@@ -157,13 +157,20 @@ CONTAINS
                               rw_tendf, mu_tend,                               &
                               ru, rv, ph, t,                                   &
                               w, mu, mut,                                      &
-                              u_b, v_b, ph_b, t_b,                             &
-                              w_b, mu_b,                                       &
-                              u_bt, v_bt, ph_bt, t_bt,                         &
-                              w_bt, mu_bt,                                     &
+                              u_bxs,u_bxe,u_bys,u_bye,                         &
+                              v_bxs,v_bxe,v_bys,v_bye,                         &
+                              ph_bxs,ph_bxe,ph_bys,ph_bye,                     &
+                              t_bxs,t_bxe,t_bys,t_bye,                         &
+                              w_bxs,w_bxe,w_bys,w_bye,                         &
+                              mu_bxs,mu_bxe,mu_bys,mu_bye,                     &
+                              u_btxs,u_btxe,u_btys,u_btye,                     &
+                              v_btxs,v_btxe,v_btys,v_btye,                     &
+                              ph_btxs,ph_btxe,ph_btys,ph_btye,                 &
+                              t_btxs,t_btxe,t_btys,t_btye,                     &
+                              w_btxs,w_btxe,w_btys,w_btye,                     &
+                              mu_btxs,mu_btxe,mu_btys,mu_btye,                 &
                               spec_bdy_width, spec_zone, relax_zone,           &
                               dtbc, fcx, gcx,             &
-                              ijds, ijde,                 & ! min/max(id,jd)
                               ids,ide, jds,jde, kds,kde,  & ! domain dims
                               ims,ime, jms,jme, kms,kme,  & ! memory dims
                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -177,7 +184,6 @@ CONTAINS
                                             ims, ime, jms, jme, kms, kme, &
                                             ips, ipe, jps, jpe, kps, kpe, & 
                                             its, ite, jts, jte, kts, kte
-   INTEGER ,               INTENT(IN   ) :: ijds, ijde
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone, relax_zone
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(IN   ) :: ru,     &
@@ -195,40 +201,53 @@ CONTAINS
    REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT)          :: mu_tend
    REAL , DIMENSION( spec_bdy_width) , INTENT(IN   ) :: fcx, gcx
 
-   REAL,  DIMENSION( ijds:ijde , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_b, &
-                                                                                 v_b, &
-                                                                                 ph_b, &
-                                                                                  w_b, &
-                                                                                 t_b, &
-                                                                                 u_bt, &
-                                                                                 v_bt, &
-                                                                                 ph_bt, &
-                                                                                  w_bt, &
-                                                                                 t_bt
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bxs,u_bxe, &
+                                                                               v_bxs,v_bxe, &
+                                                                               ph_bxs,ph_bxe, &
+                                                                               w_bxs,w_bxe, &
+                                                                               t_bxs,t_bxe, &
+                                                                               u_btxs,u_btxe, &
+                                                                               v_btxs,v_btxe, &
+                                                                               ph_btxs,ph_btxe, &
+                                                                               w_btxs,w_btxe, &
+                                                                               t_btxs,t_btxe
 
-   REAL,  DIMENSION( ijds:ijde , 1:1     , spec_bdy_width, 4 ), INTENT(IN   ) :: mu_b, &
-                                                                                 mu_bt
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bys,u_bye, &
+                                                                               v_bys,v_bye, &
+                                                                               ph_bys,ph_bye, &
+                                                                               w_bys,w_bye, &
+                                                                               t_bys,t_bye, &
+                                                                               u_btys,u_btye, &
+                                                                               v_btys,v_btye, &
+                                                                               ph_btys,ph_btye, &
+                                                                               w_btys,w_btye, &
+                                                                               t_btys,t_btye
+
+
+   REAL,  DIMENSION( jms:jme , 1:1     , spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bxs,mu_bxe, &
+                                                                               mu_btxs,mu_btxe
+
+   REAL,  DIMENSION( ims:ime , 1:1     , spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bys,mu_bye, &
+                                                                               mu_btys,mu_btye
    REAL, INTENT(IN   ) :: dtbc
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) :: rfield
    INTEGER :: i_start, i_end, j_start, j_end, i, j, k
 
            CALL relax_bdytend ( ru, ru_tendf,             &
-                               u_b, u_bt,       &
+                               u_bxs,u_bxe,u_bys,u_bye,u_btxs,u_btxe,u_btys,u_btye, &
                                'u'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
            CALL relax_bdytend ( rv, rv_tendf,             &
-                               v_b, v_bt,       &
+                               v_bxs,v_bxe,v_bys,v_bye,v_btxs,v_btxe,v_btys,v_btye, &
                                'v'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -251,11 +270,10 @@ CONTAINS
            ENDDO
            
            CALL relax_bdytend ( rfield, ph_tendf,             &
-                               ph_b, ph_bt,       &
+                               ph_bxs,ph_bxe,ph_bys,ph_bye, ph_btxs,ph_btxe,ph_btys,ph_btye,       &
                                'h'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -268,21 +286,19 @@ CONTAINS
            ENDDO
            ENDDO
            CALL relax_bdytend ( rfield, t_tendf,              &
-                               t_b, t_bt,       &
+                               t_bxs,t_bxe,t_bys,t_bye, t_btxs,t_btxe,t_btys,t_btye,       &
                                't'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
            CALL relax_bdytend ( mu, mu_tend,               &
-                               mu_b, mu_bt,                &
+                               mu_bxs,mu_bxe,mu_bys,mu_bye, mu_btxs,mu_btxe,mu_btys,mu_btye,                &
                                'm'        , config_flags,  &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, 1  ,1  ,  & ! domain dims
                                ims,ime, jms,jme, 1  ,1  ,  & ! memory dims
                                ips,ipe, jps,jpe, 1  ,1  ,  & ! patch  dims
@@ -304,11 +320,10 @@ CONTAINS
            ENDDO
            
            CALL relax_bdytend ( rfield, rw_tendf,             &
-                               w_b, w_bt,       &
+                               w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,       &
                                'h'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -320,11 +335,11 @@ CONTAINS
 !------------------------------------------------------------------------
    SUBROUTINE relax_bdy_scalar ( scalar_tend,                &
                                  scalar, mu,                 &
-                                 scalar_b, scalar_bt,        &
+                                 scalar_bxs,scalar_bxe,scalar_bys,scalar_bye, &
+                                 scalar_btxs,scalar_btxe,scalar_btys,scalar_btye, &
                                  spec_bdy_width, spec_zone, relax_zone,       &
                                  dtbc, fcx, gcx,             &
                                  config_flags,               &
-                                 ijds, ijde,                 & ! min/max(id,jd)
                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -338,7 +353,6 @@ CONTAINS
                                             ims, ime, jms, jme, kms, kme, &
                                             ips, ipe, jps, jpe, kps, kpe, & 
                                             its, ite, jts, jte, kts, kte
-   INTEGER ,               INTENT(IN   ) :: ijds, ijde
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone, relax_zone
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(IN   ) :: scalar
@@ -346,8 +360,10 @@ CONTAINS
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) :: scalar_tend
    REAL , DIMENSION( spec_bdy_width) , INTENT(IN   ) :: fcx, gcx
 
-   REAL,  DIMENSION( ijds:ijde , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_b, &
-                                                                                 scalar_bt
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bxs,scalar_bxe, &
+                                                                               scalar_btxs,scalar_btxe
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
+                                                                               scalar_btys,scalar_btye
    REAL, INTENT(IN   ) :: dtbc
 !Local
    INTEGER :: i,j,k, i_start, i_end, j_start, j_end
@@ -370,11 +386,10 @@ CONTAINS
            ENDDO
 
            CALL relax_bdytend (rscalar, scalar_tend,             &
-                               scalar_b, scalar_bt,       &
+                               scalar_bxs,scalar_bxe,scalar_bys,scalar_bye, scalar_btxs,scalar_btxe,scalar_btys,scalar_btye,       &
                                'q'        , config_flags, &
                                spec_bdy_width, spec_zone, relax_zone, &
                                dtbc, fcx, gcx,             &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -387,12 +402,19 @@ CONTAINS
    SUBROUTINE spec_bdy_dry ( config_flags,                        &
                              ru_tend, rv_tend, ph_tend, t_tend,   &
                              rw_tend, mu_tend,                    &
-                             u_b, v_b, ph_b, t_b,                 &
-                             w_b, mu_b,                           &
-                             u_bt, v_bt, ph_bt, t_bt,             &
-                             w_bt, mu_bt,                         &
+                             u_bxs,u_bxe,u_bys,u_bye,             &
+                             v_bxs,v_bxe,v_bys,v_bye,             &
+                             ph_bxs,ph_bxe,ph_bys,ph_bye,         &
+                             t_bxs,t_bxe,t_bys,t_bye,             &
+                             w_bxs,w_bxe,w_bys,w_bye,             &
+                             mu_bxs,mu_bxe,mu_bys,mu_bye,         &
+                             u_btxs,u_btxe,u_btys,u_btye,         &
+                             v_btxs,v_btxe,v_btys,v_btye,         &
+                             ph_btxs,ph_btxe,ph_btys,ph_btye,     &
+                             t_btxs,t_btxe,t_btys,t_btye,         &
+                             w_btxs,w_btxe,w_btys,w_btye,         &
+                             mu_btxs,mu_btxe,mu_btys,mu_btye,     &
                              spec_bdy_width, spec_zone,           &
-                             ijds, ijde,                 & ! min/max(id,jd)
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
                              ims,ime, jms,jme, kms,kme,  & ! memory dims
                              ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -407,7 +429,6 @@ CONTAINS
                                             ims, ime, jms, jme, kms, kme, &
                                             ips, ipe, jps, jpe, kps, kpe, & 
                                             its, ite, jts, jte, kts, kte
-   INTEGER ,               INTENT(IN   ) :: ijds, ijde
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(OUT  ) :: ru_tend, &
@@ -416,61 +437,70 @@ CONTAINS
                                                                       rw_tend, &
                                                                       t_tend
    REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(OUT  )          :: mu_tend
-   REAL,  DIMENSION( ijds:ijde , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_b,  &
-                                                                                 v_b,  &
-                                                                                 ph_b, &
-                                                                                  w_b, &
-                                                                                 t_b,  &
-                                                                                 u_bt, &
-                                                                                 v_bt, &
-                                                                                ph_bt, &
-                                                                                 w_bt, &
-                                                                                 t_bt
 
-   REAL,  DIMENSION( ijds:ijde , 1:1 ,     spec_bdy_width, 4 ), INTENT(IN   ) :: mu_b, &
-                                                                                 mu_bt
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bxs,u_bxe,  &
+                                                                               v_bxs,v_bxe,  &
+                                                                               ph_bxs,ph_bxe, &
+                                                                               w_bxs,w_bxe, &
+                                                                               t_bxs,t_bxe,  &
+                                                                               u_btxs,u_btxe, &
+                                                                               v_btxs,v_btxe, &
+                                                                               ph_btxs,ph_btxe, &
+                                                                               w_btxs,w_btxe, &
+                                                                               t_btxs,t_btxe
 
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bys,u_bye,  &
+                                                                               v_bys,v_bye,  &
+                                                                               ph_bys,ph_bye, &
+                                                                               w_bys,w_bye, &
+                                                                               t_bys,t_bye,  &
+                                                                               u_btys,u_btye, &
+                                                                               v_btys,v_btye, &
+                                                                               ph_btys,ph_btye, &
+                                                                               w_btys,w_btye, &
+                                                                               t_btys,t_btye
+
+   REAL,  DIMENSION( jms:jme , 1:1 ,     spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bxs,mu_bxe, &
+                                                                               mu_btxs,mu_btxe
+
+   REAL,  DIMENSION( ims:ime , 1:1 ,     spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bys,mu_bye, &
+                                                                               mu_btys,mu_btye
          CALL spec_bdytend (   ru_tend,                &
-                               u_b, u_bt,    &
+                               u_bxs,u_bxe,u_bys,u_bye, u_btxs,u_btxe,u_btys,u_btye,    &
                                'u'     , config_flags, &
                                spec_bdy_width, spec_zone, &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
          CALL spec_bdytend (   rv_tend,                &
-                               v_b, v_bt,    &
+                               v_bxs,v_bxe,v_bys,v_bye, v_btxs,v_btxe,v_btys,v_btye,    &
                                'v'     , config_flags, &
                                spec_bdy_width, spec_zone, &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
          CALL spec_bdytend (   ph_tend,                &
-                               ph_b, ph_bt,    &
+                               ph_bxs,ph_bxe,ph_bys,ph_bye, ph_btxs,ph_btxe,ph_btys,ph_btye,    &
                                'h'     , config_flags, &
                                spec_bdy_width, spec_zone, &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
          CALL spec_bdytend (   t_tend,                &
-                               t_b, t_bt,    &
+                               t_bxs,t_bxe,t_bys,t_bye, t_btxs,t_btxe,t_btys,t_btye,    &
                                't'     , config_flags, &
                                spec_bdy_width, spec_zone, &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
          CALL spec_bdytend (   mu_tend,                &
-                               mu_b, mu_bt,       &
+                               mu_bxs,mu_bxe,mu_bys,mu_bye, mu_btxs,mu_btxe,mu_btys,mu_btye,       &
                                'm'     , config_flags, &
                                spec_bdy_width, spec_zone, &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, 1  ,1  ,  & ! domain dims
                                ims,ime, jms,jme, 1  ,1  ,  & ! memory dims
                                ips,ipe, jps,jpe, 1  ,1  ,  & ! patch  dims
@@ -478,10 +508,9 @@ CONTAINS
 
          if(config_flags%nested)                           &
          CALL spec_bdytend (   rw_tend,                    &
-                               w_b, w_bt,                  &
+                               w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,                  &
                                'h'     , config_flags,     &
                                spec_bdy_width, spec_zone,  &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -491,10 +520,10 @@ CONTAINS
 
 !------------------------------------------------------------------------
    SUBROUTINE spec_bdy_scalar ( scalar_tend,    &
-                                scalar_b, scalar_bt,             &
+                          scalar_bxs,scalar_bxe,scalar_bys,scalar_bye,  &
+                          scalar_btxs,scalar_btxe,scalar_btys,scalar_btye, &
                           spec_bdy_width, spec_zone,                   &
                           config_flags,               &
-                          ijds, ijde,                 & ! min/max(id,jd)
                           ids,ide, jds,jde, kds,kde,  & ! domain dims
                           ims,ime, jms,jme, kms,kme,  & ! memory dims
                           ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -509,22 +538,24 @@ CONTAINS
                                             ims, ime, jms, jme, kms, kme, &
                                             ips, ipe, jps, jpe, kps, kpe, & 
                                             its, ite, jts, jte, kts, kte
-   INTEGER ,               INTENT(IN   ) :: ijds, ijde
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(OUT  ) :: scalar_tend
-   REAL,  DIMENSION( ijds:ijde , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_b, &
-                                                                                 scalar_bt
+
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bxs,scalar_bxe, &
+                                                                               scalar_btxs,scalar_btxe
+
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
+                                                                               scalar_btys,scalar_btye
+
 !Local
    INTEGER :: i,j,k
 
 
          CALL spec_bdytend (   scalar_tend,                &
-                               scalar_b, scalar_bt,    &
-!                              scalar_xbdy, scalar_ybdy,       &
+                               scalar_bxs,scalar_bxe,scalar_bys,scalar_bye, scalar_btxs,scalar_btxe,scalar_btys,scalar_btye,    &
                                'q'     , config_flags, &
                                spec_bdy_width, spec_zone, &
-                               ijds, ijde,                 & ! min/max(id,jd)
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims

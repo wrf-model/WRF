@@ -4056,8 +4056,14 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &  ! nest ratios
-                           cbdy, nbdy,                           &
-                           cbdy_t, nbdy_t,                       &
+                           cbdy_xs, nbdy_xs,                           &
+                           cbdy_xe, nbdy_xe,                           &
+                           cbdy_ys, nbdy_ys,                           &
+                           cbdy_ye, nbdy_ye,                           &
+                           cbdy_txs, nbdy_txs,                       &
+                           cbdy_txe, nbdy_txe,                       &
+                           cbdy_tys, nbdy_tys,                       &
+                           cbdy_tye, nbdy_tye,                       &
                            cdt, ndt                              &
                            )   ! boundary arrays
      USE module_configure
@@ -4078,7 +4084,10 @@
      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
      REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
      INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy, cbdy_t, nbdy, nbdy_t
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
      REAL cdt, ndt
 
      ! Local
@@ -4102,8 +4111,14 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &
-                           cbdy, nbdy,                           &
-                           cbdy_t, nbdy_t,                       &
+                           cbdy_xs, nbdy_xs,                           &
+                           cbdy_xe, nbdy_xe,                           &
+                           cbdy_ys, nbdy_ys,                           &
+                           cbdy_ye, nbdy_ye,                           &
+                           cbdy_txs, nbdy_txs,                       &
+                           cbdy_txe, nbdy_txe,                       &
+                           cbdy_tys, nbdy_tys,                       &
+                           cbdy_tye, nbdy_tye,                       &
                            cdt, ndt                              &
                                         )
 
@@ -4125,8 +4140,14 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &
-                           cbdy, bdy,                            &
-                           cbdy_t, bdy_t,                        &
+                           cbdy_xs, bdy_xs,                           &
+                           cbdy_xe, bdy_xe,                           &
+                           cbdy_ys, bdy_ys,                           &
+                           cbdy_ye, bdy_ye,                           &
+                           cbdy_txs, bdy_txs,                       &
+                           cbdy_txe, bdy_txe,                       &
+                           cbdy_tys, bdy_tys,                       &
+                           cbdy_tye, bdy_tye,                       &
                            cdt, ndt                              &
                                         )
 
@@ -4149,9 +4170,15 @@
      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ), INTENT(INOUT) :: cfld
      REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ), INTENT(INOUT) :: nfld
      INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
-     REAL, DIMENSION ( * ), INTENT(INOUT) :: cbdy, cbdy_t   ! not used
+     REAL, DIMENSION ( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs   ! not used
+     REAL, DIMENSION ( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe   ! not used
+     REAL, DIMENSION ( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys   ! not used
+     REAL, DIMENSION ( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye   ! not used
      REAL                                 :: cdt, ndt
-     REAL, DIMENSION ( nijds:nijde, nkms:nkme, spec_bdy_width, 4 ), INTENT(INOUT) :: bdy, bdy_t
+     REAL, DIMENSION ( njms:njme, nkms:nkme, spec_bdy_width ), INTENT(INOUT) :: bdy_xs, bdy_txs
+     REAL, DIMENSION ( njms:njme, nkms:nkme, spec_bdy_width ), INTENT(INOUT) :: bdy_xe, bdy_txe
+     REAL, DIMENSION ( nims:nime, nkms:nkme, spec_bdy_width ), INTENT(INOUT) :: bdy_ys, bdy_tys
+     REAL, DIMENSION ( nims:nime, nkms:nkme, spec_bdy_width ), INTENT(INOUT) :: bdy_ye, bdy_tye
 
      ! Local
 
@@ -4257,39 +4284,39 @@
 !afterwards store the new value of v at t into bdy
         ! WEST
                IF   ( ni .ge. nids .and. ni .lt. nids + sz ) THEN
-                 bdy_t( nj,k,ni, P_XSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                 bdy( nj,k,ni, P_XSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                 bdy_txs( nj,k,ni ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                 bdy_xs( nj,k,ni ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                ENDIF
 
         ! SOUTH
                IF   ( nj .ge. njds .and. nj .lt. njds + sz ) THEN
-                 bdy_t( ni,k,nj, P_YSB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                 bdy( ni,k,nj, P_YSB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                 bdy_tys( ni,k,nj ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                 bdy_ys( ni,k,nj ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                ENDIF
 
         ! EAST
                IF ( xstag ) THEN
                  IF   ( ni .ge. nide - sz + 1 .AND. ni .le. nide ) THEN
-                   bdy_t( nj,k,nide-ni+1, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( nj,k,nide-ni+1, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_txe( nj,k,nide-ni+1 ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                   bdy_xe( nj,k,nide-ni+1 ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ELSE
                  IF   ( ni .ge. nide - sz .AND. ni .le. nide-1 ) THEN
-                   bdy_t( nj,k,nide-ni, P_XEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( nj,k,nide-ni, P_XEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_txe( nj,k,nide-ni ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                   bdy_xe( nj,k,nide-ni ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ENDIF
 
         ! NORTH
                IF ( ystag ) THEN
                  IF   ( nj .ge. njde - sz + 1 .AND. nj .le. njde  ) THEN
-                   bdy_t( ni,k,njde-nj+1,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( ni,k,njde-nj+1,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_tye( ni,k,njde-nj+1 ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                   bdy_ye( ni,k,njde-nj+1 ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ELSE
                  IF   (  nj .ge. njde - sz .AND. nj .le. njde-1 ) THEN
-                   bdy_t(ni,k,njde-nj,P_YEB ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
-                   bdy( ni,k,njde-nj,P_YEB ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
+                   bdy_tye(ni,k,njde-nj ) = rdt*(psca(ci+shw,cj+shw,ip+1+(jp)*nri)-nfld(ni,k,nj))
+                   bdy_ye( ni,k,njde-nj ) = psca(ci+shw,cj+shw,ip+1+(jp)*nri )
                  ENDIF
                ENDIF
 
@@ -4297,28 +4324,6 @@
         ENDDO
      ENDDO
    !$OMP END PARALLEL DO
-#endif
-
-#ifdef DUMBCOPY
-!write(0,'("cims:cime, ckms:ckme, cjms:cjme ",6i4)')cims,cime, ckms,ckme, cjms,cjme
-!write(0,'("nims:nime, nkms:nkme, njms:njme ",6i4)')nims,nime, nkms,nkme, njms,njme
-!write(0,'("cits:cite, ckts:ckte, cjts:cjte ",6i4)')cits,cite, ckts,ckte, cjts,cjte
-!write(0,'("nits:nite, nkts:nkte, njts:njte ",6i4)')nits,nite, nkts,nkte, njts,njte
-
-     DO nj = njts, njte
-        cj = jpos + (nj-1) / nrj     ! j coord of CD point 
-        jp = mod ( nj , nrj )  ! coord of ND w/i CD point
-        DO nk = nkts, nkte
-           ck = nk
-           DO ni = nits, nite
-              ci = ipos + (ni-1) / nri      ! j coord of CD point 
-              ip = mod ( ni , nri )  ! coord of ND w/i CD point
-              ! This is a trivial implementation of the interp_fcn; just copies
-              ! the values from the CD into the ND
-              nfld( ni, nk, nj ) = cfld( ci , ck , cj )
-           ENDDO
-        ENDDO
-     ENDDO
 #endif
 
      RETURN

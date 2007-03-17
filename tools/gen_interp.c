@@ -331,10 +331,23 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
   	         if (!strncmp( nd->use, "dyn_", 4))   sprintf(core2,"%s_",corename,vname) ;
 	         else                                 sprintf(core2,"") ;
                  if ( nd->boundary_array ) {
-                   if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                     fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+                   if ( sw_new_bdys ) {
+                     int bdy ;
+                     for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
+                       if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                         fprintf(fp,",%s%s,ngrid%%%s%s%s  &\n", nd->name, bdy_indicator(bdy), core2, nd->name, bdy_indicator(bdy) ) ;
+                       } else {
+                         char c ;
+                         c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
+                         fprintf(fp,",%s%s%s(c%cms,1,1,itrace),ngrid%%%s%s%s(n%cms,1,1,itrace)  &\n", core2, nd->name, bdy_indicator(bdy), c, core2, nd->name, bdy_indicator(bdy), c  ) ;
+                       }
+                     }
                    } else {
-                     fprintf(fp,",%s%s(1,1,1,1,itrace),ngrid%%%s%s(1,1,1,1,itrace)  &\n", core2, nd->name, core2, nd->name ) ;
+                     if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                       fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+                     } else {
+                       fprintf(fp,",%s%s(1,1,1,1,itrace),ngrid%%%s%s(1,1,1,1,itrace)  &\n", core2, nd->name, core2, nd->name ) ;
+                     }
                    }
                  } else {
                    fprintf(fp,",grid%%%s%s,ngrid%%%s%s  &\n", core2, nd->name, core2, nd->name ) ;

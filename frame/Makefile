@@ -48,7 +48,12 @@ clean:
 	@ echo 'use the clean script'
 
 module_state_description.F : ../Registry/$(REGISTRY)
-		( cd .. ; tools/registry $(ARCHFLAGS) Registry/$(REGISTRY) )
+		if [ $(WRF_EM_CORE) -eq 1 ] ; then \
+		  ( cd .. ; tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ) ; \
+                else                                                                        \
+		  ( cd .. ; tools/registry $(ARCHFLAGS) Registry/$(REGISTRY) )            ; \
+                fi
+          
 
 md_calls.inc : md_calls.m4
 	$(M4) md_calls.m4 > md_calls.inc

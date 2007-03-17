@@ -934,7 +934,7 @@ gen_xposes ( char * dirname )
         if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
         {
           sprintf(post,")") ;
-          sprintf(indices_z, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+          sprintf(indices_z, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
         }
 
 /* X array */
@@ -961,7 +961,7 @@ gen_xposes ( char * dirname )
         if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
         {
           sprintf(post,")") ;
-          sprintf(indices_x, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+          sprintf(indices_x, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
         }
 
 /* Y array */
@@ -988,7 +988,7 @@ gen_xposes ( char * dirname )
         if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
         {
           sprintf(post,")") ;
-          sprintf(indices_y, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+          sprintf(indices_y, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
         }
         t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
       }

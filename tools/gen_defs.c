@@ -126,7 +126,7 @@ gen_i1_decls ( char * dn )
       {
 	sprintf(fname,"%s_tend",p->name) ;
         sprintf(post,",num_%s)",p->name) ;
-	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",t2,p,post,"" ) ;
+	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ;
         /*          type dim pdecl   name */
         fprintf(fp, "%-10s%-20s%-10s :: %s\n",
                     field_type( t1, p ) ,
@@ -135,7 +135,7 @@ gen_i1_decls ( char * dn )
                     fname ) ;
 	sprintf(fname,"%s_old",p->name) ;
         sprintf(post,",num_%s)",p->name) ;
-	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",t2,p,post,"" ) ;
+	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ;
         /*          type dim pdecl   name */
         fprintf(fp, "#ifndef NO_I1_OLD\n") ;
         fprintf(fp, "%-10s%-20s%-10s :: %s\n",
@@ -199,26 +199,60 @@ gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_
         else
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
 
-        switch ( sw_ranges )
-        {
-	  case COLON_RANGE :
-	    dimspec=dimension_with_colons( ",DIMENSION(",t2,p,")" ) ; break ;
-	  case GRIDREF :
-	    dimspec=dimension_with_ranges( "grid%",",DIMENSION(",t2,p,post,"" ) ; break ;
-	  case ARGADJ :
-	    dimspec=dimension_with_ranges( "",",DIMENSION(",t2,p,post,"" ) ; break ;
+        if ( ! p->boundary_array || ! sw_new_bdys ) {
+          switch ( sw_ranges )
+          {
+	    case COLON_RANGE :
+	      dimspec=dimension_with_colons( ",DIMENSION(",t2,p,")" ) ; break ;
+	    case GRIDREF :
+	      dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
+	    case ARGADJ :
+	      dimspec=dimension_with_ranges( "",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
+          }
+        } else {
+          dimspec="dummy" ; /* allow fall through on next tests. dimension with ranges will be called again anyway for bdy arrays */
         }
 
         if ( !strcmp( dimspec, "" ) && ipass == 1 ) continue ; /* short circuit scalars on 2nd pass  */
         if (  strcmp( dimspec, "" ) && ipass == 0 ) continue ; /* short circuit arrays on 2nd pass   */
         if ( bdyonly && p->node_kind & FIELD && ! p->boundary_array )  continue ;  /* short circuit all fields except bdy arrrays */
 
-        /*          type dim pdecl   name */
-        fprintf(fp, "%-10s%-20s%-10s :: %s\n",
-                    field_type( t1, p ) ,
-                    dimspec ,
-                    (sw_point==POINTERDECL)?declare_array_as_pointer(t3,p):"" ,
-                    fname ) ;
+        if ( p->boundary_array && sw_new_bdys ) {
+          int bdy ;
+          for ( bdy = 1; bdy <=4 ; bdy++ ) {
+            switch ( sw_ranges )
+            {
+              case COLON_RANGE :
+                dimspec=dimension_with_colons( ",DIMENSION(",t2,p,")" ) ; break ;
+              case GRIDREF :
+                dimspec=dimension_with_ranges( "grid%",",DIMENSION(",bdy,t2,p,post,"" ) ; break ;
+              case ARGADJ :
+                dimspec=dimension_with_ranges( "",",DIMENSION(",bdy,t2,p,post,"" ) ; break ;
+            }
+            /*          type dim pdecl   name */
+            fprintf(fp, "%-10s%-20s%-10s :: %s%s\n",
+                        field_type( t1, p ) ,
+                        dimspec ,
+                        (sw_point==POINTERDECL)?declare_array_as_pointer(t3,p):"" ,
+                        fname, bdy_indicator( bdy )  ) ;
+          }
+        } else {
+          switch ( sw_ranges )
+          {
+            case COLON_RANGE :
+              dimspec=dimension_with_colons( ",DIMENSION(",t2,p,")" ) ; break ;
+            case GRIDREF :
+              dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
+            case ARGADJ :
+              dimspec=dimension_with_ranges( "",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
+          }
+          /*          type dim pdecl   name */
+          fprintf(fp, "%-10s%-20s%-10s :: %s\n",
+                      field_type( t1, p ) ,
+                      dimspec ,
+                      (sw_point==POINTERDECL)?declare_array_as_pointer(t3,p):"" ,
+                      fname ) ;
+        }
       }
     }
   }

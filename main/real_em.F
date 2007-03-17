@@ -422,7 +422,7 @@ real::t1,t2,t3,t4
 
               CALL input_ext_chem_file( grid )
 
-              IF(grid%bio_emiss_opt == BEIS311 ) THEN
+              IF(grid%bio_emiss_opt == 2 ) THEN
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
@@ -435,7 +435,7 @@ real::t1,t2,t3,t4
 
               CALL input_chem_profile ( grid )
 
-              IF(grid%bio_emiss_opt == BEIS311 ) THEN
+              IF(grid%bio_emiss_opt == 2 ) THEN
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
@@ -694,27 +694,34 @@ real::t1,t2
       !  There are 2 components to the lateral boundaries.  First, there is the starting
       !  point of this time period - just the outer few rows and columns.
 
-      CALL stuff_bdy     ( ubdy3dtemp1 , grid%em_u_b     , 'U' , ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdy     ( ubdy3dtemp1 , grid%em_u_bxs, grid%em_u_bxe, grid%em_u_bys, grid%em_u_bye, &
+                                                           'U' , spec_bdy_width      , &
                                                                  ids , ide , jds , jde , kds , kde , &
                                                                  ims , ime , jms , jme , kms , kme , &
                                                                  ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdy     ( vbdy3dtemp1 , grid%em_v_b     , 'V' , ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdy     ( vbdy3dtemp1 , grid%em_v_bxs, grid%em_v_bxe, grid%em_v_bys, grid%em_v_bye, &
+                                                           'V' , spec_bdy_width      , &
                                                                  ids , ide , jds , jde , kds , kde , &
                                                                  ims , ime , jms , jme , kms , kme , &
                                                                  ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdy     ( tbdy3dtemp1 , grid%em_t_b     , 'T' , ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdy     ( tbdy3dtemp1 , grid%em_t_bxs, grid%em_t_bxe, grid%em_t_bys, grid%em_t_bye, &
+                                                           'T' , spec_bdy_width      , &
                                                                  ids , ide , jds , jde , kds , kde , &
                                                                  ims , ime , jms , jme , kms , kme , &
                                                                  ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdy     ( pbdy3dtemp1 , grid%em_ph_b    , 'W' , ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdy     ( pbdy3dtemp1 , grid%em_ph_bxs, grid%em_ph_bxe, grid%em_ph_bys, grid%em_ph_bye, &
+                                                           'W' , spec_bdy_width      , &
                                                                  ids , ide , jds , jde , kds , kde , &
                                                                  ims , ime , jms , jme , kms , kme , &
                                                                  ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdy     ( qbdy3dtemp1 , grid%moist_b(:,:,:,:,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdy     ( qbdy3dtemp1 , grid%moist_bxs(:,:,:,P_QV), grid%moist_bxe(:,:,:,P_QV),     &
+                                         grid%moist_bys(:,:,:,P_QV), grid%moist_bye(:,:,:,P_QV),     &
+                                                           'T' , spec_bdy_width      ,               &
                                                                  ids , ide , jds , jde , kds , kde , &
                                                                  ims , ime , jms , jme , kms , kme , &
                                                                  ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdy     ( mbdy2dtemp1 , grid%em_mu_b    , 'M' , ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdy     ( mbdy2dtemp1 , grid%em_mu_bxs, grid%em_mu_bxe, grid%em_mu_bys, grid%em_mu_bye, &
+                                                           'M' , spec_bdy_width      , &
                                                                  ids , ide , jds , jde , 1 , 1 , &
                                                                  ims , ime , jms , jme , 1 , 1 , &
                                                                  ips , ipe , jps , jpe , 1 , 1 )
@@ -798,33 +805,51 @@ real::t1,t2
       !  tendencies with the current data values (*bdy3dtemp2 arrays) and the previously 
       !  saved information stored in the *bdy3dtemp1 arrays.
 
-      CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds) , grid%em_u_bt  , 'U' , &
-                                                            ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                                            grid%em_u_btxs, grid%em_u_btxe,     &
+                                                            grid%em_u_btys, grid%em_u_btye,     &
+                                                            'U' , &
+                                                            spec_bdy_width      , &
                                                             ids , ide , jds , jde , kds , kde , &
                                                             ims , ime , jms , jme , kms , kme , &
                                                             ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , REAL(interval_seconds) , grid%em_v_bt  , 'V' , &
-                                                            ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                                            grid%em_v_btxs, grid%em_v_btxe,     &
+                                                            grid%em_v_btys, grid%em_v_btye,     &
+                                                            'V' , &
+                                                            spec_bdy_width      , &
                                                             ids , ide , jds , jde , kds , kde , &
                                                             ims , ime , jms , jme , kms , kme , &
                                                             ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , REAL(interval_seconds) , grid%em_t_bt  , 'T' , &
-                                                            ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                                            grid%em_t_btxs, grid%em_t_btxe,     &
+                                                            grid%em_t_btys, grid%em_t_btye,     &
+                                                            'T' , &
+                                                            spec_bdy_width      , &
                                                             ids , ide , jds , jde , kds , kde , &
                                                             ims , ime , jms , jme , kms , kme , &
                                                             ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , REAL(interval_seconds) , grid%em_ph_bt  , 'W' , &
-                                                            ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                                            grid%em_ph_btxs, grid%em_ph_btxe,   &
+                                                            grid%em_ph_btys, grid%em_ph_btye,   &
+                                                            'W' , &
+                                                            spec_bdy_width      , &
                                                             ids , ide , jds , jde , kds , kde , &
                                                             ims , ime , jms , jme , kms , kme , &
                                                             ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , REAL(interval_seconds) , grid%moist_bt(:,:,:,:,P_QV) , 'T' , &
-                                                            ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                                            grid%moist_btxs(:,:,:,P_QV), grid%moist_btxe(:,:,:,P_QV), &
+                                                            grid%moist_btys(:,:,:,P_QV), grid%moist_btye(:,:,:,P_QV), &
+                                                            'T' , &
+                                                            spec_bdy_width      , &
                                                             ids , ide , jds , jde , kds , kde , &
                                                             ims , ime , jms , jme , kms , kme , &
                                                             ips , ipe , jps , jpe , kps , kpe )
-      CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , REAL(interval_seconds) , grid%em_mu_bt  , 'M' , &
-                                                            ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , REAL(interval_seconds) ,                 &
+                                                            grid%em_mu_btxs, grid%em_mu_btxe,   &
+                                                            grid%em_mu_btys, grid%em_mu_btye,   &
+                                                            'M' , &
+                                                            spec_bdy_width      , &
                                                             ids , ide , jds , jde , 1 , 1 , &
                                                             ims , ime , jms , jme , 1 , 1 , &
                                                             ips , ipe , jps , jpe , 1 , 1 )
@@ -939,27 +964,34 @@ real::t1,t2
          !  There are 2 components to the lateral boundaries.  First, there is the starting
          !  point of this time period - just the outer few rows and columns.
 
-         CALL stuff_bdy     ( ubdy3dtemp1 , grid%em_u_b     , 'U' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( ubdy3dtemp1 , grid%em_u_bxs, grid%em_u_bxe, grid%em_u_bys, grid%em_u_bye, &
+                                                              'U' , spec_bdy_width      , &
                                                                     ids , ide , jds , jde , kds , kde , &
                                                                     ims , ime , jms , jme , kms , kme , &
                                                                     ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( vbdy3dtemp1 , grid%em_v_b     , 'V' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( vbdy3dtemp1 , grid%em_v_bxs, grid%em_v_bxe, grid%em_v_bys, grid%em_v_bye, &
+                                                              'V' , spec_bdy_width      , &
                                                                     ids , ide , jds , jde , kds , kde , &
                                                                     ims , ime , jms , jme , kms , kme , &
                                                                     ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( tbdy3dtemp1 , grid%em_t_b     , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( tbdy3dtemp1 , grid%em_t_bxs, grid%em_t_bxe, grid%em_t_bys, grid%em_t_bye, &
+                                                              'T' , spec_bdy_width      , &
                                                                     ids , ide , jds , jde , kds , kde , &
                                                                     ims , ime , jms , jme , kms , kme , &
                                                                     ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( pbdy3dtemp1 , grid%em_ph_b    , 'W' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( pbdy3dtemp1 , grid%em_ph_bxs, grid%em_ph_bxe, grid%em_ph_bys, grid%em_ph_bye, &
+                                                              'W' , spec_bdy_width      , &
                                                                     ids , ide , jds , jde , kds , kde , &
                                                                     ims , ime , jms , jme , kms , kme , &
                                                                     ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , grid%moist_b(:,:,:,:,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( qbdy3dtemp1 , grid%moist_bxs(:,:,:,P_QV), grid%moist_bxe(:,:,:,P_QV),     &
+                                            grid%moist_bys(:,:,:,P_QV), grid%moist_bye(:,:,:,P_QV),     &
+                                                              'T' , spec_bdy_width      ,               &
                                                                     ids , ide , jds , jde , kds , kde , &
                                                                     ims , ime , jms , jme , kms , kme , &
                                                                     ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( mbdy2dtemp1 , grid%em_mu_b    , 'M' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( mbdy2dtemp1 , grid%em_mu_bxs, grid%em_mu_bxe, grid%em_mu_bys, grid%em_mu_bye, &
+                                                              'M' , spec_bdy_width      , &
                                                                     ids , ide , jds , jde , 1 , 1 , &
                                                                     ims , ime , jms , jme , 1 , 1 , &
                                                                     ips , ipe , jps , jpe , 1 , 1 )

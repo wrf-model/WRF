@@ -17,10 +17,11 @@ dimension_with_colons( char * pre , char * tmp , node_t * p , char * post )
   if ( pre != NULL ) strcat(tmp,pre) ;
   if ( p->boundary_array )
   {
+    if ( ! sw_new_bdys ) { strcat( tmp,":,") ; }
     if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
-      strcat( tmp, ":,:,:,:,:" ) ;  /* boundary array for 4d tracer array */
+      strcat( tmp, ":,:,:,:" ) ;  /* boundary array for 4d tracer array */
     } else {
-      strcat( tmp, ":,:,:,:" ) ;  /* most always have four dimensions */
+      strcat( tmp, ":,:,:" ) ;  /* most always have four dimensions */
     }
   }
   else
@@ -46,7 +47,7 @@ dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
 
   if ( p->boundary_array )
   {
-
+    if ( ! sw_new_bdys ) { strcpy( tmp,"(1,") ; }
     if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {   /* if a boundary array for a 4d tracer */
       strcpy(s, p->name ) ;  /* copy the name and then remove everything after last underscore */
       if ((pp=rindex( s, '_' )) != NULL ) *pp = '\0' ;
@@ -56,10 +57,10 @@ dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
     }
 
     if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
-      sprintf( r, "1,1,1,1,%s", four_d ) ;  /* boundary array for 4d tracer array */
+      sprintf( r, "1,1,1,%s", four_d ) ;  /* boundary array for 4d tracer array */
       strcat( tmp, r ) ;
     } else {
-      strcat( tmp, "1,1,1,1," ) ;  /* most always have four dimensions */
+      strcat( tmp, "1,1,1," ) ;
     }
     tmp[strlen(tmp)-1] = '\0' ;
   }
@@ -74,7 +75,8 @@ dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
 }
 
 char *
-dimension_with_ranges( char * refarg , char * pre ,
+dimension_with_ranges( char * refarg , char * pre , 
+                       int bdy , /* as defined in data.h */
                        char * tmp , node_t * p , char * post ,
                        char * nlstructname  )   /* added 20020130;
  						   provides name (with %) of structure in
@@ -84,7 +86,7 @@ dimension_with_ranges( char * refarg , char * pre ,
   int i ;
   char tx[NAMELEN] ;
   char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
-  int   xdex, ydex, zdex ;
+  int   bdex, xdex, ydex, zdex ;
   node_t *xdim, *ydim, *zdim ;
   char *pp ;
   if ( p == NULL ) return("") ;
@@ -116,12 +118,23 @@ dimension_with_ranges( char * refarg , char * pre ,
       } else {
         strcpy( four_d, "" ) ;
       }
-
-      if ( zdim != NULL ) {
-        zdex = zdim->dim_order ;
-        sprintf(tx,"max(%sed3%d,%sed3%d),%ssd3%d:%sed3%d,%sspec_bdy_width,4,%s", r,xdex,r,ydex,r,zdex,r,zdex,r,four_d ) ;
+      if ( sw_new_bdys ) {
+        if      ( bdy == P_XSB || bdy == P_XEB ) { bdex = ydex ; } 
+        else if ( bdy == P_YSB || bdy == P_YEB ) { bdex = xdex ; }
+        else { fprintf(stderr,"REGISTRY WARNING: internal error %s %d, bdy=%d,%s,%d \n",__FILE__,__LINE__,bdy,p->name,p->boundary) ; }
+        if ( zdim != NULL ) {
+          zdex = zdim->dim_order ;
+          sprintf(tx,"%ssm3%d:%sem3%d,%ssm3%d:%sem3%d,%sspec_bdy_width,%s", r,bdex,r,bdex,r,zdex,r,zdex,r,four_d ) ;
+        } else {
+          sprintf(tx,"%ssm3%d:%sem3%d,1,%sspec_bdy_width,%s", r,bdex,r,bdex,r,four_d ) ;
+        }
       } else {
-        sprintf(tx,"max(%sed3%d,%sed3%d),1,%sspec_bdy_width,4,%s", r,xdex,r,ydex,r,four_d ) ;
+        if ( zdim != NULL ) {
+          zdex = zdim->dim_order ;
+          sprintf(tx,"max(%sed3%d,%sed3%d),%ssd3%d:%sed3%d,%sspec_bdy_width,4,%s", r,xdex,r,ydex,r,zdex,r,zdex,r,four_d ) ;
+        } else {
+          sprintf(tx,"max(%sed3%d,%sed3%d),1,%sspec_bdy_width,4,%s", r,xdex,r,ydex,r,four_d ) ;
+        }
       }
     }
     else
@@ -157,37 +170,70 @@ range_of_dimension ( char * r , char * tx , int i , node_t * p , char * nlstruct
 }
 
 char *
-index_with_firstelem( char * pre , char * dref , char * tmp , node_t * p , char * post )
+index_with_firstelem( char * pre , char * dref , int bdy ,  /* as defined in data.h */
+                      char * tmp , node_t * p , char * post )
 {
   int i ;
   char tx[NAMELEN] ;
   char tmp2[NAMELEN] ;
+  int  bdex, xdex, ydex, zdex ;
+  node_t *xdim, *ydim, *zdim ;
+  char r[NAMELEN] ;
+
   if ( p == NULL ) return("") ;
   if ( p->ndims <= 0 ) return("") ;
   strcpy(tmp,"") ;
   if ( pre != NULL ) strcat(tmp,pre) ;
 
+  strcpy(r,"") ;
+  if ( dref != NULL ) strcat(r,dref) ;
+
   if ( p->boundary_array )
   {
-    if ( p->ndims > 0 )
-    {
-#if 0
-      for ( i = 0 ; i < p->ndims ; i++ )
+    if ( sw_new_bdys ) {
+
+      xdim = get_dimnode_for_coord( p , COORD_X ) ;
+      ydim = get_dimnode_for_coord( p , COORD_Y ) ;
+      zdim = get_dimnode_for_coord( p , COORD_Z ) ;
+      if ( ydim == NULL )
+       { fprintf(stderr,"dimension_with_ranges: y dimension not specified for %s\n",p->name) ; return("") ; }
+      if ( xdim == NULL )
+       { fprintf(stderr,"dimension_with_ranges: x dimension not specified for %s\n",p->name) ; return("") ; }
+
+      xdex = xdim->dim_order ;
+      ydex = ydim->dim_order ;
+
+      if      ( bdy == P_XSB || bdy == P_XEB ) { bdex = ydex ; } 
+      else if ( bdy == P_YSB || bdy == P_YEB ) { bdex = xdex ; }
+      else { fprintf(stderr,"REGISTRY WARNING: internal error %s %d \n",__FILE__,__LINE__) ; }
+      if ( p->ndims > 0 )
       {
-	sprintf(tx,"1,") ;
+        if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
+          sprintf(tmp,"%ssm3%d,%ssm3%d,1,1", r,bdex,r,zdex ) ;
+        } else {
+          sprintf(tmp,"%ssm3%d,%ssm3%d,1", r,bdex,r,zdex ) ;
+        }
+      }
+      else
+      {
+        sprintf(tx,"1," ) ;
         strcat(tmp,tx) ;
       }
-#endif
-      if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
-        strcat(tmp,"1,1,1,1,1,") ;
-      } else {
-        strcat(tmp,"1,1,1,1,") ;
+
+    } else {
+      if ( p->ndims > 0 )
+      {
+        if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {
+          strcat(tmp,"1,1,1,1,1,") ;
+        } else {
+          strcat(tmp,"1,1,1,1,") ;
+        }
       }
-    }
-    else
-    {
-      sprintf(tx,"1," ) ;
-      strcat(tmp,tx) ;
+      else
+      {
+        sprintf(tx,"1," ) ;
+        strcat(tmp,tx) ;
+      }
     }
   }
   else
@@ -272,7 +318,7 @@ field_type( char * tmp , node_t * p )
 }
 
 char *
-field_name( char * tmp , node_t * p , int tag )
+field_name( char * tmp , node_t * p , int tag  )
 {
   if ( p == NULL ) return("") ;
   if ( tag < 1 )
@@ -286,6 +332,42 @@ field_name( char * tmp , node_t * p , int tag )
     if ( p->scalar_array_member ) sprintf(tmp,"%s_%d",p->use,tag) ;
   }
   return( tmp ) ;
+}
+
+char *
+field_name_bdy( char * tmp , node_t * p , int tag, int bdy  )
+{
+  if ( p == NULL ) return("") ;
+  if ( tag < 1 )
+  {
+    strcpy(tmp,p->name) ;
+    if ( p->scalar_array_member ) strcpy(tmp,p->use) ;
+    if ( p->boundary_array ) strcat(tmp,bdy_indicator(bdy)) ;
+  }
+  else
+  {
+    sprintf(tmp,"%s_%d",p->name,tag) ;
+    if ( p->scalar_array_member ) sprintf(tmp,"%s_%d",p->use,tag) ;
+    if ( p->boundary_array ) strcat(tmp,bdy_indicator(bdy)) ;
+  }
+  return( tmp ) ;
+}
+
+static char *emp_str = "" ;
+static char *xs_str = "xs" ;
+static char *xe_str = "xe" ;
+static char *ys_str = "ys" ;
+static char *ye_str = "ye" ;
+
+char *
+bdy_indicator( int bdy )
+{
+  char * res ;
+  res = emp_str ;
+  if      ( bdy == P_XSB ) { res = xs_str ; }
+  else if ( bdy == P_XEB ) { res = xe_str ; }
+  else if ( bdy == P_YSB ) { res = ys_str ; }
+  else if ( bdy == P_YEB ) { res = ye_str ; }
 }
 
 int
@@ -452,3 +534,27 @@ get_typedef_name ( char * name )
   }
   return(NULL) ;
 }
+
+int
+associated_with_4d_array( node_t * p ) 
+{
+  int res = 0 ;
+  node_t * possble ;
+  char * last_underscore ;
+  char name_copy[128] ;
+  if ( p != NULL )
+  {
+    /* check this variable and see if it is a boundary variable that is associated with a 4d array */
+    strcpy( name_copy, p->name ) ;
+    if (( last_underscore = rindex( name_copy , '_' )) != NULL ) {
+      if ( !strcmp( last_underscore , "_b" ) || !strcmp( last_underscore , "_bt" ) ) {
+        *last_underscore = '\0' ;
+        if (( possble = get_entry( name_copy , Domain.fields )) != NULL ) {
+          res = possble->node_kind & FOURD ;
+        }
+      }
+    }
+  }
+  return(res) ;
+}
+

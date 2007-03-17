@@ -66,13 +66,16 @@
    REAL :: MPDT
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation
+#ifndef WRF_CHEM
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: cldfra_old
+#endif
 
    REAL :: lat1 , lat2 , lat3 , lat4
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
    CHARACTER (LEN=132) :: message
 
-! Needed by some comm layers, grid%e.g. RSL. If needed, nmm_data_calls.inc is
+! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
 ! generated from the registry.  The definition of REGISTER_I1 allows
 ! I1 data to be communicated in this routine if necessary.
 #ifdef DM_PARALLEL
@@ -83,24 +86,12 @@
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
-#ifdef TEST_FOR_IJK_IN_RSL_LITE
-  grid%xxx_1 = 0.
-  grid%xxx_2 = 1.
-  do k = kps, kpe
-  do j = MAX(jds+1,jps), MIN(jde-2,jpe)
-  do i = MAX(ids+1,ips), MIN(ide-2,ipe)
-      grid%xxx_2(i,j,k) = 0.
-  enddo
-  enddo
-  enddo
-  return
-#endif
-
-
    kts = kps ; kte = kpe     ! note that tile is entire patch
    its = ips ; ite = ipe     ! note that tile is entire patch
    jts = jps ; jte = jpe    ! note that tile is entire patch
-
+#ifndef WRF_CHEM
+         ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
+#endif
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
@@ -152,7 +143,7 @@
 
    ELSE IF (config_flags%nested) THEN
 !
-! Arrays for specified boundary conditions
+! Arrays for nested boundary conditions
 
      DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
        grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
@@ -502,7 +493,14 @@
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &
                       grid%rthften, grid%rqvften,                       &
-                      grid%cldfra,grid%glw,grid%gsw,grid%emiss,grid%lu_index,          &
+                      grid%cldfra,                                      &
+#ifdef WRF_CHEM
+                      grid%cldfra_old,                                  &
+#endif
+#ifndef WRF_CHEM
+                      cldfra_old,                                  &
+#endif
+                      grid%glw,grid%gsw,grid%emiss,grid%lu_index, &
                       grid%landuse_ISICE, grid%landuse_LUCATS,            &
                       grid%landuse_LUSEAS, grid%landuse_ISN,              &
                       grid%lu_state,                                      &
@@ -793,31 +791,23 @@
 
    ENDIF
 
-#ifdef WRF_CHEM
-! Zero out the Mie arrays so they do not cause instabilities when not calling Fast-J.
-   if( .NOT. config_flags%restart ) then
-      do j=jts,jte
-         do k=kts,kte
-            do i=its,ite
-               grid%tauaer1(i,k,j) = 0.
-               grid%tauaer2(i,k,j) = 0.
-               grid%tauaer3(i,k,j) = 0.
-               grid%tauaer4(i,k,j) = 0.
-               grid%gaer1(i,k,j) = 0.
-               grid%gaer2(i,k,j) = 0.
-               grid%gaer3(i,k,j) = 0.
-               grid%gaer4(i,k,j) = 0.
-               grid%waer1(i,k,j) = 0.
-               grid%waer2(i,k,j) = 0.
-               grid%waer3(i,k,j) = 0.
-               grid%waer4(i,k,j) = 0.
-            end do
-         end do
-      end do
-   end if
-#endif
+!wig 17-Oct-2006, begin: I think the following should be here...
+   IF (num_scalar > 0) THEN
 
-   IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
+! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray
+
+      loop_3d_s   : DO loop = 1 , num_scalar
+         CALL set_physical_bc3d( scalar(:,:,:,loop) , 'r' , config_flags ,                 &
+                                 ids , ide , jds , jde , kds , kde ,        &
+                                 ims , ime , jms , jme , kms , kme ,        &
+                                 its , ite , jts , jte , kts , kte ,        &
+                                 its , ite , jts , jte , kts , kte )
+      END DO loop_3d_s
+
+   ENDIF
+!wig end.
+
+
 #ifdef WRF_CHEM
 !
 !   we do this here, so we only have one chem_init routine for either core....
@@ -839,6 +829,7 @@
                          grid%stepbioe,grid%stepphot,grid%stepchem,                        &
                          z_at_w,g,grid%aerwrf,config_flags,                               &
                          grid%em_alt,grid%em_t_1,grid%em_p,convfac,                              &
+                         grid%gd_cloud_b, grid%gd_cloud2_b,                              &
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &
@@ -861,7 +852,7 @@
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte                                   )
 
-        case (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+        case (CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
            call sum_pm_mosaic (                                             &
                 grid%em_alt, chem,                                                  &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
@@ -883,6 +874,7 @@
         end select
 #endif
 
+   IF (num_chem >= PARAM_FIRST_SCALAR ) THEN
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray
 
       loop_3d_c   : DO loop = PARAM_FIRST_SCALAR , num_chem
@@ -931,6 +923,9 @@
                          its , ite , jts , jte , &
                          its , ite , jts , jte   ) 
 
+#ifndef WRF_CHEM
+      DEALLOCATE(CLDFRA_OLD)
+#endif
 #ifdef DM_PARALLEL
 #   include "HALO_EM_INIT_1.inc"
 #   include "HALO_EM_INIT_2.inc"

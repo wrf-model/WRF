@@ -133,7 +133,7 @@ gen_halos ( char * dirname )
               if ( sw_deref_kludge ) /* &&  strchr (t2, '%') != NULLCHARPTR ) */
               {
                 sprintf(post,")") ;
-                sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+                sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
               }
               dimd = get_dimnode_for_coord( q , COORD_Z ) ;
               zdex = get_index_for_coord( q , COORD_Z ) ;
@@ -293,7 +293,7 @@ gen_periods ( char * dirname )
               if ( sw_deref_kludge ) /* &&  strchr (t2, '%') != NULLCHARPTR ) */
               {
                 sprintf(post,")") ;
-                sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+                sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
               }
               dimd = get_dimnode_for_coord( q , COORD_Z ) ;
               zdex = get_index_for_coord( q , COORD_Z ) ;
@@ -416,7 +416,7 @@ gen_xposes ( char * dirname )
         if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
         {
           sprintf(post,")") ;
-          sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+          sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
         }
         fprintf(fp," CALL add_msg_xpose_%s ( %s%s ,", q->type->name, varref,indices ) ;
         q->subject_to_communication = 1 ;         /* Indicate that this field may be communicated */
@@ -445,7 +445,7 @@ gen_xposes ( char * dirname )
         if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
         {
           sprintf(post,")") ;
-          sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+          sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
         }
         fprintf(fp," %s%s ,", varref, indices ) ;
         q->subject_to_communication = 1 ;         /* Indicate that this field may be communicated */
@@ -474,7 +474,7 @@ gen_xposes ( char * dirname )
         if ( sw_deref_kludge &&  strchr (t2, '%') != NULLCHARPTR )
         {
           sprintf(post,")") ;
-          sprintf(indices, "%s",index_with_firstelem("(","",tmp3,q,post)) ;
+          sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp3,q,post)) ;
         }
         fprintf(fp," %s%s , 3 )\n", varref, indices ) ;
         q->subject_to_communication = 1 ;         /* Indicate that this field may be communicated */
@@ -637,7 +637,7 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
                 if ( sw_deref_kludge ) /* &&  strchr (p->name, '%') != NULLCHARPTR ) */
                 {
                   sprintf(post,")") ;
-                  sprintf(indices, "%s",index_with_firstelem("(","",tmp3,p,post)) ;
+                  sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp3,p,post)) ;
                 }
                 dimd = get_dimnode_for_coord( p , COORD_Z ) ;
                 zdex = get_index_for_coord( p , COORD_Z ) ;
@@ -847,7 +847,7 @@ gen_datacalls1 ( FILE * fp , char * corename , char * structname , int mask , no
             if ( sw_deref_kludge )
             {
               sprintf(post,")") ;
-              sprintf(indices, "%s",index_with_firstelem("(","",tmp,p,post)) ;
+              sprintf(indices, "%s",index_with_firstelem("(","",-1,tmp,p,post)) ;
             }
             strcpy( ca, "" ) ;
             if (!strncmp( p->use , "dyn_", 4 )) { char * cb ;  cb = p->use+4 ; sprintf(ca,"%s_", cb) ; }

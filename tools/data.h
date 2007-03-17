@@ -141,6 +141,11 @@ EXTERN int  model_order[3] ;
 
 EXTERN int max_time_level  ;  /* Maximum number of time levels of any state variable */
 
+#define  P_XSB  1
+#define  P_XEB  2
+#define  P_YSB  3
+#define  P_YEB  4
+
 
 #define DATA_H
 #endif

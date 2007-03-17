@@ -1,4 +1,4 @@
-!dis   
+!dis
 !dis    Open Source License/Disclaimer, Forecast Systems Laboratory
 !dis    NOAA/OAR/FSL, 325 Broadway Boulder, CO 80305
 !dis    
@@ -35,6 +35,15 @@
 !dis 
 
 !WRF:PACKAGE:IO
+
+
+!CPP directives to control ic/bc conditions...
+!(The directive in module_mosaic_initmixrats also needs to be set.)
+!  CASENAME = 0   Uses Texas August 2004 case values and profiles
+!             1   Uses same concentrations as TX, but uses different
+!                 profiles depending on the species. (NEAQS2004 case)
+#define CASENAME 0
+
 
 MODULE module_input_chem_data
 
@@ -456,8 +465,8 @@ SUBROUTINE input_ext_chem_file (si_grid)
    CALL wrf_debug    ( 100, 'subroutine input_chem: find time_loop_max' )
 
      !  Which times are in this file, and more importantly, are any of them the
-      !  ones that we want?  We need to loop over times in each files, loop
-      !  over files.
+     !  ones that we want?  We need to loop over times in each files, loop
+     !  over files.
 
    get_the_right_time : DO
 !     CALL ext_ncd_get_next_time ( fid, date_string, status_next_var )
@@ -1024,6 +1033,9 @@ SUBROUTINE input_chem_profile (si_grid)
    CALL wrf_debug       ( 100,' input_chem_profile: exit subroutine ')
 
    DEALLOCATE( si_zsigf ); DEALLOCATE( si_zsig )
+#if ( ! NMM_CORE == 0 )
+   DEALLOCATE( pdsl ); DEALLOCATE( pint )
+#endif
    RETURN
 
   END SUBROUTINE input_chem_profile
@@ -1490,6 +1502,324 @@ SUBROUTINE input_chem_profile (si_grid)
   END SUBROUTINE bdy_chem_value
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#if (EM_CORE == 1 ) 
+   SUBROUTINE flow_dep_bdy_chem  (  chem,                                       &
+                               chem_bxs,chem_btxs,                                  &
+                               chem_bxe,chem_btxe,                                  &
+                               chem_bys,chem_btys,                                  &
+                               chem_bye,chem_btye,                                  &
+                               dt,                                              &
+                               spec_bdy_width,z,                                &
+                               have_bcs_chem,                        & 
+                               u, v, config_flags, alt, & 
+                               t,pb,p,t0,p1000mb,rcp,ph,phb,g, &
+                               spec_zone, ic,           &
+                               ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,  & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                               its,ite, jts,jte, kts,kte )
+
+!  This subroutine sets zero gradient conditions for outflow and a set profile value
+!  for inflow in the boundary specified region. Note that field must be unstaggered.
+!  The velocities, u and v, will only be used to check their sign (coupled vels OK)
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone,spec_bdy_width,ic
+      REAL,         INTENT(IN   )    :: dt
+
+
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: chem
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width), INTENT(IN   ) :: chem_bxs, chem_bxe, chem_btxs, chem_btxe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width), INTENT(IN   ) :: chem_bys, chem_bye, chem_btys, chem_btye
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: z
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: alt
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: u
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: v
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
+          INTENT(IN   ) ::                                           &
+                               ph,phb,t,pb,p
+   real, INTENT (IN) :: g,rcp,t0,p1000mb
+      TYPE( grid_config_rec_type ) config_flags
+
+      INTEGER    :: i, j, k, numgas
+      INTEGER    :: ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: i_inner, j_inner
+      INTEGER    :: b_dist
+      integer    :: itestbc, i_bdy_method
+      real tempfac,convfac
+      real       :: chem_bv_def
+      logical    :: have_bcs_chem
+
+      chem_bv_def = conmin
+      numgas = get_last_gas(config_flags%chem_opt)
+      itestbc=0
+      if(p_nu0.gt.1)itestbc=1
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+
+! i_bdy_method determines which "bdy_chem_value" routine to use
+!   1=radm2 or racm gas for  p_so2     <= ic <= p_ho2
+!   2=sorgam aerosol    for  p_so4aj   <= ic <= p_corn
+!   3=cbmz gas          for  p_hcl     <= ic <= p_isopo2
+!                        OR  p_dms     <= ic <= p_mtf
+!   4=mosaic aerosol    for  p_so4_a01 <= ic <= p_num_a01
+!                        OR  p_so4_a02 <= ic <= p_num_a02
+!                        OR  ...
+!   5=tracer mode
+!   0=none              for all other ic values
+! (note:  some cbmz packages use dms,...,mtf while others do not)
+! (note:  different mosaic packages use different number of sections)
+      i_bdy_method = 0
+      if ((ic .ge. p_so2) .and. (ic .le. p_ho2)) then
+          i_bdy_method = 1
+
+        if (config_flags%chem_opt == RACM_KPP .or.          &
+            config_flags%chem_opt == RACMSORG_KPP .or.      &
+            config_flags%chem_opt == RACM_MIM_KPP .or.      &
+            config_flags%chem_opt == RACMSORG_KPP ) then
+          i_bdy_method = 9
+        end if
+
+
+      else if ((ic .ge. p_so4aj) .and. (ic .le. p_corn)) then
+          i_bdy_method = 2
+      else if ((ic .ge. p_hcl) .and. (ic .le. p_isopo2)) then
+          i_bdy_method = 3
+      else if ((ic .ge. p_dms) .and. (ic .le. p_mtf)) then
+          i_bdy_method = 3
+      else if ((ic .ge. p_so4_a01) .and. (ic .le. p_num_a01)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a02) .and. (ic .le. p_num_a02)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a03) .and. (ic .le. p_num_a03)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a04) .and. (ic .le. p_num_a04)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a05) .and. (ic .le. p_num_a05)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a06) .and. (ic .le. p_num_a06)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a07) .and. (ic .le. p_num_a07)) then
+          i_bdy_method = 4
+      else if ((ic .ge. p_so4_a08) .and. (ic .le. p_num_a08)) then
+          i_bdy_method = 4
+      else if (config_flags%chem_opt == CHEM_TRACER) then
+          i_bdy_method = 5
+      end if
+      if (have_bcs_chem) i_bdy_method =6
+      if (ic .lt. param_first_scalar) i_bdy_method = 0
+
+!----------------------------------------------------------------------
+!      if (i_bdy_method .eq. 1) then
+!          print 90010, '_bdy_radm2  for ic=', ic, i_bdy_method
+!      else if (i_bdy_method .eq. 2) then
+!          print 90010, '_bdy_sorgam for ic=', ic, i_bdy_method
+!      else if (i_bdy_method .eq. 3) then
+!          print 90010, '_bdy_cbmz   for ic=', ic, i_bdy_method
+!      else if (i_bdy_method .eq. 4) then
+!          print 90010, '_bdy_mosaic for ic=', ic, i_bdy_method
+!      else if (i_bdy_method .eq. 5) then
+!          print 90010, '_bdy_tracer for ic=', ic, i_bdy_method
+!      else 
+!          print 90010, '_bdy_NONE** for ic=', ic, i_bdy_method
+!      end if
+!90010 format( a, 2(1x,i5) )
+!90020 format( a, 1p, 2e12.2 )
+!----------------------------------------------------------------------
+
+!     if(ic.eq.p_O3)THEN
+!     write(0,*)'in flow_chem ',jts,jbs,spec_zone
+!     write(0,*)'in flow_chem ',its,ibs,b_dist,i_bdy_method,ic
+!     endif
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          DO k = kts, ktf
+            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF(v(i,k,j) .lt. 0.)THEN
+                chem(i,k,j) = chem(i_inner,k,jbs+spec_zone)
+!               if(j.eq.jts+1.and.k.eq.kts.and.ic.eq.p_o3)then
+!                  write(0,*)'Yflow',i,j,k,i_bdy_method
+!                  write(0,*)chem(i_inner,k,jbs+spec_zone),v(i,k,j)
+!               endif
+              ELSE
+                if (i_bdy_method .eq. 1) then
+                   CALL bdy_chem_value (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm(   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+                else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_sorgam (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags,   &
+                        alt(i,k,j),convfac,g)
+                else if (i_bdy_method .eq. 3) then
+                   CALL bdy_chem_value_cbmz (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                else if (i_bdy_method .eq. 4) then
+                   CALL bdy_chem_value_mosaic (   &
+                        chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
+                else if (i_bdy_method .eq. 5) then
+                   CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
+!               if(k.eq.kts.and.ic.eq.p_o3)then
+!                  write(0,*)'Ygcm',i,j,k,i_bdy_method
+!                  write(0,*)chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt
+!               endif
+                else
+                   chem(i,k,j) = chem_bv_def
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+      IF (jbe - jtf .lt. spec_zone) THEN 
+! Y-end boundary 
+        DO j = max(jts,jbe-spec_zone+1), jtf 
+          b_dist = jbe - j 
+          DO k = kts, ktf 
+            DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF(v(i,k,j+1) .gt. 0.)THEN
+                chem(i,k,j) = chem(i_inner,k,jbe-spec_zone)
+              ELSE
+                if (i_bdy_method .eq. 1) then
+                   CALL bdy_chem_value (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+                else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_sorgam (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags,   &
+                        alt(i,k,j),convfac,g)
+                else if (i_bdy_method .eq. 3) then
+                   CALL bdy_chem_value_cbmz (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                else if (i_bdy_method .eq. 4) then
+                   CALL bdy_chem_value_mosaic (   &
+                        chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
+                else if (i_bdy_method .eq. 5) then
+                   CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bye(i,k,1),chem_btye(i,k,1),dt,ic)
+                else
+                   chem(i,k,j) = chem_bv_def
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              j_inner = max(j,jbs+spec_zone)
+              j_inner = min(j_inner,jbe-spec_zone)
+              IF(u(i,k,j) .lt. 0.)THEN
+                chem(i,k,j) = chem(ibs+spec_zone,k,j_inner)
+              ELSE
+                if (i_bdy_method .eq. 1) then
+                   CALL bdy_chem_value (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+                else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_sorgam (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags,   &
+                        alt(i,k,j),convfac,g)
+                else if (i_bdy_method .eq. 3) then
+                   CALL bdy_chem_value_cbmz (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                else if (i_bdy_method .eq. 4) then
+                   CALL bdy_chem_value_mosaic (   &
+                        chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
+                else if (i_bdy_method .eq. 5) then
+                   CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxs(i,k,1),chem_btxs(i,k,1),dt,ic)
+                else
+                   chem(i,k,j) = chem_bv_def
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              j_inner = max(j,jbs+spec_zone)
+              j_inner = min(j_inner,jbe-spec_zone)
+              IF(u(i+1,k,j) .gt. 0.)THEN
+                chem(i,k,j) = chem(ibe-spec_zone,k,j_inner)
+              ELSE
+                if (i_bdy_method .eq. 1) then
+                   CALL bdy_chem_value (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas )
+                else if (i_bdy_method .eq. 9) then
+                   CALL bdy_chem_value_racm (   &
+                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+                else if (i_bdy_method .eq. 2) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_sorgam (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags,   &
+                        alt(i,k,j),convfac,g)
+                else if (i_bdy_method .eq. 3) then
+                   CALL bdy_chem_value_cbmz (   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags,numgas )
+                else if (i_bdy_method .eq. 4) then
+                   CALL bdy_chem_value_mosaic (   &
+                        chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
+                else if (i_bdy_method .eq. 5) then
+                   CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 6) then
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxe(i,k,1),chem_btxe(i,k,1),dt,ic)
+                else
+                   chem(i,k,j) = chem_bv_def
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+   END SUBROUTINE flow_dep_bdy_chem
+#else
    SUBROUTINE flow_dep_bdy_chem  (  chem, chem_b,chem_bt,dt,                    &
                                spec_bdy_width,z,                                &
                                ijds, ijde,have_bcs_chem,                        & 
@@ -1655,7 +1985,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1700,7 +2030,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1742,7 +2072,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1784,7 +2114,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags,numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1802,6 +2132,7 @@ SUBROUTINE input_chem_profile (si_grid)
       ENDIF 
 
    END SUBROUTINE flow_dep_bdy_chem
+#endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE bdy_chem_value_gcm ( chem, chem_b, chem_bt, dt,ic)
                                   
@@ -1876,13 +2207,13 @@ SUBROUTINE input_chem_profile (si_grid)
      select case (chem_opt)
      case (0)
         get_last_gas = 0
-     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
+     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ)
         get_last_gas = p_ho2
 
      case (CBMZ)
         get_last_gas = p_mtf
 
-     case (CBMZ_BB,CBMZ_MOSAIC_AA,CBMZ_MOSAIC_BB)
+     case (CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
         get_last_gas = p_isopo2
 
      case (CHEM_TRACER)
@@ -2096,11 +2427,34 @@ SUBROUTINE input_chem_profile (si_grid)
 !         2430.,  1720.,  1195., 781.5,  494., 298.5, 148.5,  42.5
  
       if( p_o3 > 1 ) then
+#if (CASENAME == 0)
                                           !Rounded to closest level:
          xl(iref(p_o3-1),11:16) = 4.00e-8 !40 ppbv below 1 km
          xl(iref(p_o3-1),3:10)  = 6.50e-8 !65 ppbv > 2 km and < stratosphere
                                           !  Changed from 70 ppbv 1-Apr-2005
+#endif
+#if (CASENAME == 1)
+         xl(iref(p_o3-1),11:16) = 3.50e-8 !35 ppbv below 1 km
+         xl(iref(p_o3-1),3:10)  = 6.00e-8 !60 ppbv > 2 km and < stratosphere
+#endif
       end if
+
+#if (CASENAME == 1)
+! so2 profile based on mirage 2 output, used for neaqs case, 7-20-05 egc
+! decreased by one magnitude, 27-oct-2005 wig
+      if( p_so2 > 1 ) then
+         xl(iref(p_so2-1), 1:2) = 0.035e-10
+         xl(iref(p_so2-1),   3) = 0.081e-10
+         xl(iref(p_so2-1), 4:8) = 0.10e-10
+         xl(iref(p_so2-1),   9) = 0.60e-10
+         xl(iref(p_so2-1), 10) = 1.1e-10
+         xl(iref(p_so2-1), 11) = 1.46e-10
+         xl(iref(p_so2-1), 12) = 1.74e-10
+         xl(iref(p_so2-1), 13) = 1.94e-10
+         xl(iref(p_so2-1), 14) = 2.80e-10
+         xl(iref(p_so2-1), 15:16) = 3.0e-10
+      end if
+#endif
 
       if( p_sulf > 1 ) then
          xl(iref(p_sulf-1),:)   = conmin

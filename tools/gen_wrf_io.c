@@ -580,7 +580,7 @@ fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->
               strcpy(bdytag2,"") ;
               strncat(bdytag2,bdytag, pass+2) ;
 if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
-  fprintf(fp,"          grid%%%s%s(%s,kds,1,itrace)  , &  ! Field\n",p->name,bdytag2, ms1) ;
+  fprintf(fp,"          grid%%%s%s(%s,kds,1,itrace)  , &  ! Field\n",p->name,bdytag, ms1) ;
 } else {
   fprintf(fp,"          grid%%%s%s(1,kds,1,%d,itrace)  , &  ! Field\n",p->name,bdytag2, ibdy) ;
 }
@@ -759,7 +759,7 @@ fprintf(fp, "ENDDO\n") ;
             if ( fourdname == NULL ) {
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
 	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
-                fprintf(fp,"                       %s%s%s(%s,kds,1)     , &  ! Field \n" , structname , core , p->name, ms1 ) ;
+                fprintf(fp,"                       %s%s%s%s(%s,kds,1)     , &  ! Field \n" , structname , core , p->name, bdy_indicator(ibdy), ms1 ) ;
 	      } else {
                 fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
 	      }
@@ -768,9 +768,11 @@ fprintf(fp, "ENDDO\n") ;
               else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
 	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
-                fprintf(fp,"                       %s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ms1, p->name ) ;
+                fprintf(fp,"                       %s%s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , 
+                         structname , core , fourdname, tend_tag, bdy_indicator(ibdy), ms1, p->name ) ;
 	      } else {
-                fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+                fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , 
+                         structname , core , fourdname, tend_tag, ibdy, p->name ) ;
 	      }
             }
             if (!strncmp(p->type->name,"real",4)) {
@@ -811,7 +813,7 @@ fprintf(fp, "ENDDO\n") ;
             if ( fourdname == NULL ) {
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
 	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
-                fprintf(fp,"                       %s%s%s(%s,kds,1)     , &  ! Field \n" , structname , core , p->name, ms1 ) ;
+                fprintf(fp,"                       %s%s%s%s(%s,kds,1)     , &  ! Field \n" , structname , core , p->name, bdy_indicator(ibdy), ms1 ) ;
               } else {
                 fprintf(fp,"                       %s%s%s(1,kds,1,%d)     , &  ! Field \n" , structname , core , p->name, ibdy ) ;
 	      }
@@ -820,9 +822,11 @@ fprintf(fp, "ENDDO\n") ;
               else                                                { sprintf(dname,"%s%s%s",p->dname,tend_tag,bdytag) ; }
               fprintf(fp,"                       '%s'               , &  ! Data Name \n", dname ) ;
 	      if ( sw_new_bdys && ! sw_new_with_old_bdys ) { /* 20070207 */
-                fprintf(fp,"                       %s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ms1, p->name ) ;
+                fprintf(fp,"                       %s%s%s%s%s(%s,kds,1,P_%s)     , &  ! Field \n" , 
+                                       structname , core , fourdname, tend_tag, ms1, bdy_indicator(ibdy), p->name ) ;
               } else {
-                fprintf(fp,"                       %s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , structname , core , fourdname, tend_tag, ibdy, p->name ) ;
+                fprintf(fp,"                       %s%s%s%s%s(1,kds,1,%d,P_%s)     , &  ! Field \n" , 
+                                       structname , core , fourdname, tend_tag, ibdy, bdy_indicator(ibdy), p->name ) ;
 	      }
             }
             if (!strncmp(p->type->name,"real",4)) {
@@ -1048,7 +1052,7 @@ if ( pass == 0 )
             sprintf(post,")") ;
             if ( sw_io_deref_kludge && !(p->scalar_array_member) )   /* these aready have */
             {
-              sprintf(indices, "%s",index_with_firstelem("(","grid%",t2,p,post)) ;
+              sprintf(indices, "%s",index_with_firstelem("(","grid%",-1,t2,p,post)) ;
             }
 
 	    fprintf(fp,"CALL wrf_ext_read_field (  &\n") ;
@@ -1269,7 +1273,7 @@ if ( pass == 0 )
             sprintf(post,")") ;
             if ( sw_io_deref_kludge && !(p->scalar_array_member) )   /* these aready have */
             {
-              sprintf(indices, "%s",index_with_firstelem("(","grid%",t2,p,post)) ;
+              sprintf(indices, "%s",index_with_firstelem("(","grid%",-1,t2,p,post)) ;
             }
 
   if ( !(p->scalar_array_member) ) {

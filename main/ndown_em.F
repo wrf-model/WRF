@@ -57,7 +57,7 @@ PROGRAM ndown_em
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: its , ite , jts , jte , kts , kte
-   INTEGER :: ijds , ijde , spec_bdy_width
+   INTEGER ::  spec_bdy_width
    INTEGER :: i , j , k , nvchem
    INTEGER :: time_loop_max , time_loop
    INTEGER :: total_time_sec , file_counter
@@ -411,13 +411,10 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          jps = nested_grid%sp33
          jpe = nested_grid%ep33
 
-         ijds = MIN ( ids , jds )
-         ijde = MAX ( ide , jde )
 
          print *, ids , ide , jds , jde , kds , kde
          print *, ims , ime , jms , jme , kms , kme
          print *, ips , ipe , jps , jpe , kps , kpe
-         print *, ijds , ijde
 
          spec_bdy_width = model_config_rec%spec_bdy_width
          print *,'spec_bdy_width=',spec_bdy_width
@@ -658,28 +655,39 @@ print *,'gmt=',gmt
          !  There are 2 components to the lateral boundaries.  First, there is the starting
          !  point of this time period - just the outer few rows and columns.
 
-         CALL stuff_bdy     ( ubdy3dtemp1 , nested_grid%em_u_b     , 'U' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( ubdy3dtemp1 , nested_grid%em_u_bxs, nested_grid%em_u_bxe,                        &
+                                            nested_grid%em_u_bys, nested_grid%em_u_bye,                        &
+                                                                     'U' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( vbdy3dtemp1 , nested_grid%em_v_b     , 'V' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( vbdy3dtemp1 , nested_grid%em_v_bxs, nested_grid%em_v_bxe,                        &
+                                            nested_grid%em_v_bys, nested_grid%em_v_bye,                        &
+                                                                     'V' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( tbdy3dtemp1 , nested_grid%em_t_b     , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( tbdy3dtemp1 , nested_grid%em_t_bxs, nested_grid%em_t_bxe,                        &
+                                            nested_grid%em_t_bys, nested_grid%em_t_bye,                        &
+                                                                     'T' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( pbdy3dtemp1 , nested_grid%em_ph_b    , 'W' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( pbdy3dtemp1 , nested_grid%em_ph_bxs, nested_grid%em_ph_bxe,                      &
+                                            nested_grid%em_ph_bys, nested_grid%em_ph_bye,                      &
+                                                                     'W' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(:,:,:,:,P_QV)                                  &
-                                                                   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_bxs(:,:,:,P_QV), nested_grid%moist_bxe(:,:,:,P_QV), &
+                                            nested_grid%moist_bys(:,:,:,P_QV), nested_grid%moist_bye(:,:,:,P_QV), &
+                                                                    'T' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( mbdy2dtemp1 , nested_grid%em_mu_b    , 'M' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( mbdy2dtemp1 , nested_grid%em_mu_bxs, nested_grid%em_mu_bxe,                      &
+                                            nested_grid%em_mu_bys, nested_grid%em_mu_bye,                      &
+                                                                     'M' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , 1 , 1 , &
                                                                            ims , ime , jms , jme , 1 , 1 , &
                                                                            ips , ipe , jps , jpe , 1 , 1 )
@@ -692,8 +700,11 @@ print *,'gmt=',gmt
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill ch_b',cbdy3dtemp1(5,1,5)
 !        endif
-         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(:,:,:,:,nvchem)                                  &
-                                                                   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_bxs(:,:,:,nvchem),                                &
+                                            nested_grid%chem_bxe(:,:,:,nvchem),                                &
+                                            nested_grid%chem_bys(:,:,:,nvchem),                                &
+                                            nested_grid%chem_bye(:,:,:,nvchem),                                &
+                                                                     'T' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
@@ -731,33 +742,51 @@ print *,'gmt=',gmt
          !  tendencies with the current data values and the previously save information
          !  stored in the *bdy3dtemp1 arrays.
 
-         CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , new_bdy_frq , nested_grid%em_u_bt  , 'U'  , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , new_bdy_frq ,                               &
+                                            nested_grid%em_u_btxs, nested_grid%em_u_btxe   ,          &
+                                            nested_grid%em_u_btys, nested_grid%em_u_btye   ,          &
+                                                                  'U'  , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , new_bdy_frq , nested_grid%em_v_bt  , 'V'  , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , new_bdy_frq ,                               &
+                                            nested_grid%em_v_btxs, nested_grid%em_v_btxe   ,          &
+                                            nested_grid%em_v_btys, nested_grid%em_v_btye   ,          &
+                                                                  'V'  , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , new_bdy_frq , nested_grid%em_t_bt  , 'T'  , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , new_bdy_frq ,                               &
+                                            nested_grid%em_t_btxs, nested_grid%em_t_btxe   ,          &
+                                            nested_grid%em_t_btys, nested_grid%em_t_btye   ,          &
+                                                                  'T'  , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , new_bdy_frq , nested_grid%em_ph_bt  , 'W' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , new_bdy_frq ,                               &
+                                            nested_grid%em_ph_btxs, nested_grid%em_ph_btxe   ,        &
+                                            nested_grid%em_ph_btys, nested_grid%em_ph_btye   ,        &
+                                                                  'W' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(:,:,:,:,P_QV), 'T' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq ,                               &
+                                            nested_grid%moist_btxs(:,:,:,P_QV), nested_grid%moist_btxe(:,:,:,P_QV), &
+                                            nested_grid%moist_btys(:,:,:,P_QV), nested_grid%moist_btye(:,:,:,P_QV), &
+                                                                  'T' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq , nested_grid%em_mu_bt  , 'M' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq ,                               &
+                                            nested_grid%em_mu_btxs, nested_grid%em_mu_btxe   ,        &
+                                            nested_grid%em_mu_btys, nested_grid%em_mu_btye   ,        &
+                                                                  'M' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , 1 , 1 , &
                                                                   ims , ime , jms , jme , 1 , 1 , &
                                                                   ips , ipe , jps , jpe , 1 , 1 )
@@ -768,8 +797,11 @@ print *,'gmt=',gmt
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 1ch_b2',time_loop,cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
 !        endif
-         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(:,:,:,:,nvchem), 'T' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq ,  &
+                                            nested_grid%chem_btxs(:,:,:,nvchem), nested_grid%chem_btxe(:,:,:,nvchem), &
+                                            nested_grid%chem_btys(:,:,:,nvchem), nested_grid%chem_btye(:,:,:,nvchem), &
+                                                                 'T' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
@@ -848,23 +880,38 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
          !  There are 2 components to the lateral boundaries.  First, there is the starting
          !  point of this time period - just the outer few rows and columns.
 
-         CALL stuff_bdy     ( ubdy3dtemp1 , nested_grid%em_u_b     , 'U' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( ubdy3dtemp1 , &
+                              nested_grid%em_u_bxs, nested_grid%em_u_bxe     ,                   &
+                              nested_grid%em_u_bys, nested_grid%em_u_bye     ,                   &
+                                                       'U' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( vbdy3dtemp1 , nested_grid%em_v_b     , 'V' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( vbdy3dtemp1 , &
+                              nested_grid%em_v_bxs, nested_grid%em_v_bxe     ,                   &
+                              nested_grid%em_v_bys, nested_grid%em_v_bye     ,                   &
+                                                       'V' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( tbdy3dtemp1 , nested_grid%em_t_b     , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( tbdy3dtemp1 , &
+                              nested_grid%em_t_bxs, nested_grid%em_t_bxe     ,                   &
+                              nested_grid%em_t_bys, nested_grid%em_t_bye     ,                   &
+                                                       'T' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( pbdy3dtemp1 , nested_grid%em_ph_b    , 'W' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( pbdy3dtemp1 , &
+                              nested_grid%em_ph_bxs, nested_grid%em_ph_bxe     ,                   &
+                              nested_grid%em_ph_bys, nested_grid%em_ph_bye     ,                   &
+                                                       'W' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(:,:,:,:,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( qbdy3dtemp1 , &
+                              nested_grid%moist_bxs(:,:,:,P_QV), nested_grid%moist_bxe(:,:,:,P_QV),     &
+                              nested_grid%moist_bys(:,:,:,P_QV), nested_grid%moist_bye(:,:,:,P_QV),     &
+                                                       'T' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
@@ -874,8 +921,10 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 2ch_b3',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem)
 !        endif
-         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(:,:,:,:,nvchem)                                  &
-                                                                   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( cbdy3dtemp1 , &
+                              nested_grid%chem_bxs(:,:,:,nvchem), nested_grid%chem_bxe(:,:,:,nvchem),     &
+                              nested_grid%chem_bys(:,:,:,nvchem), nested_grid%chem_bye(:,:,:,nvchem),     &
+                                                                    'T' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
@@ -885,7 +934,10 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 !        endif
          enddo
 #endif
-         CALL stuff_bdy     ( mbdy2dtemp1 , nested_grid%em_mu_b    , 'M' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( mbdy2dtemp1 , &
+                              nested_grid%em_mu_bxs, nested_grid%em_mu_bxe    ,  &
+                              nested_grid%em_mu_bys, nested_grid%em_mu_bye    ,  &
+                                                                     'M' ,               spec_bdy_width      , &
                                                                            ids , ide , jds , jde , 1 , 1 , &
                                                                            ims , ime , jms , jme , 1 , 1 , &
                                                                            ips , ipe , jps , jpe , 1 , 1 )
@@ -919,8 +971,11 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 1ch_b4',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
 !        endif
-         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(:,:,:,:,nvchem), 'T' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq ,  &
+                              nested_grid%chem_btxs(:,:,:,nvchem),  nested_grid%chem_btxe(:,:,:,nvchem), &
+                              nested_grid%chem_btys(:,:,:,nvchem),  nested_grid%chem_btye(:,:,:,nvchem), &
+                                                                  'T' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
@@ -931,33 +986,51 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
          enddo
 #endif
 
-         CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , new_bdy_frq , nested_grid%em_u_bt  , 'U'  , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , new_bdy_frq , &
+                              nested_grid%em_u_btxs  , nested_grid%em_u_btxe , &
+                              nested_grid%em_u_btys  , nested_grid%em_u_btye , &
+                                                             'U'  , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , new_bdy_frq , nested_grid%em_v_bt  , 'V'  , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , new_bdy_frq , &
+                              nested_grid%em_v_btxs  , nested_grid%em_v_btxe , &
+                              nested_grid%em_v_btys  , nested_grid%em_v_btye , &
+                                                             'V'  , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , new_bdy_frq , nested_grid%em_t_bt  , 'T'  , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , new_bdy_frq , &
+                              nested_grid%em_t_btxs  , nested_grid%em_t_btxe , &
+                              nested_grid%em_t_btys  , nested_grid%em_t_btye , &
+                                                             'T'  , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , new_bdy_frq , nested_grid%em_ph_bt  , 'W' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( pbdy3dtemp2 , pbdy3dtemp1 , new_bdy_frq , &
+                              nested_grid%em_ph_btxs  , nested_grid%em_ph_btxe , &
+                              nested_grid%em_ph_btys  , nested_grid%em_ph_btye , &
+                                                             'W' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(:,:,:,:,P_QV) , 'T' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , &
+                              nested_grid%moist_btxs(:,:,:,P_QV) , nested_grid%moist_btxe(:,:,:,P_QV) , &
+                              nested_grid%moist_btys(:,:,:,P_QV) , nested_grid%moist_btye(:,:,:,P_QV) , &
+                                                             'T' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq , nested_grid%em_mu_bt  , 'M' , &
-                                                                  ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq , &
+                              nested_grid%em_mu_btxs  , nested_grid%em_mu_btxe , &
+                              nested_grid%em_mu_btys  , nested_grid%em_mu_btye , &
+                                                             'M' , &
+                                                                                spec_bdy_width      , &
                                                                   ids , ide , jds , jde , 1 , 1 , &
                                                                   ims , ime , jms , jme , 1 , 1 , &
                                                                   ips , ipe , jps , jpe , 1 , 1 )

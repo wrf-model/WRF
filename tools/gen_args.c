@@ -121,7 +121,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
                          )
        )
     {
-      if ( !only4d || (p->node_kind & FOURD) || ( p->boundary_array ) ) {
+      if (!only4d || (p->node_kind & FOURD) || associated_with_4d_array(p) ) {
         if      ( p->node_kind & FOURD ) { sprintf(post,",1)") ; }
         else if ( p->boundary_array )     { sprintf(post,")") ; }
         else                              { sprintf(post,")") ; }
@@ -129,19 +129,38 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
         {
           /* if this is a core-specific variable, prepend the name of the core to */
           /* the variable at the driver level */
-          if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
-            sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-          else
-            strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-	  strcpy(indices,"") ;
-          if ( sw_deref_kludge && sw==ACTUAL ) 
-	    sprintf(indices, "%s",index_with_firstelem("(","",t2,p,post)) ;
-          /* generate argument */
-	  strcpy(y,structname) ; strcat(y,fname) ; strcat(y,indices) ; strcat(y,",") ;
-	  lenarg = strlen(y) ;
-	  if ( lenarg+*linelen > MAX_ARGLINE ) { strcat(outstr," &\n") ; *linelen = 0 ; }
-	  strcat(outstr,y) ;
-	  *linelen += lenarg ;
+          if ( p->boundary_array && sw_new_bdys ) {
+            int bdy ;
+            for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
+              if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
+                sprintf(fname,"%s_%s",corename,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
+              else
+                strcpy(fname,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
+	      strcpy(indices,"") ;
+              if ( sw_deref_kludge && sw==ACTUAL ) 
+	        sprintf(indices, "%s",index_with_firstelem("(","",bdy,t2,p,post)) ;
+              /* generate argument */
+	      strcpy(y,structname) ; strcat(y,fname) ; strcat(y,indices) ; strcat(y,",") ;
+	      lenarg = strlen(y) ;
+	      if ( lenarg+*linelen > MAX_ARGLINE ) { strcat(outstr," &\n") ; *linelen = 0 ; }
+	      strcat(outstr,y) ;
+	      *linelen += lenarg ;
+            }
+          } else {
+            if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
+              sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+            else
+              strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+            strcpy(indices,"") ;
+            if ( sw_deref_kludge && sw==ACTUAL )
+              sprintf(indices, "%s",index_with_firstelem("(","",-1,t2,p,post)) ;
+            /* generate argument */
+            strcpy(y,structname) ; strcat(y,fname) ; strcat(y,indices) ; strcat(y,",") ;
+            lenarg = strlen(y) ;
+            if ( lenarg+*linelen > MAX_ARGLINE ) { strcat(outstr," &\n") ; *linelen = 0 ; }
+            strcat(outstr,y) ;
+            *linelen += lenarg ;
+          }
         }
       }
     }

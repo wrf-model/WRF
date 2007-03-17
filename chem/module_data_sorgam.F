@@ -64,6 +64,165 @@ MODULE module_data_sorgam
 !bs * LSPCV       # of condensable organic vapor interacting between gas
 !bs               aerosol phase with SORGAM
 !bs
+!   maxd_atype = maximum allowable number of aerosol types
+!   maxd_asize = maximum allowable number of aerosol size bins
+!   maxd_acomp = maximum allowable number of chemical components
+!	in each aerosol size bin
+!   maxd_aphase = maximum allowable number of aerosol phases (gas, cloud, ice, rain, ...)
+!
+!   ntype_aer = number of aerosol types
+!   nsize_aer(t) = number of aerosol size bins for aerosol type t. each bin w/ same set of components
+!   nphase_aer = number of aerosol phases
+!
+!   msectional - if positive, moving-center sectional code is utilized,
+!	and each mode is actually a section.
+!   maerosolincw - if positive, both unactivated/interstitial and activated
+!	aerosol species are simulated.  if zero/negative, only the
+!	unactivated are simulated.
+!
+!   ncomp_aer(t) = number of chemical components for aerosol type t
+!   ncomp_aer_nontracer(t) = number of "non-tracer" chemical components while in gchm code
+!   mastercompptr_aer(c,t) = mastercomp type/i.d. for chemical component c
+!	(1=sulfate, others to be defined) and aerosol type t.
+!   massptr_aer(c,s,t,p) = gchm r-array index for the mixing ratio
+!	(moles-x/mole-air) for chemical component c in size bin s for type t and phase p
+!
+!   waterptr_aer(s,t) = mixing ratio (moles-water/mole-air) for water
+!       associated with aerosol size bin s and type t
+!   hygroptr_aer(s,t) = gchm r-array index for the bulk hygroscopicity of the size bin and type
+!   numptr_aer(s,t,p) = gchm r-array index for the number mixing ratio
+!	(particles/mole-air) for aerosol size bin s, type t, and phase p
+!       If zero or negative, then number is not being simulated.
+!
+!   mprognum_aer(s,t,p) - if positive, number mixing-ratio for size s, type t,
+!       and phase p will be prognosed.  Otherwise, no.
+!
+!   ntot_mastercomp_aer = number of aerosol chemical components defined
+!   dens_mastercomp_aer(mc) = dry density (g/cm^3) of aerosol master chemical component type c
+!   mw_mastercomp_aer(mc) = molecular weight of aerosol master chemical component type mc
+!   name_mastercomp_aer(mc) = name of aerosol master chemical component type mc
+!   mc=mastercompptr_aer(c,t)
+!   dens_aer(c,t) = dry density (g/cm^3) of aerosol chemical component type c and type t
+!   mw_aer(c,t) = molecular weight of aerosol chemical component type c and type t
+!   name_aer(c,t) = name of aerosol chemical component type c and type t
+!
+!   lptr_so4_aer(s,t,p) = gchm r-array index for the
+!	mixing ratio for sulfate associated with aerosol size bin s, type t, and phase p
+!   (similar for msa, oc, bc, nacl, dust)
+!
+!-----------------------------------------------------------------------
+!
+!   volumcen_sect(s,t)= volume (cm^3) at center of section m
+!   volumlo_sect(s,t) = volume (cm^3) at lower boundary of section m
+!   volumhi_sect(s,t) = volume (cm^3) at upper boundary of section m
+!
+!   dlo_sect(s,t) = diameter (cm) at lower boundary of section m
+!   dhi_sect(s,t) = diameter (cm) at upper boundary of section m
+!   dcen_sect(s,t) = volume arithmetic-mean diameter (cm) of section m
+!	(corresponds to volumcen_sect == 0.5*(volumlo_sect + volumhi_sect)
+!
+!-----------------------------------------------------------------------
+!   nov-04 sg ! replaced amode with aer and expanded aerosol dimension to include type and phase
+
+	integer, parameter :: maxd_atype = 3
+	integer, parameter :: maxd_asize = 1
+	integer, parameter :: maxd_acomp = 17
+	integer, parameter :: maxd_aphase = 2
+	integer, save :: ai_phase ! interstitial phase of aerosol
+	integer, save :: cw_phase ! cloud water phase of aerosol
+	integer, save :: ci_phase ! cloud ice  phase of aerosol
+	integer, save :: cr_phase ! rain  phase of aerosol
+	integer, save :: cs_phase ! snow  phase of aerosol
+	integer, save :: cg_phase ! graupel phase of aerosol
+
+	integer, save :: ntype_aer = 0 ! number of types
+	integer, save :: ntot_mastercomp_aer = 0 ! number of master components
+	integer, save :: nphase_aer = 0 ! number of phases
+
+	integer, save ::   &
+      	  msectional, maerosolincw,   &
+      	  nsize_aer( maxd_atype ),   & ! number of size bins
+      	  ncomp_aer( maxd_atype ),   & ! number of chemical components
+      	  ncomp_aer_nontracer( maxd_atype ),   &
+          mastercompptr_aer(maxd_acomp, maxd_atype), &   !  mastercomp index
+      	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ), & ! index for mixing ratio
+      	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
+      	  hygroptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol hygroscopicity
+      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), & ! index for the number mixing ratio
+          mprognum_aer(maxd_asize,maxd_atype,maxd_aphase)
+
+	real, save ::   &
+          dens_aer( maxd_acomp, maxd_atype ),   &
+          dens_mastercomp_aer( maxd_acomp ),   &
+      	  mw_mastercomp_aer( maxd_acomp ), &
+      	  mw_aer( maxd_acomp, maxd_atype ),  &
+      	  hygro_mastercomp_aer( maxd_acomp ), &
+      	  hygro_aer( maxd_acomp, maxd_atype )
+	character*10, save ::   &
+      	  name_mastercomp_aer( maxd_acomp ), &
+      	  name_aer( maxd_acomp, maxd_atype )
+
+	real, save ::   &
+          volumcen_sect( maxd_asize, maxd_atype ),   &
+          volumlo_sect( maxd_asize, maxd_atype ),   &
+          volumhi_sect( maxd_asize, maxd_atype ),   &
+          dcen_sect( maxd_asize, maxd_atype ),   &
+          dlo_sect( maxd_asize, maxd_atype ),   &
+          dhi_sect( maxd_asize, maxd_atype ),   &
+	  sigmag_aer(maxd_asize, maxd_atype)
+
+	integer, save ::                     &
+      	  lptr_so4_aer(maxd_asize,maxd_atype,maxd_aphase),      &
+      	  lptr_nh4_aer(maxd_asize,maxd_atype,maxd_aphase),      &
+      	  lptr_no3_aer(maxd_asize,maxd_atype,maxd_aphase),      &
+      	  lptr_orgaro1_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgaro2_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgalk_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgole_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgba1_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgba2_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgba3_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgba4_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_orgpa_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_ec_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_p25_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+          lptr_anth_aer(maxd_asize,maxd_atype,maxd_aphase),      &
+      	  lptr_seas_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_soil_aer(maxd_asize,maxd_atype,maxd_aphase)
+
+
+!   molecular weights (g/mol)
+	real, parameter :: mw_so4_aer = 96.066
+	real, parameter :: mw_no3_aer = 62.007
+	real, parameter :: mw_seas_aer  = 58.440
+	real, parameter :: mw_ca_aer  = 40.080
+	real, parameter :: mw_co3_aer = 60.007
+	real, parameter :: mw_nh4_aer = 18.042
+	real, parameter :: mw_oc_aer  = 1.0
+	real, parameter :: mw_ec_aer  = 1.0
+	real, parameter :: mw_water_aer  = 18.016
+
+!   dry densities (g/cm3)
+	real, parameter :: dens_so4_aer = 1.80
+	real, parameter :: dens_no3_aer = 1.80
+	real, parameter :: dens_seas_aer  = 2.20
+	real, parameter :: dens_nh4_aer = 1.80
+	real, parameter :: dens_oc_aer  = 1.00
+	real, parameter :: dens_ec_aer  = 1.70
+	real, parameter :: dens_ca_aer  = 2.20
+
+!   water density (g/cm3)
+	real, parameter :: dens_water_aer  = 1.0
+
+!   hygroscopicity (dimensionless)
+	real, parameter :: hygro_so4_aer = 0.5
+	real, parameter :: hygro_no3_aer = 0.5
+	real, parameter :: hygro_seas_aer  = 1.16
+	real, parameter :: hygro_nh4_aer = 0.5
+	real, parameter :: hygro_oc_aer  = 0.14
+	real, parameter :: hygro_ec_aer  = 1.e-6
+	real, parameter :: hygro_ca_aer  = 0.1
+	real, parameter :: hygro_co3_aer = 0.1
 !     param.inc stop
 
 ! //////////////////////////////////////////////////////////////////////
@@ -722,7 +881,7 @@ MODULE module_data_sorgam
 
 
 
-      LOGICAL diagnostics
+!     LOGICAL diagnostics
 ! *** Scalar variables for fixed standard deviations.
 
 ! Flag for writing diagnostics to file       

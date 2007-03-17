@@ -6,6 +6,13 @@
 !
 ! MOSAIC module: see module_mosaic_driver.F for information and terms of use
 !**********************************************************************************  
+!CPP directives to control ic/bc conditions...
+!(The directive in module_input_chem_data also needs to be set.)
+!  CASENAME = 0   Uses Texas August 2004 case values and profiles
+!             1   Uses same concentrations as TX, but uses different
+!                 profiles depending on the species. (NEAQS2004 case)
+#define CASENAME 0
+
 	module module_mosaic_initmixrats
 
 ! rce 2005-feb-18 - several fixes for indices of dlo/hi_sect, volumlo/hi_sect,
@@ -23,7 +30,6 @@
 
 
 !-----------------------------------------------------------------------
-!wig 10-May-2004, added phb, ph, g
 	subroutine mosaic_init_wrf_mixrats(  &
 		iflagaa, config_flags,       &
 		chem, alt, z_at_w, g,        &
@@ -60,7 +66,6 @@
 		dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
 		chem
 
-!wig 10-May-2004, added phb, ph, g
 	real, intent(in),      &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
         alt, z_at_w
@@ -70,7 +75,6 @@
         integer :: i, ic, j, k
 
 	if (config_flags%aer_ic_opt == aer_ic_pnnl) then
-!wig 10-May-2004, added phb, ph, g
 	    call mosaic_init_wrf_mixrats_opt2(   &
 		iflagaa, config_flags,           &
 		chem, z_at_w, g,                 &
@@ -484,7 +488,7 @@
 		dumname = 'volume'
 		dum = vtot_nsm_ofmode(m)
 	    else
-		dumname = '????????'
+		dumname = '=BADBAD='
 		l1 = -1
 		dum = -1.0
             end if
@@ -579,6 +583,7 @@
 !
 !   provides initial values for mosaic aerosol species (mass and number
 !	mixing ratio) for "Texas August 2000" simulations
+!   modified to use different profiles for different aerosols for NEAQS case, egc 7/2005
 !   currently all the initial values are uniform in x, y, AND z
 !
 ! rce 11-sep-2004 - eliminated use of the _wrfch pointers (lptr_xxx_a_wrfch, 
@@ -605,7 +610,6 @@
 		dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
 		chem
 
-!wig 10-May-2004, added phb, ph, g
         real, intent(in),        &
 		dimension( ims:ime, kms:kme, jms:jme ) :: &
                 z_at_w
@@ -661,13 +665,13 @@
 
 !wig 10-May-2004, block begin...
 ! calculate the mid-level heights
-        do it = its, ite
-           do kt = kts, kte-1
-              do jt = jts, jte
-                 z(it,kt,jt) = (z_at_w(it,kt,jt)+z_at_w(it,kt+1,jt))*0.5
-              end do
-           end do
-        end do
+    do jt = jts, min(jte,jde-1)
+       do kt = kts, kte-1
+          do it = its, min(ite,ide-1)
+             z(it,kt,jt) = (z_at_w(it,kt,jt)+z_at_w(it,kt+1,jt))*0.5
+          end do
+       end do
+    end do
 !wig 10-May-2004, ...end block
 
 !   set the partitioning fractions for either 8 or 4 bins
@@ -848,9 +852,9 @@
 		qval = qfine*fr_fine(m) + qcoar*fr_coar(m)
 		rclm(1,l1) = qval
 
-		do it = its, ite
+		do jt = jts, min(jte,jde-1)
 		do kt = kts, kte-1
-		do jt = jts, jte
+		do it = its, min(ite,ide-1)
 
 !wig 28-May-2004, begin block...
 ! Determine height multiplier...
@@ -860,7 +864,7 @@
 !!$!    ---------     ----------
 !!$!    <=2000        1.0
 !!$!    2000<z<3000   linear transition zone to 0.5
-!!$!    3000<z<5000   linear transision zone to 0.25
+!!$!    3000<z<5000   linear transition zone to 0.25
 !!$!    >=5000        0.25
 !!$!
 !!$! which translates to:
@@ -879,6 +883,77 @@
 !!$		      mult = 0.25
 !!$           end if
 ! Updated 1-Apr-2005:
+#if (CASENAME == 1)
+! further updated 7-20-05 egc:   species specific profiles based on MIRAG2 output
+         mult = 1.0
+         if ( (l3 == 1) .or. (l3 == 2) .or. (l3 == 6) ) then
+! so4, no3 and nh4 aerosol profiles
+	     if ( z(it,kt,jt) <= 1000. ) then
+	              mult = 1.0
+		  elseif( z(it,kt,jt) > 1000. &
+                        .and. z(it,kt,jt) <= 4000. ) then
+		      mult = 1.0 - 2.367e-4*(z(it,kt,jt)-1000.)
+		   elseif( z(it,kt,jt) > 4000. &
+                        .and. z(it,kt,jt) <= 5500. ) then
+		      mult = 0.29 - 4.0e-5*(z(it,kt,jt)-4000.)
+		   else
+		      mult = 0.23
+               end if
+           else if ( ( l3 == 3) .or. (l3 ==7) ) then
+! na and cl aerosol profiles
+	     if ( z(it,kt,jt) <= 100. ) then
+	               mult = 1.0
+		  elseif( z(it,kt,jt) > 100. &
+                        .and. z(it,kt,jt) <= 265. ) then
+		      mult = 1.0 - 2.9e-3*(z(it,kt,jt)-100.)
+		   elseif( z(it,kt,jt) > 265. &
+                        .and. z(it,kt,jt) <= 2000. ) then
+		      mult = 0.52 - 2.94e-4*(z(it,kt,jt)-265.)
+                   elseif( z(it,kt,jt) > 2000. &
+                        .and. z(it,kt,jt) <= 7000. ) then
+		       mult = 0.01
+		   else
+		      mult = 1.e-10
+               end if
+          else if  ( l3 == 10)  then
+! oc aerosol profile
+	     if ( z(it,kt,jt) <= 600. ) then
+	               mult = 1.0
+		  elseif( z(it,kt,jt) > 600. &
+                        .and. z(it,kt,jt) <= 3389. ) then
+		      mult = 1.0 - 2.04e-4*(z(it,kt,jt)-600.)
+		   elseif( z(it,kt,jt) > 3389. &
+                        .and. z(it,kt,jt) <= 8840. ) then
+		      mult = 0.43 - 7.045e-5*(z(it,kt,jt)-3389.)
+		   else
+		      mult = 0.046
+               end if
+          else if  ( l3 == 11)  then
+! bc aerosol profile
+	     if ( z(it,kt,jt) <= 100. ) then
+	               mult = 1.0
+		  elseif( z(it,kt,jt) > 100. &
+                        .and. z(it,kt,jt) <= 3400. ) then
+		      mult = 1.0 - 2.51e-4*(z(it,kt,jt)-100.)
+		   elseif( z(it,kt,jt) > 3400. &
+                        .and. z(it,kt,jt) <= 8400. ) then
+		      mult = 0.172 -2.64e-5*(z(it,kt,jt)-3400.)
+		   else
+		      mult = 0.04
+               end if
+         else if  ( l3 == 9)  then
+! oin aerosol profile
+	     if ( z(it,kt,jt) <= 1580. ) then
+	               mult = 1.0 + 1.77e-4 *z(it,kt,jt)
+		  elseif( z(it,kt,jt) > 1580. &
+                        .and. z(it,kt,jt) <= 5280. ) then
+		      mult = 1.28 - 2.65e-4*(z(it,kt,jt)-1580.)
+		   else
+		      mult = 0.30
+               end if
+	else
+! generic profile for other other species (which should have groundlevel values=0)
+#endif
 !    Height(m)     Multiplier
 !    ---------     ----------
 !    <=2000        1.0
@@ -901,6 +976,9 @@
 		   else
 		      mult = 0.125
            end if
+#if (CASENAME == 1)
+        end if				!close l3 comparison block
+#endif
 
 		    chem(it,kt,jt,l3) = mult*rclm(1,l1)
 !wig 28-May-2004, ...end block
@@ -956,7 +1034,7 @@
 		dumname = 'volume'
 		dum = vtot_ofmode(m)
 	    else
-		dumname = '????????'
+		dumname = '=BADBAD='
 		l1 = -1
 		dum = -1.0
             end if
@@ -1045,12 +1123,13 @@
 	TYPE (grid_config_rec_type), intent(in) :: config_flags
 
 ! local variables
-	integer iphase, itype, m
+	integer :: iphase, itype, m
+    logical :: foundit
 
 	real, parameter :: chem_bv_def = 1.0e-20
 !wig 10-May-2004, added mult
-	real dumvol1p, mult
-	real qcoar, qfine, qval
+	real :: dumvol1p, mult
+	real :: qcoar, qfine, qval
 
 	real :: fr_coar(8), fr_fine(8)
 
@@ -1059,7 +1138,8 @@
 !                 in module_mosaic_addemiss.F). Note that these values no
 !                 longer match those in mosaic_addemiss.
 	real, save :: fr8b_coar(8) =   &
-        (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /)
+        (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
+!       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! 01-Apr-2005
 !		(/ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.16, 0.84 /)
 	real, save :: fr8b_fine(8) =   &
         (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
@@ -1088,7 +1168,7 @@
 !   *** currently only works for ntype_aer = 1
 	itype = 1
 	iphase = ai_phase
-	m = 1
+	m = 1 !This is here for size, but is overridden by loop below.
 
 
 !
@@ -1136,6 +1216,85 @@
 !!$        else
 !!$           mult = 0.25
 !!$        end if
+#if (CASENAME == 1)
+    mult = 1.0
+    SIZE_LOOP : do m=1,nsize_aer(itype)
+       if( ( nch .eq. lptr_so4_aer(m,itype,iphase) ) .or.  &
+            (nch .eq. lptr_no3_aer(m,itype,iphase) ) .or.  &
+            (nch .eq. lptr_nh4_aer(m,itype,iphase) )  )then
+! so4, no3 and nh4 aerosol profiles
+          if ( zz <= 1000. ) then
+             mult = 1.0
+		  elseif( zz > 1000. &
+                 .and. zz <= 4000. ) then
+             mult = 1.0 - 2.367e-4*(zz-1000.)
+          elseif( zz > 4000. &
+                 .and. zz <= 5500. ) then
+             mult = 0.29 - 4.0e-5*(zz-4000.)
+          else
+             mult = 0.23
+          end if
+          exit SIZE_LOOP
+       else if ( (nch .eq. lptr_na_aer(m,itype,iphase) ) .or.   &
+	             (nch .eq. lptr_cl_aer(m,itype,iphase) ) ) then
+! na and cl aerosol profiles
+          if ( zz <= 100. ) then
+             mult = 1.0
+		  elseif( zz > 100. &
+                  .and. zz <= 265. ) then
+             mult = 1.0 - 2.9e-3*(zz-100.)
+          elseif( zz > 265. &
+                  .and. zz <= 2000. ) then
+             mult = 0.52 - 2.94e-4*(zz-265.)
+          elseif( zz > 2000. &
+                  .and. zz <= 7000. ) then
+             mult = 0.01
+          else
+             mult = 1.e-10
+          end if
+          exit SIZE_LOOP
+       else if (nch .eq. lptr_oc_aer(m,itype,iphase) )  then
+! oc aerosol profile
+          if ( zz <= 600. ) then
+             mult = 1.0
+		  elseif( zz > 600. &
+                  .and. zz <= 3389. ) then
+             mult = 1.0 - 2.04e-4*(zz-600.)
+          elseif( zz > 3389. &
+                  .and. zz <= 8840. ) then
+             mult = 0.43 - 7.045e-5*(zz-3389.)
+          else
+             mult = 0.046
+          end if
+          exit SIZE_LOOP
+       else if  (nch .eq. lptr_bc_aer(m,itype,iphase) )   then
+! bc aerosol profile
+          if ( zz <= 100. ) then
+             mult = 1.0
+		  elseif( zz > 100. &
+                  .and. zz <= 3400. ) then
+             mult = 1.0 - 2.51e-4*(zz-100.)
+          elseif( zz > 3400. &
+                  .and. zz <= 8400. ) then
+             mult = 0.172 -2.64e-5*(zz-3400.)
+          else
+             mult = 0.04
+          end if
+          exit SIZE_LOOP
+       else if  (nch .eq. lptr_oin_aer(m,itype,iphase))  then
+! oin aerosol profile
+          if ( zz <= 1580. ) then
+             mult = 1.0 + 1.77e-4 *zz
+		  elseif( zz > 1580. &
+                  .and. zz <= 5280. ) then
+             mult = 1.28 - 2.65e-4*(zz-1580.)
+          else
+             mult = 0.30
+          end if
+          exit SIZE_LOOP
+       else
+! generic profile
+#endif
 ! Updated aerosol profile multiplier 1-Apr-2005:
 !    Height(m)     Multiplier
 !    ---------     ----------
@@ -1159,7 +1318,10 @@
         else
            mult = 0.125
         end if
-
+#if (CASENAME == 1)
+      end if			! end nc block comparison
+    end do SIZE_LOOP
+#endif
 !   Set values for fine and coarse mass concentrations, and
 !   compute fine/coarse volume concentrations. These are also set in
 !   mosaic_init_wrf_mixrats_opt2.
@@ -1169,7 +1331,8 @@
 	qcoar_so4 = mult*0.242
 	qfine_no3 = mult*0.11
 	qcoar_no3 = mult*0.03
-	qfine_cl  = mult*0.3
+!	qfine_cl  = mult*0.3
+	qfine_cl  = mult*0.14     ! 10-May-2005
 	qcoar_cl  = mult*0.139
 	qfine_msa = mult*0.0
 	qcoar_msa = mult*0.0
@@ -1177,11 +1340,13 @@
 	qcoar_co3 = mult*0.0
 	qfine_nh4 = mult*0.83
 	qcoar_nh4 = mult*0.10
-	qfine_na  = mult*0.2
+!	qfine_na  = mult*0.2
+	qfine_na  = mult*0.1      ! 10-May-2005
 	qcoar_na  = mult*0.09
 	qfine_ca  = mult*0.0
 	qcoar_ca  = mult*0.0
-	qfine_oin = mult*6.2
+!	qfine_oin = mult*6.2
+	qfine_oin = 3.48     ! 10-May-2005
 	qcoar_oin = mult*0.35
 	qfine_oc  = mult*1.00
 	qcoar_oc  = mult*1.50

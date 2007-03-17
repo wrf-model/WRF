@@ -39,8 +39,8 @@ CONTAINS
               ,j_start, j_end                                             &
               ,kts, kte                                                   &
               ,num_tiles                                                  &
-              ,qv,qc,qr,qi,qs,qg                                          &
-              ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                              &
+              ,qv,qc,qr,qi,qs,qg,qndrop                                   &
+              ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop                     &
               ,CLDFRA ,Pb                                                 &
               ,f_ice_phy,f_rain_phy                                       &
               ,pm2_5_dry, pm2_5_water, pm2_5_dry_ec                       &
@@ -48,7 +48,7 @@ CONTAINS
               ,gaer300, gaer400, gaer600, gaer999                         & ! jcb
               ,waer300, waer400, waer600, waer999                         & ! jcb
               ,qc_adjust ,qi_adjust                                       & ! jm
-              ,cu_rad_feedback                                            & ! jm
+              ,cu_rad_feedback, aer_ra_feedback                           & ! jm
 
                                                                           )
 
@@ -173,6 +173,8 @@ CONTAINS
 !-- GSW           net short wave flux at ground surface (W/m^2)
 !-- SWDOWN        downward short wave flux at ground surface (W/m^2)
 !-- SWDOWNC       clear-sky downward short wave flux at ground surface (W/m^2; optional; for AQ)
+!-- RLWTOA        upward long wave at top of atmosphere (w/m2)
+!-- RSWTOA        upward short wave at top of atmosphere (w/m2)
 !-- XLAT          latitude, south is negative (degree)
 !-- XLONG         longitude, west is negative (degree)
 !-- ALBEDO                albedo (between 0 and 1)
@@ -182,6 +184,7 @@ CONTAINS
 !-- rr            dry air density (kg/m^3)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
 !-- n_moist       number of moisture species
+!-- qndrop        Cloud droplet number (#/kg)
 !-- p8w           pressure at full levels (Pa)
 !-- p_phy         pressure (Pa)
 !-- Pb            base-state pressure (Pa)
@@ -289,6 +292,8 @@ CONTAINS
 
    LOGICAL, OPTIONAL :: cu_rad_feedback
 
+   INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
+
 !
 ! variables for aerosols (only if running with chemistry)
 !
@@ -393,9 +398,9 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
                                                                pb &
-                                               ,qv,qc,qr,qi,qs,qg
+                                        ,qv,qc,qr,qi,qs,qg,qndrop
 
-   LOGICAL, OPTIONAL ::             f_qv,f_qc,f_qr,f_qi,f_qs,f_qg
+   LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -758,7 +763,7 @@ CONTAINS
                      RTHRATEN=rthraten,GSW=gsw,XLAT=xlat,XLONG=xlong   &
                     ,ALB=albedo,T3D=t,P3D=p,P8W3D=p8w,pi3D=pi          &
                     ,DZ8W=dz8w,RHO_PHY=rho                             &
-                    ,CLDFRA3D=cldfra                                   &
+                    ,CLDFRA3D=cldfra,RSWTOA=rswtoa                     &
                     ,GMT=gmt,CP=cp,G=g                                 &
 !                    ,COSZ_URB2D=COSZ_URB2D ,OMG_URB2D=omg_urb2d            & !urban
                     ,JULDAY=julday,XTIME=xtime                         &
@@ -773,6 +778,7 @@ CONTAINS
                     ,GAER600=gaer600,GAER999=gaer999                   & ! jcb
                     ,WAER300=waer300,WAER400=waer400                   & ! jcb
                     ,WAER600=waer600,WAER999=waer999                   & ! jcb
+                    ,aer_ra_feedback=aer_ra_feedback                   &
 #endif
                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -784,8 +790,10 @@ CONTAINS
                     ,QI3D=qi                                           &
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
+                    ,QNDROP3D=qndrop                                   &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
+                    ,F_QNDROP=f_qndrop                                 &
                                                                        )
         CASE (CAMSWSCHEME)
 ! Temporarily lw switch already calculates sw CAM tendency, so inactive here
@@ -931,7 +939,14 @@ CONTAINS
      END SELECT accumulate_sw_select
 !
 !*** Restore the saved values of the input Q arrays before exiting
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
+   DO ij = 1 , num_tiles
+     its = i_start(ij)
+     ite = i_end(ij)
+     jts = j_start(ij)
+     jte = j_end(ij)
      IF ( PRESENT( cu_rad_feedback ) ) THEN
        IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
           DO j=jts,jte
@@ -952,6 +967,8 @@ CONTAINS
           ENDDO
        ENDIF
      ENDIF
+   ENDDO
+   !$OMP END PARALLEL DO
 
    END SUBROUTINE radiation_driver
 

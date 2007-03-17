@@ -94,7 +94,7 @@
 !
 ! Local variables...
 !
-      INTEGER :: i, j, k
+      INTEGER :: i, j, k, ksub
       REAL :: conv
       CHARACTER (LEN=80) :: message 
 
@@ -103,6 +103,10 @@
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
 ! ..
+    ksub=1
+#if ( NMM_CORE == 1 )
+    ksub=0
+#endif
     bioem_select: SELECT CASE(config_flags%bio_emiss_opt)
      CASE (GUNTHER1)
      CALL wrf_debug(15,'biogenic emissions: calling Gunther1')
@@ -147,8 +151,10 @@
 
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
-       IF(config_flags%kemit .GT. kte-1) THEN
+       IF(config_flags%kemit .GT. kte-ksub) THEN
          message = ' EMISSIONS_DRIVER: KEMIT > KME '
+         k=config_flags%kemit
+         write(0,*)kme,kte-ksub,k
          CALL WRF_ERROR_FATAL (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
@@ -169,8 +175,8 @@
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
 
-    CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
-       IF(config_flags%kemit .GT. kte-1) THEN
+    CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+       IF(config_flags%kemit .GT. kte-ksub) THEN
          message = ' EMISSIONS_DRIVER: KEMIT > KME '
          CALL WRF_ERROR_FATAL (message)
        ENDIF
@@ -194,7 +200,7 @@
     CASE (CHEM_TRACER)
        do j=jts,jte  
           do i=its,ite  
-             do k=kts,min(config_flags%kemit,kte-1)
+             do k=kts,min(config_flags%kemit,kte-ksub)
                 conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
                      +e_so2(i,k,j)*conv
@@ -219,7 +225,7 @@
 
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
-    CASE (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem,                                          &

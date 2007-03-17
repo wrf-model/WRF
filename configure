@@ -297,6 +297,10 @@ if [ -n "$WRF_CHEM" ] ; then
   if [ $WRF_CHEM = 1 ] ; then
     echo building WRF with chemistry option
     compileflags="${compileflags}!-DWRF_CHEM"
+    if [ $WRF_KPP = 1 ] ; then
+      echo building WRF with KPP chemistry option
+      compileflags="${compileflags}!-DWRF_KPP"
+    fi
   else
     compileflags=" "
   fi

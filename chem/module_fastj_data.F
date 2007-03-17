@@ -83,7 +83,8 @@
         data RAD, ZZHT, dtaumax, dsubdiv   &
 !jdf      / 0.6375D+09,  0.5000D+06,  0.1000D+01,  0.1000D+02/
 !jdf needed to reduce dsubdiv, otherwise too many vertical subdivisions for clouds
-          / 0.6375D+09,  0.5000D+06,  0.1000D+01,  0.2000D+01/
+!wig doubled dtaumax to reduce instances when layer subdivision occurs
+          / 0.6375D+09,  0.5000D+06,  0.2000D+01,  0.2000D+01/
        data dtausub, szamax   &
           / 0.1000D+01,  0.9800D+02/ 
           

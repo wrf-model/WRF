@@ -10,15 +10,19 @@ SUBROUTINE microphysics_driver(                                          &
                       ,mp_physics, spec_zone                             &
                       ,specified, channel_switch                         &
                       ,warm_rain                                         &
+                      ,t8w                                               &
+                      ,cldfra, cldfra_old, exch_h, nsource               &
+                      ,qlsink, precr, preci, precs, precg                &
                       ,xland,itimestep                                   &
                       ,f_ice_phy,f_rain_phy,f_rimef_phy                  &
-                      ,lowlyr,sr                                         &
+                      ,lowlyr,sr, id                                     &
                       ,ids,ide, jds,jde, kds,kde                         &
                       ,ims,ime, jms,jme, kms,kme                         &
-                      ,i_start,i_end,j_start,j_end,kts,kte,num_tiles     &
+                      ,i_start,i_end,j_start,j_end,kts,kte               &
+                      ,num_tiles, naer                                   &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
-                      ,qni_curr                                          &
-                      ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni               &
+                      ,qndrop_curr,qni_curr                              &
+                      ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
                       ,w ,z                                              &
@@ -47,7 +51,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
-    
+   USE module_mixactivate, only: prescribe_aerosol_mixactivate
+
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
    !
@@ -101,6 +106,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! Qndrop     droplet number mixing ratio (#/kg)
 ! Qni        cloud ice number concentration (#/kg)
 !
 !----------------------------------------------------------------------
@@ -131,13 +137,23 @@ SUBROUTINE microphysics_driver(                                          &
 !-- F_ICE_PHY     Fraction of ice.
 !-- F_RAIN_PHY    Fraction of rain.
 !-- F_RIMEF_PHY   Mass ratio of rimed ice (rime factor)
+!-- t8w           temperature at layer interfaces
+!-- cldfra, cldfra_old, current, previous cloud fraction
+!-- exch_h        vertical diffusivity (m2/s)
+!-- qlsink        Fractional cloud water sink (/s)
+!-- precr         rain precipitation rate at all levels (kg/m2/s)
+!-- preci         ice precipitation rate at all levels (kg/m2/s)
+!-- precs         snow precipitation rate at all levels (kg/m2/s)
+!-- precg         graupel precipitation rate at all levels (kg/m2/s)                             &
 !-- P_QV          species index for water vapor
 !-- P_QC          species index for cloud water
 !-- P_QR          species index for rain water
 !-- P_QI          species index for cloud ice
 !-- P_QS          species index for snow
 !-- P_QG          species index for graupel
+!-- P_QNDROP      species index for cloud drop mixing ratio
 !-- P_QNI         species index for cloud ice number concentration
+!-- id            grid id number
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -177,7 +193,7 @@ SUBROUTINE microphysics_driver(                                          &
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 !
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
-         INTENT(INOUT) ::                                     th
+         INTENT(INOUT) ::                                         th
 !
 
 !
@@ -187,11 +203,22 @@ SUBROUTINE microphysics_driver(                                          &
                                                                 dz8w, &
                                                                  p8w, &
                                                               pi_phy, &
-                                                               p
-!
+                                                                   p
+
 
    REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
                                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+!!$#ifdef WRF_CHEM
+!  REAL, INTENT(OUT), DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
+   REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
+!!$#else
+!!$  REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
+!!$#endif
+         qlsink, & ! cloud water sink (/s)
+         precr, & ! rain precipitation rate at all levels (kg/m2/s)
+         preci, & ! ice precipitation rate at all levels (kg/m2/s)
+         precs, & ! snow precipitation rate at all levels (kg/m2/s)
+         precg    ! graupel precipitation rate at all levels (kg/m2/s)
 
 !
 
@@ -207,12 +234,18 @@ SUBROUTINE microphysics_driver(                                          &
 ! Optional
 !
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
+   REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
-                  w, z                                            & 
+                  w, z, t8w                                       & 
+                 ,cldfra, cldfra_old, exch_h                      &
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
-                 ,qt_curr,qni_curr                                
+                 ,qt_curr,qndrop_curr,qni_curr                                
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                   &
+         OPTIONAL,                                                &
+         INTENT(OUT ) ::                                          &
+                  nsource
 
 !
    REAL, DIMENSION( ims:ime , jms:jme ),                          &
@@ -224,6 +257,7 @@ SUBROUTINE microphysics_driver(                                          &
                                                          ,SNOWNCV &
                                                        ,GRAUPELNC &
                                                       ,GRAUPELNCV
+   INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
          INTENT(IN)   ::                                       ht
@@ -232,7 +266,7 @@ SUBROUTINE microphysics_driver(                                          &
                                          ,tbpvs_state,tbpvs0_state
 !
 
-   LOGICAL, OPTIONAL ::      f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qni,f_qt
+   LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt
 
 
 ! LOCAL  VAR
@@ -270,7 +304,28 @@ SUBROUTINE microphysics_driver(                                          &
        jts = max(j_start(ij),jds+sz)
        jte = min(j_end(ij),jde-1-sz)
 
+       IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
+
 !-----------
+#ifndef WRF_CHEM
+       IF( PRESENT( QNDROP_CURR ) ) THEN
+          IF( F_QNDROP .AND. mp_physics==LINSCHEME ) THEN
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling prescribe_aerosol_mixactivate' )
+! 06-nov-2005 rce - id  & itimestep added to arg list
+             call prescribe_aerosol_mixactivate (               &
+                  id, itimestep, dt, naer,                      &
+                  rho, th, pi_phy, w, cldfra, cldfra_old,       &
+                  z, dz8w, p8w, t8w, exch_h,                    &
+                  qv_curr, qc_curr, qi_curr, qndrop_curr,       &
+                  nsource,                                      &
+                  ims,ime, jms,jme, kms,kme,                    &
+                  its,ite, jts,jte, kts,kte,                    &
+                  F_QC=f_qc, F_QI=f_qi                          )
+          ELSE IF( F_QNDROP ) THEN
+             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME.")
+          END IF
+       END IF
+#endif
 
      micro_select: SELECT CASE(mp_physics)
 
@@ -344,6 +399,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QR=qr_curr                                        &
                  ,QI=qi_curr                                        &
                  ,QS=qs_curr                                        &
+                 ,QLSINK=qlsink                                     &
                  ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
                  ,HT=ht, DZ8W=dz8w, GRAV=G,  CP=cp                  &
                  ,RAIR=r_d, RVAPOR=R_v                              &
@@ -355,8 +411,10 @@ SUBROUTINE microphysics_driver(                                          &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,F_QG=f_qg                                         &
+                 ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   &
+                 ,F_QG=f_qg, F_QNDROP=f_qndrop                      &
                  ,QG=qg_curr                                        &
+                 ,QNDROP=qndrop_curr                                &
                                                                     )
              ELSE 
                 CALL wrf_error_fatal ( 'arguments not present for calling lin_et_al' )

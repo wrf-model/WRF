@@ -72,6 +72,7 @@
 !   requires double precision on 32-bit machines
 !   uses Wiscombe's (1979) mie scattering code
 ! INPUT
+!       id -- grid id number
 !   	iclm, jclm -- i,j of grid column being processed
 !       nbin_a -- number of bins
 !	number_bin(nbin_a,kmaxd) --   number density in layer, #/cm^3
@@ -91,7 +92,7 @@
 !        sizeaer ! average wet radius
 !----------------------------------------------------------------------
         subroutine mieaer( &
-	          iclm, jclm, nbin_a,   &
+	          id, iclm, jclm, nbin_a,   &
               number_bin, radius_wet, refindx,   &
               dz, isecfrm0, lpar, &
               sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
@@ -112,7 +113,7 @@
         data wavmid     &
             / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
 !jdf
-    integer, intent(in) :: iclm, jclm, nbin_a, isecfrm0
+    integer, intent(in) :: id, iclm, jclm, nbin_a, isecfrm0
     real, intent(in), dimension(nbin_a_maxd, kmaxd) :: number_bin
     real, intent(inout), dimension(nbin_a_maxd, kmaxd) :: radius_wet
     complex, intent(in) :: refindx(nbin_a_maxd, kmaxd)
@@ -132,11 +133,11 @@
         real pext	    ! parameterized specific extinction (cm2/g)
         real pasm       ! parameterized asymmetry factor
         real ppmom2     ! 2 Lengendre expansion coefficient (numbered 0,1,2,...)
-        real ppmom3     ! 3 Lengendre expansion coefficient (numbered 0,1,2,...)
-        real ppmom4     ! 4 Lengendre expansion coefficient (numbered 0,1,2,...)
-        real ppmom5     ! 5 Lengendre expansion coefficient (numbered 0,1,2,...)
-        real ppmom6     ! 6 Lengendre expansion coefficient (numbered 0,1,2,...)
-        real ppmom7     ! 7 Lengendre expansion coefficient (numbered 0,1,2,...)
+        real ppmom3     ! 3     ...
+        real ppmom4     ! 4     ...
+        real ppmom5     ! 5     ...
+        real ppmom6     ! 6     ...
+        real ppmom7     ! 7     ...
 
         integer ns 	    ! Spectral loop index
         integer i  	    ! Longitude loop index
@@ -235,7 +236,7 @@
 ! diagnostic declarations
       integer kcallmieaer2
       integer ibin
-      character*80 msg
+      character*150 msg
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -423,32 +424,33 @@
 		l5(ns,klevel)=0.0
 		l6(ns,klevel)=0.0
 		l7(ns,klevel)=0.0
-		if(thesum.le.0.0)goto 1000 ! set everything = 0 if no aerosol
+		if(thesum.le.1e-21)goto 1000 ! set everything = 0 if no aerosol !wig changed 0.0 to 1e-21, 31-Oct-2005
 
 ! loop over the bins
                do m=1,nbin_a ! nbin_a is number of bins
 ! check to see if there's any aerosol
-		if(number_bin(m,klevel).le.0.0)goto 70  ! no aerosol
+		if(number_bin(m,klevel).le.1e-21)goto 70  ! no aerosol !wig changed 0.0 to 1e-21, 31-Oct-2005
 ! here's the size
 		sizem=radius_wet(m,klevel) ! radius in cm
 ! check limits of particle size
 ! rce 2004-dec-07 - use klevel in write statements
 		if(radius_wet(m,klevel).le.rmin)then
 		  radius_wet(m,klevel)=rmin
-		  write( msg, '(a, 4i4,1x, e11.4)' )	&
+		  write( msg, '(a, 5i4,1x, e11.4)' )	&
 		  'FASTJ mie: radius_wet set to rmin,'  //	&
-		  'i,j,k,m,rm(m,k)', iclm, jclm, klevel, m, radius_wet(m,klevel)
+		  'id,i,j,k,m,rm(m,k)', id, iclm, jclm, klevel, m, radius_wet(m,klevel)
 		  call peg_message( lunerr, msg )
 !		   write(6,'('' particle size too small '')')
 		endif
 !
 		if(radius_wet(m,klevel).gt.rmax)then
-		  radius_wet(m,klevel)=rmax
-		  write( msg, '(a, 4i4,1x, e11.4)' )	&
-		  'FASTJ mie: radius_wet set to rmax,'  //	&
-		  'i,j,k,m,rm(m,k)', iclm, jclm, klevel, m, radius_wet(m,klevel)
-		  call peg_message( lunerr, msg )
-!		   write(6,'('' particle size too large '')')
+		   write( msg, '(a, 5i4,1x, e11.4)' )	&
+                'FASTJ mie: radius_wet set to rmax,'  //	&
+                'id,i,j,k,m,rm(m,k)', &
+                id, iclm, jclm, klevel, m, radius_wet(m,klevel)
+           call peg_message( lunerr, msg )
+           radius_wet(m,klevel)=rmax
+!           write(6,'('' particle size too large '')')
 		endif
 !
 		x=alog(radius_wet(m,klevel)) ! radius in cm

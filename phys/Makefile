@@ -48,6 +48,7 @@ MODULES = \
 	module_cumulus_driver.o \
 	module_microphysics_driver.o \
 	module_microphysics_zero_out.o \
+	module_mixactivate.o \
 	module_radiation_driver.o \
 	module_surface_driver.o \
 	module_diagnostics.o \
@@ -173,6 +174,7 @@ module_physics_init.o : \
 		module_sf_lsm_nmm.o	
 
 module_microphysics_driver.o: \
+                module_mixactivate.o \
                 module_mp_kessler.o module_mp_lin.o \
 		module_mp_ncloud3.o module_mp_ncloud5.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
@@ -202,6 +204,9 @@ module_pbl_driver.o:  \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
+module_mixactivate.o: \
+		module_radiation_driver.o
+
 module_radiation_driver.o: \
 		module_ra_sw.o \
 		module_ra_gsfcsw.o \
@@ -224,7 +229,7 @@ module_surface_driver.o: \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  \
- 		module_sf_lsm_nmm.o
+		module_sf_lsm_nmm.o
 
 module_diagnostics.o: ../frame/module_dm.o
 

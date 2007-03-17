@@ -159,7 +159,8 @@
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
 
-     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+      CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN,  &
+                          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'calling cbmz_driver from mechanism_driver')
        call cbmz_driver(id,ktau,dtstep,ktauc,dtstepc,                  &
                config_flags,                                           &

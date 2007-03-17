@@ -316,8 +316,9 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-     &                 ,cu_rad_feedback=config_flags%cu_rad_feedback    &
 #ifdef WRF_CHEM
+     &                 ,cu_rad_feedback=config_flags%cu_rad_feedback    &
+     &                 ,aer_ra_feedback=config_flags%aer_ra_feedback    &
      &        ,PM2_5_DRY=pm2_5_dry, PM2_5_WATER=pm2_5_water               &
      &        ,PM2_5_DRY_EC=pm2_5_dry_ec                                  &
      &        ,TAUAER300=tauaer1, TAUAER400=tauaer2, TAUAER600=tauaer3, TAUAER999=tauaer4 & ! jcb
@@ -1510,7 +1511,7 @@
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
 #ifdef WRF_CHEM
-     &                 ,GD_CLOUD,GD_CLOUD2                              &
+     &                 ,GD_CLOUD,GD_CLOUD2,RAINCV                       &
 #endif
 !
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
@@ -1578,7 +1579,7 @@
      &                 ,APR_ST,APR_AS,APR_CAPMA                         &
      &                 ,APR_CAPME          ,APR_CAPMI                   &
      &                 ,MASS_FLUX                                       &
-     &                 ,GSW  ,PREC,CPRATE
+     &                 ,GSW  ,PREC,CPRATE,RAINCV
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
@@ -1630,7 +1631,7 @@
 !
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,RAINC,RAINCV   &
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,RAINC          &
      &                                  ,SFCZ,XLAND
 !
       REAL,DIMENSION(IMS:IME,KMS:KME) :: WMID

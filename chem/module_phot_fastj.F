@@ -210,7 +210,8 @@
 ! only MOSAIC will work. The Mie routine does not know how to handle
 ! SORGAM aerosols.
     select case (config_flags%chem_opt)
-    case (CBMZ_MOSAIC_AA,CBMZ_MOSAIC_BB)
+    case ( CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
+           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
        processingAerosols = .true.
     case default
        processingAerosols = .false.
@@ -264,9 +265,9 @@
           call aerosol_optical_properties(iclm, jclm, lpar, refindx, &
                radius_wet, number_bin)
 ! execute mie code , located in file module_fastj_mie
-          CALL wrf_debug(150,'fastj_driver: calling mieaer')
+          CALL wrf_debug(250,'fastj_driver: calling mieaer')
           call mieaer(                            &
-               iclm, jclm, nbin_a,                &
+               id, iclm, jclm, nbin_a,            &
                number_bin, radius_wet, refindx,   &
                dz, isecfrm0, lpar,                &
                sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
@@ -291,7 +292,7 @@
 	  end do
       zatw(lpar+1)=z_at_w(iclm,lpar+1,jclm)
 ! call interface_fastj
-	  CALL wrf_debug(150,'fastj_driver: calling interface_fastj')
+	  CALL wrf_debug(250,'fastj_driver: calling interface_fastj')
 	  call interface_fastj(tmidh,sla,slo,julday,           &
            pbnd, psfc, temp, ozone,                        &
            dz, cloudmr, airdensity, relhum, zatw,          &
@@ -299,7 +300,7 @@
            isecfrm0, valuej, cos_sza, processingAerosols,  &
            sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
 ! put column photolysis rates (valuej) into wrf photolysis (i,k,j) arrays
-      CALL wrf_debug(150,'fastj_driver: calling mapJrates_tofrom_host')
+      CALL wrf_debug(250,'fastj_driver: calling mapJrates_tofrom_host')
       call mapJrates_tofrom_host( 0,                         	    &
            ims,ime, jms,jme, kms,kme,                    		    &
            its,ite, jts,jte, kts,kte,                    		    &
@@ -679,7 +680,7 @@
             tauaer_550 = 0.05 	! no aerosols, assume typical constant aerosol optical thickness
          end if
 	
-	  CALL wrf_debug(200,'interface_fastj: calling fastj')
+	  CALL wrf_debug(250,'interface_fastj: calling fastj')
       call fastj(isvode,jsvode,lat,lon,surface_pressure_mb,surface_albedo,   &
            julian_day,  tau1,   &
           col_press_mb, col_temp_K, col_optical_depth, col_ozone,   &
@@ -2049,7 +2050,7 @@
       data wavmid     &
           / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
       INTEGER    NL, N__, M__
-      PARAMETER (NL=350, N__=2*NL, M__=4)
+      PARAMETER (NL=500, N__=2*NL, M__=4)  !wig increased nl from 350 to 500, 31-Oct-2005
       REAL(kind=double), dimension(M__) :: A,C1,H,V1,WT,EMU
       REAL(kind=double), dimension(M__,M__) :: B,AA,CC,S,W,U1
       REAL(kind=double), dimension(M__,2*M__) :: PM

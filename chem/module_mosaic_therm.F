@@ -17,13 +17,25 @@
 
       implicit none
 
-
+      intrinsic max, min
 
       contains
 
 
 
-!   zz01aerchemistry.f (mosaic.14.3)
+!   zz01aerchemistry.f (mosaic.21.0)
+!   05-feb-07 wig - converted to double
+!   10-jan-07 raz - contains major revisions and updates. new module ASTEM replaces ASTEEM.
+!   04-aug-06 raz - fixed bugs in asteem_flux_mix_case3a and asteem_flux_mix_case3b
+!		    revised treatment of kelvin effect.
+!   06-jun-06 rce - changed dens_aer_mac(ica_a) & (ico3_a) from 2.5 to 2.6
+!   31-may-06 rce - got latest version from
+!                       nirvana:/home/zaveri/rahul/pegasus/pegasus.3.1.1/src
+!                   in subr map_mosaic_species, turned off mapping
+!                       of soa species
+!   18-may-06 raz - major revisions in asteem and minor changes in mesa
+!   22-jan-06 raz - revised nh4no3 and nh4cl condensation algorithm
+!   07-jan-06 raz - improved asteem algorithm
 !   28-apr-05 raz - reversed calls to form_cacl2 and form_nacl
 !                   fixed caco3 error in subr. electrolytes_to_ions
 !                   renamed dens_aer to dens_aer_mac; mw_aer to mw_aer_mac
@@ -38,9 +50,9 @@
 !   11-jan-05 raz - major updates to many subroutines
 !   18-nov-04 rce - make sure that acos argument is between +/-1.0
 !   28-jan-04 rce - added subr aerchem_boxtest_output;
-!	eliminated some unnecessary "include v33com-"
-!   01-dec-03 rce - added "implicit none" to many routines;
-!	eliminated some unnecessary "include v33com-"
+!	eliminated some unnecessary 'include v33com-'
+!   01-dec-03 rce - added 'implicit none' to many routines;
+!	eliminated some unnecessary 'include v33com-'
 !   05-oct-03 raz - added hysteresis treatment
 !   02-sep-03 raz - implemented asteem
 !   10-jul-03 raz - changed ix to ixd in interp. subrs fast*_up and fast*_lo
@@ -52,9 +64,9 @@
 !   07-oct-02 raz - made zx and zm integers in activity coeff subs.
 !   16-sep-02 raz - updated many subrs to treat calcium salts
 !   19-aug-02 raz - inlcude v33com9a in subr aerosolmtc
-!   14-aug-02 rce - "(msectional.eq.0)" changed to "(msectional.le.0)"
+!   14-aug-02 rce - '(msectional.eq.0)' changed to '(msectional.le.0)'
 !   07-aug-02 rce - this is rahul's latest version from freshair
-!	after adding "real mean_molecular_speed" wherever it is used
+!	after adding 'real mean_molecular_speed' wherever it is used
 !   01-apr-02 raz - made final tests and gave the code to jerome
 !
 !   04--14-dec-01 rce - several minor changes during initial testing/debug
@@ -70,7 +82,7 @@
 ! update: jan 2005
 !-----------------------------------------------------------------------
       subroutine aerchemistry( iclm, jclm, kclm_calcbgn, kclm_calcend,   &
-                               dtchem, idiagaa )
+                               dtchem_sngl, idiagaa )
 
       use module_data_mosaic_asect
       use module_data_mosaic_other
@@ -83,13 +95,14 @@
 !     include 'mosaic.h'
 !   subr arguments
       integer iclm, jclm, kclm_calcbgn, kclm_calcend, idiagaa
-      real dtchem
+      real dtchem_sngl
 !   local variables
-      integer istat_mosaic, k, m
+      real(kind=8) :: dtchem
+      integer k, m
 
 
 
-
+      dtchem = dtchem_sngl
 
       lunerr_aer = lunerr
       ncorecnt_aer = ncorecnt
@@ -111,12 +124,23 @@
           kclm_aer = k
           if (afracsubarea(k,m) .lt. 1.e-4) goto 100
 
-          call print_mosaic_stats_bb( 0 )
+          istat_mosaic_fe1 = 1
 
-          call mosaic( k, m, dtchem, istat_mosaic )
+          call mosaic( k, m, dtchem )
 
-          call print_mosaic_stats_bb( 1 )
-          if (istat_mosaic .lt. 0) goto 100
+          if (istat_mosaic_fe1 .lt. 0) then
+             nfe1_mosaic_cur = nfe1_mosaic_cur + 1
+             nfe1_mosaic_tot = nfe1_mosaic_tot + 1
+             if (iprint_mosaic_fe1 .gt. 0) then
+                write(6,*) 'mosaic aerchemistry fatal error - i/j/k/m =',   &
+                   iclm_aer, jclm_aer, kclm_aer, mclm_aer
+                call print_input
+                if (iprint_mosaic_fe1 .ge. 10)   &
+                   call mosaic_aerchem_error_dump( 0, 0, lunerr_aer,   &
+                      'aerchemistry fatal error' )
+             end if
+             goto 100
+          end if
 
           call specialoutaa( iclm, jclm, k, m, 'befor_movesect' )
           call move_sections( 1, iclm, jclm, k, m)
@@ -148,7 +172,7 @@
 ! author: rahul a. zaveri
 ! update: dec 2004
 !-----------------------------------------------------------------------
-      subroutine mosaic( k, m, dtchem, istat_mosaic )
+      subroutine mosaic(k, m, dtchem)
 
       use module_data_mosaic_asect
       use module_data_mosaic_other
@@ -158,13 +182,26 @@
 !     include 'v33com3'
 !     include 'mosaic.h'
 !   subr arguments
-      integer istat_mosaic, k, m
-      real dtchem
+      integer k, m
+      real(kind=8) dtchem
 !   local variables
-      real yh2o
+      real(kind=8) yh2o, dumdum
+      integer iclm_debug, jclm_debug, kclm_debug, ncnt_debug
+!     data iclm_debug /28/
+!     data jclm_debug /1/
+!     data kclm_debug /9/
+!     data ncnt_debug /6/
+      iclm_debug=-28; jclm_debug=1; kclm_debug=9; ncnt_debug=6
 
 
-         istat_mosaic = 0
+
+      if(iclm_aer .eq. iclm_debug .and.   &
+         jclm_aer .eq. jclm_debug .and.   &
+         kclm_aer .eq. kclm_debug  .and.   &
+         ncorecnt_aer .eq. ncnt_debug)then
+        dumdum = 0.0
+      endif
+
 
 ! overwrite inputs
          if(1.eq.0)then
@@ -173,7 +210,7 @@
 
 
           t_k = rsub(ktemp,k,m)			! update temperature  = k
-          p_atm = ptotclm(k) /1.032e6		! update pressure = atm
+          p_atm = ptotclm(k) /1.032d6		! update pressure = atm
           yh2o = rsub(kh2o,k,m)			! mol(h2o)/mol(air)
           rh_pc = 100.*relhumclm(k)		! rh (%)
           ah2o = relhumclm(k)			! fractional rh
@@ -181,14 +218,22 @@
 
           call load_mosaic_parameters		! sets up indices and other stuff once per simulation
 
-          call update_thermodynamic_constants	! update temperature dependent constants
-
           call initialize_mosaic_variables
+
+          call update_thermodynamic_constants	! update t and rh dependent constants
 
           call map_mosaic_species(k, m, 0)
 
-          call mosaic_dynamic_solver( dtchem, istat_mosaic )
-          if (istat_mosaic .lt. 0) return
+
+          call overall_massbal_in ! save input mass over all bins
+          iprint_input = myes     ! reset to default
+
+
+          call mosaic_dynamic_solver( dtchem )
+          if (istat_mosaic_fe1 .lt. 0) return
+
+
+          call overall_massbal_out(0) ! check mass balance after integration
 
           call map_mosaic_species(k, m, 1)
 
@@ -196,6 +241,114 @@
 
       return
       end subroutine mosaic
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! interface to asceem and asteem dynamic gas-particle exchange solvers
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine mosaic_dynamic_solver( dtchem )
+!     implicit none
+!     include 'v33com'
+!     include 'mosaic.h'
+! subr arguments
+      real(kind=8) dtchem
+! local variables
+      integer ibin, iv, k, m
+      real(kind=8) xt, dumdum
+!     real(kind=8) aerosol_water_up				! mosaic func
+
+
+!      if(iclm_aer .eq. 21 .and.   &
+!         jclm_aer .eq. 17 .and.   &
+!         kclm_aer .eq. 3  .and.   &
+!         ncorecnt_aer .eq. 4)then
+!        dumdum = 0.0
+!      endif
+
+
+      do 500 ibin = 1, nbin_a
+
+        call check_aerosol_mass(ibin)
+        if(jaerosolstate(ibin) .eq. no_aerosol)goto 500
+
+        call conform_electrolytes(jtotal,ibin,xt) 	! conforms aer(jtotal) to a valid aerosol
+
+        call check_aerosol_mass(ibin) 			! check mass again after conform_electrolytes
+        if(jaerosolstate(ibin) .eq. no_aerosol)goto 500	! ignore this bin
+
+        call conform_aerosol_number(ibin)   		! adjusts number conc so that it conforms with bin mass and diameter
+
+500   continue
+
+
+
+! box
+!        call initial_aer_print_box	! box
+
+      call save_pregrow_props
+
+      call specialoutaa( iclm_aer, jclm_aer, kclm_aer, 77,   &
+      		'after_conform' )
+!
+!-------------------------------------
+! do dynamic gas-aerosol mass transfer
+
+      if(mgas_aer_xfer .eq. mon)then
+
+        call astem(dtchem)
+
+      endif
+
+!-------------------------------------
+! box
+! grows or shrinks size depending on mass increase or decrease
+!
+!      do ibin = 1, nbin_a
+!        if(jaerosolstate(ibin) .ne. no_aerosol)then
+!          call conform_particle_size(ibin)	! box
+!        endif
+!      enddo
+
+
+
+      do 600 ibin = 1, nbin_a
+        if(jaerosolstate(ibin).eq.no_aerosol) goto 600
+
+        if(jhyst_leg(ibin) .eq. jhyst_lo)then
+          water_a_hyst(ibin) = 0.0
+        elseif(jhyst_leg(ibin) .eq. jhyst_up)then
+          water_a_up(ibin)   = aerosol_water_up(ibin)	! at 60% rh
+          water_a_hyst(ibin) = water_a_up(ibin)
+        endif
+
+        call calc_dry_n_wet_aerosol_props(ibin)		! compute final mass and density
+600   continue
+
+      return
+      end subroutine mosaic_dynamic_solver
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -215,8 +368,8 @@
       integer k, m
 ! local variables
       integer ibin, igas, iphase, isize, itype
-      real t_kdum, p_atmdum, rhdum, cairclmdum
-      real gasdum(4), aerdum(14,8)
+      real(kind=8) t_kdum, p_atmdum, rhdum, cairclmdum
+      real(kind=8) gasdum(4), aerdum(14,8)
 
 
 
@@ -225,9 +378,9 @@
       open(92, file = 'box.txt')
 
       read(92,*)t_kdum, p_atmdum, rhdum, cairclmdum
-      do igas = 1, 4
-        read(92,*)gasdum(igas)
-      enddo
+!      do igas = 1, 4
+        read(92,*)gasdum(1),gasdum(2),gasdum(3),gasdum(4)
+!      enddo
 
       do ibin = 1, nbin_a
         read(92,*)aerdum(1,ibin),aerdum(2,ibin),aerdum(3,ibin),   &
@@ -243,7 +396,7 @@
 
 
       rsub(ktemp,k,m) = t_kdum			! update temperature  = k
-      ptotclm(k)      = p_atmdum*1.032e6	! update pressure = atm
+      ptotclm(k)      = p_atmdum*1.032d6! update pressure = atm
       relhumclm(k)    = rhdum/100.0		! fractional rh
       cairclm(k)      = cairclmdum		! mol/cc
 
@@ -314,19 +467,8 @@
 
 
 
-      do ibin = 1, nbin_a
-        ah2o_a(ibin) = ah2o				! initialize
-      enddo
-
-      if(mactivity_coeff .eq. mmtem)then
-        call mtem_compute_log_gamz			! this is done only once every transport time step (function of ah2o)
-      endif
-
-
-      do iv = 1, naer_vol
+      do iv = 1, ngas_ioa
           gas(iv)           = 0.0
-          ctot_a(iv)        = 0.0
-          volatile_a(iv)    = 0.0
       enddo
 
 ! initialize to zero
@@ -352,11 +494,15 @@
 
           gam_ratio(ibin)   = 0.0
 
-        do iv = 1, naer_vol
-          flux(iv,ibin)     = 0.0
+        do iv = 1, ngas_ioa
+          flux_s(iv,ibin)   = 0.0
+          flux_l(iv,ibin)   = 0.0
           kg(iv,ibin)       = 0.0
-          phi_volatile(iv,ibin)  = 0.0
-          df_gas(iv,ibin)   = 0.0
+          phi_volatile_s(iv,ibin) = 0.0
+          phi_volatile_l(iv,ibin) = 0.0
+          df_gas_s(iv,ibin)   = 0.0
+          df_gas_l(iv,ibin)   = 0.0
+          volatile_s(iv,ibin) = 0.0
         enddo
 
 
@@ -365,12 +511,10 @@
 
         do jc = 1, ncation
           mc(jc,ibin) = 0.0
-          gam_cation(jc,ibin) = 0.0
         enddo
 
         do ja = 1, nanion
           ma(ja,ibin) = 0.0
-          gam_anion(ja,ibin)  = 0.0
         enddo
 
       enddo	! ibin
@@ -406,7 +550,7 @@
 ! subr arguments
       integer k, m, imap
 ! local variables
-      integer ibin, iphase, isize, itype, l, p1st
+      integer ibin, iphase, isize, itsi, itype, l, p1st
 
 
 ! if a species index is less than this value, then the species is not defined
@@ -419,15 +563,15 @@
 
 ! 3-d
 ! define conversion factors
-      conv1a = cair_mol_m3*1.e9		! converts q/mol(air) to nq/m^3 (q = mol or g)
-      conv1b = 1./conv1a		! converts nq/m^3 to q/mol(air)
-      conv2a = cair_mol_m3*18.*1.e-3	! converts mol(h2o)/mol(air) to kg(h2o)/m^3(air)
-      conv2b = 1./conv2a		! converts kg(h2o)/m^3(air) to mol(h2o)/mol(air)
+      conv1a = cair_mol_m3*1.d9		! converts q/mol(air) to nq/m^3 (q = mol or g)
+      conv1b = 1.d0/conv1a		! converts nq/m^3 to q/mol(air)
+      conv2a = cair_mol_m3*18.*1.d-3	! converts mol(h2o)/mol(air) to kg(h2o)/m^3(air)
+      conv2b = 1.d0/conv2a		! converts kg(h2o)/m^3(air) to mol(h2o)/mol(air)
 
 
 ! box
-!      conv1 = 1.e15/avogad     ! converts (molec/cc) to (nmol/m^3)
-!      conv2 = 1./conv1         ! converts (nmol/m^3) to (molec/cc)
+!      conv1 = 1.d15/avogad     ! converts (molec/cc) to (nmol/m^3)
+!      conv2 = 1.d0/conv1         ! converts (nmol/m^3) to (molec/cc)
 !      kaerstart = ngas_max
 
 
@@ -454,6 +598,49 @@
 	    gas(inh3_g) = 0.0
 	end if
 
+! soa gas-phase species -- currently deactivated
+!	if (karo1 .ge. p1st) then
+!	    gas(iaro1_g)   = rsub(karo1,k,m)*conv1a
+!	else
+	    gas(iaro1_g) = 0.0
+!	end if
+!	if (karo2 .ge. p1st) then
+!	    gas(iaro2_g)   = rsub(karo2,k,m)*conv1a
+!	else
+	    gas(iaro2_g) = 0.0
+!	end if
+!	if (kalk1 .ge. p1st) then
+!	    gas(ialk1_g)   = rsub(kalk1,k,m)*conv1a
+!	else
+	    gas(ialk1_g) = 0.0
+!	end if
+!	if (kole1 .ge. p1st) then
+!	    gas(iole1_g)   = rsub(kole1,k,m)*conv1a
+!	else
+	    gas(iole1_g) = 0.0
+!	end if
+!	if (kapi1 .ge. p1st) then
+!	    gas(iapi1_g)   = rsub(kapi1,k,m)*conv1a
+!	else
+	    gas(iapi1_g) = 0.0
+!	end if
+!	if (kapi2 .ge. p1st) then
+!	    gas(iapi2_g)   = rsub(kapi2,k,m)*conv1a
+!	else
+	    gas(iapi2_g) = 0.0
+!	end if
+!	if (klim1 .ge. p1st) then
+!	    gas(ilim1_g)   = rsub(klim1,k,m)*conv1a
+!	else
+	    gas(ilim1_g) = 0.0
+!	end if
+!	if (klim2 .ge. p1st) then
+!	    gas(ilim2_g)   = rsub(klim2,k,m)*conv1a
+!	else
+	    gas(ilim2_g) = 0.0
+!	end if
+
+
 ! aerosol
         iphase = ai_phase
         ibin = 0
@@ -463,10 +650,15 @@
 
 ! aer array units are nmol/(m^3 air)
 
-! rce 18-nov-2004 - always map so4 and number, 
+! rce 18-nov-2004 - always map so4 and number,
 ! but only map other species when (lptr_xxx .ge. p1st)
+! rce 11-may-2006 - so4 mapping now optional
         l = lptr_so4_aer(isize,itype,iphase)
-        aer(iso4_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+        if (l .ge. p1st) then
+            aer(iso4_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+        else
+            aer(iso4_a,jtotal,ibin)=0.0
+        end if
 
         l = lptr_no3_aer(isize,itype,iphase)
         if (l .ge. p1st) then
@@ -538,6 +730,63 @@
             aer(ica_a,jtotal,ibin)=0.0
         end if
 
+! soa aerosol-phase species -- currently deactivated
+!       l = lptr_aro1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iaro1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iaro1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_aro2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iaro2_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iaro2_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_alk1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(ialk1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(ialk1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_ole1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iole1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iole1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_api1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iapi1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iapi1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_api2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iapi2_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iapi2_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_lim1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(ilim1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(ilim1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_lim2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(ilim2_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(ilim2_a,jtotal,ibin)=0.0
+!       end if
+
 ! water_a and water_a_hyst units are kg/(m^3 air)
         l = hyswptr_aer(isize,itype)
         if (l .ge. p1st) then
@@ -565,11 +814,6 @@
 
 
 
-! save input overall (all bins combined) mass
-      call overall_massbal_in
-
-      iprint_input = mYES     ! reset to default
-
 
 !---------------------------------------------------------------------
 
@@ -577,9 +821,7 @@
       else                 ! map aer & gas (nmol/m^3) back into rsub (mol/mol(air))
 
 
-! check exit overall (all bins combined) mass balance
-      call overall_massbal_out(k,m)
-                                                              
+
 ! gas
 	if (kh2so4 .ge. p1st)   &
 	    rsub(kh2so4,k,m) = gas(ih2so4_g)*conv1b
@@ -590,6 +832,24 @@
 	if (knh3 .ge. p1st)   &
 	    rsub(knh3,k,m)   = gas(inh3_g)*conv1b
 
+! soa gas-phase species -- currently deactivated
+!	if (karo1 .ge. p1st)   &
+!	    rsub(karo1,k,m)   = gas(iaro1_g)*conv1b
+!	if (karo2 .ge. p1st)   &
+!	    rsub(karo2,k,m)   = gas(iaro2_g)*conv1b
+!	if (kalk1 .ge. p1st)   &
+!	    rsub(kalk1,k,m)   = gas(ialk1_g)*conv1b
+!	if (kole1 .ge. p1st)   &
+!	    rsub(kole1,k,m)   = gas(iole1_g)*conv1b
+!	if (kapi1 .ge. p1st)   &
+!	    rsub(kapi1,k,m)   = gas(iapi1_g)*conv1b
+!	if (kapi2 .ge. p1st)   &
+!	    rsub(kapi2,k,m)   = gas(iapi2_g)*conv1b
+!	if (klim1 .ge. p1st)   &
+!	    rsub(klim1,k,m)   = gas(ilim1_g)*conv1b
+!	if (klim2 .ge. p1st)   &
+!	    rsub(klim2,k,m)   = gas(ilim2_g)*conv1b
+
 ! aerosol
         iphase = ai_phase
         ibin = 0
@@ -598,7 +858,7 @@
         ibin = ibin + 1
 
 
-! rce 18-nov-2004 - always map so4 and number, 
+! rce 18-nov-2004 - always map so4 and number,
 ! but only map other species when (lptr_xxx .ge. p1st)
         l = lptr_so4_aer(isize,itype,iphase)
         rsub(l,k,m) = aer(iso4_a,jtotal,ibin)*conv1b
@@ -633,6 +893,31 @@
         l = lptr_ca_aer(isize,itype,iphase)
         if (l .ge. p1st) rsub(l,k,m) = aer(ica_a,jtotal,ibin)*conv1b
 
+! soa aerosol-phase species -- currently deactivated
+!       l = lptr_aro1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(iaro1_a,jtotal,ibin)*conv1b
+
+!       l = lptr_aro2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(iaro2_a,jtotal,ibin)*conv1b
+
+!       l = lptr_alk1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(ialk1_a,jtotal,ibin)*conv1b
+
+!       l = lptr_ole1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(iole1_a,jtotal,ibin)*conv1b
+
+!       l = lptr_api1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(iapi1_a,jtotal,ibin)*conv1b
+
+!       l = lptr_api2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(iapi2_a,jtotal,ibin)*conv1b
+
+!       l = lptr_lim1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(ilim1_a,jtotal,ibin)*conv1b
+
+!       l = lptr_lim2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) rsub(l,k,m) = aer(ilim2_a,jtotal,ibin)*conv1b
+
         l = hyswptr_aer(isize,itype)
         if (l .ge. p1st) rsub(l,k,m) = water_a_hyst(ibin)*conv2b
 
@@ -663,8 +948,8 @@
 
       subroutine isize_itype_from_ibin( ibin, isize, itype )
 !
-! inside of mosaic, the "2d" (isize,itype) indexing is replaced
-!     by "1d" (ibin) indexing
+! inside of mosaic, the '2d' (isize,itype) indexing is replaced
+!     by '1d' (ibin) indexing
 ! this routine gives (isize,itype) corresponding to (ibin)
 !
       use module_data_mosaic_asect
@@ -698,7 +983,7 @@
       end if
 
       return
-      end subroutine isize_itype_from_ibin       
+      end subroutine isize_itype_from_ibin
 
 
 
@@ -730,25 +1015,29 @@
       enddo
 
 
+        total_species(inh3_g) = tot_nh4_in
+        total_species(ihno3_g)= tot_no3_in
+        total_species(ihcl_g) = tot_cl_in
+
+
       return
       end subroutine overall_massbal_in
 
 
 
-      subroutine overall_massbal_out(k,m)
+      subroutine overall_massbal_out(mbin)
 !     implicit none
-!     include 'v33com'
-!     include 'v33com3'
-!     include 'v33com9a'
-!     include 'v33com9b'
+!      include 'v33com'
+!      include 'v33com3'
+!      include 'v33com9a'
+!      include 'v33com9b'
 !     include 'mosaic.h'
-! subr arguments
-      integer k, m
+
+! subr. agrument
+      integer mbin
 ! local variables
       integer ibin
 
-        k = kclm_aer
-        m = mclm_aer
 
 
         tot_so4_out = gas(ih2so4_g)
@@ -807,17 +1096,26 @@
 
 
 
-      if(abs(reldiff_so4) .gt. 1.e-4 .or.   &
+      if(  abs(reldiff_so4) .gt. 1.e-4 .or.   &
            abs(reldiff_no3) .gt. 1.e-4 .or.   &
+           abs(reldiff_cl)  .gt. 1.e-4 .or.   &
            abs(reldiff_nh4) .gt. 1.e-4 .or.   &
            abs(reldiff_na)  .gt. 1.e-4 .or.   &
            abs(reldiff_ca)  .gt. 1.e-4)then
 
 
-        if(iprint_input .eq. myes)then
-          write(6,*) 'mosaic aerchem overall_massbal_out error'
-          call print_input(k, m)
-          iprint_input = mno
+        if (iprint_mosaic_diag1 .gt. 0) then
+          if (iprint_input .eq. myes) then
+            write(6,*)'*** mbin = ', mbin, '  isteps = ', isteps_ASTEM
+            write(6,*)'reldiff_so4 = ', reldiff_so4
+            write(6,*)'reldiff_no3 = ', reldiff_no3
+            write(6,*)'reldiff_cl  = ', reldiff_cl
+            write(6,*)'reldiff_nh4 = ', reldiff_nh4
+            write(6,*)'reldiff_na  = ', reldiff_na
+            write(6,*)'reldiff_ca  = ', reldiff_ca
+            call print_input
+            iprint_input = mno
+          endif
         endif
 
       endif
@@ -829,7 +1127,10 @@
 
 
 
-      subroutine print_input(k,m)
+
+
+
+      subroutine print_input
 
       use module_data_mosaic_asect
       use module_data_mosaic_other
@@ -844,10 +1145,16 @@
       integer k, m
 ! local variables
       integer ibin, iphase, isize, itype
+      integer ipasstmp, luntmp
+
+
+! check for print_input allowed and not already done
+        if (iprint_mosaic_input_ok .le. 0) return
+        if (iprint_input .ne. myes) return
+        iprint_input = mno
 
         k = kclm_aer
         m = mclm_aer
-
 
 
         tot_so4_out = gas(ih2so4_g)
@@ -905,215 +1212,70 @@
 	endif
 
 
-! write to monitor screen
-          write(6,*) 'mosaic aerchem print_input'
-          write(6,*)'+++++++++++++++++++++++++++++++++++++++++'
-          write(6,*)'i j k = ', iclm_aer, jclm_aer, kclm_aer
-          write(6,*)'ncorecnt = ', ncorecnt_aer
-          write(6,*)'relative so4 mass bal = ', reldiff_so4
-	  write(6,*)'relative no3 mass bal = ', reldiff_no3
-          write(6,*)'relative cl  mass bal = ', reldiff_cl
-          write(6,*)'relative nh4 mass bal = ', reldiff_nh4
-          write(6,*)'relative na  mass bal = ', reldiff_na
-          write(6,*)'relative ca  mass bal = ', reldiff_ca
-          write(6,*)'inputs:'
-          write(6,*)'t (k) = ',t_k,' p (atm) = ',p_atm,' rh = ',rh_pc
-          write(6,*)'cairclm (mol/cc) = ', cairclm(k)
-	  write(6,*)'gas h2so4(ppb) = ', rsub(kh2so4,k,m)
-          write(6,*)'gas hno3 (ppb) = ', rsub(khno3,k,m)
-	  write(6,*)'gas hcl (ppb)  = ', rsub(khcl,k,m)
-	  write(6,*)'gas nh3 (ppb)  = ', rsub(knh3,k,m)
+        do 2900 ipasstmp = 1, 2
 
-          iphase = ai_phase
+        if (ipasstmp .eq. 1) then
+           luntmp = 6     ! write to standard output
+        else
+           luntmp = 67    ! write to fort.67
+!           goto 2900      ! skip this
+        endif
+
+! write to monitor screen
+          write(luntmp,*)'+++++++++++++++++++++++++++++++++++++++++'
+          write(luntmp,*)'i j k n = ', iclm_aer, jclm_aer, kclm_aer,   &
+                                  ncorecnt_aer
+          write(luntmp,*)'relative so4 mass bal = ', reldiff_so4
+	  write(luntmp,*)'relative no3 mass bal = ', reldiff_no3
+          write(luntmp,*)'relative cl  mass bal = ', reldiff_cl
+          write(luntmp,*)'relative nh4 mass bal = ', reldiff_nh4
+          write(luntmp,*)'relative na  mass bal = ', reldiff_na
+          write(luntmp,*)'relative ca  mass bal = ', reldiff_ca
+          write(luntmp,*)'inputs:'
+          write(luntmp,*)'t (k), p (atm), rh (%), cair (mol/cc) = '
+          write(luntmp,44) t_k, p_atm, rh_pc, cairclm(k)
+	  write(luntmp,*)'gas h2so4, hno3, hcl, nh3 (mol/mol)'
+	  write(luntmp,44)rsub(kh2so4,k,m), rsub(khno3,k,m),   &
+                          rsub(khcl,k,m), rsub(knh3,k,m)
+
+
+	  iphase = ai_phase
           ibin = 0
           do itype = 1, ntype_aer
           do isize = 1, nsize_aer(itype)
-            ibin = ibin + 1
-	    write(6,44)   &
-              rsub(lptr_so4_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_no3_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_cl_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_nh4_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_oc_aer(isize,itype,iphase),k,m),	   &  ! ng/m^3(air)
-              rsub(lptr_co3_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_msa_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_bc_aer(isize,itype,iphase),k,m),	   &  ! ng/m^3(air)
-              rsub(lptr_na_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_ca_aer(isize,itype,iphase),k,m),   &
-              rsub(lptr_oin_aer(isize,itype,iphase),k,m),	   &
-              rsub(hyswptr_aer(isize,itype),k,m),   &
-              rsub(waterptr_aer(isize,itype),k,m),   &
-              rsub(numptr_aer(isize,itype,iphase),k,m)
+          ibin = ibin + 1
+
+	  write(luntmp,44) rsub(lptr_so4_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_no3_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_cl_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_nh4_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_oc_aer(ibin,itype,iphase),k,m),	   &  ! ng/m^3(air)
+                      rsub(lptr_co3_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_msa_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_bc_aer(ibin,itype,iphase),k,m),	   &  ! ng/m^3(air)
+                      rsub(lptr_na_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_ca_aer(ibin,itype,iphase),k,m),   &
+                      rsub(lptr_oin_aer(ibin,itype,iphase),k,m),	   &
+                      rsub(hyswptr_aer(ibin,itype),k,m),   &
+                      rsub(waterptr_aer(ibin,itype),k,m),   &
+                      rsub(numptr_aer(ibin,itype,iphase),k,m)
           enddo
           enddo
 
-          write(6,*)'+++++++++++++++++++++++++++++++++++++++++'
+          write(luntmp,*)'+++++++++++++++++++++++++++++++++++++++++'
+
+2900    continue
 
 
+44      format(14e20.10)
 
-
-! do this in pegasus but not in wrf-chem
-! write to fort.67
-!          write(67,*)'+++++++++++++++++++++++++++++++++++++++++'
-!          write(67,*)'i j k = ', iclm_aer, jclm_aer, kclm_aer
-!          write(67,*)'ncorecnt = ', ncorecnt_aer
-!          write(67,*)'relative so4 mass bal = ', reldiff_so4
-!	  write(67,*)'relative no3 mass bal = ', reldiff_no3
-!          write(67,*)'relative cl  mass bal = ', reldiff_cl
-!          write(67,*)'relative nh4 mass bal = ', reldiff_nh4
-!          write(67,*)'relative na  mass bal = ', reldiff_na
-!          write(67,*)'relative ca  mass bal = ', reldiff_ca
-!          write(67,*)'inputs:'
-!          write(67,*)'t (k) =',t_k,' p (atm) =',p_atm,' rh =',rh_pc,   &
-!                     'cairclm (mol/cc) = ', cairclm(k)
-!	  write(67,*)'gas h2so4 = ', rsub(kh2so4,k,m)
-!          write(67,*)'gas hno3  = ', rsub(khno3,k,m)
-!	  write(67,*)'gas hcl   = ', rsub(khcl,k,m)
-!	  write(67,*)'gas nh3   = ', rsub(knh3,k,m)
-!
-!          iphase = ai_phase
-!          ibin = 0
-!          do itype = 1, ntype_aer
-!          do isize = 1, nsize_aer(itype)
-!            ibin = ibin + 1
-!	    write(67,44)   &
-!              rsub(lptr_so4_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_no3_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_cl_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_nh4_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_oc_aer(isize,itype,iphase),k,m),	   &  ! ng/m^3(air)
-!              rsub(lptr_co3_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_msa_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_bc_aer(isize,itype,iphase),k,m),	   &  ! ng/m^3(air)
-!              rsub(lptr_na_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_ca_aer(isize,itype,iphase),k,m),   &
-!              rsub(lptr_oin_aer(isize,itype,iphase),k,m),	   &
-!              rsub(hyswptr_aer(isize,itype),k,m),   &
-!              rsub(waterptr_aer(isize,itype),k,m),   &
-!              rsub(numptr_aer(isize,itype,iphase),k,m)
-!          enddo
-!          enddo
-!
-!          write(67,*)'+++++++++++++++++++++++++++++++++++++++++'
-
-
-
-44      format(14(e18.10,2x))
-
+!c      stop
 
       return
       end subroutine print_input
 
 
 
-
-
-
-!***********************************************************************
-! interface to asceem and asteem dynamic gas-particle exchange solvers
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine mosaic_dynamic_solver( dtchem, istat_mosaic )
-!     implicit none
-!     include 'v33com'
-!     include 'mosaic.h'
-! subr arguments
-      integer istat_mosaic
-      real dtchem
-! local variables
-      integer ibin, istat_asteem, iv, k, m
-      real xt, dumdum
-!     real aerosol_water_up				! mosaic func
-
-
-      istat_mosaic = 0
-
-      if(iclm_aer .eq. 35 .and.   &
-         jclm_aer .eq. 14 .and.   &
-         kclm_aer .eq. 1  .and.   &
-         ncorecnt_aer .eq. 1)then
-        dumdum = 0.0
-      endif
-
-
-      do 500 ibin = 1, nbin_a
-
-        call check_aerosol_mass(ibin)
-        if(jaerosolstate(ibin) .eq. no_aerosol)goto 500
-
-        call conform_electrolytes(jtotal,ibin,xt) 	! conforms aer(jtotal) to a valid aerosol
-
-        call check_aerosol_mass(ibin) 			! check mass again after conform_electrolytes
-        if(jaerosolstate(ibin) .eq. no_aerosol)goto 500	! ignore this bin
-
-        call conform_aerosol_number(ibin)   		! adjusts number conc so that it conforms with bin mass and diameter
-
-
-        if(jaerosolstate(ibin) .eq. no_aerosol)goto 500
-
-        do iv = 1, naer_vol
-          ctot_a(iv) = ctot_a(iv) + aer(iv,jtotal,ibin)
-        enddo
-
-500   continue
-
-        do iv = 1, naer_vol
-          ctot_a(iv) = ctot_a(iv) + gas(iv)
-        enddo
-
-
-! box
-!        call initial_aer_print_box	! box
-
-        call save_pregrow_props
-
-	call specialoutaa( iclm_aer, jclm_aer, kclm_aer, 77,   &
-      		'after_conform' )
-!
-!-------------------------------------
-! do dynamic gas-aerosol mass transfer
-
-!      call overall_massbal_out(k ,m)
-
-        if(mdynamic_solver.eq.masceem    .and.mgas_aer_xfer.eq.mon)then
-          call asceem(dtchem)
-        elseif(mdynamic_solver.eq.masteem.and.mgas_aer_xfer.eq.mon)then
-          call asteem( dtchem, istat_asteem )
-          istat_mosaic = istat_asteem
-        endif
-        if (istat_mosaic .lt. 0) return
-
-!      call overall_massbal_out(k ,m)
-
-!-------------------------------------
-! box
-! grows or shrinks size depending on mass increase or decrease
-!
-!      do ibin = 1, nbin_a
-!        if(jaerosolstate(ibin) .ne. no_aerosol)then
-!          call conform_particle_size(ibin)	! box
-!        endif
-!      enddo
-
-
-
-      do 600 ibin = 1, nbin_a
-        if(jaerosolstate(ibin).eq.no_aerosol) goto 600
-
-        if(jhyst_leg(ibin) .eq. jhyst_lo)then
-          water_a_hyst(ibin) = 0.0
-        elseif(jhyst_leg(ibin) .eq. jhyst_up)then
-          water_a_up(ibin)   = aerosol_water_up(ibin)	! at 60% rh
-          water_a_hyst(ibin) = water_a_up(ibin)
-        endif
-
-        call calc_dry_n_wet_aerosol_props(ibin)		! compute final mass and density
-600   continue
-
-      return
-      end subroutine mosaic_dynamic_solver
 
 
 
@@ -1141,31 +1303,45 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin
+! local variables
+      integer iaer
+      real(kind=8) drymass, aer_H
+
+      mass_dry_a(ibin) = 0.0
+
+      aer_H = (2.*aer(iso4_a,jtotal,ibin) +  &
+                  aer(ino3_a,jtotal,ibin) +  &
+                  aer(icl_a,jtotal,ibin)  +  &
+                  aer(imsa_a,jtotal,ibin) +  &
+               2.*aer(ico3_a,jtotal,ibin))-  &
+              (2.*aer(ica_a,jtotal,ibin)  +  &
+                  aer(ina_a,jtotal,ibin)  +  &
+                  aer(inh4_a,jtotal,ibin))
 
 
+      do iaer = 1, naer
+        mass_dry_a(ibin) = mass_dry_a(ibin) +   &
+                           aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)	! ng/m^3(air)
+      enddo
+      mass_dry_a(ibin) = mass_dry_a(ibin) + aer_H
 
+      drymass = mass_dry_a(ibin)			! ng/m^3(air)
+      mass_dry_a(ibin) = mass_dry_a(ibin)*1.e-15	! g/cc(air)
 
-      mass_dry_a(ibin) = aer(iso4_a,jtotal,ibin)*mw_aer_mac(iso4_a) +	   &  ! ng/m^3(air)
-                         aer(ino3_a,jtotal,ibin)*mw_aer_mac(ino3_a) +   &
-                         aer(icl_a, jtotal,ibin)*mw_aer_mac(icl_a)  +   &
-                         aer(inh4_a,jtotal,ibin)*mw_aer_mac(inh4_a) +   &
-                         aer(imsa_a,jtotal,ibin)*mw_aer_mac(imsa_a) +   &
-                         aer(ico3_a,jtotal,ibin)*mw_aer_mac(ico3_a) +   &
-                         aer(ina_a, jtotal,ibin)*mw_aer_mac(ina_a)  +   &
-                         aer(ica_a, jtotal,ibin)*mw_aer_mac(ica_a)  +   &
-                         aer(ioin_a,jtotal,ibin)                +   &
-                         aer(ioc_a, jtotal,ibin)                +   &
-                         aer(ibc_a, jtotal,ibin)
-
-
-      if(mass_dry_a(ibin) .lt. mass_cutoff)then
+      if(drymass .lt. mass_cutoff)then			! bin mass is too small
         jaerosolstate(ibin) = no_aerosol
         jphase(ibin) = 0
-        if(mass_dry_a(ibin) .eq. 0.)num_a(ibin) = 0.0
+        if(drymass .eq. 0.)num_a(ibin) = 0.0
       endif
 
       return
       end subroutine check_aerosol_mass
+
+
+
+
+
+
 
 
 
@@ -1182,51 +1358,61 @@
       use module_data_mosaic_asect
 
 !     implicit none
+!     include 'v33com'
+!     include 'v33com3'
 !     include 'v33com9a'
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer isize, itype, je
-      real num_at_dlo, num_at_dhi
-
-
-
-
+      integer je, l, iaer, isize, itype
+      real(kind=8) num_at_dlo, num_at_dhi, numold
+      real(kind=8) aer_H
 
       vol_dry_a(ibin)  = 0.0		! initialize to 0.0
 
       if(jaerosolstate(ibin) .eq. no_aerosol) return
 
+      aer_H = (2.*aer(iso4_a,jtotal,ibin) +  &
+                  aer(ino3_a,jtotal,ibin) +  &
+                  aer(icl_a,jtotal,ibin)  +  &
+                  aer(imsa_a,jtotal,ibin) +  &
+               2.*aer(ico3_a,jtotal,ibin))-  &
+              (2.*aer(ica_a,jtotal,ibin)  +  &
+                  aer(ina_a,jtotal,ibin)  +  &
+                  aer(inh4_a,jtotal,ibin))
 
-! 1st add all electrolytes
-      do je = 1, nelectrolyte
-        vol_dry_a(ibin) = vol_dry_a(ibin) + 			   &  ! cc(aer)/cc(air)
-        electrolyte(je,jtotal,ibin)*mw_electrolyte(je)*1.e-15/	   &
-                     dens_electrolyte(je)
+      do iaer = 1, naer
+        vol_dry_a(ibin) = vol_dry_a(ibin) +   &
+        aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)/dens_aer_mac(iaer)  ! ng/m^3(air)
       enddo
+      vol_dry_a(ibin) = vol_dry_a(ibin) + aer_H
 
-! next add all other aerosol species
-      vol_dry_a(ibin)  = vol_dry_a(ibin)                  +	   &  ! cc/cc(air)
-          aer(ioc_a,jtotal,ibin)*1.e-15/dens_aer_mac(ioc_a)   +   &
-          aer(ibc_a,jtotal,ibin)*1.e-15/dens_aer_mac(ibc_a)   +   &
-          aer(ioin_a,jtotal,ibin)*1.e-15/dens_aer_mac(ioin_a)
-
+      vol_dry_a(ibin) = vol_dry_a(ibin)*1.e-15	! cc(aer)/cc(air)
 
 ! conform number
       call isize_itype_from_ibin( ibin, isize, itype )
       num_at_dlo = vol_dry_a(ibin)/volumlo_sect(isize,itype)
       num_at_dhi = vol_dry_a(ibin)/volumhi_sect(isize,itype)
 
-      num_a(ibin) = min(num_a(ibin), num_at_dlo)
-      num_a(ibin) = max(num_a(ibin), num_at_dhi)
+      numold = num_a(ibin)
+      num_a(ibin) = min(num_a(ibin), num_at_dlo) ! #/cc(air)
+      num_a(ibin) = max(num_a(ibin), num_at_dhi) ! #/cc(air)
 
-
+!     if (numold .ne. num_a(ibin)) then
+!       write(*,*) 'conform number - i, vol, mass, numold/new', ibin,
+!     &       vol_dry_a(ibin), mass_dry_temp, numold, num_a(ibin)
+!       write(*,*) 'conform i,j,k', iclm_aer, jclm_aer, kclm_aer
+!       if (nsubareas .gt. 0) then
+!       write(*,'(a,1pe14.4)') (name(l), rsub(l,kclm_aer,1), l=1,ltot2)
+!       else
+!       write(*,'(a,1pe14.4)') (name(l), rclm(kclm_aer,l), l=1,ltot2)
+!       end if
+!      stop
+!      end if
 
       return
       end subroutine conform_aerosol_number
-
-
 
 
 
@@ -1244,73 +1430,94 @@
 ! subr arguments
       integer ibin
 ! local variables
-      integer js
-      real ah2o_a_new, rel_err
-!     real aerosol_water_up				! mosaic func
+      integer js, je, iaer, iv, iter_kelvin
+      real(kind=8) ah2o_a_new, rel_err
+!     real(kind=8) aerosol_water_up, bin_molality		! mosaic func
+      real(kind=8) kelvin_toler, term
+      real(kind=8) aer_H
 
 
-
-
+      ah2o = rh_pc*0.01
       ah2o_a(ibin) = ah2o
       kelvin(ibin) = 1.0
-
-      total_dry_mass(ibin) = 0.0
-      dry_vol(ibin)  = 0.0
-      do js = 1, nelectrolyte
-       total_dry_mass(ibin) = total_dry_mass(ibin) +   &
-        electrolyte(js,jtotal,ibin)*mw_electrolyte(js)*1.e-9 		! [g/m^3(air)]
-
-       dry_vol(ibin) = dry_vol(ibin) +   &
-        electrolyte(js,jtotal,ibin)*mw_electrolyte(js)*1.e-15/		   &  ! [m^3/m^3(air)]
-                         dens_comp_a(js)
+      do iv = 1, ngas_volatile
+        kel(iv,ibin) = 1.0
       enddo
 
-      total_dry_mass(ibin) = total_dry_mass(ibin) + 				   &  ! [g/m^3(air)]
-        aer(ioc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ibc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ioin_a,jtotal,ibin)*1.e-9
+      if(rh_pc .le. 99)then
+        kelvin_toler = 1.e-2
+      else
+        kelvin_toler = 1.e-6
+      endif
 
-      dry_vol(ibin) = dry_vol(ibin) + 					   &  ! [m^3/m^3(air)]
-        aer(ioc_a,jtotal,ibin)*1.e-15/dens_comp_a(joc) +   &
-        aer(ibc_a,jtotal,ibin)*1.e-15/dens_comp_a(jbc) +   &
-        aer(ioin_a,jtotal,ibin)*1.e-15/dens_comp_a(join)
+! calculate dry mass and dry volume of a bin
+      mass_dry_a(ibin) = 0.0		! initialize to 0.0
+      vol_dry_a(ibin)  = 0.0		! initialize to 0.0
+
+      aer_H = (2.*aer(iso4_a,jtotal,ibin) +  &
+                  aer(ino3_a,jtotal,ibin) +  &
+                  aer(icl_a,jtotal,ibin)  +  &
+                  aer(imsa_a,jtotal,ibin) +  &
+               2.*aer(ico3_a,jtotal,ibin))-  &
+              (2.*aer(ica_a,jtotal,ibin)  +  &
+                  aer(ina_a,jtotal,ibin)  +  &
+                  aer(inh4_a,jtotal,ibin))
+
+      do iaer = 1, naer
+        mass_dry_a(ibin) = mass_dry_a(ibin) +   &
+                           aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)	! ng/m^3(air)
+        vol_dry_a(ibin)  = vol_dry_a(ibin) +   &
+        aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)/dens_aer_mac(iaer)  	! ncc/m^3(air)
+      enddo
+      mass_dry_a(ibin) = mass_dry_a(ibin) + aer_H
+      vol_dry_a(ibin) = vol_dry_a(ibin) + aer_H
+
+      mass_dry_a(ibin) = mass_dry_a(ibin)*1.e-15			! g/cc(air)
+      vol_dry_a(ibin)  = vol_dry_a(ibin)*1.e-15				! cc(aer)/cc(air) or m^3/m^3(air)
+
+! wet mass and wet volume
+      mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3		! g/cc(air)
+      vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3		! cc(aer)/cc(air) or m^3/m^3(air)
 
 
       water_a_up(ibin) = aerosol_water_up(ibin)	! for hysteresis curve determination
 
+      iter_kelvin = 0
 
-10    call phase_equilibrium(ibin)
+10    iter_kelvin = iter_kelvin + 1
+      do je = 1, nelectrolyte
+        molality0(je) = bin_molality(je,ibin)	! compute ah2o dependent binary molalities
+      enddo
+
+      call mesa(ibin)
+      if(jaerosolstate(ibin) .eq. all_solid)then
+        return
+      endif
+      if (istat_mosaic_fe1 .lt. 0) return
+
+! new wet mass and wet volume
+      mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3		! g/cc(air)
+      vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3		! cc(aer)/cc(air) or m^3/m^3(air)
 
       call calculate_kelvin(ibin)
 
-      ah2o_a_new = ah2o/kelvin(ibin)
+      ah2o_a_new = rh_pc*0.01/kelvin(ibin)
 
       rel_err = abs( (ah2o_a_new - ah2o_a(ibin))/ah2o_a(ibin))
 
-      if(rel_err .gt. 1.e-2)then
+      if(rel_err .gt. kelvin_toler .and. iter_kelvin.le.20)then
         ah2o_a(ibin) = ah2o_a_new
         goto 10
       endif
 
+      if(jaerosolstate(ibin) .eq. all_liquid)jhyst_leg(ibin) = jhyst_up
 
-! phase determination is done
-! now adjust the aerosol and update the appropriate aer(jphase) and aer(jtotal)
-
-! remove if not needed
-      if(jaerosolstate(ibin) .eq. all_solid)then
-        call adjust_solid_aerosol(ibin)
-      elseif(jaerosolstate(ibin) .eq. all_liquid)then
-        call adjust_liquid_aerosol(ibin)
-      elseif(jaerosolstate(ibin) .eq. mixed)then
-        jphase(ibin)    = jliquid
-        jhyst_leg(ibin) = jhyst_lo
-      else
-        write(6,*)'   error in deciding aerosol state'
-        write(6,*)'   stopping in subr. aerosol_phase_state'
-!       stop
-        call peg_error_fatal( lunerr_aer,   &
-            '   stopping in subr. aerosol_phase_state' )
-      endif
+! now compute kelvin effect terms for condensing species (nh3, hno3, and hcl)
+      do iv = 1,  ngas_volatile
+        term = 4.*sigma_soln(ibin)*partial_molar_vol(iv)/  &
+                       (8.3144e7*T_K*DpmV(ibin))
+        kel(iv,ibin) = 1. + term*(1. + 0.5*term*(1. + term/3.))
+      enddo
 
 
       return
@@ -1333,20 +1540,1489 @@
 ! subr arguments
       integer ibin
 ! local variables
-      real term
+      real(kind=8) term
 
 
 
-      sigma_water = 71.9759e-3	! n/m
-      volume_a(ibin) = water_a(ibin)/1000. + dry_vol(ibin) 		! [m^3/m^3(air)]
-      dpmv(ibin)=(6.*volume_a(ibin)/(num_a(ibin)*3.1415926))**(1./3.)	! [m]
-      sigma_soln(ibin) = sigma_water + 0.049*(1. - ah2o_a(ibin)) 	! [n/m]
-      term = 72.*sigma_soln(ibin)/(8314.0*t_k*1000.*dpmv(ibin))		! [-]
-      kelvin(ibin) = exp(term)
+      volume_a(ibin) = vol_wet_a(ibin) 					! [cc/cc(air)]
+      dpmv(ibin)=(6.*volume_a(ibin)/(num_a(ibin)*3.1415926))**(1./3.)	! [cm]
+      sigma_soln(ibin) = sigma_water + 49.0*(1. - ah2o_a(ibin)) 	! [dyn/cm]
+      term = 72.*sigma_soln(ibin)/(8.3144e7*t_k*dpmv(ibin))		! [-]
+!      kelvin(ibin) = exp(term)
+      kelvin(ibin) = 1. + term*(1. + 0.5*term*(1. + term/3.))
 
 
       return
       end subroutine calculate_kelvin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! mesa: multicomponent equilibrium solver for aerosols.
+! computes equilibrum solid and liquid phases by integrating
+! pseudo-transient dissolution and precipitation reactions
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine mesa(ibin)	! touch
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+
+! local variables
+      integer idissolved, j_index, jdum, js
+      real(kind=8) crh, solids, sum_soluble, sum_insoluble, xt
+!     real(kind=8) aerosol_water				! mosaic func
+!     real(kind=8) drh_mutual					! mosaic func
+      real(kind=8) h_ion
+
+
+      call calculate_xt(ibin,jtotal,xt)
+
+      crh = 0.1
+
+! step 1: check if ah2o is below crh (crystallization or efflorescence point)
+      if(ah2o_a(ibin).lt.crh .and. (xt.gt.1.0 .or. xt.lt.0.))then
+        jaerosolstate(ibin) = all_solid
+        jphase(ibin)    = jsolid
+        jhyst_leg(ibin) = jhyst_lo
+        call adjust_solid_aerosol(ibin)
+        return
+      endif
+
+
+! step 2: check for supersaturation/metastable state
+      if(water_a_hyst(ibin) .gt. 0.5*water_a_up(ibin))then
+
+        call do_full_deliquescence(ibin)
+
+        sum_soluble = 0.0
+        do js = 1, nsoluble
+          sum_soluble = sum_soluble + electrolyte(js,jtotal,ibin)
+        enddo
+
+        solids = electrolyte(jcaso4,jtotal,ibin) +   &
+                 electrolyte(jcaco3,jtotal,ibin) +   &
+                 aer(ioin_a ,jtotal,ibin)
+
+
+        if(sum_soluble .lt. 1.e-15 .and. solids .gt. 0.0)then
+
+          jaerosolstate(ibin) = all_solid ! no soluble material present
+          jphase(ibin) = jsolid
+          call adjust_solid_aerosol(ibin)
+
+! new wet mass and wet volume
+          mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+          vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
+          growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)	! mass growth factor
+
+          return
+
+        elseif(sum_soluble .gt. 0.0 .and. solids .eq. 0.0)then
+
+          jaerosolstate(ibin) = all_liquid
+          jhyst_leg(ibin) = jhyst_up
+          jphase(ibin) = jliquid
+          water_a(ibin) = aerosol_water(jtotal,ibin)
+
+          if(water_a(ibin) .lt. 0.0)then
+            jaerosolstate(ibin) = all_solid ! no soluble material present
+            jphase(ibin)    = jsolid
+            jhyst_leg(ibin) = jhyst_lo
+            call adjust_solid_aerosol(ibin)
+          else
+            call adjust_liquid_aerosol(ibin)
+            call compute_activities(ibin)
+          endif
+
+! new wet mass and wet volume
+          mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+          vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
+          growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)	! mass growth factor
+
+          return
+
+        endif
+
+      endif
+
+
+
+
+! step 3: diagnose mdrh
+      if(xt .lt. 1. .and. xt .gt. 0. )goto 10	! excess sulfate domain - no mdrh exists
+
+      jdum = 0
+      do js = 1, nsalt
+        jsalt_present(js) = 0			! default value - salt absent
+
+        if(epercent(js,jtotal,ibin) .gt. ptol_mol_astem)then
+          jsalt_present(js) = 1			! salt present
+          jdum = jdum + jsalt_index(js)
+        endif
+      enddo
+
+      if(jdum .eq. 0)then
+        jaerosolstate(ibin) = all_solid ! no significant soluble material present
+        jphase(ibin) = jsolid
+        call adjust_solid_aerosol(ibin)
+        return
+      endif
+
+      if(xt .ge. 2.0 .or. xt .lt. 0.0)then
+        j_index = jsulf_poor(jdum)
+      else
+        j_index = jsulf_rich(jdum)
+      endif
+
+      mdrh(ibin) = mdrh_t(j_index)
+
+      if(ah2o_a(ibin)*100. .lt. mdrh(ibin)) then
+        jaerosolstate(ibin) = all_solid
+        jphase(ibin) = jsolid
+        jhyst_leg(ibin) = jhyst_lo
+        call adjust_solid_aerosol(ibin)
+        return
+      endif
+
+
+! step 4: none of the above means it must be sub-saturated or mixed-phase
+10    call do_full_deliquescence(ibin)
+      call mesa_ptc(ibin)	! determines jaerosolstate(ibin)
+      if (istat_mosaic_fe1 .lt. 0) return
+
+
+
+      return
+      end subroutine mesa
+
+
+
+
+
+
+
+
+!***********************************************************************
+! this subroutine completely deliquesces an aerosol and partitions
+! all the soluble electrolytes into the liquid phase and insoluble
+! ones into the solid phase. it also calculates the corresponding
+! aer(js,jliquid,ibin) and aer(js,jsolid,ibin) generic species
+! concentrations
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine do_full_deliquescence(ibin)	! touch
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer js
+
+
+
+
+! partition all electrolytes into liquid phase
+      do js = 1, nelectrolyte
+       electrolyte(js,jsolid,ibin)  = 0.0
+       electrolyte(js,jliquid,ibin) = electrolyte(js,jtotal,ibin)
+      enddo
+!
+! except these electrolytes, which always remain in the solid phase
+      electrolyte(jcaco3,jsolid,ibin) = electrolyte(jcaco3,jtotal,ibin)
+      electrolyte(jcaso4,jsolid,ibin) = electrolyte(jcaso4,jtotal,ibin)
+      electrolyte(jcaco3,jliquid,ibin)= 0.0
+      electrolyte(jcaso4,jliquid,ibin)= 0.0
+
+
+! partition all the generic aer species into solid and liquid phases
+! solid phase
+      aer(iso4_a,jsolid,ibin) = electrolyte(jcaso4,jsolid,ibin)
+      aer(ino3_a,jsolid,ibin) = 0.0
+      aer(icl_a, jsolid,ibin) = 0.0
+      aer(inh4_a,jsolid,ibin) = 0.0
+      aer(ioc_a, jsolid,ibin) = aer(ioc_a,jtotal,ibin)
+      aer(imsa_a,jsolid,ibin) = 0.0
+      aer(ico3_a,jsolid,ibin) = aer(ico3_a,jtotal,ibin)
+      aer(ina_a, jsolid,ibin) = 0.0
+      aer(ica_a, jsolid,ibin) = electrolyte(jcaco3,jsolid,ibin) +   &
+                                electrolyte(jcaso4,jsolid,ibin)
+      aer(ibc_a, jsolid,ibin) = aer(ibc_a,jtotal,ibin)
+      aer(ioin_a,jsolid,ibin) = aer(ioin_a,jtotal,ibin)
+      aer(iaro1_a,jsolid,ibin)= aer(iaro1_a,jtotal,ibin)
+      aer(iaro2_a,jsolid,ibin)= aer(iaro2_a,jtotal,ibin)
+      aer(ialk1_a,jsolid,ibin)= aer(ialk1_a,jtotal,ibin)
+      aer(iole1_a,jsolid,ibin)= aer(iole1_a,jtotal,ibin)
+      aer(iapi1_a,jsolid,ibin)= aer(iapi1_a,jtotal,ibin)
+      aer(iapi2_a,jsolid,ibin)= aer(iapi2_a,jtotal,ibin)
+      aer(ilim1_a,jsolid,ibin)= aer(ilim1_a,jtotal,ibin)
+      aer(ilim2_a,jsolid,ibin)= aer(ilim2_a,jtotal,ibin)
+
+! liquid-phase
+      aer(iso4_a,jliquid,ibin) = aer(iso4_a,jtotal,ibin) -   &
+                                 electrolyte(jcaso4,jsolid,ibin)
+      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jtotal,ibin)
+      aer(icl_a, jliquid,ibin) = aer(icl_a,jtotal,ibin)
+      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jtotal,ibin)
+      aer(ioc_a, jliquid,ibin) = 0.0
+      aer(imsa_a,jliquid,ibin) = aer(imsa_a,jtotal,ibin)
+      aer(ico3_a,jliquid,ibin) = 0.0
+      aer(ina_a, jliquid,ibin) = aer(ina_a,jtotal,ibin)
+      aer(ica_a, jliquid,ibin) = electrolyte(jcano3,jtotal,ibin) +   &
+                                 electrolyte(jcacl2,jtotal,ibin)
+      aer(ibc_a, jliquid,ibin) = 0.0
+      aer(ioin_a,jliquid,ibin) = 0.0
+      aer(iaro1_a,jliquid,ibin)= 0.0
+      aer(iaro2_a,jliquid,ibin)= 0.0
+      aer(ialk1_a,jliquid,ibin)= 0.0
+      aer(iole1_a,jliquid,ibin)= 0.0
+      aer(iapi1_a,jliquid,ibin)= 0.0
+      aer(iapi2_a,jliquid,ibin)= 0.0
+      aer(ilim1_a,jliquid,ibin)= 0.0
+      aer(ilim2_a,jliquid,ibin)= 0.0
+
+      return
+      end subroutine do_full_deliquescence
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! mesa: multicomponent equilibrium solver for aerosol-phase
+! computes equilibrum solid and liquid phases by integrating
+! pseudo-transient dissolution and precipitation reactions
+!
+! author: rahul a. zaveri
+! update: jan 2005
+! reference: zaveri r.a., r.c. easter, and l.k. peters, jgr, 2005b
+!-----------------------------------------------------------------------
+      subroutine mesa_ptc(ibin)		! touch
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer iaer, iconverge, iconverge_flux, iconverge_mass,   &
+           idissolved, itdum, js, je, jp
+      real(kind=8) tau_p(nsalt), tau_d(nsalt)
+      real(kind=8) frac_solid, sumflux, hsalt_min, alpha, xt, dumdum,   &
+           h_ion
+      real(kind=8) phi_prod, alpha_fac, sum_dum
+      real(kind=8) aer_H
+! function
+!     real(kind=8) aerosol_water
+
+
+
+! initialize
+      itdum = 0		! initialize time
+      hsalt_max = 1.e25
+
+
+
+      do js = 1, nsalt
+        hsalt(js)     = 0.0
+        sat_ratio(js) = 0.0
+        phi_salt(js)  = 0.0
+        flux_sl(js)   = 0.0
+      enddo
+
+
+      do js = 1, nsalt
+        jsalt_present(js) = 0			! default value - salt absent
+        if(epercent(js,jtotal,ibin) .gt. 1.0)then
+          jsalt_present(js) = 1			! salt present
+        endif
+      enddo
+
+
+      mass_dry_a(ibin) = 0.0
+
+      aer_H = (2.*aer(iso4_a,jtotal,ibin) +  &
+                  aer(ino3_a,jtotal,ibin) +  &
+                  aer(icl_a,jtotal,ibin)  +  &
+                  aer(imsa_a,jtotal,ibin) +  &
+               2.*aer(ico3_a,jtotal,ibin))-  &
+              (2.*aer(ica_a,jtotal,ibin)  +  &
+                  aer(ina_a,jtotal,ibin)  +  &
+                  aer(inh4_a,jtotal,ibin))
+
+      do iaer = 1, naer
+       mass_dry_a(ibin) = mass_dry_a(ibin) +  &
+          aer(iaer,jtotal,ibin)*mw_aer_mac(iaer) 	! [ng/m^3(air)]
+        vol_dry_a(ibin)  = vol_dry_a(ibin) +  &
+          aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)/dens_aer_mac(iaer)  	! ncc/m^3(air)
+      enddo
+      mass_dry_a(ibin) = mass_dry_a(ibin) + aer_H
+      vol_dry_a(ibin) = vol_dry_a(ibin) + aer_H
+
+      mass_dry_a(ibin) = mass_dry_a(ibin)*1.e-15			! [g/cc(air)]
+      vol_dry_a(ibin) = vol_dry_a(ibin)*1.e-15				! [cc(aer)/cc(air)]
+
+      mass_dry_salt(ibin) = 0.0		! soluble salts only
+      do je = 1, nsalt
+        mass_dry_salt(ibin) = mass_dry_salt(ibin) +  &
+              electrolyte(je,jtotal,ibin)*mw_electrolyte(je)*1.e-15	! g/cc(air)
+      enddo
+
+!      call mesa_check_complete_dissolution(ibin,          &
+!                                           mdissolved,    &
+!                                           iconverge_flux)
+!      if (istat_mosaic_fe1 .lt. 0) return
+!      if(mdissolved .eq. myes .or. iconverge_flux .eq. myes)then
+!        return
+!      endif
+
+
+      nmesa_call = nmesa_call + 1
+
+!----begin pseudo time continuation loop-------------------------------
+
+      do 500 itdum = 1, nmax_mesa
+
+
+! compute new salt fluxes
+      call mesa_flux_salt(ibin)
+      if (istat_mosaic_fe1 .lt. 0) return
+
+
+! check convergence
+      call mesa_convergence_criterion(ibin,      &
+                                      iconverge_mass,   &
+                                      iconverge_flux,   &
+                                      idissolved)
+
+      if(iconverge_mass .eq. myes)then
+        iter_mesa(ibin) = iter_mesa(ibin) + itdum
+        niter_mesa = niter_mesa + itdum
+        niter_mesa_max = max(niter_mesa_max, itdum)
+        jaerosolstate(ibin) = all_solid
+        call adjust_solid_aerosol(ibin)
+        jhyst_leg(ibin) = jhyst_lo
+        growth_factor(ibin) = 1.0
+        return
+      elseif(iconverge_flux .eq. myes)then
+        iter_mesa(ibin) = iter_mesa(ibin)+ itdum
+        niter_mesa = niter_mesa + itdum
+        niter_mesa_max = max(niter_mesa_max, itdum)
+        mass_wet_a(ibin)    = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+        vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3		! cc(aer)/cc(air) or m^3/m^3(air)
+        growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)		! mass growth factor
+
+        if(idissolved .eq. myes)then
+          jaerosolstate(ibin) = all_liquid
+!          jhyst_leg(ibin) = jhyst_up  ! do this later (to avoid tripping kelvin iterations)
+        else
+          jaerosolstate(ibin) = mixed
+          jhyst_leg(ibin) = jhyst_lo
+        endif
+
+! calculate epercent(jsolid) composition in mixed-phase aerosol
+        sum_dum = 0.0
+        jp = jsolid
+        do je = 1, nelectrolyte
+          electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
+          sum_dum = sum_dum + electrolyte(je,jp,ibin)
+        enddo
+        electrolyte_sum(jp,ibin) = sum_dum
+        if(sum_dum .eq. 0.)sum_dum = 1.0
+        do je = 1, nelectrolyte
+          epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
+        enddo
+
+        return
+      endif
+
+
+! calculate hsalt(js)	! time step
+      hsalt_min = 1.e25
+      do js = 1, nsalt
+
+        phi_prod = phi_salt(js) * phi_salt_old(js)
+
+        if(itdum .gt. 1 .and. phi_prod .gt. 0.0)then
+          phi_bar(js) = (abs(phi_salt(js))-abs(phi_salt_old(js)))/   &
+                                    alpha_salt(js)
+        else
+          phi_bar(js) = 0.0			! oscillating, or phi_salt and/or phi_salt_old may be zero
+        endif
+
+        if(phi_bar(js) .lt. 0.0)then		! good. phi getting lower. maybe able to take bigger alphas
+          phi_bar(js) = max(phi_bar(js), -10.0D0)
+          alpha_fac = 3.0*exp(phi_bar(js))
+          alpha_salt(js) = min(alpha_fac*abs(phi_salt(js)), 0.9D0)
+        elseif(phi_bar(js) .gt. 0.0)then	! bad - phi is getting bigger. so be conservative with alpha
+           alpha_salt(js) = min(abs(phi_salt(js)), 0.5D0)
+        else					! very bad - phi is oscillating. be very conservative
+           alpha_salt(js) = min(abs(phi_salt(js))/3.0, 0.5D0)
+        endif
+
+!        alpha_salt(js) = max(alpha_salt(js), 0.01D0)
+
+        phi_salt_old(js) = phi_salt(js)		! update old array
+
+
+        if(flux_sl(js) .gt. 0.)then
+
+          tau_p(js) = eleliquid(js)/flux_sl(js)	! precipitation time scale
+          if(tau_p(js) .eq. 0.0)then
+            hsalt(js) = 1.e25
+            flux_sl(js) = 0.0
+            phi_salt(js)= 0.0
+          else
+            hsalt(js) = alpha_salt(js)*tau_p(js)
+          endif
+
+        elseif(flux_sl(js) .lt. 0.)then
+
+          tau_p(js) = -eleliquid(js)/flux_sl(js)	! precipitation time scale
+          tau_d(js) = -electrolyte(js,jsolid,ibin)/flux_sl(js) ! dissolution time scale
+          if(tau_p(js) .eq. 0.0)then
+            hsalt(js) = alpha_salt(js)*tau_d(js)
+          else
+            hsalt(js) = alpha_salt(js)*min(tau_p(js),tau_d(js))
+          endif
+
+        else
+
+          hsalt(js) = 1.e25
+
+        endif
+
+          hsalt_min = min(hsalt(js), hsalt_min)
+
+      enddo
+
+!---------------------------------
+
+! integrate electrolyte(solid)
+      do js = 1, nsalt
+        electrolyte(js,jsolid,ibin) =    &
+                         electrolyte(js,jsolid,ibin)  +   &
+                         hsalt(js) * flux_sl(js)
+      enddo
+
+
+! compute aer(solid) from electrolyte(solid)
+      call electrolytes_to_ions(jsolid,ibin)
+
+
+! compute new electrolyte(liquid) from mass balance
+      do iaer = 1, naer
+        aer(iaer,jliquid,ibin) = aer(iaer,jtotal,ibin) -   &
+                                       aer(iaer,jsolid,ibin)
+      enddo
+
+!---------------------------------
+
+
+
+500   continue	! end time continuation loop
+!--------------------------------------------------------------------
+      nmesa_fail = nmesa_fail + 1
+      iter_mesa(ibin) = iter_mesa(ibin) + itdum
+      niter_mesa = niter_mesa + itdum
+      jaerosolstate(ibin) = mixed
+      jhyst_leg(ibin) = jhyst_lo
+      mass_wet_a(ibin)    = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+      vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3		! cc(aer)/cc(air) or m^3/m^3(air)
+      growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)		! mass growth factor
+
+      return
+      end subroutine mesa_ptc
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! part of mesa: checks if particle is completely deliquesced at the
+! current rh
+!
+! author: rahul a. zaveri
+! update: feb 2005
+!-----------------------------------------------------------------------
+      subroutine mesa_check_complete_dissolution(ibin,          &
+                                                 mdissolved,    &
+                                                 iconverge_flux)
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin, mdissolved, iconverge_flux, je, js, iaer
+! local variables
+      real(kind=8) sumflux, aer_sav(naer,3,nbin_a),   &
+           electrolyte_sav(nelectrolyte,3,nbin_a), crustal_solids
+
+
+! save current solid-liquid arrays
+      do je = 1, nelectrolyte
+        electrolyte_sav(je,jsolid,ibin) =electrolyte(je,jsolid,ibin)
+        electrolyte_sav(je,jliquid,ibin)=electrolyte(je,jliquid,ibin)
+      enddo
+
+      do iaer = 1, naer
+        aer_sav(iaer,jsolid,ibin) =aer(iaer,jsolid,ibin)
+        aer_sav(iaer,jliquid,ibin)=aer(iaer,jliquid,ibin)
+      enddo
+
+      call do_full_deliquescence(ibin)
+
+      do js = 1, nsalt
+        sat_ratio(js) = 0.0
+        phi_salt(js)  = 0.0
+        flux_sl(js)   = 0.0
+      enddo
+
+
+! compute new salt fluxes
+      call mesa_flux_salt(ibin)
+      if (istat_mosaic_fe1 .lt. 0) return
+
+
+! check if all the fluxes are zero
+      sumflux = 0.0
+      do js = 1, nsalt
+        sumflux = sumflux + abs(flux_sl(js))
+      enddo
+
+      crustal_solids = electrolyte(jcaco3,jsolid,ibin) +  &
+                       electrolyte(jcaso4,jsolid,ibin) +  &
+                       aer(ioin_a,jsolid,ibin)
+      if(sumflux .eq. 0.0 .and. crustal_solids.eq.0.)then ! it is completely dissolved
+
+        jaerosolstate(ibin) = all_liquid
+        jphase(ibin)        = jliquid
+        mdissolved          = myes
+        iconverge_flux      = myes
+
+        mass_wet_a(ibin)    = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+        vol_wet_a(ibin)     = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
+        growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)		! mass growth factor
+
+      elseif(sumflux .eq. 0.0)then
+
+        jaerosolstate(ibin) = mixed
+        jphase(ibin)        = jliquid
+        iconverge_flux      = myes
+        mdissolved          = mno
+        jhyst_leg(ibin)     = jhyst_lo
+        mass_wet_a(ibin)    = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+        vol_wet_a(ibin)     = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
+        growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)		! mass growth factor
+
+      else ! restore saved solid-liquid arrays
+
+        do je = 1, nelectrolyte
+          electrolyte(je,jsolid,ibin) =electrolyte_sav(je,jsolid,ibin)
+          electrolyte(je,jliquid,ibin)=electrolyte_sav(je,jliquid,ibin)
+        enddo
+        do iaer = 1, naer
+          aer(iaer,jsolid,ibin) =aer_sav(iaer,jsolid,ibin)
+          aer(iaer,jliquid,ibin)=aer_sav(iaer,jliquid,ibin)
+        enddo
+        mdissolved     = mno
+        iconverge_flux = mno
+
+      endif
+
+
+      return
+      end subroutine mesa_check_complete_dissolution
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! part of mesa: calculates solid-liquid fluxes of soluble salts
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine mesa_flux_salt(ibin)	! touch
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer js
+      real(kind=8) xt, calcium, sum_salt
+
+
+! compute activities and water content
+      call ions_to_electrolytes(jliquid,ibin,xt)
+      if (istat_mosaic_fe1 .lt. 0) return
+      call compute_activities(ibin)
+      activity(jna3hso4,ibin)   = 0.0
+
+      if(water_a(ibin) .le. 0.0)then
+        do js = 1, nsalt
+         flux_sl(js) = 0.0
+        enddo
+        return
+      endif
+
+
+      call mesa_estimate_eleliquid(ibin,xt)
+
+      calcium = aer(ica_a,jliquid,ibin)
+
+
+! calculate % electrolyte composition in the solid and liquid phases
+      sum_salt = 0.0
+      do js = 1, nsalt
+        sum_salt = sum_salt + electrolyte(js,jsolid,ibin)
+      enddo
+      electrolyte_sum(jsolid,ibin) = sum_salt
+      if(sum_salt .eq. 0.0)sum_salt = 1.0
+      do js = 1, nsalt
+        frac_salt_solid(js) = electrolyte(js,jsolid,ibin)/sum_salt
+        frac_salt_liq(js)   = epercent(js,jliquid,ibin)/100.
+      enddo
+
+
+
+! compute salt fluxes
+      do js = 1, nsalt		! soluble solid salts
+
+! compute new saturation ratio
+        sat_ratio(js) = activity(js,ibin)/keq_sl(js)
+! compute relative driving force
+        phi_salt(js)  = (sat_ratio(js) - 1.0)/max(sat_ratio(js),1.0D0)
+
+! check if too little solid-phase salt is trying to dissolve
+        if(sat_ratio(js)       .lt. 1.00 .and.   &
+           frac_salt_solid(js) .lt. 0.01 .and.   &
+           frac_salt_solid(js) .gt. 0.0)then
+          call mesa_dissolve_small_salt(ibin,js)
+          call mesa_estimate_eleliquid(ibin,xt)
+          sat_ratio(js) = activity(js,ibin)/keq_sl(js)
+        endif
+
+! compute flux
+        flux_sl(js) = sat_ratio(js) - 1.0
+
+! apply heaviside function
+        if( (sat_ratio(js)               .lt. 1.0 .and.   &
+             electrolyte(js,jsolid,ibin) .eq. 0.0) .or.   &
+            (calcium .gt. 0.0 .and. frac_salt_liq(js).lt.0.01).or.   &
+            (calcium .gt. 0.0 .and. jsalt_present(js).eq.0) )then
+          flux_sl(js) = 0.0
+          phi_salt(js)= 0.0
+        endif
+
+      enddo
+
+
+! force cacl2 and cano3 fluxes to zero
+      sat_ratio(jcano3) = 1.0
+      phi_salt(jcano3)  = 0.0
+      flux_sl(jcano3)   = 0.0
+
+      sat_ratio(jcacl2) = 1.0
+      phi_salt(jcacl2)  = 0.0
+      flux_sl(jcacl2)   = 0.0
+
+
+      return
+      end subroutine mesa_flux_salt
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! part of mesa: calculates liquid electrolytes from ions
+!
+! notes:
+!  - this subroutine is to be used for liquid-phase or total-phase only
+!  - this sub transfers caso4 and caco3 from liquid to solid phase
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine mesa_estimate_eleliquid(ibin,xt)	! touch
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin, jp
+      real(kind=8) xt
+! local variables
+      integer iaer, je, jc, ja, icase
+      real(kind=8) store(naer), sum_dum, sum_naza, sum_nczc, sum_na_nh4,   &
+           f_nh4, f_na, xh, xb, xl, xs, xt_d, xna_d, xnh4_d,   &
+           xdum, dum, cat_net
+      real(kind=8) nc(ncation), na(nanion)
+      real(kind=8) dum_ca, dum_no3, dum_cl, cano3, cacl2
+
+
+
+! remove negative concentrations, if any
+      do iaer =  1, naer
+      aer(iaer,jliquid,ibin) = max(0.0D0, aer(iaer,jliquid,ibin))
+      enddo
+
+
+! calculate sulfate ratio
+      call calculate_xt(ibin,jliquid,xt)
+
+      if(xt .ge. 2.0 .or. xt.lt.0.)then
+       icase = 1	! near neutral (acidity is caused by hcl and/or hno3)
+      else
+       icase = 2	! acidic (acidity is caused by excess so4)
+      endif
+
+
+! initialize to zero
+      do je = 1, nelectrolyte
+        eleliquid(je) = 0.0
+      enddo
+!
+!---------------------------------------------------------
+! initialize moles of ions depending on the sulfate domain
+
+      jp = jliquid
+
+      if(icase.eq.1)then ! xt >= 2 : sulfate poor domain
+
+        dum_ca  = aer(ica_a,jp,ibin)
+        dum_no3 = aer(ino3_a,jp,ibin)
+        dum_cl  = aer(icl_a,jp,ibin)
+
+        cano3   = min(dum_ca, 0.5*dum_no3)
+        dum_ca  = max(0.D0, dum_ca - cano3)
+        dum_no3 = max(0.D0, dum_no3 - 2.*cano3)
+
+        cacl2   = min(dum_ca, 0.5*dum_cl)
+        dum_ca  = max(0.D0, dum_ca - cacl2)
+        dum_cl  = max(0.D0, dum_cl - 2.*cacl2)
+
+        na(ja_hso4)= 0.0
+        na(ja_so4) = aer(iso4_a,jp,ibin)
+        na(ja_no3) = aer(ino3_a,jp,ibin)
+        na(ja_cl)  = aer(icl_a, jp,ibin)
+        na(ja_msa) = aer(imsa_a,jp,ibin)
+
+        nc(jc_ca)  = aer(ica_a, jp,ibin)
+        nc(jc_na)  = aer(ina_a, jp,ibin)
+        nc(jc_nh4) = aer(inh4_a,jp,ibin)
+
+        cat_net =     &
+            ( 2.d0*na(ja_so4)+na(ja_no3)+na(ja_cl)+na(ja_msa) ) -  &
+            ( nc(jc_h)+2.d0*nc(jc_ca) +nc(jc_nh4)+nc(jc_na) )
+
+        if(cat_net .lt. 0.0)then
+
+          nc(jc_h) = 0.0
+
+        else  ! cat_net must be 0.0 or positive
+
+          nc(jc_h) = cat_net
+
+        endif
+
+
+! now compute equivalent fractions
+      sum_naza = 0.0
+      do ja = 1, nanion
+        sum_naza = sum_naza + na(ja)*za(ja)
+      enddo
+
+      sum_nczc = 0.0
+      do jc = 1, ncation
+        sum_nczc = sum_nczc + nc(jc)*zc(jc)
+      enddo
+
+      if(sum_naza .eq. 0. .or. sum_nczc .eq. 0.)then
+        if (iprint_mosaic_diag1 .gt. 0) then
+          write(6,*)'subroutine mesa_estimate_eleliquid'
+          write(6,*)'ionic concentrations are zero'
+          write(6,*)'sum_naza = ', sum_naza
+          write(6,*)'sum_nczc = ', sum_nczc
+        endif
+        return
+      endif
+
+      do ja = 1, nanion
+        xeq_a(ja) = na(ja)*za(ja)/sum_naza
+      enddo
+
+      do jc = 1, ncation
+        xeq_c(jc) = nc(jc)*zc(jc)/sum_nczc
+      enddo
+
+      na_ma(ja_so4) = na(ja_so4) *mw_a(ja_so4)
+      na_ma(ja_no3) = na(ja_no3) *mw_a(ja_no3)
+      na_ma(ja_cl)  = na(ja_cl)  *mw_a(ja_cl)
+      na_ma(ja_hso4)= na(ja_hso4)*mw_a(ja_hso4)
+      na_Ma(ja_msa) = na(ja_msa) *MW_a(ja_msa)
+
+      nc_mc(jc_ca)  = nc(jc_ca) *mw_c(jc_ca)
+      nc_mc(jc_na)  = nc(jc_na) *mw_c(jc_na)
+      nc_mc(jc_nh4) = nc(jc_nh4)*mw_c(jc_nh4)
+      nc_mc(jc_h)   = nc(jc_h)  *mw_c(jc_h)
+
+
+! now compute electrolyte moles
+      eleliquid(jna2so4) = (xeq_c(jc_na) *na_ma(ja_so4) +  &
+                            xeq_a(ja_so4)*nc_mc(jc_na))/   &
+                             mw_electrolyte(jna2so4)
+
+      eleliquid(jnahso4) = (xeq_c(jc_na) *na_ma(ja_hso4) +  &
+                            xeq_a(ja_hso4)*nc_mc(jc_na))/   &
+                             mw_electrolyte(jnahso4)
+
+      eleliquid(jnamsa)  = (xeq_c(jc_na) *na_ma(ja_msa) + &
+                            xeq_a(ja_msa)*nc_mc(jc_na))/  &
+                             mw_electrolyte(jnamsa)
+
+      eleliquid(jnano3)  = (xeq_c(jc_na) *na_ma(ja_no3) +  &
+                            xeq_a(ja_no3)*nc_mc(jc_na))/   &
+                             mw_electrolyte(jnano3)
+
+      eleliquid(jnacl)   = (xeq_c(jc_na) *na_ma(ja_cl) +   &
+                            xeq_a(ja_cl) *nc_mc(jc_na))/   &
+                             mw_electrolyte(jnacl)
+
+      eleliquid(jnh4so4) = (xeq_c(jc_nh4)*na_ma(ja_so4) +   &
+                            xeq_a(ja_so4)*nc_mc(jc_nh4))/   &
+                             mw_electrolyte(jnh4so4)
+
+      eleliquid(jnh4hso4)= (xeq_c(jc_nh4)*na_ma(ja_hso4) +   &
+                            xeq_a(ja_hso4)*nc_mc(jc_nh4))/   &
+                             mw_electrolyte(jnh4hso4)
+
+      eleliquid(jnh4msa) = (xeq_c(jc_nh4) *na_ma(ja_msa) +  &
+                            xeq_a(ja_msa)*nc_mc(jc_nh4))/   &
+                             mw_electrolyte(jnh4msa)
+
+      eleliquid(jnh4no3) = (xeq_c(jc_nh4)*na_ma(ja_no3) +   &
+                            xeq_a(ja_no3)*nc_mc(jc_nh4))/   &
+                             mw_electrolyte(jnh4no3)
+
+      eleliquid(jnh4cl)  = (xeq_c(jc_nh4)*na_ma(ja_cl) +   &
+                            xeq_a(ja_cl) *nc_mc(jc_nh4))/  &
+                             mw_electrolyte(jnh4cl)
+
+      eleliquid(jcano3)  = (xeq_c(jc_ca) *na_ma(ja_no3) +  &
+                            xeq_a(ja_no3)*nc_mc(jc_ca))/   &
+                             mw_electrolyte(jcano3)
+
+      eleliquid(jcamsa2) = (xeq_c(jc_ca) *na_ma(ja_msa) +  &
+                            xeq_a(ja_msa)*nc_mc(jc_ca))/   &
+                             mw_electrolyte(jcamsa2)
+
+      eleliquid(jcacl2)  = (xeq_c(jc_ca) *na_ma(ja_cl) +   &
+                            xeq_a(ja_cl) *nc_mc(jc_ca))/   &
+                             mw_electrolyte(jcacl2)
+
+      eleliquid(jh2so4)  = (xeq_c(jc_h)  *na_ma(ja_hso4) + &
+                            xeq_a(ja_hso4)*nc_mc(jc_h))/   &
+                             mw_electrolyte(jh2so4)
+
+      eleliquid(jhno3)   = (xeq_c(jc_h)  *na_ma(ja_no3) +  &
+                            xeq_a(ja_no3)*nc_mc(jc_h))/    &
+                             mw_electrolyte(jhno3)
+
+      eleliquid(jhcl)    = (xeq_c(jc_h) *na_ma(ja_cl) +   &
+                            xeq_a(ja_cl)*nc_mc(jc_h))/    &
+                             mw_electrolyte(jhcl)
+
+      eleliquid(jmsa)    = (xeq_c(jc_h)  *na_ma(ja_msa) + &
+                            xeq_a(ja_msa)*nc_mc(jc_h))/   &
+                             mw_electrolyte(jmsa)
+
+!--------------------------------------------------------------------
+
+      elseif(icase.eq.2)then ! xt < 2 : sulfate rich domain
+
+        jp = jliquid
+
+        store(iso4_a) = aer(iso4_a,jp,ibin)
+        store(imsa_a) = aer(imsa_a,jp,ibin)
+        store(inh4_a) = aer(inh4_a,jp,ibin)
+        store(ina_a)  = aer(ina_a, jp,ibin)
+        store(ica_a)  = aer(ica_a, jp,ibin)
+
+        call form_camsa2(store,jp,ibin)
+
+        sum_na_nh4 = store(ina_a) + store(inh4_a)
+        if(sum_na_nh4 .gt. 0.0)then
+          f_nh4 = store(inh4_a)/sum_na_nh4
+          f_na  = store(ina_a)/sum_na_nh4
+        else
+          f_nh4 = 0.0
+          f_na  = 0.0
+        endif
+
+! first form msa electrolytes
+        if(sum_na_nh4 .gt. store(imsa_a))then
+          eleliquid(jnh4msa) = f_nh4*store(imsa_a)
+          eleliquid(jnamsa)  = f_na *store(imsa_a)
+          store(inh4_a)= store(inh4_a)-eleliquid(jnh4msa) ! remaining nh4
+          store(ina_a) = store(ina_a) -eleliquid(jnamsa)  ! remaining na
+        else
+          eleliquid(jnh4msa) = store(inh4_a)
+          eleliquid(jnamsa)  = store(ina_a)
+          eleliquid(jmsa)    = store(imsa_a) - sum_na_nh4
+          store(inh4_a)= 0.0  ! remaining nh4
+          store(ina_a) = 0.0  ! remaining na
+        endif
+
+        if(store(iso4_a).eq.0.0)goto 10
+
+        xt_d  = xt
+        xna_d = 1. + 0.5*aer(ina_a,jp,ibin)/aer(iso4_a,jp,ibin)
+        xdum = aer(iso4_a,jp,ibin) - aer(inh4_a,jp,ibin)
+
+        dum = 2.d0*aer(iso4_a,jp,ibin) - aer(ina_a,jp,ibin)
+        if(aer(inh4_a,jp,ibin) .gt. 0.0 .and. dum .gt. 0.0)then
+          xnh4_d = 2.*aer(inh4_a,jp,ibin)/   &
+                  (2.*aer(iso4_a,jp,ibin) - aer(ina_a,jp,ibin))
+        else
+          xnh4_d = 0.0
+        endif
+
+
+        if(aer(inh4_a,jp,ibin) .gt. 0.0)then
+
+
+        if(xt_d .ge. xna_d)then
+          eleliquid(jna2so4) = 0.5*aer(ina_a,jp,ibin)
+
+          if(xnh4_d .ge. 5./3.)then
+            eleliquid(jnh4so4) = 1.5*aer(ina_a,jp,ibin)   &
+                               - 3.*xdum - aer(inh4_a,jp,ibin)
+            eleliquid(jlvcite) = 2.*xdum + aer(inh4_a,jp,ibin)   &
+                               - aer(ina_a,jp,ibin)
+          elseif(xnh4_d .ge. 1.5)then
+            eleliquid(jnh4so4) = aer(inh4_a,jp,ibin)/5.
+            eleliquid(jlvcite) = aer(inh4_a,jp,ibin)/5.
+          elseif(xnh4_d .ge. 1.0)then
+            eleliquid(jnh4so4) = aer(inh4_a,jp,ibin)/6.
+            eleliquid(jlvcite) = aer(inh4_a,jp,ibin)/6.
+            eleliquid(jnh4hso4)= aer(inh4_a,jp,ibin)/6.
+          endif
+
+        elseif(xt_d .gt. 1.0)then
+          eleliquid(jnh4so4)  = aer(inh4_a,jp,ibin)/6.
+          eleliquid(jlvcite)  = aer(inh4_a,jp,ibin)/6.
+          eleliquid(jnh4hso4) = aer(inh4_a,jp,ibin)/6.
+          eleliquid(jna2so4)  = aer(ina_a,jp,ibin)/3.
+          eleliquid(jnahso4)  = aer(ina_a,jp,ibin)/3.
+        elseif(xt_d .le. 1.0)then
+          eleliquid(jna2so4)  = aer(ina_a,jp,ibin)/4.
+          eleliquid(jnahso4)  = aer(ina_a,jp,ibin)/2.
+          eleliquid(jlvcite)  = aer(inh4_a,jp,ibin)/6.
+          eleliquid(jnh4hso4) = aer(inh4_a,jp,ibin)/2.
+        endif
+
+        else
+
+        if(xt_d .gt. 1.0)then
+          eleliquid(jna2so4) = aer(ina_a,jp,ibin) - aer(iso4_a,jp,ibin)
+          eleliquid(jnahso4) = 2.*aer(iso4_a,jp,ibin) -   &
+                                  aer(ina_a,jp,ibin)
+        else
+          eleliquid(jna2so4) = aer(ina_a,jp,ibin)/4.
+          eleliquid(jnahso4) = aer(ina_a,jp,ibin)/2.
+        endif
+
+
+        endif
+
+
+
+      endif
+!---------------------------------------------------------
+!
+! calculate % composition
+10    sum_dum = 0.0
+      do je = 1, nelectrolyte
+        sum_dum = sum_dum + eleliquid(je)
+      enddo
+
+      electrolyte_sum(jp,ibin) = sum_dum
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      do je = 1, nelectrolyte
+        epercent(je,jp,ibin) = 100.*eleliquid(je)/sum_dum
+      enddo
+
+
+      return
+      end subroutine mesa_estimate_eleliquid
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! part of mesa: completely dissolves small amounts of soluble salts
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine mesa_dissolve_small_salt(ibin,js)
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin, js, jp
+
+      jp = jsolid
+
+
+      if(js .eq. jnh4so4)then
+        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
+                           2.*electrolyte(js,jsolid,ibin)
+        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(inh4_a,jp,ibin) = electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                         2.*electrolyte(jnh4so4,jp,ibin) +   &
+                         3.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jnh4msa,jp,ibin)
+
+        aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jna2so4,jp,ibin) +   &
+                         2.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnh4so4,jp,ibin) +   &
+                         2.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jh2so4,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jlvcite)then
+        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
+                           3.*electrolyte(js,jsolid,ibin)
+        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
+                           2.*electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(inh4_a,jp,ibin) = electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                         2.*electrolyte(jnh4so4,jp,ibin) +   &
+                         3.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jnh4msa,jp,ibin)
+
+        aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jna2so4,jp,ibin) +   &
+                         2.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnh4so4,jp,ibin) +   &
+                         2.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jh2so4,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jnh4hso4)then
+        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
+                             electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(inh4_a,jp,ibin) = electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                         2.*electrolyte(jnh4so4,jp,ibin) +   &
+                         3.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jnh4msa,jp,ibin)
+
+        aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jna2so4,jp,ibin) +   &
+                         2.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnh4so4,jp,ibin) +   &
+                         2.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jh2so4,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jna2so4)then
+        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
+                           2.*electrolyte(js,jsolid,ibin)
+        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ina_a,jp,ibin)  = electrolyte(jnano3,jp,ibin)  +   &
+                            electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jna2so4,jp,ibin) +   &
+                         3.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)
+
+        aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jna2so4,jp,ibin) +   &
+                         2.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnh4so4,jp,ibin) +   &
+                         2.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jh2so4,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jna3hso4)then
+        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
+                           3.*electrolyte(js,jsolid,ibin)
+        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
+                           2.*electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ina_a,jp,ibin)  = electrolyte(jnano3,jp,ibin)  +   &
+                            electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jna2so4,jp,ibin) +   &
+                         3.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)
+
+        aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jna2so4,jp,ibin) +   &
+                         2.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnh4so4,jp,ibin) +   &
+                         2.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jh2so4,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jnahso4)then
+        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ina_a,jp,ibin)  = electrolyte(jnano3,jp,ibin)  +   &
+                            electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jna2so4,jp,ibin) +   &
+                         3.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)
+
+        aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jna2so4,jp,ibin) +   &
+                         2.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnh4so4,jp,ibin) +   &
+                         2.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jh2so4,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jnh4no3)then
+        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(inh4_a,jp,ibin) = electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                         2.*electrolyte(jnh4so4,jp,ibin) +   &
+                         3.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jnh4msa,jp,ibin)
+
+        aer(ino3_a,jp,ibin) = electrolyte(jnano3,jp,ibin)  +   &
+                         2.*electrolyte(jcano3,jp,ibin)  +   &
+                            electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jhno3,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jnh4cl)then
+        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(inh4_a,jp,ibin) = electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                         2.*electrolyte(jnh4so4,jp,ibin) +   &
+                         3.*electrolyte(jlvcite,jp,ibin) +   &
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jnh4msa,jp,ibin)
+
+        aer(icl_a,jp,ibin)  = electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jcacl2,jp,ibin)  +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                            electrolyte(jhcl,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jnano3)then
+        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ina_a,jp,ibin)  = electrolyte(jnano3,jp,ibin)  +   &
+                            electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jna2so4,jp,ibin) +   &
+                         3.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)
+
+        aer(ino3_a,jp,ibin) = electrolyte(jnano3,jp,ibin)  +   &
+                         2.*electrolyte(jcano3,jp,ibin)  +   &
+                            electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jhno3,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jnacl)then
+        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ina_a,jp,ibin)  = electrolyte(jnano3,jp,ibin)  +   &
+                            electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jna2so4,jp,ibin) +   &
+                         3.*electrolyte(jna3hso4,jp,ibin)+   &
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)
+
+        aer(icl_a,jp,ibin)  = electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jcacl2,jp,ibin)  +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                            electrolyte(jhcl,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jcano3)then
+        aer(ica_a,jliquid,ibin)  = aer(ica_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) +   &
+                            2.*electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ica_a,jp,ibin)  = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jcano3,jp,ibin)  +   &
+                            electrolyte(jcacl2,jp,ibin)  +   &
+                            electrolyte(jcaco3,jp,ibin)  +   &
+                            electrolyte(jcamsa2,jp,ibin)
+
+        aer(ino3_a,jp,ibin) = electrolyte(jnano3,jp,ibin)  +   &
+                         2.*electrolyte(jcano3,jp,ibin)  +   &
+                            electrolyte(jnh4no3,jp,ibin) +   &
+                            electrolyte(jhno3,jp,ibin)
+        return
+      endif
+
+
+      if(js .eq. jcacl2)then
+        aer(ica_a,jliquid,ibin) = aer(ica_a,jliquid,ibin) +   &
+                              electrolyte(js,jsolid,ibin)
+        aer(icl_a,jliquid,ibin) = aer(icl_a,jliquid,ibin) +   &
+                            2.*electrolyte(js,jsolid,ibin)
+
+        electrolyte(js,jsolid,ibin) = 0.0
+
+        aer(ica_a,jp,ibin)  = electrolyte(jcaso4,jp,ibin)  +   &
+                            electrolyte(jcano3,jp,ibin)  +   &
+                            electrolyte(jcacl2,jp,ibin)  +   &
+                            electrolyte(jcaco3,jp,ibin)  +   &
+                            electrolyte(jcamsa2,jp,ibin)
+
+        aer(icl_a,jp,ibin)  = electrolyte(jnacl,jp,ibin)   +   &
+                         2.*electrolyte(jcacl2,jp,ibin)  +   &
+                            electrolyte(jnh4cl,jp,ibin)  +   &
+                            electrolyte(jhcl,jp,ibin)
+        return
+      endif
+
+
+
+      return
+      end subroutine mesa_dissolve_small_salt
+
+
+
+
+
+
+!***********************************************************************
+! part of mesa: checks mesa convergence
+!
+! author: rahul a. zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine mesa_convergence_criterion(ibin,  &  ! touch
+                                       iconverge_mass,    &
+                                       iconverge_flux,    &
+                                       idissolved)
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin, iconverge_mass, iconverge_flux, idissolved
+! local variables
+      integer je, js, iaer
+      real(kind=8) mass_solid, mass_solid_salt, frac_solid, xt, h_ion, &
+           crustal_solids, sumflux
+
+
+      idissolved = mno		! default = not completely dissolved
+
+! check mass convergence
+      iconverge_mass = mno	! default value = no convergence
+
+!      call electrolytes_to_ions(jsolid,ibin)
+!      mass_solid = 0.0
+!      do iaer = 1, naer
+!        mass_solid = mass_solid +   &
+!                     aer(iaer,jsolid,ibin)*mw_aer_mac(iaer)*1.e-15	! g/cc(air)
+!      enddo
+
+      mass_solid_salt = 0.0
+      do je = 1, nsalt
+        mass_solid_salt = mass_solid_salt + &
+             electrolyte(je,jsolid,ibin)*mw_electrolyte(je)*1.e-15	! g/cc(air)
+      enddo
+
+
+
+!      frac_solid = mass_solid/mass_dry_a(ibin)
+
+      frac_solid = mass_solid_salt/mass_dry_salt(ibin)
+
+      if(frac_solid .ge. 0.98)then
+        iconverge_mass = myes
+        return
+      endif
+
+
+
+! check relative driving force convergence
+      iconverge_flux = myes
+      do js = 1, nsalt
+        if(abs(phi_salt(js)).gt. rtol_mesa)then
+          iconverge_flux = mno
+          return
+        endif
+      enddo
+
+
+
+! check if all the fluxes are zero
+
+      sumflux = 0.0
+      do js = 1, nsalt
+        sumflux = sumflux + abs(flux_sl(js))
+      enddo
+
+      crustal_solids = electrolyte(jcaco3,jsolid,ibin) +  &
+                       electrolyte(jcaso4,jsolid,ibin) +  &
+                       aer(ioin_a,jsolid,ibin)
+
+      if(sumflux .eq. 0.0 .and. crustal_solids .eq. 0.0)then
+        idissolved = myes
+      endif
+
+
+
+      return
+      end subroutine mesa_convergence_criterion
+
 
 
 
@@ -1369,10 +3045,7 @@
       integer iaer, je
 
 
-
-
-      jphase(ibin) = jsolid
-
+      jphase(ibin)    = jsolid
       jhyst_leg(ibin) = jhyst_lo	! lower curve
       water_a(ibin)   = 0.0
 
@@ -1389,41 +3062,6 @@
         electrolyte(je,jsolid,ibin)  = electrolyte(je,jtotal,ibin)
         epercent(je,jsolid,ibin)     = epercent(je,jtotal,ibin)
       enddo
-
-! degas volatile nh4no3 and nh4cl if they are less than smallp %
-      if(epercent(jnh4no3,jsolid,ibin) .gt. 0.0        .and.   &
-         epercent(jnh4no3,jsolid,ibin) .le. smallp     .and.   &
-         gas(inh3_g)*gas(ihno3_g)      .lt. keq_sg(1) )then
-
-        gas(inh3_g) = gas(inh3_g) + electrolyte(jnh4no3,jsolid,ibin)
-        gas(ihno3_g)= gas(ihno3_g)+ electrolyte(jnh4no3,jsolid,ibin)
-        aer(inh4_a,jsolid,ibin) = real(   &
-                           dble(aer(inh4_a,jsolid,ibin)) -   &
-                           dble(electrolyte(jnh4no3,jsolid,ibin)) )
-        aer(ino3_a,jsolid,ibin)  = real(   &
-                           dble(aer(ino3_a,jsolid,ibin)) -   &
-                           dble(electrolyte(jnh4no3,jsolid,ibin)) )
-        electrolyte(jnh4no3,jsolid,ibin) = 0.0
-        epercent(jnh4no3,jsolid,ibin) = 0.0
-
-      endif
-
-      if(epercent(jnh4cl,jsolid,ibin)  .gt. 0.0        .and.   &
-         epercent(jnh4cl,jsolid,ibin)  .le. smallp     .and.   &
-         gas(inh3_g)*gas(ihcl_g)       .lt. keq_sg(2) )then
-
-        gas(inh3_g) = gas(inh3_g) + electrolyte(jnh4cl,jsolid,ibin)
-        gas(ihcl_g) = gas(ihcl_g) + electrolyte(jnh4cl,jsolid,ibin)
-        aer(inh4_a,jsolid,ibin) = real(   &
-                           dble(aer(inh4_a,jsolid,ibin)) -   &
-                           dble(electrolyte(jnh4cl,jsolid,ibin)) )
-        aer(icl_a,jsolid,ibin)  = real(   &
-                           dble(aer(icl_a,jsolid,ibin)) -   &
-                           dble(electrolyte(jnh4cl,jsolid,ibin)) )
-        electrolyte(jnh4cl,jsolid,ibin) = 0.0
-        epercent(jnh4cl,jsolid,ibin) = 0.0
-
-      endif
 
 ! update aer(jtotal) that may have been affected above
       aer(inh4_a,jtotal,ibin) = aer(inh4_a,jsolid,ibin)
@@ -1489,1199 +3127,56 @@
 ! solid phase
       aer(iso4_a,jsolid,ibin) = electrolyte(jcaso4,jsolid,ibin)
       aer(ino3_a,jsolid,ibin) = 0.0
-      aer(icl_a, jsolid,ibin) = 0.0
+      aer(icl_a,jsolid,ibin)  = 0.0
       aer(inh4_a,jsolid,ibin) = 0.0
-      aer(ioc_a, jsolid,ibin) = aer(ioc_a,jtotal,ibin)
+      aer(ioc_a,jsolid,ibin)  = aer(ioc_a,jtotal,ibin)
       aer(imsa_a,jsolid,ibin) = 0.0
       aer(ico3_a,jsolid,ibin) = aer(ico3_a,jtotal,ibin)
-      aer(ina_a, jsolid,ibin) = 0.0
-      aer(ica_a, jsolid,ibin) = electrolyte(jcaco3,jsolid,ibin) +   &
+      aer(ina_a,jsolid,ibin)  = 0.0
+      aer(ica_a,jsolid,ibin)  = electrolyte(jcaco3,jsolid,ibin) + &
                                 electrolyte(jcaso4,jsolid,ibin)
-      aer(ibc_a, jsolid,ibin) = aer(ibc_a,jtotal,ibin)
-      aer(ioin_a, jsolid,ibin)= aer(ioin_a,jtotal,ibin)
+      aer(ibc_a,jsolid,ibin)  = aer(ibc_a,jtotal,ibin)
+      aer(ioin_a,jsolid,ibin) = aer(ioin_a,jtotal,ibin)
+      aer(iaro1_a,jsolid,ibin)= aer(iaro1_a,jtotal,ibin)
+      aer(iaro2_a,jsolid,ibin)= aer(iaro2_a,jtotal,ibin)
+      aer(ialk1_a,jsolid,ibin)= aer(ialk1_a,jtotal,ibin)
+      aer(iole1_a,jsolid,ibin)= aer(iole1_a,jtotal,ibin)
+      aer(iapi1_a,jsolid,ibin)= aer(iapi1_a,jtotal,ibin)
+      aer(iapi2_a,jsolid,ibin)= aer(iapi2_a,jtotal,ibin)
+      aer(ilim1_a,jsolid,ibin)= aer(ilim1_a,jtotal,ibin)
+      aer(ilim2_a,jsolid,ibin)= aer(ilim2_a,jtotal,ibin)
 
 ! liquid-phase
-      aer(iso4_a,jliquid,ibin) = aer(iso4_a,jtotal,ibin) -   &
-                                 electrolyte(jcaso4,jsolid,ibin)
+      aer(iso4_a,jliquid,ibin) = aer(iso4_a,jtotal,ibin) - &
+                                 aer(iso4_a,jsolid,ibin)
+      aer(iso4_a,jliquid,ibin) = max(0.D0, aer(iso4_a,jliquid,ibin))
       aer(ino3_a,jliquid,ibin) = aer(ino3_a,jtotal,ibin)
-      aer(icl_a, jliquid,ibin) = aer(icl_a,jtotal,ibin)
+      aer(icl_a,jliquid,ibin)  = aer(icl_a,jtotal,ibin)
       aer(inh4_a,jliquid,ibin) = aer(inh4_a,jtotal,ibin)
-      aer(ioc_a, jliquid,ibin) = 0.0
+      aer(ioc_a,jliquid,ibin)  = 0.0
       aer(imsa_a,jliquid,ibin) = aer(imsa_a,jtotal,ibin)
       aer(ico3_a,jliquid,ibin) = 0.0
-      aer(ina_a, jliquid,ibin) = aer(ina_a,jtotal,ibin)
-      aer(ica_a, jliquid,ibin) = electrolyte(jcano3,jtotal,ibin) +   &
-                                 electrolyte(jcacl2,jtotal,ibin)
-      aer(ibc_a, jliquid,ibin) = 0.0
-      aer(ioin_a, jliquid,ibin)= 0.0
+      aer(ina_a,jliquid,ibin)  = aer(ina_a,jtotal,ibin)
+      aer(ica_a,jliquid,ibin)  = aer(ica_a,jtotal,ibin) - &
+                                 aer(ica_a,jsolid,ibin)
+      aer(ica_a,jliquid,ibin)  = max(0.D0, aer(ica_a,jliquid,ibin))
+      aer(ibc_a,jliquid,ibin)  = 0.0
+      aer(ioin_a,jliquid,ibin) = 0.0
+      aer(iaro1_a,jliquid,ibin)= 0.0
+      aer(iaro2_a,jliquid,ibin)= 0.0
+      aer(ialk1_a,jliquid,ibin)= 0.0
+      aer(iole1_a,jliquid,ibin)= 0.0
+      aer(iapi1_a,jliquid,ibin)= 0.0
+      aer(iapi2_a,jliquid,ibin)= 0.0
+      aer(ilim1_a,jliquid,ibin)= 0.0
+      aer(ilim2_a,jliquid,ibin)= 0.0
 
       return
       end subroutine adjust_liquid_aerosol
 
 
-!--------------------------------------------------------------------
 
 
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! computes phase equilibrium and interfaces mesa
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine phase_equilibrium(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-! local variables
-      integer idissolved, j_index, jdum, js
-      real crh, solids, sum_soluble, sum_insoluble, xt
-!     real aerosol_water				! mosaic func
-!     real drh_mutual					! mosaic func
-
-
-
-      call calculate_xt(ibin,jtotal,xt)
-
-      crh = 0.1
-
-! step 1: check if ah2o is below crh (crystallization or efflorescence point)
-      if(ah2o.lt.crh .and. (xt.gt.1.0 .or. xt.lt.0.))then
-        jaerosolstate(ibin) = all_solid
-        jphase(ibin)    = jsolid
-        jhyst_leg(ibin) = jhyst_lo
-        call adjust_solid_aerosol(ibin)
-        return
-      endif
-
-
-! step 2: check for supersaturation/metastable state
-      if(water_a_hyst(ibin) .gt. 0.5*water_a_up(ibin))then
-
-        call do_full_deliquescence(ibin)
-        sum_soluble = 0.0
-        do js = 1, nsoluble
-          sum_soluble = sum_soluble + electrolyte(js,jtotal,ibin)
-        enddo
-
-        solids = electrolyte(jcaso4,jtotal,ibin) +   &
-                 electrolyte(jcaco3,jtotal,ibin) +   &
-                 aer(ioin_a,jtotal,ibin) +   &
-                 aer(ibc_a,jtotal,ibin) +   &
-                 aer(ioc_a,jtotal,ibin)
-
-
-        if(sum_soluble .lt. 1.e-15 .and. solids .gt. 0.0)then
-
-          jaerosolstate(ibin) = all_solid ! no soluble material present
-          jphase(ibin) = jsolid
-          call adjust_solid_aerosol(ibin)
-
-        elseif(sum_soluble .gt. 0.0)then
-
-          jaerosolstate(ibin) = all_liquid
-          jphase(ibin) = jliquid
-          water_a(ibin) = aerosol_water(jtotal,ibin)
-
-          if(water_a(ibin) .lt. 0.0)then
-            jaerosolstate(ibin) = all_solid ! no soluble material present
-            jphase(ibin)    = jsolid
-            jhyst_leg(ibin) = jhyst_lo
-            call adjust_solid_aerosol(ibin)
-          else
-            call adjust_liquid_aerosol(ibin)
-            call compute_activities(ibin)
-          endif
-
-        endif
-
-      return
-      endif
-
-
-
-
-! step 3: diagnose mdrh
-      if(xt .lt. 1. .and. xt .gt. 0. )goto 10	! excess sulfate domain - no mdrh exists
-
-      jdum = 0
-      do js = 1, nsalt
-        jsalt_present(js) = 0			! default value - salt absent
-
-        if(epercent(js,jtotal,ibin) .gt. 1.0)then
-          jsalt_present(js) = 1			! salt present
-          jdum = jdum + jsalt_index(js)
-        endif
-      enddo
-
-      if(jdum .eq. 0)then
-        jaerosolstate(ibin) = all_solid ! no significant soluble material present
-        jphase(ibin) = jsolid
-        call adjust_solid_aerosol(ibin)
-        return
-      endif
-
-      if(xt .ge. 2.0 .or. xt .lt. 0.0)then
-        j_index = jsulf_poor(jdum)
-      else
-        j_index = jsulf_rich(jdum)
-      endif
-
-      mdrh(ibin) = drh_mutual(j_index) + 1.0
-
-      if(ah2o*100. .lt. mdrh(ibin)) then
-        jaerosolstate(ibin) = all_solid
-        jphase(ibin) = jsolid
-        call adjust_solid_aerosol(ibin)
-        return
-      endif
-
-
-! step 4: none of the above means it must be sub-saturated or mixed-phase
-10    call do_full_deliquescence(ibin)
-
-      call mesa(ibin)	! determines jaerosolstate(ibin)
-
-
-
-      return
-      end subroutine phase_equilibrium
-
-
-
-
-
-
-
-
-!***********************************************************************
-! this subroutine completely deliquesces an aerosol and partitions
-! all the soluble electrolytes into the liquid phase and insoluble
-! ones into the solid phase. it also calculates the corresponding
-! aer(js,jliquid,ibin) and aer(js,jsolid,ibin) generic species
-! concentrations
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine do_full_deliquescence(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer js
-
-
-
-
-! partition all electrolytes into liquid phase
-      do js = 1, nelectrolyte
-       electrolyte(js,jsolid,ibin)  = 0.0
-       electrolyte(js,jliquid,ibin) = electrolyte(js,jtotal,ibin)
-      enddo
-!
-! except these electrolytes, which always remain in the solid phase
-      electrolyte(jcaco3,jsolid,ibin) = electrolyte(jcaco3,jtotal,ibin)
-      electrolyte(jcaso4,jsolid,ibin) = electrolyte(jcaso4,jtotal,ibin)
-      electrolyte(jcaco3,jliquid,ibin)= 0.0
-      electrolyte(jcaso4,jliquid,ibin)= 0.0
-
-
-! partition all the generic aer species into solid and liquid phases
-! solid phase
-      aer(iso4_a,jsolid,ibin) = electrolyte(jcaso4,jsolid,ibin)
-      aer(ino3_a,jsolid,ibin) = 0.0
-      aer(icl_a, jsolid,ibin) = 0.0
-      aer(inh4_a,jsolid,ibin) = 0.0
-      aer(ioc_a, jsolid,ibin) = aer(ioc_a,jtotal,ibin)
-      aer(imsa_a,jsolid,ibin) = 0.0
-      aer(ico3_a,jsolid,ibin) = aer(ico3_a,jtotal,ibin)
-      aer(ina_a, jsolid,ibin) = 0.0
-      aer(ica_a, jsolid,ibin) = electrolyte(jcaco3,jsolid,ibin) +   &
-                                electrolyte(jcaso4,jsolid,ibin)
-      aer(ibc_a, jsolid,ibin) = aer(ibc_a,jtotal,ibin)
-      aer(ioin_a,jsolid,ibin) = aer(ioin_a,jtotal,ibin)
-
-! liquid-phase
-      aer(iso4_a,jliquid,ibin) = aer(iso4_a,jtotal,ibin) -   &
-                                 electrolyte(jcaso4,jsolid,ibin)
-      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jtotal,ibin)
-      aer(icl_a, jliquid,ibin) = aer(icl_a,jtotal,ibin)
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jtotal,ibin)
-      aer(ioc_a, jliquid,ibin) = 0.0
-      aer(imsa_a,jliquid,ibin) = aer(imsa_a,jtotal,ibin)
-      aer(ico3_a,jliquid,ibin) = 0.0
-      aer(ina_a, jliquid,ibin) = aer(ina_a,jtotal,ibin)
-      aer(ica_a, jliquid,ibin) = electrolyte(jcano3,jtotal,ibin) +   &
-                                 electrolyte(jcacl2,jtotal,ibin)
-      aer(ibc_a, jliquid,ibin) = 0.0
-      aer(ioin_a,jliquid,ibin) = 0.0
-
-      return
-      end subroutine do_full_deliquescence
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! mesa: multicomponent equilibrium solver for aerosol-phase
-! computes equilibrum solid and liquid phases by integrating
-! pseudo-transient dissolution and precipitation reactions
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: zaveri r.a., r.c. easter, and l.k. peters, jgr, 2005b
-!-----------------------------------------------------------------------
-      subroutine mesa(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer nmax_mesa
-      parameter(nmax_mesa = 100)
-      integer iaer, iconverge, iconverge_flux, iconverge_mass,   &
-           itdum, js, je, iflux(nsalt,nmax_mesa),   &
-           iprod1, iprod2, iprod3, ioscillation, mdissolved
-      real tau_p(nsalt), tau_d(nsalt)
-      real frac_solid, sumflux, hsalt_min, alpha, xt, dumdum,   &
-           p_mesa_fails
-! function
-!     real aerosol_water
-
-
-
-!      if(mod(jmesa_call,10000).eq.0)then
-!        p_mesa_fails = 100.*float(jmesa_fail)/
-!     &                        max(float(jmesa_call),1.0)
-!        write(6,*)'total number of calls to mesa  =', jmesa_call
-!        write(6,*)'cumulative avg mesa iteration  =', iter_mesa_avg
-!        write(6,*)'percent mesa convergence fails =', p_mesa_fails
-!      endif
-
-
-! initialize
-      itdum = 0		! initialize time
-      hsalt_max = 1.e25
-
-
-      do js = 1, nsalt
-        hsalt(js)     = 0.0
-        sat_ratio(js) = 0.0
-        phi_salt(js)  = 0.0
-        flux_sl(js)   = 0.0
-      enddo
-
-
-
-      total_dry_mass(ibin) = 0.0
-      do iaer = 1, naer
-       total_dry_mass(ibin) = total_dry_mass(ibin) +   &
-        aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)*1.e-9 				! [g/m^3(air)]
-      enddo
-
-      total_dry_mass(ibin) = total_dry_mass(ibin) + 			   &  ! [g/m^3(air)]
-        aer(ioc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ibc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ioin_a,jtotal,ibin)*1.e-9
-
-
-
-      call mesa_check_complete_dissolution(ibin, mdissolved)
-      if(mdissolved .eq. myes)return
-
-      jmesa_call = jmesa_call + 1
-      jmesa_call_tot = jmesa_call_tot + 1
-
-
-!----begin pseudo time continuation loop-------------------------------
-
-      do 500 itdum = 1, nmax_mesa
-
-
-      if(itdum .gt. 50)then
-	dumdum = 0.0
-      endif
-
-! compute new salt fluxes
-      call mesa_flux_salt(ibin)
-
-
-! check convergence
-      call mesa_convergence_criterion(itdum, ibin,   &
-                                      iconverge_mass,   &
-                                      iconverge_flux)
-
-      if(iconverge_mass .eq. 1)then
-        jaerosolstate(ibin) = all_solid
-        call adjust_solid_aerosol(ibin)
-        iter_mesa = iter_mesa + float(itdum)
-        return
-      elseif(iconverge_flux .eq. 1)then
-        iter_mesa = iter_mesa + itdum
-        jaerosolstate(ibin) = mixed
-        jhyst_leg(ibin) = jhyst_lo
-        water_a(ibin) = aerosol_water(jliquid,ibin)	! kg/m^3(air)
-        return
-      endif
-
-
-! check for oscillating fluxes
-      do js = 1, nsalt
-        if(flux_sl(js) .lt. 0)then
-           iflux(js,itdum) = -1
-        elseif(flux_sl(js) .gt. 0)then
-           iflux(js,itdum) =  1
-        else
-           iflux(js,itdum) =  0
-        endif
-      enddo
-
-
-      ioscillation = mno
-      if(itdum.gt.5) then
-        do js = 1, nsalt
-          iprod1 = iflux(js,itdum-3)*iflux(js,itdum-2)
-          iprod2 = iflux(js,itdum-2)*iflux(js,itdum-1)
-          iprod3 = iflux(js,itdum-1)*iflux(js,itdum)
-
-          if(iprod1.lt.0 .and. iprod2.lt.0 .and. iprod3.lt.0)then
-            ioscillation = myes
-          endif
-
-        enddo
-      endif
-
-
-! calculate hsalt(js)	! time step
-      hsalt_min = 1.e25
-      do js = 1, nsalt
-
-        alpha = min(abs(phi_salt(js)), 0.5)
-
-        if(ioscillation .eq. myes)then
-          alpha = alpha/3.0
-        endif
-
-
-        if(flux_sl(js) .gt. 0.)then
-
-          tau_p(js) = eleliquid(js)/flux_sl(js)	! precipitation time scale
-          if(tau_p(js) .eq. 0.0)then
-            hsalt(js) = 1.e25
-            flux_sl(js) = 0.0
-            phi_salt(js)= 0.0
-          else
-            hsalt(js) = alpha*tau_p(js)
-          endif
-
-        elseif(flux_sl(js) .lt. 0.)then
-
-          tau_p(js) = -eleliquid(js)/flux_sl(js)	! precipitation time scale
-          tau_d(js) = -electrolyte(js,jsolid,ibin)/flux_sl(js) ! dissolution time scale
-          if(tau_p(js) .eq. 0.0)then
-            hsalt(js) = alpha*tau_d(js)
-          else
-            hsalt(js) = alpha*min(tau_p(js),tau_d(js))
-          endif
-
-        else
-
-          hsalt(js) = 1.e25
-
-        endif
-
-          hsalt_min = min(hsalt(js), hsalt_min)
-
-      enddo
-
-!---------------------------------
-
-! integrate electrolyte(solid)
-      do js = 1, nsalt
-        electrolyte(js,jsolid,ibin) = real(   &
-                         dble(electrolyte(js,jsolid,ibin))  +   &
-                         dble(hsalt(js)) * dble(flux_sl(js)) )
-      enddo
-
-      call electrolytes_to_ions(jsolid,ibin) ! computes aer(solid) from electrolyte(solid)
-
-
-! compute new electrolyte(liquid) from mass balance
-      do iaer = 1, naer
-        aer(iaer,jliquid,ibin) = real( dble(aer(iaer,jtotal,ibin)) -   &
-                                       dble(aer(iaer,jsolid,ibin)) )
-      enddo
-
-!---------------------------------
-
-
-
-500   continue	! end of time continuation loop
-!--------------------------------------------------------------------
-
-      jmesa_fail = jmesa_fail + 1
-      iter_mesa = iter_mesa + float(itdum)
-
-
-!      write(6,66)ibin, iclm_aer, jclm_aer, kclm_aer, jmesa_call,
-!     &           jmesa_fail
-!66    format('mixed-phase did not converge at ibin ijk jmesa_call =',
-!     &        i3, 2x, 3(i5,2x), i10, x, i10)
-
-
-
-! determine jaerosolstate from the last estimate of frac_solid
-      dry_mass(ibin) = 0.0
-      do iaer = 1, naer
-        dry_mass(ibin) = dry_mass(ibin) +   &
-                        aer(iaer,jsolid,ibin)*mw_aer_mac(iaer)*1.e-9
-      enddo
-      dry_mass(ibin) = dry_mass(ibin)   +    &  ! [g/m^3(air)]
-        aer(ioc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ibc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ioin_a,jtotal,ibin)*1.e-9
-
-      frac_solid = dry_mass(ibin)/total_dry_mass(ibin)
-
-      if(frac_solid.ge.0.97)then
-        jaerosolstate(ibin) = all_solid
-        call adjust_solid_aerosol(ibin)
-      elseif(frac_solid.lt.0.03)then
-        jaerosolstate(ibin) = all_liquid
-        call adjust_liquid_aerosol(ibin)
-        water_a(ibin) = aerosol_water(jliquid,ibin)	! kg/m^3(air)
-      elseif(frac_solid.gt.0.0)then
-        water_a(ibin) = aerosol_water(jliquid,ibin)	! kg/m^3(air)
-        jaerosolstate(ibin) = mixed
-        jhyst_leg(ibin) = jhyst_lo
-      endif
-
-
-
-      return
-      end subroutine mesa
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of mesa: checks if particle is completely deliquesced at the
-! current rh
-!
-! author: rahul a. zaveri
-! update: feb 2005
-!-----------------------------------------------------------------------
-      subroutine mesa_check_complete_dissolution(ibin, mdissolved)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, mdissolved, je, js, iaer
-! local variables
-      real sumflux, aer_sav(naer,3,nbin_a),   &
-           electrolyte_sav(nelectrolyte,3,nbin_a)
-
-
-! save current solid-liquid arrays
-      do je = 1, nelectrolyte
-        electrolyte_sav(je,jsolid,ibin) =electrolyte(je,jsolid,ibin)
-        electrolyte_sav(je,jliquid,ibin)=electrolyte(je,jliquid,ibin)
-      enddo
-
-      do iaer = 1, naer
-        aer_sav(iaer,jsolid,ibin) =aer(iaer,jsolid,ibin)
-        aer_sav(iaer,jliquid,ibin)=aer(iaer,jliquid,ibin)
-      enddo
-
-      call do_full_deliquescence(ibin)
-
-      do js = 1, nsalt
-        sat_ratio(js) = 0.0
-        phi_salt(js)  = 0.0
-        flux_sl(js)   = 0.0
-      enddo
-
-
-! compute new salt fluxes
-      call mesa_flux_salt(ibin)
-
-
-! check if all the fluxes are zero
-      sumflux = 0.0
-      do js = 1, nsalt
-        sumflux = sumflux + abs(flux_sl(js))
-      enddo
-
-      if(sumflux .eq. 0.0)then ! it is completely dissolved
-
-        jaerosolstate(ibin) = all_liquid
-        jhyst_leg(ibin)     = jhyst_up		! upper curve
-        jphase(ibin)        = jliquid
-        call adjust_liquid_aerosol(ibin)
-        mdissolved = myes
-
-      else ! restore saved solid-liquid arrays
-
-        do je = 1, nelectrolyte
-          electrolyte(je,jsolid,ibin) =electrolyte_sav(je,jsolid,ibin)
-          electrolyte(je,jliquid,ibin)=electrolyte_sav(je,jliquid,ibin)
-        enddo
-        do iaer = 1, naer
-          aer(iaer,jsolid,ibin) =aer_sav(iaer,jsolid,ibin)
-          aer(iaer,jliquid,ibin)=aer_sav(iaer,jliquid,ibin)
-        enddo
-        mdissolved = mno
-
-      endif
-
-
-      return
-      end subroutine mesa_check_complete_dissolution
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of mesa: calculates solid-liquid fluxes of soluble salts
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine mesa_flux_salt(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer js
-      real xt, calcium, sum_salt
-
-
-! compute activities and water content
-      call ions_to_electrolytes(jliquid,ibin,xt)
-      call compute_activities(ibin)
-      activity(jna3hso4,ibin)   = 0.0
-
-      if(water_a(ibin) .le. 0.0)then
-        do js = 1, nsalt
-         flux_sl(js) = 0.0
-        enddo
-        return
-      endif
-
-
-      call mesa_estimate_eleliquid(ibin,xt)
-
-      calcium = aer(ica_a,jliquid,ibin)
-
-      do js = 1, nsalt
-        jsalt_present(js) = 0			! default value - salt absent
-        if(epercent(js,jtotal,ibin) .gt. 1.0)then
-          jsalt_present(js) = 1			! salt present
-        endif
-      enddo
-
-
-! calculate % electrolyte composition in the solid and liquid phases
-      sum_salt = 0.0
-      do js = 1, nsalt
-        sum_salt = sum_salt + electrolyte(js,jsolid,ibin)
-      enddo
-      electrolyte_sum(jsolid,ibin) = sum_salt
-      if(sum_salt .eq. 0.0)sum_salt = 1.0
-      do js = 1, nsalt
-        frac_salt_solid(js) = electrolyte(js,jsolid,ibin)/sum_salt
-        frac_salt_liq(js)   = epercent(js,jliquid,ibin)/100.
-      enddo
-
-
-
-! compute salt fluxes
-      do js = 1, nsalt		! soluble solid salts
-
-! compute new saturation ratio
-        sat_ratio(js) = activity(js,ibin)/keq_sl(js)
-! compute relative driving force
-        phi_salt(js)  = (sat_ratio(js) - 1.0)/max(sat_ratio(js),1.0)
-
-! check if too little solid-phase salt is trying to dissolve
-        if(sat_ratio(js)       .lt. 1.00 .and.   &
-           frac_salt_solid(js) .lt. 0.01 .and.   &
-           frac_salt_solid(js) .gt. 0.0)then
-          call mesa_dissolve_small_salt(ibin,js)
-          call mesa_estimate_eleliquid(ibin,xt)
-          sat_ratio(js) = activity(js,ibin)/keq_sl(js)
-        endif
-
-! compute flux
-        flux_sl(js) = sat_ratio(js) - 1.0
-
-! apply heaviside function
-        if( (sat_ratio(js)               .lt. 1.0 .and.   &
-             electrolyte(js,jsolid,ibin) .eq. 0.0) .or.   &
-            (calcium .gt. 0.0 .and. jsalt_present(js).eq.0) )then
-          flux_sl(js) = 0.0
-          phi_salt(js)= 0.0
-        endif
-
-      enddo
-
-! force cacl2 and cano3 fluxes to zero
-      sat_ratio(jcano3) = 1.0
-      phi_salt(jcano3)  = 0.0
-      flux_sl(jcano3)   = 0.0
-
-      sat_ratio(jcacl2) = 1.0
-      phi_salt(jcacl2)  = 0.0
-      flux_sl(jcacl2)   = 0.0
-
-
-      return
-      end subroutine mesa_flux_salt
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of mesa: calculates liquid electrolytes from ions
-!
-! notes:
-!  - this subroutine is to be used for liquid-phase or total-phase only
-!  - this sub transfers caso4 and caco3 from liquid to solid phase
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine mesa_estimate_eleliquid(ibin,xt)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, jp
-      real xt
-! local variables
-      integer iaer, je, jc, ja, icase
-      real store(naer), thesum, sum_naza, sum_nczc, sum_na_nh4,   &
-           f_nh4, f_na, xh, xb, xl, xs, xt_d, xna_d, xnh4_d,   &
-           xdum, dum, cat_net
-      real nc(ncation), na(nanion)
-      real dum_ca, dum_no3, dum_cl, cano3, cacl2
-
-
-
-
-
-
-
-! remove negative concentrations, if any
-      do iaer =  1, naer
-      aer(iaer,jliquid,ibin) = max(0.0, aer(iaer,jliquid,ibin))
-      enddo
-
-
-! calculate sulfate ratio
-      call calculate_xt(ibin,jliquid,xt)
-
-      if(xt .ge. 2.0 .or. xt.lt.0.)then
-       icase = 1	! near neutral (acidity is caused by hcl and/or hno3)
-      else
-       icase = 2	! acidic (acidity is caused by excess so4)
-      endif
-
-
-! initialize to zero
-      do je = 1, nelectrolyte
-        eleliquid(je) = 0.0
-      enddo
-!
-!---------------------------------------------------------
-! initialize moles of ions depending on the sulfate domain
-
-      jp = jliquid
-
-      if(icase.eq.1)then ! xt >= 2 : sulfate poor domain
-
-        dum_ca  = aer(ica_a,jp,ibin)
-        dum_no3 = aer(ino3_a,jp,ibin)
-        dum_cl  = aer(icl_a,jp,ibin)
-
-        cano3   = min(dum_ca, 0.5*dum_no3)
-        dum_ca  = max(0., dum_ca - cano3)
-        dum_no3 = max(0., dum_no3 - 2.*cano3)
-
-        cacl2   = min(dum_ca, 0.5*dum_cl)
-        dum_ca  = max(0., dum_ca - cacl2)
-        dum_cl  = max(0., dum_cl - 2.*cacl2)
-
-        na(ja_hso4)= 0.0
-        na(ja_so4) = aer(iso4_a,jp,ibin)
-        na(ja_no3) = aer(ino3_a,jp,ibin)
-        na(ja_cl)  = aer(icl_a, jp,ibin)
-
-        nc(jc_ca)  = aer(ica_a, jp,ibin)
-        nc(jc_na)  = aer(ina_a, jp,ibin)
-        nc(jc_nh4) = aer(inh4_a,jp,ibin)
-
-        cat_net = real( dble(2.*na(ja_so4)+na(ja_no3)+na(ja_cl)) -   &
-                 dble(nc(jc_h)+2.*nc(jc_ca) +nc(jc_nh4)+nc(jc_na)) )
-
-        if(cat_net .lt. 0.0)then
-
-!          if(aer(inh4_a,jp,ibin) .gt. abs(cat_net))then ! degas excess nh3
-!            aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) + cat_net
-!            gas(inh3_g) = gas(inh3_g) - cat_net
-!          endif
-
-          nc(jc_h) = 0.0
-
-        else  ! cat_net must be 0.0 or positive
-
-          nc(jc_h) = cat_net
-
-        endif
-
-
-! now compute equivalent fractions
-      sum_naza = 0.0
-      do ja = 1, nanion
-        sum_naza = sum_naza + na(ja)*za(ja)
-      enddo
-
-      sum_nczc = 0.0
-      do jc = 1, ncation
-        sum_nczc = sum_nczc + nc(jc)*zc(jc)
-      enddo
-
-      if(sum_naza .eq. 0. .or. sum_nczc .eq. 0.)then
-        write(6,*)'ionic concentrations are zero'
-        write(6,*)'sum_naza = ', sum_naza
-        write(6,*)'sum_nczc = ', sum_nczc
-        return
-      endif
-
-      do ja = 1, nanion
-        xeq_a(ja) = na(ja)*za(ja)/sum_naza
-      enddo
-
-      do jc = 1, ncation
-        xeq_c(jc) = nc(jc)*zc(jc)/sum_nczc
-      enddo
-
-      na_ma(ja_so4) = na(ja_so4) *mw_a(ja_so4)
-      na_ma(ja_no3) = na(ja_no3) *mw_a(ja_no3)
-      na_ma(ja_cl)  = na(ja_cl)  *mw_a(ja_cl)
-      na_ma(ja_hso4)= na(ja_hso4)*mw_a(ja_hso4)
-
-      nc_mc(jc_ca)  = nc(jc_ca) *mw_c(jc_ca)
-      nc_mc(jc_na)  = nc(jc_na) *mw_c(jc_na)
-      nc_mc(jc_nh4) = nc(jc_nh4)*mw_c(jc_nh4)
-      nc_mc(jc_h)   = nc(jc_h)  *mw_c(jc_h)
-
-
-! now compute electrolyte moles
-      eleliquid(jna2so4) = (xeq_c(jc_na) *na_ma(ja_so4) +   &
-                            xeq_a(ja_so4)*nc_mc(jc_na))/   &
-                             mw_electrolyte(jna2so4)
-
-      eleliquid(jnahso4) = (xeq_c(jc_na) *na_ma(ja_hso4) +   &
-                            xeq_a(ja_hso4)*nc_mc(jc_na))/   &
-                             mw_electrolyte(jnahso4)
-
-      eleliquid(jnano3)  = (xeq_c(jc_na) *na_ma(ja_no3) +   &
-                            xeq_a(ja_no3)*nc_mc(jc_na))/   &
-                             mw_electrolyte(jnano3)
-
-      eleliquid(jnacl)   = (xeq_c(jc_na) *na_ma(ja_cl) +   &
-                            xeq_a(ja_cl) *nc_mc(jc_na))/   &
-                             mw_electrolyte(jnacl)
-
-      eleliquid(jnh4so4) = (xeq_c(jc_nh4)*na_ma(ja_so4) +   &
-                            xeq_a(ja_so4)*nc_mc(jc_nh4))/   &
-                             mw_electrolyte(jnh4so4)
-
-      eleliquid(jnh4hso4)= (xeq_c(jc_nh4)*na_ma(ja_hso4) +   &
-                            xeq_a(ja_hso4)*nc_mc(jc_nh4))/   &
-                             mw_electrolyte(jnh4hso4)
-
-      eleliquid(jnh4no3) = (xeq_c(jc_nh4)*na_ma(ja_no3) +   &
-                            xeq_a(ja_no3)*nc_mc(jc_nh4))/   &
-                             mw_electrolyte(jnh4no3)
-
-      eleliquid(jnh4cl)  = (xeq_c(jc_nh4)*na_ma(ja_cl) +   &
-                            xeq_a(ja_cl) *nc_mc(jc_nh4))/   &
-                             mw_electrolyte(jnh4cl)
-
-      eleliquid(jcano3)  = (xeq_c(jc_ca) *na_ma(ja_no3) +   &
-                            xeq_a(ja_no3)*nc_mc(jc_ca))/   &
-                             mw_electrolyte(jcano3)
-
-      eleliquid(jcacl2)  = (xeq_c(jc_ca) *na_ma(ja_cl) +   &
-                            xeq_a(ja_cl) *nc_mc(jc_ca))/   &
-                             mw_electrolyte(jcacl2)
-
-      eleliquid(jh2so4)  = (xeq_c(jc_h)  *na_ma(ja_hso4) +   &
-                            xeq_a(ja_hso4)*nc_mc(jc_h))/   &
-                             mw_electrolyte(jh2so4)
-
-      eleliquid(jhno3)   = (xeq_c(jc_h)  *na_ma(ja_no3) +   &
-                            xeq_a(ja_no3)*nc_mc(jc_h))/   &
-                             mw_electrolyte(jhno3)
-
-      eleliquid(jhcl)    = (xeq_c(jc_h) *na_ma(ja_cl) +   &
-                            xeq_a(ja_cl)*nc_mc(jc_h))/   &
-                             mw_electrolyte(jhcl)
-
-!--------------------------------------------------------------------
-
-      elseif(icase.eq.2)then ! xt < 2 : sulfate rich domain
-
-        jp = jliquid
-        xt_d  = xt
-        xna_d = 1. + 0.5*aer(ina_a,jp,ibin)/aer(iso4_a,jp,ibin)
-        xdum = aer(iso4_a,jp,ibin) - aer(inh4_a,jp,ibin)
-
-        dum = real( dble(2.*aer(iso4_a,jp,ibin)) -   &
-                    dble(aer(ina_a,jp,ibin)) )
-        if(aer(inh4_a,jp,ibin) .gt. 0.0 .and. dum .gt. 0.0)then
-          xnh4_d = 2.*aer(inh4_a,jp,ibin)/   &
-                  (2.*aer(iso4_a,jp,ibin) - aer(ina_a,jp,ibin))
-        else
-          xnh4_d = 0.0
-        endif
-
-
-        if(aer(inh4_a,jp,ibin) .gt. 0.0)then
-
-
-        if(xt_d .ge. xna_d)then
-          eleliquid(jna2so4) = 0.5*aer(ina_a,jp,ibin)
-
-          if(xnh4_d .ge. 5./3.)then
-            eleliquid(jnh4so4) = 1.5*aer(ina_a,jp,ibin)   &
-                               - 3.*xdum - aer(inh4_a,jp,ibin)
-            eleliquid(jlvcite) = 2.*xdum + aer(inh4_a,jp,ibin)   &
-                               - aer(ina_a,jp,ibin)
-          elseif(xnh4_d .ge. 1.5)then
-            eleliquid(jnh4so4) = aer(inh4_a,jp,ibin)/5.
-            eleliquid(jlvcite) = aer(inh4_a,jp,ibin)/5.
-          elseif(xnh4_d .ge. 1.0)then
-            eleliquid(jnh4so4) = aer(inh4_a,jp,ibin)/6.
-            eleliquid(jlvcite) = aer(inh4_a,jp,ibin)/6.
-            eleliquid(jnh4hso4)= aer(inh4_a,jp,ibin)/6.
-          endif
-
-        elseif(xt_d .gt. 1.0)then
-          eleliquid(jnh4so4)  = aer(inh4_a,jp,ibin)/6.
-          eleliquid(jlvcite)  = aer(inh4_a,jp,ibin)/6.
-          eleliquid(jnh4hso4) = aer(inh4_a,jp,ibin)/6.
-          eleliquid(jna2so4)  = aer(ina_a,jp,ibin)/3.
-          eleliquid(jnahso4)  = aer(ina_a,jp,ibin)/3.
-        elseif(xt_d .le. 1.0)then
-          eleliquid(jna2so4)  = aer(ina_a,jp,ibin)/4.
-          eleliquid(jnahso4)  = aer(ina_a,jp,ibin)/2.
-          eleliquid(jlvcite)  = aer(inh4_a,jp,ibin)/6.
-          eleliquid(jnh4hso4) = aer(inh4_a,jp,ibin)/2.
-        endif
-
-        else
-
-        if(xt_d .gt. 1.0)then
-          eleliquid(jna2so4) = aer(ina_a,jp,ibin) - aer(iso4_a,jp,ibin)
-          eleliquid(jnahso4) = 2.*aer(iso4_a,jp,ibin) -   &
-                                  aer(ina_a,jp,ibin)
-        else
-          eleliquid(jna2so4) = aer(ina_a,jp,ibin)/4.
-          eleliquid(jnahso4) = aer(ina_a,jp,ibin)/2.
-        endif
-
-
-        endif
-
-
-
-      endif
-!---------------------------------------------------------
-!
-! calculate % composition
-      thesum = 0.0
-      do je = 1, nelectrolyte
-        thesum = thesum + eleliquid(je)
-      enddo
-
-      electrolyte_sum(jp,ibin) = thesum
-
-      if(thesum .eq. 0.)thesum = 1.0
-      do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*eleliquid(je)/thesum
-      enddo
-
-
-      return
-      end subroutine mesa_estimate_eleliquid
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of mesa: completely dissolves small amounts of soluble salts
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine mesa_dissolve_small_salt(ibin,js)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, js
-
-
-
-      if(js .eq. jnh4so4)then
-        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                           2.*electrolyte(js,jsolid,ibin)
-        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jlvcite)then
-        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                           3.*electrolyte(js,jsolid,ibin)
-        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
-                           2.*electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jnh4hso4)then
-        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
-                             electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jna2so4)then
-        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
-                           2.*electrolyte(js,jsolid,ibin)
-        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jna3hso4)then
-        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
-                           3.*electrolyte(js,jsolid,ibin)
-        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
-                           2.*electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jnahso4)then
-        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(iso4_a,jliquid,ibin) = aer(iso4_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jnh4no3)then
-        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jnh4cl)then
-        aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jnano3)then
-        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jnacl)then
-        aer(ina_a,jliquid,ibin)  = aer(ina_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jcano3)then
-        aer(ica_a,jliquid,ibin)  = aer(ica_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) +   &
-                            2.*electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-      if(js .eq. jcacl2)then
-        aer(ica_a,jliquid,ibin) = aer(ica_a,jliquid,ibin) +   &
-                              electrolyte(js,jsolid,ibin)
-        aer(icl_a,jliquid,ibin) = aer(icl_a,jliquid,ibin) +   &
-                            2.*electrolyte(js,jsolid,ibin)
-        electrolyte(js,jsolid,ibin) = 0.0
-        return
-      endif
-
-
-
-      return
-      end subroutine mesa_dissolve_small_salt
-
-
-
-
-
-
-!***********************************************************************
-! part of mesa: checks mesa convergence
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine mesa_convergence_criterion(itdum, ibin,   &
-                                       iconverge_mass,   &
-                                       iconverge_flux)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer itdum, ibin, iconverge_mass, iconverge_flux
-! local variables
-      integer je, js, iaer
-      real frac_solid, xt
-
-
-
-! check mass convergence
-      iconverge_mass = 0	! default value = no convergence
-
-      call electrolytes_to_ions(jsolid,ibin)
-
-      dry_mass(ibin) = 0.0
-      do iaer = 1, naer
-        dry_mass(ibin) = dry_mass(ibin) +   &
-                        aer(iaer,jsolid,ibin)*mw_aer_mac(iaer)*1.e-9
-      enddo
-      dry_mass(ibin) = dry_mass(ibin)   +    &  ! [g/m^3(air)]
-        aer(ioc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ibc_a,jtotal,ibin)*1.e-9  +   &
-        aer(ioin_a,jtotal,ibin)*1.e-9
-
-      frac_solid = dry_mass(ibin)/total_dry_mass(ibin)
-
-      if(frac_solid .ge. 0.98)then
-
-        iconverge_mass = 1
-
-      endif
-
-
-
-! check relative driving force convergence
-      iconverge_flux = 1
-      do js = 1, nsalt
-!        if(flux_sl(js).ne.0.0 .and. abs(phi_salt(js)).gt.0.01)then
-        if(abs(phi_salt(js)).gt.0.02)then
-          iconverge_flux = 0
-        endif
-      enddo
-
-
-      return
-      end subroutine mesa_convergence_criterion
 
 
 
@@ -2695,1929 +3190,33 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 !***********************************************************************
-! asceem: adaptive step coupled explicit euler method
+! ASTEM: Adaptive Step Time-Split Euler Method
 !
-! author: rahul a. zaveri
-! update: apr 2005
+! author: Rahul A. Zaveri
+! update: jan 2007
 !-----------------------------------------------------------------------
-      subroutine asceem(dtchem)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM(dtchem)
+!      implicit none
+!      include 'chemistry.com'
+!      include 'mosaic.h'
 ! subr arguments
-      real dtchem
+      real(kind=8) dtchem
 ! local variables
-      integer ibin, iv, jp, isteps, nsteps_asceem, jcall,   &
-              ieqblm
-      real dtmax, t_in, t_new, t_old, t_out, delta_aer, xt,   &
-           avg_asceem_steps
-
-
-      t_in  = 0.0
-      t_out = dtchem
-      t_old = t_in
-
-      jcall = jcall + 1
-
-      isteps = 0
-
-! set default alpha_gas and alpha_aer, and phi_volatile
-      do iv = 1, naer_vol
-
-        do ibin = 1, nbin_a
-          phi_volatile(iv,ibin)     = 0.0
-          phi_nh4no3(ibin) = 0.0
-          phi_nh4cl(ibin)  = 0.0
-        enddo
-
-      enddo
-
-
-
-
-
-
-! compute aerosol phase state before starting integration
-      do ibin = 1, nbin_a
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-          call aerosol_phase_state(ibin)
-        endif
-      enddo
-
-
-
-! compute new gas-aerosol mass transfer coefficients
-      call aerosolmtc
-
-
-
-
-! begin integration over transport time-step
-!======================================================
-! calculate fluxes
-10    do 501 ibin = 1, nbin_a
-
-        mxfer_massbal(ibin) = mno
-
-        if(jphase(ibin) .eq. jsolid)then
-          call asceem_flux_dry(ibin)
-        elseif(jphase(ibin) .eq. jliquid)then
-          call asceem_flux_wet(ibin)
-        endif
-
-501   continue
-
-
-
-!-------------------------
-! check if all the bins have reached equilibrium
-      ieqblm = myes		! initalize to default (eqblm)
-
-      do ibin = 1, nbin_a
-
-        do iv = 1, naer_vol
-          if(flux(iv, ibin) .ne. 0.0)then
-            ieqblm = mno	! non-eqblm
-          endif
-        enddo
-
-      enddo
-
-
-      if(ieqblm .eq. myes)then
-      do 502 ibin = 1, nbin_a
-        if(jaerosolstate(ibin) .eq. no_aerosol)goto 502
-
-        do iv = 1, naer_vol
-          aer(iv,jtotal,ibin)=aer(iv,jsolid,ibin)+aer(iv,jliquid,ibin)
-        enddo
-
-        mxfer_massbal(ibin) = myes		! always yes in asceem
-        if(mxfer_massbal(ibin) .eq. myes)then
-          call conform_electrolytes(jtotal,ibin,xt) ! xfer_massbal + mdrh diagnosis
-        else
-          call form_electrolytes(jtotal,ibin,xt)	  ! for mdrh diagnosis
-        endif
-
-
-        if(jhyst_leg(ibin) .eq. jhyst_lo)then
-          call asteem_update_phase_eqblm(ibin)
-        else
-          call do_full_deliquescence(ibin)	! simply do liquid <-- total
-        endif
-
-        call monitor_massbalance_out(ibin, isteps)
-
-502   continue
-      endif
-!-------------------------
-
-
-
-
-! calculate maximum possible internal time-step
-      call asceem_calculate_dtmax(dtchem, dtmax)
-      t_new = t_old + dtmax	! update time
-      if(t_new .gt. t_out)then	! check if the new time step is too large
-        dtmax = t_out - t_old
-        t_new = t_out
-      endif
-
-
-
-
-      isteps = isteps + 1
-
-
-
-
-! do internal time-step integration--------------
-
-      do 40 ibin = 1, nbin_a
-      if(jaerosolstate(ibin) .eq. no_aerosol)goto 40
-
-        jp = jphase(ibin)
-
-        do 20 iv = 1, naer_vol
-
-          delta_aer = dtmax*flux(iv,ibin)
-
-          aer(iv,jp,ibin)=real(dble(aer(iv,jp,ibin)) + dble(delta_aer))
-          gas(iv)        =real( dble(gas(iv)) - dble(delta_aer) )
-
-          aer(iv,jp,ibin)=max(aer(iv,jp,ibin), 0.0)
-          gas(iv)        =max(gas(iv), 0.0)
-
-20      continue
-
-! degas excess nh3 (if present)
-        call form_electrolytes(jp,ibin,xt)
-
-! update jtotal
-        do iv = 1, naer_vol
-          aer(iv,jtotal,ibin)=aer(iv,jsolid,ibin)+aer(iv,jliquid,ibin)
-        enddo
-
-        if(mxfer_massbal(ibin) .eq. myes)then
-          call conform_electrolytes(jtotal,ibin,xt) ! xfer_massbal + mdrh diagnosis
-        else
-          call form_electrolytes(jtotal,ibin,xt)	  ! for mdrh diagnosis
-        endif
-
-40    continue
-! end internal time-step integration-------------
-
-
-      do 50 ibin = 1, nbin_a
-
-      if(jaerosolstate(ibin) .eq. no_aerosol)goto 50
-
-        if(jhyst_leg(ibin) .eq. jhyst_lo)then
-          call asteem_update_phase_eqblm(ibin)
-        else
-          call do_full_deliquescence(ibin)	! simply do liquid <-- total
-        endif
-
-50    continue
-
-
-
-! update time
-      t_old = t_new
-
-      if(t_new .lt. 0.9999*t_out) goto 10
-!================================================
-! end of integration over the transport time-step
-
-
-      nsteps_asceem = nsteps_asceem + isteps
-
-      avg_asceem_steps = float(nsteps_asceem)/float(jcall)
-
-      if(mod(jcall,1).eq.0)then
-        write(6,*)'avg asceem steps =',avg_asceem_steps
-      endif
-
-
-
-
-      return
-      end subroutine asceem
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asceem: computes max time step for gas-aerosol integration
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asceem_calculate_dtmax(dtchem, dtmax)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      real dtchem, dtmax
-! local variables
-      integer ibin, iv
-      real alpha, h_aer, h_gas, h_max,   &
-           h_gas_i(naer_vol),   &
-           h_aer_i_m(naer_vol, nbin_a),   &
-           h_aer_m(nbin_a)
-
-
-
-
-
-! set alpha_gas and alpha_aer
-      do ibin = 1, nbin_a
-        do iv = 1, naer_vol
-
-          alpha_gas(iv) = alpha_asteem
-
-          if(madapt_alpha .eq. mon)then
-            alpha_aer(iv,ibin) = max(abs(phi_volatile(iv,ibin)),   &
-                                     alpha_asteem)
-            alpha_aer(iv,ibin) = min(alpha_aer(iv,ibin), 10.0)
-
-          else
-            alpha_aer(iv,ibin) = alpha_asteem	! fixed alpha_aer
-
-          endif
-
-        enddo
-      enddo
-
-
-
-
-
-! gas-side
-! calculate h_gas_i and h_gas
-
-      h_gas = 2.e16
-      do 5 ibin = 1, nbin_a
-        do iv = 1, naer_vol
-
-          h_gas_i(iv) = 1.e16
-          if(flux(iv,ibin) .gt. 0.0)then
-            h_gas_i(iv) = alpha_gas(iv)/kg(iv,ibin)
-            h_gas = min(h_gas, h_gas_i(iv))
-          endif
-
-        enddo
-5     continue
-
-
-! aerosol-side
-! calculate h_aer_i_m, h_aer_m, h_aer
-      h_aer = 1.e16
-
-      do 20 ibin = 1, nbin_a
-        h_aer_m(ibin) = 4.e15		! initialize
-
-        if(jaerosolstate(ibin) .eq. no_aerosol) goto 20
-
-        call make_volatile_a(ibin)
-
-
-! solid
-      if(jphase(ibin) .eq. jsolid)then		! solid aerosol
-
-        do 10 iv = 1, naer_vol
-          h_aer_i_m(iv,ibin) = 2.e15		! initialize
-
-          if(flux(iv,ibin).lt.0.)then		! aer -> gas
-            alpha = min(alpha_aer(iv,ibin),0.5)
-            h_aer_i_m(iv,ibin) = -alpha*volatile_a(iv)/flux(iv,ibin) ! degas completely
-          endif
-
-          h_aer_m(ibin) = min(h_aer_m(ibin),h_aer_i_m(iv,ibin))
-          h_aer         = min(h_aer,        h_aer_i_m(iv,ibin))
-10      continue
-
-
-
-
-
-! liquid or mixed-phase
-      elseif(jphase(ibin) .eq. jliquid)then
-
-        do 11 iv = 1, naer_vol
-          h_aer_i_m(iv,ibin) = 2.e15		! initialize
-
-          if(flux(iv,ibin).gt.0. .and. 	   &  ! gas -> aer
-             electrolyte(jcaco3,jsolid,ibin) .eq. 0.)then
-
-            if(aer(iv,jliquid,ibin) .gt. 0.0)then
-            h_aer_i_m(iv,ibin)=alpha_aer(iv,ibin)*aer(iv,jliquid,ibin)/	   &  ! aer(i,jliquid) =< aer(i,jtotal)
-                                          flux(iv,ibin)
-            endif
-
-          elseif(flux(iv,ibin).lt.0. .and. volatile_a(iv).gt.0.0)then	! aer -> gas
-            alpha = min(alpha_aer(iv,ibin), 0.5)
-            h_aer_i_m(iv,ibin)=-alpha*volatile_a(iv)/flux(iv,ibin)
-          endif
-
-          h_aer_m(ibin) = min(h_aer_m(ibin),h_aer_i_m(iv,ibin))
-          h_aer         = min(h_aer,        h_aer_i_m(iv,ibin))
-11      continue
-
-      endif
-
-
-
-
-
-20    continue
-
-
-      h_max = min(h_aer, h_gas)
-
-      dtmax = min(dtchem, h_max)
-      h_max = dtmax
-
-
-      if(dtmax .le. 1.0e-10)then
-        write(6,*)' dtmax = ', dtmax
-      endif
-
-      return
-      end subroutine asceem_calculate_dtmax
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asceem: computes gas-aerosol fluxes over dry aerosols.
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asceem_flux_dry(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
       integer ibin
-! local variables
-      integer iv
-      real xt, xnh4, g_nh3_hno3, g_nh3_hcl,   &
-           a_nh4_no3, a_nh4_cl,   &
-           prod_nh4no3, prod_nh4cl,   &
-           volatile_cl, volatile_no3
+      real(kind=8) dumdum
+
+!      logical first
+!      save first
+!      data first/.true./
+      
+      integer, save :: iclm_debug, jclm_debug, kclm_debug, ncnt_debug
+      data iclm_debug /25/
+      data jclm_debug /1/
+      data kclm_debug /9/
+      data ncnt_debug /2/
 
 
-
-
-
-      call calculate_xt(ibin,jsolid,xt)
-
-! h2so4
-      flux(ih2so4_g,ibin)         = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      phi_volatile(ih2so4_g,ibin) = 1.0
-
-!-----------------------------------------------------------------
-! case 1: sulfate-rich domain
-
-      if(xt.lt.2.0 .and. xt.ge.0.)then	! excess sulfate (acidic)
-
-	call asceem_flux_dry_case1(ibin)
-
-        return
-      endif
-
-!-----------------------------------------------------------------
-! case 2:  caco3 > 0 absorb all acids (and indirectly degas co2)
-
-      if(electrolyte(jcaco3,jtotal,ibin) .gt. 0.0)then
-
-        call asceem_flux_dry_case2(ibin)
-
-        return
-      endif
-
-!-----------------------------------------------------------------
-! case 3: hno3 and hcl exchange may happen here
-
-      volatile_cl  = electrolyte(jnacl,jsolid,ibin) +   &
-                     electrolyte(jcacl2,jsolid,ibin)
-
-
-      if(volatile_cl .gt. 0.0 .and.   &
-         gas(ihno3_g).gt. 0.0 )then
-
-        call asceem_flux_dry_case3(ibin)
-
-        return
-      endif
-
-!-----------------------------------------------------------------
-! case 4: nh4no3 or nh4cl or both may be active
-
-      prod_nh4no3 = max( (gas(inh3_g)*gas(ihno3_g)-keq_sg(1)), 0.0) +   &
-                    epercent(jnh4no3,jsolid,ibin)
-      prod_nh4cl  = max( (gas(inh3_g)*gas(ihcl_g) -keq_sg(2)), 0.0) +   &
-                    epercent(jnh4cl,jsolid,ibin)
-
-      if(prod_nh4no3 .gt. 0.0 .or. prod_nh4cl .gt. 0.0)then
-        call asceem_flux_dry_case4(ibin)
-        return
-      endif
-
-!-----------------------------------------------------------------
-! case 5: condense h2so4 and degas hno3
-      volatile_no3 = epercent(jnano3,jsolid,ibin) +   &
-                     epercent(jcano3,jsolid,ibin)
-
-      if(volatile_no3 .gt. 0.0 .and.   &
-         gas(ih2so4_g).gt. 0.0 )then
-
-        call asceem_flux_dry_case5(ibin)
-
-        return
-      endif
-
-!-------------------------------------------------------------------
-! case 6: probably pure (nh4)2so4 particle.
-        flux(ih2so4_g,ibin) = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-        flux(ihno3_g,ibin)  = 0.0
-        flux(ihcl_g,ibin)   = 0.0
-        flux(inh3_g,ibin)   = min( kg(inh3_g,ibin)*gas(inh3_g),   &
-                                 2.*flux(ih2so4_g,ibin) )
-        return
-
-      end subroutine asceem_flux_dry
-
-!----------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asceem: subroutines for various flux_dry cases
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-!
-!
-! case 1: sulfate-rich domain
-!
-      subroutine asceem_flux_dry_case1(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-        sfc_a(ih2so4_g)= 0.0
-        sfc_a(ihno3_g) = gas(ihno3_g)
-        sfc_a(ihcl_g)  = gas(ihcl_g)
-        sfc_a(inh3_g)  = 0
-
-        df_gas(ih2so4_g,ibin) = gas(ih2so4_g)
-        df_gas(ihno3_g,ibin)  = 0.0
-        df_gas(ihcl_g,ibin)   = 0.0
-        df_gas(inh3_g,ibin)   = gas(inh3_g)
-
-        phi_volatile(ihno3_g,ibin) = 0.0
-        phi_volatile(ihcl_g,ibin)  = 0.0
-        phi_volatile(inh3_g,ibin)  = 1.0
-
-        flux(ih2so4_g,ibin)   = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-        flux(ihno3_g,ibin)    = 0.0
-        flux(ihcl_g,ibin)     = 0.0
-        flux(inh3_g,ibin)     = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      return
-      end subroutine asceem_flux_dry_case1
-
-
-
-
-
-
-! case 2:  caco3 > 0 absorb all acids (and indirectly degas co2)
-!
-      subroutine asceem_flux_dry_case2(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-      mxfer_massbal(ibin) = myes		! degas co2 via mass bal
-
-      sfc_a(ih2so4_g)= 0.0
-      sfc_a(ihno3_g) = 0.0
-      sfc_a(ihcl_g)  = 0.0
-      sfc_a(inh3_g)  = gas(inh3_g)
-
-      df_gas(ih2so4_g,ibin) = gas(ih2so4_g)
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g)
-      df_gas(inh3_g,ibin)   = 0.0
-
-      phi_volatile(ih2so4_g,ibin)= 1.0
-      phi_volatile(ihno3_g,ibin) = 1.0
-      phi_volatile(ihcl_g,ibin)  = 1.0
-      phi_volatile(inh3_g,ibin)  = 0.0
-
-      flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      flux(ihno3_g,ibin) = kg(ihno3_g,ibin)*gas(ihno3_g)
-      flux(ihcl_g,ibin)  = kg(ihcl_g,ibin)*gas(ihcl_g)
-      flux(inh3_g,ibin)  = 0.0
-
-
-      return
-      end subroutine asceem_flux_dry_case2
-
-
-
-
-
-
-
-
-
-
-! case 3: hno3 and hcl exchange may happen here
-!
-      subroutine asceem_flux_dry_case3(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-! just degas hcl from nacl or cacl2 by flux balance with 2 h2so4 and hno3
-      mxfer_massbal(ibin) = myes
-
-      flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      flux(ihno3_g,ibin) = kg(ihno3_g,ibin)*gas(ihno3_g)
-      flux(ihcl_g,ibin)  = 0.0 ! degas via mass bal
-      flux(inh3_g,ibin)  = 0.0
-
-
-      return
-      end subroutine asceem_flux_dry_case3
-
-
-
-
-
-
-! case 4: nh4no3 and/or nh4cl may be active
-      subroutine asceem_flux_dry_case4(ibin)
-
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer iactive_nh4no3, iactive_nh4cl, iactive
-      real gnh3_hno3, gnh3_hcl, pcnt_nh4no3, pcnt_nh4cl,   &
-           a, b, c, ratio_flux,   &
-           flux_nh3_max, flux_nh3_est,   &
-           flux_nh3_max_d, flux_nh3_est_d
-! function
-!     real quadratic
-
-
-!-------------------
-! set default values for flags
-      iactive_nh4no3 = 1
-      iactive_nh4cl  = 2
-
-!-------------------
-! compute diagnostic products and ratios
-      gnh3_hno3   = gas(inh3_g)*gas(ihno3_g)
-      gnh3_hcl    = gas(inh3_g)*gas(ihcl_g)
-
-      phi_nh4no3(ibin) = abs(keq_sg(1) - gnh3_hno3)/   &
-                         max(keq_sg(1), gnh3_hno3)
-      phi_nh4cl(ibin)  = abs(keq_sg(2) - gnh3_hcl)/   &
-                         max(keq_sg(2), gnh3_hcl)
-
-      pcnt_nh4no3 = epercent(jnh4no3,jsolid,ibin)
-      pcnt_nh4cl  = epercent(jnh4cl, jsolid,ibin)
-
-
-!-------------------
-! now determine if nh4no3 and/or nh4cl are active or significant
-
-! nh4no3
-      if( phi_nh4no3(ibin) .lt. 0.02 )then
-        iactive_nh4no3 = 0
-      elseif(gnh3_hno3.lt.keq_sg(1) .and. pcnt_nh4no3.lt.1.0)then
-        iactive_nh4no3 = 0
-        call degas_solid_nh4no3(ibin)
-      endif
-
-! nh4cl
-      if( phi_nh4cl(ibin) .lt. 0.02 )then
-        iactive_nh4cl = 0
-      elseif(gnh3_hcl.lt.keq_sg(2) .and. pcnt_nh4cl.lt.1.0)then
-        iactive_nh4cl = 0
-        call degas_solid_nh4cl(ibin)
-      endif
-
-
-      iactive = iactive_nh4no3 + iactive_nh4cl
-
-! check the outcome
-      if(iactive .eq. 0)then
-        flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      endif
-
-      goto (1,2,3),iactive
-
-!---------------------------------
-! only nh4no3 is active
-1     flux(ih2so4_g,ibin) = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      flux(ihcl_g,ibin)   = 0.0
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)   &
-          + 2.0*flux(ih2so4_g,ibin)
-      c = -(kg(ihno3_g,ibin)*keq_sg(1))
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = keq_sg(1)/sfc_a(inh3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-
-      df_gas(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)  = 0.0
-      df_gas(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)=     df_gas(ihno3_g,ibin)/   &
-                                max(sfc_a(ihno3_g), 1.e-10)
-      phi_volatile(ihcl_g,ibin) = 0.0
-      phi_volatile(inh3_g,ibin) =     df_gas(inh3_g,ibin)/   &
-                                max(sfc_a(inh3_g), 1.e-10)
-
-
-      if(gnh3_hno3      .gt. keq_sg(1) .and.   &
-         sfc_a(ihno3_g) .gt. gas(ihno3_g) )then  ! degas hno3 via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihno3_g,ibin)= 0.0
-        df_gas(ihno3_g,ibin) = 0.0
-        flux(ihno3_g,ibin)   = 0.0
-      else
-        flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      endif
-
-
-      flux_nh3_est = 2.*flux(ih2so4_g,ibin) +   &
-                        flux(ihno3_g,ibin)  +   &
-                        flux(ihcl_g,ibin)
-
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        phi_volatile(inh3_g,ibin) = df_gas(inh3_g,ibin)/	   &  ! recompute phi_volatile(inh3_g,ibin)
-                                    max(sfc_a(inh3_g), 1.e-10)
-
-      else ! reduce hno3 flux as necessary
-
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihno3_g,ibin) = max(flux_nh3_max-flux(ih2so4_g,ibin),0.0)
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihno3_g)     = gas(ihno3_g) -  			   &  ! recompute sfc_a(ihno3_g)
-                             flux(ihno3_g,ibin)/kg(ihno3_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-
-        phi_volatile(inh3_g,ibin)  = 10.0
-        phi_volatile(ihno3_g,ibin) = df_gas(ihno3_g,ibin)/	   &  ! recompute phi_volatile(ihno3_g,ibin)
-                                     max(sfc_a(ihno3_g), 1.e-10)
-      endif
-
-      return
-
-!-----------------
-! only nh4cl is active
-2     flux(ih2so4_g,ibin) = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      flux(ihno3_g,ibin)  = 0.0
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)   &
-          + 2.0*flux(ih2so4_g,ibin)
-      c = -(kg(ihcl_g,ibin)*keq_sg(2))
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihcl_g ) = keq_sg(2)/sfc_a(inh3_g)
-      sfc_a(ihno3_g) = gas(ihno3_g)
-
-
-      df_gas(ihno3_g,ibin) = 0.0
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-
-
-      phi_volatile(ihcl_g,ibin) =     df_gas(ihcl_g,ibin)/   &
-                                max(sfc_a(ihcl_g), 1.e-10)
-      phi_volatile(ihno3_g,ibin)= 0.0
-      phi_volatile(inh3_g,ibin) =     df_gas(inh3_g,ibin)/   &
-                                max(sfc_a(inh3_g), 1.e-10)
-
-
-      if(gnh3_hcl      .gt. keq_sg(2) .and.   &
-         sfc_a(ihcl_g) .gt. gas(ihcl_g) )then  ! degas hcl via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihcl_g,ibin) = 0.0
-        df_gas(ihcl_g,ibin)  = 0.0
-        flux(ihcl_g,ibin)    = 0.0
-      else
-        flux(ihcl_g,ibin)    = kg(ihcl_g,ibin)*df_gas(ihcl_g,ibin)
-      endif
-
-      flux_nh3_est = 2.*flux(ih2so4_g,ibin) +   &
-                        flux(ihno3_g,ibin)  +   &
-                        flux(ihcl_g,ibin)
-
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        phi_volatile(inh3_g,ibin) = df_gas(inh3_g,ibin)/	   &  ! recompute phi_volatile(inh3_g,ibin)
-                                    max(sfc_a(inh3_g), 1.e-10)
-
-      else ! reduce hcl flux as necessary
-
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihcl_g,ibin)  = max(flux_nh3_max-flux(ih2so4_g,ibin),0.0)
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihcl_g)      = gas(ihcl_g)  -  			   &  ! recompute sfc_a(ihcl_g)
-                             flux(ihcl_g,ibin)/kg(ihcl_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-
-        phi_volatile(inh3_g,ibin)  = 10.0
-        phi_volatile(ihcl_g,ibin)  = df_gas(ihcl_g,ibin)/	   &  ! recompute phi_volatile(ihcl_g,ibin)
-                                     max(sfc_a(ihcl_g), 1.e-10)
-
-      endif
-
-      return
-
-!-----------------
-! both nh4no3 and nh4cl are active
-3     continue
-
-      flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)   &
-          + 2.0*flux(ih2so4_g,ibin)
-      c = -( kg(ihno3_g,ibin)*keq_sg(1) + kg(ihcl_g,ibin)*keq_sg(2) )
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = keq_sg(1)/sfc_a(inh3_g)
-      sfc_a(ihcl_g)  = keq_sg(2)/sfc_a(inh3_g)
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g)  - sfc_a(ihcl_g)
-      df_gas(inh3_g,ibin)   = gas(inh3_g)  - sfc_a(inh3_g)
-
-      if(gnh3_hno3    .gt. keq_sg(1) .and.   &
-         sfc_a(ihno3_g) .gt. gas(ihno3_g) )then  ! degas hno3 via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihno3_g,ibin)= 0.0
-        df_gas(ihno3_g,ibin) = 0.0
-        flux(ihno3_g,ibin)   = 0.0
-      else
-        flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      endif
-
-
-      if(gnh3_hcl    .gt. keq_sg(2) .and.   &
-         sfc_a(ihcl_g) .gt. gas(ihcl_g) )then  ! degas hcl via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihcl_g,ibin) = 0.0
-        df_gas(ihcl_g,ibin)  = 0.0
-        flux(ihcl_g,ibin)    = 0.0
-      else
-        flux(ihcl_g,ibin)    = kg(ihcl_g,ibin)*df_gas(ihcl_g,ibin)
-      endif
-
-
-      flux_nh3_est = 2.*flux(ih2so4_g,ibin) +   &
-                        flux(ihno3_g,ibin)  +   &
-                        flux(ihcl_g,ibin)
-
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        phi_volatile(inh3_g,ibin) = df_gas(inh3_g,ibin)/	   &  ! recompute phi_volatile(inh3_g,ibin)
-                                    max(sfc_a(inh3_g), 1.e-10)
-
-      else			! reduce hno3 and hcl fluxes as necessary so that nh3 flux = flux_nh3_max
-
-        flux_nh3_est_d = max(flux_nh3_est-flux(ih2so4_g,ibin), 0.0)
-        flux_nh3_max_d = max(flux_nh3_max-flux(ih2so4_g,ibin), 0.0)
-
-        if(flux_nh3_max_d .eq. 0.0)then
-          ratio_flux = 0.0
-        else
-          ratio_flux = flux_nh3_max_d/flux_nh3_est_d
-        endif
-
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihno3_g,ibin) = flux(ihno3_g,ibin)*ratio_flux
-        flux(ihcl_g, ibin) = flux(ihcl_g,ibin) *ratio_flux
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihno3_g)     = gas(ihno3_g) -  			   &  ! recompute sfc_a(ihno3_g)
-                             flux(ihno3_g,ibin)/kg(ihno3_g,ibin)
-        sfc_a(ihcl_g)      = gas(ihcl_g)  -  			   &  ! recompute sfc_a(ihcl_g)
-                             flux(ihcl_g,ibin)/kg(ihcl_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-        df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-
-        phi_volatile(inh3_g,ibin)  = 10.0
-        phi_volatile(ihno3_g,ibin) = df_gas(ihno3_g,ibin)/	   &  ! recompute phi_volatile(ihno3_g,ibin)
-                                     max(sfc_a(ihno3_g), 1.e-10)
-        phi_volatile(ihcl_g,ibin)  = df_gas(ihcl_g,ibin)/	   &  ! recompute phi_volatile(ihcl_g,ibin)
-                                     max(sfc_a(ihcl_g), 1.e-10)
-
-      endif
-
-
-
-      return
-      end subroutine asceem_flux_dry_case4
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      subroutine asceem_flux_dry_case5(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-! just degas hno3 from nano3 or cano3 by flux balance with h2so4
-      mxfer_massbal(ibin) = myes
-
-      flux(ih2so4_g,ibin) = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      flux(ihno3_g,ibin)  = 0.0
-      flux(ihcl_g,ibin)   = 0.0
-      flux(inh3_g,ibin)   = 0.0
-
-
-      return
-      end subroutine asceem_flux_dry_case5
-
-!----------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asceem: computes gas-aerosol fluxes over wet aerosols
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asceem_flux_wet(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer iv, iadjust, iadjust_intermed, icontinue_case4
-      real xt, xnh4, g_nh3_hno3, g_nh3_hcl,   &
-           a_nh4_no3, a_nh4_cl, a_no3, a_cl,   &
-           prod_nh4no3, prod_nh4cl
-
-
-
-!c      call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)
-!c      call degas_acids(jliquid,ibin,xt)
-      call ions_to_electrolytes(jliquid,ibin,xt)  	! for water content calculation
-      call compute_activities(ibin)
-
-      if(water_a(ibin) .eq. 0.0)then
-	write(6,*)'water is zero in liquid phase'
-	write(6,*)'stopping in asceem_flux_wet'
-!       stop
-        call peg_error_fatal( lunerr_aer,   &
-            'stopping in asceem_flux_wet' )
-      endif
-
-      call calculate_xt(ibin,jliquid,xt)
-
-! calculate xnh4
-      if(aer(iso4_a,jliquid,ibin).gt.0.0)then
-        xnh4 = aer(inh4_a,jliquid,ibin)/aer(iso4_a,jliquid,ibin)
-      else
-        xnh4 = -1.0
-      endif
-
-
-! h2so4
-      flux(ih2so4_g,ibin)    = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      df_gas(ih2so4_g,ibin)  = gas(ih2so4_g)
-      phi_volatile(ih2so4_g,ibin) = 1.0
-
-
-!-------------------------------------------------------------------
-! case 1: sulfate-rich domain
-
-      if(xt.lt.2.0 .and. xt.ge.0.)then
-        call asceem_flux_wet_case1(ibin)
-        return
-      endif
-
-!-------------------------------------------------------------------
-! case 2: caco3 > 0 absorb acids (and indirectly degas co2)
-
-      if(electrolyte(jcaco3,jsolid,ibin) .gt. 0.0)then
-        call asceem_flux_wet_case2(ibin)
-        return
-      endif
-
-!-------------------------------------------------------------------
-! do some small adjustments before deciding case 3
-!
-      call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)
-      iadjust = mno		! default
-      iadjust_intermed = mno	! default
-
-! nh4no3
-      g_nh3_hno3= gas(inh3_g)*gas(ihno3_g)
-      a_nh4_no3 = epercent(jnh4no3,jliquid,ibin)
-
-      if(g_nh3_hno3 .gt. 0.0 .and. a_nh4_no3 .lt. 0.1)then
-        call absorb_tiny_nh4no3(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      elseif(g_nh3_hno3 .eq. 0.0 .and. a_nh4_no3 .gt. 0.0)then
-        call degas_tiny_nh4no3(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-      if(iadjust_intermed .eq. myes)then
-        call ions_to_electrolytes(jliquid,ibin,xt)  	! update after adjustments
-        iadjust_intermed = mno	! reset
-      endif
-
-! nh4cl
-      g_nh3_hcl= gas(inh3_g)*gas(ihcl_g)
-      a_nh4_cl = epercent(jnh4cl,jliquid,ibin)
-
-      if(g_nh3_hcl .gt. 0.0 .and. a_nh4_cl .lt. 0.1)then
-        call absorb_tiny_nh4cl(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      elseif(g_nh3_hcl .eq. 0.0 .and. a_nh4_cl .gt. 0.0)then
-        call degas_tiny_nh4cl(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-      if(iadjust_intermed .eq. myes)then
-        call ions_to_electrolytes(jliquid,ibin,xt)  	! update after adjustments
-        iadjust_intermed = mno	! reset
-      endif
-
-! hno3
-      a_no3 = aer_percent(ino3_a,jliquid,ibin)
-      if(gas(ihno3_g).gt.0. .and. a_no3 .lt. 0.1 .and.   &
-         aer(icl_a,jliquid,ibin) .gt. 0.0)then
-        call absorb_tiny_hno3(ibin)	! and degas tiny hcl
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-
-! hcl
-      a_cl = aer_percent(icl_a,jliquid,ibin)
-      if(gas(ihcl_g).gt.0. .and. a_cl .lt. 0.1 .and.   &
-         aer(ino3_a,jliquid,ibin) .gt. 0.0)then
-        call absorb_tiny_hcl(ibin)	! and degas tiny hno3
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-
-      if(iadjust_intermed .eq. myes)then
-        call ions_to_electrolytes(jliquid,ibin,xt)  	! update after adjustments
-      endif
-
-      if(iadjust .eq. myes)then
-        call compute_activities(ibin)			! update after adjustments
-      endif
-
-
-! all adjustments done...
-
-!--------
-      prod_nh4no3 = gas(inh3_g)*gas(ihno3_g) + activity(jnh4no3,ibin)
-      prod_nh4cl  = gas(inh3_g)*gas(ihcl_g)  + activity(jnh4cl,ibin)
-!
-! case 3: nh4no3 and/or nh4cl maybe active
-      if(prod_nh4no3 .gt. 0.0 .or. prod_nh4cl .gt. 0.0)then
-        call asceem_flux_wet_case3(ibin, icontinue_case4)
-        if(icontinue_case4 .eq. mno)return
-      endif
-
-!-------------------------------------------------------------------
-! case 4: nh3 & nh4 ~ 0 (in gas and aerosol). hno3 and hcl exchange may happen here
-
-      if(ma(ja_no3,ibin)*ma(ja_cl,ibin) .gt. 0.0)then  ! nh3 & nh4 ~ 0
-        call asceem_flux_wet_case4(ibin)
-        return
-      endif
-
-!-------------------------------------------------------------------
-! case 5: default (may degas nh3)
-
-        call asceem_flux_wet_case5(ibin)
-        return
-
-      end subroutine asceem_flux_wet
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asceem: subroutines for various flux_wet cases
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-!
-!
-! case 1: sulfate-rich domain
-!
-      subroutine asceem_flux_wet_case1(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-      if(aer(inh4_a,jliquid,ibin) .eq. 0. .and. gas(inh3_g) .gt. 0.)then
-        call absorb_tiny_nh3(ibin)
-      endif
-
-      call equilibrate_acids(ibin) 	  	! updates aer(icl_a, ino3_a, jtotal), activity(jhcl,jhno3)
-
-      sfc_a(ihno3_g) = gas(ihno3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-      sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                      (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-      df_gas(ihno3_g,ibin)  = 0.0
-      df_gas(ihcl_g,ibin)   = 0.0
-      df_gas(inh3_g,ibin)   = gas(inh3_g) - sfc_a(inh3_g)
-
-      phi_volatile(ihno3_g,ibin) = 0.0
-      phi_volatile(ihcl_g,ibin)  = 0.0
-      phi_volatile(inh3_g,ibin)  =   df_gas(inh3_g,ibin)/   &
-                                 max(sfc_a(inh3_g), 1.e-10)
-
-      flux(ihno3_g,ibin)    = 0.0
-      flux(ihcl_g,ibin)     = 0.0
-
-! check for equilibrium
-      if(phi_volatile(inh3_g,ibin) .lt. 0.01 .and.   &
-         flux(ih2so4_g,ibin)  .eq. 0.0)then
-        flux(inh3_g,ibin)   = 0.0
-      else
-        flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-      endif
-
-
-      return
-      end subroutine asceem_flux_wet_case1
-
-
-
-
-
-
-
-
-
-
-
-! case 2: caco3 > 0
-!
-      subroutine asceem_flux_wet_case2(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, iv
-
-
-      mxfer_massbal(ibin) = myes
-
-      sfc_a(ih2so4_g)= 0.0
-      sfc_a(ihno3_g) = 0.0
-      sfc_a(ihcl_g)  = 0.0
-      sfc_a(inh3_g)  = gas(inh3_g)
-
-      df_gas(ih2so4_g,ibin) = gas(ih2so4_g)
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g)
-      df_gas(inh3_g,ibin)   = 0.0
-
-      phi_volatile(ih2so4_g,ibin)= 1.0
-      phi_volatile(ihno3_g,ibin) = 1.0
-      phi_volatile(ihcl_g,ibin)  = 1.0
-      phi_volatile(inh3_g,ibin)  = 0.0
-
-      do iv = 1, naer_vol
-        flux(iv,ibin)     = kg(iv,ibin)*df_gas(iv,ibin)
-      enddo
-
-      mc(jc_h,ibin) = sqrt(keq_ll(3))
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-      end subroutine asceem_flux_wet_case2
-
-
-
-
-
-
-
-
-
-
-
-
-
-! case 3: both mh4no3 and/or nh4cl may be active
-      subroutine asceem_flux_wet_case3(ibin, icontinue_case4)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, icontinue_case4
-! local variables
-      integer iv, iactive_nh4no3, iactive_nh4cl, iactive
-      real gnh3_hno3, gnh3_hcl, beta_nh4no3, beta_nh4cl,   &
-           keq_nh4no3, keq_nh4cl, pcnt_nh4no3, pcnt_nh4cl,   &
-           ratio_flux,a, b, c, hplus1, hplus2,   &
-           flux_nh3_max, flux_nh3_est,   &
-           flux_nh3_max_d, flux_nh3_est_d,   &
-           xt
-! function
-!     real quadratic
-
-
-
-!-------------------
-! set default values for flags
-      iactive_nh4no3 = 1
-      iactive_nh4cl  = 2
-      icontinue_case4 = mno	! default
-
-!-------------------
-! compute diagnostic products and ratios
-      gnh3_hno3   = gas(inh3_g)*gas(ihno3_g)
-      gnh3_hcl    = gas(inh3_g)*gas(ihcl_g)
-
-      keq_nh4no3  = activity(jnh4no3,ibin)*kp_nh4no3	! = [nh3]s * [hno3]s
-      keq_nh4cl   = activity(jnh4cl,ibin)*kp_nh4cl	! = [nh3]s * [hcl]s
-
-      beta_nh4no3 = gas(inh3_g)*gas(ihno3_g)/keq_nh4no3_0
-      beta_nh4cl  = gas(inh3_g)*gas(ihcl_g)/keq_nh4cl_0
-
-      if(gnh3_hno3 .gt. 0. .or. keq_nh4no3 .gt. 0.)then
-        phi_nh4no3(ibin) =    (gnh3_hno3 - keq_nh4no3)/   &
-                           max(gnh3_hno3, keq_nh4no3)
-      else
-        phi_nh4no3(ibin) = 0.0
-      endif
-
-      if(gnh3_hcl .gt. 0. .or. keq_nh4cl .gt. 0.)then
-        phi_nh4cl(ibin)  =    (gnh3_hcl - keq_nh4cl)/   &
-                           max(gnh3_hcl, keq_nh4cl)
-      else
-        phi_nh4cl(ibin)  = 0.0
-      endif
-
-
-!
-! the following checks are order sensitive
-!-------------------
-! first check if the bin has reached equilibrium
-      if(abs(phi_nh4no3(ibin)).lt.0.02 .and.   &
-         abs(phi_nh4cl(ibin)) .lt.0.02)then
-        iactive_nh4no3 = 0
-        iactive_nh4cl  = 0
-        iactive = 0
-        flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return	! yes, the bin has reached equilibrium. quit
-      endif
-
-
-!------------------
-! now check if nh4no3 and/or nh4cl want to evaporate completely
-      call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)
-      pcnt_nh4no3 = epercent(jnh4no3,jliquid,ibin)
-      pcnt_nh4cl  = epercent(jnh4cl, jliquid,ibin)
-
-      if( (gnh3_hno3.le.keq_nh4no3 .and. pcnt_nh4no3.lt.1.0) .and.   &
-          (gnh3_hcl .le.keq_nh4cl  .and. pcnt_nh4cl .lt.1.0) )then
-        if(electrolyte(jnh4so4,jliquid,ibin) .gt. 0.0)then
-          call evaporate_nh4no3_nh4cl(ibin)
-          return
-        else
-          icontinue_case4 = myes ! its a nacl/nano3/cacl2/cano3 particle with negligible nh3, nh4
-          return
-        endif
-      endif
-
-!--------------------
-! now determine if nh4no3 and/or nh4cl are active or significant
-
-! nh4no3
-      if( (gnh3_hno3.gt.keq_nh4no3 .and. beta_nh4no3.lt.0.03) .or.   &
-          (abs(phi_nh4no3(ibin)) .lt. 0.02) )then
-        iactive_nh4no3 = 0
-      elseif(gnh3_hno3.lt.keq_nh4no3 .and. pcnt_nh4no3.lt.1.0)then
-        iactive_nh4no3 = 0
-        if(pcnt_nh4no3 .gt. 0.5)call evaporate_half_nh4no3(ibin)
-      endif
-
-! nh4cl
-      if( (gnh3_hcl.gt.keq_nh4cl .and. beta_nh4cl.lt.0.03) .or.   &
-          (abs(phi_nh4cl(ibin)) .lt. 0.02) )then
-        iactive_nh4cl = 0
-      elseif(gnh3_hcl.lt.keq_nh4cl .and. pcnt_nh4cl.lt.1.0)then
-        iactive_nh4cl = 0
-        if(pcnt_nh4cl .gt. 0.5)call evaporate_half_nh4cl(ibin)
-      endif
-
-      iactive = iactive_nh4no3 + iactive_nh4cl
-
-! check the outcome
-      if(iactive                          .eq. 0    .and.   &
-         phi_nh4no3(ibin)                 .gt. 0.0  .and.   &
-         phi_nh4cl(ibin)                  .gt. 0.0 )then
-        flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      elseif(iactive                      .eq. 0    .and.   &
-         abs(phi_nh4no3(ibin))            .gt. 0.02 .and.   &
-         abs(phi_nh4cl(ibin))             .gt. 0.02 .and.   &
-         aer_percent(inh4_a,jliquid,ibin) .lt. 1.0  .and.   &
-         (aer_percent(icl_a,jliquid,ibin) .gt. 1.0  .or.   &
-          aer_percent(ino3_a,jliquid,ibin).gt. 1.0) )then
-        icontinue_case4 = myes		! nh3 and nh4 seems to be insignificant
-        return				! therefore continue with case 4
-      elseif(iactive .eq. 0)then
-        flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      endif
-
-      goto (1,2,3),iactive
-
-!---------------------------------
-! only nh4no3 is active
-1     flux(ihcl_g,ibin)    = 0.0
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)   &
-          + 2.0*flux(ih2so4_g,ibin)
-      c = -(kg(ihno3_g,ibin)*keq_nh4no3)
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = keq_nh4no3/sfc_a(inh3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-
-
-      df_gas(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)  = 0.0
-      df_gas(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)=   df_gas(ihno3_g,ibin)/   &
-                                max(sfc_a(ihno3_g), 1.e-10)
-      phi_volatile(ihcl_g,ibin) = 0.0
-      phi_volatile(inh3_g,ibin) =   df_gas(inh3_g,ibin)/   &
-                                max(sfc_a(inh3_g), 1.e-10)
-
-
-      if(gnh3_hno3      .gt. keq_nh4no3 .and.   &
-         sfc_a(ihno3_g) .gt. gas(ihno3_g) )then  ! degas hno3 via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihno3_g,ibin)= 0.0
-        df_gas(ihno3_g,ibin) = 0.0
-        flux(ihno3_g,ibin)   = 0.0
-      else
-        flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      endif
-
-
-      flux_nh3_est = 2.*flux(ih2so4_g,ibin) +   &
-                        flux(ihno3_g,ibin)  +   &
-                        flux(ihcl_g,ibin)
-
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        phi_volatile(inh3_g,ibin) = df_gas(inh3_g,ibin)/	   &  ! recompute phi_volatile(inh3_g,ibin)
-                                    max(sfc_a(inh3_g), 1.e-10)
-
-      else ! reduce hno3 flux as necessary
-
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihno3_g,ibin) = max(flux_nh3_max-flux(ih2so4_g,ibin),0.0)
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihno3_g)     = gas(ihno3_g) -  			   &  ! recompute sfc_a(ihno3_g)
-                             flux(ihno3_g,ibin)/kg(ihno3_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-
-        phi_volatile(inh3_g,ibin)  = 10.0
-        phi_volatile(ihno3_g,ibin) = df_gas(ihno3_g,ibin)/	   &  ! recompute phi_volatile(ihno3_g,ibin)
-                                     max(sfc_a(ihno3_g), 1.e-10)
-      endif
-
-
-      mc(jc_h,ibin) = keq_gl(3)*sfc_a(ihno3_g)/   &
-                     (gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-
-!-----------------
-! only nh4cl is active
-2     flux(ihno3_g,ibin)  = 0.0
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)
-      c = -(kg(ihcl_g,ibin)*keq_nh4cl)
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihcl_g)  = keq_nh4cl /sfc_a(inh3_g)
-      sfc_a(ihno3_g) = gas(ihno3_g)
-
-
-      df_gas(ihno3_g,ibin) = 0.0
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)= 0.0
-      phi_volatile(ihcl_g,ibin) =   df_gas(ihcl_g,ibin)/   &
-                                max(sfc_a(ihcl_g), 1.e-10)
-      phi_volatile(inh3_g,ibin) =   df_gas(inh3_g,ibin)/   &
-                                max(sfc_a(inh3_g), 1.e-10)
-
-
-      if(gnh3_hcl    .gt. keq_nh4cl .and.   &
-         sfc_a(ihcl_g) .gt. gas(ihcl_g) )then  ! degas hcl via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihcl_g,ibin) = 0.0
-        df_gas(ihcl_g,ibin)  = 0.0
-        flux(ihcl_g,ibin)    = 0.0
-      else
-        flux(ihcl_g,ibin)    = kg(ihcl_g,ibin)*df_gas(ihcl_g,ibin)
-      endif
-
-      flux_nh3_est = 2.*flux(ih2so4_g,ibin) +   &
-                        flux(ihno3_g,ibin)  +   &
-                        flux(ihcl_g,ibin)
-
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        phi_volatile(inh3_g,ibin) = df_gas(inh3_g,ibin)/	   &  ! recompute phi_volatile(inh3_g,ibin)
-                                    max(sfc_a(inh3_g), 1.e-10)
-
-      else			! reduce hcl flux as necessary
-
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihcl_g,ibin)  = max(flux_nh3_max-flux(ih2so4_g,ibin),0.0)
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihcl_g)      = gas(ihcl_g)  -  			   &  ! recompute sfc_a(ihcl_g)
-                             flux(ihcl_g,ibin)/kg(ihcl_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-
-        phi_volatile(inh3_g,ibin)  = 10.0
-        phi_volatile(ihcl_g,ibin)  = df_gas(ihcl_g,ibin)/	   &  ! recompute phi_volatile(ihcl_g,ibin)
-                                     max(sfc_a(ihcl_g), 1.e-10)
-
-      endif
-
-
-      mc(jc_h,ibin) = keq_gl(4)*sfc_a(ihcl_g)/   &
-                     (gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-
-!-----------------
-! both nh4no3 and nh4cl are active
-3     continue
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)   &
-          + 2.0*flux(ih2so4_g,ibin)
-      c = -( kg(ihno3_g,ibin)*keq_nh4no3 + kg(ihcl_g,ibin)*keq_nh4cl )
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = keq_nh4no3/sfc_a(inh3_g)
-      sfc_a(ihcl_g)  = keq_nh4cl/sfc_a(inh3_g)
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g)- sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g)  - sfc_a(ihcl_g)
-      df_gas(inh3_g,ibin)   = gas(inh3_g)  - sfc_a(inh3_g)
-
-
-      if(gnh3_hno3      .gt. keq_nh4no3 .and.   &
-         sfc_a(ihno3_g) .gt. gas(ihno3_g) )then  ! degas hno3 via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihno3_g,ibin)= 0.0
-        df_gas(ihno3_g,ibin) = 0.0
-        flux(ihno3_g,ibin)   = 0.0
-        hplus1 = sqrt(keq_ll(3))
-      else
-        flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-        hplus1 = keq_gl(3)*sfc_a(ihno3_g)/   &
-                 (gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
-      endif
-
-
-      if(gnh3_hcl      .gt. keq_nh4cl .and.   &
-         sfc_a(ihcl_g) .gt. gas(ihcl_g) )then  ! degas hcl via mass bal
-        mxfer_massbal(ibin) = myes
-        phi_volatile(ihcl_g,ibin) = 0.0
-        df_gas(ihcl_g,ibin)  = 0.0
-        flux(ihcl_g,ibin)    = 0.0
-        hplus2 = sqrt(keq_ll(3))
-      else
-        flux(ihcl_g,ibin)    = kg(ihcl_g,ibin)*df_gas(ihcl_g,ibin)
-        hplus2 = keq_gl(4)*sfc_a(ihcl_g)/   &
-                 (gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
-      endif
-
-
-
-      flux_nh3_est = 2.*flux(ih2so4_g,ibin) +   &
-                        flux(ihno3_g,ibin)  +   &
-                        flux(ihcl_g,ibin)
-
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        phi_volatile(inh3_g,ibin) = df_gas(inh3_g,ibin)/	   &  ! recompute phi_volatile(inh3_g,ibin)
-                                    max(sfc_a(inh3_g), 1.e-10)
-
-      else			! reduce hno3 and hcl fluxes as necessary so that nh3 flux = flux_nh3_max
-
-        flux_nh3_est_d = max(flux_nh3_est-flux(ih2so4_g,ibin), 0.0)
-        flux_nh3_max_d = max(flux_nh3_max-flux(ih2so4_g,ibin), 0.0)
-
-        if(flux_nh3_max_d .eq. 0.0)then
-          ratio_flux = 0.0
-        else
-          ratio_flux = flux_nh3_max_d/flux_nh3_est_d
-        endif
-
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihno3_g,ibin) = flux(ihno3_g,ibin)*ratio_flux
-        flux(ihcl_g, ibin) = flux(ihcl_g,ibin) *ratio_flux
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihno3_g)     = gas(ihno3_g) -  			   &  ! recompute sfc_a(ihno3_g)
-                             flux(ihno3_g,ibin)/kg(ihno3_g,ibin)
-        sfc_a(ihcl_g)      = gas(ihcl_g)  -  			   &  ! recompute sfc_a(ihcl_g)
-                             flux(ihcl_g,ibin)/kg(ihcl_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-        df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-
-        phi_volatile(inh3_g,ibin)  = 10.0
-        phi_volatile(ihno3_g,ibin) = df_gas(ihno3_g,ibin)/	   &  ! recompute phi_volatile(ihno3_g,ibin)
-                                     max(sfc_a(ihno3_g), 1.e-10)
-        phi_volatile(ihcl_g,ibin)  = df_gas(ihcl_g,ibin)/	   &  ! recompute phi_volatile(ihcl_g,ibin)
-                                     max(sfc_a(ihcl_g), 1.e-10)
-
-      endif
-
-
-      mc(jc_h,ibin) = max(hplus1, hplus2)
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-
-      return
-      end subroutine asceem_flux_wet_case3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-! case 4: nh3 = 0 (in gas and aerosol)	! may have trouble
-!
-      subroutine asceem_flux_wet_case4(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real gas_eqb_ratio, gas_act_ratio, phi_ratio
-
-
-
-! now diagnose the situation
-
-      gas_eqb_ratio = (keq_gl(4)*ma(ja_no3,ibin)*gam(jhno3,ibin)**2)/     &  ! ce,hno3/ce,hcl
-                      (keq_gl(3)*ma(ja_cl ,ibin)*gam(jhcl,ibin)**2)
-
-      gas_act_ratio = gas(ihno3_g)/gas(ihcl_g)
-
-      phi_ratio = abs(gas_eqb_ratio - gas_act_ratio)/   &
-                  max(gas_eqb_ratio , gas_act_ratio)
-
-
-! check if equilibrium reached...
-      if(phi_ratio .lt. 0.01)then
-          flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-          flux(ihno3_g,ibin) = 0.0
-          flux(ihcl_g,ibin)  = 0.0
-          flux(inh3_g,ibin)  = 0.0
-          return
-      endif
-
-
-! compute equilibrium surface concentrations
-      flux(ih2so4_g,ibin)= kg(ih2so4_g,ibin)*gas(ih2so4_g)
-
-      sfc_a(ihcl_g) = (2.*flux(ih2so4_g,ibin)      +   &
-                      kg(ihno3_g,ibin)*gas(ihno3_g) +   &
-                      kg(ihcl_g,ibin) *gas(ihcl_g))/   &
-                     (kg(ihcl_g,ibin)+gas_eqb_ratio*kg(ihno3_g,ibin))
-
-      sfc_a(ihno3_g) = gas_eqb_ratio*sfc_a(ihcl_g)
-
-      df_gas(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-
-      phi_volatile(ihno3_g,ibin) =   df_gas(ihno3_g,ibin)/   &
-                                 max(sfc_a(ihno3_g), 1.e-10)
-      phi_volatile(ihcl_g,ibin)  =   df_gas(ihcl_g,ibin)/   &
-                                 max(sfc_a(ihcl_g), 1.e-10)
-
-
-      flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      flux(ihcl_g,ibin)    = kg(ihcl_g,ibin) *df_gas(ihcl_g, ibin)
-      flux(inh3_g,ibin)    = 0.0
-
-
-
-! check if degassing species is less than 1% of the total particle moles
-      if(flux(ihcl_g,ibin) .lt. 0.0 .and.   &
-         aer_percent(icl_a,jliquid,ibin) .lt. 1.0)then
-          flux(ihcl_g,ibin)  = 0.0
-          flux(ihno3_g,ibin) = -2.0*flux(ih2so4_g,ibin)
-      endif
-
-      if(flux(ihno3_g,ibin) .lt. 0.0 .and.   &
-         aer_percent(ino3_a,jliquid,ibin) .lt. 1.0)then
-          flux(ihno3_g,ibin) = 0.0
-          flux(ihcl_g,ibin)  = -2.0*flux(ih2so4_g,ibin)
-      endif
-
-! check hcl again
-      if(flux(ihcl_g,ibin) .lt. 0.0 .and.   &
-         aer_percent(icl_a,jliquid,ibin) .lt. 1.0)then
-          flux(ihcl_g,ibin)  = 0.0
-        mxfer_massbal(ibin) = myes
-      endif
-
-
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-      end subroutine asceem_flux_wet_case4
-
-
-
-
-
-
-
-
-
-
-! case 5
-      subroutine asceem_flux_wet_case5(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-      call equilibrate_acids(ibin)	! hno3/hcl may be > 0 in the gas phase
-
-      mc(jc_h,ibin) = max(sqrt(keq_ll(3)), mc(jc_h,ibin))
-
-      sfc_a(ih2so4_g)= 0.0
-      sfc_a(ihno3_g) = gas(ihno3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-      sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                      (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-      df_gas(ih2so4_g,ibin)= gas(ih2so4_g)
-      df_gas(ihno3_g,ibin) = 0.0
-      df_gas(ihcl_g,ibin)  = 0.0
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin) = 0.0
-      phi_volatile(ihcl_g,ibin)  = 0.0
-      phi_volatile(inh3_g,ibin)  =   df_gas(inh3_g,ibin)/   &
-                                 max(sfc_a(inh3_g), 1.e-10)
-
-
-      if(abs(phi_volatile(inh3_g,ibin)) .lt. 0.01)then
-        df_gas(inh3_g,ibin) = 0.0
-      endif
-
-      flux(ih2so4_g,ibin) = kg(ih2so4_g,ibin)*gas(ih2so4_g)
-      flux(ihno3_g,ibin)  = 0.0
-      flux(ihcl_g,ibin)   = 0.0
-      flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-      end subroutine asceem_flux_wet_case5
-
-!**********************************************************************
-! end of asceem
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! asteem: adaptive step time-split explicit euler method
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: zaveri r.a., r.c. easter, and l.k. peters, jgr (2005c)
-!-----------------------------------------------------------------------
-      subroutine asteem( dtchem, istat_asteem )
-!     implicit none
-!     include 'v33com'
-!     include 'mosaic.h'
-! subr arguments
-      integer istat_asteem
-      real dtchem
-! local variables
-      integer ibin, iv, itsi, ntsi, jcall, k, m, isteps
-      integer iclm_debug, jclm_debug, kclm_debug, ncnt_debug
-      real tsi, dumdum, p_mesa_fails
-
-      data iclm_debug /28/
-      data jclm_debug /13/
-      data kclm_debug /11/
-      data ncnt_debug /0/
-
-
-
-
-
-      istat_asteem = 0
 
       if(iclm_aer .eq. iclm_debug .and.   &
          jclm_aer .eq. jclm_debug .and.   &
@@ -4628,79 +3227,66 @@
 
 
 
+! update ASTEM call counter
+      nASTEM_call  = nASTEM_call + 1
+
+! reset input print flag
+      iprint_input = mYES
 
 
-! calculate water content and wet size for computing mass transfer coefficients
+
+
+! compute aerosol phase state before starting integration
       do ibin = 1, nbin_a
         if(jaerosolstate(ibin) .ne. no_aerosol)then
           call aerosol_phase_state(ibin)
+          if (istat_mosaic_fe1 .lt. 0) return
+          call calc_dry_n_wet_aerosol_props(ibin)
         endif
       enddo
 
+
+!      if(first)then
+!        first=.false.
+!        call print_aer(0)		! BOX
+!      endif
+
+
+! compute new gas-aerosol mass transfer coefficients
       call aerosolmtc
-      call asteem_calculate_tsi(dtchem, tsi, ntsi) ! do this here. kg(nh3_g) may go to zero after consdense_non_volatiles
+      if (istat_mosaic_fe1 .lt. 0) return
+
+! condense h2so4, msa, and nh3 only
+      call ASTEM_non_volatiles(dtchem)	! analytical solution
+      if (istat_mosaic_fe1 .lt. 0) return
+
+! condense inorganic semi-volatile gases hno3, hcl, nh3, and co2
+      call ASTEM_semi_volatiles(dtchem)	! semi-implicit + explicit euler
+      if (istat_mosaic_fe1 .lt. 0) return
+
+! condense secondary organic gases (8 sorgam species)
+!      call ASTEM_secondary_organics(dtchem) ! semi-implicit euler
+!      if (istat_mosaic_fe1 .lt. 0) return
 
 
-! now condense non-volatiles only for dtchem [s]
-      call asteem_condense_non_volatiles(dtchem)
-
-
-! recompute phase equilibrium
-      do ibin = 1, nbin_a
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-          call aerosol_phase_state(ibin)
-        endif
-      enddo
-
-
-
-      if(ntsi .lt. 0)return		! mass transfer rates = 0
-
-
-
-! integrate each bin separately over tsi (time-split interval)
-! using alternate direction implicit (adi) technique
-      do 10 itsi = 1, ntsi/2
-
-! first in forward order
-      do ibin = 1, nbin_a
-
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-
-          call asteem_condense_semi_volatiles( ibin, tsi, istat_asteem )
-          if (istat_asteem .lt. 0) goto 80
-
-        endif
-
-      enddo
-
-
-! then in reverse order
-      do ibin = nbin_a, 1, -1
-
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-
-          call asteem_condense_semi_volatiles( ibin, tsi, istat_asteem )
-          if (istat_asteem .lt. 0) goto 80
-
-        endif
-
-      enddo
-
-
-10    continue
-
-
-! update asteem call counter
-80    continue
-       jasteem_call = jasteem_call + 1
-
-
+! template for error status checking
+!        if (iprint_mosaic_fe1 .gt. 0) then
+!          write(6,*)'error in computing dtmax for soa'
+!          write(6,*)'mosaic fatal error in astem_soa_dtmax'
+!        endif
+!       stop
+!        istat_mosaic_fe1 = -1800
+!        return
+!      endif
 
 
 
       return
-      end subroutine asteem
+      end subroutine astem
+
+
+
+
 
 
 
@@ -4713,45 +3299,73 @@
       integer iflag1
 ! local variables
       integer ibin
-      real p_mesa_fails
+      real(kind=8) p_mesa_fails, p_astem_fails, dumcnt
 
 
-       if (iflag1 .le. 0) goto 2000
+      if (iflag1 .le. 0) goto 2000
 
-         p_mesa_fails  = 100.*float(jmesa_fail)/   &
-                              max(float(jmesa_call_tot),1.0)
-         iter_mesa_avg = iter_mesa/max(float(jmesa_call),1.0)
+! print mesa and astem statistics
 
-         do ibin = 1, nbin_a
-           steps_asteem_avg(ibin) = steps_asteem(ibin)/   &
-                                    float(jasteem_call)
-         enddo
+      dumcnt = float(max(nmesa_call,1))
+      p_mesa_fails  = 100.*float(nmesa_fail)/dumcnt
+      niter_mesa_avg = float(niter_mesa)/dumcnt
 
-         write(6,*)'------------------------------------------------'
-         write(6,*)'     asteem performance statistics'
-         write(6,*)'number asteem calls  =', jasteem_call
-         write(6,*)'total asteem fails   =', jasteem_fail
-         write(6,40)(steps_asteem_avg(ibin), ibin=1,nbin_a)
-         write(6,41)(steps_asteem_max(ibin), ibin=1,nbin_a)
-         write(6,*)'     mesa performance statistics'
-         write(6,*)'number of mesa calls =', jmesa_call
-         write(6,*)'avg mesa iterations  =', iter_mesa_avg
-         write(6,*)'total mesa fails     =', jmesa_fail
-         write(6,*)'percent mesa fails   =', p_mesa_fails
-         write(6,*)'  '
-
-2000     continue
-         jasteem_call = 0				! reset
-         jmesa_call   = 0				! reset
-         iter_mesa    = 0.0				! reset
-         do ibin = 1, nbin_a
-           steps_asteem(ibin)     = 0.0			! reset
-           steps_asteem_max(ibin) = 0.0			! reset
-         enddo
+      dumcnt = float(max(nastem_call,1))
+      p_astem_fails = 100.*float(nastem_fail)/dumcnt
+      nsteps_astem_avg = float(nsteps_astem)/dumcnt
 
 
-40    format(' avg asteem steps/bin =', 8(f8.1,x))
-41    format(' max asteem steps/bin =', 8(f8.1,x))
+      if (iprint_mosaic_perform_stats .gt. 0) then
+        write(6,*)'------------------------------------------------'
+        write(6,*)'     astem performance statistics'
+        write(6,*)'number of astem calls=', nastem_call
+        write(6,*)'percent astem fails  =', nastem_fail
+        write(6,*)'avg steps per dtchem =', nsteps_astem_avg
+        write(6,*)'max steps per dtchem =', nsteps_astem_max
+        write(6,*)'  '
+        write(6,*)'     mesa performance statistics'
+        write(6,*)'number of mesa calls =', nmesa_call
+        write(6,*)'total mesa fails     =', nmesa_fail
+        write(6,*)'percent mesa fails   =', p_mesa_fails
+        write(6,*)'avg iterations/call  =', niter_mesa_avg
+        write(6,*)'max iterations/call  =', niter_mesa_max
+        write(6,*)'  '
+      endif
+
+      if (iprint_mosaic_fe1 .gt. 0) then
+         if ((nfe1_mosaic_cur .gt. 0) .or.   &
+             (iprint_mosaic_fe1 .ge. 100)) then
+            write(6,*)'-----------------------------------------'
+            write(6,*)'mosaic failure count (current step) =',   &
+               nfe1_mosaic_cur
+            write(6,*)'mosaic failure count (all step tot) =',   &
+               nfe1_mosaic_tot
+            write(6,*)'  '
+         endif
+      endif
+
+      if (nfe1_mosaic_tot .gt. 9999) then
+         write(6,'(a)') "MOSAIC FAILURE COUNT > 9999 -- SOMETHING IS SERIOUSLY WRONG !!!"
+         call peg_error_fatal( lunerr_aer, &
+              "---> MOSAIC FAILURE COUNT > 9999 -- SOMETHING IS SERIOUSLY WRONG !!!" )
+      endif
+
+2000  continue
+
+! reset counters
+      nfe1_mosaic_cur = 0
+
+      nmesa_call   = 0
+      nmesa_fail   = 0
+      niter_mesa   = 0.0
+      niter_mesa_max = 0
+
+      nastem_call = 0
+      nastem_fail = 0
+
+      nsteps_astem = 0.0
+      nsteps_astem_max = 0.0
+
 
       return
       end subroutine print_mosaic_stats
@@ -4760,137 +3374,6 @@
 
 
 
-!-----------------------------------------------------------------------
-	subroutine print_mosaic_stats_bb( iflag1 )
-
-!	include 'mosaic.h'
-
-!   subr arguments
-	integer iflag1
-
-!   local variables
-	integer ibin, ndum
-
-
-	if (iflag1 .gt. 0) goto 2000
-
-!   iflag1 .le. 0 -- start of current gridpt calcs initialization
-1000	continue
-	do ibin = 1, nbin_a
-	    masbalout_err_count(ibin) = 0
-	    masbalout_maxreldiff_so4(ibin) = 0
-	    masbalout_maxreldiff_nh4(ibin) = 0
-	    masbalout_maxreldiff_no3(ibin) = 0
-	    masbalout_maxreldiff_cl(ibin) = 0
-	    masbalout_maxreldiff_na(ibin) = 0
-	    masbalout_maxreldiff_ca(ibin) = 0
-	end do
-
-	return
-
-
-!   iflag1 .gt. 0 -- end of current gridpt calcs
-2000	continue
-
-!   output of masbalout_err_count
-	ndum = 0
-	do ibin = 1, nbin_a
-	    if (masbalout_err_count(ibin) .gt. 1) ndum = ndum + 1
-	end do
-	if (ndum .gt. 0) then
-	    write(6,9310)   &
-      		'mosaic aerchem monitor_masbal_out - ijk',   &
-      		iclm_aer, jclm_aer, kclm_aer
-	    write(6,9300)   &
-      		'err_counts / maxreldiff_so4 / nh4 / no3 / cl / na / ca'
-	    write(6,9320) (masbalout_err_count(ibin), ibin=1,nbin_a)
-	    write(6,9330) (masbalout_maxreldiff_so4(ibin), ibin=1,nbin_a)
-	    write(6,9330) (masbalout_maxreldiff_nh4(ibin), ibin=1,nbin_a)
-	    write(6,9330) (masbalout_maxreldiff_no3(ibin), ibin=1,nbin_a)
-	    write(6,9330) (masbalout_maxreldiff_cl(ibin), ibin=1,nbin_a)
-	    write(6,9330) (masbalout_maxreldiff_na(ibin), ibin=1,nbin_a)
-	    write(6,9330) (masbalout_maxreldiff_ca(ibin), ibin=1,nbin_a)
-	end if
-9300	format( 10a )
-9310	format( a, 3i5 )
-9320	format( 8( 1x, i8 ) )
-9330	format( 8( 1pe9.1 ) )
-
-	return
-
-	end subroutine print_mosaic_stats_bb
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: computes time splitting interval (tsi)
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asteem_calculate_tsi(dtchem, tsi, ntsi)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      real tsi, dtchem
-! local variables
-      integer ibin, ntsi
-      real gnh3_ghcl, gnh3_ghno3, sumkg, tau_gas_tot, tau_g_min
-      real tau_gas_bin(nbin_a)
-
-
-
-
-      tau_g_min = 1.e20
-
-      sumkg = 0.0
-      do 50 ibin = 1, nbin_a
-
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-          sumkg = sumkg + kg(inh3_g,ibin)
-          tau_gas_bin(ibin) = 1./kg(inh3_g,ibin)
-          tau_g_min = min(tau_g_min, tau_gas_bin(ibin))
-        endif
-
-50    continue
-
-
-      if(sumkg .gt. 0.)then
-        tau_gas_tot = 1./sumkg
-      else
-        tsi = -99.0
-        ntsi = -99
-        return
-      endif
-
-
-
-      tsi = 0.1*tau_gas_tot
-
-
-
-      if(tsi .lt. dtchem)then
-
-        ntsi  = int(dtchem/tsi) + 1
-        ntsi  = (ntsi/2)*2		! even number
-        tsi = dtchem/float(ntsi)
-
-      else
-
-        tsi = dtchem/2.0
-        ntsi  = 2
-
-      endif
-
-
-      return
-      end subroutine asteem_calculate_tsi
-
-
 
 
 
@@ -4903,612 +3386,251 @@
 
 
 !***********************************************************************
-! part of asteem: condenses non-volatiles
+! part of ASTEM: integrates semi-volatile inorganic gases
 !
-! author: rahul a. zaveri
-! update: jan 2005
+! author: Rahul A. Zaveri
+! update: jan 2007
 !-----------------------------------------------------------------------
-      subroutine asteem_condense_non_volatiles(dtchem)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM_semi_volatiles(dtchem)
+!      implicit none
+!      include 'chemistry.com'
+!      include 'mosaic.h'
 ! subr arguments
-      real dtchem
+      real(kind=8) dtchem
 ! local variables
-      integer iaer, ibin, icallpt, je
-      real xt
+      integer ibin, iv, jp
+      real(kind=8) dtmax, t_new, t_old, t_out, xt
+      real(kind=8) sum1, sum2, sum3, sum4, sum4a, sum4b, h_flux_s
 
 
-
-
-
-      if(gas(inh3_g) .eq. 0.0)then
-        call asteem_condense_only_h2so4(dtchem)
-      else
-        call asteem_condense_nh3_h2so4(dtchem)
-      endif
-
-
-      do ibin = 1, nbin_a
-
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-          call conform_electrolytes(jtotal,ibin,xt)
-        endif
-
-      enddo
-
-
-      return
-      end subroutine asteem_condense_non_volatiles
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: condenses h2so4 only analytically
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asteem_condense_only_h2so4(dtchem)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      real dtchem
-! local variables
-      integer ibin
-      real sumkg, decay, delta_h2so4
-
-
-      sumkg = 0.0
-      do 50 ibin = 1, nbin_a
-        sumkg = sumkg + kg(ih2so4_g,ibin)
-50    continue
-
-
-      if(sumkg*dtchem .lt. 1.e-9)return
-
-
-! integrate gas-phase analytically
-      decay = exp(-sumkg*dtchem)
-      delta_h2so4 = gas(ih2so4_g)*(1.0 - decay)
-      gas(ih2so4_g) = gas(ih2so4_g)*decay
-
-! distribute the difference by mtc weights
-      do 60 ibin = 1, nbin_a
-        aer(iso4_a,jtotal,ibin) = aer(iso4_a,jtotal,ibin) +   &
-                         delta_h2so4*kg(ih2so4_g,ibin)/sumkg
-
-60    continue
-
-      return
-      end subroutine asteem_condense_only_h2so4
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: condenses nh3 and h2so4 using explicit euler method
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asteem_condense_nh3_h2so4(dtchem)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      real dtchem
-! local variables
-      integer ibin
-      real delta_nh4, delta_so4, dtmax,   &
-        t_new, t_old, t_out, xt
-      real sumkg(naer_vol)
-
-
-
-
-
+! initialize time
       t_old = 0.0
       t_out = dtchem
 
-
-
-
-! calculate maximum possible internal time-step
-      sumkg(inh3_g) = 0.0
+! reset ASTEM time steps and MESA iterations counters to zero
+      isteps_ASTEM = 0
       do ibin = 1, nbin_a
-        sumkg(inh3_g) = sumkg(inh3_g) + kg(inh3_g,ibin)
+        iter_MESA(ibin) = 0
       enddo
 
-
-! compute max possible nh4 condensation for each bin
-      if(sumkg(inh3_g) .gt. 0.0)then
-         do ibin = 1, nbin_a
-           aer_nh4_max(ibin) = aer(inh4_a,jtotal,ibin) +   &
-             gas(inh3_g)*(1.0 - exp(-sumkg(inh3_g)*dtchem))*   &
-             kg(inh3_g,ibin)/sumkg(inh3_g)
-         enddo
-      endif
-
-
-      if(sumkg(inh3_g) .gt. 0.0)then
-        dtmax = alpha_asteem/sumkg(inh3_g)
-      else
-        dtmax = dtchem		! mass transfer rates = 0
-        return
-      endif
-
-
-! begin integration over transport time-step
-!======================================================
-
-! calculate fluxes
-10    do 501 ibin = 1, nbin_a
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-          call asteem_flux_nh3_h2so4(ibin)
-        endif
-501   continue
-
-
-
-
-      t_new = t_old + dtmax	! update time
-      if(t_new .gt. t_out)then	! check if the new time step is too large
-        dtmax = t_out - t_old
-        t_new = t_out
-      endif
-
-
-
-! integrate
-
-      do ibin = 1, nbin_a
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-
-          delta_so4 = dtmax*flux(ih2so4_g,ibin)
-          aer(iso4_a,jtotal,ibin) = aer(iso4_a,jtotal,ibin) + delta_so4
-          gas(ih2so4_g) = gas(ih2so4_g) - delta_so4
-
-          delta_nh4 = dtmax*flux(inh3_g,ibin)
-          aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin) + delta_nh4
-          gas(inh3_g)   = gas(inh3_g) - delta_nh4
-
-        endif
-      enddo
-
-
-      do ibin = 1, nbin_a
-        if(jaerosolstate(ibin) .ne. no_aerosol)then
-          call conform_electrolytes(jtotal,ibin,xt)
-        endif
-      enddo
-
-
-! update time
-      t_old = t_new
-
-      if(t_new .lt. 0.9999*t_out) goto 10
-!================================================
-! end of integration over the transport time-step
-
-
-
-      return
-      end subroutine asteem_condense_nh3_h2so4
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: computes fluxes of h2so4 and nh3 over dry or wet aerosols
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asteem_flux_nh3_h2so4(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-      if(epercent(jnacl,jtotal,ibin)  .gt. smallp .or.   &
-         epercent(jcacl2,jtotal,ibin) .gt. smallp .or.   &
-         epercent(jnano3,jtotal,ibin) .gt. smallp .or.   &
-         epercent(jcano3,jtotal,ibin) .gt. smallp .or.   &
-         epercent(jcaco3,jtotal,ibin) .gt. 0.0)then
-
-        df_gas(ih2so4_g,ibin) = gas(ih2so4_g)
-        df_gas(inh3_g,ibin)   = 0.0
-
-        flux(ih2so4_g,ibin)   = kg(ih2so4_g,ibin)*df_gas(ih2so4_g,ibin)
-        flux(inh3_g,ibin)     = 0.0
-
-
-      else	! sulfate rich or sulfate poor ammonium sulfate aerosol
-
-
-        df_gas(ih2so4_g,ibin) = gas(ih2so4_g)
-        df_gas(inh3_g,ibin)   = gas(inh3_g)
-
-	flux(ih2so4_g,ibin)   = kg(ih2so4_g,ibin)*df_gas(ih2so4_g,ibin)
-        flux(inh3_g,ibin)     = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-
-        flux(inh3_g,ibin) = min(2.*flux(ih2so4_g,ibin),   &
-                                   flux(inh3_g,ibin))
-
-      endif
-
-
-      return
-      end subroutine asteem_flux_nh3_h2so4
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: condenses semi-volatiles over tsi time interval
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asteem_condense_semi_volatiles(   &
-          ibin, tsi, istat_asteem )
-!     implicit none
-!     include 'v33com'
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, istat_asteem
-      real tsi
-! local variables
-      integer isteps, iv, jp, nsteps_max, kdum, mdum
-      parameter(nsteps_max = 400)
-      real delta_aer, dtmax, dum, t_new, t_old, t_out, xt
-      real dumdum
-
-      integer iclm_debug, jclm_debug, kclm_debug, ncnt_debug, ibin_debug
-      data iclm_debug /4/
-      data jclm_debug /1/
-      data kclm_debug /15/
-      data ncnt_debug /270/
-      data ibin_debug /2/
-
-
-      istat_asteem = 0
-      kdum = kclm_aer
-      mdum = mclm_aer
-
-
-      t_old = 0.0
-      t_out = tsi
-
-      if(iclm_aer .eq. iclm_debug .and.   &
-         jclm_aer .eq. jclm_debug .and.   &
-         kclm_aer .eq. kclm_debug  .and.   &
-         ncorecnt_aer .eq. ncnt_debug  .and.   &
-         ibin     .eq. ibin_debug)then
-        dumdum = 0.0
-      endif
-
-
-      call monitor_massbalance_in(ibin)
-
-
-      isteps = 0
-
-! integrate ibin over tsi time interval
-!
-! calculate fluxes
-10    isteps = isteps + 1
-      mxfer_massbal(ibin) = mno
-
-
-      if(jaerosolstate(ibin) .eq. all_solid)then
-        jphase(ibin) = jsolid
-        call asteem_flux_dry(ibin)
-      elseif(jaerosolstate(ibin) .eq. all_liquid .or.   &
-             jaerosolstate(ibin) .eq. mixed)then
-        jphase(ibin) = jliquid
-        call asteem_flux_wet(ibin)
-        call degas_acids(jliquid,ibin,xt)	! degases equilibrated acids (if present) and also updates jtotal
-      endif
-
-
-
-
-
-! check if the bin has reached equilibrium
-      ieqblm_bin(ibin) = myes		! initalize to default (eqblm)
-      do iv = 1, naer_vol
-        if(flux(iv, ibin) .ne. 0.0)then
-          ieqblm_bin(ibin) = mno		! non-eqblm
-        endif
-      enddo
-
-      if(ieqblm_bin(ibin) .eq. myes)then
-
-! update jtotal
-        do iv = 1, naer_vol
-          aer(iv,jtotal,ibin)=aer(iv,jsolid,ibin)+aer(iv,jliquid,ibin)
+!--------------------------------
+! overall integration loop begins over dtchem seconds
+
+10    isteps_ASTEM = isteps_ASTEM + 1
+
+! compute new fluxes
+      phi_nh4no3_s = 0.0
+      phi_nh4cl_s  = 0.0
+      ieqblm_ASTEM = mYES			! reset to default
+
+      do 501 ibin = 1, nbin_a
+
+        idry_case3a(ibin) = mNO			! reset to default
+! default fluxes and other stuff
+        do iv = 1, ngas_ioa
+          sfc_a(iv)                  = gas(iv)
+          df_gas_s(iv,ibin)          = 0.0
+          df_gas_l(iv,ibin)          = 0.0
+          flux_s(iv,ibin)            = 0.0
+          flux_l(iv,ibin)            = 0.0
+          Heff(iv,ibin)              = 0.0
+          volatile_s(iv,ibin)        = 0.0
+          phi_volatile_s(iv,ibin)    = 0.0
+          phi_volatile_l(iv,ibin)    = 0.0
+          integrate(iv,jsolid,ibin)  = mNO	! reset to default
+          integrate(iv,jliquid,ibin) = mNO	! reset to default
         enddo
 
-        if(mxfer_massbal(ibin) .eq. myes)then
-          call conform_electrolytes(jtotal,ibin,xt) ! xfer_massbal + mdrh diagnosis
-        else
-          call form_electrolytes(jtotal,ibin,xt)    ! for mdrh diagnosis
+
+        if(jaerosolstate(ibin) .eq. all_solid)then
+          jphase(ibin) = jsolid
+          call ASTEM_flux_dry(ibin)
+        elseif(jaerosolstate(ibin) .eq. all_liquid)then
+          jphase(ibin) = jliquid
+          call ASTEM_flux_wet(ibin)
+        elseif(jaerosolstate(ibin) .eq. mixed)then
+
+          if( electrolyte(jnh4no3,jsolid,ibin).gt. 0.0 .or. &
+              electrolyte(jnh4cl, jsolid,ibin).gt. 0.0 )then
+            call ASTEM_flux_mix(ibin)	! jphase(ibin) will be determined in this subr.
+          else
+            jphase(ibin) = jliquid
+            call ASTEM_flux_wet(ibin)
+          endif
+
         endif
 
+501   continue
 
-        if(jhyst_leg(ibin) .eq. jhyst_lo)then
-          call asteem_update_phase_eqblm(ibin)
-        else
-          call do_full_deliquescence(ibin)	! simply do liquid <-- total
-        endif
+      if(ieqblm_ASTEM .eq. mYES)goto 30	! all bins have reached eqblm, so quit.
 
-        steps_asteem(ibin) = steps_asteem(ibin) + float(isteps)
-        steps_asteem_max(ibin) = max(steps_asteem_max(ibin),   &
-                                   float(isteps))
-
-      return	! the bin has reached equilibrium
-      endif
-
-
-
+!-------------------------
 
 
 ! calculate maximum possible internal time-step
-      call asteem_calculate_dtmax(ibin, tsi, dtmax)
+11    call ASTEM_calculate_dtmax(dtchem, dtmax)     
       t_new = t_old + dtmax	! update time
       if(t_new .gt. t_out)then	! check if the new time step is too large
         dtmax = t_out - t_old
-        t_new = t_out
+        t_new = t_out*1.01
       endif
 
 
+!------------------------------------------
+! do internal time-step (dtmax) integration
+
+      do 20 iv = 2, 4
+
+        sum1 = 0.0
+        sum2 = 0.0
+        sum3 = 0.0
+        sum4 = 0.0
+        sum4a= 0.0
+        sum4b= 0.0
+
+        do 21 ibin = 1, nbin_a
+          if(jaerosolstate(ibin) .eq. no_aerosol)goto 21
+
+          jp = jliquid
+          sum1 = sum1 + aer(iv,jp,ibin)/ &
+          (1. + dtmax*kg(iv,ibin)*Heff(iv,ibin)*integrate(iv,jp,ibin))
+
+          sum2 = sum2 + kg(iv,ibin)*integrate(iv,jp,ibin)/ &
+          (1. + dtmax*kg(iv,ibin)*Heff(iv,ibin)*integrate(iv,jp,ibin))
+
+          jp = jsolid
+          sum3 = sum3 + aer(iv,jp,ibin)
+
+          if(flux_s(iv,ibin) .gt. 0.)then
+            h_flux_s = dtmax*flux_s(iv,ibin)
+            sum4a = sum4a + h_flux_s
+            aer(iv,jp,ibin) = aer(iv,jp,ibin) + h_flux_s
+          elseif(flux_s(iv,ibin) .lt. 0.)then
+            h_flux_s = min(h_s_i_m(iv,ibin),dtmax)*flux_s(iv,ibin)
+            sum4b = sum4b + h_flux_s
+            aer(iv,jp,ibin) = aer(iv,jp,ibin) + h_flux_s
+            aer(iv,jp,ibin) = max(aer(iv,jp,ibin), 0.0D0)
+          endif
+          
+21      continue
+
+        sum4 = sum4a + sum4b
 
 
+! first update gas concentration
+        gas(iv) = (total_species(iv) - (sum1 + sum3 + sum4) )/ &
+                              (1. + dtmax*sum2)
+        gas(iv) = max(gas(iv), 0.0D0)
 
+!        if(gas(iv) .lt. 0.)write(6,*) gas(iv)
+        
+! now update aer concentration in the liquid phase
+        do 22 ibin = 1, nbin_a
 
+          if(integrate(iv,jliquid,ibin) .eq. mYES)then
+            aer(iv,jliquid,ibin) =  &
+             (aer(iv,jliquid,ibin) + dtmax*kg(iv,ibin)*gas(iv))/ &
+                  (1. + dtmax*kg(iv,ibin)*Heff(iv,ibin))
 
+          endif
 
+22      continue
 
-! integrate
-      jp = jphase(ibin)
-
-      do 20 iv = 1, naer_vol
-
-        delta_aer = dtmax*flux(iv,ibin)
-
-        aer(iv,jp,ibin)=real(dble(aer(iv,jp,ibin)) + dble(delta_aer))
-        gas(iv)        =real(dble(gas(iv)) - dble(delta_aer))
-
-        aer(iv,jp,ibin)=max(aer(iv,jp,ibin), 0.0)
-        gas(iv)        =max(gas(iv), 0.0)
 
 20    continue
+!------------------------------------------
+! sub-step integration done
 
 
-! degas excess nh3 (if present)
-      call form_electrolytes(jp,ibin,xt)
+!------------------------------------------
+! now update aer(jtotal) and update internal phase equilibrium
+! also do integration of species by mass balance if necessary
 
-! update jtotal
-      do iv = 1, naer_vol
-        aer(iv,jtotal,ibin)=aer(iv,jsolid,ibin)+aer(iv,jliquid,ibin)
-      enddo
+      do 40 ibin = 1, nbin_a
+        if(jaerosolstate(ibin) .eq. no_aerosol)goto 40
+
+        if(jphase(ibin) .eq. jsolid)then
+          call form_electrolytes(jsolid,ibin,XT)  ! degas excess nh3 (if present)
+        elseif(jphase(ibin) .eq. jliquid)then
+          call form_electrolytes(jliquid,ibin,XT) ! degas excess nh3 (if present)
+        elseif(jphase(ibin) .eq. jtotal)then
+          call form_electrolytes(jsolid,ibin,XT)  ! degas excess nh3 (if present)
+          call form_electrolytes(jliquid,ibin,XT) ! degas excess nh3 (if present)
+        endif
+
+!========================
+! now update jtotal
+        do iv = 2, ngas_ioa
+          aer(iv,jtotal,ibin)=aer(iv,jsolid,ibin)+aer(iv,jliquid,ibin)
+        enddo
+!========================
 
 
-      if(mxfer_massbal(ibin) .eq. myes)then
-        call conform_electrolytes(jtotal,ibin,xt) ! xfer_massbal + mdrh diagnosis
-      else
-        call form_electrolytes(jtotal,ibin,xt)	  ! for mdrh diagnosis
-      endif
+        call form_electrolytes(jtotal,ibin,XT)	! for MDRH diagnosis
 
 
-      if(jhyst_leg(ibin) .eq. jhyst_lo)then
-        call asteem_update_phase_eqblm(ibin)
-      else
-        call do_full_deliquescence(ibin)	! simply do liquid <-- total
-      endif
 
+! update internal phase equilibrium
+        if(jhyst_leg(ibin) .eq. jhyst_lo)then
+          call ASTEM_update_phase_eqblm(ibin)
+        else
+          call do_full_deliquescence(ibin)		! simply do liquid <-- total
+        endif
+      
 
-      call monitor_massbalance_out(ibin, isteps)
-
+40    continue
+!------------------------------------------
 
 ! update time
       t_old = t_new
+    
 
-      if(isteps .ge. nsteps_max)then
-        istat_asteem = -10
-        jasteem_fail = jasteem_fail + 1
-        write(6,*) 'mosaic aerchem asteem nsteps_max exceeded',   &
-            nsteps_max
-        if(iprint_input .eq. myes)then
-          call print_input(kdum,mdum)
-          iprint_input = mno
+      if(isteps_astem .ge. nmax_astem)then
+        nastem_fail = nastem_fail + 1
+        write(6,*)'ASTEM internal steps exceeded', nmax_astem
+        if(iprint_input .eq. mYES)then
+          write(67,*)'ASTEM internal steps exceeded', nmax_astem
+          call print_input
+          iprint_input = mNO
         endif
         goto 30
-      elseif(t_new .lt. 0.9999*t_out)then
+      elseif(t_new .lt. t_out)then
         goto 10
       endif
+
+
+! check if end of dtchem reached
+      if(t_new .lt. 0.9999*t_out) goto 10
+
+30    nsteps_astem = nsteps_astem + isteps_astem		! cumulative steps
+      nsteps_astem_max = max(nsteps_astem_max, isteps_astem)	! max steps in a dtchem time-step
+
 !================================================
-! end of integration over the time split interval
+! end of overall integration loop over dtchem seconds
 
 
-30    steps_asteem(ibin) = steps_asteem(ibin) + float(isteps)
-      steps_asteem_max(ibin) = max(steps_asteem_max(ibin),   &
-                                   float(isteps))
+
+! call subs to calculate fluxes over mixed-phase particles to update H+ ions, 
+! which were wiped off during update_phase_eqblm
+!      do ibin = 1, nbin_a
+!
+!        if(jaerosolstate(ibin) .eq. mixed)then
+!          if( electrolyte(jnh4no3,jsolid,ibin).gt. 0.0 .or. &
+!              electrolyte(jnh4cl, jsolid,ibin).gt. 0.0 )then
+!            call ASTEM_flux_mix(ibin)		! jphase(ibin) will be determined in this subr.
+!          else
+!            jphase(ibin) = jliquid
+!            call ASTEM_flux_wet(ibin)
+!          endif
+!        endif
+!
+!      enddo
+
 
 
       return
-      end subroutine asteem_condense_semi_volatiles
-
-
-
-
-
-
-
-
-      subroutine monitor_massbalance_in(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer iv, iaer
-
-      total_so4_in = gas(ih2so4_g)+ aer(iso4_a,jtotal,ibin)
-      total_no3_in = gas(ihno3_g) + aer(ino3_a,jtotal,ibin)
-      total_cl_in  = gas(ihcl_g)  + aer(icl_a,jtotal,ibin)
-      total_nh4_in = gas(inh3_g)  + aer(inh4_a,jtotal,ibin)
-      total_na_in  = aer(ina_a,jtotal,ibin)
-      total_ca_in  = aer(ica_a,jtotal,ibin)
-
-
-      do iv = 1, naer_vol
-        gassav(iv) = gas(iv)
-      enddo
-
-      do iaer = 1, naer
-        aersav(iaer) = aer(iaer,jtotal,ibin)
-      enddo
-
-
-      return
-      end subroutine monitor_massbalance_in
-
-
-
-
-      subroutine monitor_massbalance_out(ibin, isteps)
-!     implicit none
-!     include 'v33com'
-!     include 'v33com3'
-!     include 'v33com9a'
-!     include 'v33com9b'
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, isteps
-! local variables
-      integer kdum, mdum
-
-      integer iclm_debug, jclm_debug, kclm_debug, ncnt_debug, ibin_debug
-      data iclm_debug /4/
-      data jclm_debug /1/
-      data kclm_debug /15/
-      data ncnt_debug /270/
-      data ibin_debug /2/
-
-      kdum = kclm_aer
-      mdum = mclm_aer
-
-
-
-      total_so4 = gas(ih2so4_g)+ aer(iso4_a,jtotal,ibin)
-      total_no3 = gas(ihno3_g) + aer(ino3_a,jtotal,ibin)
-      total_cl  = gas(ihcl_g)  + aer(icl_a,jtotal,ibin)
-      total_nh4 = gas(inh3_g)  + aer(inh4_a,jtotal,ibin)
-      total_na  = aer(ina_a,jtotal,ibin)
-      total_ca  = aer(ica_a,jtotal,ibin)
-
-
-      if(total_so4_in .gt. 1.e-25 .or. total_so4 .gt. 1.e-25)then
-        rel_diff_so4 = (total_so4 - total_so4_in)/   &
-                    max(total_so4,  total_so4_in)
-      else
-        rel_diff_so4 = 0.0
-      endif
-
-      if(total_no3_in .gt. 1.e-25 .or. total_no3 .gt. 1.e-25)then
-        rel_diff_no3 = (total_no3 - total_no3_in)/   &
-                    max(total_no3,  total_no3_in)
-      else
-        rel_diff_no3 = 0.0
-      endif
-
-      if(total_cl_in .gt. 1.e-25 .or. total_cl .gt. 1.e-25)then
-        rel_diff_cl = (total_cl  - total_cl_in)/   &
-                   max(total_cl,   total_cl_in)
-      else
-        rel_diff_cl = 0.0
-      endif
-
-      if(total_nh4_in .gt. 1.e-25 .or. total_nh4 .gt. 1.e-25)then
-        rel_diff_nh4 = (total_nh4 - total_nh4_in)/   &
-                    max(total_nh4,  total_nh4_in)
-      else
-        rel_diff_nh4 = 0.0
-      endif
-
-      if(total_na_in .gt. 1.e-25 .or. total_na .gt. 1.e-25)then
-        rel_diff_na = (total_na  - total_na_in)/   &
-                   max(total_na,   total_na_in)
-      else
-        rel_diff_na = 0.0
-      endif
-
-
-      if(total_ca_in .gt. 1.e-25 .or. total_ca .gt. 1.e-25)then
-        rel_diff_ca = (total_ca  - total_ca_in)/   &
-                   max(total_ca,   total_ca_in)
-      else
-        rel_diff_ca = 0.0
-      endif
-
-
-      if(abs(rel_diff_so4).gt.1.e-4 .or.   &
-         abs(rel_diff_no3).gt.1.e-4 .or.   &
-         abs(rel_diff_nh4).gt.1.e-4 .or.   &
-         abs(rel_diff_na) .gt.1.e-4 .or.   &
-         abs(rel_diff_ca) .gt.1.e-4)then
-
-        masbalout_err_count(ibin) = masbalout_err_count(ibin) + 1
-        masbalout_maxreldiff_so4(ibin) = max(   &
-            masbalout_maxreldiff_so4(ibin), abs(rel_diff_so4) )
-        masbalout_maxreldiff_nh4(ibin) = max(   &
-            masbalout_maxreldiff_nh4(ibin), abs(rel_diff_nh4) )
-        masbalout_maxreldiff_no3(ibin) = max(   &
-            masbalout_maxreldiff_no3(ibin), abs(rel_diff_no3) )
-        masbalout_maxreldiff_cl(ibin) = max(   &
-            masbalout_maxreldiff_cl(ibin),  abs(rel_diff_cl) )
-        masbalout_maxreldiff_na(ibin) = max(   &
-            masbalout_maxreldiff_na(ibin),  abs(rel_diff_na) )
-        masbalout_maxreldiff_ca(ibin) = max(   &
-            masbalout_maxreldiff_ca(ibin),  abs(rel_diff_ca) )
-
-        if(iprint_input .eq. myes)then
-          write(6,*) 'mosaic aerchem monitor_massbalance_out failure'
-          call print_input(kdum, mdum)
-          iprint_input = mno
-        endif
-
-      endif
-
-
-      return
-      end subroutine monitor_massbalance_out
+      end subroutine ASTEM_semi_volatiles
+     
 
 
 
@@ -5521,57 +3643,246 @@
 
 
 !***********************************************************************
-! part of asteem: updates solid-liquid partitioning after each gas-aerosol
-! mass transfer step
+! part of ASTEM: computes max time step for gas-aerosol integration
 !
-! author: rahul a. zaveri
+! author: Rahul A. Zaveri
 ! update: jan 2005
 !-----------------------------------------------------------------------
-      subroutine asteem_update_phase_eqblm(ibin)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM_calculate_dtmax(dtchem, dtmax)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      real(kind=8) dtchem, dtmax
+! local variables
+      integer ibin, iv   
+      real(kind=8) alpha, h_gas, h_sub_max,  &
+           h_gas_i(ngas_ioa), h_gas_l, h_gas_s,  &
+           sum_kg_phi, sumflux_s
+
+
+      h_sub_max = 150.0	! sec
+
+
+! set alpha_gas
+      do ibin = 1, nbin_a
+        do iv = 2, ngas_ioa
+
+          if(flux_s(iv,ibin) .gt. 0.0)then
+
+            alpha_gas(iv) = max( abs(phi_volatile_s(iv,ibin)), &
+                                     alpha_ASTEM )
+            alpha_gas(iv) = min(alpha_gas(iv), 0.5D0)
+
+          endif
+
+        enddo
+      enddo
+        
+
+
+
+
+! gas-side
+
+! solid-phase
+! calculate h_gas_i and h_gas_l
+
+      h_gas_s = 2.e16
+
+      do 5 iv = 2, ngas_ioa  
+        h_gas_i(iv) = 1.e16
+        sumflux_s = 0.0
+        do ibin = 1, nbin_a
+          if(flux_s(iv,ibin) .gt. 0.0)then
+            sumflux_s = sumflux_s + flux_s(iv,ibin)
+          endif        
+        enddo
+        
+        if(sumflux_s .gt. 0.0)then
+          h_gas_i(iv) = alpha_gas(iv)*gas(iv)/sumflux_s
+          h_gas_s     = min(h_gas_s, h_gas_i(iv))
+        endif
+
+5     continue
+      
+
+! liquid-phase
+! calculate h_gas_s and h_gas_l
+
+      h_gas_l = 2.e16
+
+      do 6 iv = 2, ngas_ioa  
+        h_gas_i(iv) = 1.e16
+        sum_kg_phi = 0.0
+        do ibin = 1, nbin_a
+          if(integrate(iv,jliquid,ibin) .eq. mYES)then
+          sum_kg_phi = sum_kg_phi +  &
+                       abs(phi_volatile_l(iv,ibin))*kg(iv,ibin)
+          endif        
+        enddo
+        
+        if(sum_kg_phi .gt. 0.0)then
+          h_gas_i(iv) = alpha_astem/sum_kg_phi
+          h_gas_l     = min(h_gas_l, h_gas_i(iv))
+        endif
+
+6     continue
+
+      h_gas = min(h_gas_s, h_gas_l)
+      h_gas = min(h_gas, h_sub_max)
+
+
+
+
+! aerosol-side: solid-phase
+
+! first load volatile_solid array
+      do ibin = 1, nbin_a
+
+        volatile_s(ino3_a,ibin) = electrolyte(jnh4no3,jsolid,ibin)
+        volatile_s(inh4_a,ibin) = electrolyte(jnh4cl,jsolid,ibin) +  &
+                                  electrolyte(jnh4no3,jsolid,ibin)
+
+        if(idry_case3a(ibin) .eq. mYES)then
+          volatile_s(icl_a,ibin)  = aer(icl_a,jsolid,ibin)
+        else
+          volatile_s(icl_a,ibin)  = electrolyte(jnh4cl,jsolid,ibin)
+        endif
+
+      enddo
+
+
+! next calculate weighted avg_df_gas_s
+      do iv = 2, ngas_ioa
+
+        sum_bin_s(iv) = 0.0
+        sum_vdf_s(iv) = 0.0
+        sum_vol_s(iv) = 0.0
+
+        do ibin = 1, nbin_a
+          if(flux_s(iv,ibin) .lt. 0.)then	! aer -> gas
+            sum_bin_s(iv) = sum_bin_s(iv) + 1.0
+            sum_vdf_s(iv) = sum_vdf_s(iv) +  &
+                            volatile_s(iv,ibin)*df_gas_s(iv,ibin)
+            sum_vol_s(iv) = sum_vol_s(iv) + volatile_s(iv,ibin)
+          endif
+        enddo
+
+        if(sum_vol_s(iv) .gt. 0.0)then
+          avg_df_gas_s(iv) = sum_vdf_s(iv)/sum_vol_s(iv)
+        else
+          avg_df_gas_s(iv) = 1.0 ! never used, but set to 1.0 just to be safe
+        endif
+
+      enddo
+
+
+! calculate h_s_i_m
+
+
+      do 20 ibin = 1, nbin_a
+        
+        if(jaerosolstate(ibin) .eq. no_aerosol) goto 20        
+        
+        do 10 iv = 2, ngas_ioa
+
+          if(flux_s(iv,ibin) .lt. 0.)then				! aer -> gas
+
+            alpha = abs(avg_df_gas_s(iv))/  &
+                   (volatile_s(iv,ibin)*sum_bin_s(iv))
+            alpha = min(alpha, 1.0D0)
+
+            if(idry_case3a(ibin) .eq. mYES)alpha = 1.0D0
+
+            h_s_i_m(iv,ibin) =  &
+                 -alpha*volatile_s(iv,ibin)/flux_s(iv,ibin)
+
+          endif
+
+10      continue
+        
+
+20    continue
+      
+
+      dtmax = min(dtchem, h_gas)
+
+
+      if(dtmax .eq. 0.0)then
+        write(6,*)' dtmax = ', dtmax
+        write(67,*)' dtmax = ', dtmax
+        call print_input
+        iprint_input = mNO
+         stop
+      endif
+
+      return
+      end subroutine astem_calculate_dtmax
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! part of ASTEM: updates solid-liquid partitioning after each gas-aerosol
+! mass transfer step
+!
+! author: Rahul A. Zaveri
+! update: jan 2005
+!-----------------------------------------------------------------------
+      subroutine ASTEM_update_phase_eqblm(ibin)	! TOUCH
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer jdum, js, j_index, mdissolved
-      real xt
-! function
-!     real drh_mutual, dum
+      integer jdum, js, j_index
+      real(kind=8) XT
+      
 
 
-
-! calculate overall sulfate ratio
-      call calculate_xt(ibin,jtotal,xt)		! calc updated xt
-
-! now diagnose mdrh
-      if(xt .lt. 1. .and. xt .gt. 0. )goto 10	! excess sulfate domain - no mdrh exists
-
+! calculate overall sulfate ratio      
+      call calculate_XT(ibin,jtotal,XT)		! calc updated XT
+      
+! now diagnose MDRH
+      if(XT .lt. 1. .and. XT .gt. 0. )goto 10	! excess sulfate domain - no MDRH exists
+      
       jdum = 0
       do js = 1, nsalt
         jsalt_present(js) = 0			! default value - salt absent
-
-        if(epercent(js,jtotal,ibin) .gt. 1.0)then
+        
+        if(epercent(js,jtotal,ibin) .gt. ptol_mol_astem)then
           jsalt_present(js) = 1			! salt present
           jdum = jdum + jsalt_index(js)
         endif
       enddo
-
+      
       if(jdum .eq. 0)then
         jaerosolstate(ibin) = all_solid ! no significant soluble material present
         jphase(ibin) = jsolid
-        call adjust_solid_aerosol(ibin)
+        call adjust_solid_aerosol(ibin)      
         return
       endif
-
-      if(xt .ge. 2.0 .or. xt .lt. 0.0)then
+      
+      if(XT .ge. 2.0 .or. XT .lt. 0.0)then
         j_index = jsulf_poor(jdum)
       else
         j_index = jsulf_rich(jdum)
       endif
-
-      mdrh(ibin) = drh_mutual(j_index) + 1.0
-
-      if(ah2o*100. .lt. mdrh(ibin)) then
+      
+      MDRH(ibin) = MDRH_T(j_index)
+      
+      if(aH2O*100. .lt. MDRH(ibin)) then
         jaerosolstate(ibin) = all_solid
         jphase(ibin) = jsolid
         call adjust_solid_aerosol(ibin)
@@ -5580,17 +3891,17 @@
 
 
 ! none of the above means it must be sub-saturated or mixed-phase
-10    if(mxfer_massbal(ibin).eq.myes .or. jphase(ibin).eq.jsolid)then
+10    if(jphase(ibin) .eq. jsolid)then
         call do_full_deliquescence(ibin)
-        call mesa(ibin)
+        call MESA_PTC(ibin)
       else
-        call mesa(ibin)
+        call MESA_PTC(ibin)
       endif
 
 
 
       return
-      end subroutine asteem_update_phase_eqblm
+      end subroutine ASTEM_update_phase_eqblm
 
 
 
@@ -5603,368 +3914,801 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+!==================================================================
+!
+! LIQUID PARTICLES
+!
 !***********************************************************************
-! part of asteem: computes max time step for gas-aerosol integration
+! part of ASTEM: computes fluxes over wet aerosols
 !
-! author: rahul a. zaveri
-! update: jan 2005
+! author: Rahul A. Zaveri
+! update: Jan 2007
 !-----------------------------------------------------------------------
-      subroutine asteem_calculate_dtmax(ibin, tsi, dtmax)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-      real tsi, dtmax
-! local variables
-      integer iv
-      real alpha, h_aer, h_gas, h_max,   &
-           h_gas_i(naer_vol), h_nh3_max,   &
-           h_aer_i_m(naer_vol, nbin_a),   &
-           h_aer_m(nbin_a)
-
-
-
-
-! set alpha_gas and alpha_aer
-      do iv = 1, naer_vol
-
-          alpha_gas(iv) = alpha_asteem
-
-          if(madapt_alpha .eq. mon)then
-            alpha_aer(iv,ibin) = max(abs(phi_volatile(iv,ibin)),   &
-                                     alpha_asteem)
-            alpha_aer(iv,ibin) = min(alpha_aer(iv,ibin), 10.0)
-
-          else
-            alpha_aer(iv,ibin) = alpha_asteem	! fixed alpha_aer
-
-          endif
-
-      enddo
-
-
-
-
-
-! gas-side
-! calculate h_gas_i and h_gas
-
-      h_gas = 2.e16
-
-      do iv = 2, naer_vol
-
-        h_gas_i(iv) = 1.e16
-        if(flux(iv,ibin) .gt. 0.0)then
-
-          h_gas_i(iv) = alpha_gas(iv)/kg(iv,ibin)
-          h_gas       = min(h_gas, h_gas_i(iv))
-
-        endif
-
-      enddo
-
-! restrict gas-side time step so that max allowable nh3 concentration is not exceeded
-      if(flux(inh3_g,ibin) .gt. 0.0)then
-        h_nh3_max = (aer_nh4_max(ibin)-aer(inh4_a,jtotal,ibin))/   &
-                                flux(inh3_g,ibin)
-        h_gas     = min(h_gas, h_nh3_max)
-      endif
-
-
-!
-! aerosol-side
-! calculate h_aer_i_m, h_aer_m, h_aer
-      h_aer = 1.e16
-      h_aer_m(ibin) = 4.e15		! initialize
-
-      call make_volatile_a(ibin)
-
-
-! solid aerosol
-      if(jphase(ibin) .eq. jsolid)then		! solid aerosol
-
-        do 10 iv = 2, naer_vol
-          h_aer_i_m(iv,ibin) = 2.e15		! initialize
-
-          if(flux(iv,ibin).lt.0.)then		! aer -> gas
-            alpha = min(alpha_aer(iv,ibin),0.5)
-            h_aer_i_m(iv,ibin) = -alpha*volatile_a(iv)/flux(iv,ibin)
-          endif
-
-          h_aer_m(ibin) = min(h_aer_m(ibin),h_aer_i_m(iv,ibin))
-          h_aer         = min(h_aer,        h_aer_i_m(iv,ibin))
-10      continue
-
-        goto 100
-
-      endif
-
-
-
-
-
-
-! liquid or mixed-phase aerosol
-      if(jphase(ibin) .eq. jliquid)then
-
-        do 11 iv = 2, naer_vol
-          h_aer_i_m(iv,ibin) = 2.e15		! initialize
-
-          if(flux(iv,ibin).gt.0. .and. 					   &  ! gas -> aer
-             electrolyte(jcaco3,jtotal,ibin) .eq. 0.)then
-
-            if(aer(iv,jliquid,ibin) .gt. 0.0)then
-            h_aer_i_m(iv,ibin)=alpha_aer(iv,ibin)*aer(iv,jliquid,ibin)/	   &  ! aer(i,jliquid) =< aer(i,jtotal)
-                                          flux(iv,ibin)
-            endif
-
-          elseif(flux(iv,ibin).lt.0. .and. volatile_a(iv).gt.0.0)then	! aer -> gas
-            alpha = min(alpha_aer(iv,ibin), 0.5)
-            h_aer_i_m(iv,ibin)=-alpha*volatile_a(iv)/flux(iv,ibin)
-
-          endif
-
-
-          h_aer_m(ibin) = min(h_aer_m(ibin),h_aer_i_m(iv,ibin))
-          h_aer         = min(h_aer,        h_aer_i_m(iv,ibin))
-11      continue
-
-      endif
-
-
-
-
-100   h_max = min(h_aer, h_gas)
-
-      dtmax = min(tsi, h_max)
-      h_max = dtmax
-
-
-      if(dtmax .le. 1.0e-5)then
-        write(6,*)' dtmax = ', dtmax
-      endif
-
-
-
-      if(dtmax .eq. 0.0)then
-
-        write(6,*)'iclm jclm kclm = ',iclm_aer, jclm_aer, kclm_aer
-        write(6,*)'ibin= ',ibin,'  jaerosolstate= ',jaerosolstate(ibin)
-        write(6,*)'aerso4 = ', aer(iso4_a,jphase(ibin),ibin)
-        write(6,*)'aerno3 = ', aer(ino3_a,jphase(ibin),ibin)
-        write(6,*)'aercl  = ', aer(icl_a,jphase(ibin),ibin)
-        write(6,*)'aernh3 = ', aer(inh4_a,jphase(ibin),ibin)
-        write(6,*)'  '
-        write(6,*)'h_gas = ', h_gas, '   h_aer =', h_aer
-        write(6,*)'iv        gas        volatile          flux'
-        write(6,*)'hno3 ',gas(ihno3_g),volatile_a(ihno3_g),   &
-                   flux(ihno3_g,ibin)
-        write(6,*)'hcl  ',gas(ihcl_g), volatile_a(ihcl_g),   &
-                   flux(ihcl_g,ibin)
-        write(6,*)'nh3  ',gas(inh3_g), volatile_a(inh3_g),   &
-                   flux(inh3_g,ibin)
-
-
-        dtmax = tsi
-        do iv = 1, naer_vol
-          flux(iv,ibin) = 0.0
-        enddo
-      endif
-
-
-      return
-      end subroutine asteem_calculate_dtmax
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem and asceem: computes volatile species concentration
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine make_volatile_a(ibin)
-!     implicit none
-!     include 'v33com'
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-      if(jaerosolstate(ibin) .eq. all_solid)then
-
-        volatile_a(iso4_a) = 0.0
-        volatile_a(ino3_a) = aer(ino3_a,jsolid,ibin)
-        volatile_a(icl_a)  = aer(icl_a,jsolid,ibin)
-        volatile_a(inh4_a) = electrolyte(jnh4cl,jsolid,ibin) +   &
-                             electrolyte(jnh4no3,jsolid,ibin)
-
-      elseif(jaerosolstate(ibin) .eq. all_liquid)then
-
-        volatile_a(iso4_a) = 0.0
-        volatile_a(ino3_a) = aer(ino3_a,jliquid,ibin)-   &
-                             electrolyte(jhno3,jliquid,ibin)
-        volatile_a(icl_a)  = aer(icl_a,jliquid,ibin) -   &
-                             electrolyte(jhcl,jliquid,ibin)
-        volatile_a(inh4_a) = aer(inh4_a,jliquid,ibin)
-
-      elseif(jaerosolstate(ibin) .eq. mixed)then
-
-        volatile_a(iso4_a) = 0.0
-        volatile_a(ino3_a) = aer(ino3_a,jliquid,ibin)-   &
-                             electrolyte(jhno3,jliquid,ibin)
-        volatile_a(icl_a)  = aer(icl_a,jliquid,ibin) -   &
-                             electrolyte(jhcl,jliquid,ibin)
-        volatile_a(inh4_a) = aer(inh4_a,jliquid,ibin)	! different
-
-      else
-
-        write(6,*)'bad jaerosolstate in subr. make_volatile_a'
-        write(6,*)'ibin =',ibin,'jaerosolstate =',jaerosolstate(ibin)
-        write(6,*)'i j k = ', iclm_aer, jclm_aer, kclm_aer
-        write(6,*)'ncorecnt = ', ncorecnt_aer
-        write(6,*)'stopping in subroutine make_volatile_a'
-!       stop
-        call peg_error_fatal( lunerr_aer,   &
-            'stopping in subroutine make_volatile_a' )
-
-      endif
-
-
-      return
-      end subroutine make_volatile_a
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: computes gas-aerosol fluxes over dry aerosols
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine asteem_flux_dry(ibin)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM_flux_wet(ibin)
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      real xt, prod_nh4no3, prod_nh4cl, volatile_cl
+      integer iv, iadjust, iadjust_intermed
+      real(kind=8) xt, g_nh3_hno3, g_nh3_hcl, a_nh4_no3, a_nh4_cl
 
 
 
+      call ions_to_electrolytes(jliquid,ibin,XT)  	! for water content calculation
+      call compute_activities(ibin)
 
-      call calculate_xt(ibin,jsolid,xt)
-
-      flux(ih2so4_g,ibin)  = 0.0
-
-!-----------------------------------------------------------------
-! case 1: sulfate-rich domain
-
-      if(xt.lt.2.0 .and. xt.ge.0.)then	! excess sulfate (acidic)
-
-!	call asteem_flux_dry_case1(ibin)
-
-        flux(ihno3_g,ibin)    = 0.0
-        flux(ihcl_g,ibin)     = 0.0
-        flux(inh3_g,ibin)     = 0.0
-
-        return
+      if(water_a(ibin) .eq. 0.0)then
+	write(6,*)'Water is zero in liquid phase'
+	write(6,*)'Stopping in ASTEM_flux_wet'
+        stop
       endif
 
-!-----------------------------------------------------------------
-! case 2:  caco3 > 0 absorb all acids (and indirectly degas co2)
+!-------------------------------------------------------------------
+! CASE 1: caco3 > 0 absorb acids (and indirectly degas co2)
 
       if(electrolyte(jcaco3,jsolid,ibin) .gt. 0.0)then
-
-        call asteem_flux_dry_case2(ibin)
-
+        call ASTEM_flux_wet_case1(ibin)
         return
       endif
 
 !-------------------------------------------------------------------
-! case 3: hno3 and hcl exchange may happen here
+! CASE 2: Sulfate-Rich Domain
 
-      volatile_cl  = electrolyte(jnacl,jsolid,ibin) +   &
+      if(XT.lt.1.9999 .and. XT.ge.0.)then
+        call ASTEM_flux_wet_case2(ibin)
+        return
+      endif
+
+!-------------------------------------------------------------------
+
+      if( (gas(inh3_g)+aer(inh4_a,jliquid,ibin)) .lt. 1.e-25)goto 10  ! no ammonia in the system
+
+!-------------------------------------------------------------------
+! CASE 3: nh4no3 and/or nh4cl maybe active
+! do some small adjustments (if needed) before deciding case 3
+
+      iadjust = mNO		! default
+      iadjust_intermed = mNO	! default
+
+! nh4no3
+      g_nh3_hno3 = gas(inh3_g)*gas(ihno3_g)
+      a_nh4_no3  = aer(inh4_a,jliquid,ibin)*aer(ino3_a,jliquid,ibin)
+
+      if(g_nh3_hno3 .gt. 0. .and. a_nh4_no3 .eq. 0.)then
+        call absorb_tiny_nh4no3(ibin)
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+        iadjust_intermed = mNO	! reset
+      endif
+
+! nh4cl
+      g_nh3_hcl = gas(inh3_g)*gas(ihcl_g)
+      a_nh4_cl  = aer(inh4_a,jliquid,ibin)*aer(icl_a,jliquid,ibin)
+
+      if(g_nh3_hcl .gt. 0. .and. a_nh4_cl .eq. 0.)then
+        call absorb_tiny_nh4cl(ibin)
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+      endif
+    
+      if(iadjust .eq. mYES)then
+        call compute_activities(ibin)			! update after adjustments
+      endif
+
+
+! all adjustments done...
+
+!--------
+      kelvin_nh4no3 = kel(inh3_g,ibin)*kel(ihno3_g,ibin)
+      Keq_nh4no3 = kelvin_nh4no3*activity(jnh4no3,ibin)*Kp_nh4no3	! = [NH3]s * [HNO3]s
+
+      kelvin_nh4cl = kel(inh3_g,ibin)*kel(ihcl_g,ibin)
+      Keq_nh4cl = kelvin_nh4cl*activity(jnh4cl,ibin)*Kp_nh4cl	! = [NH3]s * [HCl]s
+
+      call ASTEM_flux_wet_case3(ibin)
+
+      return
+
+
+!-------------------------------------------------------------------
+! CASE 4: ammonia = 0. hno3 and hcl exchange may happen here
+! do small adjustments (if needed) before deciding case 4
+
+10    iadjust = mNO		! default
+      iadjust_intermed = mNO	! default
+
+! hno3
+      if(gas(ihno3_g).gt.0. .and. aer(ino3_a,jliquid,ibin).eq.0. .and. &
+         aer(icl_a,jliquid,ibin) .gt. 0.0)then
+        call absorb_tiny_hno3(ibin)	! and degas tiny hcl
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+        iadjust_intermed = mNO	! reset
+      endif
+
+! hcl
+      if(gas(ihcl_g).gt.0. .and. aer(icl_a,jliquid,ibin).eq.0. .and. &
+         aer(ino3_a,jliquid,ibin) .gt. 0.0)then
+        call absorb_tiny_hcl(ibin)	! and degas tiny hno3
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+      endif
+
+      if(iadjust .eq. mYES)then
+        call compute_activities(ibin)			! update after adjustments
+      endif
+      
+! all adjustments done...
+
+      call ASTEM_flux_wet_case4(ibin)
+
+
+      return
+      end subroutine ASTEM_flux_wet
+
+
+
+
+
+
+
+
+
+
+
+
+!***********************************************************************
+! part of ASTEM: subroutines for flux_wet cases
+!
+! author: Rahul A. Zaveri
+! update: Jan 2007
+!-----------------------------------------------------------------------
+
+! CASE 1: CaCO3 > 0 absorb all acids (and indirectly degas co2)
+
+      subroutine ASTEM_flux_wet_case1(ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer iv
+      
+      mc(jc_h,ibin) = sqrt(Keq_ll(3))
+
+! same as dry case1
+      if(gas(ihno3_g) .gt. 1.e-5)then
+        sfc_a(ihno3_g) = 0.0
+        df_gas_s(ihno3_g,ibin) = gas(ihno3_g)
+        phi_volatile_s(ihno3_g,ibin) = 1.0
+        flux_s(ihno3_g,ibin) = kg(ihno3_g,ibin)*df_gas_s(ihno3_g,ibin)
+        integrate(ihno3_g,jsolid,ibin) = mYES
+        jphase(ibin) = jsolid
+        ieqblm_ASTEM = mNO
+      endif
+
+      if(gas(ihcl_g) .gt. 1.e-5)then
+        sfc_a(ihcl_g)  = 0.0
+        df_gas_s(ihcl_g,ibin) = gas(ihcl_g)
+        phi_volatile_s(ihcl_g,ibin) = 1.0
+        flux_s(ihcl_g,ibin) = kg(ihcl_g,ibin)*df_gas_s(ihcl_g,ibin)
+        integrate(ihcl_g,jsolid,ibin)  = mYES
+        jphase(ibin) = jsolid
+        ieqblm_ASTEM = mNO
+      endif
+
+      return
+      end subroutine ASTEM_flux_wet_case1
+
+
+
+!--------------------------------------------------------------------
+! CASE 2: Sulfate-Rich Domain
+
+      subroutine ASTEM_flux_wet_case2(ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) dum_hno3, dum_hcl, dum_nh3
+
+
+      sfc_a(inh3_g)  = kel(inh3_g,ibin)* &
+                       gam_ratio(ibin)*mc(jc_nh4,ibin)*Keq_ll(3)/ &
+                        (mc(jc_h,ibin)*Keq_ll(2)*Keq_gl(2))
+
+      sfc_a(ihno3_g) = kel(ihno3_g,ibin)* &
+                   mc(jc_h,ibin)*ma(ja_no3,ibin)*gam(jhno3,ibin)**2/ &
+                   Keq_gl(3)
+
+      sfc_a(ihcl_g)  = kel(ihcl_g,ibin)* &
+                   mc(jc_h,ibin)*ma(ja_cl,ibin)*gam(jhcl,ibin)**2/ &
+                   Keq_gl(4)
+
+      dum_hno3 = max(sfc_a(ihno3_g), gas(ihno3_g))
+      dum_hcl  = max(sfc_a(ihcl_g), gas(ihcl_g))
+      dum_nh3  = max(sfc_a(inh3_g), gas(inh3_g))
+
+
+! compute relative driving forces
+      if(dum_hno3 .gt. 0.0)then
+        df_gas_l(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
+        phi_volatile_l(ihno3_g,ibin)= df_gas_l(ihno3_g,ibin)/dum_hno3
+      else
+        phi_volatile_l(ihno3_g,ibin)= 0.0
+      endif
+
+      if(dum_hcl .gt. 0.0)then
+        df_gas_l(ihcl_g,ibin)  = gas(ihcl_g)  - sfc_a(ihcl_g)
+        phi_volatile_l(ihcl_g,ibin) = df_gas_l(ihcl_g,ibin)/dum_hcl
+      else
+        phi_volatile_l(ihcl_g,ibin) = 0.0
+      endif
+
+      if(dum_nh3 .gt. 0.0)then
+        df_gas_l(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
+        phi_volatile_l(inh3_g,ibin) = df_gas_l(inh3_g,ibin)/dum_nh3
+      else
+        phi_volatile_l(inh3_g,ibin) = 0.0
+      endif
+
+
+      if(phi_volatile_l(ihno3_g,ibin) .le. rtol_eqb_astem .and. &
+         phi_volatile_l(ihcl_g,ibin)  .le. rtol_eqb_astem .and. &
+         phi_volatile_l(inh3_g,ibin)  .le. rtol_eqb_astem)then
+
+        return
+
+      endif
+
+
+! compute Heff
+      if(dum_hno3 .gt. 0.0)then
+        Heff(ihno3_g,ibin)=  &
+          kel(ihno3_g,ibin)*gam(jhno3,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(3))
+        integrate(ihno3_g,jliquid,ibin)= mYES
+        ieqblm_ASTEM = mNO
+      endif
+
+      if(dum_hcl .gt. 0.0)then
+        Heff(ihcl_g,ibin)=  &
+          kel(ihcl_g,ibin)*gam(jhcl,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(4))
+        integrate(ihcl_g,jliquid,ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
+
+      if(dum_nh3 .gt. 0.0)then
+        Heff(inh3_g,ibin) =  &
+             kel(inh3_g,ibin)*gam_ratio(ibin)*1.e-9*Keq_ll(3)/ &
+             (water_a(ibin)*mc(jc_h,ibin)*Keq_ll(2)*Keq_gl(2))
+        integrate(inh3_g,jliquid,ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
+
+
+      return
+      end subroutine ASTEM_flux_wet_case2
+
+
+
+
+
+
+
+
+!---------------------------------------------------------------------
+! CASE 3: nh4no3 and/or nh4cl may be active
+
+      subroutine ASTEM_flux_wet_case3(ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) a, b, c, dum_hno3, dum_hcl, dum_nh3
+! function
+!      real(kind=8) quadratic
+
+      a =   kg(inh3_g,ibin)
+      b = - kg(inh3_g,ibin)*gas(inh3_g)  &
+          + kg(ihno3_g,ibin)*gas(ihno3_g)  &
+          + kg(ihcl_g,ibin)*gas(ihcl_g)
+      c = -(kg(ihno3_g,ibin)*Keq_nh4no3 + kg(ihcl_g,ibin)*Keq_nh4cl)
+
+      sfc_a(inh3_g)  = quadratic(a,b,c)
+      sfc_a(ihno3_g) = Keq_nh4no3/max(sfc_a(inh3_g),1.D-20)
+      sfc_a(ihcl_g)  = Keq_nh4cl/max(sfc_a(inh3_g),1.D-20)
+
+
+! diagnose mH+
+      if(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+        mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+        (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+      elseif(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+        mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+        (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+      else
+        call equilibrate_acids(ibin)	! hno3 and/or hcl may be > 0 in the gas phase
+        mc(jc_h,ibin)  = max(mc(jc_h,ibin), sqrt(Keq_ll(3)))
+
+        sfc_a(inh3_g)  = kel(inh3_g,ibin)* &
+                         gam_ratio(ibin)*mc(jc_nh4,ibin)*Keq_ll(3)/ &
+                        (mc(jc_h,ibin)*Keq_ll(2)*Keq_gl(2))
+
+        sfc_a(ihno3_g) = kel(ihno3_g,ibin)* &
+                   mc(jc_h,ibin)*ma(ja_no3,ibin)*gam(jhno3,ibin)**2/ &
+                   Keq_gl(3)
+        sfc_a(ihcl_g)  = kel(ihcl_g,ibin)* &
+                   mc(jc_h,ibin)*ma(ja_cl,ibin)*gam(jhcl,ibin)**2/ &
+                   Keq_gl(4)
+      endif
+
+
+
+      dum_hno3 = max(sfc_a(ihno3_g), gas(ihno3_g))
+      dum_hcl  = max(sfc_a(ihcl_g), gas(ihcl_g))
+      dum_nh3  = max(sfc_a(inh3_g), gas(inh3_g))
+
+! compute relative driving forces
+      if(dum_hno3 .gt. 0.0)then
+        df_gas_l(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
+        phi_volatile_l(ihno3_g,ibin)= df_gas_l(ihno3_g,ibin)/dum_hno3
+      else
+        phi_volatile_l(ihno3_g,ibin)= 0.0
+      endif
+
+      if(dum_hcl .gt. 0.0)then
+        df_gas_l(ihcl_g,ibin)  = gas(ihcl_g)  - sfc_a(ihcl_g)
+        phi_volatile_l(ihcl_g,ibin) = df_gas_l(ihcl_g,ibin)/dum_hcl
+      else
+        phi_volatile_l(ihcl_g,ibin) = 0.0
+      endif
+
+      if(dum_nh3 .gt. 0.0)then
+        df_gas_l(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
+        phi_volatile_l(inh3_g,ibin) = df_gas_l(inh3_g,ibin)/dum_nh3
+      else
+        phi_volatile_l(inh3_g,ibin) = 0.0
+      endif
+
+
+
+      if(phi_volatile_l(ihno3_g,ibin) .le. rtol_eqb_astem .and. &
+         phi_volatile_l(ihcl_g,ibin)  .le. rtol_eqb_astem .and. &
+         phi_volatile_l(inh3_g,ibin)  .le. rtol_eqb_astem)then
+
+        return
+
+      endif
+
+
+! compute Heff
+      if(dum_hno3 .gt. 0.0)then
+        Heff(ihno3_g,ibin)=  &
+          kel(ihno3_g,ibin)*gam(jhno3,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(3))
+        integrate(ihno3_g,jliquid,ibin)= mYES
+        ieqblm_ASTEM = mNO
+      endif
+
+      if(dum_hcl .gt. 0.0)then
+        Heff(ihcl_g,ibin)=  &
+          kel(ihcl_g,ibin)*gam(jhcl,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(4))
+        integrate(ihcl_g,jliquid,ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
+
+      if(dum_nh3 .gt. 0.0)then
+        Heff(inh3_g,ibin) =  &
+             kel(inh3_g,ibin)*gam_ratio(ibin)*1.e-9*Keq_ll(3)/ &
+             (water_a(ibin)*mc(jc_h,ibin)*Keq_ll(2)*Keq_gl(2))
+        integrate(inh3_g,jliquid,ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
+
+
+
+      return
+      end subroutine ASTEM_flux_wet_case3
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------
+! CASE 3a: only NH4NO3 (aq) active
+
+      subroutine ASTEM_flux_wet_case3a(ibin)	! NH4NO3 (aq)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) a, b, c, dum_hno3, dum_nh3
+! function
+!      real(kind=8) quadratic
+
+
+      a =   kg(inh3_g,ibin)
+      b = - kg(inh3_g,ibin)*gas(inh3_g) &
+          + kg(ihno3_g,ibin)*gas(ihno3_g) 
+      c = -(kg(ihno3_g,ibin)*Keq_nh4no3)
+
+      sfc_a(inh3_g)  = quadratic(a,b,c)
+      sfc_a(ihno3_g) = Keq_nh4no3/sfc_a(inh3_g)
+
+
+! diagnose mH+
+      if(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+        mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+          (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+      else
+        mc(jc_h,ibin) = sqrt(Keq_ll(3))
+      endif
+
+
+! compute Heff
+      dum_hno3 = max(sfc_a(ihno3_g), gas(ihno3_g))
+      dum_nh3  = max(sfc_a(inh3_g), gas(inh3_g))
+
+! compute relative driving forces
+      if(dum_hno3 .gt. 0.0)then
+        df_gas_l(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
+        phi_volatile_l(ihno3_g,ibin)= df_gas_l(ihno3_g,ibin)/dum_hno3
+      else
+        phi_volatile_l(ihno3_g,ibin)= 0.0
+      endif
+
+      if(dum_nh3 .gt. 0.0)then
+        df_gas_l(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
+        phi_volatile_l(inh3_g,ibin) = df_gas_l(inh3_g,ibin)/dum_nh3
+      else
+        phi_volatile_l(inh3_g,ibin) = 0.0
+      endif
+
+
+      if(phi_volatile_l(ihno3_g,ibin) .le. rtol_eqb_astem .and. &
+         phi_volatile_l(inh3_g,ibin)  .le. rtol_eqb_astem)then
+
+        return
+
+      endif
+
+
+! compute Heff
+      Heff(ihno3_g,ibin)=  &
+        kel(ihno3_g,ibin)*gam(jhno3,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                     (water_a(ibin)*Keq_gl(3))
+      integrate(ihno3_g,jliquid,ibin)= mYES
+
+
+      Heff(inh3_g,ibin) =  &
+           kel(inh3_g,ibin)*gam_ratio(ibin)*1.e-9*Keq_ll(3)/ &
+           (water_a(ibin)*mc(jc_h,ibin)*Keq_ll(2)*Keq_gl(2))
+      integrate(inh3_g,jliquid,ibin) = mYES
+
+
+      ieqblm_ASTEM = mNO
+
+
+      return
+      end subroutine ASTEM_flux_wet_case3a
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------------
+! CASE 3b: only NH4Cl (aq) active
+
+      subroutine ASTEM_flux_wet_case3b(ibin)	! NH4Cl (aq)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) a, b, c, dum_hcl, dum_nh3
+! function
+!      real(kind=8) quadratic
+
+      
+      a =   kg(inh3_g,ibin)
+      b = - kg(inh3_g,ibin)*gas(inh3_g) &
+          + kg(ihcl_g,ibin)*gas(ihcl_g)  
+      c = -(kg(ihcl_g,ibin)*Keq_nh4cl)
+        
+      sfc_a(inh3_g)  = quadratic(a,b,c)
+      sfc_a(ihcl_g)  = Keq_nh4cl /sfc_a(inh3_g)
+
+
+! diagnose mH+
+      if(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+        mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+          (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+      else
+        mc(jc_h,ibin) = sqrt(Keq_ll(3))
+      endif
+
+
+! compute Heff
+      dum_hcl  = max(sfc_a(ihcl_g), gas(ihcl_g))
+      dum_nh3  = max(sfc_a(inh3_g), gas(inh3_g))
+
+
+! compute relative driving forces
+      if(dum_hcl .gt. 0.0)then
+        df_gas_l(ihcl_g,ibin)  = gas(ihcl_g)  - sfc_a(ihcl_g)
+        phi_volatile_l(ihcl_g,ibin) = df_gas_l(ihcl_g,ibin)/dum_hcl
+      else
+        phi_volatile_l(ihcl_g,ibin) = 0.0
+      endif
+
+      if(dum_nh3 .gt. 0.0)then
+        df_gas_l(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
+        phi_volatile_l(inh3_g,ibin) = df_gas_l(inh3_g,ibin)/dum_nh3
+      else
+        phi_volatile_l(inh3_g,ibin) = 0.0
+      endif
+
+
+
+      if(phi_volatile_l(ihcl_g,ibin)  .le. rtol_eqb_astem .and. &
+         phi_volatile_l(inh3_g,ibin)  .le. rtol_eqb_astem)then
+
+        return
+
+      endif
+
+
+
+! compute Heff
+      Heff(ihcl_g,ibin)=  &
+          kel(ihcl_g,ibin)*gam(jhcl,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(4))
+      integrate(ihcl_g,jliquid,ibin) = mYES
+
+
+      Heff(inh3_g,ibin) =  &
+             kel(inh3_g,ibin)*gam_ratio(ibin)*1.e-9*Keq_ll(3)/ &
+             (water_a(ibin)*mc(jc_h,ibin)*Keq_ll(2)*Keq_gl(2))
+      integrate(inh3_g,jliquid,ibin) = mYES
+
+
+      ieqblm_ASTEM = mNO
+
+
+
+      return
+      end subroutine ASTEM_flux_wet_case3b
+
+
+
+
+
+
+
+
+
+!-----------------------------------------------------------------------
+! CASE 4: NH3 = 0 (in gas and aerosol). hno3 and hcl exchange may happen here
+
+      subroutine ASTEM_flux_wet_case4(ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) dum_numer, dum_denom, gas_eqb_ratio, dum_hno3, dum_hcl
+      
+
+      dum_numer = kel(ihno3_g,ibin)*Keq_gl(4)*ma(ja_no3,ibin)* &
+                  gam(jhno3,ibin)**2
+      dum_denom = kel(ihcl_g,ibin)*Keq_gl(3)*ma(ja_cl ,ibin)* &
+                  gam(jhcl,ibin)**2
+
+
+      if(dum_denom .eq. 0.0 .or. dum_numer .eq. 0.0)then
+        mc(jc_h,ibin) = sqrt(Keq_ll(3))
+        return
+      endif
+
+      gas_eqb_ratio = dum_numer/dum_denom	! Ce,hno3/Ce,hcl
+     
+
+! compute equilibrium surface concentrations
+      sfc_a(ihcl_g) =  &
+       ( kg(ihno3_g,ibin)*gas(ihno3_g)+kg(ihcl_g,ibin)*gas(ihcl_g) )/ &
+           ( kg(ihcl_g,ibin) + gas_eqb_ratio*kg(ihno3_g,ibin) )
+      sfc_a(ihno3_g)= gas_eqb_ratio*sfc_a(ihcl_g)
+
+
+! diagnose mH+
+      if(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+        mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+        (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+      elseif(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+        mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+        (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+      else
+        mc(jc_h,ibin) = sqrt(Keq_ll(3))
+      endif
+
+
+! compute Heff
+      dum_hno3 = min(sfc_a(ihno3_g), gas(ihno3_g))
+      dum_hcl  = min(sfc_a(ihcl_g), gas(ihcl_g))
+
+! compute relative driving forces
+      if(dum_hno3 .gt. 0.0)then
+        df_gas_l(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
+        phi_volatile_l(ihno3_g,ibin)= df_gas_l(ihno3_g,ibin)/dum_hno3
+      else
+        phi_volatile_l(ihno3_g,ibin)= 0.0
+      endif
+
+      if(dum_hcl .gt. 0.0)then
+        df_gas_l(ihcl_g,ibin)  = gas(ihcl_g)  - sfc_a(ihcl_g)
+        phi_volatile_l(ihcl_g,ibin)= df_gas_l(ihcl_g,ibin)/dum_hcl
+      else
+        phi_volatile_l(ihcl_g,ibin)= 0.0
+      endif
+
+
+      if(phi_volatile_l(ihno3_g,ibin) .le. rtol_eqb_astem .and. &
+         phi_volatile_l(ihcl_g,ibin)  .le. rtol_eqb_astem)then
+
+        return
+
+      endif
+
+
+
+! compute Heff
+      Heff(ihno3_g,ibin)=  &
+          kel(ihno3_g,ibin)*gam(jhno3,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(3))
+      integrate(ihno3_g,jliquid,ibin)= mYES
+
+
+      Heff(ihcl_g,ibin)=  &
+          kel(ihcl_g,ibin)*gam(jhcl,ibin)**2*mc(jc_h,ibin)*1.e-9/ &
+                       (water_a(ibin)*Keq_gl(4))
+      integrate(ihcl_g,jliquid,ibin) = mYES
+
+
+      ieqblm_ASTEM = mNO
+
+
+
+      return
+      end subroutine ASTEM_flux_wet_case4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+!===========================================================
+!
+! DRY PARTICLES
+!
+!===========================================================
+!***********************************************************************
+! part of ASTEM: computes gas-aerosol fluxes over dry aerosols
+!
+! author: Rahul A. Zaveri
+! update: dec 2006
+!-----------------------------------------------------------------------
+      subroutine ASTEM_flux_dry(ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer iv
+      real(kind=8) XT, prod_nh4no3, prod_nh4cl, volatile_cl
+     
+     
+     
+      
+      call calculate_XT(ibin,jsolid,XT)
+      
+!-----------------------------------------------------------------
+! CASE 1:  caco3 > 0 absorb all acids (and indirectly degas co2)
+
+      if(electrolyte(jcaco3,jsolid,ibin) .gt. 0.0)then
+        
+        call ASTEM_flux_dry_case1(ibin)
+      
+        return
+      endif
+
+!-----------------------------------------------------------------
+! CASE 2: Sulfate-Rich Domain
+
+      if(XT.lt.1.9999 .and. XT.ge.0.)then	! excess sulfate (acidic)
+
+	call ASTEM_flux_dry_case2(ibin)
+     
+        return
+      endif
+
+!-------------------------------------------------------------------
+! CASE 3: hno3 and hcl exchange may happen here and nh4cl may form/evaporate
+
+      volatile_cl  = electrolyte(jnacl,jsolid,ibin) + &
                      electrolyte(jcacl2,jsolid,ibin)
+      
 
+      if(volatile_cl .gt. 0.0 .and. gas(ihno3_g).gt. 0.0 )then
+     
+        call ASTEM_flux_dry_case3a(ibin)
 
-      if(volatile_cl .gt. 0.0 .and.   &
-         gas(ihno3_g).gt. 0.0 )then
+        prod_nh4cl = max( (gas(inh3_g)*gas(ihcl_g)-Keq_sg(2)), 0.0D0) + &
+                     electrolyte(jnh4cl, jsolid,ibin)
 
-        call asteem_flux_dry_case3(ibin)
+        if(prod_nh4cl .gt. 0.0)then
+          call ASTEM_flux_dry_case3b(ibin)
+        endif
 
         return
       endif
 
 !-----------------------------------------------------------------
-! case 4: nh4no3 or nh4cl or both may be active
+! CASE 4: nh4no3 or nh4cl or both may be active
 
-      prod_nh4no3 = max( (gas(inh3_g)*gas(ihno3_g)-keq_sg(1)), 0.0) +   &
-                    epercent(jnh4no3,jsolid,ibin)
-      prod_nh4cl  = max( (gas(inh3_g)*gas(ihcl_g) -keq_sg(2)), 0.0) +   &
-                    epercent(jnh4cl, jsolid,ibin)
+      prod_nh4no3 = max( (gas(inh3_g)*gas(ihno3_g)-Keq_sg(1)),0.D0) + & 
+                    electrolyte(jnh4no3,jsolid,ibin)
+      prod_nh4cl  = max( (gas(inh3_g)*gas(ihcl_g) -Keq_sg(2)),0.D0) + & 
+                    electrolyte(jnh4cl, jsolid,ibin)
 
       if(prod_nh4no3 .gt. 0.0 .or. prod_nh4cl .gt. 0.0)then
-        call asteem_flux_dry_case4(ibin)
+        call ASTEM_flux_dry_case4(ibin)
         return
       endif
-
+      
 !-----------------------------------------------------------------
-! case 5: default
 
-        call asteem_flux_dry_case5(ibin)
-        return
-
-
-      end subroutine asteem_flux_dry
-
+      return                                  
+      end subroutine ASTEM_flux_dry
+      
 !----------------------------------------------------------------------
 
 
@@ -5974,139 +4718,209 @@
 
 
 
+
+
+
+
+
 !***********************************************************************
-! part of asteem: subroutines for flux_dry cases
+! part of ASTEM: subroutines for flux_dry cases
 !
-! author: rahul a. zaveri
-! update: jan 2005
+! author: Rahul A. Zaveri
+! update: dec 2006
 !-----------------------------------------------------------------------
-!
-!
-!
-! case 1: sulfate-rich domain
-!
-      subroutine asteem_flux_dry_case1(ibin)
-!     implicit none
-!     include 'mosaic.h'
+
+! CASE 1:  caco3 > 0 absorb all acids (and indirectly degas co2)
+
+      subroutine ASTEM_flux_dry_case1(ibin)
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
 
 
+      if(gas(ihno3_g) .gt. 1.e-5)then
+        sfc_a(ihno3_g) = 0.0
+        df_gas_s(ihno3_g,ibin) = gas(ihno3_g)
+        phi_volatile_s(ihno3_g,ibin) = 1.0
+        flux_s(ihno3_g,ibin) = kg(ihno3_g,ibin)*df_gas_s(ihno3_g,ibin)
+        integrate(ihno3_g,jsolid,ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
 
-      sfc_a(ih2so4_g)= 0.0
-      sfc_a(ihno3_g) = gas(ihno3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-      sfc_a(inh3_g)  = 0
-
-      df_gas(ih2so4_g,ibin) = 0.0
-      df_gas(ihno3_g,ibin)  = 0.0
-      df_gas(ihcl_g,ibin)   = 0.0
-      df_gas(inh3_g,ibin)   = gas(inh3_g)
-
-      phi_volatile(ihno3_g,ibin) = 0.0
-      phi_volatile(ihcl_g,ibin)  = 0.0
-      phi_volatile(inh3_g,ibin)  = 1.0
-
-      flux(ihno3_g,ibin)    = 0.0
-      flux(ihcl_g,ibin)     = 0.0
-      flux(inh3_g,ibin)     = kg(inh3_g,ibin)*gas(inh3_g)
+      if(gas(ihcl_g) .gt. 1.e-5)then
+        sfc_a(ihcl_g)  = 0.0
+        df_gas_s(ihcl_g,ibin) = gas(ihcl_g)
+        phi_volatile_s(ihcl_g,ibin) = 1.0
+        flux_s(ihcl_g,ibin)  = kg(ihcl_g,ibin)*df_gas_s(ihcl_g,ibin)
+        integrate(ihcl_g,jsolid,ibin)  = mYES
+        ieqblm_ASTEM = mNO
+      endif
 
 
       return
-      end subroutine asteem_flux_dry_case1
+      end subroutine ASTEM_flux_dry_case1
 
 
 
+!---------------------------------------------------------------------
+! CASE 2: Sulfate-Rich Domain
 
-! case 2:  caco3 > 0 absorb all acids (and indirectly degas co2)
-!
-      subroutine asteem_flux_dry_case2(ibin)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM_flux_dry_case2(ibin) ! TOUCH
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
+      
 
-
-      mxfer_massbal(ibin) = myes
-
-      sfc_a(ih2so4_g) = 0.0
-      sfc_a(ihno3_g)  = 0.0
-      sfc_a(ihcl_g)   = 0.0
-      sfc_a(inh3_g)   = gas(inh3_g)
-
-      df_gas(ih2so4_g,ibin) = 0.0
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g)
-      df_gas(inh3_g,ibin)   = 0.0
-
-      phi_volatile(ihno3_g,ibin) = 1.0
-      phi_volatile(ihcl_g,ibin)  = 1.0
-      phi_volatile(inh3_g,ibin)  = 0.0
-
-      flux(ih2so4_g,ibin)   = 0.0
-      flux(ihno3_g,ibin)    = kg(ihno3_g,ibin)*gas(ihno3_g)
-      flux(ihcl_g,ibin)     = kg(ihcl_g,ibin)*gas(ihcl_g)
-      flux(inh3_g,ibin)     = 0.0
-
+      if(gas(inh3_g).gt.1.e-5)then
+        sfc_a(inh3_g) = 0.0
+        df_gas_s(inh3_g,ibin) = gas(inh3_g)
+        phi_volatile_s(inh3_g,ibin)  = 1.0
+        flux_s(inh3_g,ibin) = kg(inh3_g,ibin)*gas(inh3_g)
+        integrate(inh3_g,jsolid,ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
+      
 
       return
-      end subroutine asteem_flux_dry_case2
+      end subroutine ASTEM_flux_dry_case2
 
 
 
 
+!---------------------------------------------------------------------
+! CASE 3a: degas hcl from nacl or cacl2 by flux_s balance with hno3
 
-
-
-
-
-
-
-! case 3: hno3 and hcl exchange may happen here
-!
-      subroutine asteem_flux_dry_case3(ibin)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM_flux_dry_case3a(ibin)
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
+      
 
+      if(gas(ihno3_g) .gt. 1.e-5)then
+        sfc_a(ihno3_g) = 0.0
+        sfc_a(ihcl_g)  = gas(ihcl_g) + aer(icl_a,jsolid,ibin)
 
-! just degas hcl from nacl or cacl2 by flux balance with hno3
-      mxfer_massbal(ibin) = myes
+        df_gas_s(ihno3_g,ibin) = gas(ihno3_g)
+        df_gas_s(ihcl_g,ibin)  = -aer(icl_a,jsolid,ibin)
+    
+        flux_s(ihno3_g,ibin) = kg(ihno3_g,ibin)*gas(ihno3_g)
+        flux_s(ihcl_g,ibin)  = -flux_s(ihno3_g,ibin)
 
-      flux(ih2so4_g,ibin)= 0.0
-      flux(ihno3_g,ibin) = kg(ihno3_g,ibin)*gas(ihno3_g)
-      flux(ihcl_g,ibin)  = 0.0 ! degas in conformaerosol or formelectrolytes
-      flux(inh3_g,ibin)  = 0.0
+        phi_volatile_s(ihno3_g,ibin) = 1.0
+        phi_volatile_s(ihcl_g,ibin)=df_gas_s(ihcl_g,ibin)/sfc_a(ihcl_g)
 
+        integrate(ihno3_g,jsolid,ibin) = mYES
+        integrate(ihcl_g,jsolid,ibin)  = mYES
 
+        idry_case3a(ibin) = mYES
+        ieqblm_ASTEM = mNO
+      endif
 
       return
-      end subroutine asteem_flux_dry_case3
+      end subroutine ASTEM_flux_dry_case3a
 
 
 
 
+!---------------------------------------------------------------------
+! CASE 3b: nh4cl may form/evaporate here
 
-
-
-
-
-
-! case 4: nh4no3 and/or nh4cl may be active
-      subroutine asteem_flux_dry_case4(ibin)
-!     implicit none
-!     include 'mosaic.h'
+      subroutine ASTEM_flux_dry_case3b(ibin)	! TOUCH
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer iv, iactive_nh4no3, iactive_nh4cl, iactive
-      real gnh3_hno3, gnh3_hcl, pcnt_nh4no3, pcnt_nh4cl,   &
-           beta_nh4,   &
-           a, b, c, sfc_nh3_1, sfc_nh3_2, phi_nh3_1, phi_nh3_2,   &
-           flux_nh3_est, flux_nh3_max, ratio_flux
+      integer iactive_nh4cl
+      real(kind=8) a, b, c
 ! function
-!     real quadratic
+!      real(kind=8) quadratic
+
+
+!-------------------
+! set default values for flags
+      iactive_nh4cl  = 1
+
+
+! compute relative driving force
+      phi_nh4cl_s = (gas(inh3_g)*gas(ihcl_g) - Keq_sg(2))/ &
+                    max(gas(inh3_g)*gas(ihcl_g),Keq_sg(2))
+
+
+!-------------------
+! now determine if nh4cl is active or significant
+! nh4cl
+      if( abs(phi_nh4cl_s) .lt. rtol_eqb_ASTEM )then
+        iactive_nh4cl = 0
+      elseif(gas(inh3_g)*gas(ihcl_g) .lt. Keq_sg(2) .and. &
+             epercent(jnh4cl, jsolid,ibin) .le. ptol_mol_ASTEM)then
+        iactive_nh4cl = 0
+        if(epercent(jnh4cl, jsolid,ibin) .gt. 0.0)then
+          call degas_solid_nh4cl(ibin)
+        endif
+      endif
+
+
+! check the outcome
+      if(iactive_nh4cl .eq. 0)return
+
+            
+!-----------------
+! nh4cl is active
+
+      
+      a =   kg(inh3_g,ibin)
+      b = - kg(inh3_g,ibin)*gas(inh3_g) &
+          + kg(ihcl_g,ibin)*gas(ihcl_g)  
+      c = -(kg(ihcl_g,ibin)*Keq_sg(2))
+        
+      sfc_a(inh3_g) = quadratic(a,b,c)
+      sfc_a(ihcl_g) = Keq_sg(2)/sfc_a(inh3_g)
+
+      df_gas_s(ihcl_g,ibin) = gas(ihcl_g) - sfc_a(ihcl_g)
+      df_gas_s(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
+      
+      flux_s(inh3_g,ibin) = kg(inh3_g,ibin)*df_gas_s(inh3_g,ibin)
+      flux_s(ihcl_g,ibin) = flux_s(ihcl_g,ibin) + flux_s(inh3_g,ibin)
+
+      phi_volatile_s(inh3_g,ibin) = phi_nh4cl_s
+
+      if(flux_s(ihcl_g,ibin) .gt. 0.0)then
+        df_gas_s(ihcl_g,ibin) = flux_s(ihcl_g,ibin)/kg(ihcl_g,ibin)	! recompute df_gas
+        phi_volatile_s(ihcl_g,ibin) = phi_nh4cl_s
+      else
+        sfc_a(ihcl_g)  = gas(ihcl_g) + aer(icl_a,jsolid,ibin)
+        df_gas_s(ihcl_g,ibin) = -aer(icl_a,jsolid,ibin)
+        phi_volatile_s(ihcl_g,ibin)=df_gas_s(ihcl_g,ibin)/sfc_a(ihcl_g)  ! not to be used
+      endif
+
+      integrate(inh3_g,jsolid,ibin) = mYES
+      integrate(ihcl_g,jsolid,ibin) = mYES	! integrate HCl with explicit euler
+            
+      ieqblm_ASTEM = mNO
+
+      return
+      end subroutine ASTEM_flux_dry_case3b
+
+
+
+
+!---------------------------------------------------------------------
+! Case 4: NH4NO3 and/or NH4Cl may be active
+
+      subroutine ASTEM_flux_dry_case4(ibin)	! TOUCH
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer iactive_nh4no3, iactive_nh4cl, iactive
+      real(kind=8) a, b, c
+! function
+!      real(kind=8) quadratic
 
 
 !-------------------
@@ -6114,217 +4928,221 @@
       iactive_nh4no3 = 1
       iactive_nh4cl  = 2
 
-!-------------------
+
 ! compute diagnostic products and ratios
-      gnh3_hno3   = gas(inh3_g)*gas(ihno3_g)
-      gnh3_hcl    = gas(inh3_g)*gas(ihcl_g)
-
-      beta_nh4    = aer(inh4_a,jtotal,ibin)/aer_nh4_max(ibin)
-
-      phi_nh4no3(ibin) = (gnh3_hno3 - keq_sg(1))/   &
-                               keq_sg(1)
-      phi_nh4cl(ibin)  = (gnh3_hcl - keq_sg(2))/   &
-                               keq_sg(2)
-
-      pcnt_nh4no3 = epercent(jnh4no3,jsolid,ibin)
-      pcnt_nh4cl  = epercent(jnh4cl, jsolid,ibin)
+      phi_nh4no3_s = (gas(inh3_g)*gas(ihno3_g) - Keq_sg(1))/ &
+                     max(gas(inh3_g)*gas(ihno3_g),Keq_sg(1))
+      phi_nh4cl_s  = (gas(inh3_g)*gas(ihcl_g) - Keq_sg(2))/ &
+                     max(gas(inh3_g)*gas(ihcl_g),Keq_sg(2))
 
 
 !-------------------
 ! now determine if nh4no3 and/or nh4cl are active or significant
 
 ! nh4no3
-      if( (gnh3_hno3.gt.keq_sg(1) .and. beta_nh4 .gt.0.99) .or.   &
-          (abs(phi_nh4no3(ibin)) .lt. 0.02) )then
+      if( abs(phi_nh4no3_s) .lt. rtol_eqb_ASTEM )then
         iactive_nh4no3 = 0
-      elseif(gnh3_hno3.lt.keq_sg(1) .and. pcnt_nh4no3.lt.1.0)then
+      elseif(gas(inh3_g)*gas(ihno3_g) .lt. Keq_sg(1) .and. &
+             epercent(jnh4no3,jsolid,ibin) .le. ptol_mol_ASTEM)then
         iactive_nh4no3 = 0
-        call degas_solid_nh4no3(ibin)
+        if(epercent(jnh4no3,jsolid,ibin) .gt. 0.0)then
+          call degas_solid_nh4no3(ibin)
+        endif
       endif
 
 ! nh4cl
-      if( (gnh3_hcl.gt.keq_sg(2) .and. beta_nh4 .gt.0.99) .or.   &
-          abs(phi_nh4cl(ibin)) .lt. 0.02 )then
+      if( abs(phi_nh4cl_s) .lt. rtol_eqb_ASTEM )then
         iactive_nh4cl = 0
-      elseif(gnh3_hcl.lt.keq_sg(2) .and. pcnt_nh4cl.lt.1.0)then
+      elseif(gas(inh3_g)*gas(ihcl_g) .lt. Keq_sg(2) .and. &
+             epercent(jnh4cl, jsolid,ibin) .le. ptol_mol_ASTEM)then
         iactive_nh4cl = 0
-        call degas_solid_nh4cl(ibin)
+        if(epercent(jnh4cl, jsolid,ibin) .gt. 0.0)then
+          call degas_solid_nh4cl(ibin)
+        endif
       endif
 
-
+              
       iactive = iactive_nh4no3 + iactive_nh4cl
 
 ! check the outcome
-      if(iactive .eq. 0)then
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      endif
+      if(iactive .eq. 0)return
+
 
       goto (1,2,3),iactive
 
 !---------------------------------
-! only nh4no3 is active
-1     continue
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)
-      c = -(kg(ihno3_g,ibin)*keq_sg(1))
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = keq_sg(1)/sfc_a(inh3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-
-
-      df_gas(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)  = 0.0
-      df_gas(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)= phi_nh4no3(ibin)
-      phi_volatile(ihcl_g,ibin) = 0.0
-      phi_volatile(inh3_g,ibin) = phi_nh4no3(ibin)
-
-
-      flux(inh3_g,ibin)    = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-      flux(ihno3_g,ibin)   = flux(inh3_g,ibin)
-      flux(ihcl_g,ibin)    = 0.0
+! only nh4no3 solid is active
+1     call ASTEM_flux_dry_case4a(ibin)
 
       return
-
-
-
+      
+            
 !-----------------
-! only nh4cl is active
-2     continue
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)
-      c = -(kg(ihcl_g,ibin)*keq_sg(2))
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihcl_g)  = keq_sg(2) /sfc_a(inh3_g)
-      sfc_a(ihno3_g) = gas(ihno3_g)
-
-
-      df_gas(ihno3_g,ibin) = 0.0
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)= 0.0
-      phi_volatile(ihcl_g,ibin) = phi_nh4cl(ibin)
-      phi_volatile(inh3_g,ibin) = phi_nh4cl(ibin)
-
-
-      flux(inh3_g,ibin)    = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-      flux(ihcl_g,ibin)    = flux(inh3_g,ibin)
-      flux(ihno3_g,ibin)   = 0.0
-
+! only nh4cl solid is active
+2     call ASTEM_flux_dry_case4b(ibin)
+            
       return
 
-
+      
 !-----------------
 ! both nh4no3 and nh4cl are active
-3     continue
+3     call ASTEM_flux_dry_case4ab(ibin)
 
-! nh4no3
+
+
+
+      return
+      end subroutine ASTEM_flux_dry_case4
+
+
+
+
+
+
+
+!---------------------------------------------------------------------
+! Case 4a
+
+      subroutine ASTEM_flux_dry_case4a(ibin) ! NH4NO3 solid
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) a, b, c
+! function
+!      real(kind=8) quadratic
+
+
+
       a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)
-      c = -(kg(ihno3_g,ibin)*keq_sg(1))
+      b = - kg(inh3_g,ibin)*gas(inh3_g)  &
+          + kg(ihno3_g,ibin)*gas(ihno3_g) 
+      c = -(kg(ihno3_g,ibin)*Keq_sg(1))
 
-      sfc_nh3_1    = quadratic(a,b,c)
-      sfc_a(inh3_g)  = sfc_nh3_1
-      sfc_a(ihno3_g) = keq_sg(1)/sfc_a(inh3_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-      df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-      flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      phi_volatile(ihno3_g,ibin) = phi_nh4no3(ibin)
+      sfc_a(inh3_g)  = quadratic(a,b,c)
+      sfc_a(ihno3_g) = Keq_sg(1)/sfc_a(inh3_g)
+
+      integrate(ihno3_g,jsolid,ibin) = mYES
+      integrate(inh3_g,jsolid,ibin)  = mYES
+
+      df_gas_s(ihno3_g,ibin)=gas(ihno3_g)-sfc_a(ihno3_g)
+      df_gas_s(inh3_g,ibin) =gas(inh3_g) -sfc_a(inh3_g)
+      
+      phi_volatile_s(ihno3_g,ibin)= phi_nh4no3_s
+      phi_volatile_s(inh3_g,ibin) = phi_nh4no3_s
+
+      flux_s(ihno3_g,ibin) = kg(ihno3_g,ibin)*df_gas_s(ihno3_g,ibin)
+      flux_s(inh3_g,ibin)  = flux_s(ihno3_g,ibin)
+
+      ieqblm_ASTEM = mNO
+
+      return
+      end subroutine ASTEM_flux_dry_case4a
 
 
-! nh4cl
+
+
+!---------------------------------------------------------
+! Case 4b
+
+      subroutine ASTEM_flux_dry_case4b(ibin) ! NH4Cl solid
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) a, b, c
+! function
+!      real(kind=8) quadratic
+
+
       a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)
-      c = -(kg(ihcl_g,ibin)*keq_sg(2))
+      b = - kg(inh3_g,ibin)*gas(inh3_g) &
+          + kg(ihcl_g,ibin)*gas(ihcl_g)  
+      c = -(kg(ihcl_g,ibin)*Keq_sg(2))
+        
+      sfc_a(inh3_g) = quadratic(a,b,c)
+      sfc_a(ihcl_g) = Keq_sg(2) /sfc_a(inh3_g)
 
-      sfc_nh3_2    = quadratic(a,b,c)
-      sfc_a(inh3_g)  = sfc_nh3_2
-      sfc_a(ihcl_g)  = keq_sg(2)/sfc_a(inh3_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-      flux(ihcl_g,ibin)    = kg(ihcl_g,ibin)*df_gas(ihcl_g,ibin)
-      phi_volatile(ihcl_g,ibin) = phi_nh4cl(ibin)
+      integrate(ihcl_g,jsolid,ibin) = mYES
+      integrate(inh3_g,jsolid,ibin) = mYES
 
-! nh3
-      phi_volatile(inh3_g,ibin) = max( abs(phi_nh4no3(ibin)),   &
-                                       abs(phi_nh4cl(ibin)) )
+      df_gas_s(ihcl_g,ibin) = gas(ihcl_g)-sfc_a(ihcl_g)
+      df_gas_s(inh3_g,ibin) = gas(inh3_g)-sfc_a(inh3_g)
+
+      phi_volatile_s(ihcl_g,ibin) = phi_nh4cl_s
+      phi_volatile_s(inh3_g,ibin) = phi_nh4cl_s
+
+      flux_s(ihcl_g,ibin) = kg(ihcl_g,ibin)*df_gas_s(ihcl_g,ibin)
+      flux_s(inh3_g,ibin) = flux_s(ihcl_g,ibin)
+
+      ieqblm_ASTEM = mNO
+
+      return
+      end subroutine ASTEM_flux_dry_case4b
+
+
+
+
+!-------------------------------------------------------------------
+! Case 4ab
+
+      subroutine ASTEM_flux_dry_case4ab(ibin)	! NH4NO3 + NH4Cl (solid)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) a, b, c, &
+           flux_nh3_est, flux_nh3_max, ratio_flux
+! function
+!      real(kind=8) quadratic
+
+      call ASTEM_flux_dry_case4a(ibin)
+      call ASTEM_flux_dry_case4b(ibin)
 
 
 ! estimate nh3 flux and adjust hno3 and/or hcl if necessary
 
-      flux_nh3_est = flux(ihno3_g,ibin) + flux(ihcl_g,ibin)
+      flux_nh3_est = flux_s(ihno3_g,ibin)+flux_s(ihcl_g,ibin)
       flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
 
 
       if(flux_nh3_est .le. flux_nh3_max)then
 
-        flux(inh3_g,ibin) = flux_nh3_est		! all ok - no adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
+        flux_s(inh3_g,ibin) = flux_nh3_est			! all ok - no adjustments needed
+        sfc_a(inh3_g)       = gas(inh3_g) -  &			! recompute sfc_a(ihno3_g)
+                              flux_s(inh3_g,ibin)/kg(inh3_g,ibin)
+        phi_volatile_s(inh3_g,ibin) = max(abs(phi_nh4no3_s), &
+                                          abs(phi_nh4cl_s))
 
-      else			! reduce hno3 and hcl fluxes as necessary so that nh3 flux = flux_nh3_max
+      else			! reduce hno3 and hcl flux_ses as necessary so that nh3 flux_s = flux_s_nh3_max
+     
+        ratio_flux          = flux_nh3_max/flux_nh3_est
+        flux_s(inh3_g,ibin) = flux_nh3_max
+        flux_s(ihno3_g,ibin)= flux_s(ihno3_g,ibin)*ratio_flux
+        flux_s(ihcl_g,ibin) = flux_s(ihcl_g,ibin) *ratio_flux
 
-        ratio_flux   = flux_nh3_max/flux_nh3_est
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihno3_g,ibin) = flux(ihno3_g,ibin)*ratio_flux
-        flux(ihcl_g, ibin) = flux(ihcl_g,ibin) *ratio_flux
+        sfc_a(inh3_g) = 0.0
+        sfc_a(ihno3_g)= gas(ihno3_g) -  &	! recompute sfc_a(ihno3_g)
+                        flux_s(ihno3_g,ibin)/kg(ihno3_g,ibin)
+        sfc_a(ihcl_g) = gas(ihcl_g) -   &	! recompute sfc_a(ihcl_g)
+                        flux_s(ihcl_g,ibin)/kg(ihcl_g,ibin)
 
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihno3_g)     = gas(ihno3_g) -  			   &  ! recompute sfc_a(ihno3_g)
-                             flux(ihno3_g,ibin)/kg(ihno3_g,ibin)
-        sfc_a(ihcl_g)      = gas(ihcl_g)  -  			   &  ! recompute sfc_a(ihcl_g)
-                             flux(ihcl_g,ibin)/kg(ihcl_g,ibin)
+        df_gas_s(inh3_g,ibin) =gas(inh3_g) -sfc_a(inh3_g)
+        df_gas_s(ihno3_g,ibin)=gas(ihno3_g)-sfc_a(ihno3_g)
+        df_gas_s(ihcl_g,ibin) =gas(ihcl_g) -sfc_a(ihcl_g)
 
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-        df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
+        phi_volatile_s(inh3_g,ibin) = max(abs(phi_nh4no3_s), &
+                                          abs(phi_nh4cl_s))
 
       endif
 
-
-
-
-      return
-      end subroutine asteem_flux_dry_case4
-
-
-
-
-
-
-
-
-
-      subroutine asteem_flux_dry_case5(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-      flux(ih2so4_g,ibin) = 0.0
-      flux(ihno3_g,ibin)  = 0.0
-      flux(ihcl_g,ibin)   = 0.0
-      flux(inh3_g,ibin)   = 0.0
-
+      ieqblm_ASTEM = mNO
 
       return
-      end subroutine asteem_flux_dry_case5
+      end subroutine ASTEM_flux_dry_case4ab
 
 
 
@@ -6336,185 +5154,134 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: computes fluxes over wet aerosols
+!=======================================================================
 !
-! author: rahul a. zaveri
-! update: jan 2005
+! MIXED-PHASE PARTICLES
+!
+!***********************************************************************
+! part of ASTEM: computes gas-aerosol fluxes over mixed-phase aerosols
+!
+! author: Rahul A. Zaveri
+! update: apr 2006
 !-----------------------------------------------------------------------
-      subroutine asteem_flux_wet(ibin)
-!     implicit none
-!     include 'mosaic.h'
+
+      subroutine ASTEM_flux_mix(ibin)
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer iv, iadjust, iadjust_intermed, icontinue_case4
-      real xt, xnh4, g_nh3_hno3, g_nh3_hcl,   &
-           a_nh4_no3, a_nh4_cl, a_no3, a_cl,   &
+      integer iv, iadjust, iadjust_intermed
+      real(kind=8) XT, g_nh3_hno3, g_nh3_hcl, &
+           a_nh4_no3, a_nh4_cl, a_no3, a_cl, &
            prod_nh4no3, prod_nh4cl
+      real(kind=8) volatile_cl
+     
 
-
-
-! check
-!c      call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)
-!c      call degas_acids(jliquid,ibin,xt)
-      call ions_to_electrolytes(jliquid,ibin,xt)  	! for water content calculation
+      call ions_to_electrolytes(jliquid,ibin,XT)  	! for water content calculation
       call compute_activities(ibin)
 
       if(water_a(ibin) .eq. 0.0)then
-	write(6,*)'water is zero in liquid phase'
-	write(6,*)'stopping in asteem_flux_wet'
-!       stop
-        call peg_error_fatal( lunerr_aer,   &
-            'stopping in asteem_flux_wet' )
+	write(6,*)'Water is zero in liquid phase'
+	write(6,*)'Stopping in ASTEM_flux_wet'
+        stop
+      endif
+      
+
+
+!-----------------------------------------------------------------
+! CASE 1:  caco3 > 0 absorb all acids (and indirectly degas co2)
+
+      if(epercent(jcaco3,jsolid,ibin) .gt. 0.0)then
+        jphase(ibin) = jliquid
+        call ASTEM_flux_wet_case1(ibin)
+        return
       endif
 
+!-----------------------------------------------------------------
+! CASE 2: Sulfate-Rich Domain
 
-! calculate xnh4
-      if(aer(iso4_a,jliquid,ibin).gt.0.0)then
-        xnh4 = aer(inh4_a,jliquid,ibin)/aer(iso4_a,jliquid,ibin)
-      else
-        xnh4 = -1.0
-      endif
-
-
-! h2so4
-      sfc_a(ih2so4_g)        = 0.0
-      df_gas(ih2so4_g,ibin)  = 0.0
-      flux(ih2so4_g,ibin)    = 0.0
-      phi_volatile(ih2so4_g,ibin) = 0.0
-
-
-!-------------------------------------------------------------------
-! case 1: sulfate-rich domain
-
-      if(xt.lt.2.0 .and. xt.ge.0.)then
-        call asteem_flux_wet_case1(ibin)
+      if(XT.lt.1.9999 .and. XT.ge.0.)then	! excess sulfate (acidic)
+        jphase(ibin) = jliquid
+	call ASTEM_flux_wet_case2(ibin)
         return
       endif
 
 !-------------------------------------------------------------------
-! case 2: caco3 > 0 absorb acids (and indirectly degas co2)
+! CASE 3: nh4no3 or nh4cl or both may be active
 
-      if(electrolyte(jcaco3,jsolid,ibin) .gt. 0.0)then
-        call asteem_flux_wet_case2(ibin)
-        return
-      endif
+      if( electrolyte(jnh4no3,jsolid,ibin).gt.0. .and. &
+          electrolyte(jnh4cl,jsolid,ibin) .gt.0. )then
+        jphase(ibin) = jsolid
+        call ASTEM_flux_dry_case4(ibin)
 
-!-------------------------------------------------------------------
-! do some small adjustments before deciding case 3
-!
-      call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)
-      iadjust = mno		! default
-      iadjust_intermed = mno	! default
+        if(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+          (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+        elseif(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+          (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+        else
+          mc(jc_h,ibin) = sqrt(Keq_ll(3))
+        endif
 
-! nh4no3
-      g_nh3_hno3= gas(inh3_g)*gas(ihno3_g)
-      a_nh4_no3 = epercent(jnh4no3,jliquid,ibin)
-
-      if(g_nh3_hno3 .gt. 0.0 .and. a_nh4_no3 .lt. 0.1)then
-        call absorb_tiny_nh4no3(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      elseif(g_nh3_hno3 .eq. 0.0 .and. a_nh4_no3 .gt. 0.0)then
-        call degas_tiny_nh4no3(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-      if(iadjust_intermed .eq. myes)then
-        call ions_to_electrolytes(jliquid,ibin,xt)  	! update after adjustments
-        iadjust_intermed = mno	! reset
-      endif
-
-! nh4cl
-      g_nh3_hcl= gas(inh3_g)*gas(ihcl_g)
-      a_nh4_cl = epercent(jnh4cl,jliquid,ibin)
-
-      if(g_nh3_hcl .gt. 0.0 .and. a_nh4_cl .lt. 0.1)then
-        call absorb_tiny_nh4cl(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      elseif(g_nh3_hcl .eq. 0.0 .and. a_nh4_cl .gt. 0.0)then
-        call degas_tiny_nh4cl(ibin)
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-      if(iadjust_intermed .eq. myes)then
-        call ions_to_electrolytes(jliquid,ibin,xt)  	! update after adjustments
-        iadjust_intermed = mno	! reset
-      endif
-
-! hno3
-      a_no3 = aer_percent(ino3_a,jliquid,ibin)
-      if(gas(ihno3_g).gt.0. .and. a_no3 .lt. 0.1 .and.   &
-         aer(icl_a,jliquid,ibin) .gt. 0.0)then
-        call absorb_tiny_hno3(ibin)	! and degas tiny hcl
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-
-! hcl
-      a_cl = aer_percent(icl_a,jliquid,ibin)
-      if(gas(ihcl_g).gt.0. .and. a_cl .lt. 0.1 .and.   &
-         aer(ino3_a,jliquid,ibin) .gt. 0.0)then
-        call absorb_tiny_hcl(ibin)	! and degas tiny hno3
-        iadjust = myes
-        iadjust_intermed = myes
-      endif
-
-
-      if(iadjust_intermed .eq. myes)then
-        call ions_to_electrolytes(jliquid,ibin,xt)  	! update after adjustments
-      endif
-
-      if(iadjust .eq. myes)then
-        call compute_activities(ibin)			! update after adjustments
-      endif
-
-
-! all adjustments done...
-
-!--------
-      prod_nh4no3 = gas(inh3_g)*gas(ihno3_g) + activity(jnh4no3,ibin)
-      prod_nh4cl  = gas(inh3_g)*gas(ihcl_g)  + activity(jnh4cl,ibin)
-!
-! case 3: nh4no3 and/or nh4cl maybe active
-      if(prod_nh4no3 .gt. 0.0 .or. prod_nh4cl .gt. 0.0)then
-        call asteem_flux_wet_case3(ibin, icontinue_case4)
-        if(icontinue_case4 .eq. mno)return
-      endif
-
-!-------------------------------------------------------------------
-! case 4: nh3 = 0 (in gas and aerosol). hno3 and hcl exchange may happen here
-
-      if(ma(ja_no3,ibin)*ma(ja_cl,ibin) .gt. 0.0)then
-        call asteem_flux_wet_case4(ibin)
-        return
-      endif
-
-!-------------------------------------------------------------------
-! case 5: default (may degas nh3)
-
-        call asteem_flux_wet_case5(ibin)
         return
 
-      end subroutine asteem_flux_wet
+      elseif( electrolyte(jnh4no3,jsolid,ibin).gt.0. )then
+! do small adjustments for nh4cl aq
+        g_nh3_hcl= gas(inh3_g)*gas(ihcl_g)
+        a_nh4_cl = aer(inh4_a,jliquid,ibin)*aer(icl_a,jliquid,ibin)
+
+        iadjust = mNO		! initialize
+        if(g_nh3_hcl .gt. 0.0 .and. a_nh4_cl .eq. 0.0)then
+          call absorb_tiny_nh4cl(ibin)
+          iadjust = mYES
+        elseif(g_nh3_hcl .eq. 0.0 .and. a_nh4_cl .gt. 0.0)then
+          call degas_tiny_nh4cl(ibin)
+          iadjust = mYES
+        endif
+    
+        if(iadjust .eq. mYES)then
+          call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+          call compute_activities(ibin)			! update after adjustments
+        endif
+
+        call ASTEM_flux_mix_case3a(ibin)	! nh4no3 solid + nh4cl aq
+        jphase(ibin) = jtotal
+        return
+
+      elseif( electrolyte(jnh4cl,jsolid,ibin).gt.0.)then
+! do small adjustments for nh4no3 aq
+        g_nh3_hno3= gas(inh3_g)*gas(ihno3_g)
+        a_nh4_no3 = aer(inh4_a,jliquid,ibin)*aer(ino3_a,jliquid,ibin)
+
+        iadjust = mNO		! initialize
+        if(g_nh3_hno3 .gt. 0.0 .and. a_nh4_no3 .eq. 0.0)then
+          call absorb_tiny_nh4no3(ibin)
+          iadjust = mYES
+        elseif(g_nh3_hno3 .eq. 0.0 .and. a_nh4_no3 .gt. 0.0)then
+          call degas_tiny_nh4no3(ibin)
+          iadjust = mYES
+        endif
+
+        if(iadjust .eq. mYES)then
+          call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+          call compute_activities(ibin)			! update after adjustments
+        endif
+
+        kelvin_nh4no3 = kel(inh3_g,ibin)*kel(ihno3_g,ibin)
+        Keq_nh4no3 = kelvin_nh4no3*activity(jnh4no3,ibin)*Kp_nh4no3	! = [NH3]s * [HNO3]s
+
+        call ASTEM_flux_mix_case3b(ibin)	! nh4cl solid + nh4no3 aq
+        jphase(ibin) = jtotal
+        return
+      endif
+     
+
+      return
+      end subroutine ASTEM_flux_mix
+      
+!----------------------------------------------------------------------
 
 
 
@@ -6523,6 +5290,188 @@
 
 
 
+!------------------------------------------------------------------
+! Mix Case 3a: NH4NO3 solid maybe active. NH4Cl aq maybe active
+
+      subroutine ASTEM_flux_mix_case3a(ibin)	! TOUCH
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer iactive_nh4no3, iactive_nh4cl
+
+
+! set default values for flags
+      iactive_nh4no3 = mYES
+      iactive_nh4cl  = mYES
+
+
+! nh4no3 (solid)
+      phi_nh4no3_s = (gas(inh3_g)*gas(ihno3_g) - Keq_sg(1))/ &
+                     max(gas(inh3_g)*gas(ihno3_g),Keq_sg(1))
+
+! nh4cl (liquid)
+      kelvin_nh4cl = kel(inh3_g,ibin)*kel(ihcl_g,ibin)
+      Keq_nh4cl = kelvin_nh4cl*activity(jnh4cl,ibin)*Kp_nh4cl	! = [NH3]s * [HCl]s
+
+
+!-------------------
+! now determine if nh4no3 and/or nh4cl are active or significant
+! nh4no3 solid
+      if( abs(phi_nh4no3_s) .le. rtol_eqb_ASTEM )then
+        iactive_nh4no3 = mNO
+      elseif(gas(inh3_g)*gas(ihno3_g) .lt. Keq_sg(1) .and. &
+             epercent(jnh4no3,jsolid,ibin) .le. ptol_mol_ASTEM)then
+        iactive_nh4no3 = mNO
+        if(epercent(jnh4no3,jsolid,ibin) .gt. 0.0)then
+          call degas_solid_nh4no3(ibin)
+        endif
+      endif
+
+! nh4cl aq
+      if( gas(inh3_g)*gas(ihcl_g).eq.0. .or. Keq_nh4cl.eq.0. )then
+        iactive_nh4cl = mNO
+      endif
+              
+
+!---------------------------------
+      if(iactive_nh4no3 .eq. mYES)then
+
+        jphase(ibin) = jsolid
+        call ASTEM_flux_dry_case4a(ibin)	! NH4NO3 (solid)
+
+        if(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+          (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+        elseif(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+          (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+        else
+          mc(jc_h,ibin) = sqrt(Keq_ll(3))
+        endif
+
+      endif 
+
+
+      if(iactive_nh4cl .eq. mYES)then
+
+        jphase(ibin) = jliquid
+        call ASTEM_flux_wet_case3b(ibin)	! NH4Cl (liquid)
+
+        if(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+          (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+        else
+          mc(jc_h,ibin) = sqrt(Keq_ll(3))
+        endif
+
+      endif
+
+
+      if(iactive_nh4cl .eq. mYES .and. iactive_nh4no3 .eq. mYES)then
+        jphase(ibin) = jtotal
+      endif
+
+
+            
+      return
+      end subroutine ASTEM_flux_mix_case3a
+
+
+
+
+
+
+
+
+!------------------------------------------------------------------
+! Mix Case 3b: NH4Cl solid maybe active. NH4NO3 aq may or maybe active
+
+      subroutine ASTEM_flux_mix_case3b(ibin)	! TOUCH
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      integer iactive_nh4no3, iactive_nh4cl
+
+
+! set default values for flags
+      iactive_nh4cl  = mYES
+      iactive_nh4no3 = mYES
+
+
+! nh4cl (solid)
+      phi_nh4cl_s  = (gas(inh3_g)*gas(ihcl_g) - Keq_sg(2))/ &
+                     max(gas(inh3_g)*gas(ihcl_g),Keq_sg(2))
+
+! nh4no3 (liquid)
+      kelvin_nh4no3 = kel(inh3_g,ibin)*kel(ihno3_g,ibin)
+      Keq_nh4no3 = kelvin_nh4no3*activity(jnh4no3,ibin)*Kp_nh4no3	! = [NH3]s * [HNO3]s
+
+
+!-------------------
+! now determine if nh4no3 and/or nh4cl are active or significant
+! nh4cl (solid)
+      if( abs(phi_nh4cl_s) .le. rtol_eqb_ASTEM )then
+        iactive_nh4cl = mNO
+      elseif(gas(inh3_g)*gas(ihcl_g) .lt. Keq_sg(2) .and. &
+             epercent(jnh4cl,jsolid,ibin) .le. ptol_mol_ASTEM)then
+        iactive_nh4cl = mNO
+        if(epercent(jnh4cl,jsolid,ibin) .gt. 0.0)then
+          call degas_solid_nh4cl(ibin)
+        endif
+      endif
+
+! nh4no3 (liquid)
+      if( gas(inh3_g)*gas(ihno3_g).eq.0. .or. Keq_nh4no3.eq.0. )then
+        iactive_nh4no3 = mNO
+      endif
+
+
+!---------------------------------
+      if(iactive_nh4cl .eq. mYES)then
+      
+        jphase(ibin) = jsolid
+        call ASTEM_flux_dry_case4b(ibin)	! NH4Cl (solid)
+
+        if(sfc_a(ihcl_g).gt.0.0 .and. ma(ja_cl,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(4)*sfc_a(ihcl_g)/ &
+          (kel(ihcl_g,ibin)*gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
+        elseif(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+          (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+        else
+          mc(jc_h,ibin) = sqrt(Keq_ll(3))
+        endif
+
+      endif
+
+
+      if(iactive_nh4no3 .eq. mYES)then
+
+        jphase(ibin) = jliquid
+        call ASTEM_flux_wet_case3a(ibin)	! NH4NO3 (liquid)
+
+        if(sfc_a(ihno3_g).gt.0.0 .and. ma(ja_no3,ibin).gt.0.0)then
+          mc(jc_h,ibin) = Keq_gl(3)*sfc_a(ihno3_g)/ &
+          (kel(ihno3_g,ibin)*gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
+        else
+          mc(jc_h,ibin) = sqrt(Keq_ll(3))
+        endif
+
+      endif
+
+
+      if(iactive_nh4cl .eq. mYES .and. iactive_nh4no3 .eq. mYES)then
+        jphase(ibin) = jtotal
+      endif
+
+                 
+
+      return
+      end subroutine ASTEM_flux_mix_case3b
 
 
 
@@ -6535,570 +5484,167 @@
 
 
 !***********************************************************************
-! part of asteem: subroutines for flux_wet cases
+! part of ASTEM: condenses h2so4, msa, and nh3 analytically over dtchem [s]
 !
-! author: rahul a. zaveri
-! update: jan 2005
+! author: Rahul A. Zaveri
+! update: jan 2007
 !-----------------------------------------------------------------------
-!
-!
-!
-! case 1: sulfate-rich domain
-!
-      subroutine asteem_flux_wet_case1(ibin)
-!     implicit none
-!     include 'mosaic.h'
+
+      subroutine ASTEM_non_volatiles(dtchem) ! TOUCH
+!      implicit none
+!      include 'mosaic.h'
 ! subr arguments
-      integer ibin
-      real xnh4
-
-
-
-      if(aer(inh4_a,jliquid,ibin) .eq. 0. .and. gas(inh3_g) .gt. 0.)then
-        call absorb_tiny_nh3(ibin)
-      endif
-
-! calculate xnh4
-      xnh4 = aer(inh4_a,jliquid,ibin)/aer(iso4_a,jliquid,ibin)
-
-      if(xnh4 .eq. 0.0)return	! no nh3 or nh4+ present - so skip
-
-      call equilibrate_acids(ibin) 	  	! updates aer(icl_a, ino3_a, jtotal), activity(jhcl,jhno3)
-
-      sfc_a(ih2so4_g)= 0.0
-      sfc_a(ihno3_g) = gas(ihno3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-      sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                     (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-      df_gas(ih2so4_g,ibin) = 0.0
-      df_gas(ihno3_g,ibin)  = 0.0
-      df_gas(ihcl_g,ibin)   = 0.0
-      df_gas(inh3_g,ibin)   = gas(inh3_g) - sfc_a(inh3_g)
-
-      phi_volatile(ihno3_g,ibin) = 0.0
-      phi_volatile(ihcl_g,ibin)  = 0.0
-      phi_volatile(inh3_g,ibin)  =   df_gas(inh3_g,ibin)/   &
-                                 max(sfc_a(inh3_g), 1.e-10)
-
-      flux(ih2so4_g,ibin)   = 0.0
-      flux(ihno3_g,ibin)    = 0.0
-      flux(ihcl_g,ibin)     = 0.0
-
-      if(df_gas(inh3_g,ibin) .gt. 0.0)then
-        df_gas(inh3_g,ibin) = 0.0	! only degassing is allowed here
-        flux(inh3_g,ibin)   = 0.0
-        phi_volatile(inh3_g,ibin) = 0.0
-        return
-      endif
-
-! check for equilibrium
-      if(abs(phi_volatile(inh3_g,ibin)) .lt. 0.01)then
-        flux(inh3_g,ibin)   = 0.0
-      else
-        flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-      endif
-
-
-      return
-      end subroutine asteem_flux_wet_case1
-
-
-
-
-
-
-! case 2: caco3 > 0 absorb all acids (and indirectly degas co2)
-!
-      subroutine asteem_flux_wet_case2(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
+      real(kind=8) dtchem
 ! local variables
-      integer iv
+      integer ibin, iupdate_phase_state
+      real(kind=8) decay_h2so4, decay_msa,   &
+           delta_h2so4, delta_tmsa, delta_nh3, delta_hno3, delta_hcl, &
+           delta_so4(nbin_a), delta_msa(nbin_a), &
+           delta_nh4(nbin_a)
+      real(kind=8) XT
+    
 
 
-      mxfer_massbal(ibin) = myes
 
-      sfc_a(ihno3_g) = 0.0
-      sfc_a(ihcl_g)  = 0.0
-      sfc_a(inh3_g)  = gas(inh3_g)
-
-      df_gas(ih2so4_g,ibin) = 0.0
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g)
-      df_gas(inh3_g,ibin)   = 0.0
-
-      phi_volatile(ihno3_g,ibin) = 1.0
-      phi_volatile(ihcl_g,ibin)  = 1.0
-      phi_volatile(inh3_g,ibin)  = 0.0
-
-      do iv = 1, naer_vol
-        flux(iv,ibin)     = kg(iv,ibin)*df_gas(iv,ibin)
+      sumkg_h2so4 = 0.0
+      sumkg_msa   = 0.0
+      sumkg_nh3   = 0.0
+      sumkg_hno3  = 0.0
+      sumkg_hcl   = 0.0
+      do ibin = 1, nbin_a
+        sumkg_h2so4 = sumkg_h2so4 + kg(ih2so4_g,ibin)
+        sumkg_msa   = sumkg_msa   + kg(imsa_g,ibin)
+        sumkg_nh3   = sumkg_nh3   + kg(inh3_g,ibin)
+        sumkg_hno3  = sumkg_hno3  + kg(ihno3_g,ibin)
+        sumkg_hcl   = sumkg_hcl   + kg(ihcl_g,ibin)
       enddo
 
 
-      mc(jc_h,ibin) = sqrt(keq_ll(3))
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
+
+!--------------------------------------
+! H2SO4
+      if(gas(ih2so4_g) .gt. 1.e-14)then
+
+! integrate h2so4 condensation analytically
+        decay_h2so4   = exp(-sumkg_h2so4*dtchem)
+        delta_h2so4   = gas(ih2so4_g)*(1.0 - decay_h2so4)
+        gas(ih2so4_g) = gas(ih2so4_g)*decay_h2so4
 
 
-      return
-      end subroutine asteem_flux_wet_case2
+! now distribute delta_h2so4 to each bin and conform the particle (may degas by massbal)
+        do ibin = 1, nbin_a
+          if(jaerosolstate(ibin) .ne. no_aerosol)then
+            delta_so4(ibin) = delta_h2so4*kg(ih2so4_g,ibin)/sumkg_h2so4
+            aer(iso4_a,jtotal,ibin) = aer(iso4_a,jtotal,ibin) + &
+                                      delta_so4(ibin)
+          endif
+        enddo
 
-
-
-
-
-
-
-
-
-! case 3:
-! case 3: nh4no3 and/or nh4cl may be active
-      subroutine asteem_flux_wet_case3(ibin, icontinue_case4)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, icontinue_case4
-! local variables
-      integer iv, iactive_nh4no3, iactive_nh4cl, iactive
-      real xt, gnh3_hno3, gnh3_hcl, beta_nh4no3, beta_nh4cl,   &
-           beta_nh4,   &
-           keq_nh4no3, keq_nh4cl, pcnt_nh4no3, pcnt_nh4cl,   &
-           ratio_flux, a, b, c, sfc_nh3_1, sfc_nh3_2,   &
-           phi_nh3_1, phi_nh3_2, flux_nh3_est, flux_nh3_max
-! function
-!     real quadratic
-
-
-!-------------------
-! set default values for flags
-      iactive_nh4no3 = 1
-      iactive_nh4cl  = 2
-      icontinue_case4 = mno	! default
-
-!-------------------
-! compute diagnostic products and ratios
-      gnh3_hno3   = gas(inh3_g)*gas(ihno3_g)
-      gnh3_hcl    = gas(inh3_g)*gas(ihcl_g)
-
-      keq_nh4no3  = activity(jnh4no3,ibin)*kp_nh4no3	! = [nh3]s * [hno3]s
-      keq_nh4cl   = activity(jnh4cl,ibin)*kp_nh4cl	! = [nh3]s * [hcl]s
-
-      beta_nh4no3 = gnh3_hno3/keq_nh4no3_0
-      beta_nh4cl  = gnh3_hcl/keq_nh4cl_0
-
-      beta_nh4    = aer(inh4_a,jtotal,ibin)/aer_nh4_max(ibin)
-
-      if(keq_nh4no3 .gt. 0.)then
-        phi_nh4no3(ibin) =    (gnh3_hno3 - keq_nh4no3)/   &
-                                     keq_nh4no3
       else
-        phi_nh4no3(ibin) = 0.0
-      endif
 
-      if(keq_nh4cl .gt. 0.)then
-        phi_nh4cl(ibin)  =    (gnh3_hcl - keq_nh4cl)/   &
-                                     keq_nh4cl
+        delta_h2so4 = 0.0
+        do ibin = 1, nbin_a
+            delta_so4(ibin) = 0.0
+        enddo
+
+      endif
+! h2so4 condensation is now complete
+!--------------------------------------
+
+
+
+! MSA
+      if(gas(imsa_g) .gt. 1.e-14)then
+
+! integrate msa condensation analytically
+        decay_msa   = exp(-sumkg_msa*dtchem)
+        delta_tmsa  = gas(imsa_g)*(1.0 - decay_msa)
+        gas(imsa_g) = gas(imsa_g)*decay_msa
+
+! now distribute delta_msa to each bin and conform the particle (may degas by massbal)
+        do ibin = 1, nbin_a
+          if(jaerosolstate(ibin) .ne. no_aerosol)then
+            delta_msa(ibin) = delta_tmsa*kg(imsa_g,ibin)/sumkg_msa
+            aer(imsa_a,jtotal,ibin) = aer(imsa_a,jtotal,ibin) + &
+                                      delta_msa(ibin)
+          endif
+        enddo
+
       else
-        phi_nh4cl(ibin)  = 0.0
+
+        delta_tmsa = 0.0
+        do ibin = 1, nbin_a
+            delta_msa(ibin) = 0.0
+        enddo
+
       endif
+! msa condensation is now complete
+!-------------------------------------
 
 
-!
-! the following checks are order sensitive
-!-------------------
-! first check if the bin has reached equilibrium
-      if(abs(phi_nh4no3(ibin)).lt.0.02 .and.   &
-         abs(phi_nh4cl(ibin)) .lt.0.02)then
-        iactive_nh4no3 = 0
-        iactive_nh4cl  = 0
-        iactive = 0
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return	! yes, the bin has reached equilibrium. quit
-      endif
 
-
-!------------------
-! now check if nh4no3 and/or nh4cl want to evaporate completely
-      call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)
-      pcnt_nh4no3 = epercent(jnh4no3,jliquid,ibin)
-      pcnt_nh4cl  = epercent(jnh4cl, jliquid,ibin)
-
-      if( (gnh3_hno3.le.keq_nh4no3 .and. pcnt_nh4no3.lt.1.0) .and.   &
-          (gnh3_hcl .le.keq_nh4cl  .and. pcnt_nh4cl .lt.1.0) )then
-        if(electrolyte(jnh4so4,jliquid,ibin) .gt. 0.0)then
-          call evaporate_nh4no3_nh4cl(ibin)
-          return
-        else
-          icontinue_case4 = myes ! its a nacl/nano3/cacl2/cano3 particle with negligible nh3, nh4
-          return
+! compute max allowable nh3, hno3, and hcl condensation
+      delta_nh3 = gas(inh3_g) *(1.0 - exp(-sumkg_nh3*dtchem))
+      delta_hno3= gas(ihno3_g)*(1.0 - exp(-sumkg_hno3*dtchem))
+      delta_hcl = gas(ihcl_g) *(1.0 - exp(-sumkg_hcl*dtchem))
+      
+! compute max possible nh4 condensation for each bin
+      do ibin = 1, nbin_a
+        if(jaerosolstate(ibin) .ne. no_aerosol)then
+          delta_nh3_max(ibin) = delta_nh3*kg(inh3_g,ibin)/sumkg_nh3
+          delta_hno3_max(ibin)= delta_hno3*kg(ihno3_g,ibin)/sumkg_hno3
+          delta_hcl_max(ibin) = delta_hcl*kg(ihcl_g,ibin)/sumkg_hcl
         endif
+      enddo
+
+
+      if(delta_h2so4 .eq. 0.0 .and. delta_tmsa .eq. 0.0)then
+        iupdate_phase_state = mNO
+        goto 100
       endif
 
-!--------------------
-! now determine if nh4no3 and/or nh4cl are active or significant
 
-! nh4no3
-      if( (gnh3_hno3.gt.keq_nh4no3 .and. beta_nh4no3.lt.0.03) .or.   &
-          (gnh3_hno3.gt.keq_nh4no3 .and. beta_nh4   .gt.0.99) .or.   &
-          (abs(phi_nh4no3(ibin)) .lt. 0.02) )then
-        iactive_nh4no3 = 0
-      elseif(gnh3_hno3.lt.keq_nh4no3 .and. pcnt_nh4no3.lt.1.0)then
-        iactive_nh4no3 = 0
-        if(pcnt_nh4no3 .gt. 0.5)call evaporate_half_nh4no3(ibin)
+! now condense appropriate amounts of nh3 to each bin
+      do ibin = 1, nbin_a
+
+        if(epercent(jnacl,jtotal,ibin)  .eq. 0.0 .and. &
+           epercent(jcacl2,jtotal,ibin) .eq. 0.0 .and. &
+           epercent(jnano3,jtotal,ibin) .eq. 0.0 .and. &
+           epercent(jcano3,jtotal,ibin) .eq. 0.0 .and. &
+           epercent(jcaco3,jtotal,ibin) .eq. 0.0 .and. &
+           jaerosolstate(ibin) .ne. no_aerosol)then
+        
+          delta_nh4(ibin)=min( (2.*delta_so4(ibin)+delta_msa(ibin)), &
+                                delta_nh3_max(ibin) )
+     
+          aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin) + &	! update aer-phase
+                                    delta_nh4(ibin)
+
+          gas(inh3_g) = gas(inh3_g) - delta_nh4(ibin)		! update gas-phase
+
+        else
+
+          delta_nh4(ibin)     = 0.0
+
+        endif
+
+      enddo
+
+      iupdate_phase_state = mYES
+
+
+! recompute phase equilibrium
+100   if(iupdate_phase_state .eq. mYES)then
+        do ibin = 1, nbin_a
+          if(jaerosolstate(ibin) .ne. no_aerosol)then
+            call conform_electrolytes(jtotal,ibin,XT)
+            call aerosol_phase_state(ibin)
+          endif
+        enddo
       endif
-
-! nh4cl
-      if( (gnh3_hcl.gt.keq_nh4cl .and. beta_nh4cl.lt.0.03) .or.   &
-          (gnh3_hcl.gt.keq_nh4cl .and. beta_nh4  .gt.0.99) .or.   &
-          (abs(phi_nh4cl(ibin)) .lt. 0.02) )then
-        iactive_nh4cl = 0
-      elseif(gnh3_hcl.lt.keq_nh4cl .and. pcnt_nh4cl.lt.1.0)then
-        iactive_nh4cl = 0
-        if(pcnt_nh4cl .gt. 0.5)call evaporate_half_nh4cl(ibin)
-      endif
-
-      iactive = iactive_nh4no3 + iactive_nh4cl
-
-! check the outcome
-      if(iactive                          .eq. 0    .and.   &
-         phi_nh4no3(ibin)                 .gt. 0.0  .and.   &
-         phi_nh4cl(ibin)                  .gt. 0.0 )then
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      elseif(iactive                      .eq. 0    .and.   &
-         abs(phi_nh4no3(ibin))            .gt. 0.02 .and.   &
-         abs(phi_nh4cl(ibin))             .gt. 0.02 .and.   &
-         aer_percent(inh4_a,jliquid,ibin) .lt. 1.0  .and.   &
-         (aer_percent(icl_a,jliquid,ibin) .gt. 1.0  .or.   &
-          aer_percent(ino3_a,jliquid,ibin).gt. 1.0) )then
-        icontinue_case4 = myes		! nh3 and nh4 seems to be insignificant
-        return				! therefore continue with case 4
-      elseif(iactive .eq. 0)then
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      endif
-
-      goto (1,2,3),iactive
-
-!---------------------------------
-! only nh4no3 is active
-1     continue
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)
-      c = -(kg(ihno3_g,ibin)*keq_nh4no3)
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = keq_nh4no3/sfc_a(inh3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-
-
-      df_gas(ihno3_g,ibin) = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)  = 0.0
-      df_gas(inh3_g,ibin)  = gas(inh3_g)  - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)= phi_nh4no3(ibin)
-      phi_volatile(ihcl_g,ibin) = 0.0
-      phi_volatile(inh3_g,ibin) = phi_nh4no3(ibin)
-
-
-      flux(inh3_g,ibin) = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-      flux(ihno3_g,ibin)  = flux(inh3_g,ibin)
-      flux(ihcl_g,ibin)   = 0.0
-
-      mc(jc_h,ibin) = keq_gl(3)*sfc_a(ihno3_g)/   &
-                      (gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
 
       return
-
-
-
-!-----------------
-! only nh4cl is active
-2     continue
-
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)
-      c = -(kg(ihcl_g,ibin)*keq_nh4cl)
-
-      sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihcl_g)  = keq_nh4cl /sfc_a(inh3_g)
-      sfc_a(ihno3_g) = gas(ihno3_g)
-
-
-      df_gas(ihno3_g,ibin) = 0.0
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin)= 0.0
-      phi_volatile(ihcl_g,ibin) = phi_nh4cl(ibin)
-      phi_volatile(inh3_g,ibin) = phi_nh4cl(ibin)
-
-
-      flux(inh3_g,ibin) = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-      flux(ihcl_g,ibin)   = flux(inh3_g,ibin)
-      flux(ihno3_g,ibin)  = 0.0
-
-        mc(jc_h,ibin) = keq_gl(4)*sfc_a(ihcl_g)/   &
-                       (gam(jhcl,ibin)**2 * ma(ja_cl,ibin))
-
-        ph(ibin) = -alog10(mc(jc_h,ibin))
-        ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-
-
-!-----------------
-! both hno3 and hcl are active
-3     continue
-
-! nh4no3
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihno3_g,ibin)*gas(ihno3_g)
-      c = -(kg(ihno3_g,ibin)*keq_nh4no3)
-
-      sfc_nh3_1    = quadratic(a,b,c)
-      sfc_a(inh3_g)  = sfc_nh3_1
-      sfc_a(ihno3_g) = keq_nh4no3/sfc_a(inh3_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-      df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-      flux(ihno3_g,ibin)   = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      phi_volatile(ihno3_g,ibin) = phi_nh4no3(ibin)
-
-
-! nh4cl
-      a =   kg(inh3_g,ibin)
-      b = - kg(inh3_g,ibin)*gas(inh3_g)   &
-          + kg(ihcl_g,ibin)*gas(ihcl_g)
-      c = -(kg(ihcl_g,ibin)*keq_nh4cl)
-
-      sfc_nh3_2    = quadratic(a,b,c)
-      sfc_a(inh3_g)  = sfc_nh3_2
-      sfc_a(ihcl_g)  = keq_nh4cl /sfc_a(inh3_g)
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-      df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-      flux(ihcl_g,ibin)    = kg(ihcl_g,ibin)*df_gas(ihcl_g,ibin)
-      phi_volatile(ihcl_g,ibin) = phi_nh4cl(ibin)
-
-! nh3
-      phi_volatile(inh3_g,ibin) = max( abs(phi_nh4cl(ibin)),   &
-                                       abs(phi_nh4no3(ibin)) )
-
-
-! now compute nh3 flux and adjust hno3 and/or hcl if necessary
-
-      flux_nh3_est = flux(ihno3_g,ibin) + flux(ihcl_g,ibin)
-      flux_nh3_max = kg(inh3_g,ibin)*gas(inh3_g)
-
-      if(flux_nh3_est .le. flux_nh3_max)then
-        flux(inh3_g,ibin) = flux_nh3_est			! all ok - no flux adjustments needed
-        sfc_a(inh3_g)     = gas(inh3_g) - 			   &  ! recompute sfc_a(inh3_g)
-                            flux(inh3_g,ibin)/kg(inh3_g,ibin)
-        df_gas(inh3_g,ibin) = gas(inh3_g) - sfc_a(inh3_g)
-        mc(jc_h,ibin)   = keq_gl(3)*sfc_a(ihno3_g)/   &
-                         (gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
-
-      else			! reduce hno3 and hcl fluxes as necessary so that nh3 flux = flux_nh3_max
-
-        ratio_flux   = flux_nh3_max/flux_nh3_est
-        flux(inh3_g,ibin)  = flux_nh3_max
-        flux(ihno3_g,ibin) = flux(ihno3_g,ibin)*ratio_flux
-        flux(ihcl_g, ibin) = flux(ihcl_g,ibin) *ratio_flux
-
-        sfc_a(inh3_g)      = 0.0
-        sfc_a(ihno3_g)     = gas(ihno3_g) -  			   &  ! recompute sfc_a(ihno3_g)
-                             flux(ihno3_g,ibin)/kg(ihno3_g,ibin)
-        sfc_a(ihcl_g)      = gas(ihcl_g)  -  			   &  ! recompute sfc_a(ihcl_g)
-                             flux(ihcl_g,ibin)/kg(ihcl_g,ibin)
-
-        df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-        df_gas(ihno3_g,ibin) = gas(ihno3_g)- sfc_a(ihno3_g)
-        df_gas(ihcl_g,ibin)  = gas(ihcl_g) - sfc_a(ihcl_g)
-
-        mc(jc_h,ibin)    = keq_gl(3)*sfc_a(ihno3_g)/   &
-                          (gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
-      endif
-
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-
-      return
-      end subroutine asteem_flux_wet_case3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-! case 4: nh3 = 0 (in gas and aerosol). hno3 and hcl exchange may happen here
-      subroutine asteem_flux_wet_case4(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real gas_eqb_ratio, gas_act_ratio, phi_ratio
-
-
-
-
-! now diagnose the situation
-
-      gas_eqb_ratio = (keq_gl(4)*ma(ja_no3,ibin)*gam(jhno3,ibin)**2)/     &  ! ce,hno3/ce,hcl
-                      (keq_gl(3)*ma(ja_cl ,ibin)*gam(jhcl,ibin)**2)
-
-      gas_act_ratio = gas(ihno3_g)/gas(ihcl_g)
-
-      phi_ratio = abs(gas_eqb_ratio - gas_act_ratio)/   &
-                  max(gas_eqb_ratio , gas_act_ratio)
-
-
-! check if equilibrium reached...
-      if(phi_ratio .lt. 0.01)then
-        flux(ihno3_g,ibin) = 0.0
-        flux(ihcl_g,ibin)  = 0.0
-        flux(inh3_g,ibin)  = 0.0
-        return
-      endif
-
-
-! compute equilibrium surface concentrations
-      sfc_a(ihcl_g) =   &
-       (kg(ihno3_g,ibin)*gas(ihno3_g)+kg(ihcl_g,ibin)*gas(ihcl_g))/   &
-            (kg(ihcl_g,ibin) + gas_eqb_ratio*kg(ihno3_g,ibin))
-      sfc_a(ihno3_g)= gas_eqb_ratio*sfc_a(ihcl_g)
-
-      df_gas(ihno3_g,ibin)  = gas(ihno3_g) - sfc_a(ihno3_g)
-      df_gas(ihcl_g,ibin)   = gas(ihcl_g) - sfc_a(ihcl_g)
-
-      phi_volatile(ihno3_g,ibin) =   df_gas(ihno3_g,ibin)/   &
-                                 max(sfc_a(ihno3_g), 1.e-10)
-      phi_volatile(ihcl_g,ibin)  =   df_gas(ihcl_g,ibin)/   &
-                                 max(sfc_a(ihcl_g), 1.e-10)
-
-
-      flux(ihno3_g,ibin)    = kg(ihno3_g,ibin)*df_gas(ihno3_g,ibin)
-      flux(ihcl_g,ibin)     = -flux(ihno3_g,ibin)   ! kg(ihcl_g,ibin) *df_gas(ihcl_g, ibin)
-      flux(inh3_g,ibin)     = 0.0
-
-      mc(jc_h,ibin)       = keq_gl(3)*sfc_a(ihno3_g)/   &
-                           (gam(jhno3,ibin)**2 * ma(ja_no3,ibin))
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-      end subroutine asteem_flux_wet_case4
-
-
-
-
-
-
-
-
-
-! case 5
-      subroutine asteem_flux_wet_case5(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-
-      call equilibrate_acids(ibin)	! hno3 and/or hcl may be > 0 in the gas phase
-
-      mc(jc_h,ibin) = max(sqrt(keq_ll(3)), mc(jc_h,ibin))
-
-      sfc_a(ih2so4_g)= 0.0
-      sfc_a(ihno3_g) = gas(ihno3_g)
-      sfc_a(ihcl_g)  = gas(ihcl_g)
-      sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                      (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-      df_gas(ih2so4_g,ibin)= 0.0
-      df_gas(ihno3_g,ibin) = 0.0
-      df_gas(ihcl_g,ibin)  = 0.0
-      df_gas(inh3_g,ibin)  = gas(inh3_g) - sfc_a(inh3_g)
-
-
-      phi_volatile(ihno3_g,ibin) = 0.0
-      phi_volatile(ihcl_g,ibin)  = 0.0
-      phi_volatile(inh3_g,ibin)  =   df_gas(inh3_g,ibin)/   &
-                                 max(sfc_a(inh3_g), 1.e-10)
-
-
-      if(abs(phi_volatile(inh3_g,ibin)) .lt. 0.01)then
-        df_gas(inh3_g,ibin) = 0.0
-      endif
-
-      flux(ih2so4_g,ibin) = 0.0
-      flux(ihno3_g,ibin)  = 0.0
-      flux(ihcl_g,ibin)   = 0.0
-      flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      return
-      end subroutine asteem_flux_wet_case5
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      end subroutine ASTEM_non_volatiles
 
 
 
@@ -7124,36 +5670,59 @@
       integer nghq
       parameter (nghq = 2)		! gauss-hermite quadrature order
       integer ibin, iq, iv
-      real tworootpi, root2, beta
+      real(kind=8) tworootpi, root2, beta
       parameter (tworootpi = 3.5449077, root2 = 1.4142135, beta = 2.0)
-      real cdum, dp, dp_avg, fkn, kn, lnsg, lndpgn, lndp, speed, sumghq
-      real xghq(nghq), wghq(nghq)	! quadrature abscissae and weights
-      real mw_vol(naer_vol), v_molar(naer_vol) ! mw and molar vols of volatile species
-      real freepath(naer_vol), accom(naer_vol), dg(naer_vol) ! keep local
-!     real fuchs_sutugin				! mosaic func
-!     real gas_diffusivity				! mosaic func
-!     real mean_molecular_speed				! mosaic func
+      real(kind=8) cdum, dp, dp_avg, fkn, kn, lnsg, lndpgn, lndp, speed,   &
+           sumghq
+      real(kind=8) xghq(nghq), wghq(nghq)			! quadrature abscissae and weights
+      real(kind=8) mw_vol(ngas_volatile), v_molar(ngas_volatile), 		     &  ! mw and molar vols of volatile species
+           freepath(ngas_volatile), accom(ngas_volatile),   &
+           dg(ngas_volatile) 				! keep local
+!     real(kind=8) fuchs_sutugin				! mosaic func
+!     real(kind=8) gas_diffusivity				! mosaic func
+!     real(kind=8) mean_molecular_speed				! mosaic func
 
 
 
 
 
-
+! molecular weights
       mw_vol(ih2so4_g) = 98.0
       mw_vol(ihno3_g)  = 63.0
       mw_vol(ihcl_g)   = 36.5
       mw_vol(inh3_g)   = 17.0
+      mw_vol(imsa_g)   = 96.0
+      mw_vol(iaro1_g)  = 150.0
+      mw_vol(iaro2_g)  = 150.0
+      mw_vol(ialk1_g)  = 140.0
+      mw_vol(iole1_g)  = 140.0
+      mw_vol(iapi1_g)  = 184.0
+      mw_vol(iapi2_g)  = 184.0
+      mw_vol(ilim1_g)  = 200.0
+      mw_vol(ilim2_g)  = 200.0
 
       v_molar(ih2so4_g)= 42.88
       v_molar(ihno3_g) = 24.11
       v_molar(ihcl_g)  = 21.48
       v_molar(inh3_g)  = 14.90
+      v_molar(imsa_g)  = 58.00
 
+! mass accommodation coefficients
       accom(ih2so4_g)  = 0.1
       accom(ihno3_g)   = 0.1
       accom(ihcl_g)    = 0.1
       accom(inh3_g)    = 0.1
+      accom(imsa_g)    = 0.1
+      accom(iaro1_g)   = 0.1
+      accom(iaro2_g)   = 0.1
+      accom(ialk1_g)   = 0.1
+      accom(iole1_g)   = 0.1
+      accom(iapi1_g)   = 0.1
+      accom(iapi2_g)   = 0.1
+      accom(ilim1_g)   = 0.1
+      accom(ilim2_g)   = 0.1
 
+! quadrature weights
       xghq(1) =  0.70710678
       xghq(2) = -0.70710678
       wghq(1) =  0.88622693
@@ -7161,13 +5730,19 @@
 
 
 
-
-
 ! calculate gas diffusivity and mean free path for condensing gases
-      do iv = 1, naer_vol
+! ioa
+      do iv = 1, ngas_ioa
         speed  = mean_molecular_speed(t_k,mw_vol(iv))	! cm/s
         dg(iv) = gas_diffusivity(t_k,p_atm,mw_vol(iv),v_molar(iv)) ! cm^2/s
         freepath(iv) = 3.*dg(iv)/speed			! cm
+      enddo
+
+! soa
+      do iv = iaro1_g, ngas_volatile
+        speed = mean_molecular_speed(t_k,mw_vol(iv))	! cm/s
+	dg(iv) = 0.02					! cm^2/s
+	freepath(iv) = 3.*dg(iv)/speed
       enddo
 
 
@@ -7183,12 +5758,12 @@
 
         dpgn_a(ibin) = dp_wet_a(ibin)	! cm
 
-        lnsg   = alog(sigmag_a(ibin))
-        lndpgn = alog(dpgn_a(ibin))
+        lnsg   = log(sigmag_a(ibin))
+        lndpgn = log(dpgn_a(ibin))
         cdum   = tworootpi*num_a(ibin)*   &
                  exp(beta*lndpgn + 0.5*(beta*lnsg)**2)
 
-        do 20 iv = 1, naer_vol
+        do 20 iv = 1, ngas_volatile
 
           sumghq = 0.0
           do 30 iq = 1, nghq	! sum over gauss-hermite quadrature points
@@ -7200,7 +5775,6 @@
 30        continue
 
         kg(iv,ibin) = cdum*dg(iv)*sumghq		! 1/s
-
 20      continue
 10    continue
 
@@ -7216,7 +5790,7 @@
         dp_avg = dp_wet_a(ibin)
         cdum  = 6.283185*dp_avg*num_a(ibin)
 
-        do 21 iv = 1, naer_vol
+        do 21 iv = 1, ngas_volatile
           kn = 2.*freepath(iv)/dp_avg
           fkn = fuchs_sutugin(kn,accom(iv))
           kg(iv,ibin) = cdum*dg(iv)*fkn		! 1/s
@@ -7226,11 +5800,13 @@
 
       else
 
-        write(6,*)'error in the choice of msize_framework'
-        write(6,*)'stopping in subr. aerosolmtc'
+        if (iprint_mosaic_fe1 .gt. 0) then
+          write(6,*)'error in the choice of msize_framework'
+          write(6,*)'mosaic fatal error in subr. aerosolmtc'
+        endif
 !       stop
-        call peg_error_fatal( lunerr_aer,   &
-            'stopping in subr. aerosolmtc' )
+        istat_mosaic_fe1 = -1900
+        return
 
       endif
 
@@ -7265,65 +5841,76 @@
 ! subr arguments
       integer ibin
 ! local variables
-      integer isize, itype, jc, je
-      complex ri_dum
+      integer jc, je, iaer, isize, itype
+      real(kind=8) aer_H
+      complex(kind=8) ri_dum
 
 
-
+! calculate dry mass and dry volume of a bin
+      mass_dry_a(ibin) = 0.0		! initialize to 0.0
+      vol_dry_a(ibin)  = 0.0		! initialize to 0.0
+      area_dry_a(ibin) = 0.0		! initialize to 0.0
 
       if(jaerosolstate(ibin) .ne. no_aerosol)then
 
-! calculate dry mass and dry volume of a bin
-        mass_dry_a(ibin) = 0.0		! initialize to 0.0
-        vol_dry_a(ibin)  = 0.0		! initialize to 0.0
+        aer_H = (2.*aer(iso4_a,jtotal,ibin) +  &
+                    aer(ino3_a,jtotal,ibin) +  &
+                    aer(icl_a,jtotal,ibin)  +  &
+                    aer(imsa_a,jtotal,ibin) +  &
+                 2.*aer(ico3_a,jtotal,ibin))-  &
+                (2.*aer(ica_a,jtotal,ibin)  +  &
+                    aer(ina_a,jtotal,ibin)  +  &
+                    aer(inh4_a,jtotal,ibin))
 
-! first add all electrolytes
-        do je = 1, nelectrolyte
-          comp_a(je)=electrolyte(je,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
-          mass_dry_a(ibin) = mass_dry_a(ibin) +	comp_a(je)		! g/cc(air)
+      do iaer = 1, naer
+        mass_dry_a(ibin) = mass_dry_a(ibin) +   &
+                           aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)	! ng/m^3(air)
+        vol_dry_a(ibin) = vol_dry_a(ibin) +   &
+        aer(iaer,jtotal,ibin)*mw_aer_mac(iaer)/dens_aer_mac(iaer)  	! ncc/m^3(air)
+      enddo
+        mass_dry_a(ibin) = mass_dry_a(ibin) + aer_H
+        vol_dry_a(ibin) = vol_dry_a(ibin) + aer_H
 
-          vol_dry_a(ibin) = vol_dry_a(ibin) + comp_a(je)/ 		   &  ! cc(aer)/cc(air)
-                                    dens_comp_a(je)
-        enddo
-
-! next add all other aerosol species except water
-        comp_a(joc) = aer(ioc_a,jtotal,ibin)*1.e-15			! g/cc(air)
-        comp_a(jbc) = aer(ibc_a,jtotal,ibin)*1.e-15			! g/cc(air)
-        comp_a(join)= aer(ioin_a,jtotal,ibin)*1.e-15			! g/cc(air)
-        comp_a(jh2o)= water_a(ibin)*1.e-3				! g/cc(air)
-
-        mass_dry_a(ibin) = mass_dry_a(ibin) +				   &  ! g/cc(air)
-                           comp_a(joc)      +   &
-                           comp_a(jbc)      +   &
-                           comp_a(join)
-
-        vol_dry_a(ibin)  = vol_dry_a(ibin)                +		   &  ! cc(aer)/cc(air)
-          		   comp_a(joc)/dens_comp_a(joc)   +   &
-          		   comp_a(jbc)/dens_comp_a(jbc)   +   &
-          		   comp_a(join)/dens_comp_a(join)
+      mass_dry_a(ibin) = mass_dry_a(ibin)*1.e-15			! g/cc(air)
+      vol_dry_a(ibin) = vol_dry_a(ibin)*1.e-15				! cc(aer)/cc(air)
 
 ! wet mass and wet volume
-        mass_wet_a(ibin) = mass_dry_a(ibin) + comp_a(jh2o)		! g/cc(air)
-
-        vol_wet_a(ibin) = vol_dry_a(ibin) + 				   &  ! cc(aer)/cc(air)
-      			  comp_a(jh2o)/dens_comp_a(jh2o)
-
+        mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+        vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air)
 
 ! calculate mean dry and wet particle densities
         dens_dry_a(ibin) = mass_dry_a(ibin)/vol_dry_a(ibin) ! g/cc(aerosol)
         dens_wet_a(ibin) = mass_wet_a(ibin)/vol_wet_a(ibin) ! g/cc(aerosol)
 
+! calculate mean dry and wet particle surface areas
+        area_dry_a(ibin)= 0.785398*num_a(ibin)*Dp_dry_a(ibin)**2	! cm^2/cc(air)
+        area_wet_a(ibin)= 0.785398*num_a(ibin)*Dp_wet_a(ibin)**2	! cm^2/cc(air)
 
 ! calculate mean dry and wet particle diameters
         dp_dry_a(ibin)=(1.90985*vol_dry_a(ibin)/num_a(ibin))**0.3333333	! cm
         dp_wet_a(ibin)=(1.90985*vol_wet_a(ibin)/num_a(ibin))**0.3333333 ! cm
 
-
 ! calculate volume average refractive index
+!   load comp_a array
+        do je = 1, nelectrolyte
+          comp_a(je)=electrolyte(je,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+        enddo
+        comp_a(joc)  = aer(ioc_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+        comp_a(jbc)  = aer(ibc_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+        comp_a(join) = aer(ioin_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(jaro1)= aer(iaro1_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(jaro2)= aer(iaro2_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(jalk1)= aer(ialk1_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(jole1)= aer(iole1_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(japi1)= aer(iapi1_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(japi2)= aer(iapi2_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(jlim1)= aer(ilim1_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+	comp_a(jlim2)= aer(ilim2_a,jtotal,ibin)*mw_comp_a(je)*1.e-15	! g/cc(air)
+        comp_a(jh2o) = water_a(ibin)*1.e-3				! g/cc(air)
+
         ri_dum = (0.0,0.0)
         do jc = 1, naercomp
-          ri_dum = ri_dum + ref_index_a(jc)*   &
-                            comp_a(jc)/dens_comp_a(jc)
+          ri_dum = ri_dum + ref_index_a(jc)*comp_a(jc)/dens_comp_a(jc)
         enddo
 
         ri_avg_a(ibin) = ri_dum/vol_wet_a(ibin)
@@ -7336,7 +5923,6 @@
         call isize_itype_from_ibin( ibin, isize, itype )
         dp_dry_a(ibin) = dcen_sect(isize,itype)	! cm
         dp_wet_a(ibin) = dcen_sect(isize,itype)	! cm
-
 
         ri_avg_a(ibin) = (1.5,0.0)
       endif
@@ -7376,813 +5962,70 @@
 ! subr arguments
       integer ibin
 ! local variables
-      real xt
+      integer jp, ja
+      real(kind=8) xt, xmol(nelectrolyte), sum_elec, dumK, c_bal, a_c
+      real(kind=8) quad, aq, bq, cq, xq, dum
 ! function
-!     real aerosol_water
+!     real(kind=8) aerosol_water
 
 
       water_a(ibin) = aerosol_water(jliquid,ibin)	! kg/m^3(air)
       if(water_a(ibin) .eq. 0.0)return
 
+
       call calculate_xt(ibin,jliquid,xt)
 
-      if(xt.gt.2.0 .or. xt.lt.0.)then		! check .ge. if that messes up phase calc
-        call sulfate_poor_activities(ibin)	! fully dissociated electrolytes
-      else
-        call sulfate_rich_activities(ibin)	! solve for so4= and hso4- ions
-      endif
+      if(xt.gt.2.0 .or. xt.lt.0.)then
+! sulfate poor: fully dissociated electrolytes
 
-
-      return
-      end subroutine compute_activities
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! computes activities for sulfate-poor systems
-! all electrolytes in the liquid phase are completely dissociated
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine sulfate_poor_activities(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real equiv_anions, equiv_cations, a_c
-
-
-! water molality
-      mh2o        = 55.509	! 1000 g water / mw(h2o),   (mw(h2o) = 18.016)
 
 ! anion molalities (mol/kg water)
       ma(ja_so4,ibin)  = 1.e-9*aer(iso4_a,jliquid,ibin)/water_a(ibin)
       ma(ja_hso4,ibin) = 0.0
       ma(ja_no3,ibin)  = 1.e-9*aer(ino3_a,jliquid,ibin)/water_a(ibin)
       ma(ja_cl,ibin)   = 1.e-9*aer(icl_a, jliquid,ibin)/water_a(ibin)
-      equiv_anions  = 2.*ma(ja_so4,ibin) +   &
-                         ma(ja_no3,ibin) +   &
-                         ma(ja_cl,ibin)
+      ma(ja_msa,ibin)  = 1.e-9*aer(imsa_a,jliquid,ibin)/water_a(ibin)
 
 ! cation molalities (mol/kg water)
       mc(jc_ca,ibin)   = 1.e-9*aer(ica_a, jliquid,ibin)/water_a(ibin)
       mc(jc_nh4,ibin)  = 1.e-9*aer(inh4_a,jliquid,ibin)/water_a(ibin)
       mc(jc_na,ibin)   = 1.e-9*aer(ina_a, jliquid,ibin)/water_a(ibin)
-      equiv_cations =    mc(jc_nh4,ibin) +   &
-                         mc(jc_na,ibin)  +   &
-                      2.*mc(jc_ca,ibin)
-
-      a_c = real(dble(equiv_anions) - dble(equiv_cations))
-      mc(jc_h,ibin)    = 0.5*real( dble(a_c) +   &
-                              dble(sqrt(a_c**2 + 4.*keq_ll(3))) )
-
-!      mc(jc_h,ibin)    = max( mc(jc_h,ibin), sqrt(keq_ll(3)) )
+      a_c              = ( 2.d0*ma(ja_so4,ibin)+  &
+                                ma(ja_no3,ibin)+  &
+                                ma(ja_cl,ibin) +  &
+                                ma(ja_msa,ibin) ) - &
+                         ( 2.d0*mc(jc_ca,ibin) +  &
+                                mc(jc_nh4,ibin)+  &
+                                mc(jc_na,ibin) )
+      mc(jc_h,ibin) = 0.5*a_c + sqrt(a_c**2 + 4.*Keq_ll(3))
 
       if(mc(jc_h,ibin) .eq. 0.0)then
-        mc(jc_h,ibin) = 1.e-10
+        mc(jc_h,ibin) = sqrt(Keq_ll(3))
       endif
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-
-! compute activity coefficients
-      if(mactivity_coeff .eq. mmtem)then
-          call mtem_sulfate_poor(ibin)		! mtem (2004)
-      elseif(mactivity_coeff .eq. mpsc)then
-          call psc_sulfate_poor(ibin)		! psc (1992, 1998)
-      elseif(mactivity_coeff .eq. mkm)then
-          call km_sulfate_poor(ibin)		! km (1978)
-      elseif(mactivity_coeff .eq. mbrom)then
-          call brom_sulfate_poor(ibin)	! bromley (1973)
-      endif
-
-
-! compute activities
-      activity(jnh4so4,ibin) = mc(jc_nh4,ibin)**2 * ma(ja_so4,ibin) *   &
-                               gam(jnh4so4,ibin)**3
-
-      activity(jnh4no3,ibin) = mc(jc_nh4,ibin) * ma(ja_no3,ibin) *   &
-                               gam(jnh4no3,ibin)**2
-
-      activity(jnh4cl,ibin)  = mc(jc_nh4,ibin) * ma(ja_cl,ibin) *   &
-                               gam(jnh4cl,ibin)**2
-
-      activity(jna2so4,ibin) = mc(jc_na,ibin)**2 * ma(ja_so4,ibin) *   &
-                               gam(jna2so4,ibin)**3
-
-      activity(jnano3,ibin)  = mc(jc_na,ibin) * ma(ja_no3,ibin) *   &
-                               gam(jnano3,ibin)**2
-
-      activity(jnacl,ibin)   = mc(jc_na,ibin) * ma(ja_cl,ibin) *   &
-                               gam(jnacl,ibin)**2
-
-      activity(jcano3,ibin)  = mc(jc_ca,ibin) * ma(ja_no3,ibin)**2 *   &
-                               gam(jcano3,ibin)**3
-
-      activity(jcacl2,ibin)  = mc(jc_ca,ibin) * ma(ja_cl,ibin)**2 *   &
-                               gam(jcacl2,ibin)**3
-
-      activity(jhno3,ibin)   = mc(jc_h,ibin) * ma(ja_no3,ibin) *   &
-                               gam(jhno3,ibin)**2
-
-      activity(jhcl,ibin)    = mc(jc_h,ibin) * ma(ja_cl,ibin) *   &
-                               gam(jhcl,ibin)**2
-
-!
-      activity(jlvcite,ibin) = 0.0
-
-      activity(jnh4hso4,ibin)= 0.0
-
-      activity(jnahso4,ibin) = 0.0
-
-      activity(jna3hso4,ibin)= 0.0
-
-      return
-      end subroutine sulfate_poor_activities
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! pitzer-simonson-clegg (psc) model for multicomponent activity coefficients
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: j. phys. chem. a 1998, 102, 2155-2171
-!-----------------------------------------------------------------------
-      subroutine psc_sulfate_poor(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jx, jm, ja, jc, izi, izj
-      real mtot, mion, mcation, manion, ix_c, ix_a,   &
-           sum_xczc, sum_xaza, dum
-! function
-!     real fn_thetahoe, fn_dthetahoe, fm, fx, fn
-
-
-
-! calculate mol fractions
-
-      mh2o = 55.509	! molality of water
-
-      mcation = 0.0
-      do jc = 1, ncation
-        mcation = mcation + mc(jc,ibin)
-      enddo
-
-      manion = 0.0
-      do ja = 1, nanion
-        manion = manion + ma(ja,ibin)
-      enddo
-
-      mion = mcation + manion
-
-      mtot   = mh2o + mion
-
-      do jc = 1, ncation
-        xc(jc) = mc(jc,ibin)/mtot
-      enddo
-
-      do ja = 1, nanion
-        xa(ja) = ma(ja,ibin)/mtot
-      enddo
-
-      xh2o  = mh2o/mtot
-!
-! calculate variables for mol-fraction
-! scale activity coefficient model
-
-      sum_xczc = 0.0
-      ix_c = 0.0
-      do jc = 1, ncation
-        sum_xczc = sum_xczc + xc(jc)*zc(jc)
-        ix_c = ix_c + 0.5*xc(jc)*zc(jc)**2
-      enddo
-
-      sum_xaza = 0.0
-      ix_a = 0.0
-      do ja = 1, nanion
-        sum_xaza = sum_xaza + xa(ja)*za(ja)
-        ix_a = ix_a + 0.5*xa(ja)*za(ja)**2
-      enddo
-
-      ix = ix_c + ix_a		! mole fraction ionic strength
-      ff = 2./(sum_xczc + sum_xaza)
-!
-! equivalent cation fractions
-      do jc = 1, ncation
-      ec(jc)=  xc(jc)*zc(jc)/sum_xczc
-      enddo
-
-! differentials
-      do jm = 1, ncation
-      	do jc = 1, ncation
-          if(jm.eq.jc)then
-      	    emc(jm,jc) = (zc(jm)/sum_xczc) * (1 - ec(jm))
-      	  else
-            emc(jm,jc) = -zc(jm)*ec(jc)/sum_xczc
-          endif
-     	enddo
-      enddo
-
-! equivalent anion fractions
-      do ja = 1, nanion
-      ea(ja)=  xa(ja)*za(ja)/sum_xaza
-      enddo
-
-! differentials
-      do jx = 1, nanion
-      	do ja = 1, nanion
-          if(jx.eq.ja)then
-      	    exa(jx,ja) = (za(jx)/sum_xaza) * (1 - ea(jx))
-      	  else
-            exa(jx,ja) = -za(jx)*ea(ja)/sum_xaza
-          endif
-     	enddo
-      enddo
-
-
-      do izi = 1, 2
-      do izj = 1, 2
-
-        thetahoe(izi,izj) = fn_thetahoe(izi,izj)
-        dthetahoe(izi,izj) = fn_dthetahoe(izi,izj)
-
-      enddo
-      enddo
-
-!
-!
-! mole fraction-scale activity coefficients
-        fh2o   = fn(1) ! neutral species (h2o)
-
-      do jm = 1, ncation_clegg
-        fc(jm,ibin) = fm(jm)	! cations
-      enddo
-
-
-      do jx = 1, nanion_clegg
-        fa(jx,ibin) = fx(jx)	! anions
-      enddo
-
-
-!
-! molality-scale activity coefficients
-      dum   = (1. + mion/mh2o)
-
-      do jc = 1, ncation_clegg
-       gam_cation(jc,ibin) = fc(jc,ibin)/dum
-      enddo
-
-      do ja = 1, nanion_clegg
-       gam_anion(ja,ibin)  = fa(ja,ibin)/dum
-      enddo
-
-
-      gam(jnh4no3,ibin) = (gam_cation(jc_nh4,ibin)*   &
-                           gam_anion(ja_no3,ibin))**0.5
-      gam(jnh4cl,ibin)  = (gam_cation(jc_nh4,ibin)*   &
-                           gam_anion(ja_cl,ibin))**0.5
-      gam(jnh4so4,ibin) = (gam_cation(jc_nh4,ibin)**2 *   &
-                           gam_anion(ja_so4,ibin))**(1./3.)
-      gam(jnacl,ibin)   = (gam_cation(jc_na,ibin)*   &
-                           gam_anion(ja_cl,ibin))**0.5
-      gam(jnano3,ibin)  = (gam_cation(jc_na,ibin)*   &
-                           gam_anion(ja_no3,ibin))**0.5
-      gam(jna2so4,ibin) = (gam_cation(jc_na,ibin)**2 *   &
-                           gam_anion(ja_so4,ibin))**(1./3.)
-      gam(jhno3,ibin)   = (gam_cation(jc_h,ibin)*   &
-                           gam_anion(ja_no3,ibin))**0.5
-      gam(jhcl,ibin)    = (gam_cation(jc_h,ibin)*   &
-                           gam_anion(ja_cl,ibin))**0.5
-      gam(jcacl2,ibin)  = (gam_cation(jc_ca,ibin)*   &
-                           gam_anion(ja_cl,ibin)**2)**(1./3.)
-      gam(jcano3,ibin)  = (gam_cation(jc_ca,ibin)*   &
-                           gam_anion(ja_no3,ibin)**2)**(1./3.)
-
-      gam_ratio(ibin)   = gam_cation(jc_nh4,ibin)/gam_cation(jc_h,ibin)
-
-!----
-      gam(jlvcite,ibin) = (gam_cation(jc_nh4,ibin)**3 *   &
-                           gam_anion(ja_hso4,ibin) *   &
-                           gam_anion(ja_so4,ibin))**(1./5.)
-
-      gam(jnh4hso4,ibin)= (gam_cation(jc_nh4,ibin) *   &
-                           gam_anion(ja_hso4,ibin))**(1./2.)
-
-      gam(jnahso4,ibin) = (gam_cation(jc_na,ibin) *   &
-                           gam_anion(ja_hso4,ibin))**(1./2.)
-
-      gam(jna3hso4,ibin) = (gam_cation(jc_na,ibin)**3 *   &
-                           gam_anion(ja_hso4,ibin) *   &
-                           gam_anion(ja_so4,ibin))**(1./5.)
-
-      gam(jh2so4,ibin)  = (gam_cation(jc_h,ibin)**2 *   &
-                           gam_anion(ja_so4,ibin))**(1./3.)
-
-      gam(jhhso4,ibin)  = (gam_cation(jc_h,ibin) *   &
-                           gam_anion(ja_hso4,ibin))**(1./2.)
-
-
-      return
-      end subroutine psc_sulfate_poor
-
-
-
-
-
-!***********************************************************************
-! kusik and meissner's method for multicomponent activity coefficients
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: aiche j., 1978
-!-----------------------------------------------------------------------
-      subroutine km_sulfate_poor(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jc, ja
-      real im_c, im_a, x
-! functions
-!     real fnlog_gam0
-
-
-! compute molality-scale ionic strength
-      im_c = 0.0
-      do jc = 1, ncation
-        im_c = im_c + 0.5*mc(jc,ibin)*zc(jc)**2
-      enddo
-
-      im_a = 0.0
-      do ja = 1, nanion
-        im_a = im_a + 0.5*ma(ja,ibin)*za(ja)**2
-      enddo
-
-      im(ibin) = im_c + im_a		! molality ionic strength
-      x = im(ibin)
-
-      log_gam0(jnh4so4) = fnlog_gam0(jnh4so4,im(ibin))
-      log_gam0(jnh4no3) = fnlog_gam0(jnh4no3,im(ibin))
-      log_gam0(jnh4cl)  = fnlog_gam0(jnh4cl,im(ibin))
-      log_gam0(jnacl)   = fnlog_gam0(jnacl,im(ibin))
-      log_gam0(jnano3)  = fnlog_gam0(jnano3,im(ibin))
-      log_gam0(jna2so4) = fnlog_gam0(jna2so4,im(ibin))
-      log_gam0(jcacl2)  = fnlog_gam0(jcacl2,im(ibin))
-      log_gam0(jcano3)  = fnlog_gam0(jcano3,im(ibin))
-      log_gam0(jhno3)   = fnlog_gam0(jhno3,im(ibin))
-      log_gam0(jhcl)    = fnlog_gam0(jhcl,im(ibin))
-      log_gam0(jh2so4)  = fnlog_gam0(jh2so4,im(ibin))
-      log_gam0(jhhso4)  = fnlog_gam0(jhhso4,im(ibin))
-
-
-! nh4no3
-        log_gam(jnh4no3) = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnh4no3)   +   &
-                           ma(ja_cl,ibin) *log_gam0(jnh4cl)    +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jnh4so4) ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4no3)   +   &
-                           mc(jc_na,ibin) *log_gam0(jnano3)    +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcano3)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhno3)  )
-        gam(jnh4no3,ibin) = 10.**log_gam(jnh4no3)
-
-
-
-! nh4cl
-        log_gam(jnh4cl)  = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnh4no3)   +   &
-                           ma(ja_cl,ibin) *log_gam0(jnh4cl)    +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jnh4so4) ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4cl)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnacl)     +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcacl2)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhcl)   )
-        gam(jnh4cl,ibin) = 10.**log_gam(jnh4cl)
-
-
-
-! (nh4)2so4
-        log_gam(jnh4so4) = (0.666666667/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnh4no3)   +   &
-                           ma(ja_cl,ibin) *log_gam0(jnh4cl)    +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jnh4so4) ) +   &
-                         (0.333333333/im(ibin))*   &
-                    ( 2.25*mc(jc_nh4,ibin)*log_gam0(jnh4so4)   +   &
-                      2.25*mc(jc_na,ibin) *log_gam0(jna2so4) )
-        gam(jnh4so4,ibin) = 10.**log_gam(jnh4so4)
-
-
-
-! nacl
-        log_gam(jnacl)   = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnano3)    +   &
-                           ma(ja_cl,ibin) *log_gam0(jnacl)     +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jna2so4) ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4cl)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnacl)     +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcacl2)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhcl)   )
-        gam(jnacl,ibin)  = 10.**log_gam(jnacl)
-
-
-
-! nano3
-        log_gam(jnano3)  = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnano3)    +   &
-                           ma(ja_cl,ibin) *log_gam0(jnacl)     +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jna2so4) ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4no3)   +   &
-                           mc(jc_na,ibin) *log_gam0(jnano3)    +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcano3)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhno3)  )
-        gam(jnano3,ibin) = 10.**log_gam(jnano3)
-
-
-
-! na2so4
-        log_gam(jna2so4) = (0.666666667/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnano3)    +   &
-                           ma(ja_cl,ibin) *log_gam0(jnacl)     +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jna2so4) ) +   &
-                         (0.333333333/im(ibin))*   &
-                    ( 2.25*mc(jc_nh4,ibin)*log_gam0(jnh4so4)   +   &
-                      2.25*mc(jc_na,ibin) *log_gam0(jna2so4) )
-        gam(jna2so4,ibin) = 10.**log_gam(jna2so4)
-
-
-! ca(no3)2
-        log_gam(jcano3)  = (0.333333333/im(ibin))*   &
-                    ( 2.25*ma(ja_no3,ibin)*log_gam0(jcano3)    +   &
-                      2.25*ma(ja_cl,ibin) *log_gam0(jcacl2)  ) +   &
-                         (0.666666666/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4no3)   +   &
-                           mc(jc_na,ibin) *log_gam0(jnano3)    +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcano3)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhno3)  )
-        gam(jcano3,ibin) = 10.**log_gam(jcano3)
-
-
-! cacl2
-        log_gam(jcacl2)  = (0.333333333/im(ibin))*   &
-                    ( 2.25*ma(ja_no3,ibin)*log_gam0(jcano3)    +   &
-                      2.25*ma(ja_cl,ibin) *log_gam0(jcacl2) )  +   &
-                         (0.666666666/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4cl)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnacl)     +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcacl2)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhcl)   )
-        gam(jcacl2,ibin) = 10.**log_gam(jcacl2)
-
-
-! hno3
-      log_gam(jhno3)   = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin) *log_gam0(jhno3)    +   &
-                      2.25*ma(ja_so4,ibin) *log_gam0(jh2so4)   +   &
-                           ma(ja_hso4,ibin)*log_gam0(jhhso4)   +   &
-                           ma(ja_cl,ibin)  *log_gam0(jhcl)   ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4no3)   +   &
-                           mc(jc_na,ibin) *log_gam0(jnano3)    +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcano3)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhno3)  )
-      gam(jhno3,ibin)  = 10.**log_gam(jhno3)
-
-
-! hcl
-      log_gam(jhcl)    = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin) *log_gam0(jhno3)    +   &
-                      2.25*ma(ja_so4,ibin) *log_gam0(jh2so4)   +   &
-                           ma(ja_hso4,ibin)*log_gam0(jhhso4)   +   &
-                           ma(ja_cl,ibin)  *log_gam0(jhcl)   ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4cl)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnacl)     +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcacl2)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhcl)   )
-      gam(jhcl,ibin)   = 10.**log_gam(jhcl)
-
-!----
-      gam(jlvcite,ibin) = 1.0
-
-      gam(jnh4hso4,ibin)= 1.0
-
-      gam(jnahso4,ibin) = 1.0
-
-      gam(jna3hso4,ibin) = 1.0
-
-      gam_ratio(ibin) = gam(jnh4no3,ibin)**2/gam(jhno3,ibin)**2
-
-      return
-      end subroutine km_sulfate_poor
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! bromley method for multicomponent activity coefficients
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: aiche j., 1973
-!-----------------------------------------------------------------------
-      subroutine brom_sulfate_poor(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jc, ja
-      real im_c, im_a, x, aterm, agam, sqim,   &
-           z_nh4, z_na, z_ca, z_h,   &
-           z_so4, z_no3, z_cl,   &
-           y_so4_nh4, y_so4_na, y_so4_h,   &
-           y_no3_nh4, y_no3_na, y_no3_ca, y_no3_h,   &
-           y_cl_nh4, y_cl_na, y_cl_ca, y_cl_h,   &
-           x_nh4_so4, x_na_so4, x_h_so4, x_nh4_no3,   &
-           x_na_no3, x_ca_no3, x_h_no3,   &
-           x_nh4_cl, x_na_cl, x_ca_cl, x_h_cl,   &
-           f_nh4, f_na, f_ca, f_h,   &
-           f_no3, f_cl, f_so4
-! function
-!     real fnlog_gam0
-
-
-! compute molality-scale ionic strength
-      im_c = 0.0
-      do jc = 1, ncation
-        im_c = im_c + 0.5*mc(jc,ibin)*zc(jc)**2
-      enddo
-
-      im_a = 0.0
-      do ja = 1, nanion
-        im_a = im_a + 0.5*ma(ja,ibin)*za(ja)**2
-      enddo
-
-      im(ibin) = im_c + im_a		! molality ionic strength
-      x = im(ibin)
-
-      log_gam0(jnh4so4) = fnlog_gam0(jnh4so4,im(ibin))
-      log_gam0(jnh4no3) = fnlog_gam0(jnh4no3,im(ibin))
-      log_gam0(jnh4cl)  = fnlog_gam0(jnh4cl,im(ibin))
-      log_gam0(jnacl)   = fnlog_gam0(jnacl,im(ibin))
-      log_gam0(jnano3)  = fnlog_gam0(jnano3,im(ibin))
-      log_gam0(jna2so4) = fnlog_gam0(jna2so4,im(ibin))
-      log_gam0(jcacl2)  = fnlog_gam0(jcacl2,im(ibin))
-      log_gam0(jcano3)  = fnlog_gam0(jcano3,im(ibin))
-      log_gam0(jhno3)   = fnlog_gam0(jhno3,im(ibin))
-      log_gam0(jhcl)    = fnlog_gam0(jhcl,im(ibin))
-      log_gam0(jh2so4)  = fnlog_gam0(jh2so4,im(ibin))
-      log_gam0(jhhso4)  = fnlog_gam0(jhhso4,im(ibin))
-
-
-      agam = 0.511 ! (kg/mol)^0.5
-      sqim = sqrt(im(ibin))
-
-      aterm = agam*sqim/(1. + sqim)
-
-      z_nh4 = 1.0
-      z_na  = 1.0
-      z_ca  = 2.0
-      z_h   = 1.0
-
-      z_so4 = 2.0
-      z_no3 = 1.0
-      z_cl  = 1.0
-
-! y
-      y_so4_nh4 = ((z_nh4+z_so4)/2.0)**2.0*ma(ja_so4,ibin)/im(ibin)
-      y_so4_na  = ((z_na +z_so4)/2.0)**2.0*ma(ja_so4,ibin)/im(ibin)
-      y_so4_h   = ((z_h  +z_so4)/2.0)**2.0*ma(ja_so4,ibin)/im(ibin)
-
-      y_no3_nh4 = ((z_nh4+z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-      y_no3_na  = ((z_na +z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-      y_no3_ca  = ((z_ca +z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-      y_no3_h   = ((z_h  +z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-
-      y_cl_nh4  = ((z_nh4+z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-      y_cl_na   = ((z_na +z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-      y_cl_ca   = ((z_ca +z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-      y_cl_h    = ((z_h  +z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-
-! x
-      x_nh4_so4 = ((z_nh4+z_so4)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_so4  = ((z_na +z_so4)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_h_so4   = ((z_h  +z_so4)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-      x_nh4_no3 = ((z_nh4+z_no3)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_no3  = ((z_na +z_no3)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_ca_no3  = ((z_ca +z_no3)/2.0)**2.0*mc(jc_ca,ibin)/im(ibin)
-      x_h_no3   = ((z_h  +z_no3)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-      x_nh4_cl  = ((z_nh4+z_cl)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_cl   = ((z_na +z_cl)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_ca_cl   = ((z_ca +z_cl)/2.0)**2.0*mc(jc_ca,ibin)/im(ibin)
-      x_h_cl    = ((z_h  +z_cl)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-
-
-      f_nh4 = y_no3_nh4*log_gam0(jnh4no3) +   &
-              y_so4_nh4*log_gam0(jnh4so4) +   &
-              y_cl_nh4 *log_gam0(jnh4cl)  +   &
-       aterm*(z_nh4*z_no3*y_no3_nh4 +   &
-              z_nh4*z_so4*y_so4_nh4 +   &
-              z_nh4*z_cl *y_cl_nh4)
-
-      f_na  = y_no3_na*log_gam0(jnano3)  +   &
-              y_so4_na*log_gam0(jna2so4) +   &
-              y_cl_na *log_gam0(jnacl)   +   &
-       aterm*(z_na*z_no3*y_no3_na +   &
-              z_na*z_so4*y_so4_na +   &
-              z_na*z_cl *y_cl_na)
-
-      f_ca  = y_no3_ca*log_gam0(jcano3) +   &
-              y_cl_ca *log_gam0(jcacl2) +   &
-       aterm*(z_ca*z_no3*y_no3_ca +   &
-              z_ca*z_cl *y_cl_ca)
-
-      f_h   = y_so4_h*log_gam0(jh2so4) +   &
-              y_no3_h*log_gam0(jhno3)  +   &
-              y_cl_h *log_gam0(jhcl)   +   &
-       aterm*(z_h*z_so4*y_so4_h +   &
-              z_h*z_no3*y_no3_h +   &
-              z_h*z_cl *y_cl_h)
-
-
-      f_no3 = x_nh4_no3*log_gam0(jnh4no3) +   &
-              x_na_no3 *log_gam0(jnano3)  +   &
-              x_ca_no3 *log_gam0(jcano3)  +   &
-              x_h_no3  *log_gam0(jhno3)   +   &
-       aterm*(z_nh4*z_no3*x_nh4_no3 +   &
-              z_na *z_no3*x_na_no3  +   &
-              z_ca *z_no3*x_ca_no3  +   &
-              z_h  *z_no3*x_h_no3)
-
-      f_cl  = x_nh4_cl*log_gam0(jnh4cl) +   &
-              x_na_cl *log_gam0(jnacl)  +   &
-              x_ca_cl *log_gam0(jcacl2) +   &
-              x_h_cl  *log_gam0(jhcl)   +   &
-       aterm*(z_nh4*z_cl*x_nh4_cl +   &
-              z_na *z_cl*x_na_cl  +   &
-              z_ca *z_cl*x_ca_cl  +   &
-              z_h  *z_cl*x_h_cl)
-
-      f_so4 = x_nh4_so4*log_gam0(jnh4so4) +   &
-              x_na_so4 *log_gam0(jna2so4) +   &
-              x_h_so4  *log_gam0(jh2so4)  +   &
-       aterm*(z_nh4*z_so4*x_nh4_so4 +   &
-              z_na *z_so4*x_na_so4  +   &
-              z_h  *z_so4*x_h_so4)
-
-
-! nh4no3
-      log_gam(jnh4no3) = -z_nh4*z_no3*aterm +   &
-            z_nh4*z_no3/(z_nh4+z_no3)*(f_nh4/z_nh4 + f_no3/z_no3)
-      gam(jnh4no3,ibin) = 10.**log_gam(jnh4no3)
-
-
-! nh4cl
-      log_gam(jnh4cl)  = -z_nh4*z_cl*aterm +   &
-            z_nh4*z_cl/(z_nh4+z_cl)*(f_nh4/z_nh4 + f_cl/z_cl)
-      gam(jnh4cl,ibin) = 10.**log_gam(jnh4cl)
-
-
-! (nh4)2so4
-      log_gam(jnh4so4) = -z_nh4*z_so4*aterm +   &
-            z_nh4*z_so4/(z_nh4+z_so4)*(f_nh4/z_nh4 + f_so4/z_so4)
-      gam(jnh4so4,ibin) = 10.**log_gam(jnh4so4)
-
-! nacl
-      log_gam(jnacl)   = -z_na*z_cl*aterm +   &
-            z_na*z_cl/(z_na+z_cl)*(f_na/z_na + f_cl/z_cl)
-      gam(jnacl,ibin)  = 10.**log_gam(jnacl)
-
-! nano3
-      log_gam(jnano3)  = -z_na*z_no3*aterm +   &
-            z_na*z_no3/(z_na+z_no3)*(f_na/z_na + f_no3/z_no3)
-      gam(jnano3,ibin) = 10.**log_gam(jnano3)
-
-! na2so4
-      log_gam(jna2so4) = -z_na*z_so4*aterm +   &
-            z_na*z_so4/(z_na+z_so4)*(f_na/z_na + f_so4/z_so4)
-      gam(jna2so4,ibin) = 10.**log_gam(jna2so4)
-
-
-! ca(no3)2
-      log_gam(jcano3)  = -z_ca*z_no3*aterm +   &
-            z_ca*z_no3/(z_ca+z_no3)*(f_ca/z_ca + f_no3/z_no3)
-      gam(jcano3,ibin) = 10.**log_gam(jcano3)
-
-
-! cacl2
-      log_gam(jcacl2)  = -z_ca*z_cl*aterm +   &
-            z_ca*z_cl/(z_ca+z_cl)*(f_ca/z_ca + f_cl/z_cl)
-      gam(jcacl2,ibin) = 10.**log_gam(jcacl2)
-
-
-! hno3
-      log_gam(jhno3)   = -z_h*z_no3*aterm +   &
-            z_h*z_no3/(z_h+z_no3)*(f_h/z_h + f_no3/z_no3)
-      gam(jhno3,ibin)  = 10.**log_gam(jhno3)
-
-
-! hcl
-      log_gam(jhcl)    = -z_h*z_cl*aterm +   &
-            z_h*z_cl/(z_h+z_cl)*(f_h/z_h + f_cl/z_cl)
-      gam(jhcl,ibin)   = 10.**log_gam(jhcl)
-
-!----
-      gam(jlvcite,ibin) = 1.0
-
-      gam(jnh4hso4,ibin)= 1.0
-
-      gam(jnahso4,ibin) = 1.0
-
-      gam(jna3hso4,ibin) = 1.0
-
-      gam_ratio(ibin) = gam(jnh4no3,ibin)**2/gam(jhno3,ibin)**2
-
-
-
-      return
-      end subroutine brom_sulfate_poor
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! multicomponent taylor expansion method (mtem)
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: zaveri et al., jgr 2005
-!-----------------------------------------------------------------------
-      subroutine mtem_sulfate_poor(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jp, ja
-      real xmol(nelectrolyte), sum_elec
-
-
 
 
       jp = jliquid
-
-
-      sum_elec = 2.*electrolyte(jnh4no3,jp,ibin) +   &
-                 2.*electrolyte(jnh4cl,jp,ibin)  +   &
-                 3.*electrolyte(jnh4so4,jp,ibin) +   &
-                 3.*electrolyte(jna2so4,jp,ibin) +   &
-                 2.*electrolyte(jnano3,jp,ibin)  +   &
-                 2.*electrolyte(jnacl,jp,ibin)   +   &
-                 3.*electrolyte(jcano3,jp,ibin)  +   &
-                 3.*electrolyte(jcacl2,jp,ibin)  +   &
-                 2.*electrolyte(jhno3,jp,ibin)   +   &
+      
+      
+      sum_elec = 2.*electrolyte(jnh4no3,jp,ibin) +  &
+                 2.*electrolyte(jnh4cl,jp,ibin)  +  &
+                 3.*electrolyte(jnh4so4,jp,ibin) +  &
+                 3.*electrolyte(jna2so4,jp,ibin) +  &
+                 2.*electrolyte(jnano3,jp,ibin)  +  &
+                 2.*electrolyte(jnacl,jp,ibin)   +  &
+                 3.*electrolyte(jcano3,jp,ibin)  +  &
+                 3.*electrolyte(jcacl2,jp,ibin)  +  &
+                 2.*electrolyte(jhno3,jp,ibin)   +  &
                  2.*electrolyte(jhcl,jp,ibin)
 
-
+      if(sum_elec .eq. 0.0)then
+        do ja = 1, nelectrolyte
+          gam(ja,ibin) = 1.0
+        enddo
+        goto 10
+      endif
+     
+     
 ! ionic mole fractions
       xmol(jnh4no3) = 2.*electrolyte(jnh4no3,jp,ibin)/sum_elec
       xmol(jnh4cl)  = 2.*electrolyte(jnh4cl,jp,ibin) /sum_elec
@@ -8197,1261 +6040,251 @@
 
 
       ja = jnh4so4
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-
-      ja = jnh4no3
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jnh4cl
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jna2so4
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jnano3
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jnacl
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jcano3
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-
-      ja = jcacl2
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jhno3
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      ja = jhcl
-      log_gam(ja) = xmol(jnh4no3)*log_gamz(ja,jnh4no3) +   &
-                    xmol(jnh4cl) *log_gamz(ja,jnh4cl)  +   &
-                    xmol(jnh4so4)*log_gamz(ja,jnh4so4) +   &
-                    xmol(jna2so4)*log_gamz(ja,jna2so4) +   &
-                    xmol(jnano3) *log_gamz(ja,jnano3)  +   &
-                    xmol(jnacl)  *log_gamz(ja,jnacl)   +   &
-                    xmol(jcano3) *log_gamz(ja,jcano3)  +   &
-                    xmol(jcacl2) *log_gamz(ja,jcacl2)  +   &
-                    xmol(jhno3)  *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)   *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-!----
-      gam(jlvcite,ibin) = 1.0
-
-      gam(jnh4hso4,ibin)= 1.0
-
-      gam(jnahso4,ibin) = 1.0
-
-      gam(jna3hso4,ibin) = 1.0
-
-      gam_ratio(ibin) = gam(jnh4no3,ibin)**2/gam(jhno3,ibin)**2
-
-!      gam_ratio(ibin) = max( gam(jnh4no3,ibin)**2/gam(jhno3,ibin)**2,
-!     &                       gam(jnh4cl,ibin)**2/gam(jhcl,ibin)**2 )
-
-      return
-      end subroutine mtem_sulfate_poor
-
-
-
-
-
-
-
-
-!***********************************************************************
-! computes activity coefficients for sulfate-rich systems
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine sulfate_rich_activities(ibin)	! rigorous method: psc model
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-
-
-! compute activity coefficients
-      if(mactivity_coeff .eq. mmtem)then
-        call mtem_sulfate_rich(ibin)		! mtem (2004)
-      elseif(mactivity_coeff .eq. mpsc .or. 		   &  ! psc (1992, 1998)
-             mactivity_coeff .eq. mkm  .or. 		   &  ! km (1978)
-             mactivity_coeff .eq. mbrom)then		! bromley (1973)
-        call sulfate_rich_iterations(ibin)
+      if(xmol(ja).gt.0.0)then
+      log_gam(ja) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jnh4so4,ibin) = mc(jc_nh4,ibin)**2*ma(ja_so4,ibin)* &
+                               gam(jnh4so4,ibin)**3
       endif
 
 
-! compute activities
-      activity(jnh4so4,ibin) = mc(jc_nh4,ibin)**2 * ma(ja_so4,ibin) *   &
-                               gam(jnh4so4,ibin)**3
 
-      activity(jlvcite,ibin) = mc(jc_nh4,ibin)**3 * ma(ja_hso4,ibin) *   &
-                               ma(ja_so4,ibin) * gam(jlvcite,ibin)**5
+      jA = jnh4no3
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jnh4no3,ibin) = mc(jc_nh4,ibin)*ma(ja_no3,ibin)* &
+                               gam(jnh4no3,ibin)**2
+      endif
 
-      activity(jnh4hso4,ibin)= mc(jc_nh4,ibin) * ma(ja_hso4,ibin) *   &
-                               gam(jnh4hso4,ibin)**2
 
-      activity(jna2so4,ibin) = mc(jc_na,ibin)**2 * ma(ja_so4,ibin) *   &
+      jA = jnh4cl
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jnh4cl,ibin)  = mc(jc_nh4,ibin)*ma(ja_cl,ibin)* &
+                               gam(jnh4cl,ibin)**2
+      endif
+      
+     
+      jA = jna2so4
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jna2so4,ibin) = mc(jc_na,ibin)**2*ma(ja_so4,ibin)* &
                                gam(jna2so4,ibin)**3
+      endif
 
-      activity(jnahso4,ibin) = mc(jc_na,ibin) * ma(ja_hso4,ibin) *   &
-                               gam(jnahso4,ibin)**2
 
-      activity(jna3hso4,ibin)= mc(jc_na,ibin)**3 * ma(ja_hso4,ibin) *   &
-                               ma(ja_so4,ibin) * gam(jna3hso4,ibin)**5
+      jA = jnano3
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jnano3,ibin)  = mc(jc_na,ibin)*ma(ja_no3,ibin)* &
+                               gam(jnano3,ibin)**2
+      endif
 
-      activity(jhno3,ibin)   = mc(jc_h,ibin) * ma(ja_no3,ibin) *   &
+
+
+      jA = jnacl
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jnacl,ibin)   = mc(jc_na,ibin)*ma(ja_cl,ibin)* &
+                               gam(jnacl,ibin)**2
+      endif
+
+
+
+!      jA = jcano3
+!      if(xmol(jA).gt.0.0)then
+!      gam(jA,ibin) = 1.0
+!      activity(jcano3,ibin)  = 1.0
+!      endif
+
+
+     
+!      jA = jcacl2
+!      if(xmol(jA).gt.0.0)then
+!      gam(jA,ibin) = 1.0
+!      activity(jcacl2,ibin)  = 1.0
+!      endif
+
+      jA = jcano3
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jcano3,ibin)  = mc(jc_ca,ibin)*ma(ja_no3,ibin)**2* &
+                               gam(jcano3,ibin)**3
+      endif
+
+
+     
+      jA = jcacl2
+      if(xmol(jA).gt.0.0)then
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jcacl2,ibin)  = mc(jc_ca,ibin)*ma(ja_cl,ibin)**2* &
+                               gam(jcacl2,ibin)**3
+      endif
+
+     
+      jA = jhno3
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jhno3,ibin)   = mc(jc_h,ibin)*ma(ja_no3,ibin)* &
                                gam(jhno3,ibin)**2
 
-      activity(jhcl,ibin)    = mc(jc_h,ibin) * ma(ja_cl,ibin) *   &
+
+      jA = jhcl
+      log_gam(jA) = xmol(jnh4no3)*log_gamZ(jA,jnh4no3) +  &
+                    xmol(jnh4cl) *log_gamZ(jA,jnh4cl)  +  &
+                    xmol(jnh4so4)*log_gamZ(jA,jnh4so4) +  &
+                    xmol(jna2so4)*log_gamZ(jA,jna2so4) +  &
+                    xmol(jnano3) *log_gamZ(jA,jnano3)  +  &
+                    xmol(jnacl)  *log_gamZ(jA,jnacl)   +  &
+                    xmol(jcano3) *log_gamZ(jA,jcano3)  +  &
+                    xmol(jcacl2) *log_gamZ(jA,jcacl2)  +  &
+                    xmol(jhno3)  *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)   *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      activity(jhcl,ibin)    = mc(jc_h,ibin)*ma(ja_cl,ibin)* &
                                gam(jhcl,ibin)**2
 
+!----
+10    gam(jlvcite,ibin) = 1.0
+     
+      gam(jnh4hso4,ibin)= 1.0
 
-! sulfate-poor species
-      activity(jnh4no3,ibin) = mc(jc_nh4,ibin) * ma(ja_no3,ibin) *   &
-                               gam(jnh4no3,ibin)**2
+      gam(jnh4msa,ibin) = 1.0
 
-      activity(jnh4cl,ibin)  = mc(jc_nh4,ibin) * ma(ja_cl,ibin) *   &
-                               gam(jnh4cl,ibin)**2
+      gam(jna3hso4,ibin) = 1.0
+     
+      gam(jnahso4,ibin) = 1.0
 
-      activity(jnano3,ibin)  = mc(jc_na,ibin) * ma(ja_no3,ibin) *   &
-                               gam(jnano3,ibin)**2
+      gam(jnamsa,ibin)  = 1.0
 
-      activity(jnacl,ibin)   = mc(jc_na,ibin) * ma(ja_cl,ibin) *   &
-                               gam(jnacl,ibin)**2
+      activity(jlvcite,ibin) = 0.0
 
-      activity(jcano3,ibin)  = mc(jc_ca,ibin) * ma(ja_no3,ibin)**2 *   &
-                               gam(jcano3,ibin)**3
+      activity(jnh4hso4,ibin)= 0.0
 
-      activity(jcacl2,ibin)  = mc(jc_ca,ibin) * ma(ja_cl,ibin)**2 *   &
-                               gam(jcacl2,ibin)**3
+      activity(jnh4msa,ibin) = mc(jc_nh4,ibin)*ma(ja_msa,ibin)* &
+                               gam(jnh4msa,ibin)**2
+     
+      activity(jna3hso4,ibin)= 0.0
 
-      return
-      end subroutine sulfate_rich_activities
+      activity(jnahso4,ibin) = 0.0
 
+      activity(jnh4msa,ibin) = mc(jc_na,ibin)*ma(ja_msa,ibin)* &
+                               gam(jnamsa,ibin)**2
+      
+      gam_ratio(ibin) = gam(jnh4no3,ibin)**2/gam(jhno3,ibin)**2
 
 
-
-
-
-
-
-
-
-!***********************************************************************
-! performs iterations for solving equilibrium h+ ion in sulfate-rich systems
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine sulfate_rich_iterations(ibin)	! rigorous method: psc model
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer ja, jc, idum, k1, k2, k3
-      real mh, mh0, mh1, mh_neutral,		   &  ! mol/kg water
-           c_plus, c_minus, c_bal, q, q0, q1,   &
-           charge_c, charge_a, charge_net
-! function
-!     real fzero
-
-
-
-! all strong electrolytes are completely dissociated
-!
-!
-! water molality
-      mh2o        = 55.509	! 1000 g water / mw(h2o),   (mw(h2o) = 18.016)
-
-! cation molalities (mol/kg water)
-      mc(jc_ca,ibin)   = 0.0	! aqueous ca never exists in sulfate rich cases
-      mc(jc_nh4,ibin)  = 1.e-9*aer(inh4_a,jliquid,ibin)/water_a(ibin)
-      mc(jc_na,ibin)   = 1.e-9*aer(ina_a, jliquid,ibin)/water_a(ibin)
-
-!
-! anion molalities (mol/kg water)
-      msulf            = 1.e-9*aer(iso4_a,jliquid,ibin)/water_a(ibin)
-      ma(ja_hso4,ibin) = 0.0
-      ma(ja_so4,ibin)  = 0.0
-      ma(ja_no3,ibin)  = 1.e-9*aer(ino3_a,jliquid,ibin)/water_a(ibin)
-      ma(ja_cl,ibin)   = 1.e-9*aer(icl_a, jliquid,ibin)/water_a(ibin)
-
-
-      c_plus = mc(jc_nh4,ibin) + mc(jc_na,ibin) + 2.*mc(jc_ca,ibin)
-      c_minus= ma(ja_no3,ibin) + ma(ja_cl,ibin)
-      c_bal  = real( dble(msulf + c_minus) - dble(c_plus) )
-
-
-!----------------------------------------------------------
-! inital guesses
-
-      mh_neutral = sqrt(keq_ll(3))
-
-! lower limit
-      mh0  = c_bal
-
-      if(mh0 .le. 0.)then
-        mh0 = mh_neutral
-      endif
-
-! upper limit
-      mh1  = real( dble(msulf) + dble(c_bal) )
-
-      if(mh1 .lt. mh_neutral)then
-        mh = mh_neutral
-        mc(jc_h,ibin) = mh
-        call gamma_a(ibin)
-
-        ph(ibin) = -alog10(mc(jc_h,ibin))
-
-! solve for moles----------------------------------------
-        charge_c = 0.0
-        do jc = 1, ncation
-          charge_c = charge_c + zc(jc)*mc(jc,ibin)
-        enddo
-
-        charge_a = 0.0
-        do ja = 1, nanion
-          if(ja .ne. ja_hso4  .and. ja .ne. ja_so4)then
-            charge_a = charge_a + za(ja)*ma(ja,ibin)
-          endif
-        enddo
-
-        charge_net = real( dble(charge_c) - dble(charge_a) )
-
-        ma(ja_hso4,ibin)= max(real(dble(2.*msulf)-dble(charge_net)),0.0)
-        ma(ja_so4,ibin) = max(real(dble(charge_net) - dble(msulf)), 0.0)
-
-        return
-      endif
-
-
-!--------------------------------------------------------------
-! narrowing the search to within a decade
-
-
-      do idum = 1, 10
-
-        mh = mh0*10.
-
-        q = fzero(mh, ibin)
-
-        if(q.gt.0.)then
-          mh0 = mh
-        else
-          goto 41
-        endif
-
-      enddo
-
-41    continue
-!-----------------------------------------------------
-! bisection method'
-!      q0 = fzero(mh0, ibin)
-!      q1 = fzero(mh1, ibin)
-
-      k1 = 0
-      k2 = 0
-      k3 = 0
-
-! iteration loop
-      do k1 = 1, 20
-
-        mh = 0.5*(mh0 + mh1)         ! bisect mh
-
-        if(abs(mh0-mh)/mh .lt. 1.e-3)goto 20
-
-        q  = fzero(mh, ibin)
-
-          if(q.gt.0)then
-            mh0 = mh
-             q0 = q
-          else
-            mh1 = mh
-             q1 = q
-          endif
-      enddo
-
-!--------------------------------------------------------------
-42    continue
-
-! secant method
-!      q0 = azero(mh0, ibin)
-!      q1 = azero(mh1, ibin)
-
-! iteration loop
-      do k2 =1,5
-
-        if(abs(mh1-mh0)/mh0.lt.1.e-3 .or.   &
-           abs(q1-q0).eq.0.0) goto 20
-
-        mh = mh1 - q1*(mh1 - mh0)/(q1 - q0)
-
-        if(abs(mh-mh0)/mh .lt. 1.e-2)goto 20
-
-        mh0 = mh
-         q  = fzero(mh, ibin)
-        q0  = q
-
-      enddo
-
-!--------------------------------------------------------------
-43    continue
-
-! bisection method
-!
-! iteration loop
-      do k3 = 1,100
-
-        mh = 0.5*(mh0 + mh1)		! bisect mh
-
-        if(abs(mh0-mh)/mh.lt.1.e-3)goto 20
-
-        q  = fzero(mh, ibin)
-
-!        if(mh .lt. 1.e-7)goto 20
-
-          if(q.gt.0)then
-            mh0 = mh
-          else
-            mh1 = mh
-          endif
-      enddo
-
-
-20    continue				! mh converged
-!      write(6,*)'k1 k2 k3 ktot = ', k1, k2, k3, (k1+k2+k3)
-      mc(jc_h,ibin) = mh
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
-
-      if(mactivity_coeff .eq. mpsc)then		! psc
-        gam_ratio(ibin) = gam_cation(jc_nh4,ibin)/gam_cation(jc_h,ibin)
-      else				! km or bromley
-        gam_ratio(ibin)  = gam(jnh4hso4,ibin)**2/gam(jhhso4,ibin)**2
-      endif
-
-
-      return
-      end subroutine sulfate_rich_iterations
-
-
-
-
-
-
-
-
-
-      real function fzero(mh, ibin)
-!     implicit none
-!     include 'mosaic.h'
-! func arguments
-      integer ibin
-      real mh
-
-
-
-
-      mc(jc_h,ibin) = mh
-
-      if(mactivity_coeff .eq. mpsc)then
-
-        call psc_sulfate_rich(ibin)
-        fzero  = keq_ll(1)*gam_anion(ja_hso4,ibin)*ma(ja_hso4,ibin) -   &
-                 gam_cation(jc_h,ibin)*mc(jc_h,ibin)*   &
-                 gam_anion(ja_so4,ibin)*ma(ja_so4,ibin)
-
-      elseif(mactivity_coeff .eq. mkm)then
-
-        call km_sulfate_rich(ibin)
-        fzero  = keq_ll(1)*ma(ja_hso4,ibin) -   &
-                 gam(jh2so4,ibin)**3/gam(jhhso4,ibin)**2 *   &
-                 mc(jc_h,ibin)*ma(ja_so4,ibin)
-
-      elseif(mactivity_coeff .eq. mbrom)then
-
-        call brom_sulfate_rich(ibin)
-        fzero  = keq_ll(1)*ma(ja_hso4,ibin) -   &
-                 gam(jh2so4,ibin)**3/gam(jhhso4,ibin)**2 *   &
-                 mc(jc_h,ibin)*ma(ja_so4,ibin)
-
-      endif
-
-      return
-      end function fzero
-
-
-
-
-
-
-
-      subroutine gamma_a(ibin)
-
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-
-
-
-
-      if(mactivity_coeff .eq. mpsc)then
-        call psc_sulfate_rich(ibin)
-      elseif(mactivity_coeff .eq. mkm)then
-        call km_sulfate_rich(ibin)
-      elseif(mactivity_coeff .eq. mbrom)then
-        call brom_sulfate_rich(ibin)
-      endif
-
-      return
-      end subroutine gamma_a
-
-
-
-
-
-!***********************************************************************
-! pitzer-simonson-clegg (psc) model
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! references: clegg et al., 1992, 1998
-!-----------------------------------------------------------------------
-      subroutine psc_sulfate_rich(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jx, jm, ja, jc, izi, izj
-      real mtot, mion, mcation, manion, ix_c, ix_a,   &
-           im_c, im_a, charge_net, charge_c, charge_a,   &
-           sum_xczc, sum_xaza, dum
-! functions
-!     real fn_thetahoe, fn_dthetahoe, fn, fm, fx
-
-
-
-! solve for moles----------------------------------------
-      charge_c = 0.0
-      do jc = 1, ncation
-        charge_c = charge_c + zc(jc)*mc(jc,ibin)
-      enddo
-
-      charge_a = 0.0
-      do ja = 1, nanion
-        if(ja .ne. ja_hso4  .and. ja .ne. ja_so4)then
-          charge_a = charge_a + za(ja)*ma(ja,ibin)
-        endif
-      enddo
-
-      charge_net = real( dble(charge_c) - dble(charge_a) )
-
-      ma(ja_hso4,ibin)= max(real(dble(2.*msulf)-dble(charge_net)),0.0)
-      ma(ja_so4,ibin) = max(real(dble(charge_net) - dble(msulf)), 0.0)
-!
-!
-! calculate mol fractions -------------------------------
-
-      mcation = 0.0
-      do jc = 1, ncation
-        mcation = mcation + mc(jc,ibin)
-      enddo
-
-      manion = 0.0
-      do ja = 1, nanion
-        manion = manion + ma(ja,ibin)
-      enddo
-
-      mion = mcation + manion
-
-      mtot = mh2o + mion
-
-
-! compute molality-scale ionic strength
-      im_c = 0.0
-      do jc = 1, ncation
-        im_c = im_c + 0.5*mc(jc,ibin)*zc(jc)**2
-      enddo
-
-      im_a = 0.0
-      do ja = 1, nanion
-        im_a = im_a + 0.5*ma(ja,ibin)*za(ja)**2
-      enddo
-
-      im(ibin) = im_c + im_a		! molality ionic strength
-
-
-
-      do jc = 1, ncation
-        xc(jc) = mc(jc,ibin)/mtot
-      enddo
-
-      do ja = 1, nanion
-        xa(ja) = ma(ja,ibin)/mtot
-      enddo
-
-      xh2o = mh2o/mtot
-
-!
-! calculate variables for mol-fraction------------------
-! scale activity coefficient model
-
-      sum_xczc = 0.0
-      ix_c = 0.0
-      do jc = 1, ncation
-        sum_xczc = sum_xczc + xc(jc)*zc(jc)
-        ix_c = ix_c + xc(jc)*zc(jc)**2
-      enddo
-
-      sum_xaza = 0.0
-      ix_a = 0.0
-      do ja = 1, nanion
-        sum_xaza = sum_xaza + xa(ja)*za(ja)
-        ix_a = ix_a + xa(ja)*za(ja)**2
-      enddo
-
-      ix = 0.5*(ix_c + ix_a)		! mole fraction ionic strength
-      ff = 2./(sum_xczc + sum_xaza)
-!
-! equivalent cation fractions
-      do jc = 1, ncation
-      ec(jc)=  xc(jc)*zc(jc)/sum_xczc
-      enddo
-
-! differentials
-      do jm = 1, ncation
-      	do jc = 1, ncation
-          if(jm.eq.jc)then
-      	    emc(jm,jc) = (zc(jm)/sum_xczc) * (1 - ec(jm))
-      	  else
-            emc(jm,jc) = -zc(jm)*ec(jc)/sum_xczc
-          endif
-     	enddo
-      enddo
-
-! equivalent anion fractions
-      do ja = 1, nanion
-      ea(ja)=  xa(ja)*za(ja)/sum_xaza
-      enddo
-
-! differentials
-      do jx = 1, nanion
-      	do ja = 1, nanion
-          if(jx.eq.ja)then
-      	    exa(jx,ja) = (za(jx)/sum_xaza) * (1 - ea(jx))
-      	  else
-            exa(jx,ja) = -za(jx)*ea(ja)/sum_xaza
-          endif
-     	enddo
-      enddo
-
-      do izi = 1, 2
-      do izj = 1, 2
-
-        thetahoe(izi,izj) = fn_thetahoe(izi,izj)
-        dthetahoe(izi,izj) = fn_dthetahoe(izi,izj)
-
-      enddo
-      enddo
-
-
-! mole fraction-scale activity coefficients
-        fh2o   = fn(1) ! neutral species (h2o)
-
-      do jm = 1, ncation_clegg
-        fc(jm,ibin) = fm(jm)	! cations
-      enddo
-
-      do jx = 1, nanion_clegg
-        fa(jx,ibin) = fx(jx)	! anions
-      enddo
-!
-!
-! molality-scale activity coefficients
-10    dum   = (1. + mion/mh2o)
-
-      do jc = 1, ncation_clegg
-       gam_cation(jc,ibin) = fc(jc,ibin)/dum
-      enddo
-
-      do ja = 1, nanion_clegg
-       gam_anion(ja,ibin)  = fa(ja,ibin)/dum
-      enddo
-
-
-! compute mean electrolyte activity coefficients
-      gam(jnh4so4,ibin) = (gam_cation(jc_nh4,ibin)**2 *   &
-                           gam_anion(ja_so4,ibin))**(1./3.)
-
-      gam(jlvcite,ibin) = (gam_cation(jc_nh4,ibin)**3 *   &
-                           gam_anion(ja_hso4,ibin) *   &
-                           gam_anion(ja_so4,ibin))**(1./5.)
-
-      gam(jnh4hso4,ibin)= (gam_cation(jc_nh4,ibin) *   &
-                           gam_anion(ja_hso4,ibin))**(1./2.)
-
-      gam(jna2so4,ibin) = (gam_cation(jc_na,ibin)**2 *   &
-                           gam_anion(ja_so4,ibin))**(1./3.)
-
-      gam(jnahso4,ibin) = (gam_cation(jc_na,ibin) *   &
-                           gam_anion(ja_hso4,ibin))**(1./2.)
-
-      gam(jna3hso4,ibin) = (gam_cation(jc_na,ibin)**3 *   &
-                           gam_anion(ja_hso4,ibin) *   &
-                           gam_anion(ja_so4,ibin))**(1./5.)
-
-      gam(jh2so4,ibin)  = (gam_cation(jc_h,ibin)**2 *   &
-                           gam_anion(ja_so4,ibin))**(1./3.)
-
-      gam(jhhso4,ibin)  = (gam_cation(jc_h,ibin) *   &
-                           gam_anion(ja_hso4,ibin))**(1./2.)
-
-      gam(jhno3,ibin)   = (gam_cation(jc_h,ibin) *   &
-                           gam_anion(ja_no3,ibin))**0.5
-
-      gam(jhcl,ibin)    = (gam_cation(jc_h,ibin) *   &
-                           gam_anion(ja_cl,ibin))**0.5
-
-
-
-      gam_ratio(ibin)   = gam_cation(jc_nh4,ibin)/gam_cation(jc_h,ibin)
-
-
-
-      gam(jnh4no3,ibin) = (gam_cation(jc_nh4,ibin)*   &
-                           gam_anion(ja_no3,ibin))**0.5
-      gam(jnh4cl,ibin)  = (gam_cation(jc_nh4,ibin)*   &
-                           gam_anion(ja_cl,ibin))**0.5
-      gam(jnacl,ibin)   = (gam_cation(jc_na,ibin)*   &
-                           gam_anion(ja_cl,ibin))**0.5
-      gam(jnano3,ibin)  = (gam_cation(jc_na,ibin)*   &
-                           gam_anion(ja_no3,ibin))**0.5
-      gam(jcacl2,ibin)  = (gam_cation(jc_ca,ibin)*   &
-                           gam_anion(ja_cl,ibin)**2)**(1./3.)
-      gam(jcano3,ibin)  = (gam_cation(jc_ca,ibin)*   &
-                           gam_anion(ja_no3,ibin)**2)**(1./3.)
-
-
-      return
-      end subroutine psc_sulfate_rich
-
-
-
-
-
-
-!***********************************************************************
-! kusik and meissner mixing rule for sulfate-rich systems
-!
-! author: rahul a. zaveri
-! update: jan 2005
-!-----------------------------------------------------------------------
-      subroutine km_sulfate_rich(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jc, ja
-      real im_c, im_a, charge_a, charge_c, charge_net
-! function
-!     real fnlog_gam0
-
-
-! solve for moles----------------------------------------
-      charge_c = 0.0
-      do jc = 1, ncation
-        charge_c = charge_c + zc(jc)*mc(jc,ibin)
-      enddo
-
-      charge_a = 0.0
-      do ja = 1, nanion
-        if(ja .ne. ja_hso4  .and. ja .ne. ja_so4)then
-          charge_a = charge_a + za(ja)*ma(ja,ibin)
-        endif
-      enddo
-
-      charge_net = real( dble(charge_c) - dble(charge_a) )
-
-      ma(ja_hso4,ibin)= max(real(dble(2.*msulf)-dble(charge_net)),0.0)
-      ma(ja_so4,ibin) = max(real(dble(charge_net) - dble(msulf)), 0.0)
-
-
-
-! compute molality-scale ionic strength
-      im_c = 0.0
-      do jc = 1, ncation
-        im_c = im_c + 0.5*mc(jc,ibin)*zc(jc)**2
-      enddo
-
-      im_a = 0.0
-      do ja = 1, nanion
-        im_a = im_a + 0.5*ma(ja,ibin)*za(ja)**2
-      enddo
-
-      im(ibin) = im_c + im_a		! molality ionic strength
-
-      log_gam0(jnh4so4) = fnlog_gam0(jnh4so4,im(ibin))
-      log_gam0(jnh4no3) = fnlog_gam0(jnh4no3,im(ibin))
-      log_gam0(jnh4cl)  = fnlog_gam0(jnh4cl,im(ibin))
-      log_gam0(jnacl)   = fnlog_gam0(jnacl,im(ibin))
-      log_gam0(jnano3)  = fnlog_gam0(jnano3,im(ibin))
-      log_gam0(jna2so4) = fnlog_gam0(jna2so4,im(ibin))
-      log_gam0(jcacl2)  = fnlog_gam0(jcacl2,im(ibin))
-      log_gam0(jcano3)  = fnlog_gam0(jcano3,im(ibin))
-      log_gam0(jhno3)   = fnlog_gam0(jhno3,im(ibin))
-      log_gam0(jhcl)    = fnlog_gam0(jhcl,im(ibin))
-      log_gam0(jh2so4)  = fnlog_gam0(jh2so4,im(ibin))
-      log_gam0(jhhso4)  = fnlog_gam0(jhhso4,im(ibin))
-      log_gam0(jnh4hso4)= fnlog_gam0(jnh4hso4,im(ibin))
-!      log_gam0(jlvcite) = fnlog_gam0(jlvcite,im(ibin))
-      log_gam0(jnahso4) = fnlog_gam0(jnahso4,im(ibin))
-!      log_gam0(jna3hso4)= fnlog_gam0(jna3hso4,im(ibin))
-
-
-! km
-! (nh4)2so4
-      log_gam(jnh4so4) = (0.666666667/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnh4no3)   +   &
-                           ma(ja_cl,ibin) *log_gam0(jnh4cl)    +   &
-                          ma(ja_hso4,ibin)*log_gam0(jnh4hso4)  +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jnh4so4) ) +   &
-                         (0.333333333/im(ibin))*   &
-                    ( 2.25*mc(jc_nh4,ibin)*log_gam0(jnh4so4)   +   &
-                      2.25*mc(jc_h,ibin)  *log_gam0(jh2so4)    +   &
-                      2.25*mc(jc_na,ibin) *log_gam0(jna2so4) )
-      gam(jnh4so4,ibin) = 10.**log_gam(jnh4so4)
-
-
-! na2so4
-      log_gam(jna2so4) = (0.666666667/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnano3)    +   &
-                           ma(ja_cl,ibin) *log_gam0(jnacl)     +   &
-                          ma(ja_hso4,ibin)*log_gam0(jnahso4)  +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jna2so4) ) +   &
-                         (0.333333333/im(ibin))*   &
-                    ( 2.25*mc(jc_nh4,ibin)*log_gam0(jnh4so4)   +   &
-                      2.25*mc(jc_h,ibin)  *log_gam0(jh2so4)    +   &
-                      2.25*mc(jc_na,ibin) *log_gam0(jna2so4) )
-      gam(jna2so4,ibin) = 10.**log_gam(jna2so4)
-
-
-! hno3
-      log_gam(jhno3)   = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin) *log_gam0(jhno3)    +   &
-                      2.25*ma(ja_so4,ibin) *log_gam0(jh2so4)   +   &
-                           ma(ja_hso4,ibin)*log_gam0(jhhso4)   +   &
-                           ma(ja_cl,ibin)  *log_gam0(jhcl)   ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4no3)   +   &
-                           mc(jc_na,ibin) *log_gam0(jnano3)    +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcano3)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhno3)  )
-      gam(jhno3,ibin)  = 10.**log_gam(jhno3)
-
-
-! hcl
-      log_gam(jhcl)    = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin) *log_gam0(jhno3)    +   &
-                      2.25*ma(ja_so4,ibin) *log_gam0(jh2so4)   +   &
-                           ma(ja_hso4,ibin)*log_gam0(jhhso4)   +   &
-                           ma(ja_cl,ibin)  *log_gam0(jhcl)   ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4cl)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnacl)     +   &
-                      2.25*mc(jc_ca,ibin) *log_gam0(jcacl2)    +   &
-                           mc(jc_h,ibin)  *log_gam0(jhcl)   )
-      gam(jhcl,ibin)   = 10.**log_gam(jhcl)
-
-
-! h2so4
-      log_gam(jh2so4)  = (0.666666667/im(ibin))*   &
-                         ( ma(ja_no3,ibin) *log_gam0(jhno3)    +   &
-                      2.25*ma(ja_so4,ibin) *log_gam0(jh2so4)   +   &
-                           ma(ja_hso4,ibin)*log_gam0(jhhso4)   +   &
-                           ma(ja_cl,ibin)  *log_gam0(jhcl)   ) +   &
-                         (0.333333333/im(ibin))*   &
-                    ( 2.25*mc(jc_nh4,ibin)*log_gam0(jnh4so4)   +   &
-                      2.25*mc(jc_h,ibin)  *log_gam0(jh2so4)    +   &
-                      2.25*mc(jc_na,ibin) *log_gam0(jna2so4) )
-      gam(jh2so4,ibin) = 10.**log_gam(jh2so4)
-
-
-! hhso4
-      log_gam(jhhso4)  = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin) *log_gam0(jhno3)    +   &
-                      2.25*ma(ja_so4,ibin) *log_gam0(jh2so4)   +   &
-                           ma(ja_hso4,ibin)*log_gam0(jhhso4)   +   &
-                           ma(ja_cl,ibin)  *log_gam0(jhcl)   ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4hso4)  +   &
-                           mc(jc_h,ibin)  *log_gam0(jhhso4)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnahso4) )
-      gam(jhhso4,ibin) = 10.**log_gam(jhhso4)
-
-
-! nh4hso4
-      gam(jnh4hso4,ibin)= (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnh4no3)   +   &
-                           ma(ja_cl,ibin) *log_gam0(jnh4cl)    +   &
-                          ma(ja_hso4,ibin)*log_gam0(jnh4hso4)  +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jnh4so4) ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4hso4)  +   &
-                           mc(jc_h,ibin)  *log_gam0(jhhso4)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnahso4) )
-      gam(jnh4hso4,ibin) = 10.**log_gam(jnh4hso4)
-
-
-! nahso4
-      gam(jnahso4,ibin) = (0.5/im(ibin))*   &
-                         ( ma(ja_no3,ibin)*log_gam0(jnano3)   +   &
-                           ma(ja_cl,ibin) *log_gam0(jnacl)    +   &
-                          ma(ja_hso4,ibin)*log_gam0(jnahso4)  +   &
-                      2.25*ma(ja_so4,ibin)*log_gam0(jna2so4) ) +   &
-                         (0.5/im(ibin))*   &
-                         ( mc(jc_nh4,ibin)*log_gam0(jnh4hso4)  +   &
-                           mc(jc_h,ibin)  *log_gam0(jhhso4)    +   &
-                           mc(jc_na,ibin) *log_gam0(jnahso4) )
-      gam(jnahso4,ibin) = 10.**log_gam(jnahso4)
-
-
-! derived quantities common to both km and bromley...
-
-
-      gam(jlvcite,ibin) = (gam(jnh4so4,ibin)**3 *   &
-                           gam(jnh4hso4,ibin)**2 )**0.2
-
-      gam(jna3hso4,ibin)= (gam(jna2so4,ibin)**3 *   &
-                           gam(jnahso4,ibin)**2 )**0.2
-
-      gam_ratio(ibin) = gam(jnh4hso4,ibin)**2/gam(jhhso4,ibin)**2
-
-      return
-      end subroutine km_sulfate_rich
-
-
-
-
-
-
-
-!***********************************************************************
-! bromley mixing rule for sulfate-rich systems
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! references: clegg et al., 1992, 1998
-!-----------------------------------------------------------------------
-      subroutine brom_sulfate_rich(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jc, ja
-      real im_c, im_a, x, aterm, agam, sqim,   &
-           charge_a, charge_c, charge_net,   &
-           z_nh4, z_na, z_ca, z_h,   &
-           z_so4, z_hso4, z_no3, z_cl,   &
-           y_so4_nh4, y_so4_na, y_so4_h,   &
-           y_hso4_nh4, y_hso4_na, y_hso4_h,   &
-           y_no3_nh4, y_no3_na, y_no3_ca, y_no3_h,   &
-           y_cl_nh4, y_cl_na, y_cl_ca, y_cl_h,   &
-           x_nh4_so4, x_na_so4, x_h_so4,   &
-           x_nh4_hso4, x_na_hso4, x_h_hso4,   &
-           x_nh4_no3, x_na_no3, x_ca_no3, x_h_no3,   &
-           x_nh4_cl, x_na_cl, x_ca_cl, x_h_cl,   &
-           f_nh4, f_na, f_ca, f_h,   &
-           f_no3, f_cl, f_so4, f_hso4
-! function
-!     real fnlog_gam0
-
-
-
-! solve for moles----------------------------------------
-      charge_c = 0.0
-      do jc = 1, ncation
-        charge_c = charge_c + zc(jc)*mc(jc,ibin)
-      enddo
-
-      charge_a = 0.0
-      do ja = 1, nanion
-        if(ja .ne. ja_hso4  .and. ja .ne. ja_so4)then
-          charge_a = charge_a + za(ja)*ma(ja,ibin)
-        endif
-      enddo
-
-      charge_net = real( dble(charge_c) - dble(charge_a) )
-
-      ma(ja_hso4,ibin)= max(real(dble(2.*msulf)-dble(charge_net)),0.0)
-      ma(ja_so4,ibin) = max(real(dble(charge_net) - dble(msulf)), 0.0)
-
-
-
-! compute molality-scale ionic strength
-      im_c = 0.0
-      do jc = 1, ncation
-        im_c = im_c + 0.5*mc(jc,ibin)*zc(jc)**2
-      enddo
-
-      im_a = 0.0
-      do ja = 1, nanion
-        im_a = im_a + 0.5*ma(ja,ibin)*za(ja)**2
-      enddo
-
-      im(ibin) = im_c + im_a		! molality ionic strength
-
-      log_gam0(jnh4so4) = fnlog_gam0(jnh4so4,im(ibin))
-      log_gam0(jnh4no3) = fnlog_gam0(jnh4no3,im(ibin))
-      log_gam0(jnh4cl)  = fnlog_gam0(jnh4cl,im(ibin))
-      log_gam0(jnacl)   = fnlog_gam0(jnacl,im(ibin))
-      log_gam0(jnano3)  = fnlog_gam0(jnano3,im(ibin))
-      log_gam0(jna2so4) = fnlog_gam0(jna2so4,im(ibin))
-      log_gam0(jcacl2)  = fnlog_gam0(jcacl2,im(ibin))
-      log_gam0(jcano3)  = fnlog_gam0(jcano3,im(ibin))
-      log_gam0(jhno3)   = fnlog_gam0(jhno3,im(ibin))
-      log_gam0(jhcl)    = fnlog_gam0(jhcl,im(ibin))
-      log_gam0(jh2so4)  = fnlog_gam0(jh2so4,im(ibin))
-      log_gam0(jhhso4)  = fnlog_gam0(jhhso4,im(ibin))
-      log_gam0(jnh4hso4)= fnlog_gam0(jnh4hso4,im(ibin))
-!      log_gam0(jlvcite) = fnlog_gam0(jlvcite,im(ibin))
-      log_gam0(jnahso4) = fnlog_gam0(jnahso4,im(ibin))
-!      log_gam0(jna3hso4)= fnlog_gam0(jna3hso4,im(ibin))
-!-------------------------------------------------------------------
-
-      agam = 0.511 ! (kg/mol)^0.5
-      sqim = sqrt(im(ibin))
-
-      aterm = agam*sqim/(1. + sqim)
-
-      z_nh4 = 1.0
-      z_na  = 1.0
-      z_ca  = 2.0
-      z_h   = 1.0
-
-      z_so4 = 2.0
-      z_hso4= 1.0
-      z_no3 = 1.0
-      z_cl  = 1.0
-
-! y
-      y_so4_nh4 = ((z_nh4+z_so4)/2.0)**2.0*ma(ja_so4,ibin)/im(ibin)
-      y_so4_na  = ((z_na +z_so4)/2.0)**2.0*ma(ja_so4,ibin)/im(ibin)
-      y_so4_h   = ((z_h  +z_so4)/2.0)**2.0*ma(ja_so4,ibin)/im(ibin)
-
-      y_hso4_nh4= ((z_nh4+z_hso4)/2.0)**2.0*ma(ja_hso4,ibin)/im(ibin)
-      y_hso4_na = ((z_na +z_hso4)/2.0)**2.0*ma(ja_hso4,ibin)/im(ibin)
-      y_hso4_h  = ((z_h  +z_hso4)/2.0)**2.0*ma(ja_hso4,ibin)/im(ibin)
-
-      y_no3_nh4 = ((z_nh4+z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-      y_no3_na  = ((z_na +z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-      y_no3_ca  = ((z_ca +z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-      y_no3_h   = ((z_h  +z_no3)/2.0)**2.0*ma(ja_no3,ibin)/im(ibin)
-
-      y_cl_nh4  = ((z_nh4+z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-      y_cl_na   = ((z_na +z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-      y_cl_ca   = ((z_ca +z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-      y_cl_h    = ((z_h  +z_cl)/2.0)**2.0*ma(ja_cl,ibin)/im(ibin)
-
-! x
-      x_nh4_so4 = ((z_nh4+z_so4)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_so4  = ((z_na +z_so4)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_h_so4   = ((z_h  +z_so4)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-      x_nh4_hso4= ((z_nh4+z_hso4)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_hso4 = ((z_na +z_hso4)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_h_hso4  = ((z_h  +z_hso4)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-      x_nh4_no3 = ((z_nh4+z_no3)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_no3  = ((z_na +z_no3)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_ca_no3  = ((z_ca +z_no3)/2.0)**2.0*mc(jc_ca,ibin)/im(ibin)
-      x_h_no3   = ((z_h  +z_no3)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-      x_nh4_cl  = ((z_nh4+z_cl)/2.0)**2.0*mc(jc_nh4,ibin)/im(ibin)
-      x_na_cl   = ((z_na +z_cl)/2.0)**2.0*mc(jc_na,ibin)/im(ibin)
-      x_ca_cl   = ((z_ca +z_cl)/2.0)**2.0*mc(jc_ca,ibin)/im(ibin)
-      x_h_cl    = ((z_h  +z_cl)/2.0)**2.0*mc(jc_h,ibin)/im(ibin)
-
-
-
-      f_nh4 = y_so4_nh4 *log_gam0(jnh4so4) +   &
-              y_hso4_nh4*log_gam0(jnh4hso4)+   &
-              y_no3_nh4*log_gam0(jnh4no3)  +   &
-              y_cl_nh4 *log_gam0(jnh4cl)   +   &
-       aterm*(z_nh4*z_so4 *y_so4_nh4  +   &
-              z_nh4*z_hso4*y_hso4_nh4 +   &
-              z_nh4*z_no3*y_no3_nh4   +   &
-              z_nh4*z_cl *y_cl_nh4)
-
-      f_na  = y_so4_na *log_gam0(jna2so4) +   &
-              y_hso4_na*log_gam0(jnahso4) +   &
-              y_no3_na*log_gam0(jnano3)   +   &
-              y_cl_na *log_gam0(jnacl)    +   &
-       aterm*(z_na*z_so4 *y_so4_na  +   &
-              z_na*z_hso4*y_hso4_na +   &
-              z_na*z_no3*y_no3_na   +   &
-              z_na*z_cl *y_cl_na)
-
-      f_h   = y_so4_h *log_gam0(jh2so4) +   &
-              y_hso4_h*log_gam0(jhhso4) +   &
-              y_no3_h *log_gam0(jhno3)  +   &
-              y_cl_h  *log_gam0(jhcl)   +   &
-       aterm*(z_h*z_so4* y_so4_h  +   &
-              z_h*z_hso4*y_hso4_h +   &
-              z_h*z_no3* y_no3_h  +   &
-              z_h*z_cl * y_cl_h)
-
-
-      f_no3 = x_nh4_no3*log_gam0(jnh4no3) +   &
-              x_na_no3 *log_gam0(jnano3)  +   &
-              x_ca_no3 *log_gam0(jcano3)  +   &
-              x_h_no3  *log_gam0(jhno3)   +   &
-       aterm*(z_nh4*z_no3*x_nh4_no3 +   &
-              z_na *z_no3*x_na_no3  +   &
-              z_ca *z_no3*x_ca_no3  +   &
-              z_h  *z_no3*x_h_no3)
-
-      f_cl  = x_nh4_cl*log_gam0(jnh4cl) +   &
-              x_na_cl *log_gam0(jnacl)  +   &
-              x_ca_cl *log_gam0(jcacl2) +   &
-              x_h_cl  *log_gam0(jhcl)   +   &
-       aterm*(z_nh4*z_cl*x_nh4_cl +   &
-              z_na *z_cl*x_na_cl  +   &
-              z_ca *z_cl*x_ca_cl  +   &
-              z_h  *z_cl*x_h_cl)
-
-      f_so4 = x_nh4_so4*log_gam0(jnh4so4) +   &
-              x_na_so4 *log_gam0(jna2so4) +   &
-              x_h_so4  *log_gam0(jh2so4)  +   &
-       aterm*(z_nh4*z_so4*x_nh4_so4 +   &
-              z_na *z_so4*x_na_so4  +   &
-              z_h  *z_so4*x_h_so4)
-
-      f_hso4= x_nh4_hso4*log_gam0(jnh4hso4) +   &
-              x_na_hso4 *log_gam0(jnahso4) +   &
-              x_h_hso4  *log_gam0(jhhso4)  +   &
-       aterm*(z_nh4*z_hso4*x_nh4_hso4 +   &
-              z_na *z_hso4*x_na_hso4  +   &
-              z_h  *z_hso4*x_h_hso4)
-
-
-
-! (nh4)2so4
-      log_gam(jnh4so4) = -z_nh4*z_so4*aterm +   &
-            z_nh4*z_so4/(z_nh4+z_so4)*(f_nh4/z_nh4 + f_so4/z_so4)
-      gam(jnh4so4,ibin) = 10.**log_gam(jnh4so4)
-
-! nh4hso4
-      log_gam(jnh4hso4)= -z_nh4*z_hso4*aterm +   &
-            z_nh4*z_hso4/(z_nh4+z_hso4)*(f_nh4/z_nh4 + f_hso4/z_hso4)
-      gam(jnh4hso4,ibin)  = 10.**log_gam(jnh4hso4)
-
-! na2so4
-      log_gam(jna2so4) = -z_na*z_so4*aterm +   &
-            z_na*z_so4/(z_na+z_so4)*(f_na/z_na + f_so4/z_so4)
-      gam(jna2so4,ibin) = 10.**log_gam(jna2so4)
-
-! nahso4
-      log_gam(jnahso4) = -z_na*z_hso4*aterm +   &
-            z_na*z_hso4/(z_na+z_hso4)*(f_na/z_na + f_hso4/z_hso4)
-      gam(jnahso4,ibin) = 10.**log_gam(jnahso4)
-
-! h2so4
-      log_gam(jh2so4)  = -z_h*z_so4*aterm +   &
-            z_h*z_so4/(z_h+z_so4)*(f_h/z_h + f_so4/z_so4)
-      gam(jh2so4,ibin) = 10.**log_gam(jh2so4)
-
-
-! hhso4
-      log_gam(jhhso4)  = -z_h*z_hso4*aterm +   &
-            z_h*z_hso4/(z_h+z_hso4)*(f_h/z_h + f_hso4/z_hso4)
-      gam(jhhso4,ibin) = 10.**log_gam(jhhso4)
-
-
-! hno3
-      log_gam(jhno3)   = -z_h*z_no3*aterm +   &
-            z_h*z_no3/(z_h+z_no3)*(f_h/z_h + f_no3/z_no3)
-      gam(jhno3,ibin)  = 10.**log_gam(jhno3)
-
-
-! hcl
-      log_gam(jhcl)    = -z_h*z_cl*aterm +   &
-            z_h*z_cl/(z_h+z_cl)*(f_h/z_h + f_cl/z_cl)
-      gam(jhcl,ibin)   = 10.**log_gam(jhcl)
-
-!-------------------------------------------------------------------
-
-
-! derived quantities common to both km and bromley...
-
-
-      gam(jlvcite,ibin) = (gam(jnh4so4,ibin)**3 *   &
-                           gam(jnh4hso4,ibin)**2 )**0.2
-
-      gam(jna3hso4,ibin)= (gam(jna2so4,ibin)**3 *   &
-                           gam(jnahso4,ibin)**2 )**0.2
-
-      gam_ratio(ibin) = gam(jnh4hso4,ibin)**2/gam(jhhso4,ibin)**2
-
-      return
-      end subroutine brom_sulfate_rich
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! multicomponent taylor expansion method (mtem)
-!
-! author: rahul a. zaveri
-! update: jan 2005
-! reference: zaveri, r.a., r.c. easter, and a.s. wexler,
-! a new method for multicomponent activity coefficients of electrolytes
-! in aqueous atmospheric aerosols, j. geophys. res., 2005.
-!-----------------------------------------------------------------------
-      subroutine mtem_sulfate_rich(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      integer jp, ja
-      real xmol(nelectrolyte), sum_elec, dumk,   &
-           c_bal, a, b, c
-! function
-!     real quadratic
-
+      else
+!  SULFATE-RICH: solve for SO4= and HSO4- ions
 
       jp = jliquid
-
-      sum_elec = 3.*electrolyte(jh2so4,jp,ibin)    +   &
-                 2.*electrolyte(jnh4hso4,jp,ibin)  +   &
-                 5.*electrolyte(jlvcite,jp,ibin)   +   &
-                 3.*electrolyte(jnh4so4,jp,ibin)   +   &
-                 2.*electrolyte(jnahso4,jp,ibin)   +   &
-                 5.*electrolyte(jna3hso4,jp,ibin)  +   &
-                 3.*electrolyte(jna2so4,jp,ibin)   +   &
-                 2.*electrolyte(jhno3,jp,ibin)     +   &
+            
+      sum_elec = 3.*electrolyte(jh2so4,jp,ibin)    +  &
+                 2.*electrolyte(jnh4hso4,jp,ibin)  +  &
+                 5.*electrolyte(jlvcite,jp,ibin)   +  &
+                 3.*electrolyte(jnh4so4,jp,ibin)   +  &
+                 2.*electrolyte(jnahso4,jp,ibin)   +  &
+                 5.*electrolyte(jna3hso4,jp,ibin)  +  &
+                 3.*electrolyte(jna2so4,jp,ibin)   +  &
+                 2.*electrolyte(jhno3,jp,ibin)     +  &
                  2.*electrolyte(jhcl,jp,ibin)
+     
 
+      if(sum_elec .eq. 0.0)then
+        do jA = 1, nelectrolyte
+          gam(jA,ibin) = 1.0
+        enddo
+        goto 20
+      endif
+      
 
       xmol(jh2so4)  = 3.*electrolyte(jh2so4,jp,ibin)/sum_elec
       xmol(jnh4hso4)= 2.*electrolyte(jnh4hso4,jp,ibin)/sum_elec
@@ -9462,193 +6295,268 @@
       xmol(jna2so4) = 3.*electrolyte(jna2so4,jp,ibin)/sum_elec
       xmol(jhno3)   = 2.*electrolyte(jhno3,jp,ibin)/sum_elec
       xmol(jhcl)    = 2.*electrolyte(jhcl,jp,ibin)/sum_elec
+            
+      
+! 2H.SO4
+      jA = jh2so4
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+
+      
+! H.HSO4
+      jA = jhhso4
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      
+      
+! NH4HSO4
+      jA = jnh4hso4
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      
+      
+! LETOVICITE
+      jA = jlvcite
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      
+      
+! (NH4)2SO4
+      jA = jnh4so4
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      
+      
+! NaHSO4
+      jA = jnahso4
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      
+
+! Na3H(SO4)2
+      jA = jna3hso4
+!      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+!                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+!                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+!                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+!                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+!                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+!                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+!                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+!                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+!      gam(jA,ibin) = 10.**log_gam(jA)
+      gam(jA,ibin) = 1.0
 
 
-! 2h.so4
-      ja = jh2so4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
+! Na2SO4
+      jA = jna2so4
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
 
 
-! h.hso4
-      ja = jhhso4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
+! HNO3
+      jA = jhno3
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
+      
+      
+! HCl
+      jA = jhcl
+      log_gam(jA) = xmol(jh2so4)  *log_gamZ(jA,jh2so4)  +  &
+                    xmol(jnh4hso4)*log_gamZ(jA,jnh4hso4)+  &
+                    xmol(jlvcite) *log_gamZ(jA,jlvcite) +  &
+                    xmol(jnh4so4) *log_gamZ(jA,jnh4so4) +  &
+                    xmol(jnahso4) *log_gamZ(jA,jnahso4) +  &
+                    xmol(jna3hso4)*log_gamZ(jA,jna3hso4)+  &
+                    xmol(jna2so4) *log_gamZ(jA,jna2so4) +  &
+                    xmol(jhno3)   *log_gamZ(jA,jhno3)   +  &
+                    xmol(jhcl)    *log_gamZ(jA,jhcl)
+      gam(jA,ibin) = 10.**log_gam(jA)
 
 
-! nh4hso4
-      ja = jnh4hso4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! letovicite
-      ja = jlvcite
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! (nh4)2so4
-      ja = jnh4so4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! nahso4
-      ja = jnahso4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! na3h(so4)2
-      ja = jna3hso4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! na2so4
-      ja = jna2so4
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! hno3
-      ja = jhno3
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-! hcl
-      ja = jhcl
-      log_gam(ja) = xmol(jh2so4)  *log_gamz(ja,jh2so4)  +   &
-                    xmol(jnh4hso4)*log_gamz(ja,jnh4hso4)+   &
-                    xmol(jlvcite) *log_gamz(ja,jlvcite) +   &
-                    xmol(jnh4so4) *log_gamz(ja,jnh4so4) +   &
-                    xmol(jnahso4) *log_gamz(ja,jnahso4) +   &
-                    xmol(jna3hso4)*log_gamz(ja,jna3hso4)+   &
-                    xmol(jna2so4) *log_gamz(ja,jna2so4) +   &
-                    xmol(jhno3)   *log_gamz(ja,jhno3)   +   &
-                    xmol(jhcl)    *log_gamz(ja,jhcl)
-      gam(ja,ibin) = 10.**log_gam(ja)
-
-
-      gam(jnh4no3,ibin) = 1.0
+20    gam(jnh4no3,ibin) = 1.0
       gam(jnh4cl,ibin)  = 1.0
       gam(jnano3,ibin)  = 1.0
       gam(jnacl,ibin)   = 1.0
       gam(jcano3,ibin)  = 1.0
       gam(jcacl2,ibin)  = 1.0
 
+      gam(jnh4msa,ibin) = 1.0
+      gam(jnamsa,ibin)  = 1.0
 
-! compute equilibrium ph
+
+
+! compute equilibrium pH
 ! cation molalities (mol/kg water)
       mc(jc_ca,ibin)   = 0.0	! aqueous ca never exists in sulfate rich cases
       mc(jc_nh4,ibin)  = 1.e-9*aer(inh4_a,jliquid,ibin)/water_a(ibin)
       mc(jc_na,ibin)   = 1.e-9*aer(ina_a, jliquid,ibin)/water_a(ibin)
 
 ! anion molalities (mol/kg water)
-      msulf            = 1.e-9*aer(iso4_a,jliquid,ibin)/water_a(ibin)
+      mSULF            = 1.e-9*aer(iso4_a,jliquid,ibin)/water_a(ibin)
       ma(ja_hso4,ibin) = 0.0
       ma(ja_so4,ibin)  = 0.0
       ma(ja_no3,ibin)  = 1.e-9*aer(ino3_a,jliquid,ibin)/water_a(ibin)
       ma(ja_cl,ibin)   = 1.e-9*aer(icl_a, jliquid,ibin)/water_a(ibin)
+      ma(ja_msa,ibin)  = 1.e-9*aer(imsa_a,jliquid,ibin)/water_a(ibin)
 
       gam_ratio(ibin)  = gam(jnh4hso4,ibin)**2/gam(jhhso4,ibin)**2
-      dumk = keq_ll(1)*gam(jhhso4,ibin)**2/gam(jh2so4,ibin)**3
-
-      c_bal =  mc(jc_nh4,ibin) + mc(jc_na,ibin)   &
-             - ma(ja_no3,ibin) - ma(ja_cl,ibin) - msulf
-
-      a = 1.0
-      b = dumk + c_bal
-      c = dumk*(c_bal - msulf)
-      mc(jc_h,ibin) = quadratic(a,b,c)
-
-      mc(jc_h,ibin) = max(sqrt(keq_ll(3)), mc(jc_h,ibin))
-
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-      ph_est(ibin) = -alog10(mc(jc_h,ibin))
+      dumK = Keq_ll(1)*gam(jhhso4,ibin)**2/gam(jh2so4,ibin)**3
+      
+      c_bal =  mc(jc_nh4,ibin) + mc(jc_na,ibin)  &
+         - ma(ja_no3,ibin) - ma(ja_cl,ibin) - mSULF - ma(ja_msa,ibin)
+      
+      aq = 1.0
+      bq = dumK + c_bal
+      cq = dumK*(c_bal - mSULF)
 
 
-      ma(ja_so4,ibin) = msulf*dumk/(mc(jc_h,ibin) + dumk)
-      ma(ja_hso4,ibin)= real( dble(msulf) - dble(ma(ja_so4,ibin)) )
+!--quadratic solution      
+        if(bq .ne. 0.0)then
+        xq = 4.*(1./bq)*(cq/bq)
+        else
+        xq = 1.e+6
+        endif
+                
+        if(abs(xq) .lt. 1.e-6)then
+          dum = xq*(0.5 + xq*(0.125 + xq*0.0625))
+          quad = (-0.5*bq/aq)*dum
+          if(quad .lt. 0.)then
+            quad = -bq/aq - quad
+          endif
+        else
+          quad = 0.5*(-bq+sqrt(bq*bq - 4.*cq))
+        endif      
+!--end of quadratic solution       
+
+      mc(jc_h,ibin) = max(quad, 1.D-7)
+      ma(ja_so4,ibin) = mSULF*dumK/(mc(jc_h,ibin) + dumK)
+      ma(ja_hso4,ibin)= mSULF - ma(ja_so4,ibin)
+
+
+      activity(jnh4so4,ibin) = mc(jc_nh4,ibin)**2*ma(ja_so4,ibin)* &
+                               gam(jnh4so4,ibin)**3
+     
+      activity(jlvcite,ibin) = mc(jc_nh4,ibin)**3*ma(ja_hso4,ibin)* &
+                               ma(ja_so4,ibin) * gam(jlvcite,ibin)**5
+
+      activity(jnh4hso4,ibin)= mc(jc_nh4,ibin)*ma(ja_hso4,ibin)* & 
+                               gam(jnh4hso4,ibin)**2
+
+      activity(jnh4msa,ibin) = mc(jc_nh4,ibin)*ma(ja_msa,ibin)* &
+                               gam(jnh4msa,ibin)**2
+     
+      activity(jna2so4,ibin) = mc(jc_na,ibin)**2*ma(ja_so4,ibin)* &
+                               gam(jna2so4,ibin)**3
+
+      activity(jnahso4,ibin) = mc(jc_na,ibin)*ma(ja_hso4,ibin)* & 
+                               gam(jnahso4,ibin)**2
+
+      activity(jnamsa,ibin)  = mc(jc_na,ibin)*ma(ja_msa,ibin)* &
+                               gam(jnamsa,ibin)**2
+     
+!      activity(jna3hso4,ibin)= mc(jc_na,ibin)**3*ma(ja_hso4,ibin)* &
+!                               ma(ja_so4,ibin)*gam(jna3hso4,ibin)**5
+
+      activity(jna3hso4,ibin)= 0.0
+     
+      activity(jhno3,ibin)   = mc(jc_h,ibin)*ma(ja_no3,ibin)* &
+                               gam(jhno3,ibin)**2
+      
+      activity(jhcl,ibin)    = mc(jc_h,ibin)*ma(ja_cl,ibin)* &
+                               gam(jhcl,ibin)**2
+
+      activity(jmsa,ibin)    = mc(jc_h,ibin)*ma(ja_msa,ibin)* &
+                               gam(jmsa,ibin)**2
+      
+
+! sulfate-poor species
+      activity(jnh4no3,ibin) = 0.0
+     
+      activity(jnh4cl,ibin)  = 0.0
+
+      activity(jnano3,ibin)  = 0.0
+      
+      activity(jnacl,ibin)   = 0.0
+     
+      activity(jcano3,ibin)  = 0.0
+      
+      activity(jcacl2,ibin)  = 0.0
+
+
+      endif
+
 
 
 
       return
-      end subroutine mtem_sulfate_rich
+      end subroutine compute_activities
+
+
 
 
 
@@ -9675,7 +6583,7 @@
 ! local variables
       integer ja
 ! functions
-!     real fnlog_gamz, bin_molality
+!     real(kind=8) fnlog_gamz, bin_molality
 
 
 ! sulfate-poor species
@@ -9745,10 +6653,6 @@
       log_gamz(ja,jhno3)   = fnlog_gamz(ja,jhno3)
       log_gamz(ja,jhcl)    = fnlog_gamz(ja,jhcl)
 
-      gam_nh4no3_0 = 10.**log_gamz(ja, jnh4no3)
-      keq_nh4no3_0 = (bin_molality(ja,1)*gam_nh4no3_0)**2 *keq_ll(3)/	   &  ! = [nh3]0s * [hno3]0s
-                     (keq_ll(2)*keq_gl(2)*keq_gl(3))
-
 
       ja = jnh4cl
       log_gamz(ja,jnh4so4) = fnlog_gamz(ja,jnh4so4)
@@ -9761,10 +6665,6 @@
       log_gamz(ja,jcacl2)  = fnlog_gamz(ja,jcacl2)
       log_gamz(ja,jhno3)   = fnlog_gamz(ja,jhno3)
       log_gamz(ja,jhcl)    = fnlog_gamz(ja,jhcl)
-
-      gam_nh4cl_0 = 10.**log_gamz(ja, jnh4cl)
-      keq_nh4cl_0 = (bin_molality(ja,1)*gam_nh4cl_0)**2 *keq_ll(3)/	   &  ! = [nh3]0s * [hcl]0s
-                    (keq_ll(2)*keq_gl(2)*keq_gl(4))
 
 
       ja = jna2so4
@@ -9950,14 +6850,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin, jp
-      real xt
+      real(kind=8) xt
 
 
-      if(aer(iso4_a,jp,ibin).gt.0.0)then
+      if( (aer(iso4_a,jp,ibin)+aer(imsa_a,jp,ibin)) .gt.0.0)then
         xt   = ( aer(inh4_a,jp,ibin) +   &
-                 aer(ina_a,jp,ibin)  +   &
-              2.*aer(ica_a,jp,ibin) )/   &
-                 aer(iso4_a,jp,ibin)
+     &           aer(ina_a,jp,ibin)  +   &
+     &        2.*aer(ica_a,jp,ibin) )/   &
+     &         (aer(iso4_a,jp,ibin)+0.5*aer(imsa_a,jp,ibin))
       else
         xt   = -1.0
       endif
@@ -9982,7 +6882,7 @@
 ! subr arguments
       integer jp, ibin
 ! local variables
-      real thesum
+      real(kind=8) sum_dum
 
 
       aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
@@ -10004,43 +6904,54 @@
                             electrolyte(jnh4cl,jp,ibin)  +   &
                             electrolyte(jhcl,jp,ibin)
 
+      aer(imsa_a,jp,ibin) = electrolyte(jnh4msa,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)  +   &
+                         2.*electrolyte(jcamsa2,jp,ibin) +   &
+                            electrolyte(jmsa,jp,ibin)
+
       aer(ico3_a,jp,ibin) = electrolyte(jcaco3,jp,ibin)
 
       aer(ica_a,jp,ibin)  = electrolyte(jcaso4,jp,ibin)  +   &
                             electrolyte(jcano3,jp,ibin)  +   &
                             electrolyte(jcacl2,jp,ibin)  +   &
-                            electrolyte(jcaco3,jp,ibin)
+                            electrolyte(jcaco3,jp,ibin)  +   &
+                            electrolyte(jcamsa2,jp,ibin)
 
       aer(ina_a,jp,ibin)  = electrolyte(jnano3,jp,ibin)  +   &
                             electrolyte(jnacl,jp,ibin)   +   &
                          2.*electrolyte(jna2so4,jp,ibin) +   &
                          3.*electrolyte(jna3hso4,jp,ibin)+   &
-                            electrolyte(jnahso4,jp,ibin)
+                            electrolyte(jnahso4,jp,ibin) +   &
+                            electrolyte(jnamsa,jp,ibin)
 
       aer(inh4_a,jp,ibin) = electrolyte(jnh4no3,jp,ibin) +   &
                             electrolyte(jnh4cl,jp,ibin)  +   &
                          2.*electrolyte(jnh4so4,jp,ibin) +   &
                          3.*electrolyte(jlvcite,jp,ibin) +   &
-                            electrolyte(jnh4hso4,jp,ibin)
+                            electrolyte(jnh4hso4,jp,ibin)+   &
+                            electrolyte(jnh4msa,jp,ibin)
 
 
-      thesum = aer(ica_a,jp,ibin) +   &
-            aer(ina_a,jp,ibin) +   &
-            aer(inh4_a,jp,ibin)+   &
-            aer(iso4_a,jp,ibin)+   &
-            aer(ino3_a,jp,ibin)+   &
-            aer(icl_a,jp,ibin) +   &
-            aer(ico3_a,jp,ibin)
+      sum_dum = aer(ica_a,jp,ibin) +   &
+                aer(ina_a,jp,ibin) +   &
+                aer(inh4_a,jp,ibin)+   &
+                aer(iso4_a,jp,ibin)+   &
+                aer(ino3_a,jp,ibin)+   &
+                aer(icl_a,jp,ibin) +   &
+                aer(imsa_a,jp,ibin)+   &
+                aer(ico3_a,jp,ibin)
 
-      if(thesum .eq. 0.)thesum = 1.0
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      aer_sum(jp,ibin) = sum_dum
 
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/thesum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/thesum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/thesum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/thesum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/thesum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/thesum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/thesum
+      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
+      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
+      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
+      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
+      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
+      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
+      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
+      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
 
 
       return
@@ -10070,28 +6981,31 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin, jp
-      real xt
+      real(kind=8) xt
 ! local variables
       integer iaer, je, jc, ja, icase
-      real store(naer), thesum, sum_naza, sum_nczc, sum_na_nh4,   &
-           f_nh4, f_na, xh, xb, xl, xs, cat_net
-      real nc(ncation), na(nanion)
+      real(kind=8) store(naer), sum_dum, sum_naza, sum_nczc, sum_na_nh4,   &
+           f_nh4, f_na, xh, xb, xl, xs, cat_net, rem_nh4, rem_na
+      real(kind=8) nc(ncation), na(nanion)
 
 
 
 
       if(jp .ne. jliquid)then
-        write(6,*)' jp must be jliquid'
-        write(6,*)' in ions_to_electrolytes sub'
-        write(6,*)' wrong jp = ', jp
+        if (iprint_mosaic_fe1 .gt. 0) then
+          write(6,*)' jp must be jliquid'
+          write(6,*)' in ions_to_electrolytes sub'
+          write(6,*)' wrong jp = ', jp
+          write(6,*)' mosaic fatal error in ions_to_electrolytes'
+        endif
 !       stop
-        call peg_error_fatal( lunerr_aer,   &
-            'stopping in ions_to_electrolytes' )
+        istat_mosaic_fe1 = -2000
+        return
       endif
 
 ! remove negative concentrations, if any
       do iaer = 1, naer
-      aer(iaer,jp,ibin) = max(0.0, aer(iaer,jp,ibin))
+      aer(iaer,jp,ibin) = max(0.0D0, aer(iaer,jp,ibin))
       enddo
 
 
@@ -10114,7 +7028,7 @@
         aer(iso4_a,jsolid,ibin) = aer(iso4_a,jsolid,ibin) +   &
                                   electrolyte(jcaso4,jliquid,ibin)
 
-        electrolyte(jcaso4,jsolid,ibin)=electrolyte(jcaso4,jsolid,ibin)   &
+        electrolyte(jcaso4,jsolid,ibin)=electrolyte(jcaso4,jsolid,ibin) &
                                        +electrolyte(jcaso4,jliquid,ibin)
         electrolyte(jcaso4,jliquid,ibin)= 0.0
       endif
@@ -10123,7 +7037,7 @@
 ! calculate sulfate ratio
       call calculate_xt(ibin,jp,xt)
 
-      if(xt .ge. 2.0 .or. xt.lt.0.)then
+      if(xt .ge. 1.9999 .or. xt.lt.0.)then
        icase = 1	! near neutral (acidity is caused by hcl and/or hno3)
       else
        icase = 2	! acidic (acidity is caused by excess so4)
@@ -10144,21 +7058,17 @@
         na(ja_so4) = aer(iso4_a,jp,ibin)
         na(ja_no3) = aer(ino3_a,jp,ibin)
         na(ja_cl)  = aer(icl_a, jp,ibin)
+        na(ja_msa) = aer(imsa_a,jp,ibin)
 
         nc(jc_ca)  = aer(ica_a, jp,ibin)
         nc(jc_na)  = aer(ina_a, jp,ibin)
         nc(jc_nh4) = aer(inh4_a,jp,ibin)
 
-        cat_net = real( dble(2.*na(ja_so4)+na(ja_no3)+na(ja_cl)) -   &
-                 dble(2.*nc(jc_ca) +nc(jc_nh4)+nc(jc_na)) )
+        cat_net =&
+                 ( 2.*na(ja_so4)+na(ja_no3)+na(ja_cl)+na(ja_msa) )- &
+                 ( 2.*nc(jc_ca) +nc(jc_nh4)+nc(jc_na) )
 
         if(cat_net .lt. 0.0)then
-
-!          if(aer(inh4_a,jp,ibin) .gt. abs(cat_net))then ! degas excess nh3
-!            aer(inh4_a,jp,ibin)     = aer(inh4_a,jp,ibin) + cat_net
-!            aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin)+cat_net
-!            gas(inh3_g)             = gas(inh3_g) - cat_net
-!          endif
 
           nc(jc_h) = 0.0
 
@@ -10181,9 +7091,12 @@
       enddo
 
       if(sum_naza .eq. 0. .or. sum_nczc .eq. 0.)then
-        write(6,*)'ionic concentrations are zero'
-        write(6,*)'sum_naza = ', sum_naza
-        write(6,*)'sum_nczc = ', sum_nczc
+        if (iprint_mosaic_diag1 .gt. 0) then
+          write(6,*)'mosaic ions_to_electrolytes'
+          write(6,*)'ionic concentrations are zero'
+          write(6,*)'sum_naza = ', sum_naza
+          write(6,*)'sum_nczc = ', sum_nczc
+        endif
         return
       endif
 
@@ -10198,6 +7111,7 @@
       na_ma(ja_so4) = na(ja_so4) *mw_a(ja_so4)
       na_ma(ja_no3) = na(ja_no3) *mw_a(ja_no3)
       na_ma(ja_cl)  = na(ja_cl)  *mw_a(ja_cl)
+      na_ma(ja_msa) = na(ja_msa) *mw_a(ja_msa)
       na_ma(ja_hso4)= na(ja_hso4)*mw_a(ja_hso4)
 
       nc_mc(jc_ca)  = nc(jc_ca) *mw_c(jc_ca)
@@ -10207,69 +7121,135 @@
 
 
 ! now compute electrolyte moles
-      electrolyte(jna2so4,jp,ibin) = (xeq_c(jc_na) *na_ma(ja_so4) +   &
-                                      xeq_a(ja_so4)*nc_mc(jc_na))/   &
-                                       mw_electrolyte(jna2so4)
+      if(xeq_c(jc_na) .gt. 0. .and. xeq_a(ja_so4) .gt. 0.)then
+        electrolyte(jna2so4,jp,ibin) = (xeq_c(jc_na) *na_ma(ja_so4) + &
+                                        xeq_a(ja_so4)*nc_mc(jc_na))/  &
+                                         mw_electrolyte(jna2so4)
+      endif
 
-      electrolyte(jnahso4,jp,ibin) = (xeq_c(jc_na) *na_ma(ja_hso4) +   &
-                                      xeq_a(ja_hso4)*nc_mc(jc_na))/   &
-                                       mw_electrolyte(jnahso4)
+      electrolyte(jnahso4,jp,ibin) = 0.0
 
-      electrolyte(jnano3, jp,ibin) = (xeq_c(jc_na) *na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_na))/   &
-                                       mw_electrolyte(jnano3)
+      if(xeq_c(jc_na) .gt. 0. .and. xeq_a(ja_msa) .gt. 0.)then
+        electrolyte(jnamsa,jp,ibin)  = (xeq_c(jc_na) *na_Ma(ja_msa) + &
+                                        xeq_a(ja_msa)*nc_Mc(jc_na))/  &
+                                         mw_electrolyte(jnamsa)
+      endif
 
-      electrolyte(jnacl,  jp,ibin) = (xeq_c(jc_na) *na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl) *nc_mc(jc_na))/   &
-                                       mw_electrolyte(jnacl)
+      if(xeq_c(jc_na) .gt. 0. .and. xeq_a(ja_no3) .gt. 0.)then
+        electrolyte(jnano3, jp,ibin) = (xeq_c(jc_na) *na_ma(ja_no3) + &
+                                        xeq_a(ja_no3)*nc_mc(jc_na))/  &
+                                         mw_electrolyte(jnano3)
+      endif
 
-      electrolyte(jnh4so4,jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_so4) +   &
-                                      xeq_a(ja_so4)*nc_mc(jc_nh4))/   &
-                                       mw_electrolyte(jnh4so4)
+      if(xeq_c(jc_na) .gt. 0. .and. xeq_a(ja_cl) .gt. 0.)then
+        electrolyte(jnacl,  jp,ibin) = (xeq_c(jc_na) *na_ma(ja_cl) +  &
+                                        xeq_a(ja_cl) *nc_mc(jc_na))/  &
+                                         mw_electrolyte(jnacl)
+      endif
 
-      electrolyte(jnh4hso4,jp,ibin)= (xeq_c(jc_nh4)*na_ma(ja_hso4) +   &
-                                      xeq_a(ja_hso4)*nc_mc(jc_nh4))/   &
-                                       mw_electrolyte(jnh4hso4)
+      if(xeq_c(jc_nh4) .gt. 0. .and. xeq_a(ja_so4) .gt. 0.)then
+        electrolyte(jnh4so4,jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_so4) + &
+                                        xeq_a(ja_so4)*nc_mc(jc_nh4))/ &
+                                         mw_electrolyte(jnh4so4)
+      endif
 
-      electrolyte(jnh4no3,jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_nh4))/   &
-                                       mw_electrolyte(jnh4no3)
+      electrolyte(jnh4hso4,jp,ibin)= 0.0
 
-      electrolyte(jnh4cl, jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl) *nc_mc(jc_nh4))/   &
-                                       mw_electrolyte(jnh4cl)
+      if(xeq_c(jc_nh4) .gt. 0. .and. xeq_a(ja_msa) .gt. 0.)then
+        electrolyte(jnh4msa,jp,ibin) = (xeq_c(jc_nh4)*na_Ma(ja_msa) + &
+                                        xeq_a(ja_msa)*nc_Mc(jc_nh4))/ &
+                                         mw_electrolyte(jnh4msa)
+      endif
 
-      electrolyte(jcano3, jp,ibin) = (xeq_c(jc_ca) *na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_ca))/   &
-                                       mw_electrolyte(jcano3)
+      if(xeq_c(jc_nh4) .gt. 0. .and. xeq_a(ja_no3) .gt. 0.)then
+        electrolyte(jnh4no3,jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_no3) + &
+                                        xeq_a(ja_no3)*nc_mc(jc_nh4))/ &
+                                         mw_electrolyte(jnh4no3)
+      endif
 
-      electrolyte(jcacl2, jp,ibin) = (xeq_c(jc_ca) *na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl) *nc_mc(jc_ca))/   &
-                                       mw_electrolyte(jcacl2)
+      if(xeq_c(jc_nh4) .gt. 0. .and. xeq_a(ja_cl) .gt. 0.)then
+        electrolyte(jnh4cl, jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_cl) +  &
+                                        xeq_a(ja_cl) *nc_mc(jc_nh4))/ &
+                                         mw_electrolyte(jnh4cl)
+      endif
 
-      electrolyte(jh2so4, jp,ibin) = (xeq_c(jc_h)  *na_ma(ja_hso4) +   &
-                                      xeq_a(ja_hso4)*nc_mc(jc_h))/   &
-                                       mw_electrolyte(jh2so4)
+      if(xeq_c(jc_ca) .gt. 0. .and. xeq_a(ja_no3) .gt. 0.0)then
+        electrolyte(jcano3, jp,ibin) = (xeq_c(jc_ca) *na_ma(ja_no3) + &
+                                        xeq_a(ja_no3)*nc_mc(jc_ca))/  &
+                                         mw_electrolyte(jcano3)
+      endif
 
+      if(xeq_c(jc_ca) .gt. 0. .and. xeq_a(ja_cl) .gt. 0.)then
+        electrolyte(jcacl2, jp,ibin) = (xeq_c(jc_ca) *na_ma(ja_cl) +  &
+                                        xeq_a(ja_cl) *nc_mc(jc_ca))/  &
+                                         mw_electrolyte(jcacl2)
+      endif
+
+      if(xeq_c(jc_ca) .gt. 0. .and. xeq_a(ja_msa) .gt. 0.)then
+        electrolyte(jcamsa2,jp,ibin) = (xeq_c(jc_ca) *na_Ma(ja_msa) + &
+                                        xeq_a(ja_msa) *nc_Mc(jc_ca))/ &
+                                         mw_electrolyte(jcamsa2)
+      endif
+
+      electrolyte(jh2so4, jp,ibin) = 0.0
+
+      if(xeq_c(jc_h) .gt. 0. .and. xeq_a(ja_no3) .gt. 0.)then
       electrolyte(jhno3,  jp,ibin) = (xeq_c(jc_h)  *na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_h))/   &
+                                      xeq_a(ja_no3)*nc_mc(jc_h))/     &
                                        mw_electrolyte(jhno3)
+      endif
 
-      electrolyte(jhcl,   jp,ibin) = (xeq_c(jc_h) *na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl)*nc_mc(jc_h))/   &
-                                       mw_electrolyte(jhcl)
+      if(xeq_c(jc_h) .gt. 0. .and. xeq_a(ja_cl) .gt. 0.)then
+        electrolyte(jhcl,   jp,ibin) = (xeq_c(jc_h) *na_ma(ja_cl) +   &
+                                        xeq_a(ja_cl)*nc_mc(jc_h))/    &
+                                         mw_electrolyte(jhcl)
+      endif
+
+      if(xeq_c(jc_h) .gt. 0. .and. xeq_a(ja_msa) .gt. 0.)then
+        electrolyte(jmsa,jp,ibin)    = (xeq_c(jc_h) *na_ma(ja_msa) +  &
+                                        xeq_a(ja_msa)*nc_mc(jc_h))/   &
+                                         mw_electrolyte(jmsa)
+      endif
 
 !--------------------------------------------------------------------
 
       elseif(icase.eq.2)then ! xt < 2 : sulfate rich domain
 
+        store(imsa_a) = aer(imsa_a,jp,ibin)
+        store(ica_a)  = aer(ica_a, jp,ibin)
+        
+        call form_camsa2(store,jp,ibin)
+
         sum_na_nh4 = aer(ina_a,jp,ibin) + aer(inh4_a,jp,ibin)
+
         if(sum_na_nh4 .gt. 0.0)then
           f_nh4 = aer(inh4_a,jp,ibin)/sum_na_nh4
           f_na  = aer(ina_a,jp,ibin)/sum_na_nh4
         else
           f_nh4 = 0.0
           f_na  = 0.0
+        endif
+
+! first form msa electrolytes
+        if(sum_na_nh4 .gt. store(imsa_a))then
+          electrolyte(jnamsa,jp,ibin)  = f_na *store(imsa_a)
+          electrolyte(jnh4msa,jp,ibin) = f_nh4*store(imsa_a)
+          rem_na = aer(ina_a,jp,ibin) - electrolyte(jnamsa,jp,ibin)  ! remaining na
+          rem_nh4= aer(inh4_a,jp,ibin)- electrolyte(jnh4msa,jp,ibin) ! remaining nh4
+        else
+          electrolyte(jnamsa,jp,ibin)  = aer(ina_a,jp,ibin)
+          electrolyte(jnh4msa,jp,ibin) = aer(inh4_a,jp,ibin)
+          electrolyte(jmsa,jp,ibin)    = store(imsa_a) - sum_na_nh4
+          rem_nh4 = 0.0  ! remaining nh4
+          rem_na  = 0.0  ! remaining na
+        endif
+
+
+! recompute xt
+        if(aer(iso4_a,jp,ibin).gt.0.0)then
+          xt = (rem_nh4 + rem_na)/aer(iso4_a,jp,ibin)
+        else
+          goto 10
         endif
 
         if(xt .le. 1.0)then	! h2so4 + bisulfate
@@ -10301,37 +7281,38 @@
 !---------------------------------------------------------
 !
 ! calculate % composition
-      thesum = 0.0
+10    sum_dum = 0.0
       do je = 1, nelectrolyte
-        thesum = thesum + electrolyte(je,jp,ibin)
+        sum_dum = sum_dum + electrolyte(je,jp,ibin)
       enddo
 
-      electrolyte_sum(jp,ibin) = thesum
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      electrolyte_sum(jp,ibin) = sum_dum
 
-      if(thesum .eq. 0.)thesum = 1.0
       do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/thesum
+        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
       enddo
 
+      sum_dum = aer(ica_a,jp,ibin) +   &
+                aer(ina_a,jp,ibin) +   &
+                aer(inh4_a,jp,ibin)+   &
+                aer(iso4_a,jp,ibin)+   &
+                aer(ino3_a,jp,ibin)+   &
+                aer(icl_a,jp,ibin) +   &
+                aer(imsa_a,jp,ibin)+   &
+                aer(ico3_a,jp,ibin)
 
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      aer_sum(jp,ibin) = sum_dum
 
-      thesum = aer(ica_a,jp,ibin) +   &
-            aer(ina_a,jp,ibin) +   &
-            aer(inh4_a,jp,ibin)+   &
-            aer(iso4_a,jp,ibin)+   &
-            aer(ino3_a,jp,ibin)+   &
-            aer(icl_a,jp,ibin) +   &
-            aer(ico3_a,jp,ibin)
-
-      if(thesum .eq. 0.)thesum = 1.0
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/thesum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/thesum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/thesum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/thesum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/thesum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/thesum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/thesum
+      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
+      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
+      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
+      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
+      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
+      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
+      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
+      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
 
 
 
@@ -10375,21 +7356,21 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin, jp
-      real xt
+      real(kind=8) xt
 ! local variables
       integer i, ixt_case, je
-      real thesum, xna_prime, xnh4_prime, xt_prime
-      real store(naer)
+      real(kind=8) sum_dum, xna_prime, xnh4_prime, xt_prime
+      real(kind=8) store(naer)
 
 ! remove negative concentrations, if any
       do i=1,naer
-      aer(i,jp,ibin) = max(0.0, aer(i,jp,ibin))
+      aer(i,jp,ibin) = max(0.0D0, aer(i,jp,ibin))
       enddo
 
 
       call calculate_xt(ibin,jp,xt)
 
-      if(xt .ge. 2.0 .or. xt.lt.0.)then
+      if(xt .ge. 1.9999 .or. xt.lt.0.)then
        ixt_case = 1	! near neutral (acidity is caused by hcl and/or hno3)
       else
        ixt_case = 2	! acidic (acidity is caused by excess so4)
@@ -10401,11 +7382,12 @@
       store(iso4_a) = aer(iso4_a,jp,ibin)
       store(ino3_a) = aer(ino3_a,jp,ibin)
       store(icl_a)  = aer(icl_a, jp,ibin)
+      store(imsa_a) = aer(imsa_a,jp,ibin)
       store(ico3_a) = aer(ico3_a,jp,ibin)
       store(inh4_a) = aer(inh4_a,jp,ibin)
       store(ina_a)  = aer(ina_a, jp,ibin)
       store(ica_a)  = aer(ica_a, jp,ibin)
-!
+
       do je=1,nelectrolyte
       electrolyte(je,jp,ibin) = 0.0
       enddo
@@ -10417,15 +7399,19 @@
 ! xt >= 2   : sulfate deficient
 
         call form_caso4(store,jp,ibin)
+        call form_camsa2(store,jp,ibin)
         call form_na2so4(store,jp,ibin)
+        call form_namsa(store,jp,ibin)
         call form_cano3(store,jp,ibin)
         call form_nano3(store,jp,ibin)
-        call conform_nacl(store,jp,ibin)
+        call form_nacl(store,jp,ibin)
         call form_cacl2(store,jp,ibin)
         call form_caco3(store,jp,ibin)
         call form_nh4so4(store,jp,ibin)
+        call form_nh4msa(store,jp,ibin)
         call form_nh4no3(store,jp,ibin)
         call form_nh4cl(store,jp,ibin)
+        call form_msa(store,jp,ibin)
         call degas_hno3(store,jp,ibin)
         call degas_hcl(store,jp,ibin)
         call degas_nh3(store,jp,ibin)
@@ -10435,6 +7421,13 @@
 ! xt < 2   : sulfate enough or sulfate excess
 
         call form_caso4(store,jp,ibin)
+        call form_camsa2(store,jp,ibin)
+        call form_namsa(store,jp,ibin)
+        call form_nh4msa(store,jp,ibin)
+        call form_msa(store,jp,ibin)
+
+        if(store(iso4_a).eq.0.0)goto 10
+
 
         xt_prime =(store(ina_a)+store(inh4_a))/   &
                         store(iso4_a)
@@ -10462,45 +7455,52 @@
           call form_h2so4(store,jp,ibin)
         endif
 
-      call degas_hno3(store,jp,ibin)
+10    call degas_hno3(store,jp,ibin)
       call degas_hcl(store,jp,ibin)
       call degas_nh3(store,jp,ibin)
 
       endif ! case 1, 2
+
+
+! re-calculate ions to eliminate round-off errors
+      call electrolytes_to_ions(jp, ibin)
 !---------------------------------------------------------
 !
 ! calculate % composition
-      thesum = 0.0
+      sum_dum = 0.0
       do je = 1, nelectrolyte
-        electrolyte(je,jp,ibin) = max(0.,electrolyte(je,jp,ibin)) ! remove -ve
-        thesum = thesum + electrolyte(je,jp,ibin)
+        electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
+        sum_dum = sum_dum + electrolyte(je,jp,ibin)
       enddo
 
-      electrolyte_sum(jp,ibin) = thesum
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      electrolyte_sum(jp,ibin) = sum_dum
 
-      if(thesum .eq. 0.)thesum = 1.0
       do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/thesum
+        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
       enddo
 
 
-      thesum = aer(ica_a,jp,ibin) +   &
-            aer(ina_a,jp,ibin) +   &
-            aer(inh4_a,jp,ibin)+   &
-            aer(iso4_a,jp,ibin)+   &
-            aer(ino3_a,jp,ibin)+   &
-            aer(icl_a,jp,ibin) +   &
-            aer(ico3_a,jp,ibin)
+      sum_dum = aer(ica_a,jp,ibin) +   &
+                aer(ina_a,jp,ibin) +   &
+                aer(inh4_a,jp,ibin)+   &
+                aer(iso4_a,jp,ibin)+   &
+                aer(ino3_a,jp,ibin)+   &
+                aer(icl_a,jp,ibin) +   &
+                aer(imsa_a,jp,ibin)+   &
+                aer(ico3_a,jp,ibin)
 
-      if(thesum .eq. 0.)thesum = 1.0
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      aer_sum(jp,ibin) = sum_dum
 
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/thesum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/thesum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/thesum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/thesum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/thesum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/thesum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/thesum
+      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
+      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
+      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
+      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
+      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
+      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
+      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
+      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
 
       return
       end subroutine conform_electrolytes
@@ -10526,21 +7526,21 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin, jp
-      real xt
+      real(kind=8) xt
 ! local variables
       integer i, ixt_case, j, je
-      real thesum, xna_prime, xnh4_prime, xt_prime
-      real store(naer)
+      real(kind=8) sum_dum, xna_prime, xnh4_prime, xt_prime
+      real(kind=8) store(naer)
 
 ! remove negative concentrations, if any
       do i=1,naer
-      aer(i,jp,ibin) = max(0.0, aer(i,jp,ibin))
+      aer(i,jp,ibin) = max(0.0D0, aer(i,jp,ibin))
       enddo
 
 
       call calculate_xt(ibin,jp,xt)
 
-      if(xt .ge. 2.0 .or. xt.lt.0.)then
+      if(xt .ge. 1.9999 .or. xt.lt.0.)then
        ixt_case = 1	! near neutral (acidity is caused by hcl and/or hno3)
       else
        ixt_case = 2	! acidic (acidity is caused by excess so4)
@@ -10552,6 +7552,7 @@
       store(iso4_a) = aer(iso4_a,jp,ibin)
       store(ino3_a) = aer(ino3_a,jp,ibin)
       store(icl_a)  = aer(icl_a, jp,ibin)
+      store(imsa_a) = aer(imsa_a,jp,ibin)
       store(ico3_a) = aer(ico3_a,jp,ibin)
       store(inh4_a) = aer(inh4_a,jp,ibin)
       store(ina_a)  = aer(ina_a, jp,ibin)
@@ -10567,15 +7568,19 @@
 
 ! xt >= 2   : sulfate deficient
         call form_caso4(store,jp,ibin)
+        call form_camsa2(store,jp,ibin)
         call form_na2so4(store,jp,ibin)
+        call form_namsa(store,jp,ibin)
         call form_cano3(store,jp,ibin)
         call form_nano3(store,jp,ibin)
         call form_nacl(store,jp,ibin)
         call form_cacl2(store,jp,ibin)
         call form_caco3(store,jp,ibin)
         call form_nh4so4(store,jp,ibin)
+        call form_nh4msa(store,jp,ibin)
         call form_nh4no3(store,jp,ibin)
         call form_nh4cl(store,jp,ibin)
+        call form_msa(store,jp,ibin)
 
         if(jp .eq. jsolid)then
           call degas_hno3(store,jp,ibin)
@@ -10594,6 +7599,13 @@
 ! xt < 2   : sulfate enough or sulfate excess
 
         call form_caso4(store,jp,ibin)
+        call form_camsa2(store,jp,ibin)
+        call form_namsa(store,jp,ibin)
+        call form_nh4msa(store,jp,ibin)
+        call form_msa(store,jp,ibin)
+
+        if(store(iso4_a).eq.0.0)goto 10
+
 
         xt_prime =(store(ina_a)+store(inh4_a))/   &
                         store(iso4_a)
@@ -10621,7 +7633,7 @@
           call form_h2so4(store,jp,ibin)
         endif
 
-        if(jp .eq. jsolid)then
+10      if(jp .eq. jsolid)then
           call degas_hno3(store,jp,ibin)
           call degas_hcl(store,jp,ibin)
           call degas_nh3(store,jp,ibin)
@@ -10632,360 +7644,49 @@
         endif
 
       endif ! case 1, 2
+
+
+! re-calculate ions to eliminate round-off errors
+      call electrolytes_to_ions(jp, ibin)
 !---------------------------------------------------------
 !
 ! calculate % composition
-      thesum = 0.0
+      sum_dum = 0.0
       do je = 1, nelectrolyte
-        electrolyte(je,jp,ibin) = max(0.,electrolyte(je,jp,ibin)) ! remove -ve
-        thesum = thesum + electrolyte(je,jp,ibin)
+        electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
+        sum_dum = sum_dum + electrolyte(je,jp,ibin)
       enddo
 
-      electrolyte_sum(jp,ibin) = thesum
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      electrolyte_sum(jp,ibin) = sum_dum
 
-      if(thesum .eq. 0.)thesum = 1.0
       do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/thesum
+        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
       enddo
 
+      sum_dum = aer(ica_a,jp,ibin) +   &
+                aer(ina_a,jp,ibin) +   &
+                aer(inh4_a,jp,ibin)+   &
+                aer(iso4_a,jp,ibin)+   &
+                aer(ino3_a,jp,ibin)+   &
+                aer(icl_a,jp,ibin) +   &
+                aer(imsa_a,jp,ibin)+   &
+                aer(ico3_a,jp,ibin)
 
-      thesum = aer(ica_a,jp,ibin) +   &
-            aer(ina_a,jp,ibin) +   &
-            aer(inh4_a,jp,ibin)+   &
-            aer(iso4_a,jp,ibin)+   &
-            aer(ino3_a,jp,ibin)+   &
-            aer(icl_a,jp,ibin) +   &
-            aer(ico3_a,jp,ibin)
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+      aer_sum(jp,ibin) = sum_dum
 
-      if(thesum .eq. 0.)thesum = 1.0
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/thesum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/thesum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/thesum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/thesum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/thesum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/thesum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/thesum
-
+      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
+      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
+      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
+      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
+      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
+      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
+      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
+      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
 
       return
       end subroutine form_electrolytes
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! part of asteem: does arbitrary electrolyte formation for non-volatiles and
-!    uses wexler's algorithm for nh4no3, nh4cl, hno3, and hcl
-!
-! notes:
-!  - to be used for liquid-phase or total-phase only
-!  - transfers caso4 and caco3 from liquid to solid phase
-!  - may transfer excess nh3 in the liquid phase to gas, but does not update aer(jtotal)
-!
-! author: rahul a. zaveri
-! update: oct 2004
-!-----------------------------------------------------------------------
-      subroutine asteem_formelectrolytes_hybrid(jp,ibin,xt)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, jp
-      real xt
-! local variables
-      integer iaer, icase, je, ja, jc
-      real thesum, xna_prime, xnh4_prime, xt_prime
-      real store(naer), nc(ncation), na(nanion)
-      real sum_naza, sum_nczc, sum_na_nh4, f_nh4, f_na,   &
-           xh, xb, xs, xl, cat_net
-
-
-
-
-
-      if(jp .ne. jliquid)then
-        write(6,*)' jp must be jliquid'
-        write(6,*)' in ions_to_electrolytes sub'
-        write(6,*)' wrong jp = ', jp
-!       stop
-        call peg_error_fatal( lunerr_aer,   &
-            'stopping asteem_formelectrolytes_hybrid' )
-      endif
-
-! remove negative concentrations, if any
-      do iaer = 1, naer
-      aer(iaer,jp,ibin) = max(0.0, aer(iaer,jp,ibin))
-      enddo
-
-
-! first transfer caso4 from liquid to solid phase (caco3 should not be present here)
-      store(ica_a)  = aer(ica_a, jp,ibin)
-      store(iso4_a) = aer(iso4_a,jp,ibin)
-
-      call form_caso4(store,jp,ibin)
-
-      if(jp .eq. jliquid)then ! transfer caso4 from liquid to solid phase
-        aer(ica_a,jliquid,ibin) = aer(ica_a,jliquid,ibin) -   &
-                                  electrolyte(jcaso4,jliquid,ibin)
-
-        aer(iso4_a,jliquid,ibin)= aer(iso4_a,jliquid,ibin)-   &
-                                  electrolyte(jcaso4,jliquid,ibin)
-
-        aer(ica_a,jsolid,ibin)  = aer(ica_a,jsolid,ibin) +   &
-                                  electrolyte(jcaso4,jliquid,ibin)
-
-        aer(iso4_a,jsolid,ibin) = aer(iso4_a,jsolid,ibin) +   &
-                                  electrolyte(jcaso4,jliquid,ibin)
-
-        electrolyte(jcaso4,jsolid,ibin)=electrolyte(jcaso4,jsolid,ibin)   &
-                                       +electrolyte(jcaso4,jliquid,ibin)
-        electrolyte(jcaso4,jliquid,ibin)= 0.0
-      endif
-
-! calculate sulfate ratio
-      call calculate_xt(ibin,jp,xt)
-
-      if(xt .ge. 2.0 .or. xt.lt.0.)then
-       icase = 1	! near neutral (acidity is caused by hcl and/or hno3)
-      else
-       icase = 2	! acidic (acidity is caused by excess so4)
-      endif
-
-
-! initialize to zero
-      do je = 1, nelectrolyte
-        electrolyte(je,jp,ibin) = 0.0
-      enddo
-
-
-! initialize store
-!
-! put total aer(*) into store(*)
-      store(iso4_a) = aer(iso4_a,jp,ibin)
-      store(ino3_a) = aer(ino3_a,jp,ibin)
-      store(icl_a)  = aer(icl_a, jp,ibin)
-      store(ico3_a) = aer(ico3_a,jp,ibin)
-      store(inh4_a) = aer(inh4_a,jp,ibin)
-      store(ina_a)  = aer(ina_a, jp,ibin)
-      store(ica_a)  = aer(ica_a, jp,ibin)
-
-!
-!---------------------------------------------------------
-! sulfate-poor domain
-      if(icase.eq.1)then
-
-        call form_na2so4(store,jp,ibin)
-        call form_nh4so4(store,jp,ibin)
-!        call form_cano3(store,jp,ibin)
-!        call form_nano3(store,jp,ibin)
-!        call form_cacl2(store,jp,ibin)
-!        call form_nacl(store,jp,ibin)
-
-! now use wexler's algorithm
-        na(ja_hso4)= 0.0	! = 0 in sulfate-poor domain
-        na(ja_so4) = 0.0	! by now store(iso4_a) must be 0
-        na(ja_no3) = store(ino3_a)
-        na(ja_cl)  = store(icl_a)
-
-        nc(jc_ca)  = store(ica_a)	! by now store(ica_a) must be 0
-        nc(jc_na)  = store(ina_a)	! by now store(ica_a) must be 0
-        nc(jc_nh4) = store(inh4_a)
-
-        cat_net = real( dble(na(ja_no3)+na(ja_cl)) -   &
-                        dble(nc(jc_nh4)+nc(jc_na)+2.*nc(jc_ca)) )
-
-        if(cat_net .lt. 0.0)then
-
-!          if(aer(inh4_a,jp,ibin) .gt. abs(cat_net))then ! degas excess nh3
-!            aer(inh4_a,jp,ibin)     = aer(inh4_a,jp,ibin) + cat_net
-!            aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin)+cat_net
-!            gas(inh3_g)             = gas(inh3_g) - cat_net
-!          endif
-
-          nc(jc_h) = 0.0
-
-        else  ! cat_net must be 0.0 or positive
-
-          nc(jc_h) = cat_net
-
-        endif
-
-
-! now compute equivalent fractions
-      sum_naza = 0.0
-      do ja = 1, nanion
-        sum_naza = sum_naza + na(ja)*za(ja)
-      enddo
-
-      sum_nczc = 0.0
-      do jc = 1, ncation
-        sum_nczc = sum_nczc + nc(jc)*zc(jc)
-      enddo
-
-      if(sum_naza .eq. 0. .or. sum_nczc .eq. 0.)then
-!        write(6,*)'ionic concentrations are zero'
-!        write(6,*)'sum_naza = ', sum_naza
-!        write(6,*)'sum_nczc = ', sum_nczc
-        return
-      endif
-
-      do ja = 1, nanion
-        xeq_a(ja) = na(ja)*za(ja)/sum_naza
-      enddo
-
-      do jc = 1, ncation
-        xeq_c(jc) = nc(jc)*zc(jc)/sum_nczc
-      enddo
-
-      na_ma(ja_so4) = na(ja_so4) *mw_a(ja_so4)
-      na_ma(ja_no3) = na(ja_no3) *mw_a(ja_no3)
-      na_ma(ja_cl)  = na(ja_cl)  *mw_a(ja_cl)
-      na_ma(ja_hso4)= na(ja_hso4)*mw_a(ja_hso4)
-
-      nc_mc(jc_ca)  = nc(jc_ca) *mw_c(jc_ca)
-      nc_mc(jc_na)  = nc(jc_na) *mw_c(jc_na)
-      nc_mc(jc_nh4) = nc(jc_nh4)*mw_c(jc_nh4)
-      nc_mc(jc_h)   = nc(jc_h)  *mw_c(jc_h)
-
-
-! now compute electrolyte moles
-
-      electrolyte(jnano3, jp,ibin) = (xeq_c(jc_na) *na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_na))/   &
-                                        mw_electrolyte(jnano3)
-
-      electrolyte(jnacl,  jp,ibin) = (xeq_c(jc_na) *na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl) *nc_mc(jc_na))/   &
-                                       mw_electrolyte(jnacl)
-
-      electrolyte(jnh4no3,jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_nh4))/   &
-                                       mw_electrolyte(jnh4no3)
-
-      electrolyte(jnh4cl, jp,ibin) = (xeq_c(jc_nh4)*na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl) *nc_mc(jc_nh4))/   &
-                                       mw_electrolyte(jnh4cl)
-
-      electrolyte(jcano3, jp,ibin) = (xeq_c(jc_ca) *na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_ca))/   &
-                                       mw_electrolyte(jcano3)
-
-      electrolyte(jcacl2, jp,ibin) = (xeq_c(jc_ca) *na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl) *nc_mc(jc_ca))/   &
-                                       mw_electrolyte(jcacl2)
-
-      electrolyte(jhno3, jp,ibin)  = (xeq_c(jc_h)  *na_ma(ja_no3) +   &
-                                      xeq_a(ja_no3)*nc_mc(jc_h))/   &
-                                       mw_electrolyte(jhno3)
-
-      electrolyte(jhcl,   jp,ibin) = (xeq_c(jc_h) *na_ma(ja_cl) +   &
-                                      xeq_a(ja_cl)*nc_mc(jc_h))/   &
-                                       mw_electrolyte(jhcl)
-
-!----------------------------------------------------------------
-! sulfate-rich domain
-      elseif(icase.eq.2)then
-
-        sum_na_nh4 = aer(ina_a,jp,ibin) + aer(inh4_a,jp,ibin)
-        if(sum_na_nh4 .gt. 0.0)then
-          f_nh4 = aer(inh4_a,jp,ibin)/sum_na_nh4
-          f_na  = aer(ina_a,jp,ibin)/sum_na_nh4
-        else
-          f_nh4 = 0.0
-          f_na  = 0.0
-        endif
-
-        if(xt .le. 1.0)then	! h2so4 + bisulfate
-          xh = (1.0 - xt)
-          xb = xt
-          electrolyte(jh2so4,jp,ibin)   = xh*aer(iso4_a,jp,ibin)
-          electrolyte(jnh4hso4,jp,ibin) = xb*f_nh4*aer(iso4_a,jp,ibin)
-          electrolyte(jnahso4,jp,ibin)  = xb*f_na *aer(iso4_a,jp,ibin)
-        elseif(xt .le. 1.5)then	! bisulfate + letovicite
-          xb = 3.0 - 2.0*xt
-          xl = xt - 1.0
-          electrolyte(jnh4hso4,jp,ibin) = xb*f_nh4*aer(iso4_a,jp,ibin)
-          electrolyte(jnahso4,jp,ibin)  = xb*f_na *aer(iso4_a,jp,ibin)
-          electrolyte(jlvcite,jp,ibin)  = xl*f_nh4*aer(iso4_a,jp,ibin)
-          electrolyte(jna3hso4,jp,ibin) = xl*f_na *aer(iso4_a,jp,ibin)
-        else			! letovicite + sulfate
-          xl = 2.0 - xt
-          xs = 2.0*xt - 3.0
-          electrolyte(jlvcite,jp,ibin)  = xl*f_nh4*aer(iso4_a,jp,ibin)
-          electrolyte(jna3hso4,jp,ibin) = xl*f_na *aer(iso4_a,jp,ibin)
-          electrolyte(jnh4so4,jp,ibin)  = xs*f_nh4*aer(iso4_a,jp,ibin)
-          electrolyte(jna2so4,jp,ibin)  = xs*f_na *aer(iso4_a,jp,ibin)
-        endif
-
-        electrolyte(jhno3,jp,ibin) = aer(ino3_a,jp,ibin)
-        electrolyte(jhcl,jp,ibin)  = aer(icl_a,jp,ibin)
-
-      endif ! case 1, 2
-!---------------------------------------------------------
-!
-! calculate % composition
-      thesum = 0.0
-      do je = 1, nelectrolyte
-        electrolyte(je,jp,ibin) = max(0.,electrolyte(je,jp,ibin)) ! remove -ve
-        thesum = thesum + electrolyte(je,jp,ibin)
-      enddo
-
-      electrolyte_sum(jp,ibin) = thesum
-
-      if(thesum .eq. 0.)thesum = 1.0
-      do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/thesum
-      enddo
-
-
-
-      thesum = aer(ica_a,jp,ibin) +   &
-            aer(ina_a,jp,ibin) +   &
-            aer(inh4_a,jp,ibin)+   &
-            aer(iso4_a,jp,ibin)+   &
-            aer(ino3_a,jp,ibin)+   &
-            aer(icl_a,jp,ibin) +   &
-            aer(ico3_a,jp,ibin)
-
-      if(thesum .eq. 0.)thesum = 1.0
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/thesum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/thesum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/thesum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/thesum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/thesum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/thesum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/thesum
-
-
-      return
-      end subroutine asteem_formelectrolytes_hybrid
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -11011,18 +7712,35 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jcaso4,jp,ibin) = min(store(ica_a),store(iso4_a))
-      store(ica_a)  = real( dble(store(ica_a)) -   &
-                            dble(electrolyte(jcaso4,jp,ibin)) )
-      store(iso4_a) = real( dble(store(iso4_a)) -   &
-                            dble(electrolyte(jcaso4,jp,ibin)) )
-      store(ica_a)  = max(0., store(ica_a))
-      store(iso4_a) = max(0., store(iso4_a))
+      store(ica_a)  = store(ica_a) - electrolyte(jcaso4,jp,ibin)
+      store(iso4_a) = store(iso4_a) - electrolyte(jcaso4,jp,ibin)
+      store(ica_a)  = max(0.D0, store(ica_a))
+      store(iso4_a) = max(0.D0, store(iso4_a))
 
       return
       end subroutine form_caso4
+
+
+
+      subroutine form_camsa2(store,jp,ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer jp, ibin
+      real(kind=8) store(naer)
+      
+      electrolyte(jcamsa2,jp,ibin) = min(store(ica_a),0.5*store(imsa_a))
+      store(ica_a)  = store(ica_a) - electrolyte(jcamsa2,jp,ibin)
+      store(imsa_a) = store(imsa_a) - 2.d0*electrolyte(jcamsa2,jp,ibin)
+      store(ica_a)  = max(0.D0, store(ica_a))
+      store(imsa_a) = max(0.D0, store(imsa_a))
+
+      return
+      end subroutine form_camsa2
+
 
 
       subroutine form_cano3(store,jp,ibin)	! ca(no3)2
@@ -11030,16 +7748,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jcano3,jp,ibin) = min(store(ica_a),0.5*store(ino3_a))
 
-      store(ica_a)  = real( dble(store(ica_a)) -   &
-                            dble(electrolyte(jcano3,jp,ibin)) )
-      store(ino3_a) = real( dble(store(ino3_a)) -   &
-                            dble(2.*electrolyte(jcano3,jp,ibin)) )
-      store(ica_a)  = max(0., store(ica_a))
-      store(ino3_a) = max(0., store(ino3_a))
+      store(ica_a)  = store(ica_a) - electrolyte(jcano3,jp,ibin)
+      store(ino3_a) = store(ino3_a) - 2.*electrolyte(jcano3,jp,ibin)
+      store(ica_a)  = max(0.D0, store(ica_a))
+      store(ino3_a) = max(0.D0, store(ino3_a))
 
       return
       end subroutine form_cano3
@@ -11050,16 +7766,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jcacl2,jp,ibin) = min(store(ica_a),0.5*store(icl_a))
 
-      store(ica_a)  = real( dble(store(ica_a)) -   &
-                            dble(electrolyte(jcacl2,jp,ibin)) )
-      store(icl_a)  = real( dble(store(icl_a)) -   &
-                            dble(2.*electrolyte(jcacl2,jp,ibin)) )
-      store(ica_a)  = max(0., store(ica_a))
-      store(icl_a)  = max(0., store(icl_a))
+      store(ica_a)  = store(ica_a) - electrolyte(jcacl2,jp,ibin)
+      store(icl_a)  = store(icl_a) - 2.*electrolyte(jcacl2,jp,ibin)
+      store(ica_a)  = max(0.D0, store(ica_a))
+      store(icl_a)  = max(0.D0, store(icl_a))
 
       return
       end subroutine form_cacl2
@@ -11070,7 +7784,7 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       if(jp.eq.jtotal .or. jp.eq.jsolid)then
       electrolyte(jcaco3,jp,ibin) = store(ica_a)
@@ -11090,16 +7804,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jna2so4,jp,ibin) = min(.5*store(ina_a),   &
                                             store(iso4_a))
-      store(ina_a) =real( dble(store(ina_a)) -   &
-                          dble(2.*electrolyte(jna2so4,jp,ibin)) )
-      store(iso4_a)=real( dble(store(iso4_a)) -   &
-                          dble(electrolyte(jna2so4,jp,ibin)) )
-      store(ina_a) =max(0., store(ina_a))
-      store(iso4_a)=max(0., store(iso4_a))
+      store(ina_a) = store(ina_a) - 2.*electrolyte(jna2so4,jp,ibin)
+      store(iso4_a)= store(iso4_a) - electrolyte(jna2so4,jp,ibin)
+      store(ina_a) = max(0.D0, store(ina_a))
+      store(iso4_a)= max(0.D0, store(iso4_a))
 
       return
       end subroutine form_na2so4
@@ -11111,19 +7823,36 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnahso4,jp,ibin) = min(store(ina_a),   &
                                          store(iso4_a))
-      store(ina_a)  = real( dble(store(ina_a)) -   &
-                            dble(electrolyte(jnahso4,jp,ibin)) )
-      store(iso4_a) = real( dble(store(iso4_a)) -   &
-                            dble(electrolyte(jnahso4,jp,ibin)) )
-      store(ina_a)  = max(0., store(ina_a))
-      store(iso4_a) = max(0., store(iso4_a))
+      store(ina_a)  = store(ina_a) - electrolyte(jnahso4,jp,ibin)
+      store(iso4_a) = store(iso4_a) - electrolyte(jnahso4,jp,ibin)
+      store(ina_a)  = max(0.D0, store(ina_a))
+      store(iso4_a) = max(0.D0, store(iso4_a))
 
       return
       end subroutine form_nahso4
+
+
+
+      subroutine form_namsa(store,jp,ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer jp, ibin
+      real(kind=8) store(naer)
+
+      electrolyte(jnamsa,jp,ibin) = min(store(ina_a), &
+                                        store(imsa_a))
+      store(ina_a)  = store(ina_a) - electrolyte(jnamsa,jp,ibin)
+      store(imsa_a) = store(imsa_a) - electrolyte(jnamsa,jp,ibin)
+      store(ina_a)  = max(0.D0, store(ina_a))
+      store(imsa_a) = max(0.D0, store(imsa_a))
+
+      return
+      end subroutine form_namsa
 
 
 
@@ -11132,15 +7861,13 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnano3,jp,ibin)=min(store(ina_a),store(ino3_a))
-      store(ina_a)  = real( dble(store(ina_a)) -   &
-                            dble(electrolyte(jnano3,jp,ibin)) )
-      store(ino3_a) = real( dble(store(ino3_a)) -   &
-                            dble(electrolyte(jnano3,jp,ibin)) )
-      store(ina_a)  = max(0., store(ina_a))
-      store(ino3_a) = max(0., store(ino3_a))
+      store(ina_a)  = store(ina_a) - electrolyte(jnano3,jp,ibin)
+      store(ino3_a) = store(ino3_a) - electrolyte(jnano3,jp,ibin)
+      store(ina_a)  = max(0.D0, store(ina_a))
+      store(ino3_a) = max(0.D0, store(ino3_a))
 
       return
       end subroutine form_nano3
@@ -11152,49 +7879,37 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
-
-      electrolyte(jnacl,jp,ibin) = min(store(ina_a),store(icl_a))
-
-      store(ina_a) = 0.0
-      store(icl_a) = real( dble(store(icl_a)) -   &
-                           dble(electrolyte(jnacl,jp,ibin)) )
-      store(icl_a) = max(0., store(icl_a))
-
-      return
-      end subroutine form_nacl
-
-
-
-      subroutine conform_nacl(store,jp,ibin)	! may artificially produce cl
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnacl,jp,ibin) = store(ina_a)
 
       store(ina_a) = 0.0
-      store(icl_a) = real( dble(store(icl_a)) -   &
-                           dble(electrolyte(jnacl,jp,ibin)) )
-
+      store(icl_a) = store(icl_a) - electrolyte(jnacl,jp,ibin)
+     
       if(store(icl_a) .lt. 0.)then 				! cl deficit in aerosol. take some from gas
-        aer(icl_a,jp,ibin)= aer(icl_a,jp,ibin)- store(icl_a)	! update aer(icl_a)
+        aer(icl_a,jp,ibin)= aer(icl_a,jp,ibin)- store(icl_a)	! update aer(icl_a) 
 
-! also update for jtotal
         if(jp .ne. jtotal)then
-          aer(icl_a,jtotal,ibin)= aer(icl_a,jtotal,ibin)- store(icl_a)
+          aer(icl_a,jtotal,ibin)= aer(icl_a,jliquid,ibin)+ &		! update for jtotal
+                                  aer(icl_a,jsolid,ibin) 
         endif
-        gas(ihcl_g) = gas(ihcl_g) + store(icl_a)			! update gas(ihcl_g)
-        gas(ihcl_g) = max(0., gas(ihcl_g))				! restrict gas(ihcl_g) to >= 0.
-        store(icl_a) = 0.        				! force store(icl_a) to 0.
-      endif
 
-      store(icl_a) = max(0., store(icl_a))
+        gas(ihcl_g) = gas(ihcl_g) + store(icl_a)			! update gas(ihcl_g)
+
+        if(gas(ihcl_g) .lt. 0.0)then
+          total_species(ihcl_g) = total_species(ihcl_g) - gas(ihcl_g)	! update total_species
+          tot_cl_in = tot_cl_in - gas(ihcl_g)				! update tot_cl_in
+        endif
+
+        gas(ihcl_g) = max(0.D0, gas(ihcl_g))				! restrict gas(ihcl_g) to >= 0.
+        store(icl_a) = 0.        				! force store(icl_a) to 0.
+
+      endif
+     
+      store(icl_a) = max(0.D0, store(icl_a))
 
       return
-      end subroutine conform_nacl
+      end subroutine form_nacl
 
 
 
@@ -11203,16 +7918,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnh4so4,jp,ibin)= min(.5*store(inh4_a),   &
                                            store(iso4_a))
-      store(inh4_a)= real( dble(store(inh4_a)) -   &
-                           dble(2.*electrolyte(jnh4so4,jp,ibin)) )
-      store(iso4_a)= real( dble(store(iso4_a)) -   &
-                           dble(electrolyte(jnh4so4,jp,ibin)) )
-      store(inh4_a) = max(0., store(inh4_a))
-      store(iso4_a) = max(0., store(iso4_a))
+      store(inh4_a)= store(inh4_a) - 2.*electrolyte(jnh4so4,jp,ibin)
+      store(iso4_a)= store(iso4_a) - electrolyte(jnh4so4,jp,ibin)
+      store(inh4_a) = max(0.D0, store(inh4_a))
+      store(iso4_a) = max(0.D0, store(iso4_a))
 
       return
       end subroutine form_nh4so4
@@ -11224,19 +7937,36 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnh4hso4,jp,ibin) = min(store(inh4_a),   &
                                           store(iso4_a))
-      store(inh4_a)= real( dble(store(inh4_a)) -   &
-                           dble(electrolyte(jnh4hso4,jp,ibin)) )
-      store(iso4_a)= real( dble(store(iso4_a)) -   &
-                           dble(electrolyte(jnh4hso4,jp,ibin)) )
-      store(inh4_a) = max(0., store(inh4_a))
-      store(iso4_a) = max(0., store(iso4_a))
+      store(inh4_a)= store(inh4_a) - electrolyte(jnh4hso4,jp,ibin)
+      store(iso4_a)= store(iso4_a) - electrolyte(jnh4hso4,jp,ibin)
+      store(inh4_a) = max(0.D0, store(inh4_a))
+      store(iso4_a) = max(0.D0, store(iso4_a))
 
       return
       end subroutine form_nh4hso4
+
+
+
+      subroutine form_nh4msa(store,jp,ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer jp, ibin
+      real(kind=8) store(naer)
+
+      electrolyte(jnh4msa,jp,ibin) = min(store(inh4_a), &
+                                         store(imsa_a))
+      store(inh4_a) = store(inh4_a) - electrolyte(jnh4msa,jp,ibin)
+      store(imsa_a) = store(imsa_a) - electrolyte(jnh4msa,jp,ibin)
+      store(inh4_a) = max(0.D0, store(inh4_a))
+      store(imsa_a) = max(0.D0, store(imsa_a))
+
+      return
+      end subroutine form_nh4msa
 
 
 
@@ -11245,16 +7975,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnh4cl,jp,ibin) = min(store(inh4_a),   &
                                         store(icl_a))
-      store(inh4_a) = real( dble(store(inh4_a)) -   &
-                            dble(electrolyte(jnh4cl,jp,ibin)) )
-      store(icl_a)  = real( dble(store(icl_a)) -   &
-                            dble(electrolyte(jnh4cl,jp,ibin)) )
-      store(inh4_a) = max(0., store(inh4_a))
-      store(icl_a)  = max(0., store(icl_a))
+      store(inh4_a) = store(inh4_a) - electrolyte(jnh4cl,jp,ibin)
+      store(icl_a)  = store(icl_a) - electrolyte(jnh4cl,jp,ibin)
+      store(inh4_a) = max(0.D0, store(inh4_a))
+      store(icl_a)  = max(0.D0, store(icl_a))
 
       return
       end subroutine form_nh4cl
@@ -11266,16 +7994,14 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
       electrolyte(jnh4no3,jp,ibin) = min(store(inh4_a),   &
                                          store(ino3_a))
-      store(inh4_a) = real( dble(store(inh4_a)) -   &
-                            dble(electrolyte(jnh4no3,jp,ibin)) )
-      store(ino3_a) = real( dble(store(ino3_a)) -   &
-                            dble(electrolyte(jnh4no3,jp,ibin)) )
-      store(inh4_a) = max(0., store(inh4_a))
-      store(ino3_a) = max(0., store(ino3_a))
+      store(inh4_a) = store(inh4_a) - electrolyte(jnh4no3,jp,ibin)
+      store(ino3_a) = store(ino3_a) - electrolyte(jnh4no3,jp,ibin)
+      store(inh4_a) = max(0.D0, store(inh4_a))
+      store(ino3_a) = max(0.D0, store(ino3_a))
 
       return
       end subroutine form_nh4no3
@@ -11287,15 +8013,13 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      electrolyte(jnh4so4,jp,ibin)= real( dble(2.*store(inh4_a)) -   &
-                                          dble(3.*store(iso4_a)) )
-      electrolyte(jlvcite,jp,ibin)= real( dble(2.*store(iso4_a)) -   &
-                                          dble(store(inh4_a)) )
-      electrolyte(jnh4so4,jp,ibin)= max(0.,   &
+      electrolyte(jnh4so4,jp,ibin)= 2.*store(inh4_a) - 3.*store(iso4_a)
+      electrolyte(jlvcite,jp,ibin)= 2.*store(iso4_a) - store(inh4_a)
+      electrolyte(jnh4so4,jp,ibin)= max(0.D0,   &
                                     electrolyte(jnh4so4,jp,ibin))
-      electrolyte(jlvcite,jp,ibin)= max(0.,   &
+      electrolyte(jlvcite,jp,ibin)= max(0.D0,   &
                                     electrolyte(jlvcite,jp,ibin))
       store(inh4_a) = 0.
       store(iso4_a) = 0.
@@ -11310,15 +8034,13 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      electrolyte(jlvcite,jp,ibin) = real( dble(store(inh4_a)) -   &
-                                           dble(store(iso4_a)) )
-      electrolyte(jnh4hso4,jp,ibin)= real( dble(3.*store(iso4_a)) -   &
-                                           dble(2.*store(inh4_a)) )
-      electrolyte(jlvcite,jp,ibin) = max(0.,   &
+      electrolyte(jlvcite,jp,ibin) = store(inh4_a) - store(iso4_a)
+      electrolyte(jnh4hso4,jp,ibin)= 3.*store(iso4_a) - 2.*store(inh4_a)
+      electrolyte(jlvcite,jp,ibin) = max(0.D0,   &
                                       electrolyte(jlvcite,jp,ibin))
-      electrolyte(jnh4hso4,jp,ibin)= max(0.,   &
+      electrolyte(jnh4hso4,jp,ibin)= max(0.D0,   &
                                       electrolyte(jnh4hso4,jp,ibin))
       store(inh4_a) = 0.
       store(iso4_a) = 0.
@@ -11333,15 +8055,13 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      electrolyte(jna2so4,jp,ibin)= real( dble(store(ina_a)) -   &
-                                          dble(store(iso4_a)) )
-      electrolyte(jnahso4,jp,ibin)= real( dble(2.*store(iso4_a))-   &
-                                          dble(store(ina_a)) )
-      electrolyte(jna2so4,jp,ibin)= max(0.,   &
+      electrolyte(jna2so4,jp,ibin)= store(ina_a) - store(iso4_a)
+      electrolyte(jnahso4,jp,ibin)= 2.*store(iso4_a) - store(ina_a)
+      electrolyte(jna2so4,jp,ibin)= max(0.D0,   &
                                     electrolyte(jna2so4,jp,ibin))
-      electrolyte(jnahso4,jp,ibin)= max(0.,   &
+      electrolyte(jnahso4,jp,ibin)= max(0.D0,   &
                                     electrolyte(jnahso4,jp,ibin))
       store(ina_a)  = 0.
       store(iso4_a) = 0.
@@ -11359,9 +8079,9 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      electrolyte(jh2so4,jp,ibin) = max(0.0, store(iso4_a))
+      electrolyte(jh2so4,jp,ibin) = max(0.0D0, store(iso4_a))
       store(iso4_a) = 0.0
 
       return
@@ -11370,14 +8090,29 @@
 
 
 
+      subroutine form_msa(store,jp,ibin)
+!      implicit none
+!      include 'mosaic.h'
+! subr arguments
+      integer jp, ibin
+      real(kind=8) store(naer)
+
+      electrolyte(jmsa,jp,ibin) = max(0.0D0, store(imsa_a))
+      store(imsa_a) = 0.0
+
+      return
+      end subroutine form_msa
+
+
+
       subroutine form_hno3(store,jp,ibin)
 !     implicit none
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      electrolyte(jhno3,jp,ibin) = max(0.0, store(ino3_a))
+      electrolyte(jhno3,jp,ibin) = max(0.0D0, store(ino3_a))
       store(ino3_a) = 0.0
 
       return
@@ -11391,9 +8126,9 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      electrolyte(jhcl,jp,ibin) = max(0.0, store(icl_a))
+      electrolyte(jhcl,jp,ibin) = max(0.0D0, store(icl_a))
       store(icl_a) = 0.0
 
       return
@@ -11407,13 +8142,12 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      store(ino3_a) = max(0.0, store(ino3_a))
+      store(ino3_a) = max(0.0D0, store(ino3_a))
       gas(ihno3_g) = gas(ihno3_g) + store(ino3_a)
-      aer(ino3_a,jp,ibin) = real( dble(aer(ino3_a,jp,ibin)) -   &
-                                   dble(store(ino3_a)) )
-      aer(ino3_a,jp,ibin) = max(0.0,aer(ino3_a,jp,ibin))
+      aer(ino3_a,jp,ibin) = aer(ino3_a,jp,ibin) - store(ino3_a)
+      aer(ino3_a,jp,ibin) = max(0.0D0,aer(ino3_a,jp,ibin))
 
 ! also do it for jtotal
       if(jp .ne. jtotal)then
@@ -11434,13 +8168,12 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      store(icl_a) = max(0.0, store(icl_a))
+      store(icl_a) = max(0.0D0, store(icl_a))
       gas(ihcl_g) = gas(ihcl_g) + store(icl_a)
-      aer(icl_a,jp,ibin) = real( dble(aer(icl_a,jp,ibin)) -   &
-                                  dble(store(icl_a)) )
-      aer(icl_a,jp,ibin) = max(0.0,aer(icl_a,jp,ibin))
+      aer(icl_a,jp,ibin) = aer(icl_a,jp,ibin) - store(icl_a)
+      aer(icl_a,jp,ibin) = max(0.0D0,aer(icl_a,jp,ibin))
 
 ! also do it for jtotal
       if(jp .ne. jtotal)then
@@ -11461,13 +8194,12 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real store(naer)
+      real(kind=8) store(naer)
 
-      store(inh4_a) = max(0.0, store(inh4_a))
+      store(inh4_a) = max(0.0D0, store(inh4_a))
       gas(inh3_g) = gas(inh3_g) + store(inh4_a)
-      aer(inh4_a,jp,ibin) = real( dble(aer(inh4_a,jp,ibin)) -   &
-                                   dble(store(inh4_a)) )
-      aer(inh4_a,jp,ibin) = max(0.0,aer(inh4_a,jp,ibin))
+      aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) - store(inh4_a)
+      aer(inh4_a,jp,ibin) = max(0.0D0,aer(inh4_a,jp,ibin))
 
 ! also do it for jtotal
       if(jp .ne. jtotal)then
@@ -11493,15 +8225,17 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-      real xt
+      real(kind=8) xt
 ! local variables
-      real ehno3, ehcl
+      real(kind=8) ehno3, ehcl
 
 
 
       if(jp .ne. jliquid)then
-        write(6,*)'error in degas_acids'
-        write(6,*)'wrong jp'
+        if (iprint_mosaic_diag1 .gt. 0) then
+          write(6,*)'mosaic - error in degas_acids'
+          write(6,*)'wrong jp'
+        endif
       endif
 
       ehno3 = electrolyte(jhno3,jp,ibin)
@@ -11525,552 +8259,8 @@
       electrolyte(jhno3,jp,ibin) = 0.0
       electrolyte(jhcl,jp,ibin)  = 0.0
 
-
       return
       end subroutine degas_acids
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! subroutines to evaporate volatile species by half
-!
-! author: rahul a. zaveri
-! update: jan 2004
-!-----------------------------------------------------------------------
-      subroutine evaporate_half_nh4no3(ibin)	! so that epercent(jnh4no3) remains below 1.0
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real x
-
-
-      x = 0.5*min(aer(ino3_a,jliquid,ibin),   &
-                  aer(inh4_a,jliquid,ibin))
-
-! update gas and aer(jliquid)
-      gas(ihno3_g) = gas(ihno3_g) + x
-      gas(inh3_g)  = gas(inh3_g)  + x
-      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) - x
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) - x
-
-! also update jtotal
-      aer(ino3_a,jtotal,ibin) = aer(ino3_a,jliquid,ibin) +   &
-                                aer(ino3_a,jsolid, ibin)
-      aer(inh4_a,jtotal,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                                aer(inh4_a,jsolid, ibin)
-
-      return
-      end subroutine evaporate_half_nh4no3
-
-
-      subroutine evaporate_half_nh4cl(ibin)	! so that epercent(jnh4cl) remains below 1.0
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real x
-
-
-      x = 0.5*min(aer(icl_a,jliquid,ibin),   &
-                  aer(inh4_a,jliquid,ibin))
-
-! update gas and aer(jliquid)
-      gas(ihcl_g) = gas(ihcl_g) + x
-      gas(inh3_g) = gas(inh3_g) + x
-      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin)  - x
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) - x
-
-! also update jtotal
-      aer(icl_a,jtotal,ibin)  = aer(icl_a,jliquid,ibin)  +   &
-                                aer(icl_a,jsolid, ibin)
-      aer(inh4_a,jtotal,ibin) = aer(inh4_a,jliquid,ibin) +   &
-                                aer(inh4_a,jsolid, ibin)
-
-      return
-      end subroutine evaporate_half_nh4cl
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! subroutines to evaporate volatile species close to sulfate domain change
-!
-! author: rahul a. zaveri
-! update: jan 2004
-!-----------------------------------------------------------------------
-      subroutine evaporate_nh4no3(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real acl_l, anh4_l, ano3_l, ghcl, ghno3, gnh3,   &
-        enh4no3, gnh3_ghno3, xt, keq_nh4no3
-
-
-      if(electrolyte(jnh4so4,jliquid,ibin) .gt. 0.0)then
-
-          call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)	! may also changes aer(inh4_a,jtotal,ibin) if excess nh3 is degassed
-          ghno3   = gas(ihno3_g)
-          ghcl    = gas(ihcl_g)
-          gnh3    = gas(inh3_g)
-
-          ano3_l  = aer(ino3_a,jliquid,ibin)
-          acl_l   = aer(icl_a,jliquid,ibin)
-          anh4_l  = aer(inh4_a,jliquid,ibin)
-
-          enh4no3 = electrolyte(jnh4no3,jliquid,ibin)
-
-! completely evaporate nh4no3
-          gas(ihno3_g) = ghno3 + enh4no3
-          gas(inh3_g)  = gnh3  + enh4no3
-          aer(ino3_a,jliquid,ibin) = max(ano3_l - enh4no3, 0.0)
-          aer(inh4_a,jliquid,ibin) = max(anh4_l - enh4no3, 0.0)
-
-          call ions_to_electrolytes(jliquid,ibin,xt)
-          call compute_activities(ibin)
-
-          call equilibrate_acids(ibin)
-          gnh3_ghno3 = gas(inh3_g)*gas(ihno3_g)
-          keq_nh4no3 = activity(jnh4no3,ibin)*kp_nh4no3
-
-          if(gnh3_ghno3 .lt. keq_nh4no3)then	! evaporate only nh3
-
-            sfc_a(ih2so4_g)= 0.0
-            sfc_a(ihno3_g) = gas(ihno3_g)
-            sfc_a(ihcl_g)  = gas(ihcl_g)
-            sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                            (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-            df_gas(ihno3_g,ibin)  = 0.0
-            df_gas(ihcl_g,ibin)   = 0.0
-            df_gas(inh3_g,ibin)   = gas(inh3_g) - sfc_a(inh3_g)
-
-            phi_volatile(ihno3_g,ibin) = 0.0
-            phi_volatile(ihcl_g,ibin)  = 0.0
-            phi_volatile(inh3_g,ibin)  = abs(df_gas(inh3_g,ibin))/   &
-                                  max(gas(inh3_g), sfc_a(inh3_g))
-
-            flux(ihno3_g,ibin)    = 0.0
-            flux(ihcl_g,ibin)     = 0.0
-
-! check for equilibrium
-            if(phi_volatile(inh3_g,ibin) .lt. 0.01)then
-              flux(inh3_g,ibin)   = 0.0
-            else
-              flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-            endif
-
-          else	! restore original values and ignore evaporation of nh4no3
-
-            gas(ihno3_g) = ghno3
-            gas(ihcl_g)  = ghcl
-            gas(inh3_g)  = gnh3
-
-            aer(ino3_a,jliquid,ibin) = ano3_l
-            aer(icl_a,jliquid,ibin)  = acl_l
-            aer(inh4_a,jliquid,ibin) = anh4_l
-
-
-            flux(ihno3_g,ibin)  = 0.0
-            flux(inh3_g,ibin)   = 0.0
-            call ions_to_electrolytes(jliquid,ibin,xt)
-          endif
-
-      else	! na and/or ca salts are present
-
-!          call equilibrate_tiny_nh4no3(ibin)
-          flux(ihno3_g,ibin) = 0.0
-          flux(ihcl_g,ibin)  = 0.0
-          flux(inh3_g,ibin)  = 0.0
-
-      endif
-
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
-                                 aer(icl_a,jliquid,ibin)
-
-
-      return
-      end subroutine evaporate_nh4no3
-
-
-
-
-
-
-
-
-
-
-
-
-      subroutine evaporate_nh4cl(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real acl_l, anh4_l, ano3_l, ghcl, ghno3, gnh3,   &
-        enh4cl, enh4no3,  gnh3_ghcl, xt, keq_nh4cl
-
-
-      if(electrolyte(jnh4so4,jliquid,ibin) .gt. 0.0)then
-
-          call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)	! may also changes aer(inh4_a,jtotal,ibin) if excess nh3 is degassed
-          ghno3   = gas(ihno3_g)
-          ghcl    = gas(ihcl_g)
-          gnh3    = gas(inh3_g)
-
-          ano3_l  = aer(ino3_a,jliquid,ibin)
-          acl_l   = aer(icl_a,jliquid,ibin)
-          anh4_l  = aer(inh4_a,jliquid,ibin)
-
-          enh4cl  = electrolyte(jnh4cl,jliquid,ibin)
-
-! completely evaporate nh4cl
-          gas(ihcl_g)  = ghcl  + enh4cl
-          gas(inh3_g)  = gnh3  + enh4cl
-          aer(icl_a,jliquid,ibin)  = max(acl_l  - enh4cl, 0.0)
-          aer(inh4_a,jliquid,ibin) = max(anh4_l - enh4cl, 0.0)
-
-          call ions_to_electrolytes(jliquid,ibin,xt)
-          call compute_activities(ibin)
-
-          call equilibrate_acids(ibin)
-          gnh3_ghcl = gas(inh3_g)*gas(ihcl_g)
-          keq_nh4cl = activity(jnh4cl,ibin)*kp_nh4cl
-
-          if(gnh3_ghcl .lt. keq_nh4cl)then	! evaporate only nh3
-
-            sfc_a(ih2so4_g)= 0.0
-            sfc_a(ihno3_g) = gas(ihno3_g)
-            sfc_a(ihcl_g)  = gas(ihcl_g)
-            sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                           (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-            df_gas(ihno3_g,ibin)  = 0.0
-            df_gas(ihcl_g,ibin)   = 0.0
-            df_gas(inh3_g,ibin)   = gas(inh3_g) - sfc_a(inh3_g)
-
-            phi_volatile(ihno3_g,ibin) = 0.0
-            phi_volatile(ihcl_g,ibin)  = 0.0
-            phi_volatile(inh3_g,ibin)  = abs(df_gas(inh3_g,ibin))/   &
-                                  max(gas(inh3_g), sfc_a(inh3_g))
-
-            flux(ihno3_g,ibin)    = 0.0
-            flux(ihcl_g,ibin)     = 0.0
-
-! check for equilibrium
-            if(phi_volatile(inh3_g,ibin) .lt. 0.01)then
-              flux(inh3_g,ibin)   = 0.0
-            else
-              flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-            endif
-
-          else	! restore original values and ignore evaporation of nh4cl
-
-            gas(ihno3_g) = ghno3
-            gas(ihcl_g)  = ghcl
-            gas(inh3_g)  = gnh3
-
-            aer(ino3_a,jliquid,ibin) = ano3_l
-            aer(icl_a,jliquid,ibin)  = acl_l
-            aer(inh4_a,jliquid,ibin) = anh4_l
-
-            flux(ihcl_g,ibin)   = 0.0
-            flux(inh3_g,ibin)   = 0.0
-            call ions_to_electrolytes(jliquid,ibin,xt)
-
-          endif
-
-      else	! na and/or ca salts are present
-
-!          call equilibrate_tiny_nh4cl(ibin)
-          flux(ihno3_g,ibin) = 0.0
-          flux(ihcl_g,ibin)  = 0.0
-          flux(inh3_g,ibin)  = 0.0
-
-      endif
-
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
-                                 aer(icl_a,jliquid,ibin)
-
-
-      return
-      end subroutine evaporate_nh4cl
-
-
-
-
-
-
-
-
-
-
-      subroutine evaporate_nh4no3_nh4cl(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real acl_l, anh4_l, ano3_l, ghcl, ghno3, gnh3,   &
-        enh4cl, enh4no3,  gnh3_ghcl, gnh3_ghno3, xt,   &
-        keq_nh4no3, keq_nh4cl
-
-
-      ghno3   = gas(ihno3_g)
-      ghcl    = gas(ihcl_g)
-      gnh3    = gas(inh3_g)
-
-      ano3_l  = aer(ino3_a,jliquid,ibin)
-      acl_l   = aer(icl_a,jliquid,ibin)
-      anh4_l  = aer(inh4_a,jliquid,ibin)
-
-      enh4no3 = electrolyte(jnh4no3,jliquid,ibin)
-      enh4cl  = electrolyte(jnh4cl,jliquid,ibin)
-
-! completely evaporate nh4no3  and nh4cl
-      gas(ihno3_g) = ghno3 + ano3_l
-      gas(ihcl_g)  = ghcl  + acl_l
-      gas(inh3_g)  = gnh3  + ano3_l + acl_l
-      aer(ino3_a,jliquid,ibin) = 0.0
-      aer(icl_a,jliquid,ibin)  = 0.0
-      aer(inh4_a,jliquid,ibin) = max(anh4_l-(ano3_l+acl_l), 0.0)
-
-      call ions_to_electrolytes(jliquid,ibin,xt)
-      call compute_activities(ibin)
-
-      call equilibrate_acids(ibin)
-      gnh3_ghcl  = gas(inh3_g)*gas(ihcl_g)
-      gnh3_ghno3 = gas(inh3_g)*gas(ihno3_g)
-      keq_nh4no3 = activity(jnh4no3,ibin)*kp_nh4no3
-      keq_nh4cl  = activity(jnh4cl,ibin) *kp_nh4cl
-
-
-! now check what to do further
-      if(gnh3_ghno3 .le. keq_nh4no3 .and.   &
-         gnh3_ghcl  .le. keq_nh4cl)then	! evaporate only nh3
-
-        sfc_a(ih2so4_g)= 0.0
-        sfc_a(ihno3_g) = gas(ihno3_g)
-        sfc_a(ihcl_g)  = gas(ihcl_g)
-        sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                           (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-        df_gas(ihno3_g,ibin)  = 0.0
-        df_gas(ihcl_g,ibin)   = 0.0
-        df_gas(inh3_g,ibin)   = gas(inh3_g) - sfc_a(inh3_g)
-
-        phi_volatile(ihno3_g,ibin) = 0.0
-        phi_volatile(ihcl_g,ibin)  = 0.0
-        phi_volatile(inh3_g,ibin)  =  df_gas(inh3_g,ibin)/   &
-                                  max(gas(inh3_g), sfc_a(inh3_g))
-
-        flux(ihno3_g,ibin)    = 0.0
-        flux(ihcl_g,ibin)     = 0.0
-
-! check for equilibrium
-        if(abs(phi_volatile(inh3_g,ibin)) .lt. 0.01)then
-          flux(inh3_g,ibin)   = 0.0
-        else
-          flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-        endif
-
-      else	! restore original values and ignore evaporation of nh4no3
-
-        gas(ihno3_g) = ghno3
-        gas(ihcl_g)  = ghcl
-        gas(inh3_g)  = gnh3
-
-        aer(ino3_a,jliquid,ibin) = ano3_l
-        aer(icl_a,jliquid,ibin)  = acl_l
-        aer(inh4_a,jliquid,ibin) = anh4_l
-
-        flux(ihno3_g,ibin)  = 0.0
-        flux(ihcl_g,ibin)   = 0.0
-        flux(inh3_g,ibin)   = 0.0
-        call ions_to_electrolytes(jliquid,ibin,xt)
-      endif
-
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin) = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(ino3_a,jtotal,ibin) = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-      aer(icl_a,jtotal,ibin)  = aer(icl_a,jsolid,ibin)  +   &
-                                 aer(icl_a,jliquid,ibin)
-
-
-      return
-      end subroutine evaporate_nh4no3_nh4cl
-
-
-
-
-
-
-
-
-
-
-      subroutine evaporate_nh4no3_nh4cl_old(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real acl_l, anh4_l, ano3_l, ghcl, ghno3, gnh3,   &
-        enh4cl, enh4no3,  gnh3_ghcl, gnh3_ghno3, xt,   &
-        keq_nh4no3, keq_nh4cl
-
-
-      if(electrolyte(jnh4so4,jliquid,ibin) .gt. 0.0)then
-
-          call asteem_formelectrolytes_hybrid(jliquid,ibin,xt)	! may also changes aer(inh4_a,jtotal,ibin) if excess nh3 is degassed
-          ghno3   = gas(ihno3_g)
-          ghcl    = gas(ihcl_g)
-          gnh3    = gas(inh3_g)
-
-          ano3_l  = aer(ino3_a,jliquid,ibin)
-          acl_l   = aer(icl_a,jliquid,ibin)
-          anh4_l  = aer(inh4_a,jliquid,ibin)
-
-          enh4no3 = electrolyte(jnh4no3,jliquid,ibin)
-          enh4cl  = electrolyte(jnh4cl,jliquid,ibin)
-
-! completely evaporate nh4no3  and nh4cl
-          gas(ihno3_g) = ghno3 + enh4no3
-          gas(ihcl_g)  = ghcl  + enh4cl
-          gas(inh3_g)  = gnh3  + enh4no3 + enh4cl
-          aer(ino3_a,jliquid,ibin) = max(ano3_l - enh4no3, 0.0)
-          aer(icl_a,jliquid,ibin)  = max(acl_l  - enh4cl, 0.0)
-          aer(inh4_a,jliquid,ibin) = max(anh4_l - enh4no3-enh4cl, 0.0)
-
-          call ions_to_electrolytes(jliquid,ibin,xt)
-          call compute_activities(ibin)
-
-          call equilibrate_acids(ibin)
-          gnh3_ghcl  = gas(inh3_g)*gas(ihcl_g)
-          gnh3_ghno3 = gas(inh3_g)*gas(ihno3_g)
-          keq_nh4no3 = activity(jnh4no3,ibin)*kp_nh4no3
-          keq_nh4cl  = activity(jnh4cl,ibin) *kp_nh4cl
-
-          if(gnh3_ghno3 .lt. keq_nh4no3 .and.   &
-             gnh3_ghcl  .lt. keq_nh4cl)then	! evaporate only nh3
-
-            sfc_a(ih2so4_g)= 0.0
-            sfc_a(ihno3_g) = gas(ihno3_g)
-            sfc_a(ihcl_g)  = gas(ihcl_g)
-            sfc_a(inh3_g)  = gam_ratio(ibin)*mc(jc_nh4,ibin)*keq_ll(3)/   &
-                           (mc(jc_h,ibin)*keq_ll(2)*keq_gl(2))
-
-            df_gas(ihno3_g,ibin)  = 0.0
-            df_gas(ihcl_g,ibin)   = 0.0
-            df_gas(inh3_g,ibin)   = gas(inh3_g) - sfc_a(inh3_g)
-
-            phi_volatile(ihno3_g,ibin) = 0.0
-            phi_volatile(ihcl_g,ibin)  = 0.0
-            phi_volatile(inh3_g,ibin)  = abs(df_gas(inh3_g,ibin))/   &
-                                  max(gas(inh3_g), sfc_a(inh3_g))
-
-            flux(ihno3_g,ibin)    = 0.0
-            flux(ihcl_g,ibin)     = 0.0
-
-! check for equilibrium
-            if(phi_volatile(inh3_g,ibin) .lt. 0.01)then
-              flux(inh3_g,ibin)   = 0.0
-            else
-              flux(inh3_g,ibin)   = kg(inh3_g,ibin)*df_gas(inh3_g,ibin)
-            endif
-
-          else	! restore original values and ignore evaporation of nh4no3
-
-            gas(ihno3_g) = ghno3
-            gas(ihcl_g)  = ghcl
-            gas(inh3_g)  = gnh3
-
-            aer(ino3_a,jliquid,ibin) = ano3_l
-            aer(icl_a,jliquid,ibin)  = acl_l
-            aer(inh4_a,jliquid,ibin) = anh4_l
-
-            flux(ihno3_g,ibin)  = 0.0
-            flux(ihcl_g,ibin)   = 0.0
-            flux(inh3_g,ibin)   = 0.0
-            call ions_to_electrolytes(jliquid,ibin,xt)
-          endif
-
-      else	! na and/or ca salts are probably present
-
-          flux(ihcl_g,ibin)  = 0.0
-          flux(ihno3_g,ibin) = 0.0
-          flux(inh3_g,ibin)  = 0.0
-
-      endif
-
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
-                                 aer(icl_a,jliquid,ibin)
-
-
-
-      return
-      end subroutine evaporate_nh4no3_nh4cl_old
-
-
-
-
-
-
-
-
-
 
 
 
@@ -12092,7 +8282,7 @@
 ! update: sep 2004
 !-----------------------------------------------------------------------
 !
-! only nh4no3
+! nh4no3 (solid)
       subroutine degas_solid_nh4no3(ibin)
 !     implicit none
 !     include 'mosaic.h'
@@ -12100,8 +8290,8 @@
       integer ibin
 ! local variables
       integer jp
-      real a, b, c, xgas
-!     real quadratic					! mosaic func
+      real(kind=8) a, b, c, xgas, xt
+!     real(kind=8) quadratic					! mosaic func
 
 
       jp = jsolid
@@ -12119,8 +8309,6 @@
                                 electrolyte(jnh4no3,jp,ibin)
           aer(ino3_a,jp,ibin) = aer(ino3_a,jp,ibin) -   &
                                 electrolyte(jnh4no3,jp,ibin)
-          electrolyte(jnh4no3,jp,ibin) = 0.0
-          epercent(jnh4no3,jp,ibin) = 0.0
 
       else	! degas only xgas amount of nh4no3
 
@@ -12128,7 +8316,6 @@
           gas(ihno3_g)= gas(ihno3_g) + xgas
           aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) - xgas
           aer(ino3_a,jp,ibin) = aer(ino3_a,jp,ibin) - xgas
-
       endif
 
 
@@ -12138,7 +8325,6 @@
       aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
                                  aer(ino3_a,jliquid,ibin)
 
-
       return
       end subroutine degas_solid_nh4no3
 
@@ -12147,7 +8333,10 @@
 
 
 
-! only nh4cl
+
+
+
+! nh4cl (solid)
       subroutine degas_solid_nh4cl(ibin)
 !     implicit none
 !     include 'mosaic.h'
@@ -12155,8 +8344,8 @@
       integer ibin
 ! local variables
       integer jp
-      real a, b, c, xgas
-!     real quadratic					! mosaic func
+      real(kind=8) a, b, c, xgas, xt
+!     real(kind=8) quadratic					! mosaic func
 
 
       jp = jsolid
@@ -12174,8 +8363,6 @@
                                 electrolyte(jnh4cl,jp,ibin)
           aer(icl_a,jp,ibin)  = aer(icl_a,jp,ibin) -   &
                                 electrolyte(jnh4cl,jp,ibin)
-          electrolyte(jnh4cl,jsolid,ibin) = 0.0
-          epercent(jnh4cl,jsolid,ibin)    = 0.0
 
       else	! degas only xgas amount of nh4cl
 
@@ -12193,7 +8380,6 @@
       aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
                                  aer(icl_a,jliquid,ibin)
 
-
       return
       end subroutine degas_solid_nh4cl
 
@@ -12204,93 +8390,229 @@
 
 
 
-! both nh4no3 and nh4cl
-      subroutine degas_solid_volatiles(ibin)
+
+
+
+!***********************************************************************
+! subroutines to absorb and degas small amounts of volatile species
+!
+! author: rahul a. zaveri
+! update: jun 2002
+!-----------------------------------------------------------------------
+!
+! nh4no3 (liquid)
+      subroutine absorb_tiny_nh4no3(ibin)
 !     implicit none
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer jp
-      real a, b, c, xgas
-!     real quadratic					! mosaic func
+      real(kind=8) small_aer, small_gas, small_amt
 
+      small_gas = 0.01 * min(gas(inh3_g), gas(ihno3_g))
+      small_aer = 0.01 * electrolyte_sum(jtotal,ibin)
+      if(small_aer .eq. 0.0)small_aer = small_gas
 
-      jp = jsolid
+      small_amt = min(small_gas, small_aer)
 
-      if(epercent(jnh4no3,jp,ibin) .gt. 0. .and.   &
-         gas(inh3_g)*gas(ihno3_g)  .lt. keq_sg(1) )then
-
-      a = 1.0
-      b = gas(inh3_g) + gas(ihno3_g)
-      c = gas(inh3_g)*gas(ihno3_g) - keq_sg(1)
-      xgas = quadratic(a,b,c)
-
-        if(xgas .ge. electrolyte(jnh4no3,jp,ibin))then ! degas all nh4no3
-
-          gas(inh3_g) = gas(inh3_g)  + electrolyte(jnh4no3,jp,ibin)
-          gas(ihno3_g)= gas(ihno3_g) + electrolyte(jnh4no3,jp,ibin)
-          aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) -   &
-                                    electrolyte(jnh4no3,jp,ibin)
-          aer(ino3_a,jp,ibin) = aer(ino3_a,jp,ibin) -   &
-                                    electrolyte(jnh4no3,jp,ibin)
-          electrolyte(jnh4no3,jp,ibin) = 0.0
-          epercent(jnh4no3,jp,ibin) = 0.0
-
-        else	! degas only xgas amount of nh4no3
-
-          gas(inh3_g) = gas(inh3_g)  + xgas
-          gas(ihno3_g)= gas(ihno3_g) + xgas
-          aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) - xgas
-          aer(ino3_a,jp,ibin) = aer(ino3_a,jp,ibin) - xgas
-
-        endif
-
-      endif
-
-
-
-      if(epercent(jnh4cl,jp,ibin) .gt. 0. .and.   &
-         gas(inh3_g)*gas(ihcl_g)  .lt. keq_sg(2) )then
-
-      a = 1.0
-      b = gas(inh3_g) + gas(ihcl_g)
-      c = gas(inh3_g)*gas(ihcl_g) - keq_sg(2)
-      xgas = quadratic(a,b,c)
-
-        if(xgas .ge. electrolyte(jnh4cl,jp,ibin))then ! degas all nh4cl
-
-          gas(inh3_g) = gas(inh3_g) + electrolyte(jnh4cl,jp,ibin)
-          gas(ihcl_g) = gas(ihcl_g) + electrolyte(jnh4cl,jp,ibin)
-          aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) -   &
-                                    electrolyte(jnh4cl,jp,ibin)
-          aer(icl_a,jp,ibin)  = aer(icl_a,jp,ibin) -   &
-                                    electrolyte(jnh4cl,jp,ibin)
-          electrolyte(jnh4cl,jp,ibin) = 0.0
-          epercent(jnh4cl,jp,ibin) = 0.0
-
-        else	! degas only xgas amount of nh4cl
-
-          gas(inh3_g) = gas(inh3_g) + xgas
-          gas(ihcl_g) = gas(ihcl_g) + xgas
-          aer(inh4_a,jp,ibin) = aer(inh4_a,jp,ibin) - xgas
-          aer(icl_a,jp,ibin)  = aer(icl_a,jp,ibin)  - xgas
-
-        endif
-
-      endif
-
+      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) + small_amt
+      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) + small_amt
 
 ! update jtotal
       aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
                                  aer(inh4_a,jliquid,ibin)
       aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
                                  aer(ino3_a,jliquid,ibin)
+
+! update gas
+      gas(inh3_g)    = gas(inh3_g) - small_amt
+      gas(ihno3_g)   = gas(ihno3_g) - small_amt
+
+      return
+      end subroutine absorb_tiny_nh4no3
+
+
+
+
+
+
+!--------------------------------------------------------------------
+! nh4cl (liquid)
+      subroutine absorb_tiny_nh4cl(ibin)
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) small_aer, small_gas, small_amt
+
+      small_gas = 0.01 * min(gas(inh3_g), gas(ihcl_g))
+      small_aer = 0.01 * electrolyte_sum(jtotal,ibin)
+      if(small_aer .eq. 0.0)small_aer = small_gas
+
+      small_amt = min(small_gas, small_aer)
+
+      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) + small_amt
+      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin)  + small_amt
+
+! update jtotal
+      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
+                                 aer(inh4_a,jliquid,ibin)
       aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
                                  aer(icl_a,jliquid,ibin)
 
+! update gas
+      gas(inh3_g)   = gas(inh3_g) - small_amt
+      gas(ihcl_g)   = gas(ihcl_g) - small_amt
+
       return
-      end subroutine degas_solid_volatiles
+      end subroutine absorb_tiny_nh4cl
+
+
+
+
+
+
+
+
+
+
+
+
+
+!--------------------------------------------------------------
+! nh4no3 (liquid)
+      subroutine degas_tiny_nh4no3(ibin)
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) small_amt
+
+      small_amt = 0.01 * electrolyte(jnh4no3,jliquid,ibin)
+
+      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) - small_amt
+      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) - small_amt
+
+! update jtotal
+      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
+                                 aer(inh4_a,jliquid,ibin)
+      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
+                                 aer(ino3_a,jliquid,ibin)
+
+! update gas
+      gas(inh3_g)  = gas(inh3_g)  + small_amt
+      gas(ihno3_g) = gas(ihno3_g) + small_amt
+
+      return
+      end subroutine degas_tiny_nh4no3
+
+
+
+
+!--------------------------------------------------------------------
+! liquid nh4cl (liquid)
+      subroutine degas_tiny_nh4cl(ibin)
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) small_amt
+
+
+      small_amt = 0.01 * electrolyte(jnh4cl,jliquid,ibin)
+
+      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) - small_amt
+      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) - small_amt
+
+! update jtotal
+      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
+                                 aer(inh4_a,jliquid,ibin)
+      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
+                                 aer(icl_a,jliquid,ibin)
+
+! update gas
+      gas(inh3_g) = gas(inh3_g) + small_amt
+      gas(ihcl_g) = gas(ihcl_g) + small_amt
+
+      return
+      end subroutine degas_tiny_nh4cl
+
+
+
+
+
+
+
+!--------------------------------------------------------------------
+! hcl (liquid)
+      subroutine absorb_tiny_hcl(ibin)	! and degas tiny hno3
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) small_aer, small_amt, small_gas
+
+      small_gas = 0.01 * gas(ihcl_g)
+      small_aer = 0.01 * aer(ino3_a,jliquid,ibin)
+
+      small_amt = min(small_gas, small_aer)
+
+! absorb tiny hcl
+      aer(icl_a,jliquid,ibin)= aer(icl_a,jliquid,ibin) + small_amt
+      aer(icl_a,jtotal,ibin) = aer(icl_a,jsolid,ibin) +   &
+                               aer(icl_a,jliquid,ibin)
+      gas(ihcl_g) = gas(ihcl_g) - small_amt
+
+! degas tiny hno3
+      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) - small_amt
+      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
+                                 aer(ino3_a,jliquid,ibin)
+
+! update gas
+      gas(ihno3_g) = gas(ihno3_g) + small_amt
+
+      return
+      end subroutine absorb_tiny_hcl
+
+
+
+!--------------------------------------------------------------------
+! hno3 (liquid)
+      subroutine absorb_tiny_hno3(ibin)	! and degas tiny hcl
+!     implicit none
+!     include 'mosaic.h'
+! subr arguments
+      integer ibin
+! local variables
+      real(kind=8) small_aer, small_amt, small_gas
+
+      small_gas = 0.01 * gas(ihno3_g)
+      small_aer = 0.01 * aer(icl_a,jliquid,ibin)
+
+      small_amt = min(small_gas, small_aer)
+
+! absorb tiny hno3
+      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) + small_amt
+      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
+                                 aer(ino3_a,jliquid,ibin)
+      gas(ihno3_g) = gas(ihno3_g) - small_amt
+
+! degas tiny hcl
+      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) - small_amt
+      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin) +   &
+                                 aer(icl_a,jliquid,ibin)
+
+! update gas
+      gas(ihcl_g) = gas(ihcl_g) + small_amt
+
+      return
+      end subroutine absorb_tiny_hno3
+
+
 
 
 
@@ -12309,36 +8631,17 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer ibin
-! local variables
-      real salts_cl, salts_no3, sum_salts
 
 
 
-      if(electrolyte(jcaco3,jliquid,ibin) .gt. 0.0 .or.   &
-         water_a(ibin) .eq. 0.0)return
-
-      salts_cl  = electrolyte(jnacl,jliquid,ibin)  +   &
-                  electrolyte(jcacl2,jliquid,ibin) +   &
-                  electrolyte(jnh4cl,jliquid,ibin)
-
-      salts_no3 = electrolyte(jnano3,jliquid,ibin) +   &
-                  electrolyte(jcano3,jliquid,ibin) +   &
-                  electrolyte(jnh4no3,jliquid,ibin)
-
-      sum_salts = salts_cl + salts_no3
-
-
-      if(gas(ihcl_g)*sum_salts.gt.0.)then
-          call equilibrate_hcl(ibin)
-      elseif(gas(ihno3_g)*salts_no3.gt.0. .and. salts_cl.eq.0.)then
-          call equilibrate_hno3(ibin)
-      elseif(gas(ihcl_g)*gas(ihno3_g).gt.0. .and. sum_salts.eq.0.)then
-          call equilibrate_hcl_and_hno3(ibin)
-      elseif(gas(ihcl_g).gt.0. .and. sum_salts.eq.0.)then
-          call equilibrate_hcl(ibin)
-      elseif(gas(ihno3_g).gt.0. .and. sum_salts.eq.0.)then
-          call equilibrate_hno3(ibin)
+      if(gas(ihcl_g)*gas(ihno3_g) .gt. 0.)then
+        call equilibrate_hcl_and_hno3(ibin)
+      elseif(gas(ihcl_g) .gt. 0.)then
+        call equilibrate_hcl(ibin)
+      elseif(gas(ihno3_g) .gt. 0.)then
+        call equilibrate_hno3(ibin)
       endif
+
 
       return
       end subroutine equilibrate_acids
@@ -12357,9 +8660,9 @@
 ! subr arguments
       integer ibin
 ! local variables
-      real a, aerh, aerhso4, aerso4, b, c, dum, kdash_hcl, mh, tcl,   &
+      real(kind=8) a, aerh, aerhso4, aerso4, b, c, dum, kdash_hcl, mh, tcl,   &
         w, xt, z
-!     real quadratic					! mosaic func
+!     real(kind=8) quadratic					! mosaic func
 
       aerso4 = ma(ja_so4,ibin)*water_a(ibin)*1.e+9
       aerhso4= ma(ja_hso4,ibin)*water_a(ibin)*1.e+9
@@ -12378,18 +8681,18 @@
 
       kdash_hcl = keq_gl(4)*1.e+18/gam(jhcl,ibin)**2	! (nmol^2/kg^2)/(nmol/m^3(air))
       a = 1.0
-      b = real(dble(kdash_hcl*w) + dble(z/w))*1.e-9
+      b = (kdash_hcl*w + z/w)*1.e-9
       c = kdash_hcl*(z - tcl)*1.e-18
 
 
-      dum = real(dble(b*b)-dble(4.*a*c))
+      dum = b*b - 4.*a*c
       if (dum .lt. 0.) return		! no real root
 
 
       if(c .lt. 0.)then
         mh = quadratic(a,b,c)	! mol/kg(water)
         aerh = mh*w*1.e+9
-        aer(icl_a,jliquid,ibin) = real(dble(aerh) + dble(z))
+        aer(icl_a,jliquid,ibin) = aerh + z
       else
         mh = sqrt(keq_ll(3))
       endif
@@ -12397,7 +8700,7 @@
       call form_electrolytes(jliquid,ibin,xt)
 
 ! update gas phase concentration
-      gas(ihcl_g) = real( dble(tcl)  - dble(aer(icl_a,jliquid,ibin))  )
+      gas(ihcl_g) = tcl - aer(icl_a,jliquid,ibin)
 
 
 ! update the following molalities
@@ -12429,8 +8732,6 @@
 
       electrolyte(jhcl,jtotal,ibin) = electrolyte(jhcl,jliquid,ibin)
 
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-
       return
       end subroutine equilibrate_hcl
 
@@ -12444,9 +8745,9 @@
 ! subr arguments
       integer ibin
 ! local variables
-      real a, aerh, aerhso4, aerso4, b, c, dum, kdash_hno3, mh,   &
+      real(kind=8) a, aerh, aerhso4, aerso4, b, c, dum, kdash_hno3, mh,   &
         tno3, w, xt, z
-!     real quadratic					! mosaic func
+!     real(kind=8) quadratic					! mosaic func
 
       aerso4 = ma(ja_so4,ibin)*water_a(ibin)*1.e+9
       aerhso4= ma(ja_hso4,ibin)*water_a(ibin)*1.e+9
@@ -12465,10 +8766,10 @@
 
       kdash_hno3 = keq_gl(3)*1.e+18/gam(jhno3,ibin)**2	! (nmol^2/kg^2)/(nmol/m^3(air))
       a = 1.0
-      b = real(dble(kdash_hno3*w) + dble(z/w))*1.e-9
+      b = (kdash_hno3*w + z/w)*1.e-9
       c = kdash_hno3*(z - tno3)*1.e-18
 
-      dum = real(dble(b*b)-dble(4.*a*c))
+      dum = b*b - 4.*a*c
       if (dum .lt. 0.) return		! no real root
 
 
@@ -12476,7 +8777,7 @@
       if(c .lt. 0.)then
         mh = quadratic(a,b,c)	! mol/kg(water)
         aerh = mh*w*1.e+9
-        aer(ino3_a,jliquid,ibin) = real(dble(aerh) + dble(z))
+        aer(ino3_a,jliquid,ibin) = aerh + z
       else
         mh = sqrt(keq_ll(3))
       endif
@@ -12484,7 +8785,7 @@
       call form_electrolytes(jliquid,ibin,xt)
 
 ! update gas phase concentration
-      gas(ihno3_g)= real( dble(tno3) - dble(aer(ino3_a,jliquid,ibin)) )
+      gas(ihno3_g)= tno3 - aer(ino3_a,jliquid,ibin)
 
 
 ! update the following molalities
@@ -12516,8 +8817,6 @@
 
       electrolyte(jhno3,jtotal,ibin) = electrolyte(jhno3,jliquid,ibin)
 
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-
       return
       end subroutine equilibrate_hno3
 
@@ -12537,9 +8836,9 @@
 ! subr arguments
       integer ibin
 ! local variables
-      real aerh, aerhso4, aerso4, kdash_hcl, kdash_hno3,   &
+      real(kind=8) aerh, aerhso4, aerso4, kdash_hcl, kdash_hno3,   &
         mh, p, q, r, tcl, tno3, w, xt, z
-!     real cubic					! mosaic func
+!     real(kind=8) cubic					! mosaic func
 
 
       aerso4 = ma(ja_so4,ibin)*water_a(ibin)*1.e+9
@@ -12586,8 +8885,8 @@
       call form_electrolytes(jliquid,ibin,xt)
 
 ! update gas phase concentration
-      gas(ihno3_g)= real( dble(tno3) - dble(aer(ino3_a,jliquid,ibin)) )
-      gas(ihcl_g) = real( dble(tcl)  - dble(aer(icl_a,jliquid,ibin))  )
+      gas(ihno3_g)= tno3 - aer(ino3_a,jliquid,ibin)
+      gas(ihcl_g) = tcl  - aer(icl_a,jliquid,ibin)
 
 
 ! update the following molalities
@@ -12626,8 +8925,6 @@
       electrolyte(jhno3,jtotal,ibin) = electrolyte(jhno3,jliquid,ibin)
       electrolyte(jhcl, jtotal,ibin) = electrolyte(jhcl, jliquid,ibin)
 
-      ph(ibin) = -alog10(mc(jc_h,ibin))
-
       return
       end subroutine equilibrate_hcl_and_hno3
 
@@ -12636,1269 +8933,6 @@
 
 
 
-
-
-
-
-
-
-
-
-!***********************************************************************
-! subroutines to absorb and degas small amounts of volatile species
-!
-! author: rahul a. zaveri
-! update: jun 2002
-!-----------------------------------------------------------------------
-!
-! nh3
-      subroutine absorb_tiny_nh3(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_aer, small_amt, small_gas
-
-      small_gas = 0.02 * gas(inh3_g)
-      small_aer = 0.05 * aer(iso4_a,jliquid,ibin)
-
-      small_amt = min(small_gas, small_aer)
-
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) + small_amt
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-
-! update gas
-      gas(inh3_g)              = gas(inh3_g) - small_amt
-
-      return
-      end subroutine absorb_tiny_nh3
-
-
-
-! hcl
-      subroutine absorb_tiny_hcl(ibin)	! and degas tiny hno3
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_aer, small_amt, small_gas
-
-      small_gas = 0.01 * gas(ihcl_g)
-      small_aer = 0.01 * aer(ino3_a,jliquid,ibin)
-
-      small_amt = min(small_gas, small_aer)
-
-! absorb tiny hcl
-      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) + small_amt
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin) +   &
-                                 aer(icl_a,jliquid,ibin)
-      gas(ihcl_g)              = gas(ihcl_g) - small_amt
-
-! degas tiny hno3
-      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) - small_amt
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-
-! update gas
-      gas(ihno3_g)             = gas(ihno3_g) + small_amt
-
-      return
-      end subroutine absorb_tiny_hcl
-
-
-
-
-! hno3
-      subroutine absorb_tiny_hno3(ibin)	! and degas tiny hcl
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_aer, small_amt, small_gas
-
-      small_gas = 0.01 * gas(ihno3_g)
-      small_aer = 0.01 * aer(icl_a,jliquid,ibin)
-
-      small_amt = min(small_gas, small_aer)
-
-! absorb tiny hno3
-      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) + small_amt
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-      gas(ihno3_g)             = gas(ihno3_g) - small_amt
-
-! degas tiny hcl
-      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin) - small_amt
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin) +   &
-                                 aer(icl_a,jliquid,ibin)
-
-! update gas
-      gas(ihcl_g)              = gas(ihcl_g) + small_amt
-
-      return
-      end subroutine absorb_tiny_hno3
-
-
-
-
-! nh4cl
-      subroutine absorb_tiny_nh4cl(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_aer, small_amt, small_gas
-
-      small_gas = 0.01 * min(gas(inh3_g), gas(ihcl_g))
-      small_aer = 0.01 * electrolyte_sum(jtotal,ibin)
-      if(small_aer .eq. 0.0)small_aer = small_gas
-
-      small_amt = min(small_gas, small_aer)
-
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) + small_amt
-      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin)  + small_amt
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
-                                 aer(icl_a,jliquid,ibin)
-
-! update gas
-      gas(inh3_g)              = gas(inh3_g) - small_amt
-      gas(ihcl_g)              = gas(ihcl_g) - small_amt
-
-      return
-      end subroutine absorb_tiny_nh4cl
-
-
-
-
-! both nh4no3
-      subroutine absorb_tiny_nh4no3(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_aer, small_amt, small_gas
-
-      small_gas = 0.01 * min(gas(inh3_g), gas(ihno3_g))
-      small_aer = 0.01 * electrolyte_sum(jtotal,ibin)
-
-      small_amt = min(small_gas, small_aer)
-
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) + small_amt
-      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) + small_amt
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-
-! update gas
-      gas(inh3_g)                = gas(inh3_g)  - small_amt
-      gas(ihno3_g)               = gas(ihno3_g) - small_amt
-
-      return
-      end subroutine absorb_tiny_nh4no3
-
-
-
-
-
-
-
-! nh4cl
-      subroutine degas_tiny_nh4cl(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_amt
-
-
-      small_amt = 0.01 * electrolyte(jnh4cl,jliquid,ibin)
-
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) - small_amt
-      aer(icl_a,jliquid,ibin)  = aer(icl_a,jliquid,ibin)  - small_amt
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(icl_a,jtotal,ibin)   = aer(icl_a,jsolid,ibin)  +   &
-                                 aer(icl_a,jliquid,ibin)
-
-! update gas
-      gas(inh3_g)                = gas(inh3_g) + small_amt
-      gas(ihcl_g)                = gas(ihcl_g) + small_amt
-
-      return
-      end subroutine degas_tiny_nh4cl
-
-
-
-
-
-
-
-
-! nh4no3
-      subroutine degas_tiny_nh4no3(ibin)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin
-! local variables
-      real small_amt
-
-      small_amt = 0.01 * electrolyte(jnh4no3,jliquid,ibin)
-
-      aer(inh4_a,jliquid,ibin) = aer(inh4_a,jliquid,ibin) - small_amt
-      aer(ino3_a,jliquid,ibin) = aer(ino3_a,jliquid,ibin) - small_amt
-
-! update jtotal
-      aer(inh4_a,jtotal,ibin)  = aer(inh4_a,jsolid,ibin) +   &
-                                 aer(inh4_a,jliquid,ibin)
-      aer(ino3_a,jtotal,ibin)  = aer(ino3_a,jsolid,ibin) +   &
-                                 aer(ino3_a,jliquid,ibin)
-
-! update gas
-      gas(inh3_g)                = gas(inh3_g)  + small_amt
-      gas(ihno3_g)               = gas(ihno3_g) + small_amt
-
-      return
-      end subroutine degas_tiny_nh4no3
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
-! functions used in psc model
-!
-! author: rahul a. zaveri
-! update: aug 1999
-!-----------------------------------------------------------------------
-
-!===========================================================================
-!
-! neutral species activity coefficient
-!
-!===========================================================================
-      real function fn(jn)
-!     implicit none
-!     include 'mosaic.h'
-! func arguments
-      integer jn
-! local variables
-      integer jc, ja, jcp, jap
-      real term1, term2, term3, term4, term5, term6, term7, term8,   &
-           term9, sumover_c_a, sumover_c_cp, sumover_a_ap, sumover_a,   &
-           sumover_c, lnf, lnf_s, lnf_dh, lnf_hoe, six
-
-
-
-
-
-      six = sqrt(ix)
-!
-! short-range contributions
-!
-!--term1------------------------
-      sumover_c_a = 0.0
-      do jc = 1, ncation
-      do ja = 1, nanion
-        sumover_c_a = sumover_c_a + xc(jc)*xa(ja) *   &
-                      ((zc(jc)+za(ja))**2)/(zc(jc)*za(ja)) *   &
-                      (u1_c_a(jc,ja) - 2.*xh2o*u1_c_a(jc,ja))
-      enddo
-      enddo
-
-      term1 = sumover_c_a
-
-!--term2------------------------
-      sumover_c_a = 0.0
-      do jc = 1, ncation
-      do ja = 1, nanion
-        sumover_c_a = sumover_c_a + xc(jc)*xa(ja) *   &
-                  (2.*xh2o*v1_c_a(jc,ja) - 3.*(xh2o**2)*v1_c_a(jc,ja))
-      enddo
-      enddo
-
-      term2 = 4.*sumover_c_a
-
-!--term3------------------------
-      sumover_c_a = 0.0
-      do jc = 1, ncation
-      do ja = 1, nanion
-        sumover_c_a = sumover_c_a + ec(jc)*ea(ja) *   &
-                      (zc(jc)+za(ja))/(zc(jc)*za(ja)) *   &
-                      (w1_c_a(jc,ja) - xh2o*w1_c_a(jc,ja))
-      enddo
-      enddo
-
-      term3 = (1./ff)*sumover_c_a
-
-!--term4------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c_cp = 0.0
-        do jc = 1, ncation
-        do jcp = jc+1, ncation
-        sumover_c_cp = sumover_c_cp + xc(jc)*xc(jcp)*   &
-                       (xc(jc)/xnuc(jc,ja) - xc(jcp)/xnuc(jcp,ja))*   &
-                       uc_cp_a(jc,jcp,ja)
-        enddo
-        enddo
-
-      sumover_a = sumover_a + ea(ja)*sumover_c_cp
-      enddo
-
-      term4 = -4.*sumover_a
-
-!--term5------------------------
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a_ap = 0.0
-        do ja = 1, nanion
-        do jap = ja+1, nanion
-        sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                       (xa(ja)/xnua(ja,jc) - xa(jap)/xnua(jap,jc))*   &
-                       ua_ap_c(ja,jap,jc)
-        enddo
-        enddo
-
-      sumover_c = sumover_c + ec(jc)*sumover_a_ap
-      enddo
-
-      term5 = -4.*sumover_c
-
-!--term6------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c_cp = 0.0
-        do jc = 1, ncation
-        do jcp = jc+1, ncation
-        sumover_c_cp = sumover_c_cp + xc(jc)*xc(jcp)*   &
-                                      wc_cp_a(jc,jcp,ja)
-        enddo
-        enddo
-
-      sumover_a = sumover_a + ea(ja)*sumover_c_cp
-      enddo
-
-      term6 = -2.*sumover_a
-
-!--term7------------------------
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a_ap = 0.0
-        do ja = 1, nanion
-        do jap = ja+1, nanion
-        sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                                      wa_ap_c(ja,jap,jc)
-        enddo
-        enddo
-
-      sumover_c = sumover_c + ec(jc)*sumover_a_ap
-      enddo
-
-      term7 = -2.*sumover_c
-
-!--term8------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c_cp = 0.0
-        do jc = 1, ncation
-        do jcp = jc+1, ncation
-        sumover_c_cp = sumover_c_cp + xc(jc)*xc(jcp)*   &
-                       q1_c_cp_a(jc,jcp,ja)*(1 - 2.*xh2o)
-        enddo
-        enddo
-
-      sumover_a = sumover_a + ea(ja)*sumover_c_cp
-      enddo
-
-      term8 = 4.*sumover_a
-
-!--term9------------------------
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a_ap = 0.0
-        do ja = 1, nanion
-        do jap = ja+1, nanion
-        sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                       q1_a_ap_c(ja,jap,jc)*(1 - 2.*xh2o)
-        enddo
-        enddo
-
-      sumover_c = sumover_c + ec(jc)*sumover_a_ap
-      enddo
-
-      term9 = 4.*sumover_c
-
-!-------------------------------
-      lnf_s = term1 + term2 + term3 + term4 + term5 +   &
-              term6 + term7 + term8 + term9
-
-
-! long-range contributions (debye-huckel)
-
-!--term1------------------------
-      term1 = 2.*ax*(ix**1.5)/(1.+rho*six)
-
-!--term2 & term3----------------
-      term2 = 0.0
-      term3 = 0.0
-      do jc = 1, ncation
-      do ja = 1, nanion
-        term2 = term2 + xc(jc)*xa(ja)*bc_a(jc,ja)*   &
-                        exp(-alpha_c_a(jc,ja)*six)
-        term3 = term3 + xc(jc)*xa(ja)*b1_c_a(jc,ja)*   &
-                        exp(-alpha1_c_a(jc,ja)*six)
-
-      enddo
-      enddo
-
-      term2 = -term2
-      term3 = -term3
-
-!-------------------------------
-      lnf_dh = term1 + term2 + term3
-
-
-
-! long-range contributions (higher order electrostatic)
-
-!--term1------------------------
-      sumover_c_cp = 0.0
-      do jc = 1, ncation
-      do jcp = jc+1, ncation
-        sumover_c_cp = sumover_c_cp + xc(jc)*xc(jcp)*   &
-                       ( thetahoe(izc(jc),izc(jcp)) +   &
-                         ix*dthetahoe(izc(jc),izc(jcp)) )
-      enddo
-      enddo
-
-      term1 = -2.*sumover_c_cp
-
-!--term2------------------------
-      sumover_a_ap = 0.0
-      do ja = 1, nanion
-      do jap = ja+1, nanion
-        sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                       ( thetahoe(iza(ja),iza(jap)) +   &
-                         ix*dthetahoe(iza(ja),iza(jap)) )
-      enddo
-      enddo
-
-      term2 = -2.*sumover_a_ap
-
-!-------------------------------
-      lnf_hoe = term1 + term2
-
-!================================
-      lnf = lnf_s + lnf_dh + lnf_hoe
-      fn = exp(lnf)
-
-      return
-      end function fn
-!
-!
-!
-!===========================================================================
-!
-! cation activity coefficient
-!
-!===========================================================================
-
-      real function fm(jm)
-!     implicit none
-!     include 'mosaic.h'
-! func arguments
-      integer jm
-! local variables
-      integer jc, ja, jcp, jap, izm
-      real term1, term2, term3, term4, term5, term6, term7, term8,   &
-           term9, term10, sumover_c_a, sumover_c_cp, sumover_a_ap,   &
-           sumover_a, sumover_c, sumoverp_a, sumoverp_c,   &
-           sumoverp_c_cp, lnf, lnf_s, lnf_dh, lnf_hoe, six, zm, zm2
-! functions
-!     real gg
-
-
-! short-range contributions
-      zm = zc(jm)
-      izm = izc(jm)
-
-!--term1------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c = 0.0
-        do jc = 1, ncation
-        sumover_c = sumover_c + xc(jc)*   &
-               (zc(jc)+za(ja))**2/(zc(jc)*za(ja))*u1_c_a(jc,ja)
-        enddo
-
-        sumover_a = sumover_a + xa(ja)*   &
-                ( (zm + za(ja))**2/(zm*za(ja))*u1_c_a(jm,ja)   &
-                 -2.*sumover_c )
-      enddo
-
-      term1 = xh2o*sumover_a
-
-!--term2------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c = 0.0
-        do jc = 1, ncation
-        sumover_c = sumover_c + xc(jc)*v1_c_a(jc,ja)
-        enddo
-
-        sumover_a = sumover_a + xa(ja)*   &
-                    ( v1_c_a(jm,ja) - 3.*sumover_c )
-      enddo
-
-      term2 = 4.*xh2o**2 * sumover_a
-
-!--term3------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c = 0.0
-        do jc = 1, ncation
-        sumover_c = sumover_c +   &
-               ec(jc)*(zc(jc)+za(ja))/(zc(jc)*za(ja))*w1_c_a(jc,ja)
-        enddo
-
-        sumover_a = sumover_a + ea(ja)*   &
-                    ( (zm+za(ja))/za(ja)*w1_c_a(jm,ja)   &
-                     -(zm/2. + 1/ff)*sumover_c )
-      enddo
-
-      term3 = xh2o*sumover_a
-
-!--term4-------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumoverp_c = 0.0
-        do jc = 1, ncation
-          if(jc.ne.jm)then
-          sumoverp_c = sumoverp_c + ec(jc)*   &
-                      (zc(jc)+za(ja))/(zc(jc)*za(ja))*w1_c_a(jc,ja)
-
-          endif
-        enddo
-
-      sumover_a = sumover_a + ea(ja)*   &
-                  ( (1-ec(jm)/2.)*(zm+za(ja))/za(ja)*w1_c_a(jm,ja)   &
-                   -zm/2.*sumoverp_c )
-
-      enddo
-
-      term4 = -sumover_a
-
-!--term5-------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumoverp_c = 0.0
-        sumover_c_cp = 0.0
-
-        do jc = 1, ncation
-          if(jc.ne.jm)then
-          sumoverp_c = sumoverp_c + xc(jc)*   &
-                       (2.*xc(jm)/xnuc(jm,ja) - xc(jc)/xnuc(jc,ja))*   &
-                       uc_cp_a(jm,jc,ja)
-          endif
-
-          do jcp = jc+1, ncation
-          sumover_c_cp = sumover_c_cp + xc(jc)*xc(jcp)*   &
-                         (xc(jc)/xnuc(jc,ja) - xc(jcp)/xnuc(jcp,ja))*   &
-                         uc_cp_a(jc,jcp,ja)
-          enddo
-
-        enddo
-
-      sumover_a = sumover_a + sumoverp_c - 2.*sumover_c_cp
-
-      enddo
-
-      term5 = 2*sumover_a
-
-!--term6-------------------------
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a_ap = 0.0
-        do ja = 1, nanion
-        do jap = ja+1, nanion
-
-        sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                       ( xa(ja)/xnua(ja,jc) - xa(jap)/xnua(jap,jc) )*   &
-                       ua_ap_c(ja,jap,jc)
-
-        enddo
-        enddo
-
-      sumover_c = sumover_c + (2.*ec(jc) - emc(jm,jc))*sumover_a_ap
-
-      enddo
-
-      term6 = -2.*sumover_c
-
-!--term7-------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumoverp_c = 0.0
-        sumover_c_cp = 0.0
-
-        do jc = 1, ncation
-          if(jm.ne.jc)then
-          sumoverp_c = sumoverp_c + xc(jc)*wc_cp_a(jm,jc,ja)
-          endif
-
-          do jcp = jc+1, ncation
-          sumover_c_cp = sumover_c_cp +   &
-                         xc(jc)*xc(jcp)*wc_cp_a(jc,jcp,ja)
-          enddo
-        enddo
-
-      sumover_a = sumover_a + ea(ja)*(sumoverp_c - sumover_c_cp)
-
-      enddo
-
-      term7 = 2.*sumover_a
-
-!--term8-------------------------
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a_ap = 0.0
-        do ja = 1, nanion
-        do jap = ja+1, nanion
-
-	sumover_a_ap = sumover_a_ap +   &
-                       xa(ja)*xa(jap)*wa_ap_c(ja,jap,jc)
-
-        enddo
-        enddo
-
-      sumover_c = sumover_c + (ec(jc) - emc(jm,jc))*sumover_a_ap
-
-      enddo
-
-      term8 = -2.*sumover_c
-
-!--term9-------------------------
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumoverp_c = 0.0
-        sumover_c_cp = 0.0
-
-        do jc = 1, ncation
-          if(jm.ne.jc)then
-          sumoverp_c = sumoverp_c + xc(jc)*q1_c_cp_a(jm,jc,ja)
-          endif
-
-          do jcp = jc+1, ncation
-          sumover_c_cp = sumover_c_cp +   &
-                         xc(jc)*xc(jcp)*q1_c_cp_a(jc,jcp,ja)
-          enddo
-        enddo
-
-      sumover_a = sumover_a + ea(ja)*(sumoverp_c - 2.*sumover_c_cp)
-
-      enddo
-
-      term9 = 4.*xh2o*sumover_a
-
-!--term10------------------------
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a_ap = 0.0
-
-        do ja = 1, nanion
-        do jap = ja+1, nanion
-          sumover_a_ap = sumover_a_ap +   &
-                         xa(ja)*xa(jap)*q1_a_ap_c(ja,jap,jc)
-        enddo
-        enddo
-
-      sumover_c = sumover_c +   &
-                  (2.*ec(jc) - emc(jm,jc))*sumover_a_ap
-
-      enddo
-
-      term10 = -4.*xh2o*sumover_c
-
-!--------------------------------
-      lnf_s =  term1 + term2 + term3 + term4 + term5 +   &
-               term6 + term7 + term8 + term9 + term10
-
-
-
-! long-range contributions (debye-huckel)
-      zm2 = zc(jm)**2
-      six = sqrt(ix)
-
-!--term1-------------------------
-      term1 = - zm2*ax*(2./rho*alog(1.+rho*six) +   &
-                        six*(1.-2.*ix/zm2)/(1.+rho*six))
-
-!--term2 & term3-----------------
-      term2 = 0.0
-      term3 = 0.0
-      do jc = 1, ncation
-      do ja = 1, nanion
-        term2 = term2 + xc(jc)*xa(ja)*bc_a(jc,ja)*   &
-                ( zm2*gg(alpha_c_a(jc,ja)*six)/(2.*ix) +   &
-                  (1-zm2/(2.*ix))*exp(-alpha_c_a(jc,ja)*six) )
-
-        term3 = term3 + xc(jc)*xa(ja)*b1_c_a(jc,ja)*   &
-                ( zm2*gg(alpha1_c_a(jc,ja)*six)/(2.*ix) +   &
-                  (1-zm2/(2.*ix))*exp(-alpha1_c_a(jc,ja)*six) )
-      enddo
-      enddo
-
-      term2 = -term2
-      term3 = -term3
-
-!--term4 & term5-----------------
-      term4 = 0.0
-      term5 = 0.0
-      do ja = 1, nanion
-        term4=term4+xa(ja)*bc_a(jm,ja)*gg(alpha_c_a(jm,ja)*six)
-        term5=term5+xa(ja)*b1_c_a(jm,ja)*gg(alpha1_c_a(jm,ja)*six)
-      enddo
-
-      lnf_dh = term1 + term2 + term3 + term4 + term5
-
-
-
-! long-range contributions (higher order electrostatic)
-
-!--term1-------------------------
-      sumoverp_c = 0.0
-      do jc = 1, ncation
-        if(jc.ne.jm)then
-        sumoverp_c = sumoverp_c + xc(jc)*( thetahoe(izm,izc(jc))   &
-                     - xc(jm)*(thetahoe(izm,izc(jc)) +   &
-                       dthetahoe(izm,izc(jc))*(ix - zm2/2.)) )
-        endif
-      enddo
-      term1 = 2.*sumoverp_c
-
-!--term2-------------------------
-      sumoverp_c_cp = 0.0
-      do jc = 1, ncation
-       if(jc.ne.jm)then
-         do jcp = jc+1, ncation
-          if(jcp.ne.jm)then
-          sumoverp_c_cp = sumoverp_c_cp + xc(jc)*xc(jcp)*   &
-                         ( thetahoe(izc(jc),izc(jcp)) +   &
-                           dthetahoe(izc(jc),izc(jcp))*(ix-zm2/2.) )
-          endif
-         enddo
-       endif
-      enddo
-      term2 = -2.*sumoverp_c_cp
-
-!--term3-------------------------
-      sumover_a_ap = 0.0
-      do ja = 1, nanion
-      do jap = ja+1, nanion
-        sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                       ( thetahoe(iza(ja),iza(jap)) +   &
-                        dthetahoe(iza(ja),iza(jap))*(ix-zm2/2.) )
-      enddo
-      enddo
-      term3 = -2.*sumover_a_ap
-
-!--------------------------------
-      lnf_hoe = term1 + term2 + term3
-
-
-
-!================================
-      lnf = lnf_s + lnf_dh + lnf_hoe
-      fm = exp(lnf)
-
-
-      return
-      end function fm
-!
-!
-!
-!===========================================================================
-!
-! anion activity coefficient
-!
-!===========================================================================
-      real function fx(jx)
-!     implicit none
-!     include 'mosaic.h'
-! func arguments
-      integer jx
-! local variables
-      integer jc, ja, jcp, jap, izx
-      real term1, term2, term3, term4, term5, term6, term7, term8,   &
-           term9, term10, sumover_c_a, sumover_c_cp, sumover_a_ap,   &
-           sumover_a, sumover_c, sumoverp_a, sumoverp_c,   &
-           sumoverp_c_cp, lnf, lnf_s, lnf_dh, lnf_hoe, six, zx, zx2
-! functions
-!     real gg
-
-
-! short-range contributions
-      zx = za(jx)
-      izx = iza(jx)
-
-!--term1------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a = 0.0
-        do ja = 1, nanion
-        sumover_a = sumover_a + xa(ja)*   &
-                    (za(ja)+zc(jc))**2/(za(ja)*zc(jc))*u1_c_a(jc,ja)
-        enddo
-
-        sumover_c = sumover_c + xc(jc)*   &
-                ( (zx + zc(jc))**2/(zx*zc(jc))*u1_c_a(jc,jx)   &
-                 -2.*sumover_a )
-      enddo
-
-      term1 = xh2o*sumover_c
-
-!--term2------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a = 0.0
-        do ja = 1, nanion
-        sumover_a = sumover_a + xa(ja)*v1_c_a(jc,ja)
-        enddo
-
-        sumover_c = sumover_c + xc(jc)*   &
-                    ( v1_c_a(jc,jx) - 3.*sumover_a )
-      enddo
-
-      term2 = 4.*xh2o**2 * sumover_c
-
-!--term3------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumover_a = 0.0
-        do ja = 1, nanion
-        sumover_a = sumover_a +   &
-                ea(ja)*(za(ja)+zc(jc))/(za(ja)*zc(jc))*w1_c_a(jc,ja)
-        enddo
-
-        sumover_c = sumover_c + ec(jc)*   &
-                    ( (zx+zc(jc))/zc(jc)*w1_c_a(jc,jx)   &
-                     -(zx/2. + 1/ff)*sumover_a )
-      enddo
-
-      term3 = xh2o*sumover_c
-
-!--term4-------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumoverp_a = 0.0
-        do ja = 1, nanion
-          if(ja.ne.jx)then
-          sumoverp_a = sumoverp_a + ea(ja)*   &
-                      (za(ja)+zc(jc))/(za(ja)*zc(jc))*w1_c_a(jc,ja)
-
-          endif
-        enddo
-
-      sumover_c = sumover_c + ec(jc)*   &
-                  ( (1-ea(jx)/2.)*(zx+zc(jc))/zc(jc)*w1_c_a(jc,jx)   &
-                   -zx/2.*sumoverp_a )
-
-      enddo
-
-      term4 = -sumover_c
-
-!--term5-------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumoverp_a = 0.0
-        sumover_a_ap = 0.0
-
-        do ja = 1, nanion
-          if(ja.ne.jx)then
-          sumoverp_a = sumoverp_a + xa(ja)*   &
-                       (2.*xa(jx)/xnua(jx,jc) - xa(ja)/xnua(ja,jc))*   &
-                       ua_ap_c(jx,ja,jc)
-          endif
-
-          do jap = ja+1, nanion
-          sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                         (xa(ja)/xnua(ja,jc) - xa(jap)/xnua(jap,jc))*   &
-                         ua_ap_c(ja,jap,jc)
-          enddo
-
-        enddo
-
-      sumover_c = sumover_c + sumoverp_a - 2.*sumover_a_ap
-
-      enddo
-
-      term5 = 2.*sumover_c
-
-!--term6-------------------------	done
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c_cp = 0.0
-        do jc = 1, ncation
-        do jcp = jc+1, ncation
-
-        sumover_c_cp = sumover_c_cp + xc(jc)*xc(jcp)*   &
-                       ( xc(jc)/xnuc(jc,ja) - xc(jcp)/xnuc(jcp,ja) )*   &
-                       uc_cp_a(jc,jcp,ja)
-
-        enddo
-        enddo
-
-      sumover_a = sumover_a + (2.*ea(ja) - exa(jx,ja))*sumover_c_cp
-
-      enddo
-
-      term6 = -2.*sumover_a
-
-!--term7-------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumoverp_a = 0.0
-        sumover_a_ap = 0.0
-
-        do ja = 1, nanion
-          if(ja.ne.jx)then
-          sumoverp_a = sumoverp_a + xa(ja)*wa_ap_c(jx,ja,jc)
-          endif
-
-          do jap = ja+1, nanion
-          sumover_a_ap = sumover_a_ap +   &
-                         xa(ja)*xa(jap)*wa_ap_c(ja,jap,jc)
-          enddo
-        enddo
-
-      sumover_c = sumover_c + ec(jc)*(sumoverp_a - sumover_a_ap)
-
-      enddo
-
-      term7 = 2.*sumover_c
-
-!--term8-------------------------	done
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c_cp = 0.0
-        do jc = 1, ncation
-        do jcp = jc+1, ncation
-
-	sumover_c_cp = sumover_c_cp +   &
-                       xc(jc)*xc(jcp)*wc_cp_a(jc,jcp,ja)
-
-        enddo
-        enddo
-
-      sumover_a = sumover_a + (ea(ja) - exa(jx,ja))*sumover_c_cp
-
-      enddo
-
-      term8 = -2.*sumover_a
-
-!--term9-------------------------	done
-      sumover_c = 0.0
-      do jc = 1, ncation
-
-        sumoverp_a = 0.0
-        sumover_a_ap = 0.0
-
-        do ja = 1, nanion
-          if(ja.ne.jx)then
-          sumoverp_a = sumoverp_a + xa(ja)*q1_a_ap_c(jx,ja,jc)
-          endif
-
-          do jap = ja+1, nanion
-          sumover_a_ap = sumover_a_ap +   &
-                         xa(ja)*xa(jap)*q1_a_ap_c(ja,jap,jc)
-          enddo
-        enddo
-
-      sumover_c = sumover_c + ec(jc)*(sumoverp_a - 2.*sumover_a_ap)
-
-      enddo
-
-      term9 = 4.*xh2o*sumover_c
-
-!--term10------------------------	done
-      sumover_a = 0.0
-      do ja = 1, nanion
-
-        sumover_c_cp = 0.0
-
-        do jc = 1, ncation
-        do jcp = jc+1, ncation
-          sumover_c_cp = sumover_c_cp +   &
-                         xc(jc)*xc(jcp)*q1_c_cp_a(jc,jcp,ja)
-        enddo
-        enddo
-
-      sumover_a = sumover_a +   &
-                  (2.*ea(ja) - exa(jx,ja))*sumover_c_cp
-
-      enddo
-
-      term10 = -4.*xh2o*sumover_a
-
-!--------------------------------
-      lnf_s =  term1 + term2 + term3 + term4 + term5 +   &
-               term6 + term7 + term8 + term9 + term10
-
-
-! long-range contributions (debye-huckel)
-      zx2 = za(jx)**2
-      six = sqrt(ix)
-
-!--term1-------------------------
-      term1 = - zx2*ax*(2./rho*alog(1.+rho*six) +   &
-                        six*(1.-2.*ix/zx2)/(1.+rho*six))
-
-!--term2 & term3-----------------	done
-      term2 = 0.0
-      term3 = 0.0
-      do jc = 1, ncation
-      do ja = 1, nanion
-        term2 = term2 + xc(jc)*xa(ja)*bc_a(jc,ja)*   &
-                ( zx2*gg(alpha_c_a(jc,ja)*six)/(2.*ix) +   &
-                  (1-zx2/(2.*ix))*exp(-alpha_c_a(jc,ja)*six) )
-
-        term3 = term3 + xc(jc)*xa(ja)*b1_c_a(jc,ja)*   &
-                ( zx2*gg(alpha1_c_a(jc,ja)*six)/(2.*ix) +   &
-                  (1-zx2/(2.*ix))*exp(-alpha1_c_a(jc,ja)*six) )
-      enddo
-      enddo
-
-      term2 = -term2
-      term3 = -term3
-
-!--term4 & term5-----------------	done
-      term4 = 0.0
-      term5 = 0.0
-      do jc = 1, ncation
-        term4=term4+xc(jc)*bc_a(jc,jx)*gg(alpha_c_a(jc,jx)*six)
-        term5=term5+xc(jc)*b1_c_a(jc,jx)*gg(alpha1_c_a(jc,jx)*six)
-      enddo
-
-      lnf_dh = term1 + term2 + term3 + term4 + term5
-
-
-! long-range contributions (higher order electrostatic)
-
-!--term1-------------------------	done
-      sumoverp_a = 0.0
-      do ja = 1, nanion
-        if(ja.ne.jx)then
-        sumoverp_a = sumoverp_a + xa(ja)*( thetahoe(izx,iza(ja))   &
-                     - xa(jx)*(thetahoe(izx,iza(ja)) +   &
-                       dthetahoe(izx,iza(ja))*(ix - zx2/2.)) )
-        endif
-      enddo
-      term1 = 2.*sumoverp_a
-
-!--term2-------------------------
-      sumoverp_c_cp = 0.0
-      do jc = 1, ncation
-      do jcp = jc+1, ncation
-        sumoverp_c_cp = sumoverp_c_cp + xc(jc)*xc(jcp)*   &
-                        ( thetahoe(izc(jc),izc(jcp)) +   &
-                         dthetahoe(izc(jc),izc(jcp))*(ix-zx2/2.) )
-      enddo
-      enddo
-      term2 = -2.*sumoverp_c_cp
-
-!--term3-------------------------
-      sumover_a_ap = 0.0
-      do ja = 1, nanion
-        if(ja.ne.jx)then
-          do jap = ja+1, nanion
-            if(jap.ne.jx)then
-              sumover_a_ap = sumover_a_ap + xa(ja)*xa(jap)*   &
-                           ( thetahoe(iza(ja),iza(jap)) +   &
-                             dthetahoe(iza(ja),iza(jap))*(ix-zx2/2.) )
-            endif
-          enddo
-        endif
-      enddo
-      term3 = -2.*sumover_a_ap
-
-!--------------------------------
-      lnf_hoe = term1 + term2 + term3
-
-
-!================================
-      lnf = lnf_s + lnf_dh + lnf_hoe
-      fx = exp(lnf)
-
-      return
-      end function fx
-!
-!
-!
-!===========================================================================
-!
-! miscellaneous functions used in psc
-!
-!===========================================================================
-
-      real function gg(x)
-!     implicit none
-      real x
-
-      if(x.ne.0.)then
-        gg = 2.*(1. - (1.+x)*exp(-x))/x**2
-      endif
-      return
-      end function gg
-!
-!
-!
-!-----------------------------
-      real function fn_thetahoe(izi,izj)
-!     implicit none
-!     include 'mosaic.h'
-! func arguments
-      integer izi, izj
-! local variables
-      real zi, zj, dum, xij, xii, xjj
-! functions
-!     real xj
-
-
-      if(izi.eq.izj)then
-        fn_thetahoe = 0.0
-      else
-        zi = float(izi)
-        zj = float(izj)
-        dum = 6.*ax*sqrt(ix)
-        xij = zi*zj*dum
-        xii = zi*zi*dum
-        xjj = zj*zj*dum
-        fn_thetahoe=(zi*zj/(4.*ix))*(xj(xij) - .5*xj(xii) - .5*xj(xjj))
-      endif
-
-      return
-      end function fn_thetahoe
-!
-!
-!
-!-----------------------------
-      real function fn_dthetahoe(izi,izj)
-!     implicit none
-!     include 'mosaic.h'
-! func arguments
-      integer izi, izj
-! local variables
-      real zi, zj, dum, xij, xii, xjj
-! functions
-!     real xj1
-
-
-      if(izi.eq.izj)then
-        fn_dthetahoe = 0.0
-      else
-        zi = float(izi)
-        zj = float(izj)
-        dum = 6.*ax*sqrt(ix)
-        xij = zi*zj*dum
-        xii = zi*zi*dum
-        xjj = zj*zj*dum
-        fn_dthetahoe = -thetahoe(izi,izj)/ix + (zi*zj/(8.*ix**2))*   &
-                   (xij*xj1(xij) -.5*xii*xj1(xii) -.5*xjj*xj1(xjj))
-      endif
-
-      return
-      end function fn_dthetahoe
-!
-!
-!
-!-----------------------------
-      real function xj(x)
-!     implicit none
-! func arguments
-      real x
-! local variables
-      real c1, c2, c3, c4
-
-        c1 =  4.581
-        c2 = -0.7237
-        c3 = -0.0120
-        c4 =  0.528
-        xj = x/(4. + (c1*x**c2) * exp(c3*x**c4))
-
-      return
-      end function xj
-!
-!
-!
-!-----------------------------
-      real function xj1(x)
-!     implicit none
-! func arguments
-      real x
-! local variables
-      real c1, c2, c3, c4
-
-        c1 =  4.581
-        c2 = -0.7237
-        c3 = -0.0120
-        c4 =  0.528
-        xj1 = 1./(4. + c1*exp(c3*x**c4)*x**c2) -   &
-             c1*exp(c3*x**c4)*x**c2*(c2 + c3*c4*x**c4)/   &
-             (4. + c1*exp(c3*x**c4)*x**c2)**2
-
-      return
-      end function xj1
-!======================================================================
 
 
 
@@ -13918,14 +8952,11 @@
 !     include 'v33com2'
 !     include 'mosaic.h'
 ! local variables
-      integer je, ja, jc, j_index, ibin
-      real tt, tdum
-      logical first
-      save first
-      data first/.true./
-
-
-
+      integer iaer, je, ja, j_index, ibin
+!     logical first
+!     save first
+!     data first/.true./
+      logical, save :: first = .true.
 
 
 
@@ -13934,71 +8965,97 @@
 
 !----------------------------------------------------------------
 ! control settings
-      alpha_asteem    = 0.03		! choose a value between 0.01 and 0.05
       msize_framework = msection	! mmodal or msection
-      mactivity_coeff = mmtem		! mmtem, mpsc, mkm, mbrom
-      mdynamic_solver = masteem		! masteem, masceem
-      mgas_aer_xfer   = mon		! mon, moff
-      madapt_alpha    = mon		! mon, moff
+      mgas_aer_xfer   = myes		! myes, mno
+
+! astem parameters
+      nmax_astem      = 200		! max number of time steps in astem
+      alpha_astem     = 0.5		! choose a value between 0.01 and 1.0
+      rtol_eqb_astem  = 0.01		! equilibrium tolerance in astem
+      ptol_mol_astem  = 0.01		! mol percent tolerance in astem
+
+! mesa parameters
+      nmax_mesa       = 80		! max number of iterations in mesa_ptc
+      rtol_mesa       = 0.01		! mesa equilibrium tolerance
 !----------------------------------------------------------------
 !
-!
-         jasteem_call = 0				! reset
-         jmesa_call   = 0				! reset
-         iter_mesa    = 0.0				! reset
-         do ibin = 1, nbin_a
-           steps_asteem(ibin)     = 0.0			! reset
-           steps_asteem_max(ibin) = 0.0			! reset
-         enddo
-
 ! set gas and aerosol indices
 !
-! gas
-      ih2so4_g	= 1
-      ihno3_g	= 2
-      ihcl_g	= 3
-      inh3_g	= 4
-!      isoa_g	= 5	! currently not used
-!      imsa_g	= 6	! currently not used
-!      ico2_g	= 7	! currently not used
+! gas (local)
+      ih2so4_g	= 1	! ioa (inorganic aerosol)
+      ihno3_g	= 2	! ioa
+      ihcl_g	= 3	! ioa
+      inh3_g	= 4	! ioa
+      imsa_g	= 5	! ioa
+      iaro1_g	= 6	! soa (secondary organic aerosol)
+      iaro2_g	= 7	! soa
+      ialk1_g	= 8	! soa
+      iole1_g	= 9	! soa
+      iapi1_g	= 10	! soa
+      iapi2_g	= 11	! soa
+      ilim1_g	= 12	! soa
+      ilim2_g	= 13	! soa
+
+!      ico2_g	= 14	! currently not used
 !
 ! aerosol (local): used for total species
       iso4_a	=  1	! <-> ih2so4_g
       ino3_a	=  2	! <-> ihno3_g
       icl_a	=  3	! <-> ihcl_g
       inh4_a	=  4	! <-> inh3_g
-      ioc_a	=  5	! <-> isoa
-      imsa_a	=  6	! <-> imsa
-      ico3_a	=  7	! <-> ico2
-      ina_a	=  8
-      ica_a	=  9
-      ibc_a	= 10
-      ioin_a	= 11
-!
+      imsa_a	=  5	! <-> imsa_g
+      iaro1_a	=  6	! <-> iaro1_g
+      iaro2_a	=  7	! <-> iaro2_g
+      ialk1_a	=  8	! <-> ialk1_g
+      iole1_a	=  9	! <-> iole1_g
+      iapi1_a	= 10	! <-> iapi1_g
+      iapi2_a	= 11	! <-> iapi2_g
+      ilim1_a	= 12	! <-> ilim1_g
+      ilim2_a	= 13	! <-> ilim2_g
+      ico3_a	= 14	! <-> ico2_g
+      ina_a	= 15
+      ica_a	= 16
+      ioin_a	= 17
+      ioc_a	= 18
+      ibc_a	= 19
+
+
 ! electrolyte indices (used for water content calculations)
 ! these indices are order sensitive
       jnh4so4	=  1	! soluble
       jlvcite	=  2	! soluble
       jnh4hso4	=  3	! soluble
-      jnh4no3	=  4	! soluble
-      jnh4cl	=  5	! soluble
-      jna2so4	=  6	! soluble
-      jna3hso4	=  7	! soluble
-      jnahso4	=  8	! soluble
-      jnano3	=  9	! soluble
-      jnacl	= 10	! soluble
-      jcano3	= 11	! soluble
-      jcacl2	= 12	! soluble     nsalt
-      jh2so4	= 13	! soluble
-      jhno3	= 14	! soluble
-      jhcl	= 15	! soluble
-      jhhso4	= 16	! soluble
-      jcaso4	= 17	! insoluble
-      jcaco3	= 18	! insoluble
-      joc	= 19	! insoluble - part of naercomp
-      jbc	= 20	! insoluble - part of naercomp
-      join	= 21	! insoluble - part of naercomp
-      jh2o	= 22	! water - part of naercomp
+      jnh4msa	=  4	! soluble new
+      jnh4no3	=  5	! soluble
+      jnh4cl	=  6	! soluble
+      jna2so4	=  7	! soluble
+      jna3hso4	=  8	! soluble
+      jnahso4	=  9	! soluble
+      jnamsa	= 10	! soluble new
+      jnano3	= 11	! soluble
+      jnacl	= 12	! soluble
+      jcano3	= 13	! soluble
+      jcacl2	= 14	! soluble
+      jcamsa2	= 15	! soluble new     nsalt
+      jh2so4	= 16	! soluble
+      jmsa	= 17	! soluble new
+      jhno3	= 18	! soluble
+      jhcl	= 19	! soluble
+      jhhso4	= 20	! soluble
+      jcaso4	= 21	! insoluble
+      jcaco3	= 22	! insoluble
+      joc	= 23	! insoluble - part of naercomp
+      jbc	= 24	! insoluble - part of naercomp
+      join	= 25	! insoluble - part of naercomp
+      jaro1	= 26	! insoluble - part of naercomp
+      jaro2	= 27	! insoluble - part of naercomp
+      jalk1	= 28	! insoluble - part of naercomp
+      jole1	= 29	! insoluble - part of naercomp
+      japi1	= 30	! insoluble - part of naercomp
+      japi2	= 31	! insoluble - part of naercomp
+      jlim1	= 32	! insoluble - part of naercomp
+      jlim2	= 33	! insoluble - part of naercomp
+      jh2o	= 34	! water - part of naercomp
 
 
 ! local aerosol ions
@@ -14013,52 +9070,81 @@
       ja_so4  	=  2
       ja_no3  	=  3
       ja_cl   	=  4
-!     ja_co3	=  5
+      ja_msa	=  5
+!     ja_co3	=  6
 
 !--------------------------------------------------------------------
+! phase state names
+!      phasestate(no_aerosol) = "NOAERO"
+!      phasestate(all_solid)  = "SOLID "
+!      phasestate(all_liquid) = "LIQUID"
+!      phasestate(mixed)      = "MIXED "
+
 ! names of aer species
-      aer_name(iso4_a) = "so4"
-      aer_name(ino3_a) = "no3"
-      aer_name(icl_a)  = "cl "
-      aer_name(inh4_a) = "nh4"
-      aer_name(ioc_a)  = "oc "
-      aer_name(imsa_a) = "msa"
-      aer_name(ico3_a) = "co3"
-      aer_name(ina_a)  = "na "
-      aer_name(ica_a)  = "ca "
-      aer_name(ibc_a)  = "bc "
-      aer_name(ioin_a) = "oin"
+      aer_name(iso4_a) = 'so4'
+      aer_name(ino3_a) = 'no3'
+      aer_name(icl_a)  = 'cl '
+      aer_name(inh4_a) = 'nh4'
+      aer_name(ioc_a)  = 'oc '
+      aer_name(imsa_a) = 'msa'
+      aer_name(ico3_a) = 'co3'
+      aer_name(ina_a)  = 'na '
+      aer_name(ica_a)  = 'ca '
+      aer_name(ibc_a)  = 'bc '
+      aer_name(ioin_a) = 'oin'
+      aer_name(iaro1_a)= 'aro1'
+      aer_name(iaro2_a)= 'aro2'
+      aer_name(ialk1_a)= 'alk1'
+      aer_name(iole1_a)= 'ole1'
+      aer_name(iapi1_a)= 'api1'
+      aer_name(iapi2_a)= 'api2'
+      aer_name(ilim1_a)= 'lim1'
+      aer_name(ilim2_a)= 'lim2'
 
 ! names of gas species
-      gas_name(1)    = "h2so4"
-      gas_name(2)    = "hno3 "
-      gas_name(3)    = "hcl  "
-      gas_name(4)    = "nh3  "
+      gas_name(ih2so4_g) = 'h2so4'
+      gas_name(ihno3_g)  = 'hno3 '
+      gas_name(ihcl_g)   = 'hcl  '
+      gas_name(inh3_g)   = 'nh3  '
+      gas_name(imsa_g)   = "msa  "
+      gas_name(iaro1_g)	 = "aro1 "
+      gas_name(iaro2_g)	 = "aro2 "
+      gas_name(ialk1_g)	 = "alk1 "
+      gas_name(iole1_g)	 = "ole1 "
+      gas_name(iapi1_g)	 = "api1 "
+      gas_name(iapi2_g)	 = "api2 "
+      gas_name(ilim1_g)	 = "lim1 "
+      gas_name(ilim2_g)	 = "lim2 "
 
 ! names of electrolytes
-      ename(jnh4so4) = "amso4"
-      ename(jlvcite) = "(nh4)3h(so4)2"
-      ename(jnh4hso4)= "nh4hso4"
-      ename(jnh4no3) = "nh4no3"
-      ename(jnh4cl)  = "nh4cl"
-      ename(jnacl)   = "nacl"
-      ename(jnano3)  = "nano3"
-      ename(jna2so4) = "na2so4"
-      ename(jna3hso4)= "na3h(so4)2"
-      ename(jnahso4) = "nahso4"
-      ename(jcaso4)  = "caso4"
-      ename(jcano3)  = "ca(no3)2"
-      ename(jcacl2)  = "cacl2"
-      ename(jcaco3)  = "caco3"
-      ename(jh2so4)  = "h2so4"
-      ename(jhhso4)  = "hhso4"
-      ename(jhno3)   = "hno3"
-      ename(jhcl)    = "hcl"
+      ename(jnh4so4) = 'amso4'
+      ename(jlvcite) = '(nh4)3h(so4)2'
+      ename(jnh4hso4)= 'nh4hso4'
+      ename(jnh4msa) = "ch3so3nh4"
+      ename(jnh4no3) = 'nh4no3'
+      ename(jnh4cl)  = 'nh4cl'
+      ename(jnacl)   = 'nacl'
+      ename(jnano3)  = 'nano3'
+      ename(jna2so4) = 'na2so4'
+      ename(jna3hso4)= 'na3h(so4)2'
+      ename(jnamsa)  = "ch3so3na"
+      ename(jnahso4) = 'nahso4'
+      ename(jcaso4)  = 'caso4'
+      ename(jcamsa2) = "(ch3so3)2ca"
+      ename(jcano3)  = 'ca(no3)2'
+      ename(jcacl2)  = 'cacl2'
+      ename(jcaco3)  = 'caco3'
+      ename(jh2so4)  = 'h2so4'
+      ename(jhhso4)  = 'hhso4'
+      ename(jhno3)   = 'hno3'
+      ename(jhcl)    = 'hcl'
+      ename(jmsa)    = "ch3so3h"
 
 ! molecular weights of electrolytes
       mw_electrolyte(jnh4so4) = 132.0
       mw_electrolyte(jlvcite) = 247.0
       mw_electrolyte(jnh4hso4)= 115.0
+      mw_electrolyte(jnh4msa) = 113.0
       mw_electrolyte(jnh4no3) = 80.0
       mw_electrolyte(jnh4cl)  = 53.5
       mw_electrolyte(jnacl)   = 58.5
@@ -14066,13 +9152,16 @@
       mw_electrolyte(jna2so4) = 142.0
       mw_electrolyte(jna3hso4)= 262.0
       mw_electrolyte(jnahso4) = 120.0
+      mw_electrolyte(jnamsa)  = 118.0
       mw_electrolyte(jcaso4)  = 136.0
+      mw_electrolyte(jcamsa2) = 230.0
       mw_electrolyte(jcano3)  = 164.0
       mw_electrolyte(jcacl2)  = 111.0
       mw_electrolyte(jcaco3)  = 100.0
       mw_electrolyte(jh2so4)  = 98.0
       mw_electrolyte(jhno3)   = 63.0
       mw_electrolyte(jhcl)    = 36.5
+      mw_electrolyte(jmsa)    = 96.0
 
 
 ! molecular weights of ions [g/mol]
@@ -14085,77 +9174,110 @@
       mw_a(ja_hso4)= 97.0
       mw_a(ja_no3) = 62.0
       mw_a(ja_cl)  = 35.5
+      MW_a(ja_msa) = 95.0
+
+
+! magnitude of the charges on ions
+      zc(jc_h)   = 1
+      zc(jc_nh4) = 1
+      zc(jc_na)  = 1
+      zc(jc_ca)  = 2
+
+      za(ja_hso4)= 1
+      za(ja_so4) = 2
+      za(ja_no3) = 1
+      za(ja_cl)  = 1
+      za(ja_msa) = 1
 
 
 ! densities of pure electrolytes in g/cc
-      dens_electrolyte(jnh4so4)  = 1.77
-      dens_electrolyte(jlvcite)  = 1.77
-      dens_electrolyte(jnh4hso4) = 1.78
-      dens_electrolyte(jnh4no3)  = 1.72
-      dens_electrolyte(jnh4cl)   = 1.53
-      dens_electrolyte(jnacl)    = 2.17
-      dens_electrolyte(jnano3)   = 2.26
-      dens_electrolyte(jna2so4)  = 2.68
-      dens_electrolyte(jna3hso4) = 2.50
-      dens_electrolyte(jnahso4)  = 2.43
-      dens_electrolyte(jcaso4)   = 2.61
-      dens_electrolyte(jcano3)   = 2.50
-      dens_electrolyte(jcacl2)   = 2.15
-      dens_electrolyte(jcaco3)   = 2.80
-      dens_electrolyte(jh2so4)   = 1.84
-      dens_electrolyte(jhhso4)   = 1.84
-      dens_electrolyte(jhno3)    = 1.50
-      dens_electrolyte(jhcl)     = 1.19
+      dens_electrolyte(jnh4so4)  = 1.8
+      dens_electrolyte(jlvcite)  = 1.8
+      dens_electrolyte(jnh4hso4) = 1.8
+      dens_electrolyte(jnh4msa)  = 1.8 ! assumed same as nh4hso4
+      dens_electrolyte(jnh4no3)  = 1.8
+      dens_electrolyte(jnh4cl)   = 1.8
+      dens_electrolyte(jnacl)    = 2.2
+      dens_electrolyte(jnano3)   = 2.2
+      dens_electrolyte(jna2so4)  = 2.2
+      dens_electrolyte(jna3hso4) = 2.2
+      dens_electrolyte(jnahso4)  = 2.2
+      dens_electrolyte(jnamsa)   = 2.2 ! assumed same as nahso4
+      dens_electrolyte(jcaso4)   = 2.6
+      dens_electrolyte(jcamsa2)  = 2.6	! assumed same as caso4
+      dens_electrolyte(jcano3)   = 2.6
+      dens_electrolyte(jcacl2)   = 2.6
+      dens_electrolyte(jcaco3)   = 2.6
+      dens_electrolyte(jh2so4)   = 1.8
+      dens_electrolyte(jhhso4)   = 1.8
+      dens_electrolyte(jhno3)    = 1.8
+      dens_electrolyte(jhcl)     = 1.8
+      dens_electrolyte(jmsa)     = 1.8 ! assumed same as h2so4
 
-      do je = 1, nelectrolyte
-        dens_electrolyte(je) = 1.8
-      enddo
 
 ! densities of compounds in g/cc
-      dens_comp_a(jnh4so4)  = 1.77
-      dens_comp_a(jlvcite)  = 1.77
-      dens_comp_a(jnh4hso4) = 1.78
-      dens_comp_a(jnh4no3)  = 1.72
-      dens_comp_a(jnh4cl)   = 1.53
-      dens_comp_a(jnacl)    = 2.17
-      dens_comp_a(jnano3)   = 2.26
-      dens_comp_a(jna2so4)  = 2.68
-      dens_comp_a(jna3hso4) = 2.50
-      dens_comp_a(jnahso4)  = 2.43
-      dens_comp_a(jcaso4)   = 2.61
-      dens_comp_a(jcano3)   = 2.50
-      dens_comp_a(jcacl2)   = 2.15
-      dens_comp_a(jcaco3)   = 2.80
-      dens_comp_a(jh2so4)   = 1.84
-      dens_comp_a(jhhso4)   = 1.84
-      dens_comp_a(jhno3)    = 1.50
-      dens_comp_a(jhcl)     = 1.19
-      dens_comp_a(joc)      = 1.00
-      dens_comp_a(jbc)      = 1.70
-      dens_comp_a(join)     = 2.60
-      dens_comp_a(jh2o)     = 1.00
+      dens_comp_a(jnh4so4)  = 1.8
+      dens_comp_a(jlvcite)  = 1.8
+      dens_comp_a(jnh4hso4) = 1.8
+      dens_comp_a(jnh4msa)  = 1.8	! assumed same as nh4hso4
+      dens_comp_a(jnh4no3)  = 1.7
+      dens_comp_a(jnh4cl)   = 1.5
+      dens_comp_a(jnacl)    = 2.2
+      dens_comp_a(jnano3)   = 2.2
+      dens_comp_a(jna2so4)  = 2.2
+      dens_comp_a(jna3hso4) = 2.2
+      dens_comp_a(jnahso4)  = 2.2
+      dens_comp_a(jnamsa)   = 2.2	! assumed same as nahso4
+      dens_comp_a(jcaso4)   = 2.6
+      dens_comp_a(jcamsa2)  = 2.6	! assumed same as caso4
+      dens_comp_a(jcano3)   = 2.6
+      dens_comp_a(jcacl2)   = 2.6
+      dens_comp_a(jcaco3)   = 2.6
+      dens_comp_a(jh2so4)   = 1.8
+      dens_comp_a(jhhso4)   = 1.8
+      dens_comp_a(jhno3)    = 1.8
+      dens_comp_a(jhcl)     = 1.8
+      dens_comp_a(jmsa)     = 1.8	! assumed same as h2so4
+      dens_comp_a(joc)      = 1.0
+      dens_comp_a(jbc)      = 1.8
+      dens_comp_a(join)     = 2.6
+      dens_comp_a(jaro1)    = 1.0
+      dens_comp_a(jaro2)    = 1.0
+      dens_comp_a(jalk1)    = 1.0
+      dens_comp_a(jole1)    = 1.0
+      dens_comp_a(japi1)    = 1.0
+      dens_comp_a(japi2)    = 1.0
+      dens_comp_a(jlim1)    = 1.0
+      dens_comp_a(jlim2)    = 1.0
+      dens_comp_a(jh2o)     = 1.0
 
-      do je = 1, naercomp
-        dens_comp_a(je) = 1.8
-      enddo
 
 ! molecular weights of generic aerosol species
       mw_aer_mac(iso4_a) = 96.0
       mw_aer_mac(ino3_a) = 62.0
       mw_aer_mac(icl_a)  = 35.5
-      mw_aer_mac(imsa_a) = 96.0
+      mw_aer_mac(imsa_a) = 95.0	! ch3so3
       mw_aer_mac(ico3_a) = 60.0
       mw_aer_mac(inh4_a) = 18.0
       mw_aer_mac(ina_a)  = 23.0
       mw_aer_mac(ica_a)  = 40.0
-      mw_aer_mac(ioin_a) = 1.0	! not used
-      mw_aer_mac(ioc_a)  = 1.0	! not used
-      mw_aer_mac(ibc_a)  = 1.0	! not used
+      mw_aer_mac(ioin_a) = 1.0		! not used
+      mw_aer_mac(ibc_a)  = 1.0		! not used
+      mw_aer_mac(ioc_a)  = 1.0	! 200 assumed for primary organics
+      mw_aer_mac(iaro1_a)= 150.0
+      mw_aer_mac(iaro2_a)= 150.0
+      mw_aer_mac(ialk1_a)= 140.0
+      mw_aer_mac(iole1_a)= 140.0
+      mw_aer_mac(iapi1_a)= 184.0
+      mw_aer_mac(iapi2_a)= 184.0
+      mw_aer_mac(ilim1_a)= 200.0
+      mw_aer_mac(ilim2_a)= 200.0
 
 ! molecular weights of compounds
       mw_comp_a(jnh4so4) = 132.0
       mw_comp_a(jlvcite) = 247.0
       mw_comp_a(jnh4hso4)= 115.0
+      mw_comp_a(jnh4msa) = 113.0
       mw_comp_a(jnh4no3) = 80.0
       mw_comp_a(jnh4cl)  = 53.5
       mw_comp_a(jnacl)   = 58.5
@@ -14163,7 +9285,9 @@
       mw_comp_a(jna2so4) = 142.0
       mw_comp_a(jna3hso4)= 262.0
       mw_comp_a(jnahso4) = 120.0
+      mw_comp_a(jnamsa)  = 118.0
       mw_comp_a(jcaso4)  = 136.0
+      mw_comp_a(jcamsa2) = 230.0
       mw_comp_a(jcano3)  = 164.0
       mw_comp_a(jcacl2)  = 111.0
       mw_comp_a(jcaco3)  = 100.0
@@ -14171,28 +9295,63 @@
       mw_comp_a(jhhso4)  = 98.0
       mw_comp_a(jhno3)   = 63.0
       mw_comp_a(jhcl)    = 36.5
+      mw_comp_a(jmsa)    = 96.0
       mw_comp_a(joc)	 = 1.0
       mw_comp_a(jbc)	 = 1.0
       mw_comp_a(join)    = 1.0
+      mw_comp_a(jaro1)	 = 150.0
+      mw_comp_a(jaro2)	 = 150.0
+      mw_comp_a(jalk1)	 = 140.0
+      mw_comp_a(jole1)	 = 140.0
+      mw_comp_a(japi1)	 = 184.0
+      mw_comp_a(japi2)	 = 184.0
+      mw_comp_a(jlim1)	 = 200.0
+      mw_comp_a(jlim2)	 = 200.0
       mw_comp_a(jh2o)    = 18.0
 
 ! densities of generic aerosol species
-      dens_aer_mac(iso4_a) = 1.0	! not used
-      dens_aer_mac(ino3_a) = 1.0	! not used
-      dens_aer_mac(icl_a)  = 1.0	! not used
-      dens_aer_mac(imsa_a) = 1.0	! not used
-      dens_aer_mac(ico3_a) = 1.0	! not used
-      dens_aer_mac(inh4_a) = 1.0	! not used
-      dens_aer_mac(ina_a)  = 1.0	! not used
-      dens_aer_mac(ica_a)  = 1.0	! not used
+      dens_aer_mac(iso4_a) = 1.8	! used
+      dens_aer_mac(ino3_a) = 1.8	! used
+      dens_aer_mac(icl_a)  = 2.2	! used
+      dens_aer_mac(imsa_a) = 1.8	! used
+      dens_aer_mac(ico3_a) = 2.6	! used
+      dens_aer_mac(inh4_a) = 1.8	! used
+      dens_aer_mac(ina_a)  = 2.2	! used
+      dens_aer_mac(ica_a)  = 2.6	! used
       dens_aer_mac(ioin_a) = 2.6	! used
       dens_aer_mac(ioc_a)  = 1.0	! used
       dens_aer_mac(ibc_a)  = 1.7	! used
+      dens_aer_mac(iaro1_a)= 1.0
+      dens_aer_mac(iaro2_a)= 1.0
+      dens_aer_mac(ialk1_a)= 1.0
+      dens_aer_mac(iole1_a)= 1.0
+      dens_aer_mac(iapi1_a)= 1.0
+      dens_aer_mac(iapi2_a)= 1.0
+      dens_aer_mac(ilim1_a)= 1.0
+      dens_aer_mac(ilim2_a)= 1.0
+
+
+! partial molar volumes of condensing species
+      partial_molar_vol(ih2so4_g) = 51.83
+      partial_molar_vol(ihno3_g)  = 31.45
+      partial_molar_vol(ihcl_g)   = 20.96
+      partial_molar_vol(inh3_g)   = 24.03
+      partial_molar_vol(imsa_g)   = 53.33
+      partial_molar_vol(iaro1_g)  = 150.0
+      partial_molar_vol(iaro2_g)  = 150.0
+      partial_molar_vol(ialk1_g)  = 140.0
+      partial_molar_vol(iole1_g)  = 140.0
+      partial_molar_vol(iapi1_g)  = 184.0
+      partial_molar_vol(iapi2_g)  = 184.0
+      partial_molar_vol(ilim1_g)  = 200.0
+      partial_molar_vol(ilim2_g)  = 200.0
+
 
 ! refractive index
       ref_index_a(jnh4so4) = cmplx(1.52,0.)
       ref_index_a(jlvcite) = cmplx(1.50,0.)
       ref_index_a(jnh4hso4)= cmplx(1.47,0.)
+      ref_index_a(jnh4msa) = cmplx(1.50,0.)	! assumed
       ref_index_a(jnh4no3) = cmplx(1.50,0.)
       ref_index_a(jnh4cl)  = cmplx(1.50,0.)
       ref_index_a(jnacl)   = cmplx(1.45,0.)
@@ -14200,7 +9359,9 @@
       ref_index_a(jna2so4) = cmplx(1.50,0.)
       ref_index_a(jna3hso4)= cmplx(1.50,0.)
       ref_index_a(jnahso4) = cmplx(1.50,0.)
+      ref_index_a(jnamsa)  = cmplx(1.50,0.)	! assumed
       ref_index_a(jcaso4)  = cmplx(1.56,0.006)
+      ref_index_a(jcamsa2) = cmplx(1.56,0.006)	! assumed
       ref_index_a(jcano3)  = cmplx(1.56,0.006)
       ref_index_a(jcacl2)  = cmplx(1.52,0.006)
       ref_index_a(jcaco3)  = cmplx(1.68,0.006)
@@ -14208,9 +9369,18 @@
       ref_index_a(jhhso4)  = cmplx(1.43,0.)
       ref_index_a(jhno3)   = cmplx(1.50,0.)
       ref_index_a(jhcl)    = cmplx(1.50,0.)
+      ref_index_a(jmsa)    = cmplx(1.43,0.)	! assumed
       ref_index_a(joc)	   = cmplx(1.45,0.)
       ref_index_a(jbc)	   = cmplx(1.82,0.74)
       ref_index_a(join)    = cmplx(1.55,0.006)
+      ref_index_a(jaro1)   = cmplx(1.45,0.)
+      ref_index_a(jaro2)   = cmplx(1.45,0.)
+      ref_index_a(jalk1)   = cmplx(1.45,0.)
+      ref_index_a(jole1)   = cmplx(1.45,0.)
+      ref_index_a(japi1)   = cmplx(1.45,0.)
+      ref_index_a(japi2)   = cmplx(1.45,0.)
+      ref_index_a(jlim1)   = cmplx(1.45,0.)
+      ref_index_a(jlim2)   = cmplx(1.45,0.)
       ref_index_a(jh2o)    = cmplx(1.33,0.)
 
 ! jsalt_index
@@ -14225,6 +9395,10 @@
       jsalt_index(jnacl)   = 10		! sc
       jsalt_index(jcano3)  = 120	! cn
       jsalt_index(jcacl2)  = 80		! cc
+      jsalt_index(jnh4msa) = 0		! AM	zero for now
+      jsalt_index(jnamsa)  = 0		! SM	zero for now
+      jsalt_index(jcamsa2) = 0		! CM	zero for now
+
 
 ! aerosol indices
 !  ac = 1, an = 2, as = 5, sc = 10, sn = 40, ss = 60, cc = 80, cn = 120,
@@ -14338,6 +9512,16 @@
       a_zsr(6,je)  =  2.04616
       aw_min(je)   = 0.1
 !
+! nh4msa (assumed same as nh4hso4)
+      je = jnh4msa
+      a_zsr(1,je)  =  1.15510
+      a_zsr(2,je)  = -3.20815
+      a_zsr(3,je)  =  2.71141
+      a_zsr(4,je)  =  2.01155
+      a_zsr(5,je)  = -4.71014
+      a_zsr(6,je)  =  2.04616
+      aw_min(je)   = 0.1
+!
 ! nh4no3
       je = jnh4no3
       a_zsr(1,je)  =  0.43507
@@ -14408,6 +9592,16 @@
       a_zsr(6,je)  = -3.88729
       aw_min(je)   = 0.1
 !
+! namsa (assumed same as nahso4)
+      je = jnamsa
+      a_zsr(1,je)  =  0.62764
+      a_zsr(2,je)  = -1.63520
+      a_zsr(3,je)  =  4.62531
+      a_zsr(4,je)  = -10.06925
+      a_zsr(5,je)  =  10.33547
+      a_zsr(6,je)  = -3.88729
+      aw_min(je)   = 0.1
+!
 ! ca(no3)2
       je = jcano3
       a_zsr(1,je)  =  0.38895
@@ -14430,6 +9624,16 @@
 !
 ! h2so4
       je = jh2so4
+      a_zsr(1,je) =  0.32751
+      a_zsr(2,je) = -1.00692
+      a_zsr(3,je) =  2.59750
+      a_zsr(4,je) = -4.40014
+      a_zsr(5,je) =  3.88212
+      a_zsr(6,je) = -1.39916
+      aw_min(je)  = 0.1
+!
+! msa (assumed same as h2so4)
+      je = jmsa
       a_zsr(1,je) =  0.32751
       a_zsr(2,je) = -1.00692
       a_zsr(3,je) =  2.59750
@@ -14478,6 +9682,16 @@
       a_zsr(6,je)  =  0.0
       aw_min(je)   = 1.0
 !
+! ca(msa)2 (assumed same as ca(no3)2)
+      je = jcamsa2
+      a_zsr(1,je)  =  0.38895
+      a_zsr(2,je)  = -1.16013
+      a_zsr(3,je)  =  2.16819
+      a_zsr(4,je)  = -2.23079
+      a_zsr(5,je)  =  1.00268
+      a_zsr(6,je)  = -0.16923
+      aw_min(je)   = 0.1
+!
 ! caco3
       je = jcaco3
       a_zsr(1,je)  =  0.0
@@ -14502,6 +9716,9 @@
 ! nh4hso4
       b_zsr(jnh4hso4) = 29.4779
 !
+! nh4msa
+      b_zsr(jnh4msa)  = 29.4779 ! assumed same as nh4hso4
+!
 ! nh4no3
       b_zsr(jnh4no3)  = 33.4049
 !
@@ -14523,6 +9740,9 @@
 ! nahso4
       b_zsr(jnahso4)  = 28.3367
 !
+! namsa
+      b_zsr(jnamsa)   = 28.3367 ! assumed same as nahso4
+!
 ! ca(no3)2
       b_zsr(jcano3)   = 18.3661
 !
@@ -14541,8 +9761,14 @@
 ! hcl
       b_zsr(jhcl)     = 27.7108
 !
+! msa
+      b_zsr(jmsa)     = 26.7347 ! assumed same as h2so4
+!
 ! caso4
       b_zsr(jcaso4)   = 0.0
+!
+! ca(msa)2
+      b_zsr(jcamsa2)  = 18.3661 ! assumed same as Ca(NO3)2
 !
 ! caco3
       b_zsr(jcaco3)   = 0.0
@@ -14551,158 +9777,6 @@
 
 
 
-
-!-----------------------------------------------------------
-! coefficients for activity coefficient polynomials (kusik and meissner)
-!
-!     log(gamma0) = b1*im^0.5 + b2*im + b3*im^2 + b4*im^3 + b5*im^4
-!
-! revised coefficients on nov 14, 2003.
-!
-!-----------------------------------------------------------
-! nh4no3
-      je = jnh4no3
-      b_km(1,je)  = -0.267009
-      b_km(2,je)  =  0.0202668
-      b_km(3,je)  = -0.0000942908
-      b_km(4,je)  =  3.07824e-07
-      b_km(5,je)  = -3.73474e-10
-      im_max(je)=  356.62
-!
-! nh4cl
-      je = jnh4cl
-      b_km(1,je)  = -0.266786
-      b_km(2,je)  =  0.0777832
-      b_km(3,je)  = -0.00217383
-      b_km(4,je)  =  3.16802e-05
-      b_km(5,je)  = -1.69576e-07
-      im_max(je)=  74.4
-!
-! (nh4)2so4
-      je = jnh4so4
-      b_km(1,je)  = -0.519781
-      b_km(2,je)  =  0.0804842
-      b_km(3,je)  = -0.00072761
-      b_km(4,je)  =  4.27569e-06
-      b_km(5,je)  = -9.84832e-09
-      im_max(je)=  162.84
-!
-! nacl
-      je = jnacl
-      b_km(1,je)  = -0.319457
-      b_km(2,je)  =  0.140217
-      b_km(3,je)  = -0.00171166
-      b_km(4,je)  = -5.85982e-06
-      b_km(5,je)  = 2.88269e-07
-      im_max(je)=  28.01
-!
-! nano3
-      je = jnano3
-      b_km(1,je)  = -0.290263
-      b_km(2,je)  =  0.0493945
-      b_km(3,je)  = -0.000741747
-      b_km(4,je)  =  6.81616e-06
-      b_km(5,je)  = -2.38311e-08
-      im_max(je)=  111.43
-!
-! na2so4
-      je = jna2so4
-      b_km(1,je)  = -0.58568
-      b_km(2,je)  =  0.107867
-      b_km(3,je)  = -0.000900192
-      b_km(4,je)  =  7.4922e-06
-      b_km(5,je)  = -4.72199e-08
-      im_max(je)=  53.22
-!
-! cacl2 (psc92: revised on 11/27/2003)
-      je = jcacl2
-      b_km(1,je)  = -0.531123
-      b_km(2,je)  =  0.206408
-      b_km(3,je)  = -0.00109233
-      b_km(4,je)  =  -2.62e-06
-      b_km(5,je)  = -2.95e-07
-      im_max(je)=  28.16
-!
-! ca(no3)2
-      je = jcano3
-      b_km(1,je)  = -0.522974
-      b_km(2,je)  =  0.15075
-      b_km(3,je)  = -0.00298182
-      b_km(4,je)  =  5.01151e-05
-      b_km(5,je)  = -3.82811e-07
-      im_max(je)=  49.01
-!
-! hno3
-      je = jhno3
-      b_km(1,je)  = -0.318267
-      b_km(2,je)  =  0.187029
-      b_km(3,je)  = -0.00815311
-      b_km(4,je)  =  0.000218321
-      b_km(5,je)  = -2.41756e-06
-      im_max(je)=  31.93
-!
-! hcl
-      je = jhcl
-      b_km(1,je)  = -0.323059
-      b_km(2,je)  =  0.235552
-      b_km(3,je)  = -0.00350478
-      b_km(4,je)  =  6.42091e-05
-      b_km(5,je)  = -1.48899e-06
-      im_max(je)=  18.3
-!
-! h2so4
-      je = jh2so4
-      b_km(1,je)  = -0.7185
-      b_km(2,je)  = 0.1962
-      b_km(3,je)  = 2.5783e-3
-      b_km(4,je)  = -2.1450e-4
-      b_km(5,je)  = 2.7901e-6
-      im_max(je)= 22.91
-!
-! hhso4
-      je = jhhso4
-      b_km(1,je)  = -0.2312
-      b_km(2,je)  = 0.1321
-      b_km(3,je)  = 4.9554e-3
-      b_km(4,je)  = -2.7074e-4
-      b_km(5,je)  = 3.1003e-6
-      im_max(je)= 22.91
-!
-! nh4hso4
-      je = jnh4hso4
-      b_km(1,je)  = -0.1976
-      b_km(2,je)  = 0.0445
-      b_km(3,je)  = -7.8636e-4
-      b_km(4,je)  = 6.6343e-6
-      b_km(5,je)  = -1.9562e-8
-      im_max(je)= 146.5
-!
-! (nh4)3h(so4)2
-      je = jlvcite
-      b_km(1,je)  = -0.3935
-      b_km(2,je)  = 0.0591
-      b_km(3,je)  = -5.5720e-4
-      b_km(4,je)  = 3.1519e-6
-      b_km(5,je)  = -6.6097e-9
-      im_max(je)= 197.0
-!
-! nahso4
-      je = jnahso4
-      b_km(1,je)  = -0.2961
-      b_km(2,je)  = 0.1238
-      b_km(3,je)  = -5.1698e-3
-      b_km(4,je)  = 1.2267e-4
-      b_km(5,je)  = -1.0722e-6
-      im_max(je)= 43.59
-!
-! na3h(so4)2
-      je = jna3hso4
-      b_km(1,je)  = -0.4688
-      b_km(2,je)  = 0.1020
-      b_km(3,je)  = -1.7013e-3
-      b_km(4,je)  = 2.9740e-5
-      b_km(5,je)  = -2.3703e-7
-      im_max(je)= 50.44
 
 
 !----------------------------------------------------------------
@@ -16738,559 +11812,6 @@
       d_mdrh(j_index,4) = 4.12458e-05
 
 
-
-!-----------------------------------------------------------------------------
-!
-!			psc activity coefficient model data
-!
-!-----------------------------------------------------------------------------
-!
-! magnitude of the charges on ions
-      izc(jc_h)		= 1
-      izc(jc_nh4)	= 1
-      izc(jc_na)	= 1
-      izc(jc_ca)	= 2
-!
-      iza(ja_hso4)	= 1
-      iza(ja_so4)	= 2
-      iza(ja_no3)	= 1
-      iza(ja_cl)	= 1
-
-      do jc = 1, ncation
-        zc(jc) = float(izc(jc))
-      enddo
-
-      do ja = 1, nanion
-        za(ja) = float(iza(ja))
-      enddo
-
-
-! model parameters
-!
-!		fitted binary parameters
-!
-! long-range debye-huckel contributions
-
-      ax	=  2.917 ! debye-huckel parameter (mol fraction basis) @ 298 k
-      rho	= 13.0	 ! a constant at all temperatures and pressures.
-      tdum      = 298.15
-!      tt	= te - 328.15
-      tt	= 298.15 - 328.15
-
-!
-!---------------------------
-! (h,a)
-      bc_a(jc_h,ja_hso4)	=  0.178334467e2 +   &
-                                   tt*(-0.625268629e1  *1.e-1 +   &
-                                   tt*(0.295714662     *1.e-2 +   &
-                                   tt*(0.223751841     *1.e-3/6.0 +   &
-                                   tt*(0.0             *1.e-3/12.0 +   &
-                                   tt*0.0              *1.e-3/20.0))))
-      bc_a(jc_h,ja_so4)		= -0.982408701e2 +   &
-                                   tt*(-0.205401806e2  *1.e-1 +   &
-                                   tt*(-0.103568646e1  *1.e-2 +   &
-                                   tt*(-0.376521937e-1 *1.e-3/6.0 +   &
-                                   tt*(-0.139689758e-1 *1.e-3/12.0 +   &
-                                   tt*0.0              *1.e-3/20.0))))
-      bc_a(jc_h,ja_no3)		= 13.53417796	! @@@@
-      bc_a(jc_h,ja_cl)		= 17.5347093	! @@@@
-
-      b1_c_a(jc_h,ja_hso4)	= 0.0 		! @@@@
-      b1_c_a(jc_h,ja_so4)	= 0.0 		! @@@@
-      b1_c_a(jc_h,ja_no3)	= 0.0 		! @@@@
-      b1_c_a(jc_h,ja_cl)	= 0.0		! @@@@
-
-      alpha_c_a(jc_h,ja_hso4)	= 17.0		! @@@@
-      alpha_c_a(jc_h,ja_so4)	=  9.5		! @@@@
-      alpha_c_a(jc_h,ja_no3)	= 17.0		! @@@@
-      alpha_c_a(jc_h,ja_cl)	= 13.0		! @@@@
-
-      alpha1_c_a(jc_h,ja_hso4)	= 0.0		! @@@@
-      alpha1_c_a(jc_h,ja_so4)	= 0.0		! @@@@
-      alpha1_c_a(jc_h,ja_no3)	= 0.0		! @@@@
-      alpha1_c_a(jc_h,ja_cl)	= 0.0		! @@@@
-!
-! (nh4,a)
-      bc_a(jc_nh4,ja_hso4)	= 14.2261681 	! @@@@
-      bc_a(jc_nh4,ja_so4)	= -2.858988 	! @@@@
-      bc_a(jc_nh4,ja_no3)	= 24.7529  	! @@@@
-      bc_a(jc_nh4,ja_cl)	=  4.659688	! @@@@
-
-      b1_c_a(jc_nh4,ja_hso4)	=  0.0 		! @@@@
-      b1_c_a(jc_nh4,ja_so4)	=  0.0		! @@@@
-      b1_c_a(jc_nh4,ja_no3)	= -29.9961 	! @@@@
-      b1_c_a(jc_nh4,ja_cl)	=  0.0 		! @@@@
-
-      alpha_c_a(jc_nh4,ja_hso4)	= 19.0		! @@@@
-      alpha_c_a(jc_nh4,ja_so4)	= 13.0		! @@@@
-      alpha_c_a(jc_nh4,ja_no3)	=  7.0 		! @@@@
-      alpha_c_a(jc_nh4,ja_cl)	= 15.0		! @@@@
-
-      alpha1_c_a(jc_nh4,ja_hso4)=  0.0 		! @@@@
-      alpha1_c_a(jc_nh4,ja_so4)	=  1.5		! @@@@
-      alpha1_c_a(jc_nh4,ja_no3)	= 13.0		! @@@@
-      alpha1_c_a(jc_nh4,ja_cl)	=  0.0 		! @@@@
-!
-! (na,a)
-      bc_a(jc_na,ja_hso4)	= 62.27961 	! @@@@
-      bc_a(jc_na,ja_so4)	= 34.46602	! @@@@
-      bc_a(jc_na,ja_no3)	= 26.99939	! @@@@
-      bc_a(jc_na,ja_cl)		= 19.93376	! @@@@
-
-      b1_c_a(jc_na,ja_hso4)	=  0.0 		! @@@@
-      b1_c_a(jc_na,ja_so4)	=  0.0 		! @@@@
-      b1_c_a(jc_na,ja_no3)	= -21.6050	! @@@@
-      b1_c_a(jc_na,ja_cl)	=  0.0 		! @@@@
-
-      alpha_c_a(jc_na,ja_hso4)	= 19.0 		! @@@@
-      alpha_c_a(jc_na,ja_so4)	=  8.0		! @@@@
-      alpha_c_a(jc_na,ja_no3)	=  5.0 		! @@@@
-      alpha_c_a(jc_na,ja_cl)	=  5.0 		! @@@@
-
-      alpha1_c_a(jc_na,ja_hso4)	=  0.0 		! @@@@
-      alpha1_c_a(jc_na,ja_so4)	=  0.0 		! @@@@
-      alpha1_c_a(jc_na,ja_no3)	= 13.0 		! @@@@
-      alpha1_c_a(jc_na,ja_cl)	=  0.0 		! @@@@
-
-!
-! (ca,a)					! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-      bc_a(jc_ca,ja_hso4)	= 0.0
-      bc_a(jc_ca,ja_so4)	= 0.0
-      bc_a(jc_ca,ja_no3)	= 33.251	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-      bc_a(jc_ca,ja_cl)		= 55.396	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      b1_c_a(jc_ca,ja_hso4)	= 0.0
-      b1_c_a(jc_ca,ja_so4)	= 0.0
-      b1_c_a(jc_ca,ja_no3)	= 66.931	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-      b1_c_a(jc_ca,ja_cl)	= 114.47	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      alpha_c_a(jc_ca,ja_hso4)	= 0.0
-      alpha_c_a(jc_ca,ja_so4)	= 0.0
-      alpha_c_a(jc_ca,ja_no3)	= 13.0		! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-      alpha_c_a(jc_ca,ja_cl)	= 13.0		! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      alpha1_c_a(jc_ca,ja_hso4)	=  0.0
-      alpha1_c_a(jc_ca,ja_so4)	=  0.0
-      alpha1_c_a(jc_ca,ja_no3)	=  2.0 		! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-      alpha1_c_a(jc_ca,ja_cl)	=  2.0 		! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-!
-!
-! short-range contributions
-!
-! (h,a)
-      u1_c_a(jc_h,ja_hso4)	= -0.143238371e1 +   &
-                                  tt*(-0.201636224    *1.e-1 +   &
-                                  tt*(-0.221902116e-1 *1.e-2 +   &
-                                  tt*(0.641847819e-2  *1.e-3/6.0 +   &
-                                  tt*(0.296327801e-3  *1.e-3/12.0 +   &
-                                  tt*0.0              *1.e-3/20.0))))
-
-      u1_c_a(jc_h,ja_so4)	= -0.133603464e2 +   &
-                                  tt*(-0.459479578e1  *1.e-1 +   &
-                                  tt*(-0.731101730    *1.e-2 +   &
-                                  tt*(-0.157872023    *1.e-3/6.0 +   &
-                                  tt*(-0.162230945e-3 *1.e-3/12.0 +   &
-                                  tt* 0.0             *1.e-3/20.0))))
-      u1_c_a(jc_h,ja_no3)	= 1.965818001  		! @@@@
-
-      u1_c_a(jc_h,ja_cl)	= -13.7294155		! @@@@
-
-      v1_c_a(jc_h,ja_hso4)	= -0.207474566e1 +   &
-                                  tt*(0.594737744     *1.e-1 +   &
-                                  tt*(0.337026110e-1  *1.e-2 +   &
-                                  tt*(0.0             *1.e-3/6.0 +   &
-                                  tt*(-0.394845016e-3 *1.e-3/12.0 +   &
-                                  tt*0.d0             *1.e-3/20.0))))
-
-      v1_c_a(jc_h,ja_so4)	= 0.310121997e1    +   &
-                                  tt*(0.446189009e1   *1.e-1 +   &
-                                  tt*(0.487627359     *1.e-2 +   &
-                                  tt*(0.588748231e-2  *1.e-3/6.0 +   &
-                                  tt*(-0.901983372e-3 *1.e-3/12.0 +   &
-                                  tt*0.0              *1.e-3/20.0))))
-
-      v1_c_a(jc_h,ja_no3)	= -1.411912043		! @@@@
-      v1_c_a(jc_h,ja_cl)	= 3.20778857		! @@@@
-
-      w1_c_a(jc_h,ja_hso4)	= -0.998416390e1 +   &
-                                  tt*(0.348821776     *1.e-1 +   &
-                                  tt*(-0.597630850e-2 *1.e-2 +   &
-                                  tt*(0.909425662e-2  *1.e-3/6.0 +   &
-                                  tt*(0.149166944e-3  *1.e-3/12.0 +   &
-                                  tt*0.0              *1.e-3/20.0))))
-
-      w1_c_a(jc_h,ja_so4)	= -0.107752155e2   +   &
-                                  tt*(-0.879298257    *1.e-1 +   &
-                                  tt*(-0.220264243    *1.e-2 +   &
-                                  tt*(-0.544913927e-1 *1.e-3/6.0 +   &
-                                  tt*(-0.173541364e-3 *1.e-3/12.0 +   &
-                                  tt*0.0              *1.e-3/20.0))))
-
-      w1_c_a(jc_h,ja_no3)	= -3.071864721 		! @@@@
-      w1_c_a(jc_h,ja_cl)	= -14.9654933		! @@@@
-!
-! (nh4,a)
-      u1_c_a(jc_nh4,ja_hso4)	= -0.796273529		! @@@@
-      u1_c_a(jc_nh4,ja_so4)	= 0.940860		! @@@@
-      u1_c_a(jc_nh4,ja_no3)	= 0.379736		! @@@@
-      u1_c_a(jc_nh4,ja_cl)	= 2.072437		! @@@@
-
-      v1_c_a(jc_nh4,ja_hso4)	= 0.663584552		! @@@@
-      v1_c_a(jc_nh4,ja_so4)	= -2.587430		! @@@@
-      v1_c_a(jc_nh4,ja_no3)	= -1.42646  		! @@@@
-      v1_c_a(jc_nh4,ja_cl)	= -1.25000  		! @@@@
-
-      w1_c_a(jc_nh4,ja_hso4)	= -2.56359462		! @@@@
-      w1_c_a(jc_nh4,ja_so4)	= -0.740149		! @@@@
-      w1_c_a(jc_nh4,ja_no3)	= 0.900729 		! @@@@
-      w1_c_a(jc_nh4,ja_cl)	= -0.5682911		! @@@@
-!
-! (na,a)
-      u1_c_a(jc_na,ja_hso4)	= -4.857197 		! @@@@
-      u1_c_a(jc_na,ja_so4)	= -1.95916  		! @@@@
-      u1_c_a(jc_na,ja_no3)	= 0.2666436		! @@@@
-      u1_c_a(jc_na,ja_cl)	= -3.609246		! @@@@
-
-      v1_c_a(jc_na,ja_hso4)	= 4.888311 		! @@@@
-      v1_c_a(jc_na,ja_so4)	= -4.86057		! @@@@
-      v1_c_a(jc_na,ja_no3)	= -2.302876		! @@@@
-      v1_c_a(jc_na,ja_cl)	= -2.459821		! @@@@
-
-      w1_c_a(jc_na,ja_hso4)	= -2.932425 		! @@@@
-      w1_c_a(jc_na,ja_so4)	= -3.725962		! @@@@
-      w1_c_a(jc_na,ja_no3)	= 0.5269081		! @@@@
-      w1_c_a(jc_na,ja_cl)	= -5.646077		! @@@@
-
-!
-! (ca,a)					! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-      u1_c_a(jc_ca,ja_hso4)	= 0.0
-      u1_c_a(jc_ca,ja_so4)	= 0.0
-      u1_c_a(jc_ca,ja_no3)	= 0.45953
-      u1_c_a(jc_ca,ja_cl)	= 19.148
-
-      v1_c_a(jc_ca,ja_hso4)	= 0.0
-      v1_c_a(jc_ca,ja_so4)	= 0.0
-      v1_c_a(jc_ca,ja_no3)	= -8.387
-      v1_c_a(jc_ca,ja_cl)	= -36.497
-
-      w1_c_a(jc_ca,ja_hso4)	= 0.0
-      w1_c_a(jc_ca,ja_so4)	= 0.0
-      w1_c_a(jc_ca,ja_no3)	= 0.0
-      w1_c_a(jc_ca,ja_cl)	= 0.0
-
-!		fitted ternary parameters (short-range contributions)
-!
-! (c,c',hso4)
-      uc_cp_a(jc_h,jc_nh4,ja_hso4)	=  0.0		! @@@@
-      uc_cp_a(jc_h,jc_na,ja_hso4)	= -2.92819	! @@@@
-      uc_cp_a(jc_nh4,jc_na,ja_hso4)	=  0.0    	! @@@@
-
-      uc_cp_a(jc_nh4,jc_h,ja_hso4)	= -uc_cp_a(jc_h,jc_nh4,ja_hso4)
-      uc_cp_a(jc_na,jc_h,ja_hso4)	= -uc_cp_a(jc_h,jc_na,ja_hso4)
-      uc_cp_a(jc_na,jc_nh4,ja_hso4)	= -uc_cp_a(jc_nh4,jc_na,ja_hso4)
-
-
-      wc_cp_a(jc_h,jc_nh4,ja_hso4)	= -19.494	! @@@@
-      wc_cp_a(jc_h,jc_na,ja_hso4)	= -8.96894	! @@@@
-      wc_cp_a(jc_nh4,jc_na,ja_hso4)	=  0.0     	! @@@@
-
-      wc_cp_a(jc_nh4,jc_h,ja_hso4)	= wc_cp_a(jc_h,jc_nh4,ja_hso4)
-      wc_cp_a(jc_na,jc_h,ja_hso4)	= wc_cp_a(jc_h,jc_na,ja_hso4)
-      wc_cp_a(jc_na,jc_nh4,ja_hso4)	= wc_cp_a(jc_nh4,jc_na,ja_hso4)
-
-
-      q1_c_cp_a(jc_h,jc_nh4,ja_hso4)	= 8.7607  	! @@@@
-      q1_c_cp_a(jc_h,jc_na,ja_hso4)	= 4.16202	! @@@@
-      q1_c_cp_a(jc_nh4,jc_na,ja_hso4)	= 0.0
-
-      q1_c_cp_a(jc_nh4,jc_h,ja_hso4)	= 8.7607  	! @@@@
-      q1_c_cp_a(jc_na,jc_h,ja_hso4)	= 4.16202	! @@@@
-      q1_c_cp_a(jc_na,jc_nh4,ja_hso4)	= 0.0    	! @@@@
-
-
-! (c,c',so4)
-      uc_cp_a(jc_h,jc_nh4,ja_so4)	= 6.5216  	! @@@@
-      uc_cp_a(jc_h,jc_na,ja_so4)	= 0.0    	! @@@@
-      uc_cp_a(jc_nh4,jc_na,ja_so4)	= 0.0    	! @@@@
-
-      uc_cp_a(jc_nh4,jc_h,ja_so4)	= -uc_cp_a(jc_h,jc_nh4,ja_so4)
-      uc_cp_a(jc_na,jc_h,ja_so4)	= -uc_cp_a(jc_h,jc_na,ja_so4)
-      uc_cp_a(jc_na,jc_nh4,ja_so4)	= -uc_cp_a(jc_nh4,jc_na,ja_so4)
-
-
-      wc_cp_a(jc_h,jc_nh4,ja_so4)	= -4.3507 	! @@@@
-      wc_cp_a(jc_h,jc_na,ja_so4)	= 15.9075 	! @@@@
-      wc_cp_a(jc_nh4,jc_na,ja_so4)	= -1.4832 	! @@@@
-
-      wc_cp_a(jc_nh4,jc_h,ja_so4)	= wc_cp_a(jc_h,jc_nh4,ja_so4)
-      wc_cp_a(jc_na,jc_h,ja_so4)	= wc_cp_a(jc_h,jc_na,ja_so4)
-      wc_cp_a(jc_na,jc_nh4,ja_so4)	= wc_cp_a(jc_nh4,jc_na,ja_so4)
-
-
-      q1_c_cp_a(jc_h,jc_nh4,ja_so4)	=  0.0 		! @@@@
-      q1_c_cp_a(jc_h,jc_na,ja_so4)	= -8.82425	! @@@@
-      q1_c_cp_a(jc_nh4,jc_na,ja_so4)	=  0.76211	! @@@@
-
-      q1_c_cp_a(jc_nh4,jc_h,ja_so4)	=  0.0 		! @@@@
-      q1_c_cp_a(jc_na,jc_h,ja_so4)	= -8.82425	! @@@@
-      q1_c_cp_a(jc_na,jc_nh4,ja_so4)	=  0.76211	! @@@@
-
-
-! (c,c',no3)
-      uc_cp_a(jc_h,jc_nh4,ja_no3)	= -0.46338 	! @@@@
-      uc_cp_a(jc_h,jc_na,ja_no3)	= 1.1749  	! @@@@
-      uc_cp_a(jc_nh4,jc_na,ja_no3)	= 0.2130  	! @@@@
-      uc_cp_a(jc_h,jc_ca,ja_no3)        = 0.0		! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      uc_cp_a(jc_nh4,jc_h,ja_no3)	= -uc_cp_a(jc_h,jc_nh4,ja_no3)
-      uc_cp_a(jc_na,jc_h,ja_no3)	= -uc_cp_a(jc_h,jc_na,ja_no3)
-      uc_cp_a(jc_na,jc_nh4,ja_no3)	= -uc_cp_a(jc_nh4,jc_na,ja_no3)
-      uc_cp_a(jc_ca,jc_h,ja_no3)        = -uc_cp_a(jc_h,jc_ca,ja_no3)
-
-
-      wc_cp_a(jc_h,jc_nh4,ja_no3)	= -3.0708 	! @@@@
-      wc_cp_a(jc_h,jc_na,ja_no3)	=  0.46039	! @@@@
-      wc_cp_a(jc_nh4,jc_na,ja_no3)	= -0.35411	! @@@@
-      wc_cp_a(jc_h,jc_ca,ja_no3)	=  8.343 ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      wc_cp_a(jc_nh4,jc_h,ja_no3)	= wc_cp_a(jc_h,jc_nh4,ja_no3)
-      wc_cp_a(jc_na,jc_h,ja_no3)	= wc_cp_a(jc_h,jc_na,ja_no3)
-      wc_cp_a(jc_na,jc_nh4,ja_no3)	= wc_cp_a(jc_nh4,jc_na,ja_no3)
-      wc_cp_a(jc_ca,jc_h,ja_no3)	= wc_cp_a(jc_h,jc_ca,ja_no3) ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-
-      q1_c_cp_a(jc_h,jc_nh4,ja_no3)	= 0.28491 	! @@@@
-      q1_c_cp_a(jc_h,jc_na,ja_no3)	= 0.0     	! @@@@
-      q1_c_cp_a(jc_nh4,jc_na,ja_no3)	= 0.046254	! @@@@
-      q1_c_cp_a(jc_h,jc_ca,ja_no3)	= -3.678 ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      q1_c_cp_a(jc_nh4,jc_h,ja_no3)	= 0.28491 	! @@@@
-      q1_c_cp_a(jc_na,jc_h,ja_no3)	= 0.0     	! @@@@
-      q1_c_cp_a(jc_na,jc_nh4,ja_no3)	= 0.046254	! @@@@
-      q1_c_cp_a(jc_ca,jc_h,ja_no3)	= -3.678 ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-
-! (c,c',cl)
-      uc_cp_a(jc_h,jc_nh4,ja_cl)	= 0.0 		! @@@@
-      uc_cp_a(jc_h,jc_na,ja_cl)		= 0.0 		! @@@@
-      uc_cp_a(jc_nh4,jc_na,ja_cl)	= 0.0		! @@@@
-      uc_cp_a(jc_h,jc_ca,ja_cl)         = 0.0	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      uc_cp_a(jc_nh4,jc_h,ja_cl)	= -uc_cp_a(jc_h,jc_nh4,ja_cl)
-      uc_cp_a(jc_na,jc_h,ja_cl)		= -uc_cp_a(jc_h,jc_na,ja_cl)
-      uc_cp_a(jc_na,jc_nh4,ja_cl)	= -uc_cp_a(jc_nh4,jc_na,ja_cl)
-      uc_cp_a(jc_ca,jc_h,ja_cl)         = -uc_cp_a(jc_h,jc_ca,ja_cl) ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-
-      wc_cp_a(jc_h,jc_nh4,ja_cl)	= -19.977 	! @@@@
-      wc_cp_a(jc_h,jc_na,ja_cl)		= 2.2490 	! @@@@
-      wc_cp_a(jc_nh4,jc_na,ja_cl)	= -5.6414 	! @@@@
-      wc_cp_a(jc_h,jc_ca,ja_cl)		= -8.112 ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      wc_cp_a(jc_nh4,jc_h,ja_cl)	= wc_cp_a(jc_h,jc_nh4,ja_cl)
-      wc_cp_a(jc_na,jc_h,ja_cl)		= wc_cp_a(jc_h,jc_na,ja_cl)
-      wc_cp_a(jc_na,jc_nh4,ja_cl)	= wc_cp_a(jc_nh4,jc_na,ja_cl)
-      wc_cp_a(jc_ca,jc_h,ja_cl)		= wc_cp_a(jc_h,jc_ca,ja_cl) ! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-
-      q1_c_cp_a(jc_h,jc_nh4,ja_cl)	= 10.233 	! @@@@
-      q1_c_cp_a(jc_h,jc_na,ja_cl)	= -0.25080	! @@@@
-      q1_c_cp_a(jc_nh4,jc_na,ja_cl)	= 3.2919 	! @@@@
-      q1_c_cp_a(jc_h,jc_ca,ja_cl)	= 12.67	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-      q1_c_cp_a(jc_nh4,jc_h,ja_cl)	= 10.233 	! @@@@
-      q1_c_cp_a(jc_na,jc_h,ja_cl)	= -0.25080	! @@@@
-      q1_c_cp_a(jc_na,jc_nh4,ja_cl)	= 3.2919 	! @@@@
-      q1_c_cp_a(jc_ca,jc_h,ja_cl)	= 12.67	! clegg, pitzer & brimblecombe, j.phys.chem. 1992
-
-
-! (a,a',h)
-      ua_ap_c(ja_hso4,ja_so4,jc_h)	= 0.0 		! @@@@
-      ua_ap_c(ja_hso4,ja_no3,jc_h) =0.201362+0.08483*(tdum-273.15) ! @@@@
-      ua_ap_c(ja_hso4,ja_cl,jc_h)	= 0.0 		! @@@@
-      ua_ap_c(ja_so4,ja_no3,jc_h)	= 0.0  		! @@@@
-      ua_ap_c(ja_so4,ja_cl,jc_h)	= 0.0  		! @@@@
-      ua_ap_c(ja_no3,ja_cl,jc_h)	= 0.0  		! @@@@
-
-      ua_ap_c(ja_so4,ja_hso4,jc_h)	= -ua_ap_c(ja_hso4,ja_so4,jc_h)
-      ua_ap_c(ja_no3,ja_hso4,jc_h)	= -ua_ap_c(ja_hso4,ja_no3,jc_h)
-      ua_ap_c(ja_cl,ja_hso4,jc_h)	= -ua_ap_c(ja_hso4,ja_cl,jc_h)
-      ua_ap_c(ja_no3,ja_so4,jc_h)	= -ua_ap_c(ja_so4,ja_no3,jc_h)
-      ua_ap_c(ja_cl,ja_so4,jc_h)	= -ua_ap_c(ja_so4,ja_cl,jc_h)
-      ua_ap_c(ja_cl,ja_no3,jc_h)	= -ua_ap_c(ja_no3,ja_cl,jc_h)
-
-
-      wa_ap_c(ja_hso4,ja_so4,jc_h)	= 0.0 		! @@@@
-      wa_ap_c(ja_hso4,ja_no3,jc_h)	= -4.280 	! @@@@
-      wa_ap_c(ja_hso4,ja_cl,jc_h)	= 0.0  		! @@@@
-      wa_ap_c(ja_so4,ja_no3,jc_h) = -0.033291*(tdum-273.15) ! @@@@
-      wa_ap_c(ja_so4,ja_cl,jc_h)	= 0.0  		! @@@@
-      wa_ap_c(ja_no3,ja_cl,jc_h)	= 0.0  		! @@@@
-
-      wa_ap_c(ja_so4,ja_hso4,jc_h)	= wa_ap_c(ja_hso4,ja_so4,jc_h)
-      wa_ap_c(ja_no3,ja_hso4,jc_h)	= wa_ap_c(ja_hso4,ja_no3,jc_h)
-      wa_ap_c(ja_cl,ja_hso4,jc_h)	= wa_ap_c(ja_hso4,ja_cl,jc_h)
-      wa_ap_c(ja_no3,ja_so4,jc_h)	= wa_ap_c(ja_so4,ja_no3,jc_h)
-      wa_ap_c(ja_cl,ja_so4,jc_h)	= wa_ap_c(ja_so4,ja_cl,jc_h)
-      wa_ap_c(ja_cl,ja_no3,jc_h)	= wa_ap_c(ja_no3,ja_cl,jc_h)
-
-
-      q1_a_ap_c(ja_hso4,ja_so4,jc_h)	= 0.0 		! @@@@
-      q1_a_ap_c(ja_hso4,ja_no3,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_hso4,ja_cl,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_so4,ja_no3,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_so4,ja_cl,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_no3,ja_cl,jc_h)	= 0.0  		! @@@@
-
-      q1_a_ap_c(ja_so4,ja_hso4,jc_h)	= 0.0 		! @@@@
-      q1_a_ap_c(ja_no3,ja_hso4,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_cl,ja_hso4,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_no3,ja_so4,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_cl,ja_so4,jc_h)	= 0.0  		! @@@@
-      q1_a_ap_c(ja_cl,ja_no3,jc_h)	= 0.0  		! @@@@
-
-
-! (a,a',nh4)
-      ua_ap_c(ja_hso4,ja_so4,jc_nh4)	= -16.317 	! @@@@
-      ua_ap_c(ja_hso4,ja_no3,jc_nh4)	=  0.0   	! @@@@
-      ua_ap_c(ja_hso4,ja_cl,jc_nh4)	=  0.0		! @@@@
-      ua_ap_c(ja_so4,ja_no3,jc_nh4)	= -1.2163	! @@@@
-      ua_ap_c(ja_so4,ja_cl,jc_nh4)	= -1.0709	! @@@@
-      ua_ap_c(ja_no3,ja_cl,jc_nh4)	=  0.0
-
-      ua_ap_c(ja_so4,ja_hso4,jc_nh4)	= +16.317	! @@@@
-      ua_ap_c(ja_no3,ja_hso4,jc_nh4)	=  0.0   	! @@@@
-      ua_ap_c(ja_cl,ja_hso4,jc_nh4)	=  0.0   	! @@@@
-      ua_ap_c(ja_no3,ja_so4,jc_nh4)	= +1.2163	! @@@@
-      ua_ap_c(ja_cl,ja_so4,jc_nh4)	= +1.0709	! @@@@
-      ua_ap_c(ja_cl,ja_no3,jc_nh4)	=  0.0
-
-
-      wa_ap_c(ja_hso4,ja_so4,jc_nh4)	= -14.753 	! @@@@
-      wa_ap_c(ja_hso4,ja_no3,jc_nh4)	= -2.9369	! @@@@
-      wa_ap_c(ja_hso4,ja_cl,jc_nh4)	= 0.0    	! @@@@
-      wa_ap_c(ja_so4,ja_no3,jc_nh4)	= 0.0    	! @@@@
-      wa_ap_c(ja_so4,ja_cl,jc_nh4)	= 0.0    	! @@@@
-      wa_ap_c(ja_no3,ja_cl,jc_nh4)	= -0.2207	! @@@@
-
-      wa_ap_c(ja_so4,ja_hso4,jc_nh4)	= -14.753 	! @@@@
-      wa_ap_c(ja_no3,ja_hso4,jc_nh4)	= -2.9369	! @@@@
-      wa_ap_c(ja_cl,ja_hso4,jc_nh4)	= 0.0    	! @@@@
-      wa_ap_c(ja_no3,ja_so4,jc_nh4)	= 0.0    	! @@@@
-      wa_ap_c(ja_cl,ja_so4,jc_nh4)	= 0.0    	! @@@@
-      wa_ap_c(ja_cl,ja_no3,jc_nh4)	= -0.2207	! @@@@
-
-
-      q1_a_ap_c(ja_hso4,ja_so4,jc_nh4)	= 4.7204  	! @@@@
-      q1_a_ap_c(ja_hso4,ja_no3,jc_nh4)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_hso4,ja_cl,jc_nh4)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_so4,ja_no3,jc_nh4)	= 2.9795 	! @@@@
-      q1_a_ap_c(ja_so4,ja_cl,jc_nh4)	= 1.0869 	! @@@@
-      q1_a_ap_c(ja_no3,ja_cl,jc_nh4)	= -0.1173 	! @@@@
-
-      q1_a_ap_c(ja_so4,ja_hso4,jc_nh4)	= 4.7204  	! @@@@
-      q1_a_ap_c(ja_no3,ja_hso4,jc_nh4)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_cl,ja_hso4,jc_nh4)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_no3,ja_so4,jc_nh4)	= 2.9795 	! @@@@
-      q1_a_ap_c(ja_cl,ja_so4,jc_nh4)	= 1.0869 	! @@@@
-      q1_a_ap_c(ja_cl,ja_no3,jc_nh4)	= -0.1173 	! @@@@
-
-
-! (a,a',na)
-      ua_ap_c(ja_hso4,ja_so4,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_hso4,ja_no3,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_hso4,ja_cl,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_so4,ja_no3,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_so4,ja_cl,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_no3,ja_cl,jc_na)	= 0.0     	! @@@@
-
-      ua_ap_c(ja_so4,ja_hso4,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_no3,ja_hso4,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_cl,ja_hso4,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_no3,ja_so4,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_cl,ja_so4,jc_na)	= 0.0     	! @@@@
-      ua_ap_c(ja_cl,ja_no3,jc_na)	= 0.0     	! @@@@
-
-
-      wa_ap_c(ja_hso4,ja_so4,jc_na)	= 0.0      	! @@@@
-      wa_ap_c(ja_hso4,ja_no3,jc_na)	= 0.0      	! @@@@
-      wa_ap_c(ja_hso4,ja_cl,jc_na)	= 0.0      	! @@@@
-      wa_ap_c(ja_so4,ja_no3,jc_na)	= -9.498	! @@@@
-      wa_ap_c(ja_so4,ja_cl,jc_na)	= 4.827		! @@@@
-      wa_ap_c(ja_no3,ja_cl,jc_na)	= -6.923	! @@@@
-
-      wa_ap_c(ja_so4,ja_hso4,jc_na)	= 0.0      	! @@@@
-      wa_ap_c(ja_no3,ja_hso4,jc_na)	= 0.0      	! @@@@
-      wa_ap_c(ja_cl,ja_hso4,jc_na)	= 0.0     	! @@@@
-      wa_ap_c(ja_no3,ja_so4,jc_na)	= -9.498	! @@@@
-      wa_ap_c(ja_cl,ja_so4,jc_na)	= 4.827		! @@@@
-      wa_ap_c(ja_cl,ja_no3,jc_na)	= -6.923	! @@@@
-
-
-      q1_a_ap_c(ja_hso4,ja_so4,jc_na)	= -4.68641	! @@@@
-      q1_a_ap_c(ja_hso4,ja_no3,jc_na)	= 0.0     	! @@@@
-      q1_a_ap_c(ja_hso4,ja_cl,jc_na)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_so4,ja_no3,jc_na)	= 8.528  	! @@@@
-      q1_a_ap_c(ja_so4,ja_cl,jc_na)	= 0.05163	! @@@@
-      q1_a_ap_c(ja_no3,ja_cl,jc_na)	= 4.181  	! @@@@
-
-      q1_a_ap_c(ja_so4,ja_hso4,jc_na)	= -4.68641	! @@@@
-      q1_a_ap_c(ja_no3,ja_hso4,jc_na)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_cl,ja_hso4,jc_na)	= 0.0    	! @@@@
-      q1_a_ap_c(ja_no3,ja_so4,jc_na)	= 8.528  	! @@@@
-      q1_a_ap_c(ja_cl,ja_so4,jc_na)	= 0.05163	! @@@@
-      q1_a_ap_c(ja_cl,ja_no3,jc_na)	= 4.181  	! @@@@
-
-
-
-
-!--------------
-
-      xnuc(jc_h,ja_hso4)   = 0.5	! za(ja_hso4)/(zc(jc_h)+za(ja_hso4))
-      xnuc(jc_h,ja_so4)    = 0.66666667	! za(ja_so4)/(zc(jc_h)+za(ja_so4))
-      xnuc(jc_h,ja_no3)    = 0.5	! za(ja_no3)/(zc(jc_h)+za(ja_no3))
-      xnuc(jc_h,ja_cl)     = 0.5	! za(ja_cl)/(zc(jc_h)+za(ja_cl))
-
-      xnuc(jc_nh4,ja_hso4) = 0.5	! za(ja_hso4)/(zc(jc_nh4)+za(ja_hso4))
-      xnuc(jc_nh4,ja_so4)  = 0.66666667	! za(ja_so4)/(zc(jc_nh4)+za(ja_so4))
-      xnuc(jc_nh4,ja_no3)  = 0.5	! za(ja_no3)/(zc(jc_nh4)+za(ja_no3))
-      xnuc(jc_nh4,ja_cl)   = 0.5	! za(ja_cl)/(zc(jc_nh4)+za(ja_cl))
-
-      xnuc(jc_na,ja_hso4)  = 0.5	! za(ja_hso4)/(zc(jc_na)+za(ja_hso4))
-      xnuc(jc_na,ja_so4)   = 0.66666667	! za(ja_so4)/(zc(jc_na)+za(ja_so4))
-      xnuc(jc_na,ja_no3)   = 0.5	! za(ja_no3)/(zc(jc_na)+za(ja_no3))
-      xnuc(jc_na,ja_cl)    = 0.5	! za(ja_cl)/(zc(jc_na)+za(ja_cl))
-
-      xnuc(jc_ca,ja_hso4)  = 0.33333333	! za(ja_hso4)/(zc(jc_ca)+za(ja_hso4))
-      xnuc(jc_ca,ja_so4)   = 0.5	! za(ja_so4)/(zc(jc_ca)+za(ja_so4))
-      xnuc(jc_ca,ja_no3)   = 0.33333333	! za(ja_no3)/(zc(jc_ca)+za(ja_no3))
-      xnuc(jc_ca,ja_cl)    = 0.33333333	! za(ja_cl)/(zc(jc_ca)+za(ja_cl))
-
-!-------------
-
-      xnua(ja_hso4,jc_h)   = 0.5	! zc(jc_h)/(zc(jc_h)+za(ja_hso4))
-      xnua(ja_hso4,jc_nh4) = 0.5	! zc(jc_nh4)/(zc(jc_nh4)+za(ja_hso4))
-      xnua(ja_hso4,jc_na)  = 0.5	! zc(jc_na)/(zc(jc_na)+za(ja_hso4))
-      xnua(ja_hso4,jc_ca)  = 0.66666667	! zc(jc_ca)/(zc(jc_ca)+za(ja_hso4))
-
-      xnua(ja_so4,jc_h)    = 0.33333333 ! zc(jc_h)/(zc(jc_h)+za(ja_so4))
-      xnua(ja_so4,jc_nh4)  = 0.33333333	! zc(jc_nh4)/(zc(jc_nh4)+za(ja_so4))
-      xnua(ja_so4,jc_na)   = 0.33333333	! zc(jc_na)/(zc(jc_na)+za(ja_so4))
-      xnua(ja_so4,jc_ca)   = 0.5	! zc(jc_ca)/(zc(jc_ca)+za(ja_so4))
-
-      xnua(ja_no3,jc_h)    = 0.5	! zc(jc_h)/(zc(jc_h)+za(ja_no3))
-      xnua(ja_no3,jc_nh4)  = 0.5	! zc(jc_nh4)/(zc(jc_nh4)+za(ja_no3))
-      xnua(ja_no3,jc_na)   = 0.5	! zc(jc_na)/(zc(jc_na)+za(ja_no3))
-      xnua(ja_no3,jc_ca)   = 0.66666667	! zc(jc_ca)/(zc(jc_ca)+za(ja_no3))
-
-      xnua(ja_cl,jc_h)     = 0.5	! zc(jc_h)/(zc(jc_h)+za(ja_cl))
-      xnua(ja_cl,jc_nh4)   = 0.5	! zc(jc_nh4)/(zc(jc_nh4)+za(ja_cl))
-      xnua(ja_cl,jc_na)    = 0.5	! zc(jc_na)/(zc(jc_na)+za(ja_cl))
-      xnua(ja_cl,jc_ca)    = 0.66666667	! zc(jc_ca)/(zc(jc_ca)+za(ja_cl))
-
-
-
       endif ! first
 
       return
@@ -17316,25 +11837,25 @@
 !     implicit none
 !     include 'mosaic.h'
 ! local variables
-      real tr, rt, term
+      integer iv, j_index, ibin, je
+      real(kind=8) tr, rt, term
 ! function
-!     real fn_keq
+!     real(kind=8) fn_keq, fn_po, drh_mutual, bin_molality
 
-!
+
       tr = 298.15			! reference temperature
-!
       rt = 82.056*t_k/(1.e9*1.e6)	! [m^3 atm/nmol]
 
 ! gas-liquid
-      keq_gl(1)= 1.0				        ! kelvin effect (default)
-      keq_gl(2)= fn_keq(57.64 , 13.79, -5.39,t_k)*rt     ! nh3(g)  <=> nh3(l)
-      keq_gl(3)= fn_keq(2.63e6, 29.17, 16.83,t_k)*rt     ! hno3(g) <=> no3- + h+
-      keq_gl(4)= fn_keq(2.00e6, 30.20, 19.91,t_k)*rt     ! hcl(g)  <=> cl- + h+
+      keq_gl(1)= 1.0				         ! kelvin effect (default)
+      keq_gl(2)= fn_keq(57.64d0 , 13.79d0, -5.39d0,t_k)*rt     ! nh3(g)  <=> nh3(l)
+      keq_gl(3)= fn_keq(2.63d6, 29.17d0, 16.83d0,t_k)*rt     ! hno3(g) <=> no3- + h+
+      keq_gl(4)= fn_keq(2.00d6, 30.20d0, 19.91d0,t_k)*rt     ! hcl(g)  <=> cl- + h+
 
 ! liquid-liquid
-      keq_ll(1)= fn_keq(1.0502e-2, 8.85, 25.14,t_k)      ! hso4- <=> so4= + h+
-      keq_ll(2)= fn_keq(1.805e-5, -1.50, 26.92,t_k)      ! nh3(l) + h2o = nh4+ + oh-
-      keq_ll(3)= fn_keq(1.01e-14,-22.52, 26.92,t_k)      ! h2o(l) <=> h+ + oh-
+      keq_ll(1)= fn_keq(1.0502d-2, 8.85d0, 25.14d0,t_k)      ! hso4- <=> so4= + h+
+      keq_ll(2)= fn_keq(1.805d-5, -1.50d0, 26.92d0,t_k)      ! nh3(l) + h2o = nh4+ + oh-
+      keq_ll(3)= fn_keq(1.01d-14,-22.52d0, 26.92d0,t_k)      ! h2o(l) <=> h+ + oh-
 
 
       kp_nh3   = keq_ll(3)/(keq_ll(2)*keq_gl(2))
@@ -17343,26 +11864,58 @@
 
 
 ! solid-gas
-      keq_sg(1)= fn_keq(4.72e-17,-74.38,6.12,t_k)/rt**2  ! nh4no3<=>nh3(g)+hno3(g)
-      keq_sg(2)= fn_keq(8.43e-17,-71.00,2.40,t_k)/rt**2  ! nh4cl <=>nh3(g)+hcl(g)
+      keq_sg(1)= fn_keq(4.72d-17,-74.38d0,6.12d0,t_k)/rt**2  ! nh4no3<=>nh3(g)+hno3(g)
+      keq_sg(2)= fn_keq(8.43d-17,-71.00d0,2.40d0,t_k)/rt**2  ! nh4cl <=>nh3(g)+hcl(g)
+
 
 ! solid-liquid
-      keq_sl(jnh4so4) = fn_keq(1.040,-2.65, 38.57, t_k)  ! amso4(s) = 2nh4+ + so4=
-      keq_sl(jlvcite) = fn_keq(11.8, -5.19, 54.40, t_k)  ! lvcite(s)= 3nh4+ + hso4- + so4=
-      keq_sl(jnh4hso4)= fn_keq(117.0,-2.87, 15.83, t_k)  ! amhso4(s)= nh4+ + hso4-
-      keq_sl(jnh4no3) = fn_keq(12.21,-10.4, 17.56, t_k)  ! nh4no3(s)= nh4+ + no3-
-      keq_sl(jnh4cl)  = fn_keq(17.37,-6.03, 16.92, t_k)  ! nh4cl(s) = nh4+ + cl-
-      keq_sl(jna2so4) = fn_keq(0.491, 0.98, 39.75, t_k)  ! na2so4(s)= 2na+ + so4=
-      keq_sl(jnahso4) = fn_keq(313.0, 0.8,  14.79, t_k)  ! nahso4(s)= na+ + hso4-
-      keq_sl(jna3hso4)= 1.e10		 	        ! na3h(so4)2(s) = 2na+ + hso4- + so4=
-      keq_sl(jnano3)  = fn_keq(11.95,-8.22, 16.01, t_k)  ! nano3(s) = na+ + no3-
-      keq_sl(jnacl)   = fn_keq(38.28,-1.52, 16.89, t_k)  ! nacl(s)  = na+ + cl-
-      keq_sl(jcacl2)  = fn_keq(8.0e11,32.84,44.79, t_k)*1.e5  ! cacl2(s) = ca++ + 2cl-
-      keq_sl(jcano3)  = fn_keq(4.31e5, 7.83,42.01, t_k)*1.e5  ! ca(no3)2(s) = ca++ + 2no3-
+      keq_sl(jnh4so4) = fn_keq(1.040d0,-2.65d0, 38.57d0, t_k)  ! amso4(s) = 2nh4+ + so4=
+      keq_sl(jlvcite) = fn_keq(11.8d0, -5.19d0, 54.40d0, t_k)  ! lvcite(s)= 3nh4+ + hso4- + so4=
+      keq_sl(jnh4hso4)= fn_keq(117.0d0,-2.87d0, 15.83d0, t_k)  ! amhso4(s)= nh4+ + hso4-
+      keq_sl(jnh4msa) = 1.e15				 ! NH4MSA(s)= NH4+ + MSA-
+      keq_sl(jnh4no3) = fn_keq(12.21d0,-10.4d0, 17.56d0, t_k)  ! nh4no3(s)= nh4+ + no3-
+      keq_sl(jnh4cl)  = fn_keq(17.37d0,-6.03d0, 16.92d0, t_k)  ! nh4cl(s) = nh4+ + cl-
+      keq_sl(jna2so4) = fn_keq(0.491d0, 0.98d0, 39.75d0, t_k)  ! na2so4(s)= 2na+ + so4=
+      keq_sl(jnahso4) = fn_keq(313.0d0, 0.8d0,  14.79d0, t_k)  ! nahso4(s)= na+ + hso4-
+      keq_sl(jna3hso4)= 1.e15		 	         ! na3h(so4)2(s) = 2na+ + hso4- + so4=
+      keq_sl(jnamsa)  = 1.e15				 ! NaMSA(s) = Na+ + MSA-
+      keq_sl(jnano3)  = fn_keq(11.95d0,-8.22d0, 16.01d0, t_k)  ! nano3(s) = na+ + no3-
+      keq_sl(jnacl)   = fn_keq(38.28d0,-1.52d0, 16.89d0, t_k)  ! nacl(s)  = na+ + cl-
+      keq_sl(jcacl2)  = fn_keq(8.0d11,32.84d0,44.79d0, t_k)*1.e5  ! cacl2(s) = ca++ + 2cl-
+      keq_sl(jcano3)  = fn_keq(4.31d5, 7.83d0,42.01d0, t_k)*1.e5  ! ca(no3)2(s) = ca++ + 2no3-
+      keq_sl(jcamsa2) = 1.e15				 ! CaMSA2(s)= Ca+ + 2MSA-
 
+! vapor pressures of soa species
+      po_soa(iaro1_g) = fn_po(5.7d-5, 156.0d0, t_k)	! [pascal]
+      po_soa(iaro2_g) = fn_po(1.6d-3, 156.0d0, t_k)	! [pascal]
+      po_soa(ialk1_g) = fn_po(5.0d-6, 156.0d0, t_k)	! [pascal]
+      po_soa(iole1_g) = fn_po(5.0d-6, 156.0d0, t_k)	! [pascal]
+      po_soa(iapi1_g) = fn_po(4.0d-6, 156.0d0, t_k)	! [pascal]
+      po_soa(iapi2_g) = fn_po(1.7d-4, 156.0d0, t_k)	! [pascal]
+      po_soa(ilim1_g) = fn_po(2.5d-5, 156.0d0, t_k)	! [pascal]
+      po_soa(ilim2_g) = fn_po(1.2d-4, 156.0d0, t_k)	! [pascal]
 
+      do iv = iaro1_g, ngas_volatile
+        sat_soa(iv) = 1.e9*po_soa(iv)/(8.314*t_k)	! [nmol/m^3(air)]
+      enddo
+
+! water surface tension
       term = (647.15 - t_k)/647.15
       sigma_water = 0.2358*term**1.256 * (1. - 0.625*term) ! surface tension of pure water in n/m
+
+! mdrh(t)
+      do j_index = 1, 63
+        mdrh_t(j_index) = drh_mutual(j_index)
+      enddo
+
+
+
+! rh dependent parameters
+      do ibin = 1, nbin_a
+        ah2o_a(ibin) = ah2o			! initialize
+      enddo
+
+      call mtem_compute_log_gamz		! function of ah2o and t
 
 
       return
@@ -17381,16 +11934,16 @@
 
 
 !----------------------------------------------------------
-      real function fn_keq(keq_298, a, b, t)
+      real(kind=8) function fn_keq(keq_298, a, b, t)
 !     implicit none
 ! subr. arguments
-      real keq_298, a, b, t
+      real(kind=8) keq_298, a, b, t
 ! local variables
-      real tt
+      real(kind=8) tt
 
 
         tt = 298.15/t
-        fn_keq = keq_298*exp(a*(tt-1.)+b*(1.+alog(tt)-tt))
+        fn_keq = keq_298*exp(a*(tt-1.)+b*(1.+log(tt)-tt))
 
       return
       end function fn_keq
@@ -17399,8 +11952,26 @@
 
 
 
+
 !----------------------------------------------------------
-      real function drh_mutual(j_index)
+      real(kind=8) function fn_po(po_298, dh, t)	! touch
+!     implicit none
+! subr. arguments
+      real(kind=8) po_298, dh, t
+! local variables
+
+        fn_po = po_298*exp(-(dh/8.314e-3)*(1./t - 3.354016435e-3))
+
+      return
+      end function fn_po
+!----------------------------------------------------------
+
+
+
+
+
+!----------------------------------------------------------
+      real(kind=8) function drh_mutual(j_index)
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
@@ -17411,10 +11982,19 @@
 
       j = j_index
 
-      drh_mutual = d_mdrh(j,1)    +   &
-                   d_mdrh(j,2)*t_k +   &
-                   d_mdrh(j,3)*t_k**2 +   &
-                   d_mdrh(j,4)*t_k**3
+      if(j_index .eq. 7 .or. j_index .eq. 8 .or.   &
+        (j_index.ge. 34 .and. j_index .le. 51))then
+
+        drh_mutual = 10.0  ! cano3 or cacl2 containing mixtures
+
+      else
+
+        drh_mutual =  d_mdrh(j,1) + t_k*   &
+                     (d_mdrh(j,2) + t_k*   &
+                     (d_mdrh(j,3) + t_k*   &
+                      d_mdrh(j,4) )) + 1.0
+
+      endif
 
 
       return
@@ -17429,22 +12009,22 @@
 !----------------------------------------------------------
 ! zsr method at 60% rh
 !
-      real function aerosol_water_up(ibin) ! kg (water)/m^3 (air)
+      real(kind=8) function aerosol_water_up(ibin) ! kg (water)/m^3 (air)
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
       integer ibin
 ! local variables
       integer jp, je
-      real dum
+      real(kind=8) dum
 ! function
-!     real bin_molality_60
+!     real(kind=8) bin_molality_60
 
 
       jp = jtotal
       dum = 0.0
 
-      do je = 1, 12	! exclude hno3 and hcl in water calculation
+      do je = 1, (nsalt+4)	! include hno3 and hcl in water calculation
         dum = dum + 1.e-9*electrolyte(je,jp,ibin)/bin_molality_60(je)
       enddo
 
@@ -17461,47 +12041,52 @@
 
 !----------------------------------------------------------
 ! zsr method
-      real function aerosol_water(jp,ibin) ! kg (water)/m^3 (air)
+      real(kind=8) function aerosol_water(jp,ibin) ! kg (water)/m^3 (air)
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
       integer jp, ibin
 ! local variables
       integer je
-      real dum
+      real(kind=8) dum
 ! function
-!     real bin_molality
+!     real(kind=8) bin_molality
+
+
 
       dum = 0.0
-
-      do je = 1, 15	! exclude hno3 and hcl in water calculation
+      do je = 1, (nsalt+4)	! include hno3 and hcl in water calculation
         dum = dum + 1.e-9*electrolyte(je,jp,ibin)/bin_molality(je,ibin)
       enddo
 
       aerosol_water = dum
 
       if(aerosol_water .le. 0.0)then
-        write(6,*)'iclm  jclm  ibin  jp = ',   &
-                   iclm_aer, jclm_aer, ibin, jp
-        write(6,*)'ah2o, water = ', ah2o, aerosol_water
-        write(6,*)'dry mass = ', mass_dry_a(ibin)
-        write(6,*)'soluble mass = ', mass_soluble_a(ibin)
-        write(6,*)'number = ', num_a(ibin)
-        do je = 1, nsoluble
-          write(6,44)ename(je), electrolyte(je,jp,ibin)
-        enddo
-        write(6,*)'error in water calculation'
-        write(6,*)'water content cannot be negative or zero'
-        write(6,*)'setting jaerosolstate to all_solid'
+        if (iprint_mosaic_diag1 .gt. 0) then
+          write(6,*)'mosaic aerosol_water - water .le. 0'
+          write(6,*)'iclm  jclm  ibin  jp = ',   &
+                     iclm_aer, jclm_aer, ibin, jp
+          write(6,*)'ah2o, water = ', ah2o, aerosol_water
+          write(6,*)'dry mass = ', mass_dry_a(ibin)
+          write(6,*)'soluble mass = ', mass_soluble_a(ibin)
+          write(6,*)'number = ', num_a(ibin)
+          do je = 1, nsoluble
+            write(6,44)ename(je), electrolyte(je,jp,ibin)
+          enddo
+          write(6,*)'error in water calculation'
+          write(6,*)'ibin = ', ibin
+          write(6,*)'water content cannot be negative or zero'
+          write(6,*)'setting jaerosolstate to all_solid'
+        endif
+
+        call print_input
 
         jaerosolstate(ibin) = all_solid
         jphase(ibin)    = jsolid
         jhyst_leg(ibin) = jhyst_lo
 
-!        write(6,*)'stopping execution in function aerosol_water'
-!        stop
-!        call peg_error_fatal( lunerr_aer,
-!     &      'stopping execution in function aerosol_water' )
+!c        write(6,*)'stopping execution in function aerosol_water'
+!c        stop
       endif
 
 44    format(a7, 2x, e11.3)
@@ -17516,33 +12101,33 @@
 
 
 !----------------------------------------------------------
-      real function bin_molality(je,ibin)
+      real(kind=8) function bin_molality(je,ibin)
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
       integer je, ibin
 ! local variables
-      real aw, xm
+      real(kind=8) aw, xm
 
 
       aw = max(ah2o_a(ibin), aw_min(je))
-      aw = min(aw, 0.99999)
+      aw = min(aw, 0.999999D0)
 
 
       if(aw .lt. 0.97)then
 
-        xm = a_zsr(1,je)        +   &
-             a_zsr(2,je)*aw    +   &
-             a_zsr(3,je)*aw**2 +   &
-             a_zsr(4,je)*aw**3 +   &
-             a_zsr(5,je)*aw**4 +   &
-             a_zsr(6,je)*aw**5
+        xm =     a_zsr(1,je) +   &
+             aw*(a_zsr(2,je) +   &
+             aw*(a_zsr(3,je) +   &
+             aw*(a_zsr(4,je) +   &
+             aw*(a_zsr(5,je) +   &
+             aw* a_zsr(6,je) ))))
 
         bin_molality = 55.509*xm/(1. - xm)
 
       else
 
-        bin_molality = -b_zsr(je)*alog(aw)
+        bin_molality = -b_zsr(je)*log(aw)
 
       endif
 
@@ -17556,23 +12141,23 @@
 
 
 !----------------------------------------------------------
-      real function bin_molality_60(je)
+      real(kind=8) function bin_molality_60(je)
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
       integer je
 ! local variables
-      real aw, xm
+      real(kind=8) aw, xm
 
 
       aw = 0.6
 
-      xm = a_zsr(1,je)        +   &
-           a_zsr(2,je)*aw    +   &
-           a_zsr(3,je)*aw**2 +   &
-           a_zsr(4,je)*aw**3 +   &
-           a_zsr(5,je)*aw**4 +   &
-           a_zsr(6,je)*aw**5
+        xm =  a_zsr(1,je) + aw*   &
+             (a_zsr(2,je) + aw*   &
+             (a_zsr(3,je) + aw*   &
+             (a_zsr(4,je) + aw*   &
+             (a_zsr(5,je) + aw*   &
+              a_zsr(6,je) ))))
 
       bin_molality_60 = 55.509*xm/(1. - xm)
 
@@ -17585,13 +12170,13 @@
 
 
 !----------------------------------------------------------
-      real function fnlog_gamz(ja,je)	! ja in je
+      real(kind=8) function fnlog_gamz(ja,je)	! ja in je
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
       integer ja, je
 ! local variables
-      real aw
+      real(kind=8) aw
 
 
       aw = max(ah2o, aw_min(je))
@@ -17611,32 +12196,10 @@
 
 
 !----------------------------------------------------------
-      real function fnlog_gam0(je,x)
-!     implicit none
-!     include 'mosaic.h'
-! subr. arguments
-      integer je
-      real x
-! local variables
-      real xi
-
-
-      xi = min(x, im_max(je))
-      fnlog_gam0 = b_km(1,je)*sqrt(xi) + xi*(b_km(2,je) +   &
-                   xi*(b_km(3,je) + xi*(b_km(4,je) + xi* b_km(5,je) )))
-
-      return
-      end function fnlog_gam0
-!----------------------------------------------------------
-
-
-
-
-!----------------------------------------------------------
-      real function mean_molecular_speed(t, mw)	! in cm/s
+      real(kind=8) function mean_molecular_speed(t, mw)	! in cm/s
 !     implicit none
 ! subr. arguments
-      real t, mw	! t(k)
+      real(kind=8) t, mw	! t(k)
 
         mean_molecular_speed = 1.455e4 * sqrt(t/mw)
 
@@ -17648,10 +12211,10 @@
 
 
 !----------------------------------------------------------
-      real function gas_diffusivity(t, p, mw, vm)	! in cm^2/s
+      real(kind=8) function gas_diffusivity(t, p, mw, vm)	! in cm^2/s
 !     implicit none
 ! subr. arguments
-      real mw, vm, t, p	! t(k), p(atm)
+      real(kind=8) mw, vm, t, p	! t(k), p(atm)
 
 
       gas_diffusivity = (1.0e-3 * t**1.75 * sqrt(1./mw + 0.035))/   &
@@ -17666,12 +12229,12 @@
 
 
 !----------------------------------------------------------
-      real function fuchs_sutugin(rkn,a)
+      real(kind=8) function fuchs_sutugin(rkn,a)
 !     implicit none
 ! subr. arguments
-      real rkn, a
+      real(kind=8) rkn, a
 ! local variables
-      real rnum, denom
+      real(kind=8) rnum, denom
 
 
       rnum  = 0.75*a*(1. + rkn)
@@ -17687,20 +12250,18 @@
 
 
 !----------------------------------------------------------
-      real function cubic( psngl, qsngl, rsngl )
+! solution to x^3 + px^2 + qx + r = 0
+!
+      real(kind=8) function cubic( p, q, r )
 !     implicit none
 ! subr arguments
-      real psngl, qsngl, rsngl
+      real(kind=8), intent(in) :: p, q, r
 ! local variables
-      double precision p, q, r, a, b, d, m, n, third, y
-      real k, phi, thesign, x(3), duma
+      real(kind=8) a, b, d, m, n, third, y
+      real(kind=8) k, phi, thesign, x(3), duma
       integer icase, kk
 
       third = 1.d0/3.d0
-
-      q = dble(qsngl)
-      p = dble(psngl)
-      r = dble(rsngl)
 
       a = (1.d0/3.d0)*((3.d0*q) - (p*p))
       b = (1.d0/27.d0)*((2.d0*p*p*p) - (9.d0*p*q) + (27.d0*r))
@@ -17761,8 +12322,8 @@
 ! rce 18-nov-2004 -- make sure that acos argument is between +/-1.0
 !     phi = acos(thesign*sqrt( (b*b/4.d0)/(-a*a*a/27.d0) ))	! radians
       duma = thesign*sqrt( (b*b/4.d0)/(-a*a*a/27.d0) )
-      duma = min( duma, +1.0 )
-      duma = max( duma, -1.0 )
+      duma = min( duma, +1.0D0 )
+      duma = max( duma, -1.0D0 )
       phi  = acos( duma )	! radians
 
 
@@ -17782,12 +12343,12 @@
 
 
 !----------------------------------------------------------
-      real function quadratic(a,b,c)
+      real(kind=8) function quadratic(a,b,c)
 !     implicit none
 ! subr. arguments
-      real a, b, c
+      real(kind=8) a, b, c
 ! local variables
-      real x, dum
+      real(kind=8) x, dum, quad1, quad2
 
 
         if(b .ne. 0.0)then
@@ -17797,9 +12358,9 @@
         endif
 
         if(abs(x) .lt. 1.e-6)then
-          dum = real( dble(0.5*x) +   &
-                      dble(0.125*x**2) +   &
-                      dble(0.0625*x**3) )
+          dum = (0.5*x) +   &
+                (0.125*x**2) +   &
+                (0.0625*x**3)
 
           quadratic = (-0.5*b/a)*dum
 
@@ -17808,13 +12369,54 @@
           endif
 
         else
-          quadratic = real(dble(-b)+dsqrt(dble(b*b)-dble(4.*a*c)))/   &
-                                          (2.*a)
+          quad1 = (-b+sqrt(b*b-4.*a*c))/(2.*a)
+          quad2 = (-b-sqrt(b*b-4.*a*c))/(2.*a)
+
+          quadratic = max(quad1, quad2)
         endif
 
       return
       end function quadratic
 !----------------------------------------------------------
+
+
+
+!----------------------------------------------------------
+! currently not used
+
+! two roots of a quadratic equation
+ 
+      subroutine quadratix(a,b,c, qx1,qx2)
+!      implicit none
+! subr. arguments
+      real(kind=8) a, b, c, qx1, qx2
+! local variables
+      real(kind=8) x, dum
+
+
+      if(b .ne. 0.0)then
+        x = 4.*(a/b)*(c/b)
+        else
+        x = 1.e+6
+      endif
+
+      if(abs(x) .lt. 1.e-6)then
+        dum = (0.5*x) +   &
+              (0.125*x**2) +   &
+              (0.0625*x**3)
+
+        qx1 = (-0.5*b/a)*dum
+        qx2 = -b/a - qx1
+
+      else
+
+        qx1 = (-b+sqrt(b*b - 4.*a*c))/(2.*a)
+        qx2 = (-b-sqrt(b*b - 4.*a*c))/(2.*a)
+
+      endif
+
+      return
+      end subroutine quadratix
 
 
 !=====================================================================
@@ -17861,22 +12463,28 @@
       integer iaer, ibin, iphase, isize, itype, je, k, l, m
       integer ilaporte, jlaporte
       integer p1st
-      real xt
+      real(kind=8) xt
 
 
 ! if a species index is less than this value, then the species is not defined
-      p1st = param_first_scalar
+	p1st = param_first_scalar
 
 ! fix number of subareas at 1
-      nsubareas = 1
-	
-      lunerr_aer = lunerr
-      ncorecnt_aer = ncorecnt
-	
+	nsubareas = 1
+
+	lunerr_aer = lunerr
+	ncorecnt_aer = ncorecnt
+
       call load_mosaic_parameters
-      
-      do 110 m = 1, nsubareas	
+
+      iclm_aer = iclm
+      jclm_aer = jclm
+
+      do 110 m = 1, nsubareas
       do 100 k = 1, nz
+
+        mclm_aer = m
+        kclm_aer = k
 
         cair_mol_m3 = cairclm(k)*1.e6	! cairclm(k) is in mol/cc
         cair_mol_cc = cairclm(k)
@@ -17902,9 +12510,9 @@
         enddo
 
 
-! rce 18-nov-2004 - map (transfer) aerosol mass/water/number from rsub 
+! rce 18-nov-2004 - map (transfer) aerosol mass/water/number from rsub
 !   to mosaic arrays (aer, watr_a, num_a)
-! always map so4 and number, 
+! always map so4 and number,
 !   but only map other species when (lptr_xxx .ge. p1st)
 ! (the mapping is identical to that done in mapgasaerspecies)
 
@@ -17916,7 +12524,11 @@
 
 ! aer array units are nmol/(m^3 air)
         l = lptr_so4_aer(isize,itype,iphase)
-        aer(iso4_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+        if (l .ge. p1st) then
+            aer(iso4_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+        else
+            aer(iso4_a,jtotal,ibin)=0.0
+        end if
 
         l = lptr_no3_aer(isize,itype,iphase)
         if (l .ge. p1st) then
@@ -17988,6 +12600,63 @@
             aer(ica_a,jtotal,ibin)=0.0
         end if
 
+! soa aerosol-phase species -- currently deactivated
+!       l = lptr_aro1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iaro1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iaro1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_aro2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iaro2_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iaro2_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_alk1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(ialk1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(ialk1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_ole1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iole1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iole1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_api1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iapi1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iapi1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_api2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(iapi2_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(iapi2_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_lim1_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(ilim1_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(ilim1_a,jtotal,ibin)=0.0
+!       end if
+
+!       l = lptr_lim2_aer(isize,itype,iphase)
+!       if (l .ge. p1st) then
+!           aer(ilim2_a,jtotal,ibin)=rsub(l,k,m)*conv1a
+!       else
+            aer(ilim2_a,jtotal,ibin)=0.0
+!       end if
+
 ! water_a and water_a_hyst units are kg/(m^3 air)
         l = hyswptr_aer(isize,itype)
         if (l .ge. p1st) then
@@ -18052,9 +12721,8 @@
 !-----------------------------------------------------------------------
       subroutine save_pregrow_props
 
-      use module_data_mosaic_asect, only:  drydens_pregrow, drymass_pregrow, &
-                                           ntype_aer, nsize_aer
-      use module_data_mosaic_other, only:  cairclm
+      use module_data_mosaic_asect
+      use module_data_mosaic_other
 
 !     implicit none
 !     include 'v33com'
@@ -18072,13 +12740,11 @@
       cair_mol_cc = cairclm(kclm_aer)
 
 ! compute then save drymass and drydens for each bin
-      ibin = 0
-      do itype = 1, ntype_aer
-      do isize = 1, nsize_aer(itype)
-      ibin = ibin + 1
+      do ibin = 1, nbin_a
 
       call calc_dry_n_wet_aerosol_props( ibin )
 
+      call isize_itype_from_ibin( ibin, isize, itype )
       drymass_pregrow(isize,itype) = mass_dry_a(ibin)/cair_mol_cc	! g/mol(air)
       if(jaerosolstate(ibin) .eq. no_aerosol) then
           drydens_pregrow(isize,itype) = -1.
@@ -18087,10 +12753,11 @@
       end if
 
       end do
-      end do
 
       return
       end subroutine save_pregrow_props
+
+
 
 
 
@@ -18109,7 +12776,7 @@
 	character*(*) fromwhere
 
 	return
-	end subroutine specialoutaa                                     
+	end subroutine specialoutaa
 
 
 
@@ -18131,20 +12798,17 @@
 !	include 'v33com9a'
 
 	integer iflag, iclm, jclm, kclm, msub
-	real dtchem
+	real(kind=8) dtchem
 
 !   local variables
 	integer lun
 	parameter (lun=83)
-	integer ientryno
-	save ientryno
+	integer, save :: ientryno = -13579
 	integer icomp, iphase, isize, itype, k, l, m, n
 
-	real dtchem_sv1
+	real(kind=8) dtchem_sv1
 	save dtchem_sv1
-	real rsub_sv1(l2maxd,kmaxd,nsubareamaxd)
-
-	data ientryno / -13579 /
+	real(kind=8) rsub_sv1(l2maxd,kmaxd,nsubareamaxd)
 
 
 !   bypass unless maerchem_boxtest_output > 0
@@ -18264,31 +12928,31 @@
 
 
 	return
-	end subroutine aerchem_boxtest_output 
+	end subroutine aerchem_boxtest_output
 
 
 
 !***********************************************************************
-! "debugging" output when mosaic encounters "fatal error" situation
+! 'debugging' output when mosaic encounters 'fatal error' situation
 !
 ! author: richard c. easter
 !-----------------------------------------------------------------------
-	subroutine mosaic_error_fatal( luna, ibin, msga )
+	subroutine mosaic_aerchem_error_dump( istop, ibin, luna, msga )
 !
-!   dumps current column information 
-!   when a fatal computational error occurs
+!   dumps current column information when a fatal computational error occurs
+!   when istop>0, the simulation is halted
 !
 	use module_data_mosaic_asect
 	use module_data_mosaic_other
 !	implicit none
 
 !   arguments
-	integer luna, ibin
+	integer istop, ibin, luna
 	character*(*) msga
 
 !   local variables
 	integer icomp, iphase, isize, itype, k, l, lunb, m, n
-	real dtchem_sv1
+	real(kind=8) dtchem_sv1
 
 
 !
@@ -18305,7 +12969,7 @@
 9020	format( 3(1pe19.11) )
 
 	write(lunb,9000)
-	write(lunb,9000) 'mosaic_error_fatal - msga ='
+	write(lunb,9000) 'begin mosaic_aerchem_error_dump - msga ='
 	write(lunb,9000) msga
 	write(lunb,9000) 'i, j, k, msub,ibin ='
 	write(lunb,9010) iclm_aer, jclm_aer, kclm_aer, mclm_aer, ibin
@@ -18372,13 +13036,13 @@
 	end do
 	end do
 
+	write(lunb,9000) 'end mosaic_aerchem_error_dump'
 
-	call peg_error_fatal( luna, msga )
+
+	if (istop .gt. 0) call peg_error_fatal( luna, msga )
 
 	return
-	end subroutine mosaic_error_fatal
+	end subroutine mosaic_aerchem_error_dump
 !-----------------------------------------------------------------------
-
-
 
       end module module_mosaic_therm

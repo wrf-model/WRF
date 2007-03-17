@@ -36,6 +36,7 @@
    REAL    , PARAMETER :: rcp          = r_d/cp
    REAL    , PARAMETER :: rovg         = r_d/g
    REAL    , PARAMETER :: c2           = cp * rcv
+   real    , parameter :: mwdry        = 28.966 ! molecular weight of dry air (g/mole)
 
    REAL    , PARAMETER :: p1000mb      = 100000.
    REAL    , PARAMETER :: t0           = 300.

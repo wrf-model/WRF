@@ -17,11 +17,13 @@
 !    initialize khno3,...,ktemp,ltot,ltot2 with bogus values;
 !    added aboxtest_... variables
 !    no initialization of name()
+! rce 06-may-2005 - increased lmaxd from 184 (no cw) to 283 (cw);
+!    added rcldwtr_sub
 
 
 	integer, parameter :: imaxd=1, jmaxd=1, kmaxd=100
 
-	integer, parameter :: lmaxd=184, l2maxd=184
+	integer, parameter :: lmaxd=283, l2maxd=283
 
 	integer, parameter :: nsubareamaxd = 1
 
@@ -74,6 +76,7 @@
 	real, save :: ptotclm(kmaxd)
 	real, save :: rclm(kmaxd,l2maxd)
 	real, save :: relhumclm(kmaxd)
+	real, save :: rcldwtr_sub(kmaxd,nsubareamaxd)
 	real, save :: rsub(l2maxd,kmaxd,nsubareamaxd)
 	real, save :: t
 

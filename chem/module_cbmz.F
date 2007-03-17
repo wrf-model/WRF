@@ -177,17 +177,18 @@
 
 #ifdef CHEM_DBG_I
 !rcetestb diagnostics --------------------------------------------------
-           print 93010, 'rcetestb diagnostics from cbmz_driver'
-           print 93010, 'id, chem_opt, ktau, ktauc, julday    ',   &
-                       id, config_flags%chem_opt, ktau, ktauc, julday
-           print 93020, 'dtstep, dtstepc, gmt                 ',   &
-                       dtstep, dtstepc, gmt
-           print 93010, 'ids/e, j, k', ids, ide, jds, jde, kds, kde
-           print 93010, 'ims/e, j, k', ims, ime, jms, jme, kms, kme
-           print 93010, 'its/e, j, k', its, ite, jts, jte, kts, kte
-           print 93010, 'num_moist, p_qv              ', num_moist, p_qv
-           print 93010, 'num_chem, p_so2, p_ho2       ', num_chem, p_so2, p_ho2
-           print 93010, 'p_so4aj, p_corn, p_hcl, p_mtf', p_so4aj, p_corn, p_hcl, p_mtf
+	print 93010, ' '
+	print 93010, 'rcetestb diagnostics from cbmz_driver'
+	print 93010, 'id, chem_opt, ktau, ktauc, julday    ',   &
+	              id, config_flags%chem_opt, ktau, ktauc, julday
+	print 93020, 'dtstep, dtstepc, gmt                 ',   &
+	              dtstep, dtstepc, gmt
+	print 93010, 'ids/e, j, k', ids, ide, jds, jde, kds, kde
+	print 93010, 'ims/e, j, k', ims, ime, jms, jme, kms, kme
+	print 93010, 'its/e, j, k', its, ite, jts, jte, kts, kte
+	print 93010, 'num_moist, p_qv              ', num_moist, p_qv
+	print 93010, 'num_chem, p_so2, p_ho2       ', num_chem, p_so2, p_ho2
+	print 93010, 'p_so4aj, p_corn, p_hcl, p_mtf', p_so4aj, p_corn, p_hcl, p_mtf
 93010	format( a, 8(1x,i6) )
 93020	format( a, 8(1p,e14.6) )
 !rcetestb diagnostics --------------------------------------------------
@@ -200,7 +201,7 @@
 	mgaschem = +1
 	i_boxtest_units_convert = 0
 
-        i_print_gasode_stats = 1
+	i_print_gasode_stats = 1
 	mode_force_dump = 0
 	lunerr = -1
 	lunout = -1
@@ -357,7 +358,7 @@
 
 2900	continue
 
-        if (i_print_gasode_stats .gt. 0)   &
+	if (i_print_gasode_stats .gt. 0)   &
 	   call print_gasode_stats( lunout, levdbg_info,   &
 		inforodas, iodestatus_count, ioderegime_count )
 	return
@@ -611,7 +612,7 @@
 	msg = ' '
 	call peg_debugmsg( lunout, levdbg_err, msg )
 	if (iok .gt. 0) then
-	     msg = '*** gasodesolver_rodas forced dump'
+	    msg = '*** gasodesolver_rodas forced dump'
 	else
 	    write(msg,*) '*** gasodesolver_rodas failure no.',   &
       		nrodas_failures

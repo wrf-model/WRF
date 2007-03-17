@@ -49,8 +49,9 @@ CONTAINS
                       ,ims,ime, jms,jme, kms,kme                   &
                       ,its,ite, jts,jte, kts,kte                   &
                   ! Optional 
-                      , F_QG                                       &
-                      , qg                                         &
+                      ,qlsink, precr, preci, precs, precg          &
+                      , F_QG,F_QNDROP                              &
+                      , qg, qndrop                                 &
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -68,7 +69,6 @@ CONTAINS
                                                               qv, &
                                                               ql, &
                                                               qr
-
 
 !
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
@@ -109,9 +109,18 @@ CONTAINS
         INTENT(INOUT) ::                                          &
                                                               qi, &
                                                               qs, &
-                                                              qg
+                                                              qg, &
+                                                          qndrop
 
-  LOGICAL, INTENT(IN), OPTIONAL :: F_QG
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
+        OPTIONAL, INTENT(OUT   ) ::                               &
+        qlsink, & ! cloud water conversion to rain (/s)
+        precr,  & ! rain precipitation rate at all levels (kg/m2/s)
+        preci,  & ! ice precipitation rate at all levels (kg/m2/s)
+        precs,  & ! snow precipitation rate at all levels (kg/m2/s)
+        precg     ! graupel precipitation rate at all levels (kg/m2/s)
+
+  LOGICAL, INTENT(IN), OPTIONAL ::                F_QG, F_QNDROP
 
 ! LOCAL VAR
 
@@ -126,20 +135,26 @@ CONTAINS
                                                      tothz, rhoz, &
                                                    orhoz, sqrhoz, &
                                                         prez, zz, &
-                                                        dzw
+                                  precrz, preciz, precsz, precgz, &
+                                                         qndropz, &
+                                                     dzw, preclw
 
-  LOGICAL flag_qg
+  LOGICAL :: flag_qg, flag_qndrop
 !
   REAL    ::         dt, pptrain, pptsnow, pptgraul, rhoe_s,      &
                      gindex, pptice
+  real :: qndropconst
 
   INTEGER ::               i,j,k
 !
-   flag_qg = .false.
-   IF ( PRESENT ( f_qg ) ) flag_qg = f_qg
+   flag_qg     = .false.
+   flag_qndrop = .false.
+   IF ( PRESENT ( f_qg     ) ) flag_qg     = f_qg
+   IF ( PRESENT ( f_qndrop ) ) flag_qndrop = f_qndrop
 !
    dt=dt_in
    rhoe_s=1.29
+   qndropconst=100.e6  !sg
    gindex=1.0
 
    IF (.not.flag_qg) gindex=0.
@@ -164,10 +179,20 @@ CONTAINS
       dzw(k)=dz8w(i,k,j)
    END DO
 
-      DO k = kts, kte
-         qiz(k)=qi(i,k,j)
-         qsz(k)=qs(i,k,j)
+   IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
+     DO k = kts, kte
+         qndropz(k)=qndrop(i,k,j)
       ENDDO
+   ELSE
+      DO k = kts, kte
+         qndropz(k)=qndropconst
+      ENDDO
+   ENDIF
+
+   DO k = kts, kte
+      qiz(k)=qi(i,k,j)
+      qsz(k)=qs(i,k,j)
+   ENDDO
 
    IF ( flag_qg .AND. PRESENT( qg ) ) THEN
       DO k = kts, kte
@@ -184,8 +209,10 @@ CONTAINS
    pptgraul=0.
    pptice=0.
    CALL clphy1d(    dt, qvz, qlz, qrz, qiz, qsz, qgz,         &
+                    qndropz,flag_qndrop,                      &
                     thz, tothz, rhoz, orhoz, sqrhoz,          &
-                    prez, zz, dzw, ht(I,J),                   &
+                    prez, zz, dzw, ht(I,J), preclw,           &
+                    precrz, preciz, precsz, precgz,           &
                     pptrain, pptsnow, pptgraul, pptice,       &
                     grav, cp, Rair, rvapor, gindex,           &
                     XLS, XLV, XLF, rhowater, rhosnow,         &
@@ -210,6 +237,17 @@ CONTAINS
 !- update data from 1-D back to 3-D
 !
 !
+   IF ( present(qlsink) .and. present(precr) ) THEN !sg beg
+      DO k = kts, kte
+         if(ql(i,k,j)>1.e-20) then
+            qlsink(i,k,j)=-preclw(k)/ql(i,k,j)
+         else
+            qlsink(i,k,j)=0.
+         endif
+         precr(i,k,j)=precrz(k)
+      END DO
+   END IF                                          !sg end
+
    DO k = kts, kte
       qv(i,k,j)=qvz(k)
       ql(i,k,j)=qlz(k)
@@ -217,15 +255,41 @@ CONTAINS
       th(i,k,j)=thz(k)
    END DO
 !
+   IF ( flag_qndrop .AND. PRESENT( qndrop ) ) THEN !sg beg
       DO k = kts, kte
-         qi(i,k,j)=qiz(k)
-         qs(i,k,j)=qsz(k)
+         qndrop(i,k,j)=qndropz(k)
       ENDDO
+   END IF                                          !sg end
 
+   DO k = kts, kte
+      qi(i,k,j)=qiz(k)
+      qs(i,k,j)=qsz(k)
+   ENDDO
+
+   IF ( present(preci) ) THEN     !sg beg
+      DO k = kts, kte
+         preci(i,k,j)=preciz(k)
+      ENDDO
+   END IF
+      
+   IF ( present(precs) ) THEN
+      DO k = kts, kte
+         precs(i,k,j)=precsz(k)
+      ENDDO
+   END IF                         !sg end
+      
    IF ( flag_qg .AND. PRESENT( qg ) ) THEN
       DO k = kts, kte
          qg(i,k,j)=qgz(k)
       ENDDO
+
+      IF ( present(precg) ) THEN  !sg beg
+         DO k = kts, kte
+            precg(i,k,j)=precgz(k)
+         ENDDO                    !sg end
+      END IF
+   ELSE                           !sg beg
+      IF ( present(precg) ) precg(i,:,j)=0.  !sg end
    ENDIF
 !
    ENDDO i_loop
@@ -236,8 +300,11 @@ CONTAINS
 
 !-----------------------------------------------------------------------
    SUBROUTINE clphy1d(dt, qvz, qlz, qrz, qiz, qsz, qgz,                &
+                      qndropz,flag_qndrop,                             &
                       thz, tothz, rho, orho, sqrho,                    &
-                      prez, zz, dzw, zsfc, pptrain, pptsnow, pptgraul, &
+                      prez, zz, dzw, zsfc, preclw,                     &
+                      precrz, preciz, precsz, precgz,                  &
+                      pptrain, pptsnow, pptgraul,                      &
                       pptice, grav, cp, Rair, rvapor, gindex,          &
                       XLS, XLV, XLF, rhowater, rhosnow,                &
                       EP2,SVP1,SVP2,SVP3,SVPT0,                        &
@@ -303,6 +370,7 @@ CONTAINS
 
   REAL,    DIMENSION( kts:kte ),                                      &
            INTENT(INOUT)               :: qvz, qlz, qrz, qiz, qsz,    &
+                                          qndropz,                    &
                                           qgz, thz
 
   REAL,    DIMENSION( kts:kte ),                                      &
@@ -313,9 +381,13 @@ CONTAINS
                                           XLS, XLV, XLF, rhowater,    &
                                           rhosnow,EP2,SVP1,SVP2,SVP3,SVPT0
 
+  REAL,    DIMENSION( kts:kte ), INTENT(OUT)               :: preclw, &
+  		    precrz, preciz, precsz, precgz
+
   REAL,    INTENT(INOUT)               :: pptrain, pptsnow, pptgraul, pptice
 
   REAL,    INTENT(IN   )               :: zsfc
+  logical, intent(in)                  :: flag_qndrop !sg
 
 ! local vars
 
@@ -381,6 +453,28 @@ CONTAINS
   REAL                          :: t_del_tv, del_tv, flux, fluxin, fluxout ,tmpqrz
   LOGICAL                       :: notlast
 !
+
+!sg: begin
+! liqconc = liquid water content in gcm^-3
+! capn = droplet number concentration cm^-3
+! dis = relative dispersion (dimensionless) between 0.2 and 1.
+! Written by Yangang Liu based on Liu et al., GRL 32, 2005.
+! Autoconversion rate P = P0*T
+! p0 = rate function
+! kappa = constant in Long kernel
+! beta = Condensation rate constant
+! xc = Normalized critical mass
+! ***********************************************************
+       real liqconc, dis, beta, kappa, p0, xc, capn,rhocgs
+  if(flag_qndrop)then
+     dis = 0.5 ! droplet dispersion, set to 0.5 per SG 8-Nov-2006
+!    Give  empirical constants
+     kappa=1.1d10
+!    Calculate Condensation rate constant
+     beta = (1.0d0+3.0d0*dis**2)*(1.0d0+4.0d0*dis**2)*    &
+         (1.0d0+5.0d0*dis**2)/((1.0d0+dis**2)*(1.0d0+2.0d0*dis**2))
+  endif
+!sg: end
 
    dtb=dt
    odtb=1./dtb
@@ -451,6 +545,7 @@ CONTAINS
          qsz(k)=amax1( 0.0,qsz(k) )
          qrz(k)=amax1( 0.0,qrz(k) )
          qgz(k)=amax1( 0.0,qgz(k) )
+         qndropz(k)=amax1( 0.0,qndropz(k) )     !sg
 !
          tem(k)=thz(k)*tothz(k)
          temcc(k)=tem(k)-273.15
@@ -568,6 +663,7 @@ CONTAINS
          pvapor(k)=0.0
 !
          pclw(k)=0.0
+         preclw(k)=0.0       !sg
          pladj(k)=0.0
 !
          pcli(k)=0.0
@@ -863,6 +959,17 @@ CONTAINS
       endif
 !
    ENDDO
+   do k=kts,kte-1                         !sg beg
+      precrz(k)=rho(k)*vtrold(k)*qrz(k)
+      preciz(k)=rho(k)*vtiold(k)*qiz(k)
+      precsz(k)=rho(k)*vtsold(k)*qsz(k)
+      precgz(k)=rho(k)*vtgold(k)*qgz(k)
+   enddo                                  !sg end
+   precrz(kte)=0. !wig - top level never set for vtXold vars
+   preciz(kte)=0. !wig
+   precsz(kte)=0. !wig
+   precgz(kte)=0. !wig
+   
 
 ! Microphpysics processes
 !
@@ -1296,17 +1403,38 @@ CONTAINS
 !
 !c
 !c (1) AUTOCONVERSION OF RAIN (Praut): RH
-!c     araut=afa*rho
-!c     afa=0.001 Rate coefficient for autoconvergence
+!sg: begin
+        if(flag_qndrop)then
+           if( qndropz(k) >= 1. ) then
+!         Liu et al. autoconversion scheme
+              rhocgs=rho(k)*1.e-3
+              liqconc=rhocgs*qlz(k)
+              capn=rhocgs*qndropz(k)
+!         rate function
+              if(liqconc.gt.1.e-10)then
+                 p0=kappa*beta/capn*(liqconc*liqconc*liqconc)
+                 xc=9.7d-17*capn*sqrt(capn)/(liqconc*liqconc)
+!         Calculate autoconversion rate (g/g/s)
+                 if(xc.lt.10.)then
+                    praut(k)=p0/rhocgs*0.5d0*(xc*xc+2*xc+2.0d0)* &
+                         (1.0d0+xc)*dexp(-2.0d0*xc)
+                 endif
+              endif
+           endif
+        else
+!sg: end
+!c          araut=afa*rho
+!c          afa=0.001 Rate coefficient for autoconvergence
 !c
-!c     araut=1.0e-3
+!c          araut=1.0e-3
 !c
-         araut=0.001
+            araut=0.001
 !testing
-!        tmp1=amax1( 0.0,araut*(qlz(k)-ql0) )
-!        praut(k)=amin1( tmp1,qlzodt(k) )
-         tmp1=odtb*(qlz(k)-ql0)*( 1.0-exp(-araut*dtb) )
-         praut(k)=amax1( 0.0,tmp1 )
+!           tmp1=amax1( 0.0,araut*(qlz(k)-ql0) )
+!           praut(k)=amin1( tmp1,qlzodt(k) )
+            tmp1=odtb*(qlz(k)-ql0)*( 1.0-exp(-araut*dtb) )
+            praut(k)=amax1( 0.0,tmp1 )
+        endif !sg
 
 !c
 !c (2) ACCRETION OF CLOUD WATER BY RAIN (Pracw): Lin (51)
@@ -1819,6 +1947,10 @@ CONTAINS
                    -pgdep(k)*gindex
          qvz(k)=amax1( qvmin,qvz(k)+dtb*pvapor(k) )
          pclw(k)=-praut(k)-pracw(k)-psacw(k)-psfw(k)-pgacw(k)*gindex
+	 if(flag_qndrop)then
+           if( qlz(k) > 1e-20 ) &
+              qndropz(k)=amax1( 0.0,qndropz(k)+dtb*pclw(k)*qndropz(k)/qlz(k) )  !sg
+	 endif
          qlz(k)=amax1( 0.0,qlz(k)+dtb*pclw(k) )
          pcli(k)=-psaut(k)-psfi(k)-psaci(k)-praci(k)-pgaci(k)*gdelta4 &
                  -Pgacip(k)*g1sdelt4
@@ -1930,6 +2062,10 @@ CONTAINS
           pvapor(k)=-psmltevp(k)-prevp(k)-pgmltevp(k)
           qvz(k)=amax1( qvmin,qvz(k)+dtb*pvapor(k))
           pclw(k)=-praut(k)-pracw(k)-psacw(k)-pgacw(k)*gindex
+          if(flag_qndrop)then
+	     if( qlz(k) > 1e-20 ) &
+               qndropz(k)=amax1( 0.0,qndropz(k)+dtb*pclw(k)*qndropz(k)/qlz(k) )  !sg
+	  endif
           qlz(k)=amax1( 0.0,qlz(k)+dtb*pclw(k) )
           pcli(k)=0.0
           qiz(k)=amax1( 0.0,qiz(k)+dtb*pcli(k) )
@@ -1969,6 +2105,7 @@ CONTAINS
           qvsbar(k)=qswz(k)
 !
       end if
+      preclw(k)=pclw(k)        !sg
 
 !
 !***********************************************************************

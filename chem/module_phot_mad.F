@@ -1283,7 +1283,7 @@
           if(haveaer.and.ktau.gt.1)then
 
 ! dry aerosol mass
-!rf check ki (or ki+1 or ki-1 ???)
+!rf check ki (or ki+1 or ki-1 ?)
                 aerext(k)=pm2_5_dry(i,k,j)*bext340+ &
                    pm2_5_water(i,k,j)*bexth2o
                 aerext(k)=aerext(k)*1.E3

@@ -84,10 +84,10 @@
 !
 ! calculate the mid-level heights
 !
-    do i = its, ite
+    do j = jts, min(jte,jde-1)
        do k = kts, kte
           kp1 = min(k+1, kte)
-          do j = jts, jte
+          do i = its, min(ite,ide-1)
              z(i,k,j) = (z_at_w(i,k,j)+z_at_w(i,kp1,j))*0.5
           end do
        end do
@@ -95,13 +95,13 @@
 
 !
 !   when (gas_ic_opt == gas_ic_pnnl) AND (chem_in_opt == 0),
-!   set ozone (and other gas??) to "Texas August 2000" values
+!   set ozone (and other gas?) to "Texas August 2000" values
 !
 	if ( (config_flags%chem_in_opt == 0) .and.   &
 	     (config_flags%gas_ic_opt == gas_ic_pnnl) ) then
-	    do j = jts, jte
+	    do j = jts, min(jte,jde-1)
 	    do k = kts, kte
-	    do i = its, ite
+	    do i = its, min(ite,ide-1)
            call bdy_chem_value( chem(i,k,j,p_o3),z(i,k,j), p_o3, numgas )
 	    end do
 	    end do
@@ -121,9 +121,9 @@
 !    1000<z<2500   linear transision zone
 !    >=2500        0.1 ppbv
 !
-	do j = jts, jte
+	do j = jts, min(jte,jde-1)
 	do k = kts, kte
-	do i = its, ite
+	do i = its, min(ite,ide-1)
        if( z(i,k,j) <= 1000. ) then
           chem(i,k,j,p_hcl) = 0.4*1e-3
        elseif( z(i,k,j) > 1000. &
@@ -141,9 +141,9 @@
 !   compute par initial mixing ratio from radm2 hydrocarbon species
 !   using same formula as for par emissions
 !
-	do j = jts, jte
+	do j = jts, min(jte,jde-1)
 	do k = kts, kte
-	do i = its, ite
+	do i = its, min(ite,ide-1)
 	    chem(i,k,j,p_par) =                               &
 		  0.4*chem(i,k,j,p_ald) + 2.9*chem(i,k,j,p_hc3)   &
 		+ 4.8*chem(i,k,j,p_hc5) + 7.9*chem(i,k,j,p_hc8)   &

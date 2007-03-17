@@ -22,7 +22,8 @@
 !
       REAL, DIMENSION (1:1000) :: dratio,hstar,hstar4,f0,dhr,scpr23
 ! .. Default Accessibility ..
-      PUBLIC
+    PUBLIC
+            logical, allocatable :: is_aerosol(:) ! true if field is aerosol (any phase)
 ! ..
     CONTAINS
        subroutine wesely_driver(id,ktau,dtstep,                           &
@@ -131,7 +132,7 @@
       clwchem = moist(i,kts,j,p_qc)
       ustar = ust(i,j)
       zntt = znt(i,j)
-      
+
       z1 = z_at_w(i,kts+1,j)-z_at_w(i,kts,j)
 
 !     Set logical default values
@@ -162,7 +163,10 @@
       aer_res(i,j)=0.
       CALL landusevg(ddvel0d,ustar,rmol(i,j),zntt,z1,dvpart,iland,        &
            numgas,srfres,aer_res(i,j),p_sulf)
-      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
+
+!wig: CMBZ doe snot have Ho and HO2 last so need to copy all species
+!      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
+      ddvel(i,j,1:numgas)=ddvel0d(1:numgas)
 
 100   continue
 !
@@ -172,8 +176,10 @@
 !
       if ( (config_flags%chem_opt == CBMZ          ) .or.   &
            (config_flags%chem_opt == CBMZ_BB       ) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_AA) .or.   &
-           (config_flags%chem_opt == CBMZ_MOSAIC_BB) ) then
+           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.   &
+           (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.   &
+           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.   &
+           (config_flags%chem_opt == CBMZ_MOSAIC_8BIN) ) then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_sulf)        = ddvel(i,j,p_hno3)
@@ -741,11 +747,13 @@ END SUBROUTINE wesely_driver
 !             1/L = 0 NEUTRAL
 !             1/L > 0 STABLE
 
+        if(abs(rmol) < 1.E-6 ) rmol = 0.
+
         IF (rmol<0) THEN
           ar = ((1.0-9.0*zr*rmol)**(0.25)+0.001)**2
           ao = ((1.0-9.0*z0*rmol)**(0.25)+0.001)**2
           polint = 0.74*(alog((ar-1.0)/(ar+1.0))-alog((ao-1.0)/(ao+1.0)))
-        ELSE IF (rmol==0) THEN
+        ELSE IF (rmol==0.) THEN
           polint = 0.74*alog(zr/z0)
         ELSE
           polint = 0.74*alog(zr/z0) + 4.7*rmol*(zr-z0)
@@ -782,6 +790,14 @@ END SUBROUTINE wesely_driver
                 dat3(nlu,dep_seasons), dat4(nlu,dep_seasons),         &
                 dat5(nlu,dep_seasons), dat6(nlu,dep_seasons),         &
                 dat7(nlu,dep_seasons), dvj(numgas)
+! ..
+! .. Make sure that the model is being run with a soil model. Otherwise,
+!    iland will be zero in deppart, which will try to pull non-exisant
+!    array locations.
+        call nl_get_sf_surface_physics(id,l)
+        if( l == 0 ) &
+             call wrf_error_fatal("ERROR: Cannot use dry deposition without using a soil model.")
+
 ! ..
 ! .. Data Statements ..
 !     RI for stomatal resistance

@@ -131,6 +131,9 @@
       REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM, ALBEDO_DUM
 !
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZINT,RRI,CONVFAC
+#ifndef WRF_CHEM
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_OLD
+#endif
 !     REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZMID
 #if 0
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG
@@ -1501,6 +1504,9 @@
       ALLOCATE(ZINT(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; ZINT = 0.
 !     ALLOCATE(ZMID(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; ZMID = 0.
       ALLOCATE(CONVFAC(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CONVFAC = 0.
+#ifndef WRF_CHEM
+      ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
+#endif
 #if 0
       ALLOCATE(W0AVG(IMS:IME,KMS:KME,JMS:JME),STAT=I)       ; W0AVG = 0.
 #endif
@@ -1624,7 +1630,7 @@
      &             ,CLDEFI,LOWLYR                                       &
      &             ,MASS_FLUX                                           &
      &             ,RTHFTEN, RQVFTEN                                    &
-     &             ,CLDFRA,GLW,GSW,EMISS,LU_INDEX                       &
+     &             ,CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,LU_INDEX            &
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
@@ -1791,60 +1797,60 @@
 !following will need mods Sep06
 !
 #ifdef WRF_CHEM
-      do j=jts,jte
-        jj=min(jde-1,j)
-        do k=kts,kte-1
-          kk=min(kde-1,k)
-          do i=its,ite
-            ii=min(ide-1,i)
-            convfac(i,k,j) = pint(ii,kk,jj)/rgasuniv/t(ii,kk,jj)
-          enddo
-        enddo
-      enddo
+      DO J=JTS,JTE
+        JJ=MIN(JDE-1,J)
+        DO K=KTS,KTE-1
+          KK=MIN(KDE-1,K)
+          DO I=ITS,ITE
+            II=MIN(IDE-1,I)
+            CONVFAC(I,K,J) = PINT(II,KK,JJ)/RGASUNIV/T(II,KK,JJ)
+          ENDDO
+        ENDDO
+      ENDDO
 !
-         CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,grid%chemdt, &
-               stepbioe,stepphot,stepchem,                           &
-               zint,g,aerwrf,config_flags,                           &
-               rri,t,pint,convfac,                                   &
-               tauaer1,tauaer2,tauaer3,tauaer4,                      &
-               gaer1,gaer2,gaer3,gaer4,                              &
-               waer1,waer2,waer3,waer4,                              &
-               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,grid%chem_in_opt,  &
-               ids , ide , jds , jde , kds , kde ,                   &
-               ims , ime , jms , jme , kms , kme ,                   &
-               its , ite , jts , jte , kts , kte                     )
+         CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
+               STEPBIOE,STEPPHOT,STEPCHEM,                           &
+               ZINT,G,AERWRF,CONFIG_FLAGS,                           &
+               RRI,T,PINT,CONVFAC,GD_CLOUD_B,GD_CLOUD2_B,            &
+               TAUAER1,TAUAER2,TAUAER3,TAUAER4,                      &
+               GAER1,GAER2,GAER3,GAER4,                              &
+               WAER1,WAER2,WAER3,WAER4,                              &
+               PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC,GRID%CHEM_IN_OPT,  &
+               IDS , IDE , JDS , JDE , KDS , KDE ,                   &
+               IMS , IME , JMS , JME , KMS , KME ,                   &
+               ITS , ITE , JTS , JTE , KTS , KTE                     )
 !     
 ! calculate initial pm
 !     
-        select case (config_flags%chem_opt)
-        case (RADM2SORG, RACMSORG,RACMSORG_KPP)
-           call sum_pm_sorgam (                                             &
-                rri, chem, h2oaj, h2oai,                                    &
-                pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                 &
-                ids,ide, jds,jde, kds,kde,                                  &
-                ims,ime, jms,jme, kms,kme,                                  &
-                its,ite, jts,jte, kts,kte                                   )
+        SELECT CASE (CONFIG_FLAGS%CHEM_OPT)
+        CASE (RADM2SORG, RACMSORG,RACMSORG_KPP)
+           CALL SUM_PM_SORGAM (                                             &
+                RRI, CHEM, H2OAJ, H2OAI,                                    &
+                PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
+                IDS,IDE, JDS,JDE, KDS,KDE,                                  &
+                IMS,IME, JMS,JME, KMS,KME,                                  &
+                ITS,ITE, JTS,JTE, KTS,KTE                                   )
                
-        case (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
-           call sum_pm_mosaic (                                             &
-                rri, chem,                                                  &
-                pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                 &
-                ids,ide, jds,jde, kds,kde,                                  &
-                ims,ime, jms,jme, kms,kme,                                  &
-                its,ite, jts,jte, kts,kte                                   )
+        CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+           CALL SUM_PM_MOSAIC (                                             &
+                RRI, CHEM,                                                  &
+                PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
+                IDS,IDE, JDS,JDE, KDS,KDE,                                  &
+                IMS,IME, JMS,JME, KMS,KME,                                  &
+                ITS,ITE, JTS,JTE, KTS,KTE                                   )
                
-        case default
-           do j=jts,min(jte,jde-1)
-              do k=kts,min(kte,kde-1)
-                 do i=its,min(ite,ide-1)
-                    pm2_5_dry(i,k,j)    = 0.
-                    pm2_5_water(i,k,j)  = 0.
-                    pm2_5_dry_ec(i,k,j) = 0.
-                    pm10(i,k,j)         = 0.
-                 enddo
-              enddo
-           enddo
-        end select
+        CASE DEFAULT
+           DO J=JTS,MIN(JTE,JDE-1)
+              DO K=KTS,MIN(KTE,KDE-1)
+                 DO I=ITS,MIN(ITE,IDE-1)
+                    PM2_5_DRY(I,K,J)    = 0.
+                    PM2_5_WATER(I,K,J)  = 0.
+                    PM2_5_DRY_EC(I,K,J) = 0.
+                    PM10(I,K,J)         = 0.
+                 ENDDO
+              ENDDO
+           ENDDO
+        END SELECT
 #endif
       DEALLOCATE(SFULL)
       DEALLOCATE(SMID)
@@ -1877,6 +1883,9 @@
       DEALLOCATE(RTHRATENSW)
       DEALLOCATE(ZINT)
       DEALLOCATE(CONVFAC)
+#ifndef WRF_CHEM
+      DEALLOCATE(CLDFRA_OLD)
+#endif
       DEALLOCATE(RRI)
 !     DEALLOCATE(ZMID)
       DEALLOCATE(SNOWC)

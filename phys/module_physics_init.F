@@ -36,7 +36,7 @@ CONTAINS
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
-                         CLDFRA,GLW,GSW,EMISS,LU_INDEX,          &
+                         CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,LU_INDEX,&
                          landuse_ISICE, landuse_LUCATS,          &
                          landuse_LUSEAS, landuse_ISN,            &
                          lu_state,                               &
@@ -145,6 +145,9 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) :: &
+             CLDFRA_OLD
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              GSW,ALBEDO,ALBBCK,GLW,EMISS
@@ -261,7 +264,7 @@ CONTAINS
 ! to be added to namelist: option to use climatological monthly albedo
    LOGICAL :: usebgalb
 
-   INTEGER :: i, j, itf, jtf
+   INTEGER :: i, j, k, itf, jtf
 integer myproc
 
 !-----------------------------------------------------------------
@@ -313,6 +316,9 @@ integer myproc
       RAINBL(i,j)=0.
       RAINNCV(i,j)=0.
       ACSNOW(i,j)=0.
+      DO k=kms,kme  !wig, 17-May-2006: Added for idealized chem. runs
+         EXCH_H(i,k,j) = 0.
+      END DO
    ENDDO
    ENDDO
    ENDIF
@@ -381,6 +387,7 @@ integer myproc
    CALL ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,             &
                 RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                 levsiz,XLAT,n_ozmixm,                           &
+                cldfra_old,                                     & ! Optional
                 ozmixm,pin,                                     & ! Optional
                 m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                 paerlev,n_aerosolc,                             &
@@ -721,6 +728,7 @@ integer myproc
    SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                       levsiz,XLAT,n_ozmixm,                           &
+                      cldfra_old,                                     & ! Optional
                       ozmixm,pin,                                     & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
@@ -778,6 +786,10 @@ integer myproc
                                                          RTHRATENLW, &
                                                          RTHRATENSW, &
                                                              CLDFRA
+
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) :: &
+                                                         CLDFRA_OLD
+
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
    LOGICAL :: camlw = .false.
@@ -810,6 +822,16 @@ integer myproc
      ENDDO
      ENDDO
      ENDDO
+
+     if( present(cldfra_old) ) then
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+           cldfra_old(i,k,j) = 0.
+        ENDDO
+        ENDDO
+        ENDDO
+     end if
    ENDIF
 
 !-- find out which microphysics option is used first

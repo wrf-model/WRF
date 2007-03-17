@@ -7,6 +7,7 @@ MODULE module_aerosols_sorgam
   USE module_radm
 !
       IMPLICIT NONE
+#define cw_species_are_in_registry
 
 CONTAINS
     SUBROUTINE sorgam_driver (id,ktau,dtstep,t_phy,moist,aerwrf,p8w,    &
@@ -235,6 +236,9 @@ CONTAINS
                nitrate_in =max(epsilc,chem(i,k,j,p_hno3)*convfac*mwhno3)
                nh3_in = max(epsilc,chem(i,k,j,p_nh3)*convfac*mwnh3)
                vsulf_in = max(epsilc,chem(i,k,j,p_sulf)*convfac*mwso4)
+      if(i.eq.23.and.j.eq.37.and.k.eq.22)then
+        print *,'vsulfin = ',vsulf_in,chem(i,k,j,p_sulf),convfac,mwso4
+      endif
                
 !rs
 !rs * organic aerosol precursors
@@ -355,18 +359,19 @@ CONTAINS
       cblk(1,VCORN    ) =   chem(i,k,j,p_corn)
 
 
-!     if(debug_level.ge.1)then
-!       print*,'in a_mechanisms',i,j,k
-!       print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
-!       print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
-!       print*,'nitrate_in, nh3_in, vsulf_in, so4rat_in', &
-!               nitrate_in, nh3_in, vsulf_in, so4rat_in
-!       print*,'drog_in,ldrog',drog_in,ldrog
-!       print*,'condvap_in,NCV,NACV',condvap_in,NCV,NACV
-!       print*,'eeci_in, eecj_in, eorgi_in, eorgj_in,convfac' &
-!           ,eeci_in, eecj_in, eorgi_in, eorgj_in,convfac
-!       print*,'CBLK',CBLK
-!      endif
+      if(debug_level.ge.1)then
+!     if(i.eq.23.and.j.eq.37.and.k.eq.22)then
+        print*,'in a_mechanisms',i,j,k
+        print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
+        print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
+        print*,'nitrate_in, nh3_in, vsulf_in, so4rat_in', &
+                nitrate_in, nh3_in, vsulf_in, so4rat_in
+        print*,'drog_in,ldrog',drog_in,ldrog
+        print*,'condvap_in,NCV,NACV',condvap_in,NCV,NACV
+        print*,'eeci_in, eecj_in, eorgi_in, eorgj_in,convfac' &
+            ,eeci_in, eecj_in, eorgi_in, eorgj_in,convfac
+        print*,'CBLK',CBLK
+       endif
       CALL rpmmod3(nspcsda,blksize,k,dtstep,10.*p(k),t(k),rh(k),nitrate_in,nh3_in, &
         vsulf_in,so4rat_in,drog_in,ldrog,condvap_in,ncv,nacv,eeci_in,eecj_in, &
         eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k)
@@ -1563,7 +1568,7 @@ END SUBROUTINE sorgam_depdriver
       REAL eseas(blksize) ! marine coarse aerosols                
       REAL epmcoarse(blksize) 
 ! anthropogenic coarse aerosols         
-      REAL dgnuc(blksize) ! nuclei mode mean diameter [ m ]       
+      REAL dgnuc(blksize) ! nuclei mode mean diameter [ m ]
       REAL dgacc(blksize) 
 ! accumulation                          
       REAL fconcn(blksize)                                 ! Aitken mode  [ 1 / s ]
@@ -1733,13 +1738,15 @@ END SUBROUTINE sorgam_depdriver
 
           p = -(m1-a*y0)/(m2-a*y0)
 
+!       print *,p,-dhat,dt,-dhat*dt
+!       print *,exp(-dhat*dt)
           pexpdt = p*exp(-dhat*dt)
 
           y = (m1+m2*pexpdt)/(a*(1.0D0+pexpdt)) 
 ! solution                       
         ELSE
 
-!         y = y0/(1.0D0+dt*a*y0) 
+          y = y0/(1.0D0+dt*a*y0) 
 !       print *,dhat,y0,dt,a
           y = y0/(1.+dt*a*y0) 
 !       print *,y
@@ -3621,6 +3628,7 @@ END SUBROUTINE sorgam_depdriver
       DO lcell = 1, numcells
 
 ! *** Aitken-mode
+!        cblk(lcell,vnu3) = max(conmin,(so4fac*cblk(lcell, & ! ghan
         cblk(lcell,vnu3) = so4fac*cblk(lcell, &
           vso4ai)+nh4fac*cblk(lcell,vnh4ai)+h2ofac*cblk(lcell, &
           vh2oai)+no3fac*cblk(lcell,vno3ai)+orgfac*cblk(lcell, &
@@ -3629,11 +3637,13 @@ END SUBROUTINE sorgam_depdriver
           vorgba1i)+orgfac*cblk(lcell,vorgba2i)+orgfac*cblk(lcell, &
           vorgba3i)+orgfac*cblk(lcell,vorgba4i)+orgfac*cblk(lcell, &
           vorgpai)+anthfac*cblk(lcell,vp25ai)+anthfac*cblk(lcell,veci)
+!          vorgpai)+anthfac*cblk(lcell,vp25ai)+anthfac*cblk(lcell,veci))) ! ghan
 
 
 
 ! *** Accumulation-mode
 
+!        cblk(lcell,vac3) = max(conmin,(so4fac*cblk(lcell, & ! ghan
         cblk(lcell,vac3) = so4fac*cblk(lcell, &
           vso4aj)+nh4fac*cblk(lcell,vnh4aj)+h2ofac*cblk(lcell, &
           vh2oaj)+no3fac*cblk(lcell,vno3aj)+orgfac*cblk(lcell, &
@@ -3642,9 +3652,12 @@ END SUBROUTINE sorgam_depdriver
           vorgba1j)+orgfac*cblk(lcell,vorgba2j)+orgfac*cblk(lcell, &
           vorgba3j)+orgfac*cblk(lcell,vorgba4j)+orgfac*cblk(lcell, &
           vorgpaj)+anthfac*cblk(lcell,vp25aj)+anthfac*cblk(lcell,vecj)
+!          vorgpaj)+anthfac*cblk(lcell,vp25aj)+anthfac*cblk(lcell,vecj))) ! ghan
 
 ! *** coarse mode
 
+!        cblk(lcell,vcor3) = max(conmin,(soilfac*cblk(lcell, & ! ghan rely on conmin applied to mass, not moment
+!          vsoila)+seasfac*cblk(lcell,vseas)+anthfac*cblk(lcell,vantha)))
         cblk(lcell,vcor3) = soilfac*cblk(lcell, &
           vsoila)+seasfac*cblk(lcell,vseas)+anthfac*cblk(lcell,vantha)
 
@@ -6648,7 +6661,7 @@ END SUBROUTINE vdvg
 !
     SUBROUTINE aerosols_sorgam_init(chem,convfac,z_at_w,             &
          pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                         &
-         chem_in_opt,aer_ic_opt,                                     &
+         chem_in_opt,aer_ic_opt, is_aerosol,                         &
          ids,ide, jds,jde, kds,kde,                                  &
          ims,ime, jms,jme, kms,kme,                                  &
          its,ite, jts,jte, kts,kte                                   )
@@ -6658,6 +6671,7 @@ END SUBROUTINE vdvg
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
+   LOGICAL, INTENT(OUT) :: is_aerosol(num_chem)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,     &
           INTENT(INOUT   ) ::                                      &
                               chem
@@ -6685,7 +6699,349 @@ END SUBROUTINE vdvg
       REAL m3cor
       DATA splitfac/.98/
       DATA so4vaptoaer/.999/
+      integer iphase,itype
+      integer ll, n, p1st
 
+        nphase_aer = 1
+	if(p_so4cwj.ge. param_first_scalar) then
+           nphase_aer = 2
+	endif
+        ntype_aer = 3
+	nsize_aer(:)=1
+	ai_phase=-999888777
+	cw_phase=-999888777
+	ci_phase=-999888777
+	cr_phase=-999888777
+	cs_phase=-999888777
+	cg_phase=-999888777
+	if(nphase_aer>=1)ai_phase=1
+	if(nphase_aer>=2)cw_phase=2
+	if(nphase_aer>=3)cr_phase=3
+	if(nphase_aer>=4)ci_phase=4
+	if(nphase_aer>=5)cw_phase=5
+	if(nphase_aer>=6)cg_phase=6
+	msectional = 0
+	maerosolincw = 0
+#if defined ( cw_species_are_in_registry )
+	maerosolincw = 1
+#endif
+	name_mastercomp_aer( 1) = 'sulfate'
+	dens_mastercomp_aer( 1) = dens_so4_aer
+	mw_mastercomp_aer(   1) =   mw_so4_aer
+	hygro_mastercomp_aer(1) = hygro_so4_aer
+
+	name_mastercomp_aer( 2) = 'nitrate'
+	dens_mastercomp_aer( 2) = dens_no3_aer
+	mw_mastercomp_aer(   2) =   mw_no3_aer
+	hygro_mastercomp_aer(2) = hygro_no3_aer
+
+	name_mastercomp_aer( 3) = 'ammonium'
+	dens_mastercomp_aer( 3) = dens_nh4_aer
+	mw_mastercomp_aer(   3) =   mw_nh4_aer
+	hygro_mastercomp_aer(3) = hygro_nh4_aer
+
+	name_mastercomp_aer( 4) = 'orgaro1'
+	dens_mastercomp_aer( 4) = dens_oc_aer
+	mw_mastercomp_aer(   4) =   mw_oc_aer
+	hygro_mastercomp_aer(4) = hygro_oc_aer
+
+	name_mastercomp_aer( 5) = 'orgaro2'
+	dens_mastercomp_aer( 5) = dens_oc_aer
+	mw_mastercomp_aer(   5) =   mw_oc_aer
+	hygro_mastercomp_aer(5) = hygro_oc_aer
+
+	name_mastercomp_aer( 6) = 'orgalk'
+	dens_mastercomp_aer( 6) = dens_oc_aer
+	mw_mastercomp_aer(   6) =   mw_oc_aer
+	hygro_mastercomp_aer(6) = hygro_oc_aer
+
+	name_mastercomp_aer( 7) = 'orgole'
+	dens_mastercomp_aer( 7) = dens_oc_aer
+	mw_mastercomp_aer(   7) =   mw_oc_aer
+	hygro_mastercomp_aer(7) = hygro_oc_aer
+
+	name_mastercomp_aer( 8) = 'orgba1'
+	dens_mastercomp_aer( 8) = dens_oc_aer
+	mw_mastercomp_aer(   8) =   mw_oc_aer
+	hygro_mastercomp_aer(8) = hygro_oc_aer
+
+	name_mastercomp_aer( 9) = 'orgba2'
+	dens_mastercomp_aer( 9) = dens_oc_aer
+	mw_mastercomp_aer(   9) =   mw_oc_aer
+	hygro_mastercomp_aer(9) = hygro_oc_aer
+
+	name_mastercomp_aer( 10) = 'orgba3'
+	dens_mastercomp_aer( 10) = dens_oc_aer
+	mw_mastercomp_aer(   10) =   mw_oc_aer
+	hygro_mastercomp_aer(10) = hygro_oc_aer
+
+	name_mastercomp_aer( 11) = 'orgba4'
+	dens_mastercomp_aer( 11) = dens_oc_aer
+	mw_mastercomp_aer(   11) =   mw_oc_aer
+	hygro_mastercomp_aer(11) = hygro_oc_aer
+
+	name_mastercomp_aer( 12) = 'orgpa'
+	dens_mastercomp_aer( 12) = dens_oc_aer
+	mw_mastercomp_aer(   12) =   mw_oc_aer
+	hygro_mastercomp_aer(12) = hygro_oc_aer
+
+	name_mastercomp_aer( 13) = 'ec'
+	dens_mastercomp_aer( 13) = dens_ec_aer
+	mw_mastercomp_aer(   13) =   mw_ec_aer
+	hygro_mastercomp_aer(13) = hygro_ec_aer
+
+	name_mastercomp_aer( 14) = 'p25'
+	dens_mastercomp_aer( 14) = dens_so4_aer
+	mw_mastercomp_aer(   14) =   mw_so4_aer + mw_nh4_aer
+	hygro_mastercomp_aer(14) = hygro_so4_aer + hygro_nh4_aer
+
+	name_mastercomp_aer( 15) = 'anth'
+	dens_mastercomp_aer( 15) = dens_so4_aer
+	mw_mastercomp_aer(   15) =   mw_so4_aer + mw_nh4_aer
+	hygro_mastercomp_aer(15) = hygro_so4_aer + hygro_nh4_aer
+
+	name_mastercomp_aer( 16) = 'seas'
+	dens_mastercomp_aer( 16) = dens_seas_aer
+	mw_mastercomp_aer(   16) =   mw_seas_aer
+	hygro_mastercomp_aer(16) = hygro_seas_aer
+
+	name_mastercomp_aer( 17) = 'soil'
+	dens_mastercomp_aer( 17) = dens_ca_aer
+	mw_mastercomp_aer(   17) =  mw_ca_aer + mw_co3_aer
+	hygro_mastercomp_aer(17) = hygro_ca_aer + hygro_co3_aer
+
+	lptr_so4_aer(:,:,:)      = 1
+	lptr_nh4_aer(:,:,:)      = 1
+	lptr_no3_aer(:,:,:)      = 1
+	lptr_orgaro1_aer(:,:,:)  = 1
+	lptr_orgaro2_aer(:,:,:)  = 1
+	lptr_orgalk_aer(:,:,:)  = 1
+	lptr_orgole_aer(:,:,:)  = 1
+	lptr_orgba1_aer(:,:,:)  = 1
+	lptr_orgba2_aer(:,:,:)  = 1
+	lptr_orgba3_aer(:,:,:)  = 1
+	lptr_orgba4_aer(:,:,:)  = 1
+	lptr_orgpa_aer(:,:,:)  = 1
+	lptr_ec_aer(:,:,:)  = 1
+	lptr_p25_aer(:,:,:)  = 1
+	lptr_anth_aer(:,:,:) = 1
+	lptr_seas_aer(:,:,:) = 1
+	lptr_soil_aer(:,:,:) = 1
+	numptr_aer(:,:,:)          = 1
+
+
+! Accumulation mode
+	ncomp_aer(1) = 14
+      	  lptr_so4_aer(1,1,ai_phase)= p_so4aj
+      	  lptr_nh4_aer(1,1,ai_phase) = p_nh4aj
+      	  lptr_no3_aer(1,1,ai_phase) = p_no3aj
+      	  lptr_orgaro1_aer(1,1,ai_phase) = p_orgaro1j
+      	  lptr_orgaro2_aer(1,1,ai_phase) = p_orgaro2j
+      	  lptr_orgalk_aer(1,1,ai_phase) = p_orgalk1j
+      	  lptr_orgole_aer(1,1,ai_phase) = p_orgole1j
+      	  lptr_orgba1_aer(1,1,ai_phase) = p_orgba1j
+      	  lptr_orgba2_aer(1,1,ai_phase) = p_orgba2j
+      	  lptr_orgba3_aer(1,1,ai_phase) = p_orgba3j
+      	  lptr_orgba4_aer(1,1,ai_phase) = p_orgba4j
+      	  lptr_orgpa_aer(1,1,ai_phase) = p_orgpaj
+      	  lptr_ec_aer(1,1,ai_phase) = p_ecj
+      	  lptr_p25_aer(1,1,ai_phase) = p_p25j
+	numptr_aer(1,1,ai_phase)          = p_ac0
+! Aitken mode
+	ncomp_aer(2) = 14
+      	  lptr_so4_aer(1,2,ai_phase)= p_so4ai
+      	  lptr_nh4_aer(1,2,ai_phase) = p_nh4ai
+      	  lptr_no3_aer(1,2,ai_phase) = p_no3ai
+      	  lptr_orgaro1_aer(1,2,ai_phase) = p_orgaro1i
+      	  lptr_orgaro2_aer(1,2,ai_phase) = p_orgaro2i
+      	  lptr_orgalk_aer(1,2,ai_phase) = p_orgalk1i
+      	  lptr_orgole_aer(1,2,ai_phase) = p_orgole1i
+      	  lptr_orgba1_aer(1,2,ai_phase) = p_orgba1i
+      	  lptr_orgba2_aer(1,2,ai_phase) = p_orgba2i
+      	  lptr_orgba3_aer(1,2,ai_phase) = p_orgba3i
+      	  lptr_orgba4_aer(1,2,ai_phase) = p_orgba4i
+      	  lptr_orgpa_aer(1,2,ai_phase) = p_orgpai
+      	  lptr_ec_aer(1,2,ai_phase) = p_eci
+      	  lptr_p25_aer(1,2,ai_phase) = p_p25i
+	numptr_aer(1,2,ai_phase)          = p_nu0
+! coarse mode
+	ncomp_aer(3) = 3
+          lptr_anth_aer(1,3,ai_phase) = p_antha
+      	  lptr_seas_aer(1,3,ai_phase) = p_seas
+      	  lptr_soil_aer(1,3,ai_phase) = p_soila
+	numptr_aer(1,3,ai_phase)          = p_corn
+! aerosol in cloud water
+        if(cw_phase.gt.0)then
+! Accumulation mode
+      	  lptr_so4_aer(1,1,cw_phase)= p_so4cwj
+      	  lptr_nh4_aer(1,1,cw_phase) = p_nh4cwj
+      	  lptr_no3_aer(1,1,cw_phase) = p_no3cwj
+      	  lptr_orgaro1_aer(1,1,cw_phase) = p_orgaro1cwj
+      	  lptr_orgaro2_aer(1,1,cw_phase) = p_orgaro2cwj
+      	  lptr_orgalk_aer(1,1,cw_phase) = p_orgalk1cwj
+      	  lptr_orgole_aer(1,1,cw_phase) = p_orgole1cwj
+      	  lptr_orgba1_aer(1,1,cw_phase) = p_orgba1cwj
+      	  lptr_orgba2_aer(1,1,cw_phase) = p_orgba2cwj
+      	  lptr_orgba3_aer(1,1,cw_phase) = p_orgba3cwj
+      	  lptr_orgba4_aer(1,1,cw_phase) = p_orgba4cwj
+      	  lptr_orgpa_aer(1,1,cw_phase) = p_orgpacwj
+      	  lptr_ec_aer(1,1,cw_phase) = p_eccwj
+      	  lptr_p25_aer(1,1,cw_phase) = p_p25cwj
+	numptr_aer(1,1,cw_phase)          = p_ac0cw
+! Aitken mode
+      	  lptr_so4_aer(1,2,cw_phase)= p_so4cwi
+      	  lptr_nh4_aer(1,2,cw_phase) = p_nh4cwi
+      	  lptr_no3_aer(1,2,cw_phase) = p_no3cwi
+      	  lptr_orgaro1_aer(1,2,cw_phase) = p_orgaro1cwi
+      	  lptr_orgaro2_aer(1,2,cw_phase) = p_orgaro2cwi
+      	  lptr_orgalk_aer(1,2,cw_phase) = p_orgalk1cwi
+      	  lptr_orgole_aer(1,2,cw_phase) = p_orgole1cwi
+      	  lptr_orgba1_aer(1,2,cw_phase) = p_orgba1cwi
+      	  lptr_orgba2_aer(1,2,cw_phase) = p_orgba2cwi
+      	  lptr_orgba3_aer(1,2,cw_phase) = p_orgba3cwi
+      	  lptr_orgba4_aer(1,2,cw_phase) = p_orgba4cwi
+      	  lptr_orgpa_aer(1,2,cw_phase) = p_orgpacwi
+      	  lptr_ec_aer(1,2,cw_phase) = p_eccwi
+      	  lptr_p25_aer(1,2,cw_phase) = p_p25cwi
+	numptr_aer(1,2,cw_phase)          = p_nu0cw
+! coarse mode
+          lptr_anth_aer(1,3,cw_phase) = p_anthcw
+      	  lptr_seas_aer(1,3,cw_phase) = p_seascw
+      	  lptr_soil_aer(1,3,cw_phase) = p_soilcw
+	  numptr_aer(1,3,cw_phase)          = p_corncw
+	endif
+
+	massptr_aer(:,:,:,:) = -999888777
+	mastercompptr_aer(:,:) = -999888777
+
+	p1st = param_first_scalar
+
+	do iphase=1,nphase_aer
+	do itype=1,ntype_aer
+	do n = 1, nsize_aer(itype)
+	    ll = 0
+	    if (lptr_so4_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_so4_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 1
+	    end if
+	    if (lptr_no3_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_no3_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 2
+	    end if
+	    if (lptr_nh4_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_nh4_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 3
+	    end if
+	    if (lptr_orgaro1_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgaro1_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 4
+	    end if
+	    if (lptr_orgaro2_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgaro2_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 5
+	    end if
+	    if (lptr_orgalk_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgalk_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 6
+	    end if
+	    if (lptr_orgole_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgole_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 7
+	    end if
+	    if (lptr_orgba1_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgba1_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 8
+	    end if
+	    if (lptr_orgba2_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgba2_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 9
+	    end if
+	    if (lptr_orgba3_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgba3_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 10
+	    end if
+	    if (lptr_orgba4_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgba4_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 11
+	    end if
+	    if (lptr_orgpa_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_orgpa_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 12
+	    end if
+	    if (lptr_ec_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_ec_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 13
+	    end if
+	    if (lptr_p25_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_p25_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 14
+	    end if
+	    if (lptr_anth_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_anth_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 15
+	    end if
+	    if (lptr_seas_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_seas_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 16
+	    end if
+	    if (lptr_soil_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_soil_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 17
+	    end if
+	    ncomp_aer_nontracer(itype) = ll
+
+	    ncomp_aer(itype) = ll
+
+	    mprognum_aer(n,itype,iphase) = 0
+	    if (numptr_aer(n,itype,iphase) .ge. p1st) then
+		mprognum_aer(n,itype,iphase) = 1
+	    end if
+
+	end do ! size
+	end do ! type
+	end do ! phase
+9320	format( a, i1, a, 10x )
+
+        waterptr_aer(:,:) = 0.
+
+	do itype=1,ntype_aer
+	do l=1,ncomp_aer(itype)
+	   dens_aer(l,itype) = dens_mastercomp_aer(mastercompptr_aer(l,itype))
+	   mw_aer(l,itype) = mw_mastercomp_aer(mastercompptr_aer(l,itype))
+	   hygro_aer(l,itype) = hygro_mastercomp_aer(mastercompptr_aer(l,itype))
+	   name_aer(l,itype) = name_mastercomp_aer(mastercompptr_aer(l,itype))
+	end do
+	end do
+
+	is_aerosol(:) = .false.
+	do iphase=1,nphase_aer
+	do itype=1,ntype_aer
+	do n = 1, nsize_aer(itype)
+	    do ll = 1, ncomp_aer(itype)
+	      is_aerosol(massptr_aer(ll,n,itype,iphase))=.true.
+	    end do
+	    is_aerosol(numptr_aer(n,itype,iphase))=.true.
+	end do ! size
+	end do ! type
+	end do ! phase
+        
         pm2_5_dry(its:ite, kts:kte-1, jts:jte)    = 0.
         pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
         pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
@@ -6703,6 +7059,16 @@ END SUBROUTINE vdvg
         ea1 = exp(0.125*l2sginia)
         ec1 = exp(0.125*l2sginic)
 
+        dhi_sect(1,1)=1.e2*dginin*exp(l2sginin)
+        dlo_sect(1,1)=1.e2*dginin/exp(l2sginin)
+        dhi_sect(1,2)=1.e2*dginia*exp(l2sginia)
+        dlo_sect(1,2)=1.e2*dginia/exp(l2sginia)
+        dhi_sect(1,3)=1.e2*dginic*exp(l2sginic)
+        dlo_sect(1,3)=1.e2*dginic/exp(l2sginic)
+
+        sigmag_aer(1,1)=sginin
+        sigmag_aer(1,2)=sginia
+        sigmag_aer(1,3)=sginic
 
         esn04 = en1**4
         esa04 = ea1**4

@@ -280,7 +280,7 @@ CONTAINS
                e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
                e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1)             )
 
-      DO n = 1, numgas-2
+      DO n = 1, ne_area-2 !Assumes CBMZ and RADM2 species locations match up to p_iso
       do 100 j=jts,jte  
       do 100 i=its,ite  
         chem(i,kts,j,n+1) = chem(i,kts,j,n+1)    &

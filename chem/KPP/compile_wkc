@@ -21,6 +21,9 @@ setenv WKC_KPP ${KPP_HOME}/bin/kpp
 rm -f ${WKC_HOME}/configure.kpp
 ${WKC_HOME}/configure_kpp
 
+# ...and link it
+rm -f ${KPP_HOME}/Makefile.defs
+ln -s ${WKC_HOME}/configure.kpp  ${KPP_HOME}/Makefile.defs
 
 
 # some preliminaries
@@ -40,6 +43,7 @@ cd $KPP_HOME; make; cd $WRFC_ROOT
 echo "-----------------------------------------"
 
 
+( cd $WKC_HOME/util/wkc; linker.csh link )
 
 #compile the coupler
 echo compile the coupler

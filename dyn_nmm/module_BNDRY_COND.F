@@ -31,7 +31,7 @@
      &                ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT           &
      &                ,PD,T,Q,Q2,CWM,PINT,MOIST,N_MOIST,SCALAR,N_SCALAR &
 #ifdef WRF_CHEM
-     &                ,CHEM,NUM_CHE,CONFIG_FLAGS                        &
+     &                ,CHEM,NUMG,CONFIG_FLAGS                           &
 #endif
      &                ,IJDS,IJDE,SPEC_BDY_WIDTH,Z                       &  ! min/max(id,jd)
      &                ,IHE,IHW,IVE,IVW,INDX3_WRK                        &
@@ -103,7 +103,7 @@
       INTEGER,INTENT(IN) :: IJDS,IJDE,SPEC_BDY_WIDTH
       INTEGER,INTENT(IN) :: N_MOIST, N_SCALAR
 #ifdef WRF_CHEM
-      INTEGER,INTENT(IN) :: NUM_CHE
+      INTEGER,INTENT(IN) :: NUMG
 #endif
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
@@ -145,7 +145,7 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_MOIST),INTENT(INOUT) :: MOIST
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),INTENT(INOUT) :: SCALAR
 #ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,1:NUM_CHEM),INTENT(INOUT) :: CHEM
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_CHEM),INTENT(INOUT) :: CHEM
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
 #endif
 
@@ -172,6 +172,7 @@
 #ifdef WRF_CHEM
    ! DETERMINE THE INDEX OF THE LAST GAS SPECIES
      NUMGAS=P_HO2                     
+     NUMGAS=NUMG
 !   NUMGAS = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)       
 #endif
       IM=IDE-IDS+1
@@ -277,16 +278,16 @@
 #ifdef WRF_CHEM
 !$omp parallel do                                                       &
 !$omp& private(i,k,nv)
-          DO NV=P_SO2,P_HO2
+          DO NV=2,NUMG
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              CALL BDY_CHEM_VALUE (CHEM(I,K,JJ,NV), Z(I,K,JJ), NV,NUMGAS)
+              CALL BDY_CHEM_VALUE (CHEM(I,K,JJ,NV), Z(I,K,JJ), NV,NUMG)
             ENDDO
           ENDDO
           ENDDO
 !$omp parallel do                                                       &
 !$omp& private(i,k,nv)
-          DO NV=P_HO2+1,NUM_CHEM
+          DO NV=NUMG+1,NUM_CHEM
           DO K=KTS,KTE
           KK=MIN(K+1,KTE)
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
@@ -393,14 +394,15 @@
 !$omp parallel do                                                       &
 !$omp& private(nv,j,k)
           DO K=KTS,KTE
+            KK=MIN(K+1,KTE)
             DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
               IF(MOD(J,2)==1)THEN
-                 DO NV=P_SO2,P_HO2
-                   CALL BDY_CHEM_VALUE (CHEM(II,K,J,NV), Z(II,K,J), NV,NUMGAS)
+                 DO NV=2,NUMG
+                   CALL BDY_CHEM_VALUE (CHEM(II,K,J,NV), Z(II,K,J), NV,NUMG)
                  ENDDO
 !$omp parallel do                                                       &
 !$omp& private(nv)
-                 DO NV=P_HO2+1,NUM_CHEM
+                 DO NV=NUMG+1,NUM_CHEM
                     PLYR=(PINT(II,K,J)+PINT(II,KK,J))*0.5
                     RRI=R_D*T(II,K,J)*(1.+P608*Q(II,K,J))/PLYR
                     CONVFAC=PLYR/RGASUNIV/T(II,K,J)

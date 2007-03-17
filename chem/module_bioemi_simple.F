@@ -142,7 +142,8 @@ MODULE module_bioemi_simple
 !       ' emiss_bio(lhc3)'
 !     PRINT *, emiss_bio(liso), emiss_bio(lald), emiss_bio(lhcho), &
 !       emiss_bio(lhc3)
-      DO n = 1, numgas-2
+!      DO n = 1, numgas-2 !wig, 22-May-2006: CBMZ uses more species than ne_area so would get array overwrites
+      DO n = 1, ne_area-2
         e_bio(i,j,n) = emiss_bio(n)
 !       if(i.eq.5.and.j.eq.5)print *,emiss_bio(n)
       END DO

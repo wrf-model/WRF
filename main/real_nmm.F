@@ -458,10 +458,11 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
 #ifdef WRF_CHEM
       IF ( loop == 1 ) THEN
-         IF ( ( grid%chem_opt .EQ. RADM2     ) .OR. &
-              ( grid%chem_opt .EQ. RADM2SORG ) .OR. &
-              ( grid%chem_opt .EQ. RACM      ) .OR. &
-              ( grid%chem_opt .EQ. RACMSORG  ) ) THEN
+!        IF ( ( grid%chem_opt .EQ. RADM2     ) .OR. &
+!             ( grid%chem_opt .EQ. RADM2SORG ) .OR. &
+!             ( grid%chem_opt .EQ. RACM      ) .OR. &
+!             ( grid%chem_opt .EQ. RACMSORG  ) ) THEN
+         IF( grid%chem_opt > 0 ) then
            ! Read the chemistry data from a previous wrf forecast (wrfout file)
            IF(grid%chem_in_opt == 1 ) THEN
               message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
@@ -482,8 +483,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
               write(message,*)' ETA1 '
               CALL  wrf_message ( message )
-              write(message,*) grid%nmm_eta1
-              CALL  wrf_message ( message )
+!             write(message,*) grid%nmm_eta1
+!             CALL  wrf_message ( message )
 
               CALL input_chem_profile ( grid )
 

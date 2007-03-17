@@ -186,9 +186,6 @@
 		ust(it,jt), aer_res(it,jt), vdep_aer )
 
 
-!   set ddvel
-!~	ddvel(it,jt,:) = 0.0
-
 ! rce 23-nov-2004 - change to using the "..._aer" species pointers
 	do iphase = 1, nphase_aer
 	do itype = 1, ntype_aer
@@ -328,7 +325,8 @@
 	    goto 1900
 	end if
 
-	if (drymass .le. smallmassbb) then
+!jdf    if (drymass .le. smallmassbb) then
+	if (drymass .le. smallmassaa) then
 	    wetmass = drymass
 	    wetvol = dryvol
 	end if
@@ -344,8 +342,15 @@
 	    drydp = (dryvol/(piover6*rnum))**onethird
 	end if
 
-	dumfact = (wetvol/dryvol)**onethird
-	dumfact = min( dumfact, 10.0 )
+!jdf    dumfact = (wetvol/dryvol)**onethird
+!jdf    dumfact = min( dumfact, 10.0 )
+        if(abs(wetvol).gt.(1000.*abs(dryvol))) then
+          dumfact=10.0
+        else
+          dumfact=abs(wetvol/dryvol)**onethird
+          dumfact=max(1.0,min(dumfact,10.0))
+        endif
+!jdf
 	wetdp = drydp*dumfact
 
 1900	continue

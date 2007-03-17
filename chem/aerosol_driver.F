@@ -223,7 +223,7 @@
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-   CASE (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
        CALL mosaic_aerchem_driver(                                      &
             id, ktau, dtstep, ktauc, dtstepc, config_flags,             &
@@ -283,7 +283,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (CBMZ_MOSAIC_AA, CBMZ_MOSAIC_BB)
+   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic')
        call sum_pm_mosaic (                                            &
             alt, chem,                                                 &

@@ -11,7 +11,9 @@ OBJ = registry_kpp.o  my_strtok.o data.o type.o misc.o reg_parse.o \
       gen_kpp.o get_wrf_chem_specs.o gen_kpp_mech_dr.o gen_kpp_interface.o \
       get_kpp_chem_specs.o compare_kpp_to_species.o get_wrf_radicals.o \
       get_wrf_jvals.o gen_kpp_utils.o change_chem_Makefile.o  \
-      gen_kpp_interf_utils.o gen_kpp_args_to_Update_Rconst.o  kpp_data.o
+      gen_kpp_interf_utils.o gen_kpp_args_to_Update_Rconst.o  kpp_data.o \
+      sym.o symtab_gen.o
+
 
 
 registry : $(OBJ)
@@ -52,4 +54,5 @@ gen_kpp_utils.o:registry.h kpp_data.h
 gen_kpp_interf_utils.o: protos.h kpp_data.h  protos_kpp.h
 change_chem_Makefile.o: protos.h kpp_data.h  protos_kpp.h
 gen_kpp_args_to_Update_Rconst.o: protos.h kpp_data.h  protos_kpp.h
+sym.o: sym.h
 

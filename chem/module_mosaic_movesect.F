@@ -17,10 +17,11 @@
 !
 !   if apply_n1_inflow = 1, then subr move_sections_apply_n1_inflow
 !	applies an ad_hoc correction to bin 1 to account for growth of 
-!	smaller particles (which are not simulated) growing into bin 1
+!	smaller particles (which are not simulated when aernucnew_onoff=0)
+!       growing into bin 1
 !   if apply_n1_inflow = other, this correction is not applied
 !
-	integer, parameter :: apply_n1_inflow = 1
+	integer, parameter :: apply_n1_inflow = 0
 
 	contains
 
@@ -73,8 +74,9 @@
 !   number mixing ratios (particles/mole-air) are in 
 !	rsub(numptr_aer(n,itype,iphase),k,m)
 !   these values are over-written with new values
-!   the following are also updated:  adrydens_sub(n,k,m), admeandry_sub(n,k,m),
-!	awetdens_sub(n,k,m), admeanwet_sub(n,k,m)
+!   the following are also updated:  
+!	adrydens_sub(n,itype,k,m), admeandry_sub(n,itype,k,m),
+!	awetdens_sub(n,itype,k,m), admeanwet_sub(n,itype,k,m)
 !
 !   particle sizes are in cm
 !
@@ -179,9 +181,15 @@
 	    iphase = ai_phase
 	else if (iabs(iflag) .eq. 2) then
 	    iphase = cw_phase
-	    msg = '*** subr move_sections error - ' //   &
-      		'iflag=2 (after aqueous chemistry) not implemented'
-	    call peg_error_fatal( lunerr, msg )
+	    if (nphase_aer .lt. 2) then
+		msg = '*** subr move_sections error - ' //   &
+		    'iflag=2 (after aqueous chemistry) but nphase_aer < 2'
+		call peg_error_fatal( lunerr, msg )
+	    else if (cw_phase .ne. 2) then
+		msg = '*** subr move_sections error - ' //   &
+		    'iflag=2 (after aqueous chemistry) but cw_phase .ne. 2'
+		call peg_error_fatal( lunerr, msg )
+	    end if
 	else
 	    msg = '*** subr move_sections error - ' //   &
 		'iabs(iflag) must be 1 or 2'
@@ -200,6 +208,15 @@
 	    return
 	end if
 9040	format( '*** subr move_sections - ', a, ' =', i6 )
+
+!   diagnostics
+	if (idiag_movesect .eq. 70) then
+	    msg = ' '
+	    call peg_message( lunout, msg )
+	    write(msg,9060) iclm, jclm, k, m, msectional
+	    call peg_message( lunout, msg )
+	end if
+9060	format( '*** subr move_sections diagnostics i,j,k,m,msect =', 4i4, i6 )
 
 
 	densdefault = 2.0
@@ -254,12 +271,15 @@
       	  method_movesect, idiag_movesect, llhysw, llwater, nnewsave,   &
       	  densdefault, densh2o, smallmassaa, smallmassbb,   &
       	  delta_water_conform1, delta_numb_conform1,   &
+      	  drydenspp, drymasspp, rnumbpp,   &
       	  drymassxx, dryvolxx, rmassxx, rnumbxx, wetmassxx, wetvolxx,   &
       	  drymassyy, dryvolyy, rmassyy, rnumbyy, wetmassyy, wetvolyy,   &
       	  xferfracvol, xferfracnum )
 
 ! rce 08-nov-2004 - this call is new (and perhaps temporary)
-	if (apply_n1_inflow .eq. 1) then
+! rce 05-jul-2005 - do n1_inflow for aerchem growth but not for cldchem
+	if ((apply_n1_inflow .eq. 1) .and.   &
+	    (iphase .eq. ai_phase)) then
 	call move_sections_apply_n1_inflow(   &
 	  iflag, iclm, jclm, k, m, iphase, itype,   &
       	  method_movesect, idiag_movesect, llhysw, llwater, nnewsave,   &
@@ -383,12 +403,14 @@
 	do 1390 n = 1, nsize_aer(itype)
 
 !
-!   if drydens_aftgrow < 0.5, then bin had state="no_aerosol"
+!   if drydens_aftgrow < 0.1, then bin had state="no_aerosol"
 !   compute volume using default dry-densities, set water=0,
 !	and conform the number
 !   also do this if mass is extremely small (below smallmassaa)
+!	OR if drydens_aftgrow > 20 (which is unrealistic)
 !
-	if ( (drydensxx(n) .le. 0.5) .or.   &
+	if ( (drydensxx(n) .lt.  0.1) .or.   &
+	     (drydensxx(n) .gt. 20.0) .or.   &
       	     (drymassxx(n) .le. smallmassaa) ) then
 	    dummass = 0.
 	    dumvol = 0.
@@ -401,7 +423,7 @@
 	    if (min(dummass,dumvol) .le. smallmassbb) then
 		drydensxx(n) = densdefault
 		dumvol = dummass/densdefault
-		dumnum = dumvol/volumcen_sect(n,itype)
+		dumnum = dummass/(volumcen_sect(n,itype)*densdefault)
 	    else
 		drydensxx(n) = dummass/dumvol
 		dumnum = rnumbxx(n)
@@ -701,12 +723,14 @@
 	if (iforce_movecenter(n) .gt. 0) goto 3700
 
 
-!   if drydenspp (pregrow) < 0.5 (because bin had state="no_aerosol" before
+!   if drydenspp (pregrow) < 0.1 (because bin had state="no_aerosol" before
 !	growth was computed, so its initial mass was very small)
 !   then use the moving-center method_movesect for this bin
 !   (don't try to compute the pregrow within-bin distribution)
 !   also do this if pregrow mass is extremely small (below smallmassaa)
-	if ( (drydenspp(n) .le. 0.5) .or.   &
+!	OR if drydenspp > 20 (unphysical)
+	if ( (drydenspp(n) .lt.  0.1) .or.   &
+	     (drydenspp(n) .gt. 20.0) .or.   &
       	     (drymasspp(n) .le. smallmassaa) ) then
 	    iforce_movecenter(n) = 11
 	    goto 3700
@@ -932,6 +956,7 @@
       	  method_movesect, idiag_movesect, llhysw, llwater, nnewsave,   &
       	  densdefault, densh2o, smallmassaa, smallmassbb,   &
       	  delta_water_conform1, delta_numb_conform1,   &
+      	  drydenspp, drymasspp, rnumbpp,   &
       	  drymassxx, dryvolxx, rmassxx, rnumbxx, wetmassxx, wetvolxx,   &
       	  drymassyy, dryvolyy, rmassyy, rnumbyy, wetmassyy, wetvolyy,   &
       	  xferfracvol, xferfracnum )
@@ -954,10 +979,13 @@
 
 	real densdefault, densh2o, smallmassaa, smallmassbb
 	real delta_water_conform1, delta_numb_conform1
+	real drydenspp(maxd_asize)
+	real drymasspp(maxd_asize)
 	real drymassxx(maxd_asize), drymassyy(maxd_asize)
 	real dryvolxx(maxd_asize), dryvolyy(maxd_asize)
 	real rmassxx(maxd_acomp+2,maxd_asize),   &
       	     rmassyy(maxd_acomp+2,maxd_asize)
+	real rnumbpp(maxd_asize)
 	real rnumbxx(maxd_asize), rnumbyy(maxd_asize)
 	real xferfracvol(2,maxd_asize), xferfracnum(2,maxd_asize)
 	real wetvolxx(maxd_asize), wetvolyy(maxd_asize)
@@ -967,9 +995,11 @@
 	integer jj, l, ll, n, ndum, nnew, nold
 	integer jja, jjb, jjc
 
-	real dumbot, dumnum, dumnum_at_dhi, dumnum_at_dlo,   &
+	real delta_numb_conform2,   &
+	  dumbot, dumnum, dumnum_at_dhi, dumnum_at_dlo,   &
       	  dumvol, dumvol1p, dumxfvol, dumxfnum, sixoverpi, third
-	real dumxx(maxd_asize), dumyy(maxd_asize), dumout(maxd_asize)
+	real dumpp(maxd_asize), dumxx(maxd_asize), dumyy(maxd_asize),   &
+	  dumout(maxd_asize)
 
 	character*160 msg
 	character*8 dumch8
@@ -1065,36 +1095,41 @@
       	  drymassxx, dryvolxx, rmassxx, rnumbxx, wetmassxx, wetvolxx,   &
       	  drymassyy, dryvolyy, rmassyy, rnumbyy, wetmassyy, wetvolyy )
 
+	delta_numb_conform2 = 0.0
+
 	do 3900 n = 1, nsize_aer(itype)
 
 	dumvol = dryvolyy(n)
 	if (min(drymassyy(n),dumvol) .le. smallmassbb) then
 	    dumvol = drymassyy(n)/densdefault
-	    rnumbyy(n) = dumvol/volumlo_sect(n,itype)
-	    adrydens_sub(n,k,m) = densdefault
-	    awetdens_sub(n,k,m) = densdefault
-	    admeandry_sub(n,k,m) = dcen_sect(n,itype)
-	    admeanwet_sub(n,k,m) = dcen_sect(n,itype)
+	    dumnum = drymassyy(n)/(volumlo_sect(n,itype)*densdefault)
+	    delta_numb_conform2 = delta_numb_conform2 + dumnum - rnumbyy(n)
+	    rnumbyy(n) = dumnum
+	    adrydens_sub(n,itype,k,m) = densdefault
+	    awetdens_sub(n,itype,k,m) = densdefault
+	    admeandry_sub(n,itype,k,m) = dcen_sect(n,itype)
+	    admeanwet_sub(n,itype,k,m) = dcen_sect(n,itype)
 	else
 	    dumnum = rnumbyy(n)
 	    dumnum_at_dhi = dumvol/volumhi_sect(n,itype)
 	    dumnum_at_dlo = dumvol/volumlo_sect(n,itype)
 	    dumnum = max( dumnum_at_dhi, min( dumnum_at_dlo, dumnum ) )
+	    delta_numb_conform2 = delta_numb_conform2 + dumnum - rnumbyy(n)
 	    rnumbyy(n) = dumnum
-	    adrydens_sub(n,k,m) = drymassyy(n)/dumvol
+	    adrydens_sub(n,itype,k,m) = drymassyy(n)/dumvol
 	    dumvol1p = dumvol/dumnum
-	    admeandry_sub(n,k,m) = (dumvol1p*sixoverpi)**third
-	    awetdens_sub(n,k,m) = wetmassyy(n)/wetvolyy(n)
+	    admeandry_sub(n,itype,k,m) = (dumvol1p*sixoverpi)**third
+	    awetdens_sub(n,itype,k,m) = wetmassyy(n)/wetvolyy(n)
 	    dumvol1p = wetvolyy(n)/dumnum
-	    admeanwet_sub(n,k,m) = min( 100.*dcen_sect(n,itype),   &
+	    admeanwet_sub(n,itype,k,m) = min( 100.*dcen_sect(n,itype),   &
       			(dumvol1p*sixoverpi)**third )
 	end if
-	avoldry_sub(n,k,m) = dumvol*cairclm(k)
-	amassdry_sub(n,k,m) = drymassyy(n)*cairclm(k)
+	aqvoldry_sub(n,itype,k,m) = dumvol
+	aqmassdry_sub(n,itype,k,m) = drymassyy(n)
 
 !	if (k .eq. 1) then
-!	    awetdens_sfc(n,iclm,jclm) = awetdens_sub(n,k,m)
-!	    admeanwet_sfc(n,iclm,jclm) = admeanwet_sub(n,k,m)
+!	    awetdens_sfc(n,itype,iclm,jclm) = awetdens_sub(n,itype,k,m)
+!	    admeanwet_sfc(n,itype,iclm,jclm) = admeanwet_sub(n,itype,k,m)
 !	end if
 
 	do ll = 1, ncomp_plustracer_aer(itype)
@@ -1111,6 +1146,8 @@
 	rsub(numptr_aer(n,itype,iphase),k,m) = rnumbyy(n)
 
 3900	continue
+
+	delta_numb_conform1 = delta_numb_conform1 + delta_numb_conform2
 
 	call move_sections_conserve_check(   &
 	  2, iflag, iclm, jclm, k, m, iphase, itype,   &
@@ -1163,8 +1200,18 @@
 
 	dumbot = log( volumhi_sect(1,itype)/volumlo_sect(1,itype) )
 	do n = 1, nsize_aer(itype)
+	    dumpp(n) = -9.99
 	    dumxx(n) = -9.99
 	    dumyy(n) = -9.99
+	    if ( (drydenspp(n) .gt. 0.5) .and.   &
+      	         (drymasspp(n) .gt. smallmassaa) ) then
+      		dumvol = drymasspp(n)/drydenspp(n)
+		if ((rnumbpp(n) .ge. 1.0e-35) .and.   &
+      		    (dumvol .ge. 1.0e-35)) then
+		    dumvol1p = dumvol/rnumbpp(n)
+		    dumpp(n) = 1.0 + log(dumvol1p/volumlo_sect(1,itype))/dumbot
+		end if
+	    end if
 	    if ((rnumbxx(n) .ge. 1.0e-35) .and.   &
       		(dryvolxx(n) .ge. 1.0e-35)) then
 		dumvol1p = dryvolxx(n)/rnumbxx(n)
@@ -1182,7 +1229,7 @@
 !	write(msg,97030) 'lnvolnew', (dumyy(n), n=1,nsize_aer(itype))
 !	call peg_message( lunout, msg )
 
-	do jja = 1, 6
+	do jja = 1, 7
 	    if      (jja .eq. 1) then
 		dumch8 = 'rnumbold'
 		dumout(:) = rnumbxx(:)
@@ -1201,6 +1248,9 @@
 	    else if (jja .eq. 6) then
 		dumch8 = 'lnvolnew'
 		dumout(:) = dumyy(:)
+	    else if (jja .eq. 7) then
+		dumch8 = 'lnvolpre'
+		dumout(:) = dumpp(:)
 	    end if
 	    do jjb = 1, nsize_aer(itype), 10
 		jjc = min( jjb+9, nsize_aer(itype) )
@@ -1399,6 +1449,7 @@
 	data nerr, nerrmax / 0, 999 /
 
 	real dumbot, dumtop, dumtoler, dumerr, dumworst, dumworstb
+	real duma, dumb, dumc, dume
 	real thesum(4,maxd_acomp+7)
 	save thesum
 
@@ -1459,7 +1510,7 @@
 		    thesum(ipass+2,ll) = thesum(ipass+2,ll) + rsub(l,k,m)
 	    end do
 	end do
-	if (ipass .eq. 1) then
+	if (ipass .eq. 2) then
 	    ll = ncomp_plustracer_aer(itype)+2
 	    thesum(3,ll) = thesum(3,ll) + delta_water_conform1
 	    ll = ncomp_plustracer_aer(itype)+3
@@ -1494,6 +1545,30 @@
 	    dumtop = thesum(jj+1,ll) - thesum(jj,ll)
 	    dumbot = max( abs(thesum(jj,ll)), abs(thesum(jj+1,ll)), 1.0e-35 )
 	    dumerr = dumtop/dumbot
+
+! rce 21-jul-2006 - encountered some cases when delta_*_conform1 is negative 
+!   and large in magnitude relative to thesum, which causes the mass
+!   conservation to be less accurate due to roundoff
+! following section recomputes relative error with delta_*_conform1
+!   added onto each of thesum
+! also increased dumtoler slightly
+	    if (ipass .eq. 2) then
+		dumc = 1.0
+		if (ll .eq. ncomp_plustracer_aer(itype)+2) then
+		    dumc = delta_water_conform1
+		else if (ll .eq. ncomp_plustracer_aer(itype)+3) then
+		    dumc = delta_numb_conform1
+		end if
+		if (dumc .lt. 0.0) then
+		    duma = thesum(3,ll) - dumc
+		    dumb = thesum(4,ll) - dumc
+		    dumtop = dumb - duma
+		    dumbot = max( abs(duma), abs(dumb), 1.0e-35 )
+		    dume = dumtop/dumbot
+		    if (abs(dume) .lt. abs(dumerr)) dumerr = dume
+		end if
+	    end if
+
 	    if (abs(dumerr) .gt. abs(dumworst)) then
 		llworstb = llworst
 		dumworstb = dumworst
@@ -1502,8 +1577,7 @@
 	    end if
 	end do
 
-	dumtoler = 5.0e-7
-	dumtoler = 9.0e-7
+	dumtoler = 1.0e-6
 	if (abs(dumworst) .gt. dumtoler) then
 	    nerr = nerr + 1
 	    if (nerr .le. nerrmax) then
@@ -1707,11 +1781,13 @@
 	do l = 1, ltot2
 	    rsub(l,k,m) = dumsv_rsub(l)
 	end do
+	do itype = 1, ntype_aer
 	do n = 1, nsize_aer(itype)
 	    drymass_pregrow(n,itype) = dumsv_drymass_pregrow(n,itype)
 	    drymass_aftgrow(n,itype) = dumsv_drymass_aftgrow(n,itype)
 	    drydens_pregrow(n,itype) = dumsv_drydens_pregrow(n,itype)
 	    drydens_aftgrow(n,itype) = dumsv_drydens_aftgrow(n,itype)
+	end do
 	end do
 
 	return

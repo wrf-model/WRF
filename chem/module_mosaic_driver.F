@@ -81,7 +81,7 @@
 !   then the p_xxx_cwnn variables are not in module_state_description,
 !   and the following cpp directive should be commented out
 !
-!#define cw_species_are_in_registry
+#define cw_species_are_in_registry
 
 
 	contains
@@ -111,17 +111,21 @@
 		its,ite, jts,jte, kts,kte                         )
 
 
-	use module_configure, only:  grid_config_rec_type,               &
-			p_qv,                                            &
-			p_so2, p_ho2, p_so4aj, p_corn, p_hcl, p_mtf,     &
-			p_so4_a01, p_water_a01, p_num_a01,               &
+	use module_configure, only:  grid_config_rec_type,            &
+			p_qv,                                         &
+			p_so2, p_ho2, p_so4aj, p_corn, p_hcl, p_mtf,  &
+			p_so4_a01, p_water_a01, p_num_a01,            &
 			p_so4_a04, p_water_a04, p_num_a04
 
 	use module_state_description, only:  num_moist, num_chem
 
 	use module_data_mosaic_asect
 	use module_data_mosaic_other
-	use module_mosaic_therm, only:  aerchemistry, print_mosaic_stats
+	use module_mosaic_therm, only:  aerchemistry, print_mosaic_stats, &
+         iprint_mosaic_fe1, iprint_mosaic_perform_stats, &
+         iprint_mosaic_diag1, iprint_mosaic_input_ok
+	use module_mosaic_newnuc, only:  mosaic_newnuc_1clm
+	use module_mosaic_coag, only:  mosaic_coag_1clm
 	use module_peg_util, only:  peg_error_fatal, peg_message
 
 	implicit none
@@ -199,18 +203,22 @@
 
 !-----------------------------------------------------------------------
 !   local variables
-	integer :: i, idum, it, j, jt, k, l, n
+	integer :: i, idum, istat, it, j, jt, k, l, n
 	integer :: k_pegshift, kclm_calcbgn, kclm_calcend
 	integer :: ktmaps, ktmape
 	integer :: levdbg_err, levdbg_info
 	integer :: i_force_dump, mode_force_dump
-	integer :: idiagaa_dum, ijcount_dum
-	integer :: debug_level=0
+	integer :: idiagaa_dum, idiagbb_dum, ijcount_dum
+	integer, parameter :: debug_level=0
+	integer, parameter :: aercoag_onoff = 1
+	integer, parameter :: aernewnuc_onoff = 1
 	
-	real :: dtchem
+	real :: dtchem, dtcoag, dtnuc
 	real :: dum
+	real :: rsub0(l2maxd,kmaxd,nsubareamaxd)
 
 	character*100 msg
+
 
     if (debug_level .ge. 15) then
 !rcetestc diagnostics --------------------------------------------------
@@ -243,6 +251,15 @@
     end if
 !   end if
 !rcetestc diagnostics --------------------------------------------------
+    end if
+
+! The default values for these informational printout settings are set
+! in module_data_mosaic_therm.F.
+    if (debug_level .lt. 15) then 
+       iprint_mosaic_fe1 = 1
+       iprint_mosaic_perform_stats = 0
+       iprint_mosaic_diag1 = 0
+       iprint_mosaic_input_ok = 0
     end if
 
 
@@ -323,8 +340,12 @@
 		num_moist, num_chem, moist, chem,             &
 		t_phy, p_phy, rho_phy                         )
 
+!rce 22-jul-2006 - save initial mixrats
+	rsub0(:,:,:) = rsub(:,:,:)
+
+	idiagaa_dum = 0
+	idiagbb_dum = 110
 !rce 29-apr-2004 - following is for debugging texas 16 km run
-idiagaa_dum = 0
 !	if ((its.eq.38) .and. (jts.eq.38)   &
 !			.and. (ktau.eq.240)) idiagaa_dum = 1
 !	if ((it .eq.45) .and. (jt .eq.71)   &
@@ -354,7 +375,7 @@ idiagaa_dum = 0
 
 !  note units for aerosol is now ug/m3
 
-    call wrf_debug(200,"mosaic_aerchem_driver: back from aerchemistry")
+    call wrf_debug(300,"mosaic_aerchem_driver: back from aerchemistry")
 	if ((it .eq.45) .and. (jt .eq.71)   &
 			.and. (ktau.eq.240)) then
 	    call aerchem_debug_dump( 3, it, jt, dtchem )
@@ -362,9 +383,29 @@ idiagaa_dum = 0
 
 	if (i_force_dump > 0) call aerchem_debug_dump( 3, it, jt, dtchem )
 
+
+	if (aernewnuc_onoff > 0) then
+	    if (idiagaa_dum > 0) print 93010, 'calling mosaic_newnuc_1clm'
+	    dtnuc = dtchem
+	    call mosaic_newnuc_1clm( istat,  &
+		it, jt, kclm_calcbgn, kclm_calcend,   &
+		idiagbb_dum, dtchem, dtnuc, rsub0,   &
+		id, ktau, ktauc, its, ite, jts, jte, kts, kte )
+	end if
+
+
+	if (aercoag_onoff > 0) then
+	    if (idiagaa_dum > 0) print 93010, 'calling mosaic_coag_1clm'
+	    dtcoag = dtchem
+	    call mosaic_coag_1clm( istat,  &
+		it, jt, kclm_calcbgn, kclm_calcend,   &
+		idiagbb_dum, dtchem, dtcoag,   &
+		id, ktau, ktauc, its, ite, jts, jte, kts, kte )
+	end if
+
+
 	if (idiagaa_dum > 0)   &
  	print 93010, 'calling mapaerbb'
-!	print 93010, 'calling mapaerbb'
 	call mapaer_tofrom_host( 1,                       &
 		ims,ime, jms,jme, kms,kme,                    &
 		its,ite, jts,jte, kts,kte,                    &
@@ -386,7 +427,7 @@ idiagaa_dum = 0
 
 
 !-----------------------------------------------------------------------
-   subroutine sum_pm_mosaic (                                         &
+   subroutine sum_pm_mosaic (                                          &
          alt, chem,                                                    &
          pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                   &
          ids,ide, jds,jde, kds,kde,                                    &
@@ -492,7 +533,7 @@ idiagaa_dum = 0
 		t_phy, p_phy, rho_phy                         )
 
         use module_configure, only:   &
-		p_qv, p_sulf, p_hno3, p_hcl, p_nh3, p_o3,   &
+		p_qv, p_qc, p_sulf, p_hno3, p_hcl, p_nh3, p_o3,   &
 		p_so2, p_h2o2, p_hcho, p_ora1, p_ho, p_ho2, p_no3,   &
 		p_no, p_no2, p_hono, p_pan, p_ch3o2, p_ch3oh, p_op1
 	use module_state_description, only:  param_first_scalar
@@ -634,6 +675,11 @@ idiagaa_dum = 0
 	ptotclm(:) = 0.0
 	afracsubarea(:,:) = 0.0
 	relhumclm(:) = aboxtest_min_relhum
+	rcldwtr_sub(:,:) = 0.0
+
+	adrydens_sub( :,:,:,:) = 0.0
+	aqmassdry_sub(:,:,:,:) = 0.0
+	aqvoldry_sub( :,:,:,:) = 0.0
 
 !   map gas and aerosol mixing ratios based on aboxtest_map_method
 !	1 - map aerosol species and h2so4/hno3/hcl/nh3 using the p_xxx
@@ -748,6 +794,8 @@ idiagaa_dum = 0
 	rsub(kh2o,k1:k2,1) = moist(it,kt1:kt2,jt,p_qv)/factmoist
 	cairclm(k1:k2) = rho_phy(it,kt1:kt2,jt)/factdens
 	ptotclm(k1:k2) = p_phy(it,kt1:kt2,jt)/factpres
+	if (p_qc .ge. p1st)   &
+	    rcldwtr_sub(k1:k2,1) = moist(it,kt1:kt2,jt,p_qc)/factmoist
 
 !   compute or get relative humidity, based on aboxtest_rh_method
 !	1 - compute from water vapor, temperature, and pressure
@@ -947,8 +995,8 @@ idiagaa_dum = 0
 
 !-----------------------------------------------------------------------
 ! *** note - eventually is_aerosol will be a subr argument
-!	subroutine init_data_mosaic_asect( is_aerosol )
-	subroutine init_data_mosaic_asect( )
+	subroutine init_data_mosaic_asect( is_aerosol )
+!	subroutine init_data_mosaic_asect( )
 
 	use module_data_mosaic_asect
 	use module_data_mosaic_other, only:  lunerr, lunout,   &
@@ -962,15 +1010,27 @@ idiagaa_dum = 0
 	use module_peg_util, only:  peg_error_fatal
 
 
-#if defined ( cw_species_are_in_registry )
-	use module_configure, only:   &
-		p_so4_a01, p_so4_a02, p_so4_a03, p_so4_a04,   &
-		p_so4_a05, p_so4_a06, p_so4_a07, p_so4_a08,   &
-		p_so4_cw01
-#else
 	use module_configure, only:   &
 		p_so4_a01, p_so4_a02, p_so4_a03, p_so4_a04,   &
 		p_so4_a05, p_so4_a06, p_so4_a07, p_so4_a08
+#if defined ( cw_species_are_in_registry )
+        use module_configure, only:   &
+	   p_so4_cw01, p_no3_cw01, p_cl_cw01, p_nh4_cw01, p_na_cw01,   &
+	   p_so4_cw02, p_no3_cw02, p_cl_cw02, p_nh4_cw02, p_na_cw02,   &
+	   p_so4_cw03, p_no3_cw03, p_cl_cw03, p_nh4_cw03, p_na_cw03,   &
+	   p_so4_cw04, p_no3_cw04, p_cl_cw04, p_nh4_cw04, p_na_cw04,   &
+	   p_so4_cw05, p_no3_cw05, p_cl_cw05, p_nh4_cw05, p_na_cw05,   &
+	   p_so4_cw06, p_no3_cw06, p_cl_cw06, p_nh4_cw06, p_na_cw06,   &
+	   p_so4_cw07, p_no3_cw07, p_cl_cw07, p_nh4_cw07, p_na_cw07,   &
+	   p_so4_cw08, p_no3_cw08, p_cl_cw08, p_nh4_cw08, p_na_cw08,   &
+	   p_oin_cw01, p_oc_cw01,  p_bc_cw01, p_num_cw01,              &
+	   p_oin_cw02, p_oc_cw02,  p_bc_cw02, p_num_cw02,              &
+	   p_oin_cw03, p_oc_cw03,  p_bc_cw03, p_num_cw03,              &
+	   p_oin_cw04, p_oc_cw04,  p_bc_cw04, p_num_cw04,              &
+	   p_oin_cw05, p_oc_cw05,  p_bc_cw05, p_num_cw05,              &
+	   p_oin_cw06, p_oc_cw06,  p_bc_cw06, p_num_cw06,              &
+	   p_oin_cw07, p_oc_cw07,  p_bc_cw07, p_num_cw07,              &
+	   p_oin_cw08, p_oc_cw08,  p_bc_cw08, p_num_cw08
 #endif
 
 	use module_state_description, only:  param_first_scalar, num_chem
@@ -978,8 +1038,7 @@ idiagaa_dum = 0
 	implicit none
 
 ! *** note - eventually is_aerosol will be a subr argument
-!	logical, intent(out) :: is_aerosol(num_chem)
-        logical :: is_aerosol(num_chem)
+	logical, intent(out) :: is_aerosol(num_chem)
 
 !   local variables
 	integer idum, itype, l, ldum, n, nhi, nsize_aer_dum
@@ -1180,7 +1239,7 @@ idiagaa_dum = 0
 		volumlo_sect(n,itype) = (pi/6.) * (dlo_sect(n,itype)**3)
 		volumhi_sect(n,itype) = (pi/6.) * (dhi_sect(n,itype)**3)
 		volumcen_sect(n,itype) = (pi/6.) * (dcen_sect(n,itype)**3)
-		sigmag_aer(n,itype) = alog(dhi_sect(n,itype)/dlo_sect(n,itype))
+		sigmag_aer(n,itype) = (dhi_sect(n,itype)/dlo_sect(n,itype))**0.289
 	    end do
 	end do
 
@@ -1218,6 +1277,7 @@ idiagaa_dum = 0
 		kno3, kno, kno2, khono, kpan, kch3o2, kch3oh, kch3ooh,   &
 		lmaxd, l2maxd, ltot, ltot2, lunout, lunerr, name
 	use module_peg_util, only:  peg_error_fatal, peg_message
+	use module_mosaic_wetscav, only: initwet
 
 	implicit none
 
@@ -1570,8 +1630,8 @@ idiagaa_dum = 0
 	    write(typetxt,'(a,i2)') '_t', itype
 	    ntypetxt = 4
 	else
-	    typetxt = '_t??'
-	    ntypetxt = 4
+	    typetxt = '_t?'
+	    ntypetxt = 3
 	end if
 
 	ncomp_dum(:,:) = 0
@@ -1590,7 +1650,7 @@ idiagaa_dum = 0
 	    write(sizetxt,'(i3)') isize
 	    nsizetxt = 3
 	else
-	    sizetxt = '??'
+	    sizetxt = 's?'
 	    nsizetxt = 2
 	end if
 
@@ -1604,7 +1664,7 @@ idiagaa_dum = 0
 	    phasetxt = 'cw'
 	    nphasetxt = 2
 	else 
-	    phasetxt = '??'
+	    phasetxt = 'p?'
 	    nphasetxt = 2
 	end if
 
@@ -1752,6 +1812,7 @@ idiagaa_dum = 0
 		name_aer(ll,itype) = name_mastercomp_aer(mcindx_dum)
 		dens_aer(ll,itype) = dens_mastercomp_aer(mcindx_dum)
 		mw_aer(ll,itype) = mw_mastercomp_aer(mcindx_dum)
+		hygro_aer(ll,itype) = hygro_mastercomp_aer(mcindx_dum)
 
 	    end if
 
@@ -2139,6 +2200,14 @@ idiagaa_dum = 0
 	name(ktemp)  = 'temp'
 	name(kh2o)   = 'h2o'
 
+        call initwet(   &
+	    ntype_aer, nsize_aer, ncomp_aer,   &
+	    massptr_aer, dens_aer, numptr_aer,           &
+	    maxd_acomp, maxd_asize,maxd_atype, maxd_aphase,   &
+	    dcen_sect, sigmag_aer, &
+	    waterptr_aer, dens_water_aer, &
+	    scavimptblvol, scavimptblnum, nimptblgrow_mind,   &
+	    nimptblgrow_maxd, dlndg_nimptblgrow)
 
 	return
 	end subroutine init_data_mosaic_ptr
@@ -2171,7 +2240,7 @@ idiagaa_dum = 0
 	data ientryno / -13579 /
 
 
-!   check for bypass based on some control variable ???
+!   check for bypass based on some control variable ?
 
 
 !   do initial output when ientryno = -13579

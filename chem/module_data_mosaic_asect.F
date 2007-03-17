@@ -165,6 +165,8 @@
 !-----------------------------------------------------------------------
 !
 !   msectional - if positive, each aerosol size bin is a section.
+!   if equals 10, use jacobson moving center
+!   if equals 20, use tzivion mass-number advection 
 !	if zero/negative, each size bin is a mode (aitken, accumulation, ...)
 !
 !   maerosolincw - if positive, both unactivated/interstitial and activated
@@ -293,10 +295,10 @@
 	real, parameter :: dens_no3_aer = 1.80
 	real, parameter :: dens_cl_aer  = 2.20
 	real, parameter :: dens_msa_aer = 1.80
-	real, parameter :: dens_co3_aer = 2.20
+	real, parameter :: dens_co3_aer = 2.60
 	real, parameter :: dens_nh4_aer = 1.80
 	real, parameter :: dens_na_aer  = 2.20
-	real, parameter :: dens_ca_aer  = 2.20
+	real, parameter :: dens_ca_aer  = 2.60
 	real, parameter :: dens_oin_aer = 2.60
 	real, parameter :: dens_oc_aer  = 1.00
 	real, parameter :: dens_bc_aer  = 1.70
@@ -328,9 +330,9 @@
 !   the following arrays are used during "column calculations" within
 !	mosaic modules
 !
-!   avoldry_sub(n,k,m) = dry-volume (cm^3-aerosol/cm^3-air) for mode n,
+!   aqvoldry_sub(n,k,m) = dry-volume (cm^3-aerosol/mole-air) for mode n,
 !			layer k, subarea m
-!   amassdry_sub(n,k,m) = dry-mass (g-aerosol/cm^3-air) for mode n, ...
+!   aqmassdry_sub(n,k,m) = dry-mass (g-aerosol/mole-air) for mode n, ...
 !   adrydens_sub(n,k,m) = dry-density (g-aerosol/cm^3-aerosol) for mode n, ...
 !			== amassdry_sub/avoldry_sub
 !   awetdens_sub(n,k,m) = wet-density (g-aerosol/cm^3-aerosol) for mode n, ...
@@ -368,12 +370,14 @@
 	integer, parameter :: kmaxd_asize = 100
 	integer, parameter :: nsubareamaxd_asize = 5
 
-	real, save :: avoldry_sub(maxd_asize,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: amassdry_sub(maxd_asize,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: adrydens_sub(maxd_asize,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: awetdens_sub(maxd_asize,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: admeandry_sub(maxd_asize,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: admeanwet_sub(maxd_asize,kmaxd_asize,nsubareamaxd_asize)
+! rce 22-jul-2006 - added maxd_atype dimension to following 6 arrays
+!    and changed avoldry_sub,amassdry_sub to aqvoldry_sub,aqmassdry_sub
+	real, save :: aqvoldry_sub( maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
+	real, save :: aqmassdry_sub(maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
+	real, save :: adrydens_sub( maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
+	real, save :: awetdens_sub( maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
+	real, save :: admeandry_sub(maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
+	real, save :: admeanwet_sub(maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
 
 !	real, save :: awetdens_sfc(maxd_asize,imaxd_asize,jmaxd_asize)
 !	real, save :: admeanwet_sfc(maxd_asize,imaxd_asize,jmaxd_asize)
@@ -383,6 +387,13 @@
 	real, save :: drymass_aftgrow(maxd_asize,maxd_atype)
 	real, save :: drydens_aftgrow(maxd_asize,maxd_atype)
 
+! table lookup of aerosol impaction/interception
+! scavenging rates
+	real dlndg_nimptblgrow
+	integer nimptblgrow_mind, nimptblgrow_maxd
+	parameter (nimptblgrow_mind=-7, nimptblgrow_maxd=12)
+     	real scavimptblnum(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype), &
+     	     scavimptblvol(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype)
 
 
 	end module module_data_mosaic_asect

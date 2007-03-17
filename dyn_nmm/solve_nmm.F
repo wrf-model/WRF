@@ -28,6 +28,9 @@
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
       USE MODULE_NEST_UTIL
+#ifdef WRF_CHEM
+      USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
+#endif
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -58,6 +61,9 @@
 !***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
 !
       TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+#ifdef WRF_CHEM
+      INTEGER :: NUMGAS
+#endif
 !
 !-----------------------------------------------------------------------
 !
@@ -114,6 +120,7 @@
       external rsl_internal_milliclock
 # define timef rsl_internal_milliclock
 #else
+!     real*8,dimension(1) :: timef
       real*8 :: timef
 #endif
 !-----------------------------------------------------------------------
@@ -189,6 +196,9 @@
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
 !
+#ifdef WRF_CHEM
+  NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
+#endif
       DO J=JMS,JME
       DO K=KMS,KME
       DO I=IMS,IME
@@ -1164,7 +1174,7 @@
      &             ,MASS_FLUX,XF_ENS                                   &
      &             ,PR_ENS,GSW                                         &
 #ifdef WRF_CHEM
-     &             ,GD_CLOUD,GD_CLOUD2                                 &
+     &             ,GD_CLOUD,GD_CLOUD2,RAINCV                          &
 #endif
 !
      &             ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN                 &
@@ -1326,7 +1336,7 @@
      &          ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                &
      &          ,PD,T,Q,Q2,CWM,PINT,MOIST,N_MOIST,SCALAR,NUM_SCALAR    &
 #ifdef WRF_CHEM
-     &          ,CHEM,NUM_CHEM,CONFIG_FLAGS                            &
+     &          ,CHEM,NUMGAS,CONFIG_FLAGS                              &
 #endif
      &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH,Z                       &
      &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &

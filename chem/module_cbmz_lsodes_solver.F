@@ -6,7 +6,44 @@
 !
 ! CBMZ module: see module_cbmz.F for information and terms of use
 !**********************************************************************************  
+
       module module_cbmz_lsodes_solver
+
+!-----------------------------------------------------------------------
+! 08-feb-2004 rce - this file contains a significantly modified
+!	version of the 11-oct-1994 netlib lsodes code
+!	and associated linpack routines
+!   converted to lowercase and fortran90
+!   converted to a module
+!   integer variables used to store characters for error messages
+!       changed to character variables
+!   ruserpar, nruserpar, iuserpar, niuserpar argument added -
+!	they are "user parameters" that are passed through to "subroutine f"
+!-----------------------------------------------------------------------
+! 18-mar-2006 rce - 
+!   encountering a situation with overflow in function vnorm,
+!	when called from lsodes_solver after label 160
+!   first, tried to modify the vnorm code so that it would
+!	scale the v(i)*w(i) when doing sum-of-squares.
+!	Seemed like a good idea, but this just caused problems elsewhere
+!   second, added iok_vnorm coding as a bandaid
+!	in vnorm, if any v(i)*w(i) > 1.0e18, then vnorm
+!	    is set to 1.0e18 and iok_vnorm to -1
+!       in lsodes_solver, after vnorm call near label 160,
+!	    iok_vnorm is tested, and "-1" causes a return
+!	    with istate=-901
+!       elsewhere in lsodes_solver, before each return,
+!	    iok_vnorm is tested, and "-1" causes istate=-91x
+!-----------------------------------------------------------------------
+! 18-mar-2006 rce - 
+!   subr r1mach - replaced the integer data statements used to
+!	define rmach(1:5) with real*4 data statements
+!	to avoid possible problems on mpp2
+!     also added code to define rmach(1:5) using the
+!	tiny, huge, spacing, epsilon, & log10 intrinsic functions,
+!       BUT this code is currently commented out
+!-----------------------------------------------------------------------
+
 
       contains
 
@@ -1295,6 +1332,9 @@
          ipian, ipjan, ipjgp, ipigp, ipr, ipc, ipic, ipisp, iprsp, ipa,   &
          lenyh, lenyhm, lenwk, lreq, lrat, lrest, lwmin, moss, msbj,   &
          nslj, ngp, nlu, nnz, nsp, nzl, nzu
+
+      integer iok_vnorm
+      common / lsodes_cmn_iok_vnorm / iok_vnorm
 !
       data mord(1),mord(2)/12,5/, mxstp0/500/, mxhnl0/10/
 !raz      data illin/0/, ntrep/0/
@@ -1313,6 +1353,8 @@
 ! not yet been done, an error return occurs.
 ! if istate = 1 and tout = t, jump to block g and return immediately.
 !-----------------------------------------------------------------------
+      iok_vnorm = 1
+
       if (istate .lt. 1 .or. istate .gt. 3) go to 601
       if (itask .lt. 1 .or. itask .gt. 5) go to 602
       if (istate .eq. 1) go to 10
@@ -1604,6 +1646,10 @@
  160  tol = amax1(tol,100.0e0*uround)
       tol = amin1(tol,0.001e0)
       sum = vnorm (n, rwork(lf0), rwork(lewt))
+      if (iok_vnorm .lt. 0) then
+          istate = -901
+          return
+      end if
       sum = 1.0e0/(tol*w0*w0) + tol*sum**2
       h0 = 1.0e0/sqrt(sum)
       h0 = amin1(h0,tdist)
@@ -1757,10 +1803,15 @@
       iwork(21) = nlu
       iwork(25) = nzl
       iwork(26) = nzu
+      if (iok_vnorm .lt. 0) istate = -912
       return
 !
  430  ntrep = ntrep + 1
-      if (ntrep .lt. 5) return
+!     if (ntrep .lt. 5) return
+      if (ntrep .lt. 5) then
+          if (iok_vnorm .lt. 0) istate = -913
+          return
+      end if
       call xerrwv(   &
         'lsodes-- repeated calls with istate = 1 and tout = t (=r1)  ',   &
          60, 301, 0, 0, 0, 0, 1, t, 0.0e0)
@@ -1848,6 +1899,7 @@
       iwork(21) = nlu
       iwork(25) = nzl
       iwork(26) = nzu
+      if (iok_vnorm .lt. 0) istate = -914
       return
 !-----------------------------------------------------------------------
 ! block i.
@@ -2007,12 +2059,14 @@
  700  if (illin .eq. 5) go to 710
       illin = illin + 1
       istate = -3
+      if (iok_vnorm .lt. 0) istate = -915
       return
  710  call xerrwv('lsodes-- repeated occurrences of illegal input    ',   &
          50, 302, 0, 0, 0, 0, 0, 0.0e0, 0.0e0)
 !
  800  call xerrwv('lsodes-- run aborted.. apparent infinite loop     ',   &
          50, 303, 2, 0, 0, 0, 0, 0.0e0, 0.0e0)
+      if (iok_vnorm .lt. 0) istate = -916
       return
 !----------------------- end of subroutine lsodes ----------------------
       end subroutine lsodes_solver
@@ -4601,8 +4655,15 @@
       integer n,   i
       real v, w,   sum
       dimension v(n), w(n)
+      integer iok_vnorm
+      common / lsodes_cmn_iok_vnorm / iok_vnorm
       sum = 0.0e0
       do 10 i = 1,n
+        if (abs(v(i)*w(i)) .ge. 1.0e18) then
+            vnorm = 1.0e18
+            iok_vnorm = -1
+            return
+        end if
  10     sum = sum + (v(i)*w(i))**2
       vnorm = sqrt(sum/float(n))
       return
@@ -4778,32 +4839,44 @@
 !  change integer to integer*4 or otherwise instruct your compiler
 !  to use full-word integers in the next 5 declarations.
 !
-      integer small(2)
-      integer large(2)
-      integer right(2)
-      integer diver(2)
-      integer log10(2)
+      integer mach_small(2)
+      integer mach_large(2)
+      integer mach_right(2)
+      integer mach_diver(2)
+      integer mach_log10(2)
       integer sc
 !
       character*80 errmsg
 !
       real rmach(5)
 !
-      equivalence (rmach(1),small(1))
-      equivalence (rmach(2),large(1))
-      equivalence (rmach(3),right(1))
-      equivalence (rmach(4),diver(1))
-      equivalence (rmach(5),log10(1))
+      equivalence (rmach(1), mach_small(1))
+      equivalence (rmach(2), mach_large(1))
+      equivalence (rmach(3), mach_right(1))
+      equivalence (rmach(4), mach_diver(1))
+      equivalence (rmach(5), mach_log10(1))
 !
 !     machine constants for ieee arithmetic machines, such as the at&t
 !     3b series, motorola 68000 based machines (e.g. sun 3 and at&t
 !     pc 7300), and 8087 based micros (e.g. ibm pc and at&t 6300).
 !
-       data small(1) /     8388608 /
-       data large(1) /  2139095039 /
-       data right(1) /   864026624 /
-       data diver(1) /   872415232 /
-       data log10(1) /  1050288283 /, sc/987/
+!      data small(1) /     8388608 /
+!      data large(1) /  2139095039 /
+!      data right(1) /   864026624 /
+!      data diver(1) /   872415232 /
+!      data log10(1) /  1050288283 /, sc/987/
+
+! 18-may-2006 -- 
+!   the following values are produced on our current linux 
+!	workstations, when the data statments for 
+!	'motorola 68000 based machines' are used
+!   specifiying them using 'real' data statements should work fine
+       data rmach(1) / 1.1754944000E-38 /
+       data rmach(2) / 3.4028235000E+38 /
+       data rmach(3) / 5.9604645000E-08 /
+       data rmach(4) / 1.1920929000E-07 /
+       data rmach(5) / 3.0103001000E-01 /
+       data sc / 987 /
 !
 !     machine constants for amdahl machines.
 !
@@ -4993,6 +5066,9 @@
 !      data rmach(4) /     '3500'x /
 !      data rmach(5) / '209b3f9a'x /, sc/987/
 !
+      real dum
+
+
 !  ***  issue stop 778 if all data statements are commented...
 !     if (sc .ne. 987) stop 778
       if (sc .ne. 987) then
@@ -5002,7 +5078,52 @@
       end if
 
       if (i .lt. 1  .or.  i .gt. 5) goto 999
+
       r1mach = rmach(i)
+
+! 18-may-2006 -- 
+!   the following compares results from data statements
+!   and fortran90 functions
+!     write(*,'(/a,i5      )')   &
+!         'in module_cbmz_lsodes_solver r1mach - i =', i
+!     dum = tiny( 1.0 )
+!     write(*,'( a,1pe18.10)') '   rmach(1)    =', rmach(1)
+!     write(*,'( a,1pe18.10)') '   tiny(1.0)   =', dum
+!     dum = huge( 1.0 )
+!     write(*,'( a,1pe18.10)') '   rmach(2)    =', rmach(2)
+!     write(*,'( a,1pe18.10)') '   huge(1.0)   =', dum
+!     dum = spacing( 0.5 )
+!     write(*,'( a,1pe18.10)') '   rmach(3)    =', rmach(3)
+!     write(*,'( a,1pe18.10)') '   spacing(0.5)=', dum
+!     dum = epsilon( 1.0 )
+!     write(*,'( a,1pe18.10)') '   rmach(4)    =', rmach(4)
+!     write(*,'( a,1pe18.10)') '   epsilon(1.0)=', dum
+!     dum = log10( 2.0 )
+!     write(*,'( a,1pe18.10)') '   rmach(5)    =', rmach(5)
+!     write(*,'( a,1pe18.10)') '   log10(2.0)  =', dum
+!     write(*,*)
+
+! 18-may-2006 -- 
+!   the following fortran90 functions give the same results
+!   as the 'real' data statements on our linux workstations
+!   and could probably be used to replace the data statements
+!     if (i .eq. 1) then
+!         dum = 1.0
+!         r1mach = tiny( dum )
+!     else if (i .eq. 2) then
+!         dum = 1.0
+!         r1mach = huge( dum )
+!     else if (i .eq. 3) then
+!         dum = 0.5
+!         r1mach = spacing( dum )
+!     else if (i .eq. 4) then
+!         dum = 1.0
+!         r1mach = epsilon( dum )
+!     else if (i .eq. 5) then
+!         dum = 2.0
+!         r1mach = log10( dum )
+!     end if
+
       return
 
 ! 999 write(*,1999) i
@@ -5061,8 +5182,8 @@
 !    both the wm and iwm arrays (in stode).  This is treated as a 
 !    severe error if stode is within the module.
 ! The same problem arises when iprep calls prep.
-! They were renamed to stode_lsodes and prep_lsodes to reduce the
-!    chance of name conflicts.
+! These two routines were renamed to stode_lsodes and prep_lsodes 
+!    to reduce the chance of name conflicts.
 !
       subroutine stode_lsodes (neq, y, yh, nyh, yh1, ewt, savf, acor,   &
          wm, iwm, f, jac, pjac, slvs,   &

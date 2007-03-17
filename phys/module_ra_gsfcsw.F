@@ -1,8 +1,5 @@
 !Comment the following out to turn off aerosol-radiation
 !feedback between MOSAIC and GSFCSW. wig, 21-Feb-2005
-#ifdef WRF_CHEM
-#define AER_RA_FEEDBACK   
-#endif
 
 MODULE module_ra_gsfcsw
 
@@ -21,14 +18,15 @@ CONTAINS
    SUBROUTINE GSFCSWRAD(rthraten,gsw,xlat,xlong                   &
                    ,dz8w,rho_phy                                  &
                    ,alb,t3d,qv3d,qc3d,qr3d                        &
-                   ,qi3d,qs3d,qg3d                                &
-                   ,p3d,p8w3d,pi3d,cldfra3d                       &
+                   ,qi3d,qs3d,qg3d,qndrop3d                       &
+                   ,p3d,p8w3d,pi3d,cldfra3d,rswtoa                &
                    ,gmt,cp,g,julday,xtime,declin,solcon           &
                    ,radfrq,degrad,taucldi,taucldc,warm_rain       &
                    ,tauaer300,tauaer400,tauaer600,tauaer999       & ! jcb
                    ,gaer300,gaer400,gaer600,gaer999               & ! jcb
                    ,waer300,waer400,waer600,waer999               & ! jcb
-                   ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                 &
+                   ,aer_ra_feedback                               &
+                   ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop        &
                    ,ids,ide, jds,jde, kds,kde                     & 
                    ,ims,ime, jms,jme, kms,kme                     &
                    ,its,ite, jts,jte, kts,kte                     & 
@@ -62,6 +60,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT)  ::                              RTHRATEN
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
          INTENT(INOUT)  ::                               taucldi, &
                                                          taucldc
 !
@@ -71,7 +70,8 @@ CONTAINS
                                                              ALB
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         INTENT(INOUT)  ::                                   GSW
+         INTENT(INOUT)  ::                                   GSW, &
+                                                          RSWTOA
 !
    REAL, INTENT(IN   )  ::                              GMT,CP,G
 !
@@ -84,6 +84,8 @@ CONTAINS
                                  gaer300,gaer400,gaer600,gaer999, & ! jcb
                                  waer300,waer400,waer600,waer999    ! jcb
 
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &           
          INTENT(IN    ) ::                                        &
@@ -92,9 +94,12 @@ CONTAINS
                                                             QR3D, &
                                                             QI3D, &
                                                             QS3D, &
-                                                            QG3D
+                                                            QG3D, &
+                                                        QNDROP3D
 
-   LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
+   LOGICAL, OPTIONAL, INTENT(IN ) ::    &
+                                   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG, &
+                                                        F_QNDROP
 
 ! LOCAL VARS
  
@@ -131,6 +136,7 @@ CONTAINS
                                                            P8W2D
    REAL, DIMENSION( its: ite, kts-1:kte ) ::                      &
                                                           TTEN2D, &
+                                                        qndrop2d, &
                                                             SH2D, &
                                                              P2D, &
                                                              T2D, &
@@ -172,6 +178,7 @@ CONTAINS
    data midbands/.2,.235,.27,.2875,.3025,.305,.3625,.55,1.92,1.745,6.135/   ! jcb
    real :: ang,slope ! jcb
    character(len=200) :: msg !wig
+   real pi, third, relconst, lwpmin, rhoh2o
 !
 !--------------------------------------------------------------------------------
 !   data set 1
@@ -367,7 +374,8 @@ CONTAINS
 
 !--------------------------------------------------------------------------------
 
-#ifdef AER_RA_FEEDBACK   
+#ifdef WRF_CHEM
+   IF ( aer_ra_feedback == 1) then
    IF ( .NOT. &
       ( PRESENT(tauaer300) .AND. &
         PRESENT(tauaer400) .AND. &
@@ -382,6 +390,7 @@ CONTAINS
         PRESENT(waer600) .AND. &
         PRESENT(waer999) ) ) THEN
       CALL wrf_error_fatal ( 'Warning: missing fields required for aerosol radiation' )
+   ENDIF
    ENDIF
 #endif
    cldwater = .true.
@@ -504,7 +513,7 @@ CONTAINS
 ! is not specified in Fortran
 
       IF ( PRESENT ( F_QI ) ) THEN
-	predicate = F_QI
+         predicate = F_QI
       ELSE
         predicate = .FALSE.
       ENDIF
@@ -520,7 +529,19 @@ CONTAINS
          ENDDO
       ENDIF
 
-      DO I=its,ite
+       IF ( PRESENT( F_QNDROP ) ) THEN
+         IF ( F_QNDROP ) THEN
+            DO K=kts,kte
+               DO I=its,ite
+                  NK=kme-1-K+kms
+                  qndrop2d(I,K)=qndrop3d(I,NK,j)
+               ENDDO
+            ENDDO
+            qndrop2d(:,kts-1)=0.
+         END IF
+      END IF
+
+     DO I=its,ite
          TTEN2D(I,0)=0.
          T2D(I,0)=T2D(I,1)
 ! SH2D specific humidity
@@ -549,9 +570,29 @@ CONTAINS
 
 ! ... Vertical profiles for effective particle size
 !
+      pi = 4.*atan(1.0)
+      third=1./3.
+      rhoh2o=1.e3
+      relconst=3/(4.*pi*rhoh2o)
+!     minimun liquid water path to calculate rel
+!     corresponds to optical depth of 1.e-3 for radius 4 microns.
+      lwpmin=3.e-5
       do k = kts-1, kte
       do i = its, ite
          reff(i,k,2) = 10.
+         if( PRESENT( F_QNDROP ) ) then
+            if( F_QNDROP ) then
+              if ( cwc(i,k,2)*(P8W2D(I,K+1)-P8W2D(I,K)).gt.lwpmin.and. &
+                   qndrop2d(i,k).gt.1000. ) then
+               reff(i,k,2)=(relconst*cwc(i,k,2)/qndrop2d(i,k))**third ! effective radius in m
+!           apply scaling from Martin et al., JAS 51, 1830.
+               reff(i,k,2)=1.1*reff(i,k,2)
+               reff(i,k,2)=reff(i,k,2)*1.e6 ! convert from m to microns
+               reff(i,k,2)=max(reff(i,k,2),4.)
+               reff(i,k,2)=min(reff(i,k,2),20.)
+              end if
+            end if
+         end if
          reff(i,k,1) = 80.
       end do
       end do
@@ -589,7 +630,8 @@ CONTAINS
       end do
       end do
 
-#ifdef AER_RA_FEEDBACK
+#ifdef WRF_CHEM
+   IF ( AER_RA_FEEDBACK == 1) then
 !wig end
       do ib = 1, 11
       do k = kts-1,kte-1      !wig
@@ -673,6 +715,7 @@ CONTAINS
       end do
       end do
 !wig end
+      endif
 #endif
 !
 ! ... Initialize output arrays
@@ -721,8 +764,8 @@ CONTAINS
       do k = kts, kte
       do i = its, ite
          nk=kme-1-k+kms
-         taucldc(i,nk,j)=taucld(i,k,2)
-         taucldi(i,nk,j)=taucld(i,k,1)
+         if(present(taucldc)) taucldc(i,nk,j)=taucld(i,k,2)
+         if(present(taucldi)) taucldi(i,nk,j)=taucld(i,k,1)
       enddo
       enddo
  
@@ -748,6 +791,15 @@ CONTAINS
       end do
       end do
 
+!     upward top of atmosphere
+      do i = its, ite
+        if (cosz(i) .le. thresh) then
+          RSWTOA(i,j) = 0.
+        else
+          RSWTOA(i,j) = flx(i,kts) - flxd(i,kts) * SOLCON * cosz(i)
+!	  print *,'cosz,rswtoa=',cosz(i),rswtoa(i,j)
+        endif
+      end do
 !
 ! ... Absorbed part in surface energy budget
 !
@@ -1119,7 +1171,7 @@ CONTAINS
          endif
           flx(i,j,k+1)=flx(i,j,k+1)-sdf(i,j)-df(i,j,k+1)*sclr(i,j)
           flxu(i,j,k+1)=flxu(i,j,k+1)-sdf(i,j)-df(i,j,k+1)*sclr(i,j)
-          flxd(i,j,k+1)=flxd(i,j,k+1)-sdf(i,j)-df(i,j,k+1)*sclr(i,j)
+          flxd(i,j,k+1)=flxd(i,j,k+1)-sdf(i,j)-df(i,j,k+1)*sclr(i,j) ! SG: same as flux????
 
         enddo
        enddo

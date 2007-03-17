@@ -22,7 +22,11 @@ set k_dirs = ( kpp/* )
 foreach kdir ( $k_dirs )
 echo $kdir
 ( cd $kdir; make clean )
+( cd $kdir; rm -f  Makefile.defs )
 end
+
+# remove links in util/wkc
+( cd util/wkc; linker.csh unlink )
 
 
 

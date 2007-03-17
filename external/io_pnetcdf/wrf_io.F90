@@ -789,7 +789,8 @@ LOGICAL FUNCTION ncd_ok_to_put_dom_ti( DataHandle )
     ELSE
       dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
       first_output = ncd_is_first_operation( DataHandle )
-      retval = .NOT. dryrun .AND. first_output
+!      retval = .NOT. dryrun .AND. first_output
+      retval = dryrun
     ENDIF
     ncd_ok_to_put_dom_ti = retval
     RETURN
@@ -1192,7 +1193,8 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   endif
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
-  stat = NFMPI_CREATE(Comm, FileName, NF_CLOBBER, MPI_INFO_NULL, DH%NCID)
+!  stat = NFMPI_CREATE(Comm, FileName, NF_CLOBBER, MPI_INFO_NULL, DH%NCID)
+   stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), MPI_INFO_NULL, DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_pnc_open_for_write_begin ',__FILE__,', line', __LINE__
@@ -2289,6 +2291,7 @@ subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   NCID = DH%NCID
 
   write(msg,*)'ext_pnc_write_field: called for ',TRIM(Var)
+  CALL wrf_debug( 100, msg )
 
 !jm 20061024
   Length(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
@@ -2897,6 +2900,8 @@ subroutine ext_pnc_get_next_time(DataHandle, DateStr, Status)
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE ) then
     if(DH%CurrentTime >= DH%NumberTimes) then
+      write(msg,*) 'Warning ext_pnc_get_next_time: DH%CurrentTime >= DH%NumberTimes ',DH%CurrentTime,DH%NumberTimes
+      call wrf_debug ( WARN , TRIM(msg))
       Status = WRF_WARN_TIME_EOF
       return
     endif

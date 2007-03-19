@@ -13,14 +13,21 @@ these are mentioned in the task list that follows.
 The "ESMF" referred to below is version 2.2.0rp1.  
 
 + Design and Implementation:
+   - Modifying WRF so the "output" calls that set the WRF ExportState can 
+     occur in subroutine med_after_solve_io in file 
+     share/mediation_integrate.F.  We plan to make this modification in a 
+     future revision of WRF and allow users to control where the WRF 
+     ExportState is set at run-time via a namelist variable.  Or we may make 
+     the new behavior the default since it is more natural for sequential 
+     coupling.  
    - Get rid of masses of "DEBUG" code.  
+   - Clean up/correct comments.  
    - Fix ESMF+RSL_LITE.  Currently, only ESMF+RSL works.  
        Patch and memory extents differ between RSL and RSL_LITE, see
-       /users/hender/Tasks/WRF_ESMF/RSL_LITE_broken/README for details.  This 
-       is almost certainly the underlying cause of the problem given the 
-       evil hackery in the current implementation of io_esmf.  
+       /users/hender/Tasks/WRF_ESMF/RSL_LITE_broken/README for details.  
    - Finish sequence diagram for the coupling interactions in
      /users/hender/Tasks/WRF_ESMF/SequenceDiagram.txt ...
+     - OR, use more recent ppt slides...  
    - Upgrade SST component so it can run on a subset of processors.  
        This requires breaking the domdesc dependence for SST so SST can be 
        run on fewer processes.  SST will need to call wrf_dm_patch_domain(), 
@@ -29,7 +36,8 @@ The "ESMF" referred to below is version 2.2.0rp1.
    - Upgrade external/io_esmf/ so more data types are supported.  
    - Upgrade external/io_esmf/ so 3D arrays are supported (just loop over "K" 
      at first with hard-coded names like "U_k_1", "U_k_2", etc.).  Then 
-     switch to ESMF for this once it can do it.  (Can ESMF do this now?  Check.)  
+     switch to ESMF for this once it can do it.  (Can ESMF do this yet?  
+     Check.)  
    - Extend external/io_esmf/ (etc.) so more than one I/O stream can be used 
      for ESMF coupling.  This would involve nested import and export states.  
    - Exchange staggered 2D grids and test-validate (x, y, and z staggerings).  
@@ -38,7 +46,7 @@ The "ESMF" referred to below is version 2.2.0rp1.
    - Upgrade external/io_esmf/ so metadata is exchanged correctly.  Right now, 
      metadata is ignored.  This would allow sharing of metadata and simplify 
      implementation of components that were aware of WRF metadata.  Ultimately, 
-     CF would be the right thing here...  
+     CF is the right thing here...  
    - Fix output formatting so DOMAIN_TIME_TEST works the same way 
      both with and without ESMF.  
    - Fix ext_esmf_ioclose so it actually destroys ESMF objects again.  This
@@ -93,7 +101,7 @@ The "ESMF" referred to below is version 2.2.0rp1.
      * Lack of sane (or any) iterators for ESMF_State and other container 
        classes leads to nasty user code...  
      * Lack of adherence to Orthodox Canonical Form leads to really nasty 
-       user code (so much for "best practices"...)  
+       user code.  Probably not worth tilting at this windmill again...  
      * Many others...  
    - Misc. bugs/issues:
      * Investigate odd debug prints from med_hist_out, output_wrf, input_wrf
@@ -112,13 +120,8 @@ The "ESMF" referred to below is version 2.2.0rp1.
          See /loquat2/hender/Tasks/WRF_ESMF/ESMF_FieldFromUserEx.F90
          See /loquat2/hender/Tasks/WRF_ESMF/UserCodeMod.F90
      * See if "#ifndef ESMFIO" hack can be removed from share/input_wrf.F.  
-     * Verify that findSymbol.rb generates module_symbols.F90 as claimed
-       in the comment block in external/io_esmf/module_symbols_util.F90.  
-       Update comments if needed.  
-       * Upgrade findSymbol.rb to track all usage starting at @old_module 
-         and exclude any symbols that are not found in the use-tree.
-       * Better yet, get rid of external/*/module_symbols_util.F90 altogether 
-         as encapsulation moves to module_domain.  
+     * Get rid of module_symbols.F90.  Encapsulate any remaining "WRFU" calls 
+       via module_domain.  
      * Rip out WRF_CHEM from set_timekeeping.F and test...
 + Upgrade to ESMF 2.2.2r+
    - Add an ESMF_LOG_NONE option to the "defaultLogType" argument 
@@ -138,4 +141,5 @@ The "ESMF" referred to below is version 2.2.0rp1.
    - Add WRF-CPL-SST tests to regtest.csh.  
      * Generate jun01 sst warming data set and work with Dave to add new 
        "ESMF_SST" tests to regtest.csh.  
+     * Debug (it's there but doesn't work yet).  
 

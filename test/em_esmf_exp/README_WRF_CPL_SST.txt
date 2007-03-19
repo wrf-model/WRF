@@ -5,7 +5,7 @@
                               Tom Henderson
                              John Michalakes
                                 NCAR/MMM
-                             12 October 2006
+                             27 February 2007
 
 INTRODUCTION
 
@@ -16,8 +16,17 @@ model, WRF has been coupled through ESMF to a very simple "data-ocean"
 component named "SST" via a very simple coupler component named "CPL".
 The demonstration, conducted on kraken.navo.hpc.mil, a DoD HPC system
 at the NAVO MSRC, was supported by AFWA under UCAR contract FA4600-05-P-0162.  
-The demonstration was later repeated on NCAR's bluesky machine (IBM p690).  A 
-description of the bluesky experiment follows.  
+The demonstration was later repeated on NCAR's bluesky machine (IBM p690) and 
+again on NCAR's bluevista machine (IBM p575).  A description of the bluesky 
+and bluevista experiments follows.  
+
+
+
+EVENT LOOP
+
+Please read the section entitled "NOTES ABOUT THE EVENT LOOP FOR WRF+CPL+SST" 
+in file external/io_esmf/README.io_esmf for details about order of operations
+in the current event loop (time-stepping loop).  
 
 
 
@@ -30,12 +39,17 @@ which time the following software was installed:
   xlC.rte   6.0.0.0
   ESMF 2.2.0rp1
 WRF source code was installed in
-/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/.  
+WRFDIR=/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/.  
+(Referred to below as "$WRFDIR".)  
 
-(Note that this experiment was also attempted using an installation of 
-ESMF 3.0.0.  This experiment failed due to exhaustion of compiler resources 
-building real.exe.  The ESMF core team has been notified of this problem and 
-is working with IBM to resolve it.)  
+  The "WRF+CPL+SST" experiment was repeated on bluevista on 27 February 2007 at 
+which time the following software was installed:  
+  xlfrte   10.1.0.3
+  bos.mp   5.3.0.42
+  xlC.rte  8.0.0.5
+  ESMF     2.2.2r
+WRF source code was installed in
+WRFDIR=/ptmp/hender/WRF-LIS/WRFV2_20070214_0906/WRFV2/.
 
   Additional documentation that describes the SST component and provides 
 instructions for building WRF with ESMF can be found in 
@@ -52,36 +66,43 @@ feature is illustrated below.
 All commands are csh.  
 
 
-1)  Set environment variables to build WRF with ESMF using 32-bit addressing.  
-The $ESMFLIB and $ESMFINC environment variables are used to tell the WRF build 
-automation where to find an installation of ESMF 2.2.0rp1.  
+1)  On bluesky, set environment variables to build WRF with ESMF using 32-bit 
+addressing.  On bluevista, use the default 64-bit addressing.  
+Set the $ESMFLIB and $ESMFINC environment variables are to tell the WRF build 
+automation where to find an installation of ESMF.  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> setenv OBJECT_MODE 32
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> setenv ESMFLIB /home/bluesky/hender/esmf/lib/libO/AIX.default.32.default
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> setenv ESMFINC /home/bluesky/hender/esmf/mod/modO/AIX.default.32.default
+BLUESKY:  
+OBJECT_MODE=32
+ESMFLIB=/home/bluesky/hender/esmf/lib/libO/AIX.default.32.default
+ESMFINC=/home/bluesky/hender/esmf/mod/modO/AIX.default.32.default
+
+BLUEVISTA:  
+OBJECT_MODE=64
+ESMFLIB=/home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
+ESMFINC=/home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
 
 
 
 2)  Set up WRF Registry for WRF+CPL+SST case:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/Registry >> mv -f Registry.EM Registry.EM_ORIG
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/Registry >> cp -f Registry.EM_SST Registry.EM
+$WRFDIR/Registry >> mv -f Registry.EM Registry.EM_ORIG
+$WRFDIR/Registry >> cp -f Registry.EM_SST Registry.EM
 
 
 
 3)  Build WRF from scratch with RSL for use with ESMF:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> echo 4 | configure
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> compile em_real >&! compile.em_real.4.out
+$WRFDIR >> echo 4 | configure
+$WRFDIR >> compile em_real >&! compile.em_real.4.out
 
   Verify that executables exist:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> ls -al main/*exe*
--rwxr-xr-x   1 hender   ncar       12554240 Oct 12 15:32 main/ndown.exe
--rwxr-xr-x   1 hender   ncar       11220419 Oct 12 15:33 main/nup.exe
--rwxr-xr-x   1 hender   ncar       11595285 Oct 12 15:32 main/real.exe
--rwxr-xr-x   1 hender   ncar       18018321 Oct 12 15:30 main/wrf.exe
--rwxr-xr-x   1 hender   ncar       18486948 Oct 12 15:31 main/wrf_SST_ESMF.exe
+$WRFDIR >> ls -1 main/*exe
+main/ndown.exe
+main/nup.exe
+main/real.exe
+main/wrf.exe
+main/wrf_SST_ESMF.exe
 
   Note that "wrf.exe" is the usual stand-alone WRF executable.  
 "wrf_SST_ESMF.exe" is the WRF+CPL+SST coupled application.  
@@ -92,34 +113,44 @@ bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2 >> ls -al main/
 scripts from WRF_CPL_SST.tar.gz, and verify that all required files are
 present:   
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> gunzip WRF_CPL_SST.tar.gz
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> tar xvf WRF_CPL_SST.tar
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> ls -l sstin_d01_000000 namelist.input.jan00.* *.csh
--rwxr-xr-x   1 hender   ncar   6008 Oct 12 12:49 namelist.input.jan00.ESMFSST
--rwxr-xr-x   1 hender   ncar   6008 Oct 12 12:49 namelist.input.jan00.NETCDFSST
--rw-r--r--   1 hender   ncar   1271 Oct 12 12:49 real.csh
--rw-r--r--   1 hender   ncar 458064 Oct 12 11:35 sstin_d01_000000
--rw-r--r--   1 hender   ncar   1070 Oct 12 12:49 test4_0.csh
--rw-r--r--   1 hender   ncar   1150 Oct 12 12:49 test4_0_ESMFSST.csh
--rw-r--r--   1 hender   ncar   1186 Oct 12 12:49 test4_0_NETCDFSST_wrfexe.csh
+$WRFDIR/test/em_esmf_exp >> gunzip WRF_CPL_SST.tar.gz
+$WRFDIR/test/em_esmf_exp >> tar xvf WRF_CPL_SST.tar
+$WRFDIR/test/em_esmf_exp >> ls -l sstin_d01_000000 namelist.input.jan00.* *.csh
+-rw-r--r--   6368 Feb 27 13:16 namelist.input.jan00.ESMFSST
+-rw-r--r--   6368 Feb 27 13:16 namelist.input.jan00.NETCDFSST
+-rw-r--r--   1286 Feb 27 14:51 real.csh
+-rwxr-xr-x    948 Feb 27 14:51 real.lsf.csh
+-rw-r--r-- 458064 Oct 12 11:58 sstin_d01_000000
+-rw-r--r--   1074 Feb 27 14:51 test4_0.csh
+-rwxr-xr-x    732 Feb 27 14:51 test4_0.lsf.csh
+-rw-r--r--   1162 Feb 27 14:51 test4_0_ESMFSST.csh
+-rw-r--r--    824 Feb 27 14:51 test4_0_ESMFSST.lsf.csh
+-rw-r--r--   1190 Feb 27 14:52 test4_0_NETCDFSST_wrfexe.csh
+-rw-r--r--    824 Feb 27 14:52 test4_0_NETCDFSST_wrfexe.lsf.csh
 
   "sstin_d01_000000" contains time-varying SST input data.  
+NOTE:  sstin_d01_000000 also contains LANDMASK fields soley for validation 
+purposes.  Only the first time-level of LANDMASK is significant.  For
+historical reasons, the other time-levels may differ -- they are ignored 
+(and should eventually be removed).  
 
   "test4_0_ESMFSST.csh" is a LoadLeveler batch submission script that runs the 
 WRF+CPL+SST coupled system.  It copies "namelist.input.jan00.ESMFSST" to 
-"namelist.input" and runs "wrf_SST_ESMF.exe" on four CPUs.  
+"namelist.input" and runs "wrf_SST_ESMF.exe" on four CPUs.
+"test4_0_ESMFSST.lsf.csh" does the same thing for LSF.  
 
   "test4_0_NETCDFSST.csh" is a LoadLeveler batch submission script that runs 
 WRF by itself, reading the SST data directly into WRF as a netCDF file.  It 
 copies "namelist.input.jan00.NETCDFSST" to "namelist.input" and runs "wrf.exe" 
 on four CPUs.  
+"test4_0_NETCDFSST.lsf.csh" does the same thing for LSF.  
 
   Note that namelists namelist.input.jan00.ESMFSST and 
 namelist.input.jan00.NETCDFSST differ only in the I/O format used for the 
 I/O streams used to "read" and "write" SST data.  Vanilla netCDF I/O is used 
 when "io_form" == 2.  ESMFStates are used when "io_form" == 7.  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> diff namelist.input.jan00.ESMFSST namelist.input.jan00.NETCDFSST
+$WRFDIR/test/em_esmf_exp >> diff namelist.input.jan00.ESMFSST namelist.input.jan00.NETCDFSST
 32c32
 <  io_form_auxinput5                   = 7,
 ---
@@ -132,76 +163,85 @@ bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >>
   (Also note that a script is provided to run WRF without SST forcing for 
 comparison purposes.  "test4_0.csh" is a LoadLeveler batch submission script 
 that runs WRF by itself without SST forcing.  It copies "namelist.input.jan00" 
-to "namelist.input" and runs "wrf.exe" on four CPUs.)  
+to "namelist.input" and runs "wrf.exe" on four CPUs.  "test4_0.lsf.csh" does 
+the same thing for LSF.)  
 
 
 
 5)  Run the wrf real program using the "jan00" data set.  Script "real.csh" 
-can be modified to do this if desired.  
+can be modified to do this if desired (or real.lsf.csh for LSF).  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> llsubmit real.csh
+BLUESKY (LoadLeveler):  
+$WRFDIR/test/em_esmf_exp >> llsubmit real.csh
+BLUEVISTA (LSF):  
+$WRFDIR/test/em_esmf_exp >> bsub < real.lsf.csh
 
   Verify that real.exe produced the usual WRF input and boundary data files 
 "wrfbdy_d01" and "wrfinput_d01".  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real
->> ls -al wrfbdy_d01 wrfinput_d01
--rw-r--r--   1 hender   ncar        9355792 Oct 12 12:58 wrfbdy_d01
--rw-r--r--   1 hender   ncar        6005368 Oct 12 12:58 wrfinput_d01
+$WRFDIR/test/em_esmf_exp >> ls -al wrfbdy_d01 wrfinput_d01
+-rw-r--r--   9355944 Feb 27 12:58 wrfbdy_d01
+-rw-r--r--   6076408 Feb 27 12:58 wrfinput_d01
 
 Move all other files produced by the real.exe run into a new directory:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> mkdir real.out
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> mv PET?.ESMF* namelist.input rsl.*.* real.*.err real.*.out real.out
+$WRFDIR/test/em_esmf_exp >> mkdir real.out
+$WRFDIR/test/em_esmf_exp >> mv PET?.ESMF* namelist.input rsl.*.* real.*.err real.*.out real.out
 
 
 
 6)  Run the WRF+CPL+SST test case:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> llsubmit test4_0_ESMFSST.csh
+BLUESKY (LoadLeveler):  
+$WRFDIR/test/em_esmf_exp >> llsubmit test4_0_ESMFSST.csh
+BLUEVISTA (LSF):  
+$WRFDIR/test/em_esmf_exp >> bsub < test4_0_ESMFSST.lsf.csh
 
 
 
 7)  Verify that run completed successfully:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> tail -1 rsl.out.0000
+$WRFDIR/test/em_esmf_exp >> tail -1 rsl.out.0000
  d01 2000-01-25_00:00:00 wrf: SUCCESS COMPLETE WRF
 
 
 
 8)  Move all files produced by the WRF+CPL+SST run into a new directory:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> mkdir test4_0_ESMFSST.out
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> mv PET?.ESMF* namelist.input rsl.*.* test4_0_ESMFSST.*.* wrfout* test4_0_ESMFSST.out
+$WRFDIR/test/em_esmf_exp >> mkdir test4_0_ESMFSST.out
+$WRFDIR/test/em_esmf_exp >> mv PET?.ESMF* namelist.input rsl.*.* test4_0_ESMFSST.*.* wrfout* test4_0_ESMFSST.out
 
 
 
 9)  Run the WRF stand-alone test case:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> llsubmit test4_0_NETCDFSST_wrfexe.csh
+BLUESKY (LoadLeveler):  
+$WRFDIR/test/em_esmf_exp >> llsubmit test4_0_NETCDFSST_wrfexe.csh
+BLUEVISTA (LSF):  
+$WRFDIR/test/em_esmf_exp >> bsub < test4_0_NETCDFSST_wrfexe.lsf.csh
 
 
 
 10)  Verify that run completed successfully:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> tail -1 rsl.out.0000
+$WRFDIR/test/em_esmf_exp >> tail -1 rsl.out.0000
  d01 2000-01-25_00:00:00 wrf: SUCCESS COMPLETE WRF
 
 
 
 11)  Move all files produced by the WRF stand-alone run into a new directory:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> mkdir test4_0_NETCDFSST.out
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> mv PET?.ESMF* namelist.input rsl.*.* test4_0_NETCDFSST.*.* wrfout* sstout_d01_000000 test4_0_NETCDFSST.out
+$WRFDIR/test/em_esmf_exp >> mkdir test4_0_NETCDFSST.out
+$WRFDIR/test/em_esmf_exp >> mv PET?.ESMF* namelist.input rsl.*.* test4_0_NETCDFSST.*.* wrfout* sstout_d01_000000 test4_0_NETCDFSST.out
 
 
 
 12)  Verify that both tests produced bitwise-identical history output:  
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> ls -l test4_0_ESMFSST.out/wrfout_d01_2000-01-24_12:00:00 test4_0_NETCDFSST.out/wrfout_d01_2000-01-24_12:00:00
+$WRFDIR/test/em_esmf_exp >> ls -l test4_0_ESMFSST.out/wrfout_d01_2000-01-24_12:00:00 test4_0_NETCDFSST.out/wrfout_d01_2000-01-24_12:00:00
 -rw-r--r--   1 hender   ncar       32614704 Oct 12 15:48 test4_0_ESMFSST.out/wrfout_d01_2000-01-24_12:00:00
 -rw-r--r--   1 hender   ncar       32614704 Oct 12 15:52 test4_0_NETCDFSST.out/wrfout_d01_2000-01-24_12:00:00
 
-bluesky:/ptmp/hender/ESMF2.2.0rp1/WRFV2_20061005_1123_WORK/WRFV2/test/em_real >> cmp -l test4_0_ESMFSST.out/wrfout_d01_2000-01-24_12:00:00 test4_0_NETCDFSST.out/wrfout_d01_2000-01-24_12:00:00 | wc
+$WRFDIR/test/em_esmf_exp >> cmp -l test4_0_ESMFSST.out/wrfout_d01_2000-01-24_12:00:00 test4_0_NETCDFSST.out/wrfout_d01_2000-01-24_12:00:00 | wc
        0       0       0
 

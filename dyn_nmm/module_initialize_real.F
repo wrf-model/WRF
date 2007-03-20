@@ -882,7 +882,7 @@ CONTAINS
 
         write(message,*) 'revised sea ice on patch'
         CALL wrf_debug(100,message)
-        DO J=JTE,JTS,-JTE/25
+        DO J=JTE,JTS,-(((JTE-JTS)/25)+1)
           write(message,637) (SICE(I,J),I=ITS,ITE,ITE/20)
           CALL wrf_debug(100,message)
         END DO
@@ -2211,8 +2211,7 @@ CONTAINS
            END DO
          ENDIF
 
-!	do L=2,generic
-       DO L=generic,2,-1
+       DO L=2,generic-1
 
          IF ( PRESS3D_IN(i,j,L) .gt. PSFC_IN(I,J) .AND.  &
              Z3D_IN(I,J,L) .lt. TERRAIN_HGT_T(I,J) .AND. &

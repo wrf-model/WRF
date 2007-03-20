@@ -1874,7 +1874,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
  character(len=128)                :: input_fname
  character (len=32)                :: cname
  integer                           :: ndim
- character (len=32)                :: memorder
+ character (len=3)                 :: memorder
  character (len=32)                :: stagger
  integer, dimension(3)             :: domain_start, domain_end
  integer                           :: wrftype

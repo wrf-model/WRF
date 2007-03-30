@@ -871,6 +871,27 @@ CONTAINS
 
      ENDIF
 
+     IF ( PRESENT( cu_rad_feedback ) ) THEN
+       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qc(i,k,j) = qc_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+        ENDIF
+        IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
+           DO j=jts,jte
+           DO k=kts,kte
+           DO i=its,ite
+             qi(i,k,j) = qi_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+        ENDIF
+      ENDIF
+
    ENDDO
    !$OMP END PARALLEL DO
 
@@ -935,40 +956,9 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
    ENDIF
+
      CASE DEFAULT
      END SELECT accumulate_sw_select
-!
-!*** Restore the saved values of the input Q arrays before exiting
-   !$OMP PARALLEL DO   &
-   !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
-
-   DO ij = 1 , num_tiles
-     its = i_start(ij)
-     ite = i_end(ij)
-     jts = j_start(ij)
-     jte = j_end(ij)
-     IF ( PRESENT( cu_rad_feedback ) ) THEN
-       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
-          DO j=jts,jte
-          DO k=kts,kte
-          DO i=its,ite
-            qc(i,k,j) = qc_save(i,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
-       ENDIF
-       IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
-          DO j=jts,jte
-          DO k=kts,kte
-          DO i=its,ite
-            qi(i,k,j) = qi_save(i,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
-       ENDIF
-     ENDIF
-   ENDDO
-   !$OMP END PARALLEL DO
 
    END SUBROUTINE radiation_driver
 

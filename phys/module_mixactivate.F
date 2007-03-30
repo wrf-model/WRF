@@ -2346,8 +2346,8 @@ subroutine mixactivate(  msectional,            &
 !      input
 
        integer num_chem ! maximum number of consituents
-       real chem(kmn:kmx,num_chem) ! aerosol mass, number mixing ratios
        integer k,kmn,kmx
+       real chem(kmn:kmx,num_chem) ! aerosol mass, number mixing ratios
        real cs  ! air density (kg/m3)
        real npv ! number per volume concentration (/m3)
        integer maxd_acomp,ncomp

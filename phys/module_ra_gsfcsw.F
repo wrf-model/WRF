@@ -656,7 +656,7 @@ CONTAINS
            slope=(waer600(i,k+1,j)-waer400(i,k+1,j))/.2
            ssaal(i,kte-k,ib) = slope*(midbands(ib)-.6)+waer600(i,k+1,j) ! notice reversed variables
            if(ssaal(i,kte-k,ib).lt.0.4) ssaal(i,kte-k,ib)=0.4
-           if(ssaal(i,kte-k,ib).ge.0.9) ssaal(i,kte-k,ib)=0.9
+           if(ssaal(i,kte-k,ib).ge.1.0) ssaal(i,kte-k,ib)=1.0
 
 ! g - linear interpolation;extrapolation
            slope=(gaer600(i,k+1,j)-gaer400(i,k+1,j))/.2

@@ -3,6 +3,7 @@
    subroutine chem_init (id,chem,dt,bioemdt,photdt,chemdt,stepbioe,  &
                stepphot,stepchem,z_at_w,g,aerwrf,config_flags,       &
                alt,t,p,CONVFAC,                                      &
+               gd_cloud, gd_cloud2,                                  &
                gd_cloud_b, gd_cloud2_b,                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
                gaer1,gaer2,gaer3,gaer4,                              &
@@ -34,6 +35,7 @@
           INTENT(INOUT   ) ::                                        &
                                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,   &
                                tauaer1,tauaer2,tauaer3,tauaer4,      &
+                               gd_cloud, gd_cloud2,                  &
                                gd_cloud_b, gd_cloud2_b,              &
                                gaer1,gaer2,gaer3,gaer4,              &
                                waer1,waer2,waer3,waer4
@@ -119,6 +121,8 @@ call wrf_message("**************************************************************
     do j=jts,jte
        do k=kts,kte
           do i=its,ite
+             gd_cloud(i,k,j) = 0.
+             gd_cloud2(i,k,j) = 0.
              gd_cloud_b(i,k,j) = 0.
              gd_cloud2_b(i,k,j) = 0.
           end do

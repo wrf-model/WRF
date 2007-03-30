@@ -829,6 +829,7 @@
                          grid%stepbioe,grid%stepphot,grid%stepchem,                        &
                          z_at_w,g,grid%aerwrf,config_flags,                               &
                          grid%em_alt,grid%em_t_1,grid%em_p,convfac,                              &
+                         grid%gd_cloud, grid%gd_cloud2,                                  &
                          grid%gd_cloud_b, grid%gd_cloud2_b,                              &
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &

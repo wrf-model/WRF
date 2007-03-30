@@ -1579,7 +1579,7 @@
      &                 ,APR_ST,APR_AS,APR_CAPMA                         &
      &                 ,APR_CAPME          ,APR_CAPMI                   &
      &                 ,MASS_FLUX                                       &
-     &                 ,GSW  ,PREC,CPRATE,RAINCV
+     &                 ,GSW  ,PREC,CPRATE
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
@@ -1607,7 +1607,9 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: moist
 #ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD,GD_CLOUD2
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
+     &                                                        ,GD_CLOUD2
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: RAINCV
 #endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
@@ -1633,6 +1635,10 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,RAINC          &
      &                                  ,SFCZ,XLAND
+!
+#ifndef WRF_CHEM
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: RAINCV
+#endif
 !
       REAL,DIMENSION(IMS:IME,KMS:KME) :: WMID
 !

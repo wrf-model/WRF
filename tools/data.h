@@ -92,7 +92,7 @@ typedef struct node_struct {
 /* fields used by Package nodes */
   char pkg_assoc[NAMELEN] ;
   char pkg_statevars[NAMELEN] ;
-  char pkg_4dscalars[NAMELEN] ;
+  char pkg_4dscalars[NAMELEN_LONG] ;
 
 /* fields used by Comm (halo, period, xpose)  nodes */
   char comm_define[2*8192] ;

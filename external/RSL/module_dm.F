@@ -4840,7 +4840,11 @@ END
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
-   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! if we were not indexing the globbuf and Field arrays it would not even matter
+   REAL, DIMENSION(*) :: Field, globbuf
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
@@ -4902,7 +4906,11 @@ END
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
-   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! if we were not indexing the globbuf and Field arrays it would not even matter
+   REAL, DIMENSION(*) :: Field, globbuf
 
            CALL mpi_scatterv(                                &
                             globbuf( glob_ofst ) ,           &    ! recvbuf

@@ -1340,7 +1340,11 @@ END SUBROUTINE wrf_dm_bcast_integer
 SUBROUTINE wrf_dm_bcast_double( BUF, N1 )
    IMPLICIT NONE
    INTEGER n1
-   DOUBLEPRECISION  buf(*)
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! since we were not indexing the globbuf and Field arrays it does not matter
+   REAL  buf(*)
    CALL wrf_dm_bcast_bytes ( BUF , N1 * DWORDSIZE )
    RETURN
 END SUBROUTINE wrf_dm_bcast_double
@@ -1508,8 +1512,12 @@ END
                                        PS1,PE1,PS2,PE2,PS3,PE3
        CHARACTER *(*) stagger,ordering
        INTEGER fid,domdesc
-       DOUBLEPRECISION globbuf(*)
-       DOUBLEPRECISION buf(*)
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! since we were not indexing the globbuf and Field arrays it does not matter
+       REAL globbuf(*)
+       REAL buf(*)
 
        CALL wrf_patch_to_global_generic (buf,globbuf,domdesc,stagger,ordering,DWORDSIZE,&
                                          DS1,DE1,DS2,DE2,DS3,DE3,&
@@ -1933,8 +1941,12 @@ END
                                        PS1,PE1,PS2,PE2,PS3,PE3
        CHARACTER *(*) stagger,ordering
        INTEGER fid,domdesc
-       DOUBLEPRECISION globbuf(*)
-       DOUBLEPRECISION buf(*)
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! since we were not indexing the globbuf and Field arrays it does not matter
+       REAL globbuf(*)
+       REAL buf(*)
 
        CALL wrf_global_to_patch_generic (globbuf,buf,domdesc,stagger,ordering,DWORDSIZE,&
                                        DS1,DE1,DS2,DE2,DS3,DE3,&
@@ -3354,7 +3366,11 @@ integer myproc
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
-   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! if we were not indexing the globbuf and Field arrays it would not even matter
+   REAL, DIMENSION(*) :: Field, globbuf
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
@@ -3444,7 +3460,11 @@ integer myproc
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
-   DOUBLE PRECISION, DIMENSION(*) :: Field, globbuf
+! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
+! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
+! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
+! if we were not indexing the globbuf and Field arrays it would not even matter
+   REAL, DIMENSION(*) :: Field, globbuf
 
            CALL mpi_scatterv(                                &
                             globbuf( glob_ofst ) ,           &    ! recvbuf

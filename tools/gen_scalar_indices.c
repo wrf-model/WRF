@@ -92,8 +92,8 @@ gen_scalar_indices1 ( FILE * fp )
 {
   node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
-  char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN] ;
-  char scalars_str[NAMELEN] ;
+  char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG] ;
+  char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
 
   for ( p = FourD ; p != NULL ; p = p->next )

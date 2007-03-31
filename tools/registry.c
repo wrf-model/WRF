@@ -138,7 +138,6 @@ main( int argc, char *argv[], char *env[] )
     strcpy( dir , fname_in ) ;
     if ( ( e = rindex ( dir , '/' ) ) != NULL ) { *e = '\0' ; } else { strcpy( dir, "." ) ; } 
   }
-
   if ( pre_parse( dir, fp_in, fp_tmp ) ) {
     fprintf(stderr,"Problem with Registry File %s\n", fname_in ) ;
     goto cleanup ;

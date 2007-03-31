@@ -17,8 +17,8 @@ gen_halos ( char * dirname )
   node_t * dimd ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], tmp3[4096] ;
-  char commuse[4096] ;
+  char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
+  char commuse[NAMELEN_LONG] ;
   int maxstenwidth, stenwidth ;
   FILE * fp ;
   char * t1, * t2 ;
@@ -184,7 +184,7 @@ gen_periods ( char * dirname )
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN], varref[NAMELEN] ;
-  char tmp[4096], tmp2[4096], tmp3[4096], commuse[4096] ;
+  char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG], commuse[NAMELEN_LONG] ;
   int maxperwidth, perwidth ;
   FILE * fp ;
   char * t1, * t2 ;
@@ -349,8 +349,8 @@ gen_xposes ( char * dirname )
   node_t * p, * q ;
   char commname[NAMELEN] ;
   char fname[NAMELEN] ;
-  char tmp[4096], tmp2[4096], tmp3[4096] ;
-  char commuse[4096] ;
+  char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
+  char commuse[NAMELEN_LONG] ;
   FILE * fp ;
   char * t1, * t2 ;
   char * pos1 , * pos2 ;

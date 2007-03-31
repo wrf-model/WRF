@@ -85,7 +85,7 @@ static char tracers[1000][100] ;
 int
 pre_parse( char * dir, FILE * infile, FILE * outfile )
 {
-  char inln[4096], parseline[4096], parseline_save[4096] ;
+  char inln[8192], parseline[8192], parseline_save[8192] ;
   int found ; 
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS], newdims[NAMELEN], newdims4d[NAMELEN],newname[NAMELEN] ;

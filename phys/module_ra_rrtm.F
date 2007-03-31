@@ -1727,7 +1727,7 @@ MODULE module_ra_rrtm
 CONTAINS
 
 !------------------------------------------------------------------
-   SUBROUTINE RRTMLWRAD(rthraten,glw,emiss                        &
+   SUBROUTINE RRTMLWRAD(rthraten,glw,olr,emiss                    &
                        ,p8w,p3d,pi3d                              &
                        ,dz8w,t3d,t8w,rho3d,r,g                    &
                        ,icloud, warm_rain                         &
@@ -1765,7 +1765,8 @@ CONTAINS
          INTENT(IN   )  ::                                 EMISS
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
-         INTENT(INOUT)  ::                                   GLW
+         INTENT(INOUT)  ::                                   GLW, &
+                                                             OLR
 !
    REAL, INTENT(IN  )   ::                                   R,G
 !
@@ -1803,7 +1804,7 @@ CONTAINS
                                                             QS1D, &
                                                             QG1D
 !
-    REAL   ::                                   TSFC,GLW0,EMISS0,FP
+    REAL   ::                              TSFC,GLW0,OLR0,EMISS0,FP
 !
     INTEGER:: i,j,K,NK
     LOGICAL :: predicate
@@ -1945,14 +1946,16 @@ CONTAINS
 
          EMISS0=EMISS(I,J)
          GLW0=0. 
+         OLR0=0. 
          TSFC=Tw1D(kme)
 
-         CALL RRTM(tten1d,glw0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
+         CALL RRTM(tten1d,glw0,olr0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
                    qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
                    emiss0,r,g,                                     &
                    kts,kte                                         )
  
          GLW(I,J)=GLW0
+         OLR(I,J)=OLR0
 
          DO K=kts,kte
             nk=kme-1-k+kms
@@ -2003,7 +2006,7 @@ CONTAINS
 ! *** transfer (based on a code for interface with CCM model by M. J. Iacono)    
 ! *** J. Dudhia ; March, 1999                                                    
 !---------------------------------------------------------------------
-   SUBROUTINE RRTM(TTEN,GLW,TSFC,CLDFRA,T,Tw,QV,QC,                  &
+   SUBROUTINE RRTM(TTEN,GLW,OLR,TSFC,CLDFRA,T,Tw,QV,QC,              &
                    QR,QI,QS,QG,P,Pw,DZ,                              &
                    EMISS,R,G,                                        &
                    kts,kte                                           )
@@ -2044,7 +2047,7 @@ CONTAINS
 !   
       REAL, INTENT(IN  )   ::                           R, G, EMISS
 !
-      REAL, INTENT(INOUT)  ::                              TSFC,GLW
+      REAL, INTENT(INOUT)  ::                          TSFC,GLW,OLR
 
 ! LOCAL VAR
 
@@ -2089,6 +2092,7 @@ CONTAINS
       REAL, DIMENSION(   0:kte+1 )  ::                           PZ, &
                                                                  TZ, &
                                                            TOTDFLUX, &
+                                                           TOTUFLUX, &
                                                                 HTR
 !     
       INTEGER ::  I,K,ktep1
@@ -2197,7 +2201,7 @@ CONTAINS
                                                                                  
            CALL RTRN(kts,ktep1,                                  &
                      TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX, &
-                     HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS     )
+                     TOTUFLUX, HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS     )
                                                                                  
 !  Pass total sky up and down flux profiles to CCM output arrays and             
 !  convert from mks to cgs units for CCM.  Pass clear sky TOA and surface        
@@ -2219,6 +2223,7 @@ CONTAINS
               TTEN(K)=HTR(NLAYERS-1-k)/86400. 
  2450      continue                                                              
            GLW = TOTDFLUX(0)
+           OLR = TOTUFLUX(NLAYERS)
 
    END SUBROUTINE RRTM
 
@@ -5948,7 +5953,7 @@ CONTAINS
 !-------------------------------------------------------------------------
       SUBROUTINE RTRN(kts,ktep1,                                         &
                       TAVEL, PZ, TZ, CLDFRAC, TAUCLOUD, TOTDFLUX,        &
-                      HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS            )
+                      TOTUFLUX, HTR, ICLDLYR, ITR, PFRAC, TBOUND,SEMISS  )
 !-------------------------------------------------------------------------
 !  RRTM Longwave Radiative Transfer Model                                        
 !  Atmospheric and Environmental Research, Inc., Cambridge, MA                   
@@ -5981,7 +5986,8 @@ CONTAINS
                                                 TAUCLOUD
 
       REAL, DIMENSION(   0:ktep1 ),INTENT(INOUT)::        &
-                                                TOTDFLUX
+                                                TOTDFLUX, &
+                                                TOTUFLUX
 
       REAL, DIMENSION(   0:ktep1 ), INTENT(INOUT) ::        &
                                                      HTR  
@@ -5999,8 +6005,7 @@ CONTAINS
 
       REAL, DIMENSION(   0:ktep1 )              ::        &
                                                 TOTUCLFL, &
-                                                TOTDCLFL, &
-                                                TOTUFLUX
+                                                TOTDCLFL
 
       REAL, DIMENSION(   0:ktep1 )              ::        &
                                                     FNET, &

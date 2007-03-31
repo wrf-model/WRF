@@ -596,7 +596,7 @@ CONTAINS
              CALL wrf_debug (100, 'CALL rrtm')
 
              CALL RRTMLWRAD(                                        &
-                  RTHRATEN=RTHRATEN,GLW=GLW,EMISS=EMISS             &
+                  RTHRATEN=RTHRATEN,GLW=GLW,OLR=RLWTOA,EMISS=EMISS  &
                  ,QV3D=QV                                           &
                  ,QC3D=QC                                           &
                  ,QR3D=QR                                           &
@@ -674,7 +674,7 @@ CONTAINS
                      SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
                      LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
                      LWDNB=LWDNB,LWDNBC=LWDNBC,                        &
-                     SWCF=SWCF,LWCF=LWCF,OLR=OLR,CEMISS=CEMISS,        &
+                     SWCF=SWCF,LWCF=LWCF,OLR=RLWTOA,CEMISS=CEMISS,     &
                      TAUCLDC=TAUCLDC,TAUCLDI=TAUCLDI,COSZR=COSZR,      &
                      GSW=GSW,GLW=GLW,XLAT=XLAT,XLONG=XLONG,            &
                      ALBEDO=ALBEDO,t_phy=t,TSK=TSK,EMISS=EMISS         &
@@ -719,6 +719,8 @@ CONTAINS
         DO k=kts,kte
         DO i=its,ite
            RTHRATENLW(I,K,J)=RTHRATEN(I,K,J)
+! OLR ALSO WILL CONTAIN OUTGOING LONGWAVE FOR RRTM (NMM HAS NO OLR ARRAY)
+           IF(PRESENT(OLR) .AND. K .EQ. 1)OLR(I,J)=RLWTOA(I,J)
         ENDDO
         ENDDO
         ENDDO

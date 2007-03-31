@@ -52,9 +52,11 @@ CONTAINS
 !-- QFX         upward moisture flux at the surface (kg/m^2/s)
 !-- LH          net upward latent heat flux at surface (W/m^2)
 !-- TSK         surface temperature (K)
-!-- FLHC        exchange coefficient for heat (m/s)
-!-- FLQC        exchange coefficient for moisture (m/s)
+!-- FLHC        exchange coefficient for heat (W/m^2/K)
+!-- FLQC        exchange coefficient for moisture (kg/m^2/s)
+!-- CHS         heat/moisture exchange coefficient for LSM (m/s)
 !-- QGH         lowest-level saturated mixing ratio
+!-- QSFC        ground saturated mixing ratio
 !-- uratx       ratio of surface U to U10
 !-- vratx       ratio of surface V to V10
 !-- tratx       ratio of surface T to TH2

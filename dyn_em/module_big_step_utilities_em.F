@@ -3729,7 +3729,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
    IF ( ( config_flags%open_xs .or. (specified .AND. .NOT. config_flags%periodic_x) .or. &
         config_flags%nested) .and. (its == ids) ) THEN
 
-     DO j = jts-1, jte
+     DO j = jts, jte-1
      DO k = kts, ktf
        vxgm(its-1,k,j) =  vxgm(its,k,j)
      ENDDO
@@ -3740,7 +3740,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
    IF ( ( config_flags%open_xe .or. (specified .AND. .NOT. config_flags%periodic_x) .or. &
         config_flags%nested) .and. (ite == ide) ) THEN
 
-     DO j = jts-1, jte
+     DO j = jts, jte-1
      DO k = kts, ktf
        vxgm(ite,k,j) =  vxgm(ite-1,k,j)
      ENDDO

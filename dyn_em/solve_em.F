@@ -376,7 +376,7 @@ BENCH_START(set_phys_bc_tim)
                                grid%j_start(ij), grid%j_end(ij),  &
                                k_start, k_end                )
        !TBH:  need this 2nd timestep and later
-       CALL set_physical_bc3d( grid%em_al, 'grid%em_p', config_flags,            &
+       CALL set_physical_bc3d( grid%em_al, 'p', config_flags,            &
                                ids, ide, jds, jde, kds, kde,     &
                                ims, ime, jms, jme, kms, kme,     &
                                ips, ipe, jps, jpe, kps, kpe,     &
@@ -1502,7 +1502,7 @@ BENCH_START(set_phys_bc2_tim)
                            grid%j_start(ij), grid%j_end(ij),                 &
                            k_start    , k_end                     )
 
-         CALL set_physical_bc3d( grid%em_al, 'grid%em_p', config_flags,            &
+         CALL set_physical_bc3d( grid%em_al, 'p', config_flags,            &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  ips, ipe, jps, jpe, kps, kpe, &
@@ -1510,7 +1510,7 @@ BENCH_START(set_phys_bc2_tim)
                            grid%j_start(ij), grid%j_end(ij),                 &
                            k_start    , k_end                     )
 
-         CALL set_physical_bc3d( grid%em_p, 'grid%em_p', config_flags,             &
+         CALL set_physical_bc3d( grid%em_p, 'p', config_flags,             &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  ips, ipe, jps, jpe, kps, kpe, &
@@ -1518,7 +1518,7 @@ BENCH_START(set_phys_bc2_tim)
                            grid%j_start(ij), grid%j_end(ij),                 &
                            k_start    , k_end                     )
 
-         CALL set_physical_bc3d( grid%em_t_1, 'grid%em_p', config_flags,             &
+         CALL set_physical_bc3d( grid%em_t_1, 'p', config_flags,             &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  ips, ipe, jps, jpe, kps, kpe, &
@@ -1826,7 +1826,7 @@ BENCH_START(phys_bc_tim)
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
-         CALL set_physical_bc3d( grid%em_al, 'grid%em_p', config_flags,            &
+         CALL set_physical_bc3d( grid%em_al, 'p', config_flags,            &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  ips, ipe, jps, jpe, kps, kpe,     &
@@ -1834,7 +1834,7 @@ BENCH_START(phys_bc_tim)
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
-         CALL set_physical_bc3d( grid%em_p, 'grid%em_p', config_flags,             &
+         CALL set_physical_bc3d( grid%em_p, 'p', config_flags,             &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  ips, ipe, jps, jpe, kps, kpe,     &
@@ -2801,7 +2801,7 @@ BENCH_END(diag_w_tim)
 
         moisture_loop_bdy_1 : DO im = PARAM_FIRST_SCALAR , num_3d_m
   
-          CALL set_physical_bc3d( moist(ims,kms,jms,im), 'grid%em_p', config_flags,   &
+          CALL set_physical_bc3d( moist(ims,kms,jms,im), 'p', config_flags,   &
                                    ids, ide, jds, jde, kds, kde,             &
                                    ims, ime, jms, jme, kms, kme,             &
                                    ips, ipe, jps, jpe, kps, kpe,             &
@@ -2816,7 +2816,7 @@ BENCH_END(diag_w_tim)
 
         chem_species_bdy_loop_1 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
-          CALL set_physical_bc3d( chem(ims,kms,jms,ic), 'grid%em_p', config_flags,   &
+          CALL set_physical_bc3d( chem(ims,kms,jms,ic), 'p', config_flags,   &
                                   ids, ide, jds, jde, kds, kde,            &
                                   ims, ime, jms, jme, kms, kme,            &
                                   ips, ipe, jps, jpe, kps, kpe,            &
@@ -2832,7 +2832,7 @@ BENCH_END(diag_w_tim)
 
         scalar_species_bdy_loop_1 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
-          CALL set_physical_bc3d( scalar(ims,kms,jms,is), 'grid%em_p', config_flags,   &
+          CALL set_physical_bc3d( scalar(ims,kms,jms,is), 'p', config_flags,   &
                                   ids, ide, jds, jde, kds, kde,            &
                                   ims, ime, jms, jme, kms, kme,            &
                                   ips, ipe, jps, jpe, kps, kpe,            &
@@ -2846,7 +2846,7 @@ BENCH_END(diag_w_tim)
 
       IF (config_flags%km_opt .eq. 2) THEN
 
-        CALL set_physical_bc3d( grid%em_tke_2 , 'grid%em_p', config_flags,  &
+        CALL set_physical_bc3d( grid%em_tke_2 , 'p', config_flags,  &
                                 ids, ide, jds, jde, kds, kde,            &
                                 ims, ime, jms, jme, kms, kme,            &
                                 ips, ipe, jps, jpe, kps, kpe,            &
@@ -3277,14 +3277,14 @@ BENCH_START(bc_2d_tim)
                              grid%j_start(ij), grid%j_end(ij),       &
                              k_start    , k_end                     )
 
-     CALL set_physical_bc3d( grid%em_tke_1, 'grid%em_p', config_flags,   &
+     CALL set_physical_bc3d( grid%em_tke_1, 'p', config_flags,   &
                              ids, ide, jds, jde, kds, kde,            &
                              ims, ime, jms, jme, kms, kme,            &
                              ips, ipe, jps, jpe, kps, kpe,            &
                              grid%i_start(ij), grid%i_end(ij),        &
                              grid%j_start(ij), grid%j_end(ij),        &
                              k_start    , k_end-1                    )
-     CALL set_physical_bc3d( grid%em_tke_2 , 'grid%em_p', config_flags,  &
+     CALL set_physical_bc3d( grid%em_tke_2 , 'p', config_flags,  &
                              ids, ide, jds, jde, kds, kde,            &
                              ims, ime, jms, jme, kms, kme,            &
                              ips, ipe, jps, jpe, kps, kpe,            &
@@ -3294,7 +3294,7 @@ BENCH_START(bc_2d_tim)
 
      moisture_loop_bdy_2 : DO im = PARAM_FIRST_SCALAR , num_3d_m
 
-       CALL set_physical_bc3d( moist(ims,kms,jms,im), 'grid%em_p',           &
+       CALL set_physical_bc3d( moist(ims,kms,jms,im), 'p',           &
                                config_flags,                           &
                                ids, ide, jds, jde, kds, kde,           &
                                ims, ime, jms, jme, kms, kme,           &
@@ -3307,7 +3307,7 @@ BENCH_START(bc_2d_tim)
 
      chem_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_3d_c
 
-       CALL set_physical_bc3d( chem(ims,kms,jms,ic) , 'grid%em_p', config_flags,  &
+       CALL set_physical_bc3d( chem(ims,kms,jms,ic) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                ips, ipe, jps, jpe, kps, kpe,            &
@@ -3319,7 +3319,7 @@ BENCH_START(bc_2d_tim)
 
      scalar_species_bdy_loop_2 : DO is = PARAM_FIRST_SCALAR , num_3d_s
 
-       CALL set_physical_bc3d( scalar(ims,kms,jms,is) , 'grid%em_p', config_flags,  &
+       CALL set_physical_bc3d( scalar(ims,kms,jms,is) , 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                ips, ipe, jps, jpe, kps, kpe,            &

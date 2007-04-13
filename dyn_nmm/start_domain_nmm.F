@@ -1811,7 +1811,8 @@
          CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
                STEPBIOE,STEPPHOT,STEPCHEM,                           &
                ZINT,G,AERWRF,CONFIG_FLAGS,                           &
-               RRI,T,PINT,CONVFAC,GD_CLOUD_B,GD_CLOUD2_B,            &
+               RRI,T,PINT,CONVFAC,                                   &
+               GD_CLOUD,GD_CLOUD2,GD_CLOUD_B,GD_CLOUD2_B,            &
                TAUAER1,TAUAER2,TAUAER3,TAUAER4,                      &
                GAER1,GAER2,GAER3,GAER4,                              &
                WAER1,WAER2,WAER3,WAER4,                              &

@@ -229,6 +229,7 @@ call wrf_message("**************************************************************
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        call wrf_debug(15,'call MOSAIC aerosols initialization')
        call init_data_mosaic_asect(is_aerosol)
+       if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
             call mosaic_init_wrf_mixrats(                            &
                0, config_flags,                                      &
@@ -236,6 +237,7 @@ call wrf_message("**************************************************************
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
+       endif
 
    END SELECT aer_select
 
@@ -268,6 +270,7 @@ call wrf_message("**************************************************************
    cbmz_select: SELECT CASE(config_flags%chem_opt)
      CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'initializing cbmz gas-phase chemistry')
+       if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
             call cbmz_init_wrf_mixrats(config_flags,   &
                z_at_w, g,                              &
@@ -275,6 +278,7 @@ call wrf_message("**************************************************************
                ids,ide, jds,jde, kds,kde,              &
                ims,ime, jms,jme, kms,kme,              &
                its,ite, jts,jte, kts,kte               )
+       endif
    END SELECT cbmz_select
 
     END SUBROUTINE chem_init

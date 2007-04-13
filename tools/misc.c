@@ -368,6 +368,7 @@ bdy_indicator( int bdy )
   else if ( bdy == P_XEB ) { res = xe_str ; }
   else if ( bdy == P_YSB ) { res = ys_str ; }
   else if ( bdy == P_YEB ) { res = ye_str ; }
+  return(res) ;
 }
 
 int

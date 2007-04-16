@@ -25,7 +25,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE BOCOH(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    &  ! GRIDID ADDED BY GOPAL
+      SUBROUTINE BOCOH(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    &
      &                ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                    &
      &                ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                  &
      &                ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT           &
@@ -745,7 +745,7 @@
       END SUBROUTINE BOCOH
 !-----------------------------------------------------------------------
 !***********************************************************************
-      SUBROUTINE BOCOV(GRIDID,NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT          &  ! GRIDID ADDED BY GOPAL
+      SUBROUTINE BOCOV(GRIDID,NTSD,DT,LB,VTM,U_B,V_B,U_BT,V_BT          &
      &                ,U,V                                              &
      &                ,IJDS,IJDE,SPEC_BDY_WIDTH                         &  ! min/max(id,jd)
      &                ,IHE,IHW,IVE,IVW,INDX3_WRK                        &

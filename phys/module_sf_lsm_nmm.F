@@ -1378,7 +1378,15 @@ CONTAINS
       ELSE
         ETA = ETP
       ENDIF
-      BETA = ETA/ETP
+! ----------------------------------------------------------------------
+! DETERMINE BETA (RATIO OF ACTUAL TO POTENTIAL EVAP)
+! ----------------------------------------------------------------------
+      IF (ETP == 0.0) THEN
+        BETA = 0.0
+      ELSE
+        BETA = ETA/ETP
+      ENDIF
+
 ! ----------------------------------------------------------------------
 
 ! ----------------------------------------------------------------------
@@ -2433,7 +2441,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 !       CONVERT MODELED EVAPOTRANSPIRATION FM  M S-1  TO  KG M-2 S-1
 ! ----------------------------------------------------------------------
-!        ETA = ETA1 * 1000.0
+        ETA = ETA1 * 1000.0
 
 ! ----------------------------------------------------------------------
 !        EDIR = EDIR1 * 1000.0
@@ -2492,7 +2500,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 !       CONVERT MODELED EVAPOTRANSPIRATION FM  M S-1  TO  KG M-2 S-1
 ! ----------------------------------------------------------------------
-        ETA = ETA1 * 1000.0
+!        ETA = ETA1 * 1000.0
 
 ! ----------------------------------------------------------------------
       EDIR = EDIR1 * 1000.0
@@ -2514,7 +2522,7 @@ CONTAINS
         BETA = 0.0
         IF ( ETP .LT. 0.0 ) THEN
           BETA = 1.0
-!          ETA = ETP
+          ETA = ETP
         ENDIF
       ELSE
         BETA = ETA / ETP
@@ -3814,12 +3822,12 @@ CONTAINS
       PRCP1 = PRCP1*0.001
 
 !      ETP2 = ETP * 0.001 * DT
-      BETA = 1.0
-      IF (ICE .NE. 1) THEN
-        IF (ESD .LT. ETP2) THEN
+!      BETA = 1.0
+!      IF (ICE .NE. 1) THEN
+!        IF (ESD .LT. ETP2) THEN
 !          BETA = ESD / ETP2
-        ENDIF
-      ENDIF
+!        ENDIF
+!      ENDIF
 
 ! ----------------------------------------------------------------------
       EDIR = 0.0
@@ -3882,12 +3890,16 @@ CONTAINS
             ETNS = ETNS1 * 1000.0
 ! ----------------------------------------------------------------------
           ENDIF
-          ESNOW = ETP*SNCOVR
+!          ESNOW = ETP*SNCOVR
 !          ESNOW1 = ETP*0.001
-          ESNOW1 = ESNOW*0.001
-          ESNOW2 = ESNOW1*DT
-          ETANRG = ESNOW*LSUBS + ETNS*LSUBC
+!          ESNOW1 = ESNOW*0.001
+!          ESNOW2 = ESNOW1*DT
+!          ETANRG = ESNOW*LSUBS + ETNS*LSUBC
         ENDIF
+        ESNOW = ETP*SNCOVR
+        ESNOW1 = ESNOW*0.001
+        ESNOW2 = ESNOW1*DT
+        ETANRG = ESNOW*LSUBS + ETNS*LSUBC
       ENDIF
    
 ! ----------------------------------------------------------------------
@@ -3966,7 +3978,7 @@ CONTAINS
 !        QSAT = (0.622*6.11E2)/(SFCPRS-0.378*6.11E2)
 !        ETP = RCH*(QSAT-Q2)/CP
 !        ETP2 = ETP*0.001*DT
-        BETA = 1.0
+!        BETA = 1.0
         SSOIL = DF1 * (T1 - STC(1)) / DTOT
 	
 ! ----------------------------------------------------------------------

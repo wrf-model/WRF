@@ -1129,6 +1129,7 @@
 !----------------------------------------------------------------------
 !***  CONVECTIVE PRECIPITATION
 !----------------------------------------------------------------------
+!
       IF(MOD(NTSD,GRID%NCNVC)==0.AND.                                  &
      &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN
 !
@@ -1145,7 +1146,7 @@
 !       exch_tim_max=exch_tim_max+et_max
       ENDIF
 !
-      IF(GRID%NCNVC/=999)THEN
+      convection: IF(CONFIG_FLAGS%CU_PHYSICS/=0)THEN
         btimx=timef()
 !
 !***  GET TENDENCIES FOR GD SCHEME.
@@ -1191,7 +1192,7 @@
 !
         cucnvc_tim=cucnvc_tim+timef()-btimx
 !
-      ENDIF
+      ENDIF convection
 !
 !----------------------------------------------------------------------
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)

@@ -133,8 +133,8 @@ state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velo
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
 state  real   sm        ij     dyn_nmm     1      -      i01rh   "SM"      "Sea mask; =1 for sea, =0 for land"                       ""
 state  real   sice      ij     dyn_nmm     1      -      irh     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
-state  real   htm       ikj    dyn_nmm     1      -      rh      "HTM"     "Height mask; =1 at all mass points above ground"         ""
-state  real   vtm       ikj    dyn_nmm     1      -      rh      "VTM"     "Velocity mask; =1 at all velocity points above ground"   ""
+state  real   htm       ikj    dyn_nmm     1      -      r       "HTM"     "Height mask; =1 at all mass points above ground"         ""
+state  real   vtm       ikj    dyn_nmm     1      -      r       "VTM"     "Velocity mask; =1 at all velocity points above ground"   ""
 #
 # module_VRBLS
 #
@@ -338,10 +338,10 @@ state  real   potevp    ij    dyn_nmm     1    -    rh    "POTEVP"    "Accum pot
 state  real   potflx    ij    dyn_nmm     1    -    rh    "POTFLX"    "Energy equivalent of POTEVP"       "W m-2"
 state  real   tlmin     ij    dyn_nmm     1    -    h
 state  real   tlmax     ij    dyn_nmm     1    -    h
-state  real   rlwtt     ikj   dyn_nmm     1    -    rh    "RLWTT"     "Longwave temperature tendency"     "K s-1"
-state  real   rswtt     ikj   dyn_nmm     1    -    rh    "RSWTT"     "Shortwave temperature tendency"    "K s-1"
-state  real   tcucn     ikj   dyn_nmm     1    -    h     "TCUCN"     "Accum convec temperature tendency" "K s-1"
-state  real   train     ikj   dyn_nmm     1    -    h     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
+state  real   rlwtt     ikj   dyn_nmm     1    -    r     "RLWTT"     "Longwave temperature tendency"     "K s-1"
+state  real   rswtt     ikj   dyn_nmm     1    -    r     "RSWTT"     "Shortwave temperature tendency"    "K s-1"
+state  real   tcucn     ikj   dyn_nmm     1    -    -     "TCUCN"     "Accum convec temperature tendency" "K s-1"
+state  real   train     ikj   dyn_nmm     1    -    -     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
 state integer ncfrcv    ij    dyn_nmm     1    -    irh   "NCFRCV"    "# times convec cloud >0 between rad calls"  ""
 state integer ncfrst    ij    dyn_nmm     1    -    irh   "NCFRST"    "# times stratiform cloud >0 between rad calls"  ""
 state integer nphs0     -     dyn_nmm     -    -    rh
@@ -473,7 +473,7 @@ state   real    qv             ikjft   moist       1         -     r       "QVAP
 state   real    qc             ikjft   moist       1         -     r       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
 state   real    qr             ikjft   moist       1         -     r       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjft   moist       1         -     r       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjft   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qs             ikjft   moist       1         -     r       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjft   moist       1         -     r       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars
@@ -582,9 +582,9 @@ state    real   WEASD            ij     misc        1         -     i01rh       
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 
-state    real   tke_myj         ikj     misc        1         -     rh        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
-state    real   EL_MYJ          ikj     misc        1         -      h        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
-state    real   EXCH_H         ikj     misc        1         -     rh         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
+state    real   tke_myj         ikj     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
+state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
+state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"        "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"       "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"         "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"      "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"         "U WIND COMPONENT AT TOP OF VISC. SUBLYR"       "m s-1"

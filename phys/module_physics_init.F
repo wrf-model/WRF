@@ -291,7 +291,12 @@ integer myproc
    THINLD=0.04
    ALBLND=0.2
    XMAVA=0.3
+
+#if (NMM_CORE == 1)
+   usebgalb = .TRUE.
+#else
    usebgalb = .FALSE.
+#endif
 
    CALL nl_get_cen_lat(id,cen_lat)
    CALL wrf_debug(100,'calling nl_get_iswater, nl_get_mminlu_loc')

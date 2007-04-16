@@ -1478,16 +1478,16 @@ CONTAINS
 
 !hardwire soil stuff for time being
 
-        RTDPTH=0.
-        RTDPTH(1)=0.1
-        RTDPTH(2)=0.3
-        RTDPTH(3)=0.6
+!       RTDPTH=0.
+!       RTDPTH(1)=0.1
+!       RTDPTH(2)=0.3
+!       RTDPTH(3)=0.6
 
-        SLDPTH=0.
-        SLDPTH(1)=0.1
-        SLDPTH(2)=0.3
-        SLDPTH(3)=0.6
-        SLDPTH(4)=1.0
+!       SLDPTH=0.
+!       SLDPTH(1)=0.1
+!       SLDPTH(2)=0.3
+!       SLDPTH(3)=0.6
+!       SLDPTH(4)=1.0
 
 !!! main body of nmm_specific starts here
 !

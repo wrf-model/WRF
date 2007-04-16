@@ -506,6 +506,7 @@
         DO I=MYIS1,IENDX
           HBOT(I,J)=HBOTR(I,J)
           HTOP(I,J)=HTOPR(I,J)
+          CUPPT(I,J)=CUPPTR(I,J)
         ENDDO
       ENDDO
 !-----------------------------------------------------------------------

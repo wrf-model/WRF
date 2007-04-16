@@ -1330,11 +1330,15 @@
 !
       INTEGER :: I,IER,J,J4_00,J4_M1,J4_P1,JJ,JKNT,JSTART,K,STAT
 !
-      REAL :: RDPDX,RDPDY
+      REAL :: FCIM,FCXM,RDPDX,RDPDY
 !
 !***  TYPE 4 WORKING ARRAY   ! See PFDHT
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: CKE,DPDE
+      REAL,DIMENSION(ITS-5:ITE+5) :: XDIVX,XDIVY
+!
+      REAL,DIMENSION(ITS-5:ITE+5,-1:1) :: DIVE,PDE
+!
+      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: DPDE
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -1350,12 +1354,18 @@
       DO J=-1,0
         JJ=JSTART+J
 !
+        DO I=MYIS_P2,MYIE_P2
+          PDE (I,J)=PDSL(I,JJ)+PDTOP
+          DIVE(I,J)=0.
+        ENDDO
+!
 !$omp parallel do                                                       &
 !$omp& private(i,k)
         DO K=KTS,KTE
         DO I=MYIS_P2,MYIE_P2
-          DPDE(I,K,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,JJ)
-          DIV(I,K,JJ)=DIV(I,K,JJ)*HBM2(I,JJ)
+          DPDE(I,K,J )=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,JJ)
+          DIV (I,K,JJ)=DIV(I,K,JJ)*HBM2(I,JJ)
+          DIVE(I,J)=DIV(I,K,JJ)*HBM2(I,JJ)+DIVE(I,J)
         ENDDO
         ENDDO
 !
@@ -1377,41 +1387,75 @@
 !***  THE CURRENT VALUE OF THE main_integration LOOP.
 !***  (P2 denotes +2, etc.)
 !***
-      JKNT=JKNT+1
+        JKNT=JKNT+1
 !
-      J4_P1=INDX3_WRK(1,JKNT,4)
-      J4_00=INDX3_WRK(0,JKNT,4)
-      J4_M1=INDX3_WRK(-1,JKNT,4)
+        J4_P1=INDX3_WRK(1,JKNT,4)
+        J4_00=INDX3_WRK(0,JKNT,4)
+        J4_M1=INDX3_WRK(-1,JKNT,4)
 !
 !-----------------------------------------------------------------------
+!
+        FCXM=1.
+!
+        DO I=MYIS_P2,MYIE_P2
+          PDE (I,J4_P1)=PDSL(I,J+1)+PDTOP
+          DIVE(I,J4_P1)=0.
+        ENDDO
+!
+        DO K=KTS,KTE
+          DO I=MYIS_P2,MYIE_P2
+            DIVE(I,J4_P1)=DIV(I,K,J+1)*HBM2(I,J+1)+DIVE(I,J4_P1)
+          ENDDO
+        ENDDO
+!
+        DO I=MYIS1_P1,MYIE1_P1
+          RDPDX=DDMPU(I,J)*FCXM                                         &
+     &         /(PDE(I+IVW(J),J4_00)+PDE(I+IVE(J),J4_00))
+          RDPDY=DDMPV(I,J)*FCXM                                         &
+     &         /(PDE(I       ,J4_M1)+PDE(I       ,J4_P1))
+!
+          XDIVX(I)=(DIVE(I+IVE(J),J4_00)                                &
+     &             -DIVE(I+IVW(J),J4_00))*RDPDX
+          XDIVY(I)=(DIVE(I       ,J4_P1)                                &
+     &             -DIVE(I       ,J4_M1))*RDPDY
+        ENDDO
+!
+!-----------------------------------------------------------------------
+!
+        FCIM=1.
+!
 !$omp parallel do                                                       &
 !$omp& private(i,k,rdpdx,rdpdy)
-      DO K=KTS,KTE
+        DO K=KTS,KTE
 !
-      DO I=MYIS_P2,MYIE_P2
-        DPDE(I,K,J4_P1)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J+1)
-        DIV(I,K,J+1)=DIV(I,K,J+1)*HBM2(I,J+1)
-      ENDDO
+        DO I=MYIS_P2,MYIE_P2
+          DPDE(I,K,J4_P1)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J+1)
+          DIV(I,K,J+1)=DIV(I,K,J+1)*HBM2(I,J+1)
+        ENDDO
 !
-      DO I=MYIS1_P1,MYIE1_P1
-        RDPDX=VTM(I,K,J)/(DPDE(I+IVW(J),K,J4_00)                        &
-     &                   +DPDE(I+IVE(J),K,J4_00))
-        U(I,K,J)=U(I,K,J)+(DIV(I+IVE(J),K,J)-DIV(I+IVW(J),K,J))         &
-     &                    *RDPDX*DDMPU(I,J)
+        DO I=MYIS1_P1,MYIE1_P1
+          RDPDX=DDMPU(I,J)*FCIM                                        &
+     &         /(DPDE(I+IVW(J),K,J4_00)+DPDE(I+IVE(J),K,J4_00))
+          RDPDY=DDMPV(I,J)*FCIM                                        &
+     &         /(DPDE(I       ,K,J4_M1)+DPDE(I       ,K,J4_P1))
+          U(I,K,J)=((DIV(I+IVE(J),K,J  )-DIV(I+IVW(J),K,J  ))*RDPDX    &
+     &             +XDIVX(I))*VTM(I,K,J)+U(I,K,J)
+          V(I,K,J)=((DIV(I       ,K,J+1)-DIV(I       ,K,J-1))*RDPDY    &
+     &             +XDIVY(I))*VTM(I,K,J)+V(I,K,J)
+        ENDDO
 !
-        RDPDY=VTM(I,K,J)/(DPDE(I,K,J4_M1)+DPDE(I,K,J4_P1))
-        V(I,K,J)=V(I,K,J)+(DIV(I,K,J+1)-DIV(I,K,J-1))                   &
-     &                    *RDPDY*DDMPV(I,J)
-      ENDDO
-!
-      ENDDO
+        ENDDO
 !
 !-----------------------------------------------------------------------
 !
       ENDDO main_integration
 !
 !-----------------------------------------------------------------------
+!
       END SUBROUTINE DDAMP
+!
 !-----------------------------------------------------------------------
+!
       END MODULE MODULE_IGWAVE_ADJUST
+!
 !-----------------------------------------------------------------------

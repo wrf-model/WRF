@@ -13,7 +13,7 @@
       REAL,PARAMETER ::                                                 &
      &                  DSPC=-3000.                                     &
      &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        & 
-     &                 ,ELIVW=2.72E6,ENPLO=20000.,ENPUP=15000.          &
+     &                 ,ELIWV=2.683E6,ENPLO=20000.,ENPUP=15000.         &
      &                 ,EPSDN=1.05,EPSDT=0.                             &
      &                 ,EPSNTP=.0001,EPSNTT=.0001,EPSPR=1.E-7           &
      &                 ,EPSUP=1.00                                      &
@@ -27,7 +27,12 @@
      &                 ,ROW=1.E3                                        &
      &                 ,STABDF=0.90,STABDS=0.90                         &
      &                 ,STABS=1.0,STRESH=1.10                           &
-     &                 ,TREL=2400.
+     &                 ,DTSHAL=-1.0,TREL=2400.
+!
+      REAL,PARAMETER :: DTtrigr=-0.0                                    &
+                       ,DTPtrigr=DTtrigr*PONE      !<-- Average parcel virtual temperature deficit over depth PONE.
+                                                   !<-- NOTE: CAPEtrigr is scaled by the cloud base temperature (see below)
+!
       REAL,PARAMETER :: DSPBFL=-3875.*FR                                &
      &                 ,DSP0FL=-5875.*FR                                &
      &                 ,DSPTFL=-1875.*FR                                &
@@ -62,6 +67,7 @@
      &                 ,RSFCP=1./101300.
 !
       REAL,PARAMETER :: AVGEFI=(EFIMN+1.)*0.5
+!
 !-----------------------------------------------------------------------
 !
 CONTAINS
@@ -321,8 +327,9 @@ CONTAINS
                                 ,PK,PSK,QK,QREFK,QSATK                  &
                                 ,THERK,THEVRF,THSK                      &
                                 ,THVMOD,THVREF,TK,TREFK
-!
       REAL,DIMENSION(KTS:KTE) :: APE,DIFQ,DIFT,THEE,THES,TREF
+!
+      REAL,DIMENSION(KTS:KTE) :: CPE,CPEcnv,DTV,DTVcnv,THEScnv    !<-- CPE for shallow convection buoyancy check (24 Aug 2006)
 !
       LOGICAL :: DEEP,SHALLOW
 !
@@ -335,7 +342,7 @@ CONTAINS
 !***  LOCAL SCALARS
 !***
 !-----------------------------------------------------------------------
-      REAL :: APEKL,APEKXX,APEKXY,APES,APESP,APESTS                     &
+      REAL :: APEKL,APEKXX,APEKXY,APES,APESTS                           &
      &            ,AVRGT,AVRGTL,BQ,BQK,BQS00K,BQS10K                    &
      &            ,CAPA,CUP,DEN,DENTPY,DEPMIN,DEPTH                     &
      &            ,DEPWL,DHDT,DIFQL,DIFTL,DP,DPKL,DPLO,DPMIX,DPOT       &
@@ -346,20 +353,22 @@ CONTAINS
      &            ,OTSUM,P,P00K,P01K,P10K,P11K                          &
      &            ,PART1,PART2,PART3,PBOT,PBOTFC,PBTK                   &
      &            ,PK0,PKB,PKL,PKT,PKXXXX,PKXXXY                        &
-     &            ,PLMH,plo,POTSUM,PP1,PPK,PRECK                        &
+     &            ,PLMH,PELEVFC,PBTmx,plo,POTSUM,PP1,PPK,PRECK          &
      &            ,PRESK,PSP,PSUM,PTHRS,PTOP,PTPK,PUP                   &
-     &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQBT,QQK,QRFKL               &
+     &            ,QBT,QKL,QNEW,QOTSUM,QQ1,QQK,QRFKL                    &
      &            ,QRFTP,QSP,QSUM,QUP,RDP0T                             &
-     &            ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,ROTSUM,RTBAR            &
+     &            ,RDPSUM,RDTCNVC,RHH,RHL,RHMAX,ROTSUM,RTBAR,RHAVG      &
      &            ,SM1,SMIX,SQ,SQK,SQS00K,SQS10K,STABDL,SUMDE,SUMDP     &
      &            ,SUMDT,TAUK,TAUKSC,TCORR,THBT,THERKX,THERKY           &
      &            ,THESP,THSKL,THTPK,THVMKL,TKL,TNEW                    &
-     &            ,TPSP,TQ,TQK,TREFKX,TRFKL,trmlo,trmup,TSKL,tsp,TTH    &
-     &            ,TTHBT,TTHES,TTHK,TUP 
+     &            ,TQ,TQK,TREFKX,TRFKL,trmlo,trmup,TSKL,tsp,TTH         &
+     &            ,TTHK,TUP                                             &
+     &            ,CAPEcnv,PSPcnv,THBTcnv,CAPEtrigr,CAPE                &
+     &            ,TLEV2,QSAT1,QSAT2,RHSHmax
 !
-      INTEGER :: IQ,IQTB,IT,ITER,ITREFI,ITTB,ITTBK,KB,KBMAX,KNUMH,KNUML &
+      INTEGER :: IQ,IQTB,IT,ITER,ITREFI,ITTB,ITTBK,KB,KNUMH,KNUML       &
      &          ,L,L0,L0M1,LB,LBM1,LCOR,LPT1                            &
-     &          ,LQM,LSHU,LTP1,LTP2,LTSH
+     &          ,LQM,LSHU,LTP1,LTP2,LTSH, LBOTcnv,LTOPcnv,LMID
 !-----------------------------------------------------------------------
 !
       REAL,PARAMETER :: DSPBSL=DSPBFL*FSL,DSP0SL=DSP0FL*FSL             &
@@ -367,7 +376,7 @@ CONTAINS
      &                 ,DSPBSS=DSPBFS*FSS,DSP0SS=DSP0FS*FSS             &
      &                 ,DSPTSS=DSPTFS*FSS
 !
-      REAL,PARAMETER :: ELEVFC=0.8,STEFI=1.
+      REAL,PARAMETER :: ELEVFC=0.6,STEFI=1.
 !
       REAL,PARAMETER :: SLOPBL=(DSPBFL-DSPBSL)/(1.-EFIMN)               &
      &                 ,SLOP0L=(DSP0FL-DSP0SL)/(1.-EFIMN)               &
@@ -378,16 +387,17 @@ CONTAINS
      &                 ,SLOPST=(STABDF-STABDS)/(1.-EFIMN)               &
      &                 ,SLOPE=(1.-EFMNT)/(1.-EFIMN)
 !
-      REAL :: A23M4L,CPRLG,ELOCP,RCP
+      REAL :: A23M4L,CPRLG,ELOCP,RCP,QWAT
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
       CAPA=R/CP
       CPRLG=CP/(ROW*G*ELWV)
-      ELOCP=ELIVW/CP
+      ELOCP=ELIWV/CP
       RCP=1./CP
       A23M4L=A2*(A3-A4)*ELWV
       RDTCNVC=1./DTCNVC
+      DEPMIN=PSH*PSFC*RSFCP
 !
       DEEP=.FALSE.
       SHALLOW=.FALSE.
@@ -395,7 +405,6 @@ CONTAINS
       DSP0=0.
       DSPB=0.
       DSPT=0.
-      PSP=0.
 !-----------------------------------------------------------------------
       TAUK=DTCNVC/TREL
       TAUKSC=DTCNVC/(1.0*TREL) 
@@ -403,45 +412,59 @@ CONTAINS
 !-----------------------------PREPARATIONS------------------------------
 !-----------------------------------------------------------------------
       LBOT=LMH
-      THESP=0.
       PCPCOL=0.
       TREF(KTS)=T(KTS)
-!
-      KBMAX=LMH
 !
       DO L=KTS,LMH
         APESTS=PRSMID(L)
         APE(L)=(1.E5/APESTS)**CAPA
+        CPEcnv(L)=0.
+        DTVcnv(L)=0.
+        THEScnv(L)=0.
       ENDDO
+!
 !-----------------------------------------------------------------------
 !----------------SEARCH FOR MAXIMUM BUOYANCY LEVEL----------------------
 !-----------------------------------------------------------------------
-                             DO 170 KB=1,LMH
+!
+      PLMH=PRSMID(LMH)
+      PELEVFC=PLMH*ELEVFC
+      PBTmx=PRSMID(LMH)-PONE
+      CAPEcnv=0.
+      PSPcnv=0.
+      THBTcnv=0.
+      LBOTcnv=LBOT
+      LTOPcnv=LBOT
+!
 !-----------------------------------------------------------------------
 !----------------TRIAL MAXIMUM BUOYANCY LEVEL VARIABLES-----------------
 !-----------------------------------------------------------------------
 !
-      PKL=PRSMID(KB)
-      PLMH=PRSMID(LMH)
+      max_buoy_loop: DO KB=LMH,1,-1
+!
+!-----------------------------------------------------------------------
+!
+        PKL=PRSMID(KB)
+!       IF (PKL<PELEVFC .OR. T(KB)<=TFRZ) EXIT
+        IF (PKL<PELEVFC) EXIT
+        LBOT=LMH
+        LTOP=LMH
 !
 !-----------------------------------------------------------------------
 !***  SEARCH OVER A SCALED DEPTH IN FINDING THE PARCEL
 !***  WITH THE MAX THETA-E 
 !-----------------------------------------------------------------------
-      IF(KB<=LMH)THEN
-!-----------------------------------------------------------------------
+!
         QBT=Q(KB)
-        TTHBT=T(KB)*APE(KB)
-        TTH=(TTHBT-THL)*RDTH
+        THBT=T(KB)*APE(KB)
+        TTH=(THBT-THL)*RDTH
         QQ1=TTH-AINT(TTH)
         ITTB=INT(TTH)+1
 !----------------KEEPING INDICES WITHIN THE TABLE-----------------------
         IF(ITTB<1)THEN
           ITTB=1
           QQ1=0.
-        ENDIF
-!
-        IF(ITTB>=JTB)THEN
+        ELSE IF(ITTB>=JTB)THEN
           ITTB=JTB-1
           QQ1=0.
         ENDIF
@@ -461,9 +484,7 @@ CONTAINS
         IF(IQTB<1)THEN
           IQTB=1
           PP1=0.
-        ENDIF
-!
-        IF(IQTB>=ITB)THEN
+        ELSE IF(IQTB>=ITB)THEN
           IQTB=ITB-1
           PP1=0.
         ENDIF
@@ -477,227 +498,342 @@ CONTAINS
 !
 !--------------SATURATION POINT VARIABLES AT THE BOTTOM-----------------
 !
-        TPSP=P00K+(P10K-P00K)*PP1+(P01K-P00K)*QQ1                       &
-     &           +(P00K-P10K-P01K+P11K)*PP1*QQ1
-        APESP=(1.E5/TPSP)**CAPA
-        TTHES=TTHBT*EXP(ELOCP*QBT*APESP/TTHBT)
-        THES(KB)=TTHES
+        PSP=P00K+(P10K-P00K)*PP1+(P01K-P00K)*QQ1                        &
+     &          +(P00K-P10K-P01K+P11K)*PP1*QQ1
+        APES=(1.E5/PSP)**CAPA
+        THESP=THBT*EXP(ELOCP*QBT*APES/THBT)
 !
-!--------------CHECK FOR MAXIMUM BUOYANCY-------------------------------
-!
-          IF(PKL>=ELEVFC*PLMH.AND.TTHES>THESP)THEN
-            PSP  =TPSP
-            APES =APESP
-            THBT =TTHBT
-            THESP=TTHES
-            QQBT=QBT 
-            KBMAX=KB
-          ENDIF ! End of search for maximum buoyancy level
-!-----------------------------------------------------------------------
-      ENDIF
-!-----------------------------------------------------------------------
-  170 CONTINUE
 !-----------------------------------------------------------------------
 !-----------CHOOSE CLOUD BASE AS MODEL LEVEL JUST BELOW PSP-------------
 !-----------------------------------------------------------------------
-      DO L=KTS,LMH-1
-        P=PRSMID(L)
-        IF(P<PSP.AND.P>=PQM)LBOT=L+1
-      ENDDO
-!***
-!*** WARNING: LBOT MUST NOT BE GT LMH-1 IN SHALLOW CONVECTION
-!*** MAKE SURE CLOUD BASE IS AT LEAST PONE ABOVE THE SURFACE
-!***
-      PBOT=PRSMID(LBOT)
-      PLMH=PRSMID(LMH)
-      IF(PBOT>=PLMH-PONE.OR.LBOT>=LMH)THEN
 !
         DO L=KTS,LMH-1
           P=PRSMID(L)
-          IF(P<PLMH-PONE)LBOT=L
+          IF(P<PSP.AND.P>=PQM)LBOT=L+1
         ENDDO
-!
+!***
+!*** WARNING: LBOT MUST NOT BE > LMH-1 IN SHALLOW CONVECTION
+!*** MAKE SURE CLOUD BASE IS AT LEAST PONE ABOVE THE SURFACE
+!***
         PBOT=PRSMID(LBOT)
-      ENDIF 
+        IF(PBOT>=PBTmx.OR.LBOT>=LMH)THEN
+          DO L=KTS,LMH-1
+            P=PRSMID(L)
+            IF(P<PBTmx)LBOT=L
+          ENDDO
+          PBOT=PRSMID(LBOT)
+        ENDIF 
+!
 !-----------------------------------------------------------------------
 !----------------CLOUD TOP COMPUTATION----------------------------------
 !-----------------------------------------------------------------------
-      LTOP=LBOT
-      PTOP=PBOT
-!----------------ENTRAINMENT DURING PARTICLE ASCENT---------------------
 !
-      DO L=LMH,KBMAX,-1
-        THES(L)=THESP
-      ENDDO
-!
-      DO L=KTS,LMH
-        THEE(L)=THES(L)
-      ENDDO
-!
-      FEFI=(CLDEFI-EFIMN)*SLOPE+EFMNT
-      FFUP=FUP/(FEFI*FEFI)
-!
-      IF(PBOT>ENPLO)THEN
-        FPRS=1.
-      ELSEIF(PBOT>ENPUP)THEN
-        FPRS=(PBOT-ENPUP)*RENDP
-      ELSE
-        FPRS=0.
-      ENDIF
-!
-      FFUP=FFUP*FPRS*FPRS*0.5
-      DPUP=DPRS(KBMAX)
-!
-      DO L=KBMAX-1,KTS,-1
-        DPLO=DPUP
-        DPUP=DPRS(L)
-!
-        THES(L)=((-FFUP*DPLO+1.)*THES(L+1)                              &
-     &          +(THEE(L)*DPUP+THEE(L+1)*DPLO)*FFUP)                    &
-     &         /(FFUP*DPUP+1.)
-      ENDDO
-!-----------------------------------------------------------------------
-!***
-!***  COMPUTE PARCEL TEMPERATURE ALONG THE ASCENT TRAJECTORY
-!***  SCALING PRESSURE & TT TABLE INDEX.
-!***
-!
-      DO L=LMH,KTS,-1
-!
-        PRESK=PRSMID(L)
-!
-        IF(PRESK<PLQ)THEN
-          CALL TTBLEX(ITB,JTB,PL,PRESK,RDP,RDTHE                        &
-     &               ,STHE,THE0,THES(L),TTBL,TREF(L))
-        ELSE
-          CALL TTBLEX(ITBQ,JTBQ,PLQ,PRESK,RDPQ,RDTHEQ                   &
-     &               ,STHEQ,THE0Q,THES(L),TTBLQ,TREF(L))
-        ENDIF
-!
-      ENDDO
+        LTOP=LBOT
+        PTOP=PBOT
+        DO L=LMH,KTS,-1
+          THES(L)=THESP
+        ENDDO
 !
 !-----------------------------------------------------------------------
-!----------------BUOYANCY CHECK-----------------------------------------
+!### BEGIN: ###########  WARNING  ###########  WARNING  ###########
 !-----------------------------------------------------------------------
 !
-      DO L=LMH,KTS,-1
-        IF(TREF(L)>T(L)-DTTOP)LTOP=L
-      ENDDO
+!### IMPORTANT: THIS "DO KB=LMH,1,-1" loop must be broken up into two
+!    separate loops in order for entrainment as programmed below to work
+!    properly.  
 !
-!***  CLOUD TOP PRESSURE
+!---------------  ENTRAINMENT DURING PARCEL ASCENT  --------------------
 !
-      PTOP=PRSMID(LTOP)
+!        DO L=LMH,KB,-1
+!          THES(L)=THESP
+!        ENDDO
+!
+!        DO L=KTS,LMH
+!          THEE(L)=THES(L)
+!        ENDDO
+!!
+!        FEFI=(CLDEFI-EFIMN)*SLOPE+EFMNT
+!        FFUP=FUP/(FEFI*FEFI)
+!!
+!        IF(PBOT>ENPLO)THEN
+!          FPRS=1.
+!        ELSEIF(PBOT>ENPUP)THEN
+!          FPRS=(PBOT-ENPUP)*RENDP
+!        ELSE
+!          FPRS=0.
+!        ENDIF
+!!
+!        FFUP=FFUP*FPRS*FPRS*0.5
+!        DPUP=DPRS(KB)
+!!
+!        DO L=KB-1,KTS,-1
+!          DPLO=DPUP
+!          DPUP=DPRS(L)
+!!
+!          THES(L)=((-FFUP*DPLO+1.)*THES(L+1)                           &
+!     &            +(THEE(L)*DPUP+THEE(L+1)*DPLO)*FFUP)                 &
+!     &           /(FFUP*DPUP+1.)
+!      ENDDO
+!
+!-----------------------------------------------------------------------
+!### END: ###########  WARNING  ###########  WARNING  ###########
+!-----------------------------------------------------------------------
+!!
+!-----------------------------------------------------------------------
+!!***  COMPUTE PARCEL TEMPERATURE ALONG THE ASCENT TRAJECTORY
+!!***  SCALING PRESSURE & TT TABLE INDEX.
+!-----------------------------------------------------------------------
+!!
+!!
+!       DO L=LMH,KTS,-1
+!!
+!         PRESK=PRSMID(L)
+!!
+!         IF(PRESK<PLQ)THEN
+!           CALL TTBLEX(ITB,JTB,PL,PRESK,RDP,RDTHE                      &
+!     &                ,STHE,THE0,THES(L),TTBL,TREF(L))
+!         ELSE
+!           CALL TTBLEX(ITBQ,JTBQ,PLQ,PRESK,RDPQ,RDTHEQ                 &
+!     &                ,STHEQ,THE0Q,THES(L),TTBLQ,TREF(L))
+!         ENDIF
+!!
+!       ENDDO
+!!
+!!-----------------------------------------------------------------------
+!!----------------BUOYANCY CHECK-----------------------------------------
+!!-----------------------------------------------------------------------
+!!
+!       DO L=LMH,KTS,-1
+!         IF(TREF(L)>T(L)-DTTOP)LTOP=L
+!       ENDDO
+!!
+!!***  CLOUD TOP PRESSURE
+!!
+!       PTOP=PRSMID(LTOP)
 !
 !------------------FIRST ENTROPY CHECK----------------------------------
 !
-!      IF(KBMAX>LBOT.AND.LBOT>LTOP)THEN
-!!-----------------------------------------------------------------------
-!        DENTPY=0.
-!        SUMDP=0.
-!        L=KBMAX
-!        PLO=PRSMID(L)
-!        TRMLO=0.
-!!
-!        DO L=KBMAX-1,LBOT+1,-1
-!          PUP=PRSMID(L)
-!          TUP=THBT/APE(L)
-!          DP=PLO-PUP
-!          TRMUP=(TUP*(QQBT*0.608+1.)                                    &
-!     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
-!     &           /(T(L)*(Q(L)*0.608+1.))
-!          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-!          SUMDP=SUMDP+DP
-!          PLO=PUP
-!          TRMLO=TRMUP
-!        ENDDO
-!!
-!        L=LBOT
-!        PUP=PSP
-!        TUP=THBT/APES
-!        TSP=(T(L+1)-T(L))/(PLO-PBOT)                                    &
-!     &     *(PUP-PBOT)+T(L)
-!        QSP=(Q(L+1)-Q(L))/(PLO-PBOT)                                    &
-!     &     *(PUP-PBOT)+Q(L)
-!        DP=PLO-PUP
-!        TRMUP=(TUP*(QQBT*0.608+1.)                                      &
-!     &        -TSP*(QSP*0.608+1.))*0.5                                  &
-!     &       /(TSP*(QSP*0.608+1.))
-!        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-!        SUMDP=SUMDP+DP
-!        PLO=PUP
-!        TRMLO=TRMUP
-!        PUP=PRSMID(L)
-!        TUP=TREF(L)
-!        QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
-!        DP=PLO-PUP
-!        TRMUP=(TUP*(QUP*0.608+1.)                                       &
-!     &        -T(L)*(Q(L)*0.608+1.))*0.5                                &
-!     &       /(T(L)*(Q(L)*0.608+1.))
-!        DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-!        SUMDP=SUMDP+DP
-!        PLO=PUP
-!        TRMLO=TRMUP
-!!
-!        DO L=LBOT-1,LTOP
-!          PUP=PRSMID(L)
-!          TUP=TREF(L)
-!          QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
-!          DP=PLO-PUP
-!          TRMUP=(TUP*(QUP*0.608+1.)                                     &
-!     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
-!     &         /(T(L)*(Q(L)*0.608+1.))
-!          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
-!          SUMDP=SUMDP+DP
-!          PLO=PUP
-!          TRMLO=TRMUP
-!        ENDDO
-!!
-!        DENTPY=DENTPY*CP/SUMDP
-!        IF(DENTPY<=EPSNTT)THEN
-!          LTOP=LBOT
-!          PTOP=PBOT
-!        ENDIF
-!!-----------------------------------------------------------------------
-!      ENDIF
+        DO L=KTS,LMH
+          CPE(L)=0.
+          DTV(L)=0.
+        ENDDO
 !-----------------------------------------------------------------------
-!***
-!***  CLEAN UP AND GATHER DEEP CONVECTION POINTS
-!***
-      IF(LTOP>=LBOT)THEN
-        LBOT=0
-!!        LTOP=LBOT
-        LTOP=KTE
-        PTOP=PBOT
-      ENDIF
-
+!       lbot_ltop: IF(LBOT>LTOP)THEN
+!-----------------------------------------------------------------------
+!-- Begin: Buoyancy check including deep convection (24 Aug 2006) 
+!-----------------------------------------------------------------------
+          DENTPY=0.
+          L=KB
+          PLO=PRSMID(L)
+          TRMLO=0.
+          CAPEtrigr=DTPtrigr/T(LBOT)
 !
-      IF(PTOP>PBOT-PNO.OR.LTOP>LBOT-2)THEN
+!--- Below cloud base
+!
+          IF(KB>LBOT) THEN
+            DO L=KB-1,LBOT+1,-1
+              PUP=PRSMID(L)
+              TUP=THBT/APE(L)
+              DP=PLO-PUP
+              TRMUP=(TUP*(QBT*0.608+1.)                                 &
+     &            -T(L)*(Q(L)*0.608+1.))*0.5                            &
+     &             /(T(L)*(Q(L)*0.608+1.))
+              DTV(L)=TRMLO+TRMUP
+              DENTPY=DTV(L)*DP+DENTPY
+              CPE(L)=DENTPY
+              IF (DENTPY < CAPEtrigr) GO TO 170
+              PLO=PUP
+              TRMLO=TRMUP
+            ENDDO
+          ELSE
+            L=LBOT+1
+            PLO=PRSMID(L)
+            TUP=THBT/APE(L)
+            TRMLO=(TUP*(QBT*0.608+1.)                                   &
+     &            -T(L)*(Q(L)*0.608+1.))*0.5                            &
+     &             /(T(L)*(Q(L)*0.608+1.))
+          ENDIF  ! IF(KB>LBOT) THEN
+!
+!--- At cloud base
+!
+          L=LBOT
+          PUP=PSP
+          TUP=THBT/APES
+          TSP=(T(L+1)-T(L))/(PLO-PBOT)                                  &
+     &       *(PUP-PBOT)+T(L)
+          QSP=(Q(L+1)-Q(L))/(PLO-PBOT)                                  &
+     &       *(PUP-PBOT)+Q(L)
+          DP=PLO-PUP
+          TRMUP=(TUP*(QBT*0.608+1.)                                     &
+     &          -TSP*(QSP*0.608+1.))*0.5                                &
+     &         /(TSP*(QSP*0.608+1.))
+          DTV(L)=TRMLO+TRMUP
+          DENTPY=DTV(L)*DP+DENTPY
+          CPE(L)=DENTPY
+          DTV(L)=DTV(L)*DP
+          PLO=PUP
+          TRMLO=TRMUP
+          PUP=PRSMID(L)
+!
+!--- Calculate updraft temperature along moist adiabat (TUP)
+!
+          IF(PUP<PLQ)THEN
+            CALL TTBLEX(ITB,JTB,PL,PUP,RDP,RDTHE                        &
+     &                 ,STHE,THE0,THES(L),TTBL,TUP)
+          ELSE
+            CALL TTBLEX(ITBQ,JTBQ,PLQ,PUP,RDPQ,RDTHEQ                   &
+     &                 ,STHEQ,THE0Q,THES(L),TTBLQ,TUP)
+          ENDIF
+!
+          QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
+          QWAT=QBT-QUP  !-- Water loading effects, reversible adiabat
+          DP=PLO-PUP
+          TRMUP=(TUP*(QUP*0.608+1.-QWAT)                                &
+     &          -T(L)*(Q(L)*0.608+1.))*0.5                              &
+     &         /(T(L)*(Q(L)*0.608+1.))
+          DENTPY=(TRMLO+TRMUP)*DP+DENTPY
+          CPE(L)=DENTPY
+          DTV(L)=(DTV(L)+(TRMLO+TRMUP)*DP)/(PRSMID(LBOT+1)-PRSMID(LBOT))
+!
+          IF (DENTPY < CAPEtrigr) GO TO 170
+!
+          PLO=PUP
+          TRMLO=TRMUP
+!
+!-----------------------------------------------------------------------
+!--- In cloud above cloud base
+!-----------------------------------------------------------------------
+!
+          DO L=LBOT-1,KTS,-1
+            PUP=PRSMID(L)
+!
+!--- Calculate updraft temperature along moist adiabat (TUP)
+!
+            IF(PUP<PLQ)THEN
+              CALL TTBLEX(ITB,JTB,PL,PUP,RDP,RDTHE                      &
+       &                 ,STHE,THE0,THES(L),TTBL,TUP)
+            ELSE
+              CALL TTBLEX(ITBQ,JTBQ,PLQ,PUP,RDPQ,RDTHEQ                 &
+       &                 ,STHEQ,THE0Q,THES(L),TTBLQ,TUP)
+            ENDIF
+!
+            QUP=PQ0/PUP*EXP(A2*(TUP-A3)/(TUP-A4))
+            QWAT=QBT-QUP  !-- Water loading effects, reversible adiabat
+            DP=PLO-PUP
+            TRMUP=(TUP*(QUP*0.608+1.-QWAT)                              &
+     &            -T(L)*(Q(L)*0.608+1.))*0.5                            &
+     &           /(T(L)*(Q(L)*0.608+1.))
+            DTV(L)=TRMLO+TRMUP
+            DENTPY=DTV(L)*DP+DENTPY
+            CPE(L)=DENTPY
+!
+            IF (DENTPY < CAPEtrigr) GO TO 170
+!
+            PLO=PUP
+            TRMLO=TRMUP
+          ENDDO
+!
+!-----------------------------------------------------------------------
+!
+170       LTP1=KB
+          CAPE=0.
+!
+!-----------------------------------------------------------------------
+!--- Cloud top level (LTOP) is located where CAPE is a maximum
+!--- Exit cloud-top search if CAPE < CAPEtrigr
+!-----------------------------------------------------------------------
+!
+          DO L=KB,KTS,-1
+            IF (CPE(L) < CAPEtrigr) THEN
+              EXIT
+            ELSE IF (CPE(L) > CAPE) THEN
+              LTP1=L
+              CAPE=CPE(L)
+            ENDIF
+          ENDDO      !-- End DO L=KB,KTS,-1
+!
+          LTOP=MIN(LTP1,LBOT)
+! 
+!-----------------------------------------------------------------------
+!--------------- CHECK FOR MAXIMUM INSTABILITY  ------------------------
+!-----------------------------------------------------------------------
+          IF(CAPE > CAPEcnv) THEN
+            CAPEcnv=CAPE
+            PSPcnv=PSP
+            THBTcnv=THBT
+            LBOTcnv=LBOT
+            LTOPcnv=LTOP
+            DO L=LMH,KTS,-1
+              CPEcnv(L)=CPE(L)
+              DTVcnv(L)=DTV(L)
+              THEScnv(L)=THES(L)
+            ENDDO
+          ENDIF    ! End IF(CAPE > CAPEcnv) THEN
+!
+!       ENDIF lbot_ltop
+!
+!-----------------------------------------------------------------------
+!
+      ENDDO max_buoy_loop
+!
+!-----------------------------------------------------------------------
+!------------------------  MAXIMUM INSTABILITY  ------------------------
+!-----------------------------------------------------------------------
+!
+      IF(CAPEcnv > 0.) THEN
+        PSP=PSPcnv
+        THBT=THBTcnv
+        LBOT=LBOTcnv
+        LTOP=LTOPcnv
+        PBOT=PRSMID(LBOT)
+        PTOP=PRSMID(LTOP)
+!
+        DO L=LMH,KTS,-1
+          CPE(L)=CPEcnv(L)
+          DTV(L)=DTVcnv(L)
+          THES(L)=THEScnv(L)
+        ENDDO
+!
+      ENDIF
+!
+!-----------------------------------------------------------------------
+!-----  Quick exit if cloud is too thin or no CAPE is present  ---------
+!-----------------------------------------------------------------------
+!
+      IF(PTOP>PBOT-PNO.OR.LTOP>LBOT-2.OR.CAPEcnv<=0.)THEN
+        LBOT=0
+        LTOP=KTE
+        PBOT=PRSMID(LMH)
+        PTOP=PBOT
         CLDEFI=AVGEFI*SM+STEFI*(1.-SM)
+        GO TO 800
       ENDIF
 !
 !***  DEPTH OF CLOUD REQUIRED TO MAKE THE POINT A DEEP CONVECTION POINT
 !***  IS A SCALED VALUE OF PSFC.
 !
-      DEPMIN=PSH*PSFC*RSFCP
       DEPTH=PBOT-PTOP
 !
-      IF(DEPTH>=DEPMIN)THEN
+      IF(DEPTH>=DEPMIN) THEN
         DEEP=.TRUE.
+      ELSE
+        SHALLOW=.TRUE.
+        GO TO 600
       ENDIF
-!***********************************************************************
-!************************ DEEP CONVECTION ******************************
-!***********************************************************************
-      IF(.NOT.DEEP)GO TO 600
-!***********************************************************************
+!
+!-----------------------------------------------------------------------
 !DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
-!DCDCDCDCDCDCDC  DEEP CONVECTION   DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!DCDCDCDCDCDCDCDCDCDCDC    DEEP CONVECTION   DCDCDCDCDCDCDCDCDCDCDCDCDCD
 !DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+!-----------------------------------------------------------------------
 !
   300 CONTINUE
 !
       LB =LBOT
       EFI=CLDEFI
+!-----------------------------------------------------------------------
 !--------------INITIALIZE VARIABLES IN THE CONVECTIVE COLUMN------------
+!-----------------------------------------------------------------------
 !***
 !***  ONE SHOULD NOTE THAT THE VALUES ASSIGNED TO THE ARRAY TREFK
 !***  IN THE FOLLOWING LOOP ARE REALLY ONLY RELEVANT IN ANCHORING THE
@@ -725,15 +861,29 @@ CONTAINS
         PSK   (L)=PKL
         APEKL    =APE(L)
         APEK  (L)=APEKL
+!
+!--- Calculate temperature along moist adiabat (TREF)
+!
+        IF(PKL<PLQ)THEN
+          CALL TTBLEX(ITB,JTB,PL,PKL,RDP,RDTHE                          &
+     &               ,STHE,THE0,THES(L),TTBL,TREF(L))
+        ELSE
+          CALL TTBLEX(ITBQ,JTBQ,PLQ,PKL,RDPQ,RDTHEQ                     &
+     &               ,STHEQ,THE0Q,THES(L),TTBLQ,TREF(L))
+        ENDIF
         THERK (L)=TREF(L)*APEKL
       ENDDO
+!
 !------------DEEP CONVECTION REFERENCE TEMPERATURE PROFILE------------
+!
       LTP1=LTOP+1
       LBM1=LB-1
       PKB=PK(LB)
       PKT=PK(LTOP)
       STABDL=(EFI-EFIMN)*SLOPST+STABDS
+!
 !------------TEMPERATURE REFERENCE PROFILE BELOW FREEZING LEVEL-------
+!
       EL(LB) = ELWV    
       L0=LB
       PK0=PK(LB)
@@ -756,9 +906,13 @@ CONTAINS
         L0=L
         PK0=PK(L0)
       ENDDO
+!
 !--------------FREEZING LEVEL AT OR ABOVE THE CLOUD TOP-----------------
+!
       GO TO 450
+!
 !--------------TEMPERATURE REFERENCE PROFILE ABOVE FREEZING LEVEL-------
+!
   430 L0M1=L0-1
       RDP0T=1./(PK0-PKT)
       DTHEM=THERK(L0)-TREFK(L0)*APEK(L0)
@@ -767,6 +921,7 @@ CONTAINS
         TREFK(L)=(THERK(L)-(PK(L)-PKT)*DTHEM*RDP0T)/APEK(L)
         EL(L)=ELWV !ELIV
       ENDDO
+!
 !-----------------------------------------------------------------------
 !--------------DEEP CONVECTION REFERENCE HUMIDITY PROFILE---------------
 !-----------------------------------------------------------------------
@@ -803,136 +958,139 @@ CONTAINS
       cloud_efficiency : DO ITREFI=1,ITREFI_MAX  
 !
 !-----------------------------------------------------------------------
-      DSPBK=((EFI-EFIMN)*SLOPBS+DSPBSS*PBOTFC)*SM                       &
-     &     +((EFI-EFIMN)*SLOPBL+DSPBSL*PBOTFC)*SM1
-      DSP0K=((EFI-EFIMN)*SLOP0S+DSP0SS*PBOTFC)*SM                       &
-     &     +((EFI-EFIMN)*SLOP0L+DSP0SL*PBOTFC)*SM1
-      DSPTK=((EFI-EFIMN)*SLOPTS+DSPTSS*PBOTFC)*SM                       &
-     &     +((EFI-EFIMN)*SLOPTL+DSPTSL*PBOTFC)*SM1
+        DSPBK=((EFI-EFIMN)*SLOPBS+DSPBSS*PBOTFC)*SM                     &
+     &       +((EFI-EFIMN)*SLOPBL+DSPBSL*PBOTFC)*SM1
+        DSP0K=((EFI-EFIMN)*SLOP0S+DSP0SS*PBOTFC)*SM                     &
+     &       +((EFI-EFIMN)*SLOP0L+DSP0SL*PBOTFC)*SM1
+        DSPTK=((EFI-EFIMN)*SLOPTS+DSPTSS*PBOTFC)*SM                     &
+     &       +((EFI-EFIMN)*SLOPTL+DSPTSL*PBOTFC)*SM1
 !
 !-----------------------------------------------------------------------
 !
-      DO L=LTOP,LB
+        DO L=LTOP,LB
 !
 !***
 !***  SATURATION PRESSURE DIFFERENCE
 !***
-        IF(DEPWL>=DEPTH)THEN
-          IF(L<L0)THEN
-            DSP=((PK0-PK(L))*DSPTK+(PK(L)-PKT)*DSP0K)/(PK0-PKT)
+          IF(DEPWL>=DEPTH)THEN
+            IF(L<L0)THEN
+              DSP=((PK0-PK(L))*DSPTK+(PK(L)-PKT)*DSP0K)/(PK0-PKT)
+            ELSE
+              DSP=((PKB-PK(L))*DSP0K+(PK(L)-PK0)*DSPBK)/(PKB-PK0)
+            ENDIF
           ELSE
-            DSP=((PKB-PK(L))*DSP0K+(PK(L)-PK0)*DSPBK)/(PKB-PK0)
+            DSP=DSP0K
+            IF(L<L0)THEN
+              DSP=((PK0-PK(L))*DSPTK+(PK(L)-PKT)*DSP0K)/(PK0-PKT)
+            ENDIF
           ENDIF
-        ELSE
-          DSP=DSP0K
-          IF(L<L0)THEN
-            DSP=((PK0-PK(L))*DSPTK+(PK(L)-PKT)*DSP0K)/(PK0-PKT)
-          ENDIF
-        ENDIF
 !***
 !***  HUMIDITY PROFILE
 !***
-        IF(PK(L)>PQM)THEN
-          PSK(L)=PK(L)+DSP
-          APESK(L)=(1.E5/PSK(L))**CAPA
-          THSK(L)=TREFK(L)*APEK(L)
-          QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))              &
-     &                              /(THSK(L)-A4*APESK(L)))
-        ELSE
-          QREFK(L)=QK(L)
-        ENDIF
+          IF(PK(L)>PQM)THEN
+            PSK(L)=PK(L)+DSP
+            APESK(L)=(1.E5/PSK(L))**CAPA
+            THSK(L)=TREFK(L)*APEK(L)
+            QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSK(L)-A3*APESK(L))            &
+     &                                /(THSK(L)-A4*APESK(L)))
+          ELSE
+            QREFK(L)=QK(L)
+          ENDIF
 !
-      ENDDO
+        ENDDO
 !-----------------------------------------------------------------------
 !***
 !***  ENTHALPY CONSERVATION INTEGRAL
 !***
 !-----------------------------------------------------------------------
-      enthalpy_conservation : DO ITER=1,2
+        enthalpy_conservation : DO ITER=1,2
 !
-        SUMDE=0.
-        SUMDP=0.
+          SUMDE=0.
+          SUMDP=0.
 !
-        DO L=LTOP,LB
-          SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*EL(L))*DPRS(L)    &
-     &          +SUMDE
-          SUMDP=SUMDP+DPRS(L)
-        ENDDO
+          DO L=LTOP,LB
+            SUMDE=((TK(L)-TREFK(L))*CP+(QK(L)-QREFK(L))*EL(L))*DPRS(L)  &
+     &            +SUMDE
+            SUMDP=SUMDP+DPRS(L)
+          ENDDO
 !
-        HCORR=SUMDE/(SUMDP-DPRS(LTOP))
-        LCOR=LTOP+1
+          HCORR=SUMDE/(SUMDP-DPRS(LTOP))
+          LCOR=LTOP+1
 !***
 !***  FIND LQM
 !***
-        LQM=1
-        DO L=KTS,LB
-          IF(PK(L)<=PQM)LQM=L
-        ENDDO
+          LQM=1
+          DO L=KTS,LB
+            IF(PK(L)<=PQM)LQM=L
+          ENDDO
 !***
 !***  ABOVE LQM CORRECT TEMPERATURE ONLY
 !***
-        IF(LCOR<=LQM)THEN
-          DO L=LCOR,LQM
-            TREFK(L)=TREFK(L)+HCORR*RCP
-          ENDDO
-          LCOR=LQM+1
-        ENDIF
+          IF(LCOR<=LQM)THEN
+            DO L=LCOR,LQM
+              TREFK(L)=TREFK(L)+HCORR*RCP
+            ENDDO
+            LCOR=LQM+1
+          ENDIF
 !***
 !***  BELOW LQM CORRECT BOTH TEMPERATURE AND MOISTURE
 !***
-        DO L=LCOR,LB
-          TSKL=TREFK(L)*APEK(L)/APESK(L)
-          DHDT=QREFK(L)*A23M4L/(TSKL-A4)**2+CP
-          TREFK(L)=HCORR/DHDT+TREFK(L)
-          THSKL=TREFK(L)*APEK(L)
-          QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSKL-A3*APESK(L))                &
-     &                              /(THSKL-A4*APESK(L)))
-        ENDDO
+          DO L=LCOR,LB
+            TSKL=TREFK(L)*APEK(L)/APESK(L)
+            DHDT=QREFK(L)*A23M4L/(TSKL-A4)**2+CP
+            TREFK(L)=HCORR/DHDT+TREFK(L)
+            THSKL=TREFK(L)*APEK(L)
+            QREFK(L)=PQ0/PSK(L)*EXP(A2*(THSKL-A3*APESK(L))              &
+     &                                /(THSKL-A4*APESK(L)))
+          ENDDO
 !
-      ENDDO  enthalpy_conservation
+        ENDDO  enthalpy_conservation
 !-----------------------------------------------------------------------
 !
 !***  HEATING, MOISTENING, PRECIPITATION
 !
 !-----------------------------------------------------------------------
-      AVRGT=0.
-      PRECK=0.
-      DSQ=0.
-      DST=0.
+        AVRGT=0.
+        PRECK=0.
+        DSQ=0.
+        DST=0.
 !
-      DO L=LTOP,LB
-        TKL=TK(L)
-        DIFTL=(TREFK(L)-TKL  )*TAUK
-        DIFQL=(QREFK(L)-QK(L))*TAUK
-        AVRGTL=(TKL+TKL+DIFTL)
-        DPOT=DPRS(L)/AVRGTL
-        DST=DIFTL*DPOT+DST
-        DSQ=DIFQL*EL(L)*DPOT+DSQ
-        AVRGT=AVRGTL*DPRS(L)+AVRGT
-        PRECK=DIFTL*DPRS(L)+PRECK
-        DIFT(L)=DIFTL
-        DIFQ(L)=DIFQL
-      ENDDO
+        DO L=LTOP,LB
+          TKL=TK(L)
+          DIFTL=(TREFK(L)-TKL  )*TAUK
+          DIFQL=(QREFK(L)-QK(L))*TAUK
+          AVRGTL=(TKL+TKL+DIFTL)
+          DPOT=DPRS(L)/AVRGTL
+          DST=DIFTL*DPOT+DST
+          DSQ=DIFQL*EL(L)*DPOT+DSQ
+          AVRGT=AVRGTL*DPRS(L)+AVRGT
+          PRECK=DIFTL*DPRS(L)+PRECK
+          DIFT(L)=DIFTL
+          DIFQ(L)=DIFQL
+        ENDDO
 !
-      DST=(DST+DST)*CP
-      DSQ=DSQ+DSQ
-      DENTPY=DST+DSQ
-      AVRGT=AVRGT/(SUMDP+SUMDP)
+        DST=(DST+DST)*CP
+        DSQ=DSQ+DSQ
+        DENTPY=DST+DSQ
+        AVRGT=AVRGT/(SUMDP+SUMDP)
 !
-!      DRHEAT=PRECK*CP/AVRGT
-      DRHEAT=(PRECK*SM+MAX(1.E-7,PRECK)*(1.-SM))*CP/AVRGT !As in Eta!
-      DRHEAT=MAX(DRHEAT,1.E-20)
-      EFI=EFIFC*DENTPY/DRHEAT
+!        DRHEAT=PRECK*CP/AVRGT
+        DRHEAT=(PRECK*SM+MAX(1.E-7,PRECK)*(1.-SM))*CP/AVRGT !As in Eta!
+        DRHEAT=MAX(DRHEAT,1.E-20)
+        EFI=EFIFC*DENTPY/DRHEAT
 !-----------------------------------------------------------------------
-      EFI=MIN(EFI,1.)
-      EFI=MAX(EFI,EFIMN)
+        EFI=MIN(EFI,1.)
+        EFI=MAX(EFI,EFIMN)
 !-----------------------------------------------------------------------
+!
       ENDDO  cloud_efficiency
+!
 !-----------------------------------------------------------------------
 !
 !-----------------------------------------------------------------------
 !---------------------- DEEP CONVECTION --------------------------------
 !-----------------------------------------------------------------------
+!
       IF(DENTPY>=EPSNTP.AND.PRECK>EPSPR)THEN
 !
         CLDEFI=EFI
@@ -972,31 +1130,32 @@ CONTAINS
 !***
 !***  SEARCH FOR SHALLOW CLOUD TOP
 !***
-        LTSH=LBOT
-        LBM1=LBOT-1
-        PBTK=PK(LBOT)
-        DEPMIN=PSH*PSFC*RSFCP
-        PTPK=PBTK-DEPMIN
+!        LTSH=LBOT
+!        LBM1=LBOT-1
+!        PBTK=PK(LBOT)
+!        DEPMIN=PSH*PSFC*RSFCP
+!        PTPK=PBTK-DEPMIN
+        PTPK=MAX(PSHU, PK(LBOT)-DEPMIN)
 !***
-!***  CLOUD TOP IS THE LEVEL JUST BELOW PBTK-PSH
+!***  CLOUD TOP IS THE LEVEL JUST BELOW PBTK-PSH or JUST BELOW PSHU
 !***
         DO L=KTS,LMH
           IF(PK(L)<=PTPK)LTOP=L+1
         ENDDO
 !
-        PTPK=PK(LTOP)
-!***
-!***  HIGHEST LEVEL ALLOWED IS LEVEL JUST BELOW PSHU
-!***
-        IF(PTPK<=PSHU)THEN
-!
-          DO L=KTS,LMH
-            IF(PK(L)<=PSHU)LSHU=L+1
-          ENDDO
-!
-          LTOP=LSHU
-          PTPK=PK(LTOP)
-        ENDIF
+!        PTPK=PK(LTOP)
+!!***
+!!***  HIGHEST LEVEL ALLOWED IS LEVEL JUST BELOW PSHU
+!!***
+!        IF(PTPK<=PSHU)THEN
+!!
+!          DO L=KTS,LMH
+!            IF(PK(L)<=PSHU)LSHU=L+1
+!          ENDDO
+!!
+!          LTOP=LSHU
+!          PTPK=PK(LTOP)
+!        ENDIF
 !
 !        if(ltop>=lbot)then
 !!!!!!     lbot=0
@@ -1007,35 +1166,52 @@ CONTAINS
 !          go to 600
 !        endif
 !
-        LTP1=LTOP+1
-        LTP2=LTOP+2
+!        LTP1=LTOP+1
+!        LTP2=LTOP+2
+!!
+!        DO L=LTOP,LBOT
+!          QSATK(L)=PQ0/PK(L)*EXP(A2*(TK(L)-A3)/(TK(L)-A4))
+!        ENDDO
+!!
+!        RHH=QK(LTOP)/QSATK(LTOP)
+!        RHMAX=0.
+!        LTSH=LTOP
+!!
+!        DO L=LTP1,LBM1
+!          RHL=QK(L)/QSATK(L)
+!          DRHDP=(RHH-RHL)/(PK(L-1)-PK(L))
+!!
+!          IF(DRHDP>RHMAX)THEN
+!            LTSH=L-1
+!            RHMAX=DRHDP
+!          ENDIF
+!!
+!          RHH=RHL
+!        ENDDO
 !
-        DO L=LTOP,LBOT
-          QSATK(L)=PQ0/PK(L)*EXP(A2*(TK(L)-A3)/(TK(L)-A4))
-        ENDDO
+!-----------------------------------------------------------------------
+!-- Make shallow cloud top a function of virtual temperature excess (DTV)
+!-----------------------------------------------------------------------
 !
-        RHH=QK(LTOP)/QSATK(LTOP)
-        RHMAX=0.
-!
-        DO L=LTP1,LBM1
-          RHL=QK(L)/QSATK(L)
-          DRHDP=(RHH-RHL)/(PK(L-1)-PK(L))
-!
-          IF(DRHDP>RHMAX)THEN
-            LTSH=L-1
-            RHMAX=DRHDP
+        LTP1=LBOT
+        DO L=LBOT-1,LTOP,-1
+          IF (DTV(L) > 0.) THEN
+            LTP1=L
+          ELSE
+            EXIT
           ENDIF
-!
-          RHH=RHL
         ENDDO
-!
-        LTOP=LTSH
+        LTOP=MIN(LTP1,LBOT)
 !***
 !***  CLOUD MUST BE AT LEAST TWO LAYERS THICK
 !***
-        IF(LBOT-LTOP<2)LTOP=LBOT-2
+!        IF(LBOT-LTOP<2)LTOP=LBOT-2  (eliminate this criterion)
+!
+!-- End: Buoyancy check (24 Aug 2006)
 !
         PTOP=PK(LTOP)
+        SHALLOW=.TRUE.
+        DEEP=.FALSE.
 !
       ENDIF
 !DCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
@@ -1050,18 +1226,18 @@ CONTAINS
 !
 !----------------GATHER SHALLOW CONVECTION POINTS-----------------------
 !
-      IF(PTOP<=PBOT-PNO.AND.LTOP<=LBOT-2)THEN
-         DEPMIN=PSH*PSFC*RSFCP
-!
-!        if(lpbl<lbot)lbot=lpbl
-!        if(lbot>lmh-1)lbot=lmh-1
-!        pbot=prsmid(lbot)
-!
-         IF(PTOP+1.>=PBOT-DEPMIN)SHALLOW=.TRUE.
-      ELSE
-         LBOT=0
-         LTOP=KTE
-      ENDIF
+!      IF(PTOP<=PBOT-PNO.AND.LTOP<=LBOT-2)THEN
+!         DEPMIN=PSH*PSFC*RSFCP
+!!
+!!        if(lpbl<lbot)lbot=lpbl
+!!        if(lbot>lmh-1)lbot=lmh-1
+!!        pbot=prsmid(lbot)
+!!
+!         IF(PTOP+1.>=PBOT-DEPMIN)SHALLOW=.TRUE.
+!      ELSE
+!         LBOT=0
+!         LTOP=KTE
+!      ENDIF
 !
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1098,12 +1274,48 @@ CONTAINS
         THVMKL   =TKL*APEKL*(QKL*D608+1.)
         THVREF(L)=THVMKL
 !
-!        if(tkl>=tfrz)then
+!        IF(TKL>=TFRZ)THEN
           EL(L)=ELWV
-!        else
-!          el(l)=eliv
-!        endif
+!        ELSE
+!          EL(L)=ELIV
+!        ENDIF
       ENDDO
+!
+!-----------------------------------------------------------------------
+!-- Begin: Raise cloud top if avg RH>RHSHmax and CAPE>0
+!   RHSHmax=RH at cloud base associated with a DSP of PONE
+!-----------------------------------------------------------------------
+!
+      TLEV2=T(LBOT)*((PK(LBOT)-PONE)/PK(LBOT))**CAPA
+      QSAT1=PQ0/PK(LBOT)*EXP(A2*(T(LBOT)-A3)/(TK(LBOT)-A4))
+      QSAT2=PQ0/(PK(LBOT)-PONE)*EXP(A2*(TLEV2-A3)/(TLEV2-A4))
+      RHSHmax=QSAT2/QSAT1
+      SUMDP=0.
+      RHAVG=0.
+!
+      DO L=LBOT,LTOP,-1
+        RHAVG=RHAVG+DPRS(L)*QK(L)/QSATK(L)
+        SUMDP=SUMDP+DPRS(L)
+      ENDDO
+!
+      IF (RHAVG/SUMDP > RHSHmax) THEN
+        LTSH=LTOP
+        DO L=LTOP-1,KTS,-1
+          RHAVG=RHAVG+DPRS(L)*QK(L)/QSATK(L)
+          SUMDP=SUMDP+DPRS(L)
+          IF (CPE(L) > 0.) THEN
+            LTSH=L
+          ELSE
+            EXIT
+          ENDIF
+          IF (RHAVG/SUMDP <= RHSHmax) EXIT
+          IF (PK(L) <= PSHU) EXIT
+        ENDDO
+        LTOP=LTSH
+      ENDIF
+!
+!-- End: Raise cloud top if avg RH>RHSHmax and CAPE>0
+!
 !---------------------------SHALLOW CLOUD TOP---------------------------
       LBM1=LBOT-1
       PTPK=PTOP
@@ -1129,6 +1341,7 @@ CONTAINS
         PTOP=PBOT
         GO TO 800
       ENDIF
+!
 !--------------SCALING POTENTIAL TEMPERATURE & TABLE INDEX AT TOP-------
 !
       THTPK=T(LTP1)*APE(LTP1)
@@ -1146,12 +1359,16 @@ CONTAINS
         IT=JTB-1
         QQK=0.
       ENDIF
+!
 !--------------BASE AND SCALING FACTOR FOR SPEC. HUMIDITY AT TOP--------
+!
       BQS00K=QS0(IT)
       SQS00K=SQS(IT)
       BQS10K=QS0(IT+1)
       SQS10K=SQS(IT+1)
+!
 !--------------SCALING SPEC. HUMIDITY & TABLE INDEX AT TOP--------------
+!
       BQK=(BQS10K-BQS00K)*QQK+BQS00K
       SQK=(SQS10K-SQS00K)*QQK+SQS00K
 !
@@ -1170,7 +1387,9 @@ CONTAINS
         IQ=ITB-1
         PPK=0.
       ENDIF
+!
 !----------------CLOUD TOP SATURATION POINT PRESSURE--------------------
+!
       PART1=(PTBL(IQ+1,IT)-PTBL(IQ,IT))*PPK
       PART2=(PTBL(IQ,IT+1)-PTBL(IQ,IT))*QQK
       PART3=(PTBL(IQ  ,IT  )-PTBL(IQ+1,IT  )                            &
@@ -1179,7 +1398,9 @@ CONTAINS
 !-----------------------------------------------------------------------
       DPMIX=PTPK-PSP
       IF(ABS(DPMIX).LT.3000.)DPMIX=-3000.
+!
 !----------------TEMPERATURE PROFILE SLOPE------------------------------
+!
       SMIX=(THTPK-THBT)/DPMIX*STABS
 !
       TREFKX=TREFK(LBOT+1)
@@ -1188,16 +1409,21 @@ CONTAINS
       APEKXX=APEK(LBOT+1)
       APEKXY=APEK(LBOT)
 !
+      LMID=.5*(LBOT+LTOP)
+!
       DO L=LBOT,LTOP,-1
         TREFKX=((PKXXXY-PKXXXX)*SMIX                                    &
      &          +TREFKX*APEKXX)/APEKXY
         TREFK(L)=TREFKX
+        IF(L<=LMID) TREFK(L)=MAX(TREFK(L), TK(L)+DTSHAL)
         APEKXX=APEKXY
         PKXXXX=PKXXXY
         APEKXY=APEK(L-1)
         PKXXXY=PK(L-1)
       ENDDO
+!
 !----------------TEMPERATURE REFERENCE PROFILE CORRECTION---------------
+!
       SUMDT=0.
       SUMDP=0.
 !
@@ -1216,7 +1442,9 @@ CONTAINS
         TREFK(L)=TRFKL
         FPK  (L)=TRFKL
       ENDDO
+!
 !----------------HUMIDITY PROFILE EQUATIONS-----------------------------
+!
       PSUM  =0.
       QSUM  =0.
       POTSUM=0.
@@ -1253,6 +1481,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !
 !----------------ENSURE POSITIVE ENTROPY CHANGE-------------------------
+!
       IF(DST>0.)THEN
 !        dstq=dst*epsup
         LBOT=0
@@ -1263,7 +1492,9 @@ CONTAINS
       ELSE
         DSTQ=DST*EPSDN
       ENDIF
+!
 !----------------CHECK FOR ISOTHERMAL ATMOSPHERE------------------------
+!
       DEN=POTSUM-PSUM
 !
       IF(-DEN/PSUM<5.E-5)THEN
@@ -1274,10 +1505,13 @@ CONTAINS
         GO TO 800
 !
 !----------------SLOPE OF THE REFERENCE HUMIDITY PROFILE----------------
+!
       ELSE
         DQREF=(QOTSUM-DSTQ-QSUM)/DEN
       ENDIF
+!
 !-------------- HUMIDITY DOES NOT INCREASE WITH HEIGHT------------------
+!
       IF(DQREF<0.)THEN
         LBOT=0
 !!!!    LTOP=LBOT
@@ -1285,8 +1519,11 @@ CONTAINS
         PTOP=PBOT
         GO TO 800
       ENDIF
+!
 !----------------HUMIDITY AT THE CLOUD TOP------------------------------
+!
       QRFTP=QSUM-DQREF*PSUM
+!
 !----------------HUMIDITY PROFILE---------------------------------------
 !
       DO L=LTOP,LBOT
@@ -1483,7 +1720,7 @@ CONTAINS
 
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: LOWLYR
 !
-      REAL,PARAMETER :: ELIWV=2.683E6,EPS=1.E-9
+      REAL,PARAMETER :: EPS=1.E-9
 !
       REAL, DIMENSION(JTB) :: APP,APT,AQP,AQT,PNEW,POLD,QSNEW,QSOLD     &
      &                       ,THENEW,THEOLD,TNEW,TOLD,Y2P,Y2T
@@ -1495,9 +1732,10 @@ CONTAINS
       INTEGER :: KTH,KTHM,KTHM1,KP,KPM,KPM1
 !
       REAL :: APE,DP,DQS,DTH,DTHE,P,QS,QS0K,SQSK,STHEK                  &
-     &       ,TH,THE0K,DENOM
+     &       ,TH,THE0K,DENOM,ELOCP
 !-----------------------------------------------------------------------
 
+      ELOCP=ELIWV/CP
       JTF=MIN0(JTE,JDE-1)
       KTF=MIN0(KTE,KDE-1)
       ITF=MIN0(ITE,IDE-1)
@@ -1614,7 +1852,7 @@ CONTAINS
         ENDIF
 !        QS=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
         TOLD(KTH)=TH/APE
-        THEOLD(KTH)=TH*EXP(ELIWV*QS/(CP*TOLD(KTH)))
+        THEOLD(KTH)=TH*EXP(ELOCP*QS/TOLD(KTH))
       ENDDO
 !
       THE0K=THEOLD(1)
@@ -1683,7 +1921,7 @@ CONTAINS
         ENDIF
 !        QS=PQ0/P*EXP(A2*(TH-A3*APE)/(TH-A4*APE))
         TOLDQ(KTH)=TH/APE
-        THEOLDQ(KTH)=TH*EXP(ELIWV*QS/(CP*TOLDQ(KTH)))
+        THEOLDQ(KTH)=TH*EXP(ELOCP*QS/TOLDQ(KTH))
       ENDDO
 !
       THE0K=THEOLDQ(1)

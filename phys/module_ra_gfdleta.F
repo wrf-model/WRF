@@ -11,7 +11,7 @@ MODULE MODULE_RA_GFDLETA
 #endif
       INTEGER,PARAMETER :: NL=81
       INTEGER,PARAMETER :: NBLY=15
-      REAL,PARAMETER :: RTHRESH=1.E-15,DTR=1./DEGRAD
+      REAL,PARAMETER :: RTHRESH=1.E-15,RTD=1./DEGRAD
 
       INTEGER, SAVE, DIMENSION(3)     :: LTOP
       REAL   , SAVE, DIMENSION(37,NL) :: XDUO3N,XDO3N2,XDO3N3,XDO3N4
@@ -60,7 +60,7 @@ MODULE MODULE_RA_GFDLETA
 
 #ifndef FERRIER_GFDL
       REAL, PRIVATE, PARAMETER :: RHgrd=1.0
-      REAL, PRIVATE, PARAMETER :: T_ice=-30.0
+      REAL, PRIVATE, PARAMETER :: T_ice=-40.0
 #endif
 
 !
@@ -72,6 +72,7 @@ MODULE MODULE_RA_GFDLETA
      &,  ABSCOEF_W=800.          & !--- Very tunable parameter
      &,  ABSCOEF_I=500.          & !--- Very tunable parameter
      &,  SECANG=-1.66            & !--- Very tunable parameter
+!!     &,  SECANG=-0.75            & !--- Very tunable parameter
      &,  CLDCOEF_LW=1.5          & !--- Enhance LW cloud depths
      &,  ABSCOEF_LW=SECANG*CLDCOEF_LW  & !--- Final factor for cloud emissivities
      &,  Qconv=0.1e-3            & !--- Very tunable parameter
@@ -300,10 +301,10 @@ CONTAINS
         DO I=ITS,ITE
           TFLIP (I,K,J)=T(I,KFLIP,J)
           QFLIP (I,K,J)=MAX(0.,QV(I,KFLIP,J)/(1.+QV(I,KFLIP,J)))
-          QWFLIP(I,K,J)=QW(I,KFLIP,J)      !Modified
+          QWFLIP(I,K,J)=MAX(QW(I,KFLIP,J),0.)      !Modified
 ! Note that QIFLIP will contain QS+QI if both are passed in, otherwise just QS 
 !     Eta MP now outputs QS instead of QI (JD 2006-05-12)
-          QIFLIP(I,K,J)=QS(I,KFLIP,J)      !Added QS
+          QIFLIP(I,K,J)=MAX(QS(I,KFLIP,J),0.)      !Added QS
           IF(PRESENT(QI))QIFLIP(I,K,J)=QIFLIP(I,K,J)+QI(I,KFLIP,J)      !Added QI
 !         PFLIP (I,K,J)=P_PHY(I,KFLIP,J)
 !
@@ -747,7 +748,7 @@ CONTAINS
 !
         DO II=0,NRADS,NPHS
           TIMES=XTIME*60.+II*DT
-      CALL ZENITH(TIME,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,             &
+          CALL ZENITH(TIMES,DAYI,HOUR,IDAT,IHRST,GLON,GLAT,CZEN,        &
      &                MYIS,MYIE,MYJS,MYJE,                              &
      &                ids,ide, jds,jde, kds,kde,                        &
      &                ims,ime, jms,jme, kms,kme,                        &
@@ -888,7 +889,7 @@ CONTAINS
 !!!!  ALBEDO(I)=ALB(I,J)+(1.0-0.01*VEGFRC(I,J))*SNOFAC*(SNOALB-ALB(I,J))
       ALBEDO(I)=ALB(I,J)
 !
-      XLAT(I)=GLAT(I,J)/DTR
+      XLAT(I)=GLAT(I,J)*RTD
       COSZ(I)=CZMEAN(I,J)
   250 CONTINUE
 !-----------------------------------------------------------------------
@@ -1393,7 +1394,6 @@ CONTAINS
           ENDIF      !--- End IF(LL.GE.KTOP(I,NC) ....
         ENDDO        !--- End DO LL
 !
-!!!     IF(BITX)EMIS(I,NC)=1.0-EXP(-0.75*TauC)
         IF(BITX)EMIS(I,NC)=1.0-EXP(ABSCOEF_LW*TauC)
         IF(QSUM.GE.EPSQ1)THEN
 !
@@ -6003,7 +6003,7 @@ CONTAINS
  REAL,PARAMETER ::      RCO2=3.3E-4
  REAL,PARAMETER ::      H3M6=3.0E-6
  REAL,PARAMETER ::      PI=3.1415927
- REAL,PARAMETER ::      DEGRAD=180.0/PI
+ REAL,PARAMETER ::      DEGRAD1=180.0/PI
  REAL,PARAMETER ::      H74E1=74.0
  REAL,PARAMETER ::      H15E1=15.0
 
@@ -6329,7 +6329,7 @@ CONTAINS
       IQ=INT(TWENTY*HP537+ONE)
       DO 105 I=MYIS,MYIE
          IF(COSZEN(I).GT.0.0 .AND. SLMSK(I+IBEG-1).GT.0.5) THEN
-           ZEN=DEGRAD*ACOS(MAX(COSZEN(I),0.0))
+           ZEN=DEGRAD1*ACOS(MAX(COSZEN(I),0.0))
            IF(ZEN.GE.H74E1) JX=INT(HAF*(HNINETY-ZEN)+ONE)
            IF(ZEN.LT.H74E1.AND.ZEN.GE.FIFTY) &
               JX=INT(QUARTR*(H74E1-ZEN)+HNINE)
@@ -7258,7 +7258,7 @@ CONTAINS
  REAL,PARAMETER ::      RCO2=3.3E-4
  REAL,PARAMETER ::      H3M6=3.0E-6
  REAL,PARAMETER ::      PI=3.1415927
- REAL,PARAMETER ::      DEGRAD=180.0/PI
+ REAL,PARAMETER ::      DEGRAD1=180.0/PI
  REAL,PARAMETER ::      H74E1=74.0
  REAL,PARAMETER ::      H15E1=15.0
 
@@ -9984,9 +9984,9 @@ CONTAINS
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(nunit_co2,FILE='co2_trans',                  &
                FORM='UNFORMATTED',STATUS='OLD',ERR=9014,IOSTAT=IERROR)
+          REWIND NUNIT_CO2
         ENDIF
 
-      REWIND NUNIT_CO2
 !----------------------------------------------------------------------
 !
 !***  READ IN PRE-COMPUTED CO2 TRANSMISSION DATA.

@@ -1134,7 +1134,7 @@
             SMSTOT(I,J)=1.0
             SSROFF(I,J)=0.0
             BGROFF(I,J)=0.0
-            SOILTB(I,J)=NMM_TSK(I,J)
+            SOILTB(I,J)=273.16
             GRNFLX(I,J)=0.
             SUBSHX(I,J)=0.0
             ACSNOW(I,J)=0.0
@@ -1144,7 +1144,7 @@
             SNO(I,J)=0.0
             DO NS=1,GRID%NSOIL
               SMC(I,NS,J)=1.0
-              STC(I,NS,J)=NMM_TSK(I,J)
+              STC(I,NS,J)=273.16
 !             SH2O(I,NS,J)=0.05
               SH2O(I,NS,J)=1.0
             ENDDO
@@ -1598,6 +1598,8 @@
         ELSE
           Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
         ENDIF
+!
+        Z0(I,J)=Z0BASE(I,J)
 !
       ENDDO
       ENDDO

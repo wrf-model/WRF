@@ -2553,9 +2553,11 @@ BENCH_START(chem_adv_tim)
 !!$                                grid%j_start(ij), grid%j_end(ij),  &
 !!$                                k_start, k_end                    )
 !#else
-           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),            &
-                                chem_bxs(jms,kms,1,ic),chem_bxe(jms,kms,1,ic),chem_bys(ims,kms,1,ic),chem_bye(ims,kms,1,ic), &
-                                chem_btxs(jms,kms,1,ic),chem_btxe(jms,kms,1,ic),chem_btys(ims,kms,1,ic),chem_btye(ims,kms,1,ic), &
+           CALL flow_dep_bdy_chem( chem(ims,kms,jms,ic),                          &
+                                chem_bxs(jms,kms,1,ic), chem_btxs(jms,kms,1,ic),  &
+                                chem_bxe(jms,kms,1,ic), chem_btxe(jms,kms,1,ic),  &
+                                chem_bys(ims,kms,1,ic), chem_btys(ims,kms,1,ic),  &
+                                chem_bye(ims,kms,1,ic), chem_btye(ims,kms,1,ic),  &
                                 dt_rk, &
                                 config_flags%spec_bdy_width,grid%em_z,      &
                                 grid%have_bcs_chem,      &

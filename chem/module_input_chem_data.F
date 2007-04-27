@@ -1639,10 +1639,6 @@ SUBROUTINE input_chem_profile (si_grid)
 !90020 format( a, 1p, 2e12.2 )
 !----------------------------------------------------------------------
 
-!     if(ic.eq.p_O3)THEN
-!     write(0,*)'in flow_chem ',jts,jbs,spec_zone
-!     write(0,*)'in flow_chem ',its,ibs,b_dist,i_bdy_method,ic
-!     endif
       IF (jts - jbs .lt. spec_zone) THEN
 ! Y-start boundary
         DO j = jts, min(jtf,jbs+spec_zone-1)
@@ -1653,10 +1649,6 @@ SUBROUTINE input_chem_profile (si_grid)
               i_inner = min(i_inner,ibe-spec_zone)
               IF(v(i,k,j) .lt. 0.)THEN
                 chem(i,k,j) = chem(i_inner,k,jbs+spec_zone)
-!               if(j.eq.jts+1.and.k.eq.kts.and.ic.eq.p_o3)then
-!                  write(0,*)'Yflow',i,j,k,i_bdy_method
-!                  write(0,*)chem(i_inner,k,jbs+spec_zone),v(i,k,j)
-!               endif
               ELSE
                 if (i_bdy_method .eq. 1) then
                    CALL bdy_chem_value (   &
@@ -1680,10 +1672,6 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
-!               if(k.eq.kts.and.ic.eq.p_o3)then
-!                  write(0,*)'Ygcm',i,j,k,i_bdy_method
-!                  write(0,*)chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt
-!               endif
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1766,7 +1754,7 @@ SUBROUTINE input_chem_profile (si_grid)
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
-                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxs(i,k,1),chem_btxs(i,k,1),dt,ic)
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxs(j,k,1),chem_btxs(j,k,1),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1808,7 +1796,7 @@ SUBROUTINE input_chem_profile (si_grid)
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
-                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxe(i,k,1),chem_btxe(i,k,1),dt,ic)
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxe(j,k,1),chem_btxe(j,k,1),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2079,7 +2067,7 @@ SUBROUTINE input_chem_profile (si_grid)
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
-                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(i,k,1,P_XSB),chem_bt(i,k,1,P_XSB),dt,ic)
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(j,k,1,P_XSB),chem_bt(j,k,1,P_XSB),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2121,7 +2109,7 @@ SUBROUTINE input_chem_profile (si_grid)
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
-                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(i,k,1,P_XEB),chem_bt(i,k,1,P_XEB),dt,ic)
+                   CALL bdy_chem_value_gcm ( chem(i,k,j),chem_b(j,k,1,P_XEB),chem_bt(j,k,1,P_XEB),dt,ic)
                 else
                    chem(i,k,j) = chem_bv_def
                 endif

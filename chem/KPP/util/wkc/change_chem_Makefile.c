@@ -91,7 +91,7 @@ knode_t * p1, * p2, * pm1;
  
 
           fprintf(t_Makefile, "module_wkkpc_constants.o:\n\n");
-          fprintf(t_Makefile, "module_kpp_%s_interface.o:\n\n");
+          fprintf(t_Makefile, "module_kpp_%s_interface.o:\n\n", kname );
 	  }
 
 

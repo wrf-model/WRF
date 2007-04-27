@@ -389,6 +389,51 @@ CONTAINS
     END SELECT data_ordering
    END SUBROUTINE get_ijk_from_grid2
 
+! return the values for subgrid whose refinement is in grid%sr
+! note when using this routine, it does not affect K. For K 
+! (vertical), it just returns what get_ijk_from_grid does
+   SUBROUTINE get_ijk_from_subgrid (  grid ,                &
+                           ids0, ide0, jds0, jde0, kds0, kde0,    &
+                           ims0, ime0, jms0, jme0, kms0, kme0,    &
+                           ips0, ipe0, jps0, jpe0, kps0, kpe0    )
+    TYPE( domain ), INTENT (IN)  :: grid
+    INTEGER, INTENT(OUT) ::                                 &
+                           ids0, ide0, jds0, jde0, kds0, kde0,    &
+                           ims0, ime0, jms0, jme0, kms0, kme0,    &
+                           ips0, ipe0, jps0, jpe0, kps0, kpe0
+   ! Local
+    INTEGER              ::                                 &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           ips, ipe, jps, jpe, kps, kpe
+     CALL get_ijk_from_grid (  grid ,                         &
+                             ids, ide, jds, jde, kds, kde,    &
+                             ims, ime, jms, jme, kms, kme,    &
+                             ips, ipe, jps, jpe, kps, kpe    )
+     ids0 = ids
+     ide0 = ide * grid%sr_x
+     ims0 = (ims-1)*grid%sr_x+1
+     ime0 = ime * grid%sr_x
+     ips0 = (ips-1)*grid%sr_x+1
+     ipe0 = ipe * grid%sr_x
+
+     jds0 = jds
+     jde0 = jde * grid%sr_y
+     jms0 = (jms-1)*grid%sr_y+1
+     jme0 = jme * grid%sr_y
+     jps0 = (jps-1)*grid%sr_y+1
+     jpe0 = jpe * grid%sr_y
+
+     kds0 = kds
+     kde0 = kde
+     kms0 = kms
+     kme0 = kme
+     kps0 = kps
+     kpe0 = kpe
+   RETURN
+   END SUBROUTINE get_ijk_from_subgrid
+
+
 ! Default version ; Otherwise module containing interface to DM library will provide
 
    SUBROUTINE wrf_patch_domain( id , domdesc , parent, parent_id , parent_domdesc , &
@@ -1026,19 +1071,18 @@ CONTAINS
       INTEGER tl
       LOGICAL inter_domain
       INTEGER setinitval
+      INTEGER sr_x, sr_y
 
       !declare ierr variable for error checking ALLOCATE calls
       INTEGER ierr
 
       INTEGER                              :: loop
 
-#if 1
+      CALL nl_get_sr_x( id , sr_x )
+      CALL nl_get_sr_x( id , sr_y )
+
       tl = tl_in
       inter_domain = inter_domain_in
-#else
-      tl = 3
-      inter_domain = .FALSE.
-#endif
 
 #if ( RWORDSIZE == 8 )
       initial_data_value = 0.

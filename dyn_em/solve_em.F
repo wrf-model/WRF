@@ -59,6 +59,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
 
+   INTEGER                         :: sids , side , sjds , sjde , skds , skde , &
+                                      sims , sime , sjms , sjme , skms , skme , &
+                                      sips , sipe , sjps , sjpe , skps , skpe
+
+
    INTEGER ::              imsx, imex, jmsx, jmex, kmsx, kmex,    &
                            ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
                            imsy, imey, jmsy, jmey, kmsy, kmey,    &
@@ -155,6 +160,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
                            ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
                            imsy, imey, jmsy, jmey, kmsy, kmey,    &
                            ipsy, ipey, jpsy, jpey, kpsy, kpey )
+
+  CALL get_ijk_from_subgrid (  grid ,                   &
+                            sids, side, sjds, sjde, skds, skde,    &
+                            sims, sime, sjms, sjme, skms, skme,    &
+                            sips, sipe, sjps, sjpe, skps, skpe    )
 
   k_start         = kps
   k_end           = kpe

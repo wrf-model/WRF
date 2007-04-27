@@ -23,8 +23,9 @@ int
 set_state_dims ( char * dims , node_t * node )
 {
   int modifiers ;
-  node_t *d ;
+  node_t *d, *d1 ;
   char *c ;
+  int star ;
 
   if ( dims == NULL ) dims = "-" ;
   modifiers = 0 ;
@@ -32,6 +33,8 @@ set_state_dims ( char * dims , node_t * node )
   node->ndims = 0 ;
   node->boundary_array = 0 ;
 
+  star = 0 ;
+  node->subgrid = 0 ;
   for ( c = dims ; *c ; c++ )
   {
     if      ( *c == 'f' )
@@ -59,6 +62,12 @@ set_state_dims ( char * dims , node_t * node )
       node->boundary_array = 1 ;
       modifiers = 1 ;
     }
+    else if ( *c == '*' )
+    {
+      /* next dimspec seen represents a subgrid */
+      star = 1 ;
+      continue ;
+    }
     else if ( *c == '-' )
     {
       break ;
@@ -66,7 +75,11 @@ set_state_dims ( char * dims , node_t * node )
     else if ( modifiers == 0 )
     {
       if (( d = get_dim_entry ( *c )) == NULL ) { return(1) ; }
-      node->dims[node->ndims++] = d ;
+      d1 = new_node( DIM) ;  /* make a copy */
+      *d1 = *d ;
+      if ( star ) { d1->subgrid = 1 ;  node->subgrid |= (1<<node->ndims) ; }  /* mark the node has having a subgrid dim */
+      node->dims[node->ndims++] = d1 ;
+      star = 0 ;
     }
   }
   return (0) ;
@@ -193,7 +206,6 @@ get_entry_r ( char * name , char * use , node_t * node )
   }
   return(NULL) ;
 }
-
 
 node_t *
 get_dimnode_for_coord ( node_t * node , int coord_axis )

@@ -88,6 +88,7 @@ typedef struct node_struct {
   int  coord_end ;                 /* for CONSTANT */
   int  dim_order ;                 /* order that dimensions are specified
                                       in framework */
+  int  subgrid ;                  /* 1=subgrid dimension */
 
 /* fields used by Package nodes */
   char pkg_assoc[NAMELEN] ;

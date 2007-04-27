@@ -253,6 +253,7 @@ index_with_firstelem( char * pre , char * dref , int bdy ,  /* as defined in dat
 get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t * p , int first_last )
 {
    char dref[NAMELEN], nlstruct[NAMELEN] ;
+   char d, d1 ;
 
    if ( structname == NULL ) { strcpy( dref, "" ) ;}
    else                      { strcpy( dref, structname ) ; }
@@ -264,11 +265,31 @@ get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t 
      {
        case (DOMAIN_STANDARD) :
          {
-         char *ornt ;
-         if      ( p->proc_orient == ALL_X_ON_PROC ) ornt = "x" ;
-         else if ( p->proc_orient == ALL_Y_ON_PROC ) ornt = "y" ;
-         else                                        ornt = "" ;
-           sprintf(tx,"%s%cm3%d%s",dref,first_last==0?'s':'e',p->dims[i]->dim_order,ornt) ;
+           char *ornt ;
+           if      ( p->proc_orient == ALL_X_ON_PROC ) ornt = "x" ;
+           else if ( p->proc_orient == ALL_Y_ON_PROC ) ornt = "y" ;
+           else                                        ornt = "" ;
+
+           switch( p->dims[i]->coord_axis )
+           {
+           case(COORD_X) : d = 'i' ;  d1 = 'x' ; break ;
+           case(COORD_Y) : d = 'j' ;  d1 = 'y' ; break ;
+           case(COORD_Z) : d = 'k' ;  d1 = 'z' ; break ;
+           default :  break ;
+           }
+
+           if ( p->dims[i]->subgrid ) 
+           {
+             if ( first_last == 0 ) { /*first*/
+               sprintf(tx,"(%ssm3%d%s-1)*%ssr_%c+1",dref,p->dims[i]->dim_order,ornt,dref,d1) ;
+             }else{                   /*last*/
+               sprintf(tx,"%sem3%d%s*%ssr_%c"      ,dref,p->dims[i]->dim_order,ornt,dref,d1) ;
+             }
+           }
+           else
+           {
+             sprintf(tx,"%s%cm3%d%s",dref,first_last==0?'s':'e',p->dims[i]->dim_order,ornt) ;
+           }
          }
          break ;
        case (NAMELIST) :

@@ -193,10 +193,10 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 
         if ( p1->node_kind & FOURD ) {
           grid = "" ;
-          set_dim_strs ( p->members->next , ddim , mdim , pdim , "c", 1 ) ;
-          set_dim_strs ( p->members->next , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
-          set_dim_strs ( p->members->next , nddim , nmdim , npdim , "n", 1 ) ;
-          set_dim_strs ( p->members->next , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
+          set_dim_strs2 ( p->members->next , ddim , mdim , pdim , "c", 1 ) ;
+          set_dim_strs2 ( p->members->next , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
+          set_dim_strs2 ( p->members->next , nddim , nmdim , npdim , "n", 1 ) ;
+          set_dim_strs2 ( p->members->next , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
           zdex = get_index_for_coord( p->members->next , COORD_Z ) ;
           xdex = get_index_for_coord( p->members->next , COORD_X ) ;
           ydex = get_index_for_coord( p->members->next , COORD_Y ) ;
@@ -213,10 +213,10 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 	  }
         } else {
           grid = "grid%" ;
-          set_dim_strs ( p , ddim , mdim , pdim , "c", 1 ) ;
-          set_dim_strs ( p , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
-          set_dim_strs ( p , nddim , nmdim , npdim , "n", 1 ) ;
-          set_dim_strs ( p , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
+          set_dim_strs2 ( p , ddim , mdim , pdim , "c", 1 ) ;
+          set_dim_strs2 ( p , ddim2 , mdim2 , pdim2 , "c", 0 ) ;
+          set_dim_strs2 ( p , nddim , nmdim , npdim , "n", 1 ) ;
+          set_dim_strs2 ( p , nddim2 , nmdim2 , npdim2 , "n", 0 ) ;
           zdex = get_index_for_coord( p , COORD_Z ) ;
           xdex = get_index_for_coord( p , COORD_X ) ;
           ydex = get_index_for_coord( p , COORD_Y ) ;
@@ -240,10 +240,6 @@ fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
 
-        if ( zdex >= 0 ) {
-
-/* note this is only good for IKJ */
-
 fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
@@ -260,29 +256,6 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
                 nmdim[0][0], nmdim[0][1], nmdim[1][0], nmdim[1][1], nmdim[2][0], nmdim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
                 npdim[0][0], npdim[0][1], npdim2[1][0], npdim2[1][1], npdim[2][0], npdim[2][1] ) ;
-
-        } else {
-
-/* note this is only good for IKJ */
-
-fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
-fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
-                ddim[0][0], ddim[0][1],          "1",         "1", ddim[1][0], ddim[1][1] ) ;
-fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
-                mdim[0][0], mdim[0][1],          "1",         "1", mdim[1][0], mdim[1][1] ) ;
-fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
-                pdim[0][0], pdim[0][1],          "1",         "1", pdim[1][0], pdim[1][1] ) ;
-if ( ! (down_path  & SMOOTH_UP)  ) {
-fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname2) ;
-}
-fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
-                nddim[0][0], nddim[0][1],           "1",          "1", nddim[1][0], nddim[1][1] ) ;
-fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
-                nmdim[0][0], nmdim[0][1],           "1",          "1", nmdim[1][0], nmdim[1][1] ) ;
-fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
-                npdim[0][0], npdim[0][1],           "1",          "1", npdim[1][0], npdim[1][1] ) ;
-
-        }
 
 if ( ! (down_path  & SMOOTH_UP)  ) {
   if ( sw_deref_kludge == 1 ) {

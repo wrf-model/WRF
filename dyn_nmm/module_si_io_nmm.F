@@ -1271,6 +1271,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
          do K=1,num_soil_top_cat
           do I=ITS,min(IDE-1,ITE)
           grid%SOILCTOP(I,K,J)=soil_top_cat_input(I,J,K)
+          grid%SOILCTOP_gc(I,J,K)=soil_top_cat_input(I,J,K)
           enddo
          enddo
         enddo
@@ -1279,6 +1280,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
          do K=1,num_soil_bot_cat
           do I=ITS,min(IDE-1,ITE)
           grid%SOILCBOT(I,K,J)=soil_bot_cat_input(I,J,K)
+          grid%SOILCBOT_gc(I,J,K)=soil_bot_cat_input(I,J,K)
           enddo
          enddo
         enddo
@@ -1287,6 +1289,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
          do K=1,num_veg_cat
           do I=ITS,min(IDE-1,ITE)
           grid%LANDUSEF(I,K,J)=landuse_frac_input(I,J,K)
+          grid%LANDUSEF_gc(I,J,K)=landuse_frac_input(I,J,K)
           enddo
          enddo
         enddo

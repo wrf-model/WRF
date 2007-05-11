@@ -431,8 +431,7 @@
 ! yliu: add llxy for all 3 projection
           
 !ajb Arguments ri and rj have been switched from MM5 orientation.
-!      call llxy (latitude,longitude,rj,ri,xlatc,xlonc,map_proj,
-      call llxy (latitude,longitude,ri,rj,xlatc_cg,xlonc_cg,map_proj, &
+      CALL llxy (latitude,longitude,ri,rj,xlatc_cg,xlonc_cg,map_proj, &
                  true_lat1,true_lat2,dscg,xn,sn_maxcg,we_maxcg,       &
                  1,1,1)
 
@@ -443,7 +442,7 @@
       rjo(n)=rj
 
       if (iprt) THEN
-         if(n.le.10) then
+         if(n.le.3) then
                      write(6,'(/,a,i5,a,f8.2,a,f8.2,a,f8.2,a,f8.2/)') &
                                             ' OBS N = ',n,      &
                                             ' RIO = ',rio(n),   &
@@ -1285,7 +1284,7 @@
 ! THIS ROUTINE CONVERTS INCOMING U AND V COMPS INTO MAP U AND V COMPS.
 ! iproj is projection (1=lamconf, 2=polarst, 3=mercator)
 ! xlonc is center longitude
-! xn is cone factor (.716 for current lc)
+! xn is cone factor
 !
       REAL, intent(in) :: XLON
       REAL, intent(inout) :: E1
@@ -1455,134 +1454,35 @@ SUBROUTINE llxy_lam (xlat,xlon,X,Y,xlatc, xlonc,xn,ds,       &
       return
   END SUBROUTINE llxy_lam
 
-  SUBROUTINE llxy(xlat,xlon,x,y,xlatc,xlonc,kproj,psi1,psi2,ds,    &
-                      xn,sn_max,we_max,parent_grid_ratio,        &
-                      i_parent_start,j_parent_start)
- 
+  SUBROUTINE llxy(xlat,xlon,x,y,xlatc,xlonc,kproj,psi1a,psi2,ds,    &
+                  xn,sn_max,we_max,parent_grid_ratio,               &
+                  i_parent_start,j_parent_start)
+
+!*************************************************************************
+! Purpose: Map a (lat,lon) location to the corresponding (x,y) location
+!          on the WRF (coarse) grid, using the selected map projection.
+!          Note that the x coordinate is the west-east WRF grid component,
+!          and y is the south-north component. The exact forms of the
+!          Lambert (kproj=1), Polar (kproj=2), and Mercator (kproj=3)
+!          map projection equations used here can be found in CAPS-ARPS
+!          document in Chapter 7: Model Grid Setup.
+! Modified: 03212007  Correct Polar and Mercator mapping  -Al Bourgeois
+!*************************************************************************
+
       IMPLICIT NONE
- 
+
 !     CALCULATE X AND Y GIVEN LATITUDE AND LONGITUDE.
 !     PETER HOWELLS, NCAR, 1984
- 
+
       REAL, intent(in)    :: xlat
       REAL, intent(inout) :: xlon
       REAL, intent(out)   :: x
       REAL, intent(out)   :: y
       REAL, intent(in)    :: xlatc
       REAL, intent(in)    :: xlonc
-      INTEGER, intent(in) :: kproj 
-      REAL, intent(in)    :: psi1
-      REAL, intent(in)    :: psi2 
-      REAL, intent(in)    :: ds
-      REAL, intent(in)    :: xn
-      INTEGER, intent(in) :: sn_max
-      INTEGER, intent(in) :: we_max
-      INTEGER, intent(in) :: parent_grid_ratio
-      INTEGER, intent(in) :: i_parent_start
-      INTEGER, intent(in) :: j_parent_start
-
-!***  DECLARATIONS FOR IMPLICIT NONE                                    
-      real conv, a, phi1, pole, c2, xc, phicr, cell, yc, xlatr
-      real phic, xx, yy, centri, centrj, ylon, flp, psx, r
-      integer imax, jmax, imapst, jmapst
-
-!       write(6,*) 'enter llxy'
-!       write(6,*) 'enter llxy: xlatc = ',xlatc,' xlonc = ',xlonc
-!       write(6,*) 'xlat = ',xlat,' xlon = ',xlon
-!       write(6,*) 'psi1 = ',psi1,' psi2 = ',psi2
-!       write(6,*) 'xn = ',xn,' kproj = ',kproj,' ds = ',ds
-!       write(6,*) 'sn_max = ',sn_max,' we_max = ',we_max
-!       write(6,*) 'parent_grid_ratio = ',parent_grid_ratio
-!       write(6,*) 'i_parent_start = ',i_parent_start
-!       write(6,*) 'j_parent_start = ',j_parent_start
-
-      conv = 57.29578
-      a = 6370.0
-!      imax  = sn_max*parent_grid_ratio+1
-!      jmax  = we_max*parent_grid_ratio+1
-       imax  = sn_max*parent_grid_ratio       !ajb for WRF
-       jmax  = we_max*parent_grid_ratio       !ajb for WRF
-      imapst= (j_parent_start-1)*parent_grid_ratio+1
-      jmapst= (i_parent_start-1)*parent_grid_ratio+1
-      phi1 = 90.0-psi2
-      pole = 90.0
-
-      if ( xlatc.lt.0.0 ) then
-        phi1 = -90.0-psi2
-        pole = -pole
-      endif
- 
-      if (kproj.eq.3) then
-! MERCATOR PROJECTION
-        C2     = A*COS(PSI1)
-        XC     = 0.0
-        PHICR  = XLATC/CONV
-        CELL   = COS(PHICR)/(1.0+SIN(PHICR))
-        YC     = - C2*ALOG(CELL)
-        IF (XLAT.NE.-90.) THEN
-           XLATR = XLAT/CONV
-           CELL = COS(XLATR)/(1.0+SIN(XLATR))
-           YY = -C2*ALOG(CELL)
-           IF (XLONC.LT.0.0) THEN
-             IF (XLON.GT.0.0) XLON=XLON-360.
-           ELSE
-             IF (XLON.LT.0.0) XLON=360.+XLON
-           ENDIF
-           XX = C2*(XLON-XLONC)/CONV
-        ENDIF
- 
-      ELSE IF (KPROJ.EQ.1) THEN
-! LAMBERT-COMFORMAL or POLAR-STEREO PROJECTION
-      PHIC = ( POLE - XLATC )/CONV
-      PHI1 = PHI1/CONV
-      XC = 0.0
-      YC = -A/XN*SIN(PHI1)*(TAN(PHIC/2.0)/TAN(PHI1/2.0))**XN
- 
-!     CALCULATE X,Y COORDS. RELATIVE TO POLE
- 
-      YLON = XLON - XLONC
-      IF(YLON.GT.180) YLON = YLON - 360.
-      IF(YLON.LT.-180) YLON = YLON + 360.
-      FLP = XN*YLON/CONV
-      PSX = ( POLE - XLAT )/CONV
-      R = -A/XN*SIN(PHI1)*(TAN(PSX/2.0)/TAN(PHI1/2.0))**XN
-      IF ( XLATC.LT.0.0 ) THEN
-         XX = R*SIN(FLP)
-         YY = R*COS(FLP)
-      ELSE
-         XX = -R*SIN(FLP)
-         YY = R*COS(FLP)
-      END IF
-      END IF
- 
-!  TRANSFORM (1,1) TO THE ORIGIN
- 
-      CENTRI = FLOAT(IMAX + 1)/2.0
-      CENTRJ = FLOAT(JMAX + 1)/2.0
-      X = ( XX - XC )/DS + CENTRJ  - jmapst + 1      
-      Y = ( YY - YC )/DS + CENTRI  - imapst + 1
-
-      RETURN
-  END SUBROUTINE llxy
-
-  SUBROUTINE llxy_try(xlat,xlon,x,y,xlatc,xlonc,kproj,psi1a,psi2,ds,    &
-                    xn,sn_max,we_max,parent_grid_ratio,                   &
-                    i_parent_start,j_parent_start)
- 
-      IMPLICIT NONE
- 
-!     CALCULATE X AND Y GIVEN LATITUDE AND LONGITUDE.
-!     PETER HOWELLS, NCAR, 1984
- 
-      REAL, intent(in)    :: xlat
-      REAL, intent(inout) :: xlon
-      REAL, intent(out)   :: x
-      REAL, intent(out)   :: y
-      REAL, intent(in)    :: xlatc
-      REAL, intent(in)    :: xlonc
-      INTEGER, intent(in) :: kproj 
+      INTEGER, intent(in) :: kproj
       REAL, intent(in)    :: psi1a
-      REAL, intent(in)    :: psi2 
+      REAL, intent(in)    :: psi2
       REAL, intent(in)    :: ds
       REAL, intent(in)    :: xn
       INTEGER, intent(in) :: sn_max
@@ -1591,26 +1491,19 @@ SUBROUTINE llxy_lam (xlat,xlon,X,Y,xlatc, xlonc,xn,ds,       &
       INTEGER, intent(in) :: i_parent_start
       INTEGER, intent(in) :: j_parent_start
 
-!***  DECLARATIONS FOR IMPLICIT NONE                                    
+!***  DECLARATIONS FOR IMPLICIT NONE
       real conv, a, phi1, pole, c2, xc, phicr, cell, yc, xlatr
-      real phic, xx, yy, centri, centrj, ylon, flp, psx, r
+      real phic, xx, yy, ylon, flp, psx, r
       integer imax, jmax, imapst, jmapst
       integer jmxc,imxc,iratio
       real ric0,rjc0,rs,yind,xind,rix,rjx,psi1
-
-!       write(6,*) 'enter llxy'
-!       write(6,*) 'enter llxy: xlatc = ',xlatc,' xlonc = ',xlonc
-!       write(6,*) 'psi1 = ',psi1a,' psi2 = ',psi2
-!       write(6,*) 'xn = ',xn,' kproj = ',kproj,' ds = ',ds
-!       write(6,*) 'sn_max = ',sn_max,' we_max = ',we_max
-!       write(6,*) 'parent_grid_ratio = ',parent_grid_ratio
-!       write(6,*) 'i_parent_start = ',i_parent_start
-!       write(6,*) 'j_parent_start = ',j_parent_start
+      real sgn
+      real ajbtemp
 
       conv = 57.29578
       a = 6370.0
-      imax  = sn_max*parent_grid_ratio+1
-      jmax  = we_max*parent_grid_ratio+1
+      imax  = sn_max*parent_grid_ratio
+      jmax  = we_max*parent_grid_ratio
       imapst= (j_parent_start-1)*parent_grid_ratio+1
       jmapst= (i_parent_start-1)*parent_grid_ratio+1
       iratio = parent_grid_ratio
@@ -1621,63 +1514,57 @@ SUBROUTINE llxy_lam (xlat,xlon,X,Y,xlatc, xlonc,xn,ds,       &
 
       phi1 = psi1a
       if(xlatc .gt. 0.) then
-       psi1=90.-phi1
+        psi1=90.-phi1
+        sgn = 1.0
       else
-       psi1=-90+abs(phi1)
+        psi1=-90.+abs(phi1)
+        sgn = -1.0
       endif
 
       ric0=(imxc+1.)*0.5
       rjc0=(jmxc+1.)*0.5
 
-!      if(kproj .eq. 1) then
-       if(kproj .le. 2) then
-       if(xlatc .gt. 0.) then
-        rs=a/xn*sin(psi1/conv)*(tan((90.-xlat)/conv/2.)           &
-            /tan(psi1/2./conv))**xn
-        yc=-a/xn*sin(psi1/conv)*(tan((90.-xlatc)/conv/2.)         &
-            /tan(psi1/2./conv))**xn
-       else
-        rs=a/xn*sin(psi1/conv)*(tan((-90.-xlat)/conv/2.)          &
-            /tan(psi1/2./conv))**xn
-        yc=-a/xn*sin(psi1/conv)*(tan((-90.-xlatc)/conv/2.)        &
-            /tan(psi1/2./conv))**xn
-       endif
-!     elseif(kproj .eq. 2) then
-!       if(xlatc .gt. 0.) then
-!        rs=a*sin((90.-xlat)/conv)*(1.+cos(psi1/conv))
-!     &     /(1.+cos((90.-xlat)/conv))
-!        yc=-a*sin((90.-xlatc)/conv)*(1.+cos(psi1/conv))
-!     &     /(1.+cos((90.-xlatc)/conv))
-!       else
-!        rs=a*sin((-90.-xlat)/conv)*(1.+cos(psi1/conv))
-!     &     /(1.+cos((-90.-xlat)/conv))
-!        yc=-a*sin((-90.-xlatc)/conv)*(1.+cos(psi1/conv))
-!     &     /(1.+cos((-90.-xlatc)/conv))
-!      endif
-      else
-       psi1 = 0           ! yliu added
-       c2=a*cos(psi1/conv)
-       yc=c2*alog((1.+sin(xlatc/conv))/cos(xlatc/conv))
-      endif
+      if(kproj .eq. 1) then
 
-      if(kproj .le. 2) then
-        y=(ric0-(yc/ds+rs/ds*cos(xn*(xlon-xlonc)/conv))-rix)      &
+! *** Lambert ***
+          rs = a/xn*sin(psi1/conv)*(tan((sgn*90.-xlat)/conv/2.)           &
+                 /tan(psi1/2./conv))**xn
+          yc = -a/xn*sin(psi1/conv)*(tan((sgn*90.-xlatc)/conv/2.)         &
+                 /tan(psi1/2./conv))**xn
+
+          y = (ric0-(yc/ds+rs/ds*cos(xn*(xlon-xlonc)/conv))-rix)          &
              *iratio+1.0
-        if(xlatc .gt. 0.) then
-         x=(rjc0+rs/ds*sin(xn*(xlon-xlonc)/conv)-rjx)*iratio+1.0
-        else
-         x=(rjc0-rs/ds*sin(xn*(xlon-xlonc)/conv)-rjx)*iratio+1.0
-        endif
+
+          x = (rjc0+sgn*rs/ds*sin(xn*(xlon-xlonc)/conv)-rjx)*iratio+1.0
+
+      elseif(kproj .eq. 2) then
+
+! *** Polar ***
+          rs = a*cos(xlat/conv)*                                          &
+                      (1.0+sin(psi1a/conv)) / (1.0+sin(xlat/conv))
+          yc = -a*cos(xlatc/conv)*                                        &
+                      (1.0+sin(psi1a/conv)) / (1.0+sin(xlatc/conv))
+
+          y = (ric0-(yc/ds+rs/ds*cos((xlon-xlonc)/conv))-rix)             &
+             *iratio+1.0
+          x = (rjc0+sgn*rs/ds*sin((xlon-xlonc)/conv)-rjx)*iratio+1.0
+
       else
-       y=c2*alog((1.+sin(xlat/conv))/cos(xlat/conv))
-       x=c2*(xlon-xlonc)/conv
-       y=(ric0+(y-yc)/ds-rix)*iratio+1.0
-       x=(rjc0+x/ds-rjx)*iratio+1.0
-      endif
-        write(6,*) 'xj = ',x, 'yi = ',y,"xlat",xlat,"xlon",xlon
+
+! *** Mercator ***
+        psi1 = psi1a
+        c2 = a*cos(psi1/conv)
+        yc = c2*alog((1.+sin(xlatc/conv))/cos(xlatc/conv))
+        y  = c2*alog((1.+sin(xlat/conv))/cos(xlat/conv))
+        x  = c2*(xlon-xlonc)/conv
+        y  = (ric0+(y-yc)/ds-rix)*iratio+1.0
+        x  = (rjc0+x/ds-rjx)*iratio+1.0
+
+      endif 
+
 
       RETURN
-  END SUBROUTINE llxy_try
+  END SUBROUTINE llxy
 
 #endif
 !-----------------------------------------------------------------------

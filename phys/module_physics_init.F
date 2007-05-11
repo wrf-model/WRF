@@ -480,6 +480,9 @@ integer myproc
                   config_flags%restart,                         &
                   obs_twindo,                                   &
                   itimestep,                                    &
+                  config_flags%truelat1,                        &
+                  config_flags%truelat2,                        &
+                  config_flags%map_proj,                        &
                   model_config_rec%s_sn(1),                     &
                   model_config_rec%e_sn(1),                     &
                   model_config_rec%s_we(1),                     &
@@ -1548,6 +1551,7 @@ integer myproc
 !-------------------------------------------------------------------
    SUBROUTINE fdob_init(obs_nudge_opt, maxdom, inest, parid,       &
                         dx_coarse, restart, obs_twindo, itimestep, &
+                        true_lat1, true_lat2, map_proj,            &
                         s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
                         fdob,                                      &
                         ids, ide, jds, jde, kds, kde,              &
@@ -1572,6 +1576,9 @@ integer myproc
    LOGICAL , INTENT(IN)    :: restart
    REAL    , INTENT(INOUT) :: obs_twindo
    INTEGER , INTENT(IN)    :: itimestep
+   REAL    , INTENT(IN)    :: true_lat1
+   REAL    , INTENT(IN)    :: true_lat2
+   INTEGER , INTENT(IN)    :: map_proj
    INTEGER, intent(in)     :: s_sn_cg      ! starting north-south coarse-grid index
    INTEGER, intent(in)     :: e_sn_cg      ! ending   north-south coarse-grid index
    INTEGER, intent(in)     :: s_we_cg      ! starting west-east   coarse-grid index
@@ -1586,6 +1593,7 @@ integer myproc
       e_sn = jde
       CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
                         dx_coarse, restart, obs_twindo, itimestep, &
+                        true_lat1, true_lat2, map_proj,            &
                         e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
                         fdob,                                      &  
                         ids,ide, jds,jde, kds,kde,                 &  

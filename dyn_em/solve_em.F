@@ -2568,7 +2568,7 @@ BENCH_START(chem_adv_tim)
                                 chem_bxe(jms,kms,1,ic), chem_btxe(jms,kms,1,ic),  &
                                 chem_bys(ims,kms,1,ic), chem_btys(ims,kms,1,ic),  &
                                 chem_bye(ims,kms,1,ic), chem_btye(ims,kms,1,ic),  &
-                                dt_rk, &
+                                dt_rk+grid%dtbc,                                  &
                                 config_flags%spec_bdy_width,grid%em_z,      &
                                 grid%have_bcs_chem,      &
                                 grid%em_ru_m, grid%em_rv_m, config_flags,grid%em_alt,       &

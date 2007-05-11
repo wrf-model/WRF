@@ -5496,7 +5496,7 @@ END SUBROUTINE sorgam_depdriver
       eorgi(blksize) = & ! primary organic     
         eorgi_in
       eorgj(blksize) = & 
-        eorgi_in
+        eorgj_in
 ! primary organic     
       eeci(blksize) = & ! elemental carbon    
         eeci_in

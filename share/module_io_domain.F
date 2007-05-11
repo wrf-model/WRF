@@ -817,20 +817,24 @@ SUBROUTINE construct_filename3 ( result , basename , fld1 , len1 , fld2 , len2, 
 END SUBROUTINE construct_filename3
 
 SUBROUTINE construct_filename4( result , basename , fld1 , len1 , date_char , io_form )
+  USE module_state_description
   IMPLICIT NONE
   CHARACTER*(*) :: result
   CHARACTER*(*) :: basename
   CHARACTER*(*) :: date_char
 
+  INTEGER, EXTERNAL :: use_package
   INTEGER , INTENT(IN) :: fld1 , len1 , io_form
   CHARACTER*64         :: t1, zeros
   CHARACTER*4          :: ext
   CALL zero_pad ( t1 , fld1 , len1 )
-  IF      ( io_form .EQ. 1 ) THEN
+  IF      ( use_package(io_form) .EQ. IO_INTIO ) THEN
      ext = '.int'
-  ELSE IF ( io_form .EQ. 2 ) THEN
+  ELSE IF ( use_package(io_form) .EQ. IO_NETCDF ) THEN
      ext = '.nc '
-  ELSE IF ( io_form .EQ. 5 ) THEN
+  ELSE IF ( use_package(io_form) .EQ. IO_PNETCDF ) THEN
+    ext = '.nc '
+  ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
   ELSE
      CALL wrf_error_fatal ('improper io_form')
@@ -843,22 +847,26 @@ END SUBROUTINE construct_filename4
 ! this version looks for <date> and <domain> in the basename and replaces with the arguments
 
 SUBROUTINE construct_filename4a( result , basename , fld1 , len1 , date_char , io_form )
+  USE module_state_description
   IMPLICIT NONE
   CHARACTER*(*) :: result
   CHARACTER*(*) :: basename
   CHARACTER*(*) :: date_char
 
+  INTEGER, EXTERNAL :: use_package
   INTEGER , INTENT(IN) :: fld1 , len1 , io_form
   CHARACTER*64         :: t1, zeros
   CHARACTER*4          :: ext
   INTEGER   i, j, l
   result=basename
   CALL zero_pad ( t1 , fld1 , len1 )
-  IF      ( MOD(io_form,100) .EQ. 1 ) THEN
+  IF      ( use_package(io_form) .EQ. IO_INTIO ) THEN
      ext = '.int'
-  ELSE IF ( MOD(io_form,100) .EQ. 2 ) THEN
+  ELSE IF ( use_package(io_form) .EQ. IO_NETCDF ) THEN
      ext = '.nc '
-  ELSE IF ( MOD(io_form,100) .EQ. 5 ) THEN
+  ELSE IF ( use_package(io_form) .EQ. IO_PNETCDF ) THEN
+    ext = '.nc '
+  ELSE IF ( use_package(io_form) .EQ. IO_GRIB1 ) THEN
      ext = '.gb '
   ELSE
      CALL wrf_error_fatal ('improper io_form')

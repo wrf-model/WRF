@@ -48,6 +48,7 @@
     LOGICAL for_out, horiz_stagger
     INTEGER Hndl, io_form
     LOGICAL, EXTERNAL :: has_char
+    INTEGER, EXTERNAL :: use_package
 
     IF ( wrf_at_debug_level( 500 ) ) THEN
       call start_timing
@@ -105,8 +106,10 @@
 
     CALL get_handle ( Hndl, io_form , for_out, DataHandle )
 
-    IF ( ( dryrun .AND. ( io_form .EQ. IO_NETCDF .OR. io_form .EQ. IO_PNETCDF ) ) .OR. &
-                        ( io_form .EQ. IO_PHDF5  )   ) THEN
+    IF ( ( dryrun .AND. ( use_package(io_form) .EQ. IO_NETCDF .OR. &
+                          use_package(io_form) .EQ. IO_PNETCDF ) ) .OR. &
+                        ( use_package(io_form) .EQ. IO_PHDF5  )   ) THEN
+
       CALL wrf_put_var_ti_char( &
                        DataHandle                 &  ! DataHandle
                       ,"description"              &  ! Element

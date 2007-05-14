@@ -140,16 +140,22 @@ Namelist variables specifically for the WPS input for real:
 
  num_metgrid_levels                  = 27       ; number of vertical levels of 3d meteorological fields coming 
                                                 ; from WPS metgrid program
- interp_type                         = 1        ; vertical interpolation
+ interp_type                         = 2        ; vertical interpolation
                                                 ; 1 = linear in pressure
                                                 ; 2 = linear in log(pressure)
- extrap_type                         = 2        ; vertical extrapolation
+ extrap_type                         = 2        ; vertical extrapolation of non-temperature fields
                                                 ; 1 = extrapolate using the two lowest levels
                                                 ; 2 = use lowest level as constant below ground
- t_extrap_type                       = 1        ; vertical extrapolation for potential temperature
-                                                ; 1 = extrapolate using the two lowest levels
-                                                ; 2 = use lowest level as constant below ground
-                                                ; 3 = -6.5 K/km lapse rate
+ t_extrap_type                       = 2        ; vertical extrapolation for potential temperature
+                                                ; 1 = isothermal
+                                                ; 2 = -6.5 K/km lapse rate for temperature
+                                                ; 3 = constant theta
+ use_levels_below_ground             = .true.   ; in vertical interpolation, use levels below input surface level
+                                                ; T = use input isobaric levels below input surface
+                                                ; F = extrapolate when WRF location is below input surface value
+ use_surface                         = .true.   ; use the input surface level data in the vertical interp and extrap
+                                                ; T = use the input surface data
+                                                ; F = do not use the input surface data
  lagrange_order                      = 1        ; vertical interpolation order
                                                 ; 1 = linear
                                                 ; 2 = quadratic

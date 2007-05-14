@@ -54,8 +54,12 @@
  smooth_option                       = 0
  /
  p_top_requested                     = 5000
- interp_type                         = 1
+ interp_type                         = 2
+ extrap_type                         = 2
+ t_extrap_type                       = 2
  lowest_lev_from_sfc                 = .false.
+ use_levels_below_ground             = .true.
+ use_surface                         = .true.
  lagrange_order                      = 1
  force_sfc_in_vinterp                = 1
  zap_close_levels                    = 500

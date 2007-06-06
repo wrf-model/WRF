@@ -43,6 +43,8 @@ cd $KPP_HOME; make; cd $WRFC_ROOT
 echo "-----------------------------------------"
 
 
+( cd $WKC_HOME/util/wkc; linker.csh unlink )
+
 ( cd $WKC_HOME/util/wkc; linker.csh link )
 
 #compile the coupler

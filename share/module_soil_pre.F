@@ -1718,7 +1718,7 @@ CONTAINS
 
       INTEGER , PARAMETER :: iswater_soil = 14
       INTEGER :: iforce
-      CHARACTER (LEN=132) :: message
+      CHARACTER (LEN=1024) :: message
 
       !  Sanity check on the 50/50 points
 
@@ -1729,7 +1729,7 @@ CONTAINS
                DO l = 1 , num_veg_cat
                   IF ( l .EQ. iswater ) CYCLE
                   IF ( landuse_frac(i,l,j) .EQ. lwthresh ) THEN
-                write(message, FMT='(I4,I4,A,I4,A,I4)') i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
+                write(message, FMT='(I4,I4,A,I4,A,F12.4)') i,j,' water and category ',l,' both at 50%, landmask is ',landmask(i,j)
                 call wrf_message ( message )
                      landuse_frac(i,l,j) = lwthresh - .01
                      landuse_frac(i,iswater,j) = 1. - (lwthresh + 0.01)

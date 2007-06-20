@@ -133,10 +133,29 @@ CONTAINS
 
    CHARACTER (LEN=256) :: message
 
+   actual_end_fdda_min = end_fdda_hour*60.0
+   IF( if_ramping == 1 .AND. dtramp_min > 0.0 ) &
+       actual_end_fdda_min = end_fdda_hour*60.0 + ABS(dtramp_min)
+   IF( xtime > actual_end_fdda_min ) THEN
+!  If xtime is greater than the end time, no need to calculate tendencies. Just set the tnedencies 
+!  to zero to turn off nudging and return.
+     DO j = jts, jte
+     DO k = kts, kte
+     DO i = its, ite
+       RUNDGDTEN(i,k,j) = 0.0
+       RVNDGDTEN(i,k,j) = 0.0
+       RTHNDGDTEN(i,k,j) = 0.0
+       RQVNDGDTEN(i,k,j) = 0.0
+       IF( k .EQ. kts ) RMUNDGDTEN(i,j) = 0.
+     ENDDO
+     ENDDO
+     ENDDO
+     RETURN
+   ENDIF
+
    xtime_old = FLOOR(xtime/analysis_interval) * analysis_interval * 1.0
    xtime_new = xtime_old + analysis_interval
    coef = (xtime-xtime_old)/(xtime_new-xtime_old)
-
 
    IF ( wrf_dm_on_monitor()) THEN
 

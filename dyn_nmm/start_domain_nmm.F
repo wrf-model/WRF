@@ -1582,25 +1582,18 @@
         ENDDO
         ENDDO
       ENDIF
-!
+
 !     always define the quantity Z0BASE
                                                                                                                                               
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
                                                                                                                                               
-! topo based
-!       Z0BASE(I,J)=SM(I,J)*Z0SEA+(1.-SM(I,J))*  &
-!    &             (FIS(I,J)*(FCM/3.)+Z0LAND)
-!
         IF(SM(I,J)==0)then
-!         Z0BASE(I,J)=MAX(VZ0TBL_24(IVGTYP(I,J)),0.1)
           Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0LAND
         ELSE
           Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
         ENDIF
-!
-        Z0(I,J)=Z0BASE(I,J)
-!
+
       ENDDO
       ENDDO
 !
@@ -1659,6 +1652,13 @@
 
 !-----------------------------------------------------------------------
 !
+
+      DO J=JMS,JME
+      DO I=IMS,IME
+        Z0(I,J)=Z0BASE(I,J)
+      ENDDO
+      ENDDO
+
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 
 	IF (.NOT. RESTRT) THEN
@@ -1771,15 +1771,7 @@
         ENDIF
 	ENDIF
 
-!mp
         IF (.NOT. RESTRT) THEN
-      DO J=JMS,JME
-      DO I=IMS,IME
-        Z0(I,J)=Z0_DUM(I,J)+0.5*Z0(I,J) ! add 1/2 of veg Z0 component,
-                                        ! expecting this code to be called
-                                        ! both by real and by the model.
-      ENDDO
-      ENDDO
   !-- Replace albedos if original albedos are nonzero
       IF(MAXVAL(ALBEDO_DUM)>0.)THEN
         DO J=JMS,JME

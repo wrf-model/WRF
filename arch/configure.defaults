@@ -540,7 +540,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows nesting)
+#ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1065,7 +1065,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	Sun  SunOS SM   (OpenMP, nesting using RSL and no MPI)
+#ARCH	Sun  SunOS SM   (OpenMP, ARW nesting using RSL and no MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1485,7 +1485,7 @@ convert_nmm.o :
 
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows ARW and NMM nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1632,7 +1632,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1785,7 +1785,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows ARW nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1928,7 +1928,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows ARW and NMM nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2071,7 +2071,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows nesting)
+#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2383,7 +2383,7 @@ convert_nmm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX                      (single-threaded, nesting using RSL without MPI)
+#ARCH	AIX                      (single-threaded, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2527,7 +2527,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX                      (OpenMP, nesting using RSL without MPI)
+#ARCH	AIX                      (OpenMP, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2967,7 +2967,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
+#ARCH       Compaq OSF1 alpha          (single-threaded, ARW nesting using RSL without MPI )
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3253,7 +3253,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
+#ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, ARW nesting using RSL without MPI )
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3406,7 +3406,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows ARW and NMM nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3558,7 +3558,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3711,7 +3711,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o start_em.o star
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3863,7 +3863,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -4303,7 +4303,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting, UNOPT shift_domain)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows ARW and NMM nesting, UNOPT shift_domain)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -4668,7 +4668,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows nesting)
+#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5024,7 +5024,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5273,7 +5273,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5405,7 +5405,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows nesting)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5535,7 +5535,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows nesting)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows ARW and NMM nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5668,7 +5668,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
+#ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5795,7 +5795,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH      Intel Itanium2 ia64 Linux (eg. Jacaranda), ifort compiler (RSL, no-MPI, allows nesting)
+#ARCH      Intel Itanium2 ia64 Linux (eg. Jacaranda), ifort compiler (RSL, no-MPI, allows ARW nesting)
 #
 #          On Jacaranda, setenv NETCDF /jacaranda/users/michalak/netcdf-3.5.1
 #          Built this netcdf by first setenv FC efc and CPPFLAGS '-DNDEBUG -DpgiFortran'
@@ -6044,7 +6044,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows nesting)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -6168,7 +6168,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows nesting, No periodic LBCs)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows ARW and NMM nesting, No periodic LBCs)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6292,7 +6292,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, RSL, Allows nesting)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, RSL, Allows ARW nesting)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6422,7 +6422,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #	fi
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows nesting )
+#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows ARW and NMM nesting )
 # Notes for running on PNNL cluster:
 # 
 # 1. source /home/oehmen/.mycshrc
@@ -6550,7 +6550,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, allows nesting) 
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, allows ARW nesting) 
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -6682,7 +6682,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, allows nesting)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, allows ARW and NMM nesting)
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -6934,7 +6934,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, allows nesting using RSL without MPI)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, allows ARW nesting using RSL without MPI)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7192,7 +7192,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, allows nesting using RSL without MPI)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, allows ARW nesting using RSL without MPI)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7327,7 +7327,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, allows nesting)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, allows ARW nesting)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7461,7 +7461,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, allows nesting)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, allows ARW nesting)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7757,7 +7757,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, allows nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, allows ARW nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -7914,7 +7914,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows ARW and NMM nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -8585,7 +8585,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	PA8600	32bit   (single-threaded, nesting using RSL without MPI)
+#ARCH	HP-UX	PA8600	32bit   (single-threaded, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -8816,7 +8816,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	Itanium2	(single-threaded, nesting using RSL without MPI)
+#ARCH	HP-UX	Itanium2	(single-threaded, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -9037,7 +9037,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, nesting)
+#ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -9162,7 +9162,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, nesting)
+#ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -10000,7 +10000,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    NEC SX-8, NEC SX cross compiler DM-Parallel (RSL, Allows nesting)
+#ARCH    NEC SX-8, NEC SX cross compiler DM-Parallel (RSL, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS

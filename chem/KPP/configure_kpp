@@ -22,7 +22,7 @@ FLEX="flex"
 #    the default is FLEX_LIB_DIR="/usr/lib"
 
 
-# Look for flex lib dirctory 
+# Look for flex lib directory 
 # if FLEX_LIB_DIR environment variable is not set then check in /usr/lib
 
 if test -z "$FLEX_LIB_DIR" ; then
@@ -33,11 +33,11 @@ if test -z "$FLEX_LIB_DIR" ; then
       break
     fi
   done
-# fi
+fi
 
 # if FLEX_LIB_DIR environment variable is not set then check in /usr/lib64
 
-# if test -z "$FLEX_LIB_DIR" ; then
+if test -z "$FLEX_LIB_DIR" ; then
   for p in /usr/lib64
   do
     if test -d $p ; then
@@ -46,6 +46,20 @@ if test -z "$FLEX_LIB_DIR" ; then
     fi
   done
 fi
+
+
+# if FLEX_LIB_DIR environment variable is not set then check in /usr/local/lib
+
+if test -z "$FLEX_LIB_DIR" ; then
+  for p in /usr/local/lib
+  do
+    if test -d $p ; then
+      FLEX_LIB_DIR=$p
+      break
+    fi
+  done
+fi
+
 
 #    Platform independent C compiler flags. By default "-O" is used which 
 #    turns on optimisation. If you are experiencing problems you may try 
@@ -141,5 +155,7 @@ CC_FLAGS=$CC_FLAGS
 
 END1
 
-exit
+exit 0
+
+
 

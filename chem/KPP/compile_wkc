@@ -86,37 +86,32 @@ echo $kdir
     set model = `echo $kfile | sed 's/.kpp//g'`
 
 
+    
+    
+
 # if necessary, create a few .inc files in chem/KPP/inc
 #  which can be used to add code in the automatically
-#  generated files module_kpp_xxx_interface.f 
-    set inc_list = "u l b a ibu ib ia e"
+#  generated files module_kpp_xxx_interface.f
+# these files will not be removed during cleanup!!! 
 
-    foreach inam ( $inc_list )
-       if (! -e inc/kpp_mechd_${inam}_${model}.inc ) then
-          echo ! > inc/kpp_mechd_${inam}_${model}.inc 
-       endif
-    end
+   util/create_inc_files.csh $model 
 
-    if (! -e inc/extra_args_to_update_rconst_${model}.inc ) then
-          echo ! > inc/extra_args_to_update_rconst_${model}.inc
-    endif
-
-
-    if (! -e inc/extra_args_update_rconst_${model}.inc ) then
-          echo ! > inc/extra_args_update_rconst_${model}.inc
-    endif
-
-    if (! -e inc/extra_decls_update_rconst_${model}.inc ) then
-          echo ! > inc/extra_decls_update_rconst_${model}.inc
-    endif
 
 
   cd $kdir
   echo model $model
   make MODEL=$model KPP=$WKC_KPP WRFC_ROOT=$WRFC_ROOT  
 
+   if (  `echo $WRFC_ROOT | awk '{print ( length ( $1 ) > 40 ) }' `) then
+   echo WARNING: If kpp fails here the path to WRF-Chem might be too long for yacc ...
+   endif
 
   cd $WKC_HOME
+
+
+# direct addressing in the decomp subroutine (similar to a code by
+#  Edwin Spee, CWI, Amsterdam)
+ ( cd ${WKC_HOME}/util/write_decomp; write_decom.csh ${model} ../../.. )
 
 end
 
@@ -124,7 +119,7 @@ echo "========================================================="
 
 ###################################################
  
-# link .inc files in chem/KPP/inc
+# link the remaining .inc files in chem/KPP/inc
 set kincfiles = ( inc/*.inc )
  
 foreach kincfile ( $kincfiles ) 
@@ -132,7 +127,8 @@ foreach kincfile ( $kincfiles )
  if ( ! -e ${WRFC_ROOT}/${kincfile} ) then
    echo ln -s ../chem/${WKC_DIRNAME}/${kincfile}  ${WRFC_ROOT}/inc
    ln -s ../chem/${WKC_DIRNAME}/${kincfile}  ${WRFC_ROOT}/inc
- endif
+ endif 
+
 end
 
 

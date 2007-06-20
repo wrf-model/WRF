@@ -32,7 +32,7 @@ MODULE module_wkppc_constants
 
 ! constants for KPP
 ! should be moved to namelist input in the future 
-
+! additional settings in ./inc/kpp_ctrl_default.inc  
 
  
      REAL, PARAMETER ::  rtols=1.E-3 ! 1e-2 means two digits 

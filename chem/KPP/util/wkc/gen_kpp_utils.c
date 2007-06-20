@@ -89,7 +89,9 @@ int gen_kpp_argl( FILE * ofile, knode_t * nl  )
 		 }   
 
 
+                 if ( countit % max_per_line !=  0) {
 		 fprintf(ofile,"  & \n"); 
+		 }   
 
 
 }
@@ -114,7 +116,9 @@ int gen_kpp_argl_new( FILE * ofile, knode_t * nl  )
 		 }   
 
 
+                 if ( countit % max_per_line !=  0) {
 		 fprintf(ofile,"  & \n"); 
+		 }   
 
 
 }

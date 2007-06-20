@@ -55,5 +55,8 @@ rm -f ../../Registry_tmp.*_wk*
 # configure file
 rm -f configure.kpp
 
+if ( -e  util/mod_registry.temp ) then
+rm -f util/mod_registry.temp
+endif
 
 exit 0

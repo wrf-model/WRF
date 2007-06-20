@@ -1,0 +1,160 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: Set here the F90 compiler and options
+#       Pedefined compilers: INTEL, PGF, HPUX, LAHEY
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+COMPILER = GNU
+#COMPILER = LAHEY
+#COMPILER = INTEL
+#COMPILER = PGF
+#COMPILER = HPUX
+
+FC_GNU     = g95
+FOPT_GNU   = -cpp -O -pg -fbounds-check 
+FC_LAHEY   = lf95
+FOPT_LAHEY = -Cpp --pca
+#FOPT_LAHEY = -Cpp --chk a,e,s,u --pca --ap -O0 -g --trap
+FC_INTEL   = ifort 
+FOPT_INTEL = -cpp -O -mp -pc80 -prec_div -tpp7 -implicitnone
+FC_PGF     = pgf90
+FOPT_PGF   = -Mpreprocess -O -fast -pc 80 -Kieee
+FC_HPUX    = f90
+FOPT_HPUX  = -O -u +Oall +check=on
+
+# define FULL_ALGEBRA for non-sparse integration
+FC   = $(FC_$(COMPILER))
+FOPT = $(FOPT_$(COMPILER)) # -DFULL_ALGEBRA
+
+LIBS =
+#LIBS = -llapack -lblas
+
+# Command to create Matlab mex gateway routines 
+# Note: use $(FC) as the mex Fortran compiler
+MEX  = mex
+
+GENSRC = radm2sorg_Precision.f90  \
+	 radm2sorg_Parameters.f90     \
+	 radm2sorg_Global.f90  
+
+GENOBJ = radm2sorg_Precision.o    \
+	 radm2sorg_Parameters.o       \
+	 radm2sorg_Global.o     
+
+FUNSRC = radm2sorg_Function.f90 
+FUNOBJ = radm2sorg_Function.o 
+
+JACSRC = radm2sorg_JacobianSP.f90  radm2sorg_Jacobian.f90
+JACOBJ = radm2sorg_JacobianSP.o    radm2sorg_Jacobian.o
+
+HESSRC = radm2sorg_HessianSP.f90   radm2sorg_Hessian.f90
+HESOBJ = radm2sorg_HessianSP.o     radm2sorg_Hessian.o
+
+STMSRC = radm2sorg_StoichiomSP.f90 radm2sorg_Stoichiom.f90 
+STMOBJ = radm2sorg_StoichiomSP.o   radm2sorg_Stoichiom.o
+
+UTLSRC = radm2sorg_Rates.f90 radm2sorg_Util.f90 radm2sorg_Monitor.f90
+UTLOBJ = radm2sorg_Rates.o   radm2sorg_Util.o   radm2sorg_Monitor.o
+
+LASRC  = radm2sorg_LinearAlgebra.f90 
+LAOBJ  = radm2sorg_LinearAlgebra.o   
+
+STOCHSRC = radm2sorg_Stochastic.f90 
+STOCHOBJ = radm2sorg_Stochastic.o 
+
+MAINSRC = radm2sorg_Main.f90   radm2sorg_Initialize.f90   radm2sorg_Integrator.f90 radm2sorg_Model.f90
+MAINOBJ = radm2sorg_Main.o     radm2sorg_Initialize.o     radm2sorg_Integrator.o   radm2sorg_Model.o 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       objects needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ALLOBJ = $(GENOBJ) $(FUNOBJ) $(JACOBJ) $(HESOBJ) $(STMOBJ) \
+	 $(UTLOBJ) $(LAOBJ)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       executables needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+all:    exe
+
+exe:	$(ALLOBJ) $(MAINOBJ) 
+	$(FC) $(FOPT) $(ALLOBJ) $(MAINOBJ) $(LIBS) -o radm2sorg.exe
+
+stochastic:$(ALLOBJ) $(STOCHOBJ) $(MAINOBJ)
+	$(FC) $(FOPT) $(ALLOBJ) $(STOCHOBJ) $(MAINOBJ) $(LIBS) \
+	-o radm2sorg_stochastic.exe
+
+mex:    $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O radm2sorg_mex_Fun.f90     $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O radm2sorg_mex_Jac_SP.f90  $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O radm2sorg_mex_Hessian.f90 $(ALLOBJ)
+
+clean:
+	rm -f radm2sorg*.o radm2sorg*.mod \
+	radm2sorg*.dat radm2sorg.exe radm2sorg*.mexglx \
+	radm2sorg.map
+
+distclean:
+	rm -f radm2sorg*.o radm2sorg*.mod \
+	radm2sorg*.dat radm2sorg.exe radm2sorg.map \
+	radm2sorg*.f90 radm2sorg_*.mexglx
+
+radm2sorg_Precision.o: radm2sorg_Precision.f90 
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Parameters.o: radm2sorg_Parameters.f90 \
+	            radm2sorg_Precision.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Monitor.o: radm2sorg_Monitor.f90 \
+	             radm2sorg_Precision.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Global.o: radm2sorg_Global.f90 \
+	            radm2sorg_Parameters.o radm2sorg_Precision.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Initialize.o: radm2sorg_Initialize.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Function.o: radm2sorg_Function.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Stochastic.o: radm2sorg_Stochastic.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_JacobianSP.o: radm2sorg_JacobianSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Jacobian.o: radm2sorg_Jacobian.f90  $(GENOBJ) radm2sorg_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_LinearAlgebra.o: radm2sorg_LinearAlgebra.f90 $(GENOBJ) radm2sorg_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Rates.o: radm2sorg_Rates.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_HessianSP.o: radm2sorg_HessianSP.f90  $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Hessian.o:  radm2sorg_Hessian.f90 $(GENOBJ) radm2sorg_HessianSP.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_StoichiomSP.o: radm2sorg_StoichiomSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Stoichiom.o: radm2sorg_Stoichiom.f90  $(GENOBJ) radm2sorg_StoichiomSP.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Util.o: radm2sorg_Util.f90  $(GENOBJ) radm2sorg_Monitor.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Main.o: radm2sorg_Main.f90  $(ALLOBJ) radm2sorg_Initialize.o radm2sorg_Model.o radm2sorg_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Model.o: radm2sorg_Model.f90  $(ALLOBJ) radm2sorg_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+radm2sorg_Integrator.o: radm2sorg_Integrator.f90  $(ALLOBJ)
+	$(FC) $(FOPT) -c $<

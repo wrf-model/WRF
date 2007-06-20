@@ -20,7 +20,7 @@
             rapio3 =   RCONST(111)    !ARR(1.01e-15,736.0,t_phy(i,k,j)))) !! 732!!
             rlimho =   RCONST(72)     !ARR(1.71e-10,0.0,t_phy(i,k,j))))
             rlimno3 =  RCONST(104)    !ARR(1.22e-11,0.0,t_phy(i,k,j))))
-            rlimo3 =   RCONST(112)    !ARR(2.00e-16,0.0,t_phy(i,k,j))))
+            rlimo3 =   RCONST(112)    !2.00D-16
             PRDROG(PXYL)  = rxylho * var(ind_xyl)*var(ind_ho)
             PRDROG(PTOL)  = rtolho * var(ind_tol)*var(ind_ho)
             PRDROG(PCSL1) = rcslho * var(ind_csl)*var(ind_ho)

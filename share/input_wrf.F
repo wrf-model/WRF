@@ -499,6 +499,12 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
       SELECT CASE ( switch )
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
                aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
+#ifdef WRF_CHEM
+           IF( (config_flags%io_style_emissions .eq. 1) .and.                       &
+              ((switch.eq.aux_model_input4_only) .or. (switch.eq.aux_model_input5_only)) )then
+               CALL wrf_message( "**WARNING** Time in input file not being checked **WARNING**" )
+           ELSE
+#endif
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
@@ -514,6 +520,9 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
                 CALL wrf_message( TRIM(wrf_err_message) )
                 GOTO 3003
             ENDIF
+#ifdef WRF_CHEM
+            ENDIF
+#endif
         CASE DEFAULT
       END SELECT
     ENDIF

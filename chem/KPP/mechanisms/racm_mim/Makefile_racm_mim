@@ -1,0 +1,160 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: Set here the F90 compiler and options
+#       Pedefined compilers: INTEL, PGF, HPUX, LAHEY
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+COMPILER = GNU
+#COMPILER = LAHEY
+#COMPILER = INTEL
+#COMPILER = PGF
+#COMPILER = HPUX
+
+FC_GNU     = g95
+FOPT_GNU   = -cpp -O -pg -fbounds-check 
+FC_LAHEY   = lf95
+FOPT_LAHEY = -Cpp --pca
+#FOPT_LAHEY = -Cpp --chk a,e,s,u --pca --ap -O0 -g --trap
+FC_INTEL   = ifort 
+FOPT_INTEL = -cpp -O -mp -pc80 -prec_div -tpp7 -implicitnone
+FC_PGF     = pgf90
+FOPT_PGF   = -Mpreprocess -O -fast -pc 80 -Kieee
+FC_HPUX    = f90
+FOPT_HPUX  = -O -u +Oall +check=on
+
+# define FULL_ALGEBRA for non-sparse integration
+FC   = $(FC_$(COMPILER))
+FOPT = $(FOPT_$(COMPILER)) # -DFULL_ALGEBRA
+
+LIBS =
+#LIBS = -llapack -lblas
+
+# Command to create Matlab mex gateway routines 
+# Note: use $(FC) as the mex Fortran compiler
+MEX  = mex
+
+GENSRC = racm_mim_Precision.f90  \
+	 racm_mim_Parameters.f90     \
+	 racm_mim_Global.f90  
+
+GENOBJ = racm_mim_Precision.o    \
+	 racm_mim_Parameters.o       \
+	 racm_mim_Global.o     
+
+FUNSRC = racm_mim_Function.f90 
+FUNOBJ = racm_mim_Function.o 
+
+JACSRC = racm_mim_JacobianSP.f90  racm_mim_Jacobian.f90
+JACOBJ = racm_mim_JacobianSP.o    racm_mim_Jacobian.o
+
+HESSRC = racm_mim_HessianSP.f90   racm_mim_Hessian.f90
+HESOBJ = racm_mim_HessianSP.o     racm_mim_Hessian.o
+
+STMSRC = racm_mim_StoichiomSP.f90 racm_mim_Stoichiom.f90 
+STMOBJ = racm_mim_StoichiomSP.o   racm_mim_Stoichiom.o
+
+UTLSRC = racm_mim_Rates.f90 racm_mim_Util.f90 racm_mim_Monitor.f90
+UTLOBJ = racm_mim_Rates.o   racm_mim_Util.o   racm_mim_Monitor.o
+
+LASRC  = racm_mim_LinearAlgebra.f90 
+LAOBJ  = racm_mim_LinearAlgebra.o   
+
+STOCHSRC = racm_mim_Stochastic.f90 
+STOCHOBJ = racm_mim_Stochastic.o 
+
+MAINSRC = racm_mim_Main.f90   racm_mim_Initialize.f90   racm_mim_Integrator.f90 racm_mim_Model.f90
+MAINOBJ = racm_mim_Main.o     racm_mim_Initialize.o     racm_mim_Integrator.o   racm_mim_Model.o 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       objects needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ALLOBJ = $(GENOBJ) $(FUNOBJ) $(JACOBJ) $(HESOBJ) $(STMOBJ) \
+	 $(UTLOBJ) $(LAOBJ)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       executables needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+all:    exe
+
+exe:	$(ALLOBJ) $(MAINOBJ) 
+	$(FC) $(FOPT) $(ALLOBJ) $(MAINOBJ) $(LIBS) -o racm_mim.exe
+
+stochastic:$(ALLOBJ) $(STOCHOBJ) $(MAINOBJ)
+	$(FC) $(FOPT) $(ALLOBJ) $(STOCHOBJ) $(MAINOBJ) $(LIBS) \
+	-o racm_mim_stochastic.exe
+
+mex:    $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O racm_mim_mex_Fun.f90     $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O racm_mim_mex_Jac_SP.f90  $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O racm_mim_mex_Hessian.f90 $(ALLOBJ)
+
+clean:
+	rm -f racm_mim*.o racm_mim*.mod \
+	racm_mim*.dat racm_mim.exe racm_mim*.mexglx \
+	racm_mim.map
+
+distclean:
+	rm -f racm_mim*.o racm_mim*.mod \
+	racm_mim*.dat racm_mim.exe racm_mim.map \
+	racm_mim*.f90 racm_mim_*.mexglx
+
+racm_mim_Precision.o: racm_mim_Precision.f90 
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Parameters.o: racm_mim_Parameters.f90 \
+	            racm_mim_Precision.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Monitor.o: racm_mim_Monitor.f90 \
+	             racm_mim_Precision.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Global.o: racm_mim_Global.f90 \
+	            racm_mim_Parameters.o racm_mim_Precision.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Initialize.o: racm_mim_Initialize.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Function.o: racm_mim_Function.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Stochastic.o: racm_mim_Stochastic.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+racm_mim_JacobianSP.o: racm_mim_JacobianSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Jacobian.o: racm_mim_Jacobian.f90  $(GENOBJ) racm_mim_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_LinearAlgebra.o: racm_mim_LinearAlgebra.f90 $(GENOBJ) racm_mim_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Rates.o: racm_mim_Rates.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+racm_mim_HessianSP.o: racm_mim_HessianSP.f90  $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Hessian.o:  racm_mim_Hessian.f90 $(GENOBJ) racm_mim_HessianSP.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_StoichiomSP.o: racm_mim_StoichiomSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Stoichiom.o: racm_mim_Stoichiom.f90  $(GENOBJ) racm_mim_StoichiomSP.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Util.o: racm_mim_Util.f90  $(GENOBJ) racm_mim_Monitor.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Main.o: racm_mim_Main.f90  $(ALLOBJ) racm_mim_Initialize.o racm_mim_Model.o racm_mim_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Model.o: racm_mim_Model.f90  $(ALLOBJ) racm_mim_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+racm_mim_Integrator.o: racm_mim_Integrator.f90  $(ALLOBJ)
+	$(FC) $(FOPT) -c $<

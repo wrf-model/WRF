@@ -426,22 +426,29 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
 /********************************************/
 
 /* parent->nest */
-RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, comm0 )
-  int_p mytask_p, ntasks_p, comm0 ;
+RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, Fcomm )
+  int_p mytask_p, ntasks_p, Fcomm ;
 {
-  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 ) ;
+  MPI_Comm comm ;
+
+  comm = MPI_Comm_f2c( *Fcomm ) ;
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm ) ;
 }
 
 /* nest->parent */
-RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, comm0 )
-  int_p mytask_p, ntasks_p, comm0 ;
+RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, Fcomm )
+  int_p mytask_p, ntasks_p, Fcomm ;
 {
-  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 ) ;
+  MPI_Comm comm ;
+
+  comm = MPI_Comm_f2c( *Fcomm ) ;
+  rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm ) ;
 }
 
 /* common code */
-rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
-  int_p mytask_p, ntasks_p, comm0 ;
+rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
+  int_p mytask_p, ntasks_p ;
+  MPI_Comm comm ;
 {
   int P ;
   char *work ;
@@ -467,7 +474,7 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
   
   Psize_all = RSL_MALLOC( int, ntasks * ntasks ) ;
 
-  MPI_Allgather( Ssizes, ntasks, MPI_INT , Psize_all, ntasks, MPI_INT, *comm0 ) ;
+  MPI_Allgather( Ssizes, ntasks, MPI_INT , Psize_all, ntasks, MPI_INT, comm ) ;
 
   for ( j = 0 ; j < ntasks ; j++ ) 
     Rsizes[j] = 0 ;
@@ -490,7 +497,7 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm0 )
   Rreclen = 0 ;
 
   rc = MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
-                       Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  *comm0 ) ;
+                       Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  comm ) ;
 
 /* add sentinel to the end of Recvbuf */
 

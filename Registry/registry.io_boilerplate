@@ -653,6 +653,14 @@ rconfig   integer     io_form_auxhist9    namelist,time_control		1              
 rconfig   integer     io_form_auxhist10    namelist,time_control	1              2       h        "io_form_auxhist10"               ""      ""
 rconfig   integer     io_form_auxhist11    namelist,time_control	1              2       h        "io_form_auxhist11"               ""      ""
 
+rconfig   integer simulation_start_year   derived                  1              0       -        "simulation_start_year" "start of simulation through restarts" "4-digit year"
+rconfig   integer simulation_start_month  derived                  1              0       -        "simulation_start_month" "start of simulation through restarts" "2-digit month"
+rconfig   integer simulation_start_day    derived                  1              0       -        "simulation_start_day" "start of simulation through restarts" "2-digit day"
+rconfig   integer simulation_start_hour   derived                  1              0       -        "simulation_start_hour" "start of simulation through restarts" "2-digit hour"
+rconfig   integer simulation_start_minute derived                  1              0       -        "simulation_start_minute" "start of simulation through restarts" "2-digit minute"
+rconfig   integer simulation_start_second derived                  1              0       -        "simulation_start_second" "start of simulation through restarts" "2-digit second"
+rconfig   logical reset_simulation_start  namelist,time_control    1              .false. h        "reset_simulation_start" "set simulation start date equal to start date of this run" "logical"
+
 rconfig   integer   sr_x              namelist,domains    max_domains    0
 rconfig   integer   sr_y              namelist,domains    max_domains    0
 

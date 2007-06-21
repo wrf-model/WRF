@@ -146,7 +146,7 @@ IF ( ncd_ok_to_put_dom_ti( DataHandle ) ) THEN
       call wrf_debug ( WARN , msg)
       return
     endif
-    stat = NFMPI_ENDDEF(DH%NCID)
+!  stat = NFMPI_ENDDEF(DH%NCID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) &

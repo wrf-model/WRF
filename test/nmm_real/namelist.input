@@ -3,70 +3,79 @@
  run_hours                           = 0,   
  run_minutes                         = 0,
  run_seconds                         = 0,
- start_year                          = 2005,
- start_month                         = 01,
- start_day                           = 23,
- start_hour                          = 00,
- start_minute                        = 00,
- start_second                        = 00,
+ start_year                          = 2005,	2005,
+ start_month                         = 01,	01,
+ start_day                           = 23,	23,
+ start_hour                          = 00,	00,
+ start_minute                        = 00,	00,
+ start_second                        = 00,	00,
  tstart                              = 00,
- end_year                            = 2005,
- end_month                           = 01,
- end_day                             = 24,
- end_hour                            = 00,
- end_minute                          = 00,
- end_second                          = 00,
+ end_year                            = 2005,	2005,
+ end_month                           = 01,	01,
+ end_day                             = 24,	24,
+ end_hour                            = 00,	00,
+ end_minute                          = 00,	00,	
+ end_second                          = 00,	00,
  interval_seconds                    = 10800,
- history_interval                    = 60
- frames_per_outfile                  = 1,
+ history_interval                    = 60	60,
+ frames_per_outfile                  = 1,	1,
  restart                             = .false.,
  restart_interval                    = 6000,
+ io_form_input                       = 2
  io_form_history                     = 2
  io_form_restart                     = 2
- io_form_input                       = 2
- io_form_auxinput1                   = 2
  io_form_boundary                    = 2
- debug_level                         = 1
+ io_form_auxinput1                   = 2
+ auxinput1_inname                    = "met_nmm.d<domain>.<date>"
+ debug_level                         = 1 
  /
 
  &fdda
- /
+/
 
  &domains
- time_step                           = 45,
- time_step_fract_num                 = 0,
- time_step_fract_den                 = 1,
+ time_step                           = 34,
+ time_step_fract_num                 = 2,
+ time_step_fract_den                 = 7,
  max_dom                             = 1,
- s_we                                = 1,
- e_we                                = 56,
- s_sn                                = 1,
- e_sn                                = 92,
- s_vert                              = 1,
- e_vert                              = 38,
- dx                                  = .097500,
- dy                                  = .090600,
- grid_id                             = 1,
+ s_we                                = 1,	1
+ e_we                                = 56, 	58
+ s_sn                                = 1,	1
+ e_sn                                = 92, 	100
+ s_vert                              = 1,	1
+ e_vert                              = 38,	38
+ num_metgrid_levels                  = 40,
+ dx                                  = .09629,	.032097	
+ dy                                  = .096011,	.032004
+ grid_id                             = 1,	2
+ parent_id			     = 0, 	1
+ i_parent_start			     = 1,	17
+ j_parent_start			     = 1, 	31
+ parent_grid_ratio		     = 1, 	3
+ parent_time_step_ratio		     = 1, 	3
+ p_top_requested                     = 5000.
+ ptsgm                               = 42000.,
+ eta_levels   =   1.000, 0.994, 0.983, 0.968, 0.950, 0.930, 0.908, 0.882, 0.853, 0.821,
+                  0.788, 0.752, 0.715, 0.677, 0.637, 0.597, 0.557, 0.517, 0.477,
+                  0.438, 0.401, 0.365, 0.332, 0.302, 0.274, 0.248, 0.224, 0.201,
+                  0.179, 0.158, 0.138, 0.118, 0.098, 0.078, 0.058, 0.038, 0.018, 0.000
  tile_sz_x		   	     = 0,
  tile_sz_y		   	     = 0,
- numtiles			     = 1,
- /
-
+ numtiles			     = 1
+/
  &physics
- mp_physics                          = 5,
- ra_lw_physics                       = 99,
- ra_sw_physics                       = 99,
- radt                                = 60,
- nrads                               = 200,
- nradl                               = 200,
+ mp_physics                          = 5,	5,
+ ra_lw_physics                       = 99,	99,
+ ra_sw_physics                       = 99,	99,
+ nrads                               = 105, 	315,
+ nradl                               = 105,	315
  co2tf                               = 1,
- sf_sfclay_physics                   = 2,
- sf_surface_physics                  = 99,
- bl_pbl_physics                      = 2,
- bldt                                = 3,
- nphs                                = 10,
- cu_physics                          = 2,
- cudt                                = 3,
- ncnvc                               = 10,
+ sf_sfclay_physics                   = 2,	2,
+ sf_surface_physics                  = 99,	99,
+ bl_pbl_physics                      = 2,	2,
+ nphs                                = 6,	18,
+ cu_physics                          = 2,	2,
+ ncnvc                               = 6,	18,
  tprec                               = 3,
  theat                               = 6,
  tclod                               = 6,
@@ -78,48 +87,28 @@
  ifsnow                              = 0,
  icloud                              = 0,
  num_soil_layers                     = 4,
- mp_zero_out                         = 0,
+ maxiens			     = 1,
+ maxens				     = 3
+ maxens2			     = 3
+ maxens3			     = 16
+ ensdim				     = 144
+ mp_zero_out                         = 0
  /
 
  &dynamics
- dyn_opt                             = 4,
- rk_ord                              = 3,
- diff_opt                            = 0,
- km_opt                              = 1,
- damp_opt                            = 1,
- zdamp                               = 5000.,
- dampcoef                            = 0.01,
- khdif                               = 0,
- kvdif                               = 0,
- mix_cr_len			     = 200.,
- smdiv                               = 0.1,
- emdiv                               = 0.01,
- epssm                               = 0.1,
- time_step_sound                     = 4,
+ dyn_opt                             = 4
  /
 
  &bdy_control
  spec_bdy_width                      = 1,
- spec_zone                           = 1,
- relax_zone                          = 4,
  specified                           = .true.,
- periodic_x                          = .false.,
- symmetric_xs                        = .false.,
- symmetric_xe                        = .false.,
- open_xs                             = .false.,
- open_xe                             = .false.,
- periodic_y                          = .false.,
- symmetric_ys                        = .false.,
- symmetric_ye                        = .false.,
- open_ys                             = .false.,
- open_ye                             = .false.,
- nested                              = .false.,
+ nested                              = .false.
  /
 
  &grib2
- /
+/
 
  &namelist_quilt
  nio_tasks_per_group = 0,
- nio_groups = 1,
+ nio_groups = 1
  /

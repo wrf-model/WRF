@@ -81,6 +81,8 @@ PROGRAM real_data
    CALL disable_quilting
 #endif
 
+!	CALL start()
+
    !  Initialize the modules used by the WRF system.  
    !  Many of the CALLs made from the
    !  init_modules routine are NO-OPs.  Typical initializations 
@@ -99,7 +101,8 @@ PROGRAM real_data
 
 #ifdef DM_PARALLEL
    IF ( wrf_dm_on_monitor() ) THEN
-	write(0,*) 'call initial_config'
+      write(message,*) 'call initial_config'
+      CALL wrf_message ( message )
       CALL initial_config
    ENDIF
    CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
@@ -138,8 +141,9 @@ PROGRAM real_data
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-	write(0,*) 'after model_to_grid_config_rec, e_we, e_sn are: ', &
+	write(message,*) 'after model_to_grid_config_rec, e_we, e_sn are: ', &
                     config_flags%e_we, config_flags%e_sn
+        CALL wrf_message(message)
 
    !  Initialize the WRF IO: open files, init file handles, etc.
 
@@ -209,7 +213,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER                :: time_step_begin_restart
    INTEGER                :: idsi , ierr , myproc
    CHARACTER (LEN=80)      :: si_inpname
-   CHARACTER (LEN=80)      :: message
+   CHARACTER (LEN=132)      :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , &
                         current_date_char , next_date_char
@@ -219,6 +223,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
    INTEGER :: io_form_auxinput1
    INTEGER, EXTERNAL :: use_package
+
+   LOGICAL :: using_binary_wrfsi
 
    REAL :: gmt
    REAL :: t1,t2
@@ -267,15 +273,23 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
    !  Loop over each time period to process.
 
-   write(0,*) 'time_loop_max: ', time_loop_max
+   write(message,*) 'time_loop_max: ', time_loop_max
+   CALL wrf_message(message)
    DO loop = 1 , time_loop_max
 
-      write(0,*) 'loop=', loop
+      internal_time_loop=loop
 
-      print *,'-----------------------------------------------------------'
-      print *,' '
-      print '(A,A,A,I2,A,I2)' , ' Current date being processed: ', &
+      write(message,*) 'loop=', loop
+      CALL wrf_message(message)
+
+      write(message,*) '-----------------------------------------------------------'
+      CALL wrf_message(message)
+   
+      write(message,*) ' '
+      CALL wrf_message(message)
+      write(message,'(A,A,A,I2,A,I2)') ' Current date being processed: ', &
         current_date, ', which is loop #',loop,' out of ',time_loop_max
+      CALL wrf_message(message)
 
       !  After current_date has been set, fill in the julgmt stuff.
 
@@ -290,7 +304,18 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL nl_set_julday (grid%id, config_flags%julday)
 
       CALL nl_get_io_form_auxinput1( 1, io_form_auxinput1 )
-      write(0,*)" io_form_auxinput1 = ",io_form_auxinput1
+
+      using_binary_wrfsi=.false.
+
+
+  IF ( grid%dyn_opt .EQ. dyn_nmm ) THEN
+
+        write(message,*) 'TRIM(config_flags%auxinput1_inname): ', TRIM(config_flags%auxinput1_inname)
+        CALL wrf_message(message)
+
+        IF (config_flags%auxinput1_inname(1:10) .eq. 'real_input') THEN
+           using_binary_wrfsi=.true.
+        ENDIF
 
       SELECT CASE ( use_package(io_form_auxinput1) )
 #ifdef NETCDF
@@ -298,26 +323,25 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       !  Open the wrfinput file.
 
-      IF ( grid%dyn_opt .EQ. dyn_nmm ) THEN
-         CALL  wrf_debug ( 100 , 'med_sidata_input: calling open_r_dataset for wrf_real_input_nm' )
-         current_date_char(11:11)='_'
-         CALL construct_filename2( si_inpname , 'wrf_real_input_nm' , &
-                                         grid%id , 2 , current_date_char )
-         current_date_char(11:11)='T'
-      ELSE
-         CALL wrf_error_fatal('real: error cant handle this grid%dyn_opt' )
-      END IF
+        current_date_char(11:11)='_'
 
-      CALL open_r_dataset ( idsi, TRIM(si_inpname), grid, config_flags, "DATASET=AUXINPUT1", ierr )
+       WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
+       CALL wrf_debug ( 100 , wrf_err_message )
+       IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
+          CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , &
+                                     config_flags%io_form_auxinput1 )
+       ELSE
+          CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
+       END IF
+       CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+       IF ( ierr .NE. 0 ) THEN
+          CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
+       ENDIF
 
-      IF ( ( ierr .NE. 0 ) .AND. ( grid%dyn_opt .EQ. dyn_nmm ) ) THEN
-        CALL wrf_error_fatal('real: error opening wrf_real_input_nm for read '//TRIM(si_inpname) )
-      ENDIF
 
       !  Input data.
 
       CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
-
       CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
 
       !  Possible optional SI input.  This sets flags used by init_domain.
@@ -325,11 +349,12 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       IF ( loop .EQ. 1 ) THEN
          CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
          CALL init_module_optional_si_input ( grid , config_flags )
-      END IF
+!mp      END IF
       CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
-!
       CALL optional_si_input ( grid , idsi )
-	write(0,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
+
+      ENDIF
+
 !
       CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
 
@@ -344,14 +369,66 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
          CALL init_module_optional_si_input ( grid , config_flags )
       END IF
 
-      current_date_char(11:11)='_'
-      CALL read_si ( grid, current_date_char )
-      current_date_char(11:11)='T'
+      IF (using_binary_wrfsi) THEN
+ 
+        current_date_char(11:11)='_'
+        CALL read_si ( grid, current_date_char )
+        current_date_char(11:11)='T'
 
+      ELSE
+
+        write(message,*) 'binary WPS branch'
+        CALL wrf_message(message)
+        CALL wrf_error_fatal("binary WPS support deferred for initial release")
+
+!       WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
+!       CALL wrf_debug ( 100 , wrf_err_message )
+!       CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , config_flags%io_form_auxinput1 )
+!       CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+
+!         IF ( ierr .NE. 0 ) THEN
+!            CALL wrf_debug( 1 , 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
+!            CALL wrf_debug( 1 , 'will try again without the extension' )
+!            CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
+!            CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+!            IF ( ierr .NE. 0 ) THEN
+!               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
+!            ENDIF
+!         ENDIF
+
+      !  Input data.
+
+!!! believe problematic as binary data from WPS will be XYZ ordered, while this
+!!! version of WRF will read in as XZY.  OR read all fields in as unique
+!!! Registry items that are XYZ, then swap.  More memory, and more overhead, but
+!!! better than having a stand alone "read_si" type code??
+
+!      CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
+!      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
+
+      !  Possible optional SI input.  This sets flags used by init_domain.
+
+!      IF ( loop .EQ. 1 ) THEN
+!         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
+!         CALL init_module_optional_si_input ( grid , config_flags )
+!      END IF
+!      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
+!
+!      CALL optional_si_input ( grid , idsi )
+!        flag_metgrid=1
+
+!
+!      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
+
+          ENDIF
 #endif
       CASE DEFAULT
         CALL wrf_error_fatal('real: not valid io_form_auxinput1')
       END SELECT
+
+  ELSE
+        call wrf_error_fatal("WRONG DYNAMICAL CORE SELECTED FOR THIS VERSION OF REAL - CHECK dyn_opt in namelist.input file")
+  ENDIF
 
       grid%nmm_islope=1
       grid%vegfra=grid%nmm_vegfrc
@@ -376,7 +453,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
 !!! not sure about this, but doesnt seem like needs to be called each time
       IF ( loop .EQ. 1 ) THEN
-	write(0,*) 'call start_domain'
         CALL start_domain ( grid , .TRUE.)
       END IF
 
@@ -404,8 +480,10 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
               message = 'STARTING WITH BACKGROUND CHEMISTRY '
               CALL  wrf_message ( message )
 
-              print *,' ETA1 '
-              print *, grid%nmm_eta1
+              write(message,*)' ETA1 '
+              CALL  wrf_message ( message )
+              write(message,*) grid%nmm_eta1
+              CALL  wrf_message ( message )
 
               CALL input_chem_profile ( grid )
 
@@ -436,7 +514,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       CALL domain_clock_set( grid, current_date(1:19) )
 
-      write(0,*) 'current_date= ', current_date
+      write(message,*) 'current_date= ', current_date
+      CALL wrf_message(message)
 
    END DO
 END SUBROUTINE med_sidata_input
@@ -460,7 +539,8 @@ SUBROUTINE compute_si_start_and_end (  &
    INTEGER :: interval_seconds , real_data_init_type
    INTEGER :: time_loop_max , time_loop
 
-   CHARACTER(LEN=19) :: current_date_char , start_date_char , &
+   CHARACTER(LEN=132) :: message
+   CHARACTER(LEN=19)  :: current_date_char , start_date_char , &
                         end_date_char , next_date_char
 
 !   WRITE ( start_date_char , FMT = &
@@ -505,7 +585,8 @@ SUBROUTINE compute_si_start_and_end (  &
          EXIT loop_count
       END IF
    END DO loop_count
-	write(0,*) 'done in si_start_and_end'
+	write(message,*) 'done in si_start_and_end'
+        CALL wrf_message(message)
 END SUBROUTINE compute_si_start_and_end
 
 SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
@@ -534,6 +615,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
    INTEGER , SAVE :: id 
    CHARACTER (LEN=80) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
+   CHARACTER(LEN=132) :: message
 character *19 :: temp19
 character *24 :: temp24 , temp24b
 
@@ -580,23 +662,29 @@ character *24 :: temp24 , temp24b
    jps = grid%sp33
    jpe = grid%ep33-1 ! 030730tst
 
-!!!!!!! believe IPE and JPE should be larger if they aren't on the global
-!!!!!!! boundary
-
         if (IPE .ne. IDE) IPE=IPE+1
         if (JPE .ne. JDE) JPE=JPE+1
 
-	write(0,*) 'assemble output (ids,ide): ', ids,ide
-	write(0,*) 'assemble output (ims,ime): ', ims,ime
-	write(0,*) 'assemble output (ips,ipe): ', ips,ipe
+	write(message,*) 'assemble output (ids,ide): ', ids,ide
+        CALL wrf_message(message)
+	write(message,*) 'assemble output (ims,ime): ', ims,ime
+        CALL wrf_message(message)
+	write(message,*) 'assemble output (ips,ipe): ', ips,ipe
+        CALL wrf_message(message)
 
-	write(0,*) 'assemble output (jds,jde): ', jds,jde
-	write(0,*) 'assemble output (jms,jme): ', jms,jme
-	write(0,*) 'assemble output (jps,jpe): ', jps,jpe
+	write(message,*) 'assemble output (jds,jde): ', jds,jde
+        CALL wrf_message(message)
+	write(message,*) 'assemble output (jms,jme): ', jms,jme
+        CALL wrf_message(message)
+	write(message,*) 'assemble output (jps,jpe): ', jps,jpe
+        CALL wrf_message(message)
 
-	write(0,*) 'assemble output (kds,kde): ', kds,kde
-	write(0,*) 'assemble output (kms,kme): ', kms,kme
-	write(0,*) 'assemble output (kps,kpe): ', kps,kpe
+	write(message,*) 'assemble output (kds,kde): ', kds,kde
+        CALL wrf_message(message)
+	write(message,*) 'assemble output (kms,kme): ', kms,kme
+        CALL wrf_message(message)
+	write(message,*) 'assemble output (kps,kpe): ', kps,kpe
+        CALL wrf_message(message)
 
    ijds = MIN ( ids , jds )
 !mptest030805   ijde = MAX ( ide , jde )
@@ -607,7 +695,6 @@ character *24 :: temp24 , temp24b
    spec_bdy_width = model_config_rec%spec_bdy_width
    interval_seconds = model_config_rec%interval_seconds
 
-      write(0,*)' in assemble_ouput loop=',loop
 !-----------------------------------------------------------------------
 !
    main_loop_test: IF ( loop .EQ. 1 ) THEN
@@ -617,8 +704,6 @@ character *24 :: temp24 , temp24b
    !  This is the space needed to save the current 3d data for use in computing
    !  the lateral boundary tendencies.
 
-	write(0,*) 'allocating 3d arrays passed into stuff_bdy with vert lims: ', &
-                  kms, kme
       ALLOCATE ( ubdy3dtemp1(ims:ime,kms:kme,jms:jme) )
       ALLOCATE ( vbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
       ALLOCATE ( tbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
@@ -665,10 +750,10 @@ character *24 :: temp24 , temp24b
 !     CALL calc_current_date ( grid%id , 0. )
 !      grid%write_metadata = .true.
 
-	write(0,*) 'making call to output_model_input'
+	write(message,*) 'making call to output_model_input'
+        CALL wrf_message(message)
 
         CALL output_model_input ( id1, grid , config_flags , ierr )
-	write(0,*) 'ierr from output_model_input: ', ierr
 
 !***
 !***  CLOSE THE WRFINPUT DATASET
@@ -678,7 +763,6 @@ character *24 :: temp24 , temp24b
       !  We need to save the 3d data to compute a 
       !  difference during the next loop. 
 
-   write(0,*) 'I,J,K lims: ', MIN(ide,ipe), MIN(jde,jpe), MIN(kde,kpe)
 !
 !-----------------------------------------------------------------------
 !***  SOUTHERN BOUNDARY
@@ -731,7 +815,8 @@ character *24 :: temp24 , temp24b
 !***  WESTERN BOUNDARY
 !-----------------------------------------------------------------------
 !
-	write(0,*) 'western boundary, store winds over J: ', jps, min(jpe,jde)
+	write(message,*) 'western boundary, store winds over J: ', jps, min(jpe,jde)
+         CALL wrf_message(message)
         IF(IPS==IDS)THEN
           I=1
           DO k = kps , MIN(kde,kpe)
@@ -744,7 +829,8 @@ character *24 :: temp24 , temp24b
             cwmbdy3dtemp1(i,k,j) = grid%nmm_cwm(i,k,j)
             q2bdy3dtemp1(i,k,j) = grid%nmm_q2(i,k,j)
       if(k==1)then
-        write(0,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,k,j)=',tbdy3dtemp1(i,k,j)
+        write(message,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,k,j)=',tbdy3dtemp1(i,k,j)
+        CALL wrf_debug(10,message)
       endif
 	endif
           END DO
@@ -764,7 +850,8 @@ character *24 :: temp24 , temp24b
         DO j = jps+inc_h, min(jde,jpe),2
         if (J .ge. 3 .and. J .le. JDE-2 .and. mod(J,2) .eq. 1) then
             pdbdy2dtemp1(i,1,j) = grid%nmm_pd(i,j)
-      write(0,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,1,j)=',pdbdy2dtemp1(i,1,j)
+      write(message,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,1,j)=',pdbdy2dtemp1(i,1,j)
+        CALL wrf_debug(10,message)
 	endif
           END DO
         ENDIF
@@ -823,11 +910,6 @@ character *24 :: temp24 , temp24b
                                         ids , ide+1 , jds , jde+1 , kds , kde+1 , &
                                         ims , ime , jms , jme , kms , kme , &
                                         ips , ipe , jps , jpe , kps , kpe+1 )
-	write(0,*) 'size (dim 1) nmm_t_b: ', size(grid%nmm_t_b, dim=1)
-	write(0,*) 'size (dim 2) nmm_t_b: ', size(grid%nmm_t_b, dim=2)
-	write(0,*) 'size (dim 3) nmm_t_b: ', size(grid%nmm_t_b, dim=3)
-	write(0,*) 'size (dim 4) nmm_t_b: ', size(grid%nmm_t_b, dim=4)
-
  CALL stuff_bdy ( tbdy3dtemp1, grid%nmm_t_b, 'N', ijds, ijde, spec_bdy_width, &
                                         ids , ide+1 , jds , jde+1 , kds , kde+1 , &
                                         ims , ime , jms , jme , kms , kme , &
@@ -848,9 +930,6 @@ character *24 :: temp24 , temp24b
                                         ims , ime , jms , jme , kms , kme , &
                                         ips , ipe , jps , jpe , kps , kpe+1 )
 
-	write(0,*) 'stuff_bdy lims for pdbdy I: ', ids, ide+1
-	write(0,*) 'stuff_bdy lims for pdbdy J: ', jds, jde+1
-
  CALL stuff_bdy ( pdbdy2dtemp1,grid%nmm_pd_b,'M', ijds,ijde, spec_bdy_width, &
                                         ids , ide+1 , jds , jde+1 , 1 , 1 , &
                                         ims , ime , jms , jme , 1 , 1 , &
@@ -862,7 +941,9 @@ character *24 :: temp24 , temp24b
 !
 !-----------------------------------------------------------------------
 
-      write(0,*)' assemble_ouput loop=',loop,' in IF block'
+      write(message,*)' assemble_output loop=',loop,' in IF block'
+      call wrf_message(message)
+
       !  Open the boundary file.
 
       IF ( loop .eq. 2 ) THEN
@@ -879,8 +960,6 @@ character *24 :: temp24 , temp24b
 !         grid%write_metadata = .false.
          CALL domain_clockadvance( grid )
       END IF
-
-      write(0,*)' assemble_ouput loop=',loop,' point 2'
 
 !
 !-----------------------------------------------------------------------
@@ -932,19 +1011,20 @@ character *24 :: temp24 , temp24b
 !***  WESTERN BOUNDARY
 !-----------------------------------------------------------------------
 !
-      write(0,*)' assemble_ouput loop=',loop,' point 3 ips=',ips,' ids=',ids
         IF(IPS==IDS)THEN
           I=1
           DO k = kps , MIN(kde,kpe)
           inc_h=mod(jps+1,2)
       if(k==1)then
-        write(0,*)' assemble_ouput loop=',loop,' inc_h=',inc_h,' jps=',jps
+        write(message,*)' assemble_ouput loop=',loop,' inc_h=',inc_h,' jps=',jps
+        call wrf_debug(10,message)
       endif
           DO j = jps+inc_h, MIN(jde,jpe),2
         if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
             tbdy3dtemp2(i,k,j) = grid%nmm_t(i,k,j)
       if(k==1)then
-        write(0,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,k,j)=',tbdy3dtemp1(i,k,j)
+        write(message,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,k,j)=',tbdy3dtemp1(i,k,j)
+        call wrf_debug(10,message)
       endif
             qbdy3dtemp2(i,k,j) = grid%nmm_q(i,k,j)
             cwmbdy3dtemp2(i,k,j) = grid%nmm_cwm(i,k,j)
@@ -963,12 +1043,12 @@ character *24 :: temp24 , temp24b
           END DO
           END DO
 
-	write(0,*) 'western boundary pdbdy J lims: ',  jps, min(jde,jpe)
           inc_h=mod(jps+1,2)
         DO j = jps+inc_h, MIN(jde,jpe),2
         if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
             pdbdy2dtemp2(i,1,j) = grid%nmm_pd(i,j)
-      write(0,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,1,j)=',pdbdy2dtemp1(i,1,j)
+      write(message,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,1,j)=',pdbdy2dtemp1(i,1,j)
+      CALL wrf_debug(10,message)
 	endif
           END DO
         ENDIF
@@ -1057,19 +1137,12 @@ character *24 :: temp24 , temp24b
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe+1 )
 
-       if(jps==jds.and.ips==ids) write(0,*) 'pdbdy2dtemp2(1,1,1): ', pdbdy2dtemp2(1,1,1)
-
-	write(0,*) 'stuff_bdytend lims for pdbdy I: ', ids, ide+1
-	write(0,*) 'stuff_bdytend lims for pdbdy J: ', jds, jde+1
-
     CALL stuff_bdytend( pdbdy2dtemp2 , pdbdy2dtemp1, REAL(interval_seconds),&
                                    grid%nmm_pd_bt  , 'M' , &
                                    ijds , ijde , spec_bdy_width      , &
                                    ids , ide+1 , jds , jde+1 , 1 , 1 , &
                                    ims , ime , jms , jme , 1 , 1 , &
                                    ips , ipe , jps , jpe , 1 , 1 )
-
-       write(0,*) 'grid%nmm_pd_bt(1,1): ', grid%nmm_pd_bt(1,1,1,1)
 
       !  Both pieces of the boundary data are now 
       !  available to be written (initial time and tendency).
@@ -1090,7 +1163,8 @@ character *24 :: temp24 , temp24b
                          (loop-2) * model_config_rec%interval_seconds )
       current_date = temp19 //  '.0000'
        CALL domain_clock_set( grid, current_date(1:19) )
- print *,'LBC valid between these times ',current_date, ' ',start_date
+      write(message,*) 'LBC valid between these times ',current_date, ' ',start_date
+      CALL wrf_message(message)
 
       CALL output_boundary ( id, grid , config_flags , ierr )
       current_date = temp24
@@ -1124,8 +1198,6 @@ character *24 :: temp24 , temp24b
 
 
 !mp	change these limits?????????
-
-	write(0,*) 'limits at end: ipe,jpe,kpe: ', ipe,jpe,kpe
 
          DO j = jps , jpe
             DO k = kps , kpe
@@ -1192,8 +1264,6 @@ character *24 :: temp24 , temp24b
                                           ids , ide+1 , jds , jde+1 , 1 , 1 , &
                                           ims , ime , jms , jme , 1 , 1 , &
                                           ips , ipe , jps , jpe , 1 , 1 )
-
-            write(0,*) 'grid%nmm_pd_b(1,1): ', grid%nmm_pd_b(1,1,1,1)
 
       ELSE IF ( loop .EQ. time_loop_max ) THEN
 

@@ -643,9 +643,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      END SUBROUTINE BASE_STATE_PARENT
 
-     SUBROUTINE NEST_TERRAIN ( nest )
+     SUBROUTINE NEST_TERRAIN ( nest, config_flags )
        USE module_domain
        TYPE(domain) , POINTER                        :: nest
+       TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
      END SUBROUTINE NEST_TERRAIN
 
     SUBROUTINE med_interp_domain ( parent , nest )
@@ -744,7 +745,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     JTE = nest%ep33
 
 
-    CALL NEST_TERRAIN ( nest )
+    CALL NEST_TERRAIN ( nest, config_flags )
 
 !   Initialize some more constants required especially for terrain adjustment processes
 
@@ -1736,6 +1737,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    CHARACTER (LEN=80)                     :: bdyname
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
+integer myproc,i,j,k
 
 #include <wrf_io_flags.h>
 
@@ -1798,10 +1800,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
          WRITE ( message , FMT = '("processing lateral boundary for domain ",I8)' ) grid%id
          CALL end_timing ( TRIM(message) )
        ENDIF
-
-!#if 0
      ENDIF
-!#endif
    ENDIF
    RETURN
 END SUBROUTINE med_latbound_in

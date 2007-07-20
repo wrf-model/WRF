@@ -64,9 +64,13 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
                                                 ; 2 = Dated files with length set by frames_per_emissfile
  debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
 
-To choose between SI and WPS input to real:
+To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS
                                      = "wrf_real_input_em.d<domain>.<date>"  ; Input to real from SI
+
+To choose between SI and WPS input to real for NMM core:
+ auxinput1_inname                    = "met_nmm.d<domain>.<date>"             ; Input to real from WPS
+                                     = "wrf_real_input_nm.d<domain>.<date>"  ; Input to real from SI
 
 Other output options:
 
@@ -149,6 +153,10 @@ Namelist variables specifically for the WPS input for real:
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
+ ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
+                                                ;           the terrain following portion of the hybrid vertical
+                                                ;           coordinate (p > ptsgm) and the purely
+                                                ;           isobaric portion of the vertical coordinate (p < ptsgm)
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
@@ -397,8 +405,8 @@ The following are for observation nudging:
  obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1 (not used)
  obs_rinxy                           = 200.,    ; horizonal radius of influence in km
  obs_rinsig                          = 0.1,     ; vertical radius of influence in eta
- obs_twindo                          = 40,      ; half-period time window over which an observation 
-                                                  will be used for nudging
+ obs_twindo                          = 0.66667  ; half-period time window over which an observation 
+                                                  will be used for nudging (hours)
  obs_npfi                            = 10,      ; freq in coarse grid timesteps for diag prints
  obs_ionf                            = 2        ; freq in coarse grid timesteps for obs input and err calc
  obs_idynin                          = 0        ; for dynamic initialization using a ramp-down function to gradually
@@ -423,7 +431,7 @@ The following are for observation nudging:
                                                       diffusion term on coordinate surfaces.
                                                       uses kvdif for vertical diff unless PBL option
                                                       is used. may be used with km_opt = 1 and 4.
-                                                      (= 1, recommended for real-data case when grid distance < 10 km)
+                                                      (= 1, recommended for real-data cases)
                                                   2 = evaluates mixing terms in
                                                       physical space (stress form) (x,y,z).
                                                       turbulence parameterization is chosen
@@ -434,7 +442,7 @@ The following are for observation nudging:
                                                   3 = Smagorinsky first order closure (3D)
                                                       Note: option 2 and 3 are not recommended for DX > 2 km
                                                   4 = horizontal Smagorinsky first order closure
-                                                      (recommended for real-data case when grid distance < 10 km)
+                                                      (recommended for real-data cases)
  damp_opt                            = 0,	; upper level damping flag 
                                                   0 = without damping
                                                   1 = with diffusive damping, maybe used for real-data cases 

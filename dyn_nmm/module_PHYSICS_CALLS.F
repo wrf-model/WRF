@@ -316,8 +316,9 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-     &                 ,cu_rad_feedback=config_flags%cu_rad_feedback    &
 #ifdef WRF_CHEM
+     &                 ,cu_rad_feedback=config_flags%cu_rad_feedback    &
+     &                 ,aer_ra_feedback=config_flags%aer_ra_feedback    &
      &        ,PM2_5_DRY=pm2_5_dry, PM2_5_WATER=pm2_5_water               &
      &        ,PM2_5_DRY_EC=pm2_5_dry_ec                                  &
      &        ,TAUAER300=tauaer1, TAUAER400=tauaer2, TAUAER600=tauaer3, TAUAER999=tauaer4 & ! jcb
@@ -505,6 +506,7 @@
         DO I=MYIS1,IENDX
           HBOT(I,J)=HBOTR(I,J)
           HTOP(I,J)=HTOPR(I,J)
+          CUPPT(I,J)=CUPPTR(I,J)
         ENDDO
       ENDDO
 !-----------------------------------------------------------------------
@@ -1097,7 +1099,7 @@
      &               ,U_FRAME=U_FRAME,V_FRAME=V_FRAME                 &
      &               ,RUBLTEN=DUDT,RVBLTEN=DVDT,RTHBLTEN=RTHBLTEN     &
      &               ,RQVBLTEN=RQVBLTEN,RQCBLTEN=RQCBLTEN             &
-     &               ,RQSBLTEN=RQIBLTEN                               &
+     &               ,RQIBLTEN=RQIBLTEN                               &
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,HT=SFCZ             &
      &               ,UST=USTAR, PBLH=PBLH                            &
      &               ,HFX=TWBS,QFX=QWBS,  GRDFLX=GRNFLX               &
@@ -1291,7 +1293,11 @@
           Q(I,K,J)=RATIOMX/(1.+RATIOMX)
 !         Q(I,K,J)=MAX(Q(I,K,J),EPSQ)
           QW=max(0.,MOIST(I,K,J,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
-          QI=max(0.,MOIST(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS )
+          IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+            QI=max(0.,MOIST(I,K,J,P_QS)+RQIBLTEN(I,K,J)*DTPHS )
+          ELSE
+            QI=max(0.,MOIST(I,K,J,P_QI)+RQIBLTEN(I,K,J)*DTPHS )
+          ENDIF
           QR=max(0.,MOIST(I,K,J,P_QR) )
 !          CWM(I,K,J)=QW+QI+QR
           CWM(I,K,J)=0. 
@@ -1310,10 +1316,10 @@
           ENDDO
 !
           MOIST(I,K,J,P_QC)=QW
-          MOIST(I,K,J,P_QS)=QI
           MOIST(I,K,J,P_QR)=QR
 !
           IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+          MOIST(I,K,J,P_QS)=QI
             IF(QI<=EPSQ)THEN  
               F_ICE(I,K,J)=0.
             ELSE
@@ -1325,6 +1331,8 @@
             ELSE
               F_RAIN(I,K,J)=QR/(QW+QR)
             ENDIF
+          ELSE
+          MOIST(I,K,J,P_QI)=QI
           ENDIF
 !
           Q2(I,K,J)=2.*TKE(I,K,J)
@@ -1504,7 +1512,7 @@
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
 #ifdef WRF_CHEM
-     &                 ,GD_CLOUD,GD_CLOUD2                              &
+     &                 ,GD_CLOUD,GD_CLOUD2,RAINCV                       &
 #endif
 !
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
@@ -1600,7 +1608,9 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: moist
 #ifdef WRF_CHEM
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD,GD_CLOUD2
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
+     &                                                        ,GD_CLOUD2
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: RAINCV
 #endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
@@ -1624,8 +1634,12 @@
 !
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,RAINC,RAINCV   &
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: CUBOT,CUTOP,NCA,RAINC          &
      &                                  ,SFCZ,XLAND
+!
+#ifndef WRF_CHEM
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: RAINCV
+#endif
 !
       REAL,DIMENSION(IMS:IME,KMS:KME) :: WMID
 !
@@ -1956,8 +1970,14 @@
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
           CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME)
-             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC)
-             MOIST(I,K,J,P_QC)=MAX(0.,MOIST(I,K,J,P_QC)+RQCCUTEN(I,K,J)*DTCNVC)
+           IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
+           ELSE
+             MOIST(I,K,J,P_QI)=MAX(0.,MOIST(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)
+             MOIST(I,K,J,P_QS)=MAX(0.,MOIST(I,K,J,P_QS)+RQSCUTEN(I,K,J)*DTCNVC)
+           ENDIF
+           MOIST(I,K,J,P_QR)=MAX(0.,MOIST(I,K,J,P_QR)+RQRCUTEN(I,K,J)*DTCNVC)
+           MOIST(I,K,J,P_QC)=MAX(0.,MOIST(I,K,J,P_QC)+RQCCUTEN(I,K,J)*DTCNVC)
           END SELECT cps_select
 !
           TCUCN(I,K,J)=TCUCN(I,K,J)+DTDT

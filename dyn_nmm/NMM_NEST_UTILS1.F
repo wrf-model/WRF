@@ -101,6 +101,7 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
     CALL nl_get_cen_lat (parent%id, parent%cen_lat) ! cen_lat of parent set to nested domain
     CALL nl_get_cen_lon (parent%id, parent%cen_lon) ! cen_lon of parent set to nested domain
+
     nest%cen_lat=parent%cen_lat
     nest%cen_lon=parent%cen_lon
 !
@@ -1837,7 +1838,7 @@ END SUBROUTINE BASE_STATE_PARENT
       END SUBROUTINE SPLINE1
 !---------------------------------------------------------------------
 
-SUBROUTINE NEST_TERRAIN ( nest )
+SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  USE module_domain
  USE module_configure
@@ -1848,6 +1849,7 @@ SUBROUTINE NEST_TERRAIN ( nest )
  IMPLICIT NONE
 
  TYPE(domain) , POINTER                        :: nest
+ TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
 
 !
 ! Local variables
@@ -1859,7 +1861,7 @@ SUBROUTINE NEST_TERRAIN ( nest )
  INTEGER                           :: its,ite,jts,jte,kts,kte 
  INTEGER                           :: i_parent_start, j_parent_start
  INTEGER                           :: parent_grid_ratio
- INTEGER                           :: i,j,ii,jj,nnxp,nnyp
+ INTEGER                           :: n,i,j,ii,jj,nnxp,nnyp
  INTEGER                           :: i_start,j_start,level
  REAL, ALLOCATABLE, DIMENSION(:,:) :: data1     ! for highres topo
  REAL, ALLOCATABLE, DIMENSION(:,:) :: avc_big, lnd_big, lah_big, loh_big
@@ -1867,7 +1869,41 @@ SUBROUTINE NEST_TERRAIN ( nest )
  INTEGER                           :: im_big, jm_big, i_add
  INTEGER                           :: im, jm
  CHARACTER(LEN=6)                  :: nestpath
- 
+
+ integer                           :: input_type
+ character(len=128)                :: input_fname
+ character (len=32)                :: cname
+ integer                           :: ndim
+ character (len=3)                 :: memorder
+ character (len=32)                :: stagger
+ integer, dimension(3)             :: domain_start, domain_end
+ integer                           :: wrftype
+ character (len=128), dimension(3) :: dimnames
+
+ integer :: istatus
+ integer :: handle
+ integer :: comm_1, comm_2
+
+ real, allocatable, dimension(:,:,:) :: real_domain
+
+ character (len=10), dimension(4)  :: name = (/ "XLAT_M    ", &
+                                                "XLONG_M   ", &
+                                                "LANDMASK  ", &
+                                                "HGT_M     " /)
+
+ integer, parameter :: IO_BIN=1, IO_NET=2
+
+ integer :: io_form_input
+
+ write(0,*)"in NEST_TERRAIN config_flags%io_form_input = ", config_flags%io_form_input
+ write(0,*)"in NEST_TERRAIN config_flags%auxinput1_inname = ", config_flags%auxinput1_inname
+ io_form_input = config_flags%io_form_input
+ if (config_flags%auxinput1_inname(1:7) == "met_nmm") then
+    input_type = 2
+ else
+    input_type = 1
+ end if
+
 !----------------------------------------------------------------------------------
 
       IDS = nest%sd31
@@ -1913,15 +1949,140 @@ SUBROUTINE NEST_TERRAIN ( nest )
        write(nestpath,"(a4,i1,a1)") 'nest',level,'/'
 
        if ( level > 0 ) then
-          CALL get_wrfsi_static_dims(nestpath, im_big, jm_big)
-          ALLOCATE (avc_big(im_big,jm_big))
-          ALLOCATE (lnd_big(im_big,jm_big))
-          ALLOCATE (lah_big(im_big,jm_big))
-          ALLOCATE (loh_big(im_big,jm_big))
-          CALL get_wrfsi_static_2d(nestpath, 'avc', avc_big)
-          CALL get_wrfsi_static_2d(nestpath, 'lnd', lnd_big)
-          CALL get_wrfsi_static_2d(nestpath, 'lah', lah_big)
-          CALL get_wrfsi_static_2d(nestpath, 'loh', loh_big)
+
+          if (input_type == 1) then
+!
+!        SI version of the static file
+!
+             CALL get_wrfsi_static_dims(nestpath, im_big, jm_big)
+             ALLOCATE (avc_big(im_big,jm_big))
+             ALLOCATE (lnd_big(im_big,jm_big))
+             ALLOCATE (lah_big(im_big,jm_big))
+             ALLOCATE (loh_big(im_big,jm_big))
+             CALL get_wrfsi_static_2d(nestpath, 'avc', avc_big)
+             CALL get_wrfsi_static_2d(nestpath, 'lnd', lnd_big)
+             CALL get_wrfsi_static_2d(nestpath, 'lah', lah_big)
+             CALL get_wrfsi_static_2d(nestpath, 'loh', loh_big)
+
+          else if (input_type == 2) then
+!
+!        WPS version of the static file
+!
+
+#ifdef INTIO
+             if (io_form_input == IO_BIN) write(input_fname,"(A,I2.2,A)") "geo_nmm_nest.l",level,".int"
+#endif
+#ifdef NETCDF
+             if (io_form_input == IO_NET) write(input_fname,"(A,I2.2,A)") "geo_nmm_nest.l",level,".nc"
+#endif
+
+             comm_1 = 1
+             comm_2 = 1
+
+#ifdef INTIO
+             if (io_form_input == IO_BIN) &
+                call ext_int_open_for_read(trim(input_fname), comm_1, comm_2, 'sysdep info', handle, istatus)
+#endif
+#ifdef NETCDF
+             if (io_form_input == IO_NET) &
+                call ext_ncd_open_for_read(trim(input_fname), comm_1, comm_2, 'sysdep info', handle, istatus)
+#endif
+             if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
+
+
+             do n=1,4
+
+             cname = name(n)
+
+             domain_start = 1
+             domain_end = 1
+#ifdef INTIO
+             if (io_form_input == IO_BIN) &
+                call ext_int_get_var_info(handle, cname, ndim, memorder, stagger, domain_start, domain_end, wrftype, istatus)
+#endif
+#ifdef NETCDF
+             if (io_form_input == IO_NET) &
+                call ext_ncd_get_var_info(handle, cname, ndim, memorder, stagger, domain_start, domain_end, wrftype, istatus)
+#endif
+             print *, "istatus=", istatus
+             print *, "ndim=", ndim
+             print *, "memorder=", memorder
+             print *, "stagger=", stagger
+             print *, "domain_start=", domain_start
+             print *, "domain_end=", domain_end
+             print *, "wrftype=", wrftype
+
+
+             if (allocated(real_domain)) deallocate(real_domain)
+             allocate(real_domain(domain_start(1):domain_end(1), domain_start(2):domain_end(2), domain_start(3):domain_end(3)))
+
+#ifdef INTIO
+             if (io_form_input == IO_BIN) then
+                call ext_int_read_field(handle, '0000-00-00_00:00:00', cname, real_domain, wrftype, &
+                                        1, 1, 0, memorder, stagger, &
+                                        dimnames, domain_start, domain_end, domain_start, domain_end, &
+                                        domain_start, domain_end, istatus)
+             end if
+#endif
+#ifdef NETCDF
+             if (io_form_input == IO_NET) then
+                call ext_ncd_read_field(handle, '0000-00-00_00:00:00', cname, real_domain, wrftype, &
+                                        1, 1, 0, memorder, stagger, &
+                                        dimnames, domain_start, domain_end, domain_start, domain_end, &
+                                        domain_start, domain_end, istatus)
+             end if
+#endif
+             print *, "istatus=", istatus
+
+             im_big = domain_end(1)
+             jm_big = domain_end(2)
+             if (cname(1:10) == "XLAT_M    ") then
+                ALLOCATE (lah_big(im_big,jm_big))
+                do j=1,jm_big
+                do i=1,im_big
+                   lah_big(i,j) = real_domain(i,j,1)
+                end do
+                end do
+             else if (cname(1:10) == "XLONG_M   ") then
+                ALLOCATE (loh_big(im_big,jm_big))
+                do j=1,jm_big
+                do i=1,im_big
+                   loh_big(i,j) = real_domain(i,j,1)
+                end do
+                end do
+             else if (cname(1:10) == "LANDMASK  ") then
+                ALLOCATE (lnd_big(im_big,jm_big))
+                do j=1,jm_big
+                do i=1,im_big
+                   lnd_big(i,j) = real_domain(i,j,1)
+                end do
+                end do
+             else if (cname(1:10) == "HGT_M     ") then
+                ALLOCATE (avc_big(im_big,jm_big))
+                do j=1,jm_big
+                do i=1,im_big
+                   avc_big(i,j) = real_domain(i,j,1)
+                end do
+                end do
+             end if
+
+             end do
+
+#ifdef INTIO
+             if (io_form_input == IO_BIN) then
+                call ext_int_ioclose(handle, istatus)
+             end if
+#endif
+#ifdef NETCDF
+             if (io_form_input == IO_NET) then
+                call ext_ncd_ioclose(handle, istatus)
+             end if
+#endif
+
+          else
+             CALL wrf_error_fatal('NEST_TERRAIN wrong input_type')
+          end if
+
        else
           CALL wrf_error_fatal('this routine NEST_TERRAIN should nou be called for top-level domain')
        end if
@@ -1955,7 +2116,7 @@ SUBROUTINE NEST_TERRAIN ( nest )
         IF(ABS(lah_nest(1,1)-nest%nmm_hlat(1,1)) .GE. 0.5 .OR.  & 
            ABS(loh_nest(1,1)-nest%nmm_hlon(1,1)) .GE. 0.5)THEN 
             WRITE(0,*)'CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO' 
-            CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static.wrfsi.rotlat FOR THE NEST')
+            CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
         ENDIF
 
         call smdhld(im,jm,avc_nest,1.0-lnd_nest,12,12)

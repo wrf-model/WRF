@@ -18,7 +18,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS
 LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -C -P
@@ -123,7 +123,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame -I../share -I../phys -I../chem  \
                        	-I../external/esmf_time_f90 -I../inc
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS
 LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -229,7 +229,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
                         -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
@@ -336,7 +336,7 @@ CFLAGS          =       -n32 -mips4
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS         =       -freeform -I. -O3 -OPT:roundoff=3:IEEE_arithmetic=3 -OPT:fold_arith_limit=2001
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -451,7 +451,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
                         -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
@@ -540,7 +540,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows nesting)
+#ARCH	SGI O2K DM IRIX64     DM-Parallel        (RSL, SGI-MPI, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -563,7 +563,7 @@ FCDEBUG         =       # -g
 FCOPTIM         =       -O3 -OPT:roundoff=3:IEEE_arithmetic=3
 FCBASEOPTS	=	-freeform -I. -64 -mips4 -w $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 \
                         -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DLIMIT_ARGS -DLANDREAD_STUB
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -693,7 +693,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
 			-M../frame -M../share -M../phys -M../inc -M../chem \
 			-M../dyn_em 
-ARCHFLAGS       =       -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
@@ -817,7 +817,7 @@ LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DLIMIT_ARGS -DFLOATSAFE \
@@ -971,7 +971,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 			-M../external/io_netcdf -M../external/io_int -M../external/esmf_time_f90 \
 			-M../frame -M../share -M../phys -M../inc -M../chem \
 			-M../dyn_em 
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
@@ -1065,7 +1065,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	Sun  SunOS SM   (OpenMP, nesting using RSL and no MPI)
+#ARCH	Sun  SunOS SM   (OpenMP, ARW nesting using RSL and no MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1080,7 +1080,7 @@ LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DLIMIT_ARGS -DFLOATSAFE \
@@ -1219,7 +1219,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1360,7 +1360,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1485,7 +1485,7 @@ convert_nmm.o :
 
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows ARW and NMM nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1513,7 +1513,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_pnetcdf \
                         -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PNETCDF_FLAG \
                         -DTRIEDNTRUE -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DNMM_NEST=$(WRF_NMM_NEST)
@@ -1574,7 +1574,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 wrf_bdyout.o : wrf_bdyout.F
@@ -1632,7 +1632,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1660,7 +1660,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../external/io_pnetcdf $(ESMF_IO_INC) \
                         -I../frame -I../share -I../phys -I../chem -I../inc $(ESMF_MOD_INC)
-ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PNETCDF_FLAG \
                         -DTRIEDNTRUE   -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV $(ESMF_IO_DEFS)
@@ -1785,7 +1785,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL, IBM-MPI, allows ARW nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1812,7 +1812,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
@@ -1928,7 +1928,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows ARW and NMM nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1955,7 +1955,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf  -I../external/io_phdf5 -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc -I../chem
-ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
@@ -2013,7 +2013,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 wrf_bdyout.o : wrf_bdyout.F
@@ -2071,7 +2071,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows nesting)
+#ARCH	AIX DM-Parallel/SM-Parallel (not recommended)  (RSL, IBM-MPI, OpenMP, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2100,7 +2100,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -2256,7 +2256,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../../inc -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DMCELIO -DLIMIT_ARGS \
                         -DNO_NAMELIST_PRINT -DNATIVE_MASSV
 PERL            =       perl
@@ -2383,7 +2383,7 @@ convert_nmm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX                      (single-threaded, nesting using RSL without MPI)
+#ARCH	AIX                      (single-threaded, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2410,7 +2410,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DSTUBMPI
 PERL            =       perl
@@ -2527,7 +2527,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX                      (OpenMP, nesting using RSL without MPI)
+#ARCH	AIX                      (OpenMP, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2556,7 +2556,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc
-ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DSTUBMPI
 PERL            =       perl
@@ -2709,7 +2709,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_pnetcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../chem -I../inc 
 
-ARCHFLAGS       =       -DDM_PARALLEL -DRSL_LITE -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DDM_PARALLEL -DRSL_LITE -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG CONFIGURE_PNETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DLANDREAD_STUB
 
@@ -2764,7 +2764,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -2845,7 +2845,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE
 PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
@@ -2967,7 +2967,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha          (single-threaded, nesting using RSL without MPI )
+#ARCH       Compaq OSF1 alpha          (single-threaded, ARW nesting using RSL without MPI )
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -2983,7 +2983,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DLIMIT_ARGS -DFLOATSAFE \
@@ -3130,7 +3130,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE
 PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
@@ -3253,7 +3253,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, nesting using RSL without MPI )
+#ARCH       Compaq OSF1 alpha SM-Parallel       (OpenMP, ARW nesting using RSL without MPI )
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3269,7 +3269,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         -DLIMIT_ARGS -DFLOATSAFE \
@@ -3406,7 +3406,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows ARW and NMM nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3421,7 +3421,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -3525,7 +3525,6 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 start_domain.o : start_domain.F
 start_domain_nmm.o : start_domain_nmm.F
-solve_em.o : solve_em.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
@@ -3539,7 +3538,7 @@ module_configure.o                                             \
 mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
-module_initialize_real.o start_domain.o start_domain_nmm.o solve_em.o :
+module_initialize_real.o start_domain.o start_domain_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
@@ -3559,7 +3558,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel       (RSL, MPICH, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3575,7 +3574,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -3712,7 +3711,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o start_em.o star
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, MPICH, OpenMP, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3728,7 +3727,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -3864,7 +3863,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows nesting)
+#ARCH       Compaq OSF1 alpha DM-Parallel/SM-Parallel    (RSL, DECMPI, OpenMP, allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3880,7 +3879,7 @@ CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -4028,7 +4027,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL -DRSL -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DMCELIO
@@ -4185,7 +4184,7 @@ CC              =       echo # mpicc
 SCC		=	echo # cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+ARCHFLAGS       =       $(COREDEFS) -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL="'<b>RSL</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -4304,7 +4303,7 @@ mediation_integrate.o module_dm.o mediation_wrfmain.o solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS_ESMF) $(MODULE_DIRS) -O0 $*.f90
 
 ###########################################################
-#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows nesting, UNOPT shift_domain)
+#ARCH     Compaq OSF1 alpha DM-Parallel       (RSL_LITE, MPICH, allows ARW and NMM nesting, UNOPT shift_domain)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -4319,7 +4318,7 @@ CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
-ARCHFLAGS       =       -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -4423,7 +4422,6 @@ module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_real.o : module_initialize_real.F
 start_domain.o : start_domain.F
 start_domain_nmm.o : start_domain_nmm.F
-solve_em.o : solve_em.F
 module_configure.o : module_configure.F
 mediation_interp_domain.o : mediation_interp_domain.F
 mediation_force_domain.o : mediation_force_domain.F
@@ -4439,7 +4437,7 @@ mediation_interp_domain.o  \
 mediation_force_domain.o  \
 mediation_feedback_domain.o  \
 shift_domain_em.o \
-module_initialize_real.o start_domain.o start_domain_nmm.o solve_em.o :
+module_initialize_real.o start_domain.o start_domain_nmm.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
@@ -4475,7 +4473,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -4581,7 +4579,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -4670,7 +4668,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASENOINL) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows nesting)
+#ARCH       Alpha Linux alpha DM-Parallel  (RSL, MPICH, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -4693,7 +4691,7 @@ FCBASENOINL     =       -convert big_endian -O1 -automatic -cpp -free -I. -arch 
 FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -4807,7 +4805,7 @@ FCFLAGS         =       -Free -X9 -Am
 FCFLAGS         =       -Free -X9 -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe,-P -Kfast -Am
 FCDEBUG         =       # -g
 FCBASEOPTS      =       $(FCFLAGS)
-ARCHFLAGS       = CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       = $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -4863,7 +4861,7 @@ CFLAGS          =
 FCFLAGS		=	-f free -N 255 -I.
 FCDEBUG         =       # -g
 FCBASEOPTS	=	$(FCFLAGS)
-ARCHFLAGS       =       -DCRAY CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 \
+ARCHFLAGS       =       $(COREDEFS) -DCRAY CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 \
 			-DLIMIT_ARGS
 LDFLAGS		= CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -4924,7 +4922,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 #FCBASEOPTS      =       -w -byteswapio -Mfree -Mipa=fast,inline,safe  $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -5026,7 +5024,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  (single threaded, allows ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5044,7 +5042,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -5173,7 +5171,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -5275,7 +5273,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows nesting using RSL without MPI)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  SM-Parallel (OpenMP, allows ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5295,7 +5293,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -5407,7 +5405,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows nesting)
+#ARCH    PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL, MPICH, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5428,7 +5426,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -5537,7 +5535,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows nesting)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows ARW and NMM nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5561,7 +5559,7 @@ FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 #Options for Debian Sarge systems
 #FCBASEOPTS      =       -w -byteswapio -Mfree -Mipa=fast,inline,safe  $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNMM_NEST=$(WRF_NMM_NEST)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -5670,7 +5668,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, nesting)
+#ARCH    Intel Itanium2 ia64 madison Linux DM-Parallel (e.g. mpp2 at PNNL), efc71 compiler (RSL, MPICH, ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -5693,7 +5691,7 @@ FCDEBUG = #-g
 FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -w -cm 
 FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm 
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
-ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS = $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
             -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -5797,7 +5795,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH      Intel Itanium2 ia64 Linux (eg. Jacaranda), ifort compiler (RSL, no-MPI, allows nesting)
+#ARCH      Intel Itanium2 ia64 Linux (eg. Jacaranda), ifort compiler (RSL, no-MPI, allows ARW nesting)
 #
 #          On Jacaranda, setenv NETCDF /jacaranda/users/michalak/netcdf-3.5.1
 #          Built this netcdf by first setenv FC efc and CPPFLAGS '-DNDEBUG -DpgiFortran'
@@ -5827,9 +5825,9 @@ FCDEBUG = #-g
 FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -cm -convert big_endian -mp
 FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm 
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
-ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS = $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
-            -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
+            -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS -DSTUBMPI 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -5953,7 +5951,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS -DLANDREAD_STUB
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -6046,7 +6044,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows nesting)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher, DM-Parallel  (RSL, MPICH, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -6070,7 +6068,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DLANDREAD_STUB
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -6170,7 +6168,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows nesting, No periodic LBCs)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows ARW and NMM nesting, No periodic LBCs)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6193,9 +6191,9 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-			-DLIMIT_ARGS -DLANDREAD_STUB
+			-DLIMIT_ARGS -DLANDREAD_STUB -DNMM_NEST=$(WRF_NMM_NEST)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -6294,7 +6292,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 
 ###########################################################
 
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, RSL, Allows nesting)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI compiler 5.2 or higher  (Single-threaded, RSL, Allows ARW nesting)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -6313,7 +6311,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -6330,6 +6328,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib_share -lio_grib_share \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio $(FCFLAGS) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -6342,7 +6341,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6423,7 +6422,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 #	fi
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows nesting )
+#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows ARW and NMM nesting )
 # Notes for running on PNNL cluster:
 # 
 # 1. source /home/oehmen/.mycshrc
@@ -6448,7 +6447,7 @@ FCDEBUG = #-g
 FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -cm 
 FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm 
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
-ARCHFLAGS = -DDM_PARALLEL \
+ARCHFLAGS = $(COREDEFS) -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
             -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -6551,7 +6550,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCNOOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, allows nesting) 
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL, VMI, allows ARW nesting) 
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -6578,7 +6577,7 @@ FCOPTIM = -O3 -ftz
 FCDEBUG = #-g
 FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
-ARCHFLAGS = -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS = $(COREDEFS) -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
 -DGRIB1 CONFIGURE_GRIB2_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -6683,7 +6682,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, allows nesting)
+#ARCH titan.ncsa.uiuc.edu specific Intel Itanium2 ia64 mckinley Linux, efc compiler DM-Parallel (RSL_LITE, VMI, allows ARW and NMM nesting)
 #
 # Consider 'setenv F_UFMTENDIAN big' in your run scripts for big-endian output
 # Note hard-coded paths to Mark Straka's accounts and ecc6 libs
@@ -6707,7 +6706,7 @@ FCOPTIM = -O3 -ftz
 FCDEBUG = #-g
 FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
-ARCHFLAGS = -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS = $(COREDEFS) -DRSL_LITE -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
 -DGRIB1 CONFIGURE_GRIB2_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -6771,7 +6770,7 @@ esmf_time :
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include' \
-	FC="$(SFC) $(PROMOTION) $(FCFLAGS) -cm -w -Vaxlib -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+	FC="$(FC) $(PROMOTION) $(FCFLAGS) -cm -w -Vaxlib -I../../.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6829,8 +6828,8 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
                         -I../external -I../frame -I../share -I../phys -I../inc -I../chem
-ARCHFLAGS       =        -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
-                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIFORT_KLUDGE
+ARCHFLAGS       =       $(COREDEFS)  -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+                        -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG
 LD		=	$(FC)
 LDFLAGS		=	$(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -6935,7 +6934,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, allows nesting using RSL without MPI)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler  (single threaded, allows ARW nesting using RSL without MPI)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -6958,9 +6957,9 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
+			-DLIMIT_ARGS -DSTUBMPI \
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL $(ARCHFLAGS)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7091,9 +7090,9 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
-			-DLIMIT_ARGS -DIFORT_KLUDGE
+			-DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -7193,7 +7192,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, allows nesting using RSL without MPI)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort compiler SM-Parallel (OpenMP, allows ARW nesting using RSL without MPI)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7217,9 +7216,9 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-			-DLIMIT_ARGS -DSTUBMPI -DIFORT_KLUDGE
+			-DLIMIT_ARGS -DSTUBMPI 
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL $(ARCHFLAGS)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7328,7 +7327,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, allows nesting)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+icc compiler  DM-Parallel (RSL, MPICH, allows ARW nesting)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7350,10 +7349,10 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DMPI  \
-			-DLIMIT_ARGS -DIFORT_KLUDGE 
+			-DLIMIT_ARGS 
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO $(ARCHFLAGS) \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7462,7 +7461,7 @@ module_dm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) -g -O0 $*.f90
 
 ###########################################################
-#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, allows nesting)
+#ARCH    AMD x86_64 Intel xeon i686 ia32 Xeon Linux, ifort+gcc compiler  DM-Parallel (RSL, MPICH, allows ARW nesting)
 #
 # Note: if you use ifort 8.0, please remove option -xW (for vectorization). This option 
 #       has been identified to produce wrong results occationally.
@@ -7484,10 +7483,10 @@ FCOPTIM		=	-O3 # -xW
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DMPI  \
-			-DLIMIT_ARGS -DIFORT_KLUDGE 
+			-DLIMIT_ARGS 
 CFLAGS          =       -w -DDM_PARALLEL -DWRF_RSL_IO $(ARCHFLAGS) \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7629,7 +7628,7 @@ SCC		=	$(CC)
 LD		=	$(FC)
 NATIVE_RWORDSIZE =      8
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS	=	-DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+ARCHFLAGS	= $(COREDEFS)	-DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 		##for DM compilation	-DDM_PARALLEL -DRSL 
 # note:  -ew already does this for SX6, see comments above
 PROMOTION	=	
@@ -7758,325 +7757,7 @@ module_initialize_real.o module_dm.o  start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, Intel MKL, allows nesting)
-#
-#  'setenv F_UFMTENDIAN big' in run scripts not necessary
-#  since -convert big_endian is in FCBASEOPTS
-#  Change MPI_HOME if SGI's MPI is not in the default directories
-#  Change MKL_HOME if Intel's MKL is not in the default directories
-#
-#  Process pinning should be used -- set the environment
-#  variable MPI_DSM_DISTRIBUTE on a dedicated system, when
-#  running through the cpuset command, or when using a batch
-#  scheduler that has dynamic cpuset support enabled.  In
-#  other cases, if specific processors are known to be free,
-#  the environment variable MPI_DSM_CPULIST may be used
-#  (details in 'man mpi').
-#
-#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
-#  modules/routines that take a long time to compile but do not
-#  significantly contribute to the total runtime performance is 
-#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
-#
-# Contributed settings from Gerardo Cisneros, SGI
-#
-# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
-#
-#
-DMPARALLEL        = 1
-INCLUDE           = ../external/io_netcdf/
-MAX_DOMAINS       = 7
-MAX_PROC          = 1024
-MPI_HOME          = /usr
-MKL_HOME          = /usr/lib
-# MKL_HOME          = /sw/sdev/mkl/7.2.008/mkl72/lib/64
-FC                = ifort -I..
-LD                = ifort
-CC                = icc -I.
-SCC                = icc -I.
-CC_TOOLS          = cc
-SFC               = ifort
-CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz -no-gcc -DDM_PARALLEL -DWRF_RSL_IO \
-                    -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL/RSL
-FCOPTIM           = -O3 -unroll0
-FCDEBUG           = # -g
-FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
-                     -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
-                     -I$(INCLUDE) -I. 
-FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
-                    -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                    -DLIMIT_ARGS -DIFORT_KLUDGE -DINTELMKL
-# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
-ESMF_LIB_FLAGS  =       
-ESMF_IO_LIB     =       ESMFIOLIB
-ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
-INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
-PERL              = perl
-REGISTRY          = Registry
-LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
-                    -L../external/io_grib1 -lio_grib1 \
-                        CONFIGURE_GRIB2_LIB \
-                    -L../external/io_grib_share -lio_grib_share \
-                    CONFIGURE_NETCDF_LIB_PATH \
-                    -L../external/RSL/RSL -lrsl \
-                    -L../external/io_int -lwrfio_int \
-                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
-                    -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time \
-                    -L$(MKL_HOME) -lvml -lmkl_ipf
-LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
-CPP               = /lib/cpp -C -P -traditional
-POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
-                    -I$(INCLUDE) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags` \
-                    $(POUND_DEF) $(COREDEFS)
-AR                = ar ru
-M4                = m4 -B 14000
-RANLIB            = ranlib
-NETCDFPATH	  = CONFIGURE_NETCDF_PATH
-
-externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time
-
-gen_comms.c : ../external/RSL/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
-          cat ../external/RSL/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; \
-          cat ../external/RSL/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" \
-          FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
-	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
-	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
-
-wrfio_grib_share :
-	( cd ../external/io_grib_share ; \
-          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
-
-wrfio_grib1 : 
-	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
-wrfio_grib2 : 
-	( cd ../external/io_grib2 ; \
-          make CC="$(CC)" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" FIXED="-fixed" archive)
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL/RSL/librsl.a :
-	( cd ../external/RSL/RSL ; make IDIR="-I$(MPI_HOME)/include" \
-	 MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) \
-	 LEARN_BCAST=-DLEARN_BCAST altix )
-
-# compile these without high optimization to speed compile
-module_configure.o : module_configure.F
-mediation_integrate.o : mediation_integrate.F
-mediation_interp_domain.o : mediation_interp_domain.F
-mediation_feedback_domain.o : mediation_feedback_domain.F
-wrf_auxinput1out.o : wrf_auxinput1out.F
-wrf_histout.o : wrf_histout.F
-wrf_restartout.o : wrf_restartout.F
-wrf_inputin.o : wrf_inputin.F
-wrf_auxinput1in.o : wrf_auxinput1in.F
-wrf_histin.o : wrf_histin.F
-wrf_restartin.o : wrf_restartin.F
-module_initialize_real.o: module_initialize_real.F
-solve_interface.o : solve_interface.F
-shift_domain_em.o : shift_domain_em.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_dm.o : module_dm.F
-start_domain.o : start_domain.F
-mediation_force_domain.o : mediation_force_domain.F
-
-module_configure.o \
-mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
-wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
-wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
-module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
-shift_domain_em.o                                              \
-mediation_force_domain.o:
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
-	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
-
-###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Intel MKL, Allows nesting)
-#
-#  'setenv F_UFMTENDIAN big' in run scripts not necessary
-#  since -convert big_endian is in FCBASEOPTS
-#  Change MPI_HOME if SGI's MPI is not in the default directories
-#  Change MKL_HOME if Intel's MKL is not in the default directories
-#
-#  Process pinning should be used -- set the environment
-#  variable MPI_DSM_DISTRIBUTE on a dedicated system, when
-#  running through the cpuset command, or when using a batch
-#  scheduler that has dynamic cpuset support enabled.  In
-#  other cases, if specific processors are known to be free,
-#  the environment variable MPI_DSM_CPULIST may be used
-#  (details in 'man mpi').
-#
-#  Adding -mP3OPT_ecg_lra_switch=T to the compiler options for
-#  modules/routines that take a long time to compile but do not
-#  significantly contribute to the total runtime performance is 
-#  appropriate.  Temporary suggestion for 2.1.1, Nov 2005.
-#
-# Contributed settings from Gerardo Cisneros, SGI
-#
-# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
-#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
-#
-DMPARALLEL        = 1
-INCLUDE           = ../external/io_netcdf/
-MAX_PROC          = 1024
-MPI_HOME          = /usr
-MKL_HOME          = /usr/lib
-# MKL_HOME          = /sw/sdev/mkl/7.2.008/mkl72/lib/64
-FC                = ifort -I..
-LD                = ifort
-CC                = icc -I.
-SCC                = icc -I.
-CC_TOOLS          = cc
-SFC               = ifort
-CFLAGS            = -w -O3 -unroll0 -ip -tpp2 -c -ftz -DDM_PARALLEL -I../external/RSL_LITE \
-                    -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
-FCOPTIM           = -O3 -unroll0
-FCDEBUG           = # -g
-FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
-                     -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
-                     -I$(INCLUDE) -I. 
-FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
-                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
-                    -DINTELMKL
-# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
-ESMF_LIB_FLAGS  =       
-ESMF_IO_LIB     =       ESMFIOLIB
-ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
-INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
-                    -I../external -I../frame -I../share -I../phys -I../inc -I../chem
-PERL              = perl
-REGISTRY          = Registry
-LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
-                    CONFIGURE_NETCDF_LIB_PATH \
-                    -L../external/RSL_LITE -lrsl_lite \
-                    -L../external/io_grib1 -lio_grib1 \
-                        CONFIGURE_GRIB2_LIB \
-                    -L../external/io_grib_share -lio_grib_share \
-                    -L../external/io_int -lwrfio_int \
-                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
-                    -L$(MPI_HOME)/lib -lmpi -L../external/esmf_time_f90 -lesmf_time \
-                    -L$(MKL_HOME) -lvml -lmkl_ipf
-LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
-CPP               = /lib/cpp -C -P -traditional
-POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
-                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
-                    $(POUND_DEF) $(COREDEFS)
-AR                = ar ru
-M4                = m4 -B 14000
-RANLIB            = ranlib
-NETCDFPATH	  = CONFIGURE_NETCDF_PATH
-
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time
-
-gen_comms.c : ../external/RSL_LITE/gen_comms.c
-	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
-          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
-
-module_dm.F : ../external/RSL_LITE/module_dm.F
-	( /bin/cp module_dm_warning module_dm.F ; \
-          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd ../external/io_netcdf ; \
-          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
-          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
-	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
-	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
-	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
-
-wrfio_int : 
-	( cd ../external/io_int ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
-
-wrfio_grib_share :
-	( cd ../external/io_grib_share ; \
-          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
-
-wrfio_grib1 : 
-	( cd ../external/io_grib1 ; \
-          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
-wrfio_grib2 : 
-	( cd ../external/io_grib2 ; \
-          make CC="$(CC)" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
-          FC="ifort -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" FIXED="-fixed" archive)
-
-esmf_time : 
-	( cd ../external/esmf_time_f90 ; \
-	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
-
-../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
-	 FC='ifort -w -O3 -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
-
-# compile these without high optimization to speed compile
-mediation_integrate.o : mediation_integrate.F
-mediation_interp_domain.o : mediation_interp_domain.F
-mediation_feedback_domain.o : mediation_feedback_domain.F
-wrf_auxinput1out.o : wrf_auxinput1out.F
-wrf_histout.o : wrf_histout.F
-wrf_restartout.o : wrf_restartout.F
-wrf_inputin.o : wrf_inputin.F
-wrf_auxinput1in.o : wrf_auxinput1in.F
-wrf_histin.o : wrf_histin.F
-wrf_restartin.o : wrf_restartin.F
-module_initialize_real.o: module_initialize_real.F
-solve_interface.o : solve_interface.F
-shift_domain_em.o : shift_domain_em.F
-module_dm.o : module_dm.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-start_domain.o : start_domain.F
-mediation_force_domain.o : mediation_force_domain.F
-module_configure.o : module_configure.F
-
-mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
-module_configure.o                                              \
-wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
-wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
-module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
-shift_domain_em.o                                              \
-mediation_force_domain.o:
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
-	$(RM) $*.b
-	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
-
-###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, allows nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL, SGI MPI, allows ARW nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -8120,9 +7801,9 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DRSL  -DDM_PARALLEL -DIWORDSIZE=4 \
                     -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                    -DLIMIT_ARGS -DIFORT_KLUDGE
+                    -DLIMIT_ARGS -DSGIALTIX
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -8233,7 +7914,7 @@ mediation_force_domain.o:
 	$(FC) -c $(FCBASEOPTS) -O0 $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows ARW and NMM nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -8275,8 +7956,8 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
-                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF -DSGIALTIX
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -8415,7 +8096,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF -DSGIALTIX
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -8544,7 +8225,7 @@ FCBASEOPTS        = -w -ip -tpp2 -ftz -FR -convert big_endian $(FCDEBUG) \
                      -fno-alias -fno-fnalias -align all -IPF_fp_relaxed \
                      -I$(INCLUDE) -I. 
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF -DSGIALTIX
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
 ESMF_IO_LIB     =       ESMFIOLIB
@@ -8689,7 +8370,7 @@ INCLUDE_MODULES =       -I../inc \
 			-p./ -p../external/io_netcdf -p../external/io_int -p../frame \
                         -p../frame -p../share -p../phys -p../chem \
                         -p../dyn_em -p ../external/esmf_time_f90
-ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS -Dcrayx1
 
@@ -8750,7 +8431,7 @@ esmf_time :
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) -f free -N 255" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
 
 ../external/RSL_LITE/librsl_lite.a :
-	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" \
+	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" \
                                      MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
@@ -8806,7 +8487,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -8904,7 +8585,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	PA8600	32bit   (single-threaded, nesting using RSL without MPI)
+#ARCH	HP-UX	PA8600	32bit   (single-threaded, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -8918,7 +8599,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DLIMIT_ARGS \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DLIMIT_ARGS \
                         -DDM_PARALLEL -DFLOATSAFE -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -9036,7 +8717,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE
@@ -9135,7 +8816,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	Itanium2	(single-threaded, nesting using RSL without MPI)
+#ARCH	HP-UX	Itanium2	(single-threaded, ARW nesting using RSL without MPI)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -9148,7 +8829,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DWRF_RSL_IO -DRSL -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DSTUBMPI
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE -I../external/RSL/RSL
@@ -9257,7 +8938,7 @@ LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -9356,7 +9037,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, nesting)
+#ARCH	HP-UX	PA8600	 DM-Parallel	(RSL, MPICH, ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -9371,7 +9052,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -9481,7 +9162,7 @@ module_initialize_real.o module_dm.o mediation_integrate.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, nesting)
+#ARCH	HP-UX	Itanium2    DM-Parallel	(RSL, MPICH, ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -9496,7 +9177,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS       =       CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DLIMIT_ARGS -DFLOATSAFE \
+ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DLIMIT_ARGS -DFLOATSAFE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4  -DDM_PARALLEL -DRSL \
 			-DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -9632,7 +9313,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc -I../chem
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMAC_KLUDGE
 #			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DMACOS
@@ -9758,7 +9439,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc -I../chem
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMACOS -DMAC_KLUDGE
 PERL            =       CONFIGURE_PERL_PATH
@@ -9858,7 +9539,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../external/esmf_time_f90 \
                         -I../frame -I../share -I../phys -I../inc -I../chem
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DLANDREAD_STUB -DMAC_KLUDGE
 #			-DLIMIT_ARGS -DNO_NAMELIST_PRINT -DNATIVE_MASSV -DMACOS
@@ -9972,7 +9653,7 @@ FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
 FCDEBUG         =       #-g
 FCBASEOPTS      =       -w -byteswapio -freeform -fno-second-underscore $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
                         -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10084,7 +9765,7 @@ FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
 FCDEBUG         =       #-g
 FCBASEOPTS      =       -w -byteswapio -freeform -fno-second-underscore $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
                         -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10213,7 +9894,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DLANDREAD_STUB -DNO_NAMELIST_PRINT -DXT3_Catamount
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10319,7 +10000,7 @@ module_initialize_real.o module_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    NEC SX-8, NEC SX cross compiler DM-Parallel (RSL, Allows nesting)
+#ARCH    NEC SX-8, NEC SX cross compiler DM-Parallel (RSL, Allows ARW nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -10340,7 +10021,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -f4 -Wf,-P i $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DWRF_RSL_IO -DRSL -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10354,6 +10035,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
+                        -L../external/io_grib_share -lio_grib_share \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time -L$(SX_BASE_CPLUS)/lib -lcpp
 LDFLAGS         =       $(FCFLAGS) -Wl,-h nodefs CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -10372,7 +10054,7 @@ CC_TOOLS        =       cc
 #### because the Fortran compiler complains about long source lines.          ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 ../external/RSL/RSL/librsl.a wrfio_int gen_comms.c module_dm.F esmf_time
 
 gen_comms.c : ../external/RSL/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -10474,7 +10156,7 @@ FCDEBUG		=	#-g
 #FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCBASEOPTS      =       -f4 -Wf,-P i $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10604,7 +10286,7 @@ FCOPTIM		=	-O2
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS -DG95
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10719,7 +10401,7 @@ FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g -O0
 FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS -DG95
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -10839,7 +10521,7 @@ FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g -O0
 FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNMM_NEST=$(WRF_NMM_NEST) -DG95
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)

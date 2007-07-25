@@ -907,6 +907,9 @@
 	    rbox, fr_partit_cw,   &
 	    it, jt, kt, kpeg, mpeg, icase )
 
+	use module_state_description, only:   &
+        param_first_scalar
+
 	use module_data_mosaic_asect, only:   &
         	maxd_asize, maxd_atype,   &
 		cw_phase, nsize_aer, ntype_aer, ncomp_aer,   &
@@ -938,9 +941,9 @@
 
 	real :: dum, duma, dumb, dumc, dummass, dumnumb, dumvolu
 	real :: tmass, tnumb, umass, unumb, wmass, wnumb
-        real, dimension( maxd_asize, maxd_atype ) :: fmass, fnumb, xmass, xnumb
+    real, dimension( maxd_asize, maxd_atype ) :: fmass, fnumb, xmass, xnumb
 
-
+    p1st = PARAM_FIRST_SCALAR
 
 	iphase = cw_phase
 	tmass = 0.0

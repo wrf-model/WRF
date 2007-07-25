@@ -1,1 +1,0 @@
-../../../../tools/symtab_gen.c

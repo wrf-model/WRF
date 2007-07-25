@@ -112,6 +112,7 @@
 
 
 !   set variables that do not change
+    p1st = PARAM_FIRST_SCALAR
 	idiagbb = idiagbb_in
 
 !   NOTE - code currently just does 1 type

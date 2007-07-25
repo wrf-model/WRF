@@ -429,6 +429,7 @@ CONTAINS
 	real :: ssemfact_numb( maxd_asize, maxd_atype )
 	real :: ssemfact_mass( maxd_asize, maxd_atype )
 
+    p1st = PARAM_FIRST_SCALAR
 
 !   for now just do itype=1
 	itype = 1

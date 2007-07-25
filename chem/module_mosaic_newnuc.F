@@ -104,7 +104,7 @@
 
 	character(len=100) :: msg
 
-
+    p1st = PARAM_FIRST_SCALAR
 
 !   check newnuc_method
 	istat_newnuc = 0

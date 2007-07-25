@@ -1664,7 +1664,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1705,7 +1705,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1747,7 +1747,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags, numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
@@ -1789,7 +1789,7 @@ SUBROUTINE input_chem_profile (si_grid)
                         alt(i,k,j),convfac,g)
                 else if (i_bdy_method .eq. 3) then
                    CALL bdy_chem_value_cbmz (   &
-                        chem(i,k,j), z(i,k,j), ic, config_flags,numgas )
+                        chem(i,k,j), z(i,k,j), ic, numgas )
                 else if (i_bdy_method .eq. 4) then
                    CALL bdy_chem_value_mosaic (   &
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )

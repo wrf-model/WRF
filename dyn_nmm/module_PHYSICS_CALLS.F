@@ -748,6 +748,7 @@
       LOGICAL :: E_BDY,WARM_RAIN
 !
       INTEGER :: ucmcall
+      INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -995,6 +996,15 @@
 !!!  &              +VZ0(I,J+1)+VZ0(I,J-1))*HBM2(I,J)*0.25
         ENDDO
       ENDDO
+!
+!-----------------------------------------------------------------------
+!***  URBAN RELATED VARIABLES ARE ADDED TO ARGUMENTS OF SURFACE_DRIVER
+!-----------------------------------------------------------------------
+!
+      NUM_ROOF_LAYERS=GRID%NUM_SOIL_LAYERS   !urban
+      NUM_WALL_LAYERS=GRID%NUM_SOIL_LAYERS   !urban
+      NUM_ROAD_LAYERS=GRID%NUM_SOIL_LAYERS   !urban
+!
 !-----------------------------------------------------------------------
 !
 !***  CALL SURFACE LAYER AND LAND SURFACE PHYSICS
@@ -1060,7 +1070,12 @@
 ! for RUCLSM
      &          ,QSG=QSG, QVG=QVG, QCG=QCG, SOILT1=SOILT1               &
      &          ,TSNAV=TSNAV, SMFR3D=SMFR3D, KEEPFR3DFLAG=KEEPFR3DFLAG  &
-     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR)
+     &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
+! for URBAN
+     &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
+     &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban
+     &          ,NUM_ROAD_LAYERS=NUM_ROAD_LAYERS                        & ! urban
+     &                                                          )
 !
 !-----------------------------------------------------------------------
 !

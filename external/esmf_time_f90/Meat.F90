@@ -361,7 +361,7 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
   ierr = ESMF_SUCCESS
 !  PRINT *,'DEBUG:  BEGIN timeaddmonths()'
   IF ( ( MM < 1 ) .OR. ( MM > MONTHS_PER_YEAR ) ) THEN
-    CALL wrf_message( 'ERROR timeaddmonths():  MM out of range' )
+!    CALL wrf_message( 'ERROR timeaddmonths():  MM out of range' )
     ierr = ESMF_FAILURE
   ENDIF
 !  PRINT *,'DEBUG:  timeaddmonths(): MM = ',MM

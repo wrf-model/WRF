@@ -343,6 +343,11 @@ if test -f configure.wrf ; then
   echo testing for fseeko and fseeko64
   /bin/rm -f tools/fseeko_test tools/fseeko64_test
   ( make fseek_test 2> /dev/null ) 1> /dev/null
+  if [ "$os" = "Darwin" ] ; then
+    # fseeko64 does not exist under Darwin fseeko does. Remove the 0 length executable
+    # file that might get generated anyway, even though the compiler complains about missing reference.
+    /bin/rm -f tools/fseeko64_test 
+  fi
   if test -x tools/fseeko64_test ; then
     ( tools/fseeko64_test 2> /dev/null ) 1> /dev/null
     if [ $? = 0 ] ; then

@@ -54,16 +54,10 @@ MODULE module_domain
                          AUXINPUT9_ALARM=21, AUXINPUT10_ALARM=22, AUXINPUT11_ALARM=23, &
                          RESTART_ALARM=24, BOUNDARY_ALARM=25, INPUTOUT_ALARM=26,  &  ! for outputing input (e.g. for 3dvar)
                          ALARM_SUBTIME=27,                                        &
-#ifdef MOVE_NESTS
                          COMPUTE_VORTEX_CENTER_ALARM=28,                          &
                          MAX_WRF_ALARMS=28  ! WARNING:  MAX_WRF_ALARMS must be 
                                             ! large enough to include all of 
                                             ! the alarms declared above.  
-#else
-                         MAX_WRF_ALARMS=27  ! WARNING:  MAX_WRF_ALARMS must be 
-                                            ! large enough to include all of 
-                                            ! the alarms declared above.  
-#endif
 
 #include <state_subtypes.inc>
 

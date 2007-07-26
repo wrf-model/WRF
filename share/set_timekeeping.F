@@ -11,9 +11,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    TYPE(WRFU_TimeInterval) :: stepTime
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
-#ifdef MOVE_NESTS
    INTEGER :: vortex_interval
-#endif
 
    INTEGER :: history_interval  , restart_interval  ,  &
               history_interval_mo, restart_interval_mo,  &
@@ -2017,17 +2015,20 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __LINE__  )
    ENDIF
 
-#ifdef MOVE_NESTS
 ! This is the interval at which the code in time_for_move in share/mediation_integrate.F
 ! will recompute the center of the Vortex.  Other times, it will use the last position.
 !
+   vortex_interval = 0
+#ifdef MOVE_NESTS
    CALL nl_get_vortex_interval ( grid%id , vortex_interval ) 
+#endif
    CALL WRFU_TimeIntervalSet( interval, M=vortex_interval, rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_TimeIntervalSet(interval) for computing vortex center FAILED', &
                            __FILE__ , &
                            __LINE__  )
    CALL domain_alarm_create( grid,  COMPUTE_VORTEX_CENTER_ALARM, interval  )
+#ifdef MOVE_NESTS
    CALL WRFU_AlarmEnable( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_AlarmEnable(COMPUTE_VORTEX_CENTER_ALARM) FAILED', &
@@ -2036,6 +2037,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL WRFU_AlarmRingerOn( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
                          'WRFU_AlarmRingerOn(COMPUTE_VORTEX_CENTER_ALARM) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+#else
+! Go ahead and let the alarm be defined, but disable it, since we are not using moving nests here.
+   CALL WRFU_AlarmDisable( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_AlarmDisable(COMPUTE_VORTEX_CENTER_ALARM) FAILED', &
                          __FILE__ , &
                          __LINE__  )
 #endif

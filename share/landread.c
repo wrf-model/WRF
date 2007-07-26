@@ -37,9 +37,14 @@ int GET_TERRAIN (        float *adx,
 #  define _FILE_OFFSET_BITS 64
 #endif
 #include <stdio.h>
+#include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <math.h>
-#include <malloc.h>
+#ifndef MACOS
+# include <malloc.h>
+#else
+# include <malloc/malloc.h>
+#endif
 #include <string.h>
 #include "landread.h"
 #define MAXTOPOFILES  100

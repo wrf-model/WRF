@@ -5,7 +5,9 @@
 
 #define STANDARD_OUTPUT 1
 
-#include "mpi.h"
+#ifndef STUBMPI
+#  include "mpi.h"
+#endif
 #include "rsl_lite.h"
 
 #define F_PACK
@@ -56,18 +58,20 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 
 BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 {
+#ifndef STUBMPI
     MPI_Comm *comm, dummy_comm ;
 
     comm = &dummy_comm ;
     *comm = MPI_Comm_f2c( *Fcomm ) ;
-#ifdef crayx1
+# ifdef crayx1
     if (*size % sizeof(int) == 0) {
        MPI_Bcast ( buf, *size/sizeof(int), MPI_INT, 0, *comm ) ;
     } else {
        MPI_Bcast ( buf, *size, MPI_BYTE, 0, *comm ) ;
     }
-#else
+# else
     MPI_Bcast ( buf, *size, MPI_BYTE, 0, *comm ) ;
+# endif
 #endif
 }
 
@@ -92,6 +96,8 @@ RSL_LITE_INIT_EXCH (
   int ips , ipe , jps , jpe , kps , kpe ;
   int yp, ym, xp, xm ;
   int nbytes ;
+
+#ifndef STUBMPI
   MPI_Comm comm, *comm0, dummy_comm ;
 
   comm0 = &dummy_comm ;
@@ -104,8 +110,6 @@ RSL_LITE_INIT_EXCH (
   n3dL = *n3dL0 ; n2dL = *n2dL0 ; typesizeL = *typesizeL0 ;
   me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   ips = *ips0-1 ; ipe = *ipe0-1 ; jps = *jps0-1 ; jpe = *jpe0-1 ; kps = *kps0-1 ; kpe = *kpe0-1 ;
-
-#if 1
 
   if ( np_y > 1 ) {
     nbytes = typesizeR*(ipe-ips+1+2*shw)*shw*(n3dR*(kpe-kps+1)+n2dR) +
@@ -163,6 +167,8 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
   int yp, ym, xp, xm ;
   int nbytes, ierr ;
   register int *pi, *qi ;
+
+#ifndef STUBMPI
   MPI_Comm comm, *comm0, dummy_comm ;
   int js, je, ks, ke, is, ie, wcount ;
 
@@ -370,21 +376,25 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
       }
     }
   }
+#endif
+
 }
 
+#ifndef STUBMPI
 static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;
+#endif
 
 RSL_LITE_EXCH_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, ierr ;
+#ifndef STUBMPI
   MPI_Status stat ;
   MPI_Comm comm, *comm0, dummy_comm ;
 
   comm0 = &dummy_comm ;
   *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
-#if 1
   comm = *comm0 ; me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   if ( np_y > 1 ) {
     MPI_Cart_shift( *comm0, 0, 1, &ym, &yp ) ;
@@ -406,8 +416,6 @@ RSL_LITE_EXCH_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
     if ( ym != MPI_PROC_NULL ) MPI_Wait( &ym_send, &stat ) ;
   }
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
-#else 
-fprintf(stderr,"RSL_LITE_EXCH_Y disabled\n") ;
 #endif
 }
 
@@ -415,12 +423,12 @@ RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
 {
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm ;
+#ifndef STUBMPI
   MPI_Status stat ;
   MPI_Comm comm, *comm0, dummy_comm ;
 
   comm0 = &dummy_comm ;
   *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
-#if 1
   comm = *comm0 ; me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
   if ( np_x > 1 ) {
     MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
@@ -441,10 +449,8 @@ RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
     if ( xp != MPI_PROC_NULL ) MPI_Wait( &xp_send, &stat ) ; 
     if ( xm != MPI_PROC_NULL ) MPI_Wait( &xm_send, &stat ) ;
   }
-#else 
-fprintf(stderr,"RSL_LITE_EXCH_X disabled\n") ;
-#endif
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
+#endif
 }
 
 #include <sys/time.h>

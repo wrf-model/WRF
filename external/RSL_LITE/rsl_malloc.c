@@ -67,11 +67,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+#ifndef MACOS
+# include <malloc.h>
+#else
+# include <malloc/malloc.h>
+#endif
 #ifdef T3D
 #include <errno.h>
 #endif
-#include "mpi.h"
+#ifndef STUBMPI
+# include "mpi.h"
+#endif
 #include "rsl_lite.h"
 
 /*
@@ -152,7 +158,7 @@ EF_PROTECT_FREE = 1 ;
 "rsl_malloc failed allocating %d bytes, called %s, line %d, try %d\n",
        s,f,l,tries) ;
        perror(mess) ;
-#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount))
+#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(MACOS) )
        minf = mallinfo() ;
        fprintf(stderr,"mallinfo: arena %d\n",minf.arena)  ;
        fprintf(stderr,"mallinfo: ordblks %d\n",minf.ordblks)  ;

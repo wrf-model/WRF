@@ -57,7 +57,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "rsl_lite.h"
-#include "mpi.h"
+#ifndef STUBMPI
+#  include "mpi.h"
+#endif
 
 typedef struct bufdesc {
   char * buf ;

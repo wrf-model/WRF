@@ -5,7 +5,9 @@
 
 #define STANDARD_OUTPUT 1
 
-#include "mpi.h"
+#ifndef STUBMPI
+#  include "mpi.h"
+#endif
 #include "rsl_lite.h"
 
 #define  UP_EVEN(A)   ((A)+abs((A)%2))
@@ -23,7 +25,10 @@ static int *x_peermask_src = NULL ;
 static int *x_peermask_dst = NULL ;
 static int *nbytes_src = NULL ; 
 static int *nbytes_dst = NULL ; 
+
+#ifndef STUBMPI
 static MPI_Request *x_recv = NULL ,  *x_send = NULL ;
+#endif
 
 RSL_LITE_INIT_CYCLE (  int * Fcomm ,
                 int * xy0 , int * inout0 ,
@@ -46,6 +51,7 @@ RSL_LITE_INIT_CYCLE (  int * Fcomm ,
   int ips_send , ipe_send ;
   int npts, i, ii, j, jj, m, n, ps, pe, ops, ope ;
   int Px, Py, P, Q, swap, coords[2] ;
+#ifndef STUBMPI
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
@@ -125,6 +131,7 @@ RSL_LITE_INIT_CYCLE (  int * Fcomm ,
        buffer_for_proc ( P , nbytes_src[P], RSL_SENDBUF ) ;
        buffer_for_proc ( P , nbytes_dst[P], RSL_RECVBUF ) ;
   }
+#endif
 }
 
 RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
@@ -153,6 +160,7 @@ RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 ,
   int ierr = 0 ;
   register int *pi, *qi ;
   float f ;
+#ifndef STUBMPI
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
@@ -319,6 +327,7 @@ RSL_LITE_PACK_CYCLE ( int * Fcomm, char * buf , int * inout0 , int * typesize0 ,
       }
     }
   }
+#endif
 }
 
 RSL_LITE_CYCLE ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
@@ -326,31 +335,25 @@ RSL_LITE_CYCLE ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, nb ;
   MPI_Status stat ;
+#ifndef STUBMPI
   MPI_Comm comm, *comm0, dummy_comm ;
   int i, P ;
 
   comm0 = &dummy_comm ;
   *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
-#if 1
 
   comm = *comm0 ; me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
 
-/* fprintf(stderr,"RSL_LITE_CYCLE\n") ; */
-
   for ( P = 0 ; P < np ; P++ ) {
       nb = buffer_size_for_proc( P, RSL_RECVBUF ) ;
-/* fprintf(stderr,"posting irecv from %d, nb = %d\n",P,nb) ; */
       MPI_Irecv ( buffer_for_proc( P, 0, RSL_RECVBUF ), nb, MPI_CHAR, P, me, comm, &(x_recv[P]) ) ;
-/* fprintf(stderr,"sending to         %d, nb = %d\n",P,x_curs_src[P]) ; */
       MPI_Isend ( buffer_for_proc( P, 0, RSL_SENDBUF ), x_curs_src[P], MPI_CHAR, P, P, comm, &(x_send[P]) ) ;
   }
   for ( P = 0 ; P < np ; P++ ) {
       MPI_Wait( &x_recv[P], &stat ) ; 
       MPI_Wait( &x_send[P], &stat ) ; 
   }
-#else 
-fprintf(stderr,"RSL_LITE_CYCLE disabled\n") ;
-#endif
   for ( i = 0 ; i < np ; i++ ) {  x_curs_src[i] = 0 ; x_curs_dst[i] ; }
+#endif
 }
 

@@ -59,7 +59,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "mpi.h"
+#ifndef STUBMPI
+#  include "mpi.h"
+#endif
 #include "rsl_lite.h"
 
 char mess[4096] ;
@@ -163,10 +165,12 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
   int *r ;
   int i, j, ni, nj ;
   int coords[2] ;
+#ifndef STUBMPI
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
   *comm = MPI_Comm_f2c( *Fcomm ) ;
+#endif
 
   if ( Plist == NULL ) {
     s_ntasks_x = *ntasks_x_p ;
@@ -187,10 +191,13 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
            ni = ( i - (*icoord_p + *shw_p) ) * *pgr_p + 1 + 1 ; /* add 1 to give center point */
            nj = ( j - (*jcoord_p + *shw_p) ) * *pgr_p + 1 + 1 ;
 
+#ifndef STUBMPI
 	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
            coords[1] = Px ; coords[0] = Py ;
            MPI_Cart_rank( *comm, coords, &P ) ;
-
+#else
+           P = 0 ;
+#endif
 	   q = RSL_MALLOC( rsl_list_t , 1 ) ;
 	   q->info1 = i ;
 	   q->info2 = j ;
@@ -226,9 +233,6 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
         Pptr = Plist[Pcurs] ;
       } else {
         *retval_p = 0 ;
-#if 0
-fprintf(stderr,"TO _INFO: %d %d %d \n",*ig_p,*jg_p, *retval_p) ;
-#endif
         return ;  /* done */
       }
   }
@@ -242,10 +246,6 @@ fprintf(stderr,"TO _INFO: %d %d %d \n",*ig_p,*jg_p, *retval_p) ;
   Recsizeindex = Sendbufcurs ;
   *r++ =           0 ; Sendbufcurs += sizeof(int) ;  /* store start for size */
   *retval_p = 1 ;
-
-#if 0
-fprintf(stderr,"TO  INFO: %d %d %d \n",*ig_p,*jg_p, *retval_p) ;
-#endif
 
   return ;
 }
@@ -280,10 +280,12 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
   int *r ;
   int i, j ;
   int coords[2] ;
+#ifndef STUBMPI
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
   *comm = MPI_Comm_f2c( *Fcomm ) ;
+#endif
 
   if ( Plist == NULL ) {
     s_ntasks_x = *ntasks_x_p ;
@@ -301,9 +303,13 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
       for ( i = *nips_p ; i <= *nipe_p ; i++ )
       {
 	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
+#ifndef STUBMPI
 	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
           coords[1] = Px ; coords[0] = Py ;
           MPI_Cart_rank( *comm, coords, &P ) ;
+#else
+          P = 0 ;
+#endif
 	  q = RSL_MALLOC( rsl_list_t , 1 ) ;
 	  q->info1 = i ;
 	  q->info2 = j ;
@@ -429,9 +435,13 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
 RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, Fcomm )
   int_p mytask_p, ntasks_p, Fcomm ;
 {
+#ifndef STUBMPI
   MPI_Comm comm ;
 
   comm = MPI_Comm_f2c( *Fcomm ) ;
+#else
+  int comm ;
+#endif
   rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm ) ;
 }
 
@@ -439,9 +449,13 @@ RSL_LITE_BCAST_MSGS ( mytask_p, ntasks_p, Fcomm )
 RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, Fcomm )
   int_p mytask_p, ntasks_p, Fcomm ;
 {
+#ifndef STUBMPI
   MPI_Comm comm ;
 
   comm = MPI_Comm_f2c( *Fcomm ) ;
+#else
+  int comm ;
+#endif
   rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm ) ;
 }
 
@@ -463,8 +477,13 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   int *sp, *bp ;
   int rc ;
 
+#ifndef STUBMPI
   ntasks = *ntasks_p ;
   mytask = *mytask_p ;
+#else
+  ntasks = 1 ;
+  mytask = 0 ;
+#endif
 
   RSL_TEST_ERR( Plist == NULL,
     "RSL_BCAST_MSGS: rsl_to_child_info not called first" ) ;
@@ -474,7 +493,11 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   
   Psize_all = RSL_MALLOC( int, ntasks * ntasks ) ;
 
+#ifndef STUBMPI
   MPI_Allgather( Ssizes, ntasks, MPI_INT , Psize_all, ntasks, MPI_INT, comm ) ;
+#else
+  Psize_all[0] = Ssizes[0] ;
+#endif
 
   for ( j = 0 ; j < ntasks ; j++ ) 
     Rsizes[j] = 0 ;
@@ -496,8 +519,14 @@ rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   Rbufcurs = 0 ;
   Rreclen = 0 ;
 
+#ifndef STUBMPI
   rc = MPI_Alltoallv ( Sendbuf, Ssizes, Sdisplacements, MPI_BYTE , 
                        Recvbuf, Rsizes, Rdisplacements, MPI_BYTE ,  comm ) ;
+#else
+  work = Sendbuf ;
+  Sendbuf = Recvbuf ;
+  Recvbuf = work ;
+#endif
 
 /* add sentinel to the end of Recvbuf */
 
@@ -558,9 +587,6 @@ rsl_lite_from_peerpoint_info ( ig_p, jg_p, retval_p )
     RSL_FREE( Recvbuf ) ;
   }
      
-#if 0
-fprintf(stderr,"FROM  INFO: %d %d %d %d %d %d\n",*ig_p,*jg_p,Rreclen, Rpointcurs, Rbufcurs + Rpointcurs, *retval_p) ;
-#endif
   return ;
 }
 

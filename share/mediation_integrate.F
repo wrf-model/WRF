@@ -1576,7 +1576,7 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
        ELSE
          WRITE(n2,'("DATASET=AUXINPUT",I1)')stream
        ENDIF
-       WRITE ( message , '("med_auxinput_in : opening ",A," for reading. ",I3)') TRIM ( auxname ), ierr
+       WRITE ( message , '("med_auxinput_in : opening ",A," for reading. ")') TRIM ( auxname )
        CALL wrf_debug( 1, message )
 
 !<DESCRIPTION>
@@ -1691,7 +1691,7 @@ SUBROUTINE med_filter_out ( grid , config_flags )
      CALL domain_clock_get( grid, current_timestr=timestr )
      CALL construct_filename2a ( outname , config_flags%input_outname , grid%id , 2 , timestr )
 
-     WRITE ( message , '("med_filter_out 1: opening ",A," for writing. ",I3)') TRIM ( outname ), ierr
+     WRITE ( message , '("med_filter_out 1: opening ",A," for writing. ")') TRIM ( outname )
      CALL wrf_debug( 1, message )
 
      CALL open_w_dataset ( fid, TRIM(outname), grid ,  &

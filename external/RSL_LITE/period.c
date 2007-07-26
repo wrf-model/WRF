@@ -8,8 +8,6 @@
 #include "mpi.h"
 #include "rsl_lite.h"
 
-#define F_PACK
-
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
 
 RSL_LITE_INIT_PERIOD ( 
@@ -161,7 +159,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
 	      xp_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ipe-shw, ipe-1, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                         &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
@@ -178,7 +176,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
         ks = kps           ; ke = kpe ;
         is = ipe           ; ie = ipe+shw-1+stag ;
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                           &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xp_curs += wcount*typesize ;
@@ -205,7 +203,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
 	      xm_curs + RANGE( JMAX(jps-shw), JMIN(jpe+shw), kps, kpe, ips, ips+shw-1+stag, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                         &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
@@ -222,7 +220,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
         ks = kps           ; ke = kpe ;
         is = ips-shw       ; ie = ips-1           ;
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                           &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           xm_curs += wcount*typesize ;
@@ -254,7 +252,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
 	      yp_curs + RANGE( IMAX(ips-shw), IMIN(ipe+shw), kps, kpe, jpe-shw, jpe-1, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                         &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
@@ -271,7 +269,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
         is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
         ks = kps           ; ke = kpe ;
         js = jpe           ; je = jpe+shw-1+stag ;
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                           &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           yp_curs += wcount*typesize ;
@@ -298,7 +296,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
 	      ym_curs + RANGE( IMAX(ips-shw), IMIN(ipe+shw), kps, kpe, jps, jps+shw-1+stag, 1, typesize ), nbytes ) ;
 	  MPI_Abort(MPI_COMM_WORLD, 98) ;
         }
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_PACK_LINT ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
                                         &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;
@@ -315,7 +313,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
         is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
         ks = kps           ; ke = kpe ;
         js = jps-shw       ; je = jps-1           ;
-        if ( typesize == sizeof(long int) ) {
+        if ( typesize == sizeof(long int) && sizeof( long int ) != sizeof(int) ) {
           F_UNPACK_LINT ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
                                           &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
           ym_curs += wcount*typesize ;

@@ -52,7 +52,7 @@ COLLECT_ON_COMM0 ( int * comm, int * typesize ,
 col_on_comm ( int * Fcomm, int * typesize ,
               void * inbuf, int *ninbuf , void * outbuf, int * noutbuf, int sw )
 {
-#if defined( DM_PARALLEL ) && !(STUBMPI)
+#if defined( DM_PARALLEL ) && !defined(STUBMPI)
   int mytask, ntasks, p ;
   int *recvcounts ;
   int *displace ;
@@ -169,6 +169,8 @@ dst_on_comm ( int * Fcomm, int * typesize ,
 #ifndef MACOS
 #  include <malloc.h>
 #  include <sys/resource.h>
+#else
+#  include <malloc/malloc.h>
 #endif
 
 #if 0

@@ -92,6 +92,7 @@ CONTAINS
   real               :: conv            ! 180/pi
   real               :: tl1             ! Lambert standard parallel 1
   real               :: tl2             ! Lambert standard parallel 2
+  real               :: xn1
 
 #if ( EM_CORE == 1 ) 
 ! This routine should only be called once. This is a check to make
@@ -131,22 +132,24 @@ CONTAINS
 
 ! Compute cone factor if Lambert map projection
   if(map_proj .eq. 1) then
-    conv = 57.29578
+!   conv = 57.29578
+    conv = 3.1415926/180.
     if(abs(true_lat1) .gt. 90. .or. abs(true_lat2) .gt. 90.) then
-       STOP 'module_fddaobs_rtfdda: Lambert std parallels are out of range'
+       CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert std parallels are out of range' )
     elseif (true_lat1*true_lat2 .lt. 0) then
-       STOP 'module_fddaobs_rtfdda: Lambert std parallels in N&S hemispheres'
-    elseif (abs(true_lat2) .gt. abs(true_lat1)) then
-       print *, 'WARNING: module_fddaobs_rtfdda: Lambert proj: lat2 gt lat1'
+       CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert std parallels in N&S hemispheres' )
+!   elseif (abs(true_lat2) .gt. abs(true_lat1)) then
+!      CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert proj: lat2 gt lat1' )
     else
       tl1 = abs(true_lat1)
       tl2 = abs(true_lat2)
 
-      if(true_lat1 .eq. true_lat2) then
-        fdob%xn = sin(tl1/conv)
+      if(ABS(tl1-tl2) .GT. 0.1) then
+        xn1 = LOG(COS(tl1*conv)) - LOG(COS(tl2*conv))
+        fdob%xn = xn1 /(LOG(TAN((45.0 - tl1/2.0) * conv)) - &
+                        LOG(TAN((45.0 - tl2/2.0) * conv)))
       else
-        fdob%xn = ( alog(cos(tl1/conv)) - alog(cos(tl2/conv)) ) /              &
-         ( alog(tan((90.-tl1)/conv/2.)) - alog(tan((90.-tl2)/conv/2.)) )
+        fdob%xn = SIN(tl1*conv)
       endif
     endif
   endif

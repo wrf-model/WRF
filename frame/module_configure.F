@@ -152,7 +152,7 @@ CONTAINS
 !               loc(model_config_rec%first_item_in_struct)
       IF ( nbytes .gt. buflen ) THEN
         CALL wrf_error_fatal( &
-        "get_config_rec_as_buffer: buffer size to small for config_rec" )
+        "get_config_rec_as_buffer: buffer size too small for config_rec" )
       ENDIF
       CALL wrf_mem_copy( model_config_rec, buffer, nbytes )
       ncopied = nbytes
@@ -189,7 +189,7 @@ CONTAINS
                loc(model_config_rec%first_item_in_struct)
       IF ( nbytes .gt. buflen ) THEN
         CALL wrf_error_fatal( &
-        "get_config_rec_as_buffer: buffer size to small for config_rec" )
+        "get_config_rec_as_buffer: buffer size too small for config_rec" )
       ENDIF
       CALL wrf_mem_copy( model_config_rec, buffer, nbytes )
       ncopied = nbytes

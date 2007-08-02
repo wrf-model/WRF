@@ -867,26 +867,24 @@ endif
       !  in elevation between the current model's elevation and the incoming data's
       !  orography.
          
-      IF ( flag_soilhgt .EQ. 1 ) THEN
-         adjust_soil : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+      adjust_soil : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-            CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
-               CALL adjust_soil_temp_new ( grid%tmn , model_config_rec%sf_surface_physics(grid%id) , &
-                                           grid%tsk , grid%ht , grid%toposoil , grid%landmask , flag_soilhgt , &
-                                           grid%st000010 , grid%st010040 , grid%st040100 , grid%st100200 , grid%st010200 , &
-                                           flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
-                                           grid%st000007 , grid%st007028 , grid%st028100 , grid%st100255 , &
-                                           flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
-                                           grid%soilt000 , grid%soilt005 , grid%soilt020 , grid%soilt040 , grid%soilt160 , &
-                                           grid%soilt300 , &
-                                           flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , &
-                                           flag_soilt160 , flag_soilt300 , &
-                                           ids , ide , jds , jde , kds , kde , &
-                                           ims , ime , jms , jme , kms , kme , &
-                                           its , ite , jts , jte , kts , kte )
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+            CALL adjust_soil_temp_new ( grid%tmn , model_config_rec%sf_surface_physics(grid%id) , &
+                                        grid%tsk , grid%ht , grid%toposoil , grid%landmask , flag_soilhgt , flag_tavgsfc , &
+                                        grid%st000010 , grid%st010040 , grid%st040100 , grid%st100200 , grid%st010200 , &
+                                        flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
+                                        grid%st000007 , grid%st007028 , grid%st028100 , grid%st100255 , &
+                                        flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
+                                        grid%soilt000 , grid%soilt005 , grid%soilt020 , grid%soilt040 , grid%soilt160 , &
+                                        grid%soilt300 , &
+                                        flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , &
+                                        flag_soilt160 , flag_soilt300 , &
+                                        ids , ide , jds , jde , kds , kde , &
+                                        ims , ime , jms , jme , kms , kme , &
+                                        its , ite , jts , jte , kts , kte )
 
-         END SELECT adjust_soil
-      END IF
+      END SELECT adjust_soil
 
       !  Fix grid%em_tmn and grid%em_tsk.
 
@@ -3011,6 +3009,7 @@ print *,'VERT EXTRAP = ', vert_extrap
       REAL :: target_y_1 , target_y_2
       LOGICAL :: found_loc
       INTEGER :: loop , loc_center_left , loc_center_right , ist , iend , target_loop
+      INTEGER :: vboundb , vboundt
 
       !  Local vars for the problem of extrapolating theta below ground.
 
@@ -3034,6 +3033,13 @@ print *,'p target= ',target_x
       IF ( n .LT. 1 ) THEN
          CALL wrf_error_fatal ( 'pal, linear is about as low as we go' )
       END IF
+
+      !  We can pinch in the area of the higher order interpolation with vbound.  If
+      !  vbound = 0, no pinching.  If vbound = m, then we make the lower "m" and upper
+      !  "m" eta levels use a linear interpolation.  
+
+      vboundb = 4
+      vboundt = 0
 
       !  Loop over the list of target x and y values.
 
@@ -3125,7 +3131,8 @@ print *,'p target= ',target_x
                END IF
             END IF
    
-         ELSE IF ( MOD(n,2) .EQ. 0 ) THEN
+         ELSE IF ( ( MOD(n,2) .EQ. 0 ) .AND. &
+                   ( ( target_loop .GE. 1 + vboundb ) .AND. ( target_loop .LE. target_dim - vboundt ) ) ) THEN
             IF      ( ( loc_center_left -(((n  )/2)-1) .GE.       1 ) .AND. &
                       ( loc_center_right+(((n  )/2)  ) .LE. all_dim ) .AND. &
                       ( loc_center_left -(((n  )/2)  ) .GE.       1 ) .AND. &
@@ -3151,6 +3158,11 @@ print *,'p target= ',target_x
             ELSE
                CALL wrf_error_fatal ( 'unauthorized area, you should not be here' )
             END IF
+
+         ELSE IF ( MOD(n,2) .EQ. 0 ) THEN
+               ist  = loc_center_left
+               iend = loc_center_right
+               CALL lagrange_interp ( all_x(ist:iend) , all_y(ist:iend) , 1 , target_x(target_loop) , target_y(target_loop) )
                
          END IF
 

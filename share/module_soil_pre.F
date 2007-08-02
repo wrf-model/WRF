@@ -536,7 +536,7 @@ print *,'WATER CHANGE = ',change_water
    END SUBROUTINE process_soil_ideal
 
    SUBROUTINE adjust_soil_temp_new ( tmn , sf_surface_physics , &
-                                 tsk , ter , toposoil , landmask , flag_toposoil , &
+                                 tsk , ter , toposoil , landmask , flag_toposoil , flag_tavgsfc , &
                                       st000010 ,      st010040 ,      st040100 ,      st100200 ,      st010200 , &
                                  flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , & 
                                       st000007 ,      st007028 ,      st028100 ,      st100255 , &
@@ -562,11 +562,39 @@ print *,'WATER CHANGE = ',change_water
       INTEGER , INTENT(IN) :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200
       INTEGER , INTENT(IN) :: flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255
       INTEGER , INTENT(IN) :: flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , flag_soilt160 , flag_soilt300
-      INTEGER , INTENT(IN) :: sf_surface_physics , flag_toposoil
+      INTEGER , INTENT(IN) :: sf_surface_physics , flag_toposoil , flag_tavgsfc
  
       INTEGER :: i , j
 
       REAL :: soil_elev_min_val ,  soil_elev_max_val , soil_elev_min_dif , soil_elev_max_dif
+
+      !  Adjust the annual mean temperature as if it is based on from a sea-level elevation
+      !  if the value used is from the actual annula mean data set.  If the input field to 
+      !  be used for tmn is one of the first-guess input temp fields, need to do an adjustment
+      !  only on the diff in topo from the model terrain and the first-guess terrain.
+
+       SELECT CASE ( sf_surface_physics )
+   
+         CASE (LSMSCHEME)
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF (landmask(i,j) .GT. 0.5 ) THEN
+                     tmn(i,j) = tmn(i,j) - 0.0065 * ter(i,j)
+                  END IF
+               END DO
+            END DO
+
+         CASE (RUCLSMSCHEME)
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF (landmask(i,j) .GT. 0.5 ) THEN
+                     tmn(i,j) = tmn(i,j) - 0.0065 * ter(i,j)
+                  END IF
+               END DO
+            END DO
+
+      END SELECT
+
 
       !  Do we have a soil field with which to modify soil temperatures?
 
@@ -619,11 +647,19 @@ cycle
                !  are not at a water point.
 
                IF (landmask(i,j) .GT. 0.5 ) THEN
-   
-                  IF ( sf_surface_physics .EQ. 1 ) THEN
-                     tmn(i,j) = tmn(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  
+
+                  IF ( sf_surface_physics .EQ. SLABSCHEME ) THEN
+                     IF ( ( flag_tavgsfc  .EQ. 1 ) .OR. &
+                          ( flag_st010040 .EQ. 1 ) .OR. &
+                          ( flag_st000010 .EQ. 1 ) .OR. &
+                          ( flag_soilt020 .EQ. 1 ) .OR. &
+                          ( flag_st007028 .EQ. 1 ) ) THEN
+                        tmn(i,j) = tmn(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                     ELSE
+                        tmn(i,j) = tmn(i,j) - 0.0065 * ter(i,j)
+                     END IF
+                  END IF 
+
                   tsk(i,j) = tsk(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
       
                   IF ( flag_st000010 .EQ. 1 ) THEN

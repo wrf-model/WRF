@@ -2288,8 +2288,10 @@ BENCH_START(rlx_bdy_scalar_tim)
          IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
             CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
                                     moist(ims,kms,jms,im),  grid%em_mut,         &
-                                    moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im),moist_bys(ims,kms,1,im),moist_bye(ims,kms,1,im), &
-                                    moist_btxs(jms,kms,1,im),moist_btxe(jms,kms,1,im),moist_btys(ims,kms,1,im),moist_btye(ims,kms,1,im), &
+                                    moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
+                                    moist_bys(ims,kms,1,im),moist_bye(ims,kms,1,im), &
+                                    moist_btxs(jms,kms,1,im),moist_btxe(jms,kms,1,im), &
+                                    moist_btys(ims,kms,1,im),moist_btye(ims,kms,1,im), &
                                     config_flags%spec_bdy_width, grid%spec_zone, grid%relax_zone, &
                                     grid%dtbc, grid%fcx, grid%gcx,             &
                                     config_flags,               &
@@ -2301,8 +2303,10 @@ BENCH_START(rlx_bdy_scalar_tim)
                                     k_start, k_end                        )
 
             CALL spec_bdy_scalar  ( moist_tend(ims,kms,jms,im),                &
-                                    moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im),moist_bys(ims,kms,1,im),moist_bye(ims,kms,1,im), &
-                                    moist_btxs(jms,kms,1,im),moist_btxe(jms,kms,1,im),moist_btys(ims,kms,1,im),moist_btye(ims,kms,1,im), &
+                                    moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
+                                    moist_bys(ims,kms,1,im),moist_bye(ims,kms,1,im), &
+                                    moist_btxs(jms,kms,1,im),moist_btxe(jms,kms,1,im), &
+                                    moist_btys(ims,kms,1,im),moist_btye(ims,kms,1,im), &
                                     config_flags%spec_bdy_width, grid%spec_zone,                 &
                                     config_flags,               &
                                     ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -2630,8 +2634,10 @@ BENCH_END(chem_adv_tim)
 
          CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),            &
                                  scalar(ims,kms,jms,is),  grid%em_mut,         &
-                                 scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is),scalar_bys(ims,kms,1,is),scalar_bye(ims,kms,1,is), &
-                                 scalar_btxs(jms,kms,1,is),scalar_btxe(jms,kms,1,is),scalar_btys(ims,kms,1,is),scalar_btye(ims,kms,1,is), &
+                                 scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is), &
+                                 scalar_bys(ims,kms,1,is),scalar_bye(ims,kms,1,is), &
+                                 scalar_btxs(jms,kms,1,is),scalar_btxe(jms,kms,1,is), &
+                                 scalar_btys(ims,kms,1,is),scalar_btye(ims,kms,1,is), &
                                  config_flags%spec_bdy_width, grid%spec_zone, grid%relax_zone, &
                                  grid%dtbc, grid%fcx, grid%gcx,             &
                                  config_flags,               &
@@ -2643,8 +2649,10 @@ BENCH_END(chem_adv_tim)
                                  k_start, k_end                        )
 
          CALL spec_bdy_scalar  ( scalar_tend(ims,kms,jms,is),                &
-                                 scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is),scalar_bys(ims,kms,1,is),scalar_bye(ims,kms,1,is), &
-                                 scalar_btxs(jms,kms,1,is),scalar_btxe(jms,kms,1,is),scalar_btys(ims,kms,1,is),scalar_btye(ims,kms,1,is), &
+                                 scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is), &
+                                 scalar_bys(ims,kms,1,is),scalar_bye(ims,kms,1,is), &
+                                 scalar_btxs(jms,kms,1,is),scalar_btxe(jms,kms,1,is), &
+                                 scalar_btys(ims,kms,1,is),scalar_btye(ims,kms,1,is), &
                                  config_flags%spec_bdy_width, grid%spec_zone,                 &
                                  config_flags,               &
                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -3173,6 +3181,10 @@ BENCH_END(moist_phys_end_tim)
   ENDIF
 
   IF (.not. config_flags%non_hydrostatic) THEN
+#ifdef DM_PARALLEL
+#    include "HALO_EM_HYDRO_UV.inc"
+#    include "PERIOD_EM_HYDRO_UV.inc"
+#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles

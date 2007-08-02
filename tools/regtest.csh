@@ -1,25 +1,4 @@
 #!/bin/csh
-# @ job_type		= parallel
-# @ environment		= COPY_ALL;MP_EUILIB=us
-# @ job_name		= regtest.$(jobid)
-# @ output		= regtest_out
-# @ error		= regtest_err
-# @ network.MPI		= csss,shared,us
-# @ node_usage		= shared
-# @ checkpoint		= no
-# @ wall_clock_limit	= 21600
-# @ node		= 1
-# @ total_tasks		= 4
-###################  NCAR  ########################
-# @ ja_report		= yes
-# @ class               = share
-###################  NCAR  ########################
-###################  NCEP  ########################
-## @ class              = dev
-## @ group              = devqpri
-## @ preferences        = Feature == "dev"
-###################  NCEP  ########################
-# @ queue
 
 # #BSUB -x                                # exlusive use of node (not_shared)
 # #BSUB -a mpich_gm                       # at NCAR: lightning
@@ -29,7 +8,7 @@
 #BSUB -n 4                              # number of total tasks
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
-#BSUB -J reg.test                       # job name
+#BSUB -J regular.test                   # job name
 #BSUB -q premium                        # queue
 #BSUB -W 6:00                           # wallclock time
 #BSUB -P 64000400
@@ -221,7 +200,7 @@ set start = ( `date` )
 #	Initial set up values
 
 #	Is this a single domain regression test or is this nested.  Well, a nested one
-#	is a bit special.  It can only run on machines that have the WRF RSL-but-no-MPI
+#	is a bit special.  It can only run on machines that have the WRF RSL_LITE-but-no-MPI
 #	option available.
 
 set NESTED = TRUE
@@ -238,6 +217,13 @@ endif
 
 set FDDA = TRUE
 set FDDA = FALSE
+
+set FDDA2 = TRUE
+set FDDA2 = FALSE
+
+if ( $FDDA2 == TRUE ) then
+	set FDDA = TRUE
+endif
 
 #	The default floating point precision is either 4 bytes or 8 bytes.
 #	We assume that it is 4 (or the default for the architecture) unless 
@@ -308,19 +294,6 @@ endif
 set thedataem = ${WRFREGDATAEM}/${dataset}
 set thedatanmm = $WRFREGDATANMM
 
-#	The distributed memory option RSL_LITE may be selected.
-
-set RSL_LITE = TRUE
-set RSL_LITE = FALSE
-
-set COMBO_NEST_RSL__LITE = TRUE
-set COMBO_NEST_RSL__LITE = FALSE
-
-if ( $COMBO_NEST_RSL__LITE == TRUE ) then
-	set NESTED = TRUE
-	set RSL_LITE = TRUE
-endif
-
 #	A separately installed version of the latest ESMF library (NOT the 
 #	ESMF library included in the WRF tarfile) can be tested by setting 
 #	"ESMF_LIB" to "TRUE" below.  This test is not supported on all 
@@ -350,10 +323,6 @@ if ( $ESMF_LIB == TRUE ) then
 	endif
 	if ( $NESTED == TRUE ) then
 		echo "The ESMF library does not work with nesting."
-		exit ( 3 ) 
-	endif
-	if ( $RSL_LITE == TRUE ) then
-		echo "The ESMF library does not work with RSL_LITE."
 		exit ( 3 ) 
 	endif
 endif
@@ -431,11 +400,9 @@ set IO_FORM_WHICH =( IO     IO        IO       IO       O        )
 #	esmf_lib: cannot test NMM
 #	grib output: cannot test NMM
 
-if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
+if      ( $NESTED == TRUE ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss          )
-else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
-	set CORES = ( em_real em_b_wave em_quarter_ss          )
-else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
+else if ( $NESTED != TRUE ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real em_real )
@@ -445,20 +412,6 @@ else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
 	endif
 	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
 		set CORES = ( em_real em_b_wave em_quarter_ss )
-	endif
-	if ( $FDDA == TRUE ) then
-		set CORES = ( em_real )
-	endif
-else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
-	if ( $CHEM == TRUE ) then
-		set CORES = ( em_real em_real )
-	endif
-	if ( $ESMF_LIB == TRUE ) then
-		set CORES = ( em_real )
-	endif
-	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
-		set CORES = ( em_real )
 	endif
 	if ( $FDDA == TRUE ) then
 		set CORES = ( em_real )
@@ -476,20 +429,27 @@ if      ( $REAL8 == TRUE ) then
 	set CORES = ( em_real em_quarter_ss )
 endif
 
-if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( $NESTED != TRUE ) ) then
+if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $NESTED != TRUE ) && ( $REAL8 != TRUE )   ) then
 	set PHYSOPTS =	( 1 2 3 4 5 )
-else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( $NESTED == TRUE ) ) then
-	set PHYSOPTS =	( 1 2 3 )
+else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( ( $NESTED == TRUE ) || ( $REAL8 == TRUE ) ) ) then
+	set PHYSOPTS =	( 1 2 3 4 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
-	set PHYSOPTS =	( 1 2 3 )
+	if ( $FDDA2 == TRUE ) then
+		set PHYSOPTS_FDDA = BOTH
+	else
+		set PHYSOPTS_FDDA = GRID
+	endif
+	if ( $PHYSOPTS_FDDA == GRID ) then
+		set PHYSOPTS =	( 1 )
+	else
+		set PHYSOPTS =	( 1 2 3 )
+	endif
 else if ( $CHEM == TRUE ) then
 	set PHYSOPTS =	( 1 2 3 4 5 6 )
 endif
 
 #	This is selecting the ideal physics options - mostly selecting BC options.
-#	With no nesting, run all three ideal physics options.  When we have
-#	RSL_LITE (we are only doing em_quarter_ss), choose the first option only
-#	since it uses open boundaries.
+#	With no nesting, run all three ideal physics options.
 
 if      ( $NESTED == TRUE ) then
 	set Max_Ideal_Physics_Options = 2
@@ -732,7 +692,7 @@ cat >! time_real_3  << EOF
 EOF
 
 cat >! phys_real_4 << EOF
- mp_physics                          = 4,     4,     4,
+ mp_physics                          = 6,     6,     6,
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 2,     2,     2,
  radt                                = 30,    30,    30,
@@ -768,7 +728,7 @@ cat >! time_real_4  << EOF
 EOF
 
 cat >! phys_real_5 << EOF
- mp_physics                          = 4,     4,     4,
+ mp_physics                          = 8,     8,     8,
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
  radt                                = 30,    30,    30,
@@ -1118,14 +1078,10 @@ if ( $ARCH[1] == AIX ) then
 	endif
 	if ( ! -d $TMPDIR ) mkdir $TMPDIR
 	set MAIL                = /usr/bin/mailx
-	if      ( ( $NESTED == TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS	= ( 9 10 4 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE != TRUE ) ) then
-		set COMPOPTS    = ( 1 2 4 )
-	else if ( ( $NESTED == TRUE ) && ( $RSL_LITE == TRUE ) ) then
+	if      ( $NESTED == TRUE ) then
 		set COMPOPTS	= ( 9 10 3 )
-	else if ( ( $NESTED != TRUE ) && ( $RSL_LITE == TRUE ) ) then
-		set COMPOPTS	= ( 1 2 3 )
+	else if ( $NESTED != TRUE ) then
+		set COMPOPTS    = ( 1 2 3 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
@@ -1454,6 +1410,14 @@ banner 3
 #set ans = "$<"
 #DAVE###################################################
 
+if ( $FDDA == TRUE ) then
+	if      ( $PHYSOPTS_FDDA == GRID ) then
+		set ZAP_OPENMP = FALSE
+	else if ( $PHYSOPTS_FDDA == BOTH ) then
+		set ZAP_OPENMP = TRUE
+	endif
+endif
+
 #	First of all, in which particular directory do we start.
 
 cd $DEF_DIR
@@ -1545,7 +1509,7 @@ endif
 #	Here we initialize our output message.
 
 if ( -e ${DEF_DIR}/wrftest.output ) rm ${DEF_DIR}/wrftest.output
-echo "Architecute: $ARCH[1]      machine: `hostname`" >>! ${DEF_DIR}/wrftest.output
+echo "Architecture $ARCH[1]      machine: `hostname`" >>! ${DEF_DIR}/wrftest.output
 echo "WRFV2 source from: $acquire_from " >>! ${DEF_DIR}/wrftest.output
 echo "Number of OpenMP processes to use: $OPENMP" >>! ${DEF_DIR}/wrftest.output
 echo "Number of MPI    processes to use: $Num_Procs" >>! ${DEF_DIR}/wrftest.output
@@ -1578,13 +1542,6 @@ if ( $CHEM == TRUE ) then
 	echo "WRF_CHEM tests run for em_real core only, no other cores run" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
-if ( $RSL_LITE == TRUE ) then
-	echo "Parallel DM portion using RSL_LITE build option" >>! ${DEF_DIR}/wrftest.output
-	echo " " >>! ${DEF_DIR}/wrftest.output
-else if ( $RSL_LITE != TRUE ) then
-	echo "Parallel DM portion using RSL build option" >>! ${DEF_DIR}/wrftest.output
-	echo " " >>! ${DEF_DIR}/wrftest.output
-endif
 if ( $ESMF_LIB == TRUE ) then
 	echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
 	echo "(NOT the ESMF library included in the WRF tarfile) will" >>! ${DEF_DIR}/wrftest.output
@@ -1598,8 +1555,13 @@ if ( $QUILT == TRUE ) then
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $FDDA == TRUE ) then
-	echo "Running FDDA tests (grid=1, obs=2, grid+obs=3)" >>! ${DEF_DIR}/wrftest.output
-	echo " " >>! ${DEF_DIR}/wrftest.output
+	if      ( $PHYSOPTS_FDDA == GRID ) then
+		echo "Running FDDA tests (grid nudging only)" >>! ${DEF_DIR}/wrftest.output
+		echo " " >>! ${DEF_DIR}/wrftest.output
+	else if ( $PHYSOPTS_FDDA == BOTH ) then
+		echo "Running FDDA tests (grid=1, obs=2, grid+obs=3)" >>! ${DEF_DIR}/wrftest.output
+		echo " " >>! ${DEF_DIR}/wrftest.output
+	endif
 endif
 if ( $GENERATE_BASELINE != FALSE ) then
 	echo "WRF output will be archived in baseline directory ${GENERATE_BASELINE} for some tests" >>! \
@@ -1937,7 +1899,7 @@ banner 12
 
 				if ( $CHEM != TRUE ) then
 					cp ${CUR_DIR}/phys_real_${phys_option} phys_opt
-					if ( ( $RSL_LITE == TRUE ) && ( $NESTED != TRUE ) ) then
+					if ( $NESTED != TRUE ) then
 						cp ${CUR_DIR}/dyn_real_${phys_option} dyn_opt
 					else
 						cp ${CUR_DIR}/dyn_real_SAFE dyn_opt
@@ -2554,7 +2516,7 @@ banner 26
 					../../main/ideal_${core}.exe.1 >! print.out.ideal_${core}_Parallel=${compopt}
 #DAVE###################################################
 echo ran ideal
-ls -ls wrfiput*
+ls -ls wrfinput*
 banner 27
 #set ans = "$<"
 #DAVE###################################################

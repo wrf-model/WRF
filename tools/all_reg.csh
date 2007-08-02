@@ -45,17 +45,14 @@ set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"    
                  "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
                  "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	3	\
                  "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	4	\
-                 "RSL_LITE"             "RSL_LITE=FALSE"      "RSL_LITE=TRUE"       "NONE"  	5	\
-                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  6	\
-                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	7	\
-                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	8	\
-                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	9	\
-                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	10	\
-                 "Moving_Nest2"         "COMBO_NEST_RSL__LITE=FALSE" \
-                                                              "COMBO_NEST_RSL__LITE=TRUE"  \
-                                                                                    "NONE"  	11	\
-                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	12	\
+                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	5	\
+                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	6	\
+                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	7	\
+                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	8 	\
+                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	9 	\
+                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	10	\
                )
+#                "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  5	\
 
 #	Where are we located.
 

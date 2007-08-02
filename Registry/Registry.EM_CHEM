@@ -1288,6 +1288,7 @@ halo      HALO_EM_SCALAR_OLD_E_5 dyn_em 48:scalar_old
 halo      HALO_EM_SCALAR_OLD_E_7 dyn_em 80:scalar_old
 
 halo      HALO_EM_FEEDBACK   dyn_em 48:ht
+halo      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 
 halo      HALO_EM_COUPLE_A   dyn_em 24:mub,mu_1,mu_2
 period    PERIOD_EM_COUPLE_A dyn_em 2:mub,mu_1,mu_2
@@ -1312,6 +1313,7 @@ period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
 period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist
 period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem
 period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar
+period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmhd,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2

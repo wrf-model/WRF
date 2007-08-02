@@ -67,8 +67,6 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS
                                      = "wrf_real_input_em.d<domain>.<date>"  ; Input to real from SI
-                                     = "met_nmm.d<domain>.<date>"            ; Input to real from WPS (NMM)
-                                     = "wrf_real_input_nm.d<domain>.<date>"  ; Input to real from SI (NMM)
 
 To choose between SI and WPS input to real for NMM core:
  auxinput1_inname                    = "met_nm.d<domain>.<date>"             ; Input to real from WPS
@@ -302,7 +300,7 @@ Namelist variables for controling the automatic moving nest:
                                      = 0, no surface-layer
                                      = 1, Monin-Obukhov scheme
                                      = 2, Monin-Obukhov (Janjic) scheme
-                                     = 3, NCEP Global Forecast System scheme
+                                     = 3, NCEP Global Forecast System scheme (NMM only)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
@@ -314,7 +312,7 @@ Namelist variables for controling the automatic moving nest:
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
-                                     = 3, NCEP Global Forecast System scheme
+                                     = 3, NCEP Global Forecast System scheme (NMM only)
                                      = 99, MRF scheme (to be removed)
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -330,7 +328,7 @@ Namelist variables for controling the automatic moving nest:
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Devenyi ensemble scheme
-                                     = 4, Simplified Arakawa-Schubert scheme
+                                     = 4, Simplified Arakawa-Schubert scheme (NMM only)
                                      = 99, previous Kain-Fritsch scheme
 
  cudt                                = 0,       ; minutes between cumulus physics calls
@@ -417,6 +415,8 @@ The following are for observation nudging:
                                                   in time_control namelist
  max_obs                             = 150000   ; max number of observations used on a domain during any 
                                                   given time window
+ nobs_ndg_vars                       = 5,       ; number of nudging variables; do not change
+ nobs_err_flds                       = 9,       ; number of error fields; do not change
  fdda_start                          = 0        ; obs nudging start time in minutes
  fdda_end                            = 180      ; obs nudging end time in minutes
  obs_nudge_wind (max_dom)            = 1        ; whether to nudge wind: (=0 off)
@@ -504,10 +504,10 @@ The following are for observation nudging:
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
- pd_moist                            = F        ; positive definite advection of moisture
- pd_scalar                           = F        ; positive definite advection of scalars
- pd_chem                             = F        ; positive definite advection of chem variables
- pd_tke                              = F        ; positive definite advection of tke
+ pd_moist (max_dom)                  = F        ; positive definite advection of moisture
+ pd_scalar (max_dom)                 = F        ; positive definite advection of scalars
+ pd_chem (max_dom)                   = F        ; positive definite advection of chem variables
+ pd_tke (max_dom)                    = F        ; positive definite advection of tke
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also

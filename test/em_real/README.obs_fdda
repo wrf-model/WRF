@@ -87,6 +87,8 @@ Below is an example of a namelist set up to activate obs-nudging on domains
  max_obs                             = 150000,
  fdda_start                          =     0.,     0.,     0.,     0.,     0.
  fdda_end                            = 99999., 99999., 99999., 99999., 99999.
+ nobs_ndg_vars                       = 5
+ nobs_err_flds                       = 9
  obs_nudge_wind                      = 1,1,1,1,1
  obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
  obs_nudge_temp                      = 1,1,1,1,1

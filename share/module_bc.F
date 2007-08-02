@@ -152,6 +152,7 @@ CONTAINS
      write( wrf_err_message ,*) ' nested       ',config_flags%nested
      CALL wrf_message ( wrf_err_message )
      write( wrf_err_message ,*) ' specified    ',config_flags%specified
+     CALL wrf_message ( wrf_err_message )
      CALL wrf_error_fatal( ' *** Error in boundary condition specification ' )
 
    ENDIF

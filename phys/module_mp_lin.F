@@ -2059,7 +2059,7 @@ CONTAINS
 !c
 
 
-          pvapor(k)=-psmltevp(k)-prevp(k)-pgmltevp(k)
+          pvapor(k)=-psmltevp(k)-prevp(k)-pgmltevp(k)*gindex
           qvz(k)=amax1( qvmin,qvz(k)+dtb*pvapor(k))
           pclw(k)=-praut(k)-pracw(k)-psacw(k)-pgacw(k)*gindex
           if(flag_qndrop)then

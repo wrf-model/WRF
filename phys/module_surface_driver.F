@@ -720,19 +720,29 @@ CONTAINS
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &          
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
+         IF( PRESENT(sr) ) THEN
+           frpcpn=.true.
+         ENDIF
+
          CALL wrf_debug(100,'in NOAH LSM')
            CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
-                hfx,qfx,lh,grdflx,qgh,gsw,glw,smstav,smstot,    &
+                hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
                 albedo,albbck,znt,z0, tmn,xland,xice, emiss,    &
                 snowc,qsfc,rainbl,                              & 
                 num_soil_layers,dtbl,dzs,itimestep,             &
                 smois,tslb,snow,canwat,                         &
-                chs, chs2, cqs2, cpm,rcp,                       &    
-                sh2o,snowh,                                     & !h  
+                chs, chs2, cqs2, cpm,rcp,SR,chklowq,qz0,        &    
+!MEk June07
+                myj,frpcpn,                                     &
+		sh2o,snowh,                                     & !h  
                 u_phy,v_phy,                                    & !I
                 snoalb,shdmin,shdmax,                           & !i
                 acsnom,acsnow,                                  & !o 
+! MEK MAY 2007
+                snopcx,                                         & !o 
+! MEK JUL2007
+                potevp,                                         & !o
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -756,8 +766,9 @@ CONTAINS
 
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
-              CHKLOWQ(I,J)= 1.0
-              SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+!              CHKLOWQ(I,J)= 1.0
+               SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+               SFCEXC(I,J)= CHS(I,J)
            ENDDO
            ENDDO
          

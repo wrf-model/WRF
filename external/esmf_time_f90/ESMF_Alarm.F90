@@ -155,7 +155,7 @@
                                StopTime, Enabled, rc)
 
 ! !ARGUMENTS:
-      type(ESMF_Alarm), intent(out) :: alarm
+      type(ESMF_Alarm), intent(inout) :: alarm  ! really INTENT(OUT)
       type(ESMF_Time), intent(in), optional :: RingTime
       type(ESMF_TimeInterval), intent(in), optional :: RingInterval
       type(ESMF_Time), intent(in), optional :: StopTime
@@ -540,7 +540,7 @@
       subroutine ESMF_AlarmEnable(alarm, rc)
 
 ! !ARGUMENTS:
-      type(ESMF_Alarm), intent(out) :: alarm
+      type(ESMF_Alarm), intent(inout) :: alarm  ! really INTENT(OUT)
       integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
@@ -573,7 +573,7 @@
       subroutine ESMF_AlarmDisable(alarm, rc)
 
 ! !ARGUMENTS:
-      type(ESMF_Alarm), intent(out) :: alarm
+      type(ESMF_Alarm), intent(inout) :: alarm  ! really INTENT(OUT)
       integer, intent(out), optional :: rc
 
 ! !DESCRIPTION:
@@ -607,7 +607,7 @@
       subroutine ESMF_AlarmRingerOn(alarm, rc)
 
 ! !ARGUMENTS:
-      type(ESMF_Alarm), intent(out) :: alarm
+      type(ESMF_Alarm), intent(inout) :: alarm  ! really INTENT(OUT)
       integer, intent(out), optional :: rc
     
 ! !DESCRIPTION:
@@ -646,7 +646,7 @@
       subroutine ESMF_AlarmRingerOff(alarm, rc)
 
 ! !ARGUMENTS:
-      type(ESMF_Alarm), intent(out) :: alarm
+      type(ESMF_Alarm), intent(inout) :: alarm  ! really INTENT(OUT)
       integer, intent(out), optional :: rc
     
 ! !DESCRIPTION:

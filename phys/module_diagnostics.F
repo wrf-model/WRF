@@ -162,6 +162,9 @@ CONTAINS
    dardt_sum = 0.
    drcdt_sum = 0.
    drndt_sum = 0.
+   rainc_sum = 0.
+   raint_sum = 0.
+   rainnc_sum = 0.
    sfcevp_sum = 0.
    hfx_sum = 0.
    lh_sum = 0.
@@ -210,7 +213,7 @@ CONTAINS
            drcdt_sum/dt/no_points, &
            drndt_sum/dt/no_points
      CALL wrf_message ( TRIM(outstring) )
-     WRITE(outstring,*) grid_str,'Domain average of rt_sum, rc_sum, rnc_sum (mm/sec): ', xtime, &
+     WRITE(outstring,*) grid_str,'Domain average of rt_sum, rc_sum, rnc_sum (mm): ', xtime, &
            raint_sum/no_points, &
            rainc_sum/no_points, &
            rainnc_sum/no_points

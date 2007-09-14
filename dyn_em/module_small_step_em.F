@@ -1235,7 +1235,7 @@ END SUBROUTINE advance_mu_t
 
 !------------------------------------------------------------
 
-SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
+SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                       mu1, mut, muave, muts,      &
                       t_2ave, t_2, t_1,           &
                       ph, ph_1, phb, ph_tend,     &
@@ -1270,7 +1270,8 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
       REAL, DIMENSION(  ims:ime , kms:kme, jms:jme ), &
             INTENT(IN   ) ::                          &
                                              rw_tend, &
-                                             ww,     &
+                                             ww,      &
+                                             w_save,  &
                                              u,       &
                                              v,       &
                                              t_2,     &
@@ -1315,6 +1316,9 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
       REAL, DIMENSION( its:ite ) :: mut_inv, msft_inv
       REAL, DIMENSION( its:ite, kts:kte ) :: rhs, wdwn
       INTEGER :: i,j,k, i_start, i_end, j_start, j_end, k_start, k_end
+      REAL, DIMENSION (kts:kte) :: dampwt
+      real :: htop,hbot,hdepth,hk
+      real    :: pi,dampmag
 
 !<DESCRIPTION>
 !
@@ -1350,6 +1354,9 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
   IF ( (config_flags%specified .or. config_flags%nested) .and. (jte == jde) ) &
              j_end   = j_end - 1
 
+   pi = 4.*atan(1.)
+   dampmag = dts*config_flags%dampcoef
+   hdepth=config_flags%zdamp
 
 ! calculation of phi and w equations
 
@@ -1418,7 +1425,6 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
     DO k=2,k_end
       DO i=i_start, i_end
         w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                       &
-
                  + msft_inv(i)*cqw(i,k,j)*(                        &
             +.5*dts*g*mut_inv(i)*rdn(k)*                           &
              (c2a(i,k  ,j)*rdnw(k  )                               &
@@ -1457,9 +1463,26 @@ SUBROUTINE advance_w( w, rw_tend, ww, u, v,       &
     ENDDO
     ENDDO
 
+    IF (config_flags%damp_opt .eq. 3) THEN
+       k=k_end+1
+       DO i=i_start, i_end
+          dampwt(k) = dampmag
+          w(i,k,j) = (w(i,k,j) - dampwt(k)*mut(i,j)*w_save(i,k,j))/(1.+dampwt(k))
+       ENDDO
+    ENDIF
     DO k=k_end,2,-1
     DO i=i_start, i_end
        w (i,k,j)=w (i,k,j)-gamma(i,k,j)*w(i,k+1,j)
+       IF (config_flags%damp_opt .eq. 3) THEN
+          htop=(ph_1(i,k_end+1,j)+phb(i,k_end+1,j))/g
+          hk=(ph_1(i,k,j)+phb(i,k,j))/g
+          hbot=htop-hdepth
+          dampwt(k) = 0.
+          if(hk .ge. hbot)then
+            dampwt(k) = dampmag*sin(0.5*pi*(hk-hbot)/hdepth)*sin(0.5*pi*(hk-hbot)/hdepth)
+          endif
+          w(i,k,j) = (w(i,k,j) - dampwt(k)*mut(i,j)*w_save(i,k,j))/(1.+dampwt(k))
+       ENDIF
        ph(i,k+1,j) = rhs(i,k+1)+msft(i,j)*.5*dts*g*(1.+epssm) &
                       *w(i,k+1,j)/muts(i,j)
     ENDDO

@@ -1726,7 +1726,7 @@ BENCH_END(sumflux_tim)
 
 BENCH_START(advance_w_tim)
         IF ( config_flags%non_hydrostatic ) THEN
-          CALL advance_w( grid%em_w_2, rw_tend, grid%em_ww, grid%em_u_2, grid%em_v_2,       &
+          CALL advance_w( grid%em_w_2, rw_tend, grid%em_ww, w_save, grid%em_u_2, grid%em_v_2,       &
                           grid%em_mu_2, grid%em_mut, muave, grid%em_muts,           &
                           t_2save, grid%em_t_2, grid%em_t_save,             &
                           grid%em_ph_2, ph_save, grid%em_phb, ph_tend,      &

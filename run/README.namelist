@@ -473,6 +473,8 @@ The following are for observation nudging:
                                                       (dampcoef nondimensional ~0.01-0.1)
                                                   2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; 
                                                       not for real-data cases)
+                                                  3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
+                                                      for real-data cases)
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
                                                   0 = no 6th-order diffusion (default)
                                                   1 = 6th-order numerical diffusion

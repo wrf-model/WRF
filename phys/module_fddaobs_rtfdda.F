@@ -1410,20 +1410,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 ! DEFINE GRID-TYPE OFFSET FACTORS, IGRID AND GRID
 
-  IF(INEST.EQ.1)THEN
-    INPF=NPFI
-    INFR=IONF
-  ELSE
-    IF(IRATIO.NE.3) THEN
-      IF (iprt) THEN
-        write(6,*) 'iratio = ',iratio
-        write(6,*) 'stop 1 in nudob: iratio = ',iratio
-      ENDIF
-      STOP 1
-    ENDIF
-    INPF=(3**LEVIDN(INEST))*NPFI
-    INFR=(3**LEVIDN(INEST))*IONF
-  ENDIF
+  INPF=(IRATIO**LEVIDN(INEST))*NPFI
+  INFR=(IRATIO**LEVIDN(INEST))*IONF
+
   GRIDX=0.0
   GRIDY=0.0
   IGRID=0

@@ -607,6 +607,11 @@ write(0,*)'reordering mesh'
           IF ( ips .EQ. -1 ) ips = i
        ENDIF
     ENDDO
+    ! handle setting the memory dimensions where there are no X elements assigned to this proc
+    IF (ips .EQ. -1 ) THEN
+       ipe = -1
+       ips = 0
+    ENDIF
     jps = -1
     i = ids ;
     DO j = jds, jde
@@ -616,6 +621,11 @@ write(0,*)'reordering mesh'
           IF ( jps .EQ. -1 ) jps = j
        ENDIF
     ENDDO
+    ! handle setting the memory dimensions where there are no Y elements assigned to this proc
+    IF (jps .EQ. -1 ) THEN
+       jpe = -1
+       jps = 0
+    ENDIF
 
 ! 
 ! description of transpose decomposition strategy for RSL LITE. 20061231jm
@@ -665,6 +675,12 @@ write(0,*)'reordering mesh'
           IF ( kpsx .EQ. -1 ) kpsx = k
        ENDIF
     ENDDO
+! handle case where no levels are assigned to this process
+! no iterations.  Do same for I and J. Need to handle memory alloc below.
+    IF (kpsx .EQ. -1 ) THEN
+       kpex = -1
+       kpsx = 0
+    ENDIF
 
     jpsx = -1
     k = kds ;
@@ -675,6 +691,10 @@ write(0,*)'reordering mesh'
           IF ( jpsx .EQ. -1 ) jpsx = j
        ENDIF
     ENDDO
+    IF (jpsx .EQ. -1 ) THEN
+       jpex = -1
+       jpsx = 0
+    ENDIF
 
 ! XzYx decomposition  (note, x grid dim is decomposed over Y processor dim)
 
@@ -690,6 +710,10 @@ write(0,*)'reordering mesh'
           IF ( ipsy .EQ. -1 ) ipsy = i
        ENDIF
     ENDDO
+    IF (ipsy .EQ. -1 ) THEN
+       ipey = -1
+       ipsy = 0
+    ENDIF
 
 
 #else
@@ -745,24 +769,55 @@ write(0,*)'reordering mesh'
     kmex = kpex
     kmsy = kpsy
     kmey = kpey
+    ! handle setting the memory dimensions where there are no levels assigned to this proc
+    IF ( kpsx .EQ. 0 .AND. kpex .EQ. -1 ) THEN
+      kmsx = 0
+      kmex = 0
+    ENDIF
+    IF ( kpsy .EQ. 0 .AND. kpey .EQ. -1 ) THEN
+      kmsy = 0
+      kmey = 0
+    ENDIF
 
-    ims = max( ips - max(shw,max_halo_width), ids - bdx ) - 1
-    ime = min( ipe + max(shw,max_halo_width), ide + bdx ) + 1
+    IF ( ips .EQ. 0 .AND. ipe .EQ. -1 ) THEN
+      ims = 0
+      ime = 0
+    ELSE
+      ims = max( ips - max(shw,max_halo_width), ids - bdx ) - 1
+      ime = min( ipe + max(shw,max_halo_width), ide + bdx ) + 1
+    ENDIF
     imsx = ids
     imex = ide
     ipsx = imsx
     ipex = imex
-    imsy = ipsy
-    imey = ipey
+    ! handle setting the memory dimensions where there are no Y elements assigned to this proc
+    IF ( ipsy .EQ. 0 .AND. ipey .EQ. -1 ) THEN
+      imsy = 0
+      imey = 0
+    ELSE
+      imsy = ipsy
+      imey = ipey
+    ENDIF
 
-    jms = max( jps - max(shw,max_halo_width), jds - bdy ) - 1
-    jme = min( jpe + max(shw,max_halo_width), jde + bdy ) + 1
+    IF ( jps .EQ. 0 .AND. jpe .EQ. -1 ) THEN
+      jms = 0
+      jme = 0
+    ELSE
+      jms = max( jps - max(shw,max_halo_width), jds - bdy ) - 1
+      jme = min( jpe + max(shw,max_halo_width), jde + bdy ) + 1
+    ENDIF
     jmsx = jpsx
     jmex = jpex
     jmsy = jds
     jmey = jde
-    jpsy = jmsy
-    jpey = jmey
+    ! handle setting the memory dimensions where there are no X elements assigned to this proc
+    IF ( jpsx .EQ. 0 .AND. jpex .EQ. -1 ) THEN
+      jmsx = 0
+      jmex = 0
+    ELSE
+      jpsy = jmsy
+      jpey = jmey
+    ENDIF
 
   END SUBROUTINE compute_memory_dims_rsl_lite
 

@@ -201,7 +201,7 @@ CONTAINS
    REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT)          :: mu_tend
    REAL , DIMENSION( spec_bdy_width) , INTENT(IN   ) :: fcx, gcx
 
-   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bxs,u_bxe, &
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: u_bxs,u_bxe, &
                                                                                v_bxs,v_bxe, &
                                                                                ph_bxs,ph_bxe, &
                                                                                w_bxs,w_bxe, &
@@ -212,7 +212,7 @@ CONTAINS
                                                                                w_btxs,w_btxe, &
                                                                                t_btxs,t_btxe
 
-   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bys,u_bye, &
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: u_bys,u_bye, &
                                                                                v_bys,v_bye, &
                                                                                ph_bys,ph_bye, &
                                                                                w_bys,w_bye, &
@@ -224,10 +224,10 @@ CONTAINS
                                                                                t_btys,t_btye
 
 
-   REAL,  DIMENSION( jms:jme , 1:1     , spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bxs,mu_bxe, &
+   REAL,  DIMENSION( jms:jme , 1:1     , spec_bdy_width    ), INTENT(IN   ) :: mu_bxs,mu_bxe, &
                                                                                mu_btxs,mu_btxe
 
-   REAL,  DIMENSION( ims:ime , 1:1     , spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bys,mu_bye, &
+   REAL,  DIMENSION( ims:ime , 1:1     , spec_bdy_width    ), INTENT(IN   ) :: mu_bys,mu_bye, &
                                                                                mu_btys,mu_btye
    REAL, INTENT(IN   ) :: dtbc
 
@@ -360,9 +360,9 @@ CONTAINS
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) :: scalar_tend
    REAL , DIMENSION( spec_bdy_width) , INTENT(IN   ) :: fcx, gcx
 
-   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bxs,scalar_bxe, &
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: scalar_bxs,scalar_bxe, &
                                                                                scalar_btxs,scalar_btxe
-   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
                                                                                scalar_btys,scalar_btye
    REAL, INTENT(IN   ) :: dtbc
 !Local
@@ -438,7 +438,7 @@ CONTAINS
                                                                       t_tend
    REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(OUT  )          :: mu_tend
 
-   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bxs,u_bxe,  &
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: u_bxs,u_bxe,  &
                                                                                v_bxs,v_bxe,  &
                                                                                ph_bxs,ph_bxe, &
                                                                                w_bxs,w_bxe, &
@@ -449,7 +449,7 @@ CONTAINS
                                                                                w_btxs,w_btxe, &
                                                                                t_btxs,t_btxe
 
-   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: u_bys,u_bye,  &
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: u_bys,u_bye,  &
                                                                                v_bys,v_bye,  &
                                                                                ph_bys,ph_bye, &
                                                                                w_bys,w_bye, &
@@ -460,10 +460,10 @@ CONTAINS
                                                                                w_btys,w_btye, &
                                                                                t_btys,t_btye
 
-   REAL,  DIMENSION( jms:jme , 1:1 ,     spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bxs,mu_bxe, &
+   REAL,  DIMENSION( jms:jme , 1:1 ,     spec_bdy_width    ), INTENT(IN   ) :: mu_bxs,mu_bxe, &
                                                                                mu_btxs,mu_btxe
 
-   REAL,  DIMENSION( ims:ime , 1:1 ,     spec_bdy_width, 4 ), INTENT(IN   ) :: mu_bys,mu_bye, &
+   REAL,  DIMENSION( ims:ime , 1:1 ,     spec_bdy_width    ), INTENT(IN   ) :: mu_bys,mu_bye, &
                                                                                mu_btys,mu_btye
          CALL spec_bdytend (   ru_tend,                &
                                u_bxs,u_bxe,u_bys,u_bye, u_btxs,u_btxe,u_btys,u_btye,    &
@@ -542,10 +542,10 @@ CONTAINS
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(OUT  ) :: scalar_tend
 
-   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bxs,scalar_bxe, &
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: scalar_bxs,scalar_bxe, &
                                                                                scalar_btxs,scalar_btxe
 
-   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width, 4 ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
                                                                                scalar_btys,scalar_btye
 
 !Local

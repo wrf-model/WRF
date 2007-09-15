@@ -52,6 +52,7 @@ char * field_name_bdy( char * tmp, node_t * p , int tag, int bdy  ) ;
 char * dimension_with_colons( char * pre, char * tmp, node_t * p, char * post) ;
 char * dimension_with_ones( char * pre, char * tmp, node_t * p, char * post) ;
 char * dimension_with_ranges( char * ref , char * pre, int bdy , char * tmp, node_t * p, char * post, char * nlstructname ) ;
+char * arrray_size_expression( char * refarg , char * pre , int bdy , char * tmp , node_t * p , char * post , char * nlstructname  ) ;
 char * index_with_firstelem( char * pre , char * dref , int bdy , char * tmp , node_t * p , char * post ) ;
 
 char * declare_array_as_pointer( char * tmp, node_t * p ) ;
@@ -72,7 +73,7 @@ char * get_typename_i(int i) ;
 
 int gen_alloc ( char * dirname ) ;
 int gen_alloc1 ( char * dirname , char * corename ) ;
-int gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node ) ;
+int gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node , int sw ) ;
 
 int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
@@ -113,6 +114,8 @@ int gen_model_data_ord ( char * dirname ) ;
 int get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t * p , int first_last ) ;
 
 int associated_with_4d_array( node_t * p ) ;
+
+
 
 #define PROTOS_H
 #endif

@@ -32,19 +32,20 @@ gen_alloc1 ( char * dirname , char * corename )
   else                       { sprintf(fname,"%s%s",corename,fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_alloc2( fp , "grid%", corename , &Domain ) ;
+  gen_alloc2( fp , "grid%", corename , &Domain, 1 ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
+gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
   int tag ;
-  char post[NAMELEN] ;
+  char post[NAMELEN], post_for_count[NAMELEN] ;
   char fname[NAMELEN] ;
   char x[NAMELEN] ;
+  char tchar ;
 
   if ( node == NULL ) return(1) ;
 
@@ -58,8 +59,18 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
           (p->node_kind & FIELD && ( strncmp("dyn_",p->use,4)))
                          ))
     {
-      if ( p->node_kind & FOURD ) { sprintf(post,",num_%s)",field_name(t4,p,0)) ; }
-      else                        { sprintf(post,")") ; }
+      if ( p->type != NULL ) {
+        tchar = '?' ;
+        if      ( !strcmp( p->type->name , "real" ) )            { tchar = 'R' ; }
+	else if ( !strcmp( p->type->name , "doubleprecision" ) ) { tchar = 'D' ; }
+	else if ( !strcmp( p->type->name , "logical" ) )         { tchar = 'L' ; }
+	else if ( !strcmp( p->type->name , "integer" ) )         { tchar = 'I' ; }
+	else { fprintf(stderr,"WARNING: what is the type for %s ?\n", p->name) ; }
+      }
+      if ( p->node_kind & FOURD ) { sprintf(post,           ",num_%s)",field_name(t4,p,0)) ; 
+                                    sprintf(post_for_count, "*num_%s)",field_name(t4,p,0)) ; }
+      else                        { sprintf(post,           ")" ) ; 
+                                    sprintf(post_for_count, ")" ) ;   }
       for ( tag = 1 ; tag <= p->ntl ; tag++ )
       {
         /* if this is a core-specific variable, prepend the name of the core to   */
@@ -74,26 +85,57 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
 
 /* check for errors in memory allocation */
 
-       if ( ! ( p->node_kind & FOURD ) && 
+       if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
             ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
        {
 	 fprintf(fp,"IF(.NOT.inter_domain)THEN\n",tag) ;
        }
-       if ( p->ntl > 1 ) {
+       if ( p->ntl > 1 && sw == 1 ) {
 	 fprintf(fp,"IF(IAND(%d,tl).NE.0)THEN\n",tag) ;
        }
        if ( p->boundary_array && sw_new_bdys ) {
          int bdy ;
          for ( bdy = 1 ; bdy <= 4 ; bdy++ )
          {
-           fprintf(fp, "ALLOCATE(%s%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s%s. ')\n endif\n",
+           if( p->type != NULL && tchar != '?' ) {
+	     fprintf(fp,"num_bytes_allocated = num_bytes_allocated + (%s) * %cWORDSIZE\n",
+                         array_size_expression("", "(", bdy, t2, p, post_for_count, "model_config_rec%"),
+                         tchar) ;
+           }
+	   if ( sw == 1 ) {
+             fprintf(fp, "ALLOCATE(%s%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s%s. ')\n endif\n",
                 structname, fname, bdy_indicator(bdy),
                 dimension_with_ranges( "", "(", bdy, t2, p, post, "model_config_rec%"), 
                 structname, fname, bdy_indicator(bdy),
                 dimension_with_ranges( "", "(", bdy, t2, p, post, "model_config_rec%")); 
-           fprintf(fp, "IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 3 ) %s%s%s=", structname , fname , bdy_indicator(bdy));
-           if( p->type != NULL  &&   (!strcmp( p->type->name , "real" )
+             fprintf(fp, "IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 3 ) %s%s%s=", structname , fname , bdy_indicator(bdy));
+             if( p->type != NULL  &&   (!strcmp( p->type->name , "real" )
                                    || !strcmp( p->type->name , "doubleprecision") ) )   {
+             /* if a real */
+               fprintf(fp, "initial_data_value\n");
+             } else if ( !strcmp( p->type->name , "logical" ) ) {
+               fprintf(fp, ".FALSE.\n");
+             } else if ( !strcmp( p->type->name , "integer" ) ) {
+               fprintf(fp, "0\n");
+             }
+	   }
+         }
+       } else {
+         if( p->type != NULL && tchar != '?' ) {
+	   fprintf(fp,"num_bytes_allocated = num_bytes_allocated + (%s) * %cWORDSIZE\n",
+                   array_size_expression("", "(", -1, t2, p, post_for_count, "model_config_rec%"),
+                   tchar) ;
+         }
+	 if ( sw == 1 ) {
+           fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s. ')\n endif\n",
+                structname, fname,
+                dimension_with_ranges( "", "(", -1, t2, p, post, "model_config_rec%"), 
+                structname, fname,
+                dimension_with_ranges( "", "(", -1, t2, p, post, "model_config_rec%")); 
+           fprintf(fp, "IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 3 ) %s%s=", structname , fname);
+
+           if( p->type != NULL  &&   (!strcmp( p->type->name , "real" ) 
+                                 || !strcmp( p->type->name , "doubleprecision") ) )   {
            /* if a real */
              fprintf(fp, "initial_data_value\n");
            } else if ( !strcmp( p->type->name , "logical" ) ) {
@@ -101,27 +143,10 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
            } else if ( !strcmp( p->type->name , "integer" ) ) {
              fprintf(fp, "0\n");
            }
-         }
-       } else {
-         fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s. ')\n endif\n",
-                structname, fname,
-                dimension_with_ranges( "", "(", -1, t2, p, post, "model_config_rec%"), 
-                structname, fname,
-                dimension_with_ranges( "", "(", -1, t2, p, post, "model_config_rec%")); 
-         fprintf(fp, "IF ( setinitval .EQ. 1 .OR. setinitval .EQ. 3 ) %s%s=", structname , fname);
-
-         if( p->type != NULL  &&   (!strcmp( p->type->name , "real" ) 
-                                 || !strcmp( p->type->name , "doubleprecision") ) )   {
-         /* if a real */
-           fprintf(fp, "initial_data_value\n");
-         } else if ( !strcmp( p->type->name , "logical" ) ) {
-           fprintf(fp, ".FALSE.\n");
-         } else if ( !strcmp( p->type->name , "integer" ) ) {
-           fprintf(fp, "0\n");
-         }
+	 }
        }
 
-       if ( p->ntl > 1 ) {
+       if ( p->ntl > 1 && sw == 1 ) {
 	 fprintf(fp,"ELSE\n") ;
 
        fprintf(fp, "ALLOCATE(%s%s%s,STAT=ierr)\n if (ierr.ne.0) then\n CALL wrf_error_fatal ( &\n'frame/module_domain.f: Failed to allocate %s%s%s.  ')\n endif\n",
@@ -131,7 +156,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
 	 fprintf(fp,"ENDIF\n") ;
        }
 
-       if ( ! ( p->node_kind & FOURD ) && 
+       if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
             ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
        {
 	 fprintf(fp,"ELSE\n") ;
@@ -174,28 +199,59 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
           {
             strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
           }
-          if( !strcmp( p->type->name , "real" ) || 
-              !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
-            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=initial_data_value\n",
-                        structname ,
-                        fname ) ;
-	  } else if ( !strcmp( p->type->name , "integer" ) ) {
-            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=0\n",
-                        structname ,
-                        fname ) ;
-          } else if ( !strcmp( p->type->name , "logical" ) ) {
-            fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=.FALSE.\n",
-                        structname ,
-                        fname ) ;
+          if ( sw == 1 ) {
+            if( !strcmp( p->type->name , "real" ) || 
+                !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
+              fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=initial_data_value\n",
+                          structname ,
+                          fname ) ;
+	    } else if ( !strcmp( p->type->name , "integer" ) ) {
+              fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=0\n",
+                          structname ,
+                          fname ) ;
+            } else if ( !strcmp( p->type->name , "logical" ) ) {
+              fprintf(fp, "IF ( setinitval .EQ. 3 ) %s%s=.FALSE.\n",
+                          structname ,
+                          fname ) ;
+            }
           }
       }
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_alloc2(fp,x, corename, p->type) ;
+        gen_alloc2(fp,x, corename, p->type, sw) ;
       }
     }
   }
+  return(0) ;
+}
+
+int
+gen_alloc_count ( char * dirname )
+{
+  int i ;
+
+  for ( i = 0 ; i < get_num_cores() ; i++ )
+  {
+    gen_alloc_count1( dirname , get_corename_i(i) ) ;
+  }
+  return(0) ;
+}
+
+int
+gen_alloc_count1 ( char * dirname , char * corename )
+{
+  FILE * fp ;
+  char  fname[NAMELEN] ;
+  char * fn = "_alloc_count.inc" ;
+
+  if ( dirname == NULL || corename == NULL ) return(1) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%s",dirname,corename,fn) ; }
+  else                       { sprintf(fname,"%s%s",corename,fn) ; }
+  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+  print_warning(fp,fname) ;
+  gen_alloc2( fp , "grid%", corename , &Domain, 0 ) ;
+  close_the_file( fp ) ;
   return(0) ;
 }
 

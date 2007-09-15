@@ -162,6 +162,7 @@ main( int argc, char *argv[], char *env[] )
   gen_state_struct( "inc" ) ;
   gen_state_subtypes( "inc" ) ;
   gen_alloc( "inc" ) ;
+  gen_alloc_count( "inc" ) ;
   gen_dealloc( "inc" ) ;
   gen_scalar_indices( "inc" ) ;
   gen_module_state_description( "frame" ) ;

@@ -580,3 +580,101 @@ associated_with_4d_array( node_t * p )
   return(res) ;
 }
 
+char *
+array_size_expression ( char * refarg , char * pre , 
+                       int bdy , /* as defined in data.h */
+                       char * tmp , node_t * p , char * post ,
+                       char * nlstructname  )   /* provides name (with %) of structure in
+						   which a namelist supplied dimension
+                                                   should be dereference from, or ""  */
+{
+  int i ;
+  char tx[NAMELEN] ;
+  char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
+  int   bdex, xdex, ydex, zdex ;
+  node_t *xdim, *ydim, *zdim ;
+  char *pp ;
+  if ( p == NULL ) return("") ;
+  if ( p->ndims <= 0 && !p->boundary_array ) return("") ;
+  strcpy(tmp,"") ;
+  if ( pre != NULL ) strcat(tmp,pre) ;
+  strcpy(r,"") ;
+  if ( refarg != NULL ) strcat(r,refarg) ;
+
+  if ( p->boundary_array )
+  {
+    if ( p->ndims > 0 )
+    {
+      xdim = get_dimnode_for_coord( p , COORD_X ) ;
+      ydim = get_dimnode_for_coord( p , COORD_Y ) ;
+      zdim = get_dimnode_for_coord( p , COORD_Z ) ;
+      if ( ydim == NULL )
+       { fprintf(stderr,"dimension_with_ranges: y dimension not specified for %s\n",p->name) ; return("") ; }
+      if ( xdim == NULL )
+       { fprintf(stderr,"dimension_with_ranges: x dimension not specified for %s\n",p->name) ; return("") ; }
+      
+      xdex = xdim->dim_order ;
+      ydex = ydim->dim_order ;
+
+      if ( !strcmp( p->use , "_4d_bdy_array_" ) ) {   /* if a boundary array for a 4d tracer */
+        strcpy(s, p->name ) ;  /* copy the name and then remove everything after last underscore */
+        if ((pp=rindex( s, '_' )) != NULL ) *pp = '\0' ;
+        sprintf( four_d, "*num_%s,", s  ) ;
+      } else {
+        strcpy( four_d, "" ) ;
+      }
+      if ( sw_new_bdys ) {
+        if      ( bdy == P_XSB || bdy == P_XEB ) { bdex = ydex ; } 
+        else if ( bdy == P_YSB || bdy == P_YEB ) { bdex = xdex ; }
+        else { fprintf(stderr,"REGISTRY WARNING: internal error %s %d, bdy=%d,%s,%d \n",__FILE__,__LINE__,bdy,p->name,p->boundary) ; }
+        if ( zdim != NULL ) {
+          zdex = zdim->dim_order ;
+          sprintf(tx,"(%sem3%d-%ssm3%d+1)*(%sem3%d-%ssm3%d+1)*(%sspec_bdy_width)%s", r,bdex,r,bdex,r,zdex,r,zdex,r,four_d ) ;
+        } else {
+          sprintf(tx,"(%sem3%d-%ssm3%d+1)*(%sspec_bdy_width)%s", r,bdex,r,bdex,r,four_d ) ;
+        }
+      } else {
+        if ( zdim != NULL ) {
+          zdex = zdim->dim_order ;
+          sprintf(tx,"max(%sed3%d,%sed3%d)*(%sed3%d-%ssd3%d+1)*%sspec_bdy_width*4*%s", r,xdex,r,ydex,r,zdex,r,zdex,r,four_d ) ;
+        } else {
+          sprintf(tx,"max(%sed3%d,%sed3%d)*%sspec_bdy_width*4*%s", r,xdex,r,ydex,r,four_d ) ;
+        }
+        if ( tx[strlen(tx)-1] == '*' ) tx[strlen(tx)-1] = '\0' ;  /* chop trailing * if four_d is "" */
+      }
+    }
+    else
+    {
+      sprintf(tx,"%sspec_bdy_width,",r ) ;
+    }
+    strcat(tmp,tx) ;
+  }
+  else
+  {
+    for ( i = 0 ; i < p->ndims ; i++ )
+    {
+      dimension_size_expression( r, tx , i , p , nlstructname ) ;
+      strcat(tmp,tx) ;
+      strcat(tmp,")*(") ;
+    }
+  }
+  if ( tmp[strlen(tmp)-1] == '(' ) {
+     tmp[strlen(tmp)-3] = '\0' ;  /* get rid of trailing )*( */
+  } else if ( tmp[strlen(tmp)-1] == ',' ) {
+     tmp[strlen(tmp)-1] = '\0' ;
+  }
+  if ( post != NULL ) strcat(tmp,post)  ;
+
+  return(tmp) ;
+}
+
+int
+dimension_size_expression ( char * r , char * tx , int i , node_t * p , char * nlstructname )
+{
+   char s[NAMELEN], e[NAMELEN] ;
+
+   get_elem( r , nlstructname , s , i , p , 0 ) ;
+   get_elem( r , nlstructname , e , i , p , 1 ) ;
+   sprintf(tx,"((%s)-(%s)+1)", e , s ) ;
+
+}

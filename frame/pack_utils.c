@@ -13,6 +13,7 @@
 #      define INIT_STORE_PIECE_OF_FIELD init_store_piece_of_field
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field
 #      define PERTURB_REAL perturb_real
+#      define INSPECT_HEADER inspect_header
 # else
 #   ifdef F2CSTYLE
 #      define INT_PACK_DATA  int_pack_data__
@@ -24,6 +25,7 @@
 #      define INIT_STORE_PIECE_OF_FIELD init_store_piece_of_field__
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field__
 #      define PERTURB_REAL perturb_real__
+#      define INSPECT_HEADER inspect_header__
 #   else
 #      define INT_PACK_DATA  int_pack_data_
 #      define INT_GET_TI_HEADER_C  int_get_ti_header_c_
@@ -34,6 +36,7 @@
 #      define INIT_STORE_PIECE_OF_FIELD init_store_piece_of_field_
 #      define INIT_RETRIEVE_PIECES_OF_FIELD init_retrieve_pieces_of_field_
 #      define PERTURB_REAL perturb_real_
+#      define INSPECT_HEADER inspect_header_
 #   endif
 # endif
 #endif
@@ -203,9 +206,9 @@ RETRIEVE_PIECES_OF_FIELD_C ( char * buf , int varname[], int * insize, int * out
       fprintf(stderr,"retrieve: fld_curs[%d] (%d) > *insize (%d)\n",fld,fld_curs[fld], *insize ) ;
     }
     *outsize = ( fld_curs[fld] <= *insize ) ? fld_curs[fld] : *insize ;
+    bcopy( fld_cache[fld], buf, *outsize ) ;
     varname[0] = (int) strlen( fld_name[fld] ) ;
     for ( i = 1 ; i <= varname[0] ; i++ ) varname[i] = fld_name[fld][i-1] ;
-    for ( i = 0 ; i < *outsize ; i++ )  buf[i] = fld_cache[fld][i] ;
     if ( fld_cache[fld] != NULL ) free ( fld_cache[fld] ) ;
     fld_cache[fld] = NULL ;
     fld_bufsize[fld] = 0 ;
@@ -248,3 +251,18 @@ PERTURB_REAL ( float * field, int ds[], int de[], int ms[], int me[], int ps[], 
        }
    return(0) ;
 }
+
+int INSPECT_HEADER ( char * buf, int * sz, int * line )
+{
+    int i ;
+    fprintf(stderr,"INSPECT_HEADER: line = %d ", *line ) ;
+    if ( buf != NULL && sz != NULL ) {
+      for ( i = 0 ; i < *sz && i < 256 ; i++ )  { if ( (buf[i] >= 'a' && buf[i] <= 'z') || buf[i] == '_' ||
+                                             (buf[i] >= 'A' && buf[i] <= 'Z') ||
+                                             (buf[i] >= '0' && buf[i] <= '9') ) fprintf(stderr,"%c",buf[i]) ;
+                                    }
+      fprintf(stderr,"\n") ;
+   }
+    return(0) ;
+}
+

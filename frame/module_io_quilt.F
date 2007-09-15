@@ -222,6 +222,7 @@ MODULE module_wrf_quilt
 !   I/O SERVER TASK       17:  ** not used **
 !</PRE>
 !</DESCRIPTION>
+      USE module_configure
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INTEGER,                      INTENT(IN)  :: nio_tasks_per_group, mytask, ntasks, &
@@ -232,6 +233,24 @@ MODULE module_wrf_quilt
       INTEGER                     :: i, j, ii, comdup, ierr, niotasks, n_groups, iisize
       INTEGER, DIMENSION(ntasks)  :: icolor
       CHARACTER*128 mess
+
+      INTEGER io_form_setting
+
+!check the namelist and make sure there are no output forms specified
+!that cannot be quilted
+      CALL nl_get_io_form_history(1,   io_form_setting) ; call sokay( 'history', io_form_setting )
+      CALL nl_get_io_form_restart(1,   io_form_setting) ; call sokay( 'restart', io_form_setting )
+      CALL nl_get_io_form_auxhist1(1,  io_form_setting) ; call sokay( 'auxhist1', io_form_setting )
+      CALL nl_get_io_form_auxhist2(1,  io_form_setting) ; call sokay( 'auxhist2', io_form_setting )
+      CALL nl_get_io_form_auxhist3(1,  io_form_setting) ; call sokay( 'auxhist3', io_form_setting )
+      CALL nl_get_io_form_auxhist4(1,  io_form_setting) ; call sokay( 'auxhist4', io_form_setting )
+      CALL nl_get_io_form_auxhist5(1,  io_form_setting) ; call sokay( 'auxhist5', io_form_setting )
+      CALL nl_get_io_form_auxhist6(1,  io_form_setting) ; call sokay( 'auxhist6', io_form_setting )
+      CALL nl_get_io_form_auxhist7(1,  io_form_setting) ; call sokay( 'auxhist7', io_form_setting )
+      CALL nl_get_io_form_auxhist8(1,  io_form_setting) ; call sokay( 'auxhist8', io_form_setting )
+      CALL nl_get_io_form_auxhist9(1,  io_form_setting) ; call sokay( 'auxhist9', io_form_setting )
+      CALL nl_get_io_form_auxhist10(1, io_form_setting) ; call sokay( 'auxhist10', io_form_setting )
+      CALL nl_get_io_form_auxhist11(1, io_form_setting) ; call sokay( 'auxhist11', io_form_setting )
 
       n_groups = n_groups_arg
       IF ( n_groups .LT. 1 ) n_groups = 1
@@ -311,6 +330,41 @@ MODULE module_wrf_quilt
 
     END SUBROUTINE setup_quilt_servers
 
+    SUBROUTINE sokay ( stream, io_form )
+    USE module_state_description
+    CHARACTER*(*) stream
+    CHARACTER*256 mess
+    INTEGER io_form
+
+    SELECT CASE (io_form)
+#ifdef NETCDF
+      CASE ( IO_NETCDF   )
+         RETURN
+#endif
+#ifdef INTIO
+      CASE ( IO_INTIO   )
+         RETURN
+#endif
+#ifdef YYY
+      CASE ( IO_YYY )
+         RETURN
+#endif
+#ifdef GRIB1
+      CASE ( IO_GRIB1 )
+         RETURN
+#endif
+#ifdef GRIB2
+      CASE ( IO_GRIB2 )
+         RETURN
+#endif
+      CASE (0)
+         RETURN
+      CASE DEFAULT
+         WRITE(mess,*)' An output format has been specified that is incompatible with quilting: io_form: ',io_form,' ',TRIM(stream)
+         CALL wrf_error_fatal(mess)
+    END SELECT
+    END SUBROUTINE sokay
+
     SUBROUTINE quilt
 !<DESCRIPTION>
 ! I/O server tasks call this routine and remain in it for the rest of the 
@@ -335,21 +389,25 @@ MODULE module_wrf_quilt
       INTEGER istat
       INTEGER mytask_io_group
       INTEGER   :: nout_set = 0
-      INTEGER   :: obufsize, bigbufsize, inttypesize, chunksize, sz
+      INTEGER   :: obufsize, bigbufsize, chunksize, sz
       REAL, DIMENSION(1)      :: dummy
       INTEGER, ALLOCATABLE, DIMENSION(:) :: obuf, bigbuf
       REAL,    ALLOCATABLE, DIMENSION(:) :: RDATA
       INTEGER, ALLOCATABLE, DIMENSION(:) :: IDATA
       CHARACTER (LEN=512) :: CDATA
       CHARACTER (LEN=80) :: fname
-      INTEGER icurs, hdrbufsize, itypesize, ftypesize, Status, fstat, io_form_arg
+      INTEGER icurs, hdrbufsize, itypesize, ftypesize, rtypesize, Status, fstat, io_form_arg
       INTEGER :: DataHandle, FieldType, Comm, IOComm, DomainDesc, code, Count
       INTEGER, DIMENSION(3) :: DomainStart , DomainEnd , MemoryStart , MemoryEnd , PatchStart , PatchEnd
       INTEGER :: dummybuf(1)
+      INTEGER :: num_noops, num_commit_messages, num_field_training_msgs, hdr_tag
       CHARACTER (len=80) :: DateStr , Element, VarName, MemoryOrder , Stagger , DimNames(3), FileName, SysDepInfo, mess
       INTEGER, EXTERNAL :: use_package
       LOGICAL           :: stored_write_record, retval
-      INTEGER iii, jjj, vid
+      INTEGER iii, jjj, vid, CC, DD
+
+logical okay_to_w
+character*120 sysline
 
 !
 
@@ -390,14 +448,30 @@ MODULE module_wrf_quilt
       CALL mpi_x_comm_size( mpi_comm_local,        ntasks_local_group, ierr )
       CALL MPI_COMM_RANK( mpi_comm_local,        mytask_local,       ierr )
 
-      CALL MPI_TYPE_SIZE( MPI_INTEGER, inttypesize, ierr )
-      IF ( inttypesize <= 0 ) THEN
+      CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
+      IF ( itypesize <= 0 ) THEN
         CALL wrf_error_fatal("external/RSL/module_dm.F: quilt: type size <= 0 invalid")
       ENDIF
+
+! Work out whether this i/o server processor has one fewer associated compute proc than
+! the most any processor has. Can happen when number of i/o tasks does not evenly divide
+! the number of compute tasks. This is needed to keep the i/o tasks sychronized on the
+! same message when they start commmunicating to stitch together an output.
+!
+! Compute processes associated with this task:
+       CC = ntasks_io_group - 1
+! Number of compute tasks per I/O task (less remainder)
+       DD = ncompute_tasks / ntasks_local_group
+!
+! If CC-DD is 1 on servrs with the maximum number of compute clients, 
+!             0 on servrs with one less than maximum
+
+
 ! infinite loop until shutdown message received
 ! This is the main request-handling loop.  I/O quilt servers stay in this loop 
 ! until the model run ends.  
-      DO WHILE (.TRUE.)
+okay_to_w = .false.
+      DO WHILE (.TRUE.)  ! {
 
 !<DESCRIPTION>
 ! Each I/O server receives requests from its compute tasks.  Each request
@@ -423,7 +497,6 @@ MODULE module_wrf_quilt
         obufsize = reduced(1)
 !JMTIMING CALL end_timing("MPI_Reduce at top of forever loop") 
 !JMDEBUGwrite(0,*)'obufsize = ',obufsize
-!write(0,*)'ninbuf ',ninbuf,' obufsize ', obufsize
 ! Negative obufsize will trigger I/O server exit.  
         IF ( obufsize .LT. 0 ) THEN
           IF ( obufsize .EQ. -100 ) THEN         ! magic number
@@ -463,10 +536,10 @@ MODULE module_wrf_quilt
 ! will send.  Note: obuf is size in *bytes* so we need to pare this 
 ! down, since the buffer is INTEGER.  
         IF ( obufsize .GT. 0 ) THEN
-          ALLOCATE( obuf( (obufsize+1)/inttypesize ) )
+          ALLOCATE( obuf( (obufsize+1)/itypesize ) )
 
 ! let's roll; get the data from the compute procs and put in obuf
-          CALL collect_on_comm( mpi_comm_io_groups(1),        &
+          CALL collect_on_comm_debug(__FILE__,__LINE__, mpi_comm_io_groups(1),        &
                                 onebyte,                      &
                                 dummy, 0,                     &
                                 obuf, obufsize )
@@ -491,7 +564,6 @@ MODULE module_wrf_quilt
           ! DataHandle is provided as second element of reduced
           CALL int_gen_handle_header( obuf, obufsize, itypesize, &
                                       reduced(2) , int_ioclose )
-
         ENDIF
 
 !write(0,*)'calling init_store_piece_of_field'
@@ -510,11 +582,15 @@ MODULE module_wrf_quilt
 ! Scan obuf the first time to calculate the size of the buffer required for 
 ! each field.  Calls to add_to_bufsize_for_field() accumulate sizes.  
         vid = 0
-        icurs = inttypesize
-        DO WHILE ( icurs .lt. obufsize )
-          SELECT CASE ( get_hdr_tag( obuf ( icurs / inttypesize ) ) )
+        icurs = itypesize
+        num_noops = 0 
+        num_commit_messages = 0 
+        num_field_training_msgs = 0 
+        DO WHILE ( icurs .lt. obufsize ) ! {
+          hdr_tag = get_hdr_tag( obuf ( icurs / itypesize ) )
+          SELECT CASE ( hdr_tag )
             CASE ( int_field )
-              CALL int_get_write_field_header ( obuf(icurs/inttypesize), hdrbufsize, itypesize, ftypesize,  &
+              CALL int_get_write_field_header ( obuf(icurs/itypesize), hdrbufsize, itypesize, ftypesize,  &
                                                 DataHandle , DateStr , VarName , Dummy , FieldType , Comm , IOComm, &
                                                 DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                                 DomainStart , DomainEnd ,                                    &
@@ -523,9 +599,20 @@ MODULE module_wrf_quilt
               chunksize = (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)* &
                           (PatchEnd(3)-PatchStart(3)+1)*ftypesize
 
-!write(0,*) 'X-1', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
-              call add_to_bufsize_for_field( VarName, hdrbufsize )
+              IF ( DomainDesc .EQ. 333933 ) THEN  ! Training write, only one per group of tasks
+                 IF ( num_field_training_msgs .EQ. 0 ) THEN
+                   call add_to_bufsize_for_field( VarName, hdrbufsize )
+!write(0,*) 'X-1', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+                 ENDIF
+                 num_field_training_msgs = num_field_training_msgs + 1
+              ELSE
+                 call add_to_bufsize_for_field( VarName, hdrbufsize )
+!write(0,*) 'X-2a', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+              ENDIF
               icurs = icurs + hdrbufsize
+
+!write(0,*) 'X-1', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+
               ! If this is a real write (i.e. not a training write), accumulate
               ! buffersize for this field.
               IF ( DomainDesc .NE. 333933 ) THEN   ! magic number
@@ -533,25 +620,76 @@ MODULE module_wrf_quilt
                 call add_to_bufsize_for_field( VarName, chunksize )
                 icurs = icurs + chunksize
               ENDIF
-            CASE DEFAULT
-              hdrbufsize = obuf(icurs/inttypesize)
-              write(VarName,'(I5.5)')vid 
-!write(0,*) 'X-2', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
-              call add_to_bufsize_for_field( VarName, hdrbufsize )
+            CASE ( int_open_for_write_commit )  ! only one per group of tasks
+              hdrbufsize = obuf(icurs/itypesize)
+              IF (num_commit_messages.EQ.0) THEN
+                call add_to_bufsize_for_field( 'COMMIT', hdrbufsize )
+              ENDIF
+              num_commit_messages = num_commit_messages + 1
               icurs = icurs + hdrbufsize
-              vid = vid+1
+            CASE DEFAULT
+              hdrbufsize = obuf(icurs/itypesize)
+
+! This logic and the logic in the loop below is used to determine whether
+! to send a noop records sent by the compute processes to allow to go
+! through. The purpose is to make sure that the communications between this
+! server and the other servers in this quilt group stay synchronized in
+! the collection loop below, even when the servers are serving different
+! numbers of clients. Here are some conditions:
+! 
+!   1. The number of compute clients served will not differ by more than 1
+!   2. The servers with +1 number of compute clients begin with task 0
+!      of mpi_comm_local, the commicator shared by this group of servers
+! 
+!   3. For each collective field or metadata output from the compute tasks,
+!      there will be one record sent to the associated i/o server task. The
+!      i/o server task collects these records and stores them contiguously
+!      in a buffer (obuf) using collect_on_comm above.  Thus, obuf on this
+!      server task will contain one record from each associated compute
+!      task, in order.
+! 
+!   4. In the case of replicated output from the compute tasks
+!      (e.g. put_dom_ti records and control records like
+!      open_for_write_commit type records), compute task 0 is the only
+!      one that sends the record. The other compute tasks send noop
+!      records. Thus, obuf on server task zero will contain the output
+!      record from task 0 followed by noop records from the rest of the
+!      compute tasks associated with task 0.  Obuf on the other server
+!      tasks will contain nothing but noop records.
+! 
+!   5. The logic below will not allow any noop records from server task 0.
+!      It allows only one noop record from each of the other server tasks
+!      in the i/o group.  This way, for replicated output, when the records
+!      are collected on one server task below, using collect_on_comm on
+!      mpi_comm_local, each task will provide exactly one record for each
+!      call to collect_on_comm: 1 bona fide output record from server task
+!      0 and noops from the rest.
+
+              IF ((hdr_tag.EQ.int_noop.AND.mytask_local.NE.0.AND.num_noops.LE.0)  &
+                  .OR.hdr_tag.NE.int_noop) THEN
+                write(VarName,'(I5.5)')vid 
+!write(0,*) 'X-2', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+                call add_to_bufsize_for_field( VarName, hdrbufsize )
+                vid = vid+1
+              ENDIF
+              IF ( hdr_tag .EQ. int_noop ) num_noops = num_noops + 1
+              icurs = icurs + hdrbufsize
           END SELECT
-        ENDDO
+        ENDDO ! }
 ! Store the headers and field data in internal buffers.  The first call to 
 ! store_piece_of_field() allocates internal buffers using sizes computed by 
 ! calls to add_to_bufsize_for_field().  
         vid = 0
-        icurs = inttypesize
-        DO WHILE ( icurs .lt. obufsize )
+        icurs = itypesize
+        num_noops = 0 
+        num_commit_messages = 0 
+        num_field_training_msgs = 0 
+        DO WHILE ( icurs .lt. obufsize ) !{
 !write(0,*) 'A icurs ', icurs, ' obufsize ', obufsize
-          SELECT CASE ( get_hdr_tag( obuf ( icurs / inttypesize ) ) )
+          hdr_tag = get_hdr_tag( obuf ( icurs / itypesize ) )
+          SELECT CASE ( hdr_tag )
             CASE ( int_field )
-              CALL int_get_write_field_header ( obuf(icurs/inttypesize), hdrbufsize, itypesize, ftypesize,  &
+              CALL int_get_write_field_header ( obuf(icurs/itypesize), hdrbufsize, itypesize, ftypesize,  &
                                                 DataHandle , DateStr , VarName , Dummy , FieldType , Comm , IOComm, &
                                                 DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                                 DomainStart , DomainEnd ,                                    &
@@ -560,67 +698,75 @@ MODULE module_wrf_quilt
               chunksize = (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)* &
                           (PatchEnd(3)-PatchStart(3)+1)*ftypesize
 
-
-              call store_piece_of_field( obuf(icurs/inttypesize), VarName, hdrbufsize )
-!write(0,*) 'A-1', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
+              IF ( DomainDesc .EQ. 333933 ) THEN  ! Training write, only one per group of tasks
+                 IF ( num_field_training_msgs .EQ. 0 ) THEN
+                   call store_piece_of_field( obuf(icurs/itypesize), VarName, hdrbufsize )
+!write(0,*) 'A-1', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+                 ENDIF
+                 num_field_training_msgs = num_field_training_msgs + 1
+              ELSE
+                 call store_piece_of_field( obuf(icurs/itypesize), VarName, hdrbufsize )
+!write(0,*) 'A-2a', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+              ENDIF
               icurs = icurs + hdrbufsize
               ! If this is a real write (i.e. not a training write), store
               ! this piece of this field.
               IF ( DomainDesc .NE. 333933 ) THEN   ! magic number
 !write(0,*) 'A-1a', chunksize, TRIM(VarName)
-                call store_piece_of_field( obuf(icurs/inttypesize), VarName, chunksize )
+                call store_piece_of_field( obuf(icurs/itypesize), VarName, chunksize )
                 icurs = icurs + chunksize
               ENDIF
-            CASE DEFAULT
-              hdrbufsize = obuf(icurs/inttypesize)
-              write(VarName,'(I5.5)')vid 
-              call store_piece_of_field( obuf(icurs/inttypesize), VarName, hdrbufsize )
-!write(0,*) 'A-2', hdrbufsize, get_hdr_tag( obuf ( icurs / inttypesize ) ) , get_hdr_rec_size( obuf ( icurs / inttypesize ) ), TRIM(VarName)
+            CASE ( int_open_for_write_commit )  ! only one per group of tasks
+              hdrbufsize = obuf(icurs/itypesize)
+              IF (num_commit_messages.EQ.0) THEN
+                call store_piece_of_field( obuf(icurs/itypesize), 'COMMIT', hdrbufsize )
+              ENDIF
+              num_commit_messages = num_commit_messages + 1
               icurs = icurs + hdrbufsize
-              vid = vid+1
+            CASE DEFAULT
+              hdrbufsize = obuf(icurs/itypesize)
+              IF ((hdr_tag.EQ.int_noop.AND.mytask_local.NE.0.AND.num_noops.LE.0)  &
+                  .OR.hdr_tag.NE.int_noop) THEN
+                write(VarName,'(I5.5)')vid 
+!write(0,*) 'A-2b', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
+                call store_piece_of_field( obuf(icurs/itypesize), VarName, hdrbufsize )
+                vid = vid+1
+              ENDIF
+              IF ( hdr_tag .EQ. int_noop ) num_noops = num_noops + 1
+              icurs = icurs + hdrbufsize
           END SELECT
-        ENDDO
+        ENDDO !}
 
-!call mpi_comm_size( mpi_comm_local, iii, ierr )
-!write(0,*)'mpi_comm_size mpi_comm_local ',iii
-!call mpi_comm_rank( mpi_comm_local, iii, ierr )
-!write(0,*)'mpi_comm_rank mpi_comm_local ',iii
-
-!write(0,*)'calling init_retrieve_pieces_of_field '
 ! Now, for each field, retrieve headers and patches (data) from the internal 
 ! buffers and collect them all on the I/O quilt server "root" task.
         CALL init_retrieve_pieces_of_field
 ! Retrieve header and all patches for the first field from the internal 
 ! buffers.  
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
-!write(0,*)'calling first retrieve_pieces_of_field ',TRIM(VarName),obufsize,sz,retval
 ! Sum sizes of all headers and patches (data) for this field from all I/O 
 ! servers in this I/O server group onto the I/O server "root".
         CALL MPI_Reduce( sz, bigbufsize, 1, MPI_INTEGER,  &
                          MPI_SUM, ntasks_local_group-1,         &
                          mpi_comm_local, ierr )
-!write(0,*)'after MPI_Reduce ',sz, bigbufsize
+!write(0,*)'seed: sz ',sz,' bigbufsize ',bigbufsize,' VarName ', TRIM(VarName),' retval ',retval
 
 ! Loop until there are no more fields to retrieve from the internal buffers.
-        DO WHILE ( retval )
-
-!write(0,*)' VarName ',TRIM(VarName),' sz ',sz,' bigbufsize ',bigbufsize
+        DO WHILE ( retval ) !{
+#if 0
+#else
 
 ! I/O server "root" allocates space to collect headers and fields from all
 ! other servers in this I/O server group.
           IF ( mytask_local .EQ. ntasks_local_group-1 ) THEN
-!write(0,*)'allocating bufbuf ', (bigbufsize+1)/inttypesize
-            ALLOCATE( bigbuf( (bigbufsize+1)/inttypesize ) )
+            ALLOCATE( bigbuf( (bigbufsize+1)/itypesize ) )
           ENDIF
 
-!write(0,*)'before collect_on_comm tag,size ',Trim(VarName),get_hdr_tag(obuf),get_hdr_rec_size(obuf)
 ! Collect buffers and fields from all I/O servers in this I/O server group
 ! onto the I/O server "root"
-          CALL collect_on_comm( mpi_comm_local,                    &
+          CALL collect_on_comm_debug2(__FILE__,__LINE__,Trim(VarName),get_hdr_tag(obuf),sz,get_hdr_rec_size(obuf), mpi_comm_local,                    &
                                 onebyte,                           &
                                 obuf, sz,  &
                                 bigbuf, bigbufsize )
-!write(0,*)'after collect_on_comm ', sz, bigbufsize
 ! The I/O server "root" now handles collected requests from all compute 
 ! tasks served by this I/O server group (i.e. all compute tasks).  
           IF ( mytask_local .EQ. ntasks_local_group-1 ) THEN
@@ -630,35 +776,32 @@ MODULE module_wrf_quilt
 !  jjj = jjj + get_hdr_rec_size(bigbuf(jjj/4))
 !enddo
 
-            icurs = inttypesize  ! icurs is a byte counter, but buffer is integer
+            icurs = itypesize  ! icurs is a byte counter, but buffer is integer
 
             stored_write_record = .false.
 
 ! The I/O server "root" loops over the collected requests.  
-            DO WHILE ( icurs .lt. bigbufsize )
+            DO WHILE ( icurs .lt. bigbufsize ) !{
               CALL mpi_type_size ( MPI_INTEGER , itypesize , ierr )
 
-!write(0,*)'B tag,size ',icurs,get_hdr_tag( bigbuf(icurs/inttypesize) ),get_hdr_rec_size( bigbuf(icurs/inttypesize) )
-!write(0,*)'   inttypesize ',inttypesize,' itypesize ',itypesize,' icurs/inttypesize ',icurs/inttypesize
+!write(0,*)'B tag,size ',icurs,get_hdr_tag( bigbuf(icurs/itypesize) ),get_hdr_rec_size( bigbuf(icurs/itypesize) )
 ! The I/O server "root" gets the request out of the next header and
 ! handles it by, in most cases, calling the appropriate external I/O package
 ! interface.
-              SELECT CASE ( get_hdr_tag( bigbuf(icurs/inttypesize) ) )
+              SELECT CASE ( get_hdr_tag( bigbuf(icurs/itypesize) ) )
 ! The I/O server "root" handles the "noop" (do nothing) request.  This is 
 ! actually quite easy.  "Noop" requests exist to help avoid race conditions.  
 ! In some cases, only one compute task will everything about a request so 
 ! other compute tasks send "noop" requests.  
                 CASE ( int_noop )
-!write(0,*)' int_noop '
-                  CALL int_get_noop_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize )
+                  CALL int_get_noop_header( bigbuf(icurs/itypesize), hdrbufsize, itypesize )
                   icurs = icurs + hdrbufsize
 
 ! The I/O server "root" handles the "put_dom_td_real" request.
                 CASE ( int_dom_td_real )
-!write(0,*)' int_dom_td_real '
                   CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
-                  ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_td_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
+                  ALLOCATE( RData( bigbuf(icurs/itypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
+                  CALL int_get_td_header( bigbuf(icurs/itypesize:), hdrbufsize, itypesize, ftypesize, &
                                           DataHandle, DateStr, Element, RData, Count, code )
                   icurs = icurs + hdrbufsize
 
@@ -692,8 +835,8 @@ MODULE module_wrf_quilt
                 CASE ( int_dom_ti_real )
 !write(0,*)' int_dom_ti_real '
                   CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
-                  ALLOCATE( RData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_ti_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
+                  ALLOCATE( RData( bigbuf(icurs/itypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
+                  CALL int_get_ti_header( bigbuf(icurs/itypesize:), hdrbufsize, itypesize, ftypesize, &
                                           DataHandle, Element, RData, Count, code )
                   icurs = icurs + hdrbufsize
 
@@ -729,8 +872,8 @@ MODULE module_wrf_quilt
                 CASE ( int_dom_td_integer )
 !write(0,*)' int_dom_td_integer '
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
-                  ALLOCATE( IData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_td_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
+                  ALLOCATE( IData( bigbuf(icurs/itypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
+                  CALL int_get_td_header( bigbuf(icurs/itypesize:), hdrbufsize, itypesize, ftypesize, &
                                           DataHandle, DateStr, Element, IData, Count, code )
                   icurs = icurs + hdrbufsize
 
@@ -766,8 +909,8 @@ MODULE module_wrf_quilt
 !write(0,*)' int_dom_ti_integer '
 
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
-                  ALLOCATE( IData( bigbuf(icurs/inttypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
-                  CALL int_get_ti_header( bigbuf(icurs/inttypesize:), hdrbufsize, inttypesize, ftypesize, &
+                  ALLOCATE( IData( bigbuf(icurs/itypesize + 4 ) ) )      ! 5 is the count of data items for this record ; defined in collect_on_comm.c
+                  CALL int_get_ti_header( bigbuf(icurs/itypesize:), hdrbufsize, itypesize, ftypesize, &
                                           DataHandle, Element, IData, Count, code )
                   icurs = icurs + hdrbufsize
                   SELECT CASE (use_package(io_form(DataHandle)))
@@ -802,7 +945,7 @@ MODULE module_wrf_quilt
 ! The I/O server "root" handles the "set_time" request.
                 CASE ( int_set_time )
 !write(0,*)' int_set_time '
-                  CALL int_get_ti_header_char( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, &
+                  CALL int_get_ti_header_char( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                                DataHandle, Element, VarName, CData, code )
                   SELECT CASE (use_package(io_form(DataHandle)))
 #ifdef INTIO
@@ -818,7 +961,7 @@ MODULE module_wrf_quilt
 ! The I/O server "root" handles the "put_dom_ti_char" request.
                 CASE ( int_dom_ti_char )
 !write(0,*)' before int_get_ti_header_char '
-                  CALL int_get_ti_header_char( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, &
+                  CALL int_get_ti_header_char( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                                DataHandle, Element, VarName, CData, code )
 !write(0,*)' after int_get_ti_header_char ',VarName
 
@@ -852,7 +995,7 @@ MODULE module_wrf_quilt
 ! The I/O server "root" handles the "put_var_ti_char" request.
                 CASE ( int_var_ti_char )
 !write(0,*)' int_var_ti_char '
-                  CALL int_get_ti_header_char( bigbuf(icurs/inttypesize), hdrbufsize, inttypesize, &
+                  CALL int_get_ti_header_char( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                                DataHandle, Element, VarName, CData, code )
 
                   SELECT CASE (use_package(io_form(DataHandle)))
@@ -888,12 +1031,12 @@ MODULE module_wrf_quilt
                          "quilt: should have handled int_ioexit already")
 ! The I/O server "root" handles the "ioclose" request.
                 CASE ( int_ioclose )
-                  CALL int_get_handle_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
+                  CALL int_get_handle_header( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                               DataHandle , code )
                   icurs = icurs + hdrbufsize
 
                   IF ( DataHandle .GE. 1 ) THEN
-!JMDEBUGwrite(0,*)'closing DataHandle ',DataHandle
+!JMDEBUGwrite(0,*)'closing DataHandle ',DataHandle,' io_form ',io_form(DataHandle)
 
                   SELECT CASE (use_package(io_form(DataHandle)))
 #ifdef NETCDF
@@ -901,6 +1044,9 @@ MODULE module_wrf_quilt
                       CALL ext_ncd_inquire_filename( handle(DataHandle), fname, fstat, Status )
                       IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
                         CALL ext_ncd_ioclose(handle(DataHandle),Status)
+!write(sysline,*)'msrcp -a -overwrite always -srcdelete ',TRIM(fname),' mss:/MICHALAK'
+!write(0,*)trim(sysline)
+!CALL system(sysline)
                       ENDIF
 #endif
 #ifdef INTIO
@@ -939,15 +1085,15 @@ MODULE module_wrf_quilt
 ! The I/O server "root" handles the "open_for_write_begin" request.
                 CASE ( int_open_for_write_begin )
 
-                  CALL int_get_ofwb_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
+                  CALL int_get_ofwb_header( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                             FileName,SysDepInfo,io_form_arg,DataHandle )
 
-!write(0,*)' int_open_for_write_begin inttypesize ',inttypesize,' itypesize ',itypesize
+!write(0,*)' int_open_for_write_begin itypesize ',itypesize,' itypesize ',itypesize
 !write(0,*)' int_open_for_write_begin icurs ', icurs, hdrbufsize
 !JMDEBUGwrite(0,*)' int_open_for_write_begin FileName ',TRIM(FileName) , ' DataHandle ', DataHandle
 !write(0,*)' int_open_for_write_begin SysDepInfo ',TRIM(SysDepInfo) 
                   icurs = icurs + hdrbufsize
-!write(0,*)' int_open_for_write_begin new icurs,tag,size ', icurs, get_hdr_tag( bigbuf(icurs/inttypesize) ),get_hdr_rec_size( bigbuf(icurs/inttypesize) )
+!write(0,*)' int_open_for_write_begin new icurs,tag,size ', icurs, get_hdr_tag( bigbuf(icurs/itypesize) ),get_hdr_rec_size( bigbuf(icurs/itypesize) )
                 
                   io_form(DataHandle) = io_form_arg
 
@@ -985,9 +1131,8 @@ MODULE module_wrf_quilt
 ! all requests in this batch have been handled.
                 CASE ( int_open_for_write_commit )
 
-                  CALL int_get_handle_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
+                  CALL int_get_handle_header( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                               DataHandle , code )
-!write(0,*)' int_open_for_write_commit icurs ', icurs, hdrbufsize
                   icurs = icurs + hdrbufsize
                   okay_to_commit(DataHandle) = .true.
 
@@ -1002,19 +1147,19 @@ MODULE module_wrf_quilt
 ! NOTE that the I/O server "root" will only see write_field (int_field)
 ! requests AFTER an "iosync" request.
                 CASE ( int_field )
-!write(0,*)' int_field '
                   CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
-                  CALL int_get_write_field_header ( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, ftypesize,  &
+                  CALL int_get_write_field_header ( bigbuf(icurs/itypesize), hdrbufsize, itypesize, ftypesize,  &
                                                     DataHandle , DateStr , VarName , Dummy , FieldType , Comm , IOComm, &
                                                     DomainDesc , MemoryOrder , Stagger , DimNames ,              &
                                                     DomainStart , DomainEnd ,                                    &
                                                     MemoryStart , MemoryEnd ,                                    &
                                                     PatchStart , PatchEnd )
+!write(0,*)' int_field ',TRIM(VarName),DataHandle,okay_to_write(DataHandle)
                   icurs = icurs + hdrbufsize
 
                   IF ( okay_to_write(DataHandle) ) THEN
 
-!                   WRITE(*,*)'>>> ',TRIM(DateStr), ' ', TRIM(VarName), ' ', TRIM(MemoryOrder), ' ', &
+!                    WRITE(0,*)'>>> ',TRIM(DateStr), ' ', TRIM(VarName), ' ', TRIM(MemoryOrder), ' ', &
 !                        (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)*(PatchEnd(3)-PatchStart(3)+1)
 
                     IF ( FieldType .EQ. WRF_FLOAT .OR. FieldType .EQ. WRF_DOUBLE)  THEN
@@ -1027,7 +1172,7 @@ MODULE module_wrf_quilt
                         CALL mpi_type_size( MPI_REAL, ftypesize, ierr )
                       ENDIF
                       stored_write_record = .true.
-                      CALL store_patch_in_outbuf ( bigbuf(icurs/inttypesize), dummybuf, TRIM(DateStr), TRIM(VarName) , &
+                      CALL store_patch_in_outbuf ( bigbuf(icurs/itypesize), dummybuf, TRIM(DateStr), TRIM(VarName) , &
                                                    FieldType, TRIM(MemoryOrder), TRIM(Stagger), DimNames, &
                                                    DomainStart , DomainEnd , &
                                                    MemoryStart , MemoryEnd , &
@@ -1036,7 +1181,7 @@ MODULE module_wrf_quilt
                     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
                       CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
                       stored_write_record = .true.
-                      CALL store_patch_in_outbuf ( dummybuf, bigbuf(icurs/inttypesize), TRIM(DateStr), TRIM(VarName) , &
+                      CALL store_patch_in_outbuf ( dummybuf, bigbuf(icurs/itypesize), TRIM(DateStr), TRIM(VarName) , &
                                                    FieldType, TRIM(MemoryOrder), TRIM(Stagger), DimNames, &
                                                    DomainStart , DomainEnd , &
                                                    MemoryStart , MemoryEnd , &
@@ -1076,31 +1221,28 @@ MODULE module_wrf_quilt
                     END SELECT
                   ENDIF
                 CASE ( int_iosync )
-!write(0,*)' int_iosync '
-                  CALL int_get_handle_header( bigbuf(icurs/inttypesize), hdrbufsize, itypesize, &
+                  CALL int_get_handle_header( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
                                             DataHandle , code )
                   icurs = icurs + hdrbufsize
                 CASE DEFAULT
-                  WRITE(mess,*)'quilt: bad tag: ',get_hdr_tag( bigbuf(icurs/inttypesize) ),' icurs ',icurs/inttypesize
+                  WRITE(mess,*)'quilt: bad tag: ',get_hdr_tag( bigbuf(icurs/itypesize) ),' icurs ',icurs/itypesize
                   CALL wrf_error_fatal( mess )
               END SELECT
 
-            ENDDO
+            ENDDO !}
 ! Now, the I/O server "root" has finshed handling all commands from the latest
 ! call to retrieve_pieces_of_field().
 
             IF (stored_write_record) THEN
-!write(0,*)'calling write_outbuf ',DataHandle
 ! If any fields have been stored in a globally-sized internal output buffer
 ! (via a call to store_patch_in_outbuf()) then call write_outbuf() to write
 ! them to disk now.
 ! NOTE that the I/O server "root" will only have called
 ! store_patch_in_outbuf() when handling write_field (int_field)
 ! commands which only arrive AFTER an "iosync" command.
-!JMTIMING              CALL start_timing
+!              CALL start_timing
               CALL write_outbuf ( handle(DataHandle), use_package(io_form(DataHandle))) 
-!JMTIMING               CALL end_timing( "quilt: call to write_outbuf" ) 
-!write(0,*)'back from write_outbuf ',DataHandle
+!              CALL end_timing( "quilt: call to write_outbuf" ) 
             ENDIF
 
 ! If one or more "open_for_write_commit" commands were encountered from the
@@ -1112,11 +1254,8 @@ MODULE module_wrf_quilt
 #ifdef NETCDF
                 CASE ( IO_NETCDF   )
                   CALL ext_ncd_inquire_filename( handle(DataHandle), fname, fstat, Status )
-!write(0,*)'preparing to commit ', DataHandle, fstat, fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED
                   IF ( fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
-!write(0,*)'calling ext_ncd_open_for_write_commit ', handle(DataHandle), DataHandle
                     CALL ext_ncd_open_for_write_commit(handle(DataHandle),Status)
-!write(0,*)'back from ext_ncd_open_for_write_commit ', Status
                     okay_to_write(DataHandle) = .true.
                   ENDIF
 #endif
@@ -1161,11 +1300,11 @@ MODULE module_wrf_quilt
           ENDIF
           DEALLOCATE( bigbuf )
         ENDIF
+#endif
 
 ! Retrieve header and all patches for the next field from the internal 
 ! buffers.  
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
-!write(0,*)'calling next retrieve_pieces_of_field ',trim(VarName),obufsize,sz,retval
 ! Sum sizes of all headers and patches (data) for this field from all I/O 
 ! servers in this I/O server group onto the I/O server "root".
         CALL MPI_Reduce( sz, bigbufsize, 1, MPI_INTEGER,  &
@@ -1174,14 +1313,13 @@ MODULE module_wrf_quilt
 ! Then, return to the top of the loop to collect headers and data from all 
 ! I/O servers in this I/O server group onto the I/O server "root" and handle 
 ! the next batch of commands.  
-!write(0,*)'after MPI_Reduce ',sz, bigbufsize
-      END DO
+      END DO !}
 
       DEALLOCATE( obuf )
 
       ! flush output files if needed
       IF (stored_write_record) THEN
-!JMTIMING        CALL start_timing
+!JM TIMING CALL start_timing
         SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
           CASE ( IO_NETCDF   )
@@ -1214,10 +1352,10 @@ MODULE module_wrf_quilt
           CASE DEFAULT
             Status = 0
         END SELECT
-!JMTIMING         CALL end_timing( "quilt: flush" )
+!JM TIMING CALL end_timing( "quilt: flush" )
       ENDIF
 
-      END DO
+      END DO ! }
 
     END SUBROUTINE quilt
 
@@ -1390,7 +1528,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
 !JMTIMING   CALL end_timing("MPI_Reduce in wrf_quilt_open_for_write_begin")
 
   ! send data to the i/o processor
-  CALL collect_on_comm( comm_io_group,            &
+  CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                         onebyte,                       &
                         hdrbuf, hdrbufsize , &
                         dummy, 0 )
@@ -1428,8 +1566,13 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
   ENDIF
 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
-  CALL int_gen_handle_header( hdrbuf, hdrbufsize, itypesize, &
-                              DataHandle, int_open_for_write_commit )
+
+!  IF ( wrf_dm_on_monitor() ) THEN
+    CALL int_gen_handle_header( hdrbuf, hdrbufsize, itypesize, &
+                                DataHandle, int_open_for_write_commit )
+!  ELSE
+!    CALL int_gen_noop_header( hdrbuf, hdrbufsize, itypesize )
+!  ENDIF
 
   iserver = get_server_id ( DataHandle )
   CALL get_mpi_comm_io_groups( comm_io_group , iserver )
@@ -1447,7 +1590,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
 !JMTIMING   CALL end_timing("MPI_Reduce in wrf_quilt_open_for_write_commit")
 
   ! send data to the i/o processor
-  CALL collect_on_comm( comm_io_group,            &
+  CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                         onebyte,                       &
                         hdrbuf, hdrbufsize , &
                         dummy, 0 )
@@ -1579,7 +1722,7 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
 
-  INTEGER locsize , inttypesize
+  INTEGER locsize , itypesize
   INTEGER ierr, tasks_in_group, comm_io_group, dummy, i
 
   CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_iosync' ) 
@@ -1606,12 +1749,12 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
 
     ! send data to the i/o processor
 #ifdef DEREF_KLUDGE
-    CALL collect_on_comm( comm_io_group,            &
+    CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                           onebyte,                       &
                           int_local_output_buffer(1), locsize , &
                           dummy, 0 )
 #else
-    CALL collect_on_comm( comm_io_group,            &
+    CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                           onebyte,                       &
                           int_local_output_buffer, locsize , &
                           dummy, 0 )
@@ -1670,7 +1813,6 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
   ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
   reduced = 0
   IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
-!JMDEBUGwrite(0,*)'before MPI_Reduce in ioclose: reduced ', reduced
   CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
                    MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
                    comm_io_group, ierr )
@@ -1679,7 +1821,7 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
 #if 0
   ! send data to the i/o processor
 !JMTIMING  CALL start_timing
-  CALL collect_on_comm( comm_io_group,            &
+  CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                         onebyte,                       &
                         hdrbuf, hdrbufsize , &
                         dummy, 0 )
@@ -1805,8 +1947,14 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
     IF ( int_handle_in_use( DataHandle ) ) THEN
       CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
       Count = 0   ! there is no count for character strings
-      CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
-                              DataHandle, "TIMESTAMP", "", Data, int_set_time )
+
+      IF ( wrf_dm_on_monitor() ) THEN
+        CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
+                                DataHandle, "TIMESTAMP", "", Data, int_set_time )
+      ELSE
+        CALL int_gen_noop_header( hdrbuf, hdrbufsize, itypesize )
+      ENDIF
+
       iserver = get_server_id ( DataHandle )
       CALL get_mpi_comm_io_groups( comm_io_group , iserver )
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
@@ -1819,7 +1967,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
                        MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
                        comm_io_group, ierr )
       ! send data to the i/o processor
-      CALL collect_on_comm( comm_io_group,            &
+      CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                             onebyte,                       &
                             hdrbuf, hdrbufsize , &
                             dummy, 0 )
@@ -1924,7 +2072,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
                        comm_io_group, ierr )
 !JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_dom_ti_real")
       ! send data to the i/o processor
-      CALL collect_on_comm( comm_io_group,            &
+      CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                             onebyte,                       &
                             hdrbuf, hdrbufsize , &
                             dummy, 0 )
@@ -2065,7 +2213,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
 
 !JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_dom_ti_integer")
       ! send data to the i/o processor
-      CALL collect_on_comm( comm_io_group,            &
+      CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                             onebyte,                       &
                             hdrbuf, hdrbufsize , &
                             dummy, 0 )
@@ -2212,7 +2360,6 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
       IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 
 !call mpi_comm_rank( comm_io_group , me, ierr )
-!write(0,*)'calling MPI_Reduce me and tasks_in_group and comm_io_group',me,tasks_in_group ,comm_io_group
 
       CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
                        MPI_SUM, tasks_in_group-1,          &   ! nio_tasks_in_group-1 is me
@@ -2222,7 +2369,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
       ! send data to the i/o processor
 !JMTIMING  CALL start_timing
 
-      CALL collect_on_comm( comm_io_group,            &
+      CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                             onebyte,                       &
                             hdrbuf, hdrbufsize , &
                             dummy, 0 )
@@ -2739,7 +2886,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
                        comm_io_group, ierr )
 !JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_var_ti_char")
       ! send data to the i/o processor
-      CALL collect_on_comm( comm_io_group,            &
+      CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                             onebyte,                       &
                             hdrbuf, hdrbufsize , &
                             dummy, 0 )
@@ -3085,7 +3232,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
   REAL, DIMENSION( MemoryStart(1):MemoryEnd(1), &
                    MemoryStart(2):MemoryEnd(2), &
                    MemoryStart(3):MemoryEnd(3) ) :: Field
-  INTEGER locsize , typesize, inttypesize
+  INTEGER locsize , typesize, itypesize
   INTEGER ierr, tasks_in_group, comm_io_group, dummy, i
   INTEGER, EXTERNAL :: use_package
 
@@ -3103,7 +3250,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
             (PatchEnd(2)-PatchStart(2)+1)* &
             (PatchEnd(3)-PatchStart(3)+1)
 
-  CALL mpi_type_size( MPI_INTEGER, inttypesize, ierr )
+  CALL mpi_type_size( MPI_INTEGER, itypesize, ierr )
   ! Note that the WRF_DOUBLE branch of this IF statement must come first since 
   ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.  
   IF ( FieldType .EQ. WRF_DOUBLE ) THEN
@@ -3123,7 +3270,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
       ! the number and size of messages that we will output to io server associated with
       ! this task
 
-      CALL int_gen_write_field_header ( hdrbuf, hdrbufsize, inttypesize, typesize,           &
+      CALL int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, typesize,           &
                                DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm,  &
                                333933         , MemoryOrder , Stagger , DimNames ,              &   ! 333933 means training; magic number
                                DomainStart , DomainEnd ,                                    &
@@ -3141,9 +3288,11 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 
       CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 
+#if 0
       IF ( .NOT. wrf_dm_on_monitor() ) THEN     ! only one task in compute grid sends this message; send noops on others
-        CALL int_gen_noop_header( hdrbuf, hdrbufsize, inttypesize )
+        CALL int_gen_noop_header( hdrbuf, hdrbufsize, itypesize )
       ENDIF
+#endif
 
 
 !JMTIMING      CALL start_timing
@@ -3157,7 +3306,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 !JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_write_field dryrun")
       ! send data to the i/o processor
 
-      CALL collect_on_comm( comm_io_group,                   &
+      CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,                   &
                             onebyte,                          &
                             hdrbuf, hdrbufsize ,                 &
                             dummy, 0 )
@@ -3165,14 +3314,14 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
   ELSE
 
     IF ( .NOT. associated( int_local_output_buffer ) ) THEN
-      ALLOCATE ( int_local_output_buffer( (int_num_bytes_to_write( DataHandle )+1)/inttypesize ) )
+      ALLOCATE ( int_local_output_buffer( (int_num_bytes_to_write( DataHandle )+1)/itypesize ) )
       int_local_output_cursor = 1
     ENDIF
       iserver = get_server_id ( DataHandle )
 !JMDEBUGwrite(0,*)'wrf_quilt_write_field (writing) ',iserver
 
     ! This is NOT a "training" write.  It is OK to write now.
-    CALL int_gen_write_field_header ( hdrbuf, hdrbufsize, inttypesize, typesize,           &
+    CALL int_gen_write_field_header ( hdrbuf, hdrbufsize, itypesize, typesize,           &
                              DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm,  &
                              0          , MemoryOrder , Stagger , DimNames ,              &   ! non-333933 means okay to write; magic number
                              DomainStart , DomainEnd ,                                    &
@@ -3258,4 +3407,45 @@ SUBROUTINE get_nio_tasks_in_group( retval )
       RETURN
 END SUBROUTINE get_nio_tasks_in_group
 
+SUBROUTINE collect_on_comm_debug(file,line, comm_io_group,   &
+                        sze,                                 &
+                        hdrbuf, hdrbufsize ,                 &
+                        outbuf, outbufsize                   )
+  IMPLICIT NONE
+  CHARACTER*(*) file
+  INTEGER line
+  INTEGER comm_io_group
+  INTEGER sze
+  INTEGER hdrbuf(*), outbuf(*)
+  INTEGER hdrbufsize, outbufsize 
 
+!  write(0,*)'collect_on_comm_debug ',trim(file),line,sze,hdrbufsize,outbufsize
+  CALL collect_on_comm( comm_io_group,                       &
+                        sze,                                 &
+                        hdrbuf, hdrbufsize ,                 &
+                        outbuf, outbufsize                   )
+!  write(0,*)trim(file),line,'returning'
+  RETURN
+END
+
+
+SUBROUTINE collect_on_comm_debug2(file,line,var,tag,sz,hdr_rec_size, comm_io_group,   &
+                        sze,                                 &
+                        hdrbuf, hdrbufsize ,                 &
+                        outbuf, outbufsize                   )
+  IMPLICIT NONE
+  CHARACTER*(*) file,var
+  INTEGER line,tag,sz,hdr_rec_size
+  INTEGER comm_io_group
+  INTEGER sze
+  INTEGER hdrbuf(*), outbuf(*)
+  INTEGER hdrbufsize, outbufsize
+
+!  write(0,*)'collect_on_comm_debug2 ',trim(file),line,trim(var),tag,sz,hdr_rec_size,sze,hdrbufsize,outbufsize
+  CALL collect_on_comm( comm_io_group,                       &
+                        sze,                                 &
+                        hdrbuf, hdrbufsize ,                 &
+                        outbuf, outbufsize                   )
+!  write(0,*)'collect_on_comm_debug2 ',trim(file),line,'returning for ',trim(var)
+  RETURN
+END

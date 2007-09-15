@@ -1145,7 +1145,7 @@ CONTAINS
       ENDIF
 
       WRITE(message,*)&
-          'alloc_space_field: domain ',id,' ',num_bytes_allocated
+          'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
       CALL  wrf_debug( 1, message )
 
    END SUBROUTINE alloc_space_field

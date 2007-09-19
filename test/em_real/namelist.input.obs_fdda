@@ -82,6 +82,10 @@
  &fdda
  obs_nudge_opt                       = 1,1,1,1,1
  max_obs                             = 150000,
+ fdda_start                          =   0.,   0.,   0.,   0.,   0.
+ fdda_end                            = 360., 360., 360., 360., 360.
+ nobs_ndg_vars                       = 5
+ nobs_err_flds                       = 9
  obs_nudge_wind                      = 1,1,1,1,1
  obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
  obs_nudge_temp                      = 1,1,1,1,1

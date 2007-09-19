@@ -360,8 +360,12 @@
       GOTO 130
     endif
 
-100 IF(TIMEOB(N).GT.TFORWD.and.timeob(n).lt.99999.) THEN
-       GOTO 130
+100 CONTINUE
+!ajb 20070116 bugfix for situation that first obs is not in the domain
+    IF(N.ne.0) THEN
+      IF(TIMEOB(N).GT.TFORWD.and.timeob(n).lt.99999.) THEN
+         GOTO 130
+      ENDIF
     ENDIF
  
 ! OBSFILE: no more data in the obsfile 
@@ -440,10 +444,12 @@
 
       if (iprt) THEN
          if(n.le.10) then
-                     write(6,'(/,a,i2,a,f5.2,a,f5.2,/)')        &
+                     write(6,'(/,a,i5,a,f8.2,a,f8.2,a,f8.2,a,f8.2/)') &
                                             ' OBS N = ',n,      &
                                             ' RIO = ',rio(n),   &
-                                            ' RJO = ',rjo(n)
+                                            ' RJO = ',rjo(n),   &
+                                            ' LAT = ',latitude, &
+                                            ' LON = ',longitude
          endif
       endif
 
@@ -1184,9 +1190,6 @@
 1451  FORMAT(1X,'NUDGING IND. OBS TEMPERATURE WITH GIT = ',E11.3)
 1452  FORMAT(1X,'NUDGING IND. OBS MOISTURE WITH GIQ = ',E11.3)
 1453  FORMAT(1X,'NUDGING IND. OBS SURFACE PRESSURE WITH GIP = ,'E11.3)
-1469  FORMAT(1H0,'*****NUDGING INDIVIDUAL OBS ON FGM WITH RINXY = ',     &
-      E11.3,' KM, RINSIG = ',E11.3,' AND TWINDO (HALF-PERIOD) = ',       &
-      E11.3,' MIN')
 553   FORMAT(1X,'BY DEFAULT: OBS NUDGING OF TEMPERATURE AND MOISTURE ',  &
       'IS RESTRICTED TO ABOVE THE BOUNDARY LAYER')
 554   FORMAT(1X,'...WHILE OBS NUDGING OF WIND IS INDEPENDENT OF THE ',   &

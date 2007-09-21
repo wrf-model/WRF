@@ -300,7 +300,7 @@ CONTAINS
       REAL  :: SHMIN,SHMAX,DQSDT2,LWDN,PRCP,PRCPRAIN,           &
                Q2SAT,SFCPRS,SFCSPD,SFCTMP,SHDFAC,SNOALB1,             &
                SOLDN,TBOT,ZLVL, Q2K,ALBBRD, ALBEDOK, ETA, ETA_KINEMATIC,      &
-               Z0K,RUNOFF1,RUNOFF2,RUNOFF3,SHEAT       
+               Z0K,RUNOFF1,RUNOFF2,RUNOFF3,SHEAT,E2SAT,SFCTSNO 
 
       REAL  :: EMISSI
 
@@ -529,6 +529,15 @@ CONTAINS
              ICE=0                                                      
           ENDIF                                                         
           DQSDT2=Q2SAT*A23M4/(SFCTMP-A4)**2                             
+          IF(SNOW(I,J).GT.0.0)THEN
+! snow on surface (use ice saturation properties, limit to 0 C)
+            SFCTSNO=MIN(SFCTMP,273.15)
+            E2SAT=611.2*EXP(6174.*(1./273.15 - 1./SFCTSNO))
+            Q2SAT=0.622*E2SAT/(SFCPRS-E2SAT)
+            DQSDT2=Q2SAT*6174./(SFCTSNO**2)
+! for snow cover fraction at 0 C, ground temp will not change, so DQSDT2 effectively zero
+            IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
+          ENDIF
 
           IF(ICE.EQ.0)THEN                                              
             TBOT=TMN(I,J)                                              
@@ -1386,7 +1395,7 @@ CONTAINS
 !   SFCPRS     PRESSURE AT HEIGHT ZLVL ABOVE GROUND (PASCALS)                    
 !   PRCP       PRECIP RATE (KG M-2 S-1) (NOTE, THIS IS A RATE)                   
 !   SFCTMP     AIR TEMPERATURE (K) AT HEIGHT ZLVL ABOVE GROUND                   
-!   TH2        AIR POTENTIAL TEMPERATURE (K) AT HEIGHT ZLVL ABOVE GROUND         
+!   TH2        AIR TEMPERATURE (K) AT HEIGHT 2M ABOVE GROUND         
 !   Q2         MIXING RATIO AT HEIGHT ZLVL ABOVE GROUND (KG KG-1)                
 !   COSZ       Solar zenith angle (not used for now)                             
 !   PRCPRAIN   Liquid-precipitation rate (KG M-2 S-1) (not used)                 
@@ -1856,7 +1865,7 @@ CONTAINS
                                                                                  
          CALL PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL,     &        
                        Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,          &
-                         DQSDT2,FLX2,EMISSI)                                            
+                         DQSDT2,FLX2,EMISSI,SNEQV)                                            
                                                                                  
 ! ----------------------------------------------------------------------         
 ! CALL CANRES TO CALCULATE THE CANOPY RESISTANCE AND CONVERT IT INTO PC          
@@ -3101,7 +3110,7 @@ CONTAINS
                                                                                  
       SUBROUTINE PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL, &        
      &                   Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,       &        
-     &                   DQSDT2,FLX2,EMISSI)                                                             
+     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV)                                                             
                                                                                  
 ! ----------------------------------------------------------------------         
 ! SUBROUTINE PENMAN                                                              
@@ -3114,11 +3123,12 @@ CONTAINS
       LOGICAL, INTENT(IN)     :: SNOWNG, FRZGRA
       REAL, INTENT(IN)        :: CH, DQSDT2,FDOWN,PRCP,                 &
                                  Q2, Q2SAT,SSOIL, SFCPRS, SFCTMP,       &
-                                 T2V, TH2,EMISSI                        
+                                 T2V, TH2,EMISSI_IN,SNEQV 
       REAL, INTENT(OUT)       :: EPSCA,ETP,FLX2,RCH,RR,T24
-      REAL                    :: A, DELTA, FNET,RAD,RHO
+      REAL                    :: A, DELTA, FNET,RAD,RHO,EMISSI,ELCP1,LVS
 
       REAL, PARAMETER      :: ELCP = 2.4888E+3, LSUBC = 2.501000E+6,CP = 1004.6
+      REAL, PARAMETER      :: LSUBS = 2.83E+6
                                                                                  
 ! ----------------------------------------------------------------------         
 ! EXECUTABLE CODE BEGINS HERE:                                                   
@@ -3126,8 +3136,17 @@ CONTAINS
 ! ----------------------------------------------------------------------         
 ! PREPARE PARTIAL QUANTITIES FOR PENMAN EQUATION.                                
 ! ----------------------------------------------------------------------         
+      IF(SNEQV == 0.)THEN
+        EMISSI=EMISSI_IN
+        ELCP1=ELCP
+        LVS=LSUBC
+      ELSE
+        EMISSI=0.9  ! FOR SNOW
+        ELCP1=ELCP*LSUBS/LSUBC
+        LVS=LSUBS
+      ENDIF
       FLX2 = 0.0                                                                 
-      DELTA = ELCP * DQSDT2                                                      
+      DELTA = ELCP1 * DQSDT2                                                      
       T24 = SFCTMP * SFCTMP * SFCTMP * SFCTMP                                    
 !      RR = T24 * 6.48E-8 / (SFCPRS * CH) + 1.0                                   
       RR = EMISSI*T24 * 6.48E-8 / (SFCPRS * CH) + 1.0
@@ -3158,9 +3177,9 @@ CONTAINS
 ! ----------------------------------------------------------------------         
       END IF                                                                     
       RAD = FNET / RCH + TH2- SFCTMP                                             
-      A = ELCP * (Q2SAT - Q2)                                                    
+      A = ELCP1 * (Q2SAT - Q2)                                                    
       EPSCA = (A * RR + RAD * DELTA) / (DELTA + RR)                              
-      ETP = EPSCA * RCH / LSUBC                                                  
+      ETP = EPSCA * RCH / LVS
                                                                                  
 ! ----------------------------------------------------------------------         
   END SUBROUTINE PENMAN                                                          

@@ -498,7 +498,7 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
 !
       SELECT CASE ( switch )
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
-               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only )
+               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only, aux_model_input10_only )
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )

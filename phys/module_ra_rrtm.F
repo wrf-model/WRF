@@ -1729,7 +1729,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMLWRAD(rthraten,glw,emiss                        &
                        ,p8w,p3d,pi3d                              &
-                       ,dz8w,t3d,t8w,rho3d,r,g                    &
+                       ,dz8w,tsk,t3d,t8w,rho3d,r,g                &
                        ,icloud, warm_rain                         &
                        ,ids,ide, jds,jde, kds,kde                 & 
                        ,ims,ime, jms,jme, kms,kme                 &
@@ -1762,7 +1762,8 @@ CONTAINS
          INTENT(INOUT)  ::                              RTHRATEN
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
-         INTENT(IN   )  ::                                 EMISS
+         INTENT(IN   )  ::                                 EMISS, &
+                                                             TSK
 !
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW
@@ -1945,7 +1946,7 @@ CONTAINS
 
          EMISS0=EMISS(I,J)
          GLW0=0. 
-         TSFC=Tw1D(kme)
+         TSFC=TSK(I,J)
 
          CALL RRTM(tten1d,glw0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
                    qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
@@ -3812,8 +3813,8 @@ CONTAINS
 !  TBOUND is set to this temperature here.                                       
                                                                                  
 !     TBOUND = TINT(kte+1)                                                        
-      TBOUND = Tw(kte+1)                                                        
-!     TBOUND = TSFC
+!     TBOUND = Tw(kte+1)                                                        
+      TBOUND = TSFC
                                                                                  
 !  Install MM5 profiles into RRTM arrays for pressure, temperature,              
 !  and molecular amounts.  Pressures are converted from cb                       

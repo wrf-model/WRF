@@ -598,7 +598,7 @@ CONTAINS
                  ,QI3D=QI                                           &
                  ,QS3D=QS                                           &
                  ,QG3D=QG                                           &
-                 ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,T3D=t             &
+                 ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t     &
                  ,T8W=t8w,RHO3D=rho, CLDFRA3D=CLDFRA,R=R_d,G=G      &
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &

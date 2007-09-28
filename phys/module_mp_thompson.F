@@ -88,8 +88,8 @@
       REAL, PARAMETER, PRIVATE:: bm_s = 2.0
       REAL, PARAMETER, PRIVATE:: am_g = PI*rho_g/6.0
       REAL, PARAMETER, PRIVATE:: bm_g = 3.0
-      REAL, PARAMETER, PRIVATE:: am_i = 0.069
-      REAL, PARAMETER, PRIVATE:: bm_i = 2.0
+      REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0  ! Was 0.069 in original v2.2 release
+      REAL, PARAMETER, PRIVATE:: bm_i = 3.0  ! Was 2.0 in original release
 
 !..Fallspeed power laws relations:  v = (av*D**bv)*exp(-fv*D)
 !.. Rain from Ferrier (1994), ice, snow, and graupel from
@@ -102,7 +102,7 @@
       REAL, PARAMETER, PRIVATE:: fv_s = 125.0
       REAL, PARAMETER, PRIVATE:: av_g = 442.0
       REAL, PARAMETER, PRIVATE:: bv_g = 0.89
-      REAL, PARAMETER, PRIVATE:: av_i = 2247.0
+      REAL, PARAMETER, PRIVATE:: av_i = 1847.5  ! Was 2247.0 in original v2.2 release
       REAL, PARAMETER, PRIVATE:: bv_i = 1.0
 
 !..Capacitance of sphere and plates/aggregates: D**3, D**2
@@ -156,7 +156,7 @@
       REAL, PARAMETER, PRIVATE:: xm0i = 1.E-12
       REAL, PARAMETER, PRIVATE:: D0c = 1.E-6
       REAL, PARAMETER, PRIVATE:: D0r = 50.E-6
-      REAL, PARAMETER, PRIVATE:: D0s = 125.E-6
+      REAL, PARAMETER, PRIVATE:: D0s = 200.E-6  ! Was 125.E-6 in original v2.2 release
       REAL, PARAMETER, PRIVATE:: D0g = 150.E-6
       REAL, PRIVATE:: D0i, xm0s, xm0g
 

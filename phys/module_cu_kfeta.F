@@ -480,7 +480,6 @@ CONTAINS
 !        IF(P0(K).GE.500E2)L5=K
          IF(P0(K).GE.0.5*P0(1))L5=K
          IF(P0(K).GE.P300)LLFC=K
-         IF(T0(K).GT.T00)ML=K
       ENDDO
 !
 !...DZQ IS DZ BETWEEN SIGMA SURFACES, DZA IS DZ BETWEEN MODEL HALF LEVEL
@@ -1112,6 +1111,9 @@ updraft:    DO NK=K,KL-1
 !     
 ! Initialize some arrays below cloud base and above cloud top...
 !
+    DO NK=1,LTOP
+      IF(T0(NK).GT.T00)ML=NK
+    ENDDO
     DO NK=1,K
       IF(NK.GE.LC)THEN
         IF(NK.EQ.LC)THEN

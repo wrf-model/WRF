@@ -264,48 +264,34 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    ! This allows us to reference the current grid from anywhere beneath 
    ! this point for debugging purposes.  
-   ! In the case of operations involving already initialized parent and child, 
-   ! the current grid is set to the child grid.  
-!$$$ Improve this later to track both parent and child...  
-!$$$ Use either an optional argument or another interface...  
    CALL set_current_grid_ptr( grid )
 
    IF ( .NOT. domain_clockisstoptime( grid ) ) THEN
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-      IF ( .NOT. grid%return_after_training_io ) THEN
-         CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
-      ENDIF
+      CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
       DO WHILE ( .NOT. domain_clockisstopsubtime(grid) )
-         IF ( .NOT. grid%return_after_training_io ) THEN
-            IF ( wrf_dm_on_monitor() ) THEN
-              CALL start_timing
-            END IF
-         ENDIF
+         IF ( wrf_dm_on_monitor() ) THEN
+           CALL start_timing
+         END IF
          CALL med_setup_step ( grid , config_flags )
-         IF ( .NOT. grid%return_after_training_io ) THEN
-            a_nest_was_opened = .false.
-            ! for each nest whose time has come...
-            DO WHILE ( nests_to_open( grid , nestid , kid ) )
-               ! nestid is index into model_config_rec (module_configure) of the grid
-               ! to be opened; kid is index into an open slot in grid's list of children
-               a_nest_was_opened = .true.
-               CALL med_pre_nest_initial ( grid , nestid , config_flags )
-               CALL alloc_and_configure_domain ( domain_id  = nestid ,   &
-                                                 grid       = new_nest , &
-                                                 parent     = grid ,     &
-                                                 kid        = kid        )
-               CALL Setup_Timekeeping (new_nest)
-               CALL med_nest_initial ( grid , new_nest , config_flags )
-            END DO
-            IF ( a_nest_was_opened ) THEN
-               CALL set_overlaps ( grid )   ! find overlapping and set pointers
-            END IF
-         ENDIF
+         a_nest_was_opened = .false.
+         ! for each nest whose time has come...
+         DO WHILE ( nests_to_open( grid , nestid , kid ) )
+            ! nestid is index into model_config_rec (module_configure) of the grid
+            ! to be opened; kid is index into an open slot in grid's list of children
+            a_nest_was_opened = .true.
+            CALL med_pre_nest_initial ( grid , nestid , config_flags )
+            CALL alloc_and_configure_domain ( domain_id  = nestid ,   &
+                                              grid       = new_nest , &
+                                              parent     = grid ,     &
+                                              kid        = kid        )
+            CALL Setup_Timekeeping (new_nest)
+            CALL med_nest_initial ( grid , new_nest , config_flags )
+         END DO
+         IF ( a_nest_was_opened ) THEN
+            CALL set_overlaps ( grid )   ! find overlapping and set pointers
+         END IF
          CALL med_before_solve_io ( grid , config_flags )
-         IF ( grid%return_after_training_io ) THEN
-           CALL wrf_debug( 1, 'DEBUG:  module_integrate() returned after training' )
-           RETURN  ! an ugly hack for sure, only needed for ESMF
-         ENDIF
          grid_ptr => grid
          DO WHILE ( ASSOCIATED( grid_ptr ) )
             CALL set_current_grid_ptr( grid_ptr )

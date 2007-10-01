@@ -40,11 +40,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Local
    INTEGER                                    :: rc
 
- ! Note that when grid%return_after_training_io == .TRUE. this routine 
- ! will return after the training phase for all auxiliary I/O streams.  
- ! Nothing else will be done.  This ugly hack is only needed for ESMF 
- ! coupling.  grid%return_after_training_io == .FALSE. in all other cases.  
- IF ( .NOT. grid%return_after_training_io ) THEN
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) ) THEN
      CALL med_hist_out ( grid , 0, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
@@ -54,7 +49,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL med_filter_out  ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( INPUTOUT_ALARM ), rc=rc )
    ENDIF
- ENDIF
 
 ! - AUX HISTORY OUTPUT 
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
@@ -98,7 +92,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST10_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST11_ALARM ), rc=rc ) ) THEN
-     CALL med_hist_out ( grid , 12, config_flags )
+     CALL med_hist_out ( grid , 11, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXHIST11_ALARM ), rc=rc )
    ENDIF
 
@@ -178,7 +172,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT11_ALARM ), rc=rc )
    ENDIF
 
- IF ( .NOT. grid%return_after_training_io ) THEN
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN
      IF ( grid%id .EQ. 1 ) THEN
@@ -192,9 +185,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - Look for boundary data after writing out history and restart files
    CALL med_latbound_in ( grid , config_flags )
- ELSE
-   CALL wrf_debug ( 1 , 'DEBUG:  med_before_solve_io():  returned after training aux I/O' )
- ENDIF
 
    RETURN
 END SUBROUTINE med_before_solve_io
@@ -1125,15 +1115,9 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    INTEGER , INTENT(IN)                       :: stream
   ! Local
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: fname, n1, n2
-   INTEGER                                :: fid , rid
+   CHARACTER*80                           :: fname, n2
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
-   INTEGER                                :: myproc
-   CHARACTER*80                           :: timestr
-   TYPE(WRFU_Time)                        :: ST,CT
-   INTEGER                                :: n
-   LOGICAL                                :: adjust
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing
@@ -1143,150 +1127,79 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
      WRITE(message,*)'med_hist_out: invalid history stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-   CALL nl_get_adjust_output_times( grid%id, adjust )
-   CALL domain_clock_get( grid, current_time=CT, start_time=ST, current_timestr=timestr )
 
    SELECT CASE( stream )
      CASE ( 0 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( HISTORY_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%history_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, HISTORY_ALARM, &
+                         config_flags%history_outname, grid%oid,    &
+                         output_history, fname, n2, ierr )
+       CALL output_history ( grid%oid, grid , config_flags , ierr )
      CASE ( 1 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST1_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist1_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST1_ALARM,       &
+                         config_flags%auxhist1_outname, grid%auxhist1_oid, &
+                         output_aux_hist1, fname, n2, ierr )
+       CALL output_aux_hist1 ( grid%auxhist1_oid, grid , config_flags , ierr )
      CASE ( 2 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST2_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist2_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST2_ALARM,       &
+                         config_flags%auxhist2_outname, grid%auxhist2_oid, &
+                         output_aux_hist2, fname, n2, ierr )
+       CALL output_aux_hist2 ( grid%auxhist2_oid, grid , config_flags , ierr )
      CASE ( 3 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST3_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist3_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST3_ALARM,       &
+                         config_flags%auxhist3_outname, grid%auxhist3_oid, &
+                         output_aux_hist3, fname, n2, ierr )
+       CALL output_aux_hist3 ( grid%auxhist3_oid, grid , config_flags , ierr )
      CASE ( 4 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST4_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist4_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST4_ALARM,       &
+                         config_flags%auxhist4_outname, grid%auxhist4_oid, &
+                         output_aux_hist4, fname, n2, ierr )
+       CALL output_aux_hist4 ( grid%auxhist4_oid, grid , config_flags , ierr )
      CASE ( 5 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST5_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist5_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST5_ALARM,       &
+                         config_flags%auxhist5_outname, grid%auxhist5_oid, &
+                         output_aux_hist5, fname, n2, ierr )
+       CALL output_aux_hist5 ( grid%auxhist5_oid, grid , config_flags , ierr )
      CASE ( 6 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST6_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist6_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST6_ALARM,       &
+                         config_flags%auxhist6_outname, grid%auxhist6_oid, &
+                         output_aux_hist6, fname, n2, ierr )
+       CALL output_aux_hist6 ( grid%auxhist6_oid, grid , config_flags , ierr )
      CASE ( 7 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST7_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist7_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST7_ALARM,       &
+                         config_flags%auxhist7_outname, grid%auxhist7_oid, &
+                         output_aux_hist7, fname, n2, ierr )
+       CALL output_aux_hist7 ( grid%auxhist7_oid, grid , config_flags , ierr )
      CASE ( 8 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST8_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist8_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST8_ALARM,       &
+                         config_flags%auxhist8_outname, grid%auxhist8_oid, &
+                         output_aux_hist8, fname, n2, ierr )
+       CALL output_aux_hist8 ( grid%auxhist8_oid, grid , config_flags , ierr )
      CASE ( 9 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST9_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist9_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST9_ALARM,       &
+                         config_flags%auxhist9_outname, grid%auxhist9_oid, &
+                         output_aux_hist9, fname, n2, ierr )
+       CALL output_aux_hist9 ( grid%auxhist9_oid, grid , config_flags , ierr )
      CASE ( 10 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST10_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist10_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST10_ALARM,        &
+                         config_flags%auxhist10_outname, grid%auxhist10_oid, &
+                         output_aux_hist10, fname, n2, ierr )
+       CALL output_aux_hist10 ( grid%auxhist10_oid, grid , config_flags , ierr )
      CASE ( 11 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXHIST11_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( fname , config_flags%auxhist11_outname , grid%id , 2 , timestr )
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST11_ALARM,        &
+                         config_flags%auxhist11_outname, grid%auxhist11_oid, &
+                         output_aux_hist11, fname, n2, ierr )
+       CALL output_aux_hist11 ( grid%auxhist11_oid, grid , config_flags , ierr )
    END SELECT
 
-   IF (      ( stream .eq. 0 .and. grid%oid          .eq. 0 )    &
-        .or. ( stream .eq. 1 .and. grid%auxhist1_oid .eq. 0 )    &
-        .or. ( stream .eq. 2 .and. grid%auxhist2_oid .eq. 0 )    &
-        .or. ( stream .eq. 3 .and. grid%auxhist3_oid .eq. 0 )    &
-        .or. ( stream .eq. 4 .and. grid%auxhist4_oid .eq. 0 )    &
-        .or. ( stream .eq. 5 .and. grid%auxhist5_oid .eq. 0 )    &
-        .or. ( stream .eq. 6 .and. grid%auxhist6_oid .eq. 0 )    &
-        .or. ( stream .eq. 7 .and. grid%auxhist7_oid .eq. 0 )    &
-        .or. ( stream .eq. 8 .and. grid%auxhist8_oid .eq. 0 )    &
-        .or. ( stream .eq. 9 .and. grid%auxhist9_oid .eq. 0 )    &
-        .or. ( stream .eq. 10 .and. grid%auxhist10_oid .eq. 0 )    &
-        .or. ( stream .eq. 11 .and. grid%auxhist11_oid .eq. 0 )    &
-      ) THEN
-
-     IF ( stream .EQ. 10 ) THEN
-       WRITE(n2,'("DATASET=AUXHIST10")')
-     ELSE IF ( stream .EQ. 11 ) THEN
-       WRITE(n2,'("DATASET=AUXHIST11")')
-     ELSE
-       WRITE(n2,'("DATASET=AUXHIST",I1)')stream  ! may be overwritten, below, if stream is 0
-     ENDIF
-     WRITE ( message , '("med_hist_out : opening ",A," for writing. ")') TRIM ( fname )
-     CALL wrf_debug( 1, message )
-     SELECT CASE( stream )
-       CASE ( 0 )
-         CALL open_w_dataset ( grid%oid, TRIM(fname), grid ,  &
-                               config_flags , output_history , 'DATASET=HISTORY' , ierr )
-       CASE ( 1 )
-         CALL open_w_dataset ( grid%auxhist1_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist1 , n2, ierr )
-       CASE ( 2 )
-         CALL open_w_dataset ( grid%auxhist2_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist2 , n2, ierr )
-       CASE ( 3 )
-         CALL open_w_dataset ( grid%auxhist3_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist3 , n2, ierr )
-       CASE ( 4 )
-         CALL open_w_dataset ( grid%auxhist4_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist4 , n2, ierr )
-       CASE ( 5 )
-         CALL open_w_dataset ( grid%auxhist5_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist5 , n2, ierr )
-       CASE ( 6 )
-         CALL open_w_dataset ( grid%auxhist6_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist6 , n2, ierr )
-       CASE ( 7 )
-         CALL open_w_dataset ( grid%auxhist7_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist7 , n2, ierr )
-       CASE ( 8 )
-         CALL open_w_dataset ( grid%auxhist8_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist8 , n2, ierr )
-       CASE ( 9 )
-         CALL open_w_dataset ( grid%auxhist9_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist9 , n2, ierr )
-       CASE ( 10 )
-         CALL open_w_dataset ( grid%auxhist10_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist10 , n2, ierr )
-       CASE ( 11 )
-         CALL open_w_dataset ( grid%auxhist11_oid, TRIM(fname), grid ,  &
-                               config_flags , output_aux_hist11 , n2, ierr )
-     END SELECT
-     IF ( ierr .NE. 0 ) THEN
-       WRITE ( message , '("med_hist_out : error opening ",A," for writing. ",I3)') TRIM ( fname ), ierr
-       CALL wrf_message( message )
-     ENDIF
-   END IF
-
-   ! early return after training
-   IF ( .NOT. grid%return_after_training_io ) THEN
-     SELECT CASE( stream )
-       CASE ( 0 )
-         CALL output_history ( grid%oid, grid , config_flags , ierr )
-       CASE ( 1 )
-         CALL output_aux_hist1 ( grid%auxhist1_oid, grid , config_flags , ierr )
-       CASE ( 2 )
-         CALL output_aux_hist2 ( grid%auxhist2_oid, grid , config_flags , ierr )
-       CASE ( 3 )
-         CALL output_aux_hist3 ( grid%auxhist3_oid, grid , config_flags , ierr )
-       CASE ( 4 )
-         CALL output_aux_hist4 ( grid%auxhist4_oid, grid , config_flags , ierr )
-       CASE ( 5 )
-         CALL output_aux_hist5 ( grid%auxhist5_oid, grid , config_flags , ierr )
-       CASE ( 6 )
-         CALL output_aux_hist6 ( grid%auxhist6_oid, grid , config_flags , ierr )
-       CASE ( 7 )
-         CALL output_aux_hist7 ( grid%auxhist7_oid, grid , config_flags , ierr )
-       CASE ( 8 )
-         CALL output_aux_hist8 ( grid%auxhist8_oid, grid , config_flags , ierr )
-       CASE ( 9 )
-         CALL output_aux_hist9 ( grid%auxhist9_oid, grid , config_flags , ierr )
-       CASE ( 10 )
-         CALL output_aux_hist10 ( grid%auxhist10_oid, grid , config_flags , ierr )
-       CASE ( 11 )
-         CALL output_aux_hist11 ( grid%auxhist11_oid, grid , config_flags , ierr )
-     END SELECT
+   WRITE(message,*)'med_hist_out: opened ',TRIM(fname),' as ',TRIM(n2)
+   CALL wrf_debug( 1, message )
 
      grid%nframes(stream) = grid%nframes(stream) + 1
 
      SELECT CASE( stream )
        CASE ( 0 )
          IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
-           CALL close_dataset ( grid%oid , config_flags , "DATASET=HISTORY" ) 
+           CALL close_dataset ( grid%oid , config_flags , n2 ) 
            grid%oid = 0
            grid%nframes(stream) = 0
          ENDIF
@@ -1361,9 +1274,6 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
        WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
        CALL end_timing ( TRIM(message) )
      END IF
-   ELSE
-     CALL wrf_debug( 1, 'DEBUG:  med_hist_out() returned after training' )
-   ENDIF
 
    RETURN
 END SUBROUTINE med_hist_out
@@ -1503,159 +1413,71 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
    INTEGER , INTENT(IN)                       :: stream
   ! Local
-   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-   CHARACTER*80                           :: rstname , outname, auxname, n1, n2
-   INTEGER                                :: fid , rid
-   CHARACTER (LEN=256)                    :: message
-   INTEGER                                :: ierr
-   INTEGER                                :: myproc
-   CHARACTER*80                           :: timestr
-   TYPE(WRFU_Time)                        :: ST,CT
-   INTEGER                                :: n
-   LOGICAL                                :: adjust
-
-   CALL nl_get_adjust_input_times( grid%id, adjust )
+   CHARACTER (LEN=256)                        :: message
+   INTEGER :: ierr
 
    IF ( stream .LT. 1 .OR. stream .GT. 11 ) THEN
      WRITE(message,*)'med_auxinput_in: invalid input stream ',stream
      CALL wrf_error_fatal( message )
    ENDIF
-   CALL domain_clock_get( grid, current_time=CT, start_time=ST, current_timestr=timestr )
+
    SELECT CASE( stream )
      CASE ( 1 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT1_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput1_inname, grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT1_ALARM,       &
+                        config_flags%auxinput1_inname, grid%auxinput1_oid, &
+                        input_aux_model_input1, ierr )
+       CALL input_aux_model_input1 ( grid%auxinput1_oid, grid , config_flags , ierr )
      CASE ( 2 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT2_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput2_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT2_ALARM,       &
+                        config_flags%auxinput2_inname, grid%auxinput2_oid, &
+                        input_aux_model_input2, ierr )
+       CALL input_aux_model_input2 ( grid%auxinput2_oid, grid , config_flags , ierr )
      CASE ( 3 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT3_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput3_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT3_ALARM,       &
+                        config_flags%auxinput3_inname, grid%auxinput3_oid, &
+                        input_aux_model_input3, ierr )
+       CALL input_aux_model_input3 ( grid%auxinput3_oid, grid , config_flags , ierr )
      CASE ( 4 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT4_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput4_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT4_ALARM,       &
+                        config_flags%auxinput4_inname, grid%auxinput4_oid, &
+                        input_aux_model_input4, ierr )
+       CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
      CASE ( 5 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT5_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput5_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT5_ALARM,       &
+                        config_flags%auxinput5_inname, grid%auxinput5_oid, &
+                        input_aux_model_input5, ierr )
+       CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
      CASE ( 6 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT6_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput6_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT6_ALARM,       &
+                        config_flags%auxinput6_inname, grid%auxinput6_oid, &
+                        input_aux_model_input6, ierr )
+       CALL input_aux_model_input6 ( grid%auxinput6_oid, grid , config_flags , ierr )
      CASE ( 7 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT7_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput7_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT7_ALARM,       &
+                        config_flags%auxinput7_inname, grid%auxinput7_oid, &
+                        input_aux_model_input7, ierr )
+       CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
      CASE ( 8 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT8_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput8_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT8_ALARM,       &
+                        config_flags%auxinput8_inname, grid%auxinput8_oid, &
+                        input_aux_model_input8, ierr )
+       CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
      CASE ( 9 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT9_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput9_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
+                        config_flags%auxinput9_inname, grid%auxinput9_oid, &
+                        input_aux_model_input9, ierr )
+       CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
      CASE ( 10 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT10_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%gfdda_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT10_ALARM,   &
+                        config_flags%gfdda_inname, grid%auxinput10_oid, &
+                        input_aux_model_input10, ierr )
+       CALL input_aux_model_input10 ( grid%auxinput10_oid, grid , config_flags , ierr )
      CASE ( 11 )
-       IF ( adjust ) CALL adjust_io_timestr( grid%io_intervals( AUXINPUT11_ALARM ), CT, ST, timestr )
-       CALL construct_filename2a ( auxname , config_flags%auxinput11_inname , grid%id , 2 , timestr )
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT11_ALARM,        &
+                        config_flags%auxinput11_inname, grid%auxinput11_oid, &
+                        input_aux_model_input11, ierr )
+       CALL input_aux_model_input11 ( grid%auxinput11_oid, grid , config_flags , ierr )
    END SELECT
-   IF (      ( stream .eq. 1 .and. grid%auxinput1_oid .eq. 0 )    &
-        .or. ( stream .eq. 2 .and. grid%auxinput2_oid .eq. 0 )    &
-        .or. ( stream .eq. 3 .and. grid%auxinput3_oid .eq. 0 )    &
-        .or. ( stream .eq. 4 .and. grid%auxinput4_oid .eq. 0 )    &
-        .or. ( stream .eq. 5 .and. grid%auxinput5_oid .eq. 0 )    &
-        .or. ( stream .eq. 6 .and. grid%auxinput6_oid .eq. 0 )    &
-        .or. ( stream .eq. 7 .and. grid%auxinput7_oid .eq. 0 )    &
-        .or. ( stream .eq. 8 .and. grid%auxinput8_oid .eq. 0 )    &
-        .or. ( stream .eq. 9 .and. grid%auxinput9_oid .eq. 0 )    &
-        .or. ( stream .eq. 10 .and. grid%auxinput10_oid .eq. 0 )    &
-        .or. ( stream .eq. 11 .and. grid%auxinput11_oid .eq. 0 )    &
-      ) THEN
-
-       IF      ( stream .EQ. 10 ) THEN
-         WRITE(n2,'("DATASET=AUXINPUT10")')
-       ELSE IF ( stream .EQ. 11 ) THEN
-         WRITE(n2,'("DATASET=AUXINPUT11")')
-       ELSE
-         WRITE(n2,'("DATASET=AUXINPUT",I1)')stream
-       ENDIF
-       WRITE ( message , '("med_auxinput_in : opening ",A," for reading. ")') TRIM ( auxname )
-       CALL wrf_debug( 1, message )
-
-!<DESCRIPTION>
-!
-!Open_u_dataset is called rather than open_r_dataset to allow interfaces
-!that can do blending or masking to update an existing field. (MCEL IO does this).
-!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset 
-!in those cases.
-!
-!</DESCRIPTION>
-
-     SELECT CASE( stream )
-       CASE ( 1 )
-         CALL open_u_dataset ( grid%auxinput1_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input1 , n2, ierr )
-       CASE ( 2 )
-         CALL open_u_dataset ( grid%auxinput2_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input2 , n2, ierr )
-       CASE ( 3 )
-         CALL open_u_dataset ( grid%auxinput3_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input3 , n2, ierr )
-       CASE ( 4 )
-         CALL open_u_dataset ( grid%auxinput4_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input4 , n2, ierr )
-       CASE ( 5 )
-         CALL open_u_dataset ( grid%auxinput5_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input5 , n2, ierr )
-       CASE ( 6 )
-         CALL open_u_dataset ( grid%auxinput6_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input6 , n2, ierr )
-       CASE ( 7 )
-         CALL open_u_dataset ( grid%auxinput7_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input7 , n2, ierr )
-       CASE ( 8 )
-         CALL open_u_dataset ( grid%auxinput8_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input8 , n2, ierr )
-       CASE ( 9 )
-         CALL open_u_dataset ( grid%auxinput9_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input9 , n2, ierr )
-       CASE ( 10 )
-         CALL open_u_dataset ( grid%auxinput10_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input10 , n2, ierr )
-       CASE ( 11 )
-         CALL open_u_dataset ( grid%auxinput11_oid, TRIM(auxname), grid ,  &
-                               config_flags , input_aux_model_input11 , n2, ierr )
-     END SELECT
-     IF ( ierr .NE. 0 ) THEN
-       CALL wrf_message( message )
-     ENDIF
-   END IF
-   ! early return after training
-   IF ( .NOT. grid%return_after_training_io ) THEN
-     SELECT CASE( stream )
-       CASE ( 1 )
-         CALL input_aux_model_input1 ( grid%auxinput1_oid, grid , config_flags , ierr )
-       CASE ( 2 )
-         CALL input_aux_model_input2 ( grid%auxinput2_oid, grid , config_flags , ierr )
-       CASE ( 3 )
-         CALL input_aux_model_input3 ( grid%auxinput3_oid, grid , config_flags , ierr )
-       CASE ( 4 )
-         CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
-       CASE ( 5 )
-         CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
-       CASE ( 6 )
-         CALL input_aux_model_input6 ( grid%auxinput6_oid, grid , config_flags , ierr )
-       CASE ( 7 )
-         CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
-       CASE ( 8 )
-         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
-       CASE ( 9 )
-         CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
-       CASE ( 10 )
-         CALL input_aux_model_input10 ( grid%auxinput10_oid, grid , config_flags , ierr )
-       CASE ( 11 )
-         CALL input_aux_model_input11 ( grid%auxinput11_oid, grid , config_flags , ierr )
-     END SELECT
-   ELSE
-     CALL wrf_debug( 1, 'DEBUG:  med_auxinput_in() returned after training' )
-   ENDIF
    RETURN
 END SUBROUTINE med_auxinput_in
 
@@ -1876,6 +1698,152 @@ SUBROUTINE med_endup_step ( grid , config_flags )
    RETURN
 
 END SUBROUTINE med_endup_step
+
+SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
+                        auxinput_inname, oid, insub, ierr )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+   USE module_utility
+
+   IMPLICIT NONE
+  ! Arguments
+   TYPE(domain)                                :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)    :: config_flags
+   INTEGER ,                     INTENT(IN)    :: stream
+   INTEGER ,                     INTENT(IN)    :: alarm_id
+   CHARACTER*(*) ,               INTENT(IN)    :: auxinput_inname
+   INTEGER ,                     INTENT(INOUT) :: oid
+   EXTERNAL                                       insub
+   INTEGER ,                     INTENT(OUT)   :: ierr
+  ! Local
+   CHARACTER*80                           :: fname, n2
+   CHARACTER (LEN=256)                    :: message
+   CHARACTER*80                           :: timestr
+   TYPE(WRFU_Time)                        :: ST,CT
+   LOGICAL                                :: adjust
+
+   IF ( stream .LT. 1 .OR. stream .GT. 11 ) THEN
+     WRITE(message,*)'open_aux_u: invalid input stream ',stream
+     CALL wrf_error_fatal( message )
+   ENDIF
+
+   ierr = 0
+
+   IF ( oid .eq. 0 ) THEN
+     CALL domain_clock_get( grid, current_time=CT, start_time=ST, &
+                            current_timestr=timestr )
+     CALL nl_get_adjust_input_times( grid%id, adjust )
+     IF ( adjust ) THEN 
+       CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
+     ENDIF
+     CALL construct_filename2a ( fname , auxinput_inname, &
+                                 grid%id , 2 , timestr )
+     IF      ( stream .EQ. 10 ) THEN
+       WRITE(n2,'("DATASET=AUXINPUT10")')
+     ELSE IF ( stream .EQ. 11 ) THEN
+       WRITE(n2,'("DATASET=AUXINPUT11")')
+     ELSE
+       WRITE(n2,'("DATASET=AUXINPUT",I1)')stream
+     ENDIF
+     WRITE ( message , '("open_aux_u : opening ",A," for reading. ")') TRIM ( fname )
+     CALL wrf_debug( 1, message )
+!<DESCRIPTION>
+!
+!Open_u_dataset is called rather than open_r_dataset to allow interfaces
+!that can do blending or masking to update an existing field. (MCEL IO does this).
+!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset 
+!in those cases.
+!
+!</DESCRIPTION>
+     CALL open_u_dataset ( oid, TRIM(fname), grid ,  &
+                           config_flags , insub , n2, ierr )
+   ENDIF
+   IF ( ierr .NE. 0 ) THEN
+     WRITE ( message , '("open_aux_u : error opening ",A," for reading. ",I3)') &
+       TRIM ( fname ), ierr
+     CALL wrf_message( message )
+   ENDIF
+   RETURN
+END SUBROUTINE open_aux_u
+
+SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
+                         hist_outname, oid, outsub, fname, n2, ierr )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+   USE module_utility
+
+   IMPLICIT NONE
+  ! Arguments
+   TYPE(domain)                                :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)    :: config_flags
+   INTEGER ,                     INTENT(IN)    :: stream
+   INTEGER ,                     INTENT(IN)    :: alarm_id
+   CHARACTER*(*) ,               INTENT(IN)    :: hist_outname
+   INTEGER ,                     INTENT(INOUT) :: oid
+   EXTERNAL                                       outsub
+   CHARACTER*(*) ,               INTENT(OUT)   :: fname, n2
+   INTEGER ,                     INTENT(OUT)   :: ierr
+  ! Local
+   CHARACTER (LEN=256)                    :: message
+   CHARACTER*80                           :: timestr
+   TYPE(WRFU_Time)                        :: ST,CT
+   LOGICAL                                :: adjust
+
+   IF ( stream .LT. 0 .OR. stream .GT. 11 ) THEN
+     WRITE(message,*)'open_hist_w: invalid history stream ',stream
+     CALL wrf_error_fatal( message )
+   ENDIF
+
+   ierr = 0
+
+   ! Note that computation of fname and n2 are outside of the oid IF statement 
+   ! since they are OUT args and may be used by callers even if oid/=0.  
+   CALL domain_clock_get( grid, current_time=CT, start_time=ST, &
+                          current_timestr=timestr )
+   CALL nl_get_adjust_output_times( grid%id, adjust )
+   IF ( adjust ) THEN 
+     CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
+   ENDIF
+   CALL construct_filename2a ( fname , hist_outname, &
+                               grid%id , 2 , timestr )
+   IF      ( stream .EQ. 10 ) THEN
+     WRITE(n2,'("DATASET=AUXHIST10")')
+   ELSE IF ( stream .EQ. 11 ) THEN
+     WRITE(n2,'("DATASET=AUXHIST11")')
+   ELSE IF ( stream .EQ. 0 ) THEN
+     WRITE(n2,'("DATASET=HISTORY")')
+   ELSE
+     WRITE(n2,'("DATASET=AUXHIST",I1)')stream
+   ENDIF
+   IF ( oid .eq. 0 ) THEN
+     WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )
+     CALL wrf_debug( 1, message )
+!<DESCRIPTION>
+!
+!Open_u_dataset is called rather than open_r_dataset to allow interfaces
+!that can do blending or masking to update an existing field. (MCEL IO does this).
+!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset 
+!in those cases.
+!
+!</DESCRIPTION>
+     CALL open_w_dataset ( oid, TRIM(fname), grid ,  &
+                           config_flags , outsub , n2, ierr )
+   ENDIF
+   IF ( ierr .NE. 0 ) THEN
+     WRITE ( message , '("open_hist_w : error opening ",A," for writing. ",I3)') &
+       TRIM ( fname ), ierr
+     CALL wrf_message( message )
+   ENDIF
+   RETURN
+END SUBROUTINE open_hist_w
 
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

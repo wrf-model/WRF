@@ -641,14 +641,10 @@ CONTAINS
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
-
-     ! This bit of hackery causes wrf_component_run to advance the head_grid 
-     ! of WRF up to the point where import and export states have been 
-     ! initialized and then return.  
-     head_grid%return_after_training_io = .TRUE.
-     CALL wrf_component_run( gcomp, importState, exportState, clock, rc )
-     IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'wrf_component_init2:  wrf_component_run failed' )
+     ! populate ESMF import and export states
+     CALL wrf_state_populate( rc )
+     IF ( rc /= 0 ) THEN
+       CALL wrf_error_fatal ( 'wrf_component_init2:  wrf_state_populate failed' )
      ENDIF
 
      ! examine importState
@@ -777,15 +773,6 @@ CONTAINS
      CALL wrf_debug ( 100 , 'DEBUG wrf_component_run():  calling wrf_run()' )
      CALL wrf_run( )
      CALL wrf_debug ( 100 , 'DEBUG wrf_component_run():  back from wrf_run()' )
-
-     ! This bit of hackery will cause the next call to wrf_run() to 
-     ! resume advance of the head_grid from the point where import and 
-     ! export states were initialized.  When grid%return_after_training_io 
-     ! is .TRUE., wrf_run() returns right after import and export states 
-     ! are initialized.  This hack is triggered in wrf_component_init2.
-     IF ( head_grid%return_after_training_io ) THEN
-       head_grid%return_after_training_io = .FALSE.
-     ENDIF
 
      CALL wrf_debug ( 100 , 'DEBUG wrf_component_run():  end' )
 
@@ -1176,8 +1163,234 @@ CONTAINS
    END SUBROUTINE wrf_getDecompInfo
 
 
-END MODULE module_wrf_component_top
+   SUBROUTINE wrf_state_populate( ierr )
+     ! Driver layer
+     USE module_domain
+     USE module_io_domain
+     ! Model layer
+     USE module_configure
+     USE module_bc_time_utilities
 
+     IMPLICIT NONE
+
+!<DESCRIPTION>
+!     Populate WRF import and export states from Registry-generated code.  
+!     For now, only head_grid can be coupled.  Extend later to include child 
+!     domains, possibly via nested ESMF_State's.  
+!
+!</DESCRIPTION>
+
+     ! Arguments
+     INTEGER, INTENT(OUT)       :: ierr
+     ! Local
+     TYPE(domain), POINTER      :: grid
+     TYPE(grid_config_rec_type) :: config_flags
+     INTEGER                    :: stream, idum1, idum2, io_form
+     CHARACTER*80               :: fname, n2
+     ! external function prototype
+     INTEGER, EXTERNAL          :: use_package
+
+     ! for now support coupling to head_grid only
+     grid => head_grid
+! TODO:  Use actual grid via current_grid%id via something like this...  
+!  IF ( current_grid_set ) THEN
+!    grid => current_grid
+!  ELSE
+!    ERROR
+!  ENDIF
+
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+     CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
+
+     stream = 0
+     ierr = 0
+
+     ! "Loop" over auxin streams mucking with io_esmf streams only...  Ick.  
+     ! Would need to store function pointers in an array in order to put this 
+     ! in a loop...  
+     CALL nl_get_io_form_auxinput1( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 1
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT1_ALARM,       &
+                        config_flags%auxinput1_inname, grid%auxinput1_oid, &
+                        input_aux_model_input1, ierr ) 
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput2( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 2
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT2_ALARM,       &
+                        config_flags%auxinput2_inname, grid%auxinput2_oid, &
+                        input_aux_model_input2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput3( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 3
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT3_ALARM,       &
+                        config_flags%auxinput3_inname, grid%auxinput3_oid, &
+                        input_aux_model_input3, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput4( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 4
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT4_ALARM,       &
+                        config_flags%auxinput4_inname, grid%auxinput4_oid, &
+                        input_aux_model_input4, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput5( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 5
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT5_ALARM,       &
+                        config_flags%auxinput5_inname, grid%auxinput5_oid, &
+                        input_aux_model_input5, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput6( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 6
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT6_ALARM,       &
+                        config_flags%auxinput6_inname, grid%auxinput6_oid, &
+                        input_aux_model_input6, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput7( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 7
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT7_ALARM,       &
+                        config_flags%auxinput7_inname, grid%auxinput7_oid, &
+                        input_aux_model_input7, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput8( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 8
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT8_ALARM,       &
+                        config_flags%auxinput8_inname, grid%auxinput8_oid, &
+                        input_aux_model_input8, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput9( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 9
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
+                        config_flags%auxinput9_inname, grid%auxinput9_oid, &
+                        input_aux_model_input9, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_gfdda( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 10
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT10_ALARM,   &
+                        config_flags%gfdda_inname, grid%auxinput10_oid, &
+                        input_aux_model_input10, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxinput11( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 11
+       CALL open_aux_u( grid, config_flags, stream, AUXINPUT11_ALARM,        &
+                        config_flags%auxinput11_inname, grid%auxinput11_oid, &
+                        input_aux_model_input11, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+
+     ! "Loop" over history streams mucking with io_esmf streams only...  Ick.  
+     ! Would need to store function pointers in an array in order to put this 
+     ! in a loop...  
+     CALL nl_get_io_form_auxhist1( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 1
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST1_ALARM,       &
+                         config_flags%auxhist1_outname, grid%auxhist1_oid, &
+                         output_aux_hist1, fname, n2, ierr ) 
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist2( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 2
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST2_ALARM,       &
+                         config_flags%auxhist2_outname, grid%auxhist2_oid, &
+                         output_aux_hist2, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist3( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 3
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST3_ALARM,       &
+                         config_flags%auxhist3_outname, grid%auxhist3_oid, &
+                         output_aux_hist3, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist4( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 4
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST4_ALARM,       &
+                         config_flags%auxhist4_outname, grid%auxhist4_oid, &
+                         output_aux_hist4, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist5( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 5
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST5_ALARM,       &
+                         config_flags%auxhist5_outname, grid%auxhist5_oid, &
+                         output_aux_hist5, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist6( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 6
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST6_ALARM,       &
+                         config_flags%auxhist6_outname, grid%auxhist6_oid, &
+                         output_aux_hist6, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist7( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 7
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST7_ALARM,       &
+                         config_flags%auxhist7_outname, grid%auxhist7_oid, &
+                         output_aux_hist7, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist8( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 8
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST8_ALARM,       &
+                         config_flags%auxhist8_outname, grid%auxhist8_oid, &
+                         output_aux_hist8, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist9( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 9
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST9_ALARM,       &
+                         config_flags%auxhist9_outname, grid%auxhist9_oid, &
+                         output_aux_hist9, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist10( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 10
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST10_ALARM,        &
+                         config_flags%auxhist10_outname, grid%auxhist10_oid, &
+                         output_aux_hist10, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+     CALL nl_get_io_form_auxhist11( 1, io_form )
+     IF ( use_package( io_form ) == IO_ESMF ) THEN
+       stream = 11
+       CALL open_hist_w( grid, config_flags, stream, AUXHIST11_ALARM,        &
+                         config_flags%auxhist11_outname, grid%auxhist11_oid, &
+                         output_aux_hist11, fname, n2, ierr )
+       IF ( ierr /= 0 ) RETURN
+     ENDIF
+   END SUBROUTINE wrf_state_populate
+
+END MODULE module_wrf_component_top
 
 
 

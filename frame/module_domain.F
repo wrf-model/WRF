@@ -135,12 +135,6 @@ MODULE module_domain
 
       ! Have clocks and times been initialized yet?
       LOGICAL :: time_set
-      ! This flag controls first-time-step behavior for ESMF runs 
-      ! which require components to return to the top-level driver 
-      ! after initializing import and export states.  In WRF, this 
-      ! initialization is done in the "training phase" of 
-      ! med_before_solve_io().  
-      LOGICAL                                             :: return_after_training_io
 
    END TYPE domain
 
@@ -814,7 +808,6 @@ CONTAINS
         new_grid%alarms_created( i ) = .FALSE.
       ENDDO
       new_grid%time_set = .FALSE.
-      new_grid%return_after_training_io = .FALSE.
 
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation

@@ -246,14 +246,7 @@ CONTAINS
 ! and stop times for the domain are set to the start and stop time of the
 ! model run, and then <a href=integrate.html>integrate</a> is called to
 ! advance the domain forward through that specified time interval.  On
-! return, the simulation is completed.  A Mediation Layer-provided
-! subroutine, <a href=med_shutdown_io.html>med_shutdown_io</a> is called
-! to allow the the model to do any I/O specific cleanup and shutdown, and
-! then the WRF Driver Layer routine <a
-! href=wrf_shutdown.html>wrf_shutdown</a> (quilt servers would be
-! directed to shut down here) is called to properly end the run,
-! including shutting down the communications (for example, most comm
-! layers would call MPI_FINALIZE at this point if they're using MPI).
+! return, the simulation is completed.  
 ! 
 !</DESCRIPTION>
 
@@ -271,6 +264,18 @@ CONTAINS
    SUBROUTINE wrf_finalize( no_shutdown )
 !<DESCRIPTION>
 !     WRF finalize routine.
+!</DESCRIPTION>
+
+!<DESCRIPTION>
+! A Mediation Layer-provided
+! subroutine, <a href=med_shutdown_io.html>med_shutdown_io</a> is called
+! to allow the the model to do any I/O specific cleanup and shutdown, and
+! then the WRF Driver Layer routine <a
+! href=wrf_shutdown.html>wrf_shutdown</a> (quilt servers would be
+! directed to shut down here) is called to properly end the run,
+! including shutting down the communications (for example, most comm
+! layers would call MPI_FINALIZE at this point if they're using MPI).
+! 
 !</DESCRIPTION>
      LOGICAL, OPTIONAL, INTENT(IN) :: no_shutdown
 

@@ -361,29 +361,27 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
   ierr = ESMF_SUCCESS
 !  PRINT *,'DEBUG:  BEGIN timeaddmonths()'
   IF ( ( MM < 1 ) .OR. ( MM > MONTHS_PER_YEAR ) ) THEN
-!    CALL wrf_message( 'ERROR timeaddmonths():  MM out of range' )
     ierr = ESMF_FAILURE
-  ENDIF
+  ELSE
 !  PRINT *,'DEBUG:  timeaddmonths(): MM = ',MM
-!$$$ fix this so init just points MMbdys to the one we want for this calendar?
 !  PRINT *,'DEBUG:  timeaddmonths(): time%YR = ',time%YR
 !  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%S = ',time%basetime%S
 !  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%Sn = ',time%basetime%Sn
 !  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%Sd = ',time%basetime%Sd
-  IF ( nfeb(time%YR) == 29 ) THEN
+    IF ( nfeb(time%YR) == 29 ) THEN
 !  PRINT *,'DEBUG:  timeaddmonths(): leap year'
-    MMbdys => monthbdysleap
-  ELSE
+      MMbdys => monthbdysleap
+    ELSE
 !  PRINT *,'DEBUG:  timeaddmonths(): not leap year'
-    MMbdys => monthbdys
-  ENDIF
+      MMbdys => monthbdys
+    ENDIF
 !  PRINT *,'DEBUG:  timeaddmonths(): done pointing to MMbdys'
 !  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%S = ',MMbdys(MM-1)%S
 !  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%Sn = ',MMbdys(MM-1)%Sn
 !  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%Sd = ',MMbdys(MM-1)%Sd
-!$$$ dumps core here...  
-  time%basetime = time%basetime + MMbdys(MM-1)
+    time%basetime = time%basetime + MMbdys(MM-1)
 !  PRINT *,'DEBUG:  END timeaddmonths()'
+  ENDIF
 END SUBROUTINE timeaddmonths
 
 

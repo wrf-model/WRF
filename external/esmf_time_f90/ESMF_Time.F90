@@ -614,8 +614,6 @@
           IF ( PRESENT( rc ) ) THEN
             rc = ESMF_FAILURE
             RETURN
-          ELSE
-            CALL wrf_error_fatal( 'ESMF_TimeSet:  MM out of range' )
           ENDIF
         ENDIF
 !  PRINT *,'DEBUG:  ESMF_TimeSet():  back from timeaddmonths'

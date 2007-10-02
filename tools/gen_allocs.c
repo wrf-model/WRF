@@ -75,7 +75,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
       {
         /* if this is a core-specific variable, prepend the name of the core to   */
         /* the variable at the driver level                                       */
-        if (      !strcmp( corename , p->use+4 )) {
+        if (!strncmp("dyn_",p->use,4)&&!strcmp( corename , p->use+4 )) {
           sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
         } else if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
           strcpy(fname,p->name) ;
@@ -299,7 +299,7 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
       {
         /* if this is a core-specific variable, prepend the name of the core to   */
         /* the variable at the driver level                                       */
-        if (!strcmp( corename , p->use+4 ))
+        if (!strncmp("dyn_",p->use,4)&&!strcmp( corename , p->use+4 ))
           sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
         else
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
@@ -396,7 +396,7 @@ gen_dealloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
       {
         /* if this is a core-specific variable, prepend the name of the core to   */
         /* the variable at the driver level                                       */
-        if (!strcmp( corename , p->use+4 ))
+        if (!strncmp("dyn_",p->use,4)&&!strcmp( corename , p->use+4 ))
           sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
         else
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;

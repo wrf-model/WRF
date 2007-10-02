@@ -108,6 +108,7 @@ int gen_wrf_io2 ( FILE * fp , char * fname , char * structname , char * fourdnam
 
 int gen_namelist_defines ( char * dirname , int sw_dimension ) ;
 int gen_namelist_defaults ( char * dirname ) ;
+int gen_namelist_script ( char * dirname ) ;
 
 int gen_model_data_ord ( char * dirname ) ;
 

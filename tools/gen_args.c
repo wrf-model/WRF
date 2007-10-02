@@ -132,7 +132,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
           if ( p->boundary_array && sw_new_bdys ) {
             int bdy ;
             for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
-              if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
+              if (!strncmp("dyn_",p->use,4) && !strcmp( corename , p->use+4 ) && sw==ACTUAL)
                 sprintf(fname,"%s_%s",corename,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
               else
                 strcpy(fname,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
@@ -147,7 +147,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
 	      *linelen += lenarg ;
             }
           } else {
-            if (!strcmp( corename , p->use+4 ) && sw==ACTUAL)
+            if (!strncmp("dyn_",p->use,4) && !strcmp( corename , p->use+4 ) && sw==ACTUAL)
               sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
             else
               strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;

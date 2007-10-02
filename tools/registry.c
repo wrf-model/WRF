@@ -177,6 +177,7 @@ main( int argc, char *argv[], char *env[] )
   gen_namelist_defines ( "inc", 0 ) ;  /* without dimension statements  */
   gen_namelist_defines ( "inc", 1 ) ;  /* with dimension statements     */
   gen_namelist_defaults ( "inc" ) ;
+  gen_namelist_script ( "inc" ) ;
   gen_get_nl_config( "inc" ) ;
   gen_config_assigns( "inc" ) ;
   gen_config_reads( "inc" ) ;

@@ -25,10 +25,10 @@
                               ipsx, ipex, jpsx, jpex, kpsx, kpex, & 
                               imsx, imex, jmsx, jmex, kmsx, kmex
 
-         integer, dimension((ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*min(1,(r_wordsize/i_wordsize)))         :: a
-         integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*min(1,(r_wordsize/i_wordsize)))   :: ax
-         integer, dimension(0:(ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*min(1,(r_wordsize/i_wordsize)))       :: zbuf
-         integer, dimension(0:(ep1x-sp1x+1)*(ep2x-sp2x+1)*(ep3x-sp3x+1)*min(1,(r_wordsize/i_wordsize))) :: xbuf
+         integer, dimension((ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*max(1,(r_wordsize/i_wordsize)))         :: a
+         integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize)))   :: ax
+         integer, dimension(0:(ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*max(1,(r_wordsize/i_wordsize)))       :: zbuf
+         integer, dimension(0:(ep1x-sp1x+1)*(ep2x-sp2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize))) :: xbuf
 
          integer pencil(4), allpencils(4,np)
          integer sendcnts(np), sdispls(np), recvcnts(np), rdispls(np)
@@ -117,6 +117,7 @@
      &                                        jpsx, jpex, kpsx, kpex, is(p), ie(p),         &
      &                                        jmsx, jmex, kmsx, kmex, imsx, imex, sendcurs(p) )
              endif
+             sendcurs(p) = sendcurs(p) * max(1,(r_wordsize/i_wordsize)) 
            else
              write(0,*)'RSL_LITE internal error: type size mismatch ',__FILE__,__LINE__
              call mpi_abort(ierr)
@@ -130,9 +131,9 @@
          recvcnts = 0
          do p = 1, np
            if ( dir .eq. 1 ) then
-             recvcnts(p) = (ie(p)-is(p)+1)*(kpex-kpsx+1)*(jpex-jpsx+1) * min(1,(r_wordsize/i_wordsize))
+             recvcnts(p) = (ie(p)-is(p)+1)*(kpex-kpsx+1)*(jpex-jpsx+1) * max(1,(r_wordsize/i_wordsize))
            else
-             recvcnts(p) = (ke(p)-ks(p)+1)*(ipe-ips+1)*(jpe-jps+1) * min(1,(r_wordsize/i_wordsize))
+             recvcnts(p) = (ke(p)-ks(p)+1)*(ipe-ips+1)*(jpe-jps+1) * max(1,(r_wordsize/i_wordsize))
            endif
            if ( p .GT. 1 ) rdispls(p) = rdispls(p-1) + recvcnts(p-1)
          enddo
@@ -195,10 +196,10 @@
          integer, intent(in) :: np, comm, r_wordsize, i_wordsize
          integer, intent(in) :: dir ! 1 is a->ax, otherwise ax->a
 
-         integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*min(1,(r_wordsize/i_wordsize)))   :: ax
-         integer, dimension((ep1y-sp1y+1)*(ep2y-sp2y+1)*(ep3y-sp3y+1)*min(1,(r_wordsize/i_wordsize)))   :: ay
-         integer, dimension(0:(ep1x-sp1x+1)*(ep2x-sp2x+1)*(ep3x-sp3x+1)*min(1,(r_wordsize/i_wordsize))) :: xbuf
-         integer, dimension(0:(ep1y-sp1y+1)*(ep2y-sp2y+1)*(ep3y-sp3y+1)*min(1,(r_wordsize/i_wordsize))) :: ybuf
+         integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize)))   :: ax
+         integer, dimension((ep1y-sp1y+1)*(ep2y-sp2y+1)*(ep3y-sp3y+1)*max(1,(r_wordsize/i_wordsize)))   :: ay
+         integer, dimension(0:(ep1x-sp1x+1)*(ep2x-sp2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize))) :: xbuf
+         integer, dimension(0:(ep1y-sp1y+1)*(ep2y-sp2y+1)*(ep3y-sp3y+1)*max(1,(r_wordsize/i_wordsize))) :: ybuf
 
 !local
          integer              ids, ide, jds, jde, kds, kde, & 
@@ -270,13 +271,6 @@
            ie(p) = allpencils(4,p)
          enddo
 
-write(0,*)'x2y np ',np
-write(0,*)'x2y dir ', dir
-write(0,*)'x2y js ',js
-write(0,*)'x2y je ',je
-write(0,*)'x2y is ',is
-write(0,*)'x2y ie ',ie
-
 
 ! pack send buffer
          sendcurs = 0 
@@ -303,6 +297,7 @@ write(0,*)'x2y ie ',ie
      &                                          js(p), je(p), kpsy, kpey, ipsy, ipey,        &
      &                                          jmsy, jmey, kmsy, kmey, imsy, imey, sendcurs(p) )
              endif
+             sendcurs(p) = sendcurs(p) * max(1,(r_wordsize/i_wordsize)) 
            else
              write(0,*)'RSL_LITE internal error: type size mismatch ',__FILE__,__LINE__
              call mpi_abort(ierr)
@@ -317,17 +312,15 @@ write(0,*)'x2y ie ',ie
          recvcnts = 0
          do p = 1, np
            if ( dir .eq. 1 ) then
-             recvcnts(p) = (je(p)-js(p)+1)*(kpey-kpsy+1)*(ipey-ipsy+1) * min(1,(r_wordsize/i_wordsize))
+             recvcnts(p) = (je(p)-js(p)+1)*(kpey-kpsy+1)*(ipey-ipsy+1) * max(1,(r_wordsize/i_wordsize))
            else
-             recvcnts(p) = (ie(p)-is(p)+1)*(kpex-kpsx+1)*(jpex-jpsx+1) * min(1,(r_wordsize/i_wordsize))
+             recvcnts(p) = (ie(p)-is(p)+1)*(kpex-kpsx+1)*(jpex-jpsx+1) * max(1,(r_wordsize/i_wordsize))
            endif
            if ( p .GT. 1 ) rdispls(p) = rdispls(p-1) + recvcnts(p-1)
          enddo
 
 ! do the transpose
          if ( dir .eq. 1 ) then
-write(0,*) ' x2y  alltoallv x->y sendcnts ',sendcnts
-write(0,*) ' x2y  alltoallv x->y recvcnts ',recvcnts
            call mpi_alltoallv(xbuf, sendcnts, sdispls, MPI_INTEGER,              &
                               ybuf, recvcnts, rdispls, MPI_INTEGER, comm, ierr )
          else

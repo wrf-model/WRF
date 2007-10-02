@@ -116,6 +116,91 @@ gen_namelist_statements ( char * dirname )
 }
 
 int
+gen_namelist_script ( char * dirname )
+{
+  FILE * fp ;
+  char  fname[NAMELEN] ;
+  char  *fn = "namelist_script.inc" ;
+  node_t *p,*q ;
+  char *p1, *p2, *p3, *p4 ;
+  char *i;
+  char  howset1[NAMELEN] ;
+  char  howset2[NAMELEN] ;
+
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+
+  sym_forget() ;
+
+  fprintf(fp,"# Machine generated, do not edit\n\n") ;
+  fprintf(fp,"FILE=${1:-namelist.input}\n\n");
+
+  for ( p = Domain.fields ; p != NULL ; p = p-> next )
+  {
+    if ( p->node_kind & RCONFIG )
+    {
+      strcpy(howset1,p->howset) ;
+      p1 = strtok(howset1,",") ;
+      p2 = strtok(NULL,",") ;
+      if ( !strcmp(p1,"namelist") ) {
+        if ( p2 == NULL ) {
+          fprintf(stderr,
+          "Warning: no namelist section specified for nl %s\n",p->name) ;
+          continue ;
+        }
+	if (sym_get( p2 ) == NULL) { /* not in table yet */
+          fprintf(fp,"echo \\&%s >> $FILE\n",p2) ;
+          for ( q = Domain.fields ; q != NULL ; q = q-> next ) {
+            if ( q->node_kind & RCONFIG) {
+              strcpy(howset2,q->howset) ;
+              p3 = strtok(howset2,",") ;
+              p4 = strtok(NULL,",") ;
+              if ( p4 == NULL ) {
+                continue ;
+              }
+
+              if ( !strcmp(p2,p4)) {
+                fprintf(fp,"if test ! -z \"$NL_") ;
+                for (i=q->name; *i!='\0'; i++) {
+                  fputc(toupper(*i),fp); 
+                }
+                if ( !strncmp(q->type->name,"character",9)) {
+                   fprintf(fp,"\"; then echo \"%s=\\\"${NL_",q->name) ;
+                   for (i=q->name; *i!='\0'; i++) {
+                     fputc(toupper(*i),fp); 
+                   }
+                   fprintf(fp,"}\\\",\"") ;
+                } else {
+                  fprintf(fp,"\"; then echo \"%s=${NL_",q->name) ;
+                  for (i=q->name; *i!='\0'; i++) {
+                    fputc(toupper(*i),fp); 
+                  }
+                  fprintf(fp,"},\"") ;
+                }
+
+                fprintf(fp," >> $FILE;fi\n") ;
+              }
+
+            }
+          }
+          fprintf(fp,"echo / >> $FILE\n") ;
+	  sym_add(p2) ;
+	}
+      }
+    }
+  }
+  
+  fprintf(fp,"echo \\&namelist_quilt >> $FILE\n");
+  fprintf(fp,"if test ! -z \"$NL_NIO_TASKS_PER_GROUP\"; then echo \"nio_tasks_per_group=${NL_NIO_TASKS_PER_GROUP},\" >> $FILE;fi\n");
+  fprintf(fp,"if test ! -z \"$NL_NIO_GROUPS\"; then echo \"nio_groups=${NL_NIO_GROUPS},\" >> $FILE;fi\n");
+  fprintf(fp,"echo / >> $FILE\n");
+
+  fclose( fp ) ;
+  return(0) ;
+}
+
+
+int
 gen_get_nl_config ( char * dirname )
 {
   FILE * fp ;
@@ -268,6 +353,7 @@ int
 gen_config_reads ( char * dirname )
 {
   FILE * fp ;
+  int i, n_nml ;
   char  fname[NAMELEN] ;
   char * fn = "config_reads.inc" ;
   char  howset[NAMELEN] ;
@@ -281,15 +367,44 @@ gen_config_reads ( char * dirname )
 
   fprintf(fp,"! Contains namelist statements for module_config.F.\n") ;
   fprintf(fp,"#ifndef NAMELIST_READ_UNIT\n") ;
-  fprintf(fp,"#  define NAMELIST_READ_UNIT nml_unit\n") ;
+  fprintf(fp,"#  define NAMELIST_READ_UNIT nml_read_unit\n") ;
   fprintf(fp,"#endif\n") ;
-  fprintf(fp,"#ifndef NAMELIST_READ_ERROR_LABEL\n") ;
-  fprintf(fp,"#  define NAMELIST_READ_ERROR_LABEL 9200\n") ;
+  fprintf(fp,"#ifndef NAMELIST_WRITE_UNIT\n") ;
+  fprintf(fp,"#  define NAMELIST_WRITE_UNIT nml_write_unit\n") ;
   fprintf(fp,"#endif\n") ;
   fprintf(fp,"!\n") ;
 
   sym_forget() ;
 
+  /*
+     Count how many namelists are defined in the registry
+  */
+  n_nml = 0 ;
+  for ( p = Domain.fields ; p != NULL ; p = p-> next )
+  {
+    if ( p->node_kind & RCONFIG )
+    {
+      strcpy(howset,p->howset) ;
+      p1 = strtok(howset,",") ;
+      p2 = strtok(NULL,",") ;
+      if ( !strcmp(p1,"namelist") )
+      {
+	if (sym_get( p2 ) == NULL)  /* not in table yet */
+	{
+          n_nml ++ ;
+	  sym_add(p2) ;
+	}
+      }
+    }
+  }
+
+  sym_forget() ;
+
+  fprintf(fp," nml_read_error = .FALSE.\n") ;
+  fprintf(fp," NML_LOOP : DO i=1,%i\n", n_nml) ;
+  fprintf(fp,"    REWIND ( UNIT = NAMELIST_READ_UNIT )\n") ;
+  fprintf(fp,"    SELECT CASE ( i )\n") ;
+  i = 1;
   for ( p = Domain.fields ; p != NULL ; p = p-> next )
   {
     if ( p->node_kind & RCONFIG )
@@ -307,17 +422,29 @@ gen_config_reads ( char * dirname )
         }
 	if (sym_get( p2 ) == NULL)  /* not in table yet */
 	{
-          fprintf(fp," REWIND  ( UNIT = NAMELIST_READ_UNIT )\n") ;
-          fprintf(fp," READ  ( UNIT = NAMELIST_READ_UNIT , NML = %s , ERR = NAMELIST_READ_ERROR_LABEL , END = NAMELIST_READ_ERROR_LABEL )\n",p2) ;
+          fprintf(fp,"       CASE ( %i ) \n",i) ;
+          fprintf(fp,"          nml_name = \"%s\"\n",p2) ;
+          fprintf(fp,"          READ   ( UNIT = NAMELIST_READ_UNIT , NML = %s , ERR=9201, END=9202 )\n",p2) ;
           fprintf(fp,"#ifndef NO_NAMELIST_PRINT\n") ;
-          fprintf(fp," WRITE ( UNIT = *                  , NML = %s )\n",p2) ;
+          fprintf(fp,"          WRITE ( UNIT = NAMELIST_WRITE_UNIT, NML = %s )\n",p2) ;
           fprintf(fp,"#endif\n") ;
+          fprintf(fp,"          CYCLE NML_LOOP\n") ;
+          i ++ ;
 	  sym_add(p2) ;
 	}
-       
       }
     }
   }
+  fprintf(fp,"    END SELECT\n") ;
+  fprintf(fp,"9201 CALL wrf_message(\"Error while reading namelist \"//TRIM(nml_name))\n") ;
+  fprintf(fp,"    nml_read_error = .TRUE.\n") ;
+  fprintf(fp,"    CYCLE NML_LOOP\n") ;
+  fprintf(fp,"9202 CALL wrf_message(\"Namelist \"//TRIM(nml_name)//\" not found in namelist.input.\"// & \n") ;
+  fprintf(fp,"                      \" Using registry defaults for variables in \"//TRIM(nml_name))\n") ;
+  fprintf(fp," END DO NML_LOOP\n") ;
+  fprintf(fp," \n") ;
+  fprintf(fp," IF ( nml_read_error ) CALL wrf_error_fatal(\"Errors while reading one or more namelists from namelist.input.\")\n") ;
+
   close_the_file( fp ) ;
   return(0) ;
 }

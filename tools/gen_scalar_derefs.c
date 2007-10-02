@@ -90,14 +90,14 @@ scalar_derefs1 ( FILE * fp , char * corename, node_t * node, int direction )
         char * x ;
         /* if this is a core-specific variable, prepend the name of the core to */
         /* the variable at the driver level */
-        if (!strcmp( corename , p->use+4 )) { x = "C" ; } else { x = "" ; }
+        if ((!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) ) { x = "C" ; } else { x = "" ; }
         strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
         /* generate deref */
         if ( direction == DIR_COPY_OUT ) {
-          if (!strcmp( corename , p->use+4 )) { fprintf(fp, " grid%%%s_%s = %s\n",corename,fname,fname) ; }
+          if ( (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) ) { fprintf(fp, " grid%%%s_%s = %s\n",corename,fname,fname) ; }
           else                                { fprintf(fp, " grid%%%s    = %s\n",fname,fname ) ; }
         } else {
-          if (!strcmp( corename , p->use+4 )) { fprintf(fp, " %s = grid%%%s_%s\n",fname,corename,fname) ; }
+          if ( (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) ) { fprintf(fp, " %s = grid%%%s_%s\n",fname,corename,fname) ; }
           else                                { fprintf(fp, " %s = grid%%%s\n",fname,fname ) ; }
         }
       }

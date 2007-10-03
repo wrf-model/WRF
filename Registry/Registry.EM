@@ -87,7 +87,7 @@ dimspec    v      -     constant=1                z          one
 # interpolated with a mask, as lu_index supplies that mask.
 # this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
-state    real  LU_INDEX         ij      misc        1         -     irh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
+state    real  LU_INDEX         ij      misc        1         -     i02rh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
 #
@@ -450,10 +450,10 @@ state    real   SFCEXC           ij     misc        1         -      r          
 
 state    real   ACSNOW           ij     misc        1         -      rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "ACSNOW"           "ACCUMULATED SNOW"         "kg m-2"
 state    real   ACSNOM           ij     misc        1         -      rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "ACSNOM"           "ACCUMULATED MELTED SNOW"  "kg m-2"
-state    real   SNOW             ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
-state    real   SNOWH            ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
-state    real   RHOSN            ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
-state    real   CANWAT           ij     misc        1         -     i01rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
+state    real   SNOW             ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOW"             "SNOW WATER EQUIVALENT"    "kg m-2"
+state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
+state    real   RHOSN            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
+state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state    real   SST              ij     misc        1         -     i0125rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"

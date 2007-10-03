@@ -9,8 +9,8 @@
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
 #BSUB -J regular.test                   # job name
-#BSUB -q premium                        # queue
-#BSUB -W 6:00                           # wallclock time
+#BSUB -q share                          # queue
+#BSUB -W 3:00                           # wallclock time
 #BSUB -P 64000400
 
 # QSUB -q ded_4             # submit to 4 proc
@@ -1081,7 +1081,7 @@ if ( $ARCH[1] == AIX ) then
 	if      ( $NESTED == TRUE ) then
 		set COMPOPTS	= ( 9 10 3 )
 	else if ( $NESTED != TRUE ) then
-		set COMPOPTS    = ( 1 2 3 )
+		set COMPOPTS    = ( 1 3 5 )
 	endif
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs

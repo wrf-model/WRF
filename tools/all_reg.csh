@@ -42,7 +42,6 @@ unalias mv
 #       What these tests do, must be a single string.
 
 set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  	1	\
-                 "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
                  "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	3	\
                  "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	4	\
                  "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	5	\
@@ -52,6 +51,7 @@ set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"    
                  "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	9 	\
                  "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	10	\
                )
+#                "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
 #                "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  5	\
 
 #	Where are we located.

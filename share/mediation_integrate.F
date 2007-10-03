@@ -39,6 +39,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: rc
+   CHARACTER*256          :: message
 
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) ) THEN
      CALL med_hist_out ( grid , 0, config_flags )
@@ -136,6 +137,10 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #ifndef WRF_CHEM
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput5_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+                                        TRIM(config_flags%auxinput5_inname) , &
+                                        " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    ENDIF
 #endif

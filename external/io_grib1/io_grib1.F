@@ -3338,6 +3338,11 @@ SUBROUTINE gr1_fill_eta_levels(fileindex, FileFd, grib_tables, VarName, eta_leve
      if (swapped /= 1) exit sortloop
      swapped = 0
      do idx=2, numindices
+        !
+        ! Remove duplicate levels, caused by multiple time periods in a 
+        ! single file.
+        !
+        if (eta_levels(idx) == eta_levels(idx-1)) eta_levels(idx) = 0.0
         if (eta_levels(idx) > eta_levels(idx-1)) then
           tmp = eta_levels(idx)
           eta_levels(idx) = eta_levels(idx - 1)

@@ -335,7 +335,9 @@ real::t1,t2,t3,t4
    DO loop = 1 , time_loop_max
 
       internal_time_loop = loop
-      IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) .AND. (model_config_rec%grid_fdda(grid%id) .EQ. 0) ) EXIT
+      IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) .AND. &
+           ( model_config_rec%grid_fdda(grid%id) .EQ. 0 ) .AND. &
+           ( model_config_rec%sst_update .EQ. 0 ) ) EXIT
 
       print *,' '
       print *,'-----------------------------------------------------------------------------'

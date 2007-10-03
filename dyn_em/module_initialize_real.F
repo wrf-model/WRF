@@ -3748,16 +3748,36 @@ print *,'p sfc = ',psfc(i,j)
 
       IF ( ABS(eta_levels(1)+1.) .GT. 0.0000001 ) THEN
 
-         IF ( ( ABS(eta_levels(1  )-1.) .LT. 0.0000001 ) .AND. &
-              ( ABS(eta_levels(kde)-0.) .LT. 0.0000001 ) ) THEN
+         !  Check to see if the array is oriented OK, we can easily fix an upside down oops.
+
+         IF      ( ( ABS(eta_levels(1  )-1.) .LT. 0.0000001 ) .AND. &
+                   ( ABS(eta_levels(kde)-0.) .LT. 0.0000001 ) ) THEN
             DO k = kds+1 , kde-1
 	       znw(k) = eta_levels(k)
+            END DO
+            znw(  1) = 1.
+            znw(kde) = 0.
+         ELSE IF ( ( ABS(eta_levels(kde)-1.) .LT. 0.0000001 ) .AND. &
+                   ( ABS(eta_levels(1  )-0.) .LT. 0.0000001 ) ) THEN
+            DO k = kds+1 , kde-1
+	       znw(k) = eta_levels(kde+1-k)
             END DO
             znw(  1) = 1.
             znw(kde) = 0.
          ELSE
             CALL wrf_error_fatal ( 'First eta level should be 1.0 and the last 0.0 in namelist' )
          END IF
+
+         !  Check to see if the input full-level eta array is monotonic.
+
+         DO k = kds , kde-1
+            IF ( znw(k) .LE. znw(k+1) ) THEN
+               PRINT *,'eta on full levels is not monotonic'
+               PRINT *,'eta (',k,') = ',znw(k)
+               PRINT *,'eta (',k+1,') = ',znw(k+1)
+               CALL wrf_error_fatal ( 'Fix non-monotonic "eta_levels" in the namelist.input file' )
+            END IF
+         END DO
 
       !  Compute eta levels assuming a constant delta z above the PBL.
 

@@ -18,6 +18,7 @@ MODULES =       module_driver_constants.o  \
                 module_state_description.o \
                 module_sm.o                \
                 module_io.o                \
+                module_comm_dm.o           \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o
@@ -71,7 +72,11 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_domain.o \
 		module_driver_constants.o \
 		module_timing.o \
-		module_configure.o 
+		module_configure.o module_comm_dm.o
+
+module_comm_dm.o: \
+		module_domain.o \
+		module_configure.o
 
 module_dm_stubs.F: module_domain.o
 

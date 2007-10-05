@@ -10,13 +10,155 @@
 #define NULLCHARPTR   (char *) 0
 static int parent_type;
 
+/* print actual and dummy arguments and declarations for 4D and i1 arrays */
+int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */ )   
+{
+  node_t * q ;
+  node_t * dimd ;
+  char fname[NAMELEN] ;
+  char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
+  char commuse[NAMELEN] ;
+  int maxstenwidth, stenwidth ;
+  char * t1, * t2 , *wordsize ;
+  char varref[NAMELEN] ;
+  char * pos1 , * pos2 ;
+  char * dimspec ;
+  char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
+  int zdex ;
+
+    strcpy( tmp, p->comm_define ) ;
+    strcpy( commuse, p->use ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    while ( t1 != NULL )
+    {
+      strcpy( tmp2 , t1 ) ;
+      if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for halo %s\n", p->name ) ; continue ; }
+      t2 = strtok_rentr(NULL,",", &pos2) ;
+      while ( t2 != NULL )
+      {
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
+          { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
+        else
+        {
+          strcpy( varref, t2 ) ;
+          if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+             if ( !strncmp( q->use,  "dyn_", 4 )) {
+                  char * core ;
+                  core = q->use+4 ;
+                  sprintf(varref,"grid%%%s_%s",core,t2) ;
+             } else {
+                  sprintf(varref,"grid%%%s",t2) ;
+             }
+          }
+
+          if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") ) { ; }
+          else if ( q->boundary_array ) { ; }
+          else
+          { 
+            if      ( ! strcmp( q->type->name, "real") )            { wordsize = "RWORDSIZE" ; }
+            else if ( ! strcmp( q->type->name, "integer") )         { wordsize = "IWORDSIZE" ; }
+            else if ( ! strcmp( q->type->name, "doubleprecision") ) { wordsize = "DWORDSIZE" ; }
+            if ( q->node_kind & FOURD )
+            {
+              node_t *member ;
+              zdex = get_index_for_coord( q , COORD_Z ) ;
+              if ( zdex >=1 && zdex <= 3 )
+              {
+                set_mem_order( q->members, memord , NAMELEN) ;
+                if ( ad == 0 ) 
+                /* acutal or dummy argument */
+                {
+/* explicit dummy or actual arguments for 4D arrays */
+/* TODO:  only print num_%s once */
+fprintf(fp,"  num_%s, &\n",q->name) ;
+fprintf(fp,"  %s, &\n",varref) ;
+                }
+                else
+                {
+/* declaration of dummy arguments for 4D arrays */
+/* TODO:  only print num_%s once */
+fprintf(fp,"  INTEGER, INTENT(IN) :: num_%s\n",q->name) ;
+fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33,num_%s)\n",
+                     q->type->name , varref , q->name ) ;
+                }
+              }
+              else
+              {
+                fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
+              }
+            }
+            else if ( q->node_kind & I1 )
+            {
+              if ( ad == 0 ) 
+              {
+/* explicit dummy or actual arguments for i1 arrays */
+fprintf(fp,"  %s, &\n",varref) ;
+              }
+              else
+              {
+/* declaration of dummy arguments for i1 arrays */
+              strcpy(tmp3,"") ;
+              dimspec=dimension_with_ranges( "grid%","(",-1,tmp3,q,")","" ) ;
+fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+              }
+            }
+          }
+        }
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+      }
+      t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+    }
+}
+
+int print_call_or_def( FILE * fp , node_t *p, char * callorsub, 
+                       char * commname, char * communicator, 
+                       int need_config_flags )
+  {
+  fprintf(fp,"%s %s_sub ( grid, &\n",callorsub,commname) ;
+  if (need_config_flags == 1)
+    fprintf(fp,"  config_flags, &\n") ;
+  print_4d_i1_decls( fp, p, 0 );
+  fprintf(fp,"  %s, &\n",communicator) ;
+  fprintf(fp,"  mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+  fprintf(fp,"  ids, ide, jds, jde, kds, kde,       &\n") ;
+  fprintf(fp,"  ims, ime, jms, jme, kms, kme,       &\n") ;
+  fprintf(fp,"  ips, ipe, jps, jpe, kps, kpe )\n") ;
+  return(0) ;
+  }
+
+int print_decl( FILE * fp , node_t *p, char * communicator, 
+                int need_config_flags )
+  {
+  fprintf(fp,"  TYPE(domain) ,               INTENT(IN) :: grid\n") ;
+  if (need_config_flags == 1) 
+    fprintf(fp,"  TYPE(grid_config_rec_type) , INTENT(IN) :: config_flags\n") ;
+  print_4d_i1_decls( fp, p, 1 );
+  fprintf(fp,"  INTEGER ,                    INTENT(IN) :: %s\n",communicator) ;
+  fprintf(fp,"  INTEGER ,                    INTENT(IN) :: mytask, ntasks, ntasks_x, ntasks_y\n") ;
+  fprintf(fp,"  INTEGER ,                    INTENT(IN) :: ids, ide, jds, jde, kds, kde\n") ;
+  fprintf(fp,"  INTEGER ,                    INTENT(IN) :: ims, ime, jms, jme, kms, kme\n") ;
+  fprintf(fp,"  INTEGER ,                    INTENT(IN) :: ips, ipe, jps, jpe, kps, kpe\n") ;
+  fprintf(fp,"  INTEGER :: itrace\n") ;
+  }
+
+int print_body( FILE * fp, char * commname )
+  {
+  fprintf(fp,"  \n") ;
+  fprintf(fp,"#ifdef DM_PARALLEL\n") ;
+  fprintf(fp,"#include \"%s_inline.inc\"\n",commname) ;
+  fprintf(fp,"#endif\n") ;
+  fprintf(fp,"  \n") ;
+  fprintf(fp,"  END SUBROUTINE %s_sub\n",commname) ;
+  }
+
 int
 gen_halos ( char * dirname , char * incname , node_t * halos )
 {
   node_t * p, * q ;
   node_t * dimd ;
   char commname[NAMELEN] ;
-  char fname[NAMELEN] ;
+  char fname[NAMELEN], fnamecall[NAMELEN], fnamesub[NAMELEN] ;
   char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
   char commuse[NAMELEN] ;
 #define MAX_VDIMS 100
@@ -25,6 +167,8 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   int vdimcurs ;
   int maxstenwidth, stenwidth ;
   FILE * fp ;
+  FILE * fpcall ;
+  FILE * fpsub ;
   char * t1, * t2 ;
   char * pos1 , * pos2 ;
   char indices[NAMELEN], post[NAMELEN] ;
@@ -35,6 +179,7 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   int n4d ;
   int i, foundvdim ;
   int subgrid ;
+  int need_config_flags;
 #define MAX_4DARRAYS 1000
   char name_4d[MAX_4DARRAYS][NAMELEN] ;
 
@@ -42,6 +187,7 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
 
   for ( p = halos ; p != NULL ; p = p->next )
   {
+    need_config_flags = 0;  /* 0 = do not need, 1 = need */
     if ( incname == NULL ) {
       strcpy( commname, p->name ) ;
       make_upper_case(commname) ;
@@ -49,8 +195,34 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
     else {
       strcpy( commname, incname ) ;
     }
-    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
-    else                       { sprintf(fname,"%s.inc",commname) ; }
+    if ( incname == NULL ) {
+      if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s_inline.inc",dirname,commname) ; }
+      else                       { sprintf(fname,"%s_inline.inc",commname) ; }
+      /* Generate call to custom routine that encapsulates inlined comm calls */
+      if ( strlen(dirname) > 0 ) { sprintf(fnamecall,"%s/%s.inc",dirname,commname) ; }
+      else                       { sprintf(fnamecall,"%s.inc",commname) ; }
+      if ((fpcall = fopen( fnamecall , "w" )) == NULL ) 
+      {
+        fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fnamecall ) ;
+        continue ; 
+      }
+      print_warning(fpcall,fnamecall) ;
+      /* Generate definition of custom routine that encapsulates inlined comm calls */
+      if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_subs.inc",dirname) ; }
+      else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_subs.inc") ; }
+      if ((fpsub = fopen( fnamesub , "a" )) == NULL ) 
+      {
+        fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fnamesub ) ;
+        continue ; 
+      }
+      print_warning(fpsub,fnamesub) ;
+    }
+    else {
+      /* for now, retain original behavior when called from gen_shift */
+      if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
+      else                       { sprintf(fname,"%s.inc",commname) ; }
+    }
+    /* Generate inlined comm calls */
     if ((fp = fopen( fname , "w" )) == NULL ) 
     {
       fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fname ) ;
@@ -129,6 +301,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
                   strcpy(e,"kpe") ;
                 }
                 else if ( dimd->len_defined_how == NAMELIST ) {
+                  need_config_flags = 1;
                   if ( !strcmp(dimd->assoc_nl_var_s,"1") ) {
                     strcpy(s,"1") ;
                     sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
@@ -264,6 +437,16 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
       fprintf(fp,"ENDIF\n") ;
     }
     close_the_file(fp) ;
+    if ( incname == NULL ) {
+      /* Finish call to custom routine that encapsulates inlined comm calls */
+      print_call_or_def(fpcall, p, "CALL", commname, "local_communicator", need_config_flags );
+      close_the_file(fpcall) ;
+      /* Generate definition of custom routine that encapsulates inlined comm calls */
+      print_call_or_def(fpsub, p, "SUBROUTINE", commname, "local_communicator", need_config_flags );
+      print_decl(fpsub, p, "local_communicator", need_config_flags );
+      print_body(fpsub, commname);
+      close_the_file(fpsub) ;
+    }
   }
   return(0) ;
 }
@@ -476,11 +659,13 @@ gen_periods ( char * dirname , node_t * periods )
   node_t * p, * q ;
   node_t * dimd ;
   char commname[NAMELEN] ;
-  char fname[NAMELEN] ;
+  char fname[NAMELEN], fnamecall[NAMELEN], fnamesub[NAMELEN] ;
   char tmp[NAMELEN], tmp2[NAMELEN], tmp3[NAMELEN] ;
   char commuse[NAMELEN] ;
   int maxperwidth, perwidth ;
   FILE * fp ;
+  FILE * fpcall ;
+  FILE * fpsub ;
   char * t1, * t2 ;
   char varref[NAMELEN] ;
   char * pos1 , * pos2 ;
@@ -500,8 +685,33 @@ gen_periods ( char * dirname , node_t * periods )
   {
     strcpy( commname, p->name ) ;
     make_upper_case(commname) ;
-    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
-    else                       { sprintf(fname,"%s.inc",commname) ; }
+    if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s_inline.inc",dirname,commname) ; }
+    else                       { sprintf(fname,"%s_inline.inc",commname) ; }
+    /* Generate call to custom routine that encapsulates inlined comm calls */
+    if ( strlen(dirname) > 0 ) { sprintf(fnamecall,"%s/%s.inc",dirname,commname) ; }
+    else                       { sprintf(fnamecall,"%s.inc",commname) ; }
+    if ((fpcall = fopen( fnamecall , "w" )) == NULL ) 
+    {
+      fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamecall ) ;
+      continue ; 
+    }
+    print_warning(fpcall,fnamecall) ;
+    print_call_or_def(fpcall, p, "CALL", commname, "local_communicator_periodic", 1 );
+    close_the_file(fpcall) ;
+    /* Generate definition of custom routine that encapsulates inlined comm calls */
+    if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/REGISTRY_COMM_DM_subs.inc",dirname) ; }
+    else                       { sprintf(fnamesub,"REGISTRY_COMM_DM_subs.inc") ; }
+    if ((fpsub = fopen( fnamesub , "a" )) == NULL ) 
+    {
+      fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamesub ) ;
+      continue ; 
+    }
+    print_warning(fpsub,fnamesub) ;
+    print_call_or_def(fpsub, p, "SUBROUTINE", commname, "local_communicator_periodic", 1 );
+    print_decl(fpsub, p, "local_communicator_periodic", 1 );
+    print_body(fpsub, commname);
+    close_the_file(fpsub) ;
+    /* Generate inlined comm calls */
     if ((fp = fopen( fname , "w" )) == NULL ) 
     {
       fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fname ) ;

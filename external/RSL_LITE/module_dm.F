@@ -7,6 +7,7 @@ MODULE module_dm
    USE module_state_description
    USE module_wrf_error
    USE module_driver_constants
+   USE module_comm_dm
    IMPLICIT NONE
 
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 

@@ -12,6 +12,7 @@ PROGRAM real_data
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
+   USE module_input_chem_emissopt3
 #endif
    USE module_utility
 #ifdef DM_PARALLEL
@@ -257,6 +258,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
+   USE module_input_chem_emissopt3
 #endif
 
    USE module_date_time
@@ -423,6 +425,11 @@ real::t1,t2,t3,t4
               CALL  wrf_message ( message )
 
               CALL input_ext_chem_file( grid )
+!             IF(grid%emiss_inpt_opt == 3 ) THEN
+!                message = 'READING EMISSIONS DATA OPT 3'
+!                CALL  wrf_message ( message )
+!                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
+!             END IF
 
               IF(grid%bio_emiss_opt == 2 ) THEN
                  message = 'READING BEIS3.11 EMISSIONS DATA'
@@ -442,6 +449,11 @@ real::t1,t2,t3,t4
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
+!             IF(grid%emiss_inpt_opt == 3 ) THEN
+!                message = 'READING EMISSIONS DATA OPT 3'
+!                CALL  wrf_message ( message )
+!                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
+!             END IF
 
            ELSE
              message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'

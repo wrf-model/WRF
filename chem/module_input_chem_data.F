@@ -1591,6 +1591,9 @@ SUBROUTINE input_chem_profile (si_grid)
             config_flags%chem_opt == RACMSORG_KPP ) then
           i_bdy_method = 9
         end if
+        if (config_flags%chem_opt == RACMPM_KPP ) then
+          i_bdy_method = 9
+        end if
 
 
       else if ((ic .ge. p_so4aj) .and. (ic .le. p_corn)) then
@@ -1890,6 +1893,9 @@ SUBROUTINE input_chem_profile (si_grid)
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_MIM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP ) then
+          i_bdy_method = 9
+        end if
+        if (config_flags%chem_opt == RACMPM_KPP ) then
           i_bdy_method = 9
         end if
 
@@ -2195,7 +2201,7 @@ SUBROUTINE input_chem_profile (si_grid)
      select case (chem_opt)
      case (0)
         get_last_gas = 0
-     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ)
+     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ)
         get_last_gas = p_ho2
 
      case (CBMZ)
@@ -2585,7 +2591,6 @@ end subroutine chem_dbg
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
   ! Driver layer
 !  USE module_domain
@@ -2739,6 +2744,141 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
     DEALLOCATE ( dumc0 )
    RETURN
 END SUBROUTINE med_read_bin_chem_emiss
+
+SUBROUTINE med_read_bin_chem_fireemiss ( grid , config_flags ,intime, itime_max)
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+  !INTEGER , INTENT(IN)                       :: start_step , step , end_step
+!  Type (ESMF_Time )                          :: start_time, stop_time, CurrTime
+!   TYPE(WRFU_TimeInterval) :: time_interval
+
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+   LOGICAL                                :: emiss_opened
+   INTEGER                                :: intime, itime,itime_max, ierr , open_status , fid
+   REAL                                   :: time, btime, bfrq
+   REAL, ALLOCATABLE :: dumc0(:,:)
+   CHARACTER (LEN=256)                    :: message
+   CHARACTER (LEN=80)                     :: bdyname
+
+   CHARACTER (LEN=9 ),DIMENSION(30)       :: ename
+   INTEGER :: nv,i , j , k, &
+              ids, ide, jds, jde, kds, kde,    &
+              ims, ime, jms, jme, kms, kme,    &
+              ips, ipe, jps, jpe, kps, kpe
+
+
+#include <wrf_io_flags.h>
+
+   write(message, '(A,I9)') 'call read fire emissions', intime
+   call wrf_message( TRIM( message ) )
+
+   IF(intime == 0 ) THEN
+     CALL construct_filename1 ( bdyname , '../../run/fireemiss' , grid%id , 2 )
+
+     IF (wrf_dm_on_monitor()) THEN
+        open (91,file=bdyname,form='unformatted')
+     ENDIf
+   write(message, '(A,A)') ' OPENED FILE: ',bdyname
+   call wrf_message( TRIM( message ) )
+   ENDIF
+   CALL wrf_debug( 100 , 'med_read_bin_chem_fireemiss: calling emissions' )
+
+   CALL get_ijk_from_grid (  grid ,                        &
+                             ids, ide, jds, jde, kds, kde,    &
+                             ims, ime, jms, jme, kms, kme,    &
+                             ips, ipe, jps, jpe, kps, kpe    )
+
+   ALLOCATE (dumc0(ids:ide-1,jds:jde-1))
+
+     write(message, '(A,4I6)') ' I am reading fire emissions, dims: =',ids, ide-1, jds, jde-1
+     call wrf_message( TRIM( message ) )
+
+   IF(intime == 0 .or. intime == 12) then
+     read(92)nv
+     read(92)ename
+     write(message, '(A,I10)') ' Number of emissions: ',nv
+     call wrf_message( TRIM( message ) )
+
+   ENDIF
+       read(92)itime
+     write(message, '(A,I8,A,I8)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
+     call wrf_message( TRIM( message ) )
+
+         read(92)dumc0
+!        grid%e_so2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_no(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_ald(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_hcho(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_ora2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_nh3(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_hc3(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_hc5(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_hc8(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_eth(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_co(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_ol2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_olt(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_oli(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_tol(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_xyl(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_ket(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_csl(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_iso(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_pm25i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_pm25j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_so4i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_so4j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_no3i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_no3j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_orgi(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_orgj(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_eci(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_ecj(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         read(92)dumc0
+!        grid%e_pm10(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+
+    DEALLOCATE ( dumc0 )
+   RETURN
+END SUBROUTINE med_read_bin_chem_fireemiss
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE module_input_chem_data

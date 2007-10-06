@@ -204,6 +204,8 @@
        haveaer = .false.
      CASE (RACM_KPP)
        CALL wrf_debug(15,'calling racm_kpp from chem_driver')
+     CASE (RACMPM_KPP)
+       CALL wrf_debug(15,'calling racmpm_kpp from chem_driver')
        haveaer = .false.
      CASE (RACM_MIM_KPP)
        CALL wrf_debug(15,'calling racm_mim_kpp from chem_driver')
@@ -438,6 +440,7 @@
 ! do the same for convwective parameterization cloud water mix ratio, 
 ! currently only for cu_physics=3, used by both photolysis and atmospheric radiation
 !
+       if(config_flags%cu_rad_feedback)then
        if( config_flags%cu_physics == 3 )then
          if(ktau.le.stepave)then
            do j=jts,jte
@@ -474,6 +477,7 @@
            enddo
           endif !stepave
        endif ! cu_physics
+       endif ! cu_rad_feedback
 !
 !
 #if ( EM_CORE == 1 )
@@ -515,9 +519,9 @@
 !--- emissions
     if(config_flags%emiss_inpt_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
-      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                             &
+      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,grid%stepfirepl,             &
          config_flags, grid%stepbioe,                                                 &
-         grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,                                &
+         grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
          grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,                                 &
          grid%e_iso,grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,             &
          grid%e_hc5,grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                      &
@@ -527,10 +531,17 @@
          grid%e_orgj,grid%e_no2,grid%e_ch3oh,                                         &
          grid%e_c2h5oh,grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,               &
          grid%e_orgc,grid%e_ecc,                                                      &
+         grid%ebu_no,grid%ebu_co,grid%ebu_co2,grid%ebu_eth,grid%ebu_hc3,grid%ebu_hc5, &
+         grid%ebu_hc8,grid%ebu_ete,grid%ebu_olt,grid%ebu_oli,grid%ebu_pm25,           &
+         grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
+         grid%ebu_tol,grid%ebu_xyl,grid%ebu_csl,grid%ebu_hcho,grid%ebu_ald,           &
+         grid%ebu_ket,grid%ebu_macr,grid%ebu_ora1,grid%ebu_ora2,grid%mean_fct_agtf,   &
+         grid%mean_fct_agef,grid%mean_fct_agsv,grid%mean_fct_aggr,grid%firesize_agtf, &
+         grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
          grid%u10,grid%v10,grid%ivgtyp,grid%gsw,grid%vegfra,grid%rmol,                &
          grid%ust,grid%znt,                                                           &
          grid%xland,grid%xlat,grid%xlong,                                             &
-         z_at_w,                                                                      &
+         z_at_w,zmid,                                                                 &
          grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
          grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
          grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,                &
@@ -745,7 +756,6 @@ CALL kpp_mechanism_driver (chem,                                                
    grid%id,dtstepc,config_flags,                                                      &
    p_phy,t_phy,rho,moist,                                                             &
    vdrog3, ldrog,                                                                     &
-   n2o5_het,                                                                          &
 !
 #include <call_to_kpp_mech_drive.inc>
 !

@@ -1,8 +1,8 @@
 !WRF:MODEL_LAYER:INITIALIZATION
 !
    subroutine chem_init (id,chem,dt,bioemdt,photdt,chemdt,stepbioe,  &
-               stepphot,stepchem,z_at_w,g,aerwrf,config_flags,       &
-               alt,t,p,CONVFAC,                                      &
+               stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,&
+               g,aerwrf,config_flags,alt,t,p,CONVFAC,                &
                gd_cloud, gd_cloud2,                                  &
                gd_cloud_b, gd_cloud2_b,                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
@@ -25,7 +25,7 @@
    USE module_mosaic_initmixrats, only:  mosaic_init_wrf_mixrats
    USE module_input_chem_data, only:  get_last_gas, gasprofile_init_pnnl
 
-   real  , intent(in) :: bioemdt,photdt,chemdt,dt
+   real  , intent(in) :: bioemdt,photdt,chemdt,plumerisefire_frq,dt
    INTEGER,      INTENT(IN   ) :: chem_in_opt
    INTEGER,      INTENT(IN   ) :: id,                                &
                                   ids,ide, jds,jde, kds,kde,         &
@@ -49,7 +49,7 @@
           INTENT(INOUT   ) ::                                        &
                                aerwrf
    real, INTENT (IN) :: g
-   integer, intent(out) :: stepbioe,stepphot,stepchem
+   integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
 !
 ! local stuff
@@ -135,11 +135,13 @@ call wrf_message("**************************************************************
     stepbioe=nint(bioemdt*60./dt)
     stepphot=nint(photdt*60./dt)
     stepchem=nint(chemdt*60./dt)
+    stepfirepl=nint(plumerisefire_frq*60./dt)
     stepbioe=max(stepbioe,1)
     stepphot=max(stepphot,1)
     stepchem=max(stepchem,1)
+    stepfirepl=max(stepfirepl,1)
     call wrf_debug( 15, 'in chem_init' )
-!   print *,'stepbioe,stepphot,stepchem',stepbioe,stepphot,stepchem
+!   print *,'stepbioe,stepphot,stepchem,stepfirepl',stepbioe,stepphot,stepchem,stepfirepl
 
 !
 ! An alternative ozone profile option
@@ -182,7 +184,7 @@ call wrf_message("**************************************************************
      end if
 
    kpp_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
+     CASE (RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
@@ -338,7 +340,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
-  case (RACM, RACMSORG, RACMSORG_AQ, RACM_KPP, RACMSORG_KPP)
+  case (RACM, RACMSORG, RACMSORG_AQ, RACM_KPP, RACMPM_KPP, RACMSORG_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"

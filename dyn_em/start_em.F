@@ -826,8 +826,8 @@
 
          CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,     &
                          grid%chemdt,                                       &
-                         grid%stepbioe,grid%stepphot,grid%stepchem,                        &
-                         z_at_w,g,grid%aerwrf,config_flags,                               &
+                         grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
+                         grid%plumerisefire_frq,z_at_w,g,grid%aerwrf,config_flags,            &
                          grid%em_alt,grid%em_t_1,grid%em_p,convfac,                              &
                          grid%gd_cloud, grid%gd_cloud2,                                  &
                          grid%gd_cloud_b, grid%gd_cloud2_b,                              &

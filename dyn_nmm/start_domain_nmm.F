@@ -1803,7 +1803,7 @@
       ENDDO
 !
          CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
-               STEPBIOE,STEPPHOT,STEPCHEM,                           &
+               STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,PLUMERISEFIRE_FRQ,             &
                ZINT,G,AERWRF,CONFIG_FLAGS,                           &
                RRI,T,PINT,CONVFAC,                                   &
                GD_CLOUD,GD_CLOUD2,GD_CLOUD_B,GD_CLOUD2_B,            &

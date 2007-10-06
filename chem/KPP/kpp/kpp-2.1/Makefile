@@ -40,14 +40,14 @@
 all: setup kpp
 
 setup:
-	@./cflags.guess $(SCC)
+	@ ./cflags.guess $(SCC)
 
 kpp:
-	@cd src;make;cd ..
+	@ cd src;make;cd ..
 
 clean:
-	@cd src;make clean;cd ..
-	@rm -f *~ */*~
+	@ cd src; make clean; cd ..
+	@ rm -f *~ */*~
 
 distclean: clean
-	@rm -f bin/kpp
+	@ rm -f bin/kpp

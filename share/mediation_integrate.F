@@ -123,12 +123,18 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! - Get chemistry data
   IF( config_flags%chem_opt > 0 ) THEN
 #ifdef WRF_CHEM
-   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
-    call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
-     CALL med_read_wrf_chem_emiss ( grid , config_flags )
-     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-    call wrf_debug(15,' Back from CALL med_read_wrf_chem_emiss ')
-
+   IF( config_flags%emiss_inpt_opt /= 0 ) THEN
+     IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
+       call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
+       CALL med_read_wrf_chem_emiss ( grid , config_flags )
+       CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+       call wrf_debug(15,' Back from CALL med_read_wrf_chem_emiss ')
+     ENDIF
+   ELSE
+     IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
+       CALL med_auxinput5_in ( grid , config_flags )
+       CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
+     ENDIF
    ENDIF
 ! end for wrf chem emiss input
 #endif
@@ -2107,6 +2113,133 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_bioemissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_bioemiss
+
+SUBROUTINE med_read_wrf_chem_emissopt3 ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+   USE module_configure
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+!   IF ( grid%id .EQ. 1 ) THEN
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , 'wrffirechemi' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemissions: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput7_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT7", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_fireemissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_fireemissions: Read biogenic emissions at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input7' )
+         CALL input_aux_model_input7 ( grid%auxinput7_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+
+!  ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_fireemissions: exit' )
+
+END SUBROUTINE med_read_wrf_chem_emissopt3
+SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+   USE module_configure
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+!   IF ( grid%id .EQ. 1 ) THEN
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , 'wrfchemi' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput5_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput5_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT5", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_emissions: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Read biogenic emissions at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input5' )
+         CALL input_aux_model_input5 ( grid%auxinput5_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
+
+!  ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: exit' )
+
+END SUBROUTINE med_read_wrf_chem_emissopt4
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

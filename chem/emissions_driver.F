@@ -1,14 +1,20 @@
 !WRF:MODEL_LAYER:CHEMICS
 !
-    subroutine emissions_driver(id,ktau,dtstep,DX,                         &
-         config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,        &
-         e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                            &
+    subroutine emissions_driver(id,ktau,dtstep,DX,stepfirepl,              &
+         config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
+         v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                    &
          e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
          e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
          e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,          &
          e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                &
+         ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
+         ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
+         ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
+         ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef,   &
+         mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
+         firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,gsw,vegfra,rmol,ust,znt,                           &
-         xland,xlat,xlong,z_at_w,                                          &
+         xland,xlat,xlong,z_at_w,z,                                        &
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -29,6 +35,9 @@
   USE module_bioemi_beis311
   USE module_cbmz_addemiss
   USE module_mosaic_addemiss
+  USE module_add_emis_cptec
+  USE module_add_emiss_burn
+  USE module_plumerise1
   IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -39,20 +48,32 @@
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
    INTEGER,      INTENT(IN   ) ::                                          &
-                                  ktau,stepbioe
+                                  ktau,stepbioe,stepfirepl
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
          INTENT(INOUT ) ::                               e_bio
-!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
    REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
          INTENT(IN ) ::                                                    &
           e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,       &
           e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,        &
           e_pm10,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,    &
           e_ch3oh,e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
+         INTENT(INOUT ) ::                                                 &
+           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
+           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
+           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
+           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2
+
+   REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
+         INTENT(IN ) ::                                                    &
+           mean_fct_agtf,mean_fct_agef,                                    &
+           mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,        &
+           firesize_agsv,firesize_aggr
+
 !
 ! 
 !
@@ -62,8 +83,8 @@
                                                       t_phy,               &
                                                       p_phy,               &
                                                       dz8w,                &
-                                              t8w,p8w,z_at_w ,             &
-                                                    rho_phy
+                                              t8w,p8w,z_at_w , z ,         &
+                                              u_phy,v_phy,vvel,rho_phy
    INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
           INTENT(IN   ) ::                                                 &
                                                      ivgtyp
@@ -107,6 +128,43 @@
 #if ( NMM_CORE == 1 )
     ksub=0
 #endif
+    fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
+     CASE (BIOMASSB)
+       if(ktau.eq.1.or.mod(ktau,stepfirepl).eq.0)then
+          CALL wrf_debug(15,'fire emissions: calling biomassb')
+          write(0,*)ktau,stepfirepl
+         call plumerise_driver (id,ktau,dtstep,                            &
+           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
+           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
+           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
+           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef, &
+           mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,        &
+           firesize_agsv,firesize_aggr,                                    &
+           config_flags, t_phy,moist,                                      &
+           chem,rho_phy,vvel,u_phy,v_phy,p_phy,                       &
+           e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,&
+           e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,&
+           e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,        &
+           e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,              &
+           z_at_w,z,                                                       &
+           ids,ide, jds,jde, kds,kde,                                      &
+           ims,ime, jms,jme, kms,kme,                                      &
+           its,ite, jts,jte, kts,kte                                       )
+
+       endif
+       CALL wrf_debug(15,'fire emissions: adding biomassb emissions')
+       call add_emis_burn(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
+            julday,gmt,xlat,xlong,t_phy,p_phy,                           &
+            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,       &
+            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,  &
+            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,    &
+            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,                          &
+            ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+     CASE DEFAULT 
+       CALL wrf_debug(15,'no biomass burning')
+    END SELECT fire_select
     bioem_select: SELECT CASE(config_flags%bio_emiss_opt)
      CASE (GUNTHER1)
      CALL wrf_debug(15,'biogenic emissions: calling Gunther1')
@@ -150,7 +208,8 @@
     END SELECT bioem_select
 
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
+       IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          message = ' EMISSIONS_DRIVER: KEMIT > KME '
          k=config_flags%kemit
@@ -174,7 +233,7 @@
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-
+       endif
     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        IF(config_flags%kemit .GT. kte-ksub) THEN
          message = ' EMISSIONS_DRIVER: KEMIT > KME '
@@ -222,6 +281,28 @@
        call wrf_debug(15,'emissions_driver NOT CALLING gas add_... routines')
 
     END SELECT gas_addemiss_select
+!
+! special treatment for these emissions. They come in only at one time 
+! (global emissions data set used here), and then a durnal variation is added on in this routine
+!
+    emiss_select: SELECT CASE(config_flags%emiss_inpt_opt)
+    CASE (EMISS_INPT_CPTEC)
+       call wrf_debug(15,'emissions_driver calling add_emiss_cptec')
+       call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
+            julday,gmt,xlat,xlong,t_phy,p_phy,                           &
+            e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,         &
+            e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,     &
+            e_pm25,e_pm10,e_nh3,                                         &
+!           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,       &
+!           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,  &
+!           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,    &
+!           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,                          &
+            ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+    CASE DEFAULT
+       call wrf_debug(15,'emissions_driver not calling add_emiss_cptec')
+    END SELECT emiss_select
 
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 

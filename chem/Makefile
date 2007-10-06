@@ -10,6 +10,11 @@ MODULES =                           \
   module_data_radm2.o               \
   module_data_racm.o                \
   module_data_sorgam.o              \
+  module_input_chem_emissopt3.o     \
+  module_plumerise1.o     \
+  module_add_emiss_burn.o     \
+  module_zero_plumegen_coms.o     \
+  module_chem_plumerise_scalar.o     \
   module_data_cbmz.o                \
   module_data_mosaic_asect.o        \
   module_data_mosaic_other.o        \
@@ -35,6 +40,7 @@ MODULES =                           \
   module_mosaic_coag.o              \
   module_mosaic_driver.o            \
   module_mosaic_drydep.o            \
+  module_add_emis_cptec.o            \
   module_cbmz_addemiss.o            \
   module_mosaic_addemiss.o          \
   module_input_chem_data.o          \
@@ -96,7 +102,17 @@ module_data_cbmz.o:
 
 module_peg_util.o: 
 
-module_cbmz.o: 
+module_cbmz.o:
+
+module_chem_plumerise_scalar.o: 
+
+module_plumerise1.o: module_zero_plumegen_coms.o module_chem_plumerise_scalar.o
+
+module_add_emiss_burn.o:
+
+module_zero_plumegen_coms.o: 
+
+module_add_emis_cptec.o: 
 
 module_cbmz_addemiss.o: 
 
@@ -109,6 +125,8 @@ module_phot_mad.o:
 module_phot_fastj.o:
 
 module_input_chem_data.o: module_aerosols_sorgam.o
+
+module_input_chem_emissopt3.o: 
 
 module_input_chem_bioemiss.o: 
 
@@ -178,7 +196,7 @@ photolysis_driver.o: module_phot_mad.o module_phot_fastj.o
 
 mechanism_driver.o: module_data_radm2.o module_radm.o module_data_racm.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o
 
-emissions_driver.o: module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis311.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o
+emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis311.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_plumerise1.o
 
 dry_dep_driver.o: module_data_radm2.o module_dep_simple.o module_aerosols_sorgam.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 
@@ -189,3 +207,6 @@ convert_bioemiss : convert_bioemiss.o
 convert_emiss : convert_emiss.o
 	$(RANLIB) ../main/libwrflib.a
 	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o ../main/libwrflib.a $(LIB)
+convert_fireemiss : convert_fireemiss.o
+	$(RANLIB) ../main/libwrflib.a
+	$(FC) -o convert_fireemiss.exe $(LDFLAGS) convert_fireemiss.o ../main/libwrflib.a $(LIB)

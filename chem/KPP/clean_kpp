@@ -21,8 +21,8 @@ rm -f ../*kpp*
 set k_dirs = ( kpp/* )
 foreach kdir ( $k_dirs )
 echo $kdir
-( cd $kdir; make clean )
-( cd $kdir; rm -f  Makefile.defs )
+( cd $kdir; touch Makefile.defs; make clean )
+( cd $kdir; touch Makefile.defs; rm -f  Makefile.defs )
 end
 
 # remove links in util/wkc

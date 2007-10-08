@@ -437,11 +437,14 @@ CONTAINS
 ! ra_call_offset = -1 gives old method where radiation may be called just before output
 ! ra_call_offset =  0 gives new method where radiation may be called just after output
 !                     and is also consistent with removal of offset in new XTIME
-   Radiation_step: IF (itimestep .eq. 1 .or. mod(itimestep,STEPRA) .eq. 1 + ra_call_offset) THEN
+! also need to account for stepra=1 which always has zero modulo output
+   Radiation_step: IF (itimestep .eq. 1 .or. mod(itimestep,STEPRA) .eq. 1 + ra_call_offset &
+                                        .or. STEPRA .eq. 1 ) THEN
 
 ! CAM-specific additional radiation frequency - cam_abs_freq_s (=21600s by default)
      STEPABS = nint(cam_abs_freq_s/(dt*STEPRA))*STEPRA
-     IF (itimestep .eq. 1 .or. mod(itimestep,STEPABS) .eq. 1 + ra_call_offset) THEN
+     IF (itimestep .eq. 1 .or. mod(itimestep,STEPABS) .eq. 1 + ra_call_offset &
+                                        .or. STEPABS .eq. 1 ) THEN
        doabsems = .true.
      ELSE
        doabsems = .false.

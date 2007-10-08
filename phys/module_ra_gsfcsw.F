@@ -106,6 +106,7 @@ CONTAINS
    REAL, DIMENSION( its:ite ) ::                                  &
                                                               ts, &
                                                             cosz, &
+                                                              fp, &
                                                           rsuvbm, &
                                                           rsuvdf, &
                                                           rsirbm, &
@@ -475,6 +476,14 @@ CONTAINS
         phyd(i,k)=phyd(i,k-1) - g*rho_phy(i,k-1,j)*dz8w(i,k-1,j)
         phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
       endif
+      enddo
+      enddo
+! normalize full pressure range
+      do k = kts+1,kte+1
+      do i = its,ite
+        if(k.eq.kts+1)fp(i) = (p8w3d(i,kts,j)-p8w3d(i,kte+1,j))/(phyd(i,kts)-phyd(i,kte+1))
+        phyd(i,k)=phyd(i,k-1) - g*rho_phy(i,k-1,j)*dz8w(i,k-1,j)*fp(i)
+        phydmid(i,k-1)=0.5*(phyd(i,k-1)+phyd(i,k))
       enddo
       enddo
 

@@ -4807,29 +4807,31 @@ CONTAINS
 ! SATURATION RATIO:                                                              
 ! PARAMETERS  W/(M.K)                                                            
       SATRATIO = SMC / SMCMAX                                                    
+! ICE CONDUCTIVITY:
       THKICE = 2.2                                                               
+! WATER CONDUCTIVITY:
       THKW = 0.57                                                                
+! THERMAL CONDUCTIVITY OF "OTHER" SOIL COMPONENTS
 !      IF (QZ .LE. 0.2) THKO = 3.0                                               
       THKO = 2.0                                                                 
-! SOLIDS' CONDUCTIVITY                                                           
 ! QUARTZ' CONDUCTIVITY                                                           
       THKQTZ = 7.7                                                               
-                                                                                 
-! UNFROZEN FRACTION (FROM 1., i.e., 100%LIQUID, TO 0. (100% FROZEN))             
+! SOLIDS' CONDUCTIVITY                                                           
       THKS = (THKQTZ ** QZ)* (THKO ** (1. - QZ))                                 
                                                                                  
-! UNFROZEN VOLUME FOR SATURATION (POROSITY*XUNFROZ)                              
+! UNFROZEN FRACTION (FROM 1., i.e., 100%LIQUID, TO 0. (100% FROZEN))             
       XUNFROZ = SH2O / SMC                                                       
-! SATURATED THERMAL CONDUCTIVITY                                                 
+! UNFROZEN VOLUME FOR SATURATION (POROSITY*XUNFROZ)                              
       XU = XUNFROZ * SMCMAX                                                      
                                                                                  
-! DRY DENSITY IN KG/M3                                                           
+! SATURATED THERMAL CONDUCTIVITY                                                 
       THKSAT = THKS ** (1. - SMCMAX)* THKICE ** (SMCMAX - XU)* THKW **   &       
          (XU)                                                                    
                                                                                  
-! DRY THERMAL CONDUCTIVITY IN W.M-1.K-1                                          
+! DRY DENSITY IN KG/M3                                                           
       GAMMD = (1. - SMCMAX)*2700.                                                
                                                                                  
+! DRY THERMAL CONDUCTIVITY IN W.M-1.K-1                                          
       THKDRY = (0.135* GAMMD+ 64.7)/ (2700. - 0.947* GAMMD)                      
 ! FROZEN                                                                         
       IF ( (SH2O + 0.0005) <  SMC ) THEN                                       

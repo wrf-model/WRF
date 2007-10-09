@@ -273,6 +273,7 @@ CONTAINS
             iprt, latd, lond, loop, loops, ifsat, n
 ! Temporaries used for inlining fpvs function
   REAL  :: dldti, xb, xai, tr, xbi, xa, hvap, cvap, hsub, dldt, ttp
+  REAL  :: logtr
 !
 !=================================================================
 !   compute internal functions
@@ -371,15 +372,15 @@ CONTAINS
       do k = kts, kte
         do i = its, ite
           tr=ttp/t(i,k)
-          qs(i,k,1)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+          logtr=log(tr)
+          qs(i,k,1)=psat*exp(logtr*(xa)+xb*(1.-tr))
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
           rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
-          tr=ttp/t(i,k)
           if(t(i,k).lt.ttp) then
-            qs(i,k,2)=psat*exp(log(tr)*(xai))*exp(xbi*(1.-tr))
+            qs(i,k,2)=psat*exp(logtr*(xai)+xbi*(1.-tr))
           else
-            qs(i,k,2)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+            qs(i,k,2)=psat*exp(logtr*(xa)+xb*(1.-tr))
           endif
           qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
           qs(i,k,2) = max(qs(i,k,2),qmin)
@@ -1039,16 +1040,16 @@ CONTAINS
       xai=-dldti/rv
       xbi=xai+hsub/(rv*ttp)
       do k = kts, kte
-        do i = its, ite
+      do i = its, ite
           tr=ttp/t(i,k)
-          qs(i,k,1)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+          logtr = log(tr)
+          qs(i,k,1)=psat*exp(logtr*(xa)+xb*(1.-tr))
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
-          tr=ttp/t(i,k)
           if(t(i,k).lt.ttp) then
-            qs(i,k,2)=psat*exp(log(tr)*(xai))*exp(xbi*(1.-tr))
+            qs(i,k,2)=psat*exp(logtr*(xai)+xbi*(1.-tr))
           else
-            qs(i,k,2)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
+            qs(i,k,2)=psat*exp(logtr*(xa)+xb*(1.-tr))
           endif
           qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
           qs(i,k,2) = max(qs(i,k,2),qmin)

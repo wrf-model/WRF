@@ -12,12 +12,12 @@ CONTAINS
                    RAINBL,SNOW,SNOWH,SNOWC,FRZFRAC,frpcpn,       &
                    Z3D,P8W,T3D,QV3D,QC3D,RHO3D,                  & !p8W in [PA]
                    GLW,GSW,EMISS,CHKLOWQ,                        & 
-                   FLQC,FLHC,MAVAIL,CANWAT,VEGFRA,ALB,ZNT,       &
+                   CHS ,FLHC,MAVAIL,CANWAT,VEGFRA,ALB,ZNT,       &
                    SNOALB,ALBBCK,                                &  !new
                    QSFC,QSG,QVG,QCG,SOILT1,TSNAV,                &
                    TBOT,IVGTYP,ISLTYP,XLAND,XICE,                &
                    CP,G0,LV,STBOLT,                              &
-                   SOILMOIS,SMAVAIL,SMMAX,                       &
+                   SOILMOIS,SH2O,SMAVAIL,SMMAX,                  &
                    TSO,SOILT,HFX,QFX,LH,                         &
                    SFCRUNOFF,UDRUNOFF,SFCEXC,                    &
                    SFCEVP,GRDFLX,ACSNOW,                         &
@@ -60,6 +60,7 @@ CONTAINS
 !-- EMISS       surface emissivity (between 0 and 1)
 !        FLQC - surface exchange coefficient for moisture (kg/m^2/s)
 !        FLHC - surface exchange coefficient for heat [W/m^2/s/degreeK]     
+!        CHS  - surface exchange coefficient for heat and moisture (m s-1);
 !      SFCEXC - surface exchange coefficient for heat [m/s]
 !      CANWAT - CANOPY MOISTURE CONTENT (mm)
 !      VEGFRA - vegetation fraction (between 0 and 1)
@@ -122,7 +123,8 @@ CONTAINS
                                                          SNOALB, &
                                                          ALBBCK, &
                                                            FLHC, &
-                                                           FLQC, &
+!                                                          FLQC, &
+                                                           CHS , &
                                                           EMISS, &
 !                                                        MAVAIL, &
                                                            XICE, &
@@ -154,7 +156,7 @@ CONTAINS
    REAL, INTENT(IN   )          ::              CP,G0,LV,STBOLT
  
    REAL,       DIMENSION( ims:ime , 1:nsl, jms:jme )           , &
-               INTENT(INOUT)    ::                 SOILMOIS,TSO
+               INTENT(INOUT)    ::              SOILMOIS,SH2O,TSO
 
    REAL,       DIMENSION( ims:ime, jms:jme )                   , &
                INTENT(INOUT)    ::                        SOILT, &
@@ -313,6 +315,7 @@ CONTAINS
             do k=1,nsl
 !       smfr3d  (i,k,j)=soilmois(i,k,j)/900.*1.e3
        keepfr3dflag(i,k,j)=0.
+       sh2o        (i,k,j)=0.
             enddo
 !--- initializing to zero snow fraction
            snowc(i,j) = min(1.,snowh(i,j)/0.1)
@@ -335,7 +338,7 @@ CONTAINS
            RUNOFF2(i,j) = 0.
            emissl (i,j) = 0.
 ! Temporarily!!!
-!            canwat(i,j)=0.
+            canwat(i,j)=0.
 
 ! For RUC LSM CHKLOWQ needed for MYJPBL should 
 ! 1 because is actual specific humidity at the surface, and
@@ -380,7 +383,7 @@ CONTAINS
       print *, 'SOILT, TSO start of time step =',soilt(i,j),(tso(i,k,j),k=1,nsl)
       print *, 'SOILMOIS start of time step =',(soilmois(i,k,j),k=1,nsl)
       print *, 'SMFROZEN start of time step =',(smfr3d(i,k,j),k=1,nsl)
-      print *, ' I,J=, after SFCLAY FLQC,FLHC ',i,j,flqc(i,j),flhc(i,j)
+      print *, ' I,J=, after SFCLAY CHS,FLHC ',i,j,chs(i,j),flhc(i,j)
       print *, 'LSMRUC, IVGTYP,ISLTYP,ZNT,ALB = ', ivgtyp(i,j),isltyp(i,j),znt(i,j),alb(i,j),i,j
       print *, 'LSMRUC  I,J,DT,RAINBL =',I,J,dt,RAINBL(i,j)
       print *, 'XLAND ---->, ivgtype,isoiltyp,i,j',xland(i,j),ivgtyp(i,j),isltyp(i,j),i,j
@@ -415,8 +418,9 @@ CONTAINS
 !--- rooting depth is 5 levels for forests
 !        if(iforest(ivgtyp(i,j)).eq.1) nroot=5
 !--- convert exchange coeff to [m/s]
-         QKMS=FLQC(I,J)/RHO/MAVAIL(I,J)
-         TKMS=FLHC(I,J)/RHO/CP
+!        QKMS=FLQC(I,J)/RHO/MAVAIL(I,J)
+         QKMS=CHS(I,J)
+         TKMS=CHS(I,J)
 !--- convert incoming snow and canwat from mm to m
          SNWE=SNOW(I,J)*1.E-3
          SNHEI=SNOWH(I,J)
@@ -531,6 +535,7 @@ CONTAINS
            qvg  (i,j) = QSN(SOILT(i,j),TBQ)/PATM
            qsfc(i,j) = qvg(i,j)/(1.+qvg(i,j))
            CHKLOWQ(I,J)=1.
+           patm=P8w(i,kms,j)*1.e-2
            Q2SAT=QSN(TABS,TBQ)/PATM
 
             DO K=1,NZS
@@ -734,8 +739,7 @@ CONTAINS
         do k=1,nzs
 
              soilmois(i,k,j) = soilm1d(k)
-! If not initialized from the RUC model then add qmion back.
-!             soilmois(i,k,j) = (soilm1d(k)+qmin(i,j))
+             sh2o    (i,k,j) = soiliqw(k)
                   tso(i,k,j) = tso1d(k)
         enddo
 
@@ -4166,8 +4170,18 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !---- still needs to be corrected
 !
 !       DATA LPC/ 15*.8,0.,.8,.8,.5,.5,.5,.5,.5,.0/
-       DATA LPC /0.6,6*0.8,0.7,0.75,6*0.8,0.,0.8,0.8,                   &
-                 0.5,0.7,0.6,0.7,0.5,0./
+
+! tgs - 26 June 2007
+! RUC model treats differently moisture and heat fluxes, typically 
+! exchange coefficients for moisture are smaller than for heat. 
+! To compensate for this in WRF PC parameters used in transpiration 
+! computations could be reduced. 
+
+       DATA LPC /0.4,0.3,0.4,0.4,0.4,0.4,0.4,0.4,0.4,0.4,5*0.55,0.,0.55,0.55,                   &
+                 0.4,0.4,0.4,0.4,0.3,0./
+! RUC values  
+!       DATA LPC /0.6,6*0.8,0.7,0.75,6*0.8,0.,0.8,0.8,                   &
+!                 0.5,0.7,0.6,0.7,0.5,0./
 
 
 !***************************************************************************
@@ -4221,9 +4235,10 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 ! values of roughness length, and not redefine it here.
 ! The table in this routine is the one we use in RUC with RUC LSM.
 
-        if (.not. myj) then
+!tgs MYJSFCINIT roughness produces unrealistic surface fluxes with RUC LSM
+!tgs        if (.not. myj) then
         ZNT   = LROU(IVGTYP)
-        endif
+!tgs        endif
 
         PC     = LPC (IVGTYP)
 
@@ -4280,11 +4295,11 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                   .95,.95,.94,.98,.95,.95,.85,.92,.93,.92,.85,.95/
 !-- Roughness length is changed for forests and some others
 ! next 2 lines - table from RUC
-        DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.8,.85,       &
-                  2.0,1.0,.563,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+!        DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.8,.85,       &
+!                  2.0,1.0,.563,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
 
-!         DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.5,.5,           &
-!                   .5,.5,.5,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
+         DATA LROU/.5,.06,.075,.065,.05,.2,.075,.1,.11,.15,.5,.5,           &
+                   .5,.5,.5,.0001,.2,.4,.05,.1,.15,.1,.065,.05/
 
 ! With MYJSFC better use the table from MYJSFCINIT
         DATA LROU_MYJ/1.0,.07,.07,.07,.07,.15,.08,.03,.05,.86,.8,.85,       &
@@ -4295,11 +4310,12 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !--------------------------------------------------------------------------
 
         EMISS  = LEMI(IVGTYP)
-       if(myj) then
-        ZNT    = LROU_MYJ(IVGTYP)
-       else
+!tgs LROU_MYJ produces unrealistic surface fluxes with RUC LSM
+!tgs       if(myj) then
+!        ZNT    = LROU_MYJ(IVGTYP)
+!       else
         ZNT    = LROU(IVGTYP)
-       endif
+!       endif
         ILAND  =      IVGTYP
 ! --- 
 

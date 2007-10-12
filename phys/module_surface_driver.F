@@ -452,6 +452,7 @@ CONTAINS
 !
 
   if (sf_sfclay_physics .eq. 0) return
+! if (sf_sfclay_physics .eq. 0 .or. sf_surface_physics.eq.0) return
 
   v_phytmp = 0.
   u_phytmp = 0.
@@ -829,12 +830,12 @@ CONTAINS
                 zs,rainbl,snow,snowh,snowc,sr,frpcpn,           &
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
-                flqc,flhc,mavail,canwat,vegfra,albedo,znt,      &
+                chs,flhc,mavail,canwat,vegfra,albedo,znt,       &
                 snoalb, albbck,                                 &   !new
                 qsfc,qsg,qvg,qcg,soilt1,tsnav,                  &
                 tmn,ivgtyp,isltyp,xland,xice,                   &
                 cp,g,xlv,stbolt,                                &
-                smois,smstav,smstot,tslb,tsk,hfx,qfx,lh,        &
+                smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,acsnow,                           &
                 smfr3d,keepfr3dflag,                            &
@@ -843,14 +844,14 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
-         IF(.not. MYJ) then
+!tgs     IF(.not. MYJ) then
 
           CALL SFCDIAGS(HFX,QFX,TSK,QVG,CHS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-         ENDIF
+!tgs     ENDIF
  
 
        ELSE

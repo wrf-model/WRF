@@ -64,8 +64,6 @@
 #endif
 #include "rsl_lite.h"
 
-char mess[4096] ;
-
 typedef struct bcast_point_desc {
   int ig ;
   int jg ;
@@ -400,6 +398,7 @@ rsl_lite_to_peerpoint_msg ( nbuf_p, buf )
   int *p, *q ;
   char *c, *d ;
   int i ;
+  char mess[4096] ;
 
   RSL_TEST_ERR(buf==NULL,"2nd argument is NULL.  Field allocated?") ;
 

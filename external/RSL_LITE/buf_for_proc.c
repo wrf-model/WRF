@@ -88,8 +88,6 @@ static int first = 1 ;
 
 */
 
-char mess[1024] ;
-
 char *
 buffer_for_proc( P, size, code )
   int P ;   /* processor number */
@@ -98,6 +96,7 @@ buffer_for_proc( P, size, code )
 {
   int p ;
   int i, j ;
+  char mess[1024] ;
   char * ret ;
 
   ret = NULL ;

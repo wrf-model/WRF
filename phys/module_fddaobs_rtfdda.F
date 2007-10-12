@@ -32,12 +32,15 @@ MODULE module_fddaobs_rtfdda
 !
 !   http://www.rap.ucar.edu/projects/armyrange/references.html
 !
+! Modification History:
+!   03212007 Modified fddaobs_init to compute Lambert cone factor. -Al Bourgeois
 
 CONTAINS
 
 !------------------------------------------------------------------------------
   SUBROUTINE fddaobs_init(obs_nudge_opt, maxdom, inest, parid,         &
                           dx_coarse, restart, obs_twindo, itimestep,   &
+                          true_lat1, true_lat2, map_proj,              &
                           e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,    &
 #if ( EM_CORE == 1 )
                           fdob,                                        &
@@ -68,6 +71,9 @@ CONTAINS
   LOGICAL, intent(in)  :: restart
   REAL, intent(inout)  :: obs_twindo
   INTEGER, intent(in)  :: itimestep
+  REAL,    intent(in)  :: true_lat1    ! truelat1 for map projection
+  REAL,    intent(in)  :: true_lat2    ! truelat2 for map projection
+  INTEGER, intent(in)  :: map_proj     ! map projection index    
   INTEGER, intent(in)  :: e_sn         ! ending   south-north grid index
   INTEGER, intent(in)  :: s_sn_cg      ! starting south-north coarse-grid index
   INTEGER, intent(in)  :: e_sn_cg      ! ending   south-north coarse-grid index
@@ -83,6 +89,10 @@ CONTAINS
   integer            :: nest            ! loop counter
   integer            :: idom            ! domain id
   integer            :: parent          ! parent domain
+  real               :: conv            ! 180/pi
+  real               :: tl1             ! Lambert standard parallel 1
+  real               :: tl2             ! Lambert standard parallel 2
+  real               :: xn1
 
 #if ( EM_CORE == 1 ) 
 ! This routine should only be called once. This is a check to make
@@ -118,7 +128,31 @@ CONTAINS
   fdob%rinfmx = 2.0
   fdob%dpsmx = 7.5
   fdob%dcon = 1.0/fdob%dpsmx
-  fdob%xn = 0.7155668                     ! cone factor
+  fdob%xn = 0.0
+
+! Compute cone factor if Lambert map projection
+  if(map_proj .eq. 1) then
+!   conv = 57.29578
+    conv = 3.1415926/180.
+    if(abs(true_lat1) .gt. 90. .or. abs(true_lat2) .gt. 90.) then
+       CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert std parallels are out of range' )
+    elseif (true_lat1*true_lat2 .lt. 0) then
+       CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert std parallels in N&S hemispheres' )
+!   elseif (abs(true_lat2) .gt. abs(true_lat1)) then
+!      CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert proj: lat2 gt lat1' )
+    else
+      tl1 = abs(true_lat1)
+      tl2 = abs(true_lat2)
+
+      if(ABS(tl1-tl2) .GT. 0.1) then
+        xn1 = LOG(COS(tl1*conv)) - LOG(COS(tl2*conv))
+        fdob%xn = xn1 /(LOG(TAN((45.0 - tl1/2.0) * conv)) - &
+                        LOG(TAN((45.0 - tl2/2.0) * conv)))
+      else
+        fdob%xn = SIN(tl1*conv)
+      endif
+    endif
+  endif
 
   fdob%ds_cg = dx_coarse / 1000.          ! coarse gridsize (km)
   fdob%sn_maxcg = e_sn_cg - s_sn_cg + 1   ! coarse domain grid dimension in N-S 
@@ -137,9 +171,10 @@ CONTAINS
     endif
     idom = nest
 100 parent = parid(idom)      ! Go up the parent tree
+
       if (parent .gt. 1) then   ! If not up to mother domain
         fdob%levidn(nest) = fdob%levidn(nest) + 1
-        idom = parid(parent)
+        idom = parent
         goto 100
       endif
   enddo
@@ -455,7 +490,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
       ENDDO      ! END COARSE MESH LOOP OVER NSTA 
 
     ELSE       ! FINE MESH CASE
-            
+
 !     CONVERT (I,J,K) OF OBSERVATIONS TO THE EQUIVALENT FINE MESH VALUES.
       DO N=1,NSTA
 
@@ -470,6 +505,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !       GRID (E.G., FOR 3 MESHES AND 2 NEST LEVELS, IN=1 IS THE COARSE GRID
 !       MESH, IN=2 HAS LEVIDN(2)=1 AND PARID(2)=1, AND IN=3 HAS LEVIDN(3)=2
 !       AND PARID(3)=2...)
+
         DO NNL=LEVIDN(INEST),1,-1
           MM(NNL)=PARID(NML)
           NML=MM(NNL)
@@ -483,6 +519,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
         RA(N)=RIO(N)
         RB(N)=RJO(N)
+
         DO NNL=1,LEVIDN(INEST)
           GRFACX=0.
           GRFACY=0.
@@ -498,6 +535,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                        FLOAT(IRATIO)+1.-GRFACX
           RB(N)=(RB(N)-FLOAT(j_parent_start(MM(NNL+1))))*  &
                        FLOAT(IRATIO)+1.-GRFACY
+
+!         write(6,*) 'UPDATE: ra(n) = ',ra(n),' rb(n) = ',rb(n)
 
           IA(N)=RA(N)
           IB(N)=RB(N)
@@ -1371,20 +1410,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 ! DEFINE GRID-TYPE OFFSET FACTORS, IGRID AND GRID
 
-  IF(INEST.EQ.1)THEN
-    INPF=NPFI
-    INFR=IONF
-  ELSE
-    IF(IRATIO.NE.3) THEN
-      IF (iprt) THEN
-        write(6,*) 'iratio = ',iratio
-        write(6,*) 'stop 1 in nudob: iratio = ',iratio
-      ENDIF
-      STOP 1
-    ENDIF
-    INPF=(3**LEVIDN(INEST))*NPFI
-    INFR=(3**LEVIDN(INEST))*IONF
-  ENDIF
+  INPF=(IRATIO**LEVIDN(INEST))*NPFI
+  INFR=(IRATIO**LEVIDN(INEST))*IONF
+
   GRIDX=0.0
   GRIDY=0.0
   IGRID=0
@@ -1649,6 +1677,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     njcsnd=nsndlev
 ! set pob here, to be used later
     pob=varobs(5,n)
+
 !     print *, "s-- n=,nsndlev",n,njcsnd,J, ipl
 !     print *, "s--",ivar,(errf(ivar,i),i=n,n+njcsnd)
 ! CHECK TO SEE OF STATION N HAS DATA FOR VARIABLE IVAR

@@ -102,6 +102,7 @@ CONTAINS
         CALL WRF_ERROR_FATAL ( 'ERROR OPENING namelist.input' )
       ENDIF
 
+#ifndef NO_NAMELIST_PRINT
       OPEN ( UNIT   = nml_write_unit    ,      &
              FILE   = "namelist.output" ,      &
              FORM   = "FORMATTED"      ,      &
@@ -111,6 +112,7 @@ CONTAINS
       IF ( io_status .NE. 0 ) THEN
         CALL WRF_ERROR_FATAL ( 'ERROR OPENING namelist.output' )
       ENDIF
+#endif
 
 ! Statements that set the namelist vars to default vals
 #  include <namelist_defaults.inc>
@@ -146,11 +148,13 @@ CONTAINS
         CALL WRF_ERROR_FATAL ( 'ERROR CLOSING namelist.input' )
       ENDIF
 
+#ifndef NO_NAMELIST_PRINT
       CLOSE ( UNIT = nml_write_unit , IOSTAT = io_status )
 
       IF ( io_status .NE. 0 ) THEN
         CALL WRF_ERROR_FATAL ( 'ERROR CLOSING namelist.output' )
       ENDIF
+#endif
 
       RETURN
 

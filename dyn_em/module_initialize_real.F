@@ -859,7 +859,7 @@ endif
 
             CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
                CALL adjust_soil_temp_new ( grid%tmn , model_config_rec%sf_surface_physics(grid%id) , &
-                                           grid%tsk , grid%ht , grid%toposoil , grid%landmask , flag_soilhgt , &
+                                           grid%tsk , grid%ht , grid%toposoil , grid%landmask , flag_soilhgt , flag_tavgsfc , &
                                            grid%st000010 , grid%st010040 , grid%st040100 , grid%st100200 , grid%st010200 , &
                                            flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
                                            grid%st000007 , grid%st007028 , grid%st028100 , grid%st100255 , &

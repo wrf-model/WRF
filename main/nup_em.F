@@ -61,7 +61,7 @@ PROGRAM nup_em
 
    USE module_machine
    USE module_domain
-   USE module_initialize
+   USE module_initialize_real
    USE module_integrate
    USE module_driver_constants
    USE module_configure

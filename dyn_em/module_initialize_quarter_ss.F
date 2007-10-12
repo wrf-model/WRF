@@ -13,7 +13,7 @@
 
 !-----------------------------------------------------------------------
 
-MODULE module_initialize
+MODULE module_initialize_ideal
 
    USE module_domain
    USE module_io_domain
@@ -826,4 +826,4 @@ CONTAINS
 
       end subroutine read_sounding
 
-END MODULE module_initialize
+END MODULE module_initialize_ideal

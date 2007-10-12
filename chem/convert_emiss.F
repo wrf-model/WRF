@@ -9,7 +9,7 @@ PROGRAM convert_emiss
    USE module_io
    USE module_wrf_error
    USE module_io_wrf
-   USE module_initialize
+   USE module_initialize_real
    USE module_integrate
    USE module_driver_constants
    USE module_state_description

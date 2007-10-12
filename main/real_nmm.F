@@ -5,7 +5,7 @@ PROGRAM real_data
 
    USE module_machine
    USE module_domain
-   USE module_initialize
+   USE module_initialize_real
    USE module_io_domain
    USE module_driver_constants
    USE module_configure
@@ -183,7 +183,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
   ! Model layer
    USE module_configure
    USE module_bc_time_utilities
-   USE module_initialize
+   USE module_initialize_real
    USE module_optional_si_input
 #ifdef WRF_CHEM
    USE module_input_chem_data

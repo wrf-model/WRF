@@ -5,7 +5,7 @@ PROGRAM ideal
 
    USE module_machine
    USE module_domain
-   USE module_initialize
+   USE module_initialize_ideal
    USE module_driver_constants
    USE module_configure
 
@@ -154,7 +154,7 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
   ! Driver layer
    USE module_domain
    USE module_io_domain
-   USE module_initialize
+   USE module_initialize_ideal
   ! Model layer
    USE module_configure
 

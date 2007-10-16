@@ -3125,6 +3125,10 @@ BENCH_END(moist_phys_end_tim)
   ENDIF
 
   IF (.not. config_flags%non_hydrostatic) THEN
+#ifdef DM_PARALLEL
+#    include "HALO_EM_HYDRO_UV.inc"
+#    include "PERIOD_EM_HYDRO_UV.inc"
+#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    DO ij = 1 , grid%num_tiles

@@ -6263,7 +6263,7 @@ convert_nmm.o :
 #
 FC              =       g95
 LD              =       g95
-CC              =       gcc -DFSEEKO64_OK -DMACOS -DF2CSTYLE
+CC              =       gcc -DMACOS -DF2CSTYLE
 SCC		=	$(CC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 SFC             =       $(FC)
@@ -6273,8 +6273,7 @@ PROMOTION	=	-i4
 CFLAGS          =       
 FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g -O0
-#FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
-FCBASEOPTS      =       -Wno=101,139,155,158 -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
+FCBASEOPTS      =       -Wno=101,139,155,158 -fendian=big -ffree-form -ffree-line-length-huge $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                          -DNETCDF -DGRIB1 -DLIMIT_ARGS -DG95 -DMACOS -DF2CSTYLE
@@ -6286,7 +6285,7 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
                         -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       perl
 REGISTRY        =       Registry
-LIB             =       -L../external/io_netcdf -lwrfio_nf -L/automount/static/usr/local/netcdf-3.6.0-p1-g95intel/lib -lnetcdf \
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
                         -L../external/io_grib1 -lio_grib1 \
                          \
                         -L../external/io_grib_share -lio_grib_share \
@@ -6300,7 +6299,7 @@ CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(ENVCOMPDEFS) $(POUN
 AR              =       ar ru
 M4              =       m4 -B 14000
 RANLIB          =       ranlib
-NETCDFPATH	=	/usr/local/netcdf-3.6.0-p1-g95intel
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
 #### Override default sed command and script for Fortran source files         ####
@@ -6315,7 +6314,7 @@ module_dm.F :
 
 wrfio_nf : 
 	( cd ../external/io_netcdf ; \
-	  make NETCDFPATH=/usr/local/netcdf-3.6.0-p1-g95intel RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
 
 wrfio_grib_share :
 	( cd ../external/io_grib_share ; \
@@ -6384,8 +6383,8 @@ DMPARALLEL      =       1
 MAX_PROC        =       1024
 FC              =       mpif90 -f90=g95
 LD              =       mpif90 -f90=g95
-CC              =       mpicc -cc=gcc -DFSEEKO64_OK -DMACOS -DF2CSTYLE
-SCC		=	gcc -DFSEEKO64_OK -DMACOS -DF2CSTYLE
+CC              =       mpicc -cc=gcc -DMACOS -DF2CSTYLE
+SCC		=	gcc -DMACOS -DF2CSTYLE
 SFC             =       g95
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 # g95 does not like -r4. if you want promotion to -r8 add it to PROMOTION below
@@ -6395,7 +6394,7 @@ CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I../external/RSL_LITE
 FCOPTIM		=	-O2 # -fast
 FCDEBUG		=	#-g -O0
-FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
+FCBASEOPTS      =       -Wno=101,139,155,158 -ffree-line-length-huge -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -6408,7 +6407,8 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
                         -I../external -I../frame -I../share -I../phys -I../chem -I../inc
 PERL            =       perl
 REGISTRY        =       Registry
-LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+			-L../external/RSL_LITE -lrsl_lite \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -6416,7 +6416,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_l
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCFLAGS) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
-CPP             =       /lib/cpp -C -P -traditional
+CPP             =       /usr/bin/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF)
 AR              =       ar ru

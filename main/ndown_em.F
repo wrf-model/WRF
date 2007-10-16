@@ -57,7 +57,10 @@ PROGRAM ndown_em
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: its , ite , jts , jte , kts , kte
-   INTEGER ::  spec_bdy_width
+   INTEGER :: nids, nide, njds, njde, nkds, nkde,    &
+              nims, nime, njms, njme, nkms, nkme,    &
+              nips, nipe, njps, njpe, nkps, nkpe
+   INTEGER :: spec_bdy_width
    INTEGER :: i , j , k , nvchem
    INTEGER :: time_loop_max , time_loop
    INTEGER :: total_time_sec , file_counter
@@ -451,12 +454,27 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       nested_grid%imask_xstag = 1
       nested_grid%imask_ystag = 1
       nested_grid%imask_xystag = 1
+
       CALL med_interp_domain ( head_grid , nested_grid )
       nested_grid%ht_int = nested_grid%ht
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       IF ( time_loop .EQ. 1 ) THEN
+
+         !  Dimension info for fine grid.
+
+         CALL get_ijk_from_grid (  nested_grid ,                   &
+                                   nids, nide, njds, njde, nkds, nkde,    &
+                                   nims, nime, njms, njme, nkms, nkme,    &
+                                   nips, nipe, njps, njpe, nkps, nkpe    )
+
+         !  Store horizontally interpolated terrain in temp location
+
+         CALL  store_terrain ( nested_grid%ht_fine , nested_grid%ht , &
+                               nids , nide , njds , njde , 1   , 1   , &
+                               nims , nime , njms , njme , 1   , 1   , &
+                               nips , nipe , njps , njpe , 1   , 1   )
 
          !  Open the fine grid SI static file.
    
@@ -477,6 +495,16 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
    
          CALL       wrf_debug ( 100 , 'ndown_em: closing fine grid static input' )
          CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
+
+         !  Blend parent and nest field of terrain.
+
+         CALL blend_terrain ( nested_grid%ht_fine , nested_grid%ht , &
+                               nids , nide , njds , njde , 1   , 1   , &
+                               nims , nime , njms , njme , 1   , 1   , &
+                               nips , nipe , njps , njpe , 1   , 1   )
+
+         nested_grid%ht_input = nested_grid%ht
+         nested_grid%ht_int   = nested_grid%ht_fine
 
          !  We need a fine grid landuse in the interpolation.  So we need to generate
          !  that field now.

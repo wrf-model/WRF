@@ -2,7 +2,8 @@ MODULE module_optional_si_input
 
    INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt
 
-   INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , flag_qg
+   INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
+              flag_qg       , flag_qni
 
    INTEGER :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
               flag_sm000010 , flag_sm010040 , flag_sm040100 , flag_sm100200 , flag_sm010200 , &
@@ -182,6 +183,7 @@ USE module_io_domain
       flag_qi       = 0
       flag_qs       = 0
       flag_qg       = 0
+      flag_qni      = 0
 
       flag_name(1:8) = 'QV      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -212,6 +214,11 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_qg       = itmp
+      END IF
+      flag_name(1:8) = 'QNI      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qni       = itmp
       END IF
     
    END SUBROUTINE optional_moist

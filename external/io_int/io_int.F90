@@ -195,7 +195,6 @@ SUBROUTINE ext_int_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDe
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER i, tasks_in_group, ierr, comm_io_group
-  LOGICAL, EXTERNAL :: wrf_dm_on_monitor
   REAL dummy
   INTEGER io_form
   CHARACTER*256 :: fname

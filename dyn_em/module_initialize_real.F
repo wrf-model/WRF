@@ -691,7 +691,7 @@ endif
       DO j = jts, MIN(jde-1,jte)
          DO i = its, MIN(ide-1,ite)
             IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
-                 ( grid%sst(i,j) .GT. 200. ) .AND. ( grid%sst(i,j) .LT. 350. ) ) THEN
+                 ( grid%sst(i,j) .GT. 170. ) .AND. ( grid%sst(i,j) .LT. 400. ) ) THEN
                grid%tsk(i,j) = grid%sst(i,j)
             ENDIF            
          END DO
@@ -913,7 +913,7 @@ endif
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
-                       ( grid%sst(i,j) .GT. 240. ) .AND. ( grid%sst(i,j) .LT. 350. ) ) THEN
+                       ( grid%sst(i,j) .GT. 170. ) .AND. ( grid%sst(i,j) .LT. 400. ) ) THEN
                      grid%tmn(i,j) = grid%sst(i,j)
                      grid%tsk(i,j) = grid%sst(i,j)
                   ELSE IF ( grid%landmask(i,j) .LT. 0.5 ) THEN
@@ -996,7 +996,7 @@ endif
 
       END SELECT interpolate_soil_tmw
 
-      !  Minimum soil values, residual, from RUC LSM scheme.  For input from Noah and using
+      !  Minimum soil values, residual, from RUC LSM scheme.  For input from Noah or EC, and using
       !  RUC LSM scheme, this must be subtracted from the input total soil moisture.  For
       !  input RUC data and using the Noah LSM scheme, this value must be added to the soil
       !  moisture input.
@@ -1015,10 +1015,10 @@ endif
    
             CASE ( LSMSCHEME )
                iicount = 0
-               IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+               IF      ( ( FLAG_SM000010 .EQ. 1 ) .OR. ( FLAG_SM000007 .EQ. 1 ) ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
-                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 200 ) .and. &
+                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
@@ -1037,7 +1037,7 @@ endif
                   END DO
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
-                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 200 ) .and. &
+                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'RUC -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
@@ -1052,7 +1052,7 @@ endif
    
             CASE ( RUCLSMSCHEME )
                iicount = 0
-               IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+               IF      ( ( FLAG_SM000010 .EQ. 1 ) .OR. ( FLAG_SM000007 .EQ. 1 ) ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0. )

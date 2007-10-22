@@ -57,6 +57,10 @@ PROGRAM ndown_em
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: its , ite , jts , jte , kts , kte
+
+   INTEGER :: nids, nide, njds, njde, nkds, nkde,    &
+              nims, nime, njms, njme, nkms, nkme,    &
+              nips, nipe, njps, njpe, nkps, nkpe
    INTEGER :: ijds , ijde , spec_bdy_width
    INTEGER :: i , j , k , nvchem
    INTEGER :: time_loop_max , time_loop
@@ -454,12 +458,28 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       nested_grid%imask_xstag = 1
       nested_grid%imask_ystag = 1
       nested_grid%imask_xystag = 1
+
       CALL med_interp_domain ( head_grid , nested_grid )
+
       nested_grid%ht_int = nested_grid%ht
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       IF ( time_loop .EQ. 1 ) THEN
+
+         !  Dimension info for fine grid.
+   
+         CALL get_ijk_from_grid (  nested_grid ,                   &
+                                   nids, nide, njds, njde, nkds, nkde,    &
+                                   nims, nime, njms, njme, nkms, nkme,    &
+                                   nips, nipe, njps, njpe, nkps, nkpe    )
+   
+         !  Store horizontally interpolated terrain in temp location
+   
+         CALL  store_terrain ( nested_grid%ht_fine , nested_grid%ht , &
+                               nids , nide , njds , njde , 1   , 1   , &
+                               nims , nime , njms , njme , 1   , 1   , &
+                               nips , nipe , njps , njpe , 1   , 1   )
 
          !  Open the fine grid SI static file.
    
@@ -480,6 +500,16 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
    
          CALL       wrf_debug ( 100 , 'ndown_em: closing fine grid static input' )
          CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
+
+         !  Blend parent and nest fields: terrain, mub, and phb.
+
+         CALL blend_terrain ( nested_grid%ht_fine , nested_grid%ht , &
+                               nids , nide , njds , njde , 1   , 1   , &
+                               nims , nime , njms , njme , 1   , 1   , &
+                               nips , nipe , njps , njpe , 1   , 1   )
+
+         nested_grid%ht_input = nested_grid%ht
+         nested_grid%ht_int   = nested_grid%ht_fine
 
          !  We need a fine grid landuse in the interpolation.  So we need to generate
          !  that field now.
@@ -645,7 +675,7 @@ print *,'gmt=',gmt
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp1 , nested_grid%em_ph_2                , &
                        'h' , nested_grid%msft , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-         CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp1 , nested_grid%moist(:,:,:,P_QV)    , &
+         CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp1 , nested_grid%moist(ims:ime,kms:kme,jms:jme,P_QV)    , &
                        't' , nested_grid%msft , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
 
@@ -674,7 +704,7 @@ print *,'gmt=',gmt
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(:,:,:,:,P_QV)                                  &
+         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,P_QV)                                  &
                                                                    , 'T' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
@@ -692,7 +722,7 @@ print *,'gmt=',gmt
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill ch_b',cbdy3dtemp1(5,1,5)
 !        endif
-         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(:,:,:,:,nvchem)                                  &
+         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,nvchem)                                  &
                                                                    , 'T' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
@@ -717,7 +747,7 @@ print *,'gmt=',gmt
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp2 , nested_grid%em_ph_2                , &
                        'h' , nested_grid%msft , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-         CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist(:,:,:,P_QV)    , &
+         CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist(ims:ime,kms:kme,jms:jme,P_QV)    , &
                        't' , nested_grid%msft , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
 
@@ -751,7 +781,7 @@ print *,'gmt=',gmt
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(:,:,:,:,P_QV), 'T' , &
+         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,P_QV), 'T' , &
                                                                   ijds , ijde , spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
@@ -768,7 +798,7 @@ print *,'gmt=',gmt
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 1ch_b2',time_loop,cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
 !        endif
-         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(:,:,:,:,nvchem), 'T' , &
+         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,nvchem), 'T' , &
                                                                   ijds , ijde , spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
@@ -864,7 +894,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(:,:,:,:,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
+         CALL stuff_bdy     ( qbdy3dtemp1 , nested_grid%moist_b(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,P_QV)   , 'T' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
@@ -874,7 +904,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 2ch_b3',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem)
 !        endif
-         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(:,:,:,:,nvchem)                                  &
+         CALL stuff_bdy     ( cbdy3dtemp1 , nested_grid%chem_b(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,nvchem)                                  &
                                                                    , 'T' , ijds , ijde , spec_bdy_width      , &
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
@@ -904,7 +934,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp2 , nested_grid%em_ph_2                , &
                        'h' , nested_grid%msft , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
-         CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist(:,:,:,P_QV)    , &
+         CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist(ims:ime,kms:kme,jms:jme,P_QV)    , &
                        't' , nested_grid%msft , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          mbdy2dtemp2(:,1,:) = nested_grid%em_mu_2(:,:)
@@ -919,7 +949,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 1ch_b4',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
 !        endif
-         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(:,:,:,:,nvchem), 'T' , &
+         CALL stuff_bdytend ( cbdy3dtemp2 , cbdy3dtemp1 , new_bdy_frq , nested_grid%chem_bt(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,nvchem), 'T' , &
                                                                   ijds , ijde , spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
@@ -951,7 +981,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(:,:,:,:,P_QV) , 'T' , &
+         CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , new_bdy_frq , nested_grid%moist_bt(ijds:ijde,kds:kde,1:spec_bdy_width,1:4,P_QV) , 'T' , &
                                                                   ijds , ijde , spec_bdy_width      , &
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &

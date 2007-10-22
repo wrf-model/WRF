@@ -307,15 +307,15 @@ unsetenv ESMFLIB
 unsetenv ESMFINC
 
 if ( $ESMF_LIB == TRUE ) then
-	if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bs ) ) then
+	if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bv ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for MPI tests"
-		setenv OBJECT_MODE 32
-		set ESMFLIBSAVE = /home/bluesky/hender/esmf/lib/libO/AIX.default.32.default
-		set ESMFINCSAVE = /home/bluesky/hender/esmf/mod/modO/AIX.default.32.default
-		echo "Setting ESMFLIB = ${ESMFLIBSAVE}"
-		echo "Setting ESMFINC = ${ESMFINCSAVE}"
+		setenv OBJECT_MODE 64
+		set ESMFLIBSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
+		set ESMFINCSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
+		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
+		echo "Using ESMFINC = ${ESMFINCSAVE}"
 	else
 		echo "Only the ESMF library included in the WRF tarfile is"
 		echo "tested on this machine"
@@ -408,7 +408,7 @@ else if ( $NESTED != TRUE ) then
 		set CORES = ( em_real em_real )
 	endif
 	if ( $ESMF_LIB == TRUE ) then
-		set CORES = ( em_real em_b_wave em_quarter_ss )
+		set CORES = ( em_real )
 	endif
 	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
 		set CORES = ( em_real em_b_wave em_quarter_ss )
@@ -1546,8 +1546,6 @@ if ( $ESMF_LIB == TRUE ) then
 	echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
 	echo "(NOT the ESMF library included in the WRF tarfile) will" >>! ${DEF_DIR}/wrftest.output
 	echo "be used for MPI tests" >>! ${DEF_DIR}/wrftest.output
-	echo "Setting ESMFLIB = ${ESMFLIBSAVE}" >>! ${DEF_DIR}/wrftest.output
-	echo "Setting ESMFINC = ${ESMFINCSAVE}" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
 if ( $QUILT == TRUE ) then
@@ -1705,6 +1703,8 @@ banner 6
 				echo "(NOT the ESMF library included in the WRF tarfile) is" >>! ${DEF_DIR}/wrftest.output
 				echo "being used for this test of $core parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
 				set esmf_lib_str = "using separate ESMF library"
+				echo "Setting ESMFLIB = ${ESMFLIBSAVE}" >>! ${DEF_DIR}/wrftest.output
+				echo "Setting ESMFINC = ${ESMFINCSAVE}" >>! ${DEF_DIR}/wrftest.output
 				setenv ESMFLIB $ESMFLIBSAVE
 				setenv ESMFINC $ESMFINCSAVE
 			else

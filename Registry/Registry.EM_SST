@@ -125,6 +125,7 @@ state    real   qv_gc          igj      dyn_em      1        Z     i1  "QV"     
 # Variables for Eulerian mass coordinate dynamics                                            
 #                                               
 
+
 # Velocities
 #
 # U Vel
@@ -740,7 +741,7 @@ state    real  XLONG_U          ij      dyn_em      1         X     i012rh01du=(
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
 state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
-state    real  ALBBCK           ij      misc        1         -     i012r        "ALBBCK"                   "BACKGROUND ALBEDO"        ""
+state    real  ALBBCK           ij      misc        1         -     i012rh       "ALBBCK"                   "BACKGROUND ALBEDO"        ""
 state    real  EMISS            ij      misc        1         -      r        "EMISS"                 "SURFACE EMISSIVITY"         "" 
 
 state    real  CLDEFI           ij      misc        1         -      r        "CLDEFI"                "precipitation efficiency in BMJ SCHEME"    ""      
@@ -929,14 +930,13 @@ rconfig   integer s_vert                  namelist,domains	max_domains    1     
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
 rconfig   integer num_metgrid_levels      namelist,domains	1              27      irh    "num_metgrid_levels"                ""      ""
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
-rconfig   integer interp_type             namelist,domains      1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
-rconfig   integer extrap_type             namelist,domains      1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
-rconfig   integer t_extrap_type           namelist,domains      1              2       irh    "t_extrap_type"  "1=isothermal, 2=6.5 K/km, 3=adiabatic"   ""
-rconfig   logical lowest_lev_from_sfc     namelist,domains      1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
-rconfig   logical use_levels_below_ground namelist,domains      1             .true.   irh    "use_levels_below_ground"   "T/F: use input data levels below input sfc pres" ""
-rconfig   logical use_surface             namelist,domains      1             .true.   irh    "use_surface"   "T/F: use input surface level in interpolation" ""
-rconfig   integer lagrange_order          namelist,domains      1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
-
+rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
+rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
+rconfig   integer t_extrap_type           namelist,domains	1              2       irh    "t_extrap_type"  "1=isothermal, 2=6.5 K/km, 3=adiabatic"   ""
+rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
+rconfig   logical use_levels_below_ground namelist,domains	1             .true.   irh    "use_levels_below_ground"   "T/F: use input data levels below input sfc pres" ""
+rconfig   logical use_surface             namelist,domains	1             .true.   irh    "use_surface"   "T/F: use input surface level in interpolation" ""
+rconfig   integer lagrange_order          namelist,domains	1              1       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation"      ""
 rconfig   integer force_sfc_in_vinterp    namelist,domains	1              1       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
 rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
 rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false. irh    "afcp_to_sfcp"   "T/F use incoming sfc pres to compute new sfc pres"      "flag"

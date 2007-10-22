@@ -55,6 +55,7 @@ wrf : framework_only
 	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
+# TBH:  can this be removed?  
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_ESMFApp ) ; \
 	fi

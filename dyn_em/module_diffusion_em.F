@@ -2612,8 +2612,6 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, mu, config_flags,          &
 
    DO j = j_start, j_end
    DO i = i_start, i_end
-      titau1avg(i,kts  ,j)=0.
-      titau2avg(i,kts  ,j)=0.
       titau1avg(i,ktf+1,j)=0.
       titau2avg(i,ktf+1,j)=0.
    ENDDO

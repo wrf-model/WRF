@@ -1503,6 +1503,7 @@ ENDIF
    SUBROUTINE urban_var_init(TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,     & ! in
                              ims,ime,jms,jme,num_soil_layers,                 & ! in
 !                             num_roof_layers,num_wall_layers,num_road_layers, & ! in
+                             restart,                                      & !in
                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,  & ! inout
                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & ! inout
                              TRL_URB3D,TBL_URB3D,TGL_URB3D,                & ! inout
@@ -1517,6 +1518,7 @@ ENDIF
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(IN) :: TLAYER0_URB
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)                    :: TDEEP0_URB
    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(IN)                 :: IVGTYP
+   LOGICAL , INTENT(IN) :: restart
  
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TR_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TB_URB2D
@@ -1550,10 +1552,10 @@ ENDIF
    DO I=ims,ime
     DO J=jms,jme
 
-      XXXR_URB2D(I,J)=0.
-      XXXB_URB2D(I,J)=0.
-      XXXG_URB2D(I,J)=0.
-      XXXC_URB2D(I,J)=0.
+!      XXXR_URB2D(I,J)=0.
+!      XXXB_URB2D(I,J)=0.
+!      XXXG_URB2D(I,J)=0.
+!      XXXC_URB2D(I,J)=0.
 
       SH_URB2D(I,J)=0.
       LH_URB2D(I,J)=0.
@@ -1586,6 +1588,13 @@ ENDIF
 
 
       QC_URB2D(I,J)=0.01
+
+       IF (.not.restart) THEN
+
+      XXXR_URB2D(I,J)=0.
+      XXXB_URB2D(I,J)=0.
+      XXXG_URB2D(I,J)=0.
+      XXXC_URB2D(I,J)=0.
 
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
@@ -1625,6 +1634,7 @@ ENDIF
         TGL_URB3D(I,K,J)=TLAYER0_URB(I,K,J)+0.
       END DO
 
+     ENDIF        !restart
     END DO
    END DO
 

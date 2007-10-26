@@ -1,7 +1,9 @@
 !WRF:MEDIATION_LAYER:INTERPOLATIONFUNCTION
 !
 
+#if (DA_CORE != 1)
 #define MM5_SINT
+#endif
 !#define DUMBCOPY
 
 #if ( NMM_CORE == 1 )

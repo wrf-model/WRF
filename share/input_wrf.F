@@ -515,6 +515,9 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
+#ifndef DA_CORE
+! Don't perform the check for WRFVAR, as we're not passing the right dates 
+! around
             CALL domain_clockprint(150, grid, &
                    'DEBUG input_wrf():  get CurrTime from clock,')
             IF ( time .NE. currtime ) THEN
@@ -527,6 +530,7 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
                 CALL wrf_message( TRIM(wrf_err_message) )
                 GOTO 3003
             ENDIF
+#endif
 #ifdef WRF_CHEM
             ENDIF
 #endif

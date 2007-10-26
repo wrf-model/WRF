@@ -1803,6 +1803,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    CHARACTER*(*) ,               INTENT(OUT)   :: fname, n2
    INTEGER ,                     INTENT(OUT)   :: ierr
   ! Local
+   INTEGER                                :: len_n2
    CHARACTER (LEN=256)                    :: message
    CHARACTER*80                           :: timestr
    TYPE(WRFU_Time)                        :: ST,CT
@@ -1834,6 +1835,10 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ELSE
      WRITE(n2,'("DATASET=AUXHIST",I1)')stream
    ENDIF
+#if (DA_CORE == 1)
+   len_n2 = LEN_TRIM(n2)
+   WRITE(n2(len_n2+1:len_n2+19),'(",REAL_OUTPUT_SIZE=4")')
+#endif
    IF ( oid .eq. 0 ) THEN
      WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )
      CALL wrf_debug( 1, message )

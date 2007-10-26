@@ -354,7 +354,7 @@
      IF ( first_trip_for_this_domain ) THEN
 
 ! data that is expected to be zero must be explicitly initialized as such
-     grid%h_diabatic = 0.
+!    grid%h_diabatic = 0.
 
        DO j = jts,min(jte,jde-1)
        DO k = kts,kte-1

@@ -570,7 +570,7 @@ state    real    F_ICE_PHY       ikj    misc        1         -      rdu      "F
 state    real    F_RAIN_PHY      ikj    misc        1         -      rdu      "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state    real    F_RIMEF_PHY     ikj    misc        1         -      rdu      "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
 # Other Misc State Variables                                            
-state   real    h_diabatic     ikj     misc         1         -      r        "h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         ""      
+state   real    h_diabatic     ikj     misc         1         -      rdu      "h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         ""      
 state   real    msft           ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_M"         "Map scale factor on mass grid" ""
 state   real    msfu           ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_U"         "Map scale factor on u-grid" ""
 state   real    msfv           ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_V"         "Map scale factor on v-grid" ""

@@ -985,7 +985,7 @@ endif
    
             CASE ( LSMSCHEME )
                iicount = 0
-               IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+               IF      ( ( FLAG_SM000010 .EQ. 1 ) .OR. ( FLAG_SM000007 .EQ. 1 ) ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 200 ) .and. &

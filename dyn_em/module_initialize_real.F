@@ -555,9 +555,8 @@ endif
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
-#if 0
-         !  Uncomment the Registry entries to activate these.  This adds
-         !  noticeably to the allocated space for the model.
+#ifdef RUC_CLOUD
+         !  Add -DRUC_CLOUD to ARCHFLAGS in configure.wrf file to activate the following code
 
          num_3d_m = num_moist
          num_3d_s = num_scalar

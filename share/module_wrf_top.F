@@ -83,8 +83,8 @@ CONTAINS
 
    ! Initialize WRF modules:  
    ! Phase 1 returns after MPI_INIT() (if it is called)
+   CALL init_modules(1)
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
-     CALL init_modules(1)
      ! Initialize utilities (time manager, etc.)
      CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN )
    ENDIF

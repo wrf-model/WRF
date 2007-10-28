@@ -13,21 +13,21 @@ these are mentioned in the task list that follows.
 The "ESMF" referred to below is version 2.2.0rp1.  
 
 + Design and Implementation:
-   - Modifying WRF so the "output" calls that set the WRF ExportState can 
+   - Modify WRF so the "output" calls that set the WRF ExportState can 
      occur in subroutine med_after_solve_io in file 
      share/mediation_integrate.F.  We plan to make this modification in a 
      future revision of WRF and allow users to control where the WRF 
      ExportState is set at run-time via a namelist variable.  Or we may make 
      the new behavior the default since it is more natural for sequential 
      coupling.  
-   - Get rid of masses of "DEBUG" code.  
-   - Clean up/correct comments.  
-   - Fix ESMF+RSL_LITE.  Currently, only ESMF+RSL works.  
+   X Get rid of masses of "DEBUG" code.  
+   X Clean up/correct comments.  
+   X Fix ESMF+RSL_LITE.  Currently, only ESMF+RSL works.  
        Patch and memory extents differ between RSL and RSL_LITE, see
        /users/hender/Tasks/WRF_ESMF/RSL_LITE_broken/README for details.  
-   - Finish sequence diagram for the coupling interactions in
+   X Finish sequence diagram for the coupling interactions in
      /users/hender/Tasks/WRF_ESMF/SequenceDiagram.txt ...
-     - OR, use more recent ppt slides...  
+     X OR, use more recent ppt slides...  
    - Upgrade SST component so it can run on a subset of processors.  
        This requires breaking the domdesc dependence for SST so SST can be 
        run on fewer processes.  SST will need to call wrf_dm_patch_domain(), 
@@ -43,6 +43,8 @@ The "ESMF" referred to below is version 2.2.0rp1.
    - Exchange staggered 2D grids and test-validate (x, y, and z staggerings).  
      Current hacked implementation should be able to handle this for 
      horizontal staggerings, but need to test in case bugs are lurking...  
+     Better yet, move to ESMF 3.0 and use its new features to correctly 
+     implement staggering.  
    - Upgrade external/io_esmf/ so metadata is exchanged correctly.  Right now, 
      metadata is ignored.  This would allow sharing of metadata and simplify 
      implementation of components that were aware of WRF metadata.  Ultimately, 
@@ -57,7 +59,7 @@ The "ESMF" referred to below is version 2.2.0rp1.
    X Make WRF-ESMF build recognize ESMF environment variables?
      Could remove stanzas from arch/configure.defaults and avoid lots
      of duplication and documentation.
-   - If possible, upgrade WRF ESMF component to get number of MPI tasks from 
+   X If possible, upgrade WRF ESMF component to get number of MPI tasks from 
      VM instead of from MPI.  This may be tricky or even impractical due to 
      startup issues...  
    - CF conventions:  
@@ -78,7 +80,6 @@ The "ESMF" referred to below is version 2.2.0rp1.
        connect to "MemoryOrder" argument.  
      * Take a look at my list of reported ESMF bugs and add any I haven't 
        reported.  
-     * Calls to ESMF_LogSet in main/wrf_ESMFApp.F cause core dumps -- why?  
      * Calls to ESMF_ArraySpecSet() in external/io_esmf/ quietly do the wrong 
        thing.  Why?  Once they work, uncomment this code to avoid 
        per-data-type duplication of hard-coded alternative (gaaak).  See 
@@ -88,11 +89,6 @@ The "ESMF" referred to below is version 2.2.0rp1.
        this.  
        * Re-connect "Stagger" argument to ESMF "horzrelloc" argument.  
          Uncomment this code in external/io_esmf/.  
-       * Until then, maybe use nested ESMF_States to handle it.  This is ugly 
-         though because there are no conventions for such a thing so it will 
-         introduce dependencies with other components.  Balaji's recent 
-         proposal to standardize grid metadata within CF would be useful 
-         if we go this way.  
      * Why can I specify start indices in the call to 
        ESMF_GridDistribute[Vector]() but not in the call to ESMF_GridSet() ?
      * Remove implementation of WRFU_TimeIntervalDIVQuot in 
@@ -119,7 +115,7 @@ The "ESMF" referred to below is version 2.2.0rp1.
        streamline code.  
          See /loquat2/hender/Tasks/WRF_ESMF/ESMF_FieldFromUserEx.F90
          See /loquat2/hender/Tasks/WRF_ESMF/UserCodeMod.F90
-     * See if "#ifndef ESMFIO" hack can be removed from share/input_wrf.F.  
+     X See if "#ifndef ESMFIO" hack can be removed from share/input_wrf.F.  
      * Get rid of module_symbols.F90.  Encapsulate any remaining "WRFU" calls 
        via module_domain.  
      * Rip out WRF_CHEM from set_timekeeping.F and test...
@@ -134,7 +130,7 @@ The "ESMF" referred to below is version 2.2.0rp1.
      ESMF component.
    X Description of WRF-CPL-SST "demo"
      X Description of SST and CPL demo components
-     * Sequence diagram of component interactions
+     X Sequence diagram of component interactions (see ppt)
      X Limitations of demo
      * How to extend the demo
 + Testing

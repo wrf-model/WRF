@@ -392,17 +392,9 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
        IF ( ( ide .NE. ide_compare    ) .OR. &
             ( kde .NE. kde_compare    ) .OR. &
             ( jde .NE. jde_compare    ) ) THEN
-! a hack for sure
-#ifndef ESMFIO
           WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide,jde,kde=',ide,jde,kde,&
                                   '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
           CALL wrf_error_fatal( wrf_err_message )
-#else
-          WRITE(wrf_err_message,*)'DEBUG input_wrf.F switch = ',switch, &
-                                  ': namelist ide,jde,kde=',ide,jde,kde,&
-                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-          CALL wrf_debug( 100, wrf_err_message )
-#endif
        ENDIF
 
     ELSE IF ( switch .EQ. aux_model_input1_only ) THEN
@@ -433,17 +425,9 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
        IF ( ( ide-1 .NE. ide_compare    ) .OR. &
             ( kde   .NE. kde_compare    ) .OR. &
             ( jde-1 .NE. jde_compare    ) .AND. ierr3 .EQ. 0 ) THEN
-! a hack for sure
-#ifndef ESMFIO
           WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist ide-1,jde-1,kde=',ide-1,jde-1,kde,&
                                   '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
           CALL wrf_debug( 100, wrf_err_message )
-#else
-          WRITE(wrf_err_message,*)'DEBUG input_wrf.F switch = ',switch, &
-                                  ': namelist ide,jde,kde=',ide,jde,kde,&
-                                  '; input data ide,jde,kde=',ide_compare , jde_compare , kde_compare
-          CALL wrf_debug( 100, wrf_err_message )
-#endif
        ENDIF
 
        ELSEIF ( switch .EQ. aux_model_input1_only ) THEN          ! assume just WPS in this branch

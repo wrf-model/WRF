@@ -27,10 +27,10 @@ SUBROUTINE ext_esmf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDe
     CALL wrf_error_fatal("ext_esmf_open_for_read:  ESMF_ImportStateGetCurrent failed" )
   ENDIF
   ! For now, If the import state is not empty, whine and die.
-!$$$ Eventually, use nested states to allow than one auxinput stream 
-!$$$ to be supported via ESMF.  
-!$$$ Eventually, get smart about interacting with "needed" and "optional" 
-!$$$ named state items
+!TODO:  Eventually, use nested states to allow more than one auxinput stream 
+!TODO:  to be supported via ESMF.  
+!TODO:  Eventually, get smart about interacting with "needed" and "optional" 
+!TODO:  named state items
   CALL ESMF_StateGet( importstate, itemCount=itemCount, &
                       statetype=statetype, rc=rc )
   IF ( rc /= ESMF_SUCCESS ) THEN

@@ -1378,6 +1378,14 @@ okay_to_w = .false.
       NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups
       INTEGER ntasks, mytask, ierr, io_status
       LOGICAL mpi_inited
+      LOGICAL esmf_coupling
+
+!TODO:  Change this to run-time switch
+#ifdef ESMFIO
+      esmf_coupling = .TRUE.
+#else
+      esmf_coupling = .FALSE.
+#endif
 
       quilting_enabled = .FALSE.
       IF ( disable_quilt ) RETURN
@@ -1390,12 +1398,16 @@ okay_to_w = .false.
       ENDDO
 
       CALL MPI_INITIALIZED( mpi_inited, ierr )
+      ! Note that quilt may not be used with ESMF coupling yet.  
       IF ( mpi_inited ) THEN
-        CALL wrf_error_fatal("frame/module_io_quilt.F: quilt initialization "// &
-                             "must be called before MPI_Init") ;
+        IF ( .NOT. esmf_coupling ) THEN
+          CALL wrf_error_fatal("frame/module_io_quilt.F: quilt initialization "// &
+                               "must be called before MPI_Init") ;
+        ENDIF
+      ELSE
+        CALL mpi_init ( ierr )
       ENDIF
 
-      CALL mpi_init ( ierr )
       CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
       CALL wrf_termio_dup
       CALL MPI_Comm_rank ( MPI_COMM_WORLD, mytask, ierr ) ;
@@ -1410,6 +1422,12 @@ okay_to_w = .false.
           CALL wrf_error_fatal( "ERROR reading namelist namelist_quilt" )
         ENDIF
         CLOSE ( 27 )
+        IF ( esmf_coupling ) THEN
+          IF ( nio_tasks_per_group > 0 ) THEN
+            CALL wrf_error_fatal("frame/module_io_quilt.F: cannot use "// &
+                                 "ESMF coupling with quilt tasks") ;
+          ENDIF
+        ENDIF
       ENDIF
       CALL mpi_bcast( nio_tasks_per_group  , 1 , MPI_INTEGER , 0 , MPI_COMM_WORLD, ierr )
       CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , MPI_COMM_WORLD, ierr )

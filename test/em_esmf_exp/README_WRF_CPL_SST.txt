@@ -90,10 +90,10 @@ $WRFDIR/Registry >> cp -f Registry.EM_SST Registry.EM
 
 
 
-3)  Build WRF from scratch with RSL for use with ESMF:  
+3)  Build WRF from scratch with RSL_LITE for use with ESMF:  
 
-$WRFDIR >> echo 4 | configure
-$WRFDIR >> compile em_real >&! compile.em_real.4.out
+$WRFDIR >> echo 5 | configure
+$WRFDIR >> compile em_real >&! compile.em_real.5.out
 
   Verify that executables exist:  
 

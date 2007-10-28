@@ -55,9 +55,8 @@ wrf : framework_only
 	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
-# TBH:  can this be removed?  
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_ESMFApp ) ; \
+	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
 
 ### 3.a.  rules to build the framework and then the experimental core
@@ -136,21 +135,18 @@ convert_em : framework_only
             ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
         fi
 
-#TBH:  For now, link wrf.exe, wrf_ESMFApp.exe, and wrf_SST_ESMF.exe into 
-#TBH:  test/em_esmf_exp when ESMF_COUPLING is set.  Either wrf.exe or 
-#TBH:  wrf_ESMFApp.exe can be used for stand-alone testing in this case.  
-#TBH:  wrf_SST_ESMF.exe is a coupled application.  Note that single make 
-#TBH:  target $(SOLVER)_wrf_ESMFApp builds both wrf_ESMFApp.exe and 
-#TBH:  wrf_SST_ESMF.exe.  
-#TBH:  Is this a clear violation of the DRY principle?  Oh yeah, you bet.  
+# Link wrf.exe and wrf_SST_ESMF.exe into 
+# test/em_esmf_exp when ESMF_COUPLING is set.  wrf.exe 
+# can be used for stand-alone testing in this case.  
+# wrf_SST_ESMF.exe is a coupled application.  Note that make 
+# target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.  
 em_real : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
 	( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_wrf_ESMFApp ) ; \
+	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_wrf_SST_ESMF ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_ESMFApp.exe ; ln -s ../../main/wrf_ESMFApp.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \

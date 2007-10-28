@@ -15,7 +15,7 @@ MODULE module_ext_esmf
     LOGICAL :: in_use
   END TYPE grid_ptr
 
-  ! TBH:  should package this state into an object...  
+!TODO:  encapsulate this state into a class...  
   INTEGER, PARAMETER :: int_num_handles = 99
   LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, okay_to_read,       &
                                          opened_for_write, opened_for_read, &
@@ -155,8 +155,8 @@ END MODULE module_ext_esmf
   ! Indexes for non-staggered variables come in at one-less than
   ! domain dimensions, but io_esmf is currently hacked to use full 
   ! domain spec, so adjust if not staggered.  
-  ! $$$ TBD:  remove this hackery once ESMF can support staggered 
-  ! $$$ TBD:  grids in regional models
+  !TODO:  remove this hackery once ESMF can support staggered 
+  !TODO:  grids in regional models
   SUBROUTINE ioesmf_endfullhack( numdims, DomainEnd, PatchEnd, Stagger, &
                                  DomainEndFull, PatchEndFull )
     IMPLICIT NONE
@@ -181,14 +181,14 @@ END MODULE module_ext_esmf
 
 
   ! Create the ESMF_Grid associated with index DataHandle.  
-  ! TBH:  Note that periodicity is not supported by this interface.  If 
-  ! TBH:  periodicity is needed, pass in via SysDepInfo in the call to 
-  ! TBH:  ext_esmf_ioinit().  
-  ! TBH:  Note that lat/lon coordinates are not supported by this interface 
-  ! TBH:  since general curvilinear coordindates (needed for map projections 
-  ! TBH:  used by WRF such as polar stereographic, mercator, lambert conformal)
-  ! TBH:  are not supported by ESMF as of ESMF 2.1.1.  Once they are supported, 
-  ! TBH:  add them via the "sieve" method used in ../io_mcel/.  
+  !TODO:  Note that periodicity is not supported by this interface.  If 
+  !TODO:  periodicity is needed, pass in via SysDepInfo in the call to 
+  !TODO:  ext_esmf_ioinit().  
+  !TODO:  Note that lat/lon coordinates are not supported by this interface 
+  !TODO:  since general curvilinear coordindates (needed for map projections 
+  !TODO:  used by WRF such as polar stereographic, mercator, lambert conformal)
+  !TODO:  are not supported by ESMF as of ESMF 2.1.1.  Once they are supported, 
+  !TODO:  add them via the "sieve" method used in ../io_mcel/.  
   SUBROUTINE ioesmf_create_grid( DataHandle, numdims,    &
                                  MemoryOrder, Stagger,   &
                                  DomainStart, DomainEnd, &
@@ -210,10 +210,10 @@ END MODULE module_ext_esmf
     CALL wrf_debug ( 5, TRIM(msg) )
     ! For now, blindly create a new grid if it does not already exist for 
     ! this DataHandle
-! TBH:  Note that this approach will result in duplicate ESMF_Grids when 
-! TBH:  io_esmf is used for input and output.  The first ESMF_Grid will 
-! TBH:  be associated with the input handle and the second will be associated 
-! TBH:  with the output handle.  
+!TODO:  Note that this approach will result in duplicate ESMF_Grids when 
+!TODO:  io_esmf is used for input and output.  The first ESMF_Grid will 
+!TODO:  be associated with the input handle and the second will be associated 
+!TODO:  with the output handle.  Fix this if ESMF_Grids are expensive.  
     IF ( .NOT. grid( DataHandle )%in_use ) THEN
       IF ( ASSOCIATED( grid( DataHandle )%ptr ) ) THEN
         CALL wrf_error_fatal ( 'ASSERTION ERROR:  grid(',DataHandle,') should be NULL' )
@@ -228,14 +228,14 @@ END MODULE module_ext_esmf
         ! The non-staggered variables come in at one-less than
         ! domain dimensions, but io_esmf is currently hacked to use full 
         ! domain spec, so adjust if not staggered.  
-        ! $$$ TBD:  remove this hackery once ESMF can support staggered 
-        ! $$$ TBD:  grids in regional models
+        !TODO:  remove this hackery once ESMF can support staggered 
+        !TODO:  grids in regional models
         CALL ioesmf_endfullhack( numdims, DomainEnd, PatchEnd, Stagger, &
                                  DomainEndFull, PatchEndFull )
-! $$$ TBD:  at the moment this is hard-coded for 2D arrays
-! $$$ TBD:  use MemoryOrder to set these properly!
-! $$$ TBD:  also, set these once only
-! $$$ TBD:  maybe even rip this out since it depends on a hack in input_wrf.F ...
+!TODO:  at the moment this is hard-coded for 2D arrays
+!TODO:  use MemoryOrder to set these properly!
+!TODO:  also, set these once only
+!TODO:  maybe even rip this out since it depends on a hack in input_wrf.F ...
         grid( DataHandle )%ide_save = DomainEndFull(1)
         grid( DataHandle )%jde_save = DomainEndFull(2)
         grid( DataHandle )%kde_save = 1
@@ -262,18 +262,18 @@ END MODULE module_ext_esmf
 
 
   ! Create an ESMF_Grid that matches a WRF decomposition.  
-  ! TBH:  Note that periodicity is not supported by this interface.  If 
-  ! TBH:  periodicity is needed, pass in via SysDepInfo in the call to 
-  ! TBH:  ext_esmf_ioinit().  
-  ! TBH:  Note that lat/lon coordinates are not supported by this interface 
-  ! TBH:  since general curvilinear coordindates (needed for map projections 
-  ! TBH:  used by WRF such as polar stereographic, mercator, lambert conformal)
-  ! TBH:  are not supported by ESMF as of ESMF 2.1.1.  Once they are supported, 
-  ! TBH:  add them via the "sieve" method used in ../io_mcel/.  
-  ! $$$ TBD:  Note that DomainEnd and PatchEnd must currently include "extra" 
-  ! $$$ TBD:  points for non-periodic staggered arrays.  It may be possible to 
-  ! $$$ TBD:  remove this hackery once ESMF can support staggered 
-  ! $$$ TBD:  grids in regional models.  
+  !TODO:  Note that periodicity is not supported by this interface.  If 
+  !TODO:  periodicity is needed, pass in via SysDepInfo in the call to 
+  !TODO:  ext_esmf_ioinit().  
+  !TODO:  Note that lat/lon coordinates are not supported by this interface 
+  !TODO:  since general curvilinear coordindates (needed for map projections 
+  !TODO:  used by WRF such as polar stereographic, mercator, lambert conformal)
+  !TODO:  are not supported by ESMF as of ESMF 2.1.1.  Once they are supported, 
+  !TODO:  add them via the "sieve" method used in ../io_mcel/.  
+  !TODO:  Note that DomainEnd and PatchEnd must currently include "extra" 
+  !TODO:  points for non-periodic staggered arrays.  It may be possible to 
+  !TODO:  remove this hackery once ESMF can support staggered 
+  !TODO:  grids in regional models.  
   SUBROUTINE ioesmf_create_grid_int( esmfgrid, numdims,      &
                               DomainStart, DomainEnd, &
                               MemoryStart, MemoryEnd, &
@@ -307,7 +307,7 @@ END MODULE module_ext_esmf
     REAL(ESMF_KIND_R8), ALLOCATABLE :: coordY(:)
     INTEGER, ALLOCATABLE :: cellCounts(:,:)
     INTEGER, ALLOCATABLE :: globalStarts(:,:)
-    INTEGER :: rc
+    INTEGER :: rc, debug_level
     INTEGER :: myXcount      ! task-local count in "i" dimension
     INTEGER :: myYcount      ! task-local count in "j" dimension
     INTEGER :: globalCellCounts(2)
@@ -318,6 +318,8 @@ END MODULE module_ext_esmf
     TYPE(ESMF_DELayout) :: taskLayout
     CHARACTER (32) :: gridname
     INTEGER, SAVE :: gridID = 0
+
+      CALL get_wrf_debug_level( debug_level )
 
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  begin...' )
       WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  numdims = ',numdims
@@ -345,11 +347,11 @@ END MODULE module_ext_esmf
                        __LINE__
         CALL wrf_error_fatal ( msg )
       ENDIF
-      ! TBH:  Note (PET==MPI process) assumption here.  This is OK in ESMF 
-      ! TBH:  2.2.0 but may change in a future ESMF release.  If so, we will 
-      ! TBH:  need another way to do this.  May want to grab mpiCommunicator 
-      ! TBH:  instead and ask it directly for number of MPI tasks.  Of course, 
-      ! TBH:  what if this is a serial run?  
+!TODO:  Note (PET==MPI process) assumption here.  This is OK in ESMF 
+!TODO:  2.2.0 but may change in a future ESMF release.  If so, we will 
+!TODO:  need another way to do this.  May want to grab mpiCommunicator 
+!TODO:  instead and ask it directly for number of MPI tasks.  Unless this 
+!TODO:  is a serial run...
       CALL ESMF_VMGet(vm, petCount=numprocs, localPet=myPE, rc=rc)
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_VMGet', &
@@ -365,37 +367,36 @@ END MODULE module_ext_esmf
       numprocsY = 0
       DO pe = 0, numprocs-1
         IF ( PatchStart(1) == ipatchStarts(pe) ) THEN
-          numprocsX = numprocsX + 1
+          numprocsY = numprocsY + 1
         ENDIF
         IF ( PatchStart(2) == jpatchStarts(pe) ) THEN
-          numprocsY = numprocsY + 1
+          numprocsX = numprocsX + 1
         ENDIF
       ENDDO
       DEALLOCATE( ipatchStarts, jpatchStarts )
+WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  numprocsX = ',numprocsX
+CALL wrf_debug ( 5 , TRIM(msg) )
+WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  numprocsY = ',numprocsY
+CALL wrf_debug ( 5 , TRIM(msg) )
       ! sanity check
       IF ( numprocs /= numprocsX*numprocsY ) THEN
         CALL wrf_error_fatal ( 'ASSERTION FAILED:  numprocs /= numprocsX*numprocsY' )
       ENDIF
       ! Next, create ESMF_DELayout
       numprocsXY = (/ numprocsX, numprocsY /)
-      ! transpose tasks to match RSL
-      ! TBH:  1-to-1 DE to PET mapping is assumed below...  
+!TODO:  1-to-1 DE to PET mapping is assumed below...  
       ALLOCATE( permuteTasks(0:numprocs-1) )
       pe = 0
       DO j = 0, numprocsY-1
         DO i = 0, numprocsX-1
+! NOTE:  seems to work both ways...  
 ! (/ 0 2 1 3 /)
-        permuteTasks(pe) = (i*numprocsY) + j
+!        permuteTasks(pe) = (i*numprocsY) + j
 ! (/ 0 1 2 3 /)
-!        permuteTasks(pe) = pe
+        permuteTasks(pe) = pe
         pe = pe + 1
         ENDDO
       ENDDO
-!$$$DEBUG
-!      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_VMPrint' )
-!      CALL ESMF_VMPrint( vm=vm, rc=rc )
-!      CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_VMPrint' )
-!$$$END DEBUG
       WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  numprocsXY = ',numprocsXY
       CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG ioesmf_create_grid_int:  permuteTasks = ',permuteTasks
@@ -411,14 +412,16 @@ END MODULE module_ext_esmf
       ENDIF
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutCreate' )
       DEALLOCATE( permuteTasks )
-!$$$DEBUG
+
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_DELayoutPrint 1' )
-      CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
+      IF ( 5 .LE. debug_level ) THEN
+        CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
+      ENDIF
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutPrint 1' )
-!$$$END DEBUG
+
       ! Compute indices for staggered grids because ESMF does not yet support addition of 
       ! extra data points for staggered dimensions as is common in regional models.  
-      ! $$$ TBD:  Remove this hack once ESMF can handle it.  
+!TODO:  Remove this hack once ESMF can handle it.  
       ! the [ij][dp][se] bits are for convenience...  
       ids = DomainStart(1); ide = DomainEnd(1); 
       jds = DomainStart(2); jde = DomainEnd(2); 
@@ -462,7 +465,7 @@ END MODULE module_ext_esmf
       CALL wrf_debug ( 5 , TRIM(msg) )
       ! gather task-local information on all tasks since 
       ! ESMF_GridDistribute[Block] interface require global knowledge to set up 
-      ! decompositions (@#$%)
+      ! decompositions
       ! Recall that coordX and coordY are coordinates of *vertices*, not cell centers.  
       ! Thus they must be 1 bigger than the number of cells.  
       ALLOCATE( allXStart(0:numprocs-1),  allXCount(0:numprocs-1),  &
@@ -474,14 +477,14 @@ END MODULE module_ext_esmf
       CALL GatherIntegerScalars_ESMF(myYcount, myPE, numprocs, allYCount)
       CALL GatherIntegerScalars_ESMF(myYstart, myPE, numprocs, allYStart)
 
-      ! HACK:  ESMF does not yet support mercator, polar-stereographic, or 
-      ! HACK:  lambert-conformal projections.  Therefore, we're using fake 
-      ! HACK:  coordinates here.  This means that WRF will either have to 
-      ! HACK:  couple to models that run on the same coorindate such that 
-      ! HACK:  grid points are co-located or something else will have to 
-      ! HACK:  perform the inter-grid interpolation computations.  Replace 
-      ! HACK:  this once ESMF is upgraded to support the above map 
-      ! HACK:  projections (via general curvilinear coordinates).  
+      !TODO:  ESMF 2.x does not support mercator, polar-stereographic, or 
+      !TODO:  lambert-conformal projections.  Therefore, we're using fake 
+      !TODO:  coordinates here.  This means that WRF will either have to 
+      !TODO:  couple to models that run on the same coorindate such that 
+      !TODO:  grid points are co-located or something else will have to 
+      !TODO:  perform the inter-grid interpolation computations.  Replace 
+      !TODO:  this once ESMF is upgraded to support the above map 
+      !TODO:  projections (via general curvilinear coordinates).  
       CALL wrf_message( 'WARNING:  Using artificial coordinates for ESMF coupling.' )
       CALL wrf_message( 'WARNING:  ESMF coupling interpolation will be incorrect' )
       CALL wrf_message( 'WARNING:  unless grid points in the coupled components' )
@@ -502,12 +505,11 @@ END MODULE module_ext_esmf
       ! Create an ESMF_Grid
       ! For now we create only a 2D grid suitable for simple coupling of 2D 
       ! surface fields.  Later, create and subset one or more 3D grids.  
-!TBH $$$:  NOTE that we'll have to use ESMF_GRID_HORZ_STAGGER_E_?? for NMM.  
-!TBH $$$:  E-grid is not yet supported by ESMF.  Eventually pass staggering 
-!TBH $$$:  info into this routine.  For now, hard-code it for WRF-ARW.  
+!TODO:  Pass staggering info into this routine once ESMF can support staggered 
+!TODO:  grids.  For now, it is hard-coded for WRF-ARW.  
       gridID = gridID + 1
       WRITE ( gridname,'(a,i0)' ) 'WRF_grid_', gridID
-!$$$DEBUG
+
 CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridCreateHorzXY()' )
 WRITE( msg,* ) 'DEBUG WRF:  SIZE(coordX) = ', SIZE(coordX)
 CALL wrf_debug ( 5 , TRIM(msg) )
@@ -525,11 +527,11 @@ WRITE( msg,* ) 'DEBUG WRF:  horzstagger = ', ESMF_GRID_HORZ_STAGGER_C_SW
 CALL wrf_debug ( 5 , TRIM(msg) )
 WRITE( msg,* ) 'DEBUG WRF:  name = ', TRIM(gridname)
 CALL wrf_debug ( 5 , TRIM(msg) )
-!$$$END DEBUG
+
       esmfgrid = ESMF_GridCreateHorzXY(                     &
                    coord1=coordX, coord2=coordY,            &
                    horzstagger=ESMF_GRID_HORZ_STAGGER_C_SW, &
-! use this for 3D Grids once it is stable
+!TODO:  use this for 3D Grids once it is stable
 !                  coordorder=ESMF_COORD_ORDER_XZY,         &
                    name=TRIM(gridname), rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
@@ -586,12 +588,13 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
       CALL wrf_debug ( 5 , TRIM(msg) )
       WRITE( msg,* ) 'DEBUG:  j = ',j,'  dimYCount = ',dimYCount
       CALL wrf_debug ( 5 , TRIM(msg) )
-!$$$DEBUG
+
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_DELayoutPrint 2' )
-      CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
+      IF ( 5 .LE. debug_level ) THEN
+        CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
+      ENDIF
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutPrint 2' )
-!$$$END DEBUG
-! $$$  crashes here with "-g" ...
+
       CALL ESMF_GridDistribute( esmfgrid,                  &
                                 delayout=taskLayout,       &
                                 countsPerDEDim1=dimXCount, &
@@ -613,7 +616,6 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridValidate()' )
                        ', line ',                       &
                        __LINE__ ,                       &
                        ', error code = ',rc
-! TBH:  debugging error exit here...  
         CALL wrf_error_fatal ( msg )
       ENDIF
 CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
@@ -623,49 +625,6 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
       ! Print out the ESMF decomposition info for debug comparison with WRF 
       ! decomposition info.  
       ALLOCATE( cellCounts(0:numprocs-1,2), globalStarts(0:numprocs-1,2) )
-
-!      CALL ESMF_GridGet( esmfgrid,                               &
-!                         horzrelloc=ESMF_CELL_CENTER,            &
-!                         globalStartPerDEPerDim=globalStarts,    &
-!                         cellCountPerDEPerDim=cellCounts,        &
-!                         globalCellCountPerDim=globalCellCounts, &
-!                         rc=rc )
-!      IF ( rc /= ESMF_SUCCESS ) THEN
-!        WRITE( msg,* ) 'Error in ESMF_GridGet', &
-!                       __FILE__ ,               &
-!                       ', line',                &
-!                       __LINE__
-!        CALL wrf_error_fatal ( msg )
-!      ENDIF
-! note that global indices in ESMF_Grid always start at zero
-!      WRITE( msg,* ) 'DEBUG:  ESMF task-id = ',myPE
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     ips = ',1+globalStarts(myPE,1)
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     ipe = ',1+globalStarts(myPE,1) + cellCounts(myPE,1) - 1
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered i count = ',  cellCounts(myPE,1)
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     jps = ',1+globalStarts(myPE,2)
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered     jpe = ',1+globalStarts(myPE,2) + cellCounts(myPE,2) - 1
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  ESMF non-staggered j count = ',  cellCounts(myPE,2)
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      is_min = globalStarts(0,1)
-!      js_min = globalStarts(0,2)
-!      ie_max = globalStarts(0,1) + cellCounts(0,1) - 1
-!      je_max = globalStarts(0,2) + cellCounts(0,2) - 1
-!      DO pe = 1, (numprocsX*numprocsY)-1
-!        js = globalStarts(pe,2)
-!        je = globalStarts(pe,2) + cellCounts(pe,2) - 1
-!        IF ( js < js_min ) js_min = js
-!        IF ( je > je_max ) je_max = je
-!        is = globalStarts(pe,1)
-!        ie = globalStarts(pe,1) + cellCounts(pe,1) - 1
-!        IF ( is < is_min ) is_min = is
-!        IF ( ie > ie_max ) ie_max = ie
-!      ENDDO
 
       ! extract information about staggered grids for debugging
       CALL ESMF_GridGet( esmfgrid,                               &
@@ -712,13 +671,15 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
       DEALLOCATE( cellCounts, globalStarts )
 
       CALL wrf_debug ( 100 , 'DEBUG ioesmf_create_grid_int:  print esmfgrid BEGIN...' )
-      CALL ESMF_GridPrint( esmfgrid, rc=rc )
-      IF ( rc /= ESMF_SUCCESS ) THEN
-        WRITE( msg,* ) 'Error in ESMF_GridPrint', &
-                       __FILE__ ,                        &
-                       ', line',                         &
-                       __LINE__
-        CALL wrf_error_fatal ( msg )
+      IF ( 100 .LE. debug_level ) THEN
+        CALL ESMF_GridPrint( esmfgrid, rc=rc )
+        IF ( rc /= ESMF_SUCCESS ) THEN
+          WRITE( msg,* ) 'Error in ESMF_GridPrint', &
+                         __FILE__ ,                        &
+                         ', line',                         &
+                         __LINE__
+          CALL wrf_error_fatal ( msg )
+        ENDIF
       ENDIF
       CALL wrf_debug ( 100 , 'DEBUG ioesmf_create_grid_int:  print esmfgrid END' )
 
@@ -790,8 +751,8 @@ CALL wrf_debug ( 5 , TRIM(msg) )
   END SUBROUTINE ioesmf_nullify_grid
 
 
-!$$$here...  use generic explicit interfaces?  if not, why not?  
- !$$$ remove duplication!
+!TODO:  use generic explicit interfaces and remove duplication
+!TODO:  use cpp to remove duplication
  SUBROUTINE ioesmf_extract_data_real( data_esmf_real, Field,      &
                                       ips, ipe, jps, jpe, kps, kpe, &
                                       ims, ime, jms, jme, kms, kme )
@@ -805,7 +766,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
  END SUBROUTINE ioesmf_extract_data_real
 
 
- !$$$ remove duplication!
+!TODO:  use cpp to remove duplication
  SUBROUTINE ioesmf_extract_data_int( data_esmf_int, Field,         &
                                      ips, ipe, jps, jpe, kps, kpe, &
                                      ims, ime, jms, jme, kms, kme )
@@ -819,7 +780,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
  END SUBROUTINE ioesmf_extract_data_int
 
 
- !$$$ remove duplication!
+!TODO:  use cpp to remove duplication
  SUBROUTINE ioesmf_insert_data_real( Field, data_esmf_real,        &
                                      ips, ipe, jps, jpe, kps, kpe, &
                                      ims, ime, jms, jme, kms, kme )
@@ -829,14 +790,14 @@ CALL wrf_debug ( 5 , TRIM(msg) )
    INTEGER,               INTENT(IN   ) :: ims, ime, jms, jme, kms, kme
    REAL,                  INTENT(IN   ) :: Field( ims:ime, jms:jme, kms:kme )
    REAL(ESMF_KIND_R4),    INTENT(  OUT) :: data_esmf_real( ips:ipe, jps:jpe )
-   ! $$$ TBD:  Remove this hack once we no longer have to store non-staggered 
-   ! $$$ TBD:  arrays in space dimensioned for staggered arrays.  
+   !TODO:  Remove this hack once we no longer have to store non-staggered 
+   !TODO:  arrays in space dimensioned for staggered arrays.  
    data_esmf_real = 0.0_ESMF_KIND_R4
    data_esmf_real( ips:ipe, jps:jpe ) = Field( ips:ipe, jps:jpe, kms )
  END SUBROUTINE ioesmf_insert_data_real
 
 
- !$$$ remove duplication!
+!TODO:  use cpp to remove duplication
  SUBROUTINE ioesmf_insert_data_int( Field, data_esmf_int,         &
                                     ips, ipe, jps, jpe, kps, kpe, &
                                     ims, ime, jms, jme, kms, kme )
@@ -846,8 +807,8 @@ CALL wrf_debug ( 5 , TRIM(msg) )
    INTEGER,               INTENT(IN   ) :: ims, ime, jms, jme, kms, kme
    INTEGER,               INTENT(IN   ) :: Field( ims:ime, jms:jme, kms:kme )
    INTEGER(ESMF_KIND_I4), INTENT(  OUT) :: data_esmf_int( ips:ipe, jps:jpe )
-   ! $$$ TBD:  Remove this hack once we no longer have to store non-staggered 
-   ! $$$ TBD:  arrays in space dimensioned for staggered arrays.  
+   !TODO:  Remove this hack once we no longer have to store non-staggered 
+   !TODO:  arrays in space dimensioned for staggered arrays.  
    data_esmf_int = 0.0_ESMF_KIND_I4
    data_esmf_int( ips:ipe, jps:jpe ) = Field( ips:ipe, jps:jpe, kms )
  END SUBROUTINE ioesmf_insert_data_int
@@ -912,8 +873,8 @@ SUBROUTINE ext_esmf_inquire_opened ( DataHandle, FileName , FileStatus, Status )
                  okay_to_write( DataHandle )
   CALL wrf_debug ( 5 , TRIM(msg) )
 
-!$$$ need to cache file name and match with FileName argument and return 
-!$$$ FileStatus = WRF_FILE_NOT_OPENED if they do not match
+!TODO:  need to cache file name and match with FileName argument and return 
+!TODO:  FileStatus = WRF_FILE_NOT_OPENED if they do not match
 
   FileStatus = WRF_FILE_NOT_OPENED
   IF ( int_valid_handle( DataHandle ) ) THEN
@@ -978,7 +939,7 @@ SUBROUTINE ext_esmf_inquire_filename ( DataHandle, FileName , FileStatus, Status
                  okay_to_write( DataHandle )
   CALL wrf_debug ( 5 , TRIM(msg) )
 
-!$$$ need to cache file name and return via FileName argument
+!TODO:  need to cache file name and return via FileName argument
 
   FileStatus = WRF_FILE_NOT_OPENED
   IF ( int_valid_handle( DataHandle ) ) THEN
@@ -1042,11 +1003,11 @@ SUBROUTINE ext_esmf_ioclose ( DataHandle, Status )
 ! TODO:  The code below hangs with this error message:  
 ! TODO:  "ext_esmf_ioclose:  ESMF_FieldGetDataPointer( LANDMASK) failed"
 ! TODO:  Fix this so ESMF objects actually get destroyed to avoid memory 
-! TODO:  leaks and other extraordinary nastiness.  
+! TODO:  leaks.  
   CALL wrf_debug( 5, 'ext_esmf_ioclose:  WARNING:  not destroying ESMF objects' )
 #if 0
-  ! $$$ Need to upgrade this to use nested ESMF_States if we want support 
-  ! $$$ more than one auxin and one auxhist stream for ESMF.  
+  !TODO:  Need to upgrade this to use nested ESMF_States if we want support 
+  !TODO:  more than one auxin and one auxhist stream for ESMF.  
   IF ( int_valid_handle (DataHandle) ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       ! Iterate through importState *and* exportState, find each ESMF_Field, 
@@ -1141,7 +1102,7 @@ SUBROUTINE ext_esmf_ioexit( Status )
 ! TODO:  The code below causes ext_ncd_ioclose() to fail in the 
 ! TODO:  SST component for reasons as-yet unknown.  
 ! TODO:  Fix this so ESMF objects actually get destroyed to avoid memory 
-! TODO:  leaks and other extraordinary nastiness.  
+! TODO:  leaks.  
   CALL wrf_debug( 5, 'ext_esmf_ioexit:  WARNING:  not destroying ESMF objects' )
 #if 0
   DO i = 1, int_num_handles

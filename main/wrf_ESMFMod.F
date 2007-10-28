@@ -15,17 +15,18 @@ MODULE module_metadatautils
 ! This module defines component-independent "model metadata" utilities 
 ! used for ESMF coupling.  
 !</DESCRIPTION>
-!$$$ Upgrade this later to support multiple coupling intervals via Alarms 
-!$$$ associated with top-level clock.  Do this by adding TimesAttachedToState() 
-!$$$ inquiry function that will test an ESMF_State to see if the times are 
-!$$$ present via names defined in this module.  Then call this for every 
-!$$$ component and resolve conflicts (somehow) for cases where two components 
-!$$$ define conflicting clocks.  Of course, a component is allowed to not define 
-!$$$ a clock at all too...  
+!TODO:  Upgrade this later to support multiple coupling intervals via Alarms 
+!TODO:  associated with top-level clock.  Do this by adding TimesAttachedToState() 
+!TODO:  inquiry function that will test an ESMF_State to see if the times are 
+!TODO:  present via names defined in this module.  Then call it for every 
+!TODO:  component and resolve conflicts (somehow) for cases where two components 
+!TODO:  define conflicting clocks.  Of course, a component is allowed to not attach 
+!TODO:  times to a state at all, if it can handle any time step.  
 !
-!$$$ Replace meta-data names with "model metadata" conventions (when they exist)
+!TODO:  Replace meta-data names with "model metadata" conventions such as CF 
+!TODO:  (once they exist)
 !
-!$$$ Refactor to remove duplication of hard-coded names!  
+!TODO:  Refactor to remove duplication of hard-coded names.  
 !
    USE ESMF_Mod
 
@@ -201,10 +202,10 @@ CONTAINS
      TYPE(ESMF_Time),         ALLOCATABLE :: stopTimes(:)
      TYPE(ESMF_TimeInterval), ALLOCATABLE :: couplingIntervals(:)
 
-!$$$unfortunately, implementing this is an extraordinary pain in the @ss due 
-!$$$to lack of sane iterators for ESMF_State!!!  @#$%!!  
+! Unfortunately, implementing this is unnecessarily difficult due 
+! to lack of Iterators for ESMF_State.  
 
-     ! Since there are no convenient iterators for ESMF_State (@#$%), 
+     ! Since there are no convenient iterators for ESMF_State, 
      ! write a lot of code...  
      ! Figure out how many items are in the ESMF_State
      CALL ESMF_StateGet(state, itemCount=numItems, rc=rc)
@@ -233,7 +234,7 @@ CONTAINS
                couplingIntervals(numStates) )
      IF ( numStates > 0) THEN
        ! finally, extract nested ESMF_States by name, if there are any
-       ! (should be able to do this by index at least -- @#%$)
+       ! (should be able to do this by index at least!)
        istate = 0
        DO i=1,numItems
          IF ( itemTypes(i) == ESMF_STATEITEM_STATE ) THEN
@@ -294,7 +295,7 @@ CONTAINS
      ENDIF
 
      ! reconcile
-!For now this is very simple.  Fancy it up later.  
+!TODO:  For now this is very simple.  Fancy it up later.  
      DO i = 1, numTimes
        IF ( i == 1 ) THEN
          startTime = startTimes(i)
@@ -318,8 +319,8 @@ CONTAINS
 
 
 
-   !$$$ TBH:  Eliminate this once this information can be derived via other 
-   !$$$ TBH:  means.  
+   !TODO:  Eliminate this once this information can be derived via other 
+   !TODO:  means.  
    SUBROUTINE AttachDecompToState( state,                        & 
                                    ids, ide, jds, jde, kds, kde, &
                                    ims, ime, jms, jme, kms, kme, &
@@ -336,7 +337,7 @@ CONTAINS
      ! big enough to hold the integer values listed above
      INTEGER(ESMF_KIND_I4) :: intvals(19)
      ! big enough to hold the logical values listed above
-     TYPE(ESMF_Logical) :: logvals(4)   ! #$%*ing insane
+     TYPE(ESMF_Logical) :: logvals(4)
 
      ! first the logicals
      ! Usually, when writing an API for a target language, it is considered 
@@ -382,8 +383,8 @@ CONTAINS
 
 
 
-   !$$$ TBH:  Eliminate this once this information can be derived via other 
-   !$$$ TBH:  means.  
+   !TODO:  Eliminate this once this information can be derived via other 
+   !TODO:  means.  
    SUBROUTINE GetDecompFromState( state,                        & 
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
@@ -400,7 +401,7 @@ CONTAINS
      ! big enough to hold the integer values listed above
      INTEGER(ESMF_KIND_I4) :: intvals(19)
      ! big enough to hold the logical values listed above
-     TYPE(ESMF_Logical) :: logvals(4)   ! #$%*ing insane
+     TYPE(ESMF_Logical) :: logvals(4)
 
      ! first the logicals
      CALL ESMF_StateGetAttribute(state, 'DecompositionLogicals', &
@@ -499,6 +500,12 @@ CONTAINS
 !       rc              Return code; equals ESMF_SUCCESS if there are no errors,
 !                       otherwise ESMF_FAILURE.
 !</DESCRIPTION>
+!TODO:  Note that much of the decomposition-related meta-data attached to the 
+!TODO:  exportState are WRF-specific and are only useful if other components 
+!TODO:  want to re-use the WRF IOAPI with the same decomposition as the WRF 
+!TODO:  model.  This is true for the simple WRF+CPL+SST test case, but will 
+!TODO:  not be in general.  Of course other components are free to ignore this 
+!TODO:  information.  
 
      ! Local variables
      TYPE(ESMF_GridComp), POINTER :: p_gcomp
@@ -529,8 +536,8 @@ CONTAINS
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
-     ! Call WRF "init" routine, suppressing call to init_modules(1) since 
-     ! it was already done by the AppDriver.  
+     ! Call WRF "init" routine, which, for a DM_PARALLEL run, will recognize 
+     ! that ESMF has already called MPI_INIT and respond appropriately.  
      CALL wrf_init( no_init1=.TRUE. )
 
      ! For now, use settings from WRF component intialization to set up 
@@ -543,9 +550,9 @@ CONTAINS
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'wrf_component_init1:  ESMF_ClockGet failed' )
      ENDIF
-!     CALL wrf_debug( 100, 'DEBUG wrf_component_init1():  before wrf_findCouplingInterval' )
+     CALL wrf_debug( 500, 'DEBUG wrf_component_init1():  before wrf_findCouplingInterval' )
      CALL wrf_findCouplingInterval( startTime, stopTime, couplingInterval )
-!     CALL wrf_debug( 100, 'DEBUG wrf_component_init1():  after wrf_findCouplingInterval' )
+     CALL wrf_debug( 500, 'DEBUG wrf_component_init1():  after wrf_findCouplingInterval' )
      CALL ESMF_TimeIntervalGet( couplingInterval, TimeString=couplingIntervalString, &
                                 rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
@@ -846,11 +853,12 @@ CONTAINS
 
      ! deduce coupling time-step
      foundcoupling = .FALSE.
-!$$$here...  this bit just finds the FIRST case and extracts coupling interval
-!$$$here...  add error-checking for over-specification
-!$$$here...  add support for multiple coupling intervals later...  
-!$$$here...  add support for coupling that does not begin immediately later...  
-!$$$ get rid of this hideous duplication!!  
+!TODO:  This bit just finds the FIRST case and extracts coupling interval...  
+!TODO:  Add error-checking for over-specification.  
+!TODO:  Add support for multiple coupling intervals later...  
+!TODO:  Add support for coupling that does not begin immediately later...  
+!TODO:  Get rid of duplication once I/O refactoring is finished (and 
+!TODO:  auxio streams can be addressed via index).  
      IF ( .NOT. foundcoupling ) THEN
        CALL nl_get_io_form_auxinput1( 1, io_form )
        IF ( use_package( io_form ) == IO_ESMF ) THEN
@@ -1136,12 +1144,12 @@ CONTAINS
      LOGICAL, INTENT(OUT) :: bdy_mask(4)
 !<DESCRIPTION>
 !     WRF convenience routine for deducing decomposition information.  
-!     Note that domdesc is meaningful only for SPMD serial operation.  
-!     For concurrent operation (SPMD or MPMD), we will need to create a new 
-!     "domdesc" suitable for the task layout of the SST component.  For 
-!     MPMD serial operation, we will need to serialize domdesc and store it 
-!     as metadata within the export state.  Similar arguments apply
-!     to [ij][mp][se] and bdy_mask.
+!TODO:  Note that domdesc is meaningful only for SPMD alternating event loops.  
+!TODO:  For concurrent operation (SPMD or MPMD), we will need to create a new 
+!TODO:  "domdesc" suitable for the task layout of the SST component.  For 
+!TODO:  MPMD alternating event loops, we will need to serialize domdesc and 
+!TODO:  store it as metadata within the export state.  Similar arguments apply
+!TODO:  to [ij][mp][se] and bdy_mask.
 !
 !     The arguments are:
 !       ids, ide, jds, jde, kds, kde    Domain extent.  
@@ -1175,10 +1183,11 @@ CONTAINS
 
 !<DESCRIPTION>
 !     Populate WRF import and export states from Registry-generated code.  
-!     For now, only head_grid can be coupled.  Extend later to include child 
-!     domains, possibly via nested ESMF_State's.  
+!     For now, only head_grid can be coupled.  
 !
 !</DESCRIPTION>
+!TODO:  Extend later to include child 
+!TODO:  domains, possibly via nested ESMF_State's.  
 
      ! Arguments
      INTEGER, INTENT(OUT)       :: ierr

@@ -1,9 +1,9 @@
 
-!$$$here...  TBH:  remove duplication between ext_esmf_read_field and 
-!$$$here...  TBH:  ext_esmf_write_field
+!TODO:  remove duplication between ext_esmf_read_field and 
+!TODO:  ext_esmf_write_field
 
-!$$$here...  TBH:  how to deal with time?  (via current ESMF_Clock)
-!$$$here...  TBH:  to begin, use it as an error check!  
+!TODO:  how to deal with time?  (via current ESMF_Clock)
+!TODO:  to begin, use it as an error check...
 
 
 !--- read_field
@@ -50,14 +50,11 @@ SUBROUTINE ext_esmf_read_field ( DataHandle , DateStr , VarName , Field , FieldT
   ! esmf_counts is redundant.  remove it as soon as ESMF_ArrayCreate no 
   ! longer requires it
   INTEGER :: esmf_counts(esmf_rank)
-  INTEGER :: rc
+  INTEGER :: rc, debug_level
   LOGICAL, EXTERNAL :: has_char
   character*256 mess
-!$$$DEBUG
-INTEGER, SAVE :: numtimes=0   ! track number of calls
-CHARACTER(LEN=256) :: timestamp
-!REAL :: debug_real(MemoryStart(1):MemoryEnd(1),MemoryStart(2):MemoryEnd(2))
-!$$$END DEBUG
+
+  CALL get_wrf_debug_level( debug_level )
 
   IF ( .NOT. int_valid_handle( DataHandle ) ) THEN
     CALL wrf_error_fatal("ext_esmf_read_field: invalid data handle" )
@@ -82,7 +79,7 @@ call wrf_debug( 300, TRIM(mess) )
   ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
     esmf_type = ESMF_DATA_INTEGER
     esmf_kind = ESMF_I4
-!$$$ implement this (below)
+!TODO:  implement this (below)
     CALL wrf_error_fatal( 'ext_esmf_read_field, WRF_INTEGER not yet implemented')
   ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
     CALL wrf_error_fatal( 'ext_esmf_read_field, WRF_LOGICAL not yet supported')
@@ -101,10 +98,10 @@ call wrf_debug( 300, TRIM(mess) )
   kds = DomainStart(3) ; kde = DomainEnd(3)
 
   ! For now, treat all arrays as 2D...  
-!$$$ Eventually, use ../io_netcdf subroutines Transpose() and reorder() 
-!$$$ (and etc.) to handle general array ranks and index orderings.  
-!$$$ Some copies of these exist in ../../frame/module_io.F.  
-!$$$ Then use ESMF_ArrayDataMap class to handle index mapping.  
+!TODO:  Eventually, use ../io_netcdf subroutines Transpose() and reorder() 
+!TODO:  (and etc.) to handle general array ranks and index orderings.  
+!TODO:  Some copies of these exist in ../../frame/module_io.F.  
+!TODO:  Then use ESMF_ArrayDataMap class to handle index mapping.  
   IF ( kms /= kme ) THEN
     CALL wrf_error_fatal( 'ext_esmf_read_field:  rank > 2 not yet supported')
   ENDIF
@@ -112,9 +109,9 @@ call wrf_debug( 300, TRIM(mess) )
 ! The non-staggered variables come in at one-less than
 ! domain dimensions, but io_esmf is currently hacked to use full
 ! domain spec, so adjust if not staggered.
-! $$$ TBD:  Remove EndFull hackery once ESMF can support staggered 
-! $$$ TBD:  grids in regional models.  (This hack works around the current 
-! $$$ TBD:  need to use only larger staggered dimensions for ESMF_Arrays.)  
+!TODO:  Remove EndFull hackery once ESMF can support staggered 
+!TODO:  grids in regional models.  (This hack works around the current 
+!TODO:  need to use only larger staggered dimensions for ESMF_Arrays.)  
   CALL ioesmf_endfullhack( esmf_rank, DomainEnd, PatchEnd, Stagger, &
                            DomainEndFull, PatchEndFull )
   idefull = DomainEndFull(1)
@@ -164,10 +161,10 @@ call wrf_debug( 300, TRIM(mess) )
     ! is no point in using larger "memory" sizes to build the array -- patch 
     ! is fine.  Also, since we must copy anyway, might as well let ESMF manage 
     ! the memory for simplicity.  
-!$$$ Once ESMF can match WRF memory-patch mapping, replace this with a more 
-!$$$ efficient solution that does not require a copy.  
-! $$$ esmf_counts is redundant.  Remove it as soon as ESMF_ArrayCreate no 
-! $$$ longer requires it.  
+!TODO:  Once ESMF can match WRF memory-patch mapping, replace this with a more 
+!TODO:  efficient solution that does not require a copy.  
+!TODO:  esmf_counts is redundant.  Remove it as soon as ESMF_ArrayCreate no 
+!TODO:  longer requires it.  
 !    esmf_counts(1:esmf_rank) = DomainEndFull(1:esmf_rank) - &
 !                               DomainStart(1:esmf_rank) + 1
 !    tmpArray = ESMF_ArrayCreate(arrayspec, counts=esmf_counts,      &
@@ -201,18 +198,16 @@ call wrf_debug( 300, TRIM(mess) )
     ! plans that may make it break in the future.  Build-it, attach-it, 
     ! flush-it will work.  Build-it, attach-it, modify-it, flush-it may not 
     ! always work.  
-    ! "Pie, pie and a fox..."  
     ! Note:  unique Field name is required by ESMF_StateAddField().  
-!$$$here...  use CF "standard_name" once the WRF Registry supports it
+!TODO:  use CF "standard_name" once the WRF Registry supports it
 !    tmpField = ESMF_FieldCreate( grid( DataHandle )%ptr, tmpArray,          &
 !                                 copyflag=ESMF_DATA_REF,                    &
 !                                 horzrelloc=horzrelloc, name=TRIM(VarName), &
 !                                 rc=rc )
 ! END DOESNOTWORK
-    !$$$here...  This is a complete HACK for debugging!!  Need to compute 
-    !$$$here...  horzrelloc from Stagger as above...  
+!TODO:  Compute horzrelloc from Stagger as above once ESMF supports staggering
     horzrelloc=ESMF_CELL_CENTER
-    !$$$ TODO:  Add code for other data types here...  
+!TODO:  Add code for other data types here...  
     ALLOCATE( tmp_esmf_r4_ptr(ips:ipefull,jps:jpefull) )
     CALL wrf_debug ( 100, 'ext_esmf_read_field: calling ESMF_FieldCreate' )
     tmpField = ESMF_FieldCreate(         &
@@ -232,8 +227,8 @@ call wrf_debug( 300, TRIM(mess) )
       LBOUND(tmp_esmf_r4_ptr,2),':',UBOUND(tmp_esmf_r4_ptr,2),')'
     CALL wrf_debug ( 100 , TRIM(mess) )
     ! Add the Field to the import state...  
-!$$$here...  for now, just build ESMF_Fields and stuff them in
-!$$$here...  later, use a single ESMF_Bundle
+!TODO:  for now, just build ESMF_Fields and stuff them in
+!TODO:  later, use a single ESMF_Bundle
     CALL ESMF_StateAddField( importstate, tmpField, rc=rc )
     IF ( rc /= ESMF_SUCCESS ) THEN
       CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateAddField failed" )
@@ -246,11 +241,6 @@ call wrf_debug( 300, TRIM(mess) )
 
 write(mess,*) ' ext_esmf_read_field: ACTUAL READ:  DataHandle = ', DataHandle
 call wrf_debug( 300, TRIM(mess) )
-!$$$DEBUG
-! count calls...
-numtimes = numtimes + 1
-CALL get_current_time_string( timestamp )
-!$$$END DEBUG
 
     ! read:  extract data from the ESMF import state
     ! Grab the current importState
@@ -264,11 +254,12 @@ CALL get_current_time_string( timestamp )
     IF ( rc /= ESMF_SUCCESS ) THEN
       CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateGetField failed" )
     ENDIF
-!$$$DEBUG
+
 CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  calling ESMF_FieldPrint( tmpField ) 1' )
-CALL ESMF_FieldPrint( tmpField, rc=rc )
+IF ( 100 .LE. debug_level ) THEN
+  CALL ESMF_FieldPrint( tmpField, rc=rc )
+ENDIF
 CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  back from ESMF_FieldPrint( tmpField ) 1' )
-!$$$END DEBUG
 
     ! grab a pointer to the import state data and copy data into Field
     IF      ( FieldType .EQ. WRF_REAL ) THEN
@@ -292,54 +283,17 @@ CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  back from ESMF_
           LBOUND(data_esmf_real_ptr,2),':',UBOUND(data_esmf_real_ptr,2)
         CALL wrf_error_fatal ( TRIM(mess) )
       ENDIF
-!$$$DEBUG
+
 WRITE( mess,* ) 'DEBUG:  ext_esmf_read_field:  ips:ipe,jps:jpe = ',  &
   ips,':',ipe,',',jps,':',jpe,                                       &
   ', data_esmf_real_ptr(BOUNDS) = ',                                 &
   LBOUND(data_esmf_real_ptr,1),':',UBOUND(data_esmf_real_ptr,1),',', &
   LBOUND(data_esmf_real_ptr,2),':',UBOUND(data_esmf_real_ptr,2)
 CALL wrf_debug( 300, TRIM(mess) )
-!DO j= jms, jme
-!  DO i= ims, ime
-!    debug_real(i,j) = -(i*1000.0 + j)/100000.0     ! obvious bad value for debugging
-!  ENDDO
-!ENDDO
-!debug_real(ips:ipe,jps:jpe) = data_esmf_real_ptr(ips:ipe,jps:jpe)
-!CALL wrf_debug( 100, 'DEBUG:  ext_esmf_read_field:  writing DEBUG1_WRFcmp_import'//TRIM(VarName)//'_'//TRIM(timestamp) )
-!OPEN( UNIT=985, FILE='DEBUG1_WRFcmp_import'//TRIM(VarName)//'_'//TRIM(timestamp), FORM='formatted' )
-!WRITE (985,'(a,a,i4)') TRIM(VarName),' ',numtimes
-!DO j = jps, jpe
-!  DO i = ips, ipe
-!    WRITE (985,*) '(',i,',',j,'):  ',debug_real(i,j)
-!  ENDDO
-!ENDDO
-!CLOSE (985)
-!$$$END DEBUG
+
       CALL ioesmf_extract_data_real( data_esmf_real_ptr, Field,            &
                                      ips, ipefull, jps, jpefull, kps, kpe, &
                                      ims, ime, jms, jme, kms, kme )
-!$$$DEBUG
-!ict = 0
-!DO j= jms, jme
-!  DO i= ims, ime
-!    ict = ict + 1
-!    IF ( (i<ips) .OR. (i>ipe) .OR. (j<jps) .OR. (j>jpe) ) THEN
-!      debug_real(i,j) = -(i*1000.0 + j)/100000.0     ! obvious bad value for debugging
-!    ELSE
-!      debug_real(i,j) = Field(ict)
-!    ENDIF
-!  ENDDO
-!ENDDO
-!CALL wrf_debug( 100, 'DEBUG:  ext_esmf_read_field:  writing DEBUG1_WRFcmp_read_Field'//TRIM(VarName)//'_'//TRIM(timestamp) )
-!OPEN( UNIT=985, FILE='DEBUG1_WRFcmp_read_Field'//TRIM(VarName)//'_'//TRIM(timestamp), FORM='formatted' )
-!WRITE (985,'(a,a,i4)') TRIM(VarName),' ',numtimes
-!DO j = jps, jpe
-!  DO i = ips, ipe
-!    WRITE (985,*) '(',i,',',j,'):  ',debug_real(i,j)
-!  ENDDO
-!ENDDO
-!CLOSE (985)
-!$$$END DEBUG
     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
       CALL ESMF_FieldGetDataPointer( tmpField, data_esmf_int_ptr, &
                                      ESMF_DATA_REF, rc=rc )
@@ -370,11 +324,11 @@ call wrf_debug( 300, TRIM(mess) )
 
   ENDIF
 
-!$$$DEBUG
 CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  calling ESMF_FieldPrint( tmpField ) 2' )
-CALL ESMF_FieldPrint( tmpField, rc=rc )
+IF ( 100 .LE. debug_level ) THEN
+  CALL ESMF_FieldPrint( tmpField, rc=rc )
+ENDIF
 CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  back from ESMF_FieldPrint( tmpField ) 2' )
-!$$$END DEBUG
 
   Status = 0
 

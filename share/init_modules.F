@@ -62,6 +62,7 @@ IF ( phase == 1 ) THEN
  CALL init_module_ext_internal  !! must be called before quilt
 #endif
 #ifdef DM_PARALLEL
+ CALL split_communicator
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
  CALL init_module_dm
 #endif

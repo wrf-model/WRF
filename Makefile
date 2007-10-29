@@ -43,7 +43,7 @@ configcheck:
 framework_only : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
-	/bin/rm -f main/libwrflib.a
+	/bin/rm -f main/libwrflib.a main/libwrflib.lib
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
 

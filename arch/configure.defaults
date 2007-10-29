@@ -7362,5 +7362,158 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
+
+###########################################################
+#ARCH    PC Interix x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows ARW and NMM nesting, No periodic LBCs)
+#        Note that for 5.1.x comment out -Mpia=fast
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       pgf90.exe
+LD              =       $(FC)
+CC              =       pgcc.exe
+CC              =       cc
+SCC		=	$(CC)
+SFC             =       $(FC)
+
+MPdir           =       /dev/fs/C/Program Files/Microsoft Compute Cluster Pack
+MPinc           =       -I'$(MPdir)'/Include
+MSMPdir         =       'C:\Program Files\Microsoft Compute Cluster Pack'
+MSMPinc         =       /I'C:\Program Files\Microsoft Compute Cluster Pack\Include'
+MSMPlib         =       'C:\Program Files\Microsoft Compute Cluster Pack\Lib\AMD64\msmpi.lib'
+
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+PROMOTION	=	-r$(RWORDSIZE) -i4
+
+CFLAGS          =       -DLANDREAD_STUB -DMEMCPY_FOR_BCOPY -DMS_SUA -DDM_PARALLEL \
+                        -I../external/RSL_LITE $(MPinc) #-X /MD
+FCOPTIM         =       -fastsse #-Mipa=fast
+FCDEBUG		=	#-g
+#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(MPinc)
+
+ARCHFLAGS       =       $(COREDEFS) \
+                        -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+                        -DNETCDF -DINTIO \
+                        -DNO_NAMELIST_PRINT  \
+                        -DLIMIT_ARGS -DLANDREAD_STUB -DNMM_NEST=$(WRF_NMM_NEST) -DMEMCPY_FOR_BCOPY
+
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS  =       
+ESMF_IO_LIB     =       ESMFIOLIB
+ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
+INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../external -I../frame -I../share -I../phys -I../inc -I../chem
+PERL            =       perl
+REGISTRY        =       Registry
+
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+			../external/io_int/libwrfio_int.a \
+                        ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        ../external/esmf_time_f90/libesmf_time.a \
+                        ../external/RSL_LITE/librsl_lite.a $(MSMPlib) \
+                        "c:\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib\AMD64\bufferoverflowu.lib"
+
+LDFLAGS         =       -byteswapio CONFIGURE_LDFLAGS
+ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL_LITE -C -P $(ENVCOMPDEFS) $(POUND_DEF)
+AR              =       ar r
+M4              =       NA
+RANLIB          =       ranlib
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+LIBWRFLIB       =       libwrflib.a
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+	  make LIBS="libwrfio_nf.a 'CONFIGURE_NETCDF_PATH' 'c:\Program Files\Microsoft Platform SDK\Lib\AMD64\bufferoverflowu.lib'" \
+              NETCDFPATH=CONFIGURE_NETCDF_PATH \
+              RANLIB="$(RANLIB)" CPP="$(CPP) -DMS_SUA" \
+              CPP1="$(CPP) -DMS_SUA"  \
+              FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
+
+wrfio_grib_share :
+
+wrfio_grib1 :
+
+wrfio_grib2 :
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all )
+
+esmf_time : 
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; \
+          /bin/sed -e '/MPI_ADDRESS_KIND=4/d' -e '/DEC\$$/d' '$(MPdir)'/Include/mpif.h > mpif.h ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_mm5.o : module_io_mm5.F
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F
+module_comm_dm.o : module_comm_dm.F
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
+
+solve_interface.o                                              \
+shift_domain_em.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_configure.o                                             \
+module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -o $*.o -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
+module_io.o : module_io.F
+module_dm.o : module_dm.F
+
+module_io.o module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	/bin/sed -e '/MPI_ADDRESS_KIND=4/d' -e '/DEC\$$/d' '$(MPdir)'/Include/mpif.h > mpif.h
+	$(FC) -o $*.o -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
+
 ##################################################################
 #ARCH  NULL

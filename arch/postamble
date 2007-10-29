@@ -29,7 +29,7 @@ wrf_ioapi_includes :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
+	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
 #PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
 #PGI	fi
@@ -45,7 +45,7 @@ wrf_ioapi_includes :
 
 .f90.o:
 	$(RM) $@
-	$(FC) -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90
+	$(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
 #PGI	sleep 10 ; $(FC) -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
 #PGI	fi
@@ -55,5 +55,5 @@ wrf_ioapi_includes :
 
 .c.o:
 	$(RM) $@
-	$(CC) -c $(CFLAGS) $*.c
+	$(CC) -o $@ -c $(CFLAGS) $*.c
 

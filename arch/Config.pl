@@ -167,7 +167,11 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
-	$_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L../external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib -lnetcdf: ;
+        if ( $sw_os == Interix ) {
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:../external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib -lnetcdf: ;
+        } else {
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L../external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib -lnetcdf: ;
+        }
 	 }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_NF//g ;
@@ -178,7 +182,11 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_pnetcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_PNF/wrfio_pnf/g ;
 	$_ =~ s:CONFIGURE_PNETCDF_FLAG:-DPNETCDF: ;
-	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:-L../external/io_pnetcdf -lwrfio_pnf -L$sw_pnetcdf_path/lib -lpnetcdf: ;
+        if ( $sw_os == Interix ) {
+	  $_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:../external/io_pnetcdf/libwrfio_pnf.a -L$sw_pnetcdf_path/lib -lpnetcdf: ;
+        } else {
+	  $_ =~ s:CONFIGURE_PNETCDF_LIB_PATH:-L../external/io_pnetcdf -lwrfio_pnf -L$sw_pnetcdf_path/lib -lpnetcdf: ;
+        }
 	 }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_PNF//g ;
@@ -220,8 +228,13 @@ while ( <CONFIGURE_DEFAULTS> )
       }
     else
       {
-      $_ =~ s:ESMFIOLIB:-L../external/esmf_time_f90 -lesmf_time:g ;
-      $_ =~ s:ESMFIOEXTLIB:-L../../external/esmf_time_f90 -lesmf_time:g ;
+        if ( $sw_os == Interix ) {
+           $_ =~ s:ESMFIOLIB:../external/esmf_time_f90/libesmf_time.a:g ;
+           $_ =~ s:ESMFIOEXTLIB:-L../../external/esmf_time_f90/libesmf_time.a:g ;
+        } else {
+           $_ =~ s:ESMFIOLIB:-L../external/esmf_time_f90 -lesmf_time:g ;
+           $_ =~ s:ESMFIOEXTLIB:-L../../external/esmf_time_f90 -lesmf_time:g ;
+        }
       }
 
     @machopts = ( @machopts, $_ ) ;

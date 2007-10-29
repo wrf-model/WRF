@@ -33,7 +33,9 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
     {
       strcpy( tmp2 , t1 ) ;
       if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
-       { fprintf(stderr,"unparseable description for halo %s\n", p->name ) ; continue ; }
+       { 
+         fprintf(stderr,"unparseable description for halo %s\n", p->name ) ; continue ;
+       }
       t2 = strtok_rentr(NULL,",", &pos2) ;
       while ( t2 != NULL )
       {

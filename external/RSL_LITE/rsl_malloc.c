@@ -65,7 +65,9 @@
 # define BASE_FREE     free
 #endif
 
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include <stdlib.h>
 #ifndef MACOS
 # include <malloc.h>
@@ -104,7 +106,7 @@ int bbb ;
 
 static char zero_length_storage[] = "" ;
 
-#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(crayx1) || defined(MACOS))
+#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(crayx1) || defined(MACOS) || defined(MS_SUA) )
 static struct mallinfo minf ;
 #endif
 
@@ -158,7 +160,7 @@ EF_PROTECT_FREE = 1 ;
 "rsl_malloc failed allocating %d bytes, called %s, line %d, try %d\n",
        s,f,l,tries) ;
        perror(mess) ;
-#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(crayx1) || defined(MACOS))
+#if !(defined(vpp) || defined(vpp2) || defined(SUN) || defined(XT3_Catamount) || defined(crayx1) || defined(MACOS) || defined(MS_SUA) )
        minf = mallinfo() ;
        fprintf(stderr,"mallinfo: arena %d\n",minf.arena)  ;
        fprintf(stderr,"mallinfo: ordblks %d\n",minf.ordblks)  ;
@@ -182,7 +184,9 @@ EF_PROTECT_FREE = 1 ;
        if ( tries >= 2 )
        { 
 	 system("lsps -a") ;
+#ifndef MS_SUA
 	 sleep(1) ;
+#endif
        }
        if ( tries >= 3 ) 
        {
@@ -223,7 +227,9 @@ if ( bbb < MAXSTUG ) {
    if ( nouty > maxstug ) maxstug = nouty ;
    if ( outy > maxouty ) maxouty = outy ;
 }else{
+#ifndef MS_SUA
 fprintf(stderr,"stug full %d\n",bbb) ;
+#endif
 RSL_FATAL(2) ;
 }
 #endif
@@ -256,4 +262,12 @@ for ( bbb = 0 ; bbb < MAXSTUG ; bbb++ )
    p = NULL ;
 }
 
+#ifdef MS_SUA
+bzero( char *buf, int l )
+{
+   int i ;
+   char * p ;
+   for ( p = buf, i=0 ; i < l ; i++ ) *p = '\0' ;
+}
+#endif
 

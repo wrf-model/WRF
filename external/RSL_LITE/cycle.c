@@ -1,4 +1,6 @@
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include <fcntl.h>
 
 #define STANDARD_ERROR 2

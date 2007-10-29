@@ -1,4 +1,6 @@
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include <fcntl.h>
 
 #define STANDARD_ERROR 2
@@ -319,7 +321,9 @@ RSL_LITE_SWAP ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
     }
   }
 #else 
+# ifndef MS_SUA
 fprintf(stderr,"RSL_LITE_SWAP disabled\n") ;
+# endif
 #endif
   for ( i = 0 ; i < np ; i++ ) {  x_curs[i] = 0 ;  }
 }

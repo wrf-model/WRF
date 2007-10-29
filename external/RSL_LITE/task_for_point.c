@@ -1,4 +1,6 @@
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include "rsl_lite.h"
 
 /* updated 20051021, new algorithm distributes the remainder, if any, at either ends of the dimension

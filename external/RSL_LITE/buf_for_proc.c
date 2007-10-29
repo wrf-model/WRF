@@ -54,7 +54,9 @@
 
 ***************************************************************************/
 
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include <stdlib.h>
 #include "rsl_lite.h"
 #ifndef STUBMPI
@@ -156,7 +158,9 @@ show_tot_size()
     acc += buftab[0][P].size ;
     acc += buftab[1][P].size ;
   }
+#ifndef MS_SUA
   fprintf(stderr,"Total bytes allocated for buffers: %d\n", acc ) ;
+#endif
 }
 
 int

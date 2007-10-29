@@ -57,7 +57,9 @@
 
 #define MOD_9707
 
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include <stdlib.h>
 #ifndef STUBMPI
 #  include "mpi.h"

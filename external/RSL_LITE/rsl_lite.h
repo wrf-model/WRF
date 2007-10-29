@@ -132,7 +132,11 @@ typedef int * int_p ;
 #define INDEX_3(A,B,NB,C,NC)  INDEX_2( (A), INDEX_2( (B), (C), (NC) ), (NB)*(NC) )
 
 #define RSL_FATAL(N)     MPI_Abort(MPI_COMM_WORLD, 9)
-#define RSL_TEST_ERR(T,M) {if(T){fprintf(stderr,"rsl_lite error (\"%s\":%d) %s\n",__FILE__,__LINE__,M);RSL_FATAL(5);}}
+#ifndef MS_SUA
+# define RSL_TEST_ERR(T,M) {if(T){fprintf(stderr,"rsl_lite error (\"%s\":%d) %s\n",__FILE__,__LINE__,M);RSL_FATAL(5);}}
+#else
+# define RSL_TEST_ERR(T,M) {if(T){RSL_FATAL(5);}}
+#endif
 
 #ifndef MPI2_SUPPORT
 typedef int MPI_Fint;

@@ -266,7 +266,7 @@ else
   type uname > /dev/null
   if [ $? -eq 0 ] ; then
     os=`uname`
-    if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" -o "$os" = "HP-UX"  -o "$os" = "Darwin" ] ; then
+    if [ "$os" = "AIX" -o "$os" = "IRIX" -o "$os" = "IRIX64" -o "$os" = "SunOS" -o "$os" = "HP-UX"  -o "$os" = "Darwin" -o "$os" = "Interix" ] ; then
       mach="ARCH"
     else
       if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o "$os" = "CYGWIN_NT-5.1" ] ; then

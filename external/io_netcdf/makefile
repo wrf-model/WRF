@@ -14,17 +14,21 @@ AR      = ar
 all : libwrfio_nf.a 
 
 libwrfio_nf.a:		$(OBJS) $(CODE)
-			/bin/rm -f libwrfio_nf.a
-			$(AR) cr libwrfio_nf.a $(OBJSL)
-			$(RANLIB) libwrfio_nf.a
+			/bin/rm -f $@
+			if [ "$(AR)" != "lib.exe" ] ; then \
+                          $(AR) cr libwrfio_nf.a $(OBJSL) ; \
+                        else \
+                          $(AR) /out:libwrfio_nf.a $(OBJSL) ; \
+                        fi
+			$(RANLIB) $@
 
 wrf_io.o:               wrf_io.F90 $(CODE)
 			$(CPP1) -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f
-			$(FC) $(FFLAGS) -c wrf_io.f
+			$(FC) -o $@ $(FFLAGS) -c wrf_io.f
 
 module_wrfsi_static.o:  module_wrfsi_static.F90
 			$(CPP1) -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
-			$(FC) $(FFLAGS) -c module_wrfsi_static.f
+			$(FC) -o $@ $(FFLAGS) -c module_wrfsi_static.f
 
 diffwrf:                diffwrf.F90
 			$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share diffwrf.F90 > diffwrf.f
@@ -40,8 +44,8 @@ diffwrf:                diffwrf.F90
 
 field_routines.o:	field_routines.F90
 			$(CPP1) -I../ioapi_share field_routines.F90 > field_routines.f
-			$(FC) $(FFLAGS) -c field_routines.f
+			$(FC) -o $@ $(FFLAGS) -c field_routines.f
 
 superclean:
-			/bin/rm -f *.f *.o testWRFWrite testWRFRead \
+			/bin/rm -f *.f *.o *.obj *.i testWRFWrite testWRFRead \
 			*.mod libwrfio_nf.a diffwrf

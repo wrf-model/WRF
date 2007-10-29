@@ -28,7 +28,11 @@ tests: Test1_ESMF.exe Test1_WRFU.exe
 
 libesmf_time.a : $(OBJS)
 	$(RM) libesmf_time.a
-	$(AR) ru libesmf_time.a $(OBJS)
+	if [ "$(AR)" != "lib.exe" ] ; then \
+          $(AR) ru libesmf_time.a $(OBJS) ; \
+        else \
+          $(AR) /out:libesmf_time.a $(OBJS) ; \
+        fi
 	$(RANLIB) libesmf_time.a
 
 Test1_ESMF.f : Test1.F90
@@ -52,7 +56,7 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 	$(SED_FTN) $*.F90 > $*.b
 	$(CPP) -C -P -I. $*.b > $*.f
 	$(RM) $*.b
-	$(FC) -c $*.f
+	$(FC) -o $@ -c $*.f
 
 .F90.f :
 	$(RM) $@
@@ -68,7 +72,7 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 clean : testclean
 
 testclean: 
-	$(RM) *.b *.f *.o libesmf_time.a *.mod Test1*.exe
+	$(RM) *.b *.f *.o *.obj *.i libesmf_time.a *.mod Test1*.exe
 
 superclean: testclean
 	$(RM) Test1*.out make_tests.out

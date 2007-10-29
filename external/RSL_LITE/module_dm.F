@@ -1045,6 +1045,60 @@ write(0,*)'reordering mesh'
 #endif
    END SUBROUTINE wrf_dm_minval_integer     ! End of gopal's doing
 
+   SUBROUTINE split_communicator
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      LOGICAL mpi_inited
+      INTEGER mpi_comm_here, mpi_comm_local, comdup,  mytask, ntasks, ierr, io_status
+      INTEGER i, j
+      INTEGER, ALLOCATABLE :: icolor(:)
+      INTEGER tasks_per_split
+      NAMELIST /namelist_split/ tasks_per_split
+
+      CALL MPI_INITIALIZED( mpi_inited, ierr )
+      IF ( .NOT. mpi_inited ) THEN
+        CALL mpi_init ( ierr )
+        CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
+        CALL wrf_termio_dup
+      ENDIF
+      CALL wrf_get_dm_communicator( mpi_comm_here )
+
+      CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
+      CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
+
+      IF ( mytask .EQ. 0 ) THEN
+        OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
+        tasks_per_split = ntasks
+        READ ( 27 , NML = namelist_split, IOSTAT=io_status )
+        CLOSE ( 27 )
+      ENDIF
+      CALL mpi_bcast( io_status, 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      IF ( io_status .NE. 0 ) THEN
+          RETURN ! just ignore and return
+      ENDIF
+      CALL mpi_bcast( tasks_per_split, 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      IF ( tasks_per_split .GT. ntasks .OR. tasks_per_split .LE. 0 ) RETURN
+      IF ( mod( ntasks, tasks_per_split ) .NE. 0 ) THEN
+        CALL wrf_message( 'WARNING: tasks_per_split does not evenly divide ntasks. Some tasks will be wasted.' )
+      ENDIF
+
+      ALLOCATE( icolor(ntasks) )
+      j = 0
+      DO WHILE ( j .LT. ntasks / tasks_per_split ) 
+        DO i = 1, tasks_per_split
+          icolor( i + j * tasks_per_split ) = j 
+        ENDDO
+        j = j + 1
+      ENDDO
+
+      CALL MPI_Comm_dup(mpi_comm_here,comdup,ierr)
+      CALL MPI_Comm_split(comdup,icolor(mytask+1),mytask,mpi_comm_local,ierr)
+      CALL wrf_set_dm_communicator( mpi_comm_local )
+
+      DEALLOCATE( icolor )
+
+   END SUBROUTINE split_communicator
+
    SUBROUTINE init_module_dm
       IMPLICIT NONE
       INTEGER mpi_comm_local, ierr, mytask, nproc

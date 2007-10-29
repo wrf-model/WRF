@@ -19,7 +19,7 @@ libwrfio_int.a:		$(OBJS)
 
 io_int.o:               io_int.F90 module_internal_header_util.o
 			$(CPP1)  -I../ioapi_share io_int.F90 | $(M4) - > io_int.f
-			$(FC) $(FFLAGS) -I. -I../ioapi_share -c io_int.f
+			$(FC) $(FFLAGS) -I. -I../ioapi_share -o $@ -c io_int.f
 			/bin/rm -f module_internal_header_util.o
 			/bin/rm -f intio_tags.h
 
@@ -29,7 +29,7 @@ module_internal_header_util.o :
 			cp ../../inc/intio_tags.h intio_tags.h
 			/bin/rm -f module_internal_header_util.f
 			$(CPP1)  -I../ioapi_share module_internal_header_util.b > module_internal_header_util.f
-			$(FC) $(FFLAGS) -I. -c module_internal_header_util.f
+			$(FC) $(FFLAGS) -I. -o $@ -c module_internal_header_util.f
 			/bin/rm -f module_internal_header_util.b
 
 diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
@@ -50,4 +50,4 @@ diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_ma
 			@echo "Diffwrf io_int will be built later on in this compile. No need to rerun compile. "
 
 superclean:
-			/bin/rm -f *.f *.o *.mod libwrfio_int.a diffwrf 
+			/bin/rm -f *.f *.o *.obj *.i *.mod libwrfio_int.a diffwrf 

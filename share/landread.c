@@ -11,7 +11,9 @@
 #endif
 
 #ifdef LANDREAD_STUB
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 
 int GET_TERRAIN (        float *adx,
                          float *xlat,
@@ -24,10 +26,12 @@ int GET_TERRAIN (        float *adx,
                          int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
 
 {
+#ifndef MS_SUA
  fprintf(stderr, "***************************************************************\n" ) ;
  fprintf(stderr, "Access to RSMAS Topo Ingest Code is by Special Arrangement Only\n" ) ;
  fprintf(stderr, "in WRF 2.1 .  Please contact wrfhelp@ucar.edu .                \n" ) ;
  fprintf(stderr, "***************************************************************\n" ) ;
+#endif
  return(0) ;
 }
 
@@ -36,7 +40,9 @@ int GET_TERRAIN (        float *adx,
 #ifdef FSEEKO_OK
 #  define _FILE_OFFSET_BITS 64
 #endif
-#include <stdio.h>
+#ifndef MS_SUA
+# include <stdio.h>
+#endif
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <math.h>
@@ -356,7 +362,9 @@ int tsInitTileSet(const char *fn)
 
   /* fp = (FILE *) fopen64(fn, "r"); */
   if (( fp = (FILE *) fopen(fn, "r")) == NULL ) {
+#ifndef MS_SUA
     fprintf(stderr,"tsInitTileSet: cannot open %s\n",fn) ;
+#endif
     exit(2) ;
   }
   xdrs = (XDR *) malloc(sizeof(XDR));

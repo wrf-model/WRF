@@ -98,9 +98,9 @@ TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS)
 		if [ $(WRF_NMM_CORE) -eq 1 ] ; then \
                   $(MAKE) nmm_contrib                                      ; \
-                  $(AR) ../main/libwrflib.a $(MODULES) $(OBJS) $(NMM_OBJS) $(NMM_MODULES) ; \
+                  $(AR) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NMM_OBJS) $(NMM_MODULES) ; \
                   else                                                         \
-                  $(AR) ../main/libwrflib.a $(MODULES) $(OBJS)             ; \
+                  $(AR) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)             ; \
                 fi
 
 include ../configure.wrf

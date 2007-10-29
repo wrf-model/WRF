@@ -99,6 +99,7 @@ CONTAINS
       !  Local data
 
       INTEGER :: error
+      INTEGER :: im, num_3d_m, num_3d_s
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2
       REAL    :: qvf , qvf1 , qvf2 , pd_surf
@@ -548,14 +549,14 @@ endif
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
-#if 0
-         !  Uncomment the Registry entries to activate these.  This adds
-         !  noticeably to the allocated space for the model.
+
+#ifdef RUC_CLOUD
+         !  Add -DRUC_CLOUD to ARCHFLAGS in configure.wrf file to activate the following code
 
          IF ( flag_qr .EQ. 1 ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QR ) THEN
-                  CALL vert_interp ( qr_gc , grid%em_pd_gc , moist(:,:,:,P_QR) , grid%em_pb , &
+                  CALL vert_interp ( grid%em_qr_gc , grid%em_pd_gc , moist(:,:,:,P_QR) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
@@ -569,7 +570,7 @@ endif
          IF ( flag_qc .EQ. 1 ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QC ) THEN
-                  CALL vert_interp ( qc_gc , grid%em_pd_gc , moist(:,:,:,P_QC) , grid%em_pb , &
+                  CALL vert_interp ( grid%em_qc_gc , grid%em_pd_gc , moist(:,:,:,P_QC) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
@@ -583,7 +584,7 @@ endif
          IF ( flag_qi .EQ. 1 ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QI ) THEN
-                  CALL vert_interp ( qi_gc , grid%em_pd_gc , moist(:,:,:,P_QI) , grid%em_pb , &
+                  CALL vert_interp ( grid%em_qi_gc , grid%em_pd_gc , moist(:,:,:,P_QI) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
@@ -597,7 +598,7 @@ endif
          IF ( flag_qs .EQ. 1 ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QS ) THEN
-                  CALL vert_interp ( qs_gc , grid%em_pd_gc , moist(:,:,:,P_QS) , grid%em_pb , &
+                  CALL vert_interp ( grid%em_qs_gc , grid%em_pd_gc , moist(:,:,:,P_QS) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
                                      zap_close_levels , force_sfc_in_vinterp , &
@@ -611,9 +612,24 @@ endif
          IF ( flag_qg .EQ. 1 ) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_m
                IF ( im .EQ. P_QG ) THEN
-                  CALL vert_interp ( qg_gc , grid%em_pd_gc , moist(:,:,:,P_QG) , grid%em_pb , &
+                  CALL vert_interp ( grid%em_qg_gc , grid%em_pd_gc , moist(:,:,:,P_QG) , grid%em_pb , &
                                      num_metgrid_levels , 'Q' , &
                                      interp_type , lagrange_order , lowest_lev_from_sfc , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         END IF
+
+         IF ( flag_qni .EQ. 1 ) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNI ) THEN
+                  CALL vert_interp ( grid%em_qni_gc , grid%em_pd_gc , scalar(:,:,:,P_QNI) , grid%em_pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &

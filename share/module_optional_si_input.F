@@ -2,7 +2,8 @@ MODULE module_optional_si_input
 
    INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt
 
-   INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , flag_qg
+   INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
+              flag_qg       , flag_qni
 
    INTEGER :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
               flag_sm000010 , flag_sm010040 , flag_sm040100 , flag_sm100200 , flag_sm010200 , &

@@ -109,11 +109,14 @@ state    real   psfc_gc        ij       dyn_em      1        -      -  "PSFC_GC"
 state    real   intq_gc        ij       dyn_em      1        -     -   "INTQ"  "integrated mixing ratio" "Pa"
 state    real   pdhs           ij       dyn_em      1        -     -   "PDHS"  "hydrostatic dry surface pressure" "Pa"
 state    real   qv_gc          igj      dyn_em      1        Z     i1  "QV"     "mixing ratio"        "kg kg-1"
-#state    real   qr_gc          igj      dyn_em      1        Z     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
-#state    real   qc_gc          igj      dyn_em      1        Z     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
-#state    real   qs_gc          igj      dyn_em      1        Z     i1  "QS"    "snow mixing ratio"   "kg kg-1"
-#state    real   qi_gc          igj      dyn_em      1        Z     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
-#state    real   qg_gc          igj      dyn_em      1        Z     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
+ifdef RUC_CLOUD
+state    real   qr_gc          igj      dyn_em      1        Z     i1  "QR"    "rain water mixing ratio"   "kg kg-1"
+state    real   qc_gc          igj      dyn_em      1        Z     i1  "QC"    "cloud water mixing ratio"   "kg kg-1"
+state    real   qs_gc          igj      dyn_em      1        Z     i1  "QS"    "snow mixing ratio"   "kg kg-1"
+state    real   qi_gc          igj      dyn_em      1        Z     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
+state    real   qg_gc          igj      dyn_em      1        Z     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
+state    real   qni_gc         igj      dyn_em      1        Z     i1  "QNI"   "ice no concentration"   "m-3"
+endif
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               

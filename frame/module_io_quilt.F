@@ -277,8 +277,8 @@ MODULE module_wrf_quilt
       ENDIF
       IF ( nio .EQ. 0 ) THEN
         quilting_enabled = .FALSE.
-        mpi_comm_local = MPI_COMM_WORLD
-        mpi_comm_io_groups = MPI_COMM_WORLD
+        mpi_comm_local = mpi_comm_wrld
+        mpi_comm_io_groups = mpi_comm_wrld
         RETURN
       ENDIF
       quilting_enabled = .TRUE.
@@ -1377,6 +1377,7 @@ okay_to_w = .false.
       INTEGER i
       NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups
       INTEGER ntasks, mytask, ierr, io_status
+      INTEGER mpi_comm_here
       LOGICAL mpi_inited
       LOGICAL esmf_coupling
 
@@ -1398,20 +1399,15 @@ okay_to_w = .false.
       ENDDO
 
       CALL MPI_INITIALIZED( mpi_inited, ierr )
-      ! Note that quilt may not be used with ESMF coupling yet.  
-      IF ( mpi_inited ) THEN
-        IF ( .NOT. esmf_coupling ) THEN
-          CALL wrf_error_fatal("frame/module_io_quilt.F: quilt initialization "// &
-                               "must be called before MPI_Init") ;
-        ENDIF
-      ELSE
+      IF ( .NOT. mpi_inited ) THEN
         CALL mpi_init ( ierr )
+        CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
+        CALL wrf_termio_dup
       ENDIF
+      CALL wrf_get_dm_communicator( mpi_comm_here )
 
-      CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
-      CALL wrf_termio_dup
-      CALL MPI_Comm_rank ( MPI_COMM_WORLD, mytask, ierr ) ;
-      CALL mpi_x_comm_size ( MPI_COMM_WORLD, ntasks, ierr ) ;
+      CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
+      CALL mpi_x_comm_size ( mpi_comm_here, ntasks, ierr ) ;
 
       IF ( mytask .EQ. 0 ) THEN
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
@@ -1429,15 +1425,15 @@ okay_to_w = .false.
           ENDIF
         ENDIF
       ENDIF
-      CALL mpi_bcast( nio_tasks_per_group  , 1 , MPI_INTEGER , 0 , MPI_COMM_WORLD, ierr )
-      CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , MPI_COMM_WORLD, ierr )
+      CALL mpi_bcast( nio_tasks_per_group  , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
 
       CALL setup_quilt_servers( nio_tasks_per_group,            &
                                 mytask,               &
                                 ntasks,               &
                                 nio_groups,           &
                                 nio_tasks_in_group,   &
-                                MPI_COMM_WORLD,       &
+                                mpi_comm_here,       &
                                 mpi_comm_local,       &
                                 mpi_comm_io_groups)
 

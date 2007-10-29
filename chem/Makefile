@@ -75,7 +75,7 @@ OBJS    =                           \
 LIBTARGET    =  chemics
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS)
-		$(AR) ../main/libwrflib.a $(MODULES) $(OBJS)
+		$(AR) $(LIBWRFLIB) $(MODULES) $(OBJS)
 
 include ../configure.wrf
 
@@ -201,12 +201,12 @@ emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o mo
 dry_dep_driver.o: module_data_radm2.o module_dep_simple.o module_aerosols_sorgam.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 
 convert_bioemiss : convert_bioemiss.o
-	$(RANLIB) ../main/libwrflib.a
-	$(FC) -o convert_bioemiss.exe $(LDFLAGS) convert_bioemiss.o ../main/libwrflib.a $(LIB)
+	$(RANLIB) ../main/$(LIBWRFLIB)
+	$(FC) -o convert_bioemiss.exe $(LDFLAGS) convert_bioemiss.o ../main/$(LIBWRFLIB) $(LIB)
 
 convert_emiss : convert_emiss.o
-	$(RANLIB) ../main/libwrflib.a
-	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o ../main/libwrflib.a $(LIB)
+	$(RANLIB) ../main/$(LIBWRFLIB)
+	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o ../main/$(LIBWRFLIB) $(LIB)
 convert_fireemiss : convert_fireemiss.o
-	$(RANLIB) ../main/libwrflib.a
-	$(FC) -o convert_fireemiss.exe $(LDFLAGS) convert_fireemiss.o ../main/libwrflib.a $(LIB)
+	$(RANLIB) ../main/$(LIBWRFLIB)
+	$(FC) -o convert_fireemiss.exe $(LDFLAGS) convert_fireemiss.o ../main/$(LIBWRFLIB) $(LIB)

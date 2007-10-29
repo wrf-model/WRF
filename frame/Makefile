@@ -38,8 +38,8 @@ include ../configure.wrf
 LIBTARGET    =  framework
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL)
-		$(AR) ../main/libwrflib.a $(MODULES) $(OBJS)
-		$(RANLIB) ../main/libwrflib.a
+		$(AR) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
+		$(RANLIB) ../main/$(LIBWRFLIB)
 
 
 wrf_num_bytes_between.o :
@@ -57,8 +57,11 @@ module_state_description.F : ../Registry/$(REGISTRY)
           
 
 md_calls.inc : md_calls.m4
-	$(M4) md_calls.m4 > md_calls.inc
-
+	if [ $(M4) -eq NA ] ; then \
+	  /bin/cp ../arch/md_calls.inc . ; \
+	else \
+	  $(M4) md_calls.m4 > md_calls.inc ; \
+	fi
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 

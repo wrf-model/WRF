@@ -1,5 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef MS_SUA
+# include <stdio.h>
+# include <stdlib.h>
+#endif
 #include <string.h>
 
 #ifndef CRAY
@@ -39,6 +41,10 @@
 #      define INSPECT_HEADER inspect_header_
 #   endif
 # endif
+#endif
+
+#ifdef MEMCPY_FOR_BCOPY
+# define bcopy(A,B,C) memcpy((B),(A),(C))
 #endif
 
 /*    CALL int_pack_data ( hdrbuf , hdrbufsiz * inttypesize , int_local_output_buffer, int_local_output_cursor ) */
@@ -171,7 +177,9 @@ STORE_PIECE_OF_FIELD_C ( char * buf , int varname[], int * chunksize, int *retva
   found = -1 ;
   for ( i = 0 ; i < numflds ; i++ ) { if ( !strcmp( fld_name[i], vname ) ) { found = i ; break ; } }
   if ( found == -1 ) { 
+#ifndef MS_SUA
     fprintf(stderr,"frame/pack_utils.c: field (%s) not found; was not set up with add_to_bufsize_for_field\n",vname ) ;
+#endif
     *retval = 1 ;
     return(0)  ;
   }
@@ -182,8 +190,10 @@ STORE_PIECE_OF_FIELD_C ( char * buf , int varname[], int * chunksize, int *retva
   }
 
   if ( fld_curs[found] + *chunksize > fld_bufsize[found] ) {
+#ifndef MS_SUA
     fprintf(stderr,
 "frame/pack_utils.c: %s would overwrite %d + %d  > %d [%d]\n",vname, fld_curs[found], *chunksize, fld_bufsize[found], found ) ;
+#endif
     *retval = 1 ;
     return(0)  ;
   }
@@ -202,9 +212,11 @@ RETRIEVE_PIECES_OF_FIELD_C ( char * buf , int varname[], int * insize, int * out
   char vname[256] ;
 
   if ( fld < numflds ) {
+#ifndef MS_SUA
     if ( fld_curs[fld] > *insize ) {
       fprintf(stderr,"retrieve: fld_curs[%d] (%d) > *insize (%d)\n",fld,fld_curs[fld], *insize ) ;
     }
+#endif
     *outsize = ( fld_curs[fld] <= *insize ) ? fld_curs[fld] : *insize ;
     bcopy( fld_cache[fld], buf, *outsize ) ;
     varname[0] = (int) strlen( fld_name[fld] ) ;
@@ -255,6 +267,7 @@ PERTURB_REAL ( float * field, int ds[], int de[], int ms[], int me[], int ps[], 
 int INSPECT_HEADER ( char * buf, int * sz, int * line )
 {
     int i ;
+#ifndef MS_SUA
     fprintf(stderr,"INSPECT_HEADER: line = %d ", *line ) ;
     if ( buf != NULL && sz != NULL ) {
       for ( i = 0 ; i < *sz && i < 256 ; i++ )  { if ( (buf[i] >= 'a' && buf[i] <= 'z') || buf[i] == '_' ||
@@ -263,6 +276,7 @@ int INSPECT_HEADER ( char * buf, int * sz, int * line )
                                     }
       fprintf(stderr,"\n") ;
    }
+#endif
     return(0) ;
 }
 

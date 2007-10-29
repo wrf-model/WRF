@@ -1,5 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef MS_SUA
+# include <stdio.h>
+# include <stdlib.h>
+#endif
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI )
 # include <mpi.h>
 #endif
@@ -72,7 +74,9 @@ col_on_comm ( int * Fcomm, int * typesize ,
 
   /* collect up recvcounts */
   ierr = MPI_Gather( ninbuf , 1 , MPI_INT , recvcounts , 1 , MPI_INT , root_task , *comm ) ;
+#ifndef MS_SUA
   if ( ierr != 0 ) fprintf(stderr,"%s %d MPI_Gather returns %d\n",__FILE__,__LINE__,ierr ) ;
+#endif
 
   if ( mytask == root_task ) {
 
@@ -84,9 +88,11 @@ col_on_comm ( int * Fcomm, int * typesize ,
 
     if ( noutbuf_loc > * noutbuf )
     {
+#ifndef MS_SUA
       fprintf(stderr,"FATAL ERROR: collect_on_comm: noutbuf_loc (%d) > noutbuf (%d)\n",
 		      noutbuf_loc , * noutbuf ) ; 
       fprintf(stderr,"WILL NOT perform the collection operation\n") ;
+#endif
       MPI_Abort(MPI_COMM_WORLD,1) ;
     }
 
@@ -100,7 +106,9 @@ col_on_comm ( int * Fcomm, int * typesize ,
   ierr = MPI_Gatherv( inbuf  , *ninbuf * *typesize  , MPI_CHAR ,
                outbuf , recvcounts , displace, MPI_CHAR ,
                root_task , *comm ) ;
+#ifndef MS_SUA
   if ( ierr != 0 ) fprintf(stderr,"%s %d MPI_Gatherv returns %d\n",__FILE__,__LINE__,ierr ) ;
+#endif
 
   free(recvcounts) ;
   free(displace) ;
@@ -170,6 +178,7 @@ dst_on_comm ( int * Fcomm, int * typesize ,
   return(0) ;
 }
 
+#ifndef MS_SUA
 #ifndef MACOS
 #  include <malloc.h>
 #  include <sys/resource.h>
@@ -205,13 +214,19 @@ rlim_ ()
 
    getrusage ( RUSAGE_SELF, &r_usage ) ;
    if ( tock != 0 ) {
+#ifndef MS_SUA
      fprintf(stderr,"sm %ld d %ld s %ld maxrss %ld %d %d %ld\n",r_usage.ru_ixrss/tock,r_usage.ru_idrss/tock,r_usage.ru_isrss/tock, r_usage.ru_maxrss,tick,tock,r_usage.ru_ixrss) ;
+#endif
    }
    minf = mallinfo() ;
+#ifndef MS_SUAL
    fprintf(stderr,"a %ld usm %ld fsm %ld uord %ld ford %ld hblkhd %d\n",minf.arena,minf.usmblks,minf.fsmblks,minf.uordblks,minf.fordblks,minf.hblkhd) ;
+#endif
 # if 0
    fprintf(stderr," outy %d  nouty %d  maxstug %d maxouty %d \n", outy, nouty, maxstug, maxouty ) ;
 # endif
 #endif
 }
 #endif
+#endif
+

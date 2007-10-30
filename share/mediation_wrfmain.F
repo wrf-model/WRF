@@ -35,10 +35,10 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
 
   ! Interface 
    INTERFACE
-     SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
+     SUBROUTINE start_domain ( grid , allowed_to_read, press_adj )  ! comes from module_start in appropriate dyn_ directory
        USE module_domain
        TYPE (domain) grid
-       LOGICAL, INTENT(IN) :: allowed_to_read 
+       LOGICAL, INTENT(IN) :: allowed_to_read , press_adj
      END SUBROUTINE start_domain
    END INTERFACE
 
@@ -104,7 +104,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
      grid%imask_xstag = 1
      grid%imask_ystag = 1
      grid%imask_xystag = 1
-     CALL start_domain ( grid , .TRUE. )
+     CALL start_domain ( grid , .TRUE., .FALSE. )
    ELSE
      CALL domain_clock_get( grid, current_timestr=timestr )
      CALL construct_filename2a ( rstname , config_flags%rst_inname , grid%id , 2 , timestr )
@@ -122,7 +122,7 @@ SUBROUTINE med_initialdata_input ( grid , config_flags )
      grid%imask_xstag = 1
      grid%imask_ystag = 1
      grid%imask_xystag = 1
-     CALL start_domain ( grid , .TRUE. )
+     CALL start_domain ( grid , .TRUE., .FALSE. )
    ENDIF
 
    RETURN

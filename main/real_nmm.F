@@ -199,10 +199,10 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
   ! Interface 
    INTERFACE
-     SUBROUTINE start_domain ( grid , allowed_to_read )
+     SUBROUTINE start_domain ( grid , allowed_to_read, press_adj )
        USE module_domain
        TYPE (domain) grid
-       LOGICAL, INTENT(IN) :: allowed_to_read
+       LOGICAL, INTENT(IN) :: allowed_to_read, press_adj
      END SUBROUTINE start_domain
    END INTERFACE
 
@@ -453,7 +453,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
 !!! not sure about this, but doesnt seem like needs to be called each time
       IF ( loop .EQ. 1 ) THEN
-        CALL start_domain ( grid , .TRUE.)
+        CALL start_domain ( grid , .TRUE., .FALSE.)
       END IF
 
 #ifdef WRF_CHEM

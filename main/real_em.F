@@ -267,10 +267,10 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
   ! Interface 
    INTERFACE
-     SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
+     SUBROUTINE start_domain ( grid , allowed_to_read, press_adj )  ! comes from module_start in appropriate dyn_ directory
        USE module_domain
        TYPE (domain) grid
-       LOGICAL, INTENT(IN) :: allowed_to_read
+       LOGICAL, INTENT(IN) :: allowed_to_read, press_adj
      END SUBROUTINE start_domain
    END INTERFACE
 
@@ -414,7 +414,7 @@ real::t1,t2,t3,t4
       CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
       CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
 
-!     CALL start_domain ( grid , .TRUE. )
+!     CALL start_domain ( grid , .TRUE., .FALSE. )
 
 #ifdef WRF_CHEM
       IF ( loop == 1 ) THEN

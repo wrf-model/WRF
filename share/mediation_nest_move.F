@@ -28,10 +28,10 @@ SUBROUTINE med_nest_move ( parent, nest )
         USE module_domain
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
-     SUBROUTINE start_domain ( grid , allowed_to_move )
+     SUBROUTINE start_domain ( grid , allowed_to_move, press_adj )
         USE module_domain
         TYPE(domain) :: grid
-        LOGICAL, INTENT(IN) :: allowed_to_move
+        LOGICAL, INTENT(IN) :: allowed_to_move, press_adj
      END SUBROUTINE start_domain
 #if ( EM_CORE == 1 )
      SUBROUTINE shift_domain_em ( grid, disp_x, disp_y  &
@@ -215,7 +215,7 @@ SUBROUTINE med_nest_move ( parent, nest )
        config_flags%restart = .FALSE.
        grid%restart = .FALSE.
        CALL nl_set_restart ( 1, .FALSE. )
-       CALL start_domain ( parent , .FALSE. )
+       CALL start_domain ( parent , .FALSE. , .FALSE.)
        config_flags%restart = saved_restart_value
        grid%restart = saved_restart_value
        CALL nl_set_restart ( 1,  saved_restart_value )
@@ -231,7 +231,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      config_flags%restart = .FALSE.
      CALL nl_set_restart ( 1, .FALSE. )
      grid%restart = .FALSE.
-     CALL start_domain ( nest , .FALSE. )
+     CALL start_domain ( nest , .FALSE., .FALSE. )
      config_flags%restart = saved_restart_value
      grid%restart = saved_restart_value
      CALL nl_set_restart ( 1,  saved_restart_value )

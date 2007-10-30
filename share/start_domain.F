@@ -1,7 +1,7 @@
 !WRF:MEDIATION_LAYER:ADT_BARRIER
 !
 
-SUBROUTINE start_domain ( grid , allowed_to_read )
+SUBROUTINE start_domain ( grid , allowed_to_read, press_adj )
 
    USE module_domain
    USE module_configure
@@ -10,7 +10,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 
    !  Input Arguments.
    TYPE (domain)          :: grid
-   LOGICAL, INTENT(IN)    :: allowed_to_read
+   LOGICAL, INTENT(IN)    :: allowed_to_read, press_adj
    !  Local data.
    INTEGER                :: dyn_opt
    INTEGER :: idum1, idum2
@@ -33,7 +33,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    ELSE IF (      dyn_opt .eq. DYN_EM ) THEN
 
-     CALL start_domain_em( grid, allowed_to_read  &
+     CALL start_domain_em( grid, allowed_to_read, press_adj  &
 !
 # include <em_actual_new_args.inc>
 !

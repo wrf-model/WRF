@@ -311,7 +311,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                          ,save_rainnc             &
                                          ,save_sfcevp             &
                                          ,save_sfcrunoff          &
-                                         ,save_udrunoff
+                                         ,save_udrunoff,save_mub
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
@@ -333,10 +333,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
      END SUBROUTINE med_nest_feedback
 
-     SUBROUTINE start_domain ( grid , allowed_to_move )
+     SUBROUTINE start_domain ( grid , allowed_to_move, press_adj )
         USE module_domain
         TYPE(domain) :: grid
-        LOGICAL, INTENT(IN) :: allowed_to_move
+        LOGICAL, INTENT(IN) :: allowed_to_move, press_adj
      END SUBROUTINE start_domain
 
      SUBROUTINE  blend_terrain ( ter_interpolated , ter_input , &
@@ -409,7 +409,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        CALL wrf_debug ( 0 , message )
 
 ! store horizontally interpolated terrain in temp location
-       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+       CALL  store_terrain ( nest%ht_int , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
@@ -432,9 +432,20 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                       ims , ime , jms , jme , 1   , 1   , &
                                       ips , ipe , jps , jpe , 1   , 1   )
        ENDIF
+       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+
+       allocate (save_mub(ims:ime,jms:jme))
+
+       CALL  store_terrain ( save_mub , nest%em_mub , &    ! Needed for temp/qv adjustment after blending
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
 
 ! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
-       CALL  blend_terrain ( nest%ht_fine , nest%ht , &
+       CALL  blend_terrain ( nest%ht_int , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
@@ -446,6 +457,17 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
+
+! Adjust temperature and mixing ratio after terrain blending
+
+       CALL  adjust_tempqv ( nest%em_mub , save_mub,  &
+                             nest%em_znw, nest%p_top, &
+                             nest%em_t_2, nest%em_p, nest%moist(ims,kms,jms,P_QV), &
+                             ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe )
+
+       deallocate (save_mub)
 
      ELSE
        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
@@ -466,7 +488,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      nest%imask_xstag = 1
      nest%imask_ystag = 1
      nest%imask_xystag = 1
-     CALL start_domain ( nest , .TRUE. )
+     CALL start_domain ( nest , .TRUE., .TRUE. )
 ! kludge: 20040604
      CALL get_ijk_from_grid (  parent ,                   &
                                ids, ide, jds, jde, kds, kde,    &
@@ -495,7 +517,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      parent%imask_ystag = 1
      parent%imask_xystag = 1
 
-     CALL start_domain ( parent , .TRUE. )
+     CALL start_domain ( parent , .TRUE., .FALSE. )
 
      parent%acsnow     = save_acsnow
      parent%acsnom     = save_acsnom
@@ -537,7 +559,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      nest%imask_xstag = 1
      nest%imask_ystag = 1
      nest%imask_xystag = 1
-     CALL start_domain ( nest , .TRUE. )
+     CALL start_domain ( nest , .TRUE., .FALSE. )
 #ifndef MOVE_NESTS
 ! this doesn't need to be done for moving nests, since ht_coarse is part of the restart
      parent%ht_coarse = parent%ht
@@ -643,10 +665,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
      END SUBROUTINE BASE_STATE_PARENT
 
-     SUBROUTINE NEST_TERRAIN ( nest, config_flags )
+     SUBROUTINE NEST_TERRAIN ( nest )
        USE module_domain
        TYPE(domain) , POINTER                        :: nest
-       TYPE(grid_config_rec_type) , INTENT(IN)       :: config_flags
      END SUBROUTINE NEST_TERRAIN
 
     SUBROUTINE med_interp_domain ( parent , nest )
@@ -659,10 +680,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         TYPE(domain) , POINTER                    :: parent , nest
     END SUBROUTINE med_init_domain_constants_nmm
 
-    SUBROUTINE start_domain ( grid , allowed_to_move )
+    SUBROUTINE start_domain ( grid , allowed_to_move, press_adj )
         USE module_domain
         TYPE(domain) :: grid
-        LOGICAL, INTENT(IN) :: allowed_to_move
+        LOGICAL, INTENT(IN) :: allowed_to_move, press_adj
     END SUBROUTINE start_domain
 
    END INTERFACE
@@ -745,7 +766,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     JTE = nest%ep33
 
 
-    CALL NEST_TERRAIN ( nest, config_flags )
+    CALL NEST_TERRAIN ( nest )
 
 !   Initialize some more constants required especially for terrain adjustment processes
 
@@ -782,7 +803,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 ! set some other initial fields, fill out halos, etc. 
 !--------------------------------------------------------------------------------------
 
-    CALL start_domain ( nest, .TRUE.)
+    CALL start_domain ( nest, .TRUE., .FALSE.)
 
 !===================================================================================
 !  Added for the NMM core. End of gopal's doing.
@@ -1737,7 +1758,6 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    CHARACTER (LEN=80)                     :: bdyname
    Type (WRFU_Time )                      :: startTime, stopTime, currentTime
    Type (WRFU_TimeInterval )              :: stepTime
-integer myproc,i,j,k
 
 #include <wrf_io_flags.h>
 
@@ -1800,7 +1820,10 @@ integer myproc,i,j,k
          WRITE ( message , FMT = '("processing lateral boundary for domain ",I8)' ) grid%id
          CALL end_timing ( TRIM(message) )
        ENDIF
+
+!#if 0
      ENDIF
+!#endif
    ENDIF
    RETURN
 END SUBROUTINE med_latbound_in

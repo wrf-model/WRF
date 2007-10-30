@@ -83,6 +83,10 @@
  v_mom_adv_order                     = 3,
  h_sca_adv_order                     = 5,
  v_sca_adv_order                     = 3,
+ pd_moist                            = .true., .true., .true.,
+ pd_scalar                           = .true., .true., .true.,
+ pd_chem                             = .true., .true., .true.,
+ pd_tke                              = .true., .true., .true.,
  /
 
  &bdy_control

@@ -9640,6 +9640,123 @@ convert_nmm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
 
 ###########################################################
+#ARCH Darwin           (single-threaded, no nesting, USES: gcc, g95, SystemStubs)
+#
+FC              =       g95
+LD              =       g95
+CC              =       gcc -DFSEEKO64_OK -DMACOS -DF2CSTYLE
+SCC             =       $(CC)
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+SFC             =       $(FC)
+# g95 does not like -r4. if you want promotion to -r8 add it to PROMOTION below
+#PROMOTION      =       -r$(RWORDSIZE) -i4
+PROMOTION       =       -i4
+CFLAGS          =       -DLANDREAD_STUB
+FCOPTIM         =       -O2 # -fast
+FCDEBUG         =       #-g -O0
+#FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
+FCBASEOPTS      =       -Wno=101,139,155,158 -fendian=big -ffree-form -ffree-line-length-huge $(FCDEBUG) # -Mlfs
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+                        CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
+                        -DNO_NAMELIST_PRINT -DLIMIT_ARGS -DG95 -DMACOS -DF2CSTYLE -DLANDREAD_STUB
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS  =
+ESMF_IO_LIB     =       -L../external/esmf_time_f90 -lesmf_time
+ESMF_IO_LIB_EXT =       -L../../external/esmf_time_f90 -lesmf_time
+INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                        -I../frame -I../share -I../phys -I../chem -I../inc
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/io_int -lwrfio_int \
+                        -L../external/io_grib1 -lio_grib1 \
+                        -L../external/io_grib_share -lio_grib_share \
+                        CONFIGURE_GRIB2_LIB \
+                        ../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -lSystemStubs
+LDFLAGS         =       $(FCFLAGS) CONFIGURE_LDFLAGS
+ENVCOMPDEFS     =       CONFIGURE_COMPILEFLAGS
+WRF_CHEM        =       0
+CPP             =       /usr/bin/cpp -C -P -traditional
+POUND_DEF       =       $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(ENVCOMPDEFS) $(POUND_DEF)
+AR              =       ar ru
+M4              =       m4 -B 14000
+RANLIB          =       ranlib
+NETCDFPATH      =       CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       $(CC)
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Fortran compiler complains about long source lines.          ####
+SED_FTN = sed -f ../arch/no_file_line.sed
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+	  make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) " CONFIGURE_GRIB2_INC RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-Mfixed" archive )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" all)
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+          make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+# compile these without high optimization to speed compile
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_mm5.o : module_io_mm5.F 
+module_si_io.o : module_si_io.F
+module_io_wrf.o : module_io_wrf.F
+module_domain.o : module_domain.F
+module_start.o : module_start.F
+module_initialize.o : module_initialize.F
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_initialize_real.o : module_initialize_real.F
+module_dm.o : module_dm.F 
+start_domain.o : start_domain.F
+mediation_integrate.o : mediation_integrate.F
+module_configure.o : module_configure.F
+
+solve_interface.o                                              \
+shift_domain_em.o                                              \
+module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_start.o module_initialize.o module_initialize_b_wave.o  \
+module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
+module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
+mediation_integrate.o \
+module_configure.o                                             \
+module_initialize_real.o module_dm.o start_domain.o :
+	$(RM) $@ 
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
+###########################################################
 #ARCH    PC Linux x86_64 (IA64 and Opteron), PathScale 2.1 or higher (Single-threaded, no nesting)
 #
 FC              =       pathf90

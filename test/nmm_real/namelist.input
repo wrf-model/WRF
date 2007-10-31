@@ -17,7 +17,7 @@
  end_minute                          = 00,	00,	
  end_second                          = 00,	00,
  interval_seconds                    = 10800,
- history_interval                    = 60	60,
+ history_interval                    = 60,      60,
  frames_per_outfile                  = 1,	1,
  restart                             = .false.,
  restart_interval                    = 6000,

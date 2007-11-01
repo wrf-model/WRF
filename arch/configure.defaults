@@ -9640,7 +9640,11 @@ convert_nmm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
 
 ###########################################################
-#ARCH Darwin           (single-threaded, no nesting, USES: gcc, g95, SystemStubs)
+#ARCH Darwin g95       (single-threaded, no nesting, USES: gcc, SystemStubs)
+#
+#     On Intel Mac, copy Registry/Registry.EM.no-ifdef to Registry/Registry.EM,
+#        and copy Registry/registry.io_boilerplate.no-ifdef-arw to registry.io_boilerplate
+#         or copy Registry/registry.io_boilerplate.no-ifdef-nmm to registry.io_boilerplate
 #
 FC              =       g95
 LD              =       g95

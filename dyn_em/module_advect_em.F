@@ -6529,15 +6529,15 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
             fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-            fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
-                                          field(i  ,k,j), field(i+1,k,j),  &
-                                          vel                             )
+            fqx( i,k,j ) = 0.5*ru(i,k,j)*          &
+                  (field(i,k,j)+field(i-1,k,j))
+
             fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
         ENDDO
         ENDDO
       ENDDO
 
-!--- end of 3nd order horizontal flux calculation
+!--- end of 2nd order horizontal flux calculation
 
    ELSE
 

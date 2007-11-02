@@ -1,9 +1,9 @@
 !+---+-----------------------------------------------------------------+
 !.. This subroutine computes the moisture tendencies of water vapor,
 !.. cloud droplets, rain, cloud ice (pristine), snow, and graupel.
-!.. Previously this code was based on Reisner et al (1998), but few of
-!.. those pieces remain.  A complete description is now found in
-!.. Thompson et al. (2004, 2006).
+!.. Prior to WRFv2.2 this code was based on Reisner et al (1998), but
+!.. few of those pieces remain.  A complete description is now found
+!.. in Thompson et al. (2004, 2007).
 !.. Most importantly, users may wish to modify the prescribed number of
 !.. cloud droplets (Nt_c; see guidelines mentioned below).  Otherwise,
 !.. users may alter the rain and graupel size distribution parameters
@@ -20,7 +20,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 14 Feb 2007
+!..Last modified: 26 Oct 2007
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -71,9 +71,9 @@
 !.. mu is non-zero, these become equiv y-intercept for an exponential
 !.. distrib and proper values computed based on assumed mu value.
       REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 1.E6
+      REAL, PARAMETER, PRIVATE:: gonv_max = 5.E6
       REAL, PARAMETER, PRIVATE:: ronv_min = 2.E6
-      REAL, PARAMETER, PRIVATE:: ronv_max = 2.E9
+      REAL, PARAMETER, PRIVATE:: ronv_max = 9.E9
       REAL, PARAMETER, PRIVATE:: ronv_sl  = 1./4.
       REAL, PARAMETER, PRIVATE:: ronv_r0 = 0.10E-3
       REAL, PARAMETER, PRIVATE:: ronv_c0 = ronv_sl/ronv_r0
@@ -88,8 +88,8 @@
       REAL, PARAMETER, PRIVATE:: bm_s = 2.0
       REAL, PARAMETER, PRIVATE:: am_g = PI*rho_g/6.0
       REAL, PARAMETER, PRIVATE:: bm_g = 3.0
-      REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0  ! Was 0.069 in original v2.2 release
-      REAL, PARAMETER, PRIVATE:: bm_i = 3.0  ! Was 2.0 in original release
+      REAL, PARAMETER, PRIVATE:: am_i = PI*rho_i/6.0
+      REAL, PARAMETER, PRIVATE:: bm_i = 3.0
 
 !..Fallspeed power laws relations:  v = (av*D**bv)*exp(-fv*D)
 !.. Rain from Ferrier (1994), ice, snow, and graupel from
@@ -102,7 +102,7 @@
       REAL, PARAMETER, PRIVATE:: fv_s = 125.0
       REAL, PARAMETER, PRIVATE:: av_g = 442.0
       REAL, PARAMETER, PRIVATE:: bv_g = 0.89
-      REAL, PARAMETER, PRIVATE:: av_i = 1847.5  ! Was 2247.0 in original v2.2 release
+      REAL, PARAMETER, PRIVATE:: av_i = 1847.5
       REAL, PARAMETER, PRIVATE:: bv_i = 1.0
 
 !..Capacitance of sphere and plates/aggregates: D**3, D**2
@@ -110,12 +110,13 @@
       REAL, PARAMETER, PRIVATE:: C_sqrd = 0.3
 
 !..Collection efficiencies.  Rain/snow/graupel collection of cloud
-!.. droplets use variables (Ef_rw, Ef_ri, Ef_sw, Ef_gw respectively) and
+!.. droplets use variables (Ef_rw, Ef_sw, Ef_gw respectively) and
 !.. get computed elsewhere because they are dependent on stokes
 !.. number.
       REAL, PARAMETER, PRIVATE:: Ef_si = 0.1
-      REAL, PARAMETER, PRIVATE:: Ef_rs = 0.99
-      REAL, PARAMETER, PRIVATE:: Ef_rg = 0.99
+      REAL, PARAMETER, PRIVATE:: Ef_rs = 0.95
+      REAL, PARAMETER, PRIVATE:: Ef_rg = 0.95
+      REAL, PARAMETER, PRIVATE:: Ef_ri = 0.95
 
 !..Minimum microphys values
 !.. R1 value, 1.E-12, cannot be set lower because of numerical
@@ -156,11 +157,17 @@
       REAL, PARAMETER, PRIVATE:: xm0i = 1.E-12
       REAL, PARAMETER, PRIVATE:: D0c = 1.E-6
       REAL, PARAMETER, PRIVATE:: D0r = 50.E-6
-      REAL, PARAMETER, PRIVATE:: D0s = 200.E-6  ! Was 125.E-6 in original v2.2 release
-      REAL, PARAMETER, PRIVATE:: D0g = 150.E-6
+      REAL, PARAMETER, PRIVATE:: D0s = 200.E-6
+      REAL, PARAMETER, PRIVATE:: D0g = 250.E-6
       REAL, PRIVATE:: D0i, xm0s, xm0g
 
 !..Lookup table dimensions
+      INTEGER, PARAMETER, PRIVATE:: nbins = 100
+      INTEGER, PARAMETER, PRIVATE:: nbc = nbins
+      INTEGER, PARAMETER, PRIVATE:: nbi = nbins
+      INTEGER, PARAMETER, PRIVATE:: nbr = nbins
+      INTEGER, PARAMETER, PRIVATE:: nbs = nbins
+      INTEGER, PARAMETER, PRIVATE:: nbg = nbins
       INTEGER, PARAMETER, PRIVATE:: ntb_c = 37
       INTEGER, PARAMETER, PRIVATE:: ntb_i = 64
       INTEGER, PARAMETER, PRIVATE:: ntb_r = 37
@@ -170,6 +177,13 @@
       INTEGER, PARAMETER, PRIVATE:: ntb_i1 = 55
       INTEGER, PARAMETER, PRIVATE:: ntb_t = 9
       INTEGER, PRIVATE:: nic2, nii2, nii3, nir2, nir3, nis2, nig2
+
+      DOUBLE PRECISION, DIMENSION(nbins+1):: xDx
+      DOUBLE PRECISION, DIMENSION(nbc):: Dc, dtc
+      DOUBLE PRECISION, DIMENSION(nbi):: Di, dti
+      DOUBLE PRECISION, DIMENSION(nbr):: Dr, dtr
+      DOUBLE PRECISION, DIMENSION(nbs):: Ds, dts
+      DOUBLE PRECISION, DIMENSION(nbg):: Dg, dtg
 
 !..Lookup tables for cloud water content (kg/m**3).
       REAL, DIMENSION(ntb_c), PARAMETER, PRIVATE:: &
@@ -238,23 +252,6 @@
       REAL, DIMENSION(10), PARAMETER, PRIVATE:: &
       sb = (/ 0.476221, -0.015896,  0.165977, 0.007468, -0.000141, &
               0.060366,  0.000079,  0.000594, 0.0,      -0.003577/)
-      
-!..Lookup table for A1 and A2 in Bergeron process (Koenig 1971)
-      REAL, DIMENSION(31), PARAMETER, PRIVATE:: &
-      ABER1 = (/.7939E-07,.7841E-06,.3369E-05,.4336E-05, &
-                .5285E-05,.3728E-05,.1852E-05,.2991E-06,.4248E-06, &
-                .7434E-06,.1812E-05,.4394E-05,.9145E-05,.1725E-04, &
-                .3348E-04,.1725E-04,.9175E-05,.4412E-05,.2252E-05, &
-                .9115E-06,.4876E-06,.3473E-06,.4758E-06,.6306E-06, &
-                .8573E-06,.7868E-06,.7192E-06,.6513E-06,.5956E-06, &
-                .5333E-06,.4834E-06/)
-      REAL, DIMENSION(31), PARAMETER, PRIVATE:: &
-      ABER2 = (/.4006,.4831,.5320,.5307,.5319,.5249, &
-                .4888,.3894,.4047,.4318,.4771,.5183,.5463,.5651, &
-                .5813,.5655,.5478,.5203,.4906,.4447,.4126,.3960, &
-                .4149,.4320,.4506,.4483,.4460,.4433,.4413,.4382, &
-                .4361/)
-      REAL, DIMENSION(31), PRIVATE:: CBG
 
 !..Temperatures (5 C interval 0 to -40) used in lookup tables.
       REAL, DIMENSION(ntb_t), PARAMETER, PRIVATE:: &
@@ -275,6 +272,8 @@
                 tpi_qrfz, tpg_qrfz, tni_qrfz
       DOUBLE PRECISION, DIMENSION(ntb_i,ntb_i1):: &
                 tps_iaus, tni_iaus, tpi_ide
+      REAL, DIMENSION(nbr,nbc):: t_Efrw
+      REAL, DIMENSION(nbs,nbc):: t_Efsw
 
 !..Variables holding a bunch of exponents and gamma values (cloud water,
 !.. cloud ice, rain, snow, then graupel).
@@ -285,15 +284,17 @@
       REAL, DIMENSION(12), PRIVATE:: cre, crg
       REAL, PRIVATE:: ore1, org1, org2, org3, obmr
       REAL, DIMENSION(18), PRIVATE:: cse, csg
-      REAL, PRIVATE:: oams, obms
+      REAL, PRIVATE:: oams, obms, ocms
       REAL, DIMENSION(12), PRIVATE:: cge, cgg
-      REAL, PRIVATE:: oge1, ogg1, ogg2, ogg3, obmg
+      REAL, PRIVATE:: oge1, ogg1, ogg2, ogg3, oamg, obmg, ocmg
 
 !..Declaration of precomputed constants in various rate eqns.
       REAL:: t1_qr_qc, t1_qr_qi, t2_qr_qi, t1_qg_qc, t1_qs_qc, t1_qs_qi
       REAL:: t1_qr_ev, t2_qr_ev
       REAL:: t1_qs_sd, t2_qs_sd, t1_qg_sd, t2_qg_sd
       REAL:: t1_qs_me, t2_qs_me, t1_qg_me, t2_qg_me
+
+      CHARACTER*256:: mp_debug
 
 !+---+
 !+---+-----------------------------------------------------------------+
@@ -352,14 +353,10 @@
       oig2 = 1./cig(2)
       obmi = 1./bm_i
 
-      do n = 1, 31
-         CBG(n) = WGAMMA(mu_i + 1 + ABER2(n)*bm_i)
-      enddo
-
       cre(1) = bm_r + 1.
       cre(2) = mu_r + 1.
       cre(3) = bm_r + mu_r + 1.
-      cre(4) = bm_r + mu_r + 2.
+      cre(4) = bm_r*2. + mu_r + 1.
       cre(5) = bm_r + mu_r + 3.
       cre(6) = bm_r + mu_r + bv_r + 1.
       cre(7) = bm_r + mu_r + bv_r + 2.
@@ -379,7 +376,7 @@
 
       cse(1) = bm_s + 1.
       cse(2) = bm_s + 2.
-      cse(3) = bm_s + 3.
+      cse(3) = bm_s*2.
       cse(4) = bm_s + bv_s + 1.
       cse(5) = bm_s + bv_s + 2.
       cse(6) = bm_s + bv_s + 3.
@@ -388,25 +385,24 @@
       cse(9) = bm_s + mu_s + 3.
       cse(10) = bm_s + mu_s + bv_s + 1.
       cse(11) = bm_s + mu_s + bv_s + 2.
-      cse(12) = bm_s + mu_s + bv_s + 3.
+      cse(12) = bm_s*2. + mu_s + 1.
       cse(13) = bv_s + 2.
       cse(14) = bm_s + bv_s
-      cse(15) = bm_s - 1.
+      cse(15) = mu_s + 2.
       cse(16) = 1.0 + (1.0 + bv_s)/2.
-      cse(17) = bv_s + 3.
+      cse(17) = cse(16) + mu_s + 1.
       cse(18) = bv_s + mu_s + 3.
       do n = 1, 18
          csg(n) = WGAMMA(cse(n))
       enddo
       oams = 1./am_s
       obms = 1./bm_s
-!      sg_lam = csg(2) / csg(1)
-!      sg_nos = csg(2)**cse(1) / csg(1)**cse(2)
+      ocms = oams**obms
 
       cge(1) = bm_g + 1.
       cge(2) = mu_g + 1.
       cge(3) = bm_g + mu_g + 1.
-      cge(4) = bm_g + mu_g + 2.
+      cge(4) = bm_g*2. + mu_g + 1.
       cge(5) = bm_g + mu_g + 3.
       cge(6) = bm_g + mu_g + bv_g + 1.
       cge(7) = bm_g + mu_g + bv_g + 2.
@@ -418,7 +414,9 @@
       do n = 1, 12
          cgg(n) = WGAMMA(cge(n))
       enddo
+      oamg = 1./am_g
       obmg = 1./bm_g
+      ocmg = oamg**obmg
       oge1 = 1./cge(1)
       ogg1 = 1./cgg(1)
       ogg2 = 1./cgg(2)
@@ -470,6 +468,62 @@
       nir3 = NINT(ALOG10(N0r_exp(1)))
       nis2 = NINT(ALOG10(r_s(1)))
       nig2 = NINT(ALOG10(r_g(1)))
+
+!..Create bins of cloud water (from min diameter up to 100 microns).
+      Dc(1) = D0c*1.0d0
+      dtc(1) = D0c*1.0d0
+      do n = 2, nbc
+         Dc(n) = Dc(n-1) + 1.0D-6
+         dtc(n) = (Dc(n) - Dc(n-1))
+      enddo
+
+!..Create bins of cloud ice (from min diameter up to 5x min snow size).
+      xDx(1) = D0i*1.0d0
+      xDx(nbi+1) = 5.0d0*D0s
+      do n = 2, nbi
+         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbi) &
+                  *DLOG(xDx(nbi+1)/xDx(1)) +DLOG(xDx(1)))
+      enddo
+      do n = 1, nbi
+         Di(n) = DSQRT(xDx(n)*xDx(n+1))
+         dti(n) = xDx(n+1) - xDx(n)
+      enddo
+
+!..Create bins of rain (from min diameter up to 5 mm).
+      xDx(1) = D0r*1.0d0
+      xDx(nbr+1) = 0.005d0
+      do n = 2, nbr
+         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbr) &
+                  *DLOG(xDx(nbr+1)/xDx(1)) +DLOG(xDx(1)))
+      enddo
+      do n = 1, nbr
+         Dr(n) = DSQRT(xDx(n)*xDx(n+1))
+         dtr(n) = xDx(n+1) - xDx(n)
+      enddo
+
+!..Create bins of snow (from min diameter up to 2 cm).
+      xDx(1) = D0s*1.0d0
+      xDx(nbs+1) = 0.02d0
+      do n = 2, nbs
+         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbs) &
+                  *DLOG(xDx(nbs+1)/xDx(1)) +DLOG(xDx(1)))
+      enddo
+      do n = 1, nbs
+         Ds(n) = DSQRT(xDx(n)*xDx(n+1))
+         dts(n) = xDx(n+1) - xDx(n)
+      enddo
+
+!..Create bins of graupel (from min diameter up to 5 cm).
+      xDx(1) = D0g*1.0d0
+      xDx(nbg+1) = 0.05d0
+      do n = 2, nbg
+         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbg) &
+                  *DLOG(xDx(nbg+1)/xDx(1)) +DLOG(xDx(1)))
+      enddo
+      do n = 1, nbg
+         Dg(n) = DSQRT(xDx(n)*xDx(n+1))
+         dtg(n) = xDx(n+1) - xDx(n)
+      enddo
 
 !+---+-----------------------------------------------------------------+
 !..Create lookup tables for most costly calculations.
@@ -525,12 +579,26 @@
          enddo
       enddo
 
-      if (.not. iiwarm) then
+      do j = 1, nbc
+         do i = 1, nbr
+            t_Efrw(i,j) = 0.0
+         enddo
+         do i = 1, nbs
+            t_Efsw(i,j) = 0.0
+         enddo
+      enddo
+
       CALL wrf_debug(150, 'CREATING MICROPHYSICS LOOKUP TABLES ... ')
       WRITE (wrf_err_message, '(a, f5.2, a, f5.2, a, f5.2, a, f5.2)') &
           ' using: mu_c=',mu_c,' mu_i=',mu_i,' mu_r=',mu_r,' mu_g=',mu_g
       CALL wrf_debug(150, wrf_err_message)
 
+!..Collision efficiency between rain/snow and cloud water.
+      CALL wrf_debug(200, '  creating qc collision eff tables')
+      call table_Efrw
+      call table_Efsw
+
+      if (.not. iiwarm) then
 !..Rain collecting graupel & graupel collecting rain.
       CALL wrf_debug(200, '  creating rain collecting graupel table')
       call qr_acr_qg
@@ -547,8 +615,9 @@
       CALL wrf_debug(200, '  creating ice converting to snow table')
       call qi_aut_qs
 
-      CALL wrf_debug(150, ' ... DONE microphysical lookup tables')
       endif
+
+      CALL wrf_debug(150, ' ... DONE microphysical lookup tables')
 
       END SUBROUTINE thompson_init
 !+---+-----------------------------------------------------------------+
@@ -589,9 +658,25 @@
       INTEGER:: imax_qc, imax_qr, imax_qi, imax_qs, imax_qg, imax_ni
       INTEGER:: jmax_qc, jmax_qr, jmax_qi, jmax_qs, jmax_qg, jmax_ni
       INTEGER:: kmax_qc, kmax_qr, kmax_qi, kmax_qs, kmax_qg, kmax_ni
-      CHARACTER*256:: mp_debug
+      INTEGER:: i_start, j_start, i_end, j_end
 
 !+---+
+
+      i_start = its
+      j_start = jts
+      i_end   = ite
+      j_end   = jte
+      if ( (ite-its+1).gt.4 .and. (jte-jts+1).lt.4) then
+         i_start = its + 1
+         i_end   = ite - 1
+         j_start = jts
+         j_end   = jte
+      elseif ( (ite-its+1).lt.4 .and. (jte-jts+1).gt.4) then
+         i_start = its
+         i_end   = ite
+         j_start = jts + 1
+         j_end   = jte - 1
+      endif
 
       dt = dt_in
    
@@ -623,8 +708,8 @@
          mp_debug(i:i) = char(0)
       enddo
   
-      j_loop:  do j = jts, jte
-      i_loop:  do i = its, ite   
+      j_loop:  do j = j_start, j_end
+      i_loop:  do i = i_start, i_end
 
          pptrain = 0.
          pptsnow = 0.
@@ -728,6 +813,11 @@
                         ' at i,j,k=', i,j,k
              CALL wrf_debug(150, mp_debug)
             endif
+            if (qv1d(k) .lt. 0.0) then
+             write(mp_debug,*) 'WARNING, negative qv ', qv1d(k),        &
+                        ' at i,j,k=', i,j,k
+             CALL wrf_debug(0, mp_debug)
+            endif
          enddo
 
       enddo i_loop
@@ -743,6 +833,10 @@
          'ni: ', ni_max, '(', imax_ni, ',', jmax_ni, ',', kmax_ni, ')'
       CALL wrf_debug(150, mp_debug)
 ! END DEBUG - GT
+
+      do i = 1, 256
+         mp_debug(i:i) = char(0)
+      enddo
 
       END SUBROUTINE mp_gt_driver
 
@@ -815,7 +909,7 @@
       REAL:: rgvm, delta_tp, orho, onstep, lfus2
       DOUBLE PRECISION:: N0_exp, N0_min, lam_exp, lamc, lamr, lamg
       DOUBLE PRECISION:: lami, ilami
-      REAL:: Dc, Dc_b, Dc_g, Di, Dr, Ds, Dg, Ds_m, Dg_m
+      REAL:: xDc, Dc_b, Dc_g, xDi, xDr, xDs, xDg, Ds_m, Dg_m
       REAL:: zeta1, zeta, taud, tau
       REAL:: stoke_r, stoke_s, stoke_g, stoke_i
       REAL:: vti, vtr, vts, vtg
@@ -829,20 +923,21 @@
       REAL:: clap, fcd, dfcd
       REAL:: otemp, rvs, rvs_p, rvs_pp, gamsc, alphsc, t1_evap, t1_subl
       REAL:: r_frac, g_frac
-      REAL:: Ef_rw, Ef_ri, Ef_sw, Ef_gw
-      REAL:: dts, odts, odt, odzq
+      REAL:: Ef_rw, Ef_sw, Ef_gw
+      REAL:: dtsave, odts, odt, odzq
       INTEGER:: i, k, k2, ksed1, ku, n, nn, nstep, k_0, kbot, IT, iexfrq
       INTEGER:: nir, nis, nig, nii, nic
       INTEGER:: idx_tc,idx_t,idx_s,idx_g,idx_r1,idx_r,idx_i1,idx_i,idx_c
+      INTEGER:: idx
       LOGICAL:: melti, no_micro
       LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg
 
 !+---+
 
       no_micro = .true.
-      dts = dt
+      dtsave = dt
       odt = 1./dt
-      odts = 1./dts
+      odts = 1./dtsave
       iexfrq = 1
 
 !+---+-----------------------------------------------------------------+
@@ -936,6 +1031,16 @@
             ri(k) = qi1d(k)*rho(k)
             ni(k) = MAX(1., ni1d(k)*rho(k))
             L_qi(k) = .true.
+            lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
+            ilami = 1./lami
+            xDi = (bm_i + mu_i + 1.) * ilami
+            if (xDi.lt. 30.E-6) then
+             lami = cie(2)/30.E-6
+             ni(k) = MIN(250.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
+            elseif (xDi.gt. 300.E-6) then
+             lami = cie(2)/300.E-6
+             ni(k) = cig(1)*oig2*ri(k)/am_i*lami**bm_i
+            endif
          else
             qi1d(k) = 0.0
             ni1d(k) = 0.0
@@ -1103,7 +1208,7 @@
       N0_min = gonv_max
       do k = kte, kts, -1
          if (.not. L_qg(k)) CYCLE
-         N0_exp = 100.0*rho(k)/rg(k)
+         N0_exp = 200.0*rho(k)/rg(k)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
          N0_exp = N0_min
@@ -1122,20 +1227,20 @@
 !.. into water, compute its mvd and recompute slope/intercept.
 !.. If rain not from melted snow, use old relation but hold N0_r
 !.. constant at its lowest value.  While doing all this, ensure rain
-!.. mvd does not exceed reasonable size like 3 mm.
+!.. mvd does not exceed reasonable size like 2.5 mm.
 !+---+-----------------------------------------------------------------+
       N0_min = ronv_max
       do k = kte, kts, -1
-!        if (.not. L_qr(k)) CYCLE
+!         if (.not. L_qr(k)) CYCLE
          N0_exp = ronv_c1*tanh(ronv_c0*(ronv_r0-rr(k))) + ronv_c2
          N0_min = MIN(N0_exp, N0_min)
          N0_exp = N0_min
          lam_exp = (N0_exp*am_r*crg(1)/rr(k))**ore1
          lamr = lam_exp * (crg(3)*org2*org1)**obmr
          mvd_r(k) = (3.0+mu_r+0.672) / lamr
-         if (mvd_r(k) .gt. 3.e-3) then
-            mvd_r(k) = 3.e-3
-            lamr = (3.0+mu_r+0.672) / 3.e-3
+         if (mvd_r(k) .gt. 2.5e-3) then
+            mvd_r(k) = 2.5e-3
+            lamr = (3.0+mu_r+0.672) / 2.5e-3
             lam_exp = lamr * (crg(3)*org2*org1)**bm_r
             N0_exp = org1*rr(k)/am_r * lam_exp**cre(1)
          endif
@@ -1169,20 +1274,20 @@
 !.. melting.  Set starting rain mvd to either 50 microns or max from
 !.. higher up in column.
          if (L_qs(k_0)) then
-          Ds = smoc(k_0) / smob(k_0)
-          Ds_m = (am_s*Ds**bm_s / am_r)**obmr
+          xDs = smoc(k_0) / smob(k_0)
+          Ds_m = (am_s*xDs**bm_s / am_r)**obmr
          else
           Ds_m = 1.0e-6
          endif
          if (L_qg(k_0)) then
-          Dg = (bm_g + mu_g + 1.) * ilamg(k_0)
-          Dg_m = (am_g*Dg**bm_g / am_r)**obmr
+          xDg = (bm_g + mu_g + 1.) * ilamg(k_0)
+          Dg_m = (am_g*xDg**bm_g / am_r)**obmr
          else
           Dg_m = 1.0e-6
          endif
          r_mvd1 = mvd_r(k_0)
          r_mvd2 = MIN(MAX(Ds_m, Dg_m, r_mvd1+1.e-6, mvd_r(kbot)), &
-                        3.e-3)
+                        2.5e-3)
 
 !.. Within melting layer, apply linear increase of rain mvd from r_mvd1
 !.. to equiv melted snow/graupel value (r_mvd2).  So, by the bottom of
@@ -1205,8 +1310,8 @@
          enddo
 
 !.. Below melting layer, hold N0_r constant unless changes to mixing
-!.. ratio increase mvd beyond 3 mm threshold, then adjust slope and
-!.. intercept to cap mvd at 3 mm.  In future, we could lower N0_r to
+!.. ratio increase mvd beyond 2.5 mm threshold, then adjust slope and
+!.. intercept to cap mvd at 2.5 mm.  In future, we could lower N0_r to
 !.. account for self-collection or other sinks.
          do k = kbot-1, kts, -1
             if (.not. L_qr(k)) CYCLE
@@ -1218,8 +1323,8 @@
             lam_exp = (N0_exp*am_r*crg(1)/rr(k))**ore1
             lamr = lam_exp * (crg(3)*org2*org1)**obmr
             mvd_r(k) = (3.0+mu_r+0.672) / lamr
-            if (mvd_r(k) .gt. 3.e-3) then
-               mvd_r(k) = 3.e-3
+            if (mvd_r(k) .gt. 2.5e-3) then
+               mvd_r(k) = 2.5e-3
                lamr = (3.0+mu_r+0.672) / mvd_r(k)
             endif
             N0_r(k) = rr(k)*lamr**cre(3) / (am_r*crg(3))
@@ -1236,7 +1341,7 @@
 
       do k = kts, kte
          if (.not. L_qc(k)) CYCLE
-         Dc = MAX(D0c*1.E6, ((rc(k)/(am_r*Nt_c))**obmr) * 1.E6)
+         xDc = MAX(D0c*1.E6, ((rc(k)/(am_r*Nt_c))**obmr) * 1.E6)
          lamc = (Nt_c*am_r* ccg(2) * ocg1 / rc(k))**obmr
          mvd_c(k) = (3.0+mu_c+0.672) / lamc
 
@@ -1244,9 +1349,10 @@
 !.. diameters correctly computed from gamma distrib of cloud droplets.
          if (rc(k).gt. 0.01e-3) then
           Dc_g = ((ccg(3)*ocg2)**obmr / lamc) * 1.E6
-          Dc_b = (Dc*Dc*Dc*Dc_g*Dc_g*Dc_g - Dc*Dc*Dc*Dc*Dc*Dc)**(1./6.)
-          zeta1 = 0.5*((6.25E-6*Dc*Dc_b*Dc_b*Dc_b - 0.4) &
-                     + abs(6.25E-6*Dc*Dc_b*Dc_b*Dc_b - 0.4))
+          Dc_b = (xDc*xDc*xDc*Dc_g*Dc_g*Dc_g - xDc*xDc*xDc*xDc*xDc*xDc) &
+                 **(1./6.)
+          zeta1 = 0.5*((6.25E-6*xDc*Dc_b*Dc_b*Dc_b - 0.4) &
+                     + abs(6.25E-6*xDc*Dc_b*Dc_b*Dc_b - 0.4))
           zeta = 0.027*rc(k)*zeta1
           taud = 0.5*((0.5*Dc_b - 7.5) + abs(0.5*Dc_b - 7.5)) + R1
           tau  = 3.72/(rc(k)*taud)
@@ -1256,13 +1362,10 @@
 
 !..Rain collecting cloud water.  In CE, assume Dc<<Dr and vtc=~0.
          if (L_qr(k) .and. mvd_r(k).gt. D0r .and. mvd_c(k).gt. D0c) then
-          Dr = (bm_r + mu_r + 1.) * ilamr(k)
           lamr = 1./ilamr(k)
-          vtr = rhof(k)*av_r*crg(6)*org3 * (lamr/(lamr+fv_r))**cre(3) &
-                         / (lamr+fv_r)**bv_r
-          stoke_r = mvd_c(k)*mvd_c(k)*vtr*rho_w/(9.*visco(k)*Dr)
-          Ef_rw = stoke_r*stoke_r/((stoke_r+0.5)*(stoke_r+0.5))
-          Ef_rw = MAX(0.0, MIN(0.99, Ef_rw))
+          idx = 1 + INT(nbr*DLOG(mvd_r(k)/Dr(1))/DLOG(Dr(nbr)/Dr(1)))
+          idx = MIN(idx, nbr)
+          Ef_rw = t_Efrw(idx, INT(mvd_c(k)*1.E6))
           prr_rcw(k) = rhof(k)*t1_qr_qc*Ef_rw*rc(k)*N0_r(k) &
                          *((lamr+fv_r)**(-cre(9)))
           prr_rcw(k) = MIN(DBLE(rc(k)*odts), prr_rcw(k))
@@ -1340,6 +1443,7 @@
           idx_r = INT(rr(k)/10.**n) + 10*(n-nir2) - (n-nir2)
           idx_r = MAX(1, MIN(idx_r, ntb_r))
 
+          lamr = 1./ilamr(k)
           lam_exp = lamr * (crg(3)*org2*org1)**bm_r
           N0_exp = org1*rr(k)/am_r * lam_exp**cre(1)
           nir = NINT(DLOG10(N0_exp))
@@ -1407,32 +1511,31 @@
 
 !..Snow collecting cloud water.  In CE, assume Dc<<Ds and vtc=~0.
          if (L_qc(k) .and. mvd_c(k).gt. D0c) then
-          Ds = 0.0
-          if (L_qs(k)) Ds = smoc(k) / smob(k)
-          if (Ds .gt. D0s) then
-           Mrat = 1./Ds
-           ils1 = 1./(Mrat*Lam0 + fv_s)
-           ils2 = 1./(Mrat*Lam1 + fv_s)
-           t1_vts = Kap0*csg(4)*ils1**cse(4)
-           t2_vts = Kap1*Mrat**mu_s*csg(10)*ils2**cse(10)
-           t3_vts = Kap0*csg(1)*ils1**cse(1)
-           t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
-           vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
-           stoke_s = mvd_c(k)*mvd_c(k)*vts*rho_w/(9.*visco(k)*Ds)
-           Ef_sw = stoke_s*stoke_s/((stoke_s+0.4)*(stoke_s+0.4))
-           Ef_sw = MAX(0.0, MIN(0.99, Ef_sw))
+          xDs = 0.0
+          if (L_qs(k)) xDs = smoc(k) / smob(k)
+          if (xDs .gt. D0s) then
+           idx = 1 + INT(nbs*DLOG(xDs/Ds(1))/DLOG(Ds(nbs)/Ds(1)))
+           idx = MIN(idx, nbs)
+           Ef_sw = t_Efsw(idx, INT(mvd_c(k)*1.E6))
            prs_scw(k) = rhof(k)*t1_qs_qc*Ef_sw*rc(k)*smoe(k)
           endif
 
 !..Graupel collecting cloud water.  In CE, assume Dc<<Dg and vtc=~0.
           if (rg(k).ge. r_g(1) .and. mvd_c(k).gt. D0c) then
-           Dg = (bm_g + mu_g + 1.) * ilamg(k)
+           xDg = (bm_g + mu_g + 1.) * ilamg(k)
            vtg = rhof(k)*av_g*cgg(6)*ogg3 * ilamg(k)**bv_g
-           stoke_g = mvd_c(k)*mvd_c(k)*vtg*rho_w/(9.*visco(k)*Dg)
-           Ef_gw = stoke_g*stoke_g/((stoke_g+0.5)*(stoke_g+0.5))
-           Ef_gw = MAX(0.0, MIN(0.99, Ef_gw))
-           prg_gcw(k) = rhof(k)*t1_qg_qc*Ef_gw*rc(k)*N0_g(k) &
+           stoke_g = mvd_c(k)*mvd_c(k)*vtg*rho_w/(9.*visco(k)*xDg)
+           if (xDg.gt. D0g) then
+            if (stoke_g.ge.0.4 .and. stoke_g.le.10.) then
+             Ef_gw = 0.55*ALOG10(2.51*stoke_g)
+            elseif (stoke_g.lt.0.4) then
+             Ef_gw = 0.0
+            elseif (stoke_g.gt.10) then
+             Ef_gw = 0.77
+            endif
+            prg_gcw(k) = rhof(k)*t1_qg_qc*Ef_gw*rc(k)*N0_g(k) &
                           *ilamg(k)**cge(9)
+           endif
           endif
          endif
 
@@ -1475,7 +1578,8 @@
             prg_rcg(k) = MIN(DBLE(rr(k)*odts), prg_rcg(k))
             prr_rcg(k) = -prg_rcg(k)
            else
-            prr_rcg(k) = tcg_racg(idx_g,idx_r1,idx_r)
+            prr_rcg(k) = tcg_racg(idx_g,idx_r1,idx_r) &
+                         + 0.5*tmg_gacr(idx_g,idx_r1,idx_r)
             prr_rcg(k) = MIN(DBLE(rg(k)*odts), prr_rcg(k))
             prg_rcg(k) = -prr_rcg(k)
            endif
@@ -1509,11 +1613,11 @@
           endif
 
 !..Nucleate ice from deposition & condensation freezing (Cooper 1986)
-!.. but only if water or 8%+ ice supersaturated.
-          if ( (ssati(k).ge. 0.08) .or. (ssatw(k).gt. eps &
-                                .and. temp(k).lt.265.15) ) then
-           xnc = MIN(5.E5, TNO*EXP(ATO*(T_0-temp(k))))
-           xni = ni(k) + (pni_rfz(k)+pni_wfz(k))*dts
+!.. but only if water sat and T<-10C or 20%+ ice supersaturated.
+          if ( (ssati(k).ge. 0.20) .or. (ssatw(k).gt. eps &
+                                .and. temp(k).lt.263.15) ) then
+           xnc = MIN(250.E3, TNO*EXP(ATO*(T_0-temp(k))))
+           xni = ni(k) + (pni_rfz(k)+pni_wfz(k))*dtsave
            pni_inu(k) = 0.5*(xnc-xni + abs(xnc-xni))*odts
            pri_inu(k) = MIN(DBLE(rate_max), xm0i*pni_inu(k))
            pni_inu(k) = pri_inu(k)/xm0i
@@ -1523,8 +1627,8 @@
           if (L_qi(k)) then
            lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
            ilami = 1./lami
-           Di = MAX(DBLE(D0i), (bm_i + mu_i + 1.) * ilami)
-           xmi = am_i*Di**bm_i
+           xDi = MAX(DBLE(D0i), (bm_i + mu_i + 1.) * ilami)
+           xmi = am_i*xDi**bm_i
            oxmi = 1./xmi
            pri_ide(k) = C_cube*t1_subl*diffu(k)*ssati(k)*rvs &
                   *oig1*cig(5)*ni(k)*ilami
@@ -1541,10 +1645,10 @@
 
 !..Some cloud ice needs to move into the snow category.  Use lookup
 !.. table that resulted from explicit bin representation of distrib.
-           if ( (idx_i.eq. ntb_i) .or. (Di.gt. 5.0*D0s) ) then
+           if ( (idx_i.eq. ntb_i) .or. (xDi.gt. 5.0*D0s) ) then
             prs_iau(k) = ri(k)*.99*odts
             pni_iau(k) = ni(k)*.95*odts
-           elseif (Di.lt. 0.1*D0s) then
+           elseif (xDi.lt. 0.1*D0s) then
             prs_iau(k) = 0.
             pni_iau(k) = 0.
            else
@@ -1585,8 +1689,8 @@
           if (L_qi(k)) then
            lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
            ilami = 1./lami
-           Di = MAX(DBLE(D0i), (bm_i + mu_i + 1.) * ilami)
-           xmi = am_i*Di**bm_i
+           xDi = MAX(DBLE(D0i), (bm_i + mu_i + 1.) * ilami)
+           xmi = am_i*xDi**bm_i
            oxmi = 1./xmi
            if (rs(k).ge. r_s(1)) then
             prs_sci(k) = t1_qs_qi*rhof(k)*Ef_si*ri(k)*smoe(k)
@@ -1594,22 +1698,15 @@
            endif
 
 !..Rain collecting cloud ice.  In CE, assume Di<<Dr and vti=~0.
-           if (rr(k).ge. r_r(1) .and. mvd_r(k).gt. 4.*Di) then
+           if (rr(k).ge. r_r(1) .and. mvd_r(k).gt. 4.*xDi) then
             lamr = 1./ilamr(k)
-            Dr = (bm_r + mu_r + 1.) * ilamr(k)
-            lamr = 1./ilamr(k)
-            vtr = rhof(k)*av_r*crg(6)*org3*(lamr/(lamr+fv_r))**cre(3) &
-                           /(lamr+fv_r)**bv_r
-            stoke_i = Di*Di*vtr*rho_i/(9.*visco(k)*Dr)
-            Ef_ri = stoke_i*stoke_i/((stoke_i+0.5)*(stoke_i+0.5))
-            Ef_ri = MAX(0.0, MIN(0.99, Ef_ri))
             pri_rci(k) = rhof(k)*t1_qr_qi*Ef_ri*ri(k)*N0_r(k) &
                            *((lamr+fv_r)**(-cre(9)))
             pni_rci(k) = pri_rci(k) * oxmi
             prr_rci(k) = rhof(k)*t2_qr_qi*Ef_ri*ni(k)*N0_r(k) &
                            *((lamr+fv_r)**(-cre(8)))
             prr_rci(k) = MIN(DBLE(rr(k)*odts), prr_rci(k))
-            prg_rci(k) = pri_rci(k) + prr_rci(k) 
+            prg_rci(k) = pri_rci(k) + prr_rci(k)
            endif
           endif
 
@@ -1801,29 +1898,29 @@
                       - pni_iau(k) - pni_sci(k) - pni_rci(k)) &
                       * orho
 
-!..Cloud ice mass/number balance; keep mass-wt mean size between 0.30*D0s
-!.. and 5*D0s.  Also no more than 500 xtals per liter.
-         xri=MAX(R1,(qi1d(k) + qiten(k)*dts)*rho(k))
-         xni=MAX(1.,(ni1d(k) + niten(k)*dts)*rho(k))
+!..Cloud ice mass/number balance; keep mass-wt mean size between
+!.. 30 and 300 microns.  Also no more than 250 xtals per liter.
+         xri=MAX(R1,(qi1d(k) + qiten(k)*dtsave)*rho(k))
+         xni=MAX(1.,(ni1d(k) + niten(k)*dtsave)*rho(k))
          if (xri.gt. R1) then
            lami = (am_i*cig(2)*oig1*xni/xri)**obmi
            ilami = 1./lami
-           Di = (bm_i + mu_i + 1.) * ilami
-           if (Di.lt. 0.30*D0s) then
-            lami = cie(2)/(0.30*D0s)
-            xni = MIN(5.D5, cig(1)*oig2*xri/am_i*lami**bm_i)
+           xDi = (bm_i + mu_i + 1.) * ilami
+           if (xDi.lt. 30.E-6) then
+            lami = cie(2)/30.E-6
+            xni = MIN(250.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
-           elseif (Di.gt. 5.0*D0s) then
-            lami = cie(2)/(5.0*D0s)
+           elseif (xDi.gt. 300.E-6) then
+            lami = cie(2)/300.E-6
             xni = cig(1)*oig2*xri/am_i*lami**bm_i
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
            endif
          else
           niten(k) = -ni1d(k)*odts
          endif
-         xni=MAX(0.,(ni1d(k) + niten(k)*dts)*rho(k))
-         if (xni.gt.5.E5) &
-                niten(k) = (5.E5-ni1d(k)*rho(k))*odts*orho
+         xni=MAX(0.,(ni1d(k) + niten(k)*dtsave)*rho(k))
+         if (xni.gt.250.E3) &
+                niten(k) = (250.E3-ni1d(k)*rho(k))*odts*orho
 
 !..Rain tendency
          qrten(k) = qrten(k) + (prr_wau(k) + prr_rcw(k) &
@@ -1998,7 +2095,7 @@
       N0_min = gonv_max
       do k = kte, kts, -1
          if (.not. L_qg(k)) CYCLE
-         N0_exp = 100.0*rho(k)/rg(k)
+         N0_exp = 200.0*rho(k)/rg(k)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
          N0_exp = N0_min
@@ -2015,16 +2112,16 @@
 !+---+-----------------------------------------------------------------+
       N0_min = ronv_max
       do k = kte, kts, -1
-!        if (.not. L_qr(k)) CYCLE
+!         if (.not. L_qr(k)) CYCLE
          N0_exp = ronv_c1*tanh(ronv_c0*(ronv_r0-rr(k))) + ronv_c2
          N0_min = MIN(N0_exp, N0_min)
          N0_exp = N0_min
          lam_exp = (N0_exp*am_r*crg(1)/rr(k))**ore1
          lamr = lam_exp * (crg(3)*org2*org1)**obmr
          mvd_r(k) = (3.0+mu_r+0.672) / lamr
-         if (mvd_r(k) .gt. 3.e-3) then
-            mvd_r(k) = 3.e-3
-            lamr = (3.0+mu_r+0.672) / 3.e-3
+         if (mvd_r(k) .gt. 2.5e-3) then
+            mvd_r(k) = 2.5e-3
+            lamr = (3.0+mu_r+0.672) / 2.5e-3
             lam_exp = lamr * (crg(3)*org2*org1)**bm_r
             N0_exp = org1*rr(k)/am_r * lam_exp**cre(1)
          endif
@@ -2058,20 +2155,20 @@
 !.. melting.  Set starting rain mvd to either 50 microns or max from
 !.. higher up in column.
          if (L_qs(k_0)) then
-          Ds = smoc(k_0) / smob(k_0)
-          Ds_m = (am_s*Ds**bm_s / am_r)**obmr
+          xDs = smoc(k_0) / smob(k_0)
+          Ds_m = (am_s*xDs**bm_s / am_r)**obmr
          else
           Ds_m = 1.0e-6
          endif
          if (L_qg(k_0)) then
-          Dg = (bm_g + mu_g + 1.) * ilamg(k_0)
-          Dg_m = (am_g*Dg**bm_g / am_r)**obmr
+          xDg = (bm_g + mu_g + 1.) * ilamg(k_0)
+          Dg_m = (am_g*xDg**bm_g / am_r)**obmr
          else
           Dg_m = 1.0e-6
          endif
          r_mvd1 = mvd_r(k_0)
          r_mvd2 = MIN(MAX(Ds_m, Dg_m, r_mvd1+1.e-6, mvd_r(kbot)), &
-                        3.e-3)
+                        2.5e-3)
 
 !.. Within melting layer, apply linear increase of rain mvd from r_mvd1
 !.. to equiv melted snow/graupel value (r_mvd2).  So, by the bottom of
@@ -2094,8 +2191,8 @@
          enddo
 
 !.. Below melting layer, hold N0_r constant unless changes to mixing
-!.. ratio increase mvd beyond 3 mm threshold, then adjust slope and
-!.. intercept to cap mvd at 3 mm.  In future, we could lower N0_r to
+!.. ratio increase mvd beyond 2.5 mm threshold, then adjust slope and
+!.. intercept to cap mvd at 2.5 mm.  In future, we could lower N0_r to
 !.. account for self-collection or other sinks.
          do k = kbot-1, kts, -1
             if (.not. L_qr(k)) CYCLE
@@ -2107,8 +2204,8 @@
             lam_exp = (N0_exp*am_r*crg(1)/rr(k))**ore1
             lamr = lam_exp * (crg(3)*org2*org1)**obmr
             mvd_r(k) = (3.0+mu_r+0.672) / lamr
-            if (mvd_r(k) .gt. 3.e-3) then
-               mvd_r(k) = 3.e-3
+            if (mvd_r(k) .gt. 2.5e-3) then
+               mvd_r(k) = 2.5e-3
                lamr = (3.0+mu_r+0.672) / mvd_r(k)
             endif
             N0_r(k) = rr(k)*lamr**cre(3) / (am_r*crg(3))
@@ -2249,8 +2346,8 @@
           endif
 
           if (rs(k).gt. R2) then
-           Ds = smoc(k) / smob(k)
-           Mrat = 1./Ds
+           xDs = smoc(k) / smob(k)
+           Mrat = 1./xDs
            ils1 = 1./(Mrat*Lam0 + fv_s)
            ils2 = 1./(Mrat*Lam1 + fv_s)
            t1_vts = Kap0*csg(4)*ils1**cse(4)
@@ -2388,17 +2485,17 @@
            if (ni1d(k) .gt. 1.0) then
             lami = (am_i*cig(2)*oig1*ni1d(k)/qi1d(k))**obmi
             ilami = 1./lami
-            Di = (bm_i + mu_i + 1.) * ilami
-            if (Di.lt. 0.30*D0s) then
-             lami = cie(2)/(0.30*D0s)
-             ni1d(k) = MIN(5.D5, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
-            elseif (Di.gt. 5.0*D0s) then
-             lami = cie(2)/(5.0*D0s)
+            xDi = (bm_i + mu_i + 1.) * ilami
+            if (xDi.lt. 30.E-6) then
+             lami = cie(2)/30.E-6
+             ni1d(k) = MIN(250.D3, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
+            elseif (xDi.gt. 300.E-6) then
+             lami = cie(2)/300.E-6
              ni1d(k) = cig(1)*oig2*qi1d(k)/am_i*lami**bm_i
             endif
            else
-            lami = cie(2)/(0.30*D0s)
-            ni1d(k) = MIN(5.D5, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
+            lami = cie(2)/30.E-6
+            ni1d(k) = MIN(250.D3, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
            endif
          endif
          qr1d(k) = qr1d(k) + qrten(k)*DT
@@ -2424,41 +2521,18 @@
 
 !..Local variables
       INTEGER:: i, j, k, n, n2
-      INTEGER, PARAMETER:: nbr = 100
-      INTEGER, PARAMETER:: nbg = 100
-      DOUBLE PRECISION, DIMENSION(nbg):: Dg, vg, N_g, dtg
-      DOUBLE PRECISION, DIMENSION(nbr):: Dr, vr, N_r, dtr
-      DOUBLE PRECISION, DIMENSION(nbg+1):: Dx
-      DOUBLE PRECISION, DIMENSION(nbr+1):: Dy
+      DOUBLE PRECISION, DIMENSION(nbg):: vg, N_g
+      DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
       DOUBLE PRECISION:: N0_exp, N0_r, N0_g, lam_exp, lamg, lamr, N0_s
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2
 
 !+---+
 
-!..Create bins of rain (from min diameter up to 5 mm).
-      Dy(1) = D0r*1.0d0
-      Dy(nbr+1) = 0.005d0
-      do n2 = 2, nbr
-         Dy(n2) = DEXP(DFLOAT(n2-1)/DFLOAT(nbr) &
-                  *DLOG(Dy(nbr+1)/Dy(1)) +DLOG(Dy(1)))
-      enddo
       do n2 = 1, nbr
-         Dr(n2) = DSQRT(Dy(n2)*Dy(n2+1))
          vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
-         dtr(n2) = Dy(n2+1) - Dy(n2)
-      enddo
-
-!..Create bins of graupel (from min diameter up to 5 cm).
-      Dx(1) = D0g*1.0d0
-      Dx(nbg+1) = 0.05d0
-      do n = 2, nbg
-         Dx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbg) &
-                  *DLOG(Dx(nbg+1)/Dx(1)) +DLOG(Dx(1)))
       enddo
       do n = 1, nbg
-         Dg(n) = DSQRT(Dx(n)*Dx(n+1))
          vg(n) = av_g*Dg(n)**bv_g
-         dtg(n) = Dx(n+1) - Dx(n)
       enddo
 
       do k = 1, ntb_r
@@ -2472,7 +2546,7 @@
             enddo
 
             do i = 1, ntb_g
-               N0_exp = 100.0d0/r_g(i)
+               N0_exp = 200.0d0/r_g(i)
                N0_exp = DMAX1(gonv_min*1.d0,DMIN1(N0_exp,gonv_max*1.d0))
                lam_exp = (N0_exp*am_g*cgg(1)/r_g(i))**oge1
                lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
@@ -2526,12 +2600,8 @@
 
 !..Local variables
       INTEGER:: i, j, k, m, n, n2
-      INTEGER, PARAMETER:: nbr = 100
-      INTEGER, PARAMETER:: nbs = 100
-      DOUBLE PRECISION, DIMENSION(nbr):: Dr, vr, D1, N_r, dtr
-      DOUBLE PRECISION, DIMENSION(nbs):: Ds, vs, N_s, dts
-      DOUBLE PRECISION, DIMENSION(nbr+1):: Dy
-      DOUBLE PRECISION, DIMENSION(nbs+1):: Dx
+      DOUBLE PRECISION, DIMENSION(nbr):: vr, D1, N_r
+      DOUBLE PRECISION, DIMENSION(nbs):: vs, N_s
       DOUBLE PRECISION:: loga_, a_, b_, second, M0, M2, M3, Mrat, oM3
       DOUBLE PRECISION:: N0_r, lam_exp, lamr, slam1, slam2
       DOUBLE PRECISION:: dvs, dvr, masss, massr
@@ -2539,31 +2609,12 @@
 
 !+---+
 
-!..Create bins of rain (from min diameter up to 5 mm).
-      Dy(1) = D0r*1.0d0
-      Dy(nbr+1) = 0.005d0
-      do n2 = 2, nbr
-         Dy(n2) = DEXP(DFLOAT(n2-1)/DFLOAT(nbr) &
-                  *DLOG(Dy(nbr+1)/Dy(1)) +DLOG(Dy(1)))
-      enddo
       do n2 = 1, nbr
-         Dr(n2) = DSQRT(Dy(n2)*Dy(n2+1))  
          vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          D1(n2) = (vr(n2)/av_s)**(1./bv_s)
-         dtr(n2) = Dy(n2+1) - Dy(n2)
-      enddo
-
-!..Create bins of snow (from min diameter up to 2 cm).
-      Dx(1) = D0s*1.0d0
-      Dx(nbs+1) = 0.02d0
-      do n = 2, nbs
-         Dx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbs) &
-                  *DLOG(Dx(nbs+1)/Dx(1)) +DLOG(Dx(1)))
       enddo
       do n = 1, nbs
-         Ds(n) = DSQRT(Dx(n)*Dx(n+1))
          vs(n) = 1.5*av_s*Ds(n)**bv_s * DEXP(-fv_s*Ds(n))
-         dts(n) = Dx(n+1) - Dx(n)
       enddo
 
       do m = 1, ntb_r
@@ -2693,11 +2744,8 @@
 
 !..Local variables
       INTEGER:: i, j, k, n, n2
-      INTEGER, PARAMETER:: nbr = 100
-      INTEGER, PARAMETER:: nbc = 50
-      DOUBLE PRECISION, DIMENSION(nbr):: Dr, N_r, dtr, massr
-      DOUBLE PRECISION, DIMENSION(nbr+1):: Dy
-      DOUBLE PRECISION, DIMENSION(nbc):: Dc, N_c, dtc, massc
+      DOUBLE PRECISION, DIMENSION(nbr):: N_r, massr
+      DOUBLE PRECISION, DIMENSION(nbc):: N_c, massc
       DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
                          prob, vol, Texp, orho_w, &
                          lam_exp, lamr, N0_r, lamc, N0_c, y
@@ -2706,27 +2754,11 @@
 
       orho_w = 1./rho_w
 
-!..Create bins of rain (from min diameter up to 5 mm).
-      Dy(1) = D0r*1.0d0
-      Dy(nbr+1) = 0.005d0
-      do n2 = 2, nbr
-         Dy(n2) = DEXP(DFLOAT(n2-1)/DFLOAT(nbr) &
-                  *DLOG(Dy(nbr+1)/Dy(1)) +DLOG(Dy(1)))
-      enddo
       do n2 = 1, nbr
-         Dr(n2) = DSQRT(Dy(n2)*Dy(n2+1))
          massr(n2) = am_r*Dr(n2)**bm_r
-         dtr(n2) = Dy(n2+1) - Dy(n2)
       enddo
-
-!..Create bins of cloud water (from min diameter up to 50 microns).
-      Dc(1) = D0c*1.0d0
-      massc(1) = am_r*Dc(1)**bm_r
-      dtc(1) = D0c*1.0D6
-      do n = 2, nbc
-         Dc(n) = Dc(n-1) + 1.0D-6
+      do n = 1, nbc
          massc(n) = am_r*Dc(n)**bm_r
-         dtc(n) = (Dc(n) - Dc(n-1)) * 1.0D6
       enddo
 
 !..Freeze water (smallest drops become cloud ice, otherwise graupel).
@@ -2767,7 +2799,7 @@
                vol = massc(n)*orho_w
                prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
                N_c(n) = N0_c* y**mu_c * EXP(-lamc*y)*dtc(n)
-               N_c(n) = 1.0D18 * N_c(n)
+               N_c(n) = 1.0D24 * N_c(n)
                sumn2 = sumn2 + prob*N_c(n)
                sum1 = sum1 + prob*N_c(n)*massc(n)
             enddo
@@ -2789,31 +2821,17 @@
 !.. ice depositional growth is this portion of distrib while larger
 !.. diameters contribute to snow growth (as in Harrington et al. 1995).
 !+---+-----------------------------------------------------------------+
-            
+
       subroutine qi_aut_qs
 
       implicit none
 
 !..Local variables
       INTEGER:: i, j, n2
-      INTEGER, PARAMETER:: nbi = 100
-      DOUBLE PRECISION, DIMENSION(nbi):: Di, N_i, dti
-      DOUBLE PRECISION, DIMENSION(nbi+1):: Dy
+      DOUBLE PRECISION, DIMENSION(nbi):: N_i
       DOUBLE PRECISION:: N0_i, lami, Di_mean, t1, t2
 
 !+---+
-
-!..Create bins of cloud ice (from min diameter up to 10x min snow size).
-      Dy(1) = D0i*1.0d0
-      Dy(nbi+1) = 10.0d0*D0s
-      do n2 = 2, nbi
-         Dy(n2) = DEXP(DFLOAT(n2-1)/DFLOAT(nbi) &
-                  *DLOG(Dy(nbi+1)/Dy(1)) +DLOG(Dy(1)))
-      enddo
-      do n2 = 1, nbi
-         Di(n2) = DSQRT(Dy(n2)*Dy(n2+1))
-         dti(n2) = Dy(n2+1) - Dy(n2)
-      enddo
 
       do j = 1, ntb_i1
          do i = 1, ntb_i
@@ -2846,6 +2864,114 @@
       enddo
 
       end subroutine qi_aut_qs
+!
+!+---+-----------------------------------------------------------------+
+!..Variable collision efficiency for rain collecting cloud water using
+!.. method of Beard and Grover, 1974 if a/A less than 0.25; otherwise
+!.. uses polynomials to get close match of Pruppacher & Klett Fig 14-9.
+!+---+-----------------------------------------------------------------+
+
+      subroutine table_Efrw
+
+      implicit none
+
+!..Local variables
+      DOUBLE PRECISION:: vtr, stokes, reynolds, Ef_rw
+      DOUBLE PRECISION:: p, yc0, F, G, H, z, K0, X
+      INTEGER:: i, j
+
+      do j = 1, nbc
+      do i = 1, nbr
+         p = Dc(j)/Dr(i)
+         if (Dr(i).lt.50.E-6 .or. Dc(j).lt.3.E-6) then
+          t_Efrw(i,j) = 0.0
+         elseif (p.gt.0.25) then
+          X = Dc(j)*1.D6
+          if (Dr(i) .lt. 75.e-6) then
+             Ef_rw = 0.026794*X - 0.20604
+          elseif (Dr(i) .lt. 125.e-6) then
+             Ef_rw = -0.00066842*X*X + 0.061542*X - 0.37089
+          elseif (Dr(i) .lt. 175.e-6) then
+             Ef_rw = 4.091e-06*X*X*X*X - 0.00030908*X*X*X               &
+                   + 0.0066237*X*X - 0.0013687*X - 0.073022
+          elseif (Dr(i) .lt. 250.e-6) then
+             Ef_rw = 9.6719e-5*X*X*X - 0.0068901*X*X + 0.17305*X        &
+                   - 0.65988
+          elseif (Dr(i) .lt. 350.e-6) then
+             Ef_rw = 9.0488e-5*X*X*X - 0.006585*X*X + 0.16606*X         &
+                   - 0.56125
+          else
+             Ef_rw = 0.00010721*X*X*X - 0.0072962*X*X + 0.1704*X        &
+                   - 0.46929
+          endif
+         else
+          vtr = -0.1021 + 4.932E3*Dr(i) - 0.9551E6*Dr(i)*Dr(i) &
+              + 0.07934E9*Dr(i)*Dr(i)*Dr(i) &
+              - 0.002362E12*Dr(i)*Dr(i)*Dr(i)*Dr(i)
+          stokes = Dc(j)*Dc(j)*vtr*rho_w/(9.*1.718E-5*Dr(i))
+          reynolds = 9.*stokes/(p*p*rho_w)
+
+          F = DLOG(reynolds)
+          G = -0.1007D0 - 0.358D0*F + 0.0261D0*F*F
+          K0 = DEXP(G)
+          z = DLOG(stokes/(K0+1.D-15))
+          H = 0.1465D0 + 1.302D0*z - 0.607D0*z*z + 0.293D0*z*z*z
+          yc0 = 2.0D0/PI * ATAN(H)
+          Ef_rw = (yc0+p)*(yc0+p) / ((1.+p)*(1.+p))
+
+         endif
+
+         t_Efrw(i,j) = MAX(0.0, MIN(SNGL(Ef_rw), 0.95))
+
+      enddo
+      enddo
+
+      end subroutine table_Efrw
+
+!+---+-----------------------------------------------------------------+
+!..Variable collision efficiency for snow collecting cloud water using
+!.. method of Wang and Ji, 2000 except equate melted snow diameter to
+!.. their "effective collision cross-section."
+!+---+-----------------------------------------------------------------+
+
+      subroutine table_Efsw
+
+      implicit none
+
+!..Local variables
+      DOUBLE PRECISION:: Ds_m, vts, vtc, stokes, reynolds, Ef_sw
+      DOUBLE PRECISION:: p, yc0, F, G, H, z, K0
+      INTEGER:: i, j
+
+      do j = 1, nbc
+      vtc = 1.19D4 * (1.0D4*Dc(j)*Dc(j)*0.25D0)
+      do i = 1, nbs
+         vts = av_s*Ds(i)**bv_s * DEXP(-fv_s*Ds(i)) - vtc
+         Ds_m = (am_s*Ds(i)**bm_s / am_r)**obmr
+         p = Dc(j)/Ds_m
+         if (p.gt.0.25 .or. Ds(i).lt.D0s .or. Dc(j).lt.6.E-6 &
+               .or. vts.lt.1.E-3) then
+          t_Efsw(i,j) = 0.0
+         else
+          stokes = Dc(j)*Dc(j)*vts*rho_w/(9.*1.718E-5*Ds_m)
+          reynolds = 9.*stokes/(p*p*rho_w)
+
+          F = DLOG(reynolds)
+          G = -0.1007D0 - 0.358D0*F + 0.0261D0*F*F
+          K0 = DEXP(G)
+          z = DLOG(stokes/(K0+1.D-15))
+          H = 0.1465D0 + 1.302D0*z - 0.607D0*z*z + 0.293D0*z*z*z
+          yc0 = 2.0D0/PI * ATAN(H)
+          Ef_sw = (yc0+p)*(yc0+p) / ((1.+p)*(1.+p))
+
+          t_Efsw(i,j) = MAX(0.0, MIN(SNGL(Ef_sw), 0.95))
+         endif
+
+      enddo
+      enddo
+
+      end subroutine table_Efsw
+
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
       SUBROUTINE GCF(GAMMCF,A,X,GLN)
@@ -3025,7 +3151,7 @@
 END MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+
 !
-! MODIFICATIONS TO MAKE IN OTHER MODULES
+! MODIFICATIONS TO MAKE IN OTHER MODULES  (pre v2.2 code only)
 !
 ! Use this new code by changing the "THOMPSON" section of code found
 ! in "module_microphysics_driver.F" with this section.  [Of course

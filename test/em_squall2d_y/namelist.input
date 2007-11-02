@@ -76,13 +76,17 @@
  smdiv                               = 0.1,
  emdiv                               = 0.01,
  epssm                               = 0.1,
- mix_full_fields                     = .true.,
- non_hydrostatic                     = .true.,
  time_step_sound                     = 6,
  h_mom_adv_order                     = 5,
  v_mom_adv_order                     = 3,
  h_sca_adv_order                     = 5,
  v_sca_adv_order                     = 3,
+ mix_full_fields                     = .true.,
+ non_hydrostatic                     = .true.,
+ pd_moist                            = .true., .true., .true.,
+ pd_scalar                           = .true., .true., .true.,
+ pd_chem                             = .true., .true., .true.,
+ pd_tke                              = .true., .true., .true.,
  /
 
  &bdy_control

@@ -75,7 +75,7 @@ OBJS    =                           \
 LIBTARGET    =  chemics
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS)
-		$(AR) $(LIBWRFLIB) $(MODULES) $(OBJS)
+		$(AR) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
 
 include ../configure.wrf
 

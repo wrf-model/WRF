@@ -32,7 +32,6 @@ MODULES =                 		\
 #	module_initialize_nmm.o        
 
 OBJS    = 		          	\
-	read_nmm.o			\
 	init_modules_nmm.o  		\
 	start_domain_nmm.o  		\
 	solve_nmm.o         		\

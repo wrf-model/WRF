@@ -1987,6 +1987,27 @@ BENCH_END(small_step_finish_tim)
    !$OMP END PARALLEL DO
 
 !---------------------- positive definite bc call
+#ifdef DM_PARALLEL
+   if(config_flags%pd_moist) then
+#ifndef RSL
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#     include "HALO_EM_MOIST_OLD_E_5.inc"
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#     include "HALO_EM_MOIST_OLD_E_7.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+#else
+       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+#endif    
+  endif
+#endif
+
+#ifdef DM_PARALLEL
+#  include "PERIOD_BDY_EM_MOIST_OLD.inc"
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -2004,24 +2025,6 @@ BENCH_END(small_step_finish_tim)
       ENDIF
    END DO
    !$OMP END PARALLEL DO
-
-#ifdef DM_PARALLEL
-   if(config_flags%pd_moist) then
-#ifndef RSL
-     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_MOIST_OLD_E_5.inc"
-     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_MOIST_OLD_E_7.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-#else
-       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-#endif     
-  endif
-#endif
 
    END IF  ! end if for pd_moist
 
@@ -2052,7 +2055,27 @@ BENCH_END(small_step_finish_tim)
    !$OMP END PARALLEL DO
 
 !---------------------- positive definite bc call
+#ifdef DM_PARALLEL
+   if(config_flags%pd_scalar) then
+#ifndef RSL
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#     include "HALO_EM_SCALAR_OLD_E_5.inc"
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#     include "HALO_EM_SCALAR_OLD_E_7.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+#else
+       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+#endif   
+  endif
+#endif
 
+#ifdef DM_PARALLEL
+#  include "PERIOD_BDY_EM_SCALAR_OLD.inc"
+#endif
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
 
@@ -2070,24 +2093,6 @@ BENCH_END(small_step_finish_tim)
       ENDIF
    END DO
    !$OMP END PARALLEL DO
-
-#ifdef DM_PARALLEL
-   if(config_flags%pd_scalar) then
-#ifndef RSL
-     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_SCALAR_OLD_E_5.inc"
-     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_SCALAR_OLD_E_7.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-#else
-       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-#endif     
-  endif
-#endif
 
    END IF  ! end if for pd_scalar
 
@@ -2119,6 +2124,27 @@ BENCH_END(small_step_finish_tim)
    !$OMP END PARALLEL DO
 
 !---------------------- positive definite bc call
+#ifdef DM_PARALLEL
+   if(config_flags%pd_chem) then
+#ifndef RSL
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#     include "HALO_EM_CHEM_OLD_E_5.inc"
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#     include "HALO_EM_CHEM_OLD_E_7.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+#else
+       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+#endif   
+  endif
+#endif
+
+#ifdef DM_PARALLEL
+#  include "PERIOD_BDY_EM_CHEM_OLD.inc"
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -2137,25 +2163,6 @@ BENCH_END(small_step_finish_tim)
       ENDIF
    END DO
    !$OMP END PARALLEL DO
-
-
-#ifdef DM_PARALLEL
-   if(config_flags%pd_chem) then
-#ifndef RSL
-     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_CHEM_OLD_E_5.inc"
-     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_CHEM_OLD_E_7.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-#else
-       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-#endif     
-  endif
-#endif
 
   END IF  ! end if for pd_chem
 
@@ -2187,6 +2194,27 @@ BENCH_END(small_step_finish_tim)
    !$OMP END PARALLEL DO
 
 !---------------------- positive definite bc call
+#ifdef DM_PARALLEL
+   if(config_flags%pd_tke) then
+#ifndef RSL
+     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#     include "HALO_EM_TKE_OLD_E_5.inc"
+     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#     include "HALO_EM_TKE_OLD_E_7.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+#else
+       WRITE(wrf_err_message,*)'cannot use pd scheme with RSL - use RSL-LITE'
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+#endif   
+  endif
+#endif
+
+#ifdef DM_PARALLEL
+#  include "PERIOD_BDY_EM_TKE_OLD.inc"
+#endif
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -2202,17 +2230,6 @@ BENCH_END(small_step_finish_tim)
    !$OMP END PARALLEL DO
 
 !---  end of positive definite physics tendency update
-
-#ifdef DM_PARALLEL
-     IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_TKE_OLD_E_5.inc"
-     ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_TKE_OLD_E_7.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-#endif
 
    END IF  ! end if for pd_tke
 

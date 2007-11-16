@@ -1374,7 +1374,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     DO i=i_start, i_end
       t_2ave(i,k,j)=.5*((1.+epssm)*t_2(i,k,j)       &
                     +(1.-epssm)*t_2ave(i,k,j))
-      t_2ave(i,k,j)=(t_2ave(i,k,j)-mu1(i,j)*t_1(i,k,j)) &
+      t_2ave(i,k,j)=(t_2ave(i,k,j) + muave(i,j)*t0) &
                     /(muts(i,j)*(t0+t_1(i,k,j)))
       wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
            *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
@@ -1437,9 +1437,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                 +dts*g*msft_inv(i)*(rdn(k)*                        &
              (c2a(i,k  ,j)*alt(i,k  ,j)*t_2ave(i,k  ,j)            &
              -c2a(i,k-1,j)*alt(i,k-1,j)*t_2ave(i,k-1,j))           &
-               +(rdn(k)*(c2a(i,k  ,j)*alb(i,k  ,j)                 &
-                        -c2a(i,k-1,j)*alb(i,k-1,j))*mut_inv(i)-1.) &
-                     *muave(i,j))
+              - muave(i,j))
       ENDDO
     ENDDO
 
@@ -1453,8 +1451,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
               +(1.-epssm)*(ph(i,k,j)-ph(i,k-1,j)))                  &
          -dts*g*(2.*rdnw(k-1)*                                      &
                    c2a(i,k-1,j)*alt(i,k-1,j)*t_2ave(i,k-1,j)        &
-             +(1.+2.*rdnw(k-1)*c2a(i,k-1,j)*alb(i,k-1,j)*mut_inv(i))  &
-                        *muave(i,j)) )
+              + muave(i,j)) )
     ENDDO
 
     DO k=2,k_end+1

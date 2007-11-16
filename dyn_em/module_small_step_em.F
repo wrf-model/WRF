@@ -1460,17 +1460,15 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     ENDDO
     ENDDO
 
-    IF (config_flags%damp_opt .eq. 3) THEN
-       k=k_end+1
-       DO i=i_start, i_end
-          dampwt(k) = dampmag
-          w(i,k,j) = (w(i,k,j) - dampwt(k)*mut(i,j)*w_save(i,k,j))/(1.+dampwt(k))
-       ENDDO
-    ENDIF
     DO k=k_end,2,-1
     DO i=i_start, i_end
        w (i,k,j)=w (i,k,j)-gamma(i,k,j)*w(i,k+1,j)
-       IF (config_flags%damp_opt .eq. 3) THEN
+    ENDDO
+    ENDDO
+
+    IF (config_flags%damp_opt .eq. 3) THEN
+      DO k=k_end+1,2,-1
+      DO i=i_start, i_end
           htop=(ph_1(i,k_end+1,j)+phb(i,k_end+1,j))/g
           hk=(ph_1(i,k,j)+phb(i,k,j))/g
           hbot=htop-hdepth
@@ -1479,15 +1477,15 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
             dampwt(k) = dampmag*sin(0.5*pi*(hk-hbot)/hdepth)*sin(0.5*pi*(hk-hbot)/hdepth)
           endif
           w(i,k,j) = (w(i,k,j) - dampwt(k)*mut(i,j)*w_save(i,k,j))/(1.+dampwt(k))
-       ENDIF
-       ph(i,k+1,j) = rhs(i,k+1)+msft(i,j)*.5*dts*g*(1.+epssm) &
-                      *w(i,k+1,j)/muts(i,j)
-    ENDDO
-    ENDDO
+      ENDDO
+      ENDDO
+    ENDIF
 
+    DO k=k_end+1,2,-1
     DO i=i_start, i_end
-       ph(i,2,j) =  rhs(i,2)+msft(i,j)*.5*dts*g*(1.+epssm) &
-                      *w(i,2,j)/muts(i,j)
+       ph(i,k,j) = rhs(i,k)+msft(i,j)*.5*dts*g*(1.+epssm) &
+                      *w(i,k,j)/muts(i,j)
+    ENDDO
     ENDDO
 
   ENDDO j_loop_w

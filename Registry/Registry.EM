@@ -1306,6 +1306,10 @@ period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
 period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist
 period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem
 period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar
+period    PERIOD_BDY_EM_MOIST_OLD dyn_em 3:moist_old
+period    PERIOD_BDY_EM_CHEM_OLD dyn_em 3:chem_old
+period    PERIOD_BDY_EM_SCALAR_OLD dyn_em 3:scalar_old
+period    PERIOD_BDY_EM_TKE_OLD dyn_em 3:tke_1
 period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy

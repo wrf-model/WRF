@@ -499,7 +499,7 @@ print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
-#ifndef DA_CORE
+#if (DA_CORE != 1)
 ! Don't perform the check for WRFVAR, as we're not passing the right dates 
 ! around
             CALL domain_clockprint(150, grid, &

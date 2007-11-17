@@ -81,11 +81,11 @@ Other output options:
  auxhist2_interval (max_dom)         = 10,      ; interval in minutes
  io_form_auxhist2                    = 2,       ; output in netCDF
 
-Additional ones when running 3DVAR:
+Additional settings when running WRFVAR:
 
  write_input                         = t,       ; write input-formatted data as output
  inputout_interval                   = 180,     ; interval in minutes when writing input-formatted data 
- input_outname                       = 'wrf_3dvar_input_d<domain>_<date>' ; you may change the output file name
+ input_outname                       = 'wrfinput_d<domain>_<date>' ; you may change the output file name
  inputout_begin_y                    = 0
  inputout_begin_mo                   = 0
  inputout_begin_d                    = 0

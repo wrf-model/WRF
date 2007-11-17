@@ -257,8 +257,14 @@ gen_get_nl_config ( char * dirname )
 	    } else if ( !strcmp( p->nentries, "max_eta" )) {
               fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%e_vert(1) ) THEN\n") ;
               fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range eta_level number: ',id_id\n",gs,p->name) ;
+	    } else if ( !strcmp( p->nentries, "max_outer_iterations" )) {
+              fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. max_outer_iterations ) THEN\n") ;
+              fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range eps number: ',id_id\n",gs,p->name) ;
+	    } else if ( !strcmp( p->nentries, "max_instruments" )) {
+              fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. max_instruments ) THEN\n") ;
+              fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range instruments number: ',id_id\n",gs,p->name) ;
 	    } else {
-	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains, max_moves, or max_eta \n") ;
+	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains, max_moves, max_eta, max_outer_iterations, or max_instruments \n") ;
 	    }
             fprintf(fp,"    CALL wrf_error_fatal(emess)\n") ;
             fprintf(fp,"  ENDIF\n" ) ;
@@ -291,8 +297,14 @@ gen_get_nl_config ( char * dirname )
 	    } else if ( !strcmp( p->nentries, "max_eta" )) {
               fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%e_vert(1) ) THEN\n") ;
               fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range eta_level number: ',id_id\n",gs,p->name) ;
+	    } else if ( !strcmp( p->nentries, "max_outer_iterations" )) {
+              fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. max_outer_iterations ) THEN\n") ;
+              fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range eps number: ',id_id\n",gs,p->name) ;
+	    } else if ( !strcmp( p->nentries, "max_instruments" )) {
+              fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. max_instruments ) THEN\n") ;
+              fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range instruments number: ',id_id\n",gs,p->name) ;
 	    } else {
-	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains, max_moves, or max_eta \n") ;
+	      fprintf(stderr,"Registry WARNING: multi element rconfig entry must be either max_domains, max_moves, max_eta, max_outer_iterations, or max_instruments \n") ;
 	    }
             fprintf(fp,"    CALL wrf_error_fatal(emess)\n") ;
             fprintf(fp,"  ENDIF\n" ) ;

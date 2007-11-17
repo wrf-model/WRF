@@ -49,6 +49,14 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_eta         =   501
 
+   !  The maximum number of outer iterations (for DA minimisation)
+
+   INTEGER , PARAMETER :: max_outer_iterations = 10
+
+   !  The maximum number of instruments (for radiance DA)
+
+   INTEGER , PARAMETER :: max_instruments =   30
+
    !  2. Following related to driver leve data structures for DM_PARALLEL communications
 
 #ifdef DM_PARALLEL

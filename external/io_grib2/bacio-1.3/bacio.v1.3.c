@@ -11,7 +11,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef MACOS
+#include <sys/malloc.h>
+#else
 #include <malloc.h>
+#endif
 #include <ctype.h>
 #include <string.h>
 

@@ -6326,7 +6326,7 @@ wrfio_grib1 :
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) " RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-Mfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) " RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-ffixed-form" archive )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -6453,7 +6453,7 @@ wrfio_grib1 :
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-Mfixed" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-ffixed-form" archive)
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7071,7 +7071,7 @@ wrfio_grib1 :
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-Mfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-ffixed-form" archive )
 
 
 wrfio_int : 
@@ -7187,7 +7187,7 @@ wrfio_grib1 :
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-Mfixed" archive )
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-ffixed-form" archive )
 
 wrfio_int : 
 	( cd ../external/io_int ; \
@@ -7313,7 +7313,7 @@ wrfio_grib1 :
 
 wrfio_grib2 :
 	( cd ../external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-Mfixed" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" FIXED="-ffixed-form" archive)
 
 wrfio_int : 
 	( cd ../external/io_int ; \

@@ -181,6 +181,8 @@ i1       real   t_tendf        ikj     dyn_em      1         -
 state    real   tp             ikj     dyn_em      2         -  
 i1       real   t_2save        ikj     dyn_em      1         -   
 state    real   t_save         ikj     dyn_em      1         -               "t_save"
+#
+state    real   h_div          ikj     dyn_em      1         -       -       "h_div"
 #                                               
 
 
@@ -249,7 +251,7 @@ state    real    dnw            k       dyn_em      1         -     irh       "d
 state    real    dn             k       dyn_em      1         -     irh       "dn " "d(eta) values between half (mass) levels"   ""
 state    real    znu            k       dyn_em      1         -     irh       "znu"  "eta values on half (mass) levels"  ""
 state    real    znw            k       dyn_em      1         Z     i01rh     "znw"  "eta values on full (w) levels"  ""
-state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATET T IN IDEALIZED CASES"         "K"      
+state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATE T IN IDEALIZED CASES"         "K"      
 state    real    z              ikj     dyn_em      1         -     -         " " " " " "
 i1       real    mu_3d          ikj     dyn_em      1         -                                          
 i1       real    z_at_w         ikj     dyn_em      1         Z 
@@ -343,7 +345,7 @@ state   real    -              ikjftb  scalar      1         -     -   -
 state   real    qndrop         ikjftb  scalar      1         -     \
    i01rhusdf=(bdy_interp:dt)    "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qni            ikjftb  scalar      1         -     \
-   i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg(-1)"
+   i01rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
 state   real    qt             ikjftb  scalar      1         -     \
    i01rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
 
@@ -446,7 +448,7 @@ state    real   SFCRUNOFF        ij     misc        1         -      rhd=(interp
 state    real   UDRUNOFF         ij     misc        1         -      rhd=(interp_mask_land_field:lu_index)      "UDROFF"           "UNDERGROUND RUNOFF" "mm"
 state  integer  IVGTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)            "IVGTYP"           "DOMINANT VEGETATION CATEGORY" ""
 state  integer  ISLTYP           ij     misc        1         -     i02rhd=(interp_fcni)u=(copy_fcni)            "ISLTYP"           "DOMINANT SOIL CATEGORY"       ""
-state    real   VEGFRA           ij     misc        1         -     i0125rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "VEGFRA"           "VEGETATION FRACTION" ""
+state    real   VEGFRA           ij     misc        1         -     i0124rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)   "VEGFRA"           "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -      r                                          "SFCEVP"           "SURFACE EVAPORATION" "kg m-2"
 state    real   GRDFLX           ij     misc        1         -      rh                                         "GRDFLX"           "GROUND HEAT FLUX" "W m-2"
 state    real   SFCEXC           ij     misc        1         -      r                                          "SFCEXC "          "SURFACE EXCHANGE COEFFICIENT"   "m s-1"
@@ -457,7 +459,7 @@ state    real   SNOW             ij     misc        1         -     i012rhd=(int
 state    real   SNOWH            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SNOWH"            "PHYSICAL SNOW DEPTH"      "m"
 state    real   RHOSN            ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "RHOSN"            " SNOW DENSITY"      "kg m-3" 
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
-state    real   SST              ij     misc        1         -     i0125rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
+state    real   SST              ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index)   "SST"              "SEA SURFACE TEMPERATURE" "K"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
 
@@ -583,6 +585,14 @@ state   real    h_diabatic     ikj     misc         1         -      rdu      "h
 state   real    msft           ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_M"         "Map scale factor on mass grid" ""
 state   real    msfu           ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_U"         "Map scale factor on u-grid" ""
 state   real    msfv           ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_V"         "Map scale factor on v-grid" ""
+state   real    msftx          ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_MX"         "Map scale factor on mass grid, x direction" ""
+state   real    msfty          ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_MY"         "Map scale factor on mass grid, y direction" ""
+state   real    msfux          ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_UX"         "Map scale factor on u-grid, x direction" ""
+state   real    msfuy          ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_UY"         "Map scale factor on u-grid, y direction" ""
+state   real    msfvx          ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_VX"         "Map scale factor on v-grid, x direction" ""
+state   real    msfvx_inv      ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MF_VX_INV"         "Inverse map scale factor on v-grid, x direction" ""
+state   real    msfvy          ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_VY"         "Map scale factor on v-grid, y direction" ""
+
 state   real    f              ij      misc         1         -     i012rhdu=(copy_fcnm)    "f"                "Coriolis sine latitude term"  "s-1"
 state   real    e              ij      misc         1         -     i012rhdu=(copy_fcnm)    "e"                "Coriolis cosine latitude term"  "s-1"
 state   real    sina           ij      misc         1         -     i012rhdu=(copy_fcnm)    "SINALPHA"         "Local sine of map rotation"   ""
@@ -737,6 +747,8 @@ state    real  XLONG_U          ij      dyn_em      1         X     i012rh01du=(
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
 state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
+state    real  CLAT             ij      misc        1         -     irdu=(copy_fcnm)             "CLAT"                "COMPUTATIONAL GRID LATITUDE, SOUTH IS NEGATIVE"                       "degree_north"
+state    real  CLONG            ij      misc        1         -     irdu=(copy_fcnm)             "CLONG"               "COMPUTATIONAL GRID LONGITUDE, WEST IS NEGATIVE"                       "degree_east"
 state    real  ALBBCK           ij      misc        1         -     i012rh       "ALBBCK"                   "BACKGROUND ALBEDO"        ""
 state    real  EMISS            ij      misc        1         -      r        "EMISS"                 "SURFACE EMISSIVITY"         "" 
 
@@ -1082,6 +1094,7 @@ rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0
 rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1     h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
+rconfig   real    hmdiv                   namelist,dynamics	max_domains    0.00    h    "hmdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    0       h     "time_step_sound"               ""      ""
@@ -1101,10 +1114,18 @@ rconfig   real    kv_tke_upper_bound      namelist,dynamics	max_domains    1000.
 rconfig   real    tke_drag_coefficient    namelist,dynamics	max_domains    0.      h    "tke_drag_coefficient"       ""      "dimensionless"
 rconfig   real    tke_heat_flux           namelist,dynamics	max_domains    0.      h    "tke_heat_flux"              ""      "K m s-1"
 rconfig   logical pert_coriolis           namelist,dynamics	max_domains  .false.  irh  "pert_coriolis"    ""   ""
+rconfig   logical coriolis2d              namelist,dynamics	max_domains  .false.  irh  "coriolis2d"    ""   ""
 rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .false.  irh  "mix_full_field"   ""   ""
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
+rconfig   integer polar_filter            namelist,dynamics     1              0       h    "polar_filter"   ""   "0=no polar filtering (default), 1=before acoustic steps, 2=before end of timestep, 3=both"
+rconfig   integer fft_filter_type         namelist,dynamics     1              1       h    "fft_filter_type"   ""   "1=cutoff filter (maximum wavenumber), 2=gouge filter (mid-wavelengths removed)"
+rconfig   logical polar_filter_rk_once    namelist,dynamics     1            .false.  irh   "polar_filter_rk_once"    ""   ""
+rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""
+rconfig   logical do_coriolis             namelist,dynamics	max_domains  .true.   irh  "do_coriolis"    ""   ""
+rconfig   logical do_curvature            namelist,dynamics	max_domains  .true.   irh  "do_curvature"   ""   ""
+rconfig   logical do_gradp                namelist,dynamics	max_domains  .true.   irh  "do_gradp"    ""   ""
 
 
 # Bdy_control
@@ -1122,6 +1143,7 @@ rconfig   logical symmetric_ys            namelist,bdy_control	max_domains    .f
 rconfig   logical symmetric_ye            namelist,bdy_control	max_domains    .false. rh    "symmetric_ye"          ""      ""
 rconfig   logical open_ys                 namelist,bdy_control	max_domains    .false. rh    "open_ys"               ""      ""
 rconfig   logical open_ye                 namelist,bdy_control	max_domains    .false. rh    "open_ye"               ""      ""
+rconfig   logical polar                   namelist,bdy_control	max_domains    .false. rh    "polar"                 ""      ""
 rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
 
@@ -1142,7 +1164,7 @@ rconfig   integer iswater                 derived                  max_domains  
 rconfig   integer isice                   derived                  max_domains    0       -        "isice"                "land use index of ice"        "index category"
 rconfig   integer isurban                 derived                  max_domains    0       -        "isurban"              "land use index for 'urban and built-up"     "index category"
 rconfig   integer isoilwater              derived                  max_domains    0       -        "isoilwater"           "land use index of water for soil"        "index category"
-rconfig   integer map_proj                derived                  max_domains    0       -        "map_proj"             "domain map projection"      "0=none, 1=Lambert, 2=polar, 3=Mercator"
+rconfig   integer map_proj                derived                  max_domains    0       -        "map_proj"             "domain map projection"      "0=none (Cylindrical), 1=Lambert, 2=polar, 3=Mercator"
 
 #
 # Single dummy declaration to define a nodyn dyn option
@@ -1177,6 +1199,7 @@ package   progndrop     progn==1                     -             scalar:qndrop
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc
 package   gfdllwscheme  ra_lw_physics==99            -             -
+package   heldsuarez    ra_lw_physics==31            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
@@ -1228,7 +1251,7 @@ package   io_pnetcdf  io_form_restart==11                     -             -
 halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
-halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msft,msfu,msfv,f,e,sina,cosa,ht,potevp,snopcx,soiltb
+halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat,clong
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar
 halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
@@ -1249,10 +1272,10 @@ halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
 halo      HALO_EM_TKE_F dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
 halo      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
-halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
+halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb,h_div
 halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
-halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
+halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf,h_div
 halo      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut
 halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
 halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
@@ -1299,7 +1322,7 @@ halo      HALO_OBS_NUDGE dyn_em 24:pb,p,uratx,vratx,tratx
 
 # Periodic Boundary Communications
 
-period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msft,msfu,msfv,sina,cosa,e,f
+period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,sina,cosa,e,f
 period    PERIOD_BDY_EM_MOIST dyn_em 3:moist
 period    PERIOD_BDY_EM_CHEM dyn_em 3:chem
 period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
@@ -1315,10 +1338,10 @@ period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmhd,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2
 period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten
-period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
-period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf
+period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb,h_div
+period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf,h_div
 period    PERIOD_BDY_EM_B2 dyn_em 2:ru_tend,rv_tend
-period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfv,muu,msfu
+period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfvx,msfvy,muu,msfux,msfuy,msfvx_inv
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2
 period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,mu_1,mu_2
 
@@ -1367,4 +1390,33 @@ typedef fdob_type real    rjo                  z        -         1        -    
 typedef fdob_type real    rko                  z        -         1        -       -       "rko"             "vertical grid coordinate"
 
 state fdob_type fdob - -
+
+# xpose variables for polar fft
+state    real   t_xxx          ikjx    -           1        -
+state    real   u_xxx          ikjx    -           1        X
+state    real   ru_xxx         ikjx    -           1        X
+state    real   v_xxx          ikjx    -           1        Y
+state    real   rv_xxx         ikjx    -           1        Y
+state    real   w_xxx          ikjx    -           1        Z
+state    real   ww_xxx         ikjx    -           1        Z
+state    real   ph_xxx         ikjx    -           1        Z
+state    real   dum_yyy        ikjy    -           1        -
+state    real   fourd_xxx      ikjx    -           1        -
+state    real   clat_xxx       ijx     -           1        -
+state    real   ht_xxx         ijx     -           1        -
+state    real   mf_xxx         ijx     -           1        -
+
+xpose XPOSE_POLAR_FILTER_TOPO dyn_em t_init,t_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_T  dyn_em t_2,t_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_U  dyn_em u_2,u_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_RU dyn_em ru_m,ru_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_V  dyn_em v_2,v_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_RV dyn_em rv_m,rv_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_W  dyn_em w_2,w_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_WW dyn_em ww_m,ww_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_PH dyn_em ph_2,ph_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_MOIST dyn_em moist,fourd_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_CHEM dyn_em chem,fourd_xxx,dum_yyy
+xpose XPOSE_POLAR_FILTER_SCALAR dyn_em scalar,fourd_xxx,dum_yyy
+
 ##

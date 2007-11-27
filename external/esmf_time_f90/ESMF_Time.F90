@@ -748,8 +748,13 @@
 
 !$$$here...  add negative sign for YR<0
 !$$$here...  add Sn, Sd ??
+#ifdef PLANET
+      write(TimeString,FMT="(I4.4,'-',I5.5,'_',I2.2,':',I2.2,':',I2.2)") &
+             year,dayofmonth,hour,minute,second
+#else
       write(TimeString,FMT="(I4.4,'-',I2.2,'-',I2.2,'_',I2.2,':',I2.2,':',I2.2)") &
              year,month,dayofmonth,hour,minute,second
+#endif
 
       end subroutine ESMFold_TimeGetString
 

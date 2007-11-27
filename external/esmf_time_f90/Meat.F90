@@ -199,11 +199,17 @@ FUNCTION ndaysinyear ( year ) RESULT (num_diy)
   INTEGER, INTENT(IN) :: year
   INTEGER :: num_diy
   INTEGER :: nfeb
+#if defined MARS
+  num_diy = 669
+#elif defined TITAN
+  num_diy = 686
+#else
   IF ( nfeb( year ) .EQ. 29 ) THEN
     num_diy = 366
   ELSE
     num_diy = 365
   ENDIF
+#endif
 END FUNCTION ndaysinyear
 
 
@@ -272,6 +278,9 @@ IMPLICIT NONE
       INTEGER i
       integer nfeb
 
+#ifdef PLANET
+      dayinyear = DD
+#else
       dayinyear = 0
       DO i = 1,MM-1
         if (i.eq.2) then
@@ -281,6 +290,7 @@ IMPLICIT NONE
         endif
       ENDDO
       dayinyear = dayinyear + DD
+#endif
 END SUBROUTINE compute_dayinyear
 
 
@@ -297,6 +307,9 @@ SUBROUTINE timegetmonth( time, MM )
   INTEGER :: nfeb
   INTEGER :: i
   TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
+#if defined PLANET
+  MM = 0
+#else
   IF ( nfeb(time%YR) == 29 ) THEN
     MMbdys => monthbdysleap
   ELSE
@@ -309,6 +322,7 @@ SUBROUTINE timegetmonth( time, MM )
       EXIT
     ENDIF
   ENDDO
+#endif
   IF ( MM == -1 ) THEN
     CALL wrf_error_fatal( 'timegetmonth:  could not extract month of year from time' )
   ENDIF
@@ -330,6 +344,9 @@ SUBROUTINE timegetdayofmonth( time, DD )
   INTEGER :: MM
   TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
   TYPE(ESMF_BaseTime) :: tmpbasetime
+#if defined PLANET
+  tmpbasetime = time%basetime
+#else
 !$$$ fix this so init just points MMbdys to the one we want for this calendar?
   IF ( nfeb(time%YR) == 29 ) THEN
     MMbdys => monthbdysleap
@@ -338,6 +355,7 @@ SUBROUTINE timegetdayofmonth( time, DD )
   ENDIF
   CALL timegetmonth( time, MM )
   tmpbasetime = time%basetime - MMbdys(MM-1)
+#endif
   DD = ( tmpbasetime%S / SECONDS_PER_DAY ) + 1
 END SUBROUTINE timegetdayofmonth
 
@@ -360,6 +378,9 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
   TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
   ierr = ESMF_SUCCESS
 !  PRINT *,'DEBUG:  BEGIN timeaddmonths()'
+#if defined PLANET
+!  time%basetime = time%basetime
+#else
   IF ( ( MM < 1 ) .OR. ( MM > MONTHS_PER_YEAR ) ) THEN
     ierr = ESMF_FAILURE
   ELSE
@@ -382,6 +403,7 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
     time%basetime = time%basetime + MMbdys(MM-1)
 !  PRINT *,'DEBUG:  END timeaddmonths()'
   ENDIF
+#endif
 END SUBROUTINE timeaddmonths
 
 
@@ -397,6 +419,9 @@ SUBROUTINE timeincmonth( time )
   ! locals
   INTEGER :: nfeb
   INTEGER :: MM
+#if defined PLANET
+!    time%basetime%S = time%basetime%S
+#else
   CALL timegetmonth( time, MM )
   IF ( nfeb(time%YR) == 29 ) THEN
     time%basetime%S = time%basetime%S + &
@@ -405,6 +430,7 @@ SUBROUTINE timeincmonth( time )
     time%basetime%S = time%basetime%S + &
       ( INT( mday(MM), ESMF_KIND_I8 ) * SECONDS_PER_DAY )
   ENDIF
+#endif
 END SUBROUTINE timeincmonth
 
 
@@ -421,6 +447,9 @@ SUBROUTINE timedecmonth( time )
   ! locals
   INTEGER :: nfeb
   INTEGER :: MM
+#if defined PLANET
+!    time%basetime%S = time%basetime%S
+#else
   CALL timegetmonth( time, MM )  ! current month, 1-12
   ! find previous month
   MM = MM - 1
@@ -435,6 +464,7 @@ SUBROUTINE timedecmonth( time )
     time%basetime%S = time%basetime%S - &
       ( INT( mday(MM), ESMF_KIND_I8 ) * SECONDS_PER_DAY )
   ENDIF
+#endif
 END SUBROUTINE timedecmonth
 
 
@@ -752,13 +782,17 @@ SUBROUTINE c_esmc_basetimesum( time1, timeinterval, timeOut )
   INTEGER :: m
   timeOut = time1
   timeOut%basetime = timeOut%basetime + timeinterval%basetime
-  DO m = 1, abs(timeinterval%MM)
+#if defined PLANET
+  ! Do nothing...
+#else
+ DO m = 1, abs(timeinterval%MM)
     IF ( timeinterval%MM > 0 ) THEN
       CALL timeincmonth( timeOut )
     ELSE
       CALL timedecmonth( timeOut )
     ENDIF
   ENDDO
+#endif
   timeOut%YR = timeOut%YR + timeinterval%YR
   CALL normalize_time( timeOut )
 END SUBROUTINE c_esmc_basetimesum
@@ -781,7 +815,9 @@ SUBROUTINE c_esmc_basetimedec( time1, timeinterval, timeOut )
   neginterval%basetime%S = -neginterval%basetime%S
   neginterval%basetime%Sn = -neginterval%basetime%Sn
   neginterval%YR = -neginterval%YR
+#ifndef PLANET
   neginterval%MM = -neginterval%MM
+#endif
   timeOut = time1 + neginterval
 END SUBROUTINE c_esmc_basetimedec
 

@@ -256,6 +256,7 @@ Namelist variables for controling the automatic moving nest:
                                      = 1, rrtm scheme
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
+                                     = 31, Earth Held-Suarez forcing
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
 
@@ -514,6 +515,26 @@ The following are for observation nudging:
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also
                                                   best to use even numbers)
+ do_coriolis (max_dom)               = .true.,	; whether to do Coriolis calculations (idealized)
+ do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized)
+ do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized)
+ polar_filter                        = 2        ; where to do the Fourier filtering at the poles
+	                                          0 = never
+                                                  1 = before the small acoustic timesteps
+                                                  2 = after the small acoustic timesteps
+                                                  3 = before & after small acoustic timesteps
+ fft_filter_type                     = 1        ; what type of filtering to use with the polar Fourier filtering
+                                                  1 = Cutoff filter (power at wavenumbers > maximum wavenumber
+                                                                     is set to 0)
+                                                      Maximum wavenumber derived from functional
+                                                      form based on cosine of latitude, filtering
+                                                      stops equatorward of 60 N/S
+                                                  2 = Gouge filter  (power at mid-wavenumbers is reduced)
+                                                  3 = Cutoff filter w(power at wavenumbers > maximum wavenumber
+                                                                     is set to 0)
+                                                      Maximum wavenumber is set by grid index number
+ polar_filter_rk_once                = .false.  ; Whether to do the polar filtering only at the last Runga-Kutta
+                                                  integration step (TRUE), or during all Runga-Kutta steps (FALSE)
 
 
  &bdy_control
@@ -534,6 +555,9 @@ The following are for observation nudging:
  open_ys (max_dom)                   = .false., ; open boundary conditions at y start (south)
  open_ye (max_dom)                   = .false., ; open boundary conditions at y end (north)
  nested (max_dom)                    = .false., ; nested boundary conditions (inactive)
+ polar                               = .false., ; polar boundary condition
+                                                  (v=0 at polarward-most v-point)
+ coriolis2d (max_dom)                = .false., ; whether to use only 2D formulation of coriolis and curvature terms
 
 
  &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 

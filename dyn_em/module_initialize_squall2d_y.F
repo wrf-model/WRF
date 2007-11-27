@@ -204,9 +204,13 @@ CONTAINS
 
     DO j = jts, jte
       DO i = its, ite
-         grid%msft(i,j)     = 1.
-         grid%msfu(i,j)     = 1.
-         grid%msfv(i,j)     = 1.
+         grid%msftx(i,j)    = 1.
+         grid%msfty(i,j)    = 1.
+         grid%msfux(i,j)    = 1.
+         grid%msfuy(i,j)    = 1.
+         grid%msfvx(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
+         grid%msfvy(i,j)    = 1.
          grid%sina(i,j)     = 0.
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.

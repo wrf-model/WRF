@@ -45,6 +45,13 @@ $(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL)
 wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
 
+pack_utils.o :
+	$(CC) -c $(CFLAGS) pack_utils.c
+
+module_internal_header_util.o :
+	$(CPP) $(CPPFLAGS) -I../inc module_internal_header_util.F > module_internal_header_util.f90
+	$(SFC) -c $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) module_internal_header_util.f90
+
 clean:
 	@ echo 'use the clean script'
 

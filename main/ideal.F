@@ -115,6 +115,14 @@ PROGRAM ideal
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
+#ifdef PLANET
+   WRITE ( current_date , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2,".0000")' ) &
+           config_flags%start_year, &
+           config_flags%start_day, &
+           config_flags%start_hour, &
+           config_flags%start_minute, &
+           config_flags%start_second 
+#else
    WRITE ( current_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2,".0000")' ) &
            config_flags%start_year, &
            config_flags%start_month, &
@@ -122,6 +130,7 @@ PROGRAM ideal
            config_flags%start_hour, &
            config_flags%start_minute, &
            config_flags%start_second 
+#endif
    CALL domain_clockprint ( 150, grid, &
           'DEBUG assemble_output:  clock before 1st currTime set,' )
    WRITE (wrf_err_message,*) &

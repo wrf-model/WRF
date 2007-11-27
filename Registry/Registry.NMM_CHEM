@@ -887,6 +887,7 @@ rconfig   logical symmetric_ys            namelist,bdy_control	max_domains    .f
 rconfig   logical symmetric_ye            namelist,bdy_control	max_domains    .false. rh    "symmetric_ye"          ""      ""
 rconfig   logical open_ys                 namelist,bdy_control	max_domains    .false. rh    "open_ys"               ""      ""
 rconfig   logical open_ye                 namelist,bdy_control	max_domains    .false. rh    "open_ye"               ""      ""
+rconfig   logical polar                   namelist,bdy_control  max_domains    .false. rh    "polar"                 ""      ""
 rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
 
@@ -942,6 +943,7 @@ package   thompson       mp_physics==8               -             moist:qv,qc,q
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             moist:qv,qc,qr,qi
+package   heldsuarez    ra_lw_physics==31            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -

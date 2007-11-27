@@ -220,6 +220,21 @@ integer :: ii
    !  We need to current and starting dates for the output files.  The times need to be incremented
    !  so that the lateral BC files are not overwritten.
 
+#ifdef PLANET
+   WRITE ( start_date_char , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2)' ) &
+           model_config_rec%start_year  (parent_grid%id) , &
+           model_config_rec%start_day   (parent_grid%id) , &
+           model_config_rec%start_hour  (parent_grid%id) , &
+           model_config_rec%start_minute(parent_grid%id) , &
+           model_config_rec%start_second(parent_grid%id) 
+
+   WRITE (   end_date_char , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2)' ) &
+           model_config_rec%  end_year  (parent_grid%id) , &
+           model_config_rec%  end_day   (parent_grid%id) , &
+           model_config_rec%  end_hour  (parent_grid%id) , &
+           model_config_rec%  end_minute(parent_grid%id) , &
+           model_config_rec%  end_second(parent_grid%id) 
+#else
    WRITE ( start_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
            model_config_rec%start_year  (parent_grid%id) , &
            model_config_rec%start_month (parent_grid%id) , &
@@ -235,6 +250,7 @@ integer :: ii
            model_config_rec%  end_hour  (parent_grid%id) , &
            model_config_rec%  end_minute(parent_grid%id) , &
            model_config_rec%  end_second(parent_grid%id) 
+#endif
 
    !  Override stop time with value computed above.
    CALL domain_clock_set( parent_grid, stop_timestr=end_date_char )
@@ -549,6 +565,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
             END DO
          END DO
 
+#ifndef PLANET
          CALL check_consistency ( nested_grid%ivgtyp , nested_grid%isltyp , nested_grid%landmask , &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &
@@ -563,6 +580,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                   ims , ime , jms , jme , kms , kme , &
                                   ips , ipe , jps , jpe , kps , kpe , &
                                   model_config_rec%iswater(nested_grid%id) )
+#endif
 
       END IF
 
@@ -658,20 +676,21 @@ print *,'gmt=',gmt
          !  We need to save the 3d/2d data to compute a difference during the next loop.  Couple the
          !  3d fields with total mu (mub + mu_2) and the stagger-specific map scale factor.
 
+         ! u, theta, h, scalars coupled with my, v coupled with mx
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , ubdy3dtemp1 , nested_grid%em_u_2                 , &
-                       'u' , nested_grid%msfu , &
+                       'u' , nested_grid%msfuy , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , vbdy3dtemp1 , nested_grid%em_v_2                 , &
-                       'v' , nested_grid%msfv , &
+                       'v' , nested_grid%msfvx , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , tbdy3dtemp1 , nested_grid%em_t_2                 , &
-                       't' , nested_grid%msft , &
+                       't' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp1 , nested_grid%em_ph_2                , &
-                       'h' , nested_grid%msft , &
+                       'h' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp1 , nested_grid%moist(:,:,:,P_QV)    , &
-                       't' , nested_grid%msft , &
+                       't' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
 
           DO j = jps , jpe
@@ -744,20 +763,21 @@ print *,'gmt=',gmt
 #endif
       ELSE IF ( ( time_loop .GT. 1 ) .AND. ( time_loop .LT. time_loop_max ) ) THEN
 
+         ! u, theta, h, scalars coupled with my, v coupled with mx
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , ubdy3dtemp2 , nested_grid%em_u_2                 , &
-                       'u' , nested_grid%msfu , &
+                       'u' , nested_grid%msfuy , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , vbdy3dtemp2 , nested_grid%em_v_2                 , &
-                       'v' , nested_grid%msfv , &
+                       'v' , nested_grid%msfvx , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , tbdy3dtemp2 , nested_grid%em_t_2                 , &
-                       't' , nested_grid%msft , &
+                       't' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp2 , nested_grid%em_ph_2                , &
-                       'h' , nested_grid%msft , &
+                       'h' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist(:,:,:,P_QV)    , &
-                       't' , nested_grid%msft , &
+                       't' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
 
           DO j = jps , jpe
@@ -972,20 +992,21 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
 
       ELSE IF ( time_loop .EQ. time_loop_max ) THEN
 
+         ! u, theta, h, scalars coupled with my, v coupled with mx
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , ubdy3dtemp2 , nested_grid%em_u_2                 , &
-                       'u' , nested_grid%msfu , &
+                       'u' , nested_grid%msfuy , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , vbdy3dtemp2 , nested_grid%em_v_2                 , &
-                       'v' , nested_grid%msfv , &
+                       'v' , nested_grid%msfvx , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , tbdy3dtemp2 , nested_grid%em_t_2                 , &
-                       't' , nested_grid%msft , &
+                       't' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , pbdy3dtemp2 , nested_grid%em_ph_2                , &
-                       'h' , nested_grid%msft , &
+                       'h' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( nested_grid%em_mu_2 , nested_grid%em_mub , qbdy3dtemp2 , nested_grid%moist(:,:,:,P_QV)    , &
-                       't' , nested_grid%msft , &
+                       't' , nested_grid%msfty , &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          mbdy2dtemp2(:,1,:) = nested_grid%em_mu_2(:,:)
 

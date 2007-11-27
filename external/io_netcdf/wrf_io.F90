@@ -41,7 +41,7 @@ module wrf_data
   integer                , parameter      :: WrfDataHandleMax = 99
   integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
   integer                , parameter      :: MaxVars          = 2000
-  integer                , parameter      :: MaxTimes         = 9000
+  integer                , parameter      :: MaxTimes         = 900000
   integer                , parameter      :: DateStrLen       = 19
   integer                , parameter      :: VarNameLen       = 31
   integer                , parameter      :: NO_DIM           = 0
@@ -1244,6 +1244,7 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   endif
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
+!  stat = NF_CREATE(FileName, OR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
   stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then

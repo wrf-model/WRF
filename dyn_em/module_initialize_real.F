@@ -88,12 +88,17 @@ CONTAINS
       INTEGER :: num_veg_cat , num_soil_top_cat , num_soil_bot_cat
       INTEGER :: loop , num_seaice_changes
 
-      INTEGER                             ::                       &
-                                     ids, ide, jds, jde, kds, kde, &
-                                     ims, ime, jms, jme, kms, kme, &
-                                     its, ite, jts, jte, kts, kte, &
-                                     ips, ipe, jps, jpe, kps, kpe, &
-                                     i, j, k
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte, &
+                 ips, ipe, jps, jpe, kps, kpe, &
+                 i, j, k
+
+      INTEGER :: imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                 ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                 imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                 ipsy, ipey, jpsy, jpey, kpsy, kpey
+
       INTEGER :: ns
 
       !  Local data
@@ -136,6 +141,7 @@ integer::oops1,oops2
 #    include "em_data_calls.inc"
 #endif
 
+#if 0
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
             kds = grid%sd31 ; kde = grid%ed31 ;
@@ -177,6 +183,20 @@ integer::oops1,oops2
             jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
 
       END SELECT
+#endif
+
+      !  Dimension information stored in grid data structure.
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                ids, ide, jds, jde, kds, kde,    &
+                                ims, ime, jms, jme, kms, kme,    &
+                                ips, ipe, jps, jpe, kps, kpe,    &
+                                imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                                ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                                imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                                ipsy, ipey, jpsy, jpey, kpsy, kpey )
+      its = ips ; ite = ipe ; jts = jps ; jte = jpe ; kts = kps ; kte = kpe
+
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
@@ -200,45 +220,52 @@ integer::oops1,oops2
    
       CALL const_module_initialize ( p00 , t00 , a ) 
 
-#if 0
-!KLUDGE, this is for testing only
-if ( flag_metgrid .eq. 1 ) then
-read (20+grid%id) grid%em_ht_gc
-read (20+grid%id) grid%em_xlat_gc
-read (20+grid%id) grid%em_xlong_gc
-read (20+grid%id) msft
-read (20+grid%id) msfu
-read (20+grid%id) msfv
-read (20+grid%id) f
-read (20+grid%id) e
-read (20+grid%id) sina
-read (20+grid%id) cosa
-read (20+grid%id) grid%landmask
-read (20+grid%id) grid%landusef
-read (20+grid%id) grid%soilctop
-read (20+grid%id) grid%soilcbot
-read (20+grid%id) grid%vegcat
-read (20+grid%id) grid%soilcat
-else
-write (20+grid%id) grid%em_ht
-write (20+grid%id) grid%em_xlat
-write (20+grid%id) grid%em_xlong
-write (20+grid%id) msft
-write (20+grid%id) msfu
-write (20+grid%id) msfv
-write (20+grid%id) f
-write (20+grid%id) e
-write (20+grid%id) sina
-write (20+grid%id) cosa
-write (20+grid%id) grid%landmask
-write (20+grid%id) grid%landusef
-write (20+grid%id) grid%soilctop
-write (20+grid%id) grid%soilcbot
-write (20+grid%id) grid%vegcat
-write (20+grid%id) grid%soilcat
-endif
-#endif
+      !  For backward compatibility, we might need to assign the map factors from
+      !  what they were, to what they are.
 
+      IF      ( ( config_flags%polar ) .AND. ( flag_metgrid .EQ. 1 ) ) THEN
+         DO j=max(jds+1,jts),min(jde-1,jte)
+            DO i=its,min(ide-1,ite)
+               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
+            END DO
+         END DO
+         IF(jts == jds) THEN
+            DO i=its,ite
+               grid%msfvx(i,jts) = 0.
+               grid%msfvx_inv(i,jts) = 0.
+            END DO
+         END IF
+         IF(jte == jde) THEN
+            DO i=its,ite
+               grid%msfvx(i,jte) = 0.
+               grid%msfvx_inv(i,jte) = 0.
+            END DO
+         END IF
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_metgrid .NE. 1 ) ) THEN
+         DO j=jts,jte
+            DO i=its,ite
+               grid%msfvx(i,j) = grid%msfv(i,j)
+               grid%msfvy(i,j) = grid%msfv(i,j)
+               grid%msfux(i,j) = grid%msfu(i,j)
+               grid%msfuy(i,j) = grid%msfu(i,j)
+               grid%msftx(i,j) = grid%msft(i,j)
+               grid%msfty(i,j) = grid%msft(i,j)
+            ENDDO
+         ENDDO
+         DO j=jts,min(jde,jte)
+            DO i=its,min(ide-1,ite)
+               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
+            END DO
+         END DO
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_metgrid .EQ. 1 ) ) THEN
+         DO j=jts,min(jde,jte)
+            DO i=its,min(ide-1,ite)
+               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
+            END DO
+         END DO
+      ELSE IF ( flag_metgrid .NE. 1 ) THEN
+         CALL wrf_error_fatal ( 'SI data cannot be used for a global run' )
+      ENDIF
 
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
       !  vertical locations already.
@@ -253,9 +280,80 @@ endif
               grid%tmn(i,j) = grid%em_tmn_gc(i,j)
               grid%xlat(i,j) = grid%em_xlat_gc(i,j)
               grid%xlong(i,j) = grid%em_xlong_gc(i,j)
+              grid%clat(i,j) = grid%em_xlat_gc(i,j)
+              grid%clong(i,j) = grid%em_xlong_gc(i,j)
               grid%ht(i,j) = grid%em_ht_gc(i,j)
            END DO
          END DO
+
+         !  Filter the input topography.  
+
+         IF ( config_flags%polar ) THEN
+#ifdef DM_PARALLEL
+
+            !  We stick the topo and map fac in an unused 3d array. The map scale 
+            !  factor and computational latitude are passed along for the ride 
+            !  to determine "how many" values are used to compute the mean.
+
+            DO j = jts, MIN(jte,jde-1)
+              DO k = kts, kte
+                 DO i = its, MIN(ite,ide-1)
+                    grid%em_t_init(i,k,j) = 1.
+                 END DO
+              END DO
+              DO i = its, MIN(ite,ide-1)
+                 grid%em_t_init(i,1,j) = grid%ht(i,j)
+                 grid%em_t_init(i,2,j) = grid%msftx(i,j)
+                 grid%em_t_init(i,3,j) = grid%clat(i,j)
+              END DO
+            END DO
+
+# include "XPOSE_POLAR_FILTER_TOPO_z2x.inc"
+
+            !  Retrieve the 2d arrays for topo, map factors, and the
+            !  computational latitude.
+
+            DO j = jpsx, MIN(jpex,jde-1)
+              DO i = ipsx, MIN(ipex,ide-1)
+                 grid%ht_xxx(i,j)   = grid%t_xxx(i,1,j)
+                 grid%mf_xxx(i,j)   = grid%t_xxx(i,2,j)
+                 grid%clat_xxx(i,j) = grid%t_xxx(i,3,j)
+              END DO
+            END DO
+
+            !  Get a mean topo field that is consistent with the grid
+            !  distance on each computational latitude loop.
+
+            CALL filter_topo ( grid%ht_xxx , grid%clat_xxx , grid%mf_xxx , &
+                               ids, ide, jds, jde, 1 , 1 , &
+                               imsx, imex, jmsx, jmex, 1, 1, &
+                               ipsx, ipex, jpsx, jpex, 1, 1 )
+
+            !  Stick the filtered topo back into the dummy 3d array to
+            !  transpose it back to "all z on a patch".
+
+            DO j = jpsx, MIN(jpex,jde-1)
+              DO i = ipsx, MIN(ipex,ide-1)
+                 grid%t_xxx(i,1,j) = grid%ht_xxx(i,j)
+              END DO
+            END DO
+
+# include "XPOSE_POLAR_FILTER_TOPO_x2z.inc"
+
+            !  Get the un-transposed topo data.
+            
+            DO j = jts, MIN(jte,jde-1)
+              DO i = its, MIN(ite,ide-1)
+                 grid%ht(i,j) = grid%em_t_init(i,1,j)
+              END DO
+            END DO
+#else
+            CALL filter_topo ( grid%ht , grid%clat , grid%msftx , &
+                               ids, ide, jds, jde, 1,1,           &
+                               ims, ime, jms, jme, 1,1,           &
+                               its, ite, jts, jte, 1,1 ) 
+#endif
+         END IF
 
          !  If we have any input low-res surface pressure, we store it.
 
@@ -3656,7 +3754,7 @@ print *,'p sfc = ',psfc(i,j)
       DO j = jts , MIN ( jde-1 , jte )
          DO k = kts , kte
             DO i = its , MIN (ide-1 , ite )
-                  rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  1. ) , 100. ) 
+                  rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. ) 
             END DO
          END DO
       END DO
@@ -3665,9 +3763,17 @@ print *,'p sfc = ',psfc(i,j)
          DO j = jts , MIN ( jde-1 , jte )
             DO k = kts , kte
                DO i = its , MIN (ide-1 , ite )
-                  es=svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
-                  qs=eps*es/(p(i,k,j)/100.-es)
-                  q(i,k,j)=MAX(.01*rh(i,k,j)*qs,0.0)
+
+! es is reduced by RH here to avoid problems in low-pressure cases
+
+                  es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
+                  IF (es .ge. p(i,k,j)/100.)THEN
+                    q(i,k,j)=1.0
+                    print *,'warning: vapor pressure exceeds total pressure '
+                    print *,'setting mixing ratio to 1'
+                  ELSE
+                    q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
+                  ENDIF 
                END DO
             END DO
          END DO
@@ -4390,6 +4496,182 @@ print *,'namelist p_top (Pa) = ',p_top
       END IF
 
    END SUBROUTINE sfcprs2
+
+!---------------------------------------------------------------------
+
+   SUBROUTINE filter_topo ( ht_in , xlat , msftx , &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte ) 
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) ::  ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte 
+
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: ht_in
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: xlat , msftx
+
+
+      !  Local vars
+
+      INTEGER :: i , j , j_lat_pos , j_lat_neg
+      INTEGER :: i_kicker , ik , i1, i2, i3, i4
+      REAL :: length_scale , sum
+      REAL , DIMENSION(its:ite,jts:jte) :: ht_out
+
+      !  The filtering is a simple average on a latitude loop.  Possibly a LONG list of
+      !  numbers.  We assume that ALL of the 2d arrays have been transposed so that 
+      !  each patch has the entire domain size of the i-dim local.
+
+      IF ( ( its .NE. ids ) .OR. ( ite .NE. ide ) ) THEN 
+         CALL wrf_error_fatal ( 'filtering assumes all values on X' )
+      END IF
+
+      !  We filter from the pole to a particular latitude heading towards the equator.
+      !  But gosh, which latitude?
+
+      length_scale = 1.1
+
+      !  Starting at the south pole, we find where the
+      !  grid distance is big enough, then go back a point.  Continuing to the
+      !  north pole, we find the first small grid distance.  These are the 
+      !  computational latitude loops and the associated computational poles.
+
+      j_lat_neg = 0
+      j_lat_pos = jde + 1
+      loop_neg : DO j = jts , MIN(jde-1,jte)
+         IF ( xlat(its,j) .LT. 0.0 ) THEN
+            IF ( msftx(its,j) .LT. length_scale ) THEN
+               j_lat_neg = j - 1
+               EXIT loop_neg
+            END IF
+         END IF
+      END DO loop_neg
+
+      loop_pos : DO j = jts , MIN(jde-1,jte)
+         IF ( xlat(its,j) .GT. 0.0 ) THEN
+            IF ( msftx(its,j) .GE. length_scale ) THEN
+               j_lat_pos = j
+               EXIT loop_pos
+            END IF
+         END IF
+      END DO loop_pos
+
+      !  Set output values to initial input topo values for whole patch.
+
+      DO j = jts , MIN(jde-1,jte)
+         DO i = its , MIN(ide-1,ite)
+            ht_out(i,j) = ht_in(i,j)
+         END DO
+      END DO
+
+      !  Filter the topo at the negative lats.
+
+      DO j = j_lat_neg , jts , -1
+         i_kicker = MIN( MAX ( NINT(msftx(its,j)) , 1 ) , (ide - ids) / 2 )
+         print *,'j = ' , j, ', kicker = ',i_kicker
+         DO i = its , MIN(ide-1,ite)
+            IF      ( ( i - i_kicker .GE. its ) .AND. ( i + i_kicker .LE. ide-1 ) ) THEN
+               sum = 0.0
+               DO ik = 1 , i_kicker
+                  sum = sum + ht_in(i+ik,j) + ht_in(i-ik,j)
+               END DO
+               ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 ) 
+            ELSE IF ( ( i - i_kicker .LT. its ) .AND. ( i + i_kicker .LE. ide-1 ) ) THEN
+               sum = 0.0
+               DO ik = 1 , i_kicker
+                  sum = sum + ht_in(i+ik,j)
+               END DO
+               i1 = i - i_kicker + ide
+               i2 = ide-1
+               i3 = ids 
+               i4 = i-1
+               DO ik = i1 , i2
+                  sum = sum + ht_in(ik,j)
+               END DO
+               DO ik = i3 , i4
+                  sum = sum + ht_in(ik,j)
+               END DO
+               ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 ) 
+            ELSE IF ( ( i - i_kicker .GE. its ) .AND. ( i + i_kicker .GT. ide-1 ) ) THEN
+               sum = 0.0
+               DO ik = 1 , i_kicker
+                  sum = sum + ht_in(i-ik,j)
+               END DO
+               i1 = i+1
+               i2 = ide-1
+               i3 = ids
+               i4 = ids + ( i_kicker+i ) - ide
+               DO ik = i1 , i2
+                  sum = sum + ht_in(ik,j)
+               END DO
+               DO ik = i3 , i4
+                  sum = sum + ht_in(ik,j)
+               END DO
+               ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 ) 
+            END IF
+         END DO
+      END DO
+    
+      !  Filter the topo at the positive lats.
+
+      DO j = j_lat_pos , MIN(jde-1,jte)
+         i_kicker = MIN( MAX ( NINT(msftx(its,j)) , 1 ) , (ide - ids) / 2 )
+         print *,'j = ' , j, ', kicker = ',i_kicker
+         DO i = its , MIN(ide-1,ite)
+            IF      ( ( i - i_kicker .GE. its ) .AND. ( i + i_kicker .LE. ide-1 ) ) THEN
+               sum = 0.0
+               DO ik = 1 , i_kicker
+                  sum = sum + ht_in(i+ik,j) + ht_in(i-ik,j)
+               END DO
+               ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 ) 
+            ELSE IF ( ( i - i_kicker .LT. its ) .AND. ( i + i_kicker .LE. ide-1 ) ) THEN
+               sum = 0.0
+               DO ik = 1 , i_kicker
+                  sum = sum + ht_in(i+ik,j)
+               END DO
+               i1 = i - i_kicker + ide
+               i2 = ide-1
+               i3 = ids 
+               i4 = i-1
+               DO ik = i1 , i2
+                  sum = sum + ht_in(ik,j)
+               END DO
+               DO ik = i3 , i4
+                  sum = sum + ht_in(ik,j)
+               END DO
+               ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 ) 
+            ELSE IF ( ( i - i_kicker .GE. its ) .AND. ( i + i_kicker .GT. ide-1 ) ) THEN
+               sum = 0.0
+               DO ik = 1 , i_kicker
+                  sum = sum + ht_in(i-ik,j)
+               END DO
+               i1 = i+1
+               i2 = ide-1
+               i3 = ids
+               i4 = ids + ( i_kicker+i ) - ide
+               DO ik = i1 , i2
+                  sum = sum + ht_in(ik,j)
+               END DO
+               DO ik = i3 , i4
+                  sum = sum + ht_in(ik,j)
+               END DO
+               ht_out(i,j) = ( ht_in(i,j) + sum ) / REAL ( 2 * i_kicker + 1 ) 
+            END IF
+         END DO
+      END DO
+
+      !  Set output values to initial input topo values for whole patch.
+
+      DO j = jts , MIN(jde-1,jte)
+         DO i = its , MIN(ide-1,ite)
+            ht_in(i,j) = ht_out(i,j)
+         END DO
+      END DO
+
+   END SUBROUTINE filter_topo
 
 !---------------------------------------------------------------------
 

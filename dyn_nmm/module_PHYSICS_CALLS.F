@@ -1900,6 +1900,7 @@
      &                 ,CLDEFI=cldefi,LOWLYR=lowlyr,XLAND=xland         &
      &                 ,CU_ACT_FLAG=cu_act_flag,WARM_RAIN=warm_rain     &
      &                 ,STEPCU=NSTEP_CNV,GSW=gsw                        &
+                       ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
      &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ         &   
      &                 ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
      &                 ,APR_ST=apr_st,APR_AS=apr_as,APR_CAPMA=apr_capma &

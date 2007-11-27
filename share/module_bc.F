@@ -108,6 +108,11 @@ CONTAINS
      ye_bc = ye_bc + 1
    ENDIF
 
+  IF( config_flags%polar ) THEN
+     ys_bc = ys_bc + 1
+     ye_bc = ye_bc + 1
+   ENDIF
+
 !  check the number of conditions for each boundary
 
    IF( (xs_bc /= 1) .or. &
@@ -148,6 +153,8 @@ CONTAINS
      write( wrf_err_message ,*) ' open_ys      ',config_flags%open_ys
      CALL wrf_message ( wrf_err_message )
      write( wrf_err_message ,*) ' open_ye      ',config_flags%open_ye
+     CALL wrf_message ( wrf_err_message )
+     write( wrf_err_message ,*) ' polar        ',config_flags%polar
      CALL wrf_message ( wrf_err_message )
      write( wrf_err_message ,*) ' nested       ',config_flags%nested
      CALL wrf_message ( wrf_err_message )
@@ -516,6 +523,7 @@ CONTAINS
 !  set open b.c in Y copy into boundary zone here.  WCS, 19 March 2000
 
         open_ys: IF( ( config_flags%open_ys   .or. &
+                       config_flags%polar     .or. &
                        config_flags%specified .or. &
                        config_flags%nested            ) .and.  &
                          ( jts == jds) .and. open_bc_copy )  THEN
@@ -531,6 +539,7 @@ CONTAINS
 !  now the open boundary copy at ye
 
         open_ye: IF( ( config_flags%open_ye   .or. &
+                       config_flags%polar     .or. &
                        config_flags%specified .or. &
                        config_flags%nested            ) .and.  &
                          ( jte == jde ) .and. open_bc_copy )  THEN
@@ -989,6 +998,7 @@ CONTAINS
 !  set open b.c in Y copy into boundary zone here.  WCS, 19 March 2000
 
         open_ys: IF( ( config_flags%open_ys   .or. &
+                       config_flags%polar     .or. &
                        config_flags%specified .or. &
                        config_flags%nested            ) .and.  &
                          ( jts == jds) .and. open_bc_copy )  THEN
@@ -1006,6 +1016,7 @@ CONTAINS
 !  now the open boundary copy at ye
 
         open_ye: IF( ( config_flags%open_ye   .or. &
+                       config_flags%polar     .or. &
                        config_flags%specified .or. &
                        config_flags%nested            ) .and.  &
                          ( jte == jde ) .and. open_bc_copy )  THEN

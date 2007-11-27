@@ -131,6 +131,24 @@
 !#endif
 
 
+   !  Earth
+
+   !  The value for P2SI *must* be set to 1.0 for Earth
+   !  Although, now we may not need this declaration here (see above)
+   !REAL    , PARAMETER :: P2SI         = 1.0
+
+   !  Orbital constants:
+
+   INTEGER , PARAMETER :: PLANET_YEAR = 365
+   REAL , PARAMETER :: OBLIQUITY = 23.5
+   REAL , PARAMETER :: ECCENTRICITY = 0.014
+   REAL , PARAMETER :: SEMIMAJORAXIS = 1.0 ! In AU
+   ! Don't know the following values, so we'll fake them for now
+   REAL , PARAMETER :: zero_date = 0.0   ! Time of perihelion passage
+   !  Fraction into the year (from perhelion) of the
+   !  occurrence of the Northern Spring Equinox
+   REAL , PARAMETER :: EQUINOX_FRACTION= 0.0
+
  CONTAINS
    SUBROUTINE init_module_model_constants
    END SUBROUTINE init_module_model_constants

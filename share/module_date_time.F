@@ -4,6 +4,7 @@ MODULE module_date_time
 
   USE module_wrf_error
   USE module_configure
+  USE module_model_constants
 
   CHARACTER* 24 ::   start_date = '                        '
   CHARACTER* 24 ::   current_date
@@ -36,6 +37,11 @@ CONTAINS
      INTEGER, DIMENSION(12) :: mmd
      DATA MMD/31,28,31,30,31,30,31,31,30,31,30,31/
      CALL split_date_char ( date_str , ny , nm , nd , nh , ni , ns , nt )
+#ifdef PLANET
+     GMT=nh+FLOAT(ni)/60.+(FLOAT(ns)+FLOAT(nt)/1.e6)/3600.
+     JULDAY=nd
+     JULYR=ny
+#else
      GMT=nh+FLOAT(ni)/60.+FLOAT(ns)/3600.
      MY1=MOD(ny,4)
      MY2=MOD(ny,100)
@@ -46,6 +52,7 @@ CONTAINS
      DO MONSS=1,nm-1
        JULDAY=JULDAY+MMD(MONSS)
      ENDDO
+#endif
    END SUBROUTINE get_julgmt
 
 
@@ -61,6 +68,11 @@ CONTAINS
      INTEGER, DIMENSION(12) :: mmd
      DATA MMD/31,28,31,30,31,30,31,31,30,31,30,31/
      CALL split_date_char ( current_date , ny , nm , nd , nh , ni , ns , nt )
+#ifdef PLANET
+     GMT=nh+FLOAT(ni)/60.+(FLOAT(ns)+FLOAT(nt)/1.e6)/3600.
+     JULDAY=nd
+     JULYR=ny
+#else
      GMT=nh+FLOAT(ni)/60.+FLOAT(ns)/3600.
      MY1=MOD(ny,4)
      MY2=MOD(ny,100)
@@ -71,6 +83,7 @@ CONTAINS
      DO MONSS=1,nm-1
        JULDAY=JULDAY+MMD(MONSS)
      ENDDO
+#endif
    END SUBROUTINE geth_julgmt
 
    SUBROUTINE calc_current_date (id, time)
@@ -99,7 +112,11 @@ CONTAINS
     CALL wrf_debug(300,TRIM(mess))
     write (mess,*) 'calc_current_date called: julday = ',julday
     CALL wrf_debug(300,TRIM(mess))
+#ifdef PLANET
+    base_date  = '0000-00001_00:00:00.0000'
+#else
     base_date  = '0000-01-01_00:00:00.0000'
+#endif
     write(base_date(1:4),'(I4.4)')julyr
     CALL geth_newdate (start_date(1:19), base_date(1:19), idt)
     CALL geth_newdate (new_date, start_date(1:19), nint(time))
@@ -116,6 +133,7 @@ CONTAINS
       IMPLICIT NONE
       
       !  From 2 input mdates ('YYYY-MM-DD HH:MM:SS.ffff'), 
+      !                   or ('YYYY-DDDDD HH:MM:SS.ffff'),
       !  compute the time difference.
       
       !  on entry     -  ndate  -  the new hdate.
@@ -183,8 +201,13 @@ CONTAINS
       olen = LEN(odate)
       
       READ(odate(1:4),  '(I4)') yrold
+#ifdef PLANET
+      READ(odate(6:10), '(I5)') dyold
+      moold=0.
+#else
       READ(odate(6:7),  '(I2)') moold
       READ(odate(9:10), '(I2)') dyold
+#endif
       IF (olen.GE.13) THEN
          READ(odate(12:13),'(I2)') hrold
          IF (olen.GE.16) THEN
@@ -203,8 +226,13 @@ CONTAINS
       nlen = LEN(ndate)
       
       READ(ndate(1:4),  '(I4)') yrnew
+#ifdef PLANET
+      READ(ndate(6:10), '(I5)') dynew
+      monew=0.
+#else
       READ(ndate(6:7),  '(I2)') monew
       READ(ndate(9:10), '(I2)') dynew
+#endif
       IF (nlen.GE.13) THEN
          READ(ndate(12:13),'(I2)') hrnew
          IF (nlen.GE.16) THEN
@@ -220,6 +248,22 @@ CONTAINS
       npass = .true.
       opass = .true.
       
+#ifdef PLANET
+      !  Check that the day of NDATE makes sense.
+      
+      IF ((dynew > PLANET_YEAR).or.(dynew < 1)) THEN
+         PRINT*, 'GETH_IDTS:  Day of NDATE = ', dynew
+         npass = .false.
+      END IF
+
+      !  Check that the day of ODATE makes sense.
+
+      IF ((dyold > PLANET_YEAR).or.(dyold < 1)) THEN
+         PRINT*, 'GETH_IDTS:  Day of ODATE = ', dyold
+         opass = .false.
+      END IF
+
+#else
       !  Check that the month of NDATE makes sense.
       
       IF ((monew.GT.12).or.(monew.LT.1)) THEN
@@ -265,7 +309,7 @@ CONTAINS
             opass = .false.
          END IF
       END IF
-      
+#endif
       !  Check that the hour of NDATE makes sense.
       
       IF ((hrnew.GT.23).or.(hrnew.LT.0)) THEN
@@ -325,6 +369,11 @@ CONTAINS
       !  Compute number of minutes from 1 January ODATE, 00:00:00 until ndate
       
       newdys = 0
+#ifdef PLANET
+      DO i = yrold, yrnew - 1
+         newdys = newdys + PLANET_YEAR
+      END DO
+#else
       DO i = yrold, yrnew - 1
          newdys = newdys + (365 + (nfeb(i)-28))
       END DO
@@ -336,6 +385,7 @@ CONTAINS
          END DO
          mday(2) = 28
       END IF
+#endif
       
       newdys = newdys + dynew-1
       
@@ -344,6 +394,7 @@ CONTAINS
       
       olddys = 0
       
+#ifndef PLANET
       IF (moold .GT. 1) THEN
          mday(2) = nfeb(yrold)
          DO i = 1, moold - 1
@@ -351,6 +402,7 @@ CONTAINS
          END DO
          mday(2) = 28
       END IF
+#endif
       
       olddys = olddys + dyold-1
       
@@ -377,6 +429,7 @@ CONTAINS
       IMPLICIT NONE
       
       !  From old date ('YYYY-MM-DD HH:MM:SS.ffff') and 
+      !            [or ('YYYY-DDDDD HH:MM:SS.ffff')]
       !  delta-time, compute the new date.
    
       !  on entry     -  odate  -  the old hdate.
@@ -457,8 +510,13 @@ CONTAINS
       !  date into INTEGER components.
    
       READ(odate(1:4),  '(I4)') yrold
+#ifdef PLANET
+      READ(odate(6:10), '(I5)') dyold
+      moold=0.
+#else
       READ(odate(6:7),  '(I2)') moold
       READ(odate(9:10), '(I2)') dyold
+#endif
       IF (olen.GE.13) THEN
          READ(odate(12:13),'(I2)') hrold
          IF (olen.GE.16) THEN
@@ -480,6 +538,13 @@ CONTAINS
       
       opass = .TRUE.
       
+#ifdef PLANET
+      !  Check that the day of ODATE makes sense.
+      IF ((dyold.GT.PLANET_YEAR).or.(dyold.LT.1)) THEN
+         WRITE(*,*) 'GETH_NEWDATE:  Day of ODATE = ', dyold
+         opass = .FALSE.
+      END IF
+#else
       !  Check that the month of ODATE makes sense.
       
       IF ((moold.GT.12).or.(moold.LT.1)) THEN
@@ -493,7 +558,7 @@ CONTAINS
          WRITE(*,*) 'GETH_NEWDATE:  Day of ODATE = ', dyold
          opass = .FALSE.
       END IF
-      
+#endif
       !  Check that the hour of ODATE makes sense.
       
       IF ((hrold.GT.23).or.(hrold.LT.0)) THEN
@@ -600,6 +665,12 @@ CONTAINS
          yrnew = yrold
          DO i = 1, nday
             dynew = dynew + 1
+#ifdef PLANET
+            IF (dynew .GT. PLANET_YEAR) THEN
+               dynew = dynew - PLANET_YEAR
+               yrnew = yrnew + 1
+            END IF
+#else
             IF (dynew.GT.mday(monew)) THEN
                dynew = dynew - mday(monew)
                monew = monew + 1
@@ -610,6 +681,7 @@ CONTAINS
                   mday(2) = nfeb(yrnew)
                END IF
             END IF
+#endif
          END DO
       
       ELSE IF (idt.LT.0) THEN
@@ -643,6 +715,12 @@ CONTAINS
          yrnew = yrold
          DO i = 1, nday
             dynew = dynew - 1
+#ifdef PLANET
+            IF (dynew.eq.0) THEN
+               dynew = PLANET_YEAR
+               yrnew = yrnew - 1
+            END IF
+#else
             IF (dynew.eq.0) THEN
                monew = monew - 1
                IF (monew.eq.0) THEN
@@ -653,6 +731,7 @@ CONTAINS
                END IF
                dynew = mday(monew)
             END IF
+#endif
          END DO
       END IF
       
@@ -660,6 +739,33 @@ CONTAINS
       
       nlen = LEN(ndate)
       
+#ifdef PLANET
+      IF (nlen.GT.20) THEN
+         WRITE(ndate(1:19),19) yrnew, dynew, hrnew, minew, scnew
+         WRITE(hfrc,'(I10)') frnew+1000000000
+         ndate = ndate(1:19)//'.'//hfrc(31-nlen:10)
+      
+      ELSE IF (nlen.eq.19.or.nlen.eq.20) THEN
+         WRITE(ndate(1:19),19) yrnew, dynew, hrnew, minew, scnew
+      19   format(I4.4,'-',I5.5,'_',I2.2,':',I2.2,':',I2.2)
+         IF (nlen.eq.20) ndate = ndate(1:19)//'.'
+      
+      ELSE IF (nlen.eq.16) THEN
+         WRITE(ndate,16) yrnew, dynew, hrnew, minew
+      16   format(I4.4,'-',I5.5,'_',I2.2,':',I2.2)
+      
+      ELSE IF (nlen.eq.13) THEN
+         WRITE(ndate,13) yrnew, dynew, hrnew
+      13   format(I4.4,'-',I5.5,'_',I2.2)
+      
+      ELSE IF (nlen.eq.10) THEN
+         WRITE(ndate,10) yrnew, dynew
+      10   format(I4.4,'-',I5.5)
+      
+      END IF
+      
+      IF (olen.GE.11) ndate(11:11) = sp
+#else
       IF (nlen.GT.20) THEN
          WRITE(ndate(1:19),19) yrnew, monew, dynew, hrnew, minew, scnew
          WRITE(hfrc,'(I10)') frnew+1000000000
@@ -685,7 +791,7 @@ CONTAINS
       END IF
       
       IF (olen.GE.11) ndate(11:11) = sp
-   
+#endif
    END SUBROUTINE geth_newdate
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -726,8 +832,13 @@ CONTAINS
       INTEGER , INTENT(OUT) :: century_year , month , day , hour , minute , second , ten_thousandth
       
       READ(date,FMT='(    I4)') century_year
+#ifdef PLANET
+      month = 0
+      READ(date,FMT='( 5X,I5)') day
+#else
       READ(date,FMT='( 5X,I2)') month
       READ(date,FMT='( 8X,I2)') day
+#endif
       READ(date,FMT='(11X,I2)') hour
       READ(date,FMT='(14X,I2)') minute
       READ(date,FMT='(17X,I2)') second
@@ -762,15 +873,30 @@ END MODULE module_date_time
       INTEGER rc
       IF ( LEN( str ) .GE. 20 ) THEN
         IF ( str(20:20) .EQ. '.' ) THEN
+#ifdef PLANET
+          READ(str,'(I4.4,1x,I5.5,1x,I2.2,1x,I2.2,1x,I2.2,1x,I4.4)') yr,dd,h,m,s,ms
+          mm = 1
+#else
           READ(str,34) yr,mm,dd,h,m,s,ms
+#endif
           !  last four digits are ten-thousandths of a sec, convert to ms
           ms=nint(real(ms)/10)
         ELSE
+#ifdef PLANET
+          READ(str,'(I4.4,1x,I5.5,1x,I2.2,1x,I2.2,1x,I2.2)') yr,dd,h,m,s
+          mm = 1
+#else
           READ(str,33) yr,mm,dd,h,m,s
+#endif
           ms = 0
         ENDIF
       ELSE
+#ifdef PLANET
+        READ(str,'(I4.4,1x,I5.5,1x,I2.2,1x,I2.2,1x,I2.2)') yr,dd,h,m,s
+        mm = 1
+#else
         READ(str,33) yr,mm,dd,h,m,s
+#endif
         ms = 0
       ENDIF
       CALL WRFU_TimeSet( time, YY=yr, MM=mm, DD=dd, H=h, M=m, S=s, MS=ms, rc=rc )

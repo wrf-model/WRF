@@ -124,7 +124,7 @@ module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
 
 module_bc_time_utilities.o: $(ESMF_MOD_DEPENDENCE)
 
-module_get_file_names.o: 
+module_get_file_names.o: ../frame/module_dm.o
 
 module_io_domain.o: module_io_wrf.o module_date_time.o ../frame/module_io.o  \
 		../frame/module_domain.o ../frame/module_configure.o \
@@ -152,7 +152,8 @@ wrf_ext_write_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
 wrf_ext_read_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_timing.o
 
-module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o
+module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
+		module_model_constants.o 
 
 module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 

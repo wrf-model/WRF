@@ -8,6 +8,7 @@
     USE module_state_description
     USE module_configure
 !    USE module_date_time
+    USE module_model_constants
     USE module_utility
     IMPLICIT NONE
 #include <wrf_io_flags.h>
@@ -57,6 +58,7 @@
     INTEGER :: io_form
     LOGICAL, EXTERNAL :: multi_files
     INTEGER, EXTERNAL :: use_package
+    INTEGER p_hr, p_min, p_sec, p_ms
 
     CHARACTER*256 message
     CHARACTER*80  fname
@@ -252,8 +254,13 @@
     CALL nl_get_start_hour(grid%id,start_hour)
     CALL nl_get_start_minute(grid%id,start_minute)
     CALL nl_get_start_second(grid%id,start_second)
+#ifdef PLANET
+    WRITE ( start_date , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2)' ) &
+            start_year,start_day,start_hour,start_minute,start_second
+#else
     WRITE ( start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
             start_year,start_month,start_day,start_hour,start_minute,start_second
+#endif
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. model_input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
@@ -264,9 +271,15 @@
        CALL nl_get_simulation_start_hour   ( 1, simulation_start_hour   )
        CALL nl_get_simulation_start_minute ( 1, simulation_start_minute )
        CALL nl_get_simulation_start_second ( 1, simulation_start_second )
+#ifdef PLANET
+       WRITE ( simulation_start_date , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2)' ) &
+               simulation_start_year,simulation_start_day,&
+               simulation_start_hour,simulation_start_minute,simulation_start_second
+#else
        WRITE ( simulation_start_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
                simulation_start_year,simulation_start_month,simulation_start_day,&
                simulation_start_hour,simulation_start_minute,simulation_start_second
+#endif
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(simulation_start_date) , ierr )
     END IF
 
@@ -280,8 +293,15 @@
     CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
 
 #if (EM_CORE == 1)
-    CALL wrf_put_dom_ti_real ( fid , 'DX' , config_flags%dx , 1 , ierr )
-    CALL wrf_put_dom_ti_real ( fid , 'DY' , config_flags%dy , 1 , ierr )
+    IF (grid%map_proj == 6) THEN
+       ! Global ... dx determined automatically
+       ! Don't use value from namelist ... used derived value instead
+       CALL wrf_put_dom_ti_real ( fid , 'DX' , grid%dx , 1 , ierr )
+       CALL wrf_put_dom_ti_real ( fid , 'DY' , grid%dy , 1 , ierr )
+    ELSE
+       CALL wrf_put_dom_ti_real ( fid , 'DX' , config_flags%dx , 1 , ierr )
+       CALL wrf_put_dom_ti_real ( fid , 'DY' , config_flags%dy , 1 , ierr )
+    END IF
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
@@ -452,9 +472,28 @@
     CALL wrf_put_dom_ti_real ( fid , 'MOAD_CEN_LAT',  config_flags%moad_cen_lat, 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'STAND_LON',  config_flags%stand_lon, 1 , ierr )
     IF ( switch .NE. boundary_only ) THEN
+#ifdef PLANET
+      ! When writing to restart files, use the values of the instantaneous
+      ! time for determining the values of JULYR, JULDAY, and GMT.  If the
+      ! original values in config_flags are used, this assumes that the
+      ! restart simulation will start with an itimestep NE 0.  If we use
+      ! the instantaneous time, we can start a restart simulation with a
+      ! different value of delta-t for timestep and still get the clocks
+      ! calendars (and orbital information!) correct.
+      !
+      ! Current time is still defined from above call to WRF_UTIL_ClockGet
+      CALL WRFU_TimeGet( currentTime, YY=julyr, dayOfYear=julday, H=p_hr, M=p_min, S=p_sec, MS=p_ms, rc=rc)
+      WRITE(wrf_err_message,*)'output_wrf: julyr,julday,hr,min,sec,ms = ',julyr,julday,p_hr,p_min,p_sec,p_ms
+      CALL wrf_debug( 100 , wrf_err_message )
+      gmt = REAL(p_hr)+REAL(p_min)/60.+REAL(p_sec)/3600.+REAL(p_ms)/3600000.
+      CALL wrf_put_dom_ti_real ( fid , 'GMT' ,  gmt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid , 'JULYR' ,  julyr , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid , 'JULDAY' ,  julday , 1 , ierr )
+#else
       CALL wrf_put_dom_ti_real ( fid , 'GMT' ,  config_flags%gmt , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid , 'JULYR' ,  config_flags%julyr , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid , 'JULDAY' ,  config_flags%julday , 1 , ierr )
+#endif
     ENDIF
 #if (NMM_CORE == 1)
         write(0,*) 'MMINLU would be: ', MMINLU(1:4)

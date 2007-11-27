@@ -304,6 +304,19 @@ SUBROUTINE Setup_Timekeeping ( grid )
       CALL nl_get_time_step_fract_num( 1, time_step_fract_num )
       CALL nl_get_time_step_fract_den( 1, time_step_fract_den )
       dt = real(time_step) + real(time_step_fract_num) / real(time_step_fract_den)
+#ifdef PLANET
+      ! 2004-12-08 ADT notes:
+      ! We have gotten the timestep from integers in the namelist, and they have just
+      ! been converted to the timestep, "dt", used by the physics code just above.
+      ! After this point, the integers are only used to update the clock used for,
+      ! and we want to leave that on a "24-hour" type schedule, so we don't need to
+      ! modify those integers.  Theoretically they refer to a portion of the planet's
+      ! solar day.  The only thing we have to do is convert the *real* timestep, dt,
+      ! to useful SI units.  This is easily accomplished by multiplying it by the
+      ! variable P2SI, which was designed for just this purpose.  After multiplication,
+      ! make sure every subsequent part of the model knows what the value is.
+      dt = dt * P2SI
+#endif
       CALL nl_set_dt( grid%id, dt )
       grid%dt = dt
       CALL WRFU_TimeIntervalSet(stepTime, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)

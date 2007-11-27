@@ -86,10 +86,18 @@
       CALL nl_get_reset_simulation_start ( 1, reset_simulation_start )
       IF ( ( ierr .EQ. 0 ) .AND. ( .NOT. reset_simulation_start ) ) THEN
         ! Overwrite simulation start date with metadata.  
+#ifdef PLANET
+        READ ( simulation_start_date , fmt = '(I4,1x,I5,1x,I2,1x,I2,1x,I2)' )       &
+               simulation_start_year,                                               &
+               simulation_start_day,    simulation_start_hour,                      &
+               simulation_start_minute, simulation_start_second
+        simulation_start_month = 0
+#else
         READ ( simulation_start_date , fmt = '(I4,1x,I2,1x,I2,1x,I2,1x,I2,1x,I2)' ) &
                simulation_start_year,   simulation_start_month,                     &
                simulation_start_day,    simulation_start_hour,                      &
                simulation_start_minute, simulation_start_second
+#endif
         CALL nl_set_simulation_start_year   ( 1 , simulation_start_year   )
         CALL nl_set_simulation_start_month  ( 1 , simulation_start_month  )
         CALL nl_set_simulation_start_day    ( 1 , simulation_start_day    )
@@ -158,8 +166,13 @@
        CALL wrf_get_dom_ti_real ( fid , 'DY' ,  dy_compare , 1 , icnt , ierr )
        IF ( ( ABS ( dx_compare - config_flags%dx ) .GT. 1.E-5 * dx_compare ) .OR. &
             ( ABS ( dy_compare - config_flags%dy ) .GT. 1.E-5 * dy_compare ) ) THEN
-print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
-          CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+          IF ( ( config_flags%polar ) .AND. ( config_flags%grid_id .EQ. 1 ) ) THEN
+             WRITE(wrf_err_message,*)'input_wrf: DX and DY from input file expected to be wrong'
+             CALL wrf_debug ( 1 , wrf_err_message )
+          ELSE
+             print *,'dx_compare,dy_compare = ',dx_compare,dy_compare
+             CALL wrf_error_fatal( 'DX and DY do not match from the namelist and the input file' )
+          END IF
        END IF
 #endif
     END IF

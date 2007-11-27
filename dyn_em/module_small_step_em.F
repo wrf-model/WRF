@@ -21,9 +21,12 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             mut, muts, mudf,              &
                             u_save, v_save, w_save,       &
                             t_save, ph_save, mu_save,     &
-                            ww, ww_save,                  &
+                            ww, ww_save, h_div,           &
                             dnw, c2a, pb, p, alt,         &
-                            msfu, msfv, msft,             &
+                            msfux, msfuy, msfvx,          &
+                            msfvx_inv,                    &
+                            msfvy, msftx, msfty,          &
+                            rdx, rdy,                     &
                             rk_step,                      &
                             ids,ide, jds,jde, kds,kde,    & 
                             ims,ime, jms,jme, kms,kme,    &
@@ -49,7 +52,8 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                                                               v_save,   &
                                                               w_save,   &
                                                               t_save,   &
-                                                              ph_save
+                                                              ph_save,  &
+                                                              h_div
 
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: u_2,   &
                                                               v_2,   &
@@ -73,9 +77,13 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                                                                muu,  &
                                                                muv,  &
                                                                mut,  &
-                                                               msfu, &
-                                                               msfv, &
-                                                               msft
+                                                               msfux,&
+                                                               msfuy,&
+                                                               msfvx,&
+                                                               msfvx_inv,&
+                                                               msfvy,&
+                                                               msftx,&
+                                                               msfty
 
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(  OUT) :: muus, &
                                                                muvs, &
@@ -87,6 +95,8 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(  OUT) :: mu_save
 
   REAL, DIMENSION(kms:kme, jms:jme)         , INTENT(IN   ) :: dnw
+
+  REAL, INTENT(IN) :: rdx,rdy
 
 ! local variables
 
@@ -260,7 +270,8 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
     DO k=k_start, k_end
     DO i=i_start, i_endu
       u_save(i,k,j) = u_2(i,k,j)
-      u_2(i,k,j) = (muus(i,j)*u_1(i,k,j)-muu(i,j)*u_2(i,k,j))/msfu(i,j)
+      ! u coupled with my
+      u_2(i,k,j) = (muus(i,j)*u_1(i,k,j)-muu(i,j)*u_2(i,k,j))/msfuy(i,j)
     ENDDO
     ENDDO
     ENDDO
@@ -269,7 +280,9 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
     DO k=k_start, k_end
     DO i=i_start, i_end
       v_save(i,k,j) = v_2(i,k,j)
-      v_2(i,k,j) = (muvs(i,j)*v_1(i,k,j)-muv(i,j)*v_2(i,k,j))/msfv(i,j)
+      ! v coupled with mx
+!      v_2(i,k,j) = (muvs(i,j)*v_1(i,k,j)-muv(i,j)*v_2(i,k,j))/msfvx(i,j)
+      v_2(i,k,j) = (muvs(i,j)*v_1(i,k,j)-muv(i,j)*v_2(i,k,j))*msfvx_inv(i,j)
     ENDDO
     ENDDO
     ENDDO
@@ -288,7 +301,8 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
     DO k=k_start, kde
     DO i=i_start, i_end
       w_save(i,k,j) = w_2(i,k,j)
-      w_2(i,k,j)  = (muts(i,j)* w_1(i,k,j)-mut(i,j)* w_2(i,k,j))/msft(i,j)
+      ! w coupled with my
+      w_2(i,k,j)  = (muts(i,j)* w_1(i,k,j)-mut(i,j)* w_2(i,k,j))/msfty(i,j)
       ph_save(i,k,j) = ph_2(i,k,j)
       ph_2(i,k,j) = ph_1(i,k,j)-ph_2(i,k,j)
     ENDDO
@@ -304,6 +318,18 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
       ENDDO
       ENDDO
 
+    DO j=j_start, j_end
+    DO k=k_start, k_end
+    DO i=i_start, i_end
+       h_div(i,k,j) = (                                               &
+                   rdy*( (muv(i,j+1)*v_1(i,k,j+1)*msfvx_inv(i,j+1))   &
+                        -(muv(i,j  )*v_1(i,k,j  )*msfvx_inv(i,j  )) ) &
+                  +rdx*( (muu(i+1,j)*u_1(i+1,k,j)/msfuy(i+1,j))       &
+                        -(muu(i  ,j)*u_1(i,k,j  )/msfuy(i  ,j)) ))
+    ENDDO
+    ENDDO
+    ENDDO
+
 END SUBROUTINE small_step_prep
 
 !-------------------------------------------------------------------------
@@ -315,7 +341,8 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
                               mut, muts, muu, muus, muv, muvs, &
                               u_save, v_save, w_save,          &
                               t_save, ph_save, mu_save,        &
-                              msfu, msfv, msft,                &
+                              msfux, msfuy, msfvx, msfvy,      &
+                              msftx, msfty,                    &
                               h_diabatic,                      &
                               number_of_small_timesteps,dts,   &
                               rk_step, rk_order,               &
@@ -360,7 +387,9 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   REAL,   DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mu_2, mu_1
   REAL,   DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mut, muts, &
                                                         muu, muv, mu_save
-  REAL,   DIMENSION(ims:ime, jms:jme), INTENT(IN   ) :: msfu, msfv, msft
+  REAL,   DIMENSION(ims:ime, jms:jme), INTENT(IN   ) :: msfux, msfuy, &
+                                                        msfvx, msfvy, &
+                                                        msftx, msfty
 
 
 ! local stuff
@@ -418,7 +447,8 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   DO j = j_start, j_endv
   DO k = kds, kde-1
   DO i = i_start, i_end
-    v_2(i,k,j) = (msfv(i,j)*v_2(i,k,j) + v_save(i,k,j)*muv(i,j))/muvs(i,j)
+    ! v coupled with mx
+    v_2(i,k,j) = (msfvx(i,j)*v_2(i,k,j) + v_save(i,k,j)*muv(i,j))/muvs(i,j)
   ENDDO
   ENDDO
   ENDDO
@@ -426,7 +456,8 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   DO j = j_start, j_end
   DO k = kds, kde-1
   DO i = i_start, i_endu
-    u_2(i,k,j) = (msfu(i,j)*u_2(i,k,j) + u_save(i,k,j)*muu(i,j))/muus(i,j)
+    ! u coupled with my
+    u_2(i,k,j) = (msfuy(i,j)*u_2(i,k,j) + u_save(i,k,j)*muu(i,j))/muus(i,j)
   ENDDO
   ENDDO
   ENDDO
@@ -434,7 +465,8 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   DO j = j_start, j_end
   DO k = kds, kde
   DO i = i_start, i_end
-    w_2(i,k,j) = (msft(i,j)*w_2(i,k,j) + w_save(i,k,j)*mut(i,j))/muts(i,j)
+    ! w coupled with my
+    w_2(i,k,j) = (msfty(i,j)*w_2(i,k,j) + w_save(i,k,j)*mut(i,j))/muts(i,j)
     ph_2(i,k,j) = ph_2(i,k,j) + ph_save(i,k,j)
     ww(i,k,j) = ww(i,k,j) + ww1(i,k,j)
   ENDDO
@@ -722,11 +754,13 @@ END SUBROUTINE calc_coef_w
 
 SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                         p, pb,                         &
-                        ph, php, alt, al, mu,          &
+                        ph, php, alt, al, h_div, mu,   &
                         muu, cqu, muv, cqv, mudf,      &
+                        msfux, msfuy, msfvx,           &
+                        msfvx_inv, msfvy,              &
                         rdx, rdy, dts,                 &
                         cf1, cf2, cf3, fnm, fnp,       &
-                        emdiv,                         &
+                        emdiv,hmdiv,                   &
                         rdnw, config_flags, spec_zone, &
                         non_hydrostatic,               &
                         ids, ide, jds, jde, kds, kde,  &
@@ -764,7 +798,8 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                                              alt,     &
                                              al,      &
                                              cqu,     &
-                                             cqv
+                                             cqv,     &
+                                             h_div
 
 
       REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: muu,  &
@@ -777,13 +812,20 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                                                                 fnp ,   &
                                                                 rdnw
 
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: msfux,  &
+                                                                msfuy,  &
+                                                                msfvx,  &
+                                                                msfvy,  &
+                                                                msfvx_inv
+
       REAL,                                    INTENT(IN   ) :: rdx,    &
                                                                 rdy,    &
                                                                 dts,    &
-                                            cf1,    &
-                                            cf2,    &
-                                        cf3,    &
-                                      emdiv
+                                                                cf1,    &
+                                                                cf2,    &
+                                                                cf3,    &
+                                                                emdiv,  &
+                                                                hmdiv
     
 
 !  Local 3d array from the stack (note tile size)
@@ -865,12 +907,14 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                  i_end_up   = i_end_up - 1
 
       IF ( (config_flags%open_ys    .or.   &
-            config_flags%symmetric_ys   )  &
+            config_flags%symmetric_ys  .or.   &
+            config_flags%polar   )  &
                      .and. (jts == jds) )  &
                  j_start_vp = j_start_vp + 1
 
       IF ( (config_flags%open_ye     .or. &
-            config_flags%symmetric_ye   ) &
+            config_flags%symmetric_ye  .or.   &
+            config_flags%polar   )  &
             .and. (jte == jde) )          &
                  j_end_vp   = j_end_vp - 1
 
@@ -903,13 +947,28 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
    ENDDO
 
    DO i = i_start_up, i_end_up
-     mudf_xy(i)= -emdiv*dx*(mudf(i,j)-mudf(i-1,j))
+     mudf_xy(i)= -emdiv*dx*(mudf(i,j)-mudf(i-1,j))/msfuy(i,j)
    ENDDO
 
    DO k = k_start, k_end
    DO i = i_start_up, i_end_up
 
-     dpxy(i,k)= .5*rdx*muu(i,j)*(                               &
+!     Comments on map scale factors:   
+!     x pressure gradient: ADT eqn 44, penultimate term on RHS
+!        = -(mx/my)*(mu/rho)*partial dp/dx
+!     [i.e., first rho->mu; 2nd still rho; alpha=1/rho]
+!     Klemp et al. splits into 2 terms:
+!        mu alpha partial dp/dx + partial dp/dnu * partial dphi/dx 
+!     then into 4 terms:
+!        mu alpha partial dp'/dx + nu mu alpha' partial dmubar/dx +
+!      + mu partial dphi/dx + partial dphi'/dx * (partial dp'/dnu - mu')
+!
+!     first 3 terms:
+!     ph, alt, p, al, pb not coupled
+!     since we want tendency to fit ADT eqn 44 (coupled) we need to
+!     multiply by (mx/my):
+!
+     dpxy(i,k)= (msfux(i,j)/msfuy(i,j))*.5*rdx*muu(i,j)*(         &
        ((ph (i,k+1,j)-ph (i-1,k+1,j))+(ph (i,k,j)-ph (i-1,k,j)))  &
       +(alt(i,k  ,j)+alt(i-1,k  ,j))*(p  (i,k,j)-p  (i-1,k,j))  &
       +(al (i,k  ,j)+al (i-1,k  ,j))*(pb (i,k,j)-pb (i-1,k,j)) ) 
@@ -934,9 +993,15 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
        ENDDO
      ENDDO
 
+!    Comments on map scale factors:
+!    4th term:
+!    php, dpn, mu not coupled
+!    since we want tendency to fit ADT eqn 44 (coupled) we need to
+!    multiply by (mx/my):
+
      DO k = k_start, k_end
        DO i = i_start_up, i_end_up
-         dpxy(i,k)=dpxy(i,k) + rdx*(php(i,k,j)-php(i-1,k,j))*        &
+         dpxy(i,k)=dpxy(i,k) + (msfux(i,j)/msfuy(i,j))*rdx*(php(i,k,j)-php(i-1,k,j))*        &
            (rdnw(k)*(dpn(i,k+1)-dpn(i,k))-.5*(mu(i-1,j)+mu(i,j)))
        ENDDO
      ENDDO
@@ -947,7 +1012,8 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
    DO k = k_start, k_end
      DO i = i_start_up, i_end_up
-       u(i,k,j)=u(i,k,j)-dts*cqu(i,k,j)*dpxy(i,k)+mudf_xy(i)
+       u(i,k,j)=u(i,k,j)-dts*cqu(i,k,j)*dpxy(i,k)+mudf_xy(i)        &
+                +hmdiv*dx*(h_div(i,k,j)-h_div(i-1,k,j))/msfuy(i,j)
      ENDDO
    ENDDO
 
@@ -965,7 +1031,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
    ENDDO
 
    DO i = i_start, i_end
-     mudf_xy(i)= -emdiv*dy*(mudf(i,j)-mudf(i,j-1))
+     mudf_xy(i)= -emdiv*dy*(mudf(i,j)-mudf(i,j-1))*msfvx_inv(i,j)
    ENDDO
 
      IF (     ( j >= j_start_vp)  &
@@ -974,11 +1040,27 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
          DO k = k_start, k_end
 	 DO i = i_start, i_end
 
-	  dpxy(i,k)= .5*rdy*muv(i,j)*(                               &
-	  ((ph(i,k+1,j)-ph(i,k+1,j-1))+(ph (i,k,j)-ph (i,k,j-1)))   &
-	  +(alt(i,k  ,j)+alt(i,k  ,j-1))*(p  (i,k,j)-p  (i,k,j-1))  &
-	  +(al (i,k  ,j)+al (i,k  ,j-1))*(pb (i,k,j)-pb (i,k,j-1)) ) 
+!      Comments on map scale factors:
+!      y pressure gradient: ADT eqn 45, penultimate term on RHS
+!         = -(my/mx)*(mu/rho)*partial dp/dy
+!      [i.e., first rho->mu; 2nd still rho; alpha=1/rho]
+!      Klemp et al. splits into 2 terms:
+!         mu alpha partial dp/dy + partial dp/dnu * partial dphi/dy 
+!      then into 4 terms:
+!         mu alpha partial dp'/dy + nu mu alpha' partial dmubar/dy +
+!       + mu partial dphi/dy + partial dphi'/dy * (partial dp'/dnu - mu')
+!
+!      first 3 terms:
+!      ph, alt, p, al, pb not coupled
+!      since we want tendency to fit ADT eqn 45 (coupled) we need to
+!      multiply by (my/mx):
+!      mudf_xy is NOT a map scale factor coupling
+!      it is some sort of divergence damping
 
+       dpxy(i,k)= (msfvy(i,j)/msfvx(i,j))*.5*rdy*muv(i,j)*(       &
+        ((ph(i,k+1,j)-ph(i,k+1,j-1))+(ph (i,k,j)-ph (i,k,j-1)))   &
+        +(alt(i,k  ,j)+alt(i,k  ,j-1))*(p  (i,k,j)-p  (i,k,j-1))  &
+        +(al (i,k  ,j)+al (i,k  ,j-1))*(pb (i,k,j)-pb (i,k,j-1)) ) 
 	    ENDDO
 	    ENDDO
 
@@ -1000,9 +1082,15 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
          ENDDO
        ENDDO
 
+!      Comments on map scale factors:
+!      4th term:
+!      php, dpn, mu not coupled
+!      since we want tendency to fit ADT eqn 45 (coupled) we need to
+!      multiply by (my/mx):
+
        DO k = k_start, k_end
          DO i = i_start, i_end
-           dpxy(i,k)=dpxy(i,k) + rdy*(php(i,k,j)-php(i,k,j-1))*    &
+           dpxy(i,k)=dpxy(i,k) + (msfvy(i,j)/msfvx(i,j))*rdy*(php(i,k,j)-php(i,k,j-1))*    &
              (rdnw(k)*(dpn(i,k+1)-dpn(i,k))-.5*(mu(i,j-1)+mu(i,j)))
          ENDDO
        ENDDO
@@ -1013,12 +1101,35 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
      DO k = k_start, k_end
        DO i = i_start, i_end
-         v(i,k,j)=v(i,k,j)-dts*cqv(i,k,j)*dpxy(i,k)+mudf_xy(i)
+         v(i,k,j)=v(i,k,j)-dts*cqv(i,k,j)*dpxy(i,k)+mudf_xy(i)     &
+                   +hmdiv*dy*(h_div(i,k,j)-h_div(i,k,j-1))*msfvx_inv(i,j)
        ENDDO
      ENDDO
    END IF
 
   ENDDO  v_outer_j_loop
+
+  ! The check for j_start_vp and j_end_vp makes sure that the edges in v
+  ! are not updated.  Let's add a polar boundary condition check here for
+  ! safety to ensure that v at the poles never gets to be non-zero in the
+  ! small time steps.
+  IF (config_flags%polar) THEN
+     IF (jts == jds) THEN
+        DO k = k_start, k_end
+        DO i = i_start, i_end
+           v(i,k,jds) = 0.
+        ENDDO
+        ENDDO
+     END IF
+     IF (jte == jde) THEN
+        DO k = k_start, k_end
+        DO i = i_start, i_end
+           v(i,k,jde) = 0.
+        ENDDO
+        ENDDO
+     END IF
+  END IF
+
 
 END SUBROUTINE advance_uv
 
@@ -1027,10 +1138,11 @@ END SUBROUTINE advance_uv
 SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                          mu, mut, muave, muts, muu, muv,      &
                          mudf, uam, vam, wwam, t, t_1,        &
-                         t_ave, ft, mu_tend,                  &
+                         t_ave, ft, h_div, mu_tend,           &
                          rdx, rdy, dts, epssm,                &
                          dnw, fnm, fnp, rdnw,                 &
-                         msfu, msfv, msft,                    &
+                         msfux, msfuy, msfvx, msfvx_inv,      &
+                         msfvy, msftx, msfty,                 &
                          step, config_flags,                  &
                          ids, ide, jds, jde, kds, kde,        &
                          ims, ime, jms, jme, kms, kme,        &
@@ -1065,14 +1177,19 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                                               t_ave,  &
                                               uam,    &
                                               vam,    &
+                                              h_div,  &
                                               wwam
                                               
   REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: muu,  &
                                                             muv,  &
                                                             mut,  &
-                                                            msfu, &
-                                                            msfv, &
-                                                            msft, &
+                                                            msfux,&
+                                                            msfuy,&
+                                                            msfvx,&
+                                                            msfvx_inv,&
+                                                            msfvy,&
+                                                            msftx,&
+                                                            msfty,&
                                                             mu_tend
 
   REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(  OUT) :: muave, &
@@ -1094,7 +1211,8 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 
 !  Local 3d array from the stack (note tile size)
 
-  REAL, DIMENSION (its:ite, kts:kte) :: wdtn, dvdxi
+!  REAL, DIMENSION (its:ite, kts:kte) :: wdtn, dvdxi
+  REAL, DIMENSION (its:ite, kts:kte) :: wdtn
   REAL, DIMENSION (its:ite) :: dmdt
 
   INTEGER :: i,j,k, i_start, i_end, j_start, j_end, k_start, k_end
@@ -1151,14 +1269,32 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 !         Being coupled with the map scale factor means 
 !           multiplication by (1/msft) in this case.
 
+!  Comments on map scale factors
+!  ADT eqn 47: 
+!  partial drho/dt = -mx*my[partial d/dx(rho u/my) + partial d/dy(rho v/mx)]
+!                    -partial d/dz(rho w)
+!  with rho -> mu, dividing by my, and with partial d/dnu(rho nu/my [=ww])
+!  as the final term (because we're looking for d_nu_/dt)
+!
+!  begin by integrating with respect to nu from bottom to top
+!  BCs are ww=0 at both
+!  final term gives 0
+!  first term gives Integral([1/my]partial d mu/dt) over total column = dm/dt
+!  RHS remaining is Integral(-mx[partial d/dx(mu u/my) + 
+!                                partial d/dy(mu v/mx)]) over column
+!  lines below find RHS terms at each level then set dmdt = sum over all levels
+!
+!  [don't divide the below by msfty until find ww, since dmdt is used in
+!   the meantime]
+
      DO k=k_start, k_end
      DO i=i_start, i_end
-        dvdxi(i,k) = msft(i,j)*msft(i,j)*(                        &
-                     rdy*( (v(i,k,j+1)+muv(i,j+1)*v_1(i,k,j+1)/msfv(i,j+1))   &
-                          -(v(i,k,j  )+muv(i,j  )*v_1(i,k,j  )/msfv(i,j  )) ) & 
-                    +rdx*( (u(i+1,k,j)+muu(i+1,j)*u_1(i+1,k,j)/msfu(i+1,j))   &
-                          -(u(i,k,j  )+muu(i  ,j)*u_1(i,k,j  )/msfu(i  ,j)) ) )
-        dmdt(i)    = dmdt(i) + dnw(k)*dvdxi(i,k)
+         h_div(i,k,j) = msftx(i,j)*msfty(i,j)*(                                    &
+                     rdy*( (v(i,k,j+1)+muv(i,j+1)*v_1(i,k,j+1)*msfvx_inv(i,j+1))   &
+                          -(v(i,k,j  )+muv(i,j  )*v_1(i,k,j  )*msfvx_inv(i,j  )) ) &
+                    +rdx*( (u(i+1,k,j)+muu(i+1,j)*u_1(i+1,k,j)/msfuy(i+1,j))       &
+                          -(u(i,k,j  )+muu(i  ,j)*u_1(i,k,j  )/msfuy(i  ,j)) ))
+        dmdt(i)    = dmdt(i) + dnw(k)*h_div(i,k,j)
      ENDDO
      ENDDO
      DO i=i_start, i_end
@@ -1171,7 +1307,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 
      DO k=2,k_end
      DO i=i_start, i_end
-       ww(i,k,j)=ww(i,k-1,j)-dnw(k-1)*(dmdt(i)+dvdxi(i,k-1)+mu_tend(i,j))/msft(i,j)
+       ww(i,k,j)=ww(i,k-1,j)-dnw(k-1)*(dmdt(i)+h_div(i,k-1,j)+mu_tend(i,j))/msfty(i,j)
      ENDDO
      END DO
 
@@ -1191,11 +1327,24 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 ! NOTE: theta'' is not coupled with the map-scale factor, 
 !       while the theta'' tendency is coupled (i.e., mult by 1/msft)
 
+! Comments on map scale factors
+! BUT NOTE THAT both are mass coupled
+! in flux form equations (Klemp et al.) Theta = mu*theta
+!
+! scalar eqn: partial d/dt(rho q/my) = -mx[partial d/dx(q rho u/my) + 
+!                                          partial d/dy(q rho v/mx)]
+!                                      - partial d/dz(q rho w/my)
+! with rho -> mu, and with partial d/dnu(q rho nu/my) as the final term
+!
+! adding previous tendency contribution which was map scale factor coupled
+! (had been divided by msfty)
+! need to uncouple before updating uncoupled Theta (by adding)
+
    DO j=j_start, j_end
      DO k=1,k_end
      DO i=i_start, i_end
        t_ave(i,k,j) = t(i,k,j)
-       t   (i,k,j) = t(i,k,j) + msft(i,j)*dts*ft(i,k,j)
+       t   (i,k,j) = t(i,k,j) + msfty(i,j)*dts*ft(i,k,j)
      END DO
      END DO
    ENDDO   
@@ -1209,14 +1358,20 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 
      DO k=2,k_end
      DO i=i_start, i_end
+        ! for scalar eqn RHS term 3
         wdtn(i,k)= ww(i,k,j)*(fnm(k)*t_1(i,k  ,j)+fnp(k)*t_1(i,k-1,j))
      ENDDO
      ENDDO
 
+! scalar eqn, RHS terms 1, 2 and 3
+! multiply by msfty to uncouple result for Theta from map scale factor
+
      DO k=1,k_end
      DO i=i_start, i_end
-       t(i,k,j) = t(i,k,j) - dts*msft(i,j)*(               &
-                          msft(i,j)*(                      &
+       ! multiplication by msfty uncouples result for Theta
+       t(i,k,j) = t(i,k,j) - dts*msfty(i,j)*(              &
+                          ! multiplication by mx needed for RHS terms 1 & 2
+                          msftx(i,j)*(                     &
                .5*rdy*                                     &
               ( v(i,k,j+1)*(t_1(i,k,j+1)+t_1(i,k, j ))     &
                -v(i,k,j  )*(t_1(i,k, j )+t_1(i,k,j-1)) )   &
@@ -1224,6 +1379,12 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
               ( u(i+1,k,j)*(t_1(i+1,k,j)+t_1(i  ,k,j))     &
                -u(i  ,k,j)*(t_1(i  ,k,j)+t_1(i-1,k,j)) ) ) &
              + rdnw(k)*( wdtn(i,k+1)-wdtn(i,k) ) )       
+     ENDDO
+     ENDDO
+
+     DO k=k_start, k_end
+     DO i=i_start, i_end
+         h_div(i,k,j) = h_div(i,k,j)/(msftx(i,j)*msfty(i,j))
      ENDDO
      ENDDO
 
@@ -1243,11 +1404,15 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                       a, alpha, gamma,            &
                       rdx, rdy, dts, t0, epssm,   &
                       dnw, fnm, fnp, rdnw, rdn,   &
-                      cf1, cf2, cf3, msft,        &
+                      cf1, cf2, cf3, msftx, msfty,&
                       config_flags,               &
                       ids,ide, jds,jde, kds,kde,  & ! domain dims
                       ims,ime, jms,jme, kms,kme,  & ! memory dims
                       its,ite, jts,jte, kts,kte  )  ! tile   dims
+
+! We have used msfty for msft_inv but have not thought through w equation
+! pieces properly yet, so we will have to hope that it is okay
+! We think we have found a slight error in surface w calculation
 
   IMPLICIT NONE ! religion first
       
@@ -1265,7 +1430,6 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                                              t_2ave,  &
                                              w,       &
                                              ph
-
 
       REAL, DIMENSION(  ims:ime , kms:kme, jms:jme ), &
             INTENT(IN   ) ::                          &
@@ -1294,7 +1458,8 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                                    muave,   &
                                    muts,    &
                                    ht,      &
-                                   msft
+                                   msftx,   &
+                                   msfty
 
       REAL, DIMENSION( kms:kme ),  INTENT(IN   )  :: fnp,     &
                                                      fnm,     &
@@ -1360,6 +1525,26 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 
 ! calculation of phi and w equations
 
+!   Comments on map scale factors:
+!   phi equation is:
+!    partial d/dt(rho phi/my) = -mx partial d/dx(phi rho u/my) 
+!                               -mx partial d/dy(phi rho v/mx)
+!                               - partial d/dz(phi rho w/my) + rho g w/my
+!   as with scalar equation, use uncoupled value (here phi) to find the
+!   coupled tendency (rho phi/my)
+!   here as usual rho -> ~'mu'
+!
+!   w eqn [divided by my] is:
+!     partial d/dt(rho w/my) = -mx partial d/dx(w rho u/my)
+!                              -mx partial d/dy(v rho v/mx)
+!                              - partial d/dz(w rho w/my)
+!                              +rho[(u*u+v*v)/a + 2 u omega cos(lat) -
+!                                   (1/rho) partial dp/dz - g + Fz]/my
+!   here as usual rho -> ~'mu'
+!
+!  'u,v,w' sent here must be coupled variables (= rho w/my etc.) by their usage
+
+
     DO i=i_start, i_end
       rhs(i,1) = 0.
     ENDDO
@@ -1367,7 +1552,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
   j_loop_w:  DO j = j_start, j_end
     DO i=i_start, i_end
        mut_inv(i) = 1./mut(i,j)
-       msft_inv(i) = 1./msft(i,j)
+       msft_inv(i) = 1./msfty(i,j)
     ENDDO
 
     DO k=1, k_end
@@ -1383,6 +1568,9 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     ENDDO
     ENDDO
 
+!   building up RHS of phi equation
+!   ph_tend contains terms 1 and 2; now adding 3 and 4 in stages:
+!   here rhs = delta t [ph_tend + ~g*w/2 - ~ww * partial d phi/dz]
     DO k=2,k_end
     DO i=i_start, i_end
        rhs(i,k) = rhs(i,k)-dts*( fnm(k)*wdwn(i,k+1)  &
@@ -1393,13 +1581,32 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !  NOTE:  phi'' is not coupled with the map-scale factor  (1/m), 
 !         but it's tendency is, so must multiply by msft here
 
+!   Comments on map scale factors:
+!   building up RHS of phi equation
+!   ph_tend contains terms 1 and 2; now adding 3 and 4 in stages:
+!   here rhs = ph_previous + (msft/mu)*[rhs_previous - ~ww * delta t * 
+!                                                      partial d phi/dz]
+!            = ph_previous + (msft*delta t/mu)*[ph_tend + ~g*w/2 - ~ww *
+!                                                         partial d phi/dz]
     DO k=2,k_end+1
     DO i=i_start, i_end
-      rhs(i,k) = ph(i,k,j) + msft(i,j)*rhs(i,k)*mut_inv(i)
+      rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)*mut_inv(i)
     ENDDO
     ENDDO
 
 !  lower boundary condition on w
+
+!   Comments on map scale factors:
+!   Chain rule: if Z=Z(X,Y) [true at the surface] then
+!      dZ/dt = dZ/dX * dX/dt + dZ/dY * dY/dt, U=dX/dt, V=dY/dt
+!   using capitals to denote actual values
+!   In mapped values, u=U, v=V, z=Z, 1/dX=mx/dx, 1/dY=my/dy
+!      w = dz/dt = mx u dz/dx + my v dz/dy
+!   [where dz/dx is just the surface height change between x
+!    gridpoints, and dz/dy is the change between y gridpoints]
+!   [cf1, cf2 and cf3 do vertical weighting of u or v values nearest
+!    the surface]
+!   if so, shouldn't there be map scale factors below???
 
     DO i=i_start, i_end
        w(i,1,j)=                                           &
@@ -1422,6 +1629,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 ! in efficiency.  No change in results (bit-for-bit). JM 20040514
 ! (left a blank line where the other two k/i-loops were)
 !
+!   above surface, begin by adding delta t * previous (coupled) w tendency
     DO k=2,k_end
       DO i=i_start, i_end
         w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                       &
@@ -1483,7 +1691,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 
     DO k=k_end+1,2,-1
     DO i=i_start, i_end
-       ph(i,k,j) = rhs(i,k)+msft(i,j)*.5*dts*g*(1.+epssm) &
+       ph(i,k,j) = rhs(i,k)+msfty(i,j)*.5*dts*g*(1.+epssm) &
                       *w(i,k,j)/muts(i,j)
     ENDDO
     ENDDO
@@ -1498,7 +1706,7 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
                      u_lin, v_lin, ww_lin,                   &
                      muu, muv,                               &
                      ru_m, rv_m, ww_m, epssm,                &
-                     msfu, msfv,                             &
+                     msfux, msfuy, msfvx, msfvx_inv, msfvy,  &
                      iteration , number_of_small_timesteps,  &
                      ids,ide, jds,jde, kds,kde,              &
                      ims,ime, jms,jme, kms,kme,              &
@@ -1526,7 +1734,9 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) , INTENT(INOUT) :: ru_m, &
                                                                 rv_m, &
                                                                 ww_m
-  REAL, DIMENSION(ims:ime, jms:jme) , INTENT(IN   ) :: muu, muv, msfu, msfv
+  REAL, DIMENSION(ims:ime, jms:jme) , INTENT(IN   ) :: muu, muv,      &
+                                                       msfux, msfuy,  &
+                                                       msfvx, msfvy, msfvx_inv
 
   INTEGER :: mini, minj, mink
 
@@ -1603,9 +1813,9 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
     DO  k = kts, mink
     DO  i = its, mini
       ru_m(i,k,j)  = ru_m(i,k,j) / number_of_small_timesteps   &
-                     + muu(i,j)*u_lin(i,k,j)/msfu(i,j)
+                     + muu(i,j)*u_lin(i,k,j)/msfuy(i,j)
       rv_m(i,k,j)  = rv_m(i,k,j) / number_of_small_timesteps   &
-                     + muv(i,j)*v_lin(i,k,j)/msfv(i,j) 
+                     + muv(i,j)*v_lin(i,k,j)*msfvx_inv(i,j) 
       ww_m(i,k,j)  = ww_m(i,k,j) / number_of_small_timesteps   &
                      + ww_lin(i,k,j) 
     ENDDO
@@ -1618,7 +1828,7 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
       DO  k = kts, mink
       DO  i = mini+1, ite
         ru_m(i,k,j)  = ru_m(i,k,j) / number_of_small_timesteps   &
-                     + muu(i,j)*u_lin(i,k,j)/msfu(i,j)
+                     + muu(i,j)*u_lin(i,k,j)/msfuy(i,j)
       ENDDO
       ENDDO
       ENDDO
@@ -1628,7 +1838,7 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
       DO  k = kts, mink
       DO  i = its, mini
 	rv_m(i,k,j)  = rv_m(i,k,j) / number_of_small_timesteps   &
-                     + muv(i,j)*v_lin(i,k,j)/msfv(i,j)
+                     + muv(i,j)*v_lin(i,k,j)*msfvx_inv(i,j)
       ENDDO
       ENDDO
       ENDDO

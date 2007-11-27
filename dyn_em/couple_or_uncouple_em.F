@@ -117,7 +117,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
        mut_2(i,j) = grid%em_mub(i,j) + grid%em_mu_2(i,j)
-       muwt_2(i,j) = (grid%em_mub(i,j) + grid%em_mu_2(i,j))/grid%msft(i,j)
+       muwt_2(i,j) = (grid%em_mub(i,j) + grid%em_mu_2(i,j))/grid%msfty(i,j) ! w coupled with y
      ENDDO
      ENDDO
 
@@ -127,23 +127,23 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       muut_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))/grid%msfu(i,j)
-       muvt_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))/grid%msfv(i,j)
+       muut_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
+       muvt_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))/grid%msfvx(i,j) ! v coupled with x
      ENDDO
      ENDDO
 
-     IF ( config_flags%nested .or. config_flags%specified ) THEN
+     IF ( config_flags%nested .or. config_flags%specified .or. config_flags%polar ) THEN
 
        IF ( jpe .eq. jde ) THEN
          j = jde
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = (grid%em_mub(i,j-1) + grid%em_mu_2(i,j-1))/grid%msfv(i,j)
+           muvt_2(i,j) = (grid%em_mub(i,j-1) + grid%em_mu_2(i,j-1))/grid%msfvx(i,j) ! v coupled with x
          ENDDO
        ENDIF
        IF ( ipe .eq. ide .AND. .NOT. config_flags%periodic_x ) THEN
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = (grid%em_mub(i-1,j) + grid%em_mu_2(i-1,j))/grid%msfu(i,j)
+           muut_2(i,j) = (grid%em_mub(i-1,j) + grid%em_mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
          ENDDO
        ENDIF
 
@@ -152,13 +152,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
        IF ( jpe .eq. jde ) THEN
          j = jde
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))/grid%msfv(i,j)
+           muvt_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))/grid%msfvx(i,j) ! v coupled with x
          ENDDO
        ENDIF
        IF ( ipe .eq. ide ) THEN
          i = ide       
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))/grid%msfu(i,j)
+           muut_2(i,j) = 0.5*(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
          ENDDO
        ENDIF
 
@@ -171,7 +171,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
        mut_2(i,j) = 1./(grid%em_mub(i,j) + grid%em_mu_2(i,j))
-       muwt_2(i,j) = grid%msft(i,j)/(grid%em_mub(i,j) + grid%em_mu_2(i,j))
+       muwt_2(i,j) = grid%msfty(i,j)/(grid%em_mub(i,j) + grid%em_mu_2(i,j)) ! w coupled with y
      ENDDO
      ENDDO
 
@@ -179,28 +179,28 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       muut_2(i,j) = 2.*grid%msfu(i,j)/(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))
+       muut_2(i,j) = 2.*grid%msfuy(i,j)/(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j)) ! u coupled with y
      ENDDO
      ENDDO
 
      DO j = max(jds,jps),min(jde-1,jpe)
      DO i = max(ids,ips),min(ide-1,ipe)
-       muvt_2(i,j) = 2.*grid%msfv(i,j)/(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))
+       muvt_2(i,j) = 2.*grid%msfvx(i,j)/(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1)) ! v coupled with x
      ENDDO
      ENDDO
 
-     IF ( config_flags%nested .or. config_flags%specified ) THEN
+     IF ( config_flags%nested .or. config_flags%specified .or. config_flags%polar ) THEN
 
        IF ( jpe .eq. jde ) THEN
          j = jde 
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = grid%msfv(i,j)/(grid%em_mub(i,j-1) + grid%em_mu_2(i,j-1))
+           muvt_2(i,j) = grid%msfvx(i,j)/(grid%em_mub(i,j-1) + grid%em_mu_2(i,j-1)) ! v coupled with x
          ENDDO
        ENDIF
        IF ( ipe .eq. ide .AND. .NOT. config_flags%periodic_x ) THEN
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = grid%msfu(i,j)/(grid%em_mub(i-1,j) + grid%em_mu_2(i-1,j))
+           muut_2(i,j) = grid%msfuy(i,j)/(grid%em_mub(i-1,j) + grid%em_mu_2(i-1,j)) ! u coupled with y
          ENDDO
        ENDIF
 
@@ -209,13 +209,13 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
        IF ( jpe .eq. jde ) THEN
          j = jde
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,j) = 2.*grid%msfv(i,j)/(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1))
+           muvt_2(i,j) = 2.*grid%msfvx(i,j)/(grid%em_mub(i,j)+grid%em_mub(i,j-1) + grid%em_mu_2(i,j) + grid%em_mu_2(i,j-1)) ! v coupled with x
          ENDDO
        ENDIF
        IF ( ipe .eq. ide ) THEN
          i = ide       
          DO j = max(jds,jps),min(jde-1,jpe)
-           muut_2(i,j) = 2.*grid%msfu(i,j)/(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j))
+           muut_2(i,j) = 2.*grid%msfuy(i,j)/(grid%em_mub(i,j)+grid%em_mub(i-1,j) + grid%em_mu_2(i,j) + grid%em_mu_2(i-1,j)) ! u coupled with y
          ENDDO
        ENDIF
 

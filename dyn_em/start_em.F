@@ -51,6 +51,11 @@
                                   its, ite, jts, jte, kts, kte, &
                                   ij,i,j,k,ii,jj,kk,loop,error,l
 
+   INTEGER ::              imsx, imex, jmsx, jmex, kmsx, kmex,    &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,    &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,    &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey
+
    INTEGER     :: i_m
 
    REAL        :: p00, t00, a, p_surf, pd_surf
@@ -74,6 +79,7 @@
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
    CHARACTER (LEN=132) :: message
+   REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
 
 ! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
 ! generated from the registry.  The definition of REGISTER_I1 allows
@@ -81,10 +87,14 @@
 #ifdef DM_PARALLEL
 #    include "em_data_calls.inc"
 #endif
-   CALL get_ijk_from_grid (  grid ,                   &
-                             ids, ide, jds, jde, kds, kde,    &
-                             ims, ime, jms, jme, kms, kme,    &
-                             ips, ipe, jps, jpe, kps, kpe    )
+  CALL get_ijk_from_grid ( grid ,                               &
+                           ids, ide, jds, jde, kds, kde,        &
+                           ims, ime, jms, jme, kms, kme,        &
+                           ips, ipe, jps, jpe, kps, kpe,        &
+                           imsx, imex, jmsx, jmex, kmsx, kmex,  &
+                           ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
+                           imsy, imey, jmsy, jmey, kmsy, kmey,  &
+                           ipsy, ipey, jpsy, jpey, kpsy, kpey )
 
    kts = kps ; kte = kpe     ! note that tile is entire patch
    its = ips ; ite = ipe     ! note that tile is entire patch
@@ -101,6 +111,39 @@
          grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
       CALL wrf_error_fatal ( message ) 
    END IF
+
+   IF ( config_flags%polar ) THEN
+!write(0,*)__FILE__,__LINE__,' clat ',ips,ipe,jps,jpe
+!do j = jps,jpe
+!write(0,*)__FILE__,__LINE__,' clat ',ids,j,grid%clat(ips,j) 
+!enddo
+
+#ifdef DM_PARALLEL
+! WARNING:  this might present scaling issues on very large numbers of processors
+     ALLOCATE( clat_glob(ids:ide,jds:jde) )
+
+     CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
+                                     ids, ide, jds, jde, 1, 1, &
+                                     ims, ime, jms, jme, 1, 1, &
+                                     its, ite, jts, jte, 1, 1 )
+
+     CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
+
+!write(0,*)__FILE__,__LINE__,' clat_glb ',ids,ide,jds,jde
+!do j = jds,jde
+!write(0,*)__FILE__,__LINE__,' clat_glb ',ids,j,clat_glob(ipsx,j) ,clat_glob(ids,j)
+!enddo
+
+     grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
+
+!write(0,*)__FILE__,__LINE__,' clat_xxx ',ipsx,ipex,jpsx,jpex
+!do j = jpsx,jpex
+!write(0,*)__FILE__,__LINE__,' clat_xxx ',ids,j,grid%clat_xxx(ids,j) 
+!enddo
+
+     DEALLOCATE( clat_glob )
+#endif
+   ENDIF
 
 ! here we check to see if the boundary conditions are set properly
 
@@ -601,9 +644,12 @@
 !j grid%em_mub   x
 !j grid%em_mu0   x
 !j grid%ht    x
-!j grid%msft  x
-!j grid%msfu  x
-!j grid%msfv  x
+!j grid%msftx x
+!j grid%msfty x
+!j grid%msfux x
+!j grid%msfuy x
+!j grid%msfvx x
+!j grid%msfvy x
 !j grid%sina  x
 !j grid%cosa  x
 !j grid%e     x
@@ -662,14 +708,14 @@
    IF ( .not. config_flags%restart ) THEN 
    CALL set_w_surface(  config_flags,                                      &
                         grid%em_w_1, grid%ht, grid%em_u_1, grid%em_v_1, grid%cf1, &
-                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msft,        &
+                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
                         ims, ime, jms, jme, kms, kme                      )
    CALL set_w_surface(  config_flags,                                      &
                         grid%em_w_2, grid%ht, grid%em_u_2, grid%em_v_2, grid%cf1, &
-                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msft,        &
+                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
@@ -888,17 +934,32 @@
 
    ENDIF
 
-   CALL set_physical_bc2d( grid%msft , 'r' , config_flags ,              &
+   CALL set_physical_bc2d( grid%msftx , 'r' , config_flags ,              &
                          ids , ide , jds , jde , &
                          ims , ime , jms , jme , &
                          its , ite , jts , jte , &
                          its , ite , jts , jte   )
-   CALL set_physical_bc2d( grid%msfu , 'x' , config_flags ,              &
+   CALL set_physical_bc2d( grid%msfty , 'r' , config_flags ,              &
+                         ids , ide , jds , jde , &
+                         ims , ime , jms , jme , &
+                         its , ite , jts , jte , &
+                         its , ite , jts , jte   )
+   CALL set_physical_bc2d( grid%msfux , 'x' , config_flags ,              &
                          ids , ide , jds , jde , &
                          ims , ime , jms , jme , &
                          its , ite , jts , jte , &
                          its , ite , jts , jte   ) 
-   CALL set_physical_bc2d( grid%msfv , 'y' , config_flags ,              &
+   CALL set_physical_bc2d( grid%msfuy , 'x' , config_flags ,              &
+                         ids , ide , jds , jde , &
+                         ims , ime , jms , jme , &
+                         its , ite , jts , jte , &
+                         its , ite , jts , jte   ) 
+   CALL set_physical_bc2d( grid%msfvx , 'y' , config_flags ,              &
+                         ids , ide , jds , jde , &
+                         ims , ime , jms , jme , &
+                         its , ite , jts , jte , &
+                         its , ite , jts , jte   ) 
+   CALL set_physical_bc2d( grid%msfvy , 'y' , config_flags ,              &
                          ids , ide , jds , jde , &
                          ims , ime , jms , jme , &
                          its , ite , jts , jte , &

@@ -12,7 +12,8 @@ CONTAINS
 SUBROUTINE mass_flux_divergence ( field, field_old, tendency,    &
                                   ru, rv, rom,                   &
                                   mut, config_flags,             &
-                                  msfu, msfv, msft,              &
+                                  msfux, msfuy, msfvx, msfvy,    &
+                                  msftx, msfty,                  &
                                   fzm, fzp,                      &
                                   rdx, rdy, rdzw,                &
                                   ids, ide, jds, jde, kds, kde,  &
@@ -38,9 +39,12 @@ SUBROUTINE mass_flux_divergence ( field, field_old, tendency,    &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfu,  &
-                                                                    msfv,  &
-                                                                    msft
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
@@ -74,7 +78,7 @@ SUBROUTINE mass_flux_divergence ( field, field_old, tendency,    &
    DO j = j_start, j_end
    DO k = kts, ktf
    DO i = i_start, i_end
-      mrdx=msft(i,j)*rdx
+      mrdx=msftx(i,j)*rdx
       tendency(i,k,j)=tendency(i,k,j)-mrdx*0.5 &
                       *(ru(i+1,k,j)*(field(i+1,k,j)+field(i  ,k,j)) &
                        -ru(i  ,k,j)*(field(i  ,k,j)+field(i-1,k,j)))
@@ -85,7 +89,7 @@ SUBROUTINE mass_flux_divergence ( field, field_old, tendency,    &
    DO j = j_start, j_end
    DO k = kts, ktf
    DO i = i_start, i_end
-      mrdy=msft(i,j)*rdy
+      mrdy=msfty(i,j)*rdy
       tendency(i,k,j)=tendency(i,k,j) -mrdy*0.5 &
                       *(rv(i,k,j+1)*(field(i,k,j+1)+field(i,k,j  )) &
                        -rv(i,k,j  )*(field(i,k,j  )+field(i,k,j-1))) 
@@ -124,7 +128,8 @@ END SUBROUTINE mass_flux_divergence
 SUBROUTINE advect_u   ( u, u_old, tendency,            &
                         ru, rv, rom,                   &
                         mut, config_flags,             &
-                        msfu, msfv, msft,              &
+                        msfux, msfuy, msfvx, msfvy,    &
+                        msftx, msfty,                  &
                         fzm, fzp,                      &
                         rdx, rdy, rdzw,                &
                         ids, ide, jds, jde, kds, kde,  &
@@ -150,9 +155,12 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfu,  &
-                                                                    msfv,  &
-                                                                    msft
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
@@ -272,6 +280,8 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
         j_end_f = jde-3
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
 !  compute fluxes, 5th or 6th order
 
      jp1 = 2
@@ -337,16 +347,53 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
 !  y flux-divergence into tendency
 
+!       Comments for polar boundary condition
+!       Flow is only from one side for points next to poles
+!       S. pole at j=jds, N. pole at j=jde for v-stagger points
+!       Tendencies affected are held at j=jds and j=jde-1 (non-stagger)
+!       jp0 will always hold the flux from the south, and
+!       jp1 will hold the flux from the north.
+!
+!       When j=jds+1 we are 1 in from S. pole, and jp1 contains fqy(jds+1), jp0 has fqy(jds)
+!       tendency(j-1) = - mx/dy * (u rho v (jds+1)/mx - u rho v (jds)/mx)
+!                       v(jds) = 0
+!       tendency(j-1) = - mx/dy * (u rho v (jds+1)/mx) = - mx/dy * fqy(jp1)
+!
+!       When j=jde-1 we are 1 in from N. pole, and jp1 contains fqy(jde-1), jp0 has fqy(jde-2)
+!       tendency(j-1) = - mx/dy * (u rho v (jde)/mx - u rho v (jde-1)/mx)
+!                       v(jde) = 0
+!       tendency(j-1) = + mx/dy * (u rho v (jde-1)/mx) = + mx/dy * fqy(jp0)
+
+        ! (j > j_start) will miss the u(,,jds) tendency
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
         IF(j > j_start) THEN
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdy=msfu(i,j-1)*rdy
+            mrdy=msfux(i,j-1)*rdy                 ! ADT eqn 44, 2nd term on RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
 
         ENDIF
+
+        END IF
 
 
         jtmp = jp1
@@ -446,7 +493,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
         DO k=kts,ktf
           DO i = i_start, i_end
-            mrdx=msfu(i,j)*rdx
+            mrdx=msfux(i,j)*rdx ! ADT eqn 44, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -513,6 +560,8 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
         j_end_f = jde-3
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
 !  compute fluxes, 5th or 6th order
 
      jp1 = 2
@@ -576,16 +625,36 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
 !  y flux-divergence into tendency
 
+        ! (j > j_start) will miss the u(,,jds) tendency
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
         IF(j > j_start) THEN
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdy=msfu(i,j-1)*rdy
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
 
         ENDIF
+
+        END IF
 
 
         jtmp = jp1
@@ -685,7 +754,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
         DO k=kts,ktf
           DO i = i_start, i_end
-            mrdx=msfu(i,j)*rdx
+            mrdx=msfux(i,j)*rdx ! ADT eqn 44, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -781,7 +850,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
         DO k=kts,ktf
           DO i = i_start, i_end
-            mrdx=msfu(i,j)*rdx
+            mrdx=msfux(i,j)*rdx ! ADT eqn 44, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -817,6 +886,8 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
         j_end_f = jde-2
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
 !  j flux loop for v flux of u momentum
 
      jp1 = 2
@@ -834,8 +905,11 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
      ELSE IF ((j > j_end_f) .and. degrade_ye) THEN
        DO k = kts, ktf
        DO i = i_start, i_end
-         fqy(i, k, jp1) = 0.25*(rv(i,k,j_end+1)+rv(i-1,k,j_end+1))    &
-                *(u(i,k,j_end+1)+u(i,k,j_end))
+         ! Assumes j>j_end_f is ONLY j_end+1 ...
+!         fqy(i, k, jp1) = 0.25*(rv(i,k,j_end+1)+rv(i-1,k,j_end+1))    &
+!                *(u(i,k,j_end+1)+u(i,k,j_end))
+         fqy(i, k, jp1) = 0.25*(rv(i,k,j)+rv(i-1,k,j))    &
+                *(u(i,k,j)+u(i,k,j-1))
        ENDDO
        ENDDO
      ELSE
@@ -851,16 +925,36 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
      END IF
 
-     IF (j > j_start) THEN
-
 !  y flux-divergence into tendency
+
+     ! (j > j_start) will miss the u(,,jds) tendency
+     IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+       DO k=kts,ktf
+       DO i = i_start, i_end
+         mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+         tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+       END DO
+       END DO
+       ! This would be seen by (j > j_start) but we need to zero out the NP tendency
+     ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+       DO k=kts,ktf
+       DO i = i_start, i_end
+         mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+         tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+       END DO
+       END DO
+     ELSE  ! normal code
+
+     IF (j > j_start) THEN
 
        DO k=kts,ktf
        DO i = i_start, i_end
-          mrdy=msfu(i,j-1)*rdy
+          mrdy=msfux(i,j-1)*rdy ! ADT eqn 44, 2nd term on RHS
           tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
        ENDDO
        ENDDO
+
+     END IF
 
      END IF
 
@@ -962,7 +1056,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
         DO k=kts,ktf
           DO i = i_start, i_end
-          mrdx=msfu(i,j)*rdx
+          mrdx=msfux(i,j)*rdx ! ADT eqn 44, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -997,6 +1091,8 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
         j_end_f = jde-2
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
 !  j flux loop for v flux of u momentum
 
      jp1 = 2
@@ -1014,8 +1110,11 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
      ELSE IF ((j > j_end_f) .and. degrade_ye) THEN
        DO k = kts, ktf
        DO i = i_start, i_end
-         fqy(i, k, jp1) = 0.25*(rv(i,k,j_end+1)+rv(i-1,k,j_end+1))    &
-                *(u(i,k,j_end+1)+u(i,k,j_end))
+         ! Assumes j>j_end_f is ONLY j_end+1 ...
+!         fqy(i, k, jp1) = 0.25*(rv(i,k,j_end+1)+rv(i-1,k,j_end+1))    &
+!                *(u(i,k,j_end+1)+u(i,k,j_end))
+         fqy(i, k, jp1) = 0.25*(rv(i,k,j)+rv(i-1,k,j))    &
+                *(u(i,k,j)+u(i,k,j-1))
        ENDDO
        ENDDO
      ELSE
@@ -1031,16 +1130,36 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
      END IF
 
-     IF (j > j_start) THEN
-
 !  y flux-divergence into tendency
+
+     ! (j > j_start) will miss the u(,,jds) tendency
+     IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+       DO k=kts,ktf
+       DO i = i_start, i_end
+         mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+         tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+       END DO
+       END DO
+       ! This would be seen by (j > j_start) but we need to zero out the NP tendency
+     ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+       DO k=kts,ktf
+       DO i = i_start, i_end
+         mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+         tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+       END DO
+       END DO
+     ELSE  ! normal code
+
+     IF (j > j_start) THEN
 
        DO k=kts,ktf
        DO i = i_start, i_end
-          mrdy=msfu(i,j-1)*rdy
+          mrdy=msfux(i,j-1)*rdy      ! ADT eqn 44, 2nd term on RHS
           tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
        ENDDO
        ENDDO
+
+     END IF
 
      END IF
 
@@ -1067,7 +1186,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
       DO j = j_start, j_end
       DO k=kts,ktf
       DO i = i_start, i_end
-         mrdx=msfu(i,j)*rdx
+         mrdx=msfux(i,j)*rdx         ! ADT eqn 44, 1st term on RHS
          tendency(i,k,j)=tendency(i,k,j)-mrdx*0.25 &
                 *((ru(i+1,k,j)+ru(i,k,j))*(u(i+1,k,j)+u(i,k,j)) &
                 -(ru(i,k,j)+ru(i-1,k,j))*(u(i,k,j)+u(i-1,k,j)))
@@ -1079,7 +1198,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
         DO j = j_start, j_end
         DO k=kts,ktf
            i = ids+1
-           mrdx=msfu(i,j)*rdx
+           mrdx=msfux(i,j)*rdx       ! ADT eqn 44, 1st term on RHS
            ub = u(i-1,k,j)
            IF (u(i,k,j) .LT. 0.) ub = u(i,k,j)
            tendency(i,k,j)=tendency(i,k,j)-mrdx*0.25 &
@@ -1092,7 +1211,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
         DO j = j_start, j_end
         DO k=kts,ktf
            i = ide-1
-           mrdx=msfu(i,j)*rdx
+           mrdx=msfux(i,j)*rdx       ! ADT eqn 44, 1st term on RHS
            ub = u(i+1,k,j)
            IF (u(i,k,j) .GT. 0.) ub = u(i,k,j)
            tendency(i,k,j)=tendency(i,k,j)-mrdx*0.25 &
@@ -1108,13 +1227,27 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
       DO j = j_start, j_end
       DO k=kts,ktf
       DO i = i_start, i_end
-         mrdy=msfu(i,j)*rdy
+         mrdy=msfux(i,j)*rdy         ! ADT eqn 44, 1st term on RHS
+         ! Comments for polar boundary condition
+         ! Flow is only from one side for points next to poles
+         IF ( (config_flags%polar) .AND. (j == jds) ) THEN
+            tendency(i,k,j)=tendency(i,k,j)-mrdy*0.25 &
+                            *(rv(i,k,j+1)+rv(i-1,k,j+1))*(u(i,k,j+1)+u(i,k,j))
+         ELSE IF ( (config_flags%polar) .AND. (j == jde-1) ) THEN
+            tendency(i,k,j)=tendency(i,k,j)+mrdy*0.25 &
+                           *(rv(i,k,j)+rv(i-1,k,j))*(u(i,k,j)+u(i,k,j-1))
+         ELSE  ! Normal code
             tendency(i,k,j)=tendency(i,k,j)-mrdy*0.25 &
                 *((rv(i,k,j+1)+rv(i-1,k,j+1))*(u(i,k,j+1)+u(i,k,j)) &
                  -(rv(i,k,j)+rv(i-1,k,j))*(u(i,k,j)+u(i,k,j-1)))
+         ENDIF
       ENDDO
       ENDDO
       ENDDO
+
+   ELSE IF ( horz_order == 0 ) THEN
+
+      ! Just in case we want to turn horizontal advection off, we can do it
 
    ELSE
 
@@ -1177,7 +1310,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
       DO i = i_start, i_end
 
-         mrdy=msfu(i,jts)*rdy
+         mrdy=msfux(i,jts)*rdy       ! ADT eqn 44, 2nd term on RHS
          ip = MIN( imax, i   )
          im = MAX( imin, i-1 )
 
@@ -1199,7 +1332,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
       DO i = i_start, i_end
 
-         mrdy=msfu(i,jte-1)*rdy
+         mrdy=msfux(i,jte-1)*rdy     ! ADT eqn 44, 2nd term on RHS
          ip = MIN( imax, i   )
          im = MAX( imin, i-1 )
 
@@ -1218,6 +1351,10 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
    ENDIF
 
 !-------------------- vertical advection
+!  ADT eqn 44 has 3rd term on RHS = -(1/my) partial d/dz (rho u w)
+!  Here we have:  - partial d/dz (u*rom) = - partial d/dz (u rho w / my)
+!  Since 'my' (map scale factor in y-direction) isn't a function of z,
+!  this is what we need, so leave unchanged in advect_u
 
    i_start = its
    i_end   = ite
@@ -1410,7 +1547,8 @@ END SUBROUTINE advect_u
 SUBROUTINE advect_v   ( v, v_old, tendency,            &
                         ru, rv, rom,                   &
                         mut, config_flags,             &
-                        msfu, msfv, msft,              &
+                        msfux, msfuy, msfvx, msfvy,    &
+                        msftx, msfty,                  &
                         fzm, fzp,                      &
                         rdx, rdy, rdzw,                &
                         ids, ide, jds, jde, kds, kde,  &
@@ -1436,9 +1574,12 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfu,  &
-                                                                    msfv,  &
-                                                                    msft
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
@@ -1628,16 +1769,40 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
 !  y flux-divergence into tendency
 
+         ! Comments on polar boundary conditions
+         ! No advection over the poles means tendencies (held from jds [S. pole]
+         ! to jde [N pole], i.e., on v grid) must be zero at poles
+         ! [tendency(jds) and tendency(jde)=0]
+         IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+           DO k=kts,ktf
+           DO i = i_start, i_end
+             tendency(i,k,j-1) = 0.
+           END DO
+           END DO
+         ! If j_end were set to jde in a special if statement apart from
+         ! degrade_ye, then we would hit the next conditional.  But since
+         ! we want the tendency to be zero anyway, not looping to jde+1
+         ! will produce the same effect.
+         ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
+           DO k=kts,ktf
+           DO i = i_start, i_end
+             tendency(i,k,j-1) = 0.
+           END DO
+           END DO
+         ELSE  ! Normal code
+
          IF(j > j_start) THEN
 
             DO k=kts,ktf
             DO i = i_start, i_end
-               mrdy=msfv(i,j-1)*rdy
+               mrdy=msfvy(i,j-1)*rdy ! ADT eqn 45, 2nd term on RHS
                tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
             ENDDO
             ENDDO
 
          ENDIF
+
+         END IF
 
          jtmp = jp1
          jp1 = jp0
@@ -1652,8 +1817,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       j_start = jts
       j_end   = jte
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-1,jte)
+      ! Polar boundary conditions are like open or specified
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
 !  higher order flux has a 5 or 7 point stencil, so compute
 !  bounds so we can switch to second order flux close to the boundary
@@ -1733,7 +1899,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
          DO k=kts,ktf
             DO i = i_start, i_end
-            mrdx=msfv(i,j)*rdx
+            mrdx=msfvy(i,j)*rdx      ! ADT eqn 45, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
          ENDDO
       ENDDO
@@ -1863,16 +2029,40 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
 !  y flux-divergence into tendency
 
+        ! Comments on polar boundary conditions
+        ! No advection over the poles means tendencies (held from jds [S. pole]
+        ! to jde [N pole], i.e., on v grid) must be zero at poles
+        ! [tendency(jds) and tendency(jde)=0]
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            tendency(i,k,j-1) = 0.
+          END DO
+          END DO
+        ! If j_end were set to jde in a special if statement apart from
+        ! degrade_ye, then we would hit the next conditional.  But since
+        ! we want the tendency to be zero anyway, not looping to jde+1
+        ! will produce the same effect.
+        ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            tendency(i,k,j-1) = 0.
+          END DO
+          END DO
+        ELSE  ! Normal code
+
         IF(j > j_start) THEN
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdy=msfv(i,j-1)*rdy
+            mrdy=msfvy(i,j-1)*rdy    ! ADT eqn 45, 2nd term on RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
 
         ENDIF
+
+        END IF
 
         jtmp = jp1
         jp1 = jp0
@@ -1887,8 +2077,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       j_start = jts
       j_end   = jte
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-1,jte)
+      ! Polar boundary conditions are like open or specified
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
 !  higher order flux has a 5 or 7 point stencil, so compute
 !  bounds so we can switch to second order flux close to the boundary
@@ -1968,7 +2159,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
         DO k=kts,ktf
           DO i = i_start, i_end
-            mrdx=msfv(i,j)*rdx
+            mrdx=msfvy(i,j)*rdx      ! ADT eqn 45, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -2066,13 +2257,38 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
         ENDDO
       END IF
 
+      ! Comments on polar boundary conditions
+      ! No advection over the poles means tendencies (held from jds [S. pole]
+      ! to jde [N pole], i.e., on v grid) must be zero at poles
+      ! [tendency(jds) and tendency(jde)=0]
+      IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+        DO k=kts,ktf
+        DO i = i_start, i_end
+          tendency(i,k,j-1) = 0.
+        END DO
+        END DO
+      ! If j_end were set to jde in a special if statement apart from
+      ! degrade_ye, then we would hit the next conditional.  But since
+      ! we want the tendency to be zero anyway, not looping to jde+1
+      ! will produce the same effect.
+      ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
+        DO k=kts,ktf
+        DO i = i_start, i_end
+          tendency(i,k,j-1) = 0.
+        END DO
+        END DO
+      ELSE  ! Normal code
+
       IF( j > j_start) THEN
         DO k = kts, ktf
         DO i = i_start, i_end
-            mrdy=msfv(i,j-1)*rdy
+            mrdy=msfvy(i,j-1)*rdy     ! ADT eqn 45, 2nd term on RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
         ENDDO
         ENDDO
+
+      END IF
+
       END IF
 
       jtmp = jp1
@@ -2089,8 +2305,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       j_start = jts
       j_end   = jte
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-1,jte)
+      ! Polar boundary conditions are like open or specified
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
 !  3rd or 4th order flux has a 5 point stencil, so compute
 !  bounds so we can switch to second order flux close to the boundary
@@ -2143,7 +2360,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
         DO k=kts,ktf
         DO i = i_start, i_end
-            mrdx=msfv(i,j)*rdx
+            mrdx=msfvy(i,j)*rdx       ! ADT eqn 45, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
         ENDDO
         ENDDO
@@ -2241,13 +2458,38 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
         ENDDO
       END IF
 
+      ! Comments on polar boundary conditions
+      ! No advection over the poles means tendencies (held from jds [S. pole]
+      ! to jde [N pole], i.e., on v grid) must be zero at poles
+      ! [tendency(jds) and tendency(jde)=0]
+      IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+        DO k=kts,ktf
+        DO i = i_start, i_end
+          tendency(i,k,j-1) = 0.
+        END DO
+        END DO
+      ! If j_end were set to jde in a special if statement apart from
+      ! degrade_ye, then we would hit the next conditional.  But since
+      ! we want the tendency to be zero anyway, not looping to jde+1
+      ! will produce the same effect.
+      ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
+        DO k=kts,ktf
+        DO i = i_start, i_end
+          tendency(i,k,j-1) = 0.
+        END DO
+        END DO
+      ELSE  ! Normal code
+
       IF( j > j_start) THEN
         DO k = kts, ktf
         DO i = i_start, i_end
-            mrdy=msfv(i,j-1)*rdy
+            mrdy=msfvy(i,j-1)*rdy     ! ADT eqn 45, 2nd term on RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
         ENDDO
         ENDDO
+
+      END IF
+
       END IF
 
       jtmp = jp1
@@ -2264,8 +2506,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       j_start = jts
       j_end   = jte
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-1,jte)
+      ! Polar boundary conditions are like open or specified
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
 !  3rd or 4th order flux has a 5 point stencil, so compute
 !  bounds so we can switch to second order flux close to the boundary
@@ -2318,7 +2561,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
         DO k=kts,ktf
         DO i = i_start, i_end
-            mrdx=msfv(i,j)*rdx
+            mrdx=msfvy(i,j)*rdx      ! ADT eqn 45, 1st term on RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
         ENDDO
         ENDDO
@@ -2337,12 +2580,14 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
       IF ( config_flags%open_ye ) j_end   = MIN(jde-1,jte)
       IF ( specified ) j_start = MAX(jds+2,jts)
       IF ( specified ) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%polar ) j_end   = MIN(jde-1,jte)
 
       DO j = j_start, j_end
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mrdy=msfv(i,j)*rdy
+         mrdy=msfvy(i,j)*rdy          ! ADT eqn 45, 2nd term on RHS
 
             tendency(i,k,j)=tendency(i,k,j) -mrdy*0.25 &
                             *((rv(i,k,j+1)+rv(i,k,j  ))*(v(i,k,j+1)+v(i,k,j  )) &
@@ -2351,13 +2596,34 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
       ENDDO
       ENDDO
       ENDDO
+
+      ! Comments on polar boundary conditions
+      ! tendencies = 0 at poles, and polar points do not contribute at points
+      ! next to poles
+      IF (config_flags%polar) THEN
+         IF (jts == jds) THEN
+            DO k=kts,ktf
+            DO i = i_start, i_end
+               tendency(i,k,jds) = 0.
+            END DO
+            END DO
+         END IF
+         IF (jte == jde) THEN
+            DO k=kts,ktf
+            DO i = i_start, i_end
+               tendency(i,k,jde) = 0.
+            END DO
+            END DO
+         END IF
+      END IF
+
 !  specified uses upstream normal wind at boundaries
 
       IF ( specified .AND. jts .LE. jds+1 ) THEN
         j = jds+1
         DO k=kts,ktf
         DO i = i_start, i_end
-           mrdy=msfv(i,j)*rdy
+           mrdy=msfvy(i,j)*rdy       ! ADT eqn 45, 2nd term on RHS
            vb = v(i,k,j-1)
            IF (v(i,k,j) .LT. 0.) vb = v(i,k,j)
 
@@ -2374,7 +2640,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
         DO k=kts,ktf
         DO i = i_start, i_end
 
-           mrdy=msfv(i,j)*rdy
+           mrdy=msfvy(i,j)*rdy       ! ADT eqn 45, 2nd term on RHS
            vb = v(i,k,j+1)
            IF (v(i,k,j) .GT. 0.) vb = v(i,k,j)
 
@@ -2390,12 +2656,14 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
         IF ( config_flags%open_xs .or. specified ) i_start = MAX(ids+1,its)
         IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-2,ite)
       ENDIF
+      IF ( config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%polar ) j_end   = MIN(jde-1,jte)
 
       DO j = j_start, j_end
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mrdx=msfv(i,j)*rdx
+         mrdx=msfvy(i,j)*rdx         ! ADT eqn 45, 1st term on RHS
 
             tendency(i,k,j)=tendency(i,k,j)-mrdx*0.25 &
                             *((ru(i+1,k,j)+ru(i+1,k,j-1))*(v(i+1,k,j)+v(i  ,k,j)) &
@@ -2405,6 +2673,10 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
       ENDDO
       ENDDO
 
+   ELSE IF ( horz_order == 0 ) THEN
+
+      ! Just in case we want to turn horizontal advection off, we can do it
+
   ELSE
 
 
@@ -2412,6 +2684,24 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
       CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
 
    ENDIF horizontal_order_test
+
+   !  Comments on polar boundary condition
+   !  Force tendency=0 at NP and SP
+   !  We keep setting this everywhere, but it can't hurt...
+   IF ( config_flags%polar .AND. (jts == jds) ) THEN
+      DO i=its,ite
+      DO k=kts,ktf
+         tendency(i,k,jts)=0.
+      END DO
+      END DO
+   END IF
+   IF ( config_flags%polar .AND. (jte == jde) ) THEN
+      DO i=its,ite
+      DO k=kts,ktf
+         tendency(i,k,jte)=0.
+      END DO
+      END DO
+   END IF
 
 !  radiative lateral boundary condition in y for normal velocity (v)
 
@@ -2470,7 +2760,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       DO j = j_start, j_end
 
-         mrdx=msfv(its,j)*rdx
+         mrdx=msfvy(its,j)*rdx       ! ADT eqn 45, 1st term on RHS
          jp = MIN( jmax, j   )
          jm = MAX( jmin, j-1 )
 
@@ -2491,7 +2781,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
    IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
       DO j = j_start, j_end
 
-         mrdx=msfv(ite-1,j)*rdx
+         mrdx=msfvy(ite-1,j)*rdx     ! ADT eqn 45, 1st term on RHS
          jp = MIN( jmax, j   )
          jm = MAX( jmin, j-1 )
 
@@ -2517,6 +2807,11 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
    ENDIF
 
 !-------------------- vertical advection
+!     ADT eqn 45 has 3rd term on RHS = -(1/mx) partial d/dz (rho v w)
+!     Here we have: - partial d/dz (v*rom) = - partial d/dz (v rho w / my)
+!     We therefore need to make a correction for advect_v
+!     since 'my' (map scale factor in y direction) isn't a function of z,
+!     we can do this using *(my/mx) (see eqn. 45 for example)
 
 
       i_start = its
@@ -2529,8 +2824,10 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
          vflux(i,kte)=0.
       ENDDO
 
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-1,jte)
+      ! Polar boundary conditions are like open or specified
+      ! We don't want to calculate vertical v tendencies at the N or S pole
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
     vert_order_test : IF (vert_order == 6) THEN    
 
@@ -2569,7 +2866,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
          DO k=kts,ktf
          DO i = i_start, i_end
-            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
+            ! We are calculating vertical fluxes on v points,
+            ! so we must mean msf_v_x/y variables
+            tendency(i,k,j)=tendency(i,k,j)-(msfvy(i,j)/msfvx(i,j))*rdzw(k)*(vflux(i,k+1)-vflux(i,k)) ! ADT eqn 45, 3rd term on RHS
          ENDDO
          ENDDO
 
@@ -2612,7 +2911,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
          DO k=kts,ktf
          DO i = i_start, i_end
-            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
+            ! We are calculating vertical fluxes on v points,
+            ! so we must mean msf_v_x/y variables
+            tendency(i,k,j)=tendency(i,k,j)-(msfvy(i,j)/msfvx(i,j))*rdzw(k)*(vflux(i,k+1)-vflux(i,k)) ! ADT eqn 45, 3rd term on RHS
          ENDDO
          ENDDO
 
@@ -2645,7 +2946,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
          DO k=kts,ktf
          DO i = i_start, i_end
-            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
+            ! We are calculating vertical fluxes on v points,
+            ! so we must mean msf_v_x/y variables
+            tendency(i,k,j)=tendency(i,k,j)-(msfvy(i,j)/msfvx(i,j))*rdzw(k)*(vflux(i,k+1)-vflux(i,k)) ! ADT eqn 45, 3rd term on RHS
          ENDDO
          ENDDO
 
@@ -2678,7 +2981,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
          DO k=kts,ktf
          DO i = i_start, i_end
-            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
+            ! We are calculating vertical fluxes on v points,
+            ! so we must mean msf_v_x/y variables
+            tendency(i,k,j)=tendency(i,k,j)-(msfvy(i,j)/msfvx(i,j))*rdzw(k)*(vflux(i,k+1)-vflux(i,k)) ! ADT eqn 45, 3rd term on RHS
          ENDDO
          ENDDO
 
@@ -2698,8 +3003,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       DO k=kts,ktf
       DO i = i_start, i_end
-            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
-
+            ! We are calculating vertical fluxes on v points,
+            ! so we must mean msf_v_x/y variables
+            tendency(i,k,j)=tendency(i,k,j)-(msfvy(i,j)/msfvx(i,j))*rdzw(k)*(vflux(i,k+1)-vflux(i,k)) ! ADT eqn 45, 3rd term on RHS
       ENDDO
       ENDDO
    ENDDO
@@ -2718,7 +3024,8 @@ END SUBROUTINE advect_v
 SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
                              ru, rv, rom,                   &
                              mut, config_flags,             &
-                             msfu, msfv, msft,              &
+                             msfux, msfuy, msfvx, msfvy,    &
+                             msftx, msfty,                  &
                              fzm, fzp,                      &
                              rdx, rdy, rdzw,                &
                              ids, ide, jds, jde, kds, kde,  &
@@ -2744,9 +3051,12 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfu,  &
-                                                                    msfv,  &
-                                                                    msft
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
@@ -2865,6 +3175,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
         j_end_f = jde-3
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
 !  compute fluxes, 5th or 6th order
 
      jp1 = 2
@@ -2927,16 +3239,38 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
 !  y flux-divergence into tendency
 
+        ! Comments on polar boundary conditions
+        ! Same process as for advect_u - tendencies run from jds to jde-1 
+        ! (latitudes are as for u grid, longitudes are displaced)
+        ! Therefore: flow is only from one side for points next to poles
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
         IF(j > j_start) THEN
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdy=msft(i,j-1)*rdy
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
 
         ENDIF
+
+        END IF
 
         jtmp = jp1
         jp1 = jp0
@@ -3031,7 +3365,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdx=msft(i,j)*rdx
+            mrdx=msftx(i,j)*rdx      ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
           ENDDO
@@ -3088,6 +3422,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
         j_end = MIN(jte,jde-2)
         j_end_f = jde-3
       ENDIF
+
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
 
 !  compute fluxes, 5th or 6th order
 
@@ -3151,17 +3487,38 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
 !  y flux-divergence into tendency
 
+        ! Comments on polar boundary conditions
+        ! Same process as for advect_u - tendencies run from jds to jde-1 
+        ! (latitudes are as for u grid, longitudes are displaced)
+        ! Therefore: flow is only from one side for points next to poles
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
         IF(j > j_start) THEN
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdy=msft(i,j-1)*rdy
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
 
         ENDIF
 
+        END IF
 
         jtmp = jp1
         jp1 = jp0
@@ -3256,7 +3613,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
           DO k=kts,ktf
           DO i = i_start, i_end
-            mrdx=msft(i,j)*rdx
+            mrdx=msftx(i,j)*rdx      ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
           ENDDO
@@ -3345,7 +3702,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
         DO k=kts,ktf
         DO i = i_start, i_end
-          mrdx=msft(i,j)*rdx
+          mrdx=msftx(i,j)*rdx        ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
           tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
         ENDDO
         ENDDO
@@ -3376,6 +3733,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
         j_end_f = jde-2
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
     jp1 = 2
     jp0 = 1
 
@@ -3391,8 +3750,11 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
     ELSE IF ((j > j_end_f) .and. degrade_ye) THEN
       DO k = kts, ktf
       DO i = i_start, i_end
-         fqy(i,k,jp1) = 0.5*rv(i,k,j_end+1)          &
-                *(field(i,k,j_end+1)+field(i,k,j_end))
+         ! Assumes j>j_end_f is ONLY j_end+1 ...
+!         fqy(i,k,jp1) = 0.5*rv(i,k,j_end+1)          &
+!                *(field(i,k,j_end+1)+field(i,k,j_end))
+         fqy(i,k,jp1) = 0.5*rv(i,k,j)          &
+                *(field(i,k,j)+field(i,k,j-1))
       ENDDO
       ENDDO
     ELSE
@@ -3406,15 +3768,39 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       ENDDO
     END IF
 
-    IF ( j > j_start ) THEN
 !  y flux-divergence into tendency
+
+    ! Comments on polar boundary conditions
+    ! Same process as for advect_u - tendencies run from jds to jde-1 
+    ! (latitudes are as for u grid, longitudes are displaced)
+    ! Therefore: flow is only from one side for points next to poles
+    IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+      DO k=kts,ktf
+      DO i = i_start, i_end
+        mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+        tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+      END DO
+      END DO
+    ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+      DO k=kts,ktf
+      DO i = i_start, i_end
+        mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+        tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+      END DO
+      END DO
+    ELSE  ! normal code
+
+    IF ( j > j_start ) THEN
 
       DO k=kts,ktf
       DO i = i_start, i_end
-        mrdy=msft(i,j-1)*rdy
+        mrdy=msftx(i,j-1)*rdy        ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
         tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
       ENDDO
       ENDDO
+
+    END IF
+
     END IF
 
     jtmp = jp1
@@ -3505,7 +3891,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
         DO k=kts,ktf
         DO i = i_start, i_end
-          mrdx=msft(i,j)*rdx
+          mrdx=msftx(i,j)*rdx        ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
           tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
         ENDDO
         ENDDO
@@ -3536,6 +3922,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
         j_end_f = jde-2
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
     jp1 = 2
     jp0 = 1
 
@@ -3551,8 +3939,11 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
     ELSE IF ((j > j_end_f) .and. degrade_ye) THEN
       DO k = kts, ktf
       DO i = i_start, i_end
-         fqy(i,k,jp1) = 0.5*rv(i,k,j_end+1)          &
-                *(field(i,k,j_end+1)+field(i,k,j_end))
+         ! Assumes j>j_end_f is ONLY j_end+1 ...
+!         fqy(i,k,jp1) = 0.5*rv(i,k,j_end+1)          &
+!                *(field(i,k,j_end+1)+field(i,k,j_end))
+         fqy(i,k,jp1) = 0.5*rv(i,k,j)          &
+                *(field(i,k,j)+field(i,k,j-1))
       ENDDO
       ENDDO
     ELSE
@@ -3566,15 +3957,39 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       ENDDO
     END IF
 
-    IF ( j > j_start ) THEN
 !  y flux-divergence into tendency
+
+    ! Comments on polar boundary conditions
+    ! Same process as for advect_u - tendencies run from jds to jde-1 
+    ! (latitudes are as for u grid, longitudes are displaced)
+    ! Therefore: flow is only from one side for points next to poles
+    IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+      DO k=kts,ktf
+      DO i = i_start, i_end
+        mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+        tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+      END DO
+      END DO
+    ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+      DO k=kts,ktf
+      DO i = i_start, i_end
+        mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+        tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+      END DO
+      END DO
+    ELSE  ! normal code
+
+    IF ( j > j_start ) THEN
 
       DO k=kts,ktf
       DO i = i_start, i_end
-        mrdy=msft(i,j-1)*rdy
+        mrdy=msftx(i,j-1)*rdy        ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
         tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
       ENDDO
       ENDDO
+
+    END IF
+
     END IF
 
     jtmp = jp1
@@ -3598,7 +4013,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       DO j = j_start, j_end
       DO k = kts, ktf
       DO i = i_start, i_end
-         mrdx=msft(i,j)*rdx
+         mrdx=msftx(i,j)*rdx         ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
          tendency(i,k,j)=tendency(i,k,j)-mrdx*0.5 &
                          *(ru(i+1,k,j)*(field(i+1,k,j)+field(i  ,k,j)) &
                           -ru(i  ,k,j)*(field(i  ,k,j)+field(i-1,k,j)))
@@ -3609,13 +4024,14 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       i_start = its
       i_end   = MIN(ite,ide-1)
 
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-2,jte)
+      ! Polar boundary conditions are like open or specified
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-2,jte)
 
       DO j = j_start, j_end
       DO k = kts, ktf
       DO i = i_start, i_end
-         mrdy=msft(i,j)*rdy
+         mrdy=msftx(i,j)*rdy         ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
          tendency(i,k,j)=tendency(i,k,j) -mrdy*0.5 &
                          *(rv(i,k,j+1)*(field(i,k,j+1)+field(i,k,j  )) &
                           -rv(i,k,j  )*(field(i,k,j  )+field(i,k,j-1))) 
@@ -3623,6 +4039,33 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       ENDDO
       ENDDO
    
+      ! Polar boundary condtions
+      ! These won't be covered in the loop above...
+      IF (config_flags%polar) THEN
+         IF (jts == jds) THEN
+            DO k=kts,ktf
+            DO i = i_start, i_end
+               mrdy=msftx(i,jds)*rdy ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+               tendency(i,k,jds)=tendency(i,k,jds) -mrdy*0.5 &
+                                *rv(i,k,jds+1)*(field(i,k,jds+1)+field(i,k,jds))
+            END DO
+            END DO
+         END IF
+         IF (jte == jde) THEN
+            DO k=kts,ktf
+            DO i = i_start, i_end
+               mrdy=msftx(i,jde-1)*rdy ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+               tendency(i,k,jde-1)=tendency(i,k,jde-1) +mrdy*0.5 &
+                                  *rv(i,k,jde-1)*(field(i,k,jde-1)+field(i,k,jde-2))
+            END DO
+            END DO
+         END IF
+      END IF
+
+   ELSE IF ( horz_order == 0 ) THEN
+
+      ! Just in case we want to turn horizontal advection off, we can do it
+
    ELSE
 
       WRITE ( wrf_err_message , * ) 'module_advect: advect_scalar_6a, h_order not known ',horz_order
@@ -3707,6 +4150,9 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
 
 !-------------------- vertical advection
+!     Scalar equation has 3rd term on RHS = - partial d/dz (q rho w /my)
+!     Here we have: - partial d/dz (q*rom) = - partial d/dz (q rho w / my)
+!     So we don't need to make a correction for advect_scalar
 
       i_start = its
       i_end   = MIN(ite,ide-1)
@@ -3890,7 +4336,8 @@ END SUBROUTINE advect_scalar
 SUBROUTINE advect_w    ( w, w_old, tendency,            &
                          ru, rv, rom,                   &
                          mut, config_flags,             &
-                         msfu, msfv, msft,              &
+                         msfux, msfuy, msfvx, msfvy,    &
+                         msftx, msfty,                  &
                          fzm, fzp,                      &
                          rdx, rdy, rdzu,                &
                          ids, ide, jds, jde, kds, kde,  &
@@ -3916,9 +4363,12 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfu,  &
-                                                                    msfv,  &
-                                                                    msft
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
@@ -4034,6 +4484,8 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
         j_end_f = jde-3
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
 !  compute fluxes, 5th or 6th order
 
      jp1 = 2
@@ -4130,14 +4582,36 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
 !  y flux-divergence into tendency
 
+        ! Comments for polar boundary conditions
+        ! Same process as for advect_u - tendencies run from jds to jde-1 
+        ! (latitudes are as for u grid, longitudes are displaced)
+        ! Therefore: flow is only from one side for points next to poles
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          ENDDO
+          ENDDO
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
         IF(j > j_start) THEN
 
           DO k=kts+1,ktf+1
           DO i = i_start, i_end
-            mrdy=msft(i,j-1)*rdy
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
+
+       ENDIF
 
        ENDIF
 
@@ -4258,7 +4732,7 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
         DO k=kts+1,ktf+1
           DO i = i_start, i_end
-            mrdx=msft(i,j)*rdx
+            mrdx=msftx(i,j)*rdx      ! see ADT eqn 46 dividing by my, 1st term RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -4315,6 +4789,8 @@ ELSE IF (horz_order == 5 ) THEN
         j_end = MIN(jte,jde-2)
         j_end_f = jde-3
       ENDIF
+
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
 
 !  compute fluxes, 5th or 6th order
 
@@ -4412,16 +4888,38 @@ ELSE IF (horz_order == 5 ) THEN
 
 !  y flux-divergence into tendency
 
+        ! Comments for polar boundary conditions
+        ! Same process as for advect_u - tendencies run from jds to jde-1 
+        ! (latitudes are as for u grid, longitudes are displaced)
+        ! Therefore: flow is only from one side for points next to poles
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
         IF(j > j_start) THEN
 
           DO k=kts+1,ktf+1
           DO i = i_start, i_end
-            mrdy=msft(i,j-1)*rdy
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
 
        ENDIF
+
+        END IF
 
         jtmp = jp1
         jp1 = jp0
@@ -4539,7 +5037,7 @@ ELSE IF (horz_order == 5 ) THEN
 
         DO k=kts+1,ktf+1
           DO i = i_start, i_end
-            mrdx=msft(i,j)*rdx
+            mrdx=msftx(i,j)*rdx      ! see ADT eqn 46 dividing by my, 1st term RHS
             tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
           ENDDO
         ENDDO
@@ -4644,7 +5142,7 @@ ELSE IF ( horz_order == 4 ) THEN
 
         DO k=kts+1,ktf+1
         DO i = i_start, i_end
-          mrdx=msft(i,j)*rdx
+          mrdx=msftx(i,j)*rdx        ! see ADT eqn 46 dividing by my, 1st term RHS
           tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
         ENDDO
         ENDDO
@@ -4675,6 +5173,8 @@ ELSE IF ( horz_order == 4 ) THEN
         j_end_f = jde-2
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
         jp1 = 2
         jp0 = 1
 
@@ -4697,16 +5197,24 @@ ELSE IF ( horz_order == 4 ) THEN
        ELSE IF ((j > j_end_f) .and. degrade_ye)  THEN
           DO k = kts+1, ktf
           DO i = i_start, i_end
+            ! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                             &
+!               0.5*(fzm(k)*rv(i,k,j_end+1)+fzp(k)*rv(i,k-1,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
             fqy(i, k, jp1) =                             &
-               0.5*(fzm(k)*rv(i,k,j_end+1)+fzp(k)*rv(i,k-1,j_end+1))     &
-                   *(w(i,k,j_end+1)+w(i,k,j_end))
+               0.5*(fzm(k)*rv(i,k,j)+fzp(k)*rv(i,k-1,j))     &
+                   *(w(i,k,j)+w(i,k,j-1))
           ENDDO
           ENDDO
           k = ktf+1
           DO i = i_start, i_end
+            ! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                                         &
+!               0.5*((2.-fzm(k-1))*rv(i,k-1,j_end+1)-fzp(k-1)*rv(i,k-2,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
             fqy(i, k, jp1) =                                         &
-               0.5*((2.-fzm(k-1))*rv(i,k-1,j_end+1)-fzp(k-1)*rv(i,k-2,j_end+1))     &
-                   *(w(i,k,j_end+1)+w(i,k,j_end))
+               0.5*((2.-fzm(k-1))*rv(i,k-1,j)-fzp(k-1)*rv(i,k-2,j))     &
+                   *(w(i,k,j)+w(i,k,j-1))
           ENDDO
        ELSE
 !  3rd or 4th order flux
@@ -4727,14 +5235,39 @@ ELSE IF ( horz_order == 4 ) THEN
           ENDDO
        END IF
 
-       IF( j > j_start ) THEN
 !  y flux-divergence into tendency
+
+       ! Comments for polar boundary conditions
+       ! Same process as for advect_u - tendencies run from jds to jde-1 
+       ! (latitudes are as for u grid, longitudes are displaced)
+       ! Therefore: flow is only from one side for points next to poles
+       IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+         DO k=kts,ktf
+         DO i = i_start, i_end
+           mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+           tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+         END DO
+         END DO
+       ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+         DO k=kts,ktf
+         DO i = i_start, i_end
+           mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+           tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+         END DO
+         END DO
+       ELSE  ! normal code
+
+       IF( j > j_start ) THEN
+
           DO k = kts+1, ktf+1
           DO i = i_start, i_end
-            mrdy=msft(i,j-1)*rdy
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
+
+       END IF
+
        END IF
 
        jtmp = jp1
@@ -4841,7 +5374,7 @@ ELSE IF ( horz_order == 3 ) THEN
 
         DO k=kts+1,ktf+1
         DO i = i_start, i_end
-          mrdx=msft(i,j)*rdx
+          mrdx=msftx(i,j)*rdx        ! see ADT eqn 46 dividing by my, 1st term RHS
           tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
         ENDDO
         ENDDO
@@ -4872,6 +5405,8 @@ ELSE IF ( horz_order == 3 ) THEN
         j_end_f = jde-2
       ENDIF
 
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
         jp1 = 2
         jp0 = 1
 
@@ -4894,16 +5429,24 @@ ELSE IF ( horz_order == 3 ) THEN
        ELSE IF ((j > j_end_f) .and. degrade_ye)  THEN
           DO k = kts+1, ktf
           DO i = i_start, i_end
+            ! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                             &
+!               0.5*(fzm(k)*rv(i,k,j_end+1)+fzp(k)*rv(i,k-1,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
             fqy(i, k, jp1) =                             &
-               0.5*(fzm(k)*rv(i,k,j_end+1)+fzp(k)*rv(i,k-1,j_end+1))     &
-                   *(w(i,k,j_end+1)+w(i,k,j_end))
+               0.5*(fzm(k)*rv(i,k,j)+fzp(k)*rv(i,k-1,j))     &
+                   *(w(i,k,j)+w(i,k,j-1))
           ENDDO
           ENDDO
           k = ktf+1
           DO i = i_start, i_end
+            ! Assumes j>j_end_f is ONLY j_end+1 ...
+!            fqy(i, k, jp1) =                             &
+!               0.5*((2.-fzm(k-1))*rv(i,k-1,j_end+1)-fzp(k-1)*rv(i,k-2,j_end+1))     &
+!                   *(w(i,k,j_end+1)+w(i,k,j_end))
             fqy(i, k, jp1) =                             &
-               0.5*((2.-fzm(k-1))*rv(i,k-1,j_end+1)-fzp(k-1)*rv(i,k-2,j_end+1))     &
-                   *(w(i,k,j_end+1)+w(i,k,j_end))
+               0.5*((2.-fzm(k-1))*rv(i,k-1,j)-fzp(k-1)*rv(i,k-2,j))     &
+                   *(w(i,k,j)+w(i,k,j-1))
           ENDDO
        ELSE
 !  3rd or 4th order flux
@@ -4924,14 +5467,39 @@ ELSE IF ( horz_order == 3 ) THEN
           ENDDO
        END IF
 
-       IF( j > j_start ) THEN
 !  y flux-divergence into tendency
+
+       ! Comments for polar boundary conditions
+       ! Same process as for advect_u - tendencies run from jds to jde-1 
+       ! (latitudes are as for u grid, longitudes are displaced)
+       ! Therefore: flow is only from one side for points next to poles
+       IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+         DO k=kts,ktf
+         DO i = i_start, i_end
+           mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+           tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+         END DO
+         END DO
+       ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+         DO k=kts,ktf
+         DO i = i_start, i_end
+           mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
+           tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+         END DO
+         END DO
+       ELSE  ! normal code
+
+       IF( j > j_start ) THEN
+
           DO k = kts+1, ktf+1
           DO i = i_start, i_end
-            mrdy=msft(i,j-1)*rdy
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 46 dividing by my, 2nd term RHS
             tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
           ENDDO
           ENDDO
+
+       END IF
+
        END IF
 
        jtmp = jp1
@@ -4956,7 +5524,7 @@ ELSE IF (horz_order == 2 ) THEN
       DO k=kts+1,ktf
       DO i = i_start, i_end
 
-         mrdx=msft(i,j)*rdx
+         mrdx=msftx(i,j)*rdx         ! see ADT eqn 46 dividing by my, 1st term RHS
 
             tendency(i,k,j)=tendency(i,k,j)-mrdx*0.5            &
                    *((fzm(k)*ru(i+1,k,j)+fzp(k)*ru(i+1,k-1,j))  &
@@ -4970,7 +5538,7 @@ ELSE IF (horz_order == 2 ) THEN
       k = ktf+1
       DO i = i_start, i_end
 
-         mrdx=msft(i,j)*rdx
+         mrdx=msftx(i,j)*rdx         ! see ADT eqn 46 dividing by my, 1st term RHS
 
             tendency(i,k,j)=tendency(i,k,j)-mrdx*0.5            &
                    *(((2.-fzm(k-1))*ru(i+1,k-1,j)-fzp(k-1)*ru(i+1,k-2,j))      &
@@ -4984,14 +5552,15 @@ ELSE IF (horz_order == 2 ) THEN
 
       i_start = its
       i_end   = MIN(ite,ide-1)
-      IF ( config_flags%open_ys .or. specified ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified ) j_end   = MIN(jde-2,jte)
+      ! Polar boundary conditions are like open or specified
+      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
+      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-2,jte)
 
       DO j = j_start, j_end
       DO k=kts+1,ktf
       DO i = i_start, i_end
 
-         mrdy=msft(i,j)*rdy
+         mrdy=msftx(i,j)*rdy         !  see ADT eqn 46 dividing by my, 2nd term RHS
 
             tendency(i,k,j)=tendency(i,k,j) -mrdy*0.5           &
                    *((fzm(k)*rv(i,k,j+1)+fzp(k)*rv(i,k-1,j+1))* &
@@ -5005,7 +5574,7 @@ ELSE IF (horz_order == 2 ) THEN
       k = ktf+1
       DO i = i_start, i_end
 
-         mrdy=msft(i,j)*rdy
+         mrdy=msftx(i,j)*rdy         ! see ADT eqn 46 dividing by my, 2nd term RHS
 
             tendency(i,k,j)=tendency(i,k,j) -mrdy*0.5       &
                    *(((2.-fzm(k-1))*rv(i,k-1,j+1)-fzp(k-1)*rv(i,k-2,j+1))* &
@@ -5016,6 +5585,48 @@ ELSE IF (horz_order == 2 ) THEN
       ENDDO
 
       ENDDO
+
+      ! Polar boundary condition ... not covered in above j-loop
+      IF (config_flags%polar) THEN
+         IF (jts == jds) THEN
+            DO k=kts+1,ktf
+            DO i = i_start, i_end
+               mrdy=msftx(i,jds)*rdy   ! see ADT eqn 46 dividing by my, 2nd term RHS
+               tendency(i,k,jds)=tendency(i,k,jds) -mrdy*0.5 &
+                          *((fzm(k)*rv(i,k,jds+1)+fzp(k)*rv(i,k-1,jds+1))* &
+                            (w(i,k,jds+1)+w(i,k,jds)))
+            END DO
+            END DO
+            k = ktf+1
+            DO i = i_start, i_end
+               mrdy=msftx(i,jds)*rdy   ! see ADT eqn 46 dividing by my, 2nd term RHS
+               tendency(i,k,jds)=tendency(i,k,jds) -mrdy*0.5       &
+                   *((2.-fzm(k-1))*rv(i,k-1,jds+1)-fzp(k-1)*rv(i,k-2,jds+1))* &
+                                 (w(i,k,jds+1)+w(i,k,jds))
+            ENDDO
+         END IF
+         IF (jte == jde) THEN
+            DO k=kts+1,ktf
+            DO i = i_start, i_end
+               mrdy=msftx(i,jde-1)*rdy ! see ADT eqn 46 dividing by my, 2nd term RHS
+               tendency(i,k,jde-1)=tendency(i,k,jde-1) +mrdy*0.5 &
+                          *((fzm(k)*rv(i,k,jde-1)+fzp(k)*rv(i,k-1,jde-1))* &
+                            (w(i,k,jde-1)+w(i,k,jde-2)))
+            END DO
+            END DO
+            k = ktf+1
+            DO i = i_start, i_end
+               mrdy=msftx(i,jde-1)*rdy ! see ADT eqn 46 dividing by my, 2nd term RHS
+               tendency(i,k,jde-1)=tendency(i,k,jde-1) +mrdy*0.5       &
+                    *((2.-fzm(k-1))*rv(i,k-1,jde-1)-fzp(k-1)*rv(i,k-2,jde-1)) &
+                                 *(w(i,k,jde-1)+w(i,k,jde-2))
+            ENDDO
+         END IF
+      END IF
+
+   ELSE IF ( horz_order == 0 ) THEN
+
+      ! Just in case we want to turn horizontal advection off, we can do it
 
    ELSE
 
@@ -5184,6 +5795,9 @@ ELSE IF (horz_order == 2 ) THEN
    ENDIF
 
 !-------------------- vertical advection
+!     ADT eqn 46 has 3rd term on RHS (dividing through by my) = - partial d/dz (w rho w /my)
+!     Here we have:  - partial d/dz (w*rom) = - partial d/dz (w rho w / my)
+!     Therefore we don't need to make a correction for advect_w
 
       i_start = its
       i_end   = MIN(ite,ide-1)
@@ -5403,7 +6017,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                 ru, rv, rom,                   &
                                 mut, mub, mu_old,              &
                                 config_flags,                  &
-                                msfu, msfv, msft,              &
+                                msfux, msfuy, msfvx, msfvy,    &
+                                msftx, msfty,                  &
                                 fzm, fzp,                      &
                                 rdx, rdy, rdzw, dt,            &
                                 ids, ide, jds, jde, kds, kde,  &
@@ -5440,9 +6055,12 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfu,  &
-                                                                    msfv,  &
-                                                                    msft
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
@@ -5509,6 +6127,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 ! set order for the advection schemes
 
 !  write(6,*) ' in pd advection routine '
+
+    ! Empty arrays just in case:
+    IF (config_flags%polar) THEN
+       fqx(:,:,:)  = 0.
+       fqy(:,:,:)  = 0.
+       fqz(:,:,:)  = 0.
+       fqxl(:,:,:) = 0.
+       fqyl(:,:,:) = 0.
+       fqzl(:,:,:) = 0.
+    END IF
 
   ktf=MIN(kte,kde-1)
   horz_order = config_flags%h_sca_adv_order
@@ -5581,7 +6209,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start, i_end
 
-          dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+          dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
           mu = 0.5*(mut(i,j)+mut(i,j-1))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
@@ -5601,7 +6229,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5620,7 +6248,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5638,7 +6266,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5656,7 +6284,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5710,7 +6338,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start_f, i_end_f
 
-          dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+          dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
           mu = 0.5*(mut(i,j)+mut(i-1,j))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
@@ -5733,7 +6361,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             i = ids+1
             DO k=kts,ktf
 
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)/mu
               cr = vel*dt/dx
@@ -5749,7 +6377,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
           i = ids+2
           DO k=kts,ktf
-            dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
             mu = 0.5*(mut(i,j)+mut(i-1,j))
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
@@ -5768,7 +6396,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
           IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
             i = ide-1
             DO k=kts,ktf
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)
               cr = vel*dt/dx/mu
@@ -5783,7 +6411,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
           i = ide-2
           DO k=kts,ktf
 
-            dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
             mu = 0.5*(mut(i,j)+mut(i-1,j))
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
@@ -5852,7 +6480,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start, i_end
 
-          dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+          dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
           mu = 0.5*(mut(i,j)+mut(i,j-1))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
@@ -5872,7 +6500,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5891,7 +6519,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5909,7 +6537,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5927,7 +6555,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -5981,7 +6609,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start_f, i_end_f
 
-          dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+          dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
           mu = 0.5*(mut(i,j)+mut(i-1,j))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
@@ -6004,7 +6632,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             i = ids+1
             DO k=kts,ktf
 
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)/mu
               cr = vel*dt/dx
@@ -6020,7 +6648,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
           i = ids+2
           DO k=kts,ktf
-            dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
             mu = 0.5*(mut(i,j)+mut(i-1,j))
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
@@ -6039,7 +6667,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
           IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
             i = ide-1
             DO k=kts,ktf
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)
               cr = vel*dt/dx/mu
@@ -6054,7 +6682,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
           i = ide-2
           DO k=kts,ktf
 
-            dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
             mu = 0.5*(mut(i,j)+mut(i-1,j))
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
@@ -6123,7 +6751,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start, i_end
 
-          dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+          dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
           mu = 0.5*(mut(i,j)+mut(i,j-1))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
@@ -6142,7 +6770,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -6161,7 +6789,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -6214,7 +6842,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start_f, i_end_f
 
-          dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+          dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
           mu = 0.5*(mut(i,j)+mut(i-1,j))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
@@ -6234,7 +6862,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             i = ids+1
             DO k=kts,ktf
 
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)/mu
               cr = vel*dt/dx
@@ -6253,7 +6881,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
           IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
             i = ide-1
             DO k=kts,ktf
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)
               cr = vel*dt/dx/mu
@@ -6321,7 +6949,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start, i_end
 
-          dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+          dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
           mu = 0.5*(mut(i,j)+mut(i,j-1))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
@@ -6340,7 +6968,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -6359,7 +6987,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
             DO i = i_start, i_end
 
-              dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
               mu = 0.5*(mut(i,j)+mut(i,j-1))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
@@ -6412,7 +7040,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start_f, i_end_f
 
-          dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+          dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
           mu = 0.5*(mut(i,j)+mut(i-1,j))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
@@ -6433,7 +7061,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             i = ids+1
             DO k=kts,ktf
 
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)/mu
               cr = vel*dt/dx
@@ -6452,7 +7080,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
           IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
             i = ide-1
             DO k=kts,ktf
-              dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
               mu = 0.5*(mut(i,j)+mut(i-1,j))
               vel = ru(i,k,j)
               cr = vel*dt/dx/mu
@@ -6505,7 +7133,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
       DO j = j_start, j_end+1
         DO k=kts,ktf
         DO i = i_start, i_end
-           dy = 2./(msft(i,j)+msft(i,j-1))/rdy
+           dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
            mu = 0.5*(mut(i,j)+mut(i,j-1))
            vel = rv(i,k,j)
            cr = vel*dt/dy/mu
@@ -6524,7 +7152,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
       DO j = j_start, j_end
         DO k=kts,ktf
         DO i = i_start, i_end+1
-            dx = 2./(msft(i,j)+msft(i-1,j))/rdx
+            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx ! ADT eqn 48 d/dx
             mu = 0.5*(mut(i,j)+mut(i-1,j))
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
@@ -6615,6 +7243,40 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                        vb*(   field_old(i,k,j_end  )                 &
                             - field_old(i,k,j_end-1) ) +             &
                        field(i,k,j_end)*(rv(i,k,jte)-rv(i,k,jte-1))  &
+                                                                    )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%polar) .and. (jts == jds) ) THEN
+
+       ! Assuming rv(i,k,jds) = 0.
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MIN( 0.5*rv(i,k,jts+1), 0. )
+         tendency(i,k,jts) = tendency(i,k,jts)                     &
+               - rdy*(                                             &
+                       vb*(  field_old(i,k,jts+1)                  &
+                           - field_old(i,k,jts  ) ) +              &
+                       field(i,k,jts)*rv(i,k,jts+1)                &
+                                                                )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%polar) .and. (jte == jde)) THEN
+
+       ! Assuming rv(i,k,jde) = 0.
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MAX( 0.5*rv(i,k,jte-1), 0. )
+         tendency(i,k,j_end) = tendency(i,k,j_end)                   &
+               - rdy*(                                               &
+                       vb*(   field_old(i,k,j_end  )                 &
+                            - field_old(i,k,j_end-1) ) +             &
+                       field(i,k,j_end)*(-rv(i,k,jte-1))             &
                                                                     )
        ENDDO
        ENDDO
@@ -6954,6 +7616,11 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    IF(config_flags%open_ye) THEN
      IF (degrade_ye) j_end   = MIN(jte,jde-2)
    END IF
+   ! ADT note:
+   ! We don't want to change j_start and j_end
+   ! for polar BC's since we want to calculate
+   ! fluxes for directions other than y at the
+   ! edge
 
 !-- here is the limiter...
 
@@ -6961,16 +7628,30 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    DO k=kts, ktf
    DO i=i_start, i_end
 
+     ! ADT note:
+     ! Since fq{x,y,z}l are based on coupled variables (ru,rv,rom)
+     ! I'm guessing this "msft" here is to cancel those out in order
+     ! to make these comparisons work..., ADT Eq. 48
+     !ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)                   &
+     !           - dt*( msft(i,j)*( rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))      &
+     !                             +rdy*(fqyl(i,k,j+1)-fqyl(i,k,j)) )    &
+     !                         +rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j))   )  
      ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)                   &
-                - dt*( msft(i,j)*( rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))      &
-                                  +rdy*(fqyl(i,k,j+1)-fqyl(i,k,j)) )    &
-                              +rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j))   )  
+                - dt*( msfty(i,j)*rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))       &
+                      +msftx(i,j)*rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))       &
+                      +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
 
-     flux_out = dt*(msft(i,j)*( rdx*(  max(0.,fqx (i+1,k,j))      &
+     !flux_out = dt*(msft(i,j)*( rdx*(  max(0.,fqx (i+1,k,j))      &
+     !                                 -min(0.,fqx (i  ,k,j)) )    &
+     !                          +rdy*(  max(0.,fqy (i,k,j+1))      &
+     !                                 -min(0.,fqy (i,k,j  )) ) )  &
+     !                      +rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
+     !                                 -max(0.,fqz (i,k  ,j)) )   )
+     flux_out = dt*( msfty(i,j)*rdx*(  max(0.,fqx (i+1,k,j))      &
                                       -min(0.,fqx (i  ,k,j)) )    &
-                               +rdy*(  max(0.,fqy (i,k,j+1))      &
-                                      -min(0.,fqy (i,k,j  )) ) )  &
-                           +rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
+                    +msftx(i,j)*rdy*(  max(0.,fqy (i,k,j+1))      &
+                                      -min(0.,fqy (i,k,j  )) )    &
+                +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
      IF( flux_out .gt. ph_low ) THEN
@@ -7021,8 +7702,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   DO k = kts, ktf
   DO i = i_start, i_end
 
+     ! Un-"canceled" map scale factor, ADT Eq. 48
      tendency (i,k,j) = tendency(i,k,j)                           &
-                - msft(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
+               - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
                                    +fqxl(i+1,k,j)-fqxl(i,k,j))   )
 
   ENDDO
@@ -7040,8 +7722,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   DO k = kts, ktf
   DO i = i_start, i_end
 
+     ! Un-"canceled" map scale factor, ADT Eq. 48
      tendency (i,k,j) = tendency(i,k,j)                           &
-                - msft(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+               - msfty(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
                                    +fqyl(i,k,j+1)-fqyl(i,k,j))   )
 
   ENDDO

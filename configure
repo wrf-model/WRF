@@ -293,6 +293,27 @@ fi
 
 # compile options that come from the environment, such as chemistry
 # the "!" is removed by Config.pl
+if [ -n "$WRF_MARS" ] ; then
+  if [ $WRF_MARS = 1 ] ; then
+    echo building WRF for Mars
+    compileflags="${compileflags}!-DPLANET!-DMARS"
+    echo $compileflags
+  fi
+fi
+
+if [ -n "$WRF_TITAN" ] ; then
+  if [ $WRF_TITAN = 1 ] ; then
+    echo building WRF for Mars
+    compileflags="${compileflags}!-DPLANET!-DTITAN"
+  fi
+fi
+
+if [ -n "$WRF_VENUS" ] ; then
+  if [ $WRF_VENUS = 1 ] ; then
+    echo building WRF for Mars
+    compileflags="${compileflags}!-DPLANET!-DVENUS"
+  fi
+fi
 if [ -n "$WRF_CHEM" ] ; then
   if [ $WRF_CHEM = 1 ] ; then
     echo building WRF with chemistry option
@@ -302,10 +323,10 @@ if [ -n "$WRF_CHEM" ] ; then
       compileflags="${compileflags}!-DWRF_KPP"
     fi
   else
-    compileflags=" "
+    compileflags="${compileflags} "
   fi
 else
-  compileflags=" "
+  compileflags="${compileflags} "
 fi
 
 # Found perl, so proceed with configuration

@@ -107,7 +107,7 @@ ndown_em.o: \
 	../share/module_io_domain.o \
 	../share/module_get_file_names.o \
 	../share/module_soil_pre.o \
-	../dyn_em/module_initialize_real.o \
+	../dyn_em/module_initialize_$(IDEAL_CASE).o \
 	../dyn_em/module_big_step_utilities_em.o \
 	$(ESMF_MOD_DEPENDENCE)
 

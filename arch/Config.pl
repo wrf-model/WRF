@@ -302,6 +302,14 @@ print CONFIGURE_WRF @preamble  ;
 close ARCH_PREAMBLE ;
 printf CONFIGURE_WRF "# Settings for %s", $optstr[$optchoice] ;
 print CONFIGURE_WRF @machopts  ;
+print "$ENV{WRF_MARS}" ;
+if ( $ENV{WRF_MARS} || $ENV{WRF_TITAN} || $ENV{WRF_VENUS} )
+{
+    open ARCH_PLANETAMBLE, "< arch/planetamble" or die "cannot open arch/planetamble" ;
+    while ( <ARCH_PLANETAMBLE> ) { print CONFIGURE_WRF } ;
+    close ARCH_PLANETAMBLE ;
+}
+
 open ARCH_POSTAMBLE, "< arch/postamble" or die "cannot open arch/postamble" ;
 while ( <ARCH_POSTAMBLE> ) { print CONFIGURE_WRF } ;
 close ARCH_POSTAMBLE ;

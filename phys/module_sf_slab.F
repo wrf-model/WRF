@@ -21,6 +21,7 @@ CONTAINS
                    SVP1,SVP2,SVP3,SVPT0,EP2,                    &
                    KARMAN,EOMEG,STBOLT,                         &
                    TSLB,ZS,DZS,num_soil_layers,radiation,       &
+                   P1000mb,                                     &
                    ids,ide, jds,jde, kds,kde,                   &
                    ims,ime, jms,jme, kms,kme,                   &
                    its,ite, jts,jte, kts,kte                    )
@@ -112,6 +113,7 @@ CONTAINS
 
    REAL,     INTENT(IN )     ::     SVP1,SVP2,SVP3,SVPT0
    REAL,     INTENT(IN )     ::     EP2,KARMAN,EOMEG,STBOLT
+   REAL,     INTENT(IN )     ::     P1000mb
 
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), &
              INTENT(INOUT)   :: TSLB
@@ -179,6 +181,7 @@ CONTAINS
            MAVAIL(ims,j),DELTSM,ROVCP,XLV,DTMIN,IFSNOW,         &
            SVP1,SVP2,SVP3,SVPT0,EP2,KARMAN,EOMEG,STBOLT,        &
            TSLB(ims,1,j),ZS,DZS,num_soil_layers,radiation,      &
+           P1000mb,                                             &
            ids,ide, jds,jde, kds,kde,                           &
            ims,ime, jms,jme, kms,kme,                           &
            its,ite, jts,jte, kts,kte                            )
@@ -195,6 +198,7 @@ CONTAINS
                    SVP1,SVP2,SVP3,SVPT0,EP2,                    &
                    KARMAN,EOMEG,STBOLT,                         &
                    TSLB2D,ZS,DZS,num_soil_layers,radiation,     &
+                   P1000mb,                                     &
                    ids,ide, jds,jde, kds,kde,                   &
                    ims,ime, jms,jme, kms,kme,                   &
                    its,ite, jts,jte, kts,kte                    )
@@ -230,6 +234,7 @@ CONTAINS
 
    REAL,     INTENT(IN )     ::     SVP1,SVP2,SVP3,SVPT0
    REAL,     INTENT(IN )     ::     EP2,KARMAN,EOMEG,STBOLT
+   REAL,     INTENT(IN )     ::     P1000mb
 
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers ),          &
              INTENT(INOUT)   :: TSLB2D
@@ -316,7 +321,8 @@ CONTAINS
 ! PL cmb
          PL=P1D(I)/1000.
          SCR3(I)=T1D(I)
-         THCON=(100./PL)**ROVCP
+!         THCON=(100./PL)**ROVCP
+         THCON=(P1000mb*0.001/PL)**ROVCP
          THX(I)=SCR3(I)*THCON
          QX(I)=0.
       ENDDO
@@ -391,7 +397,8 @@ CONTAINS
 
       DO 70 I=its,ite
         IF(XLD1(I).LT.0.5)GOTO 70
-        OLTG(I)=TSK(I)*(100./PSFC(I))**ROVCP
+!        OLTG(I)=TSK(I)*(100./PSFC(I))**ROVCP
+        OLTG(I)=TSK(I)*(P1000mb*0.001/PSFC(I))**ROVCP
         UPFLUX(I)=RADSWTCH*STBOLT*TG0(I)**4                            
         XINET(I)=EMISS(I)*(GLW(I)-UPFLUX(I))    
         RNET(I)=GSW(I)+XINET(I)                                                
@@ -423,7 +430,8 @@ CONTAINS
              DO L=1,num_soil_layers-1
               IF(XLD1(I).LT.0.5)GOTO 75                                          
               IF(L.EQ.1.AND.ITSOIL.GT.1)THEN                                     
-                PS1=(PSFC(I)*0.01)**ROVCP    
+!                PS1=(PSFC(I)*0.01)**ROVCP    
+                PS1=(PSFCPA(I)/P1000mb)**ROVCP    
 
 ! for rk scheme A and B are the same
                 PS=PSFC(I)

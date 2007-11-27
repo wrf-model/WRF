@@ -1216,7 +1216,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !-----------------------------------------------------------------------
   SUBROUTINE nudob(j, ivar, aten, inest, ifrest, ktau, ktaur,         &
-                       xtime, mu, msf, nndgv, nerrf, niobf, maxdom,   &
+                       xtime, mu, msfx, msfy, nndgv, nerrf, niobf, maxdom,   &
                        npfi, ionf, rinxy, twindo, levidn,             &
                        parid, nstat, i_parent_start, j_parent_start,  &
                        fdob, lev_in_ob, plfo, nlevs_ob,               &
@@ -1331,7 +1331,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL, INTENT(IN)     :: ptop
   REAL, INTENT(IN)     :: pp( ims:ime, kms:kme ) ! Pressure perturbation (Pa)
   REAL, INTENT(IN)     :: mu(ims:ime)   ! Air mass on u, v, or mass-grid
-  REAL, INTENT(IN)     :: msf(ims:ime)  ! Map scale (only used for vars u & v)
+  REAL, INTENT(IN)     :: msfx(ims:ime)  ! Map scale (only used for vars u & v)
+  REAL, INTENT(IN)     :: msfy(ims:ime)  ! Map scale (only used for vars u & v)
   INTEGER, intent(in)  :: iswind        ! Nudge flag for wind
   INTEGER, intent(in)  :: istemp        ! Nudge flag for temperature
   INTEGER, intent(in)  :: ismois        ! Nudge flag for moisture
@@ -2201,8 +2202,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
  
 ! Calculate scales for converting nudge factor from u (v)
 ! to rho_u (or rho_v) units.
-  
-  call calc_rcouple_scales(mu,msf,rscale,ims,ime,its,ite)
+
+  IF (IVAR == 1) THEN
+     call calc_rcouple_scales(mu,msfy,rscale,ims,ime,its,ite)
+  ELSE IF (IVAR == 2) THEN
+     call calc_rcouple_scales(mu,msfx,rscale,ims,ime,its,ite)
+  END IF
  
   DO K=1,kte
 

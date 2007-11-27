@@ -449,6 +449,7 @@ CONTAINS
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
               ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
               ,DZ8W=dz8w,Z=z,XLV=xlv,RV=r_v,PSFC=psfc               &
+              ,P1000MB=p1000mb                                      &
               ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol                      &
               ,PBL=pblh,PSIM=psim,PSIH=psih                         &
               ,XLAND=xland,HFX=hfx,QFX=qfx,TSK=tskold               &

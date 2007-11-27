@@ -1358,6 +1358,95 @@
 !
       END SUBROUTINE VDIFH
 !
+!----------------------------------------------------------------------
+!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+!---------------------------------------------------------------------
+      SUBROUTINE VDIFX(DTDIF,LMH,RKHS,CT                              &
+                      ,DUST1,DUST2,RKH,Z,RHO                          &
+                      ,IDS,IDE,JDS,JDE,KDS,KDE                        &
+                      ,IMS,IME,JMS,JME,KMS,KME                        &
+                      ,ITS,ITE,JTS,JTE,KTS,KTE)
+!     ***************************************************************
+!     *                                                             *
+!     *         VERTICAL DIFFUSION OF MASS VARIABLES                *
+!     *                                                             *
+!     ***************************************************************
+!---------------------------------------------------------------------
+!
+      IMPLICIT NONE
+!
+!---------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
+                           ,IMS,IME,JMS,JME,KMS,KME                    &
+                           ,ITS,ITE,JTS,JTE,KTS,KTE
+!
+      INTEGER,INTENT(IN) :: LMH
+!
+      REAL,INTENT(IN) :: CT,DTDIF,RKHS
+!
+      REAL,DIMENSION(KTS:KTE-1),INTENT(IN) :: RKH
+      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: RHO
+      REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
+      REAL,DIMENSION(KTS:KTE),INTENT(INOUT) :: DUST1,DUST2
+! 
+!----------------------------------------------------------------------
+!***
+!***  LOCAL VARIABLES
+!***
+      INTEGER :: K
+!
+      REAL :: CF,CMB,CMDB,CTHF,DTOZL,DTOZS                            &
+             ,RCML,RKHH,RSD1B,RSD2B
+!
+      REAL,DIMENSION(KTS:KTE-1) :: CM,CR,DTOZ,RKCT,RSD1,RSD2
+!
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      CTHF=0.5*CT
+!
+      DO K=KTS,LMH-1
+        DTOZ(K)=DTDIF/(Z(K)-Z(K+1))
+        CR(K)=-DTOZ(K)*RKH(K)
+        RKCT(K)=RKH(K)*(Z(K)-Z(K+2))*CTHF
+      ENDDO
+!
+      CM(KTS)=DTOZ(KTS)*RKH(KTS)+RHO(KTS)
+!----------------------------------------------------------------------
+      RSD1(KTS)=DUST1(KTS)*RHO(KTS)
+      RSD2(KTS)=DUST2(KTS)*RHO(KTS)
+!----------------------------------------------------------------------
+      DO K=KTS+1,LMH-1
+        DTOZL=DTOZ(K)
+        CF=-DTOZL*RKH(K-1)/CM(K-1)
+        CM(K)=-CR(K-1)*CF+(RKH(K-1)+RKH(K))*DTOZL+RHO(K)
+        RSD1(K)=-RSD1(K-1)*CF+DUST1(K)*RHO(K)
+        RSD2(K)=-RSD2(K-1)*CF+DUST2(K)*RHO(K)
+      ENDDO
+!
+      DTOZS=DTDIF/(Z(LMH)-Z(LMH+1))
+      RKHH=RKH(LMH-1)
+!
+      CF=-DTOZS*RKHH/CM(LMH-1)
+!
+      CMB=CR(LMH-1)*CF
+      CMDB=-CMB+RKHH*DTOZS+RHO(LMH)
+!
+      RSD1B=-RSD1(LMH-1)*CF+DUST1(LMH)*RHO(LMH)
+      RSD2B=-RSD2(LMH-1)*CF+DUST2(LMH)*RHO(LMH)
+!----------------------------------------------------------------------
+      DUST1(LMH)=RSD1B/CMDB
+      DUST2(LMH)=RSD2B/CMDB
+!----------------------------------------------------------------------
+      DO K=LMH-1,KTS,-1
+        RCML=1./CM(K)
+        DUST1(K)=(-CR(K)*DUST1(K+1)+RSD1(K))*RCML
+        DUST2(K)=(-CR(K)*DUST2(K+1)+RSD2(K))*RCML
+      ENDDO
+!----------------------------------------------------------------------
+!
+      END SUBROUTINE VDIFX
+
 !---------------------------------------------------------------------
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !---------------------------------------------------------------------

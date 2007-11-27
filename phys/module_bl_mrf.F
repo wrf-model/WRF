@@ -10,6 +10,7 @@ CONTAINS
                   RQVBLTEN,RQCBLTEN,                               &
                   CP,G,ROVCP,R,ROVG,                               &
                   dz8w,z,XLV,RV,PSFC,                              &
+                  p1000mb,                                         &
                   ZNT,UST,ZOL,HOL,PBL,PSIM,PSIH,                   &
                   XLAND,HFX,QFX,TSK,GZ1OZ0,WSPD,BR,                &
                   DT,DTMIN,KPBL2D,                                 &
@@ -108,6 +109,7 @@ CONTAINS
                                         its,ite, jts,jte, kts,kte
 
 !
+      REAL,     INTENT(IN   )   ::      P1000mb
       REAL,     INTENT(IN   )   ::      DT,DTMIN,CP,G,ROVCP,       &
                                         ROVG,R,XLV,RV             
 
@@ -209,6 +211,7 @@ CONTAINS
                P3D(ims,kms,j),RUBLTEN(ims,kms,j),RVBLTEN(ims,kms,j),&
                RTHBLTEN(ims,kms,j),RQVBLTEN(ims,kms,j),             &
                RQCBLTEN(ims,kms,j),                                 &
+               p1000mb,                                             &
                CP,G,ROVCP,R,ROVG,                                   &
                dz8w2d,z2d,XLV,Rv,                                   &
                PSFC(ims,j),ZNT(ims,j),                              &
@@ -241,6 +244,7 @@ CONTAINS
    SUBROUTINE MRF2D(J,U2D,V2D,T2D,QV2D,QC2D,     P2D,              &
                   U2DTEN,V2DTEN,T2DTEN,                            &
                   QV2DTEN,QC2DTEN,                                 & 
+                  p1000mb,                                         &
                   CP,G,ROVCP,R,ROVG,                               &
                   dz8w2d,z2d,XLV,RV,PSFCPA,                        &
                   ZNT,UST,ZOL,HOL,PBL,PSIM,PSIH,                   &
@@ -313,6 +317,7 @@ CONTAINS
 !
       LOGICAL,  INTENT(IN)      ::                        FLAG_QI
 !
+      REAL,     INTENT(IN   )   ::      P1000mb
       REAL,     INTENT(IN   )   ::      DT,DTMIN,CP,G,ROVCP,       &
                                         ROVG,R,XLV,RV
 
@@ -487,7 +492,8 @@ CONTAINS
         TGDSA(I)=TSK(I)                                                        
 ! PS PSFC cmb
         PS(I)=PSFCPA(I)/1000.
-        THGB(I)=TSK(I)*(100./PS(I))**ROVCP   
+!        THGB(I)=TSK(I)*(100./PS(I))**ROVCP   
+        THGB(I)=TSK(I)*(P1000mb/PSFCPA(I))**ROVCP   
     5 CONTINUE                                                                   
 !                                                                                
 !-----DECOUPLE FLUX-FORM VARIABLES TO GIVE U,V,T,THETA,THETA-VIR.,               
@@ -514,7 +520,8 @@ CONTAINS
 ! PL cmb
           PL=P2D(I,NK)/1000.
           SCR3(I,K)=T2D(I,NK)
-          THCON=(100./PL)**ROVCP                                                 
+!          THCON=(100./PL)**ROVCP                                                 
+          THCON=(P1000mb/(PL*1000.))**ROVCP                                                 
           THX(I,K)=SCR3(I,K)*THCON                                               
           TX(I,K)=SCR3(I,K)                                                      
           SCR4(I,K)=SCR3(I,K)                                                    

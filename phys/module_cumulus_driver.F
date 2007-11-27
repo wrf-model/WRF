@@ -20,6 +20,7 @@ CONTAINS
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
                      ,htop,hbot,kpbl,ht                               &  
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
+                     ,periodic_x,periodic_y                           &
                  ! Package selection variable
                      ,cu_physics                                      &
                  ! Optional moisture tracers 
@@ -189,6 +190,8 @@ CONTAINS
 !-- LBOT          index of lowest model layer with convection
 !-- LTOP          index of highest model layer with convection
 !-- KPBL          layer index of the PBL
+!-- periodic_x    T/F this is using periodic lateral boundaries in the X direction
+!-- periodic_y    T/F this is using periodic lateral boundaries in the Y-direction
 !
 !======================================================================
 
@@ -197,6 +200,7 @@ CONTAINS
                                       ims,ime, jms,jme, kms,kme, &
                                                         kts,kte, &
                                       itimestep, num_tiles
+   LOGICAL periodic_x, periodic_y
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
@@ -416,6 +420,7 @@ CONTAINS
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+               ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
 #if (NMM_CORE == 1 )
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               & 

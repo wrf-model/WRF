@@ -21,6 +21,7 @@ CONTAINS
               ,ids,ide, jds,jde, kds,kde                        &
               ,ims,ime, jms,jme, kms,kme                        &
               ,its,ite, jts,jte, kts,kte                        &
+              ,periodic_x,periodic_y                            &
               ,RQVCUTEN,RQCCUTEN,RQICUTEN                       &
               ,RQVFTEN,RQVBLTEN                                 &
               ,RTHFTEN,RTHCUTEN,RTHRATEN,RTHBLTEN               &
@@ -33,6 +34,7 @@ CONTAINS
                                   ids,ide, jds,jde, kds,kde,    & 
                                   ims,ime, jms,jme, kms,kme,    & 
                                   its,ite, jts,jte, kts,kte
+   LOGICAL periodic_x,periodic_y
 
    integer, intent (in   )              ::                      &
                        ensdim,maxiens,maxens,maxens2,maxens3
@@ -151,10 +153,23 @@ CONTAINS
    iens=1
      ipr=0
      jpr=0
-   jbeg=max(jts,jds+4)
-   jend=min(jte,jde-5)
-   ibeg=max(its,ids+4)
-   iend=min(ite,ide-5)
+
+   IF ( periodic_x ) THEN
+      ibeg=max(its,ids)
+      iend=min(ite,ide-1)
+   ELSE
+      ibeg=max(its,ids+4)
+      iend=min(ite,ide-5)
+   END IF
+   IF ( periodic_y ) THEN
+      jbeg=max(jts,jds)
+      jend=min(jte,jde-1)
+   ELSE
+      jbeg=max(jts,jds+4)
+      jend=min(jte,jde-5)
+   END IF
+
+
    tcrit=258.
 
    itf=MIN(ite,ide-1)

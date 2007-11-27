@@ -752,6 +752,7 @@ integer myproc
    USE module_ra_sw
    USE module_ra_gsfcsw
    USE module_ra_gfdleta
+   USE module_ra_hs
    USE module_domain
 !---------------------------------------------------------------------
    IMPLICIT NONE
@@ -894,6 +895,11 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              etalw = .true.
+        CASE (HELDSUAREZ)
+             CALL hsinit(RTHRATEN,restart,             &
+                         ids, ide, jds, jde, kds, kde, &
+                         ims, ime, jms, jme, kms, kme, &
+                         its, ite, jts, jte, kts, kte )
         CASE DEFAULT
 
    END SELECT lwrad_select

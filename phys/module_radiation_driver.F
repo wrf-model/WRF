@@ -57,7 +57,8 @@ CONTAINS
 ! !USES:
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
-                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME
+                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
+                                       ,HELDSUAREZ
    USE module_model_constants
    USE module_wrf_error
 
@@ -68,6 +69,7 @@ CONTAINS
    USE module_ra_rrtm
    USE module_ra_cam
    USE module_ra_gfdleta
+   USE module_ra_hs
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -710,6 +712,17 @@ CONTAINS
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
+
+
+        CASE (HELDSUAREZ)
+             CALL wrf_debug (100, 'CALL heldsuarez')
+
+             CALL HSRAD(RTHRATEN,p8w,p,pi,dz8w,t,          &
+                     t8w, rho, R_d,G,CP, dt, xlat, degrad, &
+                     ids,ide, jds,jde, kds,kde,            &
+                     ims,ime, jms,jme, kms,kme,            &
+                     its,ite, jts,jte, kts,kte            )
+
         CASE DEFAULT
   
              WRITE( wrf_err_message , * ) 'The longwave option does not exist: lw_physics = ', lw_physics
@@ -851,6 +864,15 @@ CONTAINS
              ELSE
                CALL wrf_error_fatal('Can not call ETARA (2b). Missing moisture fields.')
              ENDIF
+
+        CASE (0)
+
+           ! Here in case we don't want to call a sw radiation scheme
+           ! For example, the Held-Suarez idealized test case
+           IF (lw_physics /= HELDSUAREZ) THEN
+             WRITE( wrf_err_message , * ) 'You have selected a longwave radiation option, but not a shortwave option (sw_physics = 0, lw_physics = ',lw_physics,')'
+             CALL wrf_error_fatal ( wrf_err_message )
+           END IF
 
         CASE DEFAULT
 

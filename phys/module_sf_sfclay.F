@@ -20,6 +20,7 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+                     P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -106,6 +107,7 @@ CONTAINS
       INTEGER,  INTENT(IN )   ::        ISFFLX
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
+      REAL,     INTENT(IN )   ::        P1000mb
 !
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                           dz8w
@@ -207,6 +209,7 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
+                P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          )
@@ -226,6 +229,7 @@ CONTAINS
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+                     P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -243,6 +247,7 @@ CONTAINS
       INTEGER,  INTENT(IN )   ::        ISFFLX
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
+      REAL,     INTENT(IN )   ::        P1000mb
 
 !
       REAL,     DIMENSION( ims:ime )                             , &
@@ -340,7 +345,8 @@ CONTAINS
       DO 5 I=its,ite                                   
         TGDSA(I)=TSK(I)                                    
 ! PSFC cmb
-        THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP                
+!        THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP                
+        THGB(I)=TSK(I)*(P1000mb/PSFCPA(I))**ROVCP   
     5 CONTINUE                                               
 !                                                            
 !-----DECOUPLE FLUX-FORM VARIABLES TO GIVE U,V,T,THETA,THETA-VIR.,
@@ -367,7 +373,8 @@ CONTAINS
 ! PL cmb
          PL=P1D(I)/1000.
          SCR3(I)=T1D(I)                                                   
-         THCON=(100./PL)**ROVCP                                                 
+!         THCON=(100./PL)**ROVCP                                                 
+         THCON=(P1000mb*0.001/PL)**ROVCP
          THX(I)=SCR3(I)*THCON                                               
          SCR4(I)=SCR3(I)                                                    
          THVX(I)=THX(I)                                                     
@@ -644,7 +651,8 @@ CONTAINS
         V10(I)=VX(I)*PSIX10/PSIX                                   
         TH2(I)=THGB(I)+DTG*PSIT2/PSIT                                
         Q2(I)=QSFC(I)+(QX(I)-QSFC(I))*PSIQ2/PSIQ                   
-        T2(I) = TH2(I)*(PSFC(I)/100.)**ROVCP                     
+!        T2(I) = TH2(I)*(PSFC(I)/100.)**ROVCP                     
+        T2(I) = TH2(I)*(PSFCPA(I)/P1000mb)**ROVCP                     
 !       LATER Q2 WILL BE OVERWRITTEN FOR LAND POINTS IN SURFCE     
 !       QA2(I,J) = Q2(I)                                         
 !       UA10(I,J) = U10(I)                                      

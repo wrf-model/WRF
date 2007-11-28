@@ -50,9 +50,10 @@ set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"    
                  "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	8 	\
                  "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	9 	\
                  "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	10	\
+                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"      11	\
+                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"          12	\
                )
 #                "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
-#                "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  5	\
 
 #	Where are we located.
 

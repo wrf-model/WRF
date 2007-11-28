@@ -106,6 +106,7 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
 else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) || \
           ( `hostname | cut -c 1-2` == bv ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
+	set WRFREGDATAEM = /mmm/users/gill/WRF_regression_data/processed
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
 else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
 	set WRFREGDATAEM = /nbns/meso/wx22tb/regression_tests/WRF-data-EM
@@ -266,6 +267,15 @@ if ( `uname` == Linux ) then
 	endif
 endif
 
+#	We can choose to do a global test
+
+if ( $NESTED != TRUE ) then
+	set GLOBAL = TRUE
+	set GLOBAL = FALSE
+else if ( $NESTED == TRUE ) then
+	set GLOBAL = FALSE
+endif
+
 #	Is this a WRF chem test?  
 
 if ( $NESTED != TRUE ) then
@@ -287,6 +297,9 @@ set dataset = jun01
 set dataset = jan00
 if ( $CHEM == TRUE ) then
 	set dataset = chem
+endif
+if ( $GLOBAL == TRUE ) then
+	set dataset = global
 endif
 
 #	Yet another local variable to change the name of where the data is located.
@@ -407,8 +420,11 @@ else if ( $NESTED != TRUE ) then
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real em_real )
 	endif
-	if ( $ESMF_LIB == TRUE ) then
+	if ( $GLOBAL == TRUE ) then
 		set CORES = ( em_real )
+	endif
+	if ( $ESMF_LIB == TRUE ) then
+		set CORES = ( em_real em_b_wave em_quarter_ss )
 	endif
 	if ( $IO_FORM_NAME[$IO_FORM] == io_grib1 ) then
 		set CORES = ( em_real em_b_wave em_quarter_ss )
@@ -571,6 +587,31 @@ cat >! dom_real << EOF
  feedback                            = 1,
  smooth_option                       = 0
 EOF
+else if ( $dataset == global ) then
+cat >! dom_real << EOF
+ time_step                           = 2400
+ time_step_fract_num                 = 00
+ time_step_fract_den                 = 112
+ max_dom                             = 1,
+ s_we                                = 1,     1,     1,
+ e_we                                = 65,     41,    41,
+ s_sn                                = 1,     1,     1,
+ e_sn                                = 33,     81,    81,
+ s_vert                              = 1,     1,     1,
+ e_vert                              = 41,    41,    41,
+ num_metgrid_levels                  = 27
+ dx                                  = 625373.288,20000, 4000,
+ dy                                  = 625373.288,20000, 4000,
+ p_top_requested                     = 5000
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 0,     17,    17,
+ j_parent_start                      = 0,     33,    33,
+ parent_grid_ratio                   = 1,     5,     5,
+ parent_time_step_ratio              = 1,     5,     5,
+ feedback                            = 1,
+ smooth_option                       = 00
+EOF
 endif
 cat >! dom_ideal << EOF
  max_dom                             = 1,
@@ -611,11 +652,15 @@ cat >! dyn_real_SAFE  << EOF
 EOF
 
 cat >! dyn_real_1  << EOF
- pd_moist                            = .true.,  .true.,  .false.,
+ pd_moist                            = .true.,  .true.,  .true., 
  pd_scalar                           = .false., .false., .false.,
  pd_chem                             = .false., .false., .false.,
  pd_tke                              = .false., .false., .false.,
 EOF
+
+if ( $GLOBAL == TRUE ) then
+	cp dyn_real_SAFE dyn_real_1
+endif
 
 cat >! time_real_1  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
@@ -646,14 +691,18 @@ cat >! phys_real_2 << EOF
 EOF
 
 cat >! dyn_real_2  << EOF
- pd_moist                            = .true.,  .true.,  .false.,
+ pd_moist                            = .true.,  .true.,  .true., 
  pd_scalar                           = .false., .false., .false.,
  pd_chem                             = .false., .false., .false.,
  pd_tke                              = .false., .false., .false.,
 EOF
 
+if ( $GLOBAL == TRUE ) then
+	cp dyn_real_SAFE dyn_real_2
+endif
+
 cat >! time_real_2  << EOF
- auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
 cat >! phys_real_3 << EOF
@@ -724,7 +773,7 @@ cat >! dyn_real_4  << EOF
 EOF
 
 cat >! time_real_4  << EOF
- auxinput1_inname                    = "wrf_real_input_em.d<domain>.<date>"
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
 cat >! phys_real_5 << EOF
@@ -756,6 +805,11 @@ cat >! phys_real_5 << EOF
  cam_abs_dim1                        = 4
  cam_abs_dim2                        = 28
 EOF
+
+if ( $GLOBAL == TRUE ) then
+	sed -e 's/ cam_abs_dim2 *= [0-9][0-9]/ cam_abs_dim2 = 41/g' phys_real_5 >! phys_foo
+	mv phys_foo phys_real_5
+endif
 
 cat >! dyn_real_5  << EOF
  pd_moist                            = .false., .false., .false.,
@@ -1004,6 +1058,8 @@ else if ( $dataset == jan00 ) then
 	set filetag_real=2000-01-24_12:00:00
 else if ( $dataset == chem ) then
 	set filetag_real = ( 2006-04-06_00:00:00  2006-04-06_12:00:00 )
+else if ( $dataset == global ) then
+	set filetag_real=2007-10-18_12:00:00
 endif
 
 set filetag_ideal=0001-01-01_00:00:00
@@ -1542,6 +1598,10 @@ if ( $CHEM == TRUE ) then
 	echo "WRF_CHEM tests run for em_real core only, no other cores run" >>! ${DEF_DIR}/wrftest.output
 	echo " " >>! ${DEF_DIR}/wrftest.output
 endif
+if ( $GLOBAL == TRUE ) then
+	echo "Global tests run for em_real core only, no other cores run" >>! ${DEF_DIR}/wrftest.output
+	echo " " >>! ${DEF_DIR}/wrftest.output
+endif
 if ( $ESMF_LIB == TRUE ) then
 	echo "A separately installed version of the latest ESMF library" >>! ${DEF_DIR}/wrftest.output
 	echo "(NOT the ESMF library included in the WRF tarfile) will" >>! ${DEF_DIR}/wrftest.output
@@ -1909,7 +1969,6 @@ banner 12
 					if ( -e fdda_opt ) rm fdda_opt
 					cat " grid_fdda=0" > fdda_opt
 					if ( -e fdda_time ) rm fdda_time
-					cat " auxinput4_interval=0" > fdda_time
 
 					if ( $FDDA == TRUE ) then
 						cp ${CUR_DIR}/fdda_real_${phys_option} fdda_opt
@@ -1956,13 +2015,13 @@ EOF
 
 				else if ( $CHEM == TRUE ) then
 					cp namelist.input.chem_test_${phys_option} namelist.input
-					if ( -e wrf_real_input_em.d01.${filetag} ) then
-						\rm wrf_real_input_em.d01.*
+					if ( -e met_em.d01.${filetag} ) then
+						\rm met_em.d01.*
 					endif
 					if ( ${phys_option} <= 3 ) then
-						ln -s 00z/wrf_real* .
+						ln -s 00z/met_em* .
 					else
-						ln -s 12z/wrf_real* .
+						ln -s 12z/met_em* .
 					endif
 
 				endif
@@ -1992,7 +2051,7 @@ banner 13
 #DAVE###################################################
 #DAVE###################################################
 echo skipped link of data files, we push them elsewhere
-ls -ls wrf_real*
+ls -ls met_em*
 banner 14
 #set ans = "$<"
 #DAVE###################################################
@@ -2028,13 +2087,24 @@ banner 15
 
 					#	Did making the IC BC files work?
 
-					if ( ( -e wrfinput_d01 ) && ( -e wrfbdy_d01 ) && ( $success == 0 ) ) then
-						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
-						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
-					else
-						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
-						$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						exit ( 4 )
+					if ( $GLOBAL == FALSE ) then
+						if ( ( -e wrfinput_d01 ) && ( -e wrfbdy_d01 ) && ( $success == 0 ) ) then
+							echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
+						else
+							echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+							$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+							exit ( 4 )
+						endif
+					else if ( $GLOBAL == TRUE ) then
+						if ( ( -e wrfinput_d01 ) && ( $success == 0 ) ) then
+							echo "SUMMARY generate IC for $core physics $phys_option parallel $compopt $esmf_lib_str PASS" >>! ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
+						else
+							echo "SUMMARY generate IC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+							$MAIL -s "WRF FAIL making IC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
+							exit ( 41 )
+						endif
 					endif
 #DAVE###################################################
 echo IC BC must be OK

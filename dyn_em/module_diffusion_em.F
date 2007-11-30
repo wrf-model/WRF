@@ -485,7 +485,8 @@
                     zy(i-1,k  ,j) + zy(i,k  ,j) +  &
                     zy(i-1,k+1,j) + zy(i,k+1,j) )
       tmp1(i,k,j) = ( hatavg(i,k+1,j) - hatavg(i,k,j) ) *  &
-                    0.5 * tmpzy * ( rdzw(i,k,j) + rdzw(i-1,k,j) )
+                    0.25 * tmpzy * ( rdzw(i,k,j) + rdzw(i-1,k,j) + &
+                                     rdzw(i-1,k,j-1) + rdzw(i,k,j-1) )
     END DO
     END DO
     END DO
@@ -573,7 +574,8 @@
                     zx(i,k  ,j-1) + zx(i,k  ,j) +  &
                     zx(i,k+1,j-1) + zx(i,k+1,j) )
       tmp1(i,k,j) = ( hatavg(i,k+1,j) - hatavg(i,k,j) ) *  &
-                    0.5 * tmpzx * ( rdzw(i,k,j) + rdzw(i,k,j-1) )
+                    0.25 * tmpzx * ( rdzw(i,k,j) + rdzw(i,k,j-1) + &
+                                     rdzw(i-1,k,j-1) + rdzw(i-1,k,j) )
     END DO
     END DO
     END DO
@@ -3094,13 +3096,13 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     scalar_tendf, n_scalar,                   &
                                     u_2, v_2,                                 &
                                     thp,u_base,v_base,t_base,qv_base,mu,tke,  &
-                                    hfx,qfx,ust,rho,                          &
                                     config_flags,defor13,defor23,defor33,div, &
                                     moist, chem, scalar, xkmv, xkhv,km_opt,   &
                                     fnm, fnp, dn, dnw, rdz, rdzw,             &
+                                    hfx, qfx, ust, rho,                       &
                                     ids, ide, jds, jde, kds, kde,             &
                                     ims, ime, jms, jme, kms, kme,             &
-                                    its, ite, jts, jte, kts, kte             )
+                                    its, ite, jts, jte, kts, kte              )
 
 !-----------------------------------------------------------------------
 ! Begin declarations.
@@ -3120,9 +3122,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: dnw
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::  dn
    REAL , DIMENSION( ims:ime , jms:jme ) ,  INTENT(IN   )      ::  mu
-   REAL , DIMENSION( ims:ime , jms:jme ) ,  INTENT(IN   )      ::  hfx
-   REAL , DIMENSION( ims:ime , jms:jme ) ,  INTENT(IN   )      ::  qfx
-   REAL , DIMENSION( ims:ime , jms:jme ) ,  INTENT(IN   )      ::  ust
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: qv_base
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::  u_base
@@ -3163,9 +3162,12 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                                                      rdz, &
                                                                      u_2, &
                                                                      v_2, &
-                                                                     rho, &
                                                                     rdzw
 
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   )   :: rho  
+   REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: hfx,  &
+                                                                    qfx
+   REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   )            :: ust
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::    thp
 
 ! LOCAL VAR
@@ -3181,10 +3183,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 !***************************************************************************
 !MODIFICA VARIABILI PER I FLUSSI
 !
-    REAL , DIMENSION( ims:ime, jms:jme) :: Cd
     REAL :: V0_u,V0_v,tao_xz,tao_yz,ustar,cd0
     REAL :: xsfc,psi1,vk2,zrough,lnz
-    REAL :: heat_flux
+    REAL :: heat_flux, moist_flux, heat_flux0
+    REAL :: cpm
 !
 !FINE MODIFICA VARIABILI PER I FLUSSI
 !***************************************************************************
@@ -3231,11 +3233,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
   CASE (0) ! Assume cd a constant, specified in namelist
     cd0 = config_flags%tke_drag_coefficient  ! constant drag coefficient
                                              ! set in namelist.input
-    DO j = j_start, j_end+1
-    DO i = i_start, i_end+1
-       Cd(i,j)=  cd0
-    ENDDO
-    ENDDO
 !
 !calcolo del modulo della velocita
     DO j = j_start, j_end
@@ -3247,7 +3244,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            v_2(i  ,kts,j+1)+          &
                            v_2(i-1,kts,j  )+          &
                            v_2(i-1,kts,j+1))/4)**2))+epsilon
-       tao_xz=Cd(i,j)*V0_u*u_2(i,kts,j)
+       tao_xz=cd0*V0_u*u_2(i,kts,j)
        ru_tendf(i,kts,j)=ru_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i-1,j))*tao_xz*(rdzw(i,kts,j)+rdzw(i-1,kts,j))
     ENDDO
@@ -3263,7 +3260,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            u_2(i  ,kts,j-1)+          &
                            u_2(i+1,kts,j  )+          &
                            u_2(i+1,kts,j-1))/4)**2))+epsilon
-       tao_yz=Cd(i,j)*V0_v*v_2(i,kts,j)
+       tao_yz=cd0*V0_v*v_2(i,kts,j)
        rv_tendf(i,kts,j)=rv_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i,j-1))*tao_yz*(rdzw(i,kts,j)+rdzw(i,kts,j-1))
     ENDDO
@@ -3302,7 +3299,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     ENDDO
 
   CASE DEFAULT
-    CALL wrf_error_fatal( 'Please choose a surface flux approach for diff_opt=2' )
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT vflux
 
 !
@@ -3351,10 +3348,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                             ! set in namelist.input
     DO j = j_start, j_end
     DO i = i_start, i_end
-
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             +mu(i,j)*heat_flux*rdzw(i,kts,j)
-
     ENDDO
     ENDDO
 
@@ -3362,7 +3357,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     DO j = j_start, j_end
     DO i = i_start, i_end
 
-       heat_flux = hfx(i,j)/cp/rho(i,1,j)
+       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+       heat_flux = hfx(i,j)/cpm/rho(i,1,j)
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             +mu(i,j)*heat_flux*rdzw(i,kts,j)
 
@@ -3370,7 +3366,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     ENDDO
 
   CASE DEFAULT
-    CALL wrf_error_fatal( 'Please choose a surface flux approach for diff_opt=2' )
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT hflux
 
 !
@@ -3425,6 +3421,29 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                      ims, ime, jms, jme, kms, kme,        &
                                      its, ite, jts, jte, kts, kte        )
 
+!*****************************************
+!*****************************************
+!MODIFICATIONS for water vapor flux
+!
+!
+  qflux: SELECT CASE( config_flags%isfflx )
+  CASE (1) ! with surface moisture flux 
+    IF ( im == P_QV ) THEN
+       DO j = j_start, j_end
+       DO i = i_start, i_end
+          moist_flux = qfx(i,j)
+          moist_tendf(i,kts,j,im)=moist_tendf(i,kts,j,im)  &
+               +mu(i,j)*moist_flux*rdzw(i,kts,j)
+       ENDDO
+       ENDDO
+    ENDIF
+  CASE DEFAULT
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+  END SELECT qflux
+!
+! END MODIFICATIONS for water vapor flux
+!*****************************************
+!*****************************************
      ENDDO moist_loop
 
    ENDIF
@@ -4511,6 +4530,7 @@ END SUBROUTINE phy_bc
                         xkmh, xkmv, xkhv,                       &
                         rdx, rdy, dx, dy, dt, zx, zy,           &
                         rdz, rdzw, dn, dnw, cr_len,             &
+                        hfx, qfx, qv, ust, rho,                 &
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         its, ite, jts, jte, kts, kte            )
@@ -4548,6 +4568,11 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: mu
 
+    REAL, DIMENSION ( ims:ime, jms:jme ), INTENT( IN )   &
+    :: hfx, ust, qfx
+    REAL, DIMENSION ( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
+    :: qv, rho
+
 ! Local variables.
 
     INTEGER  &
@@ -4559,7 +4584,7 @@ END SUBROUTINE phy_bc
     CALL tke_shear(    tendency, config_flags,                &
                        defor11, defor22, defor33,             &
                        defor12, defor13, defor23,             &
-                       u, v, w, tke, mu, fnm, fnp,            &
+                       u, v, w, tke, ust, mu, fnm, fnp,       &
                        cf1, cf2, cf3, msftx, msfty,           &
                        xkmh, xkmv,                            &
                        rdx, rdy, zx, zy, rdz, rdzw, dnw, dn,  &
@@ -4569,9 +4594,10 @@ END SUBROUTINE phy_bc
 
     CALL tke_buoyancy( tendency, config_flags, mu,            &
                        tke, xkhv, BN2, theta, dt,             &
+                       hfx, qfx, qv,  rho,                    &
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
-                       its, ite, jts, jte, kts, kte           )
+                       its, ite, jts, jte, kts, kte           ) 
 
     CALL tke_dissip(   tendency, config_flags,                &
                        mu, tke, bn2, theta, p8w, t8w, z,      &
@@ -4614,6 +4640,7 @@ END SUBROUTINE phy_bc
 
     SUBROUTINE tke_buoyancy( tendency, config_flags, mu,    &
                              tke, xkhv, BN2, theta, dt,     &
+                             hfx, qfx, qv,  rho,            &
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte   )
@@ -4643,6 +4670,11 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: mu
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
+    :: qv, rho
+
+    REAL, DIMENSION(ims:ime, jms:jme ), INTENT ( IN ) :: hfx, qfx
+ 
 ! Local variables.
 
     INTEGER  &
@@ -4651,7 +4683,9 @@ END SUBROUTINE phy_bc
     INTEGER  &
     :: i_start, i_end, j_start, j_end
 
-    REAL :: heat_flux
+    REAL :: heat_flux, heat_flux0
+
+    REAL :: cpm
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -4691,26 +4725,36 @@ END SUBROUTINE phy_bc
 !
 ! WCS 040331
 
-   heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
+  hflux: SELECT CASE( config_flags%isfflx )
+  CASE (0) ! with fixed surface heat flux given in the namelist
+   heat_flux0 = config_flags%tke_heat_flux  ! constant heat flux value
                                            ! set in namelist.input
- IF(abs(heat_flux).lt.1.0e-6)THEN
+! LES mods
    K=KTS
    DO j = j_start, j_end
-   DO i = i_start, i_end
-      tendency(i,k,j)= tendency(i,k,j) - &
-                   mu(i,j)*xkhv(i,k,j)*BN2(i,k,j)
-   ENDDO
-   ENDDO   
- ELSE
-   K=KTS
-   DO j = j_start, j_end
-   DO i = i_start, i_end
+   DO i = i_start, i_end 
+      heat_flux = heat_flux0 
       tendency(i,k,j)= tendency(i,k,j) - &
                    mu(i,j)*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
 
    ENDDO
    ENDDO   
- ENDIF
+  CASE (1) ! use surface heat flux computed from surface routine
+   K=KTS
+   DO j = j_start, j_end
+   DO i = i_start, i_end 
+      cpm = cp * (1. + 0.8*qv(i,k,j))
+      heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
+
+      tendency(i,k,j)= tendency(i,k,j) - &
+                   mu(i,j)*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
+
+   ENDDO
+   ENDDO   
+  CASE DEFAULT
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+  END SELECT hflux
+
 ! end of MARTA/WCS change
 
 ! The tendency array now includes production of TKE from buoyant
@@ -4872,7 +4916,7 @@ END SUBROUTINE phy_bc
     SUBROUTINE tke_shear( tendency, config_flags,                &
                           defor11, defor22, defor33,             &
                           defor12, defor13, defor23,             &
-                          u, v, w, tke, mu, fnm, fnp,            &
+                          u, v, w, tke, ust, mu, fnm, fnp,       &
                           cf1, cf2, cf3, msftx, msfty,           &
                           xkmh, xkmv,                            &
                           rdx, rdy, zx, zy, rdz, rdzw, dn, dnw,  &
@@ -4951,6 +4995,9 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: mu
 
+    REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
+    :: ust
+
 ! Local variables.
 
     INTEGER  &
@@ -4967,7 +5014,7 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
     :: titau12, tmp1, zxavg, zyavg
 
-    REAL :: absU, cd0
+    REAL :: absU, cd0, Cd
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5101,19 +5148,40 @@ END SUBROUTINE phy_bc
 !MARTA: add the drag at the surface; WCS 040331
     K=KTS
 
+  uflux: SELECT CASE( config_flags%isfflx )
+  CASE (0) ! Assume cd a constant, specified in namelist
+
     cd0 = config_flags%tke_drag_coefficient  ! drag coefficient set 
                                              ! in namelist.input
     DO j = j_start, j_end   
     DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
-
+      Cd = cd0
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (u(i,k,j)+u(i+1,k,j))*0.5* &
-                     cd0*absU*defor13(i,kts+1,j))
+                     Cd*absU*defor13(i,kts+1,j))
 
     END DO
     END DO
+
+  CASE (1) ! ustar computed from surface routine
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
+      Cd = (ust(i,j)**2)/(absU**2)
+      tendency(i,k,j) = tendency(i,k,j) +       &
+           mu(i,j)*( (u(i,k,j)+u(i+1,k,j))*0.5* &
+                     Cd*absU*defor13(i,kts+1,j))
+
+    END DO
+    END DO
+
+  CASE DEFAULT
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+  END SELECT uflux
 ! end of MARTA/WCS change
 
 ! For defor23.
@@ -5154,19 +5222,40 @@ END SUBROUTINE phy_bc
 !MARTA: add the drag at the surface; WCS 040331
     K=KTS
 
+  vflux: SELECT CASE( config_flags%isfflx )
+  CASE (0) ! Assume cd a constant, specified in namelist
+
     cd0 = config_flags%tke_drag_coefficient   ! constant drag coefficient 
                                               ! set in namelist.input
     DO j = j_start, j_end   
     DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
-
+      Cd = cd0
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &
-                     cd0*absU*defor23(i,kts+1,j))
+                     Cd*absU*defor23(i,kts+1,j))
 
     END DO
     END DO
+
+  CASE (1) ! ustar computed from surface routine
+
+    DO j = j_start, j_end   
+    DO i = i_start, i_end
+
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
+      Cd = (ust(i,j)**2)/(absU**2)
+      tendency(i,k,j) = tendency(i,k,j) +       &
+           mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &
+                     Cd*absU*defor23(i,kts+1,j))
+
+    END DO
+    END DO
+
+  CASE DEFAULT
+    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+  END SELECT vflux
 ! end of MARTA/WCS change
 
     END SUBROUTINE tke_shear

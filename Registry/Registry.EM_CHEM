@@ -1200,8 +1200,6 @@ package   wsm3scheme    mp_physics==3                -             moist:qv,qc,q
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg;scalar:qt
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
-package   ncepcloud3    mp_physics==98               -             moist:qv,qc,qr
-package   ncepcloud5    mp_physics==99               -             moist:qv,qc,qr,qi,qs
 package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   noprogn       progn==0                     -             -

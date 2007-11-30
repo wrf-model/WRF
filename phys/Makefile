@@ -16,9 +16,7 @@ MODULES = \
 	module_cu_gd.o \
 	module_cu_sas.o \
 	module_mp_kessler.o \
-	module_mp_ncloud5.o \
 	module_mp_lin.o  \
-	module_mp_ncloud3.o \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
@@ -159,8 +157,6 @@ module_physics_init.o : \
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
 		module_cu_sas.o			\
-		module_mp_ncloud3.o		\
-		module_mp_ncloud5.o		\
 		module_mp_wsm3.o		\
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
@@ -178,7 +174,6 @@ module_physics_init.o : \
 module_microphysics_driver.o: \
                 module_mixactivate.o \
                 module_mp_kessler.o module_mp_lin.o \
-		module_mp_ncloud3.o module_mp_ncloud5.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_thompson.o            \

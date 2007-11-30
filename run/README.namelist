@@ -237,8 +237,6 @@ Namelist variables for controling the automatic moving nest:
                                      = 5, Ferrier (new Eta) microphysics
                                      = 6, WSM 6-class graupel scheme
                                      = 8, Thompson et al. scheme
-                                     = 98, NCEP 3-class simple ice scheme (to be removed)
-                                     = 99, NCEP 5-class scheme (to be removed)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critcal value to zero
@@ -541,7 +539,7 @@ The following are for observation nudging:
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
  spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
  relax_zone                          = 4,       ; number of points in relaxation zone (spec b.c. option)
- specified (max_dom)                 = .false., ; specified boundary conditions (only for domain 1)
+ specified (max_dom)                 = .false., ; specified boundary conditions (only can be used for domain 1)
                                                   the above 4 are used for real-data runs
 
  periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
@@ -554,10 +552,9 @@ The following are for observation nudging:
  symmetric_ye (max_dom)              = .false., ; symmetric boundary conditions at y end (north)
  open_ys (max_dom)                   = .false., ; open boundary conditions at y start (south)
  open_ye (max_dom)                   = .false., ; open boundary conditions at y end (north)
- nested (max_dom)                    = .false., ; nested boundary conditions (inactive)
+ nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
  polar                               = .false., ; polar boundary condition
                                                   (v=0 at polarward-most v-point)
- coriolis2d (max_dom)                = .false., ; whether to use only 2D formulation of coriolis and curvature terms
 
 
  &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 

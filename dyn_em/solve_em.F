@@ -1217,11 +1217,13 @@ BENCH_START(tke_rhs_tim)
                           grid%cf1,grid%cf2,grid%cf3,grid%msftx,grid%msfty,grid%xkmh,grid%xkmv,grid%xkhv,grid%rdx,grid%rdy,    &
                           grid%dx,grid%dy,grid%dt,grid%em_zx,grid%em_zy,grid%em_rdz,grid%em_rdzw,grid%em_dn,       &
                           grid%em_dnw,config_flags%mix_cr_len,  &
+                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV),&
+                          grid%ust, rho,                              &
                           ids, ide, jds, jde, kds, kde,               &
                           ims, ime, jms, jme, kms, kme,               &
                           grid%i_start(ij), grid%i_end(ij),           &
                           grid%j_start(ij), grid%j_end(ij),           &
-                          k_start    , k_end                         )
+                          k_start    , k_end                          )
 
        ENDDO
        !$OMP END PARALLEL DO
@@ -1249,16 +1251,17 @@ BENCH_START(vert_diff_tim)
                                       scalar_tend, num_3d_s,                     &
                                       grid%em_u_2, grid%em_v_2,                                  &
                                       grid%em_t_2,grid%u_base,grid%v_base,grid%em_t_base,grid%qv_base,          &
-                                      grid%em_mut,grid%em_tke_2,grid%hfx,grid%qfx,grid%ust,rho,config_flags, &
+                                      grid%em_mut,grid%em_tke_2,config_flags, &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       grid%div, moist, chem, scalar,                  &
                                       grid%xkmv, grid%xkhv, config_flags%km_opt,                        &
-                                      grid%em_fnm, grid%em_fnp, grid%em_dn, grid%em_dnw, grid%em_rdz, grid%em_rdzw,              &
+                                      grid%em_fnm, grid%em_fnp, grid%em_dn, grid%em_dnw, grid%em_rdz, grid%em_rdzw, &
+                                      grid%hfx, grid%qfx, grid%ust, rho,         &
                                       ids, ide, jds, jde, kds, kde,              &
                                       ims, ime, jms, jme, kms, kme,              &
                                       grid%i_start(ij), grid%i_end(ij),          &
                                       grid%j_start(ij), grid%j_end(ij),          &
-                                      k_start    , k_end                        )
+                                      k_start, k_end                             )
 
          ENDDO
          !$OMP END PARALLEL DO

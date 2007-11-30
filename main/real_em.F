@@ -435,6 +435,10 @@ real::t1,t2,t3,t4
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              else IF(grid%bio_emiss_opt == 3 ) THEN !shc
+                 message = 'READING MEGAN 2 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
  
            ELSEIF(grid%chem_in_opt == 0)then
@@ -447,6 +451,10 @@ real::t1,t2,t3,t4
               IF(grid%bio_emiss_opt == 2 ) THEN
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
+              else IF(grid%bio_emiss_opt == 3 ) THEN !shc
+                 message = 'READING MEGAN 2 EMISSIONS DATA'
+                 CALL  wrf_message ( message ) 
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
 !             IF(grid%emiss_inpt_opt == 3 ) THEN

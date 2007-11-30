@@ -11,6 +11,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,specified, channel_switch                         &
                       ,warm_rain                                         &
                       ,t8w                                               &
+                      ,chem_opt, progn                                   &
                       ,cldfra, cldfra_old, exch_h, nsource               &
                       ,qlsink, precr, preci, precs, precg                &
                       ,xland,itimestep                                   &
@@ -182,6 +183,7 @@ SUBROUTINE microphysics_driver(                                          &
 
    INTEGER,    INTENT(IN   )    :: mp_physics
    LOGICAL,    INTENT(IN   )    :: specified
+   INTEGER, OPTIONAL, INTENT(IN   )    :: chem_opt, progn
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
@@ -307,9 +309,9 @@ SUBROUTINE microphysics_driver(                                          &
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
 
 !-----------
-#ifndef WRF_CHEM
-       IF( PRESENT( QNDROP_CURR ) ) THEN
-          IF( F_QNDROP .AND. mp_physics==LINSCHEME ) THEN
+       IF( PRESENT(chem_opt) .AND. PRESENT(progn) ) THEN
+       IF( chem_opt==0 .AND. progn==1 .AND. mp_physics==LINSCHEME ) THEN
+          IF( PRESENT( QNDROP_CURR ) ) THEN
              CALL wrf_debug ( 100 , 'microphysics_driver: calling prescribe_aerosol_mixactivate' )
 ! 06-nov-2005 rce - id  & itimestep added to arg list
              call prescribe_aerosol_mixactivate (               &
@@ -318,14 +320,15 @@ SUBROUTINE microphysics_driver(                                          &
                   z, dz8w, p8w, t8w, exch_h,                    &
                   qv_curr, qc_curr, qi_curr, qndrop_curr,       &
                   nsource,                                      &
+                  ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
                   F_QC=f_qc, F_QI=f_qi                          )
-          ELSE IF( F_QNDROP ) THEN
-             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME.")
           END IF
+       ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME ) THEN
+             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME.")
        END IF
-#endif
+       END IF
 
      micro_select: SELECT CASE(mp_physics)
 

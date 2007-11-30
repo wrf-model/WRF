@@ -20,6 +20,8 @@ MODULES =                           \
   module_data_mosaic_other.o        \
   module_data_mosaic_therm.o        \
   module_data_cmu_bulkaqchem.o      \
+  module_data_megan2.o              \
+  module_data_mgn2mech.o            \
   module_peg_util.o                 \
   module_mosaic_csuesat.o           \
   module_cbmz_lsodes_solver.o       \
@@ -32,6 +34,7 @@ MODULES =                           \
   module_dep_simple.o               \
   module_bioemi_simple.o            \
   module_bioemi_beis311.o           \
+  module_bioemi_megan2.o            \
   module_vertmx_wrf.o               \
   module_aerosols_sorgam.o          \
   module_mosaic_movesect.o          \
@@ -134,6 +137,12 @@ module_dep_simple.o:
 
 module_bioemi_simple.o: 
 
+module_data_megan2.o: 
+
+module_data_mgn2mech.o: 
+
+module_bioemi_megan2.o: module_data_megan2.o module_data_mgn2mech.o
+
 module_vertmx_wrf.o: 
 
 module_emissions_anthropogenics.o: 
@@ -184,9 +193,9 @@ module_fastj_mie.o:
 
 module_ctrans_grell.o:
 
-chem_driver.o: module_radm.o module_racm.o module_data_racm.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o
+chem_driver.o: module_radm.o module_racm.o module_data_racm.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o dry_dep_driver.o emissions_driver.o
 
-chemics_init.o: module_phot_mad.o module_aerosols_sorgam.o
+chemics_init.o: module_phot_mad.o module_aerosols_sorgam.o module_mixactivate_wrappers.o
 
 aerosol_driver.o: module_aerosols_sorgam.o
 
@@ -196,7 +205,7 @@ photolysis_driver.o: module_phot_mad.o module_phot_fastj.o
 
 mechanism_driver.o: module_data_radm2.o module_radm.o module_data_racm.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o
 
-emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis311.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_plumerise1.o
+emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis311.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_plumerise1.o
 
 dry_dep_driver.o: module_data_radm2.o module_dep_simple.o module_aerosols_sorgam.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 
@@ -204,9 +213,14 @@ convert_bioemiss : convert_bioemiss.o
 	$(RANLIB) ../main/$(LIBWRFLIB)
 	$(FC) -o convert_bioemiss.exe $(LDFLAGS) convert_bioemiss.o ../main/$(LIBWRFLIB) $(LIB)
 
+convert_bioemiss_megan2 : convert_bioemiss_megan2.o module_input_chem_bioemiss.o 
+	$(RANLIB) ../main/$(LIBWRFLIB)
+	$(FC) -o convert_bioemiss_megan2.exe $(LDFLAGS) convert_bioemiss_megan2.o ../main/$(LIBWRFLIB) $(LIB)
+
 convert_emiss : convert_emiss.o
 	$(RANLIB) ../main/$(LIBWRFLIB)
 	$(FC) -o convert_emiss.exe $(LDFLAGS) convert_emiss.o ../main/$(LIBWRFLIB) $(LIB)
+
 convert_fireemiss : convert_fireemiss.o
 	$(RANLIB) ../main/$(LIBWRFLIB)
 	$(FC) -o convert_fireemiss.exe $(LDFLAGS) convert_fireemiss.o ../main/$(LIBWRFLIB) $(LIB)

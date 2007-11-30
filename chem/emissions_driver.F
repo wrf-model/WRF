@@ -1,20 +1,24 @@
 !WRF:MODEL_LAYER:CHEMICS
 !
+MODULE module_emissions_driver
+   IMPLICIT NONE
+CONTAINS
+
     subroutine emissions_driver(id,ktau,dtstep,DX,stepfirepl,              &
          config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                    &
          e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
          e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
          e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,          &
-         e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                &
+         e_c2h5oh,e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc,  &
          ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
          ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
          ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
          ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef,   &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
-         u10,v10,ivgtyp,gsw,vegfra,rmol,ust,znt,                           &
-         xland,xlat,xlong,z_at_w,z,                                        &
+         u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,                    &
+         xland,xlat,xlong,z_at_w,z,smois,                                  &
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
@@ -22,7 +26,18 @@
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
-         numgas,                                                           &
+         !shc stuff for MEGAN v2.04                                                 
+         T2,swdown,                                                        &
+         nmegan,EFmegan,                                                   &
+         msebio_isop,                                                      &
+         mlai,                                                             &
+         pftp_bt, pftp_nt, pftp_sb, pftp_hb,                               &
+         mtsa,                                                             &
+         mswdown,                                                          &
+         mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,                   &
+         mebio_acet, mebio_mbo, mebio_no,                                  &
+         current_month,                                                    &
+         !shc end stuff for MEGAN v2.04
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -33,6 +48,7 @@
   USE module_emissions_anthropogenics
   USE module_bioemi_simple
   USE module_bioemi_beis311
+  USE module_bioemi_megan2
   USE module_cbmz_addemiss
   USE module_mosaic_addemiss
   USE module_add_emis_cptec
@@ -43,7 +59,6 @@
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    INTEGER,      INTENT(IN   ) :: id,julday, ne_area,                      &
-                                  numgas,                                  &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
@@ -60,7 +75,8 @@
           e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,       &
           e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,        &
           e_pm10,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,    &
-          e_ch3oh,e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc
+          e_ch3oh,e_c2h5oh,e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,      &
+          e_orgc,e_ecc
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
          INTENT(INOUT ) ::                                                 &
            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
@@ -87,7 +103,8 @@
                                               u_phy,v_phy,vvel,rho_phy
    INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
           INTENT(IN   ) ::                                                 &
-                                                     ivgtyp
+                                                     ivgtyp,               &
+                                                     isltyp
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
           INTENT(IN   ) ::                                                 &
                                                      u10,                  &
@@ -100,6 +117,9 @@
                                                      xlat,                 &
                                                      xlong,                &
                                                      znt
+  REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
+      INTENT(INOUT) ::                               smois
+
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
           INTENT(INOUT   ) ::                                                 &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
@@ -110,12 +130,42 @@
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no
 
-      REAL,      INTENT(IN   ) ::                                          &
-                             dtstep,dx,gmt
+   !shc stuff for MEGAN v2.04
+
+   integer, intent(in   ) :: nmegan
+   real, dimension (ims:ime, jms:jme , nmegan) ,                       &
+        intent(inout) ::                                               &
+        EFmegan
+
+
+   real, dimension (ims:ime, jms:jme ) ,                               &
+        intent(in) ::                                                  &
+        msebio_isop,                                                   &
+        pftp_bt, pftp_nt, pftp_sb, pftp_hb
+
+   real, dimension (ims:ime, jms:jme, 12 ) ,                           &
+        intent(in) ::                                                  &
+        mlai, mtsa, mswdown
+
+   real, dimension (ims:ime, jms:jme ) ,                               &
+        intent(inout) ::                                               &
+        mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,                &
+        mebio_acet, mebio_mbo, mebio_no
+
+   real, dimension (ims:ime, jms:jme ) ,                               &
+        intent(in) ::                                                  &
+        T2, swdown
+
+   integer, intent(in) :: current_month
+
+   !shc end stuff for MEGAN v2.04
+
+      REAL,      INTENT(IN   ) ::                                      &
+                            dtstep, dx, gmt
 !
 ! Local variables...
 !
-      INTEGER :: i, j, k, ksub
+      INTEGER :: i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
       REAL :: conv
       CHARACTER (LEN=80) :: message 
 
@@ -124,10 +174,19 @@
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
 ! ..
-    ksub=1
-#if ( NMM_CORE == 1 )
+
+! Flags for turning on or off sea salt and/or dust emissions...
+!    >0 = sea salt/dust emissions turned on
+! As of Nov. 2007 this only works for MOSAIC, but is intended to be used
+! by other mechanisms when they are linked to these emissions sources.
+!
+      dust_emiss_active    = 0
+      seasalt_emiss_active = 1
+
+!!$    ksub=1
+!!$#if ( NMM_CORE == 1 )
     ksub=0
-#endif
+!!$#endif
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
      CASE (BIOMASSB)
        if(ktau.eq.1.or.mod(ktau,stepfirepl).eq.0)then
@@ -173,7 +232,6 @@
                gmt,julday,t_phy,moist,p8w,t8w,                             &
                e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                      &
                ivgtyp,gsw,vegfra,rmol,ust,znt,xlat,xlong,z_at_w,           &
-               numgas-1,                                                   &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -199,6 +257,30 @@
                its,ite, jts,jte, kts,kte                               )
        endif
 
+     CASE (MEGAN2) !shc
+       if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then                        
+         CALL wrf_debug(15,'biogenic emissions: calling megan v2.04')  
+         call bio_emissions_megan2(id,config_flags,ktau,dtstep,        &
+               julday,gmt,xlat,xlong,p_phy,rho_phy,dz8w,               &
+               chem,ne_area,                                           &
+               current_month,                                          &
+               T2,swdown,                                              &
+               nmegan, EFmegan, msebio_isop,                           &
+               mlai,                                                   &
+               pftp_bt, pftp_nt, pftp_sb, pftp_hb,                     &
+               mtsa,                                                   &
+               mswdown,                                                &
+               mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,         &
+               mebio_acet, mebio_mbo, mebio_no,                        &
+               ebio_iso,ebio_oli,ebio_api,ebio_lim,                    &
+               ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
+               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_no,           &
+               e_bio,                                                  &
+               ids,ide, jds,jde, kds,kde,                              &
+               ims,ime, jms,jme, kms,kme,                              &
+               its,ite, jts,jte, kts,kte                               )
+       endif
+
      CASE DEFAULT 
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0) &
             e_bio(its:ite,jts:jte,1:ne_area) = 0.
@@ -211,10 +293,9 @@
     CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
-         message = ' EMISSIONS_DRIVER: KEMIT > KME '
          k=config_flags%kemit
-         write(0,*)kme,kte-ksub,k
-         CALL WRF_ERROR_FATAL (message)
+         write(message,'(" WARNING: EMISSIONS_DRIVER: KEMIT > KTE ",3i6)') kme,kte-ksub,k
+         CALL WRF_MESSAGE (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
        call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
@@ -225,6 +306,9 @@
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
        call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
@@ -233,7 +317,10 @@
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       endif
+       end if !shc
+
+       end if ! emiss_inpt_opt /= 3
+
     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        IF(config_flags%kemit .GT. kte-ksub) THEN
          message = ' EMISSIONS_DRIVER: KEMIT > KME '
@@ -249,12 +336,15 @@
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
-       call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,           &
-            rho_phy, chem, e_bio, ne_area, e_iso,                        &
-            numgas,                                                      &
-            ids,ide, jds,jde, kds,kde,                                   &
-            ims,ime, jms,jme, kms,kme,                                   &
-            its,ite, jts,jte, kts,kte                                    )
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
+         call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
+              rho_phy, chem, e_bio, ne_area, e_iso,                      &
+              ids,ide, jds,jde, kds,kde,                                 &
+              ims,ime, jms,jme, kms,kme,                                 &
+              its,ite, jts,jte, kts,kte                                  )
+       endif
 
     CASE (CHEM_TRACER)
        do j=jts,jte  
@@ -309,9 +399,10 @@
     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
-            config_flags, chem,                                          &
+            config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
             e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,     &
-            e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                    &
+            e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc,      &
+            dust_emiss_active, seasalt_emiss_active,                     &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
@@ -322,3 +413,5 @@
     END SELECT aer_addemiss_select
 
     END subroutine emissions_driver
+
+END module module_emissions_driver

@@ -111,8 +111,8 @@
 
      CASE (RADM2SORG)
        CALL wrf_debug(15,'calling radm2 from mechanism_driver')
-       vcsulf_old(its:ite,kts:kte-1,jts:jte) = &
-            max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
+       vcsulf_old(its:ite,kts:kte,jts:jte) = &
+            max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
        call radm_driver(id,ktauc,dtstepc,config_flags,                 &
                gmt,julday,t_phy,moist,p8w,t8w,                         &
                p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &
@@ -141,10 +141,10 @@
                its,ite, jts,jte, kts,kte                               )
 
      CASE (RACMSORG_KPP,RADM2SORG_KPP)
-       vcsulf_old(its:ite,kts:kte-1,jts:jte) = max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
+       vcsulf_old(its:ite,kts:kte,jts:jte) = max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
      CASE (RACMSORG)
        CALL wrf_debug(15,'calling racm/sorgam from mechanism_driver')
-       vcsulf_old(its:ite,kts:kte-1,jts:jte) = max(chem(its:ite,kts:kte-1,jts:jte,p_sulf),epsilc)
+       vcsulf_old(its:ite,kts:kte,jts:jte) = max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
        call racm_driver(id,ktauc,dtstepc,config_flags,                 &
                gmt,julday,t_phy,moist,p8w,t8w,                         &
                p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,                &

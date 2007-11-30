@@ -170,7 +170,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
             eburn_in(23)=ebu_macr(i,kts,j)
             eburn_in(24)=ebu_ora1(i,kts,j)
             eburn_in(25)=ebu_ora2(i,kts,j)
-            do k=kts,kte-1
+            do k=kts,kte
               u_in(k)=u_phy(i,k,j)
               v_in(k)=v_phy(i,k,j)
               w_in(k)=vvel(i,k,j)
@@ -184,15 +184,15 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 !               write(0,*)k,u_in(k),w_in(k),qv_in(k),pi_in(k)
 !             endif
             enddo
-              pi_in(kte)=pi_in(kte-1)
-              u_in(kte)=u_in(kte-1)
-              v_in(kte)=v_in(kte-1)
-              w_in(kte)=w_in(kte-1)
-              qv_in(kte)=qv_in(kte-1)
-              zmid(kte)=z(i,kte,j)-z_at_w(i,kts,j)
-              z_lev(kte)=z_at_w(i,kte,j)-z_at_w(i,kts,j)
-              rho_phyin(kte)=rho_phyin(kte-1)
-              theta_in(kte)=theta_in(kte-1)
+!!$              pi_in(kte)=pi_in(kte-1)  !wig: These are no longer needed after changing definition
+!!$              u_in(kte)=u_in(kte-1)    !     of kte in chem_driver (12-Oct-2007)
+!!$              v_in(kte)=v_in(kte-1)
+!!$              w_in(kte)=w_in(kte-1)
+!!$              qv_in(kte)=qv_in(kte-1)
+!!$              zmid(kte)=z(i,kte,j)-z_at_w(i,kts,j)
+!!$              z_lev(kte)=z_at_w(i,kte,j)-z_at_w(i,kts,j)
+!!$              rho_phyin(kte)=rho_phyin(kte-1)
+!!$              theta_in(kte)=theta_in(kte-1)
 !             if(ffirs.le.5)then
 !           do k=kts,kte
 !               write(0,*)k,z_lev(k),zmid(k),rho_phyin(k),theta_in(k)
@@ -210,7 +210,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 !               write(0,*)'eburn_out ',k,i,j,eburn_out(k,1)
 !           enddo
 !             endif
-            do k=kts,kte-1
+            do k=kts,kte
             ebu_no(i,k,j)=eburn_out(k,1)
             ebu_co(i,k,j)=eburn_out(k,2)
             if(i.eq.56.and.j.eq.132)write(0,*)i,j,k,ebu_no(i,k,j),ebu_co(i,k,j)

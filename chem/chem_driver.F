@@ -44,6 +44,8 @@
   USE module_aerosols_sorgam
   USE module_chem_utilities
   USE module_ctrans_grell
+  USE module_dry_dep_driver
+  USE module_emissions_driver
   USE module_wetscav_driver, only: wetscav_driver
   USE module_input_chem_data, only:                 &
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
@@ -113,29 +115,72 @@
       INTEGER                         :: ij 
       INTEGER                         :: im , num_3d_m , ic , num_3d_c
       INTEGER                         :: ijds, ijde
-      INTEGER                         :: ksubt
+!     INTEGER                         :: ksubt
 
       REAL :: chem_minval, dtstepc
 
-      INTEGER :: numgas_aqfrac = 0    ! last dimension of gas_aqfrac
+      INTEGER :: numgas_aqfrac        ! last dimension of gas_aqfrac
       REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: gas_aqfrac
                                       ! fraction of gas that is in cloud water
 
       LOGICAL :: haveaer
+
+      CHARACTER (LEN=256) :: current_date_char !shc
+      integer :: current_month                 !shc
+
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
+
+!<DESCRIPTION>
+!<pre>
+! chem_driver is the main driver for handling chemistry related tasks
+! for a particular timestep. chem_driver is a mediation-layer routine ->
+! DM and SM calls are made where needed for parallel processing.  
+!
+! The main sections of chem_driver are:
+!     
+! (1) Initialization of meteorology variables as needed for chemistry
+!     
+! (2) Calls to drivers for the various chemistry tasks:
+!        emissions_driver
+!        photolysis_driver
+!        dry_dep_driver
+!        grelldrvct (convective tracer transport)
+!        mechanism_driver (gases)
+!        cloud_chem_driver
+!        aerosols_driver
+!        wetscav_driver
+!        sum_pm_driver
+!
+! Handling of tile indices in chem_driver is as close as possible to
+! what is done in solve_em. For subroutines called from chem_driver,
+! the its:ite, jts:jte, and kts:kte variables represent the extent of
+! the domain that each processor should loop over. For example, a do
+! loop in the vertical for the chem array should go from kts to kte.
+! For the EM core, kte=kde-1. For the NMM core, kte=kde-2.
+!
+! Note that the tile indices for the chemistry initialization differ
+! from the integration loop indices in that the initializataion routines
+! use kte=kde. Go figure, this is how the met. folks set things up.
+!
+!</pre>
+!</DESCRIPTION>
+
 ! ..
 
 ! Number of levels to exclude from the chem calculations counting from
 ! the model top.
-  ksubt=0
+!  ksubt=0
+
   stepave=1800./grid%dt
   CALL get_ijk_from_grid (  grid ,                   &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
                             ips, ipe, jps, jpe, kps, kpe    )
   ktau = grid%itimestep
+  CALL domain_clock_get( grid, current_timestr=current_date_char ) !shc
+  read(current_date_char(6:7),FMT='(I2)') current_month            !shc
 !initialize
 !
 #if ( NMM_CORE == 1 )
@@ -145,7 +190,7 @@
       KTAU=GRID%NMM_NTSD
       IDF=IDE-1
       JDF=JDE-1
-      KDF=KDE-1
+      KDF=KDE-2 !wig: do not do chem at the top level to mimic what used to be done (also prevents a solver failure at kde-1 for MADE/SORGAM)
       ITS=IPS
       ITE=MIN(IPE,IDF)
       JTS=JPS
@@ -168,7 +213,7 @@
   num_3d_m        = num_moist
   num_3d_c        = num_chem
   numgas          = get_last_gas(config_flags%chem_opt)
-
+  numgas_aqfrac   = 0    !will be set upon allocation of gas_aqfrac
 
 #if ( EM_CORE == 1 )
 
@@ -248,7 +293,7 @@
 !
 #if ( NMM_CORE == 1 )
   k_start         = kts
-  k_end           = kte
+  k_end           = min(kpe,kde-1)
 ! this should be in seperate routine!!!!!!
       GRID%SIGMA=1
       grid%nmm_HYDRO=.FALSE.
@@ -288,7 +333,7 @@
 !-----------------------------------------------------------------------
 !
         z_at_w(i,kts,j)=grid%nmm_fis(i,j)/g
-        DO K=KTS,KTE
+        DO K=KTS,KTE+1
            vvel(i,k,j)=grid%nmm_w(i,k,j)
            DPL=grid%nmm_DETA1(K)*grid%nmm_PDTOP+grid%nmm_DETA2(K)*grid%nmm_PDSL(i,j)
           QL(K)=AMAX1(grid%nmm_Q(I,K,J),EPSQ)
@@ -313,11 +358,11 @@
 
          ENDDO
 !         
-        DO K=KTS+1,KTE
+        DO K=KTS+1,KTE+1
           T8W(I,K,J)=0.5*(TL(K-1)+TL(K))
         ENDDO 
-        T8W(I,KTE+1,J)=-1.E20
-        ZMID(I,KTE,J)=Z_AT_W(I,KTE,J)
+        T8W(I,KTE+2,J)=-1.E20
+        ZMID(I,KTE+1,J)=Z_AT_W(I,KTE+1,J)
 !         
       ENDDO
       ENDDO
@@ -331,7 +376,7 @@
 !$omp& private(i,j,k,rwmsk,wmsk)
       DO J=MYJS1_P1,MYJE1_P1
 !
-        DO K=KTS,KTE
+        DO K=KTS,KTE+1
           DO I=MYIS_P1,MYIE_P1
             WMSK=grid%nmm_VTM(I+grid%nmm_IHE(J),K,J)+grid%nmm_VTM(I+grid%nmm_IHW(J),K,J)                    &
      &          +grid%nmm_VTM(I,K,J+1)+grid%nmm_VTM(I,K,J-1)
@@ -385,9 +430,15 @@
       do j=jps,min(jde-1,jpe)
          do k=kps,kpe
             do i=ips,min(ide-1,ipe)
-              rri(i,k,j)=grid%em_alt(i,k,j)
               vvel(i,k,j)=grid%em_w_2(i,k,j)
               zmid(i,k,j)=grid%em_z(i,k,j)
+            enddo
+         enddo
+      enddo
+      do j=jps,min(jde-1,jpe)
+         do k=kps,min(kde-1,kpe)
+            do i=ips,min(ide-1,ipe)
+              rri(i,k,j)=grid%em_alt(i,k,j)
             enddo
          enddo
       enddo
@@ -397,17 +448,27 @@
          enddo
       enddo
 
-     !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij, its, ite, jts, jte )
+!------------------------------------------------------------------------
+! Main chemistry tile loop
+!------------------------------------------------------------------------
+
+!$OMP PARALLEL DO   &
+!$OMP PRIVATE ( ij, its, ite, jts, jte )
    chem_tile_loop_1: DO ij = 1 , grid%num_tiles
-       its = max(grid%i_start(ij),ids+1)
-       ite = min(grid%i_end(ij),ide-2)
-       jts = max(grid%j_start(ij),jds+1)
-       jte = min(grid%j_end(ij),jde-2)
+!!$       its = max(grid%i_start(ij),ids+1) !beg: old way w/o domain edge ring
+!!$       ite = min(grid%i_end(ij),ide-2)
+!!$       jts = max(grid%j_start(ij),jds+1)
+!!$       jte = min(grid%j_end(ij),jde-2)   !end: old way
+       its = grid%i_start(ij) !beg, wig: new way to match physics subroutines
+       ite = min(grid%i_end(ij),ide-1)
+       jts = grid%j_start(ij)
+       jte = min(grid%j_end(ij),jde-1) !end, wig: new way
+
        kts=k_start
-       kte=k_end
+       kte=min(k_end,kde-1)
+
 #endif
-! 
+!
 ! no time average available in first half hour
 !   
        if( config_flags%chem_conv_tr>0)then
@@ -511,7 +572,7 @@
                grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, k_start,k_end,                                       &
+               its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit                                                     )
        end if
 #endif
@@ -519,41 +580,54 @@
 !--- emissions
     if(config_flags%emiss_inpt_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
-      call emissions_driver(grid%id,ktau,grid%dt,grid%DX,grid%stepfirepl,             &
-         config_flags, grid%stepbioe,                                                 &
-         grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
-         grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,                                 &
-         grid%e_iso,grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,             &
-         grid%e_hc5,grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                      &
-         grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,          &
-         grid%e_ora2,grid%e_pm25,grid%e_pm10,grid%e_nh3,                              &
-         grid%e_pm25i,grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,                 &
-         grid%e_orgj,grid%e_no2,grid%e_ch3oh,                                         &
-         grid%e_c2h5oh,grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,               &
-         grid%e_orgc,grid%e_ecc,                                                      &
-         grid%ebu_no,grid%ebu_co,grid%ebu_co2,grid%ebu_eth,grid%ebu_hc3,grid%ebu_hc5, &
-         grid%ebu_hc8,grid%ebu_ete,grid%ebu_olt,grid%ebu_oli,grid%ebu_pm25,           &
-         grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
-         grid%ebu_tol,grid%ebu_xyl,grid%ebu_csl,grid%ebu_hcho,grid%ebu_ald,           &
-         grid%ebu_ket,grid%ebu_macr,grid%ebu_ora1,grid%ebu_ora2,grid%mean_fct_agtf,   &
-         grid%mean_fct_agef,grid%mean_fct_agsv,grid%mean_fct_aggr,grid%firesize_agtf, &
-         grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
-         grid%u10,grid%v10,grid%ivgtyp,grid%gsw,grid%vegfra,grid%rmol,                &
-         grid%ust,grid%znt,                                                           &
-         grid%xland,grid%xlat,grid%xlong,                                             &
-         z_at_w,zmid,                                                                 &
-         grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
-         grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
-         grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,                &
-         grid%sebio_ora2,grid%sebio_co,grid%sebio_nr,                                 &
-         grid%noag_grow,grid%noag_nongrow,grid%nononag,grid%slai,                     &
-         grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,       &
-         grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,       &
-         grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,       &
-         grid%ebio_no,numgas,                                                         &
-         ids,ide, jds,jde, kds,kde,                                                   &
-         ims,ime, jms,jme, kms,kme,                                                   &
-         its,ite,jts,jte,kts,kte)        
+! jdf add smois for dust emissions
+         call emissions_driver(grid%id,ktau,grid%dt,grid%DX,grid%stepfirepl,               &
+              config_flags, grid%stepbioe,                                                 &
+              grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
+              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,                                 &
+              grid%e_iso,grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,             &
+              grid%e_hc5,grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                      &
+              grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,          &
+              grid%e_ora2,grid%e_pm25,grid%e_pm10,grid%e_nh3,                              &
+              grid%e_pm25i,grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,                 &
+              grid%e_orgj,grid%e_no2,grid%e_ch3oh,                                         &
+              grid%e_c2h5oh,grid%e_so4i,grid%e_so4j,grid%e_so4c,                           &
+              grid%e_no3i,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,                  &
+              grid%ebu_no,grid%ebu_co,grid%ebu_co2,grid%ebu_eth,grid%ebu_hc3,grid%ebu_hc5, &
+              grid%ebu_hc8,grid%ebu_ete,grid%ebu_olt,grid%ebu_oli,grid%ebu_pm25,           &
+              grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
+              grid%ebu_tol,grid%ebu_xyl,grid%ebu_csl,grid%ebu_hcho,grid%ebu_ald,           &
+              grid%ebu_ket,grid%ebu_macr,grid%ebu_ora1,grid%ebu_ora2,grid%mean_fct_agtf,   &
+              grid%mean_fct_agef,grid%mean_fct_agsv,grid%mean_fct_aggr,grid%firesize_agtf, &
+              grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
+              grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
+              grid%ust,grid%znt,                                                           &
+              grid%xland,grid%xlat,grid%xlong,                                             &
+              z_at_w,zmid,grid%smois,                                                           &
+              grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
+              grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
+              grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,                &
+              grid%sebio_ora2,grid%sebio_co,grid%sebio_nr,                                 &
+              grid%noag_grow,grid%noag_nongrow,grid%nononag,grid%slai,                     &
+              grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,       &
+              grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,       &
+              grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,       &
+              grid%ebio_no,                                                                &
+         !shc stuff for MEGAN v2.04                                                  
+              grid%T2,grid%swdown,                                                         &
+              grid%nmegan,grid%EFmegan,                                                    &
+              grid%msebio_isop,                                                            &
+              grid%mlai,                                                                   &
+              grid%pftp_bt, grid%pftp_nt, grid%pftp_sb, grid%pftp_hb,                      &
+              grid%mtsa,                                                                   &         
+              grid%mswdown,                                                                &
+              grid%mebio_isop,grid%mebio_apin,grid%mebio_bpin, grid%mebio_bcar,            &
+              grid%mebio_acet,grid%mebio_mbo,grid%mebio_no,                                &
+              current_month,                                                               &
+         !shc end stuff for MEGAN v2.04
+              ids,ide, jds,jde, kds,kde,                                                   &
+              ims,ime, jms,jme, kms,kme,                                                   &
+              its,ite,jts,jte,kts,kte)        
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and.                          &
@@ -571,7 +645,7 @@
                grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, k_start,k_end,                                       &
+               its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit                                                     )
        end if
 #endif
@@ -579,7 +653,7 @@
 
 !
 ! calculate photolysis rates
-!o
+!
 !     print *,'stepphot = ',grid%stepphot
       if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)                                &
            .and. config_flags%chem_opt /= CHEM_TRACER) then
@@ -619,7 +693,7 @@
                grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, k_start,k_end,                                       &
+               its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit,                                                    &
                grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
@@ -642,7 +716,7 @@
                  grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
                  rri,p_phy,chem,rho,dz8w,grid%exch_h,                                 &
                  grid%cldfra, grid%cldfra_old,                                        &
-	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
+                 grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
                  zmid,z_at_w,                                                         &
@@ -672,7 +746,7 @@
                grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, k_start,k_end,                                       &
+               its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit,                                                    &
                                                                                       )
        end if
@@ -696,7 +770,8 @@
              num_chem,                                                                &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
-             its,ite,jts,jte,kts,kte)
+             its,ite,jts,jte,kts,k_end)
+!~wig:temporarily change to k_end to avoid rewriting k indexing inside routine:   its,ite,jts,jte,kts,kte)
 !            k_start    , min(k_end,kde-1)                                            )
      end if
 !
@@ -713,13 +788,23 @@ n2o5_het=0.
 ! For the chemistry tracer mode, only emissions and vertical mixing are done.
 ! So, finish any remaining tiles and then skip to the end of chem_driver.
 !
-      kts=k_start
-      kte=k_end
+!wig      kts=k_start
+!wig      kte=k_end
       if((ktau.eq.1.or.mod(ktau,grid%stepchem).eq.0)                                  &
            .and. config_flags%chem_opt /= CHEM_TRACER) then
         dtstepc=grid%dt*float(grid%stepchem)
         ktauc=max(ktau/grid%stepchem,1)
-        if(ktau.eq.1)dtstepc=grid%dt
+        !wig, 23-Jul-2007: Alter logic to reduce dtstepc on the 2nd call
+        !to the gas and aer drivers since they are already called once at
+        !the 1st time step. The original logic introduced an erroneous
+        !extra one timestep increment to the calls since they are forced
+        !to make a call at katu==1. This only matters when the met
+        !timestep does not equal the chem timestep.
+        if(ktau.eq.1) then
+           dtstepc=grid%dt
+        else if( ktau==grid%stepchem .and. grid%stepchem>1 ) then
+           dtstepc=grid%dt*(grid%stepchem - 1)
+        end if
         if(config_flags%gaschem_onoff>0)then
 !
 ! chemical mechanisms
@@ -784,7 +869,7 @@ CALL kpp_mechanism_driver (chem,                                                
                grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, k_start,k_end,                                       &
+               its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit,                                                    &
                grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
@@ -805,7 +890,7 @@ CALL kpp_mechanism_driver (chem,                                                
             numgas_aqfrac = max( numgas, 1 )
             allocate( gas_aqfrac( grid%sm31:grid%em31, grid%sm32:grid%em32,           &
                                   grid%sm33:grid%em33, numgas_aqfrac ) )
-            gas_aqfrac(:,:,:,:) = 0.0
+            gas_aqfrac(its:ite,kts:kte,jts:jte,:) = 0.0
         end if
 
 !
@@ -859,8 +944,8 @@ CALL kpp_mechanism_driver (chem,                                                
                grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, k_start,k_end,                                       &
-               config_flags%kemit,
+               its,ite, jts,jte, kts,kte,                                             &
+               config_flags%kemit,                                                    &
                grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
                grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,           &
@@ -888,9 +973,10 @@ CALL kpp_mechanism_driver (chem,                                                
               grid%cvlim1,grid%cvlim2,                                                &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
-              grid%i_start(ij), min(grid%i_end(ij),ide-1),                            &
-              grid%j_start(ij), min(grid%j_end(ij),jde-1),                            &
-              k_start         , min(k_end,kde-ksubt)                                  )
+              its,ite, jts,jte, kts,kte                                               )
+!              grid%i_start(ij), min(grid%i_end(ij),ide-1),                            &
+!              grid%j_start(ij), min(grid%j_end(ij),jde-1),                            &
+!              k_start         , min(k_end,kde-ksubt)                                  )
        
        endif
 
@@ -910,14 +996,14 @@ end if !Chemistry time step check
            grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,            &
            ids,ide, jds,jde, kds,kde,                                                 &
            ims,ime, jms,jme, kms,kme,                                                 &
-           its,ite, jts,jte, k_start,k_end                                            )
+           its,ite, jts,jte, kts,kte                                                  )
 
 ! Fill top level to prevent spurious interpolation results (no extrapolation)
 ! should this be done on halo too????
       do nv=1,num_chem
          do j=jts,jte
             do i=its,ite
-                  chem(i,kte,j,nv)=chem(i,kte-1,j,nv)
+                  chem(i,k_end,j,nv)=chem(i,kte,j,nv)
             enddo
          enddo
       enddo

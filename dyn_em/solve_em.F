@@ -3519,6 +3519,7 @@ BENCH_START(micro_driver_tim)
 #ifdef WRF_CHEM
      &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
      &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
+     &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn   &
 #endif
      &        ,XLAND=grid%xland                                           &
      &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy        &

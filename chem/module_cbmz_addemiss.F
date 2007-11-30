@@ -94,7 +94,7 @@ CONTAINS
       do 100 j=jts,jte  
       do 100 i=its,ite  
 
-      DO k=kts,min(config_flags%kemit,kte-1)
+      DO k=kts,min(config_flags%kemit,kte)
 !v1 units:        conv = dtstep/(dz8w(i,k,j)*60.)
 !v2 units:
         conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
@@ -140,12 +140,6 @@ CONTAINS
                          +e_ora2(i,k,j)*conv 
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +e_nh3(i,k,j)*conv
-        chem(i,k,j,p_hc3)  = chem(i,k,j,p_hc3)                         &
-                         +e_hc3(i,k,j)*conv
-        chem(i,k,j,p_hc5)  = chem(i,k,j,p_hc5)                         &
-                         +e_hc5(i,k,j)*conv
-        chem(i,k,j,p_hc8)  = chem(i,k,j,p_hc8)                         &
-                         +e_hc8(i,k,j)*conv
         chem(i,k,j,p_eth)  = chem(i,k,j,p_eth)                         &
                          +e_eth(i,k,j)*conv
         chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
@@ -213,23 +207,21 @@ CONTAINS
 !----------------------------------------------------------------------
   subroutine cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,       &
         rho_phy, chem, e_bio, ne_area, e_iso,                         &
-        numgas,                                                       &
         ids,ide, jds,jde, kds,kde,                                    &
         ims,ime, jms,jme, kms,kme,                                    &
         its,ite, jts,jte, kts,kte                                     )
 
   USE module_configure
-  USE module_state_description                                  
-  USE module_data_radm2                               
-  USE module_aerosols_sorgam 
+  USE module_state_description
+  USE module_data_radm2
+  USE module_aerosols_sorgam
 
-  IMPLICIT NONE             
+  IMPLICIT NONE
 
 ! subr arguments
-   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags     
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    INTEGER,      INTENT(IN   ) :: id, ne_area,                             &
-                                  numgas,                                  &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
@@ -242,7 +234,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme,ne_area ),                            &
          INTENT(IN ) ::           e_bio
          
-!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                          &
    REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
          INTENT(IN ) ::           e_iso
 
@@ -261,32 +252,91 @@ CONTAINS
 !
    if (config_flags%bio_emiss_opt == GUNTHER1) then
 
-      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(            &
-               id, config_flags, 1, 'cbmz_addemiss_bioaa',                 &
-               dtstep, efact1, dz8w, chem, chem_sum,                       &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte,                                  &
-               kms, 13,                                                    &
-               e_bio(ims,jms,p_ald-1),  e_bio(ims,jms,p_hc3-1),            &
-               e_bio(ims,jms,p_hc5-1),  e_bio(ims,jms,p_hc8-1),            &
-               e_bio(ims,jms,p_hcho-1), e_bio(ims,jms,p_iso-1),            &
-               e_bio(ims,jms,p_ket-1),  e_bio(ims,jms,p_no-1),             &
-               e_bio(ims,jms,p_oli-1),  e_bio(ims,jms,p_olt-1),            &
-               e_bio(ims,jms,p_ora1-1), e_bio(ims,jms,p_ora2-1),           &
-               e_bio(ims,jms,p_xyl-1),                                     &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1)             )
+      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(         &
+               id, config_flags, 1, 'cbmz_addemiss_bioaa',              &
+               dtstep, efact1, dz8w, chem, chem_sum,                    &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte,                               &
+               kms, 13,                                                 &
+               e_bio(ims,jms,lald),  e_bio(ims,jms,lhc3),               &
+               e_bio(ims,jms,lhc5),  e_bio(ims,jms,lhc8),               &
+               e_bio(ims,jms,lhcho), e_bio(ims,jms,liso),               &
+               e_bio(ims,jms,lket),  e_bio(ims,jms,lno),                &
+               e_bio(ims,jms,loli),  e_bio(ims,jms,lolt),               &
+               e_bio(ims,jms,lora1), e_bio(ims,jms,lora2),              &
+               e_bio(ims,jms,lxyl),                                     &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl),               &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl),               &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl),               &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl)                )
 
-      DO n = 1, ne_area-2 !Assumes CBMZ and RADM2 species locations match up to p_iso
-      do 100 j=jts,jte  
-      do 100 i=its,ite  
-        chem(i,kts,j,n+1) = chem(i,kts,j,n+1)    &
-                          + e_bio(i,j,n)/(dz8w(i,kts,j)*60.)*dtstep
- 100  continue
-      enddo
+      do j=jts,jte  
+      do i=its,ite  
+        chem(i,kts,j,p_so2) = chem(i,kts,j,p_so2)    &
+                          + e_bio(i,j,lso2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_sulf) = chem(i,kts,j,p_sulf)    &
+                          + e_bio(i,j,lsulf)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_no2) = chem(i,kts,j,p_no2)    &
+                          + e_bio(i,j,lno2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_no) = chem(i,kts,j,p_no)    &
+                          + e_bio(i,j,lno)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_o3) = chem(i,kts,j,p_o3)    &
+                          + e_bio(i,j,lo3)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_hno3) = chem(i,kts,j,p_hno3)    &
+                          + e_bio(i,j,lhno3)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_h2o2) = chem(i,kts,j,p_h2o2)    &
+                          + e_bio(i,j,lh2o2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_ald) = chem(i,kts,j,p_ald)    &
+                          + e_bio(i,j,lald)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_hcho) = chem(i,kts,j,p_hcho)    &
+                          + e_bio(i,j,lhcho)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_op1) = chem(i,kts,j,p_op1)    &
+                          + e_bio(i,j,lop1)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_op2) = chem(i,kts,j,p_op2)    &
+                          + e_bio(i,j,lop2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_ora1) = chem(i,kts,j,p_ora1)    &
+                          + e_bio(i,j,lora1)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_ora2) = chem(i,kts,j,p_ora2)    &
+                          + e_bio(i,j,lora2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_nh3) = chem(i,kts,j,p_nh3)    &
+                          + e_bio(i,j,lnh3)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_n2o5) = chem(i,kts,j,p_n2o5)    &
+                          + e_bio(i,j,ln2o5)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_no2) = chem(i,kts,j,p_no2)    &
+                          + e_bio(i,j,lno2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_pan) = chem(i,kts,j,p_pan)    &
+                          + e_bio(i,j,lpan)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_eth) = chem(i,kts,j,p_eth)    &
+                          + e_bio(i,j,leth)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_co) = chem(i,kts,j,p_co)    &
+                          + e_bio(i,j,lco)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_ol2) = chem(i,kts,j,p_ol2)    &
+                          + e_bio(i,j,lol2)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_olt) = chem(i,kts,j,p_olt)    &
+                          + e_bio(i,j,lolt)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_oli) = chem(i,kts,j,p_oli)    &
+                          + e_bio(i,j,loli)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_tol) = chem(i,kts,j,p_tol)    &
+                          + e_bio(i,j,ltol)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_xyl) = chem(i,kts,j,p_xyl)    &
+                          + e_bio(i,j,lxyl)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_hono) = chem(i,kts,j,p_hono)    &
+                          + e_bio(i,j,lhono)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_hno4) = chem(i,kts,j,p_hno4)    &
+                          + e_bio(i,j,lhno4)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_ket) = chem(i,kts,j,p_ket)    &
+                          + e_bio(i,j,lket)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_mgly) = chem(i,kts,j,p_mgly)    &
+                          + e_bio(i,j,lmgly)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_onit) = chem(i,kts,j,p_onit)    &
+                          + e_bio(i,j,lonit)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_csl) = chem(i,kts,j,p_csl)    &
+                          + e_bio(i,j,lcsl)/(dz8w(i,kts,j)*60.)*dtstep
+        chem(i,kts,j,p_iso) = chem(i,kts,j,p_iso)    &
+                          + e_bio(i,j,liso)/(dz8w(i,kts,j)*60.)*dtstep
+      end do
+      end do
 
 ! calc par emissions as a combination of the biogenic emissions
 ! for radm2 primary voc species
@@ -294,31 +344,31 @@ CONTAINS
       do i = its, ite
          chem(i,kts,j,p_par)  =  chem(i,kts,j,p_par)               &
              + (dtstep/(dz8w(i,kts,j)*60.))*                       &
-               ( 0.4*e_bio(i,j,p_ald-1) + 2.9*e_bio(i,j,p_hc3-1)   &
-               + 4.8*e_bio(i,j,p_hc5-1) + 7.9*e_bio(i,j,p_hc8-1)   &
-               + 0.9*e_bio(i,j,p_ket-1) + 2.8*e_bio(i,j,p_oli-1)   &
-               + 1.8*e_bio(i,j,p_olt-1) + 1.0*e_bio(i,j,p_ora2-1) )
+               ( 0.4*e_bio(i,j,lald) + 2.9*e_bio(i,j,lhc3)         &
+               + 4.8*e_bio(i,j,lhc5) + 7.9*e_bio(i,j,lhc8)         &
+               + 0.9*e_bio(i,j,lket) + 2.8*e_bio(i,j,loli)         &
+               + 1.8*e_bio(i,j,lolt) + 1.0*e_bio(i,j,lora2)        )
       end do
       end do
 
-      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(            &
-               id, config_flags, 2, 'cbmz_addemiss_bioaa',                 &
-               dtstep, efact1, dz8w, chem, chem_sum,                       &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte,                                  &
-               kms, 13,                                                    &
-               e_bio(ims,jms,p_ald-1),  e_bio(ims,jms,p_hc3-1),            &
-               e_bio(ims,jms,p_hc5-1),  e_bio(ims,jms,p_hc8-1),            &
-               e_bio(ims,jms,p_hcho-1), e_bio(ims,jms,p_iso-1),            &
-               e_bio(ims,jms,p_ket-1),  e_bio(ims,jms,p_no-1),             &
-               e_bio(ims,jms,p_oli-1),  e_bio(ims,jms,p_olt-1),            &
-               e_bio(ims,jms,p_ora1-1), e_bio(ims,jms,p_ora2-1),           &
-               e_bio(ims,jms,p_xyl-1),                                     &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1),            &
-               e_bio(ims,jms,p_xyl-1),  e_bio(ims,jms,p_xyl-1)             )
+      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(         &
+               id, config_flags, 2, 'cbmz_addemiss_bioaa',              &
+               dtstep, efact1, dz8w, chem, chem_sum,                    &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte,                               &
+               kms, 13,                                                 &
+               e_bio(ims,jms,lald),  e_bio(ims,jms,lhc3),               &
+               e_bio(ims,jms,lhc5),  e_bio(ims,jms,lhc8),               &
+               e_bio(ims,jms,lhcho), e_bio(ims,jms,liso),               &
+               e_bio(ims,jms,lket),  e_bio(ims,jms,lno),                &
+               e_bio(ims,jms,loli),  e_bio(ims,jms,lolt),               &
+               e_bio(ims,jms,lora1), e_bio(ims,jms,lora2),              &
+               e_bio(ims,jms,lxyl),                                     &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl),               &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl),               &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl),               &
+               e_bio(ims,jms,lxyl),  e_bio(ims,jms,lxyl)                )
 
    end if
 
@@ -340,7 +390,7 @@ CONTAINS
                e_iso,e_iso,e_iso,e_iso,e_iso,e_iso,e_iso                   )
 
       do j = jts, jte
-      do k = kts, min(config_flags%kemit,kte-1)
+      do k = kts, min(config_flags%kemit,kte)
       do i = its, ite
          chem(i,k,j,p_iso) = chem(i,k,j,p_iso) + e_iso(i,k,j)              &
               *4.828e-4/rho_phy(i,k,j)*(dtstep/(dz8w(i,k,j)*60.))

@@ -56,14 +56,14 @@ dimspec    h      -     namelist=nobs_err_flds    c          nobs_err_flds
 dimspec    r      -     namelist=nobs_ndg_vars    c          nobs_ndg_vars
 dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
 dimspec    m      2     constant=12                  z          months_per_year
-dimspec    o      3     namelist=ne_area             z          emissions dimension
+dimspec    o      3     namelist=ne_area             z          bio_emissions_dimension
 dimspec    +      2     namelist=kemit               z          emissions_zdim
 dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
 dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
 dimspec    q      2     namelist=levsiz           z          levsiz
 dimspec    d      2     namelist=paerlev          z          paerlev
 dimspec    v      -     constant=1                z          one
-
+dimspec    ?      2     namelist=nmegan           z          megan_species
 
 
 ################################################################################

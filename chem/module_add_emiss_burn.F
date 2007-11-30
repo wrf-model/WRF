@@ -88,7 +88,7 @@ CONTAINS
 
           do j=jts,jte
           do i=its,ite
-           do k=kts+1,kte-1
+           do k=kts+1,kte
         conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60.
             if(i.eq.56.and.j.eq.132)write(0,*)k,ebu_co(i,k,j),conv_rho,r_q,dtstep
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &

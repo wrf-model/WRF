@@ -1,14 +1,15 @@
-!**********************************************************************************  
+!**********************************************************************************
 ! This computer software was prepared by Battelle Memorial Institute, hereinafter
 ! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
 ! MOSAIC module: see module_mosaic_driver.F for information and terms of use
-!**********************************************************************************  
+!**********************************************************************************
 
 MODULE module_mixactivate
-
+PRIVATE
+PUBLIC prescribe_aerosol_mixactivate, mixactivate
 CONTAINS
 
 
@@ -22,6 +23,7 @@ CONTAINS
 		z, dz8w, p_at_w, t_at_w, exch_h,                      &
         qv, qc, qi, qndrop3d,                                 &
         nsource,                                              &
+		ids,ide, jds,jde, kds,kde,                            &
 		ims,ime, jms,jme, kms,kme,                            &
 		its,ite, jts,jte, kts,kte,                            &
 		f_qc, f_qi                                            )
@@ -35,6 +37,7 @@ CONTAINS
 !   subr arguments
 	integer, intent(in) ::                  &
 		grid_id, ktau,                  &
+		ids, ide, jds, jde, kds, kde,   &
 		ims, ime, jms, jme, kms, kme,   &
 		its, ite, jts, jte, kts, kte
 
@@ -99,7 +102,7 @@ CONTAINS
 	  idrydep_onoff = 0
 	  msectional = 0
 
-	  t_phy(:,:,:)=th_phy(:,:,:)*pi_phy(:,:,:)
+	  t_phy(its:ite,kts:kte,jts:jte)=th_phy(its:ite,kts:kte,jts:jte)*pi_phy(its:ite,kts:kte,jts:jte)
 
       ntype_aer=maxd_atype
       do n=1,ntype_aer
@@ -128,9 +131,9 @@ CONTAINS
           ptr=ptr+1
           numptr_aer( m, n, p )=ptr
 	  if(p.eq.ai_phase)then
-	     chem(:,:,:,ptr)=naer
+	     chem(its:ite,kts:kte,jts:jte,ptr)=naer
 	  else
-	     chem(:,:,:,ptr)=0
+	     chem(its:ite,kts:kte,jts:jte,ptr)=0.
 	  endif
 	end do ! size
 	end do ! type
@@ -150,9 +153,9 @@ CONTAINS
 	     maer= 1.0e6 * naer * dens_aer(l,n) * ( (3.1416/6.) *   &
                  (dgnum_aer(m,n)**3) * exp( 4.5*((log(sigmag_aer(m,n)))**2) ) )
 	     if(p.eq.ai_phase)then
-	        chem(:,:,:,ptr)=maer
+	        chem(its:ite,kts:kte,jts:jte,ptr)=maer
 	     else
-	        chem(:,:,:,ptr)=0
+	        chem(its:ite,kts:kte,jts:jte,ptr)=0.
 	     endif
 	  end do
 	end do ! size
@@ -169,8 +172,8 @@ CONTAINS
 	  waterptr_aer(m, n)=-1
 	end do ! size
 	end do ! type
-	ddvel(:,:,:)=0.
-    hygro( :,:,:,:,:) = 0.5
+	ddvel(its:ite,jts:jte,:)=0.
+    hygro(its:ite,kts:kte,jts:jte,:,:) = 0.5
 
 ! 06-nov-2005 rce - grid_id & ktau added to arg list
       call mixactivate(  msectional,     &
@@ -181,8 +184,8 @@ CONTAINS
             numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dgnum_aer,  &
             dens_aer, mw_aer,           &
             waterptr_aer, hygro,  ai_phase, cw_phase,                &
-            ims,ime, jms,jme,  &
-            kms,kme,                            &
+            ids,ide, jds,jde, kds,kde,                            &
+            ims,ime, jms,jme, kms,kme,                            &
             its,ite, jts,jte, kts,kte,                            &
             rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
             cldfra, cldfra_old, qsrflx,         &
@@ -207,6 +210,7 @@ subroutine mixactivate(  msectional,            &
            numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dgnum_aer,  &
            dens_aer, mw_aer,               &
            waterptr_aer, hygro, ai_phase, cw_phase,              &
+           ids,ide, jds,jde, kds,kde,                            &
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho, zm, dz8w, p_at_w, t_at_w, kvh,      &
@@ -229,8 +233,9 @@ subroutine mixactivate(  msectional,            &
 
   INTEGER, intent(in) ::         grid_id, ktau
   INTEGER, intent(in) ::         num_chem
-  integer, intent(in) ::         ims,ime, jms,jme, kms,kme,    &
-                                  its,ite, jts,jte, kts,kte
+  integer, intent(in) ::         ids,ide, jds,jde, kds,kde,    &
+                                 ims,ime, jms,jme, kms,kme,    &
+                                 its,ite, jts,jte, kts,kte
 
   integer maxd_aphase, nphase_aer, maxd_atype, ntype_aer
   integer maxd_asize, maxd_acomp, nsize_aer(maxd_atype)
@@ -303,20 +308,17 @@ subroutine mixactivate(  msectional,            &
   real :: ekd(kms:kme)       ! diffusivity for droplets (m2/s)
   real :: ekk(kms:kme)       ! density*diffusivity for droplets (kg/m3 m2/s)
   real :: srcn(kms:kme) ! droplet source rate (/s)
-  real sq2pi
+  real, save :: sq2pi
   data sq2pi/2.5066282746/
-  save sq2pi
   real dtinv
 
   logical top        ! true if cloud top, false if cloud base or new cloud
-  logical first
-  save first
+  logical, save :: first
   data first/.true./
   integer km1,kp1
   real wbar,wmix,wmin,wmax
-  real cmincld
+  real, save :: cmincld
   data cmincld/1.e-12/
-  save cmincld
   real dum,dumc
   real dact
   real fluxntot         ! (#/cm2/s)
@@ -335,8 +337,7 @@ subroutine mixactivate(  msectional,            &
   integer nnew,nsav,ntemp
   real :: overlapp(kms:kme),overlapm(kms:kme) ! cloud overlap
   real ::  ekkp(kms:kme),ekkm(kms:kme) ! zn*zs*density*diffusivity
-  integer count_submix(100)
-  save count_submix
+  integer, save :: count_submix(100)=0 ! wig: Note that this is a no-no for tile threads with OMP
 
   integer lnum,lnumcw,l,lmass,lmasscw,lsfc,lsfccw,ltype,lsig,lwater
   integer :: ntype(maxd_asize)
@@ -372,15 +373,13 @@ subroutine mixactivate(  msectional,            &
   real :: hygro_aer(maxd_asize, maxd_atype)  ! hygroscopicity of aerosol mode
   real :: exp45logsig     ! exp(4.5*alogsig**2)
   real :: alogsig(maxd_asize, maxd_atype) ! natl log of geometric standard dev of aerosol
-  integer psat
-  parameter (psat=6) ! number of supersaturations to calc ccn concentration
+  integer, parameter :: psat=6  ! number of supersaturations to calc ccn concentration
   real ccn(kts:kte,psat)        ! number conc of aerosols activated at supersat
   real, parameter :: supersat(psat)= &! supersaturation (%) to determine ccn concentration
        (/0.02,0.05,0.1,0.2,0.5,1.0/)
   real super(psat) ! supersaturation
-  real surften       ! surface tension of water w/respect to air (N/m)
+  real,save :: surften       ! surface tension of water w/respect to air (N/m)
   data surften/0.076/
-  save surften
   real :: ccnfact(psat,maxd_asize, maxd_atype)
   real :: amcube(maxd_asize, maxd_atype) ! cube of dry mode radius (m)
   real :: argfactor(maxd_asize, maxd_atype)
@@ -400,7 +399,6 @@ subroutine mixactivate(  msectional,            &
 !!$#endif
 
   character*8, parameter :: ccn_name(psat)=(/'CCN1','CCN2','CCN3','CCN4','CCN5','CCN6'/)
-  integer ids,ide, jds,jde, kds,kde
 
   arg = 1.0
   if (abs(0.8427-ERF_ALT(arg))/0.8427>0.001) then
@@ -430,7 +428,6 @@ subroutine mixactivate(  msectional,            &
         npv(m,n)=6./(pi*(0.01*dgnum_aer(m,n))**3*exp(4.5*alogsig(m,n)*alogsig(m,n)))
      end do
   end do
-
   t0=273.
   aten=2.*surften/(r_v*t0*rhowater)
   super(:)=0.01*supersat(:)
@@ -449,32 +446,24 @@ subroutine mixactivate(  msectional,            &
           its,ite, jts,jte, kts,kte               )
   END IF
 
-  qsrflx(:,:,:) = 0.
+  qsrflx(its:ite,jts:jte,:) = 0.
 
 !     start loop over columns
 
   do 120 j=jts,jte
   do 100 i=its,ite
 
-     raercol(:,:,:) = 0. !~ wig: added, but should not be necessary
-     fluxn(:,:) = 0.     !~
-     fluxs(:,:) = 0.     !~
-     fluxm(:,:) = 0.     !~
-     fn(:,:) = 0.        !~
-     fs(:,:) = 0.        !~
-     fm(:,:) = 0.        !~
-
 !        load number nucleated into qndrop on cloud boundaries
 
 ! initialization for current i .........................................
 
-     do k=kts+1,kte-1
+     do k=kts+1,kte
 	    zs(k)=1./(zm(i,k,j)-zm(i,k-1,j))
 	 enddo
 	 zs(kts)=zs(kts+1)
-     zs(kte)=0.
+     zs(kte+1)=0.
 
-     do k=kts,kte-1
+     do k=kts,kte
 !!$	    if(qndrop3d(i,k,j).lt.-10.e6.or.qndrop3d(i,k,j).gt.1.E20)then
 !!$!	       call exit(1)
 !!$	    endif
@@ -523,6 +512,9 @@ subroutine mixactivate(  msectional,            &
         wtke(k)=max(wtke(k),wmixmin)
         nsource(i,k,j)=0.
      enddo
+     nsource(i,kte+1,j) = 0.
+     qndrop(kte+1)      = 0.
+     zn(kte+1)          = 0.
 
     !  calculate surface rate and mass mixing ratio for aerosol
 
@@ -541,8 +533,8 @@ subroutine mixactivate(  msectional,            &
               surfratemax = max( surfratemax, surfrate(lnum) )
 !             scale = 1000./mwdry ! moles/kg
               scale = 1.
-              raercol(kts:kte-1,lnumcw,nsav)=chem(i,kts:kte-1,j,lnumcw)*scale ! #/kg
-              raercol(kts:kte-1,lnum,nsav)=chem(i,kts:kte-1,j,lnum)*scale
+              raercol(kts:kte,lnumcw,nsav)=chem(i,kts:kte,j,lnumcw)*scale ! #/kg
+              raercol(kts:kte,lnum,nsav)=chem(i,kts:kte,j,lnum)*scale
            endif
            do l=1,ncomp(n)
               lmass=massptr_aer(l,m,n,ai_phase)
@@ -552,14 +544,14 @@ subroutine mixactivate(  msectional,            &
               surfrate(lmass)=ddvel(i,j,lmass)/dz(kts)
               surfrate(lmasscw)=surfrate_drop
               surfratemax = max( surfratemax, surfrate(lmass) )
-              raercol(kts:kte-1,lmasscw,nsav)=chem(i,kts:kte-1,j,lmasscw)*scale ! kg/kg
-              raercol(kts:kte-1,lmass,nsav)=chem(i,kts:kte-1,j,lmass)*scale ! kg/kg
+              raercol(kts:kte,lmasscw,nsav)=chem(i,kts:kte,j,lmasscw)*scale ! kg/kg
+              raercol(kts:kte,lmass,nsav)=chem(i,kts:kte,j,lmass)*scale ! kg/kg
            enddo
            lwater=waterptr_aer(m,n)
            if(lwater>0)then
               surfrate(lwater)=ddvel(i,j,lwater)/dz(kts)
               surfratemax = max( surfratemax, surfrate(lwater) )
-              raercol(kts:kte-1,lwater,nsav)=chem(i,kts:kte-1,j,lwater) ! don't bother to convert units,
+              raercol(kts:kte,lwater,nsav)=chem(i,kts:kte,j,lwater) ! don't bother to convert units,
              ! because it doesn't contribute to aerosol mass
            endif
         enddo ! size
@@ -570,9 +562,9 @@ subroutine mixactivate(  msectional,            &
 
 ! k-loop for growing/shrinking cloud calcs .............................
 
-     do k=kts,kte-1
+     do k=kts,kte
         km1=max0(k-1,1)
-        kp1=min0(k+1,kte-1)
+        kp1=min0(k+1,kde-1)
 
         if(lcldfra(k)-lcldfra_old(k).gt.0.01)then
 !       go to 10
@@ -588,7 +580,6 @@ subroutine mixactivate(  msectional,            &
            wdiab=0
 
 !                load aerosol properties, assuming external mixtures
-
            do n=1,ntype_aer
               do m=1,nsize_aer(n)
                  call loadaer(raercol(1,1,nsav),k,kms,kme,num_chem,    &
@@ -620,8 +611,6 @@ subroutine mixactivate(  msectional,            &
                  lnum=numptr_aer(m,n,ai_phase)
                  lnumcw=numptr_aer(m,n,cw_phase)
                  dact=dumc*fn(m,n)*(raercol(k,lnum,nsav)) ! interstitial only
-!          print *,'fn=',fn(m,n),' for m,n=',m,n
-!                   print *,'growing cloud dumc=',dumc,' fn=',fn(m,n)
                  qndrop(k)=qndrop(k)+dact
                  nsource(i,k,j)=nsource(i,k,j)+dact*dtinv
                  if(lnum.gt.0)then
@@ -653,7 +642,6 @@ subroutine mixactivate(  msectional,            &
 !                 convert activated aerosol to interstitial in decaying cloud
 
            dumc=(lcldfra(k)-lcldfra_old(k))/lcldfra_old(k)
-!       print *,'shrinking cloud dumc=',dumc
            do n=1,ntype_aer
               do m=1,nsize_aer(n)
                  lnum=numptr_aer(m,n,ai_phase)
@@ -683,9 +671,9 @@ subroutine mixactivate(  msectional,            &
 ! ......................................................................
 ! start of k-loop for calc of old cloud activation tendencies ..........
 
-     do k=kts,kte-1
+     do k=kts,kte
         km1=max0(k-1,kts)
-        kp1=min0(k+1,kte-1)
+        kp1=min0(k+1,kde-1)
         if(lcldfra(k).gt.0.01)then
            if(lcldfra_old(k).gt.0.01)then
 !          go to 30
@@ -804,11 +792,11 @@ subroutine mixactivate(  msectional,            &
 
      dtmin=dtstep
      ekk(kts)=0.0
-     do k=kts+1,kte-1
+     do k=kts+1,kte
         ekk(k)=ekd(k)*p_at_w(i,k,j)/(r_d*t_at_w(i,k,j))
      enddo
-     ekk(kte)=0.0
-     do k=kts,kte-1
+     ekk(kte+1)=0.0
+     do k=kts,kte+1
         ekkp(k)=zn(k)*ekk(k+1)*zs(k+1)
         ekkm(k)=zn(k)*ekk(k)*zs(k)
         tinv=ekkp(k)+ekkm(k)
@@ -829,8 +817,8 @@ subroutine mixactivate(  msectional,            &
      dtmix=dtstep/nsubmix
      fac_srflx = -1.0/(zn(1)*nsubmix)
      
-     do k=kts,kte-1
-        kp1=min(k+1,kte-1)
+     do k=kts,kte
+        kp1=min(k+1,kde-1)
         km1=max(k-1,1)
         if(lcldfra(kp1).gt.0)then
            overlapp(k)=min(lcldfra(k)/lcldfra(kp1),1.)
@@ -843,9 +831,8 @@ subroutine mixactivate(  msectional,            &
            overlapm(k)=1.
         endif
      enddo
-
      do nsub=1,nsubmix
-        qndrop_new(kts:kte-1)=qndrop(kts:kte-1)
+        qndrop_new(kts:kte)=qndrop(kts:kte)
 !           switch nsav, nnew so that nsav is the updated aerosol
         ntemp=nsav
         nsav=nnew
@@ -855,23 +842,22 @@ subroutine mixactivate(  msectional,            &
            do m=1,nsize_aer(n)
               lnum=numptr_aer(m,n,ai_phase)
 !              update droplet source
-              srcn(kts:kte-1)=srcn(kts:kte-1)+nact(kts:kte-1,m,n)*(raercol(kts:kte-1,lnum,nsav))
+              srcn(kts:kte)=srcn(kts:kte)+nact(kts:kte,m,n)*(raercol(kts:kte,lnum,nsav))
            enddo
         enddo
-
         call explmix(qndrop,srcn,ekkp,ekkm,overlapp,overlapm,   &
-             qndrop_new,surfrate_drop,kts,kte-1,dtmix,.false.)
+             qndrop_new,surfrate_drop,kms,kme,kts,kte,dtmix,.false.)
         do n=1,ntype_aer
            do m=1,nsize_aer(n)
               lnum=numptr_aer(m,n,ai_phase)
               lnumcw=numptr_aer(m,n,cw_phase)
               if(lnum>0)then
-                 source(kts:kte-1)= nact(kts:kte-1,m,n)*(raercol(kts:kte-1,lnum,nsav))
+                 source(kts:kte)= nact(kts:kte,m,n)*(raercol(kts:kte,lnum,nsav))
                  call explmix(raercol(1,lnumcw,nnew),source,ekkp,ekkm,overlapp,overlapm, &
-                      raercol(1,lnumcw,nsav),surfrate(lnumcw),kts,kte-1,dtmix,&
+                      raercol(1,lnumcw,nsav),surfrate(lnumcw),kms,kme,kts,kte,dtmix,&
                       .false.)
                  call explmix(raercol(1,lnum,nnew),source,ekkp,ekkm,overlapp,overlapm,  &
-                      raercol(1,lnum,nsav),surfrate(lnum),kts,kte-1,dtmix, &
+                      raercol(1,lnum,nsav),surfrate(lnum),kms,kme,kts,kte,dtmix, &
                       .true.,raercol(1,lnumcw,nsav))
                  qsrflx(i,j,lnum) = qsrflx(i,j,lnum) + fac_srflx*            &
                       raercol(kts,lnum,nsav)*surfrate(lnum)
@@ -881,12 +867,12 @@ subroutine mixactivate(  msectional,            &
               do l=1,ncomp(n)
                  lmass=massptr_aer(l,m,n,ai_phase)
                  lmasscw=massptr_aer(l,m,n,cw_phase)
-                 source(kts:kte-1)= mact(kts:kte-1,m,n)*(raercol(kts:kte-1,lmass,nsav))
+                 source(kts:kte)= mact(kts:kte,m,n)*(raercol(kts:kte,lmass,nsav))
                  call explmix(raercol(1,lmasscw,nnew),source,ekkp,ekkm,overlapp,overlapm, &
-                      raercol(1,lmasscw,nsav),surfrate(lmasscw),kts,kte-1,dtmix,  &
+                      raercol(1,lmasscw,nsav),surfrate(lmasscw),kms,kme,kts,kte,dtmix,  &
                       .false.)
                  call explmix(raercol(1,lmass,nnew),source,ekkp,ekkm,overlapp,overlapm,  &
-                      raercol(1,lmass,nsav),surfrate(lmass),kts,kte-1,dtmix,  &
+                      raercol(1,lmass,nsav),surfrate(lmass),kms,kme,kts,kte,dtmix,  &
                       .true.,raercol(1,lmasscw,nsav))
                  qsrflx(i,j,lmass) = qsrflx(i,j,lmass) + fac_srflx*          &
                       raercol(kts,lmass,nsav)*surfrate(lmass)
@@ -897,7 +883,7 @@ subroutine mixactivate(  msectional,            &
               if(lwater>0)then
                  source(:)=0.
                  call explmix(   raercol(1,lwater,nnew),source,ekkp,ekkm,overlapp,overlapm,   &
-                      raercol(1,lwater,nsav),surfrate(lwater),kts,kte-1,dtmix,  &
+                      raercol(1,lwater,nsav),surfrate(lwater),kms,kme,kts,kte,dtmix,  &
                       .true.,source)
               endif
            enddo ! size
@@ -909,7 +895,7 @@ subroutine mixactivate(  msectional,            &
 
 !        evaporate particles again if no cloud
 
-     do k=kts,kte-1
+     do k=kts,kte
         if(lcldfra(k).eq.0.)then
 
 !              no cloud
@@ -938,7 +924,7 @@ subroutine mixactivate(  msectional,            &
 !         go to 100
 !        droplet number
 
-     do k=kts,kte-1
+     do k=kts,kte
 !       if(lcldfra(k).gt.0.1)then
 !           write(6,'(a,3i5,f12.1)')'i,j,k,qndrop=',i,j,k,qndrop(k)
 !       endif
@@ -982,20 +968,20 @@ subroutine mixactivate(  msectional,            &
            if(lnum.gt.0)then
               !          scale=mwdry*0.001
               scale = 1.
-              chem(i,kts:kte-1,j,lnumcw)= raercol(kts:kte-1,lnumcw,nnew)*scale
-              chem(i,kts:kte-1,j,lnum)= raercol(kts:kte-1,lnum,nnew)*scale
+              chem(i,kts:kte,j,lnumcw)= raercol(kts:kte,lnumcw,nnew)*scale
+              chem(i,kts:kte,j,lnum)= raercol(kts:kte,lnum,nnew)*scale
            endif
            do l=1,ncomp(n)
               lmass=massptr_aer(l,m,n,ai_phase)
               lmasscw=massptr_aer(l,m,n,cw_phase)
 !          scale = mwdry/mw_aer(l,n)
               scale = 1.e9
-              chem(i,kts:kte-1,j,lmasscw)=raercol(kts:kte-1,lmasscw,nnew)*scale ! ug/kg
-              chem(i,kts:kte-1,j,lmass)=raercol(kts:kte-1,lmass,nnew)*scale ! ug/kg
+              chem(i,kts:kte,j,lmasscw)=raercol(kts:kte,lmasscw,nnew)*scale ! ug/kg
+              chem(i,kts:kte,j,lmass)=raercol(kts:kte,lmass,nnew)*scale ! ug/kg
            enddo
            lwater=waterptr_aer(m,n)
-           if(lwater>0)chem(i,kts:kte-1,j,lwater)=raercol(kts:kte-1,lwater,nnew) ! don't convert units
-           do k=kts,kte-1
+           if(lwater>0)chem(i,kts:kte,j,lwater)=raercol(kts:kte,lwater,nnew) ! don't convert units
+           do k=kts,kte
               sm=2.*aten*sqrt(aten/(27.*hygro(i,k,j,m,n)*amcube(m,n)))
               do l=1,psat
                  arg=argfactor(m,n)*log(sm/super(l))
@@ -1036,28 +1022,29 @@ subroutine mixactivate(  msectional,            &
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
    subroutine explmix( q, src, ekkp, ekkm, overlapp, overlapm, &
-                       qold, surfrate, kts, kte, dt, is_unact,   &
-             qactold )
+                       qold, surfrate, kms, kme, kts, kte, dt, &
+                       is_unact, qactold )
 
 !  explicit integration of droplet/aerosol mixing
 !     with source due to activation/nucleation
 
 
    implicit none
-   integer, intent(in) :: kts,kte ! number of levels
-   real, intent(inout) :: q(kts:kte) ! mixing ratio to be updated
-   real, intent(in) :: qold(kts:kte) ! mixing ratio from previous time step
-   real, intent(in) :: src(kts:kte) ! source due to activation/nucleation (/s)
-   real, intent(in) :: ekkp(kts:kte) ! zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+   integer, intent(in) :: kms,kme ! number of levels for array definition
+   integer, intent(in) :: kts,kte ! number of levels for looping
+   real, intent(inout) :: q(kms:kme) ! mixing ratio to be updated
+   real, intent(in) :: qold(kms:kme) ! mixing ratio from previous time step
+   real, intent(in) :: src(kms:kme) ! source due to activation/nucleation (/s)
+   real, intent(in) :: ekkp(kms:kme) ! zn*zs*density*diffusivity (kg/m3 m2/s) at interface
                       ! below layer k  (k,k+1 interface)
-   real, intent(in) :: ekkm(kts:kte) ! zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+   real, intent(in) :: ekkm(kms:kme) ! zn*zs*density*diffusivity (kg/m3 m2/s) at interface
                       ! above layer k  (k,k+1 interface)
-   real, intent(in) :: overlapp(kts:kte) ! cloud overlap below
-   real, intent(in) :: overlapm(kts:kte) ! cloud overlap above
+   real, intent(in) :: overlapp(kms:kme) ! cloud overlap below
+   real, intent(in) :: overlapm(kms:kme) ! cloud overlap above
    real, intent(in) :: surfrate ! surface exchange rate (/s)
    real, intent(in) :: dt ! time step (s)
    logical, intent(in) :: is_unact ! true if this is an unactivated species
-   real, intent(in),optional :: qactold(kts:kte)
+   real, intent(in),optional :: qactold(kms:kme)
           ! mixing ratio of ACTIVATED species from previous step
           ! *** this should only be present
           !     if the current species is unactivated number/sfc/mass
@@ -1112,8 +1099,7 @@ subroutine mixactivate(  msectional,            &
 
 !      calculates number, surface, and mass fraction of aerosols activated as CCN
 !      calculates flux of cloud droplets, surface area, and aerosol mass into cloud
-!      assumes an internal mixture within each of up to pmaxd_atype X pmaxd_asize 
-!      multiple aerosol modes. 
+!      assumes an internal mixture within each of aerosol mode.
 !      A sectional treatment within each type is assumed if ntype_aer >7.
 !      A gaussiam spectrum of updrafts can be treated.
 
@@ -1169,13 +1155,11 @@ subroutine mixactivate(  msectional,            &
       integer, parameter:: nx=200
       integer iquasisect_option, isectional
       real integ,integf
-      real surften       ! surface tension of water w/respect to air (N/m)
+      real, save :: surften       ! surface tension of water w/respect to air (N/m)
       data surften/0.076/
-      save surften
-      real p0     ! reference pressure (Pa)
-      real t0     ! reference temperature (K)
+      real, save :: p0     ! reference pressure (Pa)
+      real, save :: t0     ! reference temperature (K)
       data p0/1013.25e2/,t0/273.15/
-      save p0,t0
       real ylo(maxd_asize,maxd_atype),yhi(maxd_asize,maxd_atype) ! 1-particle volume at section interfaces
       real ymean(maxd_asize,maxd_atype) ! 1-particle volume at r=rmean
       real ycut, lnycut, betayy, betayy2, gammayy, phiyy
@@ -1184,6 +1168,7 @@ subroutine mixactivate(  msectional,            &
       real alnsign(maxd_asize,maxd_atype) ! natl log of geometric standard dev of aerosol
       real am(maxd_asize,maxd_atype) ! number mode radius of dry aerosol (m)
       real lnhygro(maxd_asize,maxd_atype) ! ln(b)
+      real f1(maxd_asize,maxd_atype) ! array to hold parameter for maxsat
       real pres ! pressure (Pa)
       real path ! mean free path (m)
       real diff ! diffusivity (m2/s)
@@ -1203,9 +1188,8 @@ subroutine mixactivate(  msectional,            &
       real gamma
       real beta
       real gaus
-      logical top        ! true if cloud top, false if cloud base or new cloud
+      logical, save :: top        ! true if cloud top, false if cloud base or new cloud
       data top/.false./
-      save top
       real asub(maxd_asize,maxd_atype),bsub(maxd_asize,maxd_atype) ! coefficients of submode size distribution N=a+bx
       real totn(maxd_atype) ! total aerosol number concentration
       real aten ! surface tension parameter
@@ -1243,7 +1227,7 @@ subroutine mixactivate(  msectional,            &
       integer m,n,nw,nwmax
 
 !      numerical integration parameters
-      real eps,fmax,sds
+      real, save :: eps,fmax,sds
       data eps/0.3/,fmax/0.99/,sds/3./
 
 !      mathematical constants
@@ -1254,15 +1238,13 @@ subroutine mixactivate(  msectional,            &
 !     data zero/0./,one/1./,two/2./,three/3./
 !     save third, sixth,twothird,zero,one,two,three
 
-      real sq2, sqpi, pi
+      real, save :: sq2, sqpi, pi
 ! 04-nov-2005 rce - make this more precise
 !     data sq2/1.4142136/, sqpi/1.7724539/,pi/3.14159/
       data sq2/1.4142135624/, sqpi/1.7724538509/,pi/3.1415926536/
-      save sq2,sqpi,pi
 
-      integer ndist(nx)  ! accumulates frequency distribution of integration bins required
+      integer, save :: ndist(nx)  ! accumulates frequency distribution of integration bins required
       data ndist/nx*0/
-      save eps,fmax,sds,ndist
 
 !     for nsize_aer>7, a sectional approach is used and isectional = iquasisect_option
 !     activation fractions (fn,fs,fm) are computed as follows
@@ -1411,25 +1393,37 @@ subroutine mixactivate(  msectional,            &
 
 
 
-         if (isectional .le. 0) goto 30000
+         if (isectional .le. 0) then
+            ! Initialize maxsat at this cell and timestep for the
+            ! modal setup (the sectional case is handled below).
+            call maxsat_init(maxd_atype, ntype_aer, &
+                 maxd_asize, nsize_aer, alnsign, f1)
 
-             do n=1,ntype_aer
-             !wig 19-Oct-2006: Add zero trap based May 2006 e-mail from
-             !Ghan. Transport can clear out a cell leading to
-             !inconsistencies with the mass.
-             gmrad(n)=gmrad(n)/max(totn(n),1e-20)
-             gmlnsig=gmradsq(n)/totn(n)-gmrad(n)*gmrad(n)    ! [ln(sigmag)]**2
-             gmlnsig(n)=sqrt( max( 1.e-4, gmlnsig(n) ) )
-             gmrad(n)=exp(gmrad(n))
-             if ((isectional .eq. 3) .or. (isectional .eq. 4)) then
-                gmsm(n)=totn(n)/sumns(n)
-                gmsm(n)=gmsm(n)*gmsm(n)*gmsm(n)
-                gmsm(n)=sqrt(gmsm(n))
-             else
-!                gmsm(n)=2.*aten/(3.*gmrad(n))*sqrt(aten/(3.*hygro(1,n)*gmrad(n)))
-                 gmsm(n)=2.*aten/(3.*gmrad(n))*sqrt(aten/(3.*hygro(nsize_aer(n),n)*gmrad(n)))
-             endif
-             enddo
+            goto 30000
+         end if
+
+         do n=1,ntype_aer
+            !wig 19-Oct-2006: Add zero trap based May 2006 e-mail from
+            !Ghan. Transport can clear out a cell leading to
+            !inconsistencies with the mass.
+            gmrad(n)=gmrad(n)/max(totn(n),1e-20)
+            gmlnsig=gmradsq(n)/totn(n)-gmrad(n)*gmrad(n)    ! [ln(sigmag)]**2
+            gmlnsig(n)=sqrt( max( 1.e-4, gmlnsig(n) ) )
+            gmrad(n)=exp(gmrad(n))
+            if ((isectional .eq. 3) .or. (isectional .eq. 4)) then
+               gmsm(n)=totn(n)/sumns(n)
+               gmsm(n)=gmsm(n)*gmsm(n)*gmsm(n)
+               gmsm(n)=sqrt(gmsm(n))
+            else
+!              gmsm(n)=2.*aten/(3.*gmrad(n))*sqrt(aten/(3.*hygro(1,n)*gmrad(n)))
+               gmsm(n)=2.*aten/(3.*gmrad(n))*sqrt(aten/(3.*hygro(nsize_aer(n),n)*gmrad(n)))
+            endif
+         enddo
+         
+         ! Initialize maxsat at this cell and timestep for the
+         ! sectional setup (the modal case is handled above)...
+         call maxsat_init(maxd_atype, ntype_aer, &
+              maxd_asize, (/1/), gmlnsig, f1)
 
 !.......................................................................
 !   calculate sectional "sub-bin" size distribution
@@ -1462,7 +1456,7 @@ subroutine mixactivate(  msectional,            &
                 yhi(m,n) = 1.0
 
 ! 04-nov-2005 - extremely narrow bins will be treated using 0/1 activation
-!    this is to avoid potential numberical problems
+!    this is to avoid potential numerical problems
                 bin_is_narrow(m,n) = .false.
                 if ((rhi(m,n)/rlo(m,n)) .le. 1.01) bin_is_narrow(m,n) = .true.
 
@@ -1677,8 +1671,8 @@ subroutine mixactivate(  msectional,            &
                     eta(1,n)=1.e10
                  endif
               enddo
-               call maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,(/1/),gmsm,gmlnsig,smax)
-!              call maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,nsize_aer,gmsm,gmlnsig,smax)
+              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                   maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
               lnsmax=log(smax)
               x=2*(log(gmsm(1))-lnsmax)/(3*sq2*gmlnsig(1))
               fnew=0.5*(1.-ERF_ALT(x))
@@ -1691,7 +1685,8 @@ subroutine mixactivate(  msectional,            &
               enddo
               enddo
 
-              call maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,nsize_aer,sm,alnsign,smax)
+              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                   maxd_asize,nsize_aer,sm,alnsign,f1,smax)
 !             write(6,*)'w,smax=',w,smax
 
               lnsmax=log(smax)
@@ -2005,7 +2000,6 @@ subroutine mixactivate(  msectional,            &
 !
 !.......................................................................
 
-
 !.......................................................................
 !
 !   start calc. of activation fractions/fluxes
@@ -2013,6 +2007,7 @@ subroutine mixactivate(  msectional,            &
 !
 !.......................................................................
 50000 continue
+
          wnuc=wbar+wdiab
 !         write(6,*)'uniform updraft =',wnuc
 
@@ -2046,8 +2041,8 @@ subroutine mixactivate(  msectional,            &
                  eta(1,n)=1.e10
               endif
               end do
-               call maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,(/1/),gmsm,gmlnsig,smax)
-!              call maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,nsize_aer,gmsm,gmlnsig,smax)
+               call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                    maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
 
             else
 
@@ -2061,15 +2056,13 @@ subroutine mixactivate(  msectional,            &
               end do
               end do
 
-              call maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,nsize_aer,sm,alnsign,smax)
+              call maxsat(zeta,eta,maxd_atype,ntype_aer, &
+                   maxd_asize,nsize_aer,sm,alnsign,f1,smax)
 
             endif
 
             lnsmax=log(smax)
             xmincoeff=alogaten-2.*third*(lnsmax-alog2)-alog3
-
-!           print *,'smax=',smax
-
 
             do 55002 n=1,ntype_aer
             do 55000 m=1,nsize_aer(n)
@@ -2235,63 +2228,44 @@ subroutine mixactivate(  msectional,            &
 
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
-      subroutine maxsat(zeta,eta,maxd_atype,ntype_aer,maxd_asize,nsize_aer, &
-                        sm,alnsign,smax)
+      subroutine maxsat(zeta,eta, &
+                        maxd_atype,ntype_aer,maxd_asize,nsize_aer, &
+                        sm,alnsign,f1,smax)
 
-!      calculates maximum supersaturation for multiple
-!      competing aerosol modes.
+!      Calculates maximum supersaturation for multiple competing aerosol
+!      modes. Note that maxsat_init must be called before calling this
+!      subroutine.
 
 !      Abdul-Razzak and Ghan, A parameterization of aerosol activation.
 !      2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 
-      integer maxd_atype
-      integer ntype_aer
-      integer maxd_asize
-      integer nsize_aer(maxd_atype) ! number of size bins
-      real sm(maxd_asize,maxd_atype) ! critical supersaturation for number mode radius
-      real zeta, eta(maxd_asize,maxd_atype)
-      real alnsign(maxd_asize,maxd_atype) ! ln(sigma)
-      integer pmax
-      parameter (pmax=100)
-      real f1(pmax,pmax)
-      real smax ! maximum supersaturation
-      save f1
-      logical first
-      data first/.true./
-      save first
-      real twothird,sum
-! 04-nov-2005 rce - make this more precise
-!     data twothird/0.666666666/
+      implicit none
+
+      integer, intent(in) :: maxd_atype
+      integer, intent(in) :: ntype_aer
+      integer, intent(in) :: maxd_asize
+      integer, intent(in) :: nsize_aer(maxd_atype) ! number of size bins
+      real, intent(in) :: sm(maxd_asize,maxd_atype) ! critical supersaturation for number mode radius
+      real, intent(in) :: zeta, eta(maxd_asize,maxd_atype)
+      real, intent(in) :: alnsign(maxd_asize,maxd_atype) ! ln(sigma)
+      real, intent(in) :: f1(maxd_asize,maxd_atype)
+      real, intent(out) :: smax ! maximum supersaturation
+
+      real :: g1, g2
+      real thesum
+      real, save :: twothird
       data twothird/0.66666666667/
-      save twothird
       integer m ! size index
       integer n ! type index
 
-      if(first)then
-!         calculate and save f1(sigma). assumes sigma is invariant.
-         do n=1,ntype_aer
-         do m=1,nsize_aer(n)
-            if(ntype_aer>pmax)then
-                print *,'pmax < ',ntype_aer,' in maxsat'
-                call exit
-            endif
-            if(nsize_aer(n)>pmax)then
-                print *,'pmax < ',nsize_aer(n),' in maxsat'
-                call exit
-            endif
-            f1(m,n)=0.5*exp(2.5*alnsign(m,n)*alnsign(m,n))
-         end do
-         end do
-         first=.false.
-      endif
-
       do n=1,ntype_aer
       do m=1,nsize_aer(n)
-         if(zeta.gt.1.e5*eta(m,n).or.sm(m,n)*sm(m,n).gt.1.e5*eta(m,n))then
-!            weak forcing. essentially none activated
+         if(zeta.gt.1.e5*eta(m,n) .or. &
+              sm(m,n)*sm(m,n).gt.1.e5*eta(m,n))then
+!           weak forcing. essentially none activated
             smax=1.e-20
          else
-!            significant activation of this mode. calc activation all modes.
+!           significant activation of this mode. calc activation all modes.
             go to 1
          endif
       end do
@@ -2301,7 +2275,7 @@ subroutine mixactivate(  msectional,            &
 
   1   continue
 
-      sum=0
+      thesum=0
       do n=1,ntype_aer
       do m=1,nsize_aer(n)
          if(eta(m,n).gt.1.e-20)then
@@ -2310,18 +2284,53 @@ subroutine mixactivate(  msectional,            &
             g2=sm(m,n)/sqrt(eta(m,n)+3*zeta)
             g2=sqrt(g2)
             g2=g2*g2*g2
-            sum=sum+(f1(m,n)*g1+(1.+0.25*alnsign(m,n))*g2)/(sm(m,n)*sm(m,n))
+            thesum=thesum + &
+                 (f1(m,n)*g1+(1.+0.25*alnsign(m,n))*g2)/(sm(m,n)*sm(m,n))
          else
-            sum=1.e20
+            thesum=1.e20
          endif
       end do
       end do
 
-      smax=1./sqrt(sum)
+      smax=1./sqrt(thesum)
 
       return
       end subroutine maxsat
 
+
+
+!----------------------------------------------------------------------
+!----------------------------------------------------------------------
+      subroutine maxsat_init(maxd_atype, ntype_aer, &
+           maxd_asize, nsize_aer, alnsign, f1)
+
+!     Calculates the f1 paramter needed by maxsat.
+
+!     Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+!     2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
+
+      implicit none
+
+      integer, intent(in)  :: maxd_atype
+      integer, intent(in)  :: ntype_aer ! number of aerosol types
+      integer, intent(in)  :: maxd_asize
+      integer, intent(in)  :: nsize_aer(maxd_atype) ! number of size bins
+      real,    intent(in)  :: alnsign(maxd_asize,maxd_atype) ! ln(sigma)
+      real,    intent(out) :: f1(maxd_asize,maxd_atype)
+
+      integer m ! size index
+      integer n ! type index
+
+!  calculate and save f1(sigma), assumes sigma is invariant
+!  between calls to this init routine
+
+      do n=1,ntype_aer
+         do m=1,nsize_aer(n)
+            f1(m,n)=0.5*exp(2.5*alnsign(m,n)*alnsign(m,n))
+         end do
+      end do
+
+      end subroutine maxsat_init
 
 
 
@@ -2345,41 +2354,37 @@ subroutine mixactivate(  msectional,            &
 
 !      input
 
-       integer num_chem ! maximum number of consituents
-       integer k,kmn,kmx
-       real chem(kmn:kmx,num_chem) ! aerosol mass, number mixing ratios
-       real cs  ! air density (kg/m3)
-       real npv ! number per volume concentration (/m3)
-       integer maxd_acomp,ncomp
-       integer numptr_aer,numptrcw_aer
-       integer massptr_aer(maxd_acomp), massptrcw_aer(maxd_acomp)
-       real dens_aer(maxd_acomp) ! aerosol material density (g/cm3)
-       real dlo_sect,dhi_sect ! minimum, maximum diameter of section (cm)
-       integer grid_id, ktau, i, j, isize, itype
+       integer, intent(in) ::  num_chem ! maximum number of consituents
+       integer, intent(in) ::  k,kmn,kmx
+       real,    intent(in) ::  chem(kmn:kmx,num_chem) ! aerosol mass, number mixing ratios
+       real,    intent(in) ::  cs  ! air density (kg/m3)
+       real,    intent(in) ::  npv ! number per volume concentration (/m3)
+       integer, intent(in) ::  maxd_acomp,ncomp
+       integer, intent(in) ::  numptr_aer,numptrcw_aer
+       integer, intent(in) ::  massptr_aer(maxd_acomp), massptrcw_aer(maxd_acomp)
+       real,    intent(in) ::  dens_aer(maxd_acomp) ! aerosol material density (g/cm3)
+       real,    intent(in) ::  dlo_sect,dhi_sect ! minimum, maximum diameter of section (cm)
+       integer, intent(in) ::  grid_id, ktau, i, j, isize, itype
 
 !      output
 
-       real naerosol                ! interstitial number conc (/m3)
-       real naerosolcw              ! activated    number conc (/m3)
-       real maerosol(maxd_acomp)   ! interstitial mass conc (kg/m3)
-       real maerosolcw(maxd_acomp) ! activated    mass conc (kg/m3)
-       real maerosol_tot   ! total-over-species interstitial mass conc (kg/m3)
-       real maerosol_totcw ! total-over-species activated    mass conc (kg/m3)
-       real vaerosol       ! interstitial volume conc (m3/m3)
-       real vaerosolcw     ! activated volume conc (m3/m3)
+       real, intent(out) ::  naerosol                ! interstitial number conc (/m3)
+       real, intent(out) ::  naerosolcw              ! activated    number conc (/m3)
+       real, intent(out) ::  maerosol(maxd_acomp)   ! interstitial mass conc (kg/m3)
+       real, intent(out) ::  maerosolcw(maxd_acomp) ! activated    mass conc (kg/m3)
+       real, intent(out) ::  maerosol_tot   ! total-over-species interstitial mass conc (kg/m3)
+       real, intent(out) ::  maerosol_totcw ! total-over-species activated    mass conc (kg/m3)
+       real, intent(out) ::  vaerosol       ! interstitial volume conc (m3/m3)
+       real, intent(out) ::  vaerosolcw     ! activated volume conc (m3/m3)
 
 !      internal
 
        integer lnum,lnumcw,l,ltype,lmass,lmasscw,lsfc,lsfccw
        real num_at_dhi, num_at_dlo
        real npv_at_dhi, npv_at_dlo
-       real pi
-       real specvol ! inverse aerosol material density (m3/kg)
-! 04-nov-2005 rce - make this more precise
-!      data pi/3.14159/
+       real, save :: pi
        data pi/3.1415926526/
-       save pi
-
+       real specvol ! inverse aerosol material density (m3/kg)
 
           lnum=numptr_aer
           lnumcw=numptrcw_aer

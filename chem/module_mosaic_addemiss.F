@@ -23,19 +23,16 @@ MODULE module_mosaic_addemiss
    integer, parameter :: mosaic_addemiss_masscheck = -1
                        ! only do emissions masscheck calcs when this is positive
 
-   integer, parameter :: mosaic_seasalt_emiss_active = 1
-                       ! only do seasalt emissions when this is positive
-
-
 CONTAINS
 
 
 
 !----------------------------------------------------------------------
    subroutine mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
-               config_flags, chem,                                         &
+               config_flags, chem, slai, ust, smois, ivgtyp, isltyp,       &
                e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,    &
-               e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                   &
+               e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc,     &
+               dust_emiss_active, seasalt_emiss_active,                    &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -59,11 +56,15 @@ CONTAINS
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
 
+   INTEGER, INTENT(IN) ::    dust_emiss_active, seasalt_emiss_active
+
    REAL, INTENT(IN   ) ::    dtstep
 
 ! 10-m wind speed components (m/s)
    REAL,  DIMENSION( ims:ime , jms:jme )         ,                         &
-          INTENT(IN   ) ::   u10, v10, xland
+          INTENT(IN   ) ::   u10, v10, xland, slai, ust
+   INTEGER,  DIMENSION( ims:ime , jms:jme )      ,                         &
+          INTENT(IN   ) ::   ivgtyp, isltyp
 
 ! trace species mixing ratios (aerosol mass = ug/kg-air; number = #/kg-air)
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
@@ -75,11 +76,14 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
          INTENT(IN ) ::                                                    &
           e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,         &
-          e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc
+          e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc
 
 ! 1/(dry air density) and layer thickness (m)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::   alt, dz8w
+
+   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
+          INTENT(INOUT) ::   smois
 
 ! local variables
    integer i, j, k, l, n
@@ -252,16 +256,20 @@ CONTAINS
 	do 1900 n = 1, nsize_aer(itype)
 
 	do 1830 j = jts, jte
-	do 1820 k = kts, min(config_flags%kemit,kte-1)
+	do 1820 k = kts, min(config_flags%kemit,kte)
 	do 1810 i = its, ite
 
 ! compute mass emissions [(ug/m3)*m/s] for each species
 ! using the apportioning fractions
 	aem_so4 = fr_aem_mosaic_f(n)*e_so4j(i,k,j)   &
-	        + fr_aem_mosaic_c(n)*e_so4c(i,k,j)
+	        + fr_aem_mosaic_c(n)*e_so4c(i,k,j)   &
+	        + fr_aem_sorgam_i(n)*e_so4i(i,k,j)   &
+	        + fr_aem_sorgam_j(n)*e_so4j(i,k,j)
 
 	aem_no3 = fr_aem_mosaic_f(n)*e_no3j(i,k,j)   &
-	        + fr_aem_mosaic_c(n)*e_no3c(i,k,j)
+	        + fr_aem_mosaic_c(n)*e_no3c(i,k,j)   &
+	        + fr_aem_sorgam_i(n)*e_no3i(i,k,j)   &
+	        + fr_aem_sorgam_j(n)*e_no3j(i,k,j)
 
 	aem_oc  = fr_aem_mosaic_f(n)*e_orgj(i,k,j)   &
 	        + fr_aem_mosaic_c(n)*e_orgc(i,k,j)   &
@@ -363,13 +371,20 @@ CONTAINS
 
 
 ! do seasalt emissions
-	if (mosaic_seasalt_emiss_active > 0)   &
+	if (seasalt_emiss_active > 0)   &
 	    call mosaic_seasalt_emiss(                                     &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
 
+! do dust emissions
+        if (dust_emiss_active > 0)   &
+            call mosaic_dust_emiss( slai, ust, smois, ivgtyp, isltyp,      &
+               id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
 
 	return
 
@@ -491,7 +506,6 @@ CONTAINS
 	    l = numptr_aer(n,itype,iphase)
 	    if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &
 			factbb * ssemfact_numb(n,itype)
-
 	    end if
 1810	continue
 
@@ -753,6 +767,325 @@ CONTAINS
 
 END MODULE module_mosaic_addemiss
 
+!----------------------------------------------------------------------
+   subroutine mosaic_dust_emiss(  slai,ust, smois, ivgtyp, isltyp,         &
+               id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+!
+! adds dust emissions for mosaic aerosol species
+! This is a simple dust scheme at this point, based more on Mahowald et al., 1999
+! Many things are hard coded in to this first version (e.g. 8 aerosol bins)
+!
+! (i.e., emissions tendencies over time dtstep are applied 
+! to the aerosol mixing ratios)
+!
+
+   USE module_configure, only:  grid_config_rec_type
+   USE module_state_description, only:  num_chem, param_first_scalar
+   USE module_data_mosaic_asect
+
+   IMPLICIT NONE
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER,      INTENT(IN   ) :: id,                                      &
+                                  ids,ide, jds,jde, kds,kde,               &
+                                  ims,ime, jms,jme, kms,kme,               &
+                                  its,ite, jts,jte, kts,kte
+
+   REAL, INTENT(IN   ) ::    dtstep
+
+! 10-m wind speed components (m/s)
+   REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
+          INTENT(IN   ) ::   u10, v10, xland, slai, ust
+   INTEGER,  DIMENSION( ims:ime , jms:jme ),                               &
+          INTENT(IN   ) ::   ivgtyp, isltyp
+
+! trace species mixing ratios (aerosol mass = ug/kg; number = #/kg)
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+         INTENT(INOUT ) ::   chem
+
+! alt  = 1.0/(dry air density) in (m3/kg)
+! dz8w = layer thickness in (m)
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
+          INTENT(IN   ) ::   alt, dz8w
+
+   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,     &
+          INTENT(INOUT) ::   smois
+
+! local variables
+        integer i, j, k, l, l_oin, l_ca, l_co3, n, ii
+        integer iphase, itype, izob
+        integer p1st
+
+        real dum, dumdlo, dumdhi, dumlandfrac, dumspd10
+        real factaa, factbb, fracoin, fracca, fracco3, fractot
+        real ustart, ustar1, ustart0
+        real alphamask, f8, f50, f51, f52, wetfactor, sumdelta, ftot
+        real smois_grav, wp, pclay
+        real :: beta(4,7)
+        real :: gamma(4), delta(4)
+        real :: sz(8)
+        real :: dustflux, densdust, mass1part
+!
+! from Nickovic et al., JGR, 2001 and Shaw et al. 2007
+! beta: fraction of clay, small silt, large silt, and sand correcsponding to Zobler class (7)
+! beta (1,*) for 0.5-1 um
+! beta (2,*) for 1-10 um
+! beta (3,*) for 10-25 um
+! beta (4,*) for 25-50 um
+!
+        beta(1,1)=0.12
+        beta(2,1)=0.04
+        beta(3,1)=0.04
+        beta(4,1)=0.80
+        beta(1,2)=0.34
+        beta(2,2)=0.28
+        beta(3,2)=0.28
+        beta(4,2)=0.10
+        beta(1,3)=0.45
+        beta(2,3)=0.15
+        beta(3,3)=0.15
+        beta(4,3)=0.25
+        beta(1,4)=0.12
+        beta(2,4)=0.09
+        beta(3,4)=0.09
+        beta(4,4)=0.70
+        beta(1,5)=0.40
+        beta(2,5)=0.05
+        beta(3,5)=0.05
+        beta(4,5)=0.50
+        beta(1,6)=0.34
+        beta(2,6)=0.18
+        beta(3,6)=0.18
+        beta(4,6)=0.30
+        beta(1,7)=0.22
+        beta(2,7)=0.09
+        beta(3,7)=0.09
+        beta(4,7)=0.60
+        gamma(1)=0.08
+        gamma(2)=1.00
+        gamma(3)=1.00
+        gamma(4)=0.12
+!
+! * Mass fractions for each size bin. These values were recommended by 
+!   Natalie Mahowold, with bins 7 and 8 the same as bins 3 and 4 from CAM.
+! * Changed slightly since Natelie's estimates do not add up to 1.0
+! * This would need to be made more generic for other bin sizes.
+!       sz(1)=0
+!       sz(2)=1.78751e-06
+!       sz(3)=0.000273786
+!       sz(4)=0.00847978
+!       sz(5)=0.056055
+!       sz(6)=0.0951896
+!       sz(7)=0.17
+!       sz(8)=0.67
+        sz(1)=0.0
+        sz(2)=0.0
+        sz(3)=0.0005
+        sz(4)=0.0095
+        sz(5)=0.03
+        sz(6)=0.10
+        sz(7)=0.18
+        sz(8)=0.68
+
+!   for now just do itype=1
+        itype = 1
+        iphase = ai_phase
+
+!   loop over i,j and apply dust emissions
+        k = kts
+        do 1830 j = jts, jte
+        do 1820 i = its, ite
+
+    if( xland(i,j) > 1.5 ) cycle
+
+! compute wind speed anyway, even though ustar is used below
+
+        dumlandfrac = 1.
+        dumspd10=(u10(i,j)*u10(i,j) + v10(i,j)*v10(i,j))**(0.5)
+        if(dumspd10 >= 5.0) then
+           dumspd10 = dumlandfrac* &
+         ( dumspd10*dumspd10*(dumspd10-5.0))
+         else
+            dumspd10=0.
+         endif
+
+! The parameters are based on Shaw et al. (2007) to be submitted to Atmos. Environ.
+
+! part1 - compute vegetation mask
+!
+! * f8, f50, f51, f52 refer to vegetation classes from the Olsen categories
+!   for desert, sand desert, grass aemi-desert, and shrub semi-desert
+! * in WRF, vegetation types 7, 8 and 10 are grassland, shrubland, and savanna
+!   that are dominate types in Mexico and probably have some erodable surface
+!   during the dry season
+! * currently modified these values so that only a small fraction of cell
+!   area is erodable
+! * these values are highly tuneable!
+
+         alphamask=0.001
+         if (ivgtyp(i,j) .eq. 7) then
+!          f8=0.05
+!          f50=0.05
+!          f51=0.70
+!          f52=0.00
+           f8=0.005
+           f50=0.00
+           f51=0.10
+           f52=0.00
+           alphamask=(f8+f50)*1.0+(f51+f52)*0.5
+         endif
+         if (ivgtyp(i,j) .eq. 8) then
+!          f8=0.10
+!          f50=0.05
+!          f51=0.00
+!          f52=0.85
+           f8=0.010
+           f50=0.00
+           f51=0.00
+           f52=0.15
+           alphamask=(f8+f50)*1.0+(f51+f52)*0.5
+         endif
+         if (ivgtyp(i,j) .eq. 10) then
+!          f8=0.05
+!          f50=0.05
+!          f51=0.50
+!          f52=0.00
+           f8=0.00
+           f50=0.00
+           f51=0.01
+           f52=0.00
+           alphamask=(f8+f50)*1.0+(f51+f52)*0.5
+         endif
+
+! part2 - zobler
+! 
+! * in Shaw's paper, dust is computed for 4 size ranges:
+!   0.5-1 um 
+!    1-10 um  
+!   10-25 um  
+!   25-50 um
+! * Shaw's paper also accounts for sub-grid variability in soil
+!   texture, but here we just assume the same soil texture for each
+!   grid cell
+! * since MOSAIC is currently has a maximum size range up to 10 um,
+!   neglect upper 2 size ranges and lowest size range (assume small)
+! * map WRF soil classes arbitrarily to Zolber soil textural classes
+! * skip dust computations for WRF soil classes greater than 13, i.e. 
+!   do not compute dust over water, bedrock, and other surfaces
+! * should be skipping for water surface at this point anyway
+!
+         izob=0
+         if(isltyp(i,j).eq.1) izob=1
+         if(isltyp(i,j).eq.2) izob=1
+         if(isltyp(i,j).eq.3) izob=4
+         if(isltyp(i,j).eq.4) izob=2
+         if(isltyp(i,j).eq.5) izob=2
+         if(isltyp(i,j).eq.6) izob=2
+         if(isltyp(i,j).eq.7) izob=7
+         if(isltyp(i,j).eq.8) izob=2
+         if(isltyp(i,j).eq.9) izob=6
+         if(isltyp(i,j).eq.10) izob=5
+         if(isltyp(i,j).eq.11) izob=2
+         if(isltyp(i,j).eq.12) izob=3
+         if(isltyp(i,j).ge.13) izob=0
+         if(izob.eq.0) goto 1840
+         beta = 0.28
+!
+! part3 - dustprod
+!
+         do ii=1,4
+           delta(ii)=0.0
+         enddo
+         sumdelta=0.0
+         do ii=1,4
+           delta(ii)=beta(ii,izob)*gamma(ii)
+           if(ii.lt.4) then
+             sumdelta=sumdelta+delta(ii)
+           endif
+         enddo
+         do ii=1,4
+           delta(ii)=delta(ii)/sumdelta
+         enddo
+
+! part4 - wetness
+!
+! * assume dry for now, have passed in soil moisture to this routine
+!   but needs to be included here
+! * wetfactor less than 1 would reduce dustflux
+! * convert model soil moisture (m3/m3) to gravimetric soil moisture
+!   (mass of water / mass of soil in %) assuming a constant density 
+!   for soil
+         pclay=beta(1,izob)*100.
+         wp=0.0014*pclay*pclay+0.17*pclay
+         smois_grav=(smois(i,1,j)/2.6)*100.
+         if(smois_grav.gt.wp) then
+           wetfactor=sqrt(1.0+1.21*(smois_grav-wp)**0.68)
+         else
+           wetfactor=1.0
+         endif
+!        wetfactor=1.0
+
+! part5 - dustflux
+
+         ustar1=ust(i,j)*100.0
+         ustart0=20.0
+         ustart=ustart0*wetfactor
+         if(ustar1.le.ustart) then
+           dustflux=0.0
+         else
+           dustflux=1.0e-14*(ustar1**4)*(1.0-(ustart/ustar1))
+         endif
+         dustflux=dustflux*10.0
+! units kg m-2 s-1
+         ftot=0.0
+         do ii=1,2
+           ftot=ftot+dustflux*alphamask*delta(ii)
+         enddo
+! convert to ug m-2 s-1
+         ftot=ftot*1.0e+09
+
+!   apportion other inorganics only
+         factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
+         factbb = factaa * ftot
+         fracoin = 0.97
+         fracca = 0.03*0.4
+         fracco3 = 0.03*0.6
+         fractot = fracoin + fracca + fracco3
+!   if (ivgtyp(i,j) .eq. 8) print*,'jdf',i,j,ustar1,ustart0,factaa,ftot
+         do 1810 n = 1, nsize_aer(itype)
+            l_oin = lptr_oin_aer(n,itype,iphase)
+            l_ca = lptr_ca_aer(n,itype,iphase)
+            l_co3 = lptr_co3_aer(n,itype,iphase)
+            if (l_oin >= p1st) then
+               chem(i,k,j,l_oin) = chem(i,k,j,l_oin) +      &
+               factbb * sz(n) * fracoin
+               if (l_ca >= p1st)                            &
+                  chem(i,k,j,l_ca) = chem(i,k,j,l_ca) +     &
+                  factbb * sz(n) * fracca
+               if (l_co3 >= p1st)                           &
+                  chem(i,k,j,l_co3) = chem(i,k,j,l_co3) +   &
+                  factbb * sz(n) * fracco3
+! mass1part is mass of a single particle in ug, density of dust ~2.5 g cm-3
+               densdust=2.5
+               mass1part=0.523598*(dcen_sect(n,itype)**3)*densdust*1.0e06
+               l = numptr_aer(n,itype,iphase)
+               if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &
+                        factbb * sz(n) * fractot / mass1part
+            end if
+1810    continue
+
+1840    continue
+
+1820    continue
+1830    continue
+
+        return
+
+   END subroutine mosaic_dust_emiss
 
 
 !----------------------------------------------------------------------
@@ -827,7 +1160,7 @@ END MODULE module_mosaic_addemiss
 	chem_sum(l) = 0.0
 
 	do j = jts, jte
-	do k = kts, kte-1
+	do k = kts, kte
 	do i = its, ite
 	    chem_sum(l) = chem_sum(l) + dble( chem(i,k,j,l)*dz8w(i,k,j) )
 	end do
@@ -846,7 +1179,7 @@ END MODULE module_mosaic_addemiss
 
 	do 2900 l = 1, min(nemit,nemit_maxd)
 	do j = jts, jte
-	do k = kts, min(config_flags%kemit,kte-1)
+	do k = kts, min(config_flags%kemit,kte)
 	do i = its, ite
 	    if (l== 1) emit_sum(l) = emit_sum(l) + e01(i,k,j)
 	    if (l== 2) emit_sum(l) = emit_sum(l) + e02(i,k,j)

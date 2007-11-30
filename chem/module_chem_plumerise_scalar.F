@@ -99,7 +99,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
          enddo
  	
          !- get envinronmental state (temp, water vapor mix ratio, ...)
- 	 call get_env_condition(1,m1-1,kmt)
+ 	 call get_env_condition(1,m1,kmt)
  	    
          !- loop nos 4 biomas agregados com possivel queimada 
  	 do iveg_ag=1,nveg_agreg

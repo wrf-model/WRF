@@ -257,7 +257,7 @@ wki_start_loop( FILE * ofile )
 {
 
    fprintf(ofile,"\n    DO j=jts, jte\n");
-   fprintf(ofile,"    DO k=kts, kte-1\n");
+   fprintf(ofile,"    DO k=kts, kte\n");
    fprintf(ofile,"    DO i=its, ite\n\n\n");
 }
 

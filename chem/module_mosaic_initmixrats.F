@@ -1346,7 +1346,8 @@
 	qfine_ca  = mult*0.0
 	qcoar_ca  = mult*0.0
 !	qfine_oin = mult*6.2
-	qfine_oin = 3.48     ! 10-May-2005
+!	qfine_oin = 3.48     ! 10-May-2005
+	qfine_oin = mult*3.48     ! not sure why mult was dropped from qfine_oin
 	qcoar_oin = mult*0.35
 	qfine_oc  = mult*1.00
 	qcoar_oc  = mult*1.50

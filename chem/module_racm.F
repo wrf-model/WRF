@@ -84,8 +84,8 @@
       INTEGER :: i,j,k,iprt, jce, jcs, n, nr, ipr,jpr,nvr
 ! ..
 ! .. Local Arrays ..
-      REAL :: p(kts:kte-1), rh(kts:kte-1),       &
-        t(kts:kte-1), vcinp(nspec),wlc(kts:kte-1),p1,wvap
+      REAL :: p(kts:kte), rh(kts:kte),       &
+        t(kts:kte), vcinp(nspec),wlc(kts:kte),p1,wvap
         REAL*8 :: t_in,t_end, rj(nphot)
       real :: PRDROG(ldrog)
 	REAL*8 :: ATOL,rtol,temp

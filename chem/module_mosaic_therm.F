@@ -23,7 +23,8 @@
 
 
 
-!   zz01aerchemistry.f (mosaic.21.0)
+!   zz01aerchemistry.f (mosaic.22.0)
+!   30-apr-07 raz - made about a dozen changes/bug fixes. search for "raz-30apr07" to see the changes
 !   05-feb-07 wig - converted to double
 !   10-jan-07 raz - contains major revisions and updates. new module ASTEM replaces ASTEEM.
 !   04-aug-06 raz - fixed bugs in asteem_flux_mix_case3a and asteem_flux_mix_case3b
@@ -1593,10 +1594,13 @@
 
       call calculate_xt(ibin,jtotal,xt)
 
-      crh = 0.1
+      crh = 0.35  ! raz-30apr07
 
 ! step 1: check if ah2o is below crh (crystallization or efflorescence point)
-      if(ah2o_a(ibin).lt.crh .and. (xt.gt.1.0 .or. xt.lt.0.))then
+      if( (ah2o_a(ibin) .lt. crh)   .and. &
+          (xt.gt.1.0 .or. xt.lt.0.) .and. &
+          (epercent(jcano3,jtotal,ibin) .le. ptol_mol_astem) .and. &
+          (epercent(jcacl2,jtotal,ibin) .le. ptol_mol_astem) )then     ! raz-30apr07
         jaerosolstate(ibin) = all_solid
         jphase(ibin)    = jsolid
         jhyst_leg(ibin) = jhyst_lo
@@ -3660,26 +3664,7 @@
            sum_kg_phi, sumflux_s
 
 
-      h_sub_max = 150.0	! sec
-
-
-! set alpha_gas
-      do ibin = 1, nbin_a
-        do iv = 2, ngas_ioa
-
-          if(flux_s(iv,ibin) .gt. 0.0)then
-
-            alpha_gas(iv) = max( abs(phi_volatile_s(iv,ibin)), &
-                                     alpha_ASTEM )
-            alpha_gas(iv) = min(alpha_gas(iv), 0.5D0)
-
-          endif
-
-        enddo
-      enddo
-        
-
-
+      h_sub_max = 100.0	! sec  raz-30apr07
 
 
 ! gas-side
@@ -3699,7 +3684,7 @@
         enddo
         
         if(sumflux_s .gt. 0.0)then
-          h_gas_i(iv) = alpha_gas(iv)*gas(iv)/sumflux_s
+          h_gas_i(iv) = 0.1*gas(iv)/sumflux_s     ! raz-30apr07
           h_gas_s     = min(h_gas_s, h_gas_i(iv))
         endif
 
@@ -4564,8 +4549,8 @@
 
 
 ! compute Heff
-      dum_hno3 = min(sfc_a(ihno3_g), gas(ihno3_g))
-      dum_hcl  = min(sfc_a(ihcl_g), gas(ihcl_g))
+      dum_hno3 = max(sfc_a(ihno3_g), gas(ihno3_g)) ! raz-30apr07
+      dum_hcl  = max(sfc_a(ihcl_g), gas(ihcl_g))   ! raz-30apr07
 
 ! compute relative driving forces
       if(dum_hno3 .gt. 0.0)then
@@ -6245,6 +6230,8 @@
 
       gam(jnamsa,ibin)  = 1.0
 
+      gam(jcamsa2,ibin) = 1.0  ! raz-30apr07
+
       activity(jlvcite,ibin) = 0.0
 
       activity(jnh4hso4,ibin)= 0.0
@@ -6256,9 +6243,12 @@
 
       activity(jnahso4,ibin) = 0.0
 
-      activity(jnh4msa,ibin) = mc(jc_na,ibin)*ma(ja_msa,ibin)* &
+      activity(jnamsa,ibin) = mc(jc_na,ibin)*ma(ja_msa,ibin)* &  ! raz-30apr07
                                gam(jnamsa,ibin)**2
       
+      activity(jcamsa2,ibin) = mc(jc_ca,ibin) * ma(ja_msa,ibin)**2 * &  ! raz-30apr07
+                               gam(jcamsa2,ibin)**3
+
       gam_ratio(ibin) = gam(jnh4no3,ibin)**2/gam(jhno3,ibin)**2
 
 
@@ -6447,7 +6437,7 @@
 
       gam(jnh4msa,ibin) = 1.0
       gam(jnamsa,ibin)  = 1.0
-
+      gam(jcamsa2,ibin) = 1.0  ! raz-30apr07
 
 
 ! compute equilibrium pH
@@ -6467,7 +6457,7 @@
       gam_ratio(ibin)  = gam(jnh4hso4,ibin)**2/gam(jhhso4,ibin)**2
       dumK = Keq_ll(1)*gam(jhhso4,ibin)**2/gam(jh2so4,ibin)**3
       
-      c_bal =  mc(jc_nh4,ibin) + mc(jc_na,ibin)  &
+      c_bal =  mc(jc_nh4,ibin) + mc(jc_na,ibin) + 2.*mc(jc_ca,ibin) & ! raz-30apr07
          - ma(ja_no3,ibin) - ma(ja_cl,ibin) - mSULF - ma(ja_msa,ibin)
       
       aq = 1.0
@@ -6497,6 +6487,9 @@
       ma(ja_so4,ibin) = mSULF*dumK/(mc(jc_h,ibin) + dumK)
       ma(ja_hso4,ibin)= mSULF - ma(ja_so4,ibin)
 
+
+      activity(jcamsa2,ibin) = mc(jc_ca,ibin) * ma(ja_msa,ibin)**2 * & ! raz-30apr07
+                               gam(jcamsa2,ibin)**3
 
       activity(jnh4so4,ibin) = mc(jc_nh4,ibin)**2*ma(ja_so4,ibin)* &
                                gam(jnh4so4,ibin)**3

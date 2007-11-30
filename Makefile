@@ -281,6 +281,15 @@ bio_conv : wrf
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
 		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
+bioemiss_conv_megan2 : wrf
+	@ echo '--------------------------------------'
+	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_bioemiss_megan2 )
+	( cd test/em_real ; /bin/rm -f convert_bioemiss_megan2.exe ; ln -s ../../chem/convert_bioemiss_megan2.exe . )
+	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; if test -f namelist.input ; then \
+	        /bin/cp -f namelist.input namelist.input.backup ; fi ; \
+	        /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+
 #### nmm converter
 
 nmm_real : nmm_wrf

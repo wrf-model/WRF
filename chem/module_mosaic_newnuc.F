@@ -73,7 +73,7 @@
 	integer :: iconform_numb
 	integer :: idiagbb
 	integer :: nsize, ntau_nuc
-	integer :: ncount(10)
+	integer, save :: ncount(10)
 	integer :: p1st
 
 	real, parameter :: densdefault = 2.0

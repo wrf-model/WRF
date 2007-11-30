@@ -137,21 +137,23 @@
     end do
     end do
 
-!
-!   compute par initial mixing ratio from radm2 hydrocarbon species
-!   using same formula as for par emissions
-!
-	do j = jts, min(jte,jde-1)
-	do k = kts, kte
-	do i = its, min(ite,ide-1)
-	    chem(i,k,j,p_par) =                               &
-		  0.4*chem(i,k,j,p_ald) + 2.9*chem(i,k,j,p_hc3)   &
-		+ 4.8*chem(i,k,j,p_hc5) + 7.9*chem(i,k,j,p_hc8)   &
-		+ 0.9*chem(i,k,j,p_ket) + 2.8*chem(i,k,j,p_oli)   &
-		+ 1.8*chem(i,k,j,p_olt) + 1.0*chem(i,k,j,p_ora2) 
-	end do
-	end do
-	end do
+!wig, 2-May-2007: Moved this logic to make_chem_profile so this species
+!                 will now come in via the real.exe generated wrfinput.
+!!$!
+!!$!   compute par initial mixing ratio from radm2 hydrocarbon species
+!!$!   using same formula as for par emissions
+!!$!
+!!$	do j = jts, min(jte,jde-1)
+!!$	do k = kts, kte
+!!$	do i = its, min(ite,ide-1)
+!!$	    chem(i,k,j,p_par) =                               &
+!!$		  0.4*chem(i,k,j,p_ald) + 2.9*chem(i,k,j,p_hc3)   &
+!!$		+ 4.8*chem(i,k,j,p_hc5) + 7.9*chem(i,k,j,p_hc8)   &
+!!$		+ 0.9*chem(i,k,j,p_ket) + 2.8*chem(i,k,j,p_oli)   &
+!!$		+ 1.8*chem(i,k,j,p_olt) + 1.0*chem(i,k,j,p_ora2) 
+!!$	end do
+!!$	end do
+!!$	end do
 
 	return
 	end subroutine cbmz_init_wrf_mixrats  
@@ -170,8 +172,8 @@
 !    for gas species that are common to both cbmz and radm2, the boundary
 !	values are provided by subr bdy_chem_value
 !    for gas species that are in cbmz but not in radm2, the boundary values
-!	are provided here
-!    currently only "par" has a non-zero boundary value,
+!	are provided here, except for par
+!    currently only "hcl" has a non-zero boundary value,
 !	and other species are near-zero
 !
 ! this is outside of the module declaration because of potential
@@ -211,9 +213,12 @@
 
     else if( nch == p_par ) then
        call bdy_chem_value( chem_bv_ald,  z, p_ald, numgas )
-       call bdy_chem_value( chem_bv_hc3,  z, p_hc3, numgas )
-       call bdy_chem_value( chem_bv_hc5,  z, p_hc5, numgas )
-       call bdy_chem_value( chem_bv_hc8,  z, p_hc8, numgas )
+!wig, 2-May-2007: begin
+       ! The extra +1 offsets the blank first index for p_XXX
+       call bdy_chem_value( chem_bv_hc3,  z, numgas+1+1, numgas )
+       call bdy_chem_value( chem_bv_hc5,  z, numgas+1+2, numgas )
+       call bdy_chem_value( chem_bv_hc8,  z, numgas+1+3, numgas )
+!wig, 2-May-2007: end
        call bdy_chem_value( chem_bv_ket,  z, p_ket, numgas )
        call bdy_chem_value( chem_bv_oli,  z, p_oli, numgas )
        call bdy_chem_value( chem_bv_olt,  z, p_olt, numgas )

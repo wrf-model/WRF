@@ -3836,7 +3836,7 @@ CONTAINS
         do k=kts,ktf
         do i=its,itf
           pw(i,k)=0.
-          qc(i,k)=qes_cup(i,k)
+          if(ierr(i).eq.0)qc(i,k)=qes_cup(i,k)
           clw_all(i,k)=0.
           qrc(i,k)=0.
         enddo

@@ -1824,7 +1824,7 @@
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
-                ITS,ITE, JTS,JTE, KTS,KTE                                   )
+                ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
                
         CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
            CALL SUM_PM_MOSAIC (                                             &
@@ -1832,7 +1832,7 @@
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
-                ITS,ITE, JTS,JTE, KTS,KTE                                   )
+                ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
                
         CASE DEFAULT
            DO J=JTS,MIN(JTE,JDE-1)

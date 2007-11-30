@@ -870,7 +870,7 @@
             enddo
          enddo
 
-         CALL chem_init (grid%id,chem,grid%dt,grid%bioemdt,grid%photdt,     &
+         CALL chem_init (grid%id,chem,scalar,grid%dt,grid%bioemdt,grid%photdt,     &
                          grid%chemdt,                                       &
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
                          grid%plumerisefire_frq,z_at_w,g,grid%aerwrf,config_flags,            &
@@ -897,7 +897,7 @@
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
-                its,ite, jts,jte, kts,kte                                   )
+                its,ite, jts,jte, kts,kte-1                                 )
 
         case (CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
            call sum_pm_mosaic (                                             &
@@ -905,7 +905,7 @@
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
-                its,ite, jts,jte, kts,kte                                   )
+                its,ite, jts,jte, kts,kte-1                                 )
 
         case default
            do j=jts,min(jte,jde-1)

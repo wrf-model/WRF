@@ -81,42 +81,60 @@ state    real  firesize_agsv      ij      misc           1         -      i05h  
 state    real  firesize_aggr      ij      misc           1         -      i05h     "firesize_aggr"         "mean firesize for grassland"  "?"
 
 #
-state    real  e_bio          ijo     misc        1         -      -        "E_BIO"               "EMISSIONS"          "ppm m/min"
-state    real  sebio_iso      ij      misc        1         -      i04      "sebio_iso"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_oli      ij      misc        1         -      i04      "sebio_oli"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_api      ij      misc        1         -      i04      "sebio_api"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_lim      ij      misc        1         -      i04      "sebio_lim"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_xyl      ij      misc        1         -      i04      "sebio_xyl"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_hc3      ij      misc        1         -      i04      "sebio_hc3"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ete      ij      misc        1         -      i04      "sebio_ete"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_olt      ij      misc        1         -      i04      "sebio_olt"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ket      ij      misc        1         -      i04      "sebio_ket"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ald      ij      misc        1         -      i04      "sebio_ald"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_hcho     ij      misc        1         -      i04      "sebio_hcho"        "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_eth      ij      misc        1         -      i04      "sebio_eth"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_ora2     ij      misc        1         -      i04      "sebio_ora2"        "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_co       ij      misc        1         -      i04      "sebio_co"          "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_nr       ij      misc        1         -      i04      "sebio_nr"          "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  noag_grow      ij      misc        1         -      i04      "noag_grow"         "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  noag_nongrow   ij      misc        1         -      i04      "noag_nongrow"      "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  nononag        ij      misc        1         -      i04      "nononag"           "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  slai           ij      misc        1         -      i04      "slai"              "Leaf area index isop"  ""
+state    real  e_bio          ijo     misc        1         Z      r        "E_BIO"             "EMISSIONS"             "ppm m/min"
+state    real  sebio_iso      ij      misc        1         -      i04r     "sebio_iso"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_oli      ij      misc        1         -      i04r     "sebio_oli"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_api      ij      misc        1         -      i04r     "sebio_api"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_lim      ij      misc        1         -      i04r     "sebio_lim"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_xyl      ij      misc        1         -      i04r     "sebio_xyl"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_hc3      ij      misc        1         -      i04r     "sebio_hc3"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ete      ij      misc        1         -      i04r     "sebio_ete"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_olt      ij      misc        1         -      i04r     "sebio_olt"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ket      ij      misc        1         -      i04r     "sebio_ket"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ald      ij      misc        1         -      i04r     "sebio_ald"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_hcho     ij      misc        1         -      i04r     "sebio_hcho"        "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_eth      ij      misc        1         -      i04r     "sebio_eth"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_ora2     ij      misc        1         -      i04r     "sebio_ora2"        "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_co       ij      misc        1         -      i04r     "sebio_co"          "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_nr       ij      misc        1         -      i04r     "sebio_nr"          "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  noag_grow      ij      misc        1         -      i04r     "noag_grow"         "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  noag_nongrow   ij      misc        1         -      i04r     "noag_nongrow"      "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  nononag        ij      misc        1         -      i04r     "nononag"           "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  slai           ij      misc        1         -      i04r     "slai"              "Leaf area index isop"  ""
 state    real  ebio_iso       ij      misc        1         -      h        "EBIO_ISO"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_oli       ij      misc        1         -      -        "ebio_oli"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_api       ij      misc        1         -      -        "ebio_api"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_lim       ij      misc        1         -      -        "ebio_lim"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_xyl       ij      misc        1         -      -        "ebio_xyl"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_hc3       ij      misc        1         -      -        "ebio_hc3"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_ete       ij      misc        1         -      -        "ebio_ete"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_olt       ij      misc        1         -      -        "ebio_olt"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_ket       ij      misc        1         -      -        "ebio_ket"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_ald       ij      misc        1         -      -        "ebio_ald"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_hcho      ij      misc        1         -      -        "ebio_hcho"        "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_eth       ij      misc        1         -      -        "ebio_eth"         "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_ora2      ij      misc        1         -      -        "ebio_ora2"        "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_co        ij      misc        1         -      -        "ebio_co"          "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_nr        ij      misc        1         -      -        "ebio_nr"          "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_no        ij      misc        1         -      -        "ebio_no"          "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_oli       ij      misc        1         -      h        "ebio_oli"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_api       ij      misc        1         -      h        "ebio_api"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_lim       ij      misc        1         -      h        "ebio_lim"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_xyl       ij      misc        1         -      h        "ebio_xyl"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_hc3       ij      misc        1         -      h        "ebio_hc3"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ete       ij      misc        1         -      h        "ebio_ete"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_olt       ij      misc        1         -      h        "ebio_olt"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ket       ij      misc        1         -      h        "ebio_ket"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ald       ij      misc        1         -      h        "ebio_ald"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_hcho      ij      misc        1         -      h        "ebio_hcho"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_eth       ij      misc        1         -      h        "ebio_eth"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ora2      ij      misc        1         -      h        "ebio_ora2"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_co        ij      misc        1         -      h        "ebio_co"          "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_nr        ij      misc        1         -      h        "ebio_nr"          "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_no        ij      misc        1         -      h        "ebio_no"          "Actual biog emiss"  "mol km^-2 hr^-1"
+# Output of selected biogenic emissions from model MEGAN v2
+state    real  mebio_isop     ij      misc        1         -      h        "MEBIO_ISOP"       "MEGAN2 isoprene emiss" "mol km^-2 hr^-1"
+state    real  mebio_apin     ij      misc        1         -      h        "MEBIO_APIN"       "MEGAN2 a-pinene emiss" "mol km^-2 hr^-1"
+state    real  mebio_bpin     ij      misc        1         -      h        "MEBIO_BPIN"       "MEGAN2 b-pinene emiss" "mol km^-2 hr^-1"
+state    real  mebio_bcar     ij      misc        1         -      h        "MEBIO_BCAR"       "MEGAN2 b-caryop emiss" "mol km^-2 hr^-2"
+state    real  mebio_acet     ij      misc        1         -      h        "MEBIO_ACET"       "MEGAN2 acetone emiss"  "mol km^-2 hr^-2"
+state    real  mebio_mbo      ij      misc        1         -      h        "MEBIO_MBO"        "MEGAN2 MBO emiss"      "mol km^-2 hr^-2"
+state    real  mebio_no       ij      misc        1         -      h        "MEBIO_NO"         "MEGAN2 NO emiss"       "mol km^-2 hr^-2"
+# Input for biogenic emissions model MEGAN v2
+state    real  msebio_isop    ij      misc        1         -      i04r     "msebio_isop"      "MEGAN2 isoprone emis fac"  "mol km^-2 hr^-1"
+state    real  mlai           ijm     misc        1         Z      i04r     "mlai"             "Monthly Leaf area index for MEGAN2"  ""
+state    real  pftp_bt        ij      misc        1         -      i04r     "pftp_bt"          "MEGAN2 PFT Broadleaf %"  "%"
+state    real  pftp_nt        ij      misc        1         -      i04r     "pftp_nt"          "MEGAN2 PFT Needleleaf %"  "%"
+state    real  pftp_sb        ij      misc        1         -      i04r     "pftp_sb"          "MEGAN2 PFT Shrub and Bush %"  "%"
+state    real  pftp_hb        ij      misc        1         -      i04r     "pftp_hb"          "MEGAN2 PFT Herbs %"  "%"
+state    real  mtsa           ijm     misc        1         Z      i04r     "mtsa"             "Monthly surface air temp"  "K"
+state    real  mswdown        ijm     misc        1         Z      i04r     "mswdown"          "Monthly SWdown"  "W/m2"
+state    real  EFmegan        ij?     misc        1         -      -        "EFmegan"          "MEGAN2 Emis Factor"       "ug m^-2 hr^-1"
 #
 # following used for output to look at all kinds of stuff
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
@@ -124,9 +142,9 @@ state    real  cu_co_ten      ikj     misc        1         -      -        "CU_
 # aerosol stuff
 state    real  aerwrf         ikj     misc        1         -      r        "AERWRF"                "STANDARD AEROSOL PROFILE"            "?"
 
-state    real  pm2_5_dry      ikj     misc        1         -      hr       "PM2_5_DRY"             "pm2.5 aerosol dry mass"              "ug m^-3"
-state    real  pm2_5_dry_ec   ikj     misc        1         -      r        "PM2_5_EC_DRY"          "dry ec aerosol mass"                 "ug m^-3"
-state    real  pm2_5_water    ikj     misc        1         -      r        "PM2_5_WATER"           "pm2.5 aerosol liquid water content"  "ug m^-3"
+state    real  pm2_5_dry      ikj     misc        1         -      rh       "PM2_5_DRY"             "pm2.5 aerosol dry mass"              "ug m^-3"
+state    real  pm2_5_dry_ec   ikj     misc        1         -      rh       "PM2_5_EC_DRY"          "dry ec aerosol mass"                 "ug m^-3"
+state    real  pm2_5_water    ikj     misc        1         -      rh       "PM2_5_WATER"           "pm2.5 aerosol liquid water content"  "ug m^-3"
 state    real  pm10           ikj     misc        1         -      h        "pm10 "                 "pm10 dry mass"                       "ug m^-3"
 state    real  uvrad          ij      misc        1         -      -        "uv_rad "               "uvb net-radiation"                   "W m^-2"
 
@@ -156,18 +174,18 @@ state    real  ph_macr         ikj     misc        1         -      r        "PH
 state    real  ph_n2o5         ikj     misc        1         -      r        "PHOTR23"               "N2O5 Photolysis Rate" "min{-1}"
 state    real  ph_o2           ikj     misc        1         -      r        "PHOTR24"               "O2 Photolysis Rate" "min{-1}"
 # Aerosol optical properties from Mie code
-state    real  tauaer1         ikj     misc        1         -      r        "TAUAER1"               "bin 1 layer optical thickness" "?"
-state    real  tauaer2         ikj     misc        1         -      r        "TAUAER2"               "bin 2 layer optical thickness" "?"
-state    real  tauaer3         ikj     misc        1         -      r        "TAUAER3"               "bin 3 layer optical thickness" "?"
-state    real  tauaer4         ikj     misc        1         -      r        "TAUAER4"               "bin 4 layer optical thickness" "?"
-state    real  gaer1           ikj     misc        1         -      r        "GAER1"                 "bin 1 layer assymetry parameter" "?"
-state    real  gaer2           ikj     misc        1         -      r        "GAER2"                 "bin 2 layer assymetry parameter" "?"
-state    real  gaer3           ikj     misc        1         -      r        "GAER3"                 "bin 3 layer assymetry parameter" "?"
-state    real  gaer4           ikj     misc        1         -      r        "GAER4"                 "bin 4 layer assymetry parameter" "?"
-state    real  waer1           ikj     misc        1         -      r        "WAER1"                 "bin 1 layer single-scattering albedo" "?"
-state    real  waer2           ikj     misc        1         -      r        "WAER2"                 "bin 2 layer single-scattering albedo" "?"
-state    real  waer3           ikj     misc        1         -      r        "WAER3"                 "bin 3 layer single-scattering albedo" "?"
-state    real  waer4           ikj     misc        1         -      r        "WAER4"                 "bin 4 layer single-scattering albedo" "?"
+state    real  tauaer1         ikj     misc        1         -      hr        "TAUAER1"               "bin 1 layer optical thickness" "?"
+state    real  tauaer2         ikj     misc        1         -      hr        "TAUAER2"               "bin 2 layer optical thickness" "?"
+state    real  tauaer3         ikj     misc        1         -      hr        "TAUAER3"               "bin 3 layer optical thickness" "?"
+state    real  tauaer4         ikj     misc        1         -      hr        "TAUAER4"               "bin 4 layer optical thickness" "?"
+state    real  gaer1           ikj     misc        1         -      hr        "GAER1"                 "bin 1 layer assymetry parameter" "?"
+state    real  gaer2           ikj     misc        1         -      hr        "GAER2"                 "bin 2 layer assymetry parameter" "?"
+state    real  gaer3           ikj     misc        1         -      hr        "GAER3"                 "bin 3 layer assymetry parameter" "?"
+state    real  gaer4           ikj     misc        1         -      hr        "GAER4"                 "bin 4 layer assymetry parameter" "?"
+state    real  waer1           ikj     misc        1         -      hr        "WAER1"                 "bin 1 layer single-scattering albedo" "?"
+state    real  waer2           ikj     misc        1         -      hr        "WAER2"                 "bin 2 layer single-scattering albedo" "?"
+state    real  waer3           ikj     misc        1         -      hr        "WAER3"                 "bin 3 layer single-scattering albedo" "?"
+state    real  waer4           ikj     misc        1         -      hr        "WAER4"                 "bin 4 layer single-scattering albedo" "?"
 
 # non-transported aerosol variables
 state    real  h2oaj           ikj     misc        1         -      r        "h2oaj"                 "Aerosol water conc. Acc.mode"         "?"
@@ -630,32 +648,34 @@ rconfig   integer     io_form_emissions   namelist,chem        1              2 
 rconfig   real    BIOEMDT                 namelist,chem        max_domains          0       h    "BIOEMDT"          "" ""
 rconfig   real    PHOTDT                  namelist,chem        max_domains          0       h    "PHOTDT"          ""  ""
 rconfig   real    CHEMDT                  namelist,chem        max_domains          0       h    "CHEMDT"          ""  ""
-rconfig   integer ne_area                 namelist,chem                  1           41       irh    "ne_area"               ""      ""
+rconfig   integer ne_area                 namelist,chem                  1      41      irh    "ne_area"               ""      ""
 rconfig   integer kemit                   namelist,chem                  1             9       irh   "kemit"                 ""      ""
+rconfig   integer nmegan                  namelist,chem                  1      138     irh    "nmegan"                ""      ""
+
 # Default chemistry settings are: passive/prescribed aerosols (chem_opt=0)
 #                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
 #                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
 #                                 vertical mixing turned on (vertmix_onoff=1) since this is done via the dry deposition routine and works with all chem options
-rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh       "chem_conv_opt"              ""      ""
-rconfig   integer     chem_opt            namelist,chem          max_domains    0       rh       "chem_opt"              ""      ""
-rconfig   integer     gaschem_onoff       namelist,chem          max_domains    1       rh    "gaschem_onoff"            ""      ""
-rconfig   integer     aerchem_onoff       namelist,chem          max_domains    1       rh    "aerchem_onoff"            ""      ""
-rconfig   integer     wetscav_onoff       namelist,chem          max_domains    0       rh    "wetscav_onoff"            ""      ""
-rconfig   integer     cldchem_onoff       namelist,chem          max_domains    0       rh    "cldchem_onoff"            ""      ""
-rconfig   integer     vertmix_onoff       namelist,chem          max_domains    1       rh    "vertmix_onoff"            ""      ""
-rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh       "chem_in_opt"     ""      ""
-rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh       "phot_opt"        ""      ""
-rconfig   integer     drydep_opt          namelist,chem          max_domains    0       rh       "drydep_opt"      ""      ""
-rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh       "bio_emiss_opt"   ""      ""
-rconfig   integer     biomass_burn_opt    namelist,chem          max_domains    0       rh       "biomass_burn_opt"   ""      ""
-rconfig   integer     plumerisefire_frq   namelist,chem          max_domains    180     rh       "plumerisefire_frq"   ""      ""
-rconfig   integer     emiss_inpt_opt      namelist,chem          max_domains    1       rh       "emiss_inpt_opt"  ""      ""
-rconfig   integer     gas_bc_opt          namelist,chem          max_domains    1       rh       "gas_bc_opt"      ""      ""
-rconfig   integer     gas_ic_opt          namelist,chem          max_domains    1       rh       "gas_ic_opt"      ""      ""
-rconfig   integer     aer_bc_opt          namelist,chem          max_domains    1       rh       "aer_bc_opt"      ""      ""
-rconfig   integer     aer_ic_opt          namelist,chem          max_domains    1       rh       "aer_ic_opt"      ""      ""
-rconfig   logical have_bcs_chem           namelist,chem          max_domains    .false. rh    "have_bcs_chem"                ""      ""
-rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"          ""      ""
+rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh    "chem_conv_opt"       ""      ""
+rconfig   integer     chem_opt            namelist,chem          max_domains    0       rh    "chem_opt"            ""      ""
+rconfig   integer     gaschem_onoff       namelist,chem          max_domains    1       rh    "gaschem_onoff"       ""      ""
+rconfig   integer     aerchem_onoff       namelist,chem          max_domains    1       rh    "aerchem_onoff"       ""      ""
+rconfig   integer     wetscav_onoff       namelist,chem          max_domains    0       rh    "wetscav_onoff"       ""      ""
+rconfig   integer     cldchem_onoff       namelist,chem          max_domains    0       rh    "cldchem_onoff"       ""      ""
+rconfig   integer     vertmix_onoff       namelist,chem          max_domains    1       rh    "vertmix_onoff"       ""      ""
+rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh    "chem_in_opt"         ""      ""
+rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
+rconfig   integer     drydep_opt          namelist,chem          max_domains    0       rh    "drydep_opt"          ""      ""
+rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh    "bio_emiss_opt"       ""      ""
+rconfig   integer     biomass_burn_opt    namelist,chem          max_domains    0       rh    "biomass_burn_opt"    ""      ""
+rconfig   integer     plumerisefire_frq   namelist,chem          max_domains    180     rh    "plumerisefire_frq"   ""      ""
+rconfig   integer     emiss_inpt_opt      namelist,chem          max_domains    1       rh    "emiss_inpt_opt"      ""      ""
+rconfig   integer     gas_bc_opt          namelist,chem          max_domains    1       rh    "gas_bc_opt"          ""      ""
+rconfig   integer     gas_ic_opt          namelist,chem          max_domains    1       rh    "gas_ic_opt"          ""      ""
+rconfig   integer     aer_bc_opt          namelist,chem          max_domains    1       rh    "aer_bc_opt"          ""      ""
+rconfig   integer     aer_ic_opt          namelist,chem          max_domains    1       rh    "aer_ic_opt"          ""      ""
+rconfig   logical     have_bcs_chem       namelist,chem          max_domains    .false. rh    "have_bcs_chem"       ""      ""
+rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -664,12 +684,16 @@ package   radm2         chem_opt==1                  -             chem:so2,sulf
 package   radm2sorg     chem_opt==2                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 package   racm          chem_opt==3                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2
 package   racmsorg      chem_opt==4                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
-package   cbmz          chem_opt==5                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf
-package   cbmz_bb       chem_opt==6                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
-package   cbmz_mosaic_4bin chem_opt==7               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
-package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08
-package   cbmz_mosaic_4bin_aq  chem_opt==9             -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04
-package   cbmz_mosaic_8bin_aq  chem_opt==10            -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04,so4_cw05,no3_cw05,cl_cw05,nh4_cw05,na_cw05,oin_cw05,oc_cw05,bc_cw05,num_cw05,so4_cw06,no3_cw06,cl_cw06,nh4_cw06,na_cw06,oin_cw06,oc_cw06,bc_cw06,num_cw06,so4_cw07,no3_cw07,cl_cw07,nh4_cw07,na_cw07,oin_cw07,oc_cw07,bc_cw07,num_cw07,so4_cw08,no3_cw08,cl_cw08,nh4_cw08,na_cw08,oin_cw08,oc_cw08,bc_cw08,num_cw08
+
+package   cbmz          chem_opt==5                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf
+package   cbmz_bb       chem_opt==6                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
+package   cbmz_mosaic_4bin chem_opt==7               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
+package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08
+#Alternative cbmz_moszic_8bin with dust chemistry (ca & co aerosol)
+#package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,ca_a01,ca_a02,ca_a03,ca_a04,ca_a05,ca_a06,ca_a07,ca_a08,co3_a01,co3_a02,co3_a03,co3_a04,co3_a05,co3_a06,co3_a07,co3_a08
+package   cbmz_mosaic_4bin_aq  chem_opt==9           -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04
+package   cbmz_mosaic_8bin_aq  chem_opt==10          -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04,so4_cw05,no3_cw05,cl_cw05,nh4_cw05,na_cw05,oin_cw05,oc_cw05,bc_cw05,num_cw05,so4_cw06,no3_cw06,cl_cw06,nh4_cw06,na_cw06,oin_cw06,oc_cw06,bc_cw06,num_cw06,so4_cw07,no3_cw07,cl_cw07,nh4_cw07,na_cw07,oin_cw07,oc_cw07,bc_cw07,num_cw07,so4_cw08,no3_cw08,cl_cw08,nh4_cw08,na_cw08,oin_cw08,oc_cw08,bc_cw08,num_cw08
+
 package   radm2sorg_aq chem_opt==11                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 package   racmsorg_aq  chem_opt==12                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 package   chem_tracer   chem_opt==13                 -             chem:so2,no,ald,hcho,ora2,co
@@ -697,6 +721,7 @@ package   photfastj     phot_opt==2                  -             -
 package   wesely        drydep_opt==1                -             -
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis311       bio_emiss_opt==2             -             -
+package   megan2        bio_emiss_opt==3             -             -
 package   biomassb      biomass_burn_opt==1             -             -
 
 # emiss_inpt_default        = radm2-sorgam emissions in "standard(=grell)" wrf-chem

@@ -627,6 +627,10 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
+              else IF( nested_grid%bio_emiss_opt == 3 ) THEN !shc
+                 message = 'READING MEGAN 2 EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
               endif
 !           ELSE
 !             message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'

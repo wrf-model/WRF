@@ -189,10 +189,10 @@ CONTAINS
 
 ! scavenging cloud-phase aerosol assuming precip falls to surface
       do 100 j=jts,jte
-      do k=kts,kte-1
+      do k=kts,kte
          pdel(:,k,j)=p8w(:,k,j)-p8w(:,k+1,j)
       end do
-      pdel(:,kte,j)=pdel(:,kte-1,j)
+!wig      pdel(:,kte,j)=pdel(:,kte-1,j)
       do 100 k=kts,kte
       do 100 i=its,ite
          scale=max((1.-dtstepc*qlsink(i,k,j)),0.)
@@ -437,18 +437,18 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
    integer, intent(in)  :: jts,jte            ! column identifier
    real, intent(in) :: deltat           ! model timestep
 
-   real, intent(in) :: t(ims:ime,kts:kte,jms:jme)    ! temperature
-   real, intent(in) :: pmid(ims:ime,kts:kte,jms:jme) ! pressure at model levels
-   real, intent(in) :: pdel(ims:ime,kts:kte,jms:jme) ! pressure thickness of levels
-   real, intent(in) :: chem(ims:ime,kts:kte,jms:jme,num_chem) ! chem array
+   real, intent(in) :: t(ims:ime,kms:kme,jms:jme)    ! temperature
+   real, intent(in) :: pmid(ims:ime,kms:kme,jms:jme) ! pressure at model levels
+   real, intent(in) :: pdel(ims:ime,kms:kme,jms:jme) ! pressure thickness of levels
+   real, intent(in) :: chem(ims:ime,kms:kme,jms:jme,num_chem) ! chem array
 
-   logical, intent(in)  :: isprx(ims:ime,kts:kte,jms:jme) ! true if precip at i,k
-   real, intent(in) :: fapx(ims:ime,kts:kte,jms:jme)    ! frac. area for precip
-   real, intent(in) :: pfx(ims:ime,kts:kte,jms:jme)     ! grid-avg precip
+   logical, intent(in)  :: isprx(ims:ime,kms:kme,jms:jme) ! true if precip at i,k
+   real, intent(in) :: fapx(ims:ime,kms:kme,jms:jme)    ! frac. area for precip
+   real, intent(in) :: pfx(ims:ime,kms:kme,jms:jme)     ! grid-avg precip
                                                  ! flux (kg/m2/s)
-   real, intent(in) :: pfx_inrain(ims:ime,kts:kte,jms:jme)  ! in-rain-area precip flux (kg/m2/s)
+   real, intent(in) :: pfx_inrain(ims:ime,kms:kme,jms:jme)  ! in-rain-area precip flux (kg/m2/s)
 
-   real, intent(inout) :: dqdt(ims:ime,kts:kte,jms:jme,num_chem) ! TMR tendency array
+   real, intent(inout) :: dqdt(ims:ime,kms:kme,jms:jme,num_chem) ! TMR tendency array
    logical,  intent(inout) :: dotend(num_chem)     ! flag for doing scav
    real, intent(inout) :: qsrflx(ims:ime,jms:jme,num_chem) ! column tracer tendencies
    integer, intent(in)  :: maxd_atype

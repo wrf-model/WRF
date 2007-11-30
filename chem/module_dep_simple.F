@@ -1,4 +1,5 @@
     MODULE module_dep_simple
+      IMPLICIT NONE
 !
 ! many of these parameters will depend on the RADM mechanism!
 ! if you change it, lets talk about it and get it done!!!
@@ -97,12 +98,12 @@
 !--- deposition and emissions stuff
 ! ..
 ! .. Local Scalars ..
-      REAL ::  clwchem,dvfog,dvpart,rad,rhchem,ta,ustar,vegfrac,z1,zntt
-      INTEGER :: iland, iprt, iseason, jce, jcs, n, nr, ipr,jpr,nvr
+      REAL ::  clwchem,dvfog,dvpart,pa,rad,rhchem,ta,ustar,vegfrac,z1,zntt
+      INTEGER :: i, iland, iprt, iseason, j, jce, jcs, n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
 ! ..
 ! .. Local Arrays ..  
-      REAL :: p(kts:kte-1), srfres(numgas),ddvel0d(numgas)
+      REAL :: p(kts:kte), srfres(numgas),ddvel0d(numgas)
 !
 ! necessary for aerosols (module dependent)         
 !  
@@ -164,7 +165,7 @@
       CALL landusevg(ddvel0d,ustar,rmol(i,j),zntt,z1,dvpart,iland,        &
            numgas,srfres,aer_res(i,j),p_sulf)
 
-!wig: CMBZ doe snot have Ho and HO2 last so need to copy all species
+!wig: CMBZ does not have HO and HO2 last so need to copy all species
 !      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
       ddvel(i,j,1:numgas)=ddvel0d(1:numgas)
 
@@ -189,7 +190,7 @@
                ddvel(i,j,p_ethp)        = 0
                ddvel(i,j,p_ch3oh)       = ddvel(i,j,p_hcho)
                ddvel(i,j,p_c2h5oh)      = ddvel(i,j,p_hcho)
-               ddvel(i,j,p_par)         = ddvel(i,j,p_hc5)
+!wig, 1-May-2007 (added par to tables)    ddvel(i,j,p_par)         = ddvel(i,j,p_hc5)
                ddvel(i,j,p_to2)         = 0
                ddvel(i,j,p_cro)         = 0
                ddvel(i,j,p_open)        = ddvel(i,j,p_xyl)
@@ -1108,6 +1109,7 @@ END SUBROUTINE wesely_driver
         hstar(p_nh3) = 1.04E+4
         hstar(p_n2o5) = 1.00E+10
         if(p_ol2.gt.1)hstar(p_ol2) = 4.67E-3
+        hstar(p_par) = 1.13E-3  !wig, 1-May-2007: for CBMZ
 !
 !  FOLLOWING FOR RACM
 !
@@ -1190,6 +1192,7 @@ END SUBROUTINE wesely_driver
         dhr(p_nh3) = 3660.
         dhr(p_n2o5) = 0.
         if(p_ol2.gt.1)dhr(p_ol2) = 0.
+        dhr(p_par) = 0.   !wig, 1-May-2007: for CBMZ
 !     REACTIVITY FACTORS
 !     [f0]=1
 
@@ -1231,6 +1234,7 @@ END SUBROUTINE wesely_driver
         f0(p_nh3) = 0.
         f0(p_n2o5) = 1.
         if(p_ol2.gt.1)f0(p_ol2) = 0.
+        f0(p_par) = 0.   !wig, 1-May-2007: for CBMZ
 !     DIFFUSION COEFFICIENTS
 !     [DV]=cm2/s (assumed: 1/SQRT(molar mass) when not known)
 
@@ -1274,6 +1278,7 @@ END SUBROUTINE wesely_driver
         dvj(p_ho) = 0.243
         dvj(p_ho2) = 0.174
         if(p_ol2.gt.1)dvj(p_ol2) = 0.189
+        dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
         DO l = 1, numgas
           hstar4(l) = hstar(l) ! preliminary              
 ! Correction of diff. coeff

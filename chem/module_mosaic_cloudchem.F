@@ -150,7 +150,7 @@
 	do 3920 jt = jts, jte
 	do 3910 it = its, ite
 
-	do 3800 kt = kts, kte-1
+	do 3800 kt = kts, kte
 
 	qcldwtr = moist(it,kt,jt,p_qc)
 	if (qcldwtr .le. qcldwtr_cutoff) goto 3800
@@ -1678,7 +1678,7 @@
 9110	format( / 'isize =', i3 /   &
 	'  k    cldwtr      mass-ai   numb-ai      mass-cw   numb-cw' )
 
-	do 2800 kt = kte-1, kts, -1
+	do 2800 kt = kte, kts, -1
 
 	dumai = 0.0
 	dumcw = 0.0

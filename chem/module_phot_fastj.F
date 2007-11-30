@@ -179,30 +179,30 @@
       real psfc
 
       real cos_sza
-      real, dimension(kts:kte-1) :: temp, ozone, dz 
-      real, dimension(0:kte-1) :: pbnd
-      real, dimension(kts:kte-1) :: cloudmr, airdensity, relhum
-      real, dimension(kts:kte) :: zatw
+      real, dimension(kts:kte) :: temp, ozone, dz 
+      real, dimension(0:kte) :: pbnd
+      real, dimension(kts:kte) :: cloudmr, airdensity, relhum
+      real, dimension(kts:kte+1) :: zatw
  	     
-      real valuej(kte-1,nphoto_fastj)
+      real valuej(kte,nphoto_fastj)
 
       logical processingAerosols
 
 !   set "pegasus" grid size variables
 !	itot = ite
 !	jtot = jte
-    lpar = kte - 1
-    jpnl = kte - 1
+    lpar = kte
+    jpnl = kte
     nb   = lpar + 1 !for module module_fastj_data
     nc   = 2*nb     !ditto, and don't confuse this with nc in module_fastj_mie
 	nsubareas = 1
-	if ((kte-1 > kmaxd) .or. (lpar <= 0)) then
+	if ((kte > kmaxd) .or. (lpar <= 0)) then
 	    write( wrf_err_message, '(a,4i5)' )   &
 		'*** subr fastj_driver -- ' //   &
 		'lpar, kmaxd, kts, kte', lpar, kmaxd, kts, kte
         call wrf_message( trim(wrf_err_message) )
 	    wrf_err_message = '*** subr fastj_driver -- ' //   &
-             'kte-1>kmaxd OR lpar<=0'
+             'kte>kmaxd OR lpar<=0'
 	    call wrf_error_fatal( wrf_err_message )
 	end if
 
@@ -313,7 +313,7 @@
            ph_n2o5                                                  )
 ! put the aerosol optical properties into the wrf arrays (this is hard-
 ! coded to 4 spectral bins, nspint)
-      do k=kts,kte-1
+      do k=kts,kte
          tauaer1(iclm,k,jclm) = tauaer(1,k)
          tauaer2(iclm,k,jclm) = tauaer(2,k)
          tauaer3(iclm,k,jclm) = tauaer(3,k)
@@ -384,7 +384,7 @@
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
            ph_n2o5
 
-   REAL, DIMENSION( kte-1,nphoto_fastj ), INTENT(INOUT) :: valuej
+   REAL, DIMENSION( kte,nphoto_fastj ), INTENT(INOUT) :: valuej
 
 ! local variables
 	real ft

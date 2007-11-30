@@ -1253,7 +1253,7 @@ END subroutine cup_env_clev_tr
         do k=kts,ktf
         do i=its,itf
           tr_pw(i,k,nv)=0.
-          tr_up(i,k,nv)=tre_cup(i,k,nv)
+          if(ierr(i).eq.0)tr_up(i,k,nv)=tre_cup(i,k,nv)
           tr_c(i,k,nv)=0.
         enddo
         enddo

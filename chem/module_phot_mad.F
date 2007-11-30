@@ -1217,8 +1217,8 @@
    INTEGER :: ki,i,j,k,ixhour,n,iprt
 !   photolysis input
 !
-      real tt(kts:kte),o33(kts:kte),rhoa(kts:kte),aerext(kts:kte),qll(kts:kte),    &
-           phizz(kts:kte),phot1(nreakj-1,kts:kte)
+      real tt(kts:kte+1),o33(kts:kte+1),rhoa(kts:kte+1),aerext(kts:kte+1),qll(kts:kte+1),    &
+           phizz(kts:kte+1),phot1(nreakj-1,kts:kte+1)
       real :: xtime,xhour,xmin,gmtp,uvb_dd1,uvb_du1,uvb_dir1
       real :: zenith,zenita,azimuth,dobsi
       real :: bext340,bexth2o,ctr
@@ -1234,7 +1234,7 @@
       do 100 j=jts,jte
       do 100 i=its,ite
 !     write(0,*)i,j
-        do k=kts,kte
+        do k=kts,kte+1
         do n=1,nreakj-1
           phot1(n,k)=0.
         END DO
@@ -1273,7 +1273,7 @@
 ! ch3coo2h       20              actually use 0.28*(h2o2 value)
 ! ch3ono2        21
 ! hcocho proc b  22
-        do k=kts,kte-1
+        do k=kts,kte
           aerext(k+1)=aerwrf(i,k+1,j)
 !
 !--- if you have aerosols
@@ -1304,7 +1304,7 @@
 !            write(0,*)k+1,phizz(k+1),qll(k+1),moist(i,k,j,p_qc),moist(i,k,j,p_qi),rqccuten(i,k,j),rqicuten(i,k,j),rho_phy(i,k,j)
 !         write(0,*)k+1,z_at_w(i,k+1,j),z_at_w(i,1,j),tt(k+1),o33(k+1),qll(k+1),rhoa(k+1)
 !         endif
-        END DO
+       END DO
         tt(1)=t8w(i,kts,j)
         o33(1)=max(1.e-3,chem(i,kts,j,p_o3))
         qll(1)=0.
@@ -1329,18 +1329,18 @@
 !            print *,k,rhoa(1),phizz(1),qll(1),aerext(1),o33(1),tt(1),zenita
 !         endif
 !write(0,*)'calling photolysis_mad --------',i,j
-        call photolysis_mad(kte-1,zenita,phizz,tt,rhoa,o33,aerext,qll,dobsi,phot1, &
+        call photolysis_mad(kte,zenita,phizz,tt,rhoa,o33,aerext,qll,dobsi,phot1, &
              nreacj,iprt,uvb_dd1,uvb_du1,uvb_dir1)
 !write(0,*)'back from photolysis_mad ---------------------------- '
 !       print *,'after photmad, i,j = ',i,j
         uvrad(i,j)=uvb_dd1+uvb_dir1-uvb_du1
-        do k=kts,kte-1
+        do k=kts,kte
         do n=1,nreakj-1
           phot1(n,k)=60.*phot1(n,k)
         END DO
         END DO
  199    continue
-        do k=kts,kte-1
+        do k=kts,kte
 !
 !
           ph_o31d(i,k,j) = phot1(1,k)

@@ -67,7 +67,7 @@ CONTAINS
       do 100 j=jts,jte  
       do 100 i=its,ite  
 
-      DO k=kts,min(config_flags%kemit,kte-1)
+      DO k=kts,min(config_flags%kemit,kte)
         conv_rho=4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))

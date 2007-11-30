@@ -97,8 +97,8 @@ MODULE module_input_chem_data
 ! The variable "iref" is the reference index 
 !    "fracref" is the reference fraction correpsonding to iref
 !
-!  For example: WRF-Chem species number 1 is SO2.  iref(1) is 12, and XL(12,K)
-!  is the profile for SO2.
+!  For example: WRF-Chem species number 1 for RADM is SO2.  iref(1)
+!  is 12, and XL(12,K) is the profile for SO2.
 !
 !  Note: NALROM calculates lumped OX (XL(1) =O3+NO2+HNO3+...) and a
 !  lumped NOX (XL(2)=NO+NO2+NO3+2N2O5+HO2NO2+HONO).  But XL(33) is
@@ -147,21 +147,6 @@ MODULE module_input_chem_data
 !      NAMEL(34)='NOX       ' 
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-
-
-    DATA iref/12,19,2,2,1,3,4,9,8,5,5,32,6,6,6,30,30,10,26,13,11,6,6, &
-               14,15,15,23,23,32,16,23,31,17,5*23,7,28,29,59*7/
-
-    DATA fracref/1.,1.,.75,.25,6*1.,.5,.5,6.25E-4,7.5E-4,6.25E-5,.1, &
-                 .9,4*1.,8.E-3,3*1.,.5,1.,1.,.5,12*1.,59*1./
-
-    DATA ggnam/ 'SO2 ','SULF','NO2 ','NO  ','O3  ','HNO3',    &
-                'H2O2','ALD ','HCHO','OP1 ','OP2 ','PAA ',    &
-                'ORA1','ORA2','NH3 ','N2O5','NO3 ','PAN ',    &
-                'HC3 ','HC5 ','HC8 ','ETH ','CO  ','OL2 ',    &
-                'OLT ','OLI ','TOL ','XYL ','ACO3','TPAN',    &
-                'HONO','HNO4','KET ','GLY ','MGLY','DCB ',    &
-                'ONIT','CSL ','ISO ','HO  ','HO2 ',59*'JUNK'  /
 
      DATA dens/ 2.738E+18, 5.220E+18, 7.427E+18, 9.202E+18, &
                 1.109E+19, 1.313E+19, 1.525E+19, 1.736E+19, &
@@ -335,6 +320,109 @@ MODULE module_input_chem_data
        5.49E+08, 5.35E+08, 5.28E+08, 5.24E+08, 5.23E+08/
 
 CONTAINS
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Sets up the cross reference mapping indices and fractional
+! apportionment of the default species profiles for use with
+! ICs and BCs.
+! William.Gustafson@pnl.gov; 2-May-2007
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
+  integer, intent(in) :: chem_opt, numgas
+
+  select case(chem_opt)
+  case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP, &
+        RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ, &
+        CHEM_TRACER)
+     call setup_gasprofile_map_radm_racm
+
+  case (CBMZ,CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
+        CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
+     call setup_gasprofile_map_cbmz(numgas)
+
+  case default
+     call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
+
+  end select
+
+END SUBROUTINE setup_gasprofile_maps
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Maps for indices and fractional apportionment of the default
+! species profiles to the RADM2 and RACM species for ICs and BCs.
+! William.Gustafson@pnl.gov; 2-May-2007
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE setup_gasprofile_map_radm_racm
+  
+  iref(:)    = 7 !default value
+  iref(1:41) = (/12,19,2,2,1,3,4,9,8,5,5,32,6,6,6,30,30,10,26,13,11,6,6, &
+                 14,15,15,23,23,32,16,23,31,17,23,23,23,23,23,7,28,29/)
+
+  fracref(:)    = 1. !default value
+  fracref(1:41) = (/1.,1.,.75,.25,1.,1.,1.,1.,1.,1., &
+                    .5,.5,6.25E-4,7.5E-4,6.25E-5,.1, &
+                    .9,1.,1.,1.,1.,8.E-3,1.,1.,1.,.5,&
+                    1.,1.,.5,1.,1.,1.,1.,1.,1.,1.,1.,&
+                    1.,1.,1.,1./)
+
+  ggnam(:) = 'JUNK' !default value
+  ggnam(1:41) = (/ 'SO2 ','SULF','NO2 ','NO  ','O3  ','HNO3',    &
+                   'H2O2','ALD ','HCHO','OP1 ','OP2 ','PAA ',    &
+                   'ORA1','ORA2','NH3 ','N2O5','NO3 ','PAN ',    &
+                   'HC3 ','HC5 ','HC8 ','ETH ','CO  ','OL2 ',    &
+                   'OLT ','OLI ','TOL ','XYL ','ACO3','TPAN',    &
+                   'HONO','HNO4','KET ','GLY ','MGLY','DCB ',    &
+                   'ONIT','CSL ','ISO ','HO  ','HO2 '           /)
+
+END SUBROUTINE setup_gasprofile_map_radm_racm
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Maps for indices and fractional apportionment of the default
+! species profiles to the CBMZ species for ICs and BCs. The profiles
+! for HC3, HC5, and HC8 used for RADM are tacked onto the end of the
+! CBMZ list in order to construct the PAR species.
+! William.Gustafson@pnl.gov; 2-May-2007
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE setup_gasprofile_map_cbmz(numgas)
+  integer, intent(in) :: numgas
+  integer, parameter :: listlast = 33
+  iref(:)    = 7 !default value
+  iref(1:listlast) = (/12,19, 2, 2, 1, 3, &
+                        4, 9, 8, 5, 5, 6, &
+                        6, 6,30,30,10, 6, &
+                        6,14,15,15,23,23, &
+                       23,31,17,23,23,23, &
+                        7,28,29          /)
+
+  fracref(:)    = 1. !default value
+  fracref(1:listlast) = (/1.,1.,.75,.25,1.,1., &
+                          1.,1.,1.,1.,.5,6.25E-4, &
+                          7.5E-4,6.25E-5,.1,.9,1.,8.E-3, &
+                          1.,1.,1.,.5,1.,1.,   &
+                          1.,1.,1.,1.,1.,1.,   &
+                          1.,1.,1.            /)
+
+  ggnam(:) = 'JUNK' !default value - not really all junk, the
+                    !last species all just goto the default
+  ggnam(1:listlast) = (/ 'SO2 ','SULF','NO2 ','NO  ','O3  ','HNO3', &
+                         'H2O2','ALD ','HCHO','OP1 ','OP2 ','ORA1', &
+                         'ORA2','NH3 ','N2O5','NO3 ','PAN ','ETH ', &
+                         'CO  ','OL2 ','OLT ','OLI ','TOL ','XYL ', &
+                         'HONO','HNO4','KET ','MGLY','ONIT','CSL ', &
+                         'ISO ','HO  ','HO2 '                      /)
+!
+! After the CBMZ species, add the RADM HC3, HC5, and HC8 to be used
+! for constructing PAR..
+!
+  if( numgas < listlast ) &
+       call wrf_error_fatal("numgas < listlast in setup_gasprofile_map_cbmz")
+  iref(numgas+1:numgas+3)    = (/   26,     13,    11/)
+  fracref(numgas+1:numgas+3) = (/   1.,     1.,    1./)
+  ggnam(numgas+1:numgas+3)   = (/'HC3 ','HC5 ','HC8 '/)
+  
+END SUBROUTINE setup_gasprofile_map_cbmz
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 SUBROUTINE input_ext_chem_file (si_grid)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1011,12 +1099,16 @@ SUBROUTINE input_chem_profile (si_grid)
    enddo
    si_zsig(:,kde,:) = 0.5 * ( 3. * si_zsigf(:,kde,:) - si_zsigf(:,kde-1,:) ) 
 
+   ! Determine the index of the last gas species
+   numgas = get_last_gas(si_grid%chem_opt)
+
+   ! Setup the cross reference mappings between the default profiles and
+   ! the gas mechanism species (wig, 2-May-2007)
+   call setup_gasprofile_maps(si_grid%chem_opt, numgas)
+
    ! An alternative ozone profile option for initialization
    if( si_grid%gas_ic_opt == GAS_IC_PNNL ) &
         call gasprofile_init_pnnl
-
-   ! Determine the index of the last gas species
-   numgas = get_last_gas(si_grid%chem_opt)
 
    ! Interpolate the chemistry data to the SI grid. These values should typically
    ! be set to match the values in bdy_chem_value_tracer so that the boundaries
@@ -1027,7 +1119,7 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_co ) = 0.08
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
-                              si_zsig, si_grid%chem)
+                              si_grid%chem_opt, si_zsig, si_grid%chem)
    END IF
 
    CALL wrf_debug       ( 100,' input_chem_profile: exit subroutine ')
@@ -1041,12 +1133,12 @@ SUBROUTINE input_chem_profile (si_grid)
   END SUBROUTINE input_chem_profile
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE make_chem_profile ( nx1, nx2, ny1, ny2, nz1, nz2, nch, numgas, &
-                                  zgrid, chem )
+                                 chem_opt, zgrid, chem )
     IMPLICIT NONE
 
     INTEGER, INTENT(IN) :: nx1, ny1, nz1
     INTEGER, INTENT(IN) :: nx2, ny2, nz2
-    INTEGER, INTENT(IN) :: nch, numgas
+    INTEGER, INTENT(IN) :: nch, numgas, chem_opt
     !REAL, INTENT(IN), DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
 
@@ -1058,6 +1150,9 @@ SUBROUTINE input_chem_profile (si_grid)
 
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2,nch) :: chem
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2,lo ) :: stor
+
+    REAL :: hc358 !wig, 2-May-2007
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 ! Check the number of species
@@ -1112,6 +1207,30 @@ SUBROUTINE input_chem_profile (si_grid)
         ENDDO
         ENDDO
       ENDDO
+!
+! For CBMZ, we need to construct PAR based on a combination of other
+! species. This cannot be done with the looping construct above so
+! we have to treat it separately. (wig, 2-May-2007)
+!
+      SELECT CASE(chem_opt)
+      CASE (CBMZ,CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
+            CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
+         do j = ny1,ny2
+         do k = nz1,nz2
+         do i = nx1,nx2
+            !Construct the sum of the profiles for hc3, hc5, & hc8
+            hc358 = ( 2.9*fracref(numgas+1)*stor(i,k,j,iref(numgas+1)) &
+                     +4.8*fracref(numgas+2)*stor(i,k,j,iref(numgas+2)) &
+                     +7.9*fracref(numgas+3)*stor(i,k,j,iref(numgas+3)) &
+                    )*1.E6
+            chem(i,k,j,p_par) =                                    &
+                 0.4*chem(i,k,j,p_ald) + hc358                     &
+                 + 0.9*chem(i,k,j,p_ket) + 2.8*chem(i,k,j,p_oli)   &
+                 + 1.8*chem(i,k,j,p_olt) + 1.0*chem(i,k,j,p_ora2)
+         end do
+         end do
+         end do
+      END SELECT
 
       RETURN
   END SUBROUTINE make_chem_profile
@@ -1424,6 +1543,9 @@ SUBROUTINE input_chem_profile (si_grid)
 
       RETURN
   END SUBROUTINE bdy_chem_value_racm
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   SUBROUTINE bdy_chem_value ( chem, z, nch, numgas )
                                   
     IMPLICIT NONE
@@ -1447,12 +1569,11 @@ SUBROUTINE input_chem_profile (si_grid)
 ! Check the number of species
 !     if((nch-1).gt.logg)return
 
-!    if( nch .GT. logg+1) then
-     if( nch .GT. numgas) then
-       message = ' Input_chem_profile: wrong number of chemical species'
-       return
+!     if( nch .GT. numgas) then
+!       message = ' Input_chem_profile: wrong number of chemical species'
+!       return
 !       CALL WRF_ERROR_FATAL ( message )
-     endif
+!     endif
 
       ! Vertically flip the chemistry data as it is given top down 
       !     and heights in zfa are bottom up

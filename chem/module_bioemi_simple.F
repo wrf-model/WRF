@@ -18,7 +18,6 @@ MODULE module_bioemi_simple
                gmt,julday,t_phy,moist,p8w,t8w,                            &
                e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                     &
                ivgtyp,gsw,vegfra,rmol,ust,znt,xlat,xlong,z_at_w,          &
-               numgas,                                                    &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -28,7 +27,7 @@ MODULE module_bioemi_simple
    INTEGER,      INTENT(IN   ) :: id,julday, ne_area,                     &
                                   ids,ide, jds,jde, kds,kde,              &
                                   ims,ime, jms,jme, kms,kme,              &
-                                  its,ite, jts,jte, kts,kte,numgas
+                                  its,ite, jts,jte, kts,kte
    INTEGER,      INTENT(IN   ) ::                                         &
                                   ktau
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),               &
@@ -67,9 +66,8 @@ MODULE module_bioemi_simple
 ! .. Parameters ..
 !     INTEGER, PARAMETER ::  nlu = 25,  &
 !       nseason = 1, nseasons = 2
-!     REAL :: aefiso(nlu), aefmter(nlu), aefovoc(nlu), aef_n(nlu),  &
-!       emiss_bio(numgas)
-      REAL :: emiss_bio(numgas)
+!     REAL :: aefiso(nlu), aefmter(nlu), aefovoc(nlu), aef_n(nlu)
+      REAL :: emiss_bio(ne_area) !wig, 1-May-2007: switched to ne_area from numgas to make more general
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
       CHARACTER (4) :: luse_typ
 ! ..
@@ -136,13 +134,12 @@ MODULE module_bioemi_simple
 !     endif
 
 !     PRINT *, eiso, emter, eovoc, e_n, eisoc, eovocc                 
-      CALL biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,numgas,vegfrac, &
+      CALL biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,ne_area,vegfrac, &
         luse_typ,vegflag)
 !     PRINT *, 'emiss_bio(liso)  emiss_bio(lald)  emiss_bio(lhcho) ', &
 !       ' emiss_bio(lhc3)'
 !     PRINT *, emiss_bio(liso), emiss_bio(lald), emiss_bio(lhcho), &
 !       emiss_bio(lhc3)
-!      DO n = 1, numgas-2 !wig, 22-May-2006: CBMZ uses more species than ne_area so would get array overwrites
       DO n = 1, ne_area-2
         e_bio(i,j,n) = emiss_bio(n)
 !       if(i.eq.5.and.j.eq.5)print *,emiss_bio(n)
@@ -1155,7 +1152,7 @@ END SUBROUTINE bio_emissions
 ! **********************************************************************
 ! ***********************  SUBROUTINE BIOSPLIT *************************
 ! **********************************************************************
-      SUBROUTINE biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,numgas, &
+      SUBROUTINE biosplit(iland,eiso,emter,eovoc,e_n,emiss_bio,ne_area, &
           vegfrc,mminlu,vegflag)
 !     THIS PROGRAMM SPLITS THE BIOGENIC EMISSION RATES FOR
 !     MONOTERPENES AND OTHER ORGANIC COMPOUNDS INTO THE
@@ -1211,12 +1208,12 @@ END SUBROUTINE bio_emissions
 !***********************************************************************
 ! .. Scalar Arguments ..
         REAL :: eiso, emter, eovoc, e_n, vegfrc
-        INTEGER :: iland, numgas
+        INTEGER :: iland, ne_area
 !       INTEGER :: lald, lhc3, lhc5, lhc8, lhcho, liso, lket, lno, &
 !         loli, lolt, lora1, lora2, lxyl
 ! ..
 ! .. Array Arguments ..
-        REAL :: emiss_bio(numgas)
+        REAL :: emiss_bio(ne_area)
 !       INTEGER :: ixxxlu(nlu)
 ! ..
 ! .. Local Scalars ..

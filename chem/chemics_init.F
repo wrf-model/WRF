@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:INITIALIZATION
 !
-   subroutine chem_init (id,chem,dt,bioemdt,photdt,chemdt,stepbioe,  &
+   subroutine chem_init (id,chem,scalar,dt,bioemdt,photdt,chemdt,stepbioe,  &
                stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,&
                g,aerwrf,config_flags,alt,t,p,CONVFAC,                &
                gd_cloud, gd_cloud2,                                  &
@@ -23,7 +23,8 @@
    USE module_cbmz_initmixrats, only:  cbmz_init_wrf_mixrats
    USE module_mosaic_driver, only:  init_data_mosaic_asect
    USE module_mosaic_initmixrats, only:  mosaic_init_wrf_mixrats
-   USE module_input_chem_data, only:  get_last_gas, gasprofile_init_pnnl
+   USE module_input_chem_data, only:  get_last_gas, gasprofile_init_pnnl, setup_gasprofile_maps
+   USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
 
    real  , intent(in) :: bioemdt,photdt,chemdt,plumerisefire_frq,dt
    INTEGER,      INTENT(IN   ) :: chem_in_opt
@@ -45,6 +46,9 @@
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,       &
           INTENT(INOUT   ) ::                                        &
                               chem 
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_scalar ) ,     &
+          INTENT(INOUT   ) ::                                        &
+                              scalar
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
                                aerwrf
@@ -142,7 +146,11 @@ call wrf_message("**************************************************************
     stepfirepl=max(stepfirepl,1)
     call wrf_debug( 15, 'in chem_init' )
 !   print *,'stepbioe,stepphot,stepchem,stepfirepl',stepbioe,stepphot,stepchem,stepfirepl
-
+!
+! Setup the cross reference mappings between the default profiles and
+! the gas mechanism species (wig, 2-May-2007)
+!
+   call setup_gasprofile_maps(config_flags%chem_opt,numgas)
 !
 ! An alternative ozone profile option
 !
@@ -250,8 +258,8 @@ call wrf_message("**************************************************************
    END SELECT aer_sanity_check
 
    do nv=1,num_chem
-      do j=jms,jme
-         do i=ims,ime
+      do j=jts,jte
+         do i=its,ite
             chem(i,kde,j,nv)=chem(i,kde-1,j,nv)
          enddo
       enddo
@@ -282,6 +290,16 @@ call wrf_message("**************************************************************
                its,ite, jts,jte, kts,kte               )
        endif
    END SELECT cbmz_select
+!
+! Initialize the cloud droplet number and mass
+!
+    if( (.not.config_flags%restart) .and. (config_flags%progn > 0) ) then
+       call mosaic_mixactivate_init(                   &
+            config_flags, chem, scalar,                &
+            ims,ime, jms,jme, kms,kme,                 &
+            its,ite, jts,jte, kts,kte                  )
+
+    end if
 
     END SUBROUTINE chem_init
 

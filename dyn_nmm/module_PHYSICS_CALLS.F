@@ -2232,6 +2232,10 @@
      &                 ,RAINNC=RAINNC,RAINNCV=RAINNCV                   &
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
+#ifdef WRF_CHEM
+     &                 ,CHEM_OPT=CONFIG_FLAGS%CHEM_OPT                  &
+     &                 ,PROGN=CONFIG_FLAGS%PROGN                        &
+#endif
      &                 ,SPECIFIED=CONFIG_FLAGS%SPECIFIED                &
      &                        .OR.CONFIG_FLAGS%NESTED                   &
      &                 ,SPEC_ZONE=0,WARM_RAIN=WARM_RAIN                 &

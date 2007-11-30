@@ -231,6 +231,12 @@
 !   currently nothing is done with vdrog3
 !	vdrog3(its:ite,kts:kte,jts:jte,:) = 0.0  !This is already set to zero in chem_driver.
 
+!   initialize rate constant arrays to 0.0 since not all elements are set
+!   to valid values before some were used in loops, wig 16-Nov-2007
+    rk_m1(:) = 0.
+    rk_m2(:) = 0.
+    rk_m3(:) = 0.
+    rk_m4(:) = 0.
 
 !   determine which regimes are allowed
 !   based on which gas species are "active"
@@ -242,7 +248,7 @@
 !   main loop -- do gas chemistry at each i,j,k
 !
 	do 2900 jt = jts, jte
-	do 2900 kt = kts, kte-1
+	do 2900 kt = kts, kte
 	do 2900 it = its, ite
 
 	trun = dtstep*(ktau-1)		! run time in s
@@ -3034,13 +3040,14 @@
 !      rk_m1(70) = rk_het(6)	! HNO3 --> NO
 !      rk_m1(71) = rk_het(7)	! NO3 --> NO + O2
 
-! all rate constants but be >= 0
-      do i = 1, nrxn_m1
-          rk_m1(i) = max( rk_m1(i), 0.0 )
-      end do
-      do i = 1, nrxn_m2
-          rk_m2(i) = max( rk_m2(i), 0.0 )
-      end do
+!!$Turn off this check since initializing to 0's; wig 16-Nov-2007
+!!$! all rate constants but be >= 0
+!!$      do i = 1, nrxn_m1
+!!$          rk_m1(i) = max( rk_m1(i), 0.0 )
+!!$      end do
+!!$      do i = 1, nrxn_m2
+!!$          rk_m2(i) = max( rk_m2(i), 0.0 )
+!!$      end do
 
       return
       end subroutine gasthermrk_m1                             
@@ -3132,10 +3139,11 @@
       rk_m2(52) = rk_param(jxo2)
       rk_m2(53) = 1.0e-11		! XPAR + PAR -->
 
-! all rate constants but be >= 0
-      do i = 1, nrxn_m2
-          rk_m2(i) = max( rk_m2(i), 0.0 )
-      end do
+!!$Turn off this check since initializing to 0's; wig 16-Nov-2007
+!!$! all rate constants but be >= 0
+!!$      do i = 1, nrxn_m2
+!!$          rk_m2(i) = max( rk_m2(i), 0.0 )
+!!$      end do
 
       return
       end subroutine gasthermrk_m2                             

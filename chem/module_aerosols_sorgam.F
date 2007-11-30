@@ -1,4 +1,5 @@
 
+
 MODULE module_aerosols_sorgam
 !
   USE module_state_description
@@ -124,7 +125,7 @@ CONTAINS
                     !bs
       REAL relhum
                     ! rel. humidity (0,1)   
-      REAL ::p(kts:kte-1),t(kts:kte-1),rh(kts:kte-1)
+      REAL ::p(kts:kte),t(kts:kte),rh(kts:kte)
 
 !...molecular weights                   ciarev02
 
@@ -188,7 +189,7 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   INTEGER :: i,j,k,kk,l,debug_level
+   INTEGER :: i,j,k,l,debug_level
 
 !
 ! convert advected aerosol variables to ug/m3 from mixing ratio
@@ -197,17 +198,16 @@ CONTAINS
    do l=p_so4aj,num_chem
       do j=jts,jte
          do k=kts,kte
-            kk=min(k,kte-1)
             do i=its,ite
-               chem(i,k,j,l)=max(epsilc,chem(i,kk,j,l)/alt(i,kk,j))
+               chem(i,k,j,l)=max(epsilc,chem(i,k,j,l)/alt(i,k,j))
             enddo
          enddo
       enddo
    enddo
       do 100 j=jts,jte
          do 100 i=its,ite
-           debug_level=0
-            do k=kts,kte-1
+           debug_level=1
+            do k=kts,kte
                t(k) = t_phy(i,k,j)
                p(k) = .001*p_phy(i,k,j)
                rh(k) = MIN( 95.,100. * moist(i,k,j,p_qv) /        &
@@ -216,7 +216,7 @@ CONTAINS
                rh(k)=max(.1,0.01*rh(k))
 !               rh(k) = .10
             enddo
-            do k=kts,kte-1
+            do k=kts,kte
 !           if(timer.gt.2.)then
 !                if((i.eq.12.and.j.eq.17.and.k.eq.1).or.       &
 !                   (i.eq.12.and.j.eq.7.and.k.eq.2).or.       &
@@ -236,7 +236,7 @@ CONTAINS
                nitrate_in =max(epsilc,chem(i,k,j,p_hno3)*convfac*mwhno3)
                nh3_in = max(epsilc,chem(i,k,j,p_nh3)*convfac*mwnh3)
                vsulf_in = max(epsilc,chem(i,k,j,p_sulf)*convfac*mwso4)
-      if(i.eq.23.and.j.eq.37.and.k.eq.22)then
+      if(i.eq.20.and.j.eq.20.and.k.eq.19)then
         print *,'vsulfin = ',vsulf_in,chem(i,k,j,p_sulf),convfac,mwso4
       endif
                
@@ -360,7 +360,7 @@ CONTAINS
 
 
       if(debug_level.ge.1)then
-!     if(i.eq.23.and.j.eq.37.and.k.eq.22)then
+     if(i.eq.20.and.j.eq.20.and.k.eq.19)then
         print*,'in a_mechanisms',i,j,k
         print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
         print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
@@ -372,6 +372,7 @@ CONTAINS
             ,eeci_in, eecj_in, eorgi_in, eorgj_in,convfac
         print*,'CBLK',CBLK
        endif
+    end if
       CALL rpmmod3(nspcsda,blksize,k,dtstep,10.*p(k),t(k),rh(k),nitrate_in,nh3_in, &
         vsulf_in,so4rat_in,drog_in,ldrog,condvap_in,ncv,nacv,eeci_in,eecj_in, &
         eorgi_in,eorgj_in,epm25i,epm25j,epmcoarse,soilrat_in,cblk,i,j,k)
@@ -435,9 +436,8 @@ CONTAINS
       do l=p_so4aj,num_chem
          do j=jts,jte
             do k=kts,kte
-               kk=min(k,kte-1)
                do i=its,ite
-                  chem(i,k,j,l)=max(epsilc,chem(i,kk,j,l)*alt(i,kk,j))
+                  chem(i,k,j,l)=max(epsilc,chem(i,k,j,l)*alt(i,k,j))
                enddo
             enddo
          enddo
@@ -466,44 +466,42 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10
 
-   INTEGER :: i,ii,j,jj,k,kk,n
+   INTEGER :: i,ii,j,jj,k,n
 !
 ! sum up pm2_5 and pm10 output
 !
-      pm2_5_dry(its:ite, kts:kte-1, jts:jte)    = 0.
-      pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
-      pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
+      pm2_5_dry(its:ite, kts:kte, jts:jte)    = 0.
+      pm2_5_water(its:ite, kts:kte, jts:jte)  = 0.
+      pm2_5_dry_ec(its:ite, kts:kte, jts:jte) = 0.
       do j=jts,jte
          jj=min(jde-1,j)
-      do k=kts,kte-1
-         kk=min(kde-1,k)
+      do k=kts,kte
       do i=its,ite
          ii=min(ide-1,i)
          do n=p_so4aj,p_p25i
-            pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,kk,jj,n)
+            pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,n)
          enddo
-         pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j)+chem(ii,kk,jj,p_ecj) &
-                               + chem(ii,kk,jj,p_eci)
+         pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j)+chem(ii,k,jj,p_ecj) &
+                               + chem(ii,k,jj,p_eci)
          pm2_5_water(i,k,j) =  pm2_5_water(i,k,j)+h2oaj(i,k,j)       &
                                + h2oai(i,k,j)
 
          !Convert the units from mixing ratio to concentration (ug m^-3)
-         pm2_5_dry(i,k,j)    = pm2_5_dry(i,k,j) / alt(ii,kk,jj)
-         pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j) / alt(ii,kk,jj)
-         pm2_5_water(i,k,j)  = pm2_5_water(i,k,j) / alt(ii,kk,jj)
+         pm2_5_dry(i,k,j)    = pm2_5_dry(i,k,j) / alt(ii,k,jj)
+         pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j) / alt(ii,k,jj)
+         pm2_5_water(i,k,j)  = pm2_5_water(i,k,j) / alt(ii,k,jj)
       enddo
       enddo
       enddo
       do j=jts,jte
          jj=min(jde-1,j)
-         do k=kts,kte-1
-            kk=min(kde-1,k)
+         do k=kts,kte
             do i=its,ite
                ii=min(ide-1,i)
                pm10(i,k,j) = pm2_5_dry(i,k,j)                       &
-                           + ( chem(ii,kk,jj,p_antha)               &
-                           + chem(ii,kk,jj,p_soila)                 &
-                           + chem(ii,kk,jj,p_seas) ) / alt(ii,kk,jj)
+                           + ( chem(ii,k,jj,p_antha)               &
+                           + chem(ii,k,jj,p_soila)                 &
+                           + chem(ii,k,jj,p_seas) ) / alt(ii,k,jj)
             enddo
          enddo
       enddo
@@ -598,7 +596,7 @@ CONTAINS
                     !bs
       REAL relhum
                     ! rel. humidity (0,1)   
-      REAL ::p(kts:kte-1),t(kts:kte-1),rh(kts:kte-1)
+      REAL ::p(kts:kte),t(kts:kte),rh(kts:kte)
 
 !...molecular weights                   ciarev02
 
@@ -728,7 +726,7 @@ CONTAINS
       do 100 j=jts,jte
          do 100 i=its,ite
             cblk=epsilc
-            do k=kts,kte-1
+            do k=kts,kte
                t(k) = t_phy(i,k,j)
                p(k) = .001*p_phy(i,k,j)
                rh(k) = MIN( 100.,100. * moist(i,k,j,p_qv) / &
@@ -736,7 +734,7 @@ CONTAINS
                (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j))))
                rh(k)=max(.05,0.01*rh(k))
             enddo
-!           do k=kts,kte-1
+!           do k=kts,kte
             k=kts
                convfac = p(k)/rgas/t(k)*1000.
                nitrate_in =chem(i,k,j,p_hno3)*convfac*mwhno3

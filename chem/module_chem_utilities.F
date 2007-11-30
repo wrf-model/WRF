@@ -86,6 +86,18 @@ CONTAINS
     enddo
     enddo
 
+!  wig: added to make sure there is no junk in the top level even
+!       though it should not be used
+    do j = j_start,j_end
+    do i = i_start, i_end
+      p_phy(i,kte,j) = p_phy(i,k_end,j)
+      t_phy(i,kte,j) = t_phy(i,k_end,j)
+      rho(i,kte,j) = rho(i,k_end,j)
+      u_phy(i,kte,j) = u_phy(i,k_end,j)
+      v_phy(i,kte,j) = v_phy(i,k_end,j)
+    enddo
+    enddo
+
 !  compute z at w points
 
     do j = j_start,j_end

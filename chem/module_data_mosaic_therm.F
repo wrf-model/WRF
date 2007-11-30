@@ -14,7 +14,8 @@
 
 
 
-! mosaic.h (mosaic.21.0)
+! mosaic.h (mosaic.22.0)
+!   30-apr-07 raz - deleted alpha_gas
 !   05-feb-07 wig - converted reals to double
 !   10-jan-07 raz - compatible with mosaic.21.0
 !   19-dec-05 raz - compatible with mosaic.16.4
@@ -249,7 +250,6 @@
 	sum_bin_s(ngas_volatile),		&  ! number of bins that have flux_s(iv) < 0
 	avg_df_gas_s(ngas_volatile),		&  ! nmol/m^3
 	h_s_i_m(ngas_volatile,nbin_a_maxd),	&  ! s
-	alpha_gas(ngas_volatile),		&  ! - adaptive
 	alpha_astem,				&  ! 0.01 to 0.05
 	rtol_eqb_astem,				&  ! 0.01 to 0.03
 	ptol_mol_astem,				&  ! 0.01 to 1.0

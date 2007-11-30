@@ -1,5 +1,10 @@
 !WRF:MODEL_LAYER:CHEMICS
 !
+MODULE module_dry_dep_driver
+  IMPLICIT NONE
+
+CONTAINS
+
     subroutine dry_dep_driver(id,ktau,dtstep,config_flags,                &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
                p_phy,chem,rho_phy,dz8w,exch_h,                            &
@@ -101,14 +106,14 @@
 !     CHARACTER (4) :: luse_typ,mminlu_loc
 ! ..
 ! .. Local Arrays ..
-      REAL :: p(kts:kte-1)
+      REAL :: p(kts:kte)
    REAL, DIMENSION( its:ite, jts:jte, num_chem ) ::   ddvel
 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) :: dryrho_phy
    REAL,  DIMENSION( kms:kme ) :: dryrho_1d
 
 ! turbulent transport
-      real :: pblst(kts:kte-1),ekmfull(kts:kte),zzfull(kts:kte),zz(kts:kte-1)
+      real :: pblst(kts:kte),ekmfull(kts:kte+1),zzfull(kts:kte+1),zz(kts:kte)
       integer :: ii,jj,kk,i,j,k,nv
 !
 ! necessary for aerosols (module dependent)
@@ -220,10 +225,14 @@
 !
 !-- start with vertical mixing
 !
-      do k=kts,kte
+      do k=kts,kte+1
          zzfull(k)=z_at_w(i,k,j)-z_at_w(i,kts,j)
+      enddo
+      do k=kts,kte
          ekmfull(k)=max(1.e-6,exch_h(i,k,j))
       enddo
+      ekmfull(kts)=0.
+      ekmfull(kte+1)=0.
 
 !!$! UNCOMMENT THIS AND FINE TUNE LEVELS TO YOUR DOMAIN IF YOU WANT TO
 !!$! FORCE MIXING TO A CERTAIN DEPTH:
@@ -238,14 +247,11 @@
 !       if (e_co(i,kts,j) .gt. 200) then
 !          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
 !       endif
-!!$!
 !
 !
-      do k=kts,kte-1
+      do k=kts,kte
          zz(k)=z(i,k,j)-z_at_w(i,kts,j)
       enddo
-      ekmfull(kts)=0.
-      ekmfull(kte)=0.
 !
 !   vertical mixing routine (including deposition)
 !   need to be careful here with that dumm tracer in spot 1
@@ -254,7 +260,7 @@
 !
       dep_vel_o3(i,j)=ddvel(i,j,p_o3)
       do nv=2,num_chem-0
-         do k=kts,kte-1
+         do k=kts,kte
 !           pblst(k)=max(epsilc,chem(i,k,j,nv))
             pblst(k)=max(epsilc,chem(i,k,j,nv)/alt(i,k,j))
             dryrho_1d(k) = 1./alt(i,k,j)
@@ -267,18 +273,18 @@
          CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
 !              call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
-!                          zzfull,zz,ddvel(i,j,nv),kts,kte-1)
-               call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte-1)
+!                          zzfull,zz,ddvel(i,j,nv),kts,kte)
+               call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte)
 
             endif
 !        CASE (PRESCRIBE_AEROSOL)
 
          CASE DEFAULT
-            call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte-1)
+            call vertmx(dtstep,pblst,ekmfull,zzfull,zz,ddvel(i,j,nv),kts,kte)
 
          END SELECT mix_select
 
-         do k=kts,kte-2
+         do k=kts,kte-1
 
 !           chem(i,k,j,nv)=max(epsilc,pblst(k))
             chem(i,k,j,nv)=max(epsilc,pblst(k)*alt(i,k,j))
@@ -290,10 +296,11 @@
 !
    where( alt(its:ite,kts:kte,jts:jte) /= 0. )  !get dry density to conserve mass in mixactivate, wig, 24-apr-2006
       dryrho_phy(its:ite,kts:kte,jts:jte) = 1./alt(its:ite,kts:kte,jts:jte)
-      dryrho_phy(its:ite,kts:kte,jts:jte) = 1.
+!      dryrho_phy(its:ite,kts:kte,jts:jte) = 1. <---wig: this got into the Jan 2007 release by mistake, above is correct
    elsewhere
       dryrho_phy(its:ite,kts:kte,jts:jte) = 0.
    end where
+   dryrho_phy(its:ite,kte+1,jts:jte) = 0. !wig: testing, should never need this
 
    mixactivate_select: SELECT CASE(config_flags%chem_opt)
 
@@ -305,6 +312,7 @@
 		moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC), moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem, &
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,       &
+		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
    CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
@@ -316,6 +324,7 @@
 		moist(ims,kms,jms,P_QV), moist(ims,kms,jms,P_QC), moist(ims,kms,jms,P_QI), &
         scalar(ims,kms,jms,P_QNDROP), f_qc, f_qi, chem,   &
         ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
+		ids,ide, jds,jde, kds,kde,                        &
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
    CASE DEFAULT
@@ -323,3 +332,5 @@
        CALL wrf_debug(15,'end of dry_dep_driver')
 
 END SUBROUTINE dry_dep_driver
+
+END MODULE module_dry_dep_driver

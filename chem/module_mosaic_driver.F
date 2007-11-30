@@ -240,11 +240,11 @@
     k = kts
 	print 93020, 't, p, rho, qv at its/kts /jts', t_phy(its,k,jts),   &
 		p_phy(its,k,jts), rho_phy(its,k,jts), moist(its,k,jts,p_qv)
-	k = (kts + kte - 1)/2
+	k = (kts + kte)/2
 	print 93020, 't, p, rho, qv at its/ktmi/jts', t_phy(its,k,jts),   &
 		p_phy(its,k,jts), rho_phy(its,k,jts), moist(its,k,jts,p_qv)
-	k = kte-1
-	print 93020, 't, p, rho, qv at its/kte-/jts', t_phy(its,k,jts),   &
+	k = kte
+	print 93020, 't, p, rho, qv at its/kte /jts', t_phy(its,k,jts),   &
 		p_phy(its,k,jts), rho_phy(its,k,jts), moist(its,k,jts,p_qv)
 93010	format( a, 8(1x,i6) )
 93020	format( a, 8(1p,e14.6) )
@@ -265,14 +265,14 @@
 
 !   ktmaps,ktmape = first/last wrf kt for which aer chem is done
 	ktmaps = kts
-	ktmape = kte-1
+	ktmape = kte
 
 !   rce 2005-mar-09 - added kclm_calcbgn/end 
 !   kclm_calcbgn,kclm_calcend = first/last pegasus array k
 !   for which aer chem is done
 	k_pegshift = k_pegbegin - kts 
-	kclm_calcbgn = kts     + k_pegshift
-	kclm_calcend = (kte-1) + k_pegshift
+	kclm_calcbgn = kts + k_pegshift
+	kclm_calcend = kte + k_pegshift
 
 !   set some variables to their wrf-chem "standard" values
 	mode_force_dump = 0
@@ -452,19 +452,21 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(OUT) :: pm2_5_dry,pm2_5_water,pm2_5_dry_ec,pm10
 
+   REAL :: mass
+
    INTEGER :: i,imax,j,jmax,k,kmax,n,itype,iphase
 
    imax = min(ite,ide-1)
    jmax = min(jte,jde-1)
-   kmax = kte-1
+   kmax = kte
 !
 ! Sum over bins with center diameter < 2.5e-4 cm for pm2_5_dry,
 ! pm2_5_dry_ec, and pm2_5_water. All bins go into pm10
 !
-   pm2_5_dry(its:ite,kts:kte,jts:jte)    = 0.
-   pm2_5_dry_ec(its:ite,kts:kte,jts:jte) = 0.
-   pm2_5_water(its:ite,kts:kte,jts:jte)  = 0.
-   pm10(its:ite,kts:kte,jts:jte)         = 0.
+   pm2_5_dry(its:imax,kts:kmax,jts:jmax)    = 0.
+   pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) = 0.
+   pm2_5_water(its:imax,kts:kmax,jts:jmax)  = 0.
+   pm10(its:imax,kts:kmax,jts:jmax)         = 0.
 
    do iphase=1,nphase_aer
    do itype=1,ntype_aer
@@ -473,23 +475,24 @@
          do j=jts,jmax
             do k=kts,kmax
                do i=its,imax
-                  pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)                  &
-                                     + chem(i,k,j,lptr_so4_aer(n,itype,iphase)) &
-                                     + chem(i,k,j,lptr_no3_aer(n,itype,iphase)) &
-                                     + chem(i,k,j,lptr_cl_aer(n,itype,iphase))  &
-                                     + chem(i,k,j,lptr_nh4_aer(n,itype,iphase)) &
-                                     + chem(i,k,j,lptr_na_aer(n,itype,iphase))  &
-                                     + chem(i,k,j,lptr_oin_aer(n,itype,iphase)) &
-                                     + chem(i,k,j,lptr_oc_aer(n,itype,iphase))  &
-                                     + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
+                  mass = chem(i,k,j,lptr_so4_aer(n,itype,iphase)) &
+                       + chem(i,k,j,lptr_no3_aer(n,itype,iphase)) &
+                       + chem(i,k,j,lptr_cl_aer(n,itype,iphase))  &
+                       + chem(i,k,j,lptr_nh4_aer(n,itype,iphase)) &
+                       + chem(i,k,j,lptr_na_aer(n,itype,iphase))  &
+                       + chem(i,k,j,lptr_oin_aer(n,itype,iphase)) &
+                       + chem(i,k,j,lptr_oc_aer(n,itype,iphase))  &
+                       + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
  
+                  pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j) + mass
+
                   pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j)            &
-                                     + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
+                                      + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
 
                   pm2_5_water(i,k,j) = pm2_5_water(i,k,j)              &
-                                       + chem(i,k,j,waterptr_aer(n,itype))
+                                     + chem(i,k,j,waterptr_aer(n,itype))
 
-                  pm10(i,k,j) = pm10(i,k,j) + pm2_5_dry(i,k,j)
+                  pm10(i,k,j) = pm10(i,k,j) + mass
                enddo
             enddo
          enddo
@@ -497,15 +500,15 @@
          do j=jts,jmax
             do k=kts,kmax
                do i=its,imax
-                  pm10(i,k,j) = pm10(i,k,j)                         &
-                                + chem(i,k,j,lptr_so4_aer(n,itype,iphase))   &
-                                + chem(i,k,j,lptr_no3_aer(n,itype,iphase))   &
-                                + chem(i,k,j,lptr_cl_aer(n,itype,iphase))    &
-                                + chem(i,k,j,lptr_nh4_aer(n,itype,iphase))   &
-                                + chem(i,k,j,lptr_na_aer(n,itype,iphase))    &
-                                + chem(i,k,j,lptr_oin_aer(n,itype,iphase))   &
-                                + chem(i,k,j,lptr_oc_aer(n,itype,iphase))    &
-                                + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
+                  pm10(i,k,j) = pm10(i,k,j)                              &
+                              + chem(i,k,j,lptr_so4_aer(n,itype,iphase)) &
+							  + chem(i,k,j,lptr_no3_aer(n,itype,iphase)) &
+							  + chem(i,k,j,lptr_cl_aer(n,itype,iphase))  &
+							  + chem(i,k,j,lptr_nh4_aer(n,itype,iphase)) &
+							  + chem(i,k,j,lptr_na_aer(n,itype,iphase))  &
+							  + chem(i,k,j,lptr_oin_aer(n,itype,iphase)) &
+							  + chem(i,k,j,lptr_oc_aer(n,itype,iphase))  &
+							  + chem(i,k,j,lptr_bc_aer(n,itype,iphase))
                enddo
             enddo
          enddo
@@ -516,11 +519,13 @@
 
    !Convert the units from mixing ratio to concentration (ug m^-3)
    pm2_5_dry(its:imax,kts:kmax,jts:jmax) = pm2_5_dry(its:imax,kts:kmax,jts:jmax) &
-                                        / alt(its:imax,kts:kmax,jts:jmax)
-   pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) = pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) &
                                            / alt(its:imax,kts:kmax,jts:jmax)
+   pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) = pm2_5_dry_ec(its:imax,kts:kmax,jts:jmax) &
+                                              / alt(its:imax,kts:kmax,jts:jmax)
    pm2_5_water(its:imax,kts:kmax,jts:jmax) = pm2_5_water(its:imax,kts:kmax,jts:jmax) &
-                                          / alt(its:imax,kts:kmax,jts:jmax)
+                                             / alt(its:imax,kts:kmax,jts:jmax)
+   pm10(its:imax,kts:kmax,jts:jmax) = pm10(its:imax,kts:kmax,jts:jmax) &
+                                      / alt(its:imax,kts:kmax,jts:jmax)
 
    end subroutine sum_pm_mosaic
 
@@ -2252,7 +2257,7 @@
 95020	format( 8( 1x, i8 ) )
 95030	format( 4( 1pe18.10 ) )
 
-	print 95010, 'aerchem_debug_dump start'
+	print 95010, 'aerchem_debug_dump start -- first time'
 	print 95020, ltot, ltot2, itot, jtot, ktot
 	print 95010, (name(l), l=1,ltot2)
 
@@ -2292,7 +2297,7 @@
 	end do ! size
 	end do ! type
 	end do ! phase
-	print 95010, 'aerchem_debug_dump end'
+	print 95010, 'aerchem_debug_dump end -- first time'
 
 !
 !   test iflag
@@ -2317,7 +2322,7 @@
 	end do
 	end do
 
-	print 95010, 'aerchem_debug_dump start'
+	print 95010, 'aerchem_debug_dump start -- iflag=1'
 	do m = 1, nsubareas
 	do k = 1, ktot
 	    print 95020, iymdcur, ihmscur,   &
@@ -2327,7 +2332,7 @@
 	    print 95030, (rsub_sv1(l,k,m), rsub(l,k,m), l=1,ltot2)
 	end do
 	end do
-	print 95010, 'aerchem_debug_dump end'
+	print 95010, 'aerchem_debug_dump end -- iflag=1'
 
 	return
 
@@ -2343,7 +2348,7 @@
 !   iflag=3 -- do output
 !
 3000	continue
-	print 95010, 'aerchem_debug_dump start'
+	print 95010, 'aerchem_debug_dump start -- iflag=3'
 	do m = 1, nsubareas
 	do k = 1, ktot
 	    print 95020, iymdcur, ihmscur,   &
@@ -2353,7 +2358,7 @@
 	    print 95030, (rsub_sv1(l,k,m), rsub(l,k,m), l=1,ltot2)
 	end do
 	end do
-	print 95010, 'aerchem_debug_dump end'
+	print 95010, 'aerchem_debug_dump end -- iflag=3'
 
 
 	return

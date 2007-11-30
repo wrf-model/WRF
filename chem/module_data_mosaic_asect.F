@@ -237,22 +237,21 @@
 
 
 	real, save ::   &
-          dens_aer( maxd_acomp, maxd_atype ),   &
+          dens_aer( maxd_acomp, maxd_atype ),  &
           dens_mastercomp_aer( maxd_acomp ),   &
-      	  mw_mastercomp_aer( maxd_acomp ),   &
-      	  mw_aer( maxd_acomp, maxd_atype ),   &
-      	  hygro_mastercomp_aer( maxd_acomp ),   &
+      	  mw_mastercomp_aer( maxd_acomp ),     &
+      	  mw_aer( maxd_acomp, maxd_atype ),    &
+      	  hygro_mastercomp_aer( maxd_acomp ),  &
       	  hygro_aer( maxd_acomp, maxd_atype )
 
-!  added by Yang Zhang
 	real, save ::   &
-          volumcen_sect( maxd_asize, maxd_atype ),   &
+          volumcen_sect( maxd_asize, maxd_atype ),  &
           volumlo_sect( maxd_asize, maxd_atype ),   &
           volumhi_sect( maxd_asize, maxd_atype ),   &
-          dcen_sect( maxd_asize, maxd_atype ),   &
-          dlo_sect( maxd_asize, maxd_atype ),   &
-          dhi_sect( maxd_asize, maxd_atype ),   &
-	  sigmag_aer(maxd_asize, maxd_atype)
+          dcen_sect( maxd_asize, maxd_atype ),      &
+          dlo_sect( maxd_asize, maxd_atype ),       &
+          dhi_sect( maxd_asize, maxd_atype ),       &
+          sigmag_aer(maxd_asize, maxd_atype)
 
 	character*10, save ::   &
       	  name_mastercomp_aer( maxd_acomp ),  &

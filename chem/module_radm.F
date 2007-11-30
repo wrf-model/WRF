@@ -72,9 +72,9 @@
       INTEGER :: i,j,k,iprt, jce, jcs, n, nr, ipr,jpr,nvr
 ! ..
 ! .. Local Arrays ..
-      REAL :: p(kts:kte-1), rh(kts:kte-1), rj(kts:kte-1,nreacj),       &
-        t(kts:kte-1), vcinp(kts:kte-1,numchem),wlc(kts:kte-1)
-      real :: vdrog1(kts:kte-1,ldrog)
+      REAL :: p(kts:kte), rh(kts:kte), rj(kts:kte,nreacj),       &
+        t(kts:kte), vcinp(kts:kte,numchem),wlc(kts:kte)
+      real :: vdrog1(kts:kte,ldrog)
 
 !
 
@@ -110,7 +110,7 @@
 ! reorder                                                                                        
 !                                                                                                
 !       if(iprt.eq.2)print *,'k,chem(i,k,j,p_sulf),vcinp(k,lsulf)'
-      do k=kts,kte-1                                                                             
+      do k=kts,kte
         vcinp(k,lso2)  =  max(chem(i,k,j,p_so2),epsilc)
         vcinp(k,Lsulf) =  max(chem(i,k,j,p_sulf),epsilc)
         vcinp(k,Lno2)  =  max(chem(i,k,j,p_no2),epsilc)
@@ -160,7 +160,7 @@
         enddo
 !--- now do chemistry, need some input here
 
-      do k=kts,kte-1
+      do k=kts,kte
          t(k) = t_phy(i,k,j)
          p(k) = .001*p_phy(i,k,j)
          rh(k) = .95
@@ -180,13 +180,13 @@
 ! radm here is called with a vertical stack
 !
       jcs = kts
-      jce = kte-1
+      jce = kte
 
 
 !
 ! fill photolysis rates for use in radm module
 !
-      do k=kts,kte-1
+      do k=kts,kte
         rj(k,1) = ph_no2(i,k,j)
         rj(k,2) = ph_o31d(i,k,j)
         rj(k,3) = ph_o33p(i,k,j)
@@ -214,10 +214,10 @@
 !     if((i.eq.87.and.j.eq.15).or.(i.eq.87.and.j.eq.4))then
 !       iprt=1
 !     endif
-      CALL radm(rj,wlc,vcinp,t,p,rh,xtime,xtimin,kts,kte-1,            &
+      CALL radm(rj,wlc,vcinp,t,p,rh,xtime,xtimin,kts,kte,            &
                 iprt,dt60,dtcmax,dtcmin,vdrog1,iaerosol_sorgam)
 !     print *,'after  radm, i,j = ',i,j
-      do k=kts,kte-1
+      do k=kts,kte
         chem(i,k,j,p_so2)     = max(vcinp(k,lso2),epsilc)
         chem(i,k,j,p_sulf)     = max(vcinp(k,Lsulf),epsilc)
         chem(i,k,j,p_no2)     = max(vcinp(k,Lno2),epsilc)

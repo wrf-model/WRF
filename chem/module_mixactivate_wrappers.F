@@ -25,6 +25,7 @@ CONTAINS
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
            qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
+           ids,ide, jds,jde, kds,kde,                        &
            ims,ime, jms,jme, kms,kme,                        &
            its,ite, jts,jte, kts,kte                         )
 
@@ -40,6 +41,7 @@ CONTAINS
 !   subr arguments
 	integer, intent(in) ::               &
          id, ktau,                       &
+         ids, ide, jds, jde, kds, kde,   &
          ims, ime, jms, jme, kms, kme,   &
          its, ite, jts, jte, kts, kte,   &
          idrydep_onoff
@@ -78,24 +80,24 @@ CONTAINS
 	real qsrflx(ims:ime, jms:jme, num_chem) ! dry deposition flux of aerosol
 	real sumhygro,sumvol
 	integer i,j,k,l,m,n
-	real hygro( its:ite, kts:kte, jts:jte,maxd_asize, maxd_atype ) ! bulk
+	real hygro( its:ite, kts:kte, jts:jte, maxd_asize, maxd_atype ) ! bulk
 
 
 ! calculate volume-weighted bulk hygroscopicity for each type and size
-
+!!$      hygro(its:ite, :, jts:jte, :, :) = 0. !~wig: testing, should not need this
       do 100 j=jts,jte
       do 100 k=kts,kte
       do 100 i=its,ite
        do n=1,ntype_aer
        do m=1,nsize_aer(n)
-	       sumhygro=0
-	       sumvol=0
+	       sumhygro=0.
+	       sumvol=0.
 	       do l=1,ncomp_aer(n)
 	          sumhygro = sumhygro+hygro_aer(l,n)*   &
                    chem(i,k,j,massptr_aer(l,m,n,ai_phase))/dens_aer(l,n)
 	          sumvol = sumvol+chem(i,k,j,massptr_aer(l,m,n,ai_phase))/dens_aer(l,n)
 	       end do ! comp
-               hygro(i,k,j,m,n)=sumhygro/sumvol
+           hygro(i,k,j,m,n)=sumhygro/sumvol
 	end do ! size
 	end do ! type
   100 continue
@@ -110,6 +112,7 @@ CONTAINS
            numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dcen_sect,  &
            dens_aer, mw_aer,           &
            waterptr_aer, hygro,  ai_phase, cw_phase,                &
+           ids,ide, jds,jde, kds,kde,                            &
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &
@@ -123,12 +126,69 @@ CONTAINS
 
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
+
+      subroutine mosaic_mixactivate_init(                    &
+           config_flags, chem, scalar,                       &
+           ims,ime, jms,jme, kms,kme,                        &
+           its,ite, jts,jte, kts,kte                         )
+
+      USE module_configure, only: grid_config_rec_type
+      use module_state_description, only:  num_chem, num_scalar, p_qndrop
+      use module_data_mosaic_asect
+
+	implicit none
+
+! subr arguments
+      type(grid_config_rec_type), intent(in) :: config_flags
+
+      integer, intent(in) ::               &
+           ims, ime, jms, jme, kms, kme,   &
+           its, ite, jts, jte, kts, kte
+
+      real, intent(inout),   &
+           dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
+           chem
+
+      real, intent(inout),   &
+           dimension( ims:ime, kms:kme, jms:jme, 1:num_scalar ) :: &
+           scalar
+
+      integer :: i, j, k, m, n, l
+
+      do j=jts,jte
+         do k=kts,kte
+            do i=its,ite
+               scalar(i,k,j,p_qndrop) = 0.               
+            end do
+         end do
+      end do
+
+      if( cw_phase > 0 ) then   !sanity check in case using prognostic
+                                !drop number without aq. chemistry
+         do n=1,ntype_aer
+         do m=1,nsize_aer(n)
+            chem(its:ite,kts:kte,jts:jte,numptr_aer(m,n,cw_phase)) = 0.
+            do l=1,ncomp_aer(n)
+               chem(its:ite,kts:kte,jts:jte,massptr_aer(l,m,n,cw_phase)) = 0.
+            end do              ! comp
+         end do                 ! size
+         end do                 ! type
+      end if
+
+      end subroutine mosaic_mixactivate_init
+
+
+!----------------------------------------------------------------------
+!----------------------------------------------------------------------
+
+
       subroutine sorgam_mixactivate (                        &
            id, ktau, dtstep, config_flags, idrydep_onoff,    &
            rho_phy, t_phy, w, cldfra, cldfra_old,            &
            ddvel, z, dz8w, p_at_w, t_at_w, exch_h,           &
            qv, qc, qi, qndrop3d, f_qc, f_qi, chem,           &
 	       ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,      &
+           ids,ide, jds,jde, kds,kde,                        &
            ims,ime, jms,jme, kms,kme,                        &
            its,ite, jts,jte, kts,kte                         )
 
@@ -144,6 +204,7 @@ CONTAINS
 !   subr arguments
 	integer, intent(in) ::                  &
 		id, ktau,                       &
+		ids, ide, jds, jde, kds, kde,   &
 		ims, ime, jms, jme, kms, kme,   &
 		its, ite, jts, jte, kts, kte,   &
                 idrydep_onoff
@@ -215,6 +276,7 @@ CONTAINS
            numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dcen_sect,  &
            dens_aer, mw_aer,           &
            waterptr_aer, hygro,  ai_phase, cw_phase,                 &
+           ids,ide, jds,jde, kds,kde,                            &
            ims,ime, jms,jme, kms,kme,                            &
            its,ite, jts,jte, kts,kte,                            &
            rho_phy, z, dz8w, p_at_w, t_at_w, exch_h,      &

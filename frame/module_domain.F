@@ -2111,8 +2111,6 @@ CONTAINS
 !PRINT *,'DEBUG:  end set_current_grid_ptr()'
       END SUBROUTINE set_current_grid_ptr
 
-
-
 !******************************************************************************
 ! BEGIN TEST SECTION
 !   Code in the test section is used to test domain methods.  

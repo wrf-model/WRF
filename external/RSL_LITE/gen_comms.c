@@ -40,7 +40,7 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
       while ( t2 != NULL )
       {
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
-          { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
+          { fprintf(stderr,"WARNING 1a : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
         else
         {
           strcpy( varref, t2 ) ;
@@ -479,7 +479,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
       while ( t2 != NULL )
       {
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
-          { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
+          { fprintf(stderr,"WARNING 1b : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
         else
         {
 
@@ -754,7 +754,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
       while ( t2 != NULL )
       {
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
-          { fprintf(stderr,"WARNING 1 : %s in peridod spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
+          { fprintf(stderr,"WARNING 1 : %s in period spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
         else
         {
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )
@@ -1053,7 +1053,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
       while ( t2 != NULL )
       {
         if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
-          { fprintf(stderr,"WARNING 1 : %s in swap spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
+          { fprintf(stderr,"WARNING 1 : %s in cycle spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
         else
         {
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )

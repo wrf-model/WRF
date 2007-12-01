@@ -79,7 +79,7 @@ int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
 
 int gen_scalar_indices ( char * dirname ) ;
-int gen_scalar_indices1 ( FILE * fp ) ;
+int gen_scalar_indices1 ( FILE * fp, FILE * fp2 ) ;
 
 int gen_actual_args ( char * dirname ) ;
 int gen_dummy_args ( char * dirname ) ;

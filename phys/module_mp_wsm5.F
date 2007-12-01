@@ -1046,13 +1046,6 @@ CONTAINS
           qs(i,k,1)=psat*exp(logtr*(xa)+xb*(1.-tr))
           qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
           qs(i,k,1) = max(qs(i,k,1),qmin)
-          if(t(i,k).lt.ttp) then
-            qs(i,k,2)=psat*exp(logtr*(xai)+xbi*(1.-tr))
-          else
-            qs(i,k,2)=psat*exp(logtr*(xa)+xb*(1.-tr))
-          endif
-          qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
-          qs(i,k,2) = max(qs(i,k,2),qmin)
         enddo
       enddo
 !

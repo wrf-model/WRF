@@ -3721,6 +3721,7 @@ CONTAINS
                                                       CIWP, &
                                                       PLWP, &
                                                       PIWP
+      CHARACTER*80 errmess
                            
       real :: amd       ! Effective molecular weight of dry air (g/mol)  
       real :: amw       ! Molecular weight of water vapor (g/mol)        
@@ -3820,6 +3821,11 @@ CONTAINS
 !     TBOUND = TINT(kte+1)                                                        
 !     TBOUND = Tw(kte+1)                                                        
       TBOUND = TSFC
+      IF(TBOUND .GT. 340.)THEN
+        WRITE( errmess , '(A,I4)' ) 'rrtm: TBOUND exceeds table limit: reset ',TBOUND
+        CALL wrf_message (errmess)
+        TBOUND = 339.99
+      ENDIF
                                                                                  
 !  Install MM5 profiles into RRTM arrays for pressure, temperature,              
 !  and molecular amounts.  Pressures are converted from cb                       

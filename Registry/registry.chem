@@ -173,6 +173,10 @@ state    real  ph_hcochob      ikj     misc        1         -      r        "PH
 state    real  ph_macr         ikj     misc        1         -      r        "PHOTR1"                "MACR Photolysis Rate" "min{-1}"
 state    real  ph_n2o5         ikj     misc        1         -      r        "PHOTR23"               "N2O5 Photolysis Rate" "min{-1}"
 state    real  ph_o2           ikj     misc        1         -      r        "PHOTR24"               "O2 Photolysis Rate" "min{-1}"
+state    real  ph_pan          ikj     misc        1         -      r        "PHOTR101"              "pan photolysis rate" "min{-1}"
+state    real  ph_acet         ikj     misc        1         -      r        "PHOTR102"              "acetone photolysis rate" "min{-1}"
+state    real  ph_mglo         ikj     misc        1         -      r        "PHOTR103"              "mglo photolysis rate" "min{-1}"
+state    real  ph_hno4_2       ikj     misc        1         -      r        "PHOTR104"              "mglo photolysis rate" "min{-1}"
 # Aerosol optical properties from Mie code
 state    real  tauaer1         ikj     misc        1         -      hr        "TAUAER1"               "bin 1 layer optical thickness" "?"
 state    real  tauaer2         ikj     misc        1         -      hr        "TAUAER2"               "bin 2 layer optical thickness" "?"
@@ -620,6 +624,50 @@ state   real   oc_cw08      ikjftb   chem       1         -   irhusdf=(bdy_inter
 state   real   bc_cw08      ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "bc_cw08"        "Black carbon, aerosol in cloud bin 08"      "ug/kg-dryair"
 state   real   num_cw08     ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "num_cw08"       "Number, aerosol in cloud bin 08"     "#/kg-dryair"
 
+# KPP Mechanism from MATCH-MPI MAINZ global chemistry
+state   real    pa       ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "pa"          ""         "" 
+state   real    aca      ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "aca"        ""         "" 
+state   real    acet     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "acet"        ""         ""
+state   real    isopr     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "isopr"        "isoprene"         "" 
+state   real    mvk      ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mvk"         " "         "" 
+state   real    iso2     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "iso2"        ""         "" 
+state   real    isooh    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "isooh"       ""         ""
+state   real    mvko2    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mvko2"       ""         "" 
+state   real    mvkooh   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mvkooh"      ""         "" 
+state   real    acol     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "acol"        ""         ""
+state   real    hcooh    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "hcooh"       ""         ""
+state   real    naca     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "naca"        ""         "" 
+state   real    mglo     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mglo"        ""         "" 
+state   real    c2h6     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c2h6"        ""         "" 
+state   real    etooh    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "etooh"       ""         "" 
+state   real    c3h8     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c3h8"        ""         "" 
+state   real    prooh    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "prooh"       ""         ""
+state   real    acooh    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "acooh"       ""         ""
+state   real    eto2     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "eto2"        ""         ""
+state   real    pro2     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "pro2"        ""         ""
+state   real    aco2     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "aco2"        ""         ""
+state   real    c3h6     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c3h6"        ""         ""
+state   real    c3h6ooh  ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c3h6ooh"     ""         ""
+state   real    c2h4     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c2h4"        ""         ""
+state   real    c4h10    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c4h10"       ""         ""
+state   real    buooh    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c4h9ooh"     ""         ""
+state   real    mek      ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mek"         ""         "" 
+state   real    mekooh   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mekooh"      ""         ""
+state   real    mecoco   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "mecoco"      ""         ""
+state   real    c3h6o2   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c3h6o2"      ""         ""
+state   real    c4h9o2   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c4h9o2"      ""         ""
+state   real    meko2    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "meko2"       ""         ""
+state   real    prono2   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "prono2"      ""         ""
+state   real    acetol   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "acetol"      ""         ""
+state   real    acetp    ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "acetp"      ""         ""
+state   real    aceto2   ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "aceto2"      ""         ""
+state   real    ch3cooh  ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "ch3cooh"      ""      ""
+state   real    c4h9ooh  ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "c4h9ooh"      ""     "" 
+state   real    meo2     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "meo2"      ""         ""
+state   real    meoh     ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "meoh"  ""  ""
+state   real    meo2no2  ikjftb   chem        1         -     irusdf=(bdy_interp:dt)         "meo2no2"  ""  ""
+
+#End MATCH-MPI MAINZ global chemistry
 
 # time averaged stuff
 state    real  RAINCV_A           ij      misc        1         -      r       "RAINCV_A"                "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
@@ -712,6 +760,8 @@ package   racmsorg_kpp      chem_opt==105                  -            chem:so2
 
 package   radm2sorg_kpp     chem_opt==106                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 
+# KPP mechanism from MATCH-MPI Mainz used for global chemistry
+package   nmhc9_kpp     chem_opt==200                   -             chem:o3,h2o2,ch4,op1,hcho,ch3oh,co,hno3,no3,n2o5,hno4,no,no2,isopr,mvk,iso2,isooh,mvko2,mvkooh,ison,aca,acol,hcooh,mpan,naca,pan,pa,paa,mglo,c2h6,eTooh,ald,c3h8,pRooh,acet,acooh,eTo2,pRo2,aco2,c3h6,c3h6ooh,c2h4,c4h10,buooh,mek,mekooh,mEcoco,c3h6o2,c4h9o2,meko2,onit,pRono2,ch3o2,acetol,acetp,aceto2,ch3cooh,c4h9ooh,mEoh,ho,ho2,mEo2,mEo2no2
 
 
 #cms--
@@ -743,4 +793,6 @@ package   aer_bc_default              aer_bc_opt==1                -            
 package   aer_bc_pnnl                 aer_bc_opt==101              -             -
 package   aer_ic_default              aer_ic_opt==1                -             -
 package   aer_ic_pnnl                 aer_ic_opt==101              -             -
+
+
 

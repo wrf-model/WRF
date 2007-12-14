@@ -1702,11 +1702,11 @@ END SUBROUTINE sorgam_depdriver
           END IF
 
         END IF
-        if(y.lt.nummin_i)then
-          print *,'a,b,y,y0,c,cblk(l,vnu0),dt,dndt(l),brna01(l),epm25i(l),eeci(l),eorgi(l)'
-          print *,'igrid,jgrid,kgrid = ',igrid,jgrid,kgrid
-          print *,a,b,y,y0,c,cblk(l,vnu0),dt,dndt(l),brna01(l),epm25i(l),eeci(l),eorgi(l)
-        endif
+!       if(y.lt.nummin_i)then
+!         print *,'a,b,y,y0,c,cblk(l,vnu0),dt,dndt(l),brna01(l),epm25i(l),eeci(l),eorgi(l)'
+!         print *,'igrid,jgrid,kgrid = ',igrid,jgrid,kgrid
+!         print *,a,b,y,y0,c,cblk(l,vnu0),dt,dndt(l),brna01(l),epm25i(l),eeci(l),eorgi(l)
+!       endif
 
         cblk(l,vnu0) = max(nummin_i,y) 
 

@@ -14,7 +14,7 @@ CONTAINS
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,tke_myj,el_myj,exch_h,akhs,akms                  &
                  ,thz0,qz0,uz0,vz0,qsfc                            &
-                 ,lowlyr                                           &
+                 ,lowlyr,u10,v10                                   &
                  ,psim,psih,gz1oz0, wspd,br,chklowq                &
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
@@ -240,7 +240,9 @@ CONTAINS
                                                              UZ0, &
                                                              VZ0, &
                                                               CT, &
-                                                          GRDFLX  , &
+                                                          GRDFLX, &
+                                                             U10, &
+                                                             V10, &
                                                             WSPD
 
 !
@@ -409,7 +411,7 @@ CONTAINS
              CALL ysu(                                              &
                U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
-              ,P3D=p_phy,PI3D=pi_phy                                &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy                       &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
@@ -419,6 +421,7 @@ CONTAINS
               ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh            &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
+              ,U10=u10,V10=v10                                      &
               ,WSPD=wspd,BR=br,DT=dtbl,DTMIN=dtmin,KPBL2D=kpbl      &
               ,SVP1=svp1,SVP2=svp2,SVP3=svp3,SVPT0=svpt0            &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman,EOMEG=eomeg          &

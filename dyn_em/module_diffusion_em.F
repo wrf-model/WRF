@@ -3427,6 +3427,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 !
 !
   qflux: SELECT CASE( config_flags%isfflx )
+  CASE (0)
+! do nothing
   CASE (1) ! with surface moisture flux 
     IF ( im == P_QV ) THEN
        DO j = j_start, j_end
@@ -5160,7 +5162,7 @@ END SUBROUTINE phy_bc
       Cd = cd0
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (u(i,k,j)+u(i+1,k,j))*0.5* &
-                     Cd*absU*defor13(i,kts+1,j))
+                     Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
     END DO
     END DO
@@ -5170,11 +5172,11 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO i = i_start, i_end
 
-      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (u(i,k,j)+u(i+1,k,j))*0.5* &
-                     Cd*absU*defor13(i,kts+1,j))
+                     Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
     END DO
     END DO
@@ -5234,7 +5236,7 @@ END SUBROUTINE phy_bc
       Cd = cd0
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &
-                     Cd*absU*defor23(i,kts+1,j))
+                     Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
     END DO
     END DO
@@ -5244,11 +5246,11 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end   
     DO i = i_start, i_end
 
-      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
+      absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
       tendency(i,k,j) = tendency(i,k,j) +       &
            mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &
-                     Cd*absU*defor23(i,kts+1,j))
+                     Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
     END DO
     END DO

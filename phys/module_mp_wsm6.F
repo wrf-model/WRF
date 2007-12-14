@@ -255,7 +255,6 @@ CONTAINS
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
                                                               sr
-
   REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
         INTENT(INOUT) ::                                    snow, &
                                                          snowncv
@@ -267,12 +266,16 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte , 3) ::                      &
         rh, qs, rslope, rslope2, rslope3, rslopeb,                &
         falk, fall, work1
+  REAL, DIMENSION( its:ite , kts:kte , 1) ::                      &
+        worka
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
               falkc, work1c, work2c, fallc
-  REAL, DIMENSION( its:ite , kts:kte) ::                          &
+  REAL, DIMENSION( its:ite , kts:kte ) ::                          &
         prevp, psdep, pgdep, praut, psaut, pgaut,                 &
         pracw, psacw, pgacw, pgacr, pgacs, psaci, pgmlt, praci,   &
         piacr, pracs, psacr, pgaci, pseml, pgeml      
+  REAL, DIMENSION( its:ite , kts:kte) :: qsum
+  REAL, DIMENSION( its:ite , kts:kte ) :: paacw
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         pigen, pidep, pcond, xl, cpm, work2, psmlt, psevp, denfac,     &
         xni, pgevp,n0sfac
@@ -289,9 +292,10 @@ CONTAINS
             coeres, supsat, dtcld, xmi, eacrs, satdt,             &
             qimax, diameter, xni0, roqi0,                         &
             fallsum, fallsum_qsi, fallsum_qg,                     &
-             vt2i,vt2r,vt2s,vt2g,acrfac,egs,egi,     &
+            vt2i,vt2r,vt2s,vt2g,acrfac,egs,egi,     &
             xlwork2, factor, source, value,              &
             xlf, pfrzdtc, pfrzdtr, supice, alpha2, delta2, delta3  
+  REAL  :: vt2ave
   REAL  :: holdc, holdci
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n
@@ -434,6 +438,7 @@ CONTAINS
           pracs(i,k) = 0.
           psacr(i,k) = 0.
           pgacw(i,k) = 0.
+          paacw(i,k) = 0.
           pgaci(i,k) = 0.
           pgacr(i,k) = 0.
           pgacs(i,k) = 0.
@@ -520,7 +525,13 @@ CONTAINS
           work1(i,k,1) = pvtr*rslopeb(i,k,1)*denfac(i,k)/delz(i,k)
           work1(i,k,2) = pvts*rslopeb(i,k,2)*denfac(i,k)/delz(i,k)
           work1(i,k,3) = pvtg*rslopeb(i,k,3)*denfac(i,k)/delz(i,k)
-          numdt(i) = max(nint(max(work1(i,k,1),work1(i,k,2),work1(i,k,3)) &
+          qsum(i,k) = qrs(i,k,2)+qrs(i,k,3)
+          if(qsum(i,k) .le. 0) then
+          qsum(i,k) = 1.E-15
+          endif
+          worka(i,k,1) = (pvts*rslopeb(i,k,2)*denfac(i,k)*qrs(i,k,2)      &
+                         +pvtg*rslopeb(i,k,3)*denfac(i,k)*qrs(i,k,3))/qsum(i,k)/delz(i,k)     
+          numdt(i) = max(nint(max(work1(i,k,1),worka(i,k,1)) &
                     *dtcld+.5),1)
           if(numdt(i).ge.mstep(i)) mstep(i) = numdt(i)
         enddo
@@ -534,8 +545,8 @@ CONTAINS
         do i = its, ite
           if(n.le.mstep(i)) then
               falk(i,k,1) = den(i,k)*qrs(i,k,1)*work1(i,k,1)/mstep(i)
-              falk(i,k,2) = den(i,k)*qrs(i,k,2)*work1(i,k,2)/mstep(i)
-              falk(i,k,3) = den(i,k)*qrs(i,k,3)*work1(i,k,3)/mstep(i)
+              falk(i,k,2) = den(i,k)*qrs(i,k,2)*worka(i,k,1)/mstep(i)
+              falk(i,k,3) = den(i,k)*qrs(i,k,3)*worka(i,k,1)/mstep(i)
               fall(i,k,1) = fall(i,k,1)+falk(i,k,1)
               fall(i,k,2) = fall(i,k,2)+falk(i,k,2)
               fall(i,k,3) = fall(i,k,3)+falk(i,k,3)
@@ -548,8 +559,8 @@ CONTAINS
           do i = its, ite
             if(n.le.mstep(i)) then
               falk(i,k,1) = den(i,k)*qrs(i,k,1)*work1(i,k,1)/mstep(i)
-              falk(i,k,2) = den(i,k)*qrs(i,k,2)*work1(i,k,2)/mstep(i)
-              falk(i,k,3) = den(i,k)*qrs(i,k,3)*work1(i,k,3)/mstep(i)
+              falk(i,k,2) = den(i,k)*qrs(i,k,2)*worka(i,k,1)/mstep(i)
+              falk(i,k,3) = den(i,k)*qrs(i,k,3)*worka(i,k,1)/mstep(i)
               fall(i,k,1) = fall(i,k,1)+falk(i,k,1)
               fall(i,k,2) = fall(i,k,2)+falk(i,k,2)
               fall(i,k,3) = fall(i,k,3)+falk(i,k,3)
@@ -874,6 +885,11 @@ CONTAINS
           vt2r=pvtr*rslopeb(i,k,1)*denfac(i,k)
           vt2s=pvts*rslopeb(i,k,2)*denfac(i,k)
           vt2g=pvtg*rslopeb(i,k,3)*denfac(i,k)
+          qsum(i,k) = qrs(i,k,2)+qrs(i,k,3)
+          if(qsum(i,k) .le. 0) then
+          qsum(i,k) = 1.E-15
+          endif
+          vt2ave=(vt2s*qrs(i,k,2)+vt2g*qrs(i,k,3))/(qsum(i,k))
           if(supcol.gt.0.and.qci(i,k,2).gt.qmin) then
             if(qrs(i,k,1).gt.qcrmin) then
 !-------------------------------------------------------------
@@ -901,7 +917,7 @@ CONTAINS
               acrfac = 2.*rslope3(i,k,2)+2.*diameter*rslope2(i,k,2)     &
                       +diameter**2*rslope(i,k,2)
               psaci(i,k) = pi*qci(i,k,2)*eacrs*n0s*n0sfac(i,k)          &
-                          *abs(vt2s-vt2i)*acrfac/4.
+                          *abs(vt2ave-vt2i)*acrfac/4.
               psaci(i,k) = min(psaci(i,k),qci(i,k,2)/dtcld)
             endif
 !-------------------------------------------------------------
@@ -912,13 +928,13 @@ CONTAINS
               egi = exp(0.07*(-supcol))
               acrfac = 2.*rslope3(i,k,3)+2.*diameter*rslope2(i,k,3)     &
                       +diameter**2*rslope(i,k,3)
-              pgaci(i,k) = pi*egi*qci(i,k,2)*n0g*abs(vt2g-vt2i)*acrfac/4.
+              pgaci(i,k) = pi*egi*qci(i,k,2)*n0g*abs(vt2ave-vt2i)*acrfac/4.
               pgaci(i,k) = min(pgaci(i,k),qci(i,k,2)/dtcld)
             endif
           endif
 !-------------------------------------------------------------
 ! psacw: Accretion of cloud water by snow  [HL A7] [LFO 24]
-!        (T<T0: C->G, and T>=T0: C->R)
+!        (T<T0: C->S, and T>=T0: C->R)
 !-------------------------------------------------------------
           if(qrs(i,k,2).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
             psacw(i,k) = min(pacrc*n0sfac(i,k)*rslope3(i,k,2)           &
@@ -934,6 +950,13 @@ CONTAINS
                         *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !-------------------------------------------------------------
+! paacw: Accretion of cloud water by averaged snow/graupel 
+!        (T<T0: C->G or S, and T>=T0: C->R) 
+!-------------------------------------------------------------
+          if(qrs(i,k,2).gt.qcrmin.and.qrs(i,k,3).gt.qcrmin) then
+            paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))/(qsum(i,k))
+           endif      
+!-------------------------------------------------------------
 ! pracs: Accretion of snow by rain [HL A11] [LFO 27]
 !         (T<T0: S->G)
 !-------------------------------------------------------------
@@ -942,7 +965,7 @@ CONTAINS
               acrfac = 5.*rslope3(i,k,2)*rslope3(i,k,2)*rslope(i,k,1)   &
                       +2.*rslope3(i,k,2)*rslope2(i,k,2)*rslope2(i,k,1)  &
                       +.5*rslope2(i,k,2)*rslope2(i,k,2)*rslope3(i,k,1)
-              pracs(i,k) = pi**2*n0r*n0s*n0sfac(i,k)*abs(vt2r-vt2s)     &
+              pracs(i,k) = pi**2*n0r*n0s*n0sfac(i,k)*abs(vt2r-vt2ave)     &
                           *(dens/den(i,k))*acrfac
               pracs(i,k) = min(pracs(i,k),qrs(i,k,2)/dtcld)
             endif
@@ -953,7 +976,7 @@ CONTAINS
             acrfac = 5.*rslope3(i,k,1)*rslope3(i,k,1)*rslope(i,k,2)     &
                     +2.*rslope3(i,k,1)*rslope2(i,k,1)*rslope2(i,k,2)    &
                     +.5*rslope2(i,k,1)*rslope2(i,k,1)*rslope3(i,k,2)
-            psacr(i,k) = pi**2*n0r*n0s*n0sfac(i,k)*abs(vt2s-vt2r)       &
+            psacr(i,k) = pi**2*n0r*n0s*n0sfac(i,k)*abs(vt2ave-vt2r)       &
                         *(denr/den(i,k))*acrfac
             psacr(i,k) = min(psacr(i,k),qrs(i,k,1)/dtcld)
           endif
@@ -965,7 +988,7 @@ CONTAINS
             acrfac = 5.*rslope3(i,k,1)*rslope3(i,k,1)*rslope(i,k,3)     &
                     +2.*rslope3(i,k,1)*rslope2(i,k,1)*rslope2(i,k,3)    &
                     +.5*rslope2(i,k,1)*rslope2(i,k,1)*rslope3(i,k,3)
-            pgacr(i,k) = pi**2*n0r*n0g*abs(vt2g-vt2r)*(denr/den(i,k))   &
+            pgacr(i,k) = pi**2*n0r*n0g*abs(vt2ave-vt2r)*(denr/den(i,k))   &
                         *acrfac
             pgacr(i,k) = min(pgacr(i,k),qrs(i,k,1)/dtcld)
           endif
@@ -983,7 +1006,7 @@ CONTAINS
             else
               egs = 1.
             endif
-            pgacs(i,k) = pi**2*egs*n0s*n0sfac(i,k)*n0g*abs(vt2g-vt2s)   &
+            pgacs(i,k) = pi**2*egs*n0s*n0sfac(i,k)*n0g*abs(vt2ave-vt2ave)   &
                         *(dens/den(i,k))*acrfac
             pgacs(i,k) = min(pgacs(i,k),qrs(i,k,2)/dtcld)
           endif
@@ -994,14 +1017,14 @@ CONTAINS
 !        (T>=T0: S->R)
 !-------------------------------------------------------------
             if(qrs(i,k,2).gt.0.)                                        &
-              pseml(i,k) = min(max(cliq*supcol*(psacw(i,k)+psacr(i,k))  &
+              pseml(i,k) = min(max(cliq*supcol*(paacw(i,k)+psacr(i,k))  &
                           /xlf,-qrs(i,k,2)/dtcld),0.)
 !-------------------------------------------------------------
 ! pgeml: Enhanced melting of graupel by accretion of water [HL A24] [RH84 A21-A22]
 !        (T>=T0: G->R)
 !-------------------------------------------------------------
             if(qrs(i,k,3).gt.0.)                                        &
-              pgeml(i,k) = min(max(cliq*supcol*(pgacw(i,k)+pgacr(i,k))  &
+              pgeml(i,k) = min(max(cliq*supcol*(paacw(i,k)+pgacr(i,k))  &
                           /xlf,-qrs(i,k,3)/dtcld),0.)
           endif
           if(supcol.gt.0) then
@@ -1133,13 +1156,12 @@ CONTAINS
 !     cloud water
 !
             value = max(qmin,qci(i,k,1))
-            source = (praut(i,k)+pracw(i,k)+psacw(i,k)+pgacw(i,k))*dtcld
+            source = (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
               pracw(i,k) = pracw(i,k)*factor
-              psacw(i,k) = psacw(i,k)*factor
-              pgacw(i,k) = pgacw(i,k)*factor
+              paacw(i,k) = paacw(i,k)*factor
             endif
 !
 !     cloud ice
@@ -1175,7 +1197,7 @@ CONTAINS
 !     snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = -(psdep(i,k)+psaut(i,k)-pgaut(i,k)+psacw(i,k)      &
+            source = -(psdep(i,k)+psaut(i,k)-pgaut(i,k)+paacw(i,k)      &
                      +piacr(i,k)*delta3+praci(i,k)*delta3               &
                      -pracs(i,k)*(1.-delta2)+psacr(i,k)*delta2          &
                      +psaci(i,k)-pgacs(i,k) )*dtcld
@@ -1184,7 +1206,7 @@ CONTAINS
               psdep(i,k) = psdep(i,k)*factor
               psaut(i,k) = psaut(i,k)*factor
               pgaut(i,k) = pgaut(i,k)*factor
-              psacw(i,k) = psacw(i,k)*factor
+              paacw(i,k) = paacw(i,k)*factor
               piacr(i,k) = piacr(i,k)*factor
               praci(i,k) = praci(i,k)*factor
               psaci(i,k) = psaci(i,k)*factor
@@ -1199,7 +1221,7 @@ CONTAINS
             source = -(pgdep(i,k)+pgaut(i,k)               &
                      +piacr(i,k)*(1.-delta3)+praci(i,k)*(1.-delta3)     &
                      +psacr(i,k)*(1.-delta2)+pracs(i,k)*(1.-delta2)     &
-                     +pgaci(i,k)+pgacw(i,k)+pgacr(i,k)+pgacs(i,k))*dtcld
+                     +pgaci(i,k)+paacw(i,k)+pgacr(i,k)+pgacs(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               pgdep(i,k) = pgdep(i,k)*factor
@@ -1208,7 +1230,7 @@ CONTAINS
               praci(i,k) = praci(i,k)*factor
               psacr(i,k) = psacr(i,k)*factor
               pracs(i,k) = pracs(i,k)*factor
-              pgacw(i,k) = pgacw(i,k)*factor
+              paacw(i,k) = paacw(i,k)*factor
               pgaci(i,k) = pgaci(i,k)*factor
               pgacr(i,k) = pgacr(i,k)*factor
               pgacs(i,k) = pgacs(i,k)*factor
@@ -1219,14 +1241,14 @@ CONTAINS
 !     update
             q(i,k) = q(i,k)+work2(i,k)*dtcld
             qci(i,k,1) = max(qci(i,k,1)-(praut(i,k)+pracw(i,k)          &
-                           +psacw(i,k)+pgacw(i,k))*dtcld,0.)
+                           +paacw(i,k)+paacw(i,k))*dtcld,0.)
             qrs(i,k,1) = max(qrs(i,k,1)+(praut(i,k)+pracw(i,k)          &
                            +prevp(i,k)-piacr(i,k)-pgacr(i,k)            &
                            -psacr(i,k))*dtcld,0.)
             qci(i,k,2) = max(qci(i,k,2)-(psaut(i,k)+praci(i,k)          &
                            +psaci(i,k)+pgaci(i,k)-pigen(i,k)-pidep(i,k))   &
                            *dtcld,0.)
-            qrs(i,k,2) = max(qrs(i,k,2)+(psdep(i,k)+psaut(i,k)+psacw(i,k)  &
+            qrs(i,k,2) = max(qrs(i,k,2)+(psdep(i,k)+psaut(i,k)+paacw(i,k)  &
                            -pgaut(i,k)+piacr(i,k)*delta3                &
                            +praci(i,k)*delta3+psaci(i,k)-pgacs(i,k)      &
                            -pracs(i,k)*(1.-delta2)+psacr(i,k)*delta2)    &
@@ -1234,39 +1256,37 @@ CONTAINS
             qrs(i,k,3) = max(qrs(i,k,3)+(pgdep(i,k)+pgaut(i,k)         &
                            +piacr(i,k)*(1.-delta3)            &
                            +praci(i,k)*(1.-delta3)+psacr(i,k)*(1.-delta2)&
-                           +pracs(i,k)*(1.-delta2)+pgaci(i,k)+pgacw(i,k) &
+                           +pracs(i,k)*(1.-delta2)+pgaci(i,k)+paacw(i,k) &
                            +pgacr(i,k)+pgacs(i,k))*dtcld,0.)
             xlf = xls-xl(i,k)
             xlwork2 = -xls*(psdep(i,k)+pgdep(i,k)+pidep(i,k)+pigen(i,k)) &
-                      -xl(i,k)*prevp(i,k)-xlf*(piacr(i,k)+psacw(i,k)    &
-                      +pgacw(i,k)+pgacr(i,k)+psacr(i,k))
+                      -xl(i,k)*prevp(i,k)-xlf*(piacr(i,k)+paacw(i,k)    &
+                      +paacw(i,k)+pgacr(i,k)+psacr(i,k))
             t(i,k) = t(i,k)-xlwork2/cpm(i,k)*dtcld
           else
 !
 !     cloud water
 !
             value = max(qmin,qci(i,k,1))
-            source=(praut(i,k)+pracw(i,k)+psacw(i,k)+pgacw(i,k))*dtcld
+            source=(praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
               pracw(i,k) = pracw(i,k)*factor
-              psacw(i,k) = psacw(i,k)*factor
-              pgacw(i,k) = pgacw(i,k)*factor
+              paacw(i,k) = paacw(i,k)*factor
             endif
 !
 !     rain
 !
             value = max(qmin,qrs(i,k,1))
-            source = (-psacw(i,k)-praut(i,k)+pseml(i,k)+pgeml(i,k)     &
-                     -pracw(i,k)-pgacw(i,k)-prevp(i,k))*dtcld
+            source = (-paacw(i,k)-praut(i,k)+pseml(i,k)+pgeml(i,k)     &
+                     -pracw(i,k)-paacw(i,k)-prevp(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
               praut(i,k) = praut(i,k)*factor
               prevp(i,k) = prevp(i,k)*factor
-              pgacw(i,k) = pgacw(i,k)*factor
               pracw(i,k) = pracw(i,k)*factor
-              psacw(i,k) = psacw(i,k)*factor
+              paacw(i,k) = paacw(i,k)*factor
               pseml(i,k) = pseml(i,k)*factor
               pgeml(i,k) = pgeml(i,k)*factor
             endif
@@ -1296,9 +1316,9 @@ CONTAINS
 !     update
             q(i,k) = q(i,k)+work2(i,k)*dtcld
             qci(i,k,1) = max(qci(i,k,1)-(praut(i,k)+pracw(i,k)         &
-                    +psacw(i,k)+pgacw(i,k))*dtcld,0.)
+                    +paacw(i,k)+paacw(i,k))*dtcld,0.)
             qrs(i,k,1) = max(qrs(i,k,1)+(praut(i,k)+pracw(i,k)         &
-                    +prevp(i,k)+psacw(i,k)+pgacw(i,k)-pseml(i,k)       &
+                    +prevp(i,k)+paacw(i,k)+paacw(i,k)-pseml(i,k)       &
                     -pgeml(i,k))*dtcld,0.)
             qrs(i,k,2) = max(qrs(i,k,2)+(psevp(i,k)-pgacs(i,k)           &
                     +pseml(i,k))*dtcld,0.)

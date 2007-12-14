@@ -1683,6 +1683,8 @@ CONTAINS
 !c     vf1s=0.78,vf2s=0.31 in LIN
 !c     Cdrag=0.6  drag coefficient for hairstone
 !c
+            constg2=vf1s*olambdag(k)*olambdag(k)+  &
+                    vf2s*schmidt(k)**0.33334*gam2pt75*sqrt(term0)
             tmp2=abg*xnog*constg2
             pgdep(k)=amax1(0.0,tmp2)
             pgsub(k)=amin1(0.0,tmp2)

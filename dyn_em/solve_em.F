@@ -770,8 +770,8 @@ BENCH_START(pbl_driver_tim)
      &        ,RVBLTEN=grid%rvblten    ,SNOW=grid%snow          ,STEPBL=grid%stepbl      &
      &        ,THZ0=grid%thz0          ,TH_PHY=th_phy      ,TKE_MYJ=grid%tke_myj    &
      &        ,TSK=grid%tsk            ,T_PHY=t_phy        ,UST=grid%ust            &
-     &        ,UZ0=grid%uz0            ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        &
-     &        ,VZ0=grid%vz0            ,V_FRAME=grid%v_frame    ,V_PHY=v_phy        &
+     &        ,U10=grid%u10 ,UZ0=grid%uz0      ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        &
+     &        ,V10=grid%v10 ,VZ0=grid%vz0      ,V_FRAME=grid%v_frame    ,V_PHY=v_phy        &
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%em_z                &
      &        ,ZNT=grid%znt                                                    &
@@ -2942,7 +2942,10 @@ BENCH_END(chem_adv_tim)
 
      IF( config_flags%nested .and. (rk_step == 1) ) THEN
 
-       IF (is .eq. P_QNDROP .OR. is .eq. P_QNI) THEN
+       IF (is .eq. P_QNDROP .OR. is .eq. P_QNI          & 
+                 .or. is .eq. P_QNS                   &
+                 .or. is .eq. P_QNR                   &
+                 .or. is .eq. P_QNG) THEN             
 
          CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),            &
                                  scalar(ims,kms,jms,is),  grid%em_mut,         &
@@ -3554,6 +3557,11 @@ BENCH_START(micro_driver_tim)
      &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
      &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI         &
      &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT             &
+     &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS         &  
+     &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR         &  
+     &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG         &  
+     &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten            &  
+     &        , qicuten=grid%rqicuten,mu=grid%em_mut                    &  
                                                                           )
 BENCH_END(micro_driver_tim)
 

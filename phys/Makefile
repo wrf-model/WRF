@@ -22,6 +22,7 @@ MODULES = \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
 	module_mp_thompson.o \
+        module_mp_morr_two_moment.o \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
 	module_ra_rrtm.o  \
@@ -164,6 +165,7 @@ module_physics_init.o : \
 		module_fdda_psufddagd.o		\
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
+                module_mp_morr_two_moment.o     \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_wrf_error.o \
@@ -177,6 +179,7 @@ module_microphysics_driver.o: \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_thompson.o            \
+                module_mp_morr_two_moment.o     \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \

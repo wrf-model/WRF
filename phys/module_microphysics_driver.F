@@ -23,7 +23,10 @@ SUBROUTINE microphysics_driver(                                          &
                       ,num_tiles, naer                                   &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qndrop_curr,qni_curr                              &
+                      ,qns_curr,qnr_curr,qng_curr                        & 
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
+                      ,f_qns,f_qnr,f_qng                                 & 
+                      ,qrcuten, qscuten, qicuten, mu                     & 
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
                       ,w ,z                                              &
@@ -34,7 +37,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, THOMPSON
+                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT
 
 
 ! Model Layer
@@ -50,6 +53,8 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
+   USE module_mp_morr_two_moment 
+    
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 !----------------------------------------------------------------------
@@ -105,6 +110,10 @@ SUBROUTINE microphysics_driver(                                          &
 ! Qs         snow mixing ratio (kg/kg)
 ! Qndrop     droplet number mixing ratio (#/kg)
 ! Qni        cloud ice number concentration (#/kg)
+! Qns        snow number concentration (#/kg), 
+! Qnr        rain number concentration (#/kg), 
+! Qng        graupel number concentration (#/kg), 
+
 !
 !----------------------------------------------------------------------
 !-- th        potential temperature    (K)
@@ -150,6 +159,9 @@ SUBROUTINE microphysics_driver(                                          &
 !-- P_QG          species index for graupel
 !-- P_QNDROP      species index for cloud drop mixing ratio
 !-- P_QNI         species index for cloud ice number concentration
+!-- P_QNS         species index for snow number concentration, 
+!-- P_QNR         species index for rain number concentration, 
+!-- P_QNG         species index for graupel number concentration, 
 !-- id            grid id number
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -239,7 +251,17 @@ SUBROUTINE microphysics_driver(                                          &
                   w, z, t8w                                       & 
                  ,cldfra, cldfra_old, exch_h                      &
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
-                 ,qt_curr,qndrop_curr,qni_curr                                
+                 ,qt_curr,qndrop_curr,qni_curr                    &
+                 ,qns_curr,qnr_curr,qng_curr 
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & 
+         OPTIONAL,                                                & 
+         INTENT(IN) :: qrcuten, qscuten, qicuten                    
+   REAL, DIMENSION( ims:ime, jms:jme ),                           & 
+         OPTIONAL,                                                & 
+         INTENT(IN) :: mu                                           
+
+
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                   &
          OPTIONAL,                                                &
          INTENT(OUT ) ::                                          &
@@ -264,8 +286,8 @@ SUBROUTINE microphysics_driver(                                          &
                                          ,tbpvs_state,tbpvs0_state
 !
 
-   LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt
-
+   LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt &
+                                   ,f_qns,f_qnr,f_qng             
 
 ! LOCAL  VAR
 
@@ -384,6 +406,56 @@ SUBROUTINE microphysics_driver(                                          &
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
 !
+
+    CASE (MORR_TWO_MOMENT)
+         CALL wrf_debug(100, 'microphysics_driver: calling morrison two moment')
+         IF (PRESENT (QV_CURR) .AND. PRESENT (QC_CURR) .AND. &
+             PRESENT (QR_CURR) .AND. PRESENT (QI_CURR) .AND. &
+         PRESENT (QS_CURR) .AND. PRESENT (QG_CURR) .AND. &
+         PRESENT (QR_CURR) .AND. PRESENT (QI_CURR) .AND. &
+         PRESENT (QNS_CURR) .AND. PRESENT (QNI_CURR).AND. &
+         PRESENT (QNR_CURR) .AND. PRESENT (QNG_CURR).AND. &
+         PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
+         PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
+                 PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
+         PRESENT (Z      ) .AND.PRESENT ( W      )  ) THEN
+         CALL mp_morr_two_moment(                            &
+                     ITIMESTEP=itimestep,                &  !*
+                     TH=th,                              &  !*
+                     QV=qv_curr,                         &  !*
+                     QC=qc_curr,                         &  !*
+                     QR=qr_curr,                         &  !*
+                     QI=qi_curr,                         &  !*
+                     QS=qs_curr,                         &  !*
+                     QG=qg_curr,                         &  !*
+                     NI=qni_curr,                        &  !*
+                     NS=qns_curr,                        &  !* ! VVT
+                     NR=qnr_curr,                        &  !* ! VVT
+                     NG=qng_curr,                        &  !* ! VVT
+                     RHO=rho,                            &  !*
+                     PII=pi_phy,                         &  !*            
+                     P=p,                                &  !*
+                     DT_IN=dt,                           &  !*
+                     DZ=dz8w,                            &  !* !hm  
+                     HT=ht,                              &  !*
+                     W=w                                 &  !*
+                    ,RAINNC=RAINNC                       &  !*   
+                    ,RAINNCV=RAINNCV                     &  !*
+                    ,SR=SR                               &  !* !hm 
+                    ,qrcuten=qrcuten                     &  ! hm
+                    ,qscuten=qscuten                     &  ! hm 
+                    ,qicuten=qicuten                     &  ! hm 
+                    ,mu=mu                          &  ! hm 
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+        ELSE
+           Call wrf_error_fatal( 'arguments not present for calling morrison two moment')
+        ENDIF
+
+!
+
         CASE (LINSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lin_et_al' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &

@@ -477,6 +477,9 @@ state   real    qg             ikjft   moist       1         -     i01rhusdf=(bd
 # Other Scalars
 state   real    -              ikjftb  scalar      1         -     -    -
 state   real    qni            ikjftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
+state   real    qns            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNS"              "Snow Number concentration" "# kg(-1)"
+state   real    qnr            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
+state   real    qng            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
 state   real    qndrop         ikjftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNDROP"           "Droplet number mixing ratio"        "# kg-1"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -937,6 +940,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -

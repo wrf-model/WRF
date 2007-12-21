@@ -906,7 +906,7 @@ contains
 !
    do i = its,ite
      ad(i,1) = 1.
-     f1(i,1) = thx(i,1)+hfx(i)/(rhox(i)*cpm(i))/zq(i,2)*dt2
+     f1(i,1) = thx(i,1)-300.+hfx(i)/(rhox(i)*cpm(i))/zq(i,2)*dt2
      f3(i,1,1) = qx(i,1)+qfx(i)/(rhox(i))/zq(i,2)*dt2
    enddo
 !
@@ -933,7 +933,7 @@ contains
          dsdzt = tem1*(-hgamt(i)/hpbl(i)-hfxpbl(i)*zfacent(i,k)/xkzh(i,k))
          dsdzq = tem1*(-qfxpbl(i)*zfacent(i,k)/xkzh(i,k))
          f1(i,k)   = f1(i,k)+dtodsd*dsdzt
-         f1(i,k+1) = thx(i,k+1)-dtodsu*dsdzt
+         f1(i,k+1) = thx(i,k+1)-300.-dtodsu*dsdzt
          f3(i,k,1) = f3(i,k,1)+dtodsd*dsdzq
          f3(i,k+1,1) = qx(i,k+1)-dtodsu*dsdzq
        elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
@@ -941,10 +941,10 @@ contains
          xkzh(i,k) = sqrt(xkzh(i,k)*xkzhl(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
          xkzh(i,k) = max(xkzh(i,k),xkzmin)
-         f1(i,k+1) = thx(i,k+1)
+         f1(i,k+1) = thx(i,k+1)-300.
          f3(i,k+1,1) = qx(i,k+1)
        else
-         f1(i,k+1) = thx(i,k+1)
+         f1(i,k+1) = thx(i,k+1)-300.
          f3(i,k+1,1) = qx(i,k+1)
        endif
        dsdz2     = tem1*rdz
@@ -995,7 +995,7 @@ contains
 !
    do k = kte,kts,-1
      do i = its,ite
-       ttend = (f1(i,k)-thx(i,k))*rdt*pi2d(i,k)
+       ttend = (f1(i,k)-thx(i,k)+300.)*rdt*pi2d(i,k)
        qtend = (f3(i,k,1)-qx(i,k))*rdt
        ttnp(i,k) = ttnp(i,k)+ttend
        qtnp(i,k) = qtnp(i,k)+qtend

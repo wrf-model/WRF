@@ -555,7 +555,7 @@
                       grid%adv_moist_cond,                         &
                       grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as,      &
                       grid%apr_capma,grid%apr_capme,grid%apr_capmi,          &
-                      grid%xice,grid%vegfra,grid%snow,grid%canwat,grid%smstav,         &
+                      grid%xice,grid%xicem,grid%vegfra,grid%snow,grid%canwat,grid%smstav,         &
                       grid%smstot, grid%sfcrunoff,grid%udrunoff,grid%grdflx,grid%acsnow,      &
                       grid%acsnom,grid%ivgtyp,grid%isltyp, grid%sfcevp,grid%smois,     &
                       grid%sh2o, grid%snowh, grid%smfr3d,                    &
@@ -706,14 +706,14 @@
                            its , ite , jts , jte   )
 
    IF ( .not. config_flags%restart ) THEN 
-   CALL set_w_surface(  config_flags,                                      &
+   CALL set_w_surface(  config_flags, grid%em_znw,                         &
                         grid%em_w_1, grid%ht, grid%em_u_1, grid%em_v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
                         ims, ime, jms, jme, kms, kme                      )
-   CALL set_w_surface(  config_flags,                                      &
+   CALL set_w_surface(  config_flags, grid%em_znw,                         &
                         grid%em_w_2, grid%ht, grid%em_u_2, grid%em_v_2, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                         ids, ide, jds, jde, kds, kde,                      &

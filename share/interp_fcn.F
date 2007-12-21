@@ -4220,16 +4220,16 @@
 
             !  1-2-1 smoothing in the j direction first, 
    
-            DO i = MAX(ipos+1,cits-2) , MIN(ipos+(nide-nids)/nri-1-istag,cite+2)
-            DO j = MAX(jpos+1,cjts-2) , MIN(jpos+(njde-njds)/nrj-1-jstag,cjte+2)
+            DO i = MAX(ipos+2,cits-2) , MIN(ipos+(nide-nids)/nri-2-istag,cite+2)
+            DO j = MAX(jpos+2,cjts-2) , MIN(jpos+(njde-njds)/nrj-2-jstag,cjte+2)
                   cfldnew(i,j) = 0.25 * ( cfld(i,k,j+1) + 2.*cfld(i,k,j) + cfld(i,k,j-1) )
                END DO
             END DO
 
             !  then 1-2-1 smoothing in the i direction last
        
-            DO j = MAX(jpos+1,cjts-2) , MIN(jpos+(njde-njds)/nrj-1-jstag,cjte+2)
-            DO i = MAX(ipos+1,cits-2) , MIN(ipos+(nide-nids)/nri-1-istag,cite+2)
+            DO j = MAX(jpos+2,cjts-2) , MIN(jpos+(njde-njds)/nrj-2-jstag,cjte+2)
+            DO i = MAX(ipos+2,cits-2) , MIN(ipos+(nide-nids)/nri-2-istag,cite+2)
                   cfld(i,k,j) =  0.25 * ( cfldnew(i+1,j) + 2.*cfldnew(i,j) + cfldnew(i-1,j) )
                END DO
             END DO
@@ -4289,26 +4289,26 @@
     
          DO k = ckts , ckte
    
-            DO i = MAX(ipos+1,cits-2) , MIN(ipos+(nide-nids)/nri-1-istag,cite+2)
-               DO j = MAX(jpos+1,cjts-2) , MIN(jpos+(njde-njds)/nrj-1-jstag,cjte+2)
+            DO i = MAX(ipos+2,cits-2) , MIN(ipos+(nide-nids)/nri-2-istag,cite+2)
+               DO j = MAX(jpos+2,cjts-2) , MIN(jpos+(njde-njds)/nrj-2-jstag,cjte+2)
                   cfldnew(i,j) = cfld(i,k,j) + xnu(n) * ((cfld(i,k,j+1) + cfld(i,k,j-1)) * 0.5-cfld(i,k,j))
                END DO
             END DO
        
-            DO i = MAX(ipos+1,cits-2) , MIN(ipos+(nide-nids)/nri-1-istag,cite+2)
-               DO j = MAX(jpos+1,cjts-2) , MIN(jpos+(njde-njds)/nrj-1-jstag,cjte+2)
+            DO i = MAX(ipos+2,cits-2) , MIN(ipos+(nide-nids)/nri-2-istag,cite+2)
+               DO j = MAX(jpos+2,cjts-2) , MIN(jpos+(njde-njds)/nrj-2-jstag,cjte+2)
                   cfld(i,k,j) = cfldnew(i,j)
                END DO
             END DO
        
-            DO j = MAX(jpos+1,cjts-2) , MIN(jpos+(njde-njds)/nrj-1-jstag,cjte+2)
-               DO i = MAX(ipos+1,cits-2) , MIN(ipos+(nide-nids)/nri-1-istag,cite+2)
+            DO j = MAX(jpos+2,cjts-2) , MIN(jpos+(njde-njds)/nrj-2-jstag,cjte+2)
+               DO i = MAX(ipos+2,cits-2) , MIN(ipos+(nide-nids)/nri-2-istag,cite+2)
                   cfldnew(i,j) = cfld(i,k,j) + xnu(n) * ((cfld(i+1,k,j) + cfld(i-1,k,j)) * 0.5-cfld(i,k,j))
                END DO
             END DO
        
-            DO j = MAX(jpos+1,cjts-2) , MIN(jpos+(njde-njds)/nrj-1-jstag,cjte+2)
-               DO i = MAX(ipos+1,cits-2) , MIN(ipos+(nide-nids)/nri-1-istag,cite+2)
+            DO j = MAX(jpos+2,cjts-2) , MIN(jpos+(njde-njds)/nrj-2-jstag,cjte+2)
+               DO i = MAX(ipos+2,cits-2) , MIN(ipos+(nide-nids)/nri-2-istag,cite+2)
                   cfld(i,k,j) = cfldnew(i,j)
                END DO
             END DO

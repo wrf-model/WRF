@@ -381,10 +381,10 @@ Namelist variables for controling the automatic moving nest:
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
                                                 ; from 3 m to surface, and set smois and sh2o
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
-                                                ; puts SST and VEGFRA in wrflowinp_d01 file, and wrf updates these from it
+                                                ; puts SST, XICE and VEGFRA in wrflowinp_d01 file, and wrf updates these from it
                                                 ; at same interval as boundary file. To read this, the time-control
-                                                ; namelist must include  auxinput5_interval,  auxinput5_end_h, and
-                                                ; auxinput5_inname = "wrflowinp_d<domain>"
+                                                ; namelist must include  auxinput4_interval,  auxinput4_end_h, and
+                                                ; auxinput4_inname = "wrflowinp_d<domain>"
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain

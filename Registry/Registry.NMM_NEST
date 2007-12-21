@@ -41,8 +41,8 @@
 
 #<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
 dimspec    i      1     standard_domain           x          west_east
-dimspec    j      3     standard_domain           y          south_north
-dimspec    k      2     standard_domain           z          bottom_top
+dimspec    j      2     standard_domain           y          south_north
+dimspec    k      3     standard_domain           z          bottom_top
 dimspec    l      2     namelist=num_soil_layers  z          soil_layers
 dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
 dimspec    u      2     namelist=num_land_cat     z          land_cat
@@ -83,7 +83,6 @@ state    real  LU_MASK          ij      misc        1         -     i3h1     "LU
 ################################
 
 state    real   p_gc           ijg      dyn_nmm      1     Z     i1      "PRES"     "pressure"            "Pa"
-state    real   p_gc_xzy       igj      dyn_nmm      1     Z     -       "PRES1"   "pressure"            "Pa"   # for RSL_LITE halo_exchange
 state    real   vegcat         ij       misc         1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
 state    real   soilcat        ij       misc         1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 
@@ -124,18 +123,18 @@ dimspec    v      -     constant=1             c  # a little crude right now
 
 state  real    pdnest_b     ij      dyn_nmm     1      -      -
 state  real    pdnest_bt    ij      dyn_nmm     1      -      -
-state  real    tnest_b      ikj     dyn_nmm     1      -      -
-state  real    tnest_bt     ikj     dyn_nmm     1      -      -
-state  real    qnest_b      ikj     dyn_nmm     1      -      -
-state  real    qnest_bt     ikj     dyn_nmm     1      -      -
-state  real    unest_b      ikj     dyn_nmm     1      -      -
-state  real    unest_bt     ikj     dyn_nmm     1      -      -
-state  real    vnest_b      ikj     dyn_nmm     1      -      -
-state  real    vnest_bt     ikj     dyn_nmm     1      -      -
-state  real    q2nest_b     ikj     dyn_nmm     1      -      -
-state  real    q2nest_bt    ikj     dyn_nmm     1      -      -
-state  real    cwmnest_b    ikj     dyn_nmm     1      -      -
-state  real    cwmnest_bt   ikj     dyn_nmm     1      -      -
+state  real    tnest_b      ijk     dyn_nmm     1      -      -
+state  real    tnest_bt     ijk     dyn_nmm     1      -      -
+state  real    qnest_b      ijk     dyn_nmm     1      -      -
+state  real    qnest_bt     ijk     dyn_nmm     1      -      -
+state  real    unest_b      ijk     dyn_nmm     1      -      -
+state  real    unest_bt     ijk     dyn_nmm     1      -      -
+state  real    vnest_b      ijk     dyn_nmm     1      -      -
+state  real    vnest_bt     ijk     dyn_nmm     1      -      -
+state  real    q2nest_b     ijk     dyn_nmm     1      -      -
+state  real    q2nest_bt    ijk     dyn_nmm     1      -      -
+state  real    cwmnest_b    ijk     dyn_nmm     1      -      -
+state  real    cwmnest_bt   ijk     dyn_nmm     1      -      -
 
 #
 # For the moving nest. This is gopal's doing
@@ -180,17 +179,11 @@ rconfig  real sbd0    derived   max_domains    0       - "sbd0"                 
 
 state  real   PSTD      k      dyn_nmm     1      Z      -
 state  integer KZMAX    -      dyn_nmm     -      -      r
-state  real   Z3D       ikj    dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
-state  real   T3D       ikj    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
-state  real   Q3D       ikj    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Z3D       ijk    dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
+state  real   T3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
 
-
-#
-# module_LOOPS
-#
-state integer  lmh      ij     dyn_nmm     1      -      irh      "LMH"     "Lowest model layer at mass points from domain top"       ""
-state integer  lmv      ij     dyn_nmm     1      -      irh      "LMV"     "Lowest model layer at velocity points from domain top"   ""
 #
 # module_MASKS
 #
@@ -200,25 +193,21 @@ state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velo
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
 state  real   sm        ij     dyn_nmm     1      -      i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
 state  real   sice      ij     dyn_nmm     1      -      irh     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
-state  real   htm       ikj    dyn_nmm     1      -      r      "HTM"     "Height mask; =1 at all mass points above ground"         ""
-state  real   vtm       ikj    dyn_nmm     1      -      r      "VTM"     "Velocity mask; =1 at all velocity points above ground"   ""
 #
 # module_VRBLS
 #
 state  integer ntsd     -       dyn_nmm     -      -      r       "NTSD"    "Number of timesteps done"                      ""
 state  integer nstart_hour  -   dyn_nmm     -      -      r       "NSTART_HOUR"   "Forecast hour at start of integration"   ""
-state  real   pd        ijb     dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_mass_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Z3D,HRES_FIS,SM,PDTOP,PT,PSTD,KZMAX)f=(nmm_bdymass_hinterp:dt,pdnest_b,pdnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Z3D,HRES_FIS,SM,PDTOP,PT,PSTD,KZMAX)  "PD"      "Mass at I,J in the sigma domain"               "Pa"
+state  real   pd        ijb     dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_mass_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Z3D,HRES_FIS,SM,PDTOP,PT,PSTD,KZMAX)f=(nmm_bdymass_hinterp:pdnest_b,pdnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Z3D,HRES_FIS,SM,PDTOP,PT,PSTD,KZMAX)  "PD"      "Mass at I,J in the sigma domain"               "Pa"
 state  real   fis       ij     dyn_nmm     1      -      i01rh   "FIS"     "Surface geopotential"                          "m2 s-2"
 state  real   res       ij     dyn_nmm     1      -      irh     "RES"     "Reciprocal of surface sigma"                   ""
-#state  real   q         ikjb    dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)f=(nmm_bdy_hinterp:dt,qnest_b,qnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "Q"       "Specific humidity"                             "kg kg-1"
-#state  real   t         ikjb    dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_p2hyb_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Z3D,Q,HRES_FIS,PD,PSTD,PDTOP,PT,ETA1,ETA2,DETA1,DETA2)f=(nmm_bdy_p2hyb:dt,tnest_b,tnest_bt,Z3D,qnest_b,HRES_FIS,pdnest_b,PSTD,PDTOP,PT,ETA1,ETA2,DETA1,DETA2)   "T"       "Sensible temperature"                          "K"
-state  real   t         ikjb    dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_scalar_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,T3D,PD,PSTD,PDTOP,PT,ETA1,ETA2)f=(nmm_bdy_scalar:dt,tnest_b,tnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,T3d,PD,PSTD,PDTOP,PT,ETA1,ETA2)  "T"       "Sensible temperature"                          "K"
-state  real   q         ikjb    dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_scalar_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Q3D,PD,PSTD,PDTOP,PT,ETA1,ETA2)f=(nmm_bdy_scalar:dt,qnest_b,qnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Q3d,PD,PSTD,PDTOP,PT,ETA1,ETA2)  "Q"       "Specific humidity"                             "kg kg-1"
-state  real   u         ikjb    dyn_nmm     1      -      i01rhu=(nmm_vfeedback:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)d=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)f=(nmm_bdy_vinterp:dt,unest_b,unest_bt,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)   "U"       "U component of wind"                           "m s-1"
-state  real   v         ikjb    dyn_nmm     1      -      i01rhu=(nmm_vfeedback:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)d=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)f=(nmm_bdy_vinterp:dt,vnest_b,vnest_bt,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)   "V"       "V component of wind"                           "m s-1"
-state  real   told      ikj    dyn_nmm     1      -      r       "TOLD"    "T from previous timestep"                      "K"
-state  real   uold      ikj    dyn_nmm     1      -      r       "UOLD"    "U from previous timestep"                      "m s-1"
-state  real   vold      ikj    dyn_nmm     1      -      r       "VOLD"    "V from previous timestep"                      "m s-1"
+state  real   t         ijkb    dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_scalar_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,T3D,PD,PSTD,PDTOP,PT,ETA1,ETA2)f=(nmm_bdy_scalar:dt,tnest_b,tnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,T3d,PD,PSTD,PDTOP,PT,ETA1,ETA2)  "T"       "Sensible temperature"                          "K"
+state  real   q         ijkb    dyn_nmm     1      -      i01rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_scalar_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Q3D,PD,PSTD,PDTOP,PT,ETA1,ETA2)f=(nmm_bdy_scalar:dt,qnest_b,qnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,Q3d,PD,PSTD,PDTOP,PT,ETA1,ETA2)  "Q"       "Specific humidity"                             "kg kg-1"
+state  real   u         ijkb    dyn_nmm     1      -      i01rhu=(nmm_vfeedback:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)d=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)f=(nmm_bdy_vinterp:unest_b,unest_bt,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)   "U"       "U component of wind"                           "m s-1"
+state  real   v         ijkb    dyn_nmm     1      -      i01rhu=(nmm_vfeedback:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)d=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)f=(nmm_bdy_vinterp:vnest_b,vnest_bt,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4)   "V"       "V component of wind"                           "m s-1"
+state  real   told      ijk    dyn_nmm     1      -      r       "TOLD"    "T from previous timestep"                      "K"
+state  real   uold      ijk    dyn_nmm     1      -      r       "UOLD"    "U from previous timestep"                      "m s-1"
+state  real   vold      ijk    dyn_nmm     1      -      r       "VOLD"    "V from previous timestep"                      "m s-1"
 #
 # module_DYNAM
 #
@@ -246,9 +235,9 @@ state  real   aeta2     k      dyn_nmm     1      -      i01r    "AETA2"   "Midl
 state  real   eta2      k      dyn_nmm     1      -      i01rh   "ETA2"    "Interface sigma value in sigma domain"         ""
 state  real   em        q      dyn_nmm     1      -      ir
 state  real   emt       q      dyn_nmm     1      -      ir
-state  real   adt       ikj    dyn_nmm     1      -      -       "ADT"     "Change of T due to advection"                  "K"
-state  real   adu       ikj    dyn_nmm     1      -      -       "ADU"     "Change of U due to advection"                  "m s-1"
-state  real   adv       ikj    dyn_nmm     1      -      -       "ADV"     "Change of V due to advection"                  "m s-1"
+state  real   adt       ij     dyn_nmm     1      -      -       "ADT"     "Change of T due to advection"                  "K"
+state  real   adu       ij     dyn_nmm     1      -      -       "ADU"     "Change of U due to advection"                  "m s-1"
+state  real   adv       ij     dyn_nmm     1      -      -       "ADV"     "Change of V due to advection"                  "m s-1"
 state  real   em_loc    q      dyn_nmm     1      -      r
 state  real   emt_loc   q      dyn_nmm     1      -      r
 state  real   dy_nmm    -      dyn_nmm     -      -      ir      "DY_NMM"  "North-south distance H-to-V points"            "m"
@@ -269,14 +258,14 @@ state  real   pt        -      dyn_nmm     -      -      i01rh   "PT"      "Pres
 state  real   pdsl      ij     dyn_nmm     1      -      -       "PDSL"    "Sigma-domain pressure at sigma=1"           "Pa"
 state  real   pdslo     ij     dyn_nmm     1      -      -       "PDSLO"   "PDSL from previous timestep"                "Pa"
 state  real   psdt      ij     dyn_nmm     1      -      r       "PSDT"    "Surface pressure tendency"                  "Pa s-1"
-state  real   div       ikj    dyn_nmm     1      -      r       "DIV"     "Divergence"                                 "Pa s-1"
-state  real   few       ikj    dyn_nmm     1      -      -       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
-state  real   fne       ikj    dyn_nmm     1      -      -       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
-state  real   fns       ikj    dyn_nmm     1      -      -       "FNS"     "Integrated north-south mass flux"           "Pa m2 s-1"
-state  real   fse       ikj    dyn_nmm     1      -      -       "FSE"     "Integrated southeast-northwest mass flux"   "Pa m2 s-1"
-state  real   omgalf    ikj    dyn_nmm     1      -      r       "OMGALF"  "Omega-alpha"                                "K"
-state  real   petdt     ikj    dyn_nmm     1      -      -       "PETDT"   "Vertical mass flux"                         "Pa s-1"
-state  real   rtop      ikj    dyn_nmm     1      -      r       "RTOP"    "Rd * Tv / P"                                "m3 kg-1"
+state  real   div       ijk    dyn_nmm     1      -      r       "DIV"     "Divergence"                                 "Pa s-1"
+state  real   few       ijk    dyn_nmm     1      -      -       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
+state  real   fne       ijk    dyn_nmm     1      -      -       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
+state  real   fns       ijk    dyn_nmm     1      -      -       "FNS"     "Integrated north-south mass flux"           "Pa m2 s-1"
+state  real   fse       ijk    dyn_nmm     1      -      -       "FSE"     "Integrated southeast-northwest mass flux"   "Pa m2 s-1"
+state  real   omgalf    ijk    dyn_nmm     1      -      r       "OMGALF"  "Omega-alpha"                                "K"
+state  real   petdt     ijk    dyn_nmm     1      -      -       "PETDT"   "Vertical mass flux"                         "Pa s-1"
+state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd * Tv / P"                                "m3 kg-1"
 #
 # module_PVRBLS
 #
@@ -307,10 +296,10 @@ state  real   q10       ij    dyn_nmm   1    -     irh      "Q10"      "10-m spe
 state  real   pshltr    ij    dyn_nmm   1    -     irh      "PSHLTR"   "2-m pressure from MYJ"                "Pa"
 state  real   tshltr    ij    dyn_nmm   1    -     irh      "TSHLTR"   "2-m potential temperature from MYJ"    "K"
 state  real   qshltr    ij    dyn_nmm   1    -     irh      "QSHLTR"   "2-m specific humidity from MYJ"       "kg kg-1"
-state  real   q2        ikjb   dyn_nmm   1    -     irhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)f=(nmm_bdy_hinterp:dt,q2nest_b,q2nest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "Q2"       "2 * Turbulence kinetic energy"        "m2 s-2"
-state  real   t_adj     ikj   dyn_nmm   1    -     rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "T_ADJ"    "T change due to precip in phys step"  "K"
-state  real   t_old     ikj   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
-state  real   zero_3d   ikj   dyn_nmm   1    -     r
+state  real   q2        ijkb   dyn_nmm   1    -     irhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)f=(nmm_bdy_hinterp:q2nest_b,q2nest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "Q2"       "2 * Turbulence kinetic energy"        "m2 s-2"
+state  real   t_adj     ijk   dyn_nmm   1    -     rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "T_ADJ"    "T change due to precip in phys step"  "K"
+state  real   t_old     ijk   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
+state  real   zero_3d   ijk   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"  "m s-1"
 state  real   AKHS_OUT  ij    dyn_nmm   1    -     h        "AKHS_OUT"  "Output sfc exch coeff for heat"               "m2 s-1"
 state  real   AKMS_OUT  ij    dyn_nmm   1    -     h        "AKMS_OUT"  "Output sfc exch coeff for momentum"           "m2 s-1"
@@ -340,11 +329,11 @@ state integer lvl       ij    dyn_nmm   1    -     ir
 #
 # module_CLDWTR.F
 #
-state  real   cwm       ikjb   dyn_nmm   1    -     rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)f=(nmm_bdy_hinterp:dt,cwmnest_b,cwmnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "CWM"       "Total condensate"                     "kg kg-1"
-state  real   f_ice     ikj   dyn_nmm   1    -     rhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "F_ICE"     "Frozen fraction of CWM"               ""
-state  real   f_rain    ikj   dyn_nmm   1    -     rhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
-state  real   f_rimef   ikj   dyn_nmm   1    -     rhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "F_RIMEF"   "Rime factor"                          ""
-state  real   cldfra    ikj   dyn_nmm   1    -     rh       "CLDFRA"    "Cloud fraction"                       ""
+state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(nmm_feedback:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)f=(nmm_bdy_hinterp:cwmnest_b,cwmnest_bt,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "CWM"       "Total condensate"                     "kg kg-1"
+state  real   f_ice     ikj   dyn_nmm   1    -     rhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "F_ICE"     "Frozen fraction of CWM"               ""
+state  real   f_rain    ikj   dyn_nmm   1    -     rhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
+state  real   f_rimef   ikj   dyn_nmm   1    -     rhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "F_RIMEF"   "Rime factor"                          ""
+state  real   cldfra    ijk   dyn_nmm   1    -     rh       "CLDFRA"    "Cloud fraction"                       ""
 state  real   sr        ij    dyn_nmm   1    -     irh      "SR"        "Timestep mass ratio of snow:precip"   ""
 state  real   cfrach    ij    dyn_nmm   1    -     rh       "CFRACH"    "High cloud fraction"                  ""
 state  real   cfracl    ij    dyn_nmm   1    -     rh       "CFRACL"    "Low cloud fraction"                   ""
@@ -356,7 +345,7 @@ state logical micro_start        -     dyn_nmm   -    -     -
 state integer islope    ij    dyn_nmm   1    -     i01rhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "ISLOPE"
 state  real   dzsoil    k     dyn_nmm   1    -     ir       "DZSOIL"    "Thickness of soil layers"         "m"
 state  real   rtdpth    k     dyn_nmm   1    -     i01r
-state  real   sldpth    k     dyn_nmm   1    -     i01rh    "SLDPTH"    "Thickness of soil layers"         "m"
+state  real   sldpth    k     dyn_nmm   1    -     i01rh    "SLDPTH"    "Depths of centers of soil layers" "m"
 state  real   cmc       ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "CMC"       "Canopy moisture"                  "m"
 state  real   grnflx    ij    dyn_nmm   1    -     irh      "GRNFLX"    "Deep soil heat flux"              "W m-2"
 state  real   pctsno    ij    dyn_nmm   1    -     irh
@@ -364,20 +353,20 @@ state  real   soiltb    ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,
 state  real   vegfrc    ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "VEGFRC"    "Vegetation fraction"              ""
 state  real   shdmin    ij    dyn_nmm   1    -     -
 state  real   shdmax    ij    dyn_nmm   1    -     -
-state  real   sh2o      ilj   dyn_nmm   1    Z     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
-state  real   smc       ilj   dyn_nmm   1    Z     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "SMC"       "Soil moisture volume fraction"    ""
-state  real   stc       ilj   dyn_nmm   1    Z     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "STC"       "Soil temperature"                 "K"
+state  real   sh2o      ilj   dyn_nmm   1    Z     irhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
+state  real   smc       ilj   dyn_nmm   1    Z     irhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "SMC"       "Soil moisture volume fraction"    ""
+state  real   stc       ilj   dyn_nmm   1    Z     irhd=(interp_hnear_ikj_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)   "STC"       "Soil temperature"                 "K"
 #
 # module_NHYDRO.F
 #
 state logical hydro     -     dyn_nmm   -    -     -        "HYDRO"     ".FALSE. => nonhydrostatic"        ""
 state  real   dwdtmn    ij    dyn_nmm   1    -     -        "DWDTMN"    "Minimum value for DWDT"           "m s-2"
 state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum value for DWDT"           "m s-2"
-state  real   dwdt      ikj   dyn_nmm   1    -     rd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
-state  real   pdwdt     ikj   dyn_nmm   1    -     r
-state  real   pint      ikj   dyn_nmm   1    Z     rh       "PINT"      "Model layer interface pressure"   "Pa"
-state  real   w         ikj   dyn_nmm   1    Z     rh       "W"         "Vertical velocity"                "m s-1"
-state  real   z         ikj   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
+state  real   dwdt      ijk   dyn_nmm   1    -     rd=(interp_v_nmm:IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
+state  real   pdwdt     ijk   dyn_nmm   1    -     r
+state  real   pint      ijk   dyn_nmm   1    Z     rh       "PINT"      "Model layer interface pressure"   "Pa"
+state  real   w         ijk   dyn_nmm   1    Z     rh       "W"         "Vertical velocity"                "m s-1"
+state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
 #
 # module_ACCUM.F
 #
@@ -407,10 +396,14 @@ state  real   potevp    ij    dyn_nmm     1    -    rh    "POTEVP"    "Accum pot
 state  real   potflx    ij    dyn_nmm     1    -    rh    "POTFLX"    "Energy equivalent of POTEVP"       "W m-2"
 state  real   tlmin     ij    dyn_nmm     1    -    h
 state  real   tlmax     ij    dyn_nmm     1    -    h
-state  real   rlwtt     ikj   dyn_nmm     1    -    rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "RLWTT"     "Longwave temperature tendency"     "K s-1"
-state  real   rswtt     ikj   dyn_nmm     1    -    rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "RSWTT"     "Shortwave temperature tendency"    "K s-1"
-state  real   tcucn     ikj   dyn_nmm     1    -    -     "TCUCN"     "Accum convec temperature tendency" "K s-1"
-state  real   train     ikj   dyn_nmm     1    -    -     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
+state  real   t02_min   ij    dyn_nmm     1    -    h     "T02_MIN"  "Hourly Min Shelter Temperature"    "K"
+state  real   t02_max   ij    dyn_nmm     1    -    h     "T02_MAX"  "Hourly Max Shelter Temperature"    "K"
+state  real   rh02_min  ij    dyn_nmm     1    -    h     "RH02_MIN" "Hourly Min Relative Humidity"    ""
+state  real   rh02_max  ij    dyn_nmm     1    -    h     "RH02_MAX" "Hourly Max Relative Humidity"    ""
+state  real   rlwtt     ijk   dyn_nmm     1    -    rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "RLWTT"     "Longwave temperature tendency"     "K s-1"
+state  real   rswtt     ijk   dyn_nmm     1    -    rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "RSWTT"     "Shortwave temperature tendency"    "K s-1"
+state  real   tcucn     ijk   dyn_nmm     1    -    -     "TCUCN"     "Accum convec temperature tendency" "K s-1"
+state  real   train     ijk   dyn_nmm     1    -    -     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
 state integer ncfrcv    ij    dyn_nmm     1    -    irh   "NCFRCV"    "# times convec cloud >0 between rad calls"  ""
 state integer ncfrst    ij    dyn_nmm     1    -    irh   "NCFRST"    "# times stratiform cloud >0 between rad calls"  ""
 state integer nphs0     -     dyn_nmm     -    -    rh
@@ -445,7 +438,6 @@ dimspec    r      -     constant=2000             c  # a little crude right now
 state integer iradg     r    dyn_nmm     1    -    -
 dimspec    z      -     constant=(-3:3)            c
 dimspec    n      -     constant=(0:6)             c
-state integer indx3_wrk zqn  dyn_nmm     1    -    -      "INDX3_WRK"  "Array of 3rd (J) indices for local arrays"  ""
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
 state integer n_iup_adh j    dyn_nmm     1    -    -      "N_IUP_ADH"  "# mass points in each row of upstream advection"  ""
@@ -537,20 +529,20 @@ state   real   soilcbot            isj   misc          1     Z     -      ""    
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ikjft   moist       1         -     -    -                                       
-state   real    qv             ikjft   moist       1         -     r       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ikjft   moist       1         -     r       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ikjft   moist       1         -     r       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ikjft   moist       1         -     r       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ikjft   moist       1         -     r       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ikjft   moist       1         -     r       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    -              ijkft   moist       1         -     -    -                                       
+state   real    qv             ijkft   moist       1         -     r       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkft   moist       1         -     r       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkft   moist       1         -     r       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkft   moist       1         -     r       "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkft   moist       1         -     r       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkft   moist       1         -     r       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars
-state   real    -              ikjftb  scalar      1         -     -    -
-state   real    qni            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
-state   real    qns            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNS"              "Snow Number concentration" "# kg(-1)"
-state   real    qnr            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
-state   real    qng            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
+state   real    -              ijkftb  scalar      1         -     -    -
+state   real    qni            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
+state   real    qns            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNS"              "Snow Number concentration" "# kg(-1)"
+state   real    qnr            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
+state   real    qng            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -654,7 +646,7 @@ state    real   WEASD            ij     misc        1         -     i01rhd=(inte
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 
-state    real   tke_myj         ikj     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
+state    real   tke_myj         ijk     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "THZ0"                  "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"                 "K"
@@ -673,20 +665,22 @@ state   real   psfc_out         ij    dyn_nmm        1         -     -
 # added as state for HALO_NMM_TURBL, jm
 state   real   UZ0h              ij     misc        1         -     -       
 state   real   VZ0h              ij     misc        1         -     -       
-state   real   dudt              ikj     misc        1         -     -      
-state   real   dvdt              ikj     misc        1         -     -      
+state   real   dudt              ijk     misc        1         -     -      
+state   real   dvdt              ijk     misc        1         -     -      
 
 state   real   QSFC             ij     misc        1         -     irh       "QSFC"                  "SPECIFIC HUMIDITY AT LOWER BOUNDARY"          "kg kg-1"
 state   real   AKHS             ij     misc        1         -     ir        "AKHS"                  "SFC EXCH COEFF FOR HEAT /DELTA Z"             "m s-1"
 state   real   AKMS             ij     misc        1         -     ir        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM /DELTA Z"         "m s-1"
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
-state    real    HTOP            ij     misc        1         -     irhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
-state    real    HBOT            ij     misc        1         -     irhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    HTOP            ij     misc        1         -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    HBOT            ij     misc        1         -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    HTOPR           ij     misc        1         -     ird=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "HTOPR"                 "TOP OF CONVECTION LEVEL FOR RADIATION"         ""
+state    real    HBOTR           ij     misc        1         -     ird=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "HBOTR"                 "BOT OF CONVECTION LEVEL FOR RADIATION"         ""
 state    real    HTOPD           ij     misc        1         -     rh        "HTOPD"                "TOP DEEP CONVECTION LEVEL"         ""
 state    real    HBOTD           ij     misc        1         -     rh        "HBOTD"                "BOT DEEP CONVECTION LEVEL"         ""
 state    real    HTOPS           ij     misc        1         -     rh        "HTOPS"                "TOP SHALLOW CONVECTION LEVEL"         ""
 state    real    HBOTS           ij     misc        1         -     rh        "HBOTS"                "BOT SHALLOW CONVECTION LEVEL"         ""
-state    REAL      CUPPT         ij     misc        1         -     rhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINCE LAST CALL TO THE RADIATION"         ""
+state    REAL      CUPPT         ij     misc        1         -     rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINCE LAST CALL TO THE RADIATION"         ""
 state    REAL      CPRATE        ij     misc        1         -     rh         "CPRATE"               "INSTANTANEOUS CONVECTIVE PRECIPITATION RATE"      ""   #  1-17-06a
 state    real    F_ICE_PHY       ikj    misc        1         -      -        "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      -        "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
@@ -744,6 +738,12 @@ state   logical patched        -        -          -         -     -         "pa
 # indicates whether to read input from file or generate                                         
 #state   logical input_from_file        -        -          -         -     -         "input_from_file"         ""         ""    
 
+# vortex center indices; need for restarts of moving nests
+state    real    xi                   -       misc     -     -    r
+state    real    xj                   -       misc     -     -    r
+state    real    vc_i                 -       misc     -     -    r
+state    real    vc_j                 -       misc     -     -    r
+
 ######                                          
 #                                               
 # Variables that are set at run-time to control configuration  (namelist-settable)                                              
@@ -770,10 +770,9 @@ rconfig   integer end_minute              namelist,time_control		max_domains    
 rconfig   integer end_second              namelist,time_control		max_domains      00    irh   "end_second"            "2 DIGIT SECOND OF THE MINUTE OF END OF MODEL, 0-59" "SECONDS"
 rconfig   integer interval_seconds        namelist,time_control		1             43200    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
 rconfig   logical input_from_file         namelist,time_control		max_domains    .false. irh    "input_from_file"      "T/F INPUT FOR THIS DOMAIN FROM A SEPARATE INPUT FILE"  ""
-rconfig   integer fine_input_stream       namelist,time_control         max_domains    0       irh    "fine_input_stream"      "0 THROUGH 5, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
+rconfig   integer fine_input_stream       namelist,time_control         max_domains    0       irh    "fine_input_stream"      "0 THROUGH 11, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
 
 include registry.io_boilerplate
-include registry.io_boilerplate_NMM
 
 rconfig   integer JULYR                   namelist,time_control		max_domains    0       h    "JULYR"                 ""      ""
 rconfig   integer JULDAY                  namelist,time_control		max_domains    1       h    "JULDAY"                ""      ""
@@ -839,7 +838,6 @@ rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   real      ptsgm           namelist,domains    1       42000.
 rconfig   integer num_metgrid_levels      namelist,domains  1              43      irh    "num_metgrid_levels"                ""      ""
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
-
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
@@ -971,6 +969,12 @@ rconfig   integer isice                   derived                  max_domains  
 rconfig   integer isurban                 derived                  max_domains    0       -        "isurban"              "land use index for 'urban and built-up"     "index category"
 rconfig   integer isoilwater              derived                  max_domains    0       -        "isoilwater"           "land use index of water for soil"        "index category"
 rconfig   integer map_proj                derived                  max_domains    0       -        "map_proj"             "domain map projection"      "0=none, 1=Lambert, 2=polar, 3=Mercator"
+#rconfig   integer simulation_start_year   derived                  1              0       h        "simulation_start_year" "start of simulation through restarts" "4-digit year"
+#rconfig   integer simulation_start_month  derived                  1              0       h        "simulation_start_month" "start of simulation through restarts" "2-digit month"
+#rconfig   integer simulation_start_day    derived                  1              0       h        "simulation_start_day" "start of simulation through restarts" "2-digit day"
+#rconfig   integer simulation_start_hour   derived                  1              0       h        "simulation_start_hour" "start of simulation through restarts" "2-digit hour"
+#rconfig   integer simulation_start_minute derived                  1              0       h        "simulation_start_minute" "start of simulation through restarts" "2-digit minute"
+#rconfig   integer simulation_start_second derived                  1              0       h        "simulation_start_second" "start of simulation through restarts" "2-digit second"
 
 #
 # Single dummy declaration to define a nodyn dyn option
@@ -1001,12 +1005,12 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
-package   heldsuarez    ra_lw_physics==31            -             -
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
+package   heldsuarez    ra_lw_physics==31            -             -
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
@@ -1048,11 +1052,10 @@ package   io_pnetcdf  io_form_restart==11                     -             -
 
 # NMM communications
 
-#halo HALO_NMM_INIT_1	dyn_nmm 120:LMH,LMV,HBM2
 halo HALO_NMM_INIT_1	dyn_nmm 120:HBM2
 halo HALO_NMM_INIT_2	dyn_nmm 120:HBM3,VBM2,VBM3
-halo HALO_NMM_INIT_3	dyn_nmm 120:SM,SICE,HTM
-halo HALO_NMM_INIT_4	dyn_nmm 120:VTM,DX_NMM,WPDAR
+halo HALO_NMM_INIT_3	dyn_nmm 120:SM,SICE
+halo HALO_NMM_INIT_4	dyn_nmm 120:DX_NMM,WPDAR
 halo HALO_NMM_INIT_5	dyn_nmm 120:CPGFU,CURV,FCP
 halo HALO_NMM_INIT_6	dyn_nmm 120:FDIV,FAD,F
 halo HALO_NMM_INIT_7	dyn_nmm 120:DDMPU,DDMPV,GLAT
@@ -1100,8 +1103,8 @@ halo      HALO_NMM_D  dyn_nmm 24:pd
 halo      HALO_NMM_E  dyn_nmm 24:petdt
 halo      HALO_NMM_F  dyn_nmm 24:t,u,v
 halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
-halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z                    
-halo      HALO_NMM_H  dyn_nmm 24:w,lmh
+halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z  
+halo      HALO_NMM_H  dyn_nmm 24:w                  
 halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm                    
 halo      HALO_NMM_I_3  dyn_nmm 48:moist,scalar
 halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    
@@ -1111,7 +1114,7 @@ halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2
 halo      HALO_NMM_L_3  dyn_nmm 8:moist,scalar
 halo      HALO_NMM_MG dyn_nmm 8:ht_gc
 halo      HALO_NMM_MG2 dyn_nmm 8:pd,psfc_out
-halo      HALO_NMM_MG3 dyn_nmm 8:p_gc_xzy
+halo      HALO_NMM_MG3 dyn_nmm 8:p_gc
 
 halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2
 halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt

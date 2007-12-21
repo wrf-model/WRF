@@ -94,6 +94,7 @@
 #define MYJS4_P3  MY_JS( 4 , 3  )
 #define MYJS4_P4  MY_JS( 4 , 4  )
 #define MYJS4_P5  MY_JS( 4 , 5  )
+#define MYJS5     MY_JS( 5 , 0  )
 
 #define MYJE      MY_JE( 0 , 0  )
 #define MYJE_P1   MY_JE( 0 , 1  )
@@ -125,4 +126,5 @@
 #define MYJE4_P3  MY_JE( 4 , 3  )
 #define MYJE4_P4  MY_JE( 4 , 4  )
 #define MYJE4_P5  MY_JE( 4 , 5  )
+#define MYJE5     MY_JE( 5 , 0  )
 

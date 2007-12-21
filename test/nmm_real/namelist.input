@@ -21,6 +21,7 @@
  frames_per_outfile                  = 1,
  restart                             = .false.,
  restart_interval                    = 6000,
+ reset_simulation_start              = F,
  io_form_input                       = 2
  io_form_history                     = 2
  io_form_restart                     = 2

@@ -48,9 +48,9 @@
                            ,ITS,ITE,JTS,JTE,KTS,KTE                    &
                            ,NPHS
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: T     &
-                                                                ,T_ADJ &
-                                                                ,T_OLD
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: T       &
+                                                              ,T_ADJ   &
+                                                              ,T_OLD
 !
 !***  LOCAL VARIABLES 
 !
@@ -61,29 +61,29 @@
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
-      IF(ICLTEND.LT.0)THEN
-        DO J=JTS,JTE
+      IF(ICLTEND<0)THEN
         DO K=KTS,KTE
-        DO I=ITS,ITE
-          T_OLD(I,K,J)=T(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-      ELSEIF(ICLTEND.EQ.0)THEN
         DO J=JTS,JTE
-        DO K=KTS,KTE
         DO I=ITS,ITE
-          T_ADJ(I,K,J)=T(I,K,J)-T_OLD(I,K,J)
-          T(I,K,J)=T_OLD(I,K,J)
+          T_OLD(I,J,K)=T(I,J,K)
+        ENDDO
+        ENDDO
+        ENDDO
+      ELSEIF(ICLTEND==0)THEN
+        DO K=KTS,KTE
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          T_ADJ(I,J,K)=T(I,J,K)-T_OLD(I,J,K)
+          T(I,J,K)=T_OLD(I,J,K)
         ENDDO
         ENDDO
         ENDDO
       ELSE
         DELTPH=1./REAL(NPHS)
-        DO J=JTS,JTE
         DO K=KTS,KTE
+        DO J=JTS,JTE
         DO I=ITS,ITE
-          T(I,K,J)=T(I,K,J)+DELTPH*T_ADJ(I,K,J)
+          T(I,J,K)=T(I,J,K)+DELTPH*T_ADJ(I,J,K)
         ENDDO
         ENDDO
         ENDDO

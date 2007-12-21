@@ -644,9 +644,9 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
          REAL,       INTENT(IN   )                            :: PDTOP,PTOP
          REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
          REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
-         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
+         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN) :: PINT,T,Q,CWM
          REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
-         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
+         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(OUT):: Z3d,Q3d,T3d
 
      END SUBROUTINE BASE_STATE_PARENT
 
@@ -698,24 +698,24 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
     IDS = parent%sd31
     IDE = parent%ed31
-    KDS = parent%sd32
-    KDE = parent%ed32
-    JDS = parent%sd33
-    JDE = parent%ed33
+    JDS = parent%sd32
+    JDE = parent%ed32
+    KDS = parent%sd33
+    KDE = parent%ed33
 
     IMS = parent%sm31
     IME = parent%em31
-    KMS = parent%sm32
-    KME = parent%em32
-    JMS = parent%sm33
-    JME = parent%em33
+    JMS = parent%sm32
+    JME = parent%em32
+    KMS = parent%sm33
+    KME = parent%em33
 
     ITS = parent%sp31
     ITE = parent%ep31
-    KTS = parent%sp32
-    KTE = parent%ep32
-    JTS = parent%sp33
-    JTE = parent%ep33
+    JTS = parent%sp32
+    JTE = parent%ep32
+    KTS = parent%sp33
+    KTE = parent%ep33
 
     CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD,  &
                              parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,      &
@@ -732,24 +732,24 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 !
     IDS = nest%sd31
     IDE = nest%ed31
-    KDS = nest%sd32
-    KDE = nest%ed32
-    JDS = nest%sd33
-    JDE = nest%ed33
+    JDS = nest%sd32
+    JDE = nest%ed32
+    KDS = nest%sd33
+    KDE = nest%ed33
 
     IMS = nest%sm31
     IME = nest%em31
-    KMS = nest%sm32
-    KME = nest%em32
-    JMS = nest%sm33
-    JME = nest%em33
+    JMS = nest%sm32
+    JME = nest%em32
+    KMS = nest%sm33
+    KME = nest%em33
 
     ITS = nest%sp31
     ITE = nest%ep31
-    KTS = nest%sp32
-    KTE = nest%ep32
-    JTS = nest%sp33
-    JTE = nest%ep33
+    JTS = nest%sp32
+    JTE = nest%ep32
+    KTS = nest%sp33
+    KTE = nest%ep33
 
 
     CALL NEST_TERRAIN ( nest, config_flags )
@@ -862,9 +862,9 @@ SUBROUTINE med_nest_force ( parent , nest )
          REAL,       INTENT(IN   )                            :: PDTOP,PTOP
          REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
          REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
-         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
+         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN) :: PINT,T,Q,CWM
          REAL, DIMENSION(KMS:KME)                , INTENT(OUT):: PSTD
-         REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
+         REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(OUT):: Z3d,Q3d,T3d
 
      END SUBROUTINE BASE_STATE_PARENT
 
@@ -877,24 +877,24 @@ SUBROUTINE med_nest_force ( parent , nest )
 
     IDS = parent%sd31
     IDE = parent%ed31
-    KDS = parent%sd32
-    KDE = parent%ed32
-    JDS = parent%sd33
-    JDE = parent%ed33
+    JDS = parent%sd32
+    JDE = parent%ed32
+    KDS = parent%sd33
+    KDE = parent%ed33
 
     IMS = parent%sm31
     IME = parent%em31
-    KMS = parent%sm32
-    KME = parent%em32
-    JMS = parent%sm33
-    JME = parent%em33
+    JMS = parent%sm32
+    JME = parent%em32
+    KMS = parent%sm33
+    KME = parent%em33
 
     ITS = parent%sp31
     ITE = parent%ep31
-    KTS = parent%sp32
-    KTE = parent%ep32
-    JTS = parent%sp33
-    JTE = parent%ep33
+    JTS = parent%sp32
+    JTE = parent%ep32
+    KTS = parent%sp33
+    KTE = parent%ep33
 
 
     CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD, &

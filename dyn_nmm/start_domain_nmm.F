@@ -69,17 +69,21 @@
 !
       INTEGER :: JHL=7
 !
-      INTEGER :: I,IEND,IER,IERR,IFE,IFS,IHH,IHL,IHRSTB,II,IRTN        &
-     &          ,ISIZ1,ISIZ2,ISTART,IX,J,J00,JFE,JFS,JHH,JJ             &
-     &          ,JM1,JM2,JM3,JP1,JP2,JP3,JX                             &
-     &          ,K,K400,KBI,KBI2,KCCO2,KNT,KNTI,KOFF,KOFV               &
-     &          ,LB,LLMH,LMHK,LMVK,LRECBC                               &
+      INTEGER :: I,IEND,IER,IFE,IFE,IFS,IHH,IHL,IHRSTB,II,IRTN          &
+     &          ,ISIZ1,ISIZ2,ISTART,ISTAT,IX,J,J00,JFE,JFS,JHH,JJ       &
+     &          ,JM1,JM2,JM3,JP1,JP2,JP3,JX,KK                          &
+     &          ,K,K400,KBI,KBI2,KCCO2,KNT,KNTI                         &
+     &          ,LB,LRECBC,L                                            &
      &          ,N,NMAP,NRADLH,NRADSH,NREC,NS,RECL,STAT                 &
      &          ,STEPBL,STEPCU,STEPRA
-      INTEGER :: i_m
+!
+      INTEGER :: IPE,MY_E,MY_N,MY_S,MY_W                                &
+     &          ,MY_NE,MY_NW,MY_SE,MY_SW,MYI,MYJ,NPE
+!
+      INTEGER :: I_M
 !
       INTEGER :: ILPAD2,IRPAD2,JBPAD2,JTPAD2
-      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE,KK,L
+      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,DIMENSION(3) :: LPTOP
 !
@@ -93,27 +97,8 @@
 
 !
 !!!   REAL,ALLOCATABLE,DIMENSION(:,:) :: RAINBL,RAINNC,RAINNC           &
-      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: LOWLYR
+      INTEGER,ALLOCATABLE,DIMENSION(:,:) :: ITEMP,LOWLYR
       REAL,ALLOCATABLE,DIMENSION(:) :: SFULL,SMID
-!state    real   DZS             l        dyn_em      -         Z     ir 
-!state    real  CLDFRA          ikj      dyn_em        1         -      r
-!state    real  RQCBLTEN        ikj      dyn_em        1         -      r
-!state    real  RQIBLTEN        ikj      dyn_em        1         -      r
-!state    real  RQVBLTEN        ikj      dyn_em        1         -      r
-!state    real  RTHBLTEN        ikj      dyn_em        1         -      r
-!state    real  RUBLTEN         ikj      dyn_em        1         -      r
-!state    real  RVBLTEN         ikj      dyn_em        1         -      r
-!state    real  RQCCUTEN        ikj      dyn_em        1         -      r
-!state    real  RQICUTEN        ikj      dyn_em        1         -      r
-!state    real  RQRCUTEN        ikj      dyn_em        1         -      r
-!state    real  RQSCUTEN        ikj      dyn_em        1         -      r
-!state    real  RQVCUTEN        ikj      dyn_em        1         -      r
-!state    real  RTHCUTEN        ikj      dyn_em        1         -      r
-!state    real  RTHRATEN        ikj      dyn_em        1         -      r
-!state    real  RTHRATENLW      ikj      dyn_em        1         -      r
-!state    real  RTHRATENSW      ikj      dyn_em        1         -      r
-!state    real   TSLB           ilj       dyn_em      1         Z     irh
-!state    real   ZS              l        dyn_em      -         Z     ir 
       REAL,ALLOCATABLE,DIMENSION(:) :: DZS,ZS
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RQCBLTEN,RQIBLTEN            &
      &                                    ,RQVBLTEN,RTHBLTEN            &
@@ -130,11 +115,12 @@
 
       REAL,ALLOCATABLE,DIMENSION(:,:) :: Z0_DUM, ALBEDO_DUM
 !
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZINT,RRI,CONVFAC
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZINT,RRI,CONVFAC,ZMID
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: T_TRANS,PINT_TRANS
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_TRANS
 #ifndef WRF_CHEM
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_OLD
 #endif
-!     REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZMID
 #if 0
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: W0AVG
 #endif
@@ -150,6 +136,9 @@
       integer :: i_u=49,j_u=475,n_u=07
       integer :: i_v=49,j_v=475,n_v=07
       integer :: num_ozmixm, num_aerosolc
+!Rogers GMT
+      INTEGER :: hr, mn, sec, ms, rc
+      TYPE(WRFU_Time) :: currentTime
 
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -202,28 +191,28 @@
 !       write(0,*) 'set RESTRT to: ', RESTRT
 
 #if 1
-      IF(IME.GT. NMM_MAX_DIM )THEN
+      IF(IME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
          'start_domain_nmm ime (',ime,') > ',NMM_MAX_DIM,    &
          '. Increase NMM_MAX_DIM in configure.wrf, clean, and recompile.'
         CALL WRF_ERROR_FATAL(wrf_err_message)
       ENDIF
 !
-      IF(JME.GT. NMM_MAX_DIM )THEN
+      IF(JME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
          'start_domain_nmm jme (',jme,') > ',NMM_MAX_DIM,    &
          '. Increase NMM_MAX_DIM in configure.wrf, clean, and recompile.'
         CALL WRF_ERROR_FATAL(wrf_err_message)
       ENDIF
 #else
-      IF(IMS.GT.-2.OR.IME.GT. NMM_MAX_DIM )THEN
+      IF(IMS>-2.OR.IME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
          'start_domain_nmm ims(',ims,' > -2 or ime (',ime,') > ',NMM_MAX_DIM,    &
          '. Increase NMM_MAX_DIM in configure.wrf, clean, and recompile.'
         CALL WRF_ERROR_FATAL(wrf_err_message)
       ENDIF
 !
-      IF(JMS.GT.-2.OR.JME.GT. NMM_MAX_DIM )THEN
+      IF(JMS>-2.OR.JME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
          'start_domain_nmm jms(',jms,' > -2 or jme (',jme,') > ',NMM_MAX_DIM,    &
          '. Increase NMM_MAX_DIM in configure.wrf, clean, and recompile.'
@@ -303,6 +292,81 @@
       CALL WRF_GET_MYPROC(MYPROC)
       MYPE=MYPROC
 
+!
+!----------------------------------------------------------------------
+!***  Let each task determine who its eight neighbors are because we
+!***  will need to know that for the halo exchanges.  The direction
+!***  to each neighbor will be designated by the following integers:
+!
+!***      north: 1
+!***       east: 2
+!***      south: 3
+!***       west: 4
+!***  northeast: 5
+!***  southeast: 6
+!***  southwest: 7
+!***  northwest: 8
+!
+!***  If a task has no neighbor in a particular direction because of
+!***  the presence of the global domain boundary then that element
+!***  of my_neb is set to -1.
+!-----------------------------------------------------------------------
+!
+      call wrf_get_nprocx(inpes)
+      call wrf_get_nprocy(jnpes)
+!
+      allocate(itemp(inpes,jnpes),stat=istat)
+      npe=0
+!
+      do j=1,jnpes
+      do i=1,inpes
+        itemp(i,j)=npe
+        if(npe==mype)then
+          myi=i
+          myj=j
+        endif
+        npe=npe+1
+      enddo
+      enddo
+!
+      my_n=-1
+      if(myj+1<=jnpes)my_n=itemp(myi,myj+1)
+!
+      my_e=-1
+      if(myi+1<=inpes)my_e=itemp(myi+1,myj)
+!
+      my_s=-1
+      if(myj-1>=1)my_s=itemp(myi,myj-1)
+!
+      my_w=-1
+      if(myi-1>=1)my_w=itemp(myi-1,myj)
+!
+      my_ne=-1
+      if((myi+1<=inpes).and.(myj+1<=jnpes)) &
+         my_ne=itemp(myi+1,myj+1)
+!
+      my_se=-1
+      if((myi+1<=inpes).and.(myj-1>=1)) &
+         my_se=itemp(myi+1,myj-1)
+!
+      my_sw=-1
+      if((myi-1>=1).and.(myj-1>=1)) &
+         my_sw=itemp(myi-1,myj-1)
+!
+      my_nw=-1
+      if((myi-1>=1).and.(myj+1<=jnpes)) &
+         my_nw=itemp(myi-1,myj+1)
+!
+!     my_neb(1)=my_n
+!     my_neb(2)=my_e
+!     my_neb(3)=my_s
+!     my_neb(4)=my_w
+!     my_neb(5)=my_ne
+!     my_neb(6)=my_se
+!     my_neb(7)=my_sw
+!     my_neb(8)=my_nw
+!
+      deallocate(itemp)
 #  include <HALO_NMM_INIT_1.inc>
 #  include <HALO_NMM_INIT_2.inc>
 #  include <HALO_NMM_INIT_3.inc>
@@ -315,12 +379,7 @@
 #  include <HALO_NMM_INIT_10.inc>
 #  include <HALO_NMM_INIT_11.inc>
 #  include <HALO_NMM_INIT_12.inc>
-
 #  include <HALO_NMM_INIT_13.inc>
-
-!        CALL wrf_shutdown
-!        stop
-
 #  include <HALO_NMM_INIT_14.inc>
 #  include <HALO_NMM_INIT_15.inc>
 #  include <HALO_NMM_INIT_16.inc>
@@ -348,7 +407,7 @@
 #  include <HALO_NMM_INIT_38.inc>
 #  include <HALO_NMM_INIT_39.inc>
 #endif
-
+!
       DO J=MYJS_P4,MYJE_P4
         IHEG(J)=MOD(J+1,2)
         IHWG(J)=IHEG(J)-1
@@ -374,8 +433,6 @@
       IF(.NOT.RESTRT)THEN
         DO J=JFS,JFE
         DO I=IFS,IFE
-          LLMH=LMH(I,J)
-          KOFF=KPE-1-LLMH
           PDSL(I,J)  =PD(I,J)*RES(I,J)
           PREC(I,J)  =0.
           ACPREC(I,J)=0.
@@ -394,8 +451,6 @@
           TWBS(I,J)  =0.
           QWBS(I,J)  =0.
           CLDEFI(I,J)=1.
-!!!!          HTOP(I,J)  =REAL(LLMH)
-!!!!          HBOT(I,J)  =REAL(LLMH)
           HTOP(I,J)  =REAL(KTS)
           HTOPD(I,J) =REAL(KTS)
           HTOPS(I,J) =REAL(KTS)
@@ -408,15 +463,15 @@
 !***  EXTRAPOLATE DOWN FOR INITIAL SURFACE POTENTIAL TEMPERATURE.
 !***  ALSO DO THE SHELTER PRESSURE.
 !***
-          PM1=AETA1(KOFF+1)*PDTOP+AETA2(KOFF+1)*PDSL(I,J)+PT
+          PM1=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
           APEM1=(1.E5/PM1)**CAPA
 
-        IF (NMM_TSK(I,J) .ge. 200.) THEN ! have a specific skin temp, use it
-               THS(I,J)=NMM_TSK(I,J)*APEM1
-               TSFCK=NMM_TSK(I,J)
-	ELSE ! use lowest layer as a proxy
-          THS(I,J)=T(I,KOFF+1,J)*APEM1
-          TSFCK=T(I,KOFF+1,J)
+        IF(NMM_TSK(I,J)>=200.)THEN         ! have a specific skin temp, use it
+          THS(I,J)=NMM_TSK(I,J)*APEM1
+          TSFCK=NMM_TSK(I,J)
+	ELSE                               ! use lowest layer as a proxy
+          THS(I,J)=T(I,J,KTS)*APEM1
+          TSFCK=T(I,J,KTS)
 	ENDIF
 
 !	if (I .eq. IFE/2 .and. J .eq. JFE/2) then
@@ -426,13 +481,13 @@
 
           PSFCK=PD(I,J)+PDTOP+PT
 !
-          IF(SM(I,J).LT.0.5) THEN
+          IF(SM(I,J)<0.5) THEN
             QSH(I,J)=PQ0/PSFCK*EXP(A2*(TSFCK-A3)/(TSFCK-A4))
-          ELSEIF(SM(I,J).GT.0.5) THEN
+          ELSEIF(SM(I,J)>0.5) THEN
             THS(I,J)=SST(I,J)*(1.E5/(PD(I,J)+PDTOP+PT))**CAPA
           ENDIF
 !
-          TERM1=-0.068283/T(I,KOFF+1,J)
+          TERM1=-0.068283/T(I,J,KTS)
           PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
 !
           USTAR(I,J)=0.1
@@ -445,27 +500,16 @@
         ENDDO
 
 !***
-!***  INITIALIZE 3D MASKS
-!***
-        DO J=JFS,JFE
-          DO K=KPS,KPE
-          DO I=IFS,IFE
-            HTM(I,K,J)=1.
-            VTM(I,K,J)=1.
-          ENDDO
-          ENDDO
-        ENDDO
-!***
 !***  INITIALIZE CLOUD FIELDS
 !***
       IF (MAXVAL(CWM) .gt. 0. .and. MAXVAL(CWM) .lt. 1.) then
         write(0,*) 'appear to have CWM values...do not zero'
       ELSE
         write(0,*) 'zeroing CWM'
-        DO J=JFS,JFE
-          DO K=KPS,KPE
+        DO K=KPS,KPE
+          DO J=JFS,JFE
           DO I=IFS,IFE
-            CWM(I,K,J)=0.
+            CWM(I,J,K)=0.
           ENDDO
           ENDDO
         ENDDO
@@ -512,7 +556,7 @@
 !
         DO J=JFS,JFE
         DO I=IFS,IFE
-          IF(SM(I,J).GT.0.5)THEN
+          IF(SM(I,J)>0.5)THEN
             CLOGES =-CM1/SST(I,J)-CM2*ALOG10(SST(I,J))+CM3
             ESE    = 10.**(CLOGES+2.)
             QSH(I,J)= SM(I,J)*EPS*ESE/(PD(I,J)+PDTOP+PT-ESE*(1.-EPS))
@@ -531,20 +575,19 @@
         write(0,*) 'appear to have Q2 values...do not zero'
       ELSE
         write(0,*) 'zeroing Q2'
-        DO J=JFS,JFE
         DO K=KPS,KPE-1
+        DO J=JFS,JFE
         DO I=IFS,IFE
-          Q2(I,K,J)=HTM(I,K+1,J)*HBM2(I,J)*EPSQ2
+          Q2(I,J,K)=HBM2(I,J)*EPSQ2
         ENDDO
         ENDDO
         ENDDO
 !
         DO J=JFS,JFE
         DO I=IFS,IFE
-          Q2(I,LM,J)    = 0.
-          LLMH          = LMH(I,J)
-          Q2(I,LLMH-2,J)= HBM2(I,J)*Q2INI
-          Q2(I,LLMH-1,J)= HBM2(I,J)*Q2INI
+          Q2(I,J,LM)    = 0.
+          Q2(I,J,KTE-2)= HBM2(I,J)*Q2INI
+          Q2(I,J,KTE-1)= HBM2(I,J)*Q2INI
         ENDDO
         ENDDO
       ENDIF
@@ -552,12 +595,12 @@
 !***  PAD ABOVE GROUND SPECIFIC HUMIDITY IF IT IS TOO SMALL.
 !***  INITIALIZE LATENT HEATING ACCUMULATION ARRAYS.
 !***
-        DO J=JFS,JFE
         DO K=KPS,KPE
+        DO J=JFS,JFE
         DO I=IFS,IFE
-          IF(Q(I,K,J).LT.EPSQ)Q(I,K,J)=EPSQ*HTM(I,K,J)
-          TRAIN(I,K,J)=0.
-          TCUCN(I,K,J)=0.
+          IF(Q(I,J,K)<EPSQ)Q(I,J,K)=EPSQ
+          TRAIN(I,J,K)=0.
+          TCUCN(I,J,K)=0.
         ENDDO
         ENDDO
         ENDDO
@@ -567,8 +610,8 @@
 !***
         DO J=JFS,JFE
         DO I=IFS,IFE
-          TLMAX(I,J)=T(I,KPS,J)
-          TLMIN(I,J)=T(I,KPS,J)
+          TLMAX(I,J)=T(I,J,KPS)
+          TLMIN(I,J)=T(I,J,KPS)
         ENDDO
         ENDDO
 !
@@ -583,14 +626,11 @@
         DO J=JFS,JFE
         DO I=IFS,IFE
 !
-          LLMH=LMH(I,J)
-          KOFF=KPE-1-LLMH
-!
-          IF(T(I,KOFF+1,J).EQ.0.)THEN
-            T(I,KOFF+1,J)=T(I,KOFF+2,J)
+          IF(T(I,J,KTS)==0.)THEN
+            T(I,J,KTS)=T(I,J,KTS+1)
           ENDIF
 !
-          TERM1=-0.068283/T(I,KOFF+1,J)
+          TERM1=-0.068283/T(I,J,KTS)
           PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
         ENDDO
         ENDDO
@@ -635,7 +675,7 @@
 !***
 !***    AVERAGE CLOUD AMOUNT ARRAY
 !***
-        IF(MOD(NTSD,NCLOD).LT.GRID%NPHS)THEN
+        IF(MOD(NTSD,NCLOD)<GRID%NPHS)THEN
           CALL wrf_message('  ZERO AVG CLD AMT ARRAY')
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -649,16 +689,16 @@
 !***  
 !***     GRID-SCALE AND CONVECTIVE LATENT HEATING ARRAYS.
 !***  
-        IF(MOD(NTSD,NHEAT).LT.GRID%NCNVC)THEN
+        IF(MOD(NTSD,NHEAT)<GRID%NCNVC)THEN
           CALL wrf_message('  ZERO ACCUM LATENT HEATING ARRAYS')
 !
           AVRAIN=0.
           AVCNVC=0.
-          DO J=JFS,JFE
           DO K=KPS,KPE
+          DO J=JFS,JFE
           DO I=IFS,IFE
-            TRAIN(I,K,J)=0.
-            TCUCN(I,K,J)=0.
+            TRAIN(I,J,K)=0.
+            TCUCN(I,J,K)=0.
           ENDDO
           ENDDO
           ENDDO
@@ -670,7 +710,7 @@
 !         DO K=1,LM
 !           DO J=JFS,JFE
 !           DO I=IFS,IFE
-!             Q2(I,K,J)=AMAX1(Q2(I,K,J)*HBM2(I,J),EPSQ2)
+!             Q2(I,J,K)=AMAX1(Q2(I,J,K)*HBM2(I,J),EPSQ2)
 !           ENDDO
 !           ENDDO
 !         ENDDO
@@ -689,7 +729,7 @@
 !***  TOTAL SNOW AND SNOW MELT ARRAYS.
 !***  STORM SURFACE AND BASE GROUND RUN OFF ARRAYS.
 !     
-        IF(MOD(NTSD,NPREC).LT.GRID%NPHS)THEN
+        IF(MOD(NTSD,NPREC)<GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM PRECIP ARRAYS')
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -705,7 +745,7 @@
 !***  
 !***  LONG WAVE RADIATION ARRAYS.
 !***  
-        IF(MOD(NTSD,NRDLW).LT.GRID%NPHS)THEN
+        IF(MOD(NTSD,NRDLW)<GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM LW RADTN ARRAYS')
           ARDLW=0.
           DO J=JFS,JFE
@@ -719,7 +759,7 @@
 !***  
 !***  SHORT WAVE RADIATION ARRAYS.
 !***  
-        IF(MOD(NTSD,NRDSW).LT.GRID%NPHS)THEN
+        IF(MOD(NTSD,NRDSW)<GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM SW RADTN ARRAYS')
           ARDSW=0.
           DO J=JFS,JFE
@@ -733,7 +773,7 @@
 !***  
 !***  SURFACE SENSIBLE AND LATENT HEAT FLUX ARRAYS.
 !***  
-        IF(MOD(NTSD,NSRFC).LT.GRID%NPHS)THEN
+        IF(MOD(NTSD,NSRFC)<GRID%NPHS)THEN
           CALL wrf_message('  ZERO ACCUM SFC FLUX ARRAYS')
           ASRFC=0.
           DO J=JFS,JFE
@@ -755,13 +795,6 @@
         CALL wrf_message('INIT:  INITIALIZED ARRAYS FOR RESTART START')
       ENDIF
 !
-      DO J=JFS,JFE
-      DO K=KPS,KPE
-      DO I=IFS,IFE
-        ZERO_3D(I,K,J)=0.
-      ENDDO
-      ENDDO
-      ENDDO
 !----------------------------------------------------------------------
 !
 !***  FLAG FOR INITIALIZING ARRAYS, LOOKUP TABLES, & CONSTANTS USED IN
@@ -777,12 +810,10 @@
 !***  BOUNDARY POINTS WILL ALWAYS BE ZERO
 !***
       DO J=JFS,JFE
-      DO K=KPS,KPE
       DO I=IFS,IFE
-        ADT(I,K,J)=0.
-        ADU(I,K,J)=0.
-        ADV(I,K,J)=0.
-      ENDDO
+        ADT(I,J)=0.
+        ADU(I,J)=0.
+        ADV(I,J)=0.
       ENDDO
       ENDDO
 !----------------------------------------------------------------------
@@ -920,7 +951,7 @@
         UPSTRM=.TRUE.
         ILPAD2=0
         DO JJ=8,JDE-8   ! JM-7
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
 !
             DO I=1,4
@@ -933,7 +964,7 @@
         ENDDO
 !
         DO JJ=6,JDE-6   ! JM-5
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             KNTI=0
             IEND=2+MOD(JJ,2)
@@ -961,7 +992,7 @@
         UPSTRM=.TRUE.
         IRPAD2=0
         DO JJ=8,JDE-8   ! JM-7
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             IEND=IM-MOD(JJ+1,2)
             ISTART=IEND-3
@@ -983,12 +1014,12 @@
         ENDDO
 !
         DO JJ=6,JDE-6   ! JM-5
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             IEND=IM-1-MOD(JJ+1,2)
             ISTART=IEND-MOD(JJ,2)
             KNTI=0
-            IF(INPES.EQ.1)KNTI=N_IUP_ADH(J)
+            IF(INPES==1)KNTI=N_IUP_ADH(J)
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
               IUP_ADH(IMS+KNTI,J)=I
@@ -999,12 +1030,12 @@
         ENDDO
 !***
         DO JJ=8,JDE-8  ! JM-7
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             IEND=IM-MOD(JJ,2)
             ISTART=IEND-3
             KNTI=0
-            IF(INPES.EQ.1)KNTI=N_IUP_V(J)
+            IF(INPES==1)KNTI=N_IUP_V(J)
 !
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
@@ -1016,12 +1047,12 @@
         ENDDO
 !
         DO JJ=6,JDE-6  !  JM-5
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             IEND=IM-1-MOD(JJ,2)
             ISTART=IEND-MOD(JJ+1,2)
             KNTI=0
-            IF(INPES.EQ.1)KNTI=N_IUP_ADV(J)
+            IF(INPES==1)KNTI=N_IUP_ADV(J)
             DO II=ISTART,IEND
               I=II      ! -MY_IS_GLB+1
               IUP_ADV(IMS+KNTI,J)=I
@@ -1076,7 +1107,7 @@
         KNT=6
         DO JJ=6,JDE-6 ! JM-5
           KNT=KNT+1
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             EM_LOC(J)=EM(KNT)
             EMT_LOC(J)=EMT(KNT)
@@ -1088,7 +1119,7 @@
         KNT=6+JDE-11 ! JM-10
         DO JJ=6,JDE-6 ! JM-5
           KNT=KNT+1
-          IF(JJ.GE.MY_JS_GLB-2.AND.JJ.LE.MY_JE_GLB+2)THEN
+          IF(JJ>=MY_JS_GLB-2.AND.JJ<=MY_JE_GLB+2)THEN
             J=JJ      ! -MY_JS_GLB+1
             EM_LOC(J)=EM(KNT)
             EMT_LOC(J)=EMT(KNT)
@@ -1108,10 +1139,10 @@
         DO J=JFS,JFE
         DO I=IFS,IFE
           PCTSNO(I,J)=-999.0
-          IF(SM(I,J).LT.0.5)THEN
+          IF(SM(I,J)<0.5)THEN
               CMC(I,J)=0.0
 !              CMC(I,J)=canwat(i,j)   ! tgs
-            IF(SICE(I,J).GT.0.5)THEN
+            IF(SICE(I,J)>0.5)THEN
 !***
 !***  SEA-ICE CASE
 !***
@@ -1170,7 +1201,7 @@
 !   
       DO J=JFS,JFE
       DO I=IFS,IFE
-        LVL(I,J)=LM-LMH(I,J)
+        LVL(I,J)=LM-KTE
       ENDDO
       ENDDO
 !***
@@ -1184,14 +1215,14 @@
       PDIF=SLPM-PT
       DO K=1,LM
         PSUM=PSUM+DETA(K)*PDIF
-        IF(LPTOP(3).EQ.0)THEN
-          IF(PSUM.GT.PHITP)LPTOP(3)=K
-        ELSEIF(LPTOP(2).EQ.0)THEN
-          IF(PSUM.GT.PMDHI)LPTOP(2)=K
-        ELSEIF(K400.EQ.0)THEN
-          IF(PSUM.GT.P400)K400=K
-        ELSEIF(LPTOP(1).EQ.0)THEN
-          IF(PSUM.GT.PLOMD)LPTOP(1)=K
+        IF(LPTOP(3)==0)THEN
+          IF(PSUM>PHITP)LPTOP(3)=K
+        ELSEIF(LPTOP(2)==0)THEN
+          IF(PSUM>PMDHI)LPTOP(2)=K
+        ELSEIF(K400==0)THEN
+          IF(PSUM>P400)K400=K
+        ELSEIF(LPTOP(1)==0)THEN
+          IF(PSUM>PLOMD)LPTOP(1)=K
         ENDIF
       ENDDO
 !***
@@ -1218,7 +1249,7 @@
 !***
 !***  CALL SOLARD TO CALCULATE NON-DIMENSIONAL SUN-EARTH DISTANCE
 !***
-!!!   IF(MYPE.EQ.0)CALL SOLARD(SUN_DIST)
+!!!   IF(MYPE==0)CALL SOLARD(SUN_DIST)
 !!!   CALL MPI_BCAST(SUN_DIST,1,MPI_REAL,0,MPI_COMM_COMP,IRTN)
 
 !***
@@ -1230,7 +1261,7 @@
 !!!   CALL ZENITH(TIME,DAYI,HOUR)
 !
       ADDL=0.
-      IF(MOD(IDAT(3),4).EQ.0)ADDL=1.
+      IF(MOD(IDAT(3),4)==0)ADDL=1.
 !
 !!!   CALL O3CLIM
 !
@@ -1246,25 +1277,20 @@
 !***  TRY A SIMPLE LINEAR INTERP TO GET 2/10 M VALUES
 !***
         PDSL(I,J)=PD(I,J)*RES(I,J)
-        LMHK=LMH(I,J)
-        LMVK=LMV(I,J)
 !
-        KOFF=KPE-1-LMHK
-        KOFV=KPE-1-LMVK
-!
-        ULM=U(I,KOFV+1,J)
-        VLM=V(I,KOFV+1,J)
-        TLM=T(I,KOFF+1,J)
-        QLM=Q(I,KOFF+1,J)
-        PLM=AETA1(KOFF+1)*PDTOP+AETA2(KOFF+1)*PDSL(I,J)+PT
+        ULM=U(I,J,KTS)
+        VLM=V(I,J,KTS)
+        TLM=T(I,J,KTS)
+        QLM=Q(I,J,KTS)
+        PLM=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
         APELM=(1.0E5/PLM)**CAPA
         APELMNW=(1.0E5/PSHLTR(I,J))**CAPA
         THLM=TLM*APELM
-        DPLM=(DETA1(KOFF+1)*PDTOP+DETA2(KOFF+1)*PDSL(I,J))*0.5
+        DPLM=(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSL(I,J))*0.5
         DZLM=R_D*DPLM*TLM*(1.+P608*QLM)/(G*PLM)
         FAC1=10./DZLM
         FAC2=(DZLM-10.)/DZLM
-        IF(DZLM.LE.10.)THEN
+        IF(DZLM<=10.)THEN
           FAC1=1.
           FAC2=0.
         ENDIF
@@ -1285,17 +1311,17 @@
 !
         IF(.NOT.RESTRT.OR.NEST)THEN
 
-	IF ( (THLM-THS(I,J)) .gt. 2.0) THEN  ! weight differently in different scenarios
-	 FAC1=0.3
-         FAC2=0.7
+	IF ( (THLM-THS(I,J))>2.0) THEN  ! weight differently in different scenarios
+          FAC1=0.3
+          FAC2=0.7
         ELSE
-         FAC1=0.8
-         FAC2=0.2
+          FAC1=0.8
+          FAC2=0.2
         ENDIF
 
-          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
+        TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
 !          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
-          QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
+        QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
 !          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
         ENDIF
 !***
@@ -1315,12 +1341,12 @@
 !----------------------------------------------------------------------
 !
       IF(.NOT.RESTRT)THEN
-        DO J=jfs,jfe
-          DO K=KPS,KPE
+        DO K=KPS,KPE
+          DO J=JFS,JFE
           DO I=ifs,ife
-            TOLD(I,K,J)=T(I,K,J)   ! T AT TAU-1
-            UOLD(I,K,J)=U(I,K,J)   ! U AT TAU-1
-            VOLD(I,K,J)=V(I,K,J)   ! V AT TAU-1
+          TOLD(I,J,K)=T(I,J,K)   ! T AT TAU-1
+          UOLD(I,J,K)=U(I,J,K)   ! U AT TAU-1
+          VOLD(I,J,K)=V(I,J,K)   ! V AT TAU-1
           ENDDO
           ENDDO
         ENDDO
@@ -1332,25 +1358,25 @@
 !
 !!!!	SHOULD DWDT BE REDEFINED IF RESTRT?
 
-        IF(.NOT.RESTRT.OR.NEST)THEN
-      DO J=jfs,jfe
+      IF(.NOT.RESTRT.OR.NEST)THEN
         DO K=KPS,KPE
-        DO I=ifs,ife
-          DWDT(I,K,J)=1.
+          DO J=JFS,JFE
+          DO I=IFS,IFE
+            DWDT(I,J,K)=1.
+          ENDDO
+          ENDDO
         ENDDO
-        ENDDO
-      ENDDO
-	ENDIF
+      ENDIF
 !***
-      IF(GRID%SIGMA.EQ.1)THEN
-        DO J=jfs,jfe
-        DO I=ifs,ife
+      IF(GRID%SIGMA==1)THEN
+        DO J=JFS,JFE
+        DO I=IFS,IFE
           PDSL(I,J)=PD(I,J)
         ENDDO
         ENDDO
       ELSE
-        DO J=jfs,jfe
-        DO I=ifs,ife
+        DO J=JFS,JFE
+        DO I=IFS,IFE
           PDSL(I,J)=RES(I,J)*PD(I,J)
         ENDDO
         ENDDO
@@ -1366,42 +1392,40 @@
       write(0,*)' jfs=',jfs,' jfe=',jfe
       write(0,*)' kps=',kps,' kpe=',kpe
       write(0,*)' pdtop=',pdtop,' pt=',pt
-        IF(.NOT.RESTRT.OR.NEST)THEN
-      DO J=jfs,jfe
+      IF(.NOT.RESTRT.OR.NEST)THEN
         DO K=KPS,KPE
-        DO I=ifs,ife
-          PINT(I,K,J)=ETA1(K)*PDTOP+ETA2(K)*PDSL(I,J)+PT
-          Z(I,K,J)=PINT(I,K,J)
-          W(I,K,J)=0.
+        DO J=JFS,JFE
+        DO I=IFS,IFE
+          PINT(I,J,K)=ETA1(K)*PDTOP+ETA2(K)*PDSL(I,J)+PT
+          Z(I,J,K)=PINT(I,J,K)
+          W(I,J,K)=0.
         ENDDO
         ENDDO
-      ENDDO
-	ENDIF
+        ENDDO
+      ENDIF
 
 #ifndef NO_RESTRICT_ACCEL
 !----------------------------------------------------------------------
 !***  RESTRICTING THE ACCELERATION ALONG THE BOUNDARIES
 !----------------------------------------------------------------------
 !
-      DO J=jfs,jfe
-      DO I=ifs,ife
+      DO J=JFS,JFE
+      DO I=IFS,IFE
         DWDTMN(I,J)=-EPSIN
         DWDTMX(I,J)= EPSIN
       ENDDO
       ENDDO
-
-
 !
 !***
-      IF(JHL.GT.1)THEN
+      IF(JHL>1)THEN
         JHH=JDE-1-JHL+1 ! JM-JHL+1
         IHL=JHL/2+1
 !
         DO J=1,JHL
-          IF(J.GE.MY_JS_GLB-JBPAD2.AND.J.LE.MY_JE_GLB+JTPAD2)THEN
+          IF(J>=MY_JS_GLB-JBPAD2.AND.J<=MY_JE_GLB+JTPAD2)THEN
             JX=J      ! -MY_JS_GLB+1
             DO I=1,IDE-1 ! IM
-              IF(I.GE.MY_IS_GLB-ILPAD2.AND.I.LE.MY_IE_GLB+IRPAD2)THEN
+              IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
                 DWDTMN(IX,JX)=-EPSB
                 DWDTMX(IX,JX)= EPSB
@@ -1411,10 +1435,10 @@
         ENDDO
 !
         DO J=JHH,JDE-1   ! JM
-          IF(J.GE.MY_JS_GLB-JBPAD2.AND.J.LE.MY_JE_GLB+JTPAD2)THEN
+          IF(J>=MY_JS_GLB-JBPAD2.AND.J<=MY_JE_GLB+JTPAD2)THEN
             JX=J      ! -MY_JS_GLB+1
             DO I=1,IDE-1 ! IM
-              IF(I.GE.MY_IS_GLB-ILPAD2.AND.I.LE.MY_IE_GLB+IRPAD2)THEN
+              IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
                 DWDTMN(IX,JX)=-EPSB
                 DWDTMX(IX,JX)= EPSB
@@ -1424,10 +1448,10 @@
         ENDDO
 !
         DO J=1,JDE-1 ! JM
-          IF(J.GE.MY_JS_GLB-JBPAD2.AND.J.LE.MY_JE_GLB+JTPAD2)THEN
+          IF(J>=MY_JS_GLB-JBPAD2.AND.J<=MY_JE_GLB+JTPAD2)THEN
             JX=J      ! -MY_JS_GLB+1
             DO I=1,IHL
-              IF(I.GE.MY_IS_GLB-ILPAD2.AND.I.LE.MY_IE_GLB+IRPAD2)THEN
+              IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
                 DWDTMN(IX,JX)=-EPSB
                 DWDTMX(IX,JX)= EPSB
@@ -1437,12 +1461,12 @@
         ENDDO
 !
         DO J=1,JDE-1 ! JM
-          IF(J.GE.MY_JS_GLB-JBPAD2.AND.J.LE.MY_JE_GLB+JTPAD2)THEN
+          IF(J>=MY_JS_GLB-JBPAD2.AND.J<=MY_JE_GLB+JTPAD2)THEN
             JX=J      ! -MY_JS_GLB+1
              ! moved this line to inside the J-loop, 20030429, jm
-            IHH=IDE-1-IHL+MOD(j,2) ! IM-IHL+MOD(J,2)
+            IHH=IDE-1-IHL+MOD(J,2) ! IM-IHL+MOD(J,2)
             DO I=IHH,IDE-1 ! IM
-              IF(I.GE.MY_IS_GLB-ILPAD2.AND.I.LE.MY_IE_GLB+IRPAD2)THEN
+              IF(I>=MY_IS_GLB-ILPAD2.AND.I<=MY_IE_GLB+IRPAD2)THEN
                 IX=I      ! -MY_IS_GLB+1
                 DWDTMN(IX,JX)=-EPSB
                 DWDTMX(IX,JX)= EPSB
@@ -1500,11 +1524,13 @@
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHRATEN  = 0.
       ALLOCATE(RTHRATENLW(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RTHRATENLW = 0.
       ALLOCATE(RTHRATENSW(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RTHRATENSW = 0.
-      ALLOCATE(RRI(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; RRI = 0.
       ALLOCATE(ZINT(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; ZINT = 0.
-!     ALLOCATE(ZMID(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; ZMID = 0.
       ALLOCATE(CONVFAC(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CONVFAC = 0.
-#ifndef WRF_CHEM
+      ALLOCATE(PINT_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; PINT_TRANS = 0.
+      ALLOCATE(T_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ;  T_TRANS = 0.
+      ALLOCATE(RRI(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ;  RRI = 0.
+      ALLOCATE(CLDFRA_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_TRANS = 0.
+#ifndef WRF_CHEM      
       ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
 #if 0
@@ -1524,7 +1550,7 @@
         SFCZ=FIS(I,J)*G_INV
         ZINT(I,KTS,J)=SFCZ
         PDSL(I,J)=PD(I,J)*RES(I,J)
-        PSURF=PINT(I,KTS,J)
+        PSURF=PINT(I,J,KTS)
         EXNSFC=(1.E5/PSURF)**CAPA
         XLAND(I,J)=SM(I,J)+1.
         THSIJ=(SST(I,J)*EXNSFC)*(XLAND(I,J)-1.)                         &
@@ -1532,13 +1558,13 @@
         TSFC(I,J)=THSIJ/EXNSFC
 !
         DO K=KTS,KTE-1
-          PLYR=(PINT(I,K,J)+PINT(I,K+1,J))*0.5
-          TL=T(I,K,J)
-          CWML=CWM(I,K,J)
-          rri(i,k,j)=r_d*tl*(1.+p608*q(i,k,j))/plyr
+          PLYR=(PINT(I,J,K)+PINT(I,J,K+1))*0.5
+          TL=T(I,J,K)
+          CWML=CWM(I,J,K)
+          RRI(I,K,J)=R_D*TL*(1.+P608*Q(I,J,K))/PLYR
           ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             & 
                      *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*ROG        & 
-                     *(Q(I,K,J)*P608-CWML+1.)
+                     *(Q(I,J,K)*P608-CWML+1.)
         ENDDO
 !
 !        DO K=KTS,KTE
@@ -1559,15 +1585,15 @@
       PDBOT=PDTOT-PDTOP
       SFULL(KTS)=1.
       SFULL(KTE)=0.
-      dsigsum = 0.
+      DSIGSUM = 0.
       DO K=KTS+1,KTE
         DSIG=(DETA1(K-1)*PDTOP+DETA2(K-1)*PDBOT)*RPDTOT
-        dsigsum=dsigsum+dsig
+        DSIGSUM=DSIGSUM+DSIG
         SFULL(K)=SFULL(K-1)-DSIG
         SMID(K-1)=0.5*(SFULL(K-1)+SFULL(K))
       ENDDO
-      dsig=(deta1(kte-1)*pdtop+deta2(kte-1)*pdbot)*rpdtot
-      dsigsum=dsigsum+dsig
+      DSIG=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDBOT)*RPDTOT
+      DSIGSUM=DSIGSUM+DSIG
       SMID(KTE-1)=0.5*(SFULL(KTE-1)+SFULL(KTE))
 !
 !-----------------------------------------------------------------------
@@ -1582,8 +1608,8 @@
         ENDDO
         ENDDO
       ENDIF
-
-!     always define the quantity Z0BASE
+!
+!***  Always define the quantity Z0BASE
                                                                                                                                               
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
@@ -1593,7 +1619,7 @@
         ELSE
           Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
         ENDIF
-
+!
       ENDDO
       ENDDO
 !
@@ -1609,10 +1635,20 @@
 ! when NMM moves to moving nests.  
       CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
+      if(restrt) then
+        CALL domain_clock_get( grid, current_time=currentTime )
+        CALL WRFU_TimeGet( currentTime, YY=grid%julyr, dayOfYear=grid%julday, &
+                           H=hr, M=mn, S=sec, MS=ms, rc=rc)
+        grid%gmt=hr+real(mn)/60.+real(sec)/3600.+real(ms)/(1000*3600)
+        WRITE( wrf_err_message , * ) 'DEBUG start_domain_nmm():  gmt = ',grid%gmt
+        CALL wrf_debug( 150, TRIM(wrf_err_message) )
+      endif
+
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
-      CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,GRID%RESTART,sfull,smid&
+
+      CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,GRID%RESTART,SFULL,SMID &
      &             ,PT,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
@@ -1625,7 +1661,7 @@
      &             ,CLDEFI,LOWLYR                                       &
      &             ,MASS_FLUX                                           &
      &             ,RTHFTEN, RQVFTEN                                    &
-     &             ,CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,LU_INDEX            &
+     &             ,CLDFRA_TRANS,CLDFRA_OLD,GLW,GSW,EMISS,LU_INDEX      &
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
@@ -1652,13 +1688,23 @@
 
 !-----------------------------------------------------------------------
 !
-
+      IF(NSTART==0)THEN
+        DO J=JMS,JME
+        DO I=IMS,IME
+          Z0(I,J)=Z0BASE(I,J)
+        ENDDO
+        ENDDO
+      ENDIF
+      DO K=KMS,KME
       DO J=JMS,JME
       DO I=IMS,IME
-        Z0(I,J)=Z0BASE(I,J)
+        CLDFRA(I,J,K)=CLDFRA_TRANS(I,K,J)
+      ENDDO
       ENDDO
       ENDDO
 
+!
+!
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 
 	IF (.NOT. RESTRT) THEN
@@ -1666,10 +1712,10 @@
 ! mixing ratio (from NMM's specific humidity var) into moist array.
 
         write(0,*) 'Initializng moist(:,:,:, Qv) from Q'
-        DO J=JFS,JFE
         DO K=KPS,KPE
+        DO J=JFS,JFE
         DO I=IFS,IFE
-           moist(I,K,J,P_QV) = Q(I,K,J) / (1.-Q(I,K,J))                 
+           moist(I,J,K,P_QV) = Q(I,J,K) / (1.-Q(I,J,K))                 
         enddo      
         enddo      
         enddo      
@@ -1682,11 +1728,11 @@
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
      &       write(0,*) ' summing moist(:,:,:,',i_m,') into CWM array'  
-          DO J=JFS,JFE
           DO K=KPS,KPE
+          DO J=JFS,JFE
           DO I=IFS,IFE
-            IF ( (moist(I,K,J,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN  
-               CWM(I,K,J) = CWM(I,K,J) + moist(I,K,J,i_m)               
+            IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN  
+               CWM(I,J,K) = CWM(I,J,K) + moist(I,J,K,i_m)               
             ENDIF  
           enddo    
           enddo
@@ -1699,14 +1745,14 @@
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-              IF ( (moist(I,K,J,i_m).gt.EPSQ) .and. &
+              IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. &
      &               ( (i_m.eq.p_qi).or.(i_m.eq.p_qs).or.(i_m.eq.p_qg) ) ) THEN
-                 F_ICE(I,K,J) = F_ICE(I,K,J) + moist(I,K,J,i_m)
+                 F_ICE(I,K,J) = F_ICE(I,K,J) + moist(I,J,K,i_m)
               ENDIF
         if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
             if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
-               moist(I,K,J,p_qs)=moist(I,K,J,p_qs)+moist(I,K,J,i_m)
-               moist(I,K,J,i_m) =0.
+               moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
+               moist(I,J,K,i_m) =0.
             endif
         endif
             enddo
@@ -1720,14 +1766,14 @@
           IF(F_ICE(i,k,j)<=EPSQ)THEN
               F_ICE(I,K,J)=0.
           ELSE
-              F_ICE(I,K,J) = F_ICE(I,K,J)/CWM(I,K,J)
+              F_ICE(I,K,J) = F_ICE(I,K,J)/CWM(I,J,K)
           ENDIF
-              IF ( (moist(I,K,J,p_qr)+moist(I,K,J,p_qc)).gt.EPSQ) THEN
-           IF(moist(i,k,j,p_qr)<=EPSQ)THEN
+              IF ( (moist(I,J,K,p_qr)+moist(I,J,K,p_qc)).gt.EPSQ) THEN
+           IF(moist(i,j,k,p_qr)<=EPSQ)THEN
               F_RAIN(I,K,J)=0.
            ELSE
-              F_RAIN(I,K,J) = moist(i,k,j,p_qr) &
-     &                    / (moist(i,k,j,p_qr)+moist(i,k,j,p_qc))
+              F_RAIN(I,K,J) = moist(i,j,k,p_qr) &
+     &                    / (moist(i,j,k,p_qr)+moist(i,j,k,p_qc))
            ENDIF
               ENDIF
             enddo
@@ -1771,6 +1817,7 @@
         ENDIF
 	ENDIF
 
+!mp
         IF (.NOT. RESTRT) THEN
   !-- Replace albedos if original albedos are nonzero
       IF(MAXVAL(ALBEDO_DUM)>0.)THEN
@@ -1797,15 +1844,23 @@
           KK=MIN(KDE-1,K)
           DO I=ITS,ITE
             II=MIN(IDE-1,I)
-            CONVFAC(I,K,J) = PINT(II,KK,JJ)/RGASUNIV/T(II,KK,JJ)
+            CONVFAC(I,K,J) = PINT(II,JJ,KK)/RGASUNIV/T(II,JJ,KK)
           ENDDO
         ENDDO
       ENDDO
-!
-         CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
-               STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,PLUMERISEFIRE_FRQ,             &
-               ZINT,G,AERWRF,CONFIG_FLAGS,                           &
-               RRI,T,PINT,CONVFAC,                                   &
+      
+      DO J=JMS,JME
+         DO K=KMS,KME
+             DO I=IMS,IME
+             PINT_TRANS(I,K,J)=PINT(I,J,K)
+             T_TRANS(I,K,J)=T(I,J,K)
+             ENDDO
+          ENDDO
+       ENDDO 
+       CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
+               STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,GRID%PLUMERISEFIRE_FRQ,      &
+               ZINT,G,AERWRF,CONFIG_FLAGS,                     &
+               RRI,T_TRANS,PINT_TRANS,CONVFAC,                 &
                GD_CLOUD,GD_CLOUD2,GD_CLOUD_B,GD_CLOUD2_B,            &
                TAUAER1,TAUAER2,TAUAER3,TAUAER4,                      &
                GAER1,GAER2,GAER3,GAER4,                              &
@@ -1814,26 +1869,27 @@
                IDS , IDE , JDS , JDE , KDS , KDE ,                   &
                IMS , IME , JMS , JME , KMS , KME ,                   &
                ITS , ITE , JTS , JTE , KTS , KTE                     )
+
 !     
 ! calculate initial pm
 !     
         SELECT CASE (CONFIG_FLAGS%CHEM_OPT)
         CASE (RADM2SORG, RACMSORG,RACMSORG_KPP)
            CALL SUM_PM_SORGAM (                                             &
-                RRI, CHEM, H2OAJ, H2OAI,                                    &
+                RRI, CHEM, H2OAJ, H2OAI,                              &
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-               
+             
         CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
            CALL SUM_PM_MOSAIC (                                             &
-                RRI, CHEM,                                                  &
+                RRI, CHEM,                                            &
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-               
+             
         CASE DEFAULT
            DO J=JTS,MIN(JTE,JDE-1)
               DO K=KTS,MIN(KTE,KDE-1)
@@ -1878,16 +1934,18 @@
       DEALLOCATE(RTHRATENSW)
       DEALLOCATE(ZINT)
       DEALLOCATE(CONVFAC)
-#ifndef WRF_CHEM
-      DEALLOCATE(CLDFRA_OLD)
-#endif
       DEALLOCATE(RRI)
-!     DEALLOCATE(ZMID)
       DEALLOCATE(SNOWC)
       DEALLOCATE(THC)
       DEALLOCATE(TMN)
       DEALLOCATE(TSFC)
       DEALLOCATE(ZS)
+      DEALLOCATE(PINT_TRANS)
+      DEALLOCATE(T_TRANS)
+      DEALLOCATE(CLDFRA_TRANS)
+#ifndef WRF_CHEM
+      DEALLOCATE(CLDFRA_OLD)
+#endif
 #if 0
       DEALLOCATE(W0AVG)
 #endif
@@ -1900,149 +1958,6 @@
         ENDDO
         ENDDO
 !----------------------------------------------------------------------
-!***  INITIALIZE 3RD INDEX IN WORKING ARRAYS USED IN PFDHT, DDAMP, AND  
-!***  HZADV.  THESE ARRAYS MUST HAVE AN EXTENT OF MORE THAN 1 IN J DUE 
-!***  TO THE MANY DIFFERENCES AND AVERAGES THAT ARE COMPUTED IN J
-!***  OR BECAUSE THE ARRAY IS SIMPLY REFERENCED AT MORE THAN ONE J.
-!***  THE WORKING "SPACE" SPANS FROM 3 ROWS SOUTH TO 3 ROWS NORTH
-!***  OF THE ROW FOR WHICH THE PRIMARY COMPUTATION IS BEING DONE
-!***  THUS THE 3RD DIMENSION CAN VARY FROM -3 TO +3 ALTHOUGH ALL OF
-!***  THESE ARRAYS DO NOT NEED TO SPAN THAT MANY ROWS.  FOR INSTANCE,
-!***  SOME OF THE ARRAYS ARE ONLY USED FROM 2 ROWS SOUTH TO 1 ROW 
-!***  NORTH, OR FROM 1 ROW SOUTH TO THE CENTRAL ROW.  AS THE INTEGRATION
-!***  MOVES NORTHWARD, THE SOUTHERNMOST I,K SLAB IS DROPPED FOR EACH
-!***  WORKING ARRAY AND THE NORTHERNMOST IS GENERATED.  SO AS NOT TO
-!***  HAVE TO ACTUALLY MOVE ANY OF THE I,K SLABS NORTHWARD, THE 3RD
-!***  INDEX IS CYCLED THROUGH THE EXTENT OF EACH ARRAY'S J DIMENSION.
-!***  THE FOLLOWING WILL FILL AN ARRAY WITH THE VALUES OF THE 3RD
-!***  INDEX FOR EACH THESE VARIATIONS OF J EXTENTS FOR ALL J's IN
-!***  THE LOCAL DOMAIN.
-!----------------------------------------------------------------------
-!
-!***  CASE 0: J EXTENT IS -3 TO 3
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        JP3=KNT+2-7*((KNT+5)/7)
-        JP2=JP3-1+7*((4-JP3)/7)
-        JP1=JP2-1+7*((4-JP2)/7)
-        J00=JP1-1+7*((4-JP1)/7)
-        JM1=J00-1+7*((4-J00)/7)
-        JM2=JM1-1+7*((4-JM1)/7)
-        JM3=JM2-1+7*((4-JM2)/7)
-        INDX3_WRK(3,KNT,0)=JP3
-        INDX3_WRK(2,KNT,0)=JP2
-        INDX3_WRK(1,KNT,0)=JP1
-        INDX3_WRK(0,KNT,0)=J00
-        INDX3_WRK(-1,KNT,0)=JM1
-        INDX3_WRK(-2,KNT,0)=JM2
-        INDX3_WRK(-3,KNT,0)=JM3
-      ENDDO
-!
-!***  CASE 1: J EXTENT IS -2 TO 2
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        JP2=KNT+1-5*((KNT+3)/5)
-        JP1=JP2-1+5*((3-JP2)/5)
-        J00=JP1-1+5*((3-JP1)/5)
-        JM1=J00-1+5*((3-J00)/5)
-        JM2=JM1-1+5*((3-JM1)/5)
-        INDX3_WRK(3,KNT,1)=999
-        INDX3_WRK(2,KNT,1)=JP2
-        INDX3_WRK(1,KNT,1)=JP1
-        INDX3_WRK(0,KNT,1)=J00
-        INDX3_WRK(-1,KNT,1)=JM1
-        INDX3_WRK(-2,KNT,1)=JM2
-        INDX3_WRK(-3,KNT,1)=999
-      ENDDO
-!
-!***  CASE 2: J EXTENT IS -2 TO 1
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        JP1=KNT-4*((KNT+2)/4)
-        J00=JP1-1+4*((2-JP1)/4)
-        JM1=J00-1+4*((2-J00)/4)
-        JM2=JM1-1+4*((2-JM1)/4)
-        INDX3_WRK(3,KNT,2)=999
-        INDX3_WRK(2,KNT,2)=999
-        INDX3_WRK(1,KNT,2)=JP1
-        INDX3_WRK(0,KNT,2)=J00
-        INDX3_WRK(-1,KNT,2)=JM1
-        INDX3_WRK(-2,KNT,2)=JM2
-        INDX3_WRK(-3,KNT,2)=999
-      ENDDO
-!
-!***  CASE 3: J EXTENT IS -1 TO 2
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        JP2=KNT+1-4*((KNT+2)/4)
-        JP1=JP2-1+4*((3-JP2)/4)
-        J00=JP1-1+4*((3-JP1)/4)
-        JM1=J00-1+4*((3-J00)/4)
-        INDX3_WRK(3,KNT,3)=999
-        INDX3_WRK(2,KNT,3)=JP2
-        INDX3_WRK(1,KNT,3)=JP1
-        INDX3_WRK(0,KNT,3)=J00
-        INDX3_WRK(-1,KNT,3)=JM1
-        INDX3_WRK(-2,KNT,3)=999
-        INDX3_WRK(-3,KNT,3)=999
-      ENDDO
-!
-!***  CASE 4: J EXTENT IS -1 TO 1
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        JP1=KNT-3*((KNT+1)/3)
-        J00=JP1-1+3*((2-JP1)/3)
-        JM1=J00-1+3*((2-J00)/3)
-        INDX3_WRK(3,KNT,4)=999
-        INDX3_WRK(2,KNT,4)=999
-        INDX3_WRK(1,KNT,4)=JP1
-        INDX3_WRK(0,KNT,4)=J00
-        INDX3_WRK(-1,KNT,4)=JM1
-        INDX3_WRK(-2,KNT,4)=999
-        INDX3_WRK(-3,KNT,4)=999
-      ENDDO
-!
-!***  CASE 5: J EXTENT IS -1 TO 0
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        J00=-MOD(KNT+1,2)
-        JM1=-1-J00
-        INDX3_WRK(3,KNT,5)=999
-        INDX3_WRK(2,KNT,5)=999
-        INDX3_WRK(1,KNT,5)=999
-        INDX3_WRK(0,KNT,5)=J00
-        INDX3_WRK(-1,KNT,5)=JM1
-        INDX3_WRK(-2,KNT,5)=999
-        INDX3_WRK(-3,KNT,5)=999
-      ENDDO
-!
-!***  CASE 6: J EXTENT IS 0 TO 1
-!
-      KNT=0
-      DO J=MYJS2_P2,MYJE2_P2
-        KNT=KNT+1
-        JP1=MOD(KNT,2)
-        J00=1-JP1
-        INDX3_WRK(3,KNT,6)=999
-        INDX3_WRK(2,KNT,6)=999
-        INDX3_WRK(1,KNT,6)=JP1
-        INDX3_WRK(0,KNT,6)=J00
-        INDX3_WRK(-1,KNT,6)=999
-        INDX3_WRK(-2,KNT,6)=999
-        INDX3_WRK(-3,KNT,6)=999
-      ENDDO
 
 #ifdef DM_PARALLEL
 #  include <HALO_NMM_INIT_1.inc>
@@ -2086,12 +2001,11 @@
 #  include <HALO_NMM_INIT_38.inc>
 #  include <HALO_NMM_INIT_39.inc>
 #endif
-
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
 
    RETURN
 
 
-END SUBROUTINE start_domain_nmm
+END SUBROUTINE START_DOMAIN_NMM
 

@@ -45,8 +45,21 @@ CONTAINS
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
 
-      !  Get the various indices, assume XZY ordering.
+      !  Get the various indices, assume XYZ & XZY ordering.
+#if (NMM_CORE==1)
+      ids = grid%sd31 ; ide = grid%ed31 ;
+      jds = grid%sd32 ; jde = grid%ed32 ;
+      kds = grid%sd33 ; kde = grid%ed33 ;
 
+      ims = grid%sm31 ; ime = grid%em31 ;
+      jms = grid%sm32 ; jme = grid%em32 ;
+      kms = grid%sm33 ; kme = grid%em33 ;
+
+      its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
+      jts = grid%sp32 ; jte = grid%ep32 ;   ! note that tile is entire patch
+      kts = grid%sp33 ; kte = grid%ep33 ;   ! note that tile is entire patch
+#endif
+#if (EM_CORE==1)
       ids = grid%sd31 ; ide = grid%ed31 ;
       kds = grid%sd32 ; kde = grid%ed32 ;
       jds = grid%sd33 ; jde = grid%ed33 ;
@@ -58,7 +71,7 @@ CONTAINS
       its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
       kts = grid%sp32 ; kte = grid%ep32 ;   ! note that tile is entire patch
       jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
-
+#endif
       IF ( .NOT. already_been_here ) THEN
 
          num_st_levels_alloc = config_flags%num_soil_layers * 3 ! used to be 2
@@ -95,8 +108,21 @@ CONTAINS
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
 
-      !  Get the various indices, assume XZY ordering.
+      !  Get the various indices, assume XYZ & XZY ordering.
+#if (NMM_CORE==1)
+      ids = grid%sd31 ; ide = grid%ed31 ;
+      jds = grid%sd32 ; jde = grid%ed32 ;
+      kds = grid%sd33 ; kde = grid%ed33 ;
 
+      ims = grid%sm31 ; ime = grid%em31 ;
+      jms = grid%sm32 ; jme = grid%em32 ;
+      kms = grid%sm33 ; kme = grid%em33 ;
+
+      its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
+      jts = grid%sp32 ; jte = grid%ep32 ;   ! note that tile is entire patch
+      kts = grid%sp33 ; kte = grid%ep33 ;   ! note that tile is entire patch
+#endif
+#if (EM_CORE==1)
       ids = grid%sd31 ; ide = grid%ed31 ;
       kds = grid%sd32 ; kde = grid%ed32 ;
       jds = grid%sd33 ; jde = grid%ed33 ;
@@ -108,7 +134,7 @@ CONTAINS
       its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
       kts = grid%sp32 ; kte = grid%ep32 ;   ! note that tile is entire patch
       jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
-
+#endif
 
       CALL optional_tavgsfc    ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &

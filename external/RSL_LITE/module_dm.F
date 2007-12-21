@@ -3349,6 +3349,7 @@ integer myproc
 
       REAL    nest_influence
       LOGICAL, EXTERNAL  :: nmm_cd_feedback_mask
+      LOGICAL, EXTERNAL  :: nmm_cd_feedback_mask_v
 #ifdef DEREF_KLUDGE
 !  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33

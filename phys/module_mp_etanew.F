@@ -29,8 +29,8 @@ MODULE module_mp_etanew
 !
       INTEGER,PARAMETER :: NX=7501
       REAL, PARAMETER :: XMIN=180.0,XMAX=330.0
-      REAL, DIMENSION(NX),PRIVATE,SAVE :: TBPVS,TBPVS0
-      REAL, PRIVATE,SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
+      REAL, DIMENSION(NX),SAVE :: TBPVS,TBPVS0
+      REAL, SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
 !
       REAL, PRIVATE,PARAMETER ::                                        &
 !--- Physical constants follow:

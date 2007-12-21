@@ -188,8 +188,6 @@ CONTAINS
       REAL :: pt
       INTEGER :: num_veg_cat , num_soil_top_cat , num_soil_bot_cat
 
-      write(0,*)' enter read_si'
-
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
             kds = grid%sd31 ; kde = grid%ed31 ;
@@ -1224,15 +1222,13 @@ print *,'------------------> skipping ', var_info%name(1:8)
         sw_inputx=0.
 !new
 
-      do j=jts,JMAX
       do k=kts,kte-1
+      do j=jts,JMAX
       do i=its,IMAX
-        grid%nmm_HTM(I,K,J)=HTM_in(I,J,K)
-        grid%nmm_VTM(I,K,J)=VTM_in(I,J,K)
-        grid%nmm_U(I,K,J)=U_input(I,J,K)
-        grid%nmm_V(I,K,J)=V_input(I,J,K)
-        grid%nmm_T(I,K,J)=T_input(I,J,K)
-        grid%nmm_Q(I,K,J)=Q_input(I,J,K)
+        grid%nmm_U(I,J,K)=U_input(I,J,K)
+        grid%nmm_V(I,J,K)=V_input(I,J,K)
+        grid%nmm_T(I,J,K)=T_input(I,J,K)
+        grid%nmm_Q(I,J,K)=Q_input(I,J,K)
       enddo
       enddo
       enddo
@@ -1247,8 +1243,8 @@ print *,'------------------> skipping ', var_info%name(1:8)
         write(0,*) 'maxval st_inputx(4): ', maxval(st_input(:,:,4))
 
 
-        do K=1,num_st_levels_alloc
-         do J=JTS,min(JDE-1,JTE)
+        do J=JTS,min(JDE-1,JTE)
+         do K=1,num_st_levels_alloc
           do I=ITS,min(IDE-1,ITE)
              st_input(I,K,J)=st_inputx(I,J,K)
              sm_input(I,K,J)=sm_inputx(I,J,K)

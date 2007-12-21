@@ -56,12 +56,7 @@ clean:
 	@ echo 'use the clean script'
 
 module_state_description.F : ../Registry/$(REGISTRY)
-		if [ $(WRF_EM_CORE) -eq 1 ] ; then \
-		  ( cd .. ; tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ) ; \
-                else                                                                        \
-		  ( cd .. ; tools/registry $(ARCHFLAGS) Registry/$(REGISTRY) )            ; \
-                fi
-          
+		  ( cd .. ; tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
 
 md_calls.inc : md_calls.m4
 	if [ $(M4) -eq NA ] ; then \

@@ -23,12 +23,12 @@
 !***********************************************************************
       SUBROUTINE EPS(NTSD,DT,HYDRO,DX,DY,FAD                            &
                     ,DETA1,DETA2,PDTOP,PT                               &
-                    ,HTM,HBM2,HBM3,LMH                                  &
+                    ,HBM2,HBM3                                          &
                     ,PDSL,PDSLO,PINT,RTOP,PETDT,PDWDT                   &
                     ,DWDT,DWDTMN,DWDTMX                                 &
                     ,FNS,FEW,FNE,FSE                                    &
                     ,T,U,V,W,Q,CWM                                      &
-                    ,IHE,IHW,IVE,IVW,INDX3_WRK                          &
+                    ,IHE,IHW,IVE,IVW                                    &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &
                     ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -46,6 +46,7 @@
 !   00-01-05  BLACK      - DISTRIBUTED MEMORY AND THREADS
 !   02-02-07  BLACK      - CONVERTED TO WRF STRUCTURE
 !   04-11-22  BLACK      - THREADED
+!   05-12-12  BLACK      - CONVERTED FROM IKJ TO IJK
 !
 ! USAGE: CALL EPS FROM SUBROUTINE SOLVE_RUNSTREAM
 !   INPUT ARGUMENT LIST:
@@ -81,17 +82,8 @@
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
 !-----------------------------------------------------------------------
-!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!***  NMM_MAX_DIM is set in configure.wrf and must agree with
-!***  the value of dimspec q in the Registry/Registry
-!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!-----------------------------------------------------------------------
-!
-      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
 !
       INTEGER,INTENT(IN) :: NTSD
-!
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LMH
 !
       REAL,INTENT(IN) :: DT,DY,PDTOP,PT
 !
@@ -101,20 +93,19 @@
                                                    ,FAD,HBM2,HBM3       &
                                                    ,PDSL,PDSLO
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PETDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM         &
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM         &
                                                            ,FEW,FNE     &
                                                            ,FNS,FSE     &
-                                                           ,HTM,Q       &
-                                                           ,RTOP        &
+                                                           ,Q,RTOP      &
                                                            ,U,V
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: DWDT     &
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: DWDT     &
                                                               ,PDWDT    &
                                                               ,T
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: PINT,W
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: PINT,W
 !
       LOGICAL,INTENT(IN) :: HYDRO
 !
@@ -130,36 +121,29 @@
 !
       INTEGER,DIMENSION(KTS:KTE) :: LA
 !
-      INTEGER :: I,J,J4_00,J4_M1,J4_P1,J5_00,J5_M1,J6_00,J6_P1          &
-                ,JEND,JJ,JKNT,JSTART,K,KOFF,LMP
+      INTEGER :: I,J,K,LMP
 !
       REAL,DIMENSION(KTS:KTE) :: B1,B2,B3,C0,CWM_K,DWDT_K,Q_K,RDPP      &
                                 ,RTOP_K,T_K
 !
-      REAL,DIMENSION(KTS:KTE+1) :: CHI,COFF,PINT_K,PNP1,PONE,PSTR,W_K
+      REAL,DIMENSION(ITS:ITE) :: DPTU_I,PNP1_I,PSTRUP_I
 !
-      REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: TTB
+      REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: TTB,WEW,WNE,WNS,WSE
 !
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE) :: WEW
+      REAL,DIMENSION(ITS:ITE,KTS:KTE) :: B1_IK,B2_IK,B3_IK,C0_IK        &
+                                        ,CWM_IK,DWDT_IK,Q_IK            &
+                                        ,RDPP_IK,RTOP_IK,T_IK
+!
+      REAL,DIMENSION(ITS:ITE,KTS:KTE+1) :: CHI_IK,COFF_IK               &
+                                          ,PINT_IK,PSTR_IK,W_IK
 !
       REAL :: ADDT,DELP,DETAL,DP,DPDE,DPPL,DPSTR,DPTL,DPTU              &
              ,DWDTT,EPSN,FCT,FFC,GDT,GDT2                               &
-             ,HBM3IJ,HM,PP1,PSTRDN,PSTRUP,RDP,RDPDN,RDPUP,RDT           &
+             ,PNP,PP1,PSTRDN,PSTRUP,RDP,RDPDN,RDPUP,RDT                 &
              ,TFC,TMP,TTAL,TTFC
 !
       LOGICAL :: BOT,TOP
 !
-!***  TYPE 4 WORKING ARRAY (SEE PFDHT)
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: WNS
-!
-!***  TYPE 5 WORKING ARRAY
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:0) :: WNE
-!
-!***  TYPE 6 WORKING ARRAY
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE, 0:1) :: WSE
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -167,27 +151,27 @@
 !***
         DO J=MYJS_P2,MYJE_P2
         DO I=MYIS_P1,MYIE_P1
-          PINT(I,KTE+1,J)=PT
+          PINT(I,J,KTE+1)=PT
         ENDDO
         ENDDO
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO J=MYJS_P2,MYJE_P2
-          DO K=KTS,KTE
+        DO K=KTS,KTE
+          DO J=MYJS_P2,MYJE_P2
           DO I=MYIS_P1,MYIE_P1
-            DWDT(I,K,J)=1.
-            PDWDT(I,K,J)=1.
+            DWDT(I,J,K)=1.
+            PDWDT(I,J,K)=1.
           ENDDO
           ENDDO
         ENDDO
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO J=MYJS_P2,MYJE_P2
-          DO K=KTE,KTS,-1
+        DO K=KTE,KTS,-1
+          DO J=MYJS_P2,MYJE_P2
           DO I=MYIS_P1,MYIE_P1
-            PINT(I,K,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)+PINT(I,K+1,J)
+            PINT(I,J,K)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)+PINT(I,J,K+1)
           ENDDO
           ENDDO
         ENDDO
@@ -204,10 +188,10 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-      DO J=MYJS_P1,MYJE_P1
-        DO K=KTS,KTE
+      DO K=KTS,KTE
+        DO J=MYJS_P1,MYJE_P1
         DO I=MYIS_P1,MYIE_P1
-          DWDT(I,K,J)=(W(I,K,J)-DWDT(I,K,J))*HTM(I,K,J)*HBM2(I,J)*RDT
+          DWDT(I,J,K)=(W(I,J,K)-DWDT(I,J,K))*HBM2(I,J)*RDT
         ENDDO
         ENDDO
       ENDDO
@@ -217,21 +201,23 @@
 !***  VERTICAL ADVECTION
 !***
 !-----------------------------------------------------------------------
+!
       DO J=MYJS2,MYJE2
       DO I=MYIS,MYIE
         TTB(I,J)=0.
       ENDDO
       ENDDO
 !
-!$omp parallel do                                                       &
-!$omp& private(i,j,k,ttal)
-      DO J=MYJS2,MYJE2
       DO K=KTE,KTS+1,-1
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,ttal)
+      DO J=MYJS2,MYJE2
       DO I=MYIS,MYIE
-        TTAL=(W(I,K-1,J)-W(I,K,J))*PETDT(I,K-1,J)*0.5
-        DWDT(I,K,J)=(TTAL+TTB(I,J))                                     &
+        TTAL=(W(I,J,K-1)-W(I,J,K))*PETDT(I,J,K-1)*0.5
+        DWDT(I,J,K)=(TTAL+TTB(I,J))                                     &
                    /(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J))                &
-                    +DWDT(I,K,J)
+                    +DWDT(I,J,K)
         TTB(I,J)=TTAL
       ENDDO
       ENDDO
@@ -241,9 +227,9 @@
 !$omp& private(i,j)
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
-        TTB(I,J)=(W(I,KTS,J)-W(I,KTS+1,J))*PETDT(I,KTS,J)*0.5
-        DWDT(I,KTS,J)=TTB(I,J)/(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSLO(I,J)) &
-                     +DWDT(I,KTS,J)
+        TTB(I,J)=(W(I,J,KTS)-W(I,J,KTS+1))*PETDT(I,J,KTS)*0.5
+        DWDT(I,J,KTS)=TTB(I,J)/(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSLO(I,J)) &
+                     +DWDT(I,J,KTS)
       ENDDO
       ENDDO
 !-----------------------------------------------------------------------
@@ -257,111 +243,53 @@
 !***  HORIZONTAL ADVECTION
 !***
 !-----------------------------------------------------------------------
-!***  MARCH NORTHWARD THROUGH THE SOUTHERNMOST SLABS TO BEGIN
-!***  FILLING THE MAIN WORKING ARRAYS WHICH ARE MULTI-DIMENSIONED
-!***  IN J BECAUSE THEY ARE DIFFERENCED OR AVERAGED IN J
-!-----------------------------------------------------------------------
-!
-      JSTART=MYJS3
-!
-      DO J=-1,0
-        JJ=JSTART+J
 !
 !$omp parallel do                                                       &
-!$omp& private(i,k)
-        DO K=KTS,KTE
-        DO I=MYIS_P3,MYIE_P3
-          WNS(I,K,J)=FNS(I,K,JJ)*(W(I,K,JJ+1)-W(I,K,JJ-1))
-        ENDDO
-        ENDDO
+!$omp& private(dpde,i,j,k)
 !
-      ENDDO
-!
-      J=-1
-      JJ=JSTART+J
-!
-!$omp parallel do                                                       &
-!$omp& private(i,k)
-      DO K=KTS,KTE
-      DO I=MYIS_P2,MYIE1_P2
-        WNE(I,K,J)=FNE(I,K,JJ)*(W(I+IHE(JJ),K,JJ+1)-W(I,K,JJ))
-      ENDDO
-      ENDDO
-!
-      J=0
-      JJ=JSTART+J
-!
-!$omp parallel do                                                       &
-!$omp& private(i,k)
-      DO K=KTS,KTE
-      DO I=MYIS_P2,MYIE1_P2
-        WSE(I,K,J)=FSE(I,K,JJ)*(W(I+IHE(JJ),K,JJ-1)-W(I,K,JJ))
-      ENDDO
-      ENDDO
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-!
-      JKNT=0
-      JSTART=MYJS3
-      JEND  =MYJE3
-!
-      main_horizontal:  DO J=JSTART,JEND
-!
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-!***
-!***  SET THE 3RD INDEX IN THE WORKING ARRAYS (SEE SUBROUTINE INIT
-!***                                           AND PFDHT DIAGRAMS)
-!***
-!***  J[TYPE]_NN WHERE "TYPE" IS THE WORKING ARRAY TYPE SEEN IN THE
-!***  LOCAL DECLARATION ABOVE (DEPENDENT UPON THE J EXTENT) AND
-!***  NN IS THE NUMBER OF ROWS NORTH OF THE CENTRAL ROW WHOSE J IS
-!***  THE CURRENT VALUE OF THE main_integration LOOP.
-!***  (P3 denotes +3, M1 denotes -1, etc.)
-!***
-      JKNT=JKNT+1
-!
-      J4_P1=INDX3_WRK(1,JKNT,4)
-      J4_00=INDX3_WRK(0,JKNT,4)
-      J4_M1=INDX3_WRK(-1,JKNT,4)
-!
-      J5_00=INDX3_WRK(0,JKNT,5)
-      J5_M1=INDX3_WRK(-1,JKNT,5)
-!
-      J6_P1=INDX3_WRK(1,JKNT,6)
-      J6_00=INDX3_WRK(0,JKNT,6)
+      main_horizontal:  DO K=KTS,KTE
 !
 !-----------------------------------------------------------------------
 !***  THE WORKING ARRAYS FOR THE PRIMARY VARIABLES
 !-----------------------------------------------------------------------
-!$omp parallel do                                                       &
-!$omp& private(dpde,i,k)
-      DO K=KTS,KTE
 !
-      DO I=MYIS_P3,MYIE_P3
-        WEW(I,K)=FEW(I,K,J)*(W(I+IVE(J),K,J)-W(I+IVW(J),K,J))
-        WNS(I,K,J4_P1)=FNS(I,K,J+1)*(W(I,K,J+2)-W(I,K,J))
-      ENDDO
+        DO J=MYJS1_P3,MYJE1_P3
+        DO I=MYIS_P3,MYIE_P3
+          WEW(I,J)=FEW(I,J,K)*(W(I+IVE(J),J,K)-W(I+IVW(J),J,K))
+          WNS(I,J)=FNS(I,J,K)*(W(I,J+1,K)-W(I,J-1,K))
+        ENDDO
+        ENDDO
 !
-!***  DIAGONAL FLUXES AND DIAGONALLY AVERAGED WIND
+!***    DIAGONAL FLUXES AND DIAGONALLY AVERAGED WIND
 !
-      DO I=MYIS_P2,MYIE1_P2
-        WNE(I,K,J5_00)=FNE(I,K,J)*(W(I+IHE(J),K,J+1)-W(I,K,J))
-        WSE(I,K,J6_P1)=FSE(I,K,J+1)*(W(I+IHE(J+1),K,J)-W(I,K,J+1))
-      ENDDO
+        DO J=MYJS1_P2,MYJE2_P2
+        DO I=MYIS_P2,MYIE1_P2
+          WNE(I,J)=FNE(I,J,K)*(W(I+IHE(J),J+1,K)-W(I,J,K))
+        ENDDO
+        ENDDO
+!
+        DO J=MYJS2_P2,MYJE1_P2
+        DO I=MYIS_P2,MYIE1_P2
+          WSE(I,J)=FSE(I,J,K)*(W(I+IHE(J),J-1,K)-W(I,J,K))
+        ENDDO
+        ENDDO
+!
+!-----------------------------------------------------------------------
+!***    ADVECTION OF W
 !-----------------------------------------------------------------------
 !
-      DO I=MYIS2,MYIE2
-        DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
-        DWDT(I,K,J)=-(WEW(I+IHW(J),K)      +WEW(I+IHE(J),K)             &
-                     +WNS(I,K,J4_M1)       +WNS(I,K,J4_P1)              &
-                     +WNE(I+IHW(J),K,J5_M1)+WNE(I,K,J5_00)              &
-                     +WSE(I,K,J6_00)       +WSE(I+IHW(J),K,J6_P1))      &
-                     *FAD(I,J)*HTM(I,K,J)*HBM3(I,J)/(DPDE*DT)           &
-                     +DWDT(I,K,J)
-      ENDDO
+        DO J=MYJS3,MYJE3
+        DO I=MYIS2,MYIE2
+          DPDE=DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)
+          DWDT(I,J,K)=-(WEW(I+IHW(J),J)      +WEW(I+IHE(J),J)           &
+                       +WNS(I,J-1)           +WNS(I,J+1)                &
+                       +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
+                       +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
+                       *FAD(I,J)*HBM3(I,J)/(DPDE*DT)                    &
+                       +DWDT(I,J,K)
+        ENDDO
+        ENDDO
 !
-      ENDDO
 !-----------------------------------------------------------------------
 !
       ENDDO main_horizontal
@@ -374,14 +302,14 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(dwdtt,i,j,k)
-      DO J=MYJS,MYJE
       DO K=KTS,KTE
+      DO J=MYJS,MYJE
       DO I=MYIS,MYIE
-        DWDTT=DWDT(I,K,J)*HTM(I,K,J)
+        DWDTT=DWDT(I,J,K)
         DWDTT=MAX(DWDTT,DWDTMN(I,J))
         DWDTT=MIN(DWDTT,DWDTMX(I,J))
 !
-        DWDT(I,K,J)=(DWDTT*RG+1.)*(1.-WP)+PDWDT(I,K,J)*WP
+        DWDT(I,J,K)=(DWDTT*RG+1.)*(1.-WP)+PDWDT(I,J,K)*WP
       ENDDO
       ENDDO
       ENDDO
@@ -394,120 +322,200 @@
 !-----------------------------------------------------------------------
 !
 !$omp parallel do                                                       &
-!$omp& private(b1,b2,b3,c0,chi,coff,cwm_k,delp,dppl,dpstr,dptl,dptu,    &
-!$omp&         dwdt_k,fct,hbm3ij,i,j,k,koff,pint_k,pnp1,pone,pp1,pstr,  &
-!$omp&         pstrdn,pstrup,q_k,rdpdn,rdpp,rdpup,rtop_k,t_k,tfc,       &
-!$omp&         tmp,ttfc,w_k)
+!$omp& private(b1_ik,b2_ik,b3_ik,c0_ik,chi_ik,coff_ik,cwm_ik,           &
+!$omp&         delp,dppl,dpstr,dptl,dptu_i,dwdt_ik,fct,i,j,k            &
+!$omp&         pint_ik,pnp1_i,pp1,pstr_ik,pstrdn,pstrup_i,q_ik          &
+!$omp&         rddp_ik,rdpdn,rdpup,rtop_ik,t_ik,tfc,tmp,ttfc,w_ik)
+!
       final_update:  DO J=MYJS3,MYJE3
 !
-      PONE(KTE+1)=PT
-      PSTR(KTE+1)=PT
-      PNP1(KTE+1)=PT
-      CHI(KTE+1)=0.
-!
-      DO I=MYIS2,MYIE2
-!
+!-----------------------------------------------------------------------
+!***  EXTRACT COLUMNS FROM 3-D ARRAYS
 !-----------------------------------------------------------------------
 !
-!***  EXTRACT COLUMNS FROM 3-D ARRAYS
-!
         DO K=KTS,KTE
-          CWM_K(K)=CWM(I,K,J)
-          DWDT_K(K)=DWDT(I,K,J)
-          Q_K(K)=Q(I,K,J)
-          RTOP_K(K)=RTOP(I,K,J)
-          T_K(K)=T(I,K,J)
+        DO I=MYIS2,MYIE2
+          CWM_IK(I,K)=CWM(I,J,K)
+          DWDT_IK(I,K)=DWDT(I,J,K)
+          Q_IK(I,K)=Q(I,J,K)
+          RTOP_IK(I,K)=RTOP(I,J,K)
+          T_IK(I,K)=T(I,J,K)
+        ENDDO
         ENDDO
 !
         DO K=KTS,KTE+1
-          PINT_K(K)=PINT(I,K,J)
-          W_K(K)=W(I,K,J)
+        DO I=MYIS2,MYIE2
+          PINT_IK(I,K)=PINT(I,J,K)
+          W_IK(I,K)=W(I,J,K)
         ENDDO
-!-----------------------------------------------------------------------
-!
-        KOFF=KTE-LMH(I,J)
-!
-        DO K=KTE,KOFF+1,-1
-          CHI(K)=0.
-          DPPL=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
-          RDPP(K)=1./DPPL
-          PONE(K)=PINT_K(K)
-          DPSTR=DWDT_K(K)*DPPL
-          PSTR(K)=PSTR(K+1)+DPSTR
-          PP1=PNP1(K+1)+DPSTR
-          PNP1(K)=(PP1-PONE(K))*WGHT+PONE(K)
-          TFC=Q_K(K)*P608+(1.-CWM_K(K))
-          TTFC=-CAPA*TFC+1.
-          COFF(K)=T_K(K)*TTFC*TFC*DPPL*FFC                              &
-                   /((PNP1(K+1)+PNP1(K))*(PNP1(K+1)+PNP1(K)))
         ENDDO
-!-----------------------------------------------------------------------
 !
-        PSTRUP=-(PSTR(KTE+1)+PSTR(KTE)-PONE(KTE+1)-PONE(KTE))*COFF(KTE)
-!
-!-----------------------------------------------------------------------
-        DO K=KTE-1,KOFF+1,-1
-          RDPDN=RDPP(K)
-          RDPUP=RDPP(K+1)
-!
-          PSTRDN=-(PSTR(K+1)+PSTR(K)-PONE(K+1)-PONE(K))*COFF(K)
-!
-          B1(K)=COFF(K+1)+RDPUP
-          B2(K)=(COFF(K+1)+COFF(K))-(RDPUP+RDPDN)
-          B3(K)=COFF(K)+RDPDN
-          C0(K)=PSTRUP+PSTRDN
-!
-          PSTRUP=PSTRDN
+        DO I=MYIS2,MYIE2
+          PSTR_IK(I,KTE+1)=PT
         ENDDO
-!-----------------------------------------------------------------------
-        B1(KTE-1)=0.
-        B2(KOFF+1)=B2(KOFF+1)+B3(KOFF+1)
+!
 !-----------------------------------------------------------------------
 !
+        DO K=KTE,KTS,-1
+!
+          IF(K==KTE)THEN
+            DO I=MYIS2,MYIE2
+              DPPL=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+              RDPP_IK(I,K)=1./DPPL
+              DPSTR=DWDT_IK(I,K)*DPPL
+              PSTR_IK(I,K)=PT+DPSTR
+              PP1=PT+DPSTR
+              PNP1_I(I)=(PP1-PINT_IK(I,K))*WGHT+PINT_IK(I,K)
+              TFC=Q_IK(I,K)*P608+(1.-CWM_IK(I,K))
+              TTFC=-CAPA*TFC+1.
+              COFF_IK(I,K)=T_IK(I,K)*TTFC*TFC*DPPL*FFC                  &
+                          /((PT+PNP1_I(I))*(PT+PNP1_I(I)))
+            ENDDO
+          ELSE
+            DO I=MYIS2,MYIE2
+              DPPL=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+              RDPP_ik(I,K)=1./DPPL
+              DPSTR=DWDT_IK(I,K)*DPPL
+              PSTR_IK(I,K)=PSTR_IK(I,K+1)+DPSTR
+              PP1=PNP1_I(I)+DPSTR
+              PNP=(PP1-PINT_IK(I,K))*WGHT+PINT_IK(I,K)
+              TFC=Q_IK(I,K)*P608+(1.-CWM_IK(I,K))
+              TTFC=-CAPA*TFC+1.
+              COFF_IK(I,K)=T_IK(I,K)*TTFC*TFC*DPPL*FFC                  &
+                          /((PNP1_I(I)+PNP)*(PNP+PNP1_I(I)))
+              PNP1_I(I)=PNP
+            ENDDO 
+          ENDIF
+!
+        ENDDO
+!
+!-----------------------------------------------------------------------
+!
+        DO I=MYIS2,MYIE2
+!!BUG!!   PSTRUP_I(I)=-(PSTR_IK(I,KTE)-PINT_IK(I,KTE))*COFF_IK(I,KTE)
+          PSTRUP_I(I)=-(PSTR_IK(I,KTE+1)+PSTR_IK(I,KTE)                 &
+                       -PINT_IK(I,KTE+1)-PINT_IK(I,KTE))*COFF_IK(I,KTE)
+        ENDDO
+!
+!-----------------------------------------------------------------------
+        DO K=KTE-1,KTS,-1
+!
+          IF(K==KTE-1)THEN
+            DO I=MYIS2,MYIE2
+              RDPDN=RDPP_IK(I,K)
+              RDPUP=RDPP_IK(I,K+1)
+!
+              PSTRDN=-(PSTR_IK(I,K+1)+PSTR_IK(I,K)                      &
+                      -PINT_IK(I,K+1)-PINT_IK(I,K))                     &
+                      *COFF_IK(I,K)
+!
+              B1_IK(I,K)=COFF_IK(I,K+1)+RDPUP
+              B2_IK(I,K)=(COFF_IK(I,K+1)+COFF_IK(I,K))-(RDPUP+RDPDN)
+              B3_IK(I,K)=COFF_IK(I,K)+RDPDN
+              C0_IK(I,K)=PSTRUP_I(I)+PSTRDN
+              PSTRUP_I(I)=PSTRDN
+            ENDDO
+          ELSE
+            DO I=MYIS2,MYIE2
+              RDPDN=RDPP_IK(I,K)
+              RDPUP=RDPP_IK(I,K+1)
+!
+              PSTRDN=-(PSTR_IK(I,K+1)+PSTR_IK(I,K)                      &
+                      -PINT_IK(I,K+1)-PINT_IK(I,K))                     &
+                      *COFF_IK(I,K)
+!
+              B1_IK(I,K)=COFF_IK(I,K+1)+RDPUP
+              B2_IK(I,K)=(COFF_IK(I,K+1)+COFF_IK(I,K))-(RDPUP+RDPDN)
+              B3_IK(I,K)=COFF_IK(I,K)+RDPDN
+              C0_IK(I,K)=PSTRUP_I(I)+PSTRDN
+              PSTRUP_I(I)=PSTRDN
+            ENDDO
+          ENDIF
+!
+        ENDDO
+!
+!-----------------------------------------------------------------------
 !***  ELIMINATION
-!
-        DO K=KTE-2,KOFF+1,-1
-          TMP=-B1(K)/B2(K+1)
-          B2(K)=B3(K+1)*TMP+B2(K)
-          C0(K)=C0(K+1)*TMP+C0(K)
-        ENDDO
-!
-        CHI(KTE+1)=0.
 !-----------------------------------------------------------------------
 !
+        DO K=KTE-2,KTS,-1
+!
+          IF(K>KTS)THEN
+            DO I=MYIS2,MYIE2
+              TMP=-B1_IK(I,K)/B2_IK(I,K+1)
+              B2_IK(I,K)=B3_IK(I,K+1)*TMP+B2_IK(I,K)
+              C0_IK(I,K)=C0_IK(I,K+1)*TMP+C0_IK(I,K)
+            ENDDO
+          ELSE
+            DO I=MYIS2,MYIE2
+              TMP=-B1_IK(I,K)/B2_IK(I,K+1)
+              B2_IK(I,K)=B3_IK(I,K+1)*TMP                               &
+                       +(B2_IK(I,KTS)+B3_IK(I,KTS))
+              C0_IK(I,K)=C0_IK(I,K+1)*TMP+C0_IK(I,K)
+            ENDDO
+          ENDIF
+!
+        ENDDO
+!
+!-----------------------------------------------------------------------
 !***  BACK SUBSTITUTION
-!
-        CHI(KOFF+2)=C0(KOFF+1)/B2(KOFF+1)
-        CHI(KOFF+1)=CHI(KOFF+2)
-!
-        DO K=KOFF+3,KTE
-          CHI(K)=(-B3(K-1)*CHI(K-1)+C0(K-1))/B2(K-1)
-        ENDDO
 !-----------------------------------------------------------------------
-        HBM3IJ=HBM3(I,J)
-        DPTU=0.
-        FCT=0.5/CP*HBM3IJ
 !
-        DO K=KTE,KOFF+1,-1
-          DPTL=(CHI(K)+PSTR(K)-PINT_K(K))*HBM3IJ
-          PINT_K(K)=PINT_K(K)+DPTL
-          T_K(K)=(DPTU+DPTL)*RTOP_K(K)*FCT+T_K(K)
-          DELP=(PINT_K(K)-PINT_K(K+1))*RDPP(K)
-          W_K(K)=((DELP-DWDT_K(K))*GDT+W_K(K))*HBM3IJ
-          DWDT_K(K)=(DELP-1.)*HBM3IJ+1.
+        DO K=KTS+1,KTE
 !
-          DPTU=DPTL
-        ENDDO
-!-----------------------------------------------------------------------
-        DO K=KOFF+1,KTE
-          PINT(I,K,J)=PINT_K(K)
-          T(I,K,J)=T_K(K)
-          W(I,K,J)=W_K(K)
-          DWDT(I,K,J)=DWDT_K(K)
+          IF(K==KTS+1)THEN
+            DO I=MYIS2,MYIE2
+              CHI_IK(I,K)=C0_IK(I,KTS)/B2_IK(I,KTS)
+              CHI_IK(I,KTS)=CHI_IK(I,K)
+            ENDDO
+          ELSE
+            DO I=MYIS2,MYIE2
+              CHI_IK(I,K)=(-B3_IK(I,K-1)*CHI_IK(I,K-1)+C0_IK(I,K-1))    &
+                          /B2_IK(I,K-1)
+            ENDDO
+          ENDIF
+!
         ENDDO
 !-----------------------------------------------------------------------
 !
-      ENDDO
+        FCT=0.5/CP
+!
+        DO K=KTE,KTS,-1
+!
+          IF(K==KTE)THEN
+            DO I=MYIS2,MYIE2
+              DPTL=(CHI_IK(I,K)+PSTR_IK(I,K)-PINT_IK(I,K))*HBM3(I,J)
+              PINT_IK(I,K)=PINT_IK(I,K)+DPTL
+              T_IK(I,K)=DPTL*RTOP_IK(I,K)*FCT+T_IK(I,K)
+              DELP=(PINT_IK(I,K)-PINT_IK(I,K+1))*RDPP_IK(I,K)
+              W_IK(I,K)=((DELP-DWDT_IK(I,K))*GDT+W_IK(I,K))*HBM3(I,J)
+              DWDT_IK(I,K)=(DELP-1.)*HBM3(I,J)+1.
+              DPTU_I(I)=DPTL
+            ENDDO
+          ELSE
+            DO I=MYIS2,MYIE2
+              DPTL=(CHI_IK(I,K)+PSTR_IK(I,K)-PINT_IK(I,K))*HBM3(I,J)
+              PINT_IK(I,K)=PINT_IK(I,K)+DPTL
+              T_IK(I,K)=(DPTU_I(I)+DPTL)*RTOP_IK(I,K)*FCT+T_IK(I,K)
+              DELP=(PINT_IK(I,K)-PINT_IK(I,K+1))*RDPP_IK(I,K)
+              W_IK(I,K)=((DELP-DWDT_IK(I,K))*GDT+W_IK(I,K))*HBM3(I,J)
+              DWDT_IK(I,K)=(DELP-1.)*HBM3(I,J)+1.
+              DPTU_I(I)=DPTL
+            ENDDO
+          ENDIF
+!
+        ENDDO
+!
+!-----------------------------------------------------------------------
+        DO K=KTS,KTE
+        DO I=MYIS2,MYIE2
+          PINT(I,J,K)=PINT_IK(I,K)
+          T(I,J,K)=T_IK(I,K)
+          W(I,J,K)=W_IK(I,K)
+          DWDT(I,J,K)=DWDT_IK(I,K)
+        ENDDO
+        ENDDO
+!-----------------------------------------------------------------------
 !
       ENDDO final_update
 !
@@ -519,11 +527,11 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
-      SUBROUTINE VADZ(NTSD,DT,FIS,SIGMA,DFL,HTM,HBM2                    &
+      SUBROUTINE VADZ(NTSD,DT,FIS,SIGMA,DFL,HBM2                        &
                      ,DETA1,DETA2,PDTOP                                 &
                      ,PINT,PDSL,PDSLO,PETDT                             &
                      ,RTOP,T,Q,CWM,Z,W,DWDT,PDWDT                       &
-                     ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+                     ,IHE,IHW,IVE,IVW                                   &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                           &
                      ,IMS,IME,JMS,JME,KMS,KME                           &
                      ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -543,6 +551,7 @@
 !   01-03-26  BLACK      - CONVERTED TO WRF STRUCTURE
 !   02-02-19  BLACK      - CONVERSION UPDATED
 !   04-11-22  BLACK      - THREADED
+!   05-12-12  BLACK      - CONVERTED FROM IKJ TO IJK
 !     
 ! USAGE: CALL VADZ FROM MAIN PROGRAM
 !   INPUT ARGUMENT LIST:
@@ -583,13 +592,6 @@
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
 !-----------------------------------------------------------------------
-!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!***  NMM_MAX_DIM is set in configure.wrf and must agree with
-!***  the value of dimspec q in the Registry/Registry
-!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!-----------------------------------------------------------------------
-!
-      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
 !
       REAL,INTENT(IN) :: DT,PDTOP
 !
@@ -599,18 +601,18 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: FIS,HBM2,PDSL,PDSLO
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PETDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PETDT
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,HTM     &
-                                                           ,Q,RTOP,T
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: CWM,Q       &
+                                                           ,RTOP,T
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: PDWDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: PDWDT
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: DWDT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: DWDT
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: PINT
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: W,Z
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: W,Z
 !-----------------------------------------------------------------------
 !
 !***  LOCAL VARIABLES
@@ -625,89 +627,106 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       RDT=1./DT
+!
+      DO K=KTS,KTE
+        DO J=MYJS,MYJE
+        DO I=MYIS,MYIE
+          PDWDT(I,J,K)=DWDT(I,J,K)
+          DWDT(I,J,K)=W(I,J,K)
+        ENDDO
+        ENDDO
+      ENDDO
+!
+      DO J=MYJS,MYJE
+      DO I=MYIS,MYIE
+        W(I,J,KTS)=0.
+!
+#ifdef AS_RECEIVED
+        IF(SIGMA)THEN
+#else
+        IF(SIGMA==1)THEN
+#endif
+          Z(I,J,KTS)=FIS(I,J)*RG
+        ELSE
+          Z(I,J,KTS)=0.
+        ENDIF
+      ENDDO
+      ENDDO
+!
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(dz,i,j,k,zeta)
-      DO J=MYJS,MYJE
+!-----------------------------------------------------------------------
 !
-        DO K=KTS,KTE
+      kloop1 : DO K=KTS,KTE
+!
+!-----------------------------------------------------------------------
+!
+        DO J=MYJS,MYJE
         DO I=MYIS,MYIE
-          PDWDT(I,K,J)=DWDT(I,K,J)
-          DWDT(I,K,J)=W(I,K,J)
-        ENDDO
-        ENDDO
-!
-        DO I=MYIS,MYIE
-          W(I,KTS,J)=0.
-#ifdef AS_RECEIVED
-          IF(SIGMA)THEN
-#else
-          IF(SIGMA==1)THEN
-#endif
-            Z(I,KTS,J)=FIS(I,J)*RG
-          ELSE
-            Z(I,KTS,J)=0.
-          ENDIF
-        ENDDO
-!
-        DO K=KTS,KTE
 !
           ZETA=DFL(K+1)*RG
+          DZ=(Q(I,J,K)*P608-CWM(I,J,K)+1.)*T(I,J,K)                     &
+            /(PINT(I,J,K+1)+PINT(I,J,K))                                &
+            *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*TRG
+          Z(I,J,K+1)=Z(I,J,K)+DZ
+          W(I,J,K+1)=(DZ-RTOP(I,J,K)                                    &
+                    *(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J))*RG)           &
+                    *HBM2(I,J)                                          &
+                    +W(I,J,K)
 !
-          DO I=MYIS,MYIE
-!
-            DZ=(Q(I,K,J)*P608-CWM(I,K,J)+1.)*T(I,K,J)                   &
-              /(PINT(I,K+1,J)+PINT(I,K,J))                              &
-              *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*TRG
-            Z(I,K+1,J)=(Z(I,K,J)+DZ-ZETA)*HTM(I,K,J)+ZETA
-            W(I,K+1,J)=(DZ-RTOP(I,K,J)                                  &
-                      *(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J))*RG)         &
-                      *HTM(I,K,J)*HBM2(I,J)                             &
-                      +W(I,K,J)
-!
-          ENDDO
+        ENDDO
         ENDDO
 !
-      ENDDO
+!-----------------------------------------------------------------------
+!
+      ENDDO kloop1
+!
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-      DO J=MYJS,MYJE
+!-----------------------------------------------------------------------
+      DO K=KTS,KTE
 !
-        DO K=KTS,KTE
+        DO J=MYJS,MYJE
         DO I=MYIS,MYIE
-          Z(I,K,J)=(Z(I,K+1,J)+Z(I,K,J))*0.5
-          W(I,K,J)=(W(I,K+1,J)+W(I,K,J))*HTM(I,K,J)*HBM2(I,J)*0.5*RDT
+          Z(I,J,K)=(Z(I,J,K+1)+Z(I,J,K))*0.5
+          W(I,J,K)=(W(I,J,K+1)+W(I,J,K))*HBM2(I,J)*0.5*RDT
         ENDDO
         ENDDO
 !
       ENDDO
 !-----------------------------------------------------------------------
+!
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
         TTB(I,J)=0.
       ENDDO
       ENDDO
 !
+!-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,ttal)
-      DO J=MYJS2,MYJE2
-        DO K=KTE,KTS+1,-1
+!-----------------------------------------------------------------------
+      DO K=KTE,KTS+1,-1
+        DO J=MYJS2,MYJE2
         DO I=MYIS1,MYIE1
-          TTAL=(Z(I,K-1,J)-Z(I,K,J))*PETDT(I,K-1,J)*0.5
-          W(I,K,J)=(TTAL+TTB(I,J))/(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)) &
-                  +W(I,K,J)
+          TTAL=(Z(I,J,K-1)-Z(I,J,K))*PETDT(I,J,K-1)*0.5
+          W(I,J,K)=(TTAL+TTB(I,J))/(DETA1(K)*PDTOP+DETA2(K)*PDSLO(I,J)) &
+                  +W(I,J,K)
           TTB(I,J)=TTAL
         ENDDO
         ENDDO
       ENDDO
 !
+!-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(i,j)
+!-----------------------------------------------------------------------
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
-        W(I,KTS,J)=TTB(I,J)/(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSLO(I,J))    &
-                  +W(I,KTS,J)
+        W(I,J,KTS)=TTB(I,J)/(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSLO(I,J))    &
+                  +W(I,J,KTS)
       ENDDO
       ENDDO
 !-----------------------------------------------------------------------
@@ -716,11 +735,11 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
-      SUBROUTINE HADZ(NTSD,DT,HYDRO,HTM,HBM2,DETA1,DETA2,PDTOP          &
+      SUBROUTINE HADZ(NTSD,DT,HYDRO,HBM2,DETA1,DETA2,PDTOP              &
                      ,DX,DY,FAD                                         &
                      ,FEW,FNS,FNE,FSE                                   &
                      ,PDSL,U,V,W,Z                                      &
-                     ,IHE,IHW,IVE,IVW,INDX3_WRK                         &
+                     ,IHE,IHW,IVE,IVW                                   &
                      ,IDS,IDE,JDS,JDE,KDS,KDE                           &
                      ,IMS,IME,JMS,JME,KMS,KME                           &
                      ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -739,6 +758,7 @@
 !   00-01-04  BLACK      - DISTRIBUTED MEMORY AND THREADS
 !   01-03-26  BLACK      - CONVERTED TO WRF STRUCTURE
 !   04-11-22  BLACK      - THREADED
+!   05-12-12  BLACK      - CONVERTED FROM IKJ TO IJK
 !
 ! USAGE: CALL HADZ FROM MAIN PROGRAM
 !   INPUT ARGUMENT LIST:
@@ -775,13 +795,6 @@
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
 !-----------------------------------------------------------------------
-!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!***  NMM_MAX_DIM is set in configure.wrf and must agree with
-!***  the value of dimspec q in the Registry/Registry
-!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!-----------------------------------------------------------------------
-!
-      INTEGER,DIMENSION(-3:3,NMM_MAX_DIM,0:6),INTENT(IN) :: INDX3_WRK
 !
       REAL,INTENT(IN) :: DT,DY,PDTOP
 !
@@ -789,14 +802,14 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX,FAD,HBM2,PDSL
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: HTM,U,V
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: U,V
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: FEW,FNE    &
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: FEW,FNE    &
                                                             ,FNS,FSE
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: Z
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: Z
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: W
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: W
 !-----------------------------------------------------------------------
 !
 !***  LOCAL VARIABLES
@@ -804,38 +817,23 @@
 !-----------------------------------------------------------------------
       INTEGER,PARAMETER :: NTSHY=2
 !
-      INTEGER :: I,J,J1_00,J1_P1,J1_P2,J4_00,J4_M1,J4_P1,J5_00,J5_M1    &
-                ,J6_00,J6_P1,JJ,JKNT,JSTART,K
+      INTEGER :: I,J,K
 !
       REAL :: FEWP,FNEP,FNSP,FSEP,UDY,VDX
 !
-      REAL,DIMENSION(IMS:IME,KTS:KTE) :: UDY_00,ZEW
+      REAL,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5) :: DPDE,UNED,USED         &
+     &                                          ,ZEW,ZNE,ZNS,ZSE
 !
-!***  TYPE 1 WORKING ARRAY (SEE PFDHT)
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-2:2) :: DPDE
-!
-!***  TYPE 4 WORKING ARRAY 
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:1) :: UNED,USED,ZNS
-!
-!***  TYPE 5 WORKING ARRAY
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE,-1:0) :: ZNE
-!
-!***  TYPE 6 WORKING ARRAY
-!
-      REAL,DIMENSION(ITS-5:ITE+5,KTS:KTE, 0:1) :: ZSE
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
       IF(NTSD+1<=NTSHY.OR.HYDRO)THEN
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO J=MYJS,MYJE
-          DO K=KTS,KTE
+        DO K=KTS,KTE
+          DO J=MYJS,MYJE
           DO I=MYIS,MYIE
-            W(I,K,J)=0.
+            W(I,J,K)=0.
           ENDDO
           ENDDO
         ENDDO
@@ -849,157 +847,54 @@
 !
 !***  FIRST ZERO OUT SOME WORKING ARRAYS
 !
-      DO J=-2,2
 !$omp parallel do                                                       &
-!$omp& private(i,k)
-      DO K=KTS,KTE
+!$omp& private(i,j)
+      DO J=JTS-5,JTE+5
       DO I=ITS-5,ITE+5
-        DPDE(I,K,J)=0.
-      ENDDO
-      ENDDO
-      ENDDO
-!
-      DO J=-1,1
-!$omp parallel do                                                       &
-!$omp& private(i,k)
-      DO K=KTS,KTE
-      DO I=ITS-5,ITE+5
-        UNED(I,K,J)=0.
-        USED(I,K,J)=0.
-      ENDDO
+        DPDE(I,J)=0.
+        UNED(I,J)=0.
+        USED(I,J)=0.
       ENDDO
       ENDDO
 !
 !-----------------------------------------------------------------------
-!***  MARCH NORTHWARD THROUGH THE SOUTHERNMOST SLABS TO BEGIN
-!***  FILLING THE MAIN WORKING ARRAYS WHICH ARE MULTI-DIMENSIONED
-!***  IN J BECAUSE THEY ARE DIFFERENCED OR AVERAGED IN J
+!$omp parallel do                                                       &
+!$omp& private(dpde,fewp,fnep,fnsp,fsep,i,j,udy,uned,used,vdx           &
+!$omp&        ,zew,zne,zns,zse)
 !-----------------------------------------------------------------------
 !
-      JSTART=MYJS2_P1
+      main_integration:  DO K=KTS,KTE
 !
-      DO J=-2,1
-        JJ=JSTART+J
-!
-!$omp parallel do                                                       &
-!$omp& private(i,k)
-        DO K=KTS,KTE
-        DO I=MYIS_P4,MYIE_P4
-          DPDE(I,K,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,JJ)
-        ENDDO
-        ENDDO
-!
-      ENDDO
-!
-      DO J=-1,0
-        JJ=JSTART+J
-!
-!$omp parallel do                                                       &
-!$omp& private(fnsp,i,k,udy,vdx)
-        DO K=KTS,KTE
-        DO I=MYIS_P3,MYIE_P3
-          UDY=U(I,K,JJ)*DY
-          VDX=V(I,K,JJ)*DX(I,JJ)
-          UNED(I,K,J)=UDY+VDX
-          USED(I,K,J)=UDY-VDX
-          FNSP=VDX*(DPDE(I,K,J-1)+DPDE(I,K,J+1))
-          ZNS(I,K,J)=FNSP*(Z(I,K,JJ+1)-Z(I,K,JJ-1))
-          FNS(I,K,JJ)=FNSP
-          UDY_00(I,K)=UDY
-        ENDDO
-        ENDDO
-!
-      ENDDO
-!
-      J=-1
-      JJ=JSTART+J
-!
-!$omp parallel do                                                       &
-!$omp& private(fnep,i,k)
-      DO K=KTS,KTE
-      DO I=MYIS_P2,MYIE_P2
-        FNEP=(UNED(I+IHE(JJ),K,J)+UNED(I,K,J+1))                        &
-            *(DPDE(I,K,J)+DPDE(I+IHE(JJ),K,J+1))
-        ZNE(I,K,J)=FNEP*(Z(I+IHE(JJ),K,JJ+1)-Z(I,K,JJ))
-      ENDDO
-      ENDDO
-!
-      J=0
-      JJ=JSTART+J
-!
-!$omp parallel do                                                       &
-!$omp& private(fsep,i,k)
-      DO K=KTS,KTE
-      DO I=MYIS_P2,MYIE_P2
-        FSEP=(USED(I+IHE(JJ),K,J)+USED(I,K,J-1))                        &
-            *(DPDE(I,K,J)+DPDE(I+IHE(JJ),K,J-1))
-        ZSE(I,K,J)=FSEP*(Z(I+IHE(JJ),K,JJ-1)-Z(I,K,JJ))
-        FSE(I,K,JJ)=FSEP
-      ENDDO
-      ENDDO
-!-----------------------------------------------------------------------
-!
-      JKNT=0
-!
-      main_integration:  DO J=MYJS2_P1,MYJE2_P1
-!
-!-----------------------------------------------------------------------
-!***
-!***  SET THE 3RD INDEX IN THE WORKING ARRAYS (SEE SUBROUTINE INIT
-!***                                           AND ABOVE DIAGRAMS)
-!***
-!***  J[TYPE]_NN WHERE "TYPE" IS THE WORKING ARRAY TYPE SEEN IN THE
-!***  LOCAL DECLARATION ABOVE (DEPENDENT UPON THE J EXTENT) AND
-!***  NN IS THE NUMBER OF ROWS NORTH OF THE CENTRAL ROW WHOSE J IS
-!***  THE CURRENT VALUE OF THE main_integration LOOP.
-!***  (P2 denotes +2, etc.)
-!***
-        JKNT=JKNT+1
-!
-        J1_P2=INDX3_WRK(2,JKNT,1)
-        J1_P1=INDX3_WRK(1,JKNT,1)
-        J1_00=INDX3_WRK(0,JKNT,1)
-!
-        J4_P1=INDX3_WRK(1,JKNT,4)
-        J4_00=INDX3_WRK(0,JKNT,4)
-        J4_M1=INDX3_WRK(-1,JKNT,4)
-!
-        J5_00=INDX3_WRK(0,JKNT,5)
-        J5_M1=INDX3_WRK(-1,JKNT,5)
-!
-        J6_P1=INDX3_WRK(1,JKNT,6)
-        J6_00=INDX3_WRK(0,JKNT,6)
 !-----------------------------------------------------------------------
 !
 !***  MASS FLUXES AND MASS POINT ADVECTION COMPONENTS
 !
 !-----------------------------------------------------------------------
-!$omp parallel do                                                       &
-!$omp& private(fewp,fnep,fnsp,fsep,i,k,udy,vdx)
-        DO K=KTS,KTE
 !
+        DO J=MYJS_P3,MYJE_P3
         DO I=MYIS_P4,MYIE_P4
-          DPDE(I,K,J1_P2)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J+2)
+          DPDE(I,J)=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+        ENDDO
         ENDDO
 !
+        DO J=MYJS1_P3,MYJE1_P3
         DO I=MYIS_P3,MYIE_P3
-          UDY=U(I,K,J+1)*DY
-          VDX=V(I,K,J+1)*DX(I,J+1)
+          UDY=U(I,J,K)*DY
+          VDX=V(I,J,K)*DX(I,J)
 !
-          FEWP=UDY_00(I,K)                                              &
-             *(DPDE(I+IVW(J),K,J1_00)+DPDE(I+IVE(J),K,J1_00))
-          FNSP=VDX*(DPDE(I,K,J1_00)+DPDE(I,K,J1_P2))
+          FEWP=UDY*(DPDE(I+IVW(J),J)+DPDE(I+IVE(J),J))
+          FNSP=VDX*(DPDE(I,J-1)+DPDE(I,J+1))
 !
-          FEW(I,K,J)=FEWP
-          FNS(I,K,J+1)=FNSP
+          FEW(I,J,K)=FEWP
+          FNS(I,J,K)=FNSP
 !
-          ZEW(I,K)=FEWP*(Z(I+IVE(J),K,J)-Z(I+IVW(J),K,J))
-          ZNS(I,K,J4_P1)=FNSP*(Z(I,K,J+2)-Z(I,K,J))
+          ZEW(I,J)=FEWP*(Z(I+IVE(J),J,K)-Z(I+IVW(J),J,K))
+          ZNS(I,J)=FNSP*(Z(I,J+1,K)-Z(I,J-1,K))
 !
-          UNED(I,K,J4_P1)=UDY+VDX
-          USED(I,K,J4_P1)=UDY-VDX
+          UNED(I,J)=UDY+VDX
+          USED(I,J)=UDY-VDX
 !
-          UDY_00(I,K)=UDY
+        ENDDO
         ENDDO
 !
 !-----------------------------------------------------------------------
@@ -1007,16 +902,22 @@
 !***  DIAGONAL FLUXES AND DIAGONALLY AVERAGED WIND
 !
 !-----------------------------------------------------------------------
+        DO J=MYJS1_P2,MYJE2_P2
         DO I=MYIS_P2,MYIE1_P2
-          FNEP=(UNED(I+IHE(J),K,J4_00)+UNED(I,K,J4_P1))                 &
-              *(DPDE(I,K,J1_00)+DPDE(I+IHE(J),K,J1_P1))
-          FNE(I,K,J)=FNEP
-          ZNE(I,K,J5_00)=FNEP*(Z(I+IHE(J),K,J+1)-Z(I,K,J))
+          FNEP=(UNED(I+IHE(J),J)+UNED(I,J+1))                           &
+     &        *(DPDE(I,J)+DPDE(I+IHE(J),J+1))
+          FNE(I,J,K)=FNEP
+          ZNE(I,J)=FNEP*(Z(I+IHE(J),J+1,K)-Z(I,J,K))
+        ENDDO
+        ENDDO
 !
-          FSEP=(USED(I+IHE(J+1),K,J4_P1)+USED(I,K,J4_00))               &
-              *(DPDE(I,K,J1_P1)+DPDE(I+IHE(J+1),K,J1_00))
-          FSE(I,K,J+1)=FSEP
-          ZSE(I,K,J6_P1)=FSEP*(Z(I+IHE(J+1),K,J)-Z(I,K,J+1))
+        DO J=MYJS2_P2,MYJE1_P2
+        DO I=MYIS_P2,MYIE1_P2
+          FSEP=(USED(I+IHE(J),J)+USED(I,J-1))                           &
+     &        *(DPDE(I,J)+DPDE(I+IHE(J),J-1))
+          FSE(I,J,K)=FSEP
+          ZSE(I,J)=FSEP*(Z(I+IHE(J),J-1,K)-Z(I,J,K))
+        ENDDO
         ENDDO
 !
 !-----------------------------------------------------------------------
@@ -1024,16 +925,18 @@
 !***  ADVECTION OF Z
 !
 !-----------------------------------------------------------------------
+!
+        DO J=MYJS2_P1,MYJE2_P1
         DO I=MYIS1_P1,MYIE1_P1
-          W(I,K,J)=-(ZEW(I+IHW(J),K)+ZEW(I+IHE(J),K)                    &
-                    +ZNS(I,K,J4_M1)+ZNS(I,K,J4_P1)                      &
-                    +ZNE(I+IHW(J),K,J5_M1)+ZNE(I,K,J5_00)               &
-                    +ZSE(I,K,J6_00)+ZSE(I+IHW(J),K,J6_P1))              &
-                    *FAD(I,J)*HTM(I,K,J)*HBM2(I,J)/(DPDE(I,K,J1_00)*DT) &
-                    +W(I,K,J)
+          W(I,J,K)=-(ZEW(I+IHW(J),J)  +ZEW(I+IHE(J),J)                  &
+                    +ZNS(I,J-1)       +ZNS(I,J+1)                       &
+                    +ZNE(I+IHW(J),J-1)+ZNE(I,J)                         &
+                    +ZSE(I,J)         +ZSE(I+IHW(J),J+1))               &
+                    *FAD(I,J)*HBM2(I,J)/(DPDE(I,J)*DT)                  &
+                    +W(I,J,K)
+        ENDDO
         ENDDO
 !
-        ENDDO   ! End K loop
 !-----------------------------------------------------------------------
 !
       ENDDO main_integration
@@ -1043,5 +946,7 @@
       END SUBROUTINE HADZ
 !
 !-----------------------------------------------------------------------
+!
       END MODULE MODULE_NONHY_DYNAM
+!
 !-----------------------------------------------------------------------

@@ -22,11 +22,15 @@
 
 RSL_LITE_ERROR_DUP1 ( int *me )
 {
-    int newfd ;
+    int newfd,rc ;
     char filename[256] ;
+    char dirname[256] ;
     char hostname[256] ;
 
-#ifndef MS_SUA
+/* redirect standard out and standard error based on compile options*/
+                                                                                                                                              
+#ifndef NCEP_DEBUG_MULTIDIR
+# ifndef MS_SUA
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
@@ -62,7 +66,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
     fprintf( stdout, "taskid: %d hostname: %s\n",*me,hostname) ;
     fprintf( stderr, "taskid: %d hostname: %s\n",*me,hostname) ;
-#else
+# else
     printf("host %d", *me ) ;
     system("hostname") ;
     sprintf( hostname, "host %d", *me ) ;
@@ -89,8 +93,86 @@ RSL_LITE_ERROR_DUP1 ( int *me )
         return ;
     }
 
-#endif
+# endif
+#else
+# ifndef NCEP_DEBUG_GLOBALSTDOUT
 
+/*create TASKOUTPUT directory to contain separate task owned output directories*/
+                                                                                                                                              
+   /* let task 0 create the subdirectory path for the task directories */
+                                                                                                                                              
+    if (*me == 0)
+    {
+        sprintf(dirname, "%s","TASKOUTPUT");
+        rc = mkdir(dirname, 0777);
+        if ( rc != 0 && errno==EEXIST) rc=0;
+    }
+                                                                                                                                              
+    /* If TASKOUTPUT directory is not created then return */
+                                                                                                                                              
+    MPI_Bcast(&rc, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+                                                                                                                                              
+    if (rc != 0 ) {
+       if (*me == 0 ) {
+          perror("mkdir error");
+          fprintf(stderr, "mkdir failed for directory %s on task %d. Sending error/output to stderr/stdout for all tasks and continuing.\n", dirname, *me);
+          return;
+       }
+       else {
+          return;
+       }
+    }
+        
+    /* TASKOUTPUT directory exists, continue with task specific directory */
+                                                                                                                                              
+    sprintf(dirname, "TASKOUTPUT/%04d", *me);
+    rc=mkdir(dirname, 0777);
+    if (  rc !=0 && errno!=EEXIST ) {
+        perror("mkdir error");
+        fprintf(stderr, "mkdir failed for directory %s on task %d. Sending error/output to stderr/stdout and continuing.\n", dirname, *me);
+        return;
+    }
+                                                                                                                                              
+   /* Each tasks creates/opens its own output and error files */
+                                                                                                                                              
+   sprintf(filename, "%s/%04d/rsl.out.%04d","TASKOUTPUT",*me,*me) ;
+        
+   if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+   {
+        perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.out.nnnn") ;
+        fprintf(stderr,"...sending output to standard output and continuing.\n")
+ ;
+        return ;
+   }
+   if( dup2( newfd, STANDARD_OUTPUT ) < 0 )
+   {
+        perror("error_dup: dup2 fails to change output descriptor") ;
+        fprintf(stderr,"...sending output to standard output and continuing.\n");
+        close(newfd) ;
+        return ;
+   }
+        
+   sprintf(filename, "%s/%04d/rsl.error.%04d","TASKOUTPUT",*me,*me) ;
+   if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+   {
+       perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.error.nnnn") ;
+       fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+       return ;
+   }
+   if( dup2( newfd, STANDARD_ERROR ) < 0 )
+   {
+       perror("error_dup: dup2 fails to change error descriptor") ;
+       fprintf(stderr,"...sending error to standard error and continuing.\n") ;
+       close(newfd) ;
+       return ;
+   }
+# else
+/* Each task writes to global standard error and standard out */
+     
+   return;
+     
+# endif
+#endif
 }
 
 BYTE_BCAST ( char * buf, int * size, int * Fcomm )

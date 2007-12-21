@@ -81,7 +81,7 @@ PROGRAM real_data
    CALL disable_quilting
 #endif
 
-!	CALL start()
+!       CALL start()
 
    !  Initialize the modules used by the WRF system.  
    !  Many of the CALLs made from the
@@ -141,9 +141,9 @@ PROGRAM real_data
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-	write(message,*) 'after model_to_grid_config_rec, e_we, e_sn are: ', &
+   write(message,*) 'after model_to_grid_config_rec, e_we, e_sn are: ', &
                     config_flags%e_we, config_flags%e_sn
-        CALL wrf_message(message)
+   CALL wrf_message(message)
 
    !  Initialize the WRF IO: open files, init file handles, etc.
 
@@ -213,7 +213,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    INTEGER                :: time_step_begin_restart
    INTEGER                :: idsi , ierr , myproc
    CHARACTER (LEN=80)      :: si_inpname
-   CHARACTER (LEN=132)      :: message
+   CHARACTER (LEN=132)     :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , &
                         current_date_char , next_date_char
@@ -277,14 +277,14 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    CALL wrf_message(message)
    DO loop = 1 , time_loop_max
 
-      internal_time_loop=loop
-
+     internal_time_loop=loop
+                                                                                                                                              
       write(message,*) 'loop=', loop
       CALL wrf_message(message)
-
+                                                                                                                                              
       write(message,*) '-----------------------------------------------------------'
       CALL wrf_message(message)
-   
+                      
       write(message,*) ' '
       CALL wrf_message(message)
       write(message,'(A,A,A,I2,A,I2)') ' Current date being processed: ', &
@@ -304,15 +304,14 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL nl_set_julday (grid%id, config_flags%julday)
 
       CALL nl_get_io_form_auxinput1( 1, io_form_auxinput1 )
-
       using_binary_wrfsi=.false.
-
-
-  IF ( grid%dyn_opt .EQ. dyn_nmm ) THEN
-
+       
+       
+      IF ( grid%dyn_opt .EQ. dyn_nmm ) THEN
+       
         write(message,*) 'TRIM(config_flags%auxinput1_inname): ', TRIM(config_flags%auxinput1_inname)
         CALL wrf_message(message)
-
+       
         IF (config_flags%auxinput1_inname(1:10) .eq. 'real_input') THEN
            using_binary_wrfsi=.true.
         ENDIF
@@ -324,7 +323,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       !  Open the wrfinput file.
 
         current_date_char(11:11)='_'
-
+ 
        WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
        CALL wrf_debug ( 100 , wrf_err_message )
        IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
@@ -334,14 +333,15 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
           CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
        END IF
        CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+ 
        IF ( ierr .NE. 0 ) THEN
           CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
        ENDIF
 
-
       !  Input data.
 
       CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
+
       CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
 
       !  Possible optional SI input.  This sets flags used by init_domain.
@@ -349,12 +349,11 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       IF ( loop .EQ. 1 ) THEN
          CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
          CALL init_module_optional_si_input ( grid , config_flags )
-!mp      END IF
       CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
+!
       CALL optional_si_input ( grid , idsi )
-
-      ENDIF
-
+	write(0,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
+      END IF
 !
       CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
 
@@ -370,22 +369,22 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       END IF
 
       IF (using_binary_wrfsi) THEN
- 
+
         current_date_char(11:11)='_'
         CALL read_si ( grid, current_date_char )
         current_date_char(11:11)='T'
 
       ELSE
-
+                                                                                                                                              
         write(message,*) 'binary WPS branch'
         CALL wrf_message(message)
         CALL wrf_error_fatal("binary WPS support deferred for initial release")
-
+                                                                                                                                              
 !       WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
 !       CALL wrf_debug ( 100 , wrf_err_message )
 !       CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , config_flags%io_form_auxinput1 )
 !       CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-
+                                                                                                                                              
 !         IF ( ierr .NE. 0 ) THEN
 !            CALL wrf_debug( 1 , 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
 !            CALL wrf_debug( 1 , 'will try again without the extension' )
@@ -395,19 +394,19 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 !               CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
 !            ENDIF
 !         ENDIF
-
+                                                                                                                                              
       !  Input data.
-
+                                                                                                                                              
 !!! believe problematic as binary data from WPS will be XYZ ordered, while this
 !!! version of WRF will read in as XZY.  OR read all fields in as unique
 !!! Registry items that are XYZ, then swap.  More memory, and more overhead, but
 !!! better than having a stand alone "read_si" type code??
-
+                                                                                                                                              
 !      CALL wrf_debug (100, 'med_sidata_input: call input_aux_model_input1_wrf')
 !      CALL input_aux_model_input1 ( idsi, grid, config_flags, ierr )
-
+ 
       !  Possible optional SI input.  This sets flags used by init_domain.
-
+ 
 !      IF ( loop .EQ. 1 ) THEN
 !         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
 !         CALL init_module_optional_si_input ( grid , config_flags )
@@ -416,11 +415,12 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 !
 !      CALL optional_si_input ( grid , idsi )
 !        flag_metgrid=1
-
+ 
 !
 !      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
-
+ 
           ENDIF
+
 #endif
       CASE DEFAULT
         CALL wrf_error_fatal('real: not valid io_form_auxinput1')
@@ -594,7 +594,7 @@ SUBROUTINE compute_si_start_and_end (  &
          EXIT loop_count
       END IF
    END DO loop_count
-	write(message,*) 'done in si_start_and_end'
+        write(message,*) 'done in si_start_and_end'
         CALL wrf_message(message)
 END SUBROUTINE compute_si_start_and_end
 
@@ -652,47 +652,47 @@ character *24 :: temp24 , temp24b
 
    ids = grid%sd31
    ide = grid%ed31-1 ! 030730tst
-   kds = grid%sd32
-   kde = grid%ed32-1 ! 030730tst
-   jds = grid%sd33
-   jde = grid%ed33-1 ! 030730tst
+   jds = grid%sd32
+   jde = grid%ed32-1 ! 030730tst
+   kds = grid%sd33
+   kde = grid%ed33-1 ! 030730tst
 
    ims = grid%sm31
    ime = grid%em31
-   kms = grid%sm32
-   kme = grid%em32
-   jms = grid%sm33
-   jme = grid%em33
+   jms = grid%sm32
+   jme = grid%em32
+   kms = grid%sm33
+   kme = grid%em33
 
    ips = grid%sp31
    ipe = grid%ep31-1 ! 030730tst
-   kps = grid%sp32
-   kpe = grid%ep32-1 ! 030730tst
-   jps = grid%sp33
-   jpe = grid%ep33-1 ! 030730tst
+   jps = grid%sp32
+   jpe = grid%ep32-1 ! 030730tst
+   kps = grid%sp33
+   kpe = grid%ep33-1 ! 030730tst
 
         if (IPE .ne. IDE) IPE=IPE+1
         if (JPE .ne. JDE) JPE=JPE+1
 
-	write(message,*) 'assemble output (ids,ide): ', ids,ide
+        write(message,*) 'assemble output (ids,ide): ', ids,ide
         CALL wrf_message(message)
-	write(message,*) 'assemble output (ims,ime): ', ims,ime
+        write(message,*) 'assemble output (ims,ime): ', ims,ime
         CALL wrf_message(message)
-	write(message,*) 'assemble output (ips,ipe): ', ips,ipe
+        write(message,*) 'assemble output (ips,ipe): ', ips,ipe
         CALL wrf_message(message)
-
-	write(message,*) 'assemble output (jds,jde): ', jds,jde
+ 
+        write(message,*) 'assemble output (jds,jde): ', jds,jde
         CALL wrf_message(message)
-	write(message,*) 'assemble output (jms,jme): ', jms,jme
+        write(message,*) 'assemble output (jms,jme): ', jms,jme
         CALL wrf_message(message)
-	write(message,*) 'assemble output (jps,jpe): ', jps,jpe
+        write(message,*) 'assemble output (jps,jpe): ', jps,jpe
         CALL wrf_message(message)
-
-	write(message,*) 'assemble output (kds,kde): ', kds,kde
+ 
+        write(message,*) 'assemble output (kds,kde): ', kds,kde
         CALL wrf_message(message)
-	write(message,*) 'assemble output (kms,kme): ', kms,kme
+        write(message,*) 'assemble output (kms,kme): ', kms,kme
         CALL wrf_message(message)
-	write(message,*) 'assemble output (kps,kpe): ', kps,kpe
+        write(message,*) 'assemble output (kps,kpe): ', kps,kpe
         CALL wrf_message(message)
 
    ijds = MIN ( ids , jds )
@@ -713,13 +713,13 @@ character *24 :: temp24 , temp24b
    !  This is the space needed to save the current 3d data for use in computing
    !  the lateral boundary tendencies.
 
-      ALLOCATE ( ubdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( vbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( tbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( qbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( cwmbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( q2bdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( pdbdy2dtemp1(ims:ime,  1:1  ,jms:jme) )
+      ALLOCATE ( ubdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( vbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( tbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( qbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( cwmbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( q2bdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( pdbdy2dtemp1(ims:ime,jms:jme,1:1) )
 
 	ubdy3dtemp1=0.
 	vbdy3dtemp1=0.
@@ -729,13 +729,13 @@ character *24 :: temp24 , temp24b
 	q2bdy3dtemp1=0.
 	pdbdy2dtemp1=0.
 
-      ALLOCATE ( ubdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( vbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( tbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( qbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( cwmbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( q2bdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-      ALLOCATE ( pdbdy2dtemp2(ims:ime,  1:1  ,jms:jme) )
+      ALLOCATE ( ubdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( vbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( tbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( qbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( cwmbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( q2bdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+      ALLOCATE ( pdbdy2dtemp2(ims:ime,jms:jme,1:1) )
 
 	ubdy3dtemp2=0.
 	vbdy3dtemp2=0.
@@ -759,7 +759,7 @@ character *24 :: temp24 , temp24b
 !     CALL calc_current_date ( grid%id , 0. )
 !      grid%write_metadata = .true.
 
-	write(message,*) 'making call to output_model_input'
+        write(message,*) 'making call to output_model_input'
         CALL wrf_message(message)
 
         CALL output_model_input ( id1, grid , config_flags , ierr )
@@ -782,17 +782,17 @@ character *24 :: temp24 , temp24b
           J=1
           DO k = kps , MIN(kde,kpe)
           DO i = ips , MIN(ide,ipe)
-            ubdy3dtemp1(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp1(i,k,j) = grid%nmm_v(i,k,j)
-            tbdy3dtemp1(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp1(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp1(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp1(i,k,j) = grid%nmm_q2(i,k,j)
+            ubdy3dtemp1(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp1(i,j,k) = grid%nmm_v(i,j,k)
+            tbdy3dtemp1(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp1(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp1(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp1(i,j,k) = grid%nmm_q2(i,j,k)
           END DO
           END DO
 
           DO i = ips , MIN(ide,ipe)
-            pdbdy2dtemp1(i,1,j) = grid%nmm_pd(i,j)
+            pdbdy2dtemp1(i,j,1) = grid%nmm_pd(i,j)
           END DO
         ENDIF
 
@@ -805,17 +805,17 @@ character *24 :: temp24 , temp24b
           J=MIN(JDE,JPE)
           DO k = kps , MIN(kde,kpe)
           DO i = ips , MIN(ide,ipe)
-            ubdy3dtemp1(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp1(i,k,j) = grid%nmm_v(i,k,j)
-            tbdy3dtemp1(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp1(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp1(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp1(i,k,j) = grid%nmm_q2(i,k,j)
+            ubdy3dtemp1(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp1(i,j,k) = grid%nmm_v(i,j,k)
+            tbdy3dtemp1(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp1(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp1(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp1(i,j,k) = grid%nmm_q2(i,j,k)
           END DO
           END DO
 
           DO i = ips , MIN(ide,ipe)
-            pdbdy2dtemp1(i,1,j) = grid%nmm_pd(i,j)
+            pdbdy2dtemp1(i,j,1) = grid%nmm_pd(i,j)
           END DO
         ENDIF
 
@@ -824,8 +824,9 @@ character *24 :: temp24 , temp24b
 !***  WESTERN BOUNDARY
 !-----------------------------------------------------------------------
 !
-	write(message,*) 'western boundary, store winds over J: ', jps, min(jpe,jde)
-         CALL wrf_message(message)
+        write(message,*) 'western boundary, store winds over J: ', jps, min(jpe,jde)
+        CALL wrf_message(message)
+
         IF(IPS==IDS)THEN
           I=1
           DO k = kps , MIN(kde,kpe)
@@ -833,12 +834,12 @@ character *24 :: temp24 , temp24b
           DO j = jps+inc_h, min(jde,jpe),2
 
         if (J .ge. 3 .and. J .le. JDE-2 .and. mod(J,2) .eq. 1) then
-            tbdy3dtemp1(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp1(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp1(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp1(i,k,j) = grid%nmm_q2(i,k,j)
+            tbdy3dtemp1(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp1(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp1(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp1(i,j,k) = grid%nmm_q2(i,j,k)
       if(k==1)then
-        write(message,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,k,j)=',tbdy3dtemp1(i,k,j)
+        write(message,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,j,k)=',tbdy3dtemp1(i,j,k)
         CALL wrf_debug(10,message)
       endif
 	endif
@@ -849,8 +850,8 @@ character *24 :: temp24 , temp24b
           inc_v=mod(jps,2)
           DO j = jps+inc_v, min(jde,jpe),2
         if (J .ge. 2 .and. J .le. JDE-1 .and. mod(J,2) .eq. 0) then
-            ubdy3dtemp1(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp1(i,k,j) = grid%nmm_v(i,k,j)
+            ubdy3dtemp1(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp1(i,j,k) = grid%nmm_v(i,j,k)
 	endif
           END DO
           END DO
@@ -858,9 +859,9 @@ character *24 :: temp24 , temp24b
           inc_h=mod(jps+1,2)
         DO j = jps+inc_h, min(jde,jpe),2
         if (J .ge. 3 .and. J .le. JDE-2 .and. mod(J,2) .eq. 1) then
-            pdbdy2dtemp1(i,1,j) = grid%nmm_pd(i,j)
-      write(message,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,1,j)=',pdbdy2dtemp1(i,1,j)
-        CALL wrf_debug(10,message)
+            pdbdy2dtemp1(i,j,1) = grid%nmm_pd(i,j)
+          write(message,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,j)=',pdbdy2dtemp1(i,j,1)
+          CALL wrf_debug(10,message)
 	endif
           END DO
         ENDIF
@@ -879,10 +880,10 @@ character *24 :: temp24 , temp24b
           inc_h=mod(jps+1,2)
           DO j = jps+inc_h, min(jde,jpe),2
         if (J .ge. 3 .and. J .le. JDE-2 .and. mod(J,2) .eq. 1) then
-            tbdy3dtemp1(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp1(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp1(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp1(i,k,j) = grid%nmm_q2(i,k,j)
+            tbdy3dtemp1(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp1(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp1(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp1(i,j,k) = grid%nmm_q2(i,j,k)
 	endif
           END DO
           END DO
@@ -891,8 +892,8 @@ character *24 :: temp24 , temp24b
           inc_v=mod(jps,2)
           DO j = jps+inc_v, min(jde,jpe),2
         if (J .ge. 2 .and. J .le. JDE-1 .and. mod(J,2) .eq. 0) then
-            ubdy3dtemp1(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp1(i,k,j) = grid%nmm_v(i,k,j)
+            ubdy3dtemp1(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp1(i,j,k) = grid%nmm_v(i,j,k)
         endif
           END DO
           END DO
@@ -900,7 +901,7 @@ character *24 :: temp24 , temp24b
           inc_h=mod(jps+1,2)
           DO j = jps+inc_h, min(jde,jpe),2
         if (J .ge. 3 .and. J .le. JDE-2 .and. mod(J,2) .eq. 1) then
-            pdbdy2dtemp1(i,1,j) = grid%nmm_pd(i,j)
+            pdbdy2dtemp1(i,j,1) = grid%nmm_pd(i,j)
 	endif
           END DO
         ENDIF
@@ -911,38 +912,55 @@ character *24 :: temp24 , temp24b
       !  point of this time period - just the outer few rows and columns.
 
 
- CALL stuff_bdy (ubdy3dtemp1, grid%nmm_u_b, 'N', ijds, ijde, spec_bdy_width  , &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
- CALL stuff_bdy ( vbdy3dtemp1, grid%nmm_v_b, 'N', ijds, ijde, spec_bdy_width, &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
- CALL stuff_bdy ( tbdy3dtemp1, grid%nmm_t_b, 'N', ijds, ijde, spec_bdy_width, &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (ubdy3dtemp1, grid%nmm_u_bxs, grid%nmm_u_bxe, &
+                                  grid%nmm_u_bys, grid%nmm_u_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
- CALL stuff_bdy ( cwmbdy3dtemp1,grid%nmm_cwm_b,'N',ijds,ijde, spec_bdy_width, &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (vbdy3dtemp1, grid%nmm_v_bxs, grid%nmm_v_bxe, &
+                                  grid%nmm_v_bys, grid%nmm_v_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
- CALL stuff_bdy ( qbdy3dtemp1, grid%nmm_q_b, 'N', ijds, ijde, spec_bdy_width, &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (tbdy3dtemp1, grid%nmm_t_bxs, grid%nmm_t_bxe, &
+                                  grid%nmm_t_bys, grid%nmm_t_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
- CALL stuff_bdy ( q2bdy3dtemp1,grid%nmm_q2_b,'N', ijds, ijde, spec_bdy_width, &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (cwmbdy3dtemp1, grid%nmm_cwm_bxs, grid%nmm_cwm_bxe, &
+                                  grid%nmm_cwm_bys, grid%nmm_cwm_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
- CALL stuff_bdy ( pdbdy2dtemp1,grid%nmm_pd_b,'M', ijds,ijde, spec_bdy_width, &
-                                        ids , ide+1 , jds , jde+1 , 1 , 1 , &
-                                        ims , ime , jms , jme , 1 , 1 , &
-                                        ips , ipe , jps , jpe , 1 , 1 )
+ CALL stuff_bdy_ijk (qbdy3dtemp1, grid%nmm_q_bxs, grid%nmm_q_bxe, &
+                                  grid%nmm_q_bys, grid%nmm_q_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
+
+ CALL stuff_bdy_ijk (q2bdy3dtemp1, grid%nmm_q2_bxs, grid%nmm_q2_bxe, &
+                                  grid%nmm_q2_bys, grid%nmm_q2_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
+
+
+ CALL stuff_bdy_ijk (pdbdy2dtemp1, grid%nmm_pd_bxs, grid%nmm_pd_bxe, &
+                                   grid%nmm_pd_bys, grid%nmm_pd_bye, &
+                                   'M', spec_bdy_width, &
+                                   ids , ide+1 , jds , jde+1 , 1 , 1 , &
+                                   ims , ime , jms , jme , 1 , 1 , &
+                                   ips , ipe , jps , jpe , 1 , 1 )
 
 !-----------------------------------------------------------------------
 !
@@ -979,17 +997,17 @@ character *24 :: temp24 , temp24b
           J=1
           DO k = kps , MIN(kde,kpe)
           DO i = ips , MIN(ide,ipe)
-            ubdy3dtemp2(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp2(i,k,j) = grid%nmm_v(i,k,j)
-            tbdy3dtemp2(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp2(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp2(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp2(i,k,j) = grid%nmm_q2(i,k,j)
+            ubdy3dtemp2(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp2(i,j,k) = grid%nmm_v(i,j,k)
+            tbdy3dtemp2(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp2(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp2(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp2(i,j,k) = grid%nmm_q2(i,j,k)
           END DO
           END DO
 !
           DO i = ips , MIN(ide,ipe)
-            pdbdy2dtemp2(i,1,j) = grid%nmm_pd(i,j)
+            pdbdy2dtemp2(i,j,1) = grid%nmm_pd(i,j)
           END DO
         ENDIF
 
@@ -1002,17 +1020,17 @@ character *24 :: temp24 , temp24b
           J=MIN(JDE,JPE)
           DO k = kps , MIN(kde,kpe)
           DO i = ips , MIN(ide,ipe)
-            ubdy3dtemp2(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp2(i,k,j) = grid%nmm_v(i,k,j)
-            tbdy3dtemp2(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp2(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp2(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp2(i,k,j) = grid%nmm_q2(i,k,j)
+            ubdy3dtemp2(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp2(i,j,k) = grid%nmm_v(i,j,k)
+            tbdy3dtemp2(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp2(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp2(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp2(i,j,k) = grid%nmm_q2(i,j,k)
           END DO
           END DO
 
           DO i = ips , MIN(ide,ipe)
-            pdbdy2dtemp2(i,1,j) = grid%nmm_pd(i,j)
+            pdbdy2dtemp2(i,j,1) = grid%nmm_pd(i,j)
           END DO
         ENDIF
 !
@@ -1030,14 +1048,14 @@ character *24 :: temp24 , temp24b
       endif
           DO j = jps+inc_h, MIN(jde,jpe),2
         if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
-            tbdy3dtemp2(i,k,j) = grid%nmm_t(i,k,j)
+            tbdy3dtemp2(i,j,k) = grid%nmm_t(i,j,k)
       if(k==1)then
-        write(message,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,k,j)=',tbdy3dtemp1(i,k,j)
+        write(message,*)' loop=',loop,' i=',i,' j=',j,' tbdy3dtemp1(i,j,k)=',tbdy3dtemp1(i,j,k)
         call wrf_debug(10,message)
       endif
-            qbdy3dtemp2(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp2(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp2(i,k,j) = grid%nmm_q2(i,k,j)
+            qbdy3dtemp2(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp2(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp2(i,j,k) = grid%nmm_q2(i,j,k)
 	endif
           END DO
           END DO
@@ -1046,8 +1064,8 @@ character *24 :: temp24 , temp24b
           inc_v=mod(jps,2)
           DO j = jps+inc_v, MIN(jde,jpe),2
         if (J .ge. 2 .and. J .le. jde-1 .and. mod(J,2) .eq. 0) then
-            ubdy3dtemp2(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp2(i,k,j) = grid%nmm_v(i,k,j)
+            ubdy3dtemp2(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp2(i,j,k) = grid%nmm_v(i,j,k)
 	endif
           END DO
           END DO
@@ -1055,9 +1073,9 @@ character *24 :: temp24 , temp24b
           inc_h=mod(jps+1,2)
         DO j = jps+inc_h, MIN(jde,jpe),2
         if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
-            pdbdy2dtemp2(i,1,j) = grid%nmm_pd(i,j)
-      write(message,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,1,j)=',pdbdy2dtemp1(i,1,j)
-      CALL wrf_debug(10,message)
+          pdbdy2dtemp2(i,j,1) = grid%nmm_pd(i,j)
+          write(message,*)' loop=',loop,' i=',i,' j=',j,' pdbdy2dtemp1(i,j)=',pdbdy2dtemp1(i,j,1)
+          CALL wrf_debug(10,message)
 	endif
           END DO
         ENDIF
@@ -1073,10 +1091,10 @@ character *24 :: temp24 , temp24b
           inc_h=mod(jps+1,2)
           DO j = jps+inc_h, MIN(jde,jpe),2
         if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
-            tbdy3dtemp2(i,k,j) = grid%nmm_t(i,k,j)
-            qbdy3dtemp2(i,k,j) = grid%nmm_q(i,k,j)
-            cwmbdy3dtemp2(i,k,j) = grid%nmm_cwm(i,k,j)
-            q2bdy3dtemp2(i,k,j) = grid%nmm_q2(i,k,j)
+            tbdy3dtemp2(i,j,k) = grid%nmm_t(i,j,k)
+            qbdy3dtemp2(i,j,k) = grid%nmm_q(i,j,k)
+            cwmbdy3dtemp2(i,j,k) = grid%nmm_cwm(i,j,k)
+            q2bdy3dtemp2(i,j,k) = grid%nmm_q2(i,j,k)
 	endif
           END DO
           END DO
@@ -1085,8 +1103,8 @@ character *24 :: temp24 , temp24b
           inc_v=mod(jps,2)
           DO j = jps+inc_v, MIN(jde,jpe),2
         if (J .ge. 2 .and. J .le. jde-1 .and. mod(J,2) .eq. 0) then
-            ubdy3dtemp2(i,k,j) = grid%nmm_u(i,k,j)
-            vbdy3dtemp2(i,k,j) = grid%nmm_v(i,k,j)
+            ubdy3dtemp2(i,j,k) = grid%nmm_u(i,j,k)
+            vbdy3dtemp2(i,j,k) = grid%nmm_v(i,j,k)
 	endif
           END DO
           END DO
@@ -1094,7 +1112,7 @@ character *24 :: temp24 , temp24b
           inc_h=mod(jps+1,2)
           DO j = jps+inc_h, MIN(jde,jpe),2
         if (J .ge. 3 .and. J .le. jde-2 .and. mod(J,2) .eq. 1) then
-            pdbdy2dtemp2(i,1,j) = grid%nmm_pd(i,j)
+            pdbdy2dtemp2(i,j,1) = grid%nmm_pd(i,j)
 	endif
           END DO
         ENDIF
@@ -1106,52 +1124,64 @@ character *24 :: temp24 , temp24b
       !  saved information stored in the *bdy3dtemp1 arrays.
 
 
-      CALL stuff_bdytend ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds),&
-                                   grid%nmm_u_bt  , 'N' , &
-                                   ijds , ijde , spec_bdy_width      , &
-                                   ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                   ims , ime , jms , jme , kms , kme , &
-                                   ips , ipe , jps , jpe , kps , kpe+1 )
-      CALL stuff_bdytend ( vbdy3dtemp2 , vbdy3dtemp1 , REAL(interval_seconds),&
-                                    grid%nmm_v_bt  , 'N' , &
-                                   ijds , ijde , spec_bdy_width      , &
-                                   ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                   ims , ime , jms , jme , kms , kme , &
-                                   ips , ipe , jps , jpe , kps , kpe+1 )
-      CALL stuff_bdytend ( tbdy3dtemp2 , tbdy3dtemp1 , REAL(interval_seconds),&
-                                   grid%nmm_t_bt  , 'N' , &
-                                   ijds , ijde , spec_bdy_width      , &
+	write(0,*) 'ubdy3dtemp2(1,2,1),ubdy3dtemp1(1,2,1): ', ubdy3dtemp2(1,2,1),ubdy3dtemp1(1,2,1)
+      CALL stuff_bdytend_ijk ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds),&
+                                   grid%nmm_u_btxs, grid%nmm_u_btxe, &
+                                   grid%nmm_u_btys, grid%nmm_u_btye, &
+                                   'N',  spec_bdy_width      , &
                                    ids , ide+1 , jds , jde+1 , kds , kde+1 , &
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe+1 )
 
-      CALL stuff_bdytend ( cwmbdy3dtemp2,cwmbdy3dtemp1,REAL(interval_seconds),&
-                                   grid%nmm_cwm_bt  , 'N' , &
-                                   ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend_ijk ( vbdy3dtemp2 , vbdy3dtemp1 , REAL(interval_seconds),&
+                                   grid%nmm_v_btxs, grid%nmm_v_btxe, &
+                                   grid%nmm_v_btys, grid%nmm_v_btye, &
+                                   'N',  spec_bdy_width      , &
                                    ids , ide+1 , jds , jde+1 , kds , kde+1 , &
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe+1 )
 
-      CALL stuff_bdytend ( qbdy3dtemp2 , qbdy3dtemp1 , REAL(interval_seconds),&
-                                   grid%nmm_q_bt , 'N' , &
-                                   ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend_ijk ( tbdy3dtemp2 , tbdy3dtemp1 , REAL(interval_seconds),&
+                                   grid%nmm_t_btxs, grid%nmm_t_btxe, &
+                                   grid%nmm_t_btys, grid%nmm_t_btye, &
+                                   'N',  spec_bdy_width      , &
                                    ids , ide+1 , jds , jde+1 , kds , kde+1 , &
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe+1 )
 
-    CALL stuff_bdytend ( q2bdy3dtemp2, q2bdy3dtemp1 , REAL(interval_seconds),&
-                                   grid%nmm_q2_bt , 'N' , &
-                                   ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend_ijk ( cwmbdy3dtemp2 , cwmbdy3dtemp1 , REAL(interval_seconds),&
+                                   grid%nmm_cwm_btxs, grid%nmm_cwm_btxe, &
+                                   grid%nmm_cwm_btys, grid%nmm_cwm_btye, &
+                                   'N',  spec_bdy_width      , &
                                    ids , ide+1 , jds , jde+1 , kds , kde+1 , &
                                    ims , ime , jms , jme , kms , kme , &
                                    ips , ipe , jps , jpe , kps , kpe+1 )
 
-    CALL stuff_bdytend( pdbdy2dtemp2 , pdbdy2dtemp1, REAL(interval_seconds),&
-                                   grid%nmm_pd_bt  , 'M' , &
-                                   ijds , ijde , spec_bdy_width      , &
+      CALL stuff_bdytend_ijk ( qbdy3dtemp2 , qbdy3dtemp1 , REAL(interval_seconds),&
+                                   grid%nmm_q_btxs, grid%nmm_q_btxe, &
+                                   grid%nmm_q_btys, grid%nmm_q_btye, &
+                                   'N',  spec_bdy_width      , &
+                                   ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                   ims , ime , jms , jme , kms , kme , &
+                                   ips , ipe , jps , jpe , kps , kpe+1 )
+
+      CALL stuff_bdytend_ijk ( q2bdy3dtemp2 , q2bdy3dtemp1 , REAL(interval_seconds),&
+                                   grid%nmm_q2_btxs, grid%nmm_q2_btxe, &
+                                   grid%nmm_q2_btys, grid%nmm_q2_btye, &
+                                   'N',  spec_bdy_width      , &
+                                   ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                   ims , ime , jms , jme , kms , kme , &
+                                   ips , ipe , jps , jpe , kps , kpe+1 )
+
+      CALL stuff_bdytend_ijk( pdbdy2dtemp2 , pdbdy2dtemp1, REAL(interval_seconds),&
+                                   grid%nmm_pd_btxs, grid%nmm_pd_btxe, &
+                                   grid%nmm_pd_btys, grid%nmm_pd_btye, &
+                                   'M',  spec_bdy_width      , &
                                    ids , ide+1 , jds , jde+1 , 1 , 1 , &
-                                   ims , ime , jms , jme , 1 , 1 , &
-                                   ips , ipe , jps , jpe , 1 , 1 )
+                                   ims , ime   , jms , jme   , 1 , 1 , &
+                                   ips , ipe   , jps , jpe   , 1 , 1 )
+
+
 
       !  Both pieces of the boundary data are now 
       !  available to be written (initial time and tendency).
@@ -1208,15 +1238,15 @@ character *24 :: temp24 , temp24b
 
 !mp	change these limits?????????
 
-         DO j = jps , jpe
-            DO k = kps , kpe
+         DO k = kps , kpe
+            DO j = jps , jpe
                DO i = ips , ipe
-                  ubdy3dtemp1(i,k,j) = ubdy3dtemp2(i,k,j)
-                  vbdy3dtemp1(i,k,j) = vbdy3dtemp2(i,k,j)
-                  tbdy3dtemp1(i,k,j) = tbdy3dtemp2(i,k,j)
-                  cwmbdy3dtemp1(i,k,j) = cwmbdy3dtemp2(i,k,j)
-                  qbdy3dtemp1(i,k,j) = qbdy3dtemp2(i,k,j)
-                  q2bdy3dtemp1(i,k,j) = q2bdy3dtemp2(i,k,j)
+                  ubdy3dtemp1(i,j,k) = ubdy3dtemp2(i,j,k)
+                  vbdy3dtemp1(i,j,k) = vbdy3dtemp2(i,j,k)
+                  tbdy3dtemp1(i,j,k) = tbdy3dtemp2(i,j,k)
+                  cwmbdy3dtemp1(i,j,k) = cwmbdy3dtemp2(i,j,k)
+                  qbdy3dtemp1(i,j,k) = qbdy3dtemp2(i,j,k)
+                  q2bdy3dtemp1(i,j,k) = q2bdy3dtemp2(i,j,k)
                END DO
             END DO
          END DO
@@ -1225,7 +1255,8 @@ character *24 :: temp24 , temp24b
 
          DO j = jps , jpe
             DO i = ips , ipe
-               pdbdy2dtemp1(i,1,j) = pdbdy2dtemp2(i,1,j)
+               pdbdy2dtemp1(i,j,1) = pdbdy2dtemp2(i,j,1)
+	if (J .eq. jpe) write(0,*) 'I,J, PDBDy2dtemp1(i,j,1):' , I,J, PDBDy2dtemp1(i,j,1)
             END DO
          END DO
 
@@ -1233,46 +1264,54 @@ character *24 :: temp24 , temp24b
   !   First, there is the starting
   !  point of this time period - just the outer few rows and columns.
 
+ CALL stuff_bdy_ijk (ubdy3dtemp1, grid%nmm_u_bxs, grid%nmm_u_bxe, &
+                                  grid%nmm_u_bys, grid%nmm_u_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
-         CALL stuff_bdy ( ubdy3dtemp1 , grid%nmm_u_b  , 'N' ,& 
-                                        ijds , ijde , spec_bdy_width      , &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
-         CALL stuff_bdy ( vbdy3dtemp1 , grid%nmm_v_b  , 'N' , &
-                                        ijds , ijde , spec_bdy_width      , &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
-         CALL stuff_bdy ( tbdy3dtemp1 , grid%nmm_t_b  , 'N' , &
-                                        ijds , ijde , spec_bdy_width      , &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (vbdy3dtemp1, grid%nmm_v_bxs, grid%nmm_v_bxe, &
+                                  grid%nmm_v_bys, grid%nmm_v_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
-         CALL stuff_bdy ( cwmbdy3dtemp1 , grid%nmm_cwm_b , 'N' , &
-                                          ijds , ijde , spec_bdy_width      , &
-                                          ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                          ims , ime , jms , jme , kms , kme , &
-                                          ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (tbdy3dtemp1, grid%nmm_t_bxs, grid%nmm_t_bxe, &
+                                  grid%nmm_t_bys, grid%nmm_t_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
-         CALL stuff_bdy ( qbdy3dtemp1 , grid%nmm_q_b , 'N' ,&
-                                        ijds , ijde , spec_bdy_width      , &
-                                        ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (cwmbdy3dtemp1, grid%nmm_cwm_bxs, grid%nmm_cwm_bxe, &
+                                  grid%nmm_cwm_bys, grid%nmm_cwm_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
-         CALL stuff_bdy ( q2bdy3dtemp1 , grid%nmm_q2_b, 'N' ,&
-                                         ijds , ijde , spec_bdy_width      , &
-                                         ids , ide+1 , jds , jde+1 , kds , kde+1 , &
-                                         ims , ime , jms , jme , kms , kme , &
-                                         ips , ipe , jps , jpe , kps , kpe+1 )
+ CALL stuff_bdy_ijk (qbdy3dtemp1, grid%nmm_q_bxs, grid%nmm_q_bxe, &
+                                  grid%nmm_q_bys, grid%nmm_q_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
 
-         CALL stuff_bdy ( pdbdy2dtemp1 , grid%nmm_pd_b , 'M' ,&
-                                          ijds , ijde , spec_bdy_width  , &
-                                          ids , ide+1 , jds , jde+1 , 1 , 1 , &
-                                          ims , ime , jms , jme , 1 , 1 , &
-                                          ips , ipe , jps , jpe , 1 , 1 )
+ CALL stuff_bdy_ijk (q2bdy3dtemp1, grid%nmm_q2_bxs, grid%nmm_q2_bxe, &
+                                  grid%nmm_q2_bys, grid%nmm_q2_bye, &
+                                  'N', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , kds , kde+1 , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  ips , ipe , jps , jpe , kps , kpe+1 )
+
+ CALL stuff_bdy_ijk (pdbdy2dtemp1,grid%nmm_pd_bxs, grid%nmm_pd_bxe, &
+                                  grid%nmm_pd_bys, grid%nmm_pd_bye, &
+                                  'M', spec_bdy_width  , &
+                                  ids , ide+1 , jds , jde+1 , 1 , 1 , &
+                                  ims , ime , jms , jme , 1 , 1 , &
+                                  ips , ipe , jps , jpe , 1 , 1 )
 
       ELSE IF ( loop .EQ. time_loop_max ) THEN
 

@@ -2590,6 +2590,417 @@ CONTAINS
     
  END SUBROUTINE stuff_bdytend_old
 
+ SUBROUTINE stuff_bdy_ijk ( data3d , space_bdy_xs, space_bdy_xe, &
+                             space_bdy_ys, space_bdy_ye, &
+                             char_stagger , spec_bdy_width, &
+                             ids, ide, jds, jde, kds, kde , &
+                             ims, ime, jms, jme, kms, kme , & 
+                             its, ite, jts, jte, kts, kte )
+ 
+ !  This routine puts the data in the 3d arrays into the proper locations
+ !  for the lateral boundary arrays.
+ 
+    USE module_state_description
+    
+    IMPLICIT NONE
+ 
+    INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
+    INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
+    INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
+    INTEGER , INTENT(IN) :: spec_bdy_width
+    REAL , DIMENSION(ims:ime,jms:jme,kms:kme) , INTENT(IN) :: data3d
+!    REAL , DIMENSION(:,:,:,:) , INTENT(OUT) :: space_bdy
+!    REAL , DIMENSION(ijds:ijde,kds:kde,spec_bdy_width,4,1) , INTENT(OUT) :: space_bdy
+    REAL , DIMENSION(jms:jme,kds:kde,spec_bdy_width) , INTENT(OUT) :: space_bdy_xs, space_bdy_xe
+    REAL , DIMENSION(ims:ime,kds:kde,spec_bdy_width) , INTENT(OUT) :: space_bdy_ys, space_bdy_ye
+    CHARACTER (LEN=1) , INTENT(IN) :: char_stagger
+ 
+    INTEGER :: i , ii , j , jj , k
+ 
+    !  There are four lateral boundary locations that are stored.
+ 
+    !  X start boundary
+ 
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    END IF
+ 
+    !  X end boundary
+ 
+    IF      ( char_stagger .EQ. 'U' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide,ite) , MAX(ide - spec_bdy_width + 1,its) , -1
+          ii = ide - i + 1
+          space_bdy_xe(j,k,ii) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    END IF
+ 
+    !  Y start boundary
+ 
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide,ite)
+          space_bdy_ys(i,k,j) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    END IF
+ 
+    !  Y end boundary
+ 
+    IF      ( char_stagger .EQ. 'V' ) THEN
+       DO k = kds , kde - 1
+       DO j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j + 1
+          space_bdy_ye(i,k,jj) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO k = kds , kde - 1
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,j,k)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,j,k)
+!        if (K .eq. 54 .and. I .eq. 369) then
+!	write(0,*) 'N bound i,k,jj,P_YEB,data3d,space_bdy: ', i,k,jj,P_YEB,data3d(I,j,k),space_bdy(i,k,jj,P_YEB,1)
+!	endif
+
+       END DO
+       END DO
+       END DO
+    END IF
+    
+ END SUBROUTINE stuff_bdy_ijk
+ 
+ SUBROUTINE stuff_bdytend_ijk ( data3dnew , data3dold , time_diff , &
+                             space_bdy_xs, space_bdy_xe, space_bdy_ys, space_bdy_ye, &
+                             char_stagger , &
+                             spec_bdy_width , &
+                             ids, ide, jds, jde, kds, kde , &
+                             ims, ime, jms, jme, kms, kme , & 
+                             its, ite, jts, jte, kts, kte )
+ 
+ !  This routine puts the tendency data into the proper locations
+ !  for the lateral boundary arrays.
+ 
+    USE module_state_description
+    
+    IMPLICIT NONE
+ 
+    INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
+    INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
+    INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
+    INTEGER , INTENT(IN) :: spec_bdy_width
+!    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN) :: data3dnew , data3dold
+    REAL , DIMENSION(ims:ime,jms:jme,kms:kme) , INTENT(IN) :: data3dnew , data3dold
+    REAL , DIMENSION(jms:jme,kds:kde,spec_bdy_width) , INTENT(OUT) :: space_bdy_xs, space_bdy_xe
+    REAL , DIMENSION(ims:ime,kds:kde,spec_bdy_width) , INTENT(OUT) :: space_bdy_ys, space_bdy_ye
+
+    CHARACTER (LEN=1) , INTENT(IN) :: char_stagger
+    REAL , INTENT(IN) :: time_diff ! seconds
+ 
+    INTEGER :: i , ii , j , jj , k
+ 
+    !  There are four lateral boundary locations that are stored.
+ 
+    !  X start boundary
+ 
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    END IF
+ 
+    !  X end boundary
+ 
+    IF      ( char_stagger .EQ. 'U' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide,ite) , MAX(ide - spec_bdy_width + 1,its) , -1
+          ii = ide - i + 1
+          space_bdy_xe(j,k,ii) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    END IF
+ 
+    !  Y start boundary
+ 
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide,ite)
+          space_bdy_ys(i,k,j) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    END IF
+ 
+    !  Y end boundary
+ 
+    IF      ( char_stagger .EQ. 'V' ) THEN
+       DO k = kds , kde - 1
+       DO j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j + 1
+          space_bdy_ye(i,k,jj) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO k = kds , kde - 1
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO k = kds , kde
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO k = kds , kde
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO k = kds , kde - 1
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
+!        if (K .eq. 54 .and. I .eq. 369) then
+!	write(0,*) 'N bound i,k,jj,data3dnew,data3dold: ', i,k,jj,data3dnew(I,j,k),data3dold(i,j,k)
+!	endif
+       END DO
+       END DO
+       END DO
+    END IF
+    
+ END SUBROUTINE stuff_bdytend_ijk
+
 END MODULE module_bc
 
 SUBROUTINE get_bdyzone_x ( bzx )
@@ -2612,4 +3023,3 @@ SUBROUTINE get_bdyzone ( bz)
   INTEGER bz
   bz = bdyzone
 END SUBROUTINE get_bdyzone
-

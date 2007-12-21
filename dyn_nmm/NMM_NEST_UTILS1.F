@@ -39,14 +39,14 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 !   BASIC TEST FOR PARENT DOMAIN: CHECK IF JMAX IS ODD. SINCE JDE IN THE NAMELIST
 !   IS JMAX + 1, WE NEED TO CHECK IF JDE IS EVEN IN WRF CONTEXT
 
-    IF(MOD(parent%ed33,2) .NE. 0)THEN
+    IF(MOD(parent%ed32,2) .NE. 0)THEN
      CALL wrf_error_fatal("PARENT DOMAIN: JMAX IS EVEN, INCREASE e_sn IN THE namelist.input BY 1")
     ENDIF
 
 !   BASIC TEST FOR NESTED DOMAIN: CHECK IF JMAX IS ODD. SINCE JDE IN THE NAMELIST
 !   IS JMAX + 1, WE NEED TO CHECK IF JDE IS EVEN IN WRF CONTEXT
 
-    IF(MOD(nest%ed33,2) .NE. 0)THEN
+    IF(MOD(nest%ed32,2) .NE. 0)THEN
      CALL wrf_error_fatal("NESTED DOMAIN: JMAX IS EVEN, INCREASE e_sn IN THE namelist.input BY 1")
     ENDIF
 
@@ -54,24 +54,24 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
     IDS = parent%sd31
     IDE = parent%ed31
-    KDS = parent%sd32
-    KDE = parent%ed32
-    JDS = parent%sd33
-    JDE = parent%ed33
+    JDS = parent%sd32
+    JDE = parent%ed32
+    KDS = parent%sd33
+    KDE = parent%ed33
 
     IMS = parent%sm31
     IME = parent%em31
-    KMS = parent%sm32
-    KME = parent%em32
-    JMS = parent%sm33
-    JME = parent%em33
+    JMS = parent%sm32
+    JME = parent%em32
+    KMS = parent%sm33
+    KME = parent%em33
 
     ITS = parent%sp31
     ITE = parent%ep31
-    KTS = parent%sp32
-    KTE = parent%ep32
-    JTS = parent%sp33
-    JTE = parent%ep33
+    JTS = parent%sp32
+    JTE = parent%ep32
+    KTS = parent%sp33
+    KTE = parent%ep33
 
 !   grid configuration
 
@@ -210,24 +210,24 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
     IDS = parent%sd31
     IDE = parent%ed31
-    KDS = parent%sd32
-    KDE = parent%ed32
-    JDS = parent%sd33
-    JDE = parent%ed33
+    JDS = parent%sd32
+    JDE = parent%ed32
+    KDS = parent%sd33
+    KDE = parent%ed33
 
     IMS = parent%sm31
     IME = parent%em31
-    KMS = parent%sm32
-    KME = parent%em32
-    JMS = parent%sm33
-    JME = parent%em33
+    JMS = parent%sm32
+    JME = parent%em32
+    KMS = parent%sm33
+    KME = parent%em33
 
     ITS  = parent%sp31
     ITE  = parent%ep31
-    KTS  = parent%sp32
-    KTE  = parent%ep32
-    JTS  = parent%sp33
-    JTE  = parent%ep33
+    JTS  = parent%sp32
+    JTE  = parent%ep32
+    KTS  = parent%sp33
+    KTE  = parent%ep33
 !
     parent_DLMD = parent%dx                ! DLMD: dlamda in degrees 
     parent_DPHD = parent%dy                ! DPHD: dphi in degrees 
@@ -247,24 +247,24 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
     IDS = nest%sd31
     IDE = nest%ed31
-    KDS = nest%sd32
-    KDE = nest%ed32
-    JDS = nest%sd33
-    JDE = nest%ed33
+    JDS = nest%sd32
+    JDE = nest%ed32
+    KDS = nest%sd33
+    KDE = nest%ed33
 
     IMS = nest%sm31
     IME = nest%em31
-    KMS = nest%sm32
-    KME = nest%em32
-    JMS = nest%sm33
-    JME = nest%em33
+    JMS = nest%sm32
+    JME = nest%em32
+    KMS = nest%sm33
+    KME = nest%em33
 
     ITS  = nest%sp31
     ITE  = nest%ep31
-    KTS  = nest%sp32
-    KTE  = nest%ep32
-    JTS  = nest%sp33
-    JTE  = nest%ep33
+    JTS  = nest%sp32
+    JTE  = nest%ep32
+    KTS  = nest%sp33
+    KTE  = nest%ep33
 !
     nest_DLMD = nest%dx
     nest_DPHD = nest%dy
@@ -1515,9 +1515,9 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
  REAL,       INTENT(IN   )                            :: PDTOP,PTOP
  REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
  REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QS
- REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(IN) :: PINT,T,Q,CWM
+ REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN) :: PINT,T,Q,CWM
  REAL, DIMENSION(KMS:KME),                 INTENT(OUT):: PSTD
- REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(OUT):: Z3d,Q3d,T3d
+ REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(OUT):: Z3d,Q3d,T3d
 
 ! local
 
@@ -1529,19 +1529,19 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
  REAL, PARAMETER                                      :: P_REF=103000.
  REAL                                                 :: A,B,APELP,RTOPP,DZ,ZMID
  REAL, DIMENSION(IMS:IME,JMS:JME)                     :: SLP,TSFC,ZMSLP
- REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME)             :: Z3d_IN
+ REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME)             :: Z3d_IN
  REAL,DIMENSION(JTB)                                  :: PIN,ZIN,Y2,PIO,ZOUT,DUM1,DUM2
  REAL,DIMENSION(JTB)                                  :: QIN,QOUT,TIN,TOUT
 !-------------------------------------------------------------------------------------- 
 
 !  CLEAN Z3D ARRAY FIRST
 
-    DO J = JTS, MIN(JTE,JDE-1)
-     DO K=KDS,KDE
+    DO K=KDS,KDE
+     DO J = JTS, MIN(JTE,JDE-1)
       DO I = ITS, MIN(ITE,IDE-1)
-       Z3d(I,K,J)=0.0
-       T3d(I,K,J)=0.0
-       Q3d(I,K,J)=0.0
+       Z3d(I,J,K)=0.0
+       T3d(I,J,K)=0.0
+       Q3d(I,J,K)=0.0
       ENDDO
      ENDDO
     ENDDO 
@@ -1551,18 +1551,18 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
 
     DO J = JTS, MIN(JTE,JDE-1)
       DO I = ITS, MIN(ITE,IDE-1)
-       Z3d_IN(I,1,J)=FIS(I,J)*GI
+       Z3d_IN(I,J,1)=FIS(I,J)*GI
       ENDDO
     ENDDO 
 
-    DO J = JTS, MIN(JTE,JDE-1)
-     DO K = KDS,KDE-1
+    DO K = KDS,KDE-1
+     DO J = JTS, MIN(JTE,JDE-1)
       DO I = ITS, MIN(ITE,IDE-1)
-        APELP    = (PINT(I,K+1,J)+PINT(I,K,J))
-!       RTOPP    = TRG*T(I,K,J)*(1.0+Q(I,K,J)*P608-CWM(I,K,J))/APELP
-        RTOPP    = TRG*T(I,K,J)*(1.0+Q(I,K,J)*P608)/APELP
+        APELP    = (PINT(I,J,K+1)+PINT(I,J,K))
+!       RTOPP    = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608-CWM(I,J,K))/APELP
+        RTOPP    = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608)/APELP
         DZ       = RTOPP*(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))   ! (RTv/P_TOT)*D(P_HYDRO)
-        Z3d_IN(I,K+1,J) = Z3d_IN(I,K,J) + DZ
+        Z3d_IN(I,J,K+1) = Z3d_IN(I,J,K) + DZ
 !       IF(I==2 .AND. J==2)WRITE(0,*)'INSIDE BASE_STATE',K,T(I,K,J)
       ENDDO
      ENDDO
@@ -1581,9 +1581,9 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
 
     DO J = JTS, MIN(JTE,JDE-1)
       DO I = ITS, MIN(ITE,IDE-1)
-        TSFC(I,J) = T(I,1,J)*(1.+D608*Q(I,1,J)) + LAPSR*(Z3d_IN(I,1,J)+Z3d_IN(I,2,J))*0.5
-        A         = LAPSR*Z3d_IN(I,1,J)/TSFC(I,J)
-        SLP(I,J)  = PINT(I,1,J)*(1-A)**COEF2    ! sea level pressure 
+        TSFC(I,J) = T(I,J,1)*(1.+D608*Q(I,J,1)) + LAPSR*(Z3d_IN(I,J,1)+Z3d_IN(I,J,2))*0.5
+        A         = LAPSR*Z3d_IN(I,J,1)/TSFC(I,J)
+        SLP(I,J)  = PINT(I,J,1)*(1-A)**COEF2    ! sea level pressure 
         B         = (PSTD(1)/SLP(I,J))**COEF3
         ZMSLP(I,J)= TSFC(I,J)*LAPSI*(1.0 - B)   ! Height at 1000. mb level
       ENDDO
@@ -1600,16 +1600,16 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
       PIN=0.;ZIN=0.;Y2=0;PIO=0.;ZOUT=0.;DUM1=0.;DUM2=0.
 
        DO K=KDS,KDE                           ! inputs at model interfaces 
-         PIN(K) = PINT(I,KDE-K+1,J)
-         ZIN(K) = Z3d_IN(I,KDE-K+1,J)
+         PIN(K) = PINT(I,J,KDE-K+1)
+         ZIN(K) = Z3d_IN(I,J,KDE-K+1)
        ENDDO
 
-       IF(PINT(I,1,J) .LE. PSTD(1))THEN
-          PIN(KDE) = PSTD(1)                 
-          ZIN(KDE) = ZMSLP(I,J)             
+       IF(PINT(I,J,1) .LE. PSTD(1))THEN
+          PIN(KDE) = PSTD(1)
+          ZIN(KDE) = ZMSLP(I,J)
        ENDIF
 !
-       Y2(1   )=0.
+       Y2(1  )=0.
        Y2(KDE)=0.
 !
        DO K=KDS,KDE
@@ -1620,9 +1620,9 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
 !
 
        DO K=KDS,KDE                           ! inputs at model interfaces
-         Z3d(I,K,J)=ZOUT(K)
+         Z3d(I,J,K)=ZOUT(K)
        ENDDO
-       
+
       ENDDO
     ENDDO
 !
@@ -1637,17 +1637,17 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
       PIN=0.;TIN=0.;Y2=0;PIO=0.;TOUT=0.;DUM1=0.;DUM2=0.
 
        DO K=KDS+1,KDE                           ! inputs at model levels
-         PIN(K-1) = EXP((ALOG(PINT(I,KDE-K+1,J))+ALOG(PINT(I,KDE-K+2,J)))*0.5)
-         TIN(K-1) = T(I,KDE-K+1,J)
+         PIN(K-1) = EXP((ALOG(PINT(I,J,KDE-K+1))+ALOG(PINT(I,J,KDE-K+2)))*0.5)
+         TIN(K-1) = T(I,J,KDE-K+1)
        ENDDO
 
-       IF(PINT(I,1,J) .LE. PSTD(1))THEN
+       IF(PINT(I,J,1) .LE. PSTD(1))THEN
          PIN(KDE-1) = EXP((ALOG(PSTD(1))+ALOG(PSTD(2)))*0.5)
-         ZMID     = 0.5*(Z3d_IN(I,1,J)+Z3d_IN(I,2,J))
-         TIN(KDE-1) = T(I,1,J) + LAPSR*(ZMID-ZMSLP(I,J)) 
+         ZMID     = 0.5*(Z3d_IN(I,J,1)+Z3d_IN(I,J,2))
+         TIN(KDE-1) = T(I,J,1) + LAPSR*(ZMID-ZMSLP(I,J))
        ENDIF
 !
-       Y2(1   )=0.
+       Y2(1    )=0.
        Y2(KDE-1)=0.
 !
        DO K=KDS,KDE-1
@@ -1658,7 +1658,7 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
 
 
        DO K=KDS,KDE-1                           ! inputs at model levels
-         T3d(I,K,J)=TOUT(K)
+         T3d(I,J,K)=TOUT(K)
        ENDDO
 
       ENDDO
@@ -1677,16 +1677,16 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
       PIN=0.;QIN=0.;Y2=0;PIO=0.;QOUT=0.;DUM1=0.;DUM2=0.
 
        DO K=KDS+1,KDE                           ! inputs at model levels
-         PIN(K-1) = EXP((ALOG(PINT(I,KDE-K+1,J))+ALOG(PINT(I,KDE-K+2,J)))*0.5)
-         QIN(K-1) = Q(I,KDE-K+1,J)
+         PIN(K-1) = EXP((ALOG(PINT(I,J,KDE-K+1))+ALOG(PINT(I,J,KDE-K+2)))*0.5)
+         QIN(K-1) = Q(I,J,KDE-K+1)
        ENDDO
 
-       IF(PINT(I,1,J) .LE. PSTD(1))THEN
+       IF(PINT(I,J,1) .LE. PSTD(1))THEN
           PIN(KDE-1) = EXP((ALOG(PSTD(1))+ALOG(PSTD(2)))*0.5)
 !         QIN(KDE-1) =  QS(I,J)
        ENDIF
 
-       Y2(1   )=0.
+       Y2(1    )=0.
        Y2(KDE-1)=0.
 !
        DO K=KDS,KDE-1
@@ -1696,7 +1696,7 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
        CALL SPLINE1(I,J,JTB,KDE-1,PIN,QIN,Y2,KDE-1,PIO,QOUT,DUM1,DUM2)  ! interpolate
 
        DO K=KDS,KDE-1                          ! inputs at model levels
-         Q3d(I,K,J)=QOUT(K)
+         Q3d(I,J,K)=QOUT(K)
        ENDDO
 
       ENDDO
@@ -1908,24 +1908,24 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
       IDS = nest%sd31
       IDE = nest%ed31
-      KDS = nest%sd32
-      KDE = nest%ed32
-      JDS = nest%sd33
-      JDE = nest%ed33
+      JDS = nest%sd32
+      JDE = nest%ed32
+      KDS = nest%sd33
+      KDE = nest%ed33
 
       IMS = nest%sm31
       IME = nest%em31
-      KMS = nest%sm32
-      KME = nest%em32
-      JMS = nest%sm33
-      JME = nest%em33
+      JMS = nest%sm32
+      JME = nest%em32
+      KMS = nest%sm33
+      KME = nest%em33
 
       ITS = nest%sp31
       ITE = nest%ep31
-      KTS = nest%sp32
-      KTE = nest%ep32
-      JTS = nest%sp33
-      JTE = nest%ep33
+      JTS = nest%sp32
+      JTE = nest%ep32
+      KTS = nest%sp33
+      KTE = nest%ep33
 
       i_parent_start = nest%i_parent_start
       j_parent_start = nest%j_parent_start
@@ -2142,7 +2142,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
             avc_nest(im,j)=0.25*(avc_nest(im-1,j-1)+avc_nest(im,j-1)+ &
            &                     avc_nest(im-1,j+1)+avc_nest(im,j+1))
         enddo
-        
+
         DO J = 1,NNYP
          DO I = 1,NNXP
             DATA1(I,J) = 9.81*avc_nest(I,J)
@@ -2485,24 +2485,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 !-----------  END OF LAND SURFACE INITIALIZATION -------------------------------------
 !
-!   INITIALIZE 3D HEIGHT MASK AND VELOCITY FIELDS (HTM AND VTM),
-!   AND LOWEST ABV GROUND LEVEL (LMH AND LMV) AND RECIPROCAL 
-!   ETAS (RES) OVER THE NESTED DOMAIN  
-
-
-    DO J = JTS, MIN(JTE,JDE-1)
-     DO K = KTS,KTE
-      DO I = ITS, MIN(ITE,IDE-1)
-       HTM(I,K,J)=1.0
-       VTM(I,K,J)=1.0
-      ENDDO
-     ENDDO
-    ENDDO
-
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
-       LMH(I,J)= KME-1        ! note the flipping for start_domain_nmm.F
-       LMV(I,J)= KME-1        ! this is consistent with Tom's version
        RES(I,J)=1.
      ENDDO
     ENDDO
@@ -2792,8 +2776,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
          DO K=KDS,KDE-1                                         !  
           DO J=JDS,JDE-1,2                                      !  V  [H]    V    H
            IF (J .ge. JTS .and. J .le. JTE) THEN                !
-             U(IDE-1,K,J)=0.                                    !  H  [x]    H    V
-             V(IDE-1,K,J)=0.                                    !  ------    ------  
+             U(IDE-1,J,K)=0.                                    !  H  [x]    H    V
+             V(IDE-1,J,K)=0.                                    !  ------    ------  
            ENDIF                                                !   ide-1      ide
           ENDDO                                                 !   NMM/SI     WRF
          ENDDO                                                  !   domain    domain
@@ -3020,24 +3004,24 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
 
     IDS = parent%sd31
     IDE = parent%ed31
-    KDS = parent%sd32
-    KDE = parent%ed32
-    JDS = parent%sd33
-    JDE = parent%ed33
+    JDS = parent%sd32
+    JDE = parent%ed32
+    KDS = parent%sd33
+    KDE = parent%ed33
 
     IMS = parent%sm31
     IME = parent%em31
-    KMS = parent%sm32
-    KME = parent%em32
-    JMS = parent%sm33
-    JME = parent%em33
+    JMS = parent%sm32
+    JME = parent%em32
+    KMS = parent%sm33
+    KME = parent%em33
 
     ITS  = parent%sp31
     ITE  = parent%ep31
-    KTS  = parent%sp32
-    KTE  = parent%ep32
-    JTS  = parent%sp33
-    JTE  = parent%ep33
+    JTS  = parent%sp32
+    JTE  = parent%ep32
+    KTS  = parent%sp33
+    KTE  = parent%ep33
 
     NIDE = nest%ed31
     NJDE = nest%ed33
@@ -3106,6 +3090,23 @@ END SUBROUTINE initial_nest_pivot
 !============================================================================================
 #endif
 
+LOGICAL FUNCTION nmm_cd_feedback_mask_orig( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
+   INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
+   LOGICAL, INTENT(IN) :: xstag, ystag
+
+   INTEGER ioff, joff
+
+   ioff = 0 ; joff = 0
+   IF ( xstag  ) ioff = 1
+   IF ( ystag  ) joff = 1
+
+   nmm_cd_feedback_mask_orig = ( pig .ge. ips_save+1        .and.      &
+                            pjg .ge. jps_save+1        .and.      &
+                            pig .le. ipe_save-1  +ioff .and.      &
+                            pjg .le. jpe_save-1  +joff           )
+
+END FUNCTION nmm_cd_feedback_mask_orig
+
 LOGICAL FUNCTION nmm_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
    INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
    LOGICAL, INTENT(IN) :: xstag, ystag
@@ -3116,12 +3117,30 @@ LOGICAL FUNCTION nmm_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, 
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 
-   nmm_cd_feedback_mask = ( pig .ge. ips_save+1        .and.      &
-                            pjg .ge. jps_save+1        .and.      &
-                            pig .le. ipe_save-1  +ioff .and.      &
-                            pjg .le. jpe_save-1  +joff           )
+   nmm_cd_feedback_mask = ( pig .ge. ips_save+1 .and. &
+                            pjg .ge. jps_save+2 .and. &
+                            pig .le. ipe_save-1-mod(pjg-jps_save,2) .and. &
+                            pjg .le. jpe_save-2 )
 
 END FUNCTION nmm_cd_feedback_mask
+
+LOGICAL FUNCTION nmm_cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
+   INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
+   LOGICAL, INTENT(IN) :: xstag, ystag
+
+   INTEGER ioff, joff
+
+   ioff = 0 ; joff = 0
+   IF ( xstag  ) ioff = 1
+   IF ( ystag  ) joff = 1
+   
+   nmm_cd_feedback_mask_v = ( pig .ge. ips_save+1 .and. &
+                            pjg .ge. jps_save+2 .and. &
+                            pig .le. ipe_save-1-mod(pjg-jps_save+1,2) .and. &
+                            pjg .le. jpe_save-2 )
+
+END FUNCTION nmm_cd_feedback_mask_v
+
 
 !----------------------------------------------------------------------------
 #else

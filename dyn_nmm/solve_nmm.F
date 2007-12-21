@@ -7,7 +7,7 @@
 #include "nmm_loop_macros.h"
 !-----------------------------------------------------------------------
 !
-      SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS                           &
+      SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS                            &
 !
 #include "nmm_dummy_args.inc"
 !
@@ -27,7 +27,7 @@
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
-      USE MODULE_NEST_UTIL
+      USE MODULE_NEST_UTIL     ! USEs module_MPP (contains MYPE,NPES,MPI_COMM_COMP)
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
@@ -75,28 +75,36 @@
      &          ,IPS,IPE,JPS,JPE,KPS,KPE                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE
 !
-      INTEGER :: I,ICLTEND,IDF,IJDE,IJDS,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
-     &          ,NTSD_current
+      INTEGER :: I,ICLTEND,IDF,IRTN,J,JC,JDF,K,KDF,LB,N_MOIST &
+     &          ,NTSD_current,L
+      integer :: ierr
       INTEGER,SAVE :: NTSD_restart
-!dusan      INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
+!     INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
       INTEGER :: MYPROC
       INTEGER :: KVH,NTSD_rad,RC
-      REAL :: WC, QI, QR, QW, FICE, FRAIN
       INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
 !
-      CHARACTER*80 :: MESSAGE
+      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC
 !
-!  For precip assimilation:
+      LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS
+!
+      CHARACTER(80) :: MESSAGE
+!
+!***  For precip assimilation:
       INTEGER :: ISTAT
       REAL,ALLOCATABLE,SAVE,DIMENSION(:,:,:) :: PPTDAT
-
-!  For physics compatibility with other packages
+#ifdef WRF_CHEM
+      REAL,ALLOCATABLE,DIMENSION(:,:,:,:) :: CHEM_TRANS
+#endif
+!
+!-----------------------------------------------------------------------
+!***  For physics compatibility with other packages
+!-----------------------------------------------------------------------
+!
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: TTEN,QTEN
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RTHRATEN,RTHBLTEN,RQVBLTEN
 !
-      REAL :: DT_INV,GPS
-!
-      LOGICAL :: LAST_TIME
+!-----------------------------------------------------------------------
 !
       LOGICAL wrf_dm_on_monitor
       EXTERNAL wrf_dm_on_monitor
@@ -120,7 +128,6 @@
       external rsl_internal_milliclock
 # define timef rsl_internal_milliclock
 #else
-!     real*8,dimension(1) :: timef
       real*8 :: timef
 #endif
 !-----------------------------------------------------------------------
@@ -186,6 +193,27 @@
 !***  SEE: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
 !
       CALL SET_TILES(GRID,IDS,IDE,JDS,JDE,IPS,IPE,JPS,JPE)
+!
+!-----------------------------------------------------------------------
+!***  SET FLAG FOR THE OPERATIONAL PHYSICS SUITE.
+!***  THIS WILL BE USED TO SAVE CLOCKTIME BY SKIPPING
+!***  FREQUENT UPDATES OF THE MOIST ARRAY AND INSTEAD
+!***  UPDATE IT ONLY WHEN IT IS NEEDED FOR PHYSICS.
+!-----------------------------------------------------------------------
+!
+      OPERATIONAL_PHYSICS=.FALSE.
+!
+      IF(CONFIG_FLAGS%RA_SW_PHYSICS    ==GFDLSWSCHEME.AND.              &
+     &   CONFIG_FLAGS%RA_LW_PHYSICS    ==GFDLLWSCHEME.AND.              &
+     &   CONFIG_FLAGS%SF_SFCLAY_PHYSICS==MYJSFCSCHEME.AND.              &
+     &   CONFIG_FLAGS%BL_PBL_PHYSICS   ==MYJPBLSCHEME.AND.              &
+     &   CONFIG_FLAGS%CU_PHYSICS       ==BMJSCHEME.AND.                 &
+     &   CONFIG_FLAGS%MP_PHYSICS       ==ETAMPNEW)THEN
+!
+        OPERATIONAL_PHYSICS=.TRUE.
+!
+      ENDIF
+!
 !-----------------------------------------------------------------------
 !
 !***  TTEN, QTEN are used by GD convection scheme
@@ -195,24 +223,25 @@
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
-!
 #ifdef WRF_CHEM
+  ALLOCATE(CHEM_TRANS(IMS:IME,JMS:JME,KMS:KME,1:NUM_CHEM),STAT=ISTAT)
   NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
 #endif
-      DO J=JMS,JME
-      DO K=KMS,KME
-      DO I=IMS,IME
-        TTEN(I,K,J)=T(I,K,J)
-        QTEN(I,K,J)=Q(I,K,J)
-      ENDDO
-      ENDDO
-      ENDDO
+!
+      IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME)THEN
+        DO J=JMS,JME
+        DO K=KMS,KME
+        DO I=IMS,IME
+          TTEN(I,K,J)=T(I,J,K)
+          QTEN(I,K,J)=Q(I,J,K)
+        ENDDO
+        ENDDO
+        ENDDO
+      ENDIF
 !
       GRID%SIGMA=1 
       HYDRO=.FALSE.
 !
-      IJDS=MIN(IDS,JDS)
-      IJDE=MAX(IDE,JDE)
 !
       IDF=IDE-1
       JDF=JDE-1
@@ -316,7 +345,7 @@
       IF(NTSD_current==0)THEN
         IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
           IHRST=NSTART_HOUR
-          NTSD_restart=NTSD+1
+          NTSD_restart=NTSD
         ELSE
           IHRST=GRID%GMT
           NSTART_HOUR=IHRST
@@ -329,11 +358,11 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(WRF_DM_ON_MONITOR() )THEN
+!!!!! IF(WRF_DM_ON_MONITOR() )THEN
         WRITE(MESSAGE,125)NTSD,NTSD*GRID%DT/3600.
   125   FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
         CALL WRF_MESSAGE(TRIM(MESSAGE))
-      ENDIF
+!!!!  ENDIF
 !
 !-----------------------------------------------------------------------
 !
@@ -354,14 +383,20 @@
 
       IF(GRID%ID/=1)THEN
 !
-        CALL NESTBC_PATCH (PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                                    &
-                          ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                             &
-                          ,PDNEST_B,TNEST_B,QNEST_B,UNEST_B,VNEST_B,Q2NEST_B,CWMNEST_B        &
-                          ,PDNEST_BT,TNEST_BT,QNEST_BT,UNEST_BT,VNEST_BT,Q2NEST_BT,CWMNEST_BT &
-                          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                                      &
-                          ,IDS,IDF,JDS,JDF,KDS,KDE                                            &
-                          ,IMS,IME,JMS,JME,KMS,KME                                            &
-                          ,ITS,ITE,JTS,JTE,KTS,KTE                                            )
+        CALL NESTBC_PATCH (PD_BXS,PD_BXE,PD_BYS,PD_BYE,T_BXS,T_BXE,T_BYS,T_BYE,Q_BXS,Q_BXE         &
+                          ,Q_BYS,Q_BYE,U_BXS,U_BXE,U_BYS,U_BYE,V_BXS,V_BXE,V_BYS,V_BYE             &
+                          ,Q2_BXS,Q2_BXE,Q2_BYS,Q2_BYE,CWM_BXS,CWM_BXE,CWM_BYS,CWM_BYE             &
+                          ,PD_BTXS,PD_BTXE,PD_BTYS,PD_BTYE,T_BTXS,T_BTXE,T_BTYS,T_BTYE             &
+                          ,Q_BTXS,Q_BTXE,Q_BTYS,Q_BTYE,U_BTXS,U_BTXE,U_BTYS,U_BTYE                 &
+                          ,V_BTXS,V_BTXE,V_BTYS,V_BTYE,Q2_BTXS,Q2_BTXE,Q2_BTYS,Q2_BTYE             &
+                          ,CWM_BTXS,CWM_BTXE,CWM_BTYS,CWM_BTYE,PDNEST_B,TNEST_B,QNEST_B,UNEST_B    &
+                          ,VNEST_B,Q2NEST_B,CWMNEST_B,PDNEST_BT,TNEST_BT,QNEST_BT                  &
+                          ,UNEST_BT,VNEST_BT,Q2NEST_BT,CWMNEST_BT                                  &
+                          ,GRID%SPEC_BDY_WIDTH                                                     &
+                          ,IDS,IDF,JDS,JDF,KDS,KDE                                                 &
+                          ,IMS,IME,JMS,JME,KMS,KME                                                 &
+                          ,ITS,ITE,JTS,JTE,KTS,KTE                                                 )
+
         CALL wrf_debug ( 100 , 'nmm: out of patch' )
 !
 #ifdef MOVE_NESTS
@@ -421,7 +456,8 @@
      &            ,ACFRST,NCFRST,ACFRCV,NCFRCV                          &
      &            ,AVCNVC,AVRAIN,TCUCN,TRAIN                            &
      &            ,ASRFC                                                &
-     &            ,T,TLMAX,TLMIN                                        &
+     &            ,T,TLMAX,TLMIN,TSHLTR,PSHLTR,QSHLTR                   &
+     &            ,T02_MAX,T02_MIN,RH02_MAX,RH02_MIN                    &
      &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &
      &            ,IMS,IME,JMS,JME,KMS,KME                              &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -437,11 +473,13 @@
 #    include "HALO_NMM_A.inc"
 #endif
 !
+!-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
       IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif
+!-----------------------------------------------------------------------
 !
 !***  Only for chemistry:
 !
@@ -490,13 +528,12 @@
 !
       CALL PDTE(                                                        &
 #ifdef DM_PARALLEL
-     &            GRID,                                                 &
+     &            GRID,MYPE,MPI_COMM_COMP                               &
 #endif
-     &            NTSD,GRID%DT,PT,ETA2,RES,HYDRO                        &
-     &           ,HTM,HBM2                                              &
+     &           ,NTSD,GRID%DT,PT,ETA2,RES,HYDRO,HBM2                   &
      &           ,PD,PDSL,PDSLO                                         &
      &           ,PETDT,DIV,PSDT                                        &
-     &           ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
+     &           ,IHE,IHW,IVE,IVW                                       &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &           ,IMS,IME,JMS,JME,KMS,KME                               &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -519,12 +556,11 @@
 !     call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max             &
 !    &                  ,mpi_comm_comp,irtn)
 !     exch_tim_max=exch_tim_max+et_max
-!
       btimx=timef()
 !
       CALL ADVE(NTSD,GRID%DT,DETA1,DETA2,PDTOP                          &
      &         ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX_NMM,DY_NMM      &
-     &         ,HTM,HBM2,VTM,VBM2,LMH,LMV                               &
+     &         ,HBM2,VBM2                                               &
      &         ,T,U,V,PDSLO,TOLD,UOLD,VOLD                              &
      &         ,PETDT,UPSTRM                                            &
      &         ,FEW,FNS,FNE,FSE                                         &
@@ -532,7 +568,7 @@
      &         ,N_IUP_H,N_IUP_V                                         &
      &         ,N_IUP_ADH,N_IUP_ADV                                     &
      &         ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                             &
-     &         ,IHE,IHW,IVE,IVW,INDX3_WRK                               &
+     &         ,IHE,IHW,IVE,IVW                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -550,10 +586,10 @@
      &          GRID,                                                   &
 #endif
      &          NTSD,GRID%DT,PT,ETA2                                    &
-     &         ,HTM,HBM2,EF4T                                           &
+     &         ,HBM2,EF4T                                               &
      &         ,T,DWDT,RTOP,OMGALF                                      &
      &         ,PINT,DIV,PSDT,RES                                       &
-     &         ,IHE,IHW,IVE,IVW,INDX3_WRK                               &
+     &         ,IHE,IHW,IVE,IVW                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -566,11 +602,11 @@
 !
       btimx=timef()
 !
-      CALL VADZ(NTSD,GRID%DT,FIS,GRID%SIGMA,DFL,HTM,HBM2                &
+      CALL VADZ(NTSD,GRID%DT,FIS,GRID%SIGMA,DFL,HBM2                    &
      &         ,DETA1,DETA2,PDTOP                                       &
      &         ,PINT,PDSL,PDSLO,PETDT                                   &
      &         ,RTOP,T,Q,CWM,Z,W,DWDT,PDWDT                             &
-     &         ,IHE,IHW,IVE,IVW,INDX3_WRK                               &
+     &         ,IHE,IHW,IVE,IVW                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -595,11 +631,11 @@
 !
       btimx=timef()
 !
-      CALL HADZ(NTSD,GRID%DT,HYDRO,HTM,HBM2,DETA1,DETA2,PDTOP           &
+      CALL HADZ(NTSD,GRID%DT,HYDRO,HBM2,DETA1,DETA2,PDTOP               &
      &         ,DX_NMM,DY_NMM,FAD                                       &
      &         ,FEW,FNS,FNE,FSE                                         &
      &         ,PDSL,U,V,W,Z                                            &
-     &         ,IHE,IHW,IVE,IVW,INDX3_WRK                               &
+     &         ,IHE,IHW,IVE,IVW                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
      &         ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -626,12 +662,12 @@
 !
       CALL EPS(NTSD,GRID%DT,HYDRO,DX_NMM,DY_NMM,FAD                     &
      &        ,DETA1,DETA2,PDTOP,PT                                     &
-     &        ,HTM,HBM2,HBM3,LMH                                        &
+     &        ,HBM2,HBM3                                                &
      &        ,PDSL,PDSLO,PINT,RTOP,PETDT,PDWDT                         &
      &        ,DWDT,DWDTMN,DWDTMX                                       &
      &        ,FNS,FEW,FNE,FSE                                          &
      &        ,T,U,V,W,Q,CWM                                            &
-     &        ,IHE,IHW,IVE,IVW,INDX3_WRK                                &
+     &        ,IHE,IHW,IVE,IVW                                          &
      &        ,IDS,IDF,JDS,JDF,KDS,KDE                                  &
      &        ,IMS,IME,JMS,JME,KMS,KME                                  &
      &        ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -647,13 +683,12 @@
 !
         vad2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
           CALL VAD2(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM               &
-     &             ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                  &
-     &             ,HBM2,LMH                                            &
+     &             ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP,HBM2             &
      &             ,Q,Q2,CWM,PETDT                                      &
      &             ,N_IUP_H,N_IUP_V                                     &
      &             ,N_IUP_ADH,N_IUP_ADV                                 &
      &             ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                         &
-     &             ,IHE,IHW,IVE,IVW,INDX3_WRK                           &
+     &             ,IHE,IHW,IVE,IVW                                     &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &             ,IMS,IME,JMS,JME,KMS,KME                             &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -661,12 +696,12 @@
         ELSE vad2_micro_check
           CALL VAD2_SCAL(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM          &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP             &
-     &                  ,HBM2,LMH                                       &
+     &                  ,HBM2                                           &
      &                  ,Q2,PETDT                                       &
      &                  ,N_IUP_H,N_IUP_V                                &
      &                  ,N_IUP_ADH,N_IUP_ADV                            &
      &                  ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                    &
-     &                  ,IHE,IHW,IVE,IVW,INDX3_WRK                      &
+     &                  ,IHE,IHW,IVE,IVW                                &
      &                  ,1,1                                            &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
@@ -674,12 +709,12 @@
      
           CALL VAD2_SCAL(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM          &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP             &
-     &                  ,HBM2,LMH                                       &
+     &                  ,HBM2                                           &
      &                  ,MOIST,PETDT                                    &
      &                  ,N_IUP_H,N_IUP_V                                &
      &                  ,N_IUP_ADH,N_IUP_ADV                            &
      &                  ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                    &
-     &                  ,IHE,IHW,IVE,IVW,INDX3_WRK                      &
+     &                  ,IHE,IHW,IVE,IVW                                &
      &                  ,NUM_MOIST,2                                    &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
@@ -687,22 +722,22 @@
 !
           CALL VAD2_SCAL(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM          &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP             &
-     &                  ,HBM2,LMH                                       &
+     &                  ,HBM2                                           &
      &                  ,SCALAR,PETDT                                   &
      &                  ,N_IUP_H,N_IUP_V                                &
      &                  ,N_IUP_ADH,N_IUP_ADV                            &
      &                  ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                    &
-     &                  ,IHE,IHW,IVE,IVW,INDX3_WRK                      &
+     &                  ,IHE,IHW,IVE,IVW                                &
      &                  ,NUM_SCALAR,2                                   &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 
-          DO J=MYJS,MYJE
           DO K=KTS,KTE
-          DO i=MYIS,MYIE
-            Q(I,K,J)=MOIST(I,K,J,P_QV)/(1.+MOIST(I,K,J,P_QV))
+          DO J=MYJS,MYJE
+          DO I=MYIS,MYIE
+            Q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))
           ENDDO
           ENDDO   
           ENDDO   
@@ -723,14 +758,25 @@
         btimx=timef()
 #endif
 !
+        DO L=1,NUM_CHEM
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
+           CHEM_TRANS(I,J,K,L)=CHEM(I,K,J,L)
+        ENDDO
+        ENDDO
+        ENDDO
+        ENDDO
+
+         
         CALL VAD2_SCAL(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM            &
      &           ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                    &
-     &           ,HBM2,LMH                                              &
-     &           ,CHEM,PETDT                                            & 
+     &           ,HBM2                                                  &
+     &           ,CHEM_TRANS,PETDT                                            & 
      &           ,N_IUP_H,N_IUP_V                                       &
      &           ,N_IUP_ADH,N_IUP_ADV                                   &
      &           ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                           &
-     &           ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
+     &           ,IHE,IHW,IVE,IVW                                       &
      &           ,NUM_CHEM,1                                            & 
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &           ,IMS,IME,JMS,JME,KMS,KME                               &
@@ -775,56 +821,63 @@
 #endif
      &              NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM              &
      &             ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                 &
-     &             ,HTM,HBM2,HBM3,LMH                                  &
+     &             ,HBM2,HBM3                                          &
      &             ,Q,Q2,CWM,U,V,Z,HYDRO                               &
      &             ,N_IUP_H,N_IUP_V                                    &
      &             ,N_IUP_ADH,N_IUP_ADV                                &
      &             ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                        &
-     &             ,IHE,IHW,IVE,IVW,INDX3_WRK                          &
+     &             ,IHE,IHW,IVE,IVW                                    &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
-!***  UPDATE MOIST ARRAY
+!***  UPDATE MOIST ARRAY.
+!***  REMEMBER THAT MOIST IS ONLY USED WITH THE PHYSICS AND THUS
+!***  THE P_QV SLOT (=2) IS MIXING RATIO, NOT SPECIFIC HUMIDITY.
+!***  ALTHOUGH MOIST IS ONLY USED FOR PHYSICS IN OPERATIONS, IT IS 
+!***  UPDATED HERE FROM Q EVERY ADVECTION TIMESTEP FOR NON-OPERATIONAL
+!***  CONFIGURATIONS WHERE IT MAY BE USED OUTSIDE OF THE PHYSICS.
 !
-          DO J=MYJS,MYJE
-          DO K=KTS,KTE
-          DO I=MYIS,MYIE
-            MOIST(I,K,J,P_QV)=Q(I,K,J)/(1.-Q(I,K,J))
-            WC = CWM(I,K,J)
-            QI = 0.
-            QR = 0.
-            QW = 0.
-            FICE=F_ICE(I,K,J)
-            FRAIN=F_RAIN(I,K,J)
+          IF(.NOT.OPERATIONAL_PHYSICS)THEN
+            DO K=KTS,KTE
+            DO J=MYJS,MYJE
+            DO I=MYIS,MYIE
+              MOIST(I,J,K,P_QV)=Q(I,J,K)/(1.-Q(I,J,K))
+              WC = CWM(I,J,K)
+              QI = 0.
+              QR = 0.
+              QW = 0.
+              FICE=F_ICE(I,K,J)
+              FRAIN=F_RAIN(I,K,J)
 !
-            IF(FICE>=1.)THEN
-              QI=WC
-            ELSEIF(FICE<=0.)THEN
-              QW=WC
-            ELSE
-              QI=FICE*WC
-              QW=WC-QI
-            ENDIF
-!
-            IF(QW>0..AND.FRAIN>0.)THEN
-              IF(FRAIN>=1.)THEN
-                QR=QW
-                QW=0.
+              IF(FICE>=1.)THEN
+                QI=WC
+              ELSEIF(FICE<=0.)THEN
+                QW=WC
               ELSE
-                QR=FRAIN*QW
-                QW=QW-QR
+                QI=FICE*WC
+                QW=WC-QI
               ENDIF
-            ENDIF
 !
-            MOIST(I,K,J,P_QC)=QW
-            MOIST(I,K,J,P_QR)=QR
-            MOIST(I,K,J,P_QI)=0.
-            MOIST(I,K,J,P_QS)=QI
-            MOIST(I,K,J,P_QG)=0.
-          ENDDO
-          ENDDO
-          ENDDO
+              IF(QW>0..AND.FRAIN>0.)THEN
+                IF(FRAIN>=1.)THEN
+                  QR=QW
+                  QW=0.
+                ELSE
+                  QR=FRAIN*QW
+                  QW=QW-QR
+                ENDIF
+              ENDIF
+!
+              MOIST(I,J,K,P_QC)=QW
+              MOIST(I,J,K,P_QR)=QR
+              MOIST(I,J,K,P_QI)=0.
+              MOIST(I,J,K,P_QS)=QI
+              MOIST(I,J,K,P_QG)=0.
+            ENDDO
+            ENDDO
+            ENDDO
+          ENDIF
 !
 !-----------------------------------------------------------------------
         ELSE had2_micro_check
@@ -836,12 +889,12 @@
 #endif        
      &                   NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM         &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP            &
-     &                  ,HTM,HBM2,HBM3,LMH                             &
+     &                  ,HBM2,HBM3                                     &
      &                  ,Q2,U,V,Z,HYDRO                                &
      &                  ,N_IUP_H,N_IUP_V                               &
      &                  ,N_IUP_ADH,N_IUP_ADV                           &
      &                  ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                   &
-     &                  ,IHE,IHW,IVE,IVW,INDX3_WRK                     &
+     &                  ,IHE,IHW,IVE,IVW                               &
      &                  ,1,1                                           &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
@@ -853,12 +906,12 @@
 #endif
      &                   NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM         &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP            &
-     &                  ,HTM,HBM2,HBM3,LMH                             &
+     &                  ,HBM2,HBM3                                     &
      &                  ,MOIST,U,V,Z,HYDRO                             &
      &                  ,N_IUP_H,N_IUP_V                               &
      &                  ,N_IUP_ADH,N_IUP_ADV                           &
      &                  ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                   &
-     &                  ,IHE,IHW,IVE,IVW,INDX3_WRK                     &
+     &                  ,IHE,IHW,IVE,IVW                               &
      &                  ,NUM_MOIST,2                                   &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
@@ -870,21 +923,21 @@
 #endif
      &                   NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM         &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP            &
-     &                  ,HTM,HBM2,HBM3,LMH                             &
+     &                  ,HBM2,HBM3                                     &
      &                  ,SCALAR,U,V,Z,HYDRO                            &
      &                  ,N_IUP_H,N_IUP_V                               &
      &                  ,N_IUP_ADH,N_IUP_ADV                           &
      &                  ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                   &
-     &                  ,IHE,IHW,IVE,IVW,INDX3_WRK                     &
+     &                  ,IHE,IHW,IVE,IVW                               &
      &                  ,NUM_SCALAR,2                                  &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)                             
 !    
-          DO J=MYJS,MYJE
           DO K=KTS,KTE 
+          DO J=MYJS,MYJE
           DO I=MYIS,MYIE
-            Q(I,K,J)=MOIST(I,K,J,P_QV)/(1.+MOIST(I,K,J,P_QV))           
+            Q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))           
           ENDDO
           ENDDO    
           ENDDO   
@@ -920,19 +973,29 @@
 #endif
      &                 NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM           &
      &                ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP              &
-     &                ,HTM,HBM2,HBM3,LMH                               &
-     &                ,CHEM,U,V,Z,HYDRO                                &
+     &                ,HBM2,HBM3                                       &
+     &                ,CHEM_TRANS,U,V,Z,HYDRO                                &
      &                ,N_IUP_H,N_IUP_V                                 &
      &                ,N_IUP_ADH,N_IUP_ADV                             &
      &                ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                     &
-     &                ,IHE,IHW,IVE,IVW,INDX3_WRK                       &
+     &                ,IHE,IHW,IVE,IVW                                 &
      &                ,NUM_CHEM,1                                      &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                         &
      &                ,IMS,IME,JMS,JME,KMS,KME                         &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 
       ENDIF
+        DO L=1,NUM_CHEM
+        DO J=JMS,JME
+        DO K=KMS,KME
+        DO I=IMS,IME
+           CHEM(I,K,J,L)=CHEM_TRANS(I,J,K,L)
+        ENDDO
+        ENDDO
+        ENDDO
+        ENDDO
 #endif
+
 !
 !----------------------------------------------------------------------
 !***  RADIATION
@@ -956,7 +1019,14 @@
 !
       IF(MOD(NTSD_rad,GRID%NRADS)==0.OR.                               &
      &   MOD(NTSD_rad,GRID%NRADL)==0)THEN
+!
         btimx=timef()
+        IF(OPERATIONAL_PHYSICS)THEN
+          CALL UPDATE_MOIST(MOIST,Q,CWM,F_ICE,F_RAIN,N_MOIST           &
+     &                     ,IDS,IDF,JDS,JDF,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE)
+        ENDIF
 !
         CALL RADIATION(NTSD_rad,GRID%DT,GRID%JULDAY,GRID%JULYR         &
      &                ,GRID%XTIME,GRID%JULIAN                          &
@@ -968,7 +1038,7 @@
 #ifdef WRF_CHEM
      &                ,GD_CLOUD,GD_CLOUD2                              &
 #endif
-     &                ,SM,HBM2,LMH,CLDFRA,N_MOIST,RESTRT               &
+     &                ,SM,HBM2,CLDFRA,N_MOIST,RESTRT                   &
      &                ,RLWTT,RSWTT,RLWIN,RSWIN,RSWINC,RSWOUT           &
      &                ,RLWTOA,RSWTOA,CZMEAN                            &
      &                ,CFRACL,CFRACM,CFRACH,SIGT4                      &
@@ -1008,7 +1078,7 @@
       btimx=timef()
 !
       CALL RDTEMP(NTSD,GRID%DT,GRID%JULDAY,GRID%JULYR,IHRST,GLAT,GLON  &
-     &           ,CZEN,CZMEAN,T,RSWTT,RLWTT,HTM,HBM2                   &
+     &           ,CZEN,CZMEAN,T,RSWTT,RLWTT,HBM2                       &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1023,14 +1093,22 @@
 !
         btimx=timef()
 !
+        IF(OPERATIONAL_PHYSICS                                         &
+     &    .AND.MOD(NTSD_rad,GRID%NRADS)/=0                             &
+     &    .AND.MOD(NTSD_rad,GRID%NRADL)/=0)THEN
+          CALL UPDATE_MOIST(MOIST,Q,CWM,F_ICE,F_RAIN,N_MOIST           &
+     &                     ,IDS,IDF,JDS,JDF,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE)
+        ENDIF
+!
         CALL TURBL(NTSD,GRID%DT,GRID%NPHS,RESTRT                       &
      &            ,N_MOIST,GRID%NUM_SOIL_LAYERS,SLDPTH,DZSOIL          &
      &            ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT          &
-!    &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFL                 &
-     &            ,SM,LMH,HTM,VTM,HBM2,VBM2,DX_NMM,DFRLG               &
+     &            ,SM,HBM2,VBM2,DX_NMM,DFRLG                           &
      &            ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT                 &
      &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
-     &            ,Q2,U,V,THS,NMM_TSK,SST,PREC,SNO,ZERO_3D             &
+     &            ,Q2,U,V,THS,NMM_TSK,SST,PREC,SNO                     &
      &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ                &
      &            ,MOIST,RMOL                                          &
      &            ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT                  &
@@ -1081,7 +1159,7 @@
 !
         btimx=timef()
         CALL UV_H_TO_V(NTSD,GRID%DT,GRID%NPHS,UZ0H,VZ0H,UZ0,VZ0         &
-     &                ,DUDT,DVDT,U,V,HBM2,VTM,IVE,IVW                   &
+     &                ,DUDT,DVDT,U,V,HBM2,IVE,IVW                       &
      &                ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1156,15 +1234,28 @@
           DO J=JMS,JME
           DO K=KMS,KME
           DO I=IMS,IME
-            TTEN(I,K,J)=(T(I,K,J)-TTEN(I,K,J))*DT_INV
-            QTEN(I,K,J)=(Q(I,K,J)-QTEN(I,K,J))*DT_INV
+            TTEN(I,K,J)=(T(I,J,K)-TTEN(I,K,J))*DT_INV
+            QTEN(I,K,J)=(Q(I,J,K)-QTEN(I,K,J))*DT_INV
           ENDDO
           ENDDO
           ENDDO
         ENDIF
-
+!
+!***  UPDATE THE MOIST ARRAY IF NEEDED.
+!
+        IF(OPERATIONAL_PHYSICS                                         &
+     &    .AND.MOD(NTSD_rad,GRID%NRADS)/=0                             &
+     &    .AND.MOD(NTSD_rad,GRID%NRADL)/=0                             &
+     &    .AND.MOD(NTSD,GRID%NPHS)/=0)THEN
+          CALL UPDATE_MOIST(MOIST,Q,CWM,F_ICE,F_RAIN,N_MOIST           &
+     &                     ,IDS,IDF,JDS,JDF,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE)
+        ENDIF
+!
+!----------------------------------------------------------------------
         CALL CUCNVC(NTSD,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
-     &             ,GPS,RESTRT,HYDRO,CLDEFI,LMH,N_MOIST,GRID%ENSDIM    &
+     &             ,GPS,RESTRT,HYDRO,CLDEFI,N_MOIST,GRID%ENSDIM        &
      &             ,MOIST                                              &
      &             ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                  &
      &             ,F_ICE,F_RAIN                                       &
@@ -1179,16 +1270,17 @@
 #endif
 !
      &             ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN                 &
-     &             ,OMGALF,U,V,VTM,W,Z,FIS,W0AVG                       &
+     &             ,OMGALF,U,V,W,Z,FIS,W0AVG                           &
      &             ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                    &
      &             ,SM,HBM2,LPBL,CNVBOT,CNVTOP                         &
      &             ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS                  &
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
-     &             ,AVCNVC,ACUTIM,ZERO_3D,IHE,IHW                      &
+     &             ,AVCNVC,ACUTIM,IHE,IHW                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
+!----------------------------------------------------------------------
 !
         cucnvc_tim=cucnvc_tim+timef()-btimx
 !
@@ -1202,12 +1294,12 @@
         btimx=timef()
 !
         CALL GSMDRIVE(NTSD,GRID%DT,GRID%NPHS,N_MOIST                   &
-     &               ,DX_NMM(ITS,JC),GRID%DY,LMH,SM,HBM2,FIS           &
+     &               ,DX_NMM(ITS,JC),GRID%DY,SM,HBM2,FIS               &
      &               ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2                &
      &               ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN               &
      &               ,MOIST,SCALAR,NUM_SCALAR                          &
      &               ,F_ICE,F_RAIN,F_RIMEF,SR                          &
-     &               ,PREC,ACPREC,AVRAIN,ZERO_3D                       &
+     &               ,PREC,ACPREC,AVRAIN                               &
      &               ,MP_RESTART_STATE                                 &
      &               ,TBPVS_STATE                                      &
      &               ,TBPVS0_STATE                                     &
@@ -1285,21 +1377,23 @@
       btimx=timef()
 !
       CALL HDIFF(NTSD,GRID%DT,FIS,DY_NMM,HDAC,HDACV                    &
-     &          ,HTM,HBM2,VTM,DETA1,GRID%SIGMA                         &
+     &          ,HBM2,DETA1,GRID%SIGMA                                 &
      &          ,T,Q,U,V,Q2,Z,W,SM,SICE                                &
-     &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
+     &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
-      DO J=MYJS,MYJE
-      DO K=KTS,KTE
-      DO I=MYIS,MYIE
-!!!      MOIST(I,K,J,P_QV)=MAX(0.,Q(I,K,J)/(1.-Q(I,K,J)))
-         MOIST(I,K,J,P_QV)=Q(I,K,J)/(1.-Q(I,K,J))
-      ENDDO
-      ENDDO
-      ENDDO
+      IF(.NOT.OPERATIONAL_PHYSICS)THEN
+        DO K=KTS,KTE
+        DO J=MYJS,MYJE
+        DO I=MYIS,MYIE
+!!!       MOIST(I,J,K,P_QV)=MAX(0.,Q(I,J,K)/(1.-Q(I,J,K)))
+          MOIST(I,J,K,P_QV)=Q(I,J,K)/(1.-Q(I,J,K))           !<-- Update mixing ratio
+        ENDDO
+        ENDDO
+        ENDDO
+      ENDIF
 !
       hdiff_tim=hdiff_tim+timef()-btimx
 !
@@ -1331,19 +1425,27 @@
 !
       btimx=timef()
 !
-      CALL BOCOH(GRID%ID,NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH & 
-     &          ,LB,ETA1,ETA2,PDTOP,PT,RES,HTM                         &
-     &          ,PD_B,T_B,Q_B,U_B,V_B,Q2_B,CWM_B                       &
-     &          ,PD_BT,T_BT,Q_BT,U_BT,V_BT,Q2_BT,CWM_BT                &
-     &          ,PD,T,Q,Q2,CWM,PINT,MOIST,N_MOIST,SCALAR,NUM_SCALAR    &
+      CALL BOCOH(GRID%ID,NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
+     &          ,LB,ETA1,ETA2,PDTOP,PT,RES                              &
+     &          ,PD_BXS,PD_BXE,PD_BYS,PD_BYE,T_BXS,T_BXE,T_BYS,T_BYE    &
+     &          ,Q_BXS,Q_BXE,Q_BYS,Q_BYE,U_BXS,U_BXE,U_BYS,U_BYE,V_BXS  &
+     &          ,V_BXE,V_BYS,V_BYE,Q2_BXS,Q2_BXE,Q2_BYS,Q2_BYE,CWM_BXS  &
+     &          ,CWM_BXE,CWM_BYS,CWM_BYE,PD_BTXS,PD_BTXE,PD_BTYS        &
+     &          ,PD_BTYE,T_BTXS,T_BTXE,T_BTYS,T_BTYE,Q_BTXS,Q_BTXE      &
+     &          ,Q_BTYS,Q_BTYE,U_BTXS,U_BTXE,U_BTYS,U_BTYE,V_BTXS       &
+     &          ,V_BTXE,V_BTYS,V_BTYE,Q2_BTXS,Q2_BTXE,Q2_BTYS,Q2_BTYE   &
+     &          ,CWM_BTXS,CWM_BTXE,CWM_BTYS,CWM_BTYE,PD,T,Q,Q2,CWM,PINT &
+     &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
 #ifdef WRF_CHEM
-     &          ,CHEM,NUMGAS,CONFIG_FLAGS                              &
+     &          ,CHEM,NUMGAS,CONFIG_FLAGS                               &
 #endif
-     &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH,Z                       &
-     &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
-     &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
-     &          ,IMS,IME,JMS,JME,KMS,KME                               &
+     &          ,GRID%SPEC_BDY_WIDTH,Z                                  &
+     &          ,IHE,IHW,IVE,IVW                                        &
+     &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+
+ 
 !
       bocoh_tim=bocoh_tim+timef()-btimx
 !     if(mod(ntsd,n_print_time)==0)then
@@ -1391,14 +1493,15 @@
 !
       CALL PFDHT(NTSD,LAST_TIME,PT,DETA1,DETA2,PDTOP,RES,FIS           &
      &          ,HYDRO,GRID%SIGMA,FIRST,DX_NMM,DY_NMM                  &
-     &          ,HTM,HBM2,VTM,VBM2,VBM3                                &
+     &          ,HBM2,VBM2,VBM3                                        &
      &          ,FDIV,FCP,WPDAR,DFL,CPGFU,CPGFV                        &
      &          ,PD,PDSL,T,Q,U,V,CWM,OMGALF,PINT,DWDT                  &
      &          ,RTOP,DIV,FEW,FNS,FNE,FSE                              &
-     &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
+     &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+
 !
       pfdht_tim=pfdht_tim+timef()-btimx
 !
@@ -1420,14 +1523,15 @@
 !
       btimx=timef()
 !
-      CALL DDAMP(NTSD,GRID%DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2,VTM      &
+      CALL DDAMP(NTSD,GRID%DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2          &
      &          ,T,U,V,DDMPU,DDMPV                                     &
-     &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
+     &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
       ddamp_tim=ddamp_tim+timef()-btimx
+!
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 !
@@ -1471,13 +1575,15 @@
 !
       btimx=timef()
 !
-      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB,VTM,U_B,V_B,U_BT,V_BT         & 
-     &          ,U,V                                                   &
-     &          ,IJDS,IJDE,GRID%SPEC_BDY_WIDTH                         &
-     &          ,IHE,IHW,IVE,IVW,INDX3_WRK                             &
+      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB,U_BXS,U_BXE,U_BYS,U_BYE,V_BXS &
+     &          ,V_BXE,V_BYS,V_BYE,U_BTXS,U_BTXE,U_BTYS,U_BTYE,V_BTXS  &
+     &          ,V_BTXE,V_BTYS,V_BTYE,U,V                              &
+     &          ,GRID%SPEC_BDY_WIDTH                                   &
+     &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE )
+ 
 !
       bocov_tim=bocov_tim+timef()-btimx
 !
@@ -1485,10 +1591,10 @@
 !***  COPY THE NMM VARIABLE Q2 TO THE WRF VARIABLE TKE_MYJ
 !----------------------------------------------------------------------
 !
-      DO J=JTS,JTE
       DO K=KTS,KTE
+      DO J=JTS,JTE
       DO I=ITS,ITE
-        TKE_MYJ(I,K,J)=0.5*Q2(I,K,J) !TKE is q squared over 2
+        TKE_MYJ(I,J,K)=0.5*Q2(I,J,K) !TKE is q squared over 2
       ENDDO
       ENDDO
       ENDDO
@@ -1553,6 +1659,9 @@
       DEALLOCATE(RTHRATEN,STAT=ISTAT)
       DEALLOCATE(RTHBLTEN,STAT=ISTAT)
       DEALLOCATE(RQVBLTEN,STAT=ISTAT)
+#ifdef WRF_CHEM
+      DEALLOCATE(CHEM_TRANS,STAT=ISTAT)
+#endif
 !
 #define COPY_OUT
 #include <nmm_scalar_derefs.inc>
@@ -1585,7 +1694,7 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
      &                     ,KK,MPI_COMM_COMP,MYPE,NPES,NTSD
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME+KK,JMS:JME),INTENT(IN) :: ARRAY
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME+KK),INTENT(IN) :: ARRAY
 !
       CHARACTER(*),INTENT(IN) :: FIELD
 !
@@ -1642,7 +1751,7 @@
       IF(MYPE==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
-          TWRITE(I,J)=ARRAY(I,K,J)
+          TWRITE(I,J)=ARRAY(I,J,K)
         ENDDO
         ENDDO
 !
@@ -1683,7 +1792,7 @@
         DO J=JTS,JTE
         DO I=ITS,ITE
           N=N+1
-          VALUES(N)=ARRAY(I,K,J)
+          VALUES(N)=ARRAY(I,J,K)
         ENDDO
         ENDDO
 !
@@ -1727,7 +1836,183 @@
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
-      SUBROUTINE EXIT(NAME,T,Q,U,V,Q2,NTSD,MYPE,MPI_COMM_COMP          &
+      SUBROUTINE VWR(ARRAY,KK,FIELD,NTSD,MYPE,NPES,MPI_COMM_COMP       &
+     &              ,IDS,IDE,JDS,JDE,KDS,KDE                           &
+     &              ,IMS,IME,JMS,JME,KMS,KME                           &
+     &              ,ITS,ITE,JTS,JTE,KTS,KTE)
+!----------------------------------------------------------------------
+!**********************************************************************
+      USE MODULE_EXT_INTERNAL
+!
+      IMPLICIT NONE
+      INCLUDE "mpif.h"
+!----------------------------------------------------------------------
+!----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
+     &                     ,KK,MPI_COMM_COMP,MYPE,NPES,NTSD
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME+KK),INTENT(IN) :: ARRAY
+!
+      CHARACTER(*),INTENT(IN) :: FIELD
+!
+!*** LOCAL VARIABLES
+!
+      INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
+      INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
+      INTEGER,DIMENSION(2) :: IM_REM,JM_REM,IT_REM,JT_REM
+!
+      INTEGER :: I,IENDX,IER,IPE,IRECV,IRTN,ISEND,IUNIT                &
+     &          ,J,K,L,N,NLEN,NSIZE
+      INTEGER :: ITS_REM,ITE_REM,JTS_REM,JTE_REM
+!
+      REAL,DIMENSION(IDS:IDE,JDS:JDE) :: TWRITE
+      REAL,ALLOCATABLE,DIMENSION(:) :: VALUES
+      CHARACTER(5) :: TIMESTEP
+      CHARACTER(6) :: FMT
+      CHARACTER(12) :: FILENAME
+      LOGICAL :: OPENED
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+!
+      IF(NTSD<=9)THEN
+        FMT='(I1.1)'
+        NLEN=1
+      ELSEIF(NTSD<=99)THEN
+        FMT='(I2.2)'
+        NLEN=2
+      ELSEIF(NTSD<=999)THEN
+        FMT='(I3.3)'
+        NLEN=3
+      ELSEIF(NTSD<=9999)THEN
+        FMT='(I4.4)'
+        NLEN=4
+      ELSEIF(NTSD<=99999)THEN
+        FMT='(I5.5)'
+        NLEN=5
+      ENDIF
+      WRITE(TIMESTEP,FMT)NTSD
+      FILENAME=FIELD//'_'//TIMESTEP(1:NLEN)
+!
+      IF(MYPE==0)THEN
+        CALL INT_GET_FRESH_HANDLE(IUNIT)
+        CLOSE(IUNIT)
+        OPEN(UNIT=IUNIT,FILE=FILENAME,FORM='UNFORMATTED',IOSTAT=IER)
+      ENDIF
+!     IF(MYPE==0)THEN
+!       OPEN_UNIT: DO L=51,99
+!         INQUIRE(L,OPENED=OPENED)
+!         IF(.NOT.OPENED)THEN
+!           IUNIT=L
+!           OPEN(UNIT=IUNIT,FILE=FILENAME,STATUS='NEW'                 &
+!               ,FORM='UNFORMATTED',IOSTAT=IER)
+!           IF(IER/=0)THEN
+!             WRITE(0,*)' Opening file error=',IER
+!             WRITE(6,*)' Opening file error=',IER
+!           ENDIF
+!           EXIT OPEN_UNIT
+!         ENDIF
+!       ENDDO OPEN_UNIT
+!     ENDIF
+!
+!----------------------------------------------------------------------
+!!!!  DO 500 K=KTS,KTE+KK     !Unflipped
+!!!!  DO 500 K=KTE+KK,KTS,-1
+      DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
+!----------------------------------------------------------------------
+!
+      IF(MYPE==0)THEN
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          TWRITE(I,J)=ARRAY(I,J,K)
+        ENDDO
+        ENDDO
+!
+        DO IPE=1,NPES-1
+          CALL MPI_RECV(IT_REM,2,MPI_INTEGER,IPE,IPE                    &
+     &                 ,MPI_COMM_COMP,JSTAT,IRECV)
+          CALL MPI_RECV(JT_REM,2,MPI_INTEGER,IPE,IPE                    &
+     &                 ,MPI_COMM_COMP,JSTAT,IRECV)
+!
+          ITS_REM=IT_REM(1)
+          ITE_REM=IT_REM(2)
+          JTS_REM=JT_REM(1)
+          JTE_REM=JT_REM(2)
+!
+          NSIZE=(ITE_REM-ITS_REM+1)*(JTE_REM-JTS_REM+1)
+          ALLOCATE(VALUES(1:NSIZE))
+!
+          CALL MPI_RECV(VALUES,NSIZE,MPI_REAL,IPE,IPE                   &
+     &                 ,MPI_COMM_COMP,JSTAT,IRECV)
+          N=0
+          DO J=JTS_REM,JTE_REM
+            DO I=ITS_REM,ITE_REM
+              N=N+1
+              TWRITE(I,J)=VALUES(N)
+            ENDDO
+          ENDDO
+!
+          DEALLOCATE(VALUES)
+!
+        ENDDO
+!
+!----------------------------------------------------------------------
+      ELSE
+        NSIZE=(ITE-ITS+1)*(JTE-JTS+1)
+        ALLOCATE(VALUES(1:NSIZE))
+!
+        N=0
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          N=N+1
+          VALUES(N)=ARRAY(I,J,K)
+        ENDDO
+        ENDDO
+!
+        IT_REM(1)=ITS
+        IT_REM(2)=ITE
+        JT_REM(1)=JTS
+        JT_REM(2)=JTE
+!
+        CALL MPI_SEND(IT_REM,2,MPI_INTEGER,0,MYPE                       &
+     &               ,MPI_COMM_COMP,ISEND)
+        CALL MPI_SEND(JT_REM,2,MPI_INTEGER,0,MYPE                       &
+     &               ,MPI_COMM_COMP,ISEND)
+!
+        CALL MPI_SEND(VALUES,NSIZE,MPI_REAL,0,MYPE                      &
+     &               ,MPI_COMM_COMP,ISEND)
+!
+        DEALLOCATE(VALUES)
+!
+      ENDIF
+!----------------------------------------------------------------------
+!
+      CALL MPI_BARRIER(MPI_COMM_COMP,IRTN)
+!
+      IF(MYPE==0)THEN
+!
+        DO J=JDS,JDE-1
+          IENDX=IDE-1
+          IF(MOD(J,2)==1)IENDX=IENDX-1
+          WRITE(IUNIT)(TWRITE(I,J),I=1,IENDX)
+        ENDDO
+!
+      ENDIF
+!
+!----------------------------------------------------------------------
+  500 CONTINUE
+!
+      IF(MYPE==0)CLOSE(IUNIT)
+!----------------------------------------------------------------------
+!
+      END SUBROUTINE VWR
+!----------------------------------------------------------------------
+!**********************************************************************
+!----------------------------------------------------------------------
+      SUBROUTINE EXIT(NAME,PINT,T,Q,U,V,Q2,W                           &
+     &               ,NTSD,MYPE,MPI_COMM_COMP                          &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1745,7 +2030,8 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
      &                     ,MYPE,MPI_COMM_COMP,NTSD      
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: T,Q,U,V,Q2
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT,T,Q   &
+                                                           ,U,V,Q2,W
       CHARACTER(*),INTENT(IN) :: NAME
 !
       INTEGER :: I,J,K,IEND,IERR,IRET
@@ -1758,35 +2044,53 @@
       S_BDY=(JTS==JDS)
       E_BDY=(ITE==IDE-1)
 !
+      DO K=KTS,KTE
       DO J=JTS,JTE
       IEND=ITE
-      DO K=KTS,KTE
       IF(E_BDY.AND.MOD(J,2)==0)IEND=ITE-1
 !
       DO I=ITS,IEND
-        IF(T(I,K,J)>330..OR.T(I,K,J)<180..OR.T(I,K,J)/=T(I,K,J))THEN
+        IF(T(I,J,K)>330..OR.T(I,J,K)<180..OR.T(I,J,K)/=T(I,J,K))THEN
           WRITE(0,100)NAME,NTSD
-          WRITE(0,200)I,J,K,T(I,K,J),MYPE,NTSD
+          WRITE(0,200)I,J,K,T(I,J,K),MYPE,NTSD
   200     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' T=',E12.5      &
      &,          ' MYPE=',I3,' NTSD=',I5)
           IRET=666
           return
-!         WRITE(ERRMESS,205)NAME,T(I,K,J),I,K,J,MYPE
+!         WRITE(ERRMESS,205)NAME,T(I,J,K),I,J,K,MYPE
   205     FORMAT(' EXIT ',A,' TEMPERATURE=',E12.5                      &
      &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
 !         CALL WRF_ERROR_FATAL(ERRMESS)
 !         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ELSEIF(Q(I,K,J)<-1.E-4.OR.Q(I,K,J)>30.E-3                      &
-     &         .OR.Q(I,K,J)/=Q(I,K,J))THEN
+        ELSEIF(Q(I,J,K)<-1.E-4.OR.Q(I,J,K)>30.E-3                      &
+     &         .OR.Q(I,J,K)/=Q(I,J,K))THEN
           WRITE(0,100)NAME,NTSD
-          WRITE(0,300)I,J,K,Q(I,K,J),MYPE,NTSD
+          WRITE(0,300)I,J,K,Q(I,J,K),MYPE,NTSD
   300     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' Q=',E12.5      &
      &,          ' MYPE=',I3,' NTSD=',I5)
           IRET=666
           return
-!         WRITE(ERRMESS,305)NAME,Q(I,K,J),I,K,J,MYPE
+!         WRITE(ERRMESS,305)NAME,Q(I,J,K),I,J,K,MYPE
   305     FORMAT(' EXIT ',A,' SPEC HUMIDITY=',E12.5                    &
      &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
+!         CALL WRF_ERROR_FATAL(ERRMESS)
+!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
+        ELSEIF(PINT(I,J,K)<0..OR.PINT(I,J,K)/=PINT(I,J,K))THEN
+          WRITE(0,100)NAME,NTSD
+          WRITE(0,315)I,J,K,PINT(I,J,K),MYPE,NTSD
+  315     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' PINT=',E12.5      &
+     &,          ' MYPE=',I3,' NTSD=',I5)
+          IRET=666
+          return
+!         CALL WRF_ERROR_FATAL(ERRMESS)
+!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
+        ELSEIF(W(I,J,K)/=W(I,J,K))THEN
+          WRITE(0,100)NAME,NTSD
+          WRITE(0,325)I,J,K,W(I,J,K),MYPE,NTSD
+  325     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' W=',E12.5      &
+     &,          ' MYPE=',I3,' NTSD=',I5)
+          IRET=666
+          return
 !         CALL WRF_ERROR_FATAL(ERRMESS)
 !         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
         ENDIF
@@ -1794,20 +2098,20 @@
       ENDDO
       ENDDO
 !
+      DO K=KTS,KTE
       DO J=JTS,JTE
       IEND=ITE
-      DO K=KTS,KTE
       IF(E_BDY.AND.MOD(J,2)==1)IEND=ITE-1
       DO I=ITS,IEND
-        IF(ABS(U(I,K,J))>125..OR.ABS(V(I,K,J))>125.                    &
-     &         .OR.U(I,K,J)/=U(I,K,J).OR.V(I,K,J)/=V(I,K,J))THEN
+        IF(ABS(U(I,J,K))>125..OR.ABS(V(I,J,K))>125.                    &
+     &         .OR.U(I,J,K)/=U(I,J,K).OR.V(I,J,K)/=V(I,J,K))THEN
           WRITE(0,100)NAME,NTSD
-          WRITE(0,400)I,J,K,U(I,K,J),V(I,K,J),MYPE,NTSD
+          WRITE(0,400)I,J,K,U(I,J,K),V(I,J,K),MYPE,NTSD
   400     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' U=',E12.5      &
      &,          ' V=',E12.5,' MYPE=',I3,' NTSD=',I5)
           IRET=666
           return
-!         WRITE(ERRMESS,405)NAME,U(I,K,J),V(I,K,J),I,K,J,MYPE
+!         WRITE(ERRMESS,405)NAME,U(I,J,K),V(I,J,K),I,J,K,MYPE
   405     FORMAT(' EXIT ',A,' U=',E12.5,' V=',E12.5                    &
      &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
 !         CALL WRF_ERROR_FATAL(ERRMESS)
@@ -2101,7 +2405,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: FIELD
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: FIELD
 !
 !----------------------------------------------------------------------
 !***  LOCAL
@@ -2133,7 +2437,7 @@
           IEND=MIN(ITE,IDE-1)
           IF(MOD(J,2)==0.AND.ITE==IDE-1)IEND=IEND-1
           DO I=ITS,IEND
-            FIKJ=FIELD(I,K,J)
+            FIKJ=FIELD(I,J,K)
             FMAXK=MAX(FMAXK,FIKJ)
             FMINK=MIN(FMINK,FIKJ)
             SUMFK=SUMFK+FIKJ
@@ -2180,7 +2484,7 @@
 !----------------------------------------------------------------------
       FUNCTION TIMEF()
       REAL*8 TIMEF
-      INTEGER IC, IR
-      CALL SYSTEM_CLOCK(COUNT=IC, COUNT_RATE=IR)
-      TIMEF=REAL(IC)/REAL(IR) * 1000.0
+      INTEGER :: IC,IR
+      CALL SYSTEM_CLOCK(COUNT=IC,COUNT_RATE=IR)
+      TIMEF=REAL(IC)/REAL(IR)*1000.0
       END

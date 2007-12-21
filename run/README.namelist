@@ -51,6 +51,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
                                                   into smaller pieces
  restart                             = F,	; whether this run is a restart run
  restart_interval		     = 1440,	; restart output file interval in minutes
+ reset_simulation_start              = F,       ; whether to overwrite simulation_start_date with forecast start time
  io_form_history                     = 2,       ; 2 = netCDF 
  io_form_restart                     = 2,       ; 2 = netCDF 
  io_form_input                       = 2,       ; 2 = netCDF

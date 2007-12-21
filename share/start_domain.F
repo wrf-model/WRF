@@ -20,6 +20,11 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #    include "start_domain_em.int"
    END INTERFACE
 #endif
+#if (NMM_CORE == 1)
+   INTERFACE
+#    include "start_domain_nmm.int"
+   END INTERFACE
+#endif
 
    CALL nl_get_dyn_opt( 1, dyn_opt )
   
@@ -35,7 +40,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 !
                          )
 #endif
-#if (NMM_CORE == 1)
+#if (NMM_CORE == 1) 
    ELSE IF (      dyn_opt .eq. DYN_NMM ) THEN
      CALL start_domain_nmm( grid, allowed_to_read   &
 !

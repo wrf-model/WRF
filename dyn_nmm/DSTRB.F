@@ -24,8 +24,8 @@
      &,                     ITS,ITE,JTS,JTE,KTS,KTE
       INTEGER,INTENT(IN) :: L1,LGE,LGS,LLE,LLS
 !
-      REAL,DIMENSION(IDS:IDE,LGS:LGE,JDS:JDE),INTENT(IN) :: ARRAYG
-      REAL,DIMENSION(IMS:IME,LLS:LLE,JMS:JME),INTENT(OUT) :: ARRAYL
+      REAL,DIMENSION(IDS:IDE,JDS:JDE,LGS:LGE),INTENT(IN) :: ARRAYG
+      REAL,DIMENSION(IMS:IME,JMS:JME,LLS:LLE),INTENT(OUT) :: ARRAYL
 !-----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -48,10 +48,10 @@
 !
 !***  INITIALIZE THE OUTPUT ARRAY
 !
-      DO J=JMS,JME
       DO L=LLS,LLE
+      DO J=JMS,JME
       DO I=IMS,IME
-        ARRAYL(I,L,J)=0.
+        ARRAYL(I,J,L)=0.
       ENDDO
       ENDDO
       ENDDO
@@ -66,16 +66,16 @@
         IF(LGE==LGS)THEN
           DO J=JTS,JTE
           DO I=ITS,ITE
-            ARRAYL(I,L1,J)=ARRAYG(I,LGS,J)
+            ARRAYL(I,J,L1)=ARRAYG(I,J,LGS)
           ENDDO
           ENDDO
 !
         ELSE
 !
-          DO J=JTS,JTE
-            DO L=LGS,LGE
+          DO L=LGS,LGE
+            DO J=JTS,JTE
             DO I=ITS,ITE
-              ARRAYL(I,L,J)=ARRAYG(I,L,J)
+              ARRAYL(I,J,L)=ARRAYG(I,J,L)
             ENDDO
             ENDDO
           ENDDO
@@ -98,11 +98,11 @@
           
           KNT=0
 !
-          DO J=JSTART,JEND
-            DO L=LGS,LGE
+          DO L=LGS,LGE
+            DO J=JSTART,JEND
             DO I=ISTART,IEND
               KNT=KNT+1
-              ARRAYX(KNT)=ARRAYG(I,L,J)
+              ARRAYX(KNT)=ARRAYG(I,J,L)
             ENDDO
             ENDDO
           ENDDO
@@ -138,15 +138,15 @@
           DO J=JTS,JTE
           DO I=ITS,ITE
             KNT=KNT+1
-            ARRAYL(I,L1,J)=ARRAYX(KNT)
+            ARRAYL(I,J,L1)=ARRAYX(KNT)
           ENDDO
           ENDDO
         ELSE
-          DO J=JTS,JTE
-            DO L=LGS,LGE
+          DO L=LGS,LGE
+            DO J=JTS,JTE
             DO I=ITS,ITE
               KNT=KNT+1
-              ARRAYL(I,L,J)=ARRAYX(KNT)
+              ARRAYL(I,J,L)=ARRAYX(KNT)
             ENDDO
             ENDDO
           ENDDO

@@ -14,7 +14,8 @@
      &                  ,ACFRST,NCFRST,ACFRCV,NCFRCV                    &
      &                  ,AVCNVC,AVRAIN,TCUCN,TRAIN                      &
      &                  ,ASRFC                                          &
-     &                  ,T,TLMAX,TLMIN                                  &
+     &                  ,T,TLMAX,TLMIN,TSHLTR,PSHLTR,QSHLTR             &
+     &                  ,T02_MAX,T02_MIN,RH02_MAX,RH02_MIN              &
      &                  ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -47,6 +48,13 @@
 !           T - TEMPERATURE
 !       TLMAX - MAX TEMPERATURE EACH HOUR IN LOWEST LAYER
 !       TLMIN - MIN TEMPERATURE EACH HOUR IN LOWEST LAYER
+!      TSHLTR - SHELTER LEVEL (2m) POTENTIAL TEMPERATURE (K)
+!      PSHLTR - SHELTER LEVEL (2m) PRESSURE (Pa)
+!      QSHLTR - SHELTER LEVEL (2m) SPECIFIC HUMIDITY (kg/kg)
+!     T02_MAX - 2m HOURLY MAX TEMPERATURE (K)
+!     T02_MIN - 2m HOURLY MIN TEMPERATURE (K)
+!    RH02_MAX - 2m HOURLY MAX RELATIVE HUMIDITY (fraction)
+!    RH02_MIN - 2m HOURLY MIN RELATIVE HUMIDITY (fraction)
 !  
 !   OUTPUT ARGUMENT LIST:  THE ACCUMULATED QUANTITIES
 !     
@@ -60,8 +68,14 @@
 !  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM SP
+!   MACHINE : IBM 
 !$$$  
+!-----------------------------------------------------------------------
+!
+      USE MODULE_MODEL_CONSTANTS,ONLY: CP,CPV,R_D,R_V,RCP
+      USE MODULE_MP_ETANEW,ONLY: C1XPVS,C1XPVS0,C2XPVS,C2XPVS0          &
+                                ,FPVS,FPVS0,NX,TBPVS,TBPVS0
+!
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -76,7 +90,16 @@
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE 
 !
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: NCFRST,NCFRCV
+!
       REAL,INTENT(IN) :: TSPH,TSTART
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: PSHLTR,QSHLTR,TSHLTR
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: T
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: TLMAX,TLMIN
+!
       REAL,INTENT(OUT) :: ARDLW,ARDSW,ASRFC,AVCNVC,AVRAIN
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: ACPREC,ACSNOM      &
@@ -87,15 +110,13 @@
      &                                              ,ASWTOA,BGROFF      &
      &                                              ,CUPREC,POTEVP      &
      &                                              ,POTFLX,SFCEVP      &
+     &                                              ,RH02_MAX,RH02_MIN  &
      &                                              ,SFCLHX,SFCSHX      &
      &                                              ,SFCUVX,SNOPCX      &
-     &                                              ,SSROFF,SUBSHX
+     &                                              ,SSROFF,SUBSHX      &
+     &                                              ,T02_MAX,T02_MIN
 !
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: NCFRST,NCFRCV
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: TLMAX,TLMIN
-!
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: T
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: TCUCN      &
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: TCUCN      &
      &                                                      ,TRAIN
 !
       LOGICAL,INTENT(IN) :: RESTART
@@ -105,17 +126,37 @@
 !-----------------------------------------------------------------------
 !
       INTEGER :: I,J,K,NTSD_BUCKET,NTSPH
-      LOGICAL  WRF_DM_ON_MONITOR
+      LOGICAL ::  FIRST_PASS=.TRUE.
+      LOGICAL ::  WRF_DM_ON_MONITOR
       EXTERNAL WRF_DM_ON_MONITOR
+!
+      REAL :: CAPPA_MOIST,RH02,SAT_VAPOR_PRESS,VAPOR_PRESS
+      REAL,SAVE :: CP_FACTOR,EPSILON,ONE_MINUS_EPSILON,R_FACTOR
+      REAL,SAVE :: P00_INV=1.E-5
+!
+      REAL,DIMENSION(ITS:ITE,JTS:JTE) :: T02
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
+!***  COMPUTE AND SAVE THE FACTORS IN R AND CP TO ACCOUNT FOR
+!***  WATER VAPOR IN THE AIR.
+!*** 
+!***  RECALL: R  = Rd * (1. + Q * (1./EPSILON - 1.))
+!***          CP = CPd * (1. + Q * (CPv/CPd - 1.))
+!
+      IF(FIRST_PASS)THEN
+        FIRST_PASS=.FALSE.
+!
+        EPSILON=R_D/R_V
+        ONE_MINUS_EPSILON=1.-EPSILON
+        R_FACTOR=1./EPSILON-1.
+        CP_FACTOR=CPV/CP-1.
+      ENDIF
+!
+!-----------------------------------------------------------------------
 !
       NTSD_BUCKET=NTSD
-      IF(RESTART.AND.TSTART>0.)THEN
-        NTSD_BUCKET=NTSD-1
-      ENDIF
 !
 !-----------------------------------------------------------------------
 !***  TOTAL AND CONVECTIVE PRECIPITATION ARRAYS.
@@ -124,6 +165,7 @@
 !***  EVAPORATION ARRAYS.
 !-----------------------------------------------------------------------
 !
+!     IF(MOD(NTSD,NPREC)<NPHS)THEN
       IF(MOD(NTSD_BUCKET,NPREC)==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -148,6 +190,7 @@
 !***  SFC FLUX ARRAYS.
 !-----------------------------------------------------------------------
 !
+!     IF(MOD(NTSD,NSRFC)<NPHS)THEN
       IF(MOD(NTSD_BUCKET,NSRFC)==0)THEN
         ASRFC=0.
         DO J=JTS,JTE
@@ -171,6 +214,7 @@
 !***  SHORTWAVE FLUX ACCUMULATION ARRAYS.
 !-----------------------------------------------------------------------
 !
+!     IF(MOD(NTSD,NRDSW)<NPHS)THEN
       IF(MOD(NTSD_BUCKET,NRDSW)==0)THEN
         ARDSW=0.
         DO J=JTS,JTE
@@ -191,6 +235,7 @@
 !***  LONGWAVE FLUX ACCUMULATION ARRAYS.
 !-----------------------------------------------------------------------
 !
+!     IF(MOD(NTSD,NRDLW)<NPHS)THEN
       IF(MOD(NTSD_BUCKET,NRDLW)==0)THEN
         ARDLW=0.
         DO J=JTS,JTE
@@ -211,6 +256,7 @@
 !***  TIME-AVERAGED CLOUD FRACTION ARRAYS.
 !-----------------------------------------------------------------------
 !
+!     IF(MOD(NTSD,NCLOD)<NPHS)THEN
       IF(MOD(NTSD_BUCKET,NCLOD)==0)THEN
 !***
   !--- Ferrier 11/2/05:  Right now no accumulator variable is used (e.g.,
@@ -236,15 +282,16 @@
 !***  GRID-SCALE AND CONVECTIVE (LATENT) HEATING ARRAYS.
 !-----------------------------------------------------------------------
 !
+!     IF(MOD(NTSD,NHEAT)<NPHS)THEN
       IF(MOD(NTSD_BUCKET,NHEAT)==0)THEN
         AVCNVC=0.
         AVRAIN=0.
 !
-        DO J=JTS,JTE
         DO K=KTS,KTE
+        DO J=JTS,JTE
         DO I=ITS,ITE
-          TRAIN(I,K,J)=0.
-          TCUCN(I,K,J)=0.
+          TRAIN(I,J,K)=0.
+          TCUCN(I,J,K)=0.
         ENDDO
         ENDDO
         ENDDO
@@ -265,20 +312,77 @@
         DO I=ITS,ITE
           TLMAX(I,J)=-999.
           TLMIN(I,J)=999.
+          T02_MAX(I,J)=-999.
+          T02_MIN(I,J)=999.
         ENDDO
         ENDDO
 !
         IF ( WRF_DM_ON_MONITOR() ) THEN
-        CALL WRF_MESSAGE('RESET MAX/MIN TEMPERTURES')
+        CALL WRF_MESSAGE('RESET MAX/MIN TEMPERATURES')
         ENDIF
       ENDIF
 !
       DO J=JTS,JTE
       DO I=ITS,ITE
-        TLMAX(I,J)=MAX(TLMAX(I,J),T(I,1,J))
-        TLMIN(I,J)=MIN(TLMIN(I,J),T(I,1,J))
+        TLMAX(I,J)=MAX(TLMAX(I,J),T(I,J,1))         !<--- Hourly max lowest layer T
+        TLMIN(I,J)=MIN(TLMIN(I,J),T(I,J,1))         !<--- Hourly min lowest layer T
+!
+        CAPPA_MOIST=RCP*(1.+QSHLTR(I,J)*R_FACTOR)/(1.+QSHLTR(I,J)*CP_FACTOR)
+        T02(I,J)=TSHLTR(I,J)*(P00_INV*PSHLTR(I,J))**CAPPA_MOIST
+!
+        IF(NTSD>0)THEN
+          T02_MAX(I,J)=MAX(T02_MAX(I,J),T02(I,J))     !<--- Hourly max shelter T
+          T02_MIN(I,J)=MIN(T02_MIN(I,J),T02(I,J))     !<--- Hourly min shelter T
+        ENDIF
       ENDDO
       ENDDO
+!
+!-----------------------------------------------------------------------
+!***  MAX/MIN RELATIVE HUMIDITY
+!-----------------------------------------------------------------------
+!
+      IF(MOD(NTSD_BUCKET,NTSPH)==0.OR.NTSD==1)THEN
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          RH02_MAX(I,J)=-999.
+          RH02_MIN(I,J)=999.
+        ENDDO
+        ENDDO
+!
+        IF ( WRF_DM_ON_MONITOR() ) THEN
+          CALL WRF_MESSAGE('RESET MAX/MIN RH')
+        ENDIF
+      ENDIF
+!
+      IF(NTSD>0)THEN
+!
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          VAPOR_PRESS=PSHLTR(I,J)*QSHLTR(I,J)/                          &
+                     (EPSILON+QSHLTR(I,J)*ONE_MINUS_EPSILON)
+!
+!         IF(T02(I,J)>273.15)THEN
+            SAT_VAPOR_PRESS=1.E3*FPVS0(T02(I,J))
+!         ELSE
+!           SAT_VAPOR_PRESS=1.E3*FPVS(T02(I,J))
+!         ENDIF
+!
+          RH02=MIN(VAPOR_PRESS/SAT_VAPOR_PRESS,0.99)
+!
+          RH02_MAX(I,J)=MAX(RH02_MAX(I,J),RH02)     !<--- Hourly max shelter RH
+          RH02_MIN(I,J)=MIN(RH02_MIN(I,J),RH02)     !<--- Hourly min shelter RH
+        ENDDO
+        ENDDO
+!
+      ELSE                         !<-- If timestep is 0, simply set max/min to zero.
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+          RH02_MAX(I,J)=0.
+          RH02_MIN(I,J)=0.
+        ENDDO
+        ENDDO
+!
+      ENDIF
 !
 !-----------------------------------------------------------------------
 !

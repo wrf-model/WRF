@@ -317,7 +317,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
       REAL  :: SHMIN,SHMAX,DQSDT2,LWDN,PRCP,PRCPRAIN,                    &
-               Q2SAT,SFCPRS,SFCSPD,SFCTMP,SHDFAC,SNOALB1,                &
+               Q2SAT,Q2SATI,SFCPRS,SFCSPD,SFCTMP,SHDFAC,SNOALB1,         &
                SOLDN,TBOT,ZLVL, Q2K,ALBBRD, ALBEDOK, ETA, ETA_KINEMATIC, &
                Z0K,RUNOFF1,RUNOFF2,RUNOFF3,SHEAT,SOLNET,E2SAT,SFCTSNO,   &       
 ! mek, WRF testing, expanded diagnostics
@@ -602,11 +602,20 @@ CONTAINS
           DQSDT2=Q2SAT*A23M4/(SFCTMP-A4)**2                             
 
           IF(SNOW(I,J).GT.0.0)THEN
-! snow on surface (use ice saturation properties, limit to 0 C)
-            SFCTSNO=MIN(SFCTMP,273.15)
+! snow on surface (use ice saturation properties)
+            SFCTSNO=SFCTMP
             E2SAT=611.2*EXP(6174.*(1./273.15 - 1./SFCTSNO))
-            Q2SAT=0.622*E2SAT/(SFCPRS-E2SAT)
-            DQSDT2=Q2SAT*6174./(SFCTSNO**2)
+            Q2SATI=0.622*E2SAT/(SFCPRS-E2SAT)
+            Q2SATI=Q2SATI/(1.0+Q2SATI)    ! spec. hum.
+            IF(T1 .GT. 273.15)THEN
+! warm ground temps, weight the saturation between ice and water according to SNOWC
+              Q2SAT=Q2SAT*(1.-SNOWC(I,J)) + Q2SATI*SNOWC(I,J)
+              DQSDT2=DQSDT2*(1.-SNOWC(I,J)) + Q2SATI*6174./(SFCTSNO**2)*SNOWC(I,J)
+            ELSE
+! cold ground temps, use ice saturation only
+              Q2SAT=Q2SATI
+              DQSDT2=Q2SATI*6174./(SFCTSNO**2)
+            ENDIF
 ! for snow cover fraction at 0 C, ground temp will not change, so DQSDT2 effectively zero
             IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
           ENDIF

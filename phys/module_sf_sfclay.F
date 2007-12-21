@@ -15,7 +15,6 @@ CONTAINS
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
-                     uratx,vratx,tratx,                            &
                      U10,V10,TH2,T2,Q2,                            &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
@@ -23,7 +22,8 @@ CONTAINS
                      P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+                     its,ite, jts,jte, kts,kte,                    &
+                     uratx,vratx,tratx                             )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -130,8 +130,6 @@ CONTAINS
                                                                Q2, &
                                                              QSFC
 
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(OUT)     ::              uratx,vratx,tratx
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)               ::             REGIME, &
@@ -172,6 +170,8 @@ CONTAINS
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
  
+      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+                INTENT(OUT)     ::              uratx,vratx,tratx
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -203,7 +203,6 @@ CONTAINS
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
                 XLAND(ims,j),HFX(ims,j),QFX(ims,j),TSK(ims,j),     &
-                uratx(ims,j),vratx(ims,j),tratx(ims,j),            &
                 U10(ims,j),V10(ims,j),TH2(ims,j),T2(ims,j),        &
                 Q2(ims,j),FLHC(ims,j),FLQC(ims,j),QGH(ims,j),      &
                 QSFC(ims,j),LH(ims,j),                             &
@@ -212,7 +211,8 @@ CONTAINS
                 P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
-                its,ite, jts,jte, kts,kte                          )
+                its,ite, jts,jte, kts,kte,                         &
+                uratx(ims,j),vratx(ims,j),tratx(ims,j)             )
       ENDDO
 
 
@@ -224,7 +224,6 @@ CONTAINS
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH,RMOL, &
                      ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,      &
                      XLAND,HFX,QFX,TSK,                            &
-                     uratx,vratx,tratx,                            &
                      U10,V10,TH2,T2,Q2,FLHC,FLQC,QGH,              &
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
@@ -232,7 +231,8 @@ CONTAINS
                      P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
+                     its,ite, jts,jte, kts,kte,                    &
+                     uratx,vratx,tratx                             )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -290,8 +290,6 @@ CONTAINS
                 INTENT(OUT)     ::                        U10,V10, &
                                                 TH2,T2,Q2,QSFC,LH
 
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(OUT)     ::              uratx,vratx,tratx
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
@@ -304,6 +302,9 @@ CONTAINS
                                                               P1D, &
                                                               T1D
  
+      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
+                INTENT(OUT)     ::              uratx,vratx,tratx
+
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite )        ::                 ZA, &
@@ -448,16 +449,20 @@ CONTAINS
 !                                ... HONG Aug. 2001
 !
 !       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)
+!      Use Beljaars over land, old MM5 (Wyngaard) formula over water
+        if (xland(i).lt.1.5) then
         fluxc = max(hfx(i)/rhox(i)/cp                    &
               + ep1*tskv*qfx(i)/rhox(i),0.)
         VCONV = vconvc*(g/tgdsa(i)*pblh(i)*fluxc)**.33
-!       IF(-DTHVDZ.GE.0)THEN
-!         DTHVM=-DTHVDZ
-!       ELSE
-!         DTHVM=0.
-!       ENDIF
-!       VCONV = max(vconv,VCONVC*SQRT(DTHVM))
-! VCONV comes from Beljaars only
+        else
+        IF(-DTHVDZ.GE.0)THEN
+          DTHVM=-DTHVDZ
+        ELSE
+          DTHVM=0.
+        ENDIF
+        VCONV = 2.*SQRT(DTHVM)
+        endif
+! Mahrt and Sun low-res correction
         VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
         WSPD(I)=SQRT(WSPD(I)*WSPD(I)+VCONV*VCONV+vsgd*vsgd)
         WSPD(I)=AMAX1(WSPD(I),0.1)
@@ -659,17 +664,19 @@ CONTAINS
 !       VA10(I,J) = V10(I)                                     
 !       write(*,1002)UST(I),KARMAN*WSPD(I),PSIX,KARMAN*WSPD(I)/PSIX
 !                                                                                
-        IF(ABS(U10(I)) .GT. 1.E-10) THEN
-           uratx(I) = UX(I)/U10(I)
-        ELSE
-           uratx(I) = 1.2
-        END IF
-        IF(ABS(V10(I)) .GT. 1.E-10) THEN
-           vratx(I) = VX(I)/V10(I)
-        ELSE
-           vratx(I) = 1.2 
-        END IF
-        tratx(I) = THX(I)/TH2(I)
+        IF(PRESENT(uratx) .and. PRESENT(vratx) .and. PRESENT(tratx))THEN
+          IF(ABS(U10(I)) .GT. 1.E-10) THEN
+             uratx(I) = UX(I)/U10(I)
+          ELSE
+             uratx(I) = 1.2
+          END IF
+          IF(ABS(V10(I)) .GT. 1.E-10) THEN
+             vratx(I) = VX(I)/V10(I)
+          ELSE
+             vratx(I) = 1.2 
+          END IF
+          tratx(I) = THX(I)/TH2(I)
+        ENDIF
 
         USTM=AMAX1(UST(I),0.1)                                                 
         IF((XLAND(I)-1.5).GE.0)THEN                                            

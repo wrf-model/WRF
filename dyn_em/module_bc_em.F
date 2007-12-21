@@ -969,7 +969,7 @@ CONTAINS
 
 !---------------------------------------------------------------------
 
-  SUBROUTINE set_w_surface( config_flags,                                &
+  SUBROUTINE set_w_surface( config_flags, znw,                           &
                             w, ht, u, v, cf1, cf2, cf3, rdx, rdy,        &
                             msftx, msfty,                                &
                             ids, ide, jds, jde, kds, kde,                &
@@ -985,7 +985,7 @@ CONTAINS
                                    its, ite, jts, jte, kts, kte, &
                                    ips, ipe, jps, jpe, kps, kpe
 
-   REAL :: cf1, cf2, cf3, rdx, rdy
+   REAL :: rdx, rdy, cf1, cf2, cf3
 
 
    REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
@@ -998,8 +998,10 @@ CONTAINS
    REAL , DIMENSION(  ims:ime , jms:jme ) , INTENT(IN   ) ::  ht,         &
                                                               msftx,      &
                                                               msfty
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) ::  znw
 
-   INTEGER :: i,j
+
+   INTEGER :: i,j,k
    INTEGER :: ip1,im1,jp1,jm1
 
 !  set kinematic lower boundary condition on W
@@ -1037,6 +1039,16 @@ CONTAINS
 
       ENDDO
       ENDDO
+
+! Fill the atmospheric w field with smoothly decaying values
+
+     DO j = jts,min(jte,jde-1)
+     DO k = kts+1,kte
+     DO i = its,min(ite,ide-1)
+         w(i,k,j) = w(i,1,j)*znw(k)*znw(k)
+     ENDDO
+     ENDDO
+     ENDDO
 
   END SUBROUTINE set_w_surface
 

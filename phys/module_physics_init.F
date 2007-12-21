@@ -48,7 +48,7 @@ CONTAINS
                          adv_moist_cond,                         &
                          APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                          APR_CAPMA,APR_CAPME,APR_CAPMI,          &
-                         XICE,VEGFRA,SNOW,CANWAT,SMSTAV,         &
+                         XICE,XICEM,VEGFRA,SNOW,CANWAT,SMSTAV,   &
                          SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,&
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
@@ -134,6 +134,7 @@ CONTAINS
                                                         GRDFLX, &
                                                         ACSNOW, &
                                                           XICE, &
+                                                         XICEM, &
                                                         VEGFRA, &
                                                         ACSNOM
 
@@ -362,7 +363,7 @@ integer myproc
 !-- initialize surface properties
 
      CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,      &
-                znt, Z0, thc, xland, xice, julday, cen_lat, iswater, mminlu_loc,  &
+                znt, Z0, thc, xland, xice, xicem, julday, cen_lat, iswater, mminlu_loc,  &
                 landuse_ISICE, landuse_LUCATS,                      &
                 landuse_LUSEAS, landuse_ISN,                        &
                 lu_state,                                           &
@@ -498,7 +499,7 @@ integer myproc
 
 !=====================================================================
    SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,  &
-                znt,Z0,thc,xland, xice, julday, cen_lat, iswater, mminlu, &
+                znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu, &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
                 lu_state,                                           &
                 allowed_to_read , usebgalb ,                        &
@@ -520,7 +521,7 @@ integer myproc
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usebgalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
-                                                               znt, Z0, thc, xland
+                                                               znt, Z0, thc, xland, xicem
    INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN
    REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
 
@@ -696,6 +697,7 @@ integer myproc
             XLAND(I,J)=2.0                                    
           ENDIF                                              
 !    SET SEA-ICE POINTS TO LAND WITH ICE/SNOW SURFACE PROPERTIES
+          XICEM(I,J)=XICE(I,J)
           IF(XICE(I,J).GT.0.5)THEN
             XLAND(I,J)=1.0
             ALBBCK(I,J)=ALBD(ISICE,ISN)/100.

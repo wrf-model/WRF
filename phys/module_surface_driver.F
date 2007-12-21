@@ -15,7 +15,7 @@ CONTAINS
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
-     &          ,ct,tke_myj                                           &
+     &          ,xicem,isice,iswater,ct,tke_myj                       &
      &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
      &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss                        &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
@@ -227,14 +227,16 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
-   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   ISLTYP
-   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   IVGTYP
+   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ISLTYP
+   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   IVGTYP
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   LOWLYR
    INTEGER, INTENT(IN )::   IFSNOW
    INTEGER, INTENT(IN )::   ISFFLX
    INTEGER, INTENT(IN )::   ITIMESTEP
    INTEGER, INTENT(IN )::   NUM_SOIL_LAYERS
    INTEGER, INTENT(IN )::   STEPBL
+   INTEGER, INTENT(IN )::   ISICE
+   INTEGER, INTENT(IN )::   ISWATER
    LOGICAL, INTENT(IN )::   WARM_RAIN
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
@@ -245,10 +247,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SST
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   TMN
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   VEGFRA
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   TMN
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XICE
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XLAND
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOALB
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACSNOW
@@ -498,7 +501,35 @@ CONTAINS
     DO ij = 1 , num_tiles
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
+        IF(XLAND(i,j) .GT. 1.5 .AND. XICE(I,J) .GT. 0.5 .AND. XICEM(I,J) .LT. 0.5)THEN
+! water point turns to sea-ice point
+          XICEM(I,J) = XICE(I,J)
+          XLAND(I,J) = 1.
+          IVGTYP(I,J) = ISICE
+          ISLTYP(I,J) = 16
+          VEGFRA(I,J) = 0.
+          TMN(I,J) = 271.4
+          DO nk = 1, num_soil_layers
+            TSLB(I,NK,J) = TSK(I,J)
+            SMOIS(I,NK,J) = 1.0
+            SH2O(I,NK,J) = 0.0
+          ENDDO
+        ENDIF
         IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SST(i,j)
+        IF(XLAND(i,j) .LT. 1.5 .AND. XICEM(I,J) .GT. 0.5 .AND. XICE(I,J) .LT. 0.5)THEN
+! sea-ice point turns to water point
+          XICEM(I,J) = XICE(I,J)
+          XLAND(I,J) = 2.
+          IVGTYP(I,J) = ISWATER
+          ISLTYP(I,J) = 14
+          VEGFRA(I,J) = 0.
+          TMN(I,J) = SST(I,J)
+          DO nk = 1, num_soil_layers
+            TSLB(I,NK,J) = SST(I,J)
+            SMOIS(I,NK,J) = 1.0
+            SH2O(I,NK,J) = 1.0
+          ENDDO
+        ENDIF
       ENDDO
       ENDDO
     ENDDO
@@ -559,14 +590,14 @@ CONTAINS
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
-               uratx,vratx,tratx,                                  &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
                P1000mb,                                            &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+               uratx,vratx,tratx                                   )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF

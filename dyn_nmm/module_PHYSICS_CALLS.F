@@ -695,7 +695,7 @@
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: ISLTYP,IVGTYP
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ISLTYP,IVGTYP 
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: LPBL
 !
@@ -717,10 +717,11 @@
      &                                             ,RSWIN,RSWOUT,RSWTOA &
      &                                             ,SHDMIN,SHDMAX       &
 !    &                                             ,SICE,SIGT4,SM,SR    & !Bandaid
-     &                                             ,SICE,SIGT4          &
-     &                                             ,SST,TG,VBM2,VEGFRC
+     &                                             ,SIGT4               &
+     &                                             ,SST,VBM2,VEGFRC
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR         !Bandaid
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
+                                                      ,TG,SICE      
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ALBASE,MXSNAL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACSNOM,ACSNOW    &
@@ -1146,7 +1147,8 @@
      &          ,U10=U10,UDRUNOFF=BGROFF,UST=USTAR,UZ0=UZ0H             &
      &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
-     &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE                &
+     &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
+     &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &

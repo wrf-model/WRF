@@ -1674,7 +1674,7 @@
      &             ,ADV_MOIST_COND                                      &
      &             ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                   &
      &             ,APR_CAPMA,APR_CAPME,APR_CAPMI                       &
-     &             ,XICE,VEGFRA,SNOW,CANWAT,SMSTAV                      &
+     &             ,XICE,XICE,VEGFRA,SNOW,CANWAT,SMSTAV                 &
      &             ,SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW            &
      &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMC                     &
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary

@@ -1406,10 +1406,10 @@ int   inp2grib_Mercator (ppvGDS_Proj_Input, Mercator, lProj_size , errmsg)
       Mercator->chScan_mode = ( unsigned char ) ProjInp->usScan_mode;
 
 /* convert ulDx to 3 char */
-      set_bytes(ProjInp->lon_inc, 3, Mercator->achDi);
+      set_bytes((int)(ProjInp->lon_inc + 0.5), 3, Mercator->achDi);
 
 /* convert ulDy to 3chars */
-      set_bytes(ProjInp->lat_inc, 3, Mercator->achDj);
+      set_bytes((int)(ProjInp->lat_inc + 0.5), 3, Mercator->achDj);
 
       Mercator->chScan_mode = ( unsigned char ) ProjInp->usScan_mode;
 

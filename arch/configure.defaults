@@ -27,6 +27,7 @@ CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(ENVCOMPDEFS) $(POUND
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share
@@ -41,7 +42,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -69,6 +70,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS) -w" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -134,6 +139,7 @@ CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(COREDEFS) $(ENVCOMPDEFS) $(POUND
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share
@@ -148,7 +154,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -175,6 +181,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -237,6 +247,7 @@ ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RW
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -258,7 +269,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -285,6 +296,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -350,6 +365,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int -I../frame 
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -370,7 +386,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -397,6 +413,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -461,6 +481,7 @@ ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RW
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH $(OMP) \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -482,7 +503,7 @@ CC_TOOLS        =       $(CC)
 #### because the SGI Fortran compiler complains about long source lines.      ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -509,6 +530,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -575,6 +600,7 @@ ARCHFLAGS       =       $(COREDEFS) -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -598,7 +624,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -625,6 +651,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -711,6 +741,7 @@ ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -734,7 +765,7 @@ CC_TOOLS        =       $(CC)
 #### usually due to cpp translating __FILE__ to a full pathname.              ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -761,6 +792,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -828,11 +863,11 @@ ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
-			-L../external/fftpack/fftpack5 -lfftpack \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 
 LDFLAGS         =	 CONFIGURE_LDFLAGS
@@ -876,7 +911,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 wrf_bdyout.o : wrf_bdyout.F
@@ -973,6 +1008,7 @@ ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -990,7 +1026,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
@@ -1017,6 +1053,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -1118,11 +1158,11 @@ ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv -lxlsmp \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
-			-L../external/fftpack/fftpack5 -lfftpack \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =	$(OMP) CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -1165,7 +1205,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 module_sm.o 	: module_sm.F
 module_tiles.o	: module_tiles.F
@@ -1271,6 +1311,7 @@ ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv -lxlsmp \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -1287,7 +1328,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 module_dm.F :  ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
@@ -1314,6 +1355,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -1427,11 +1472,11 @@ ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWO
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/RSL_LITE -lrsl_lite -lmass -lmassv \
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
-			-L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib_share -lio_grib_share \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o $(ESMF_IO_LIB)
 LDFLAGS         =	 CONFIGURE_LDFLAGS
@@ -1483,7 +1528,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -1578,6 +1623,7 @@ ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWO
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PHDF5_LIB_PATH -L../external/RSL_LITE -lrsl_lite -lmass -lmassv \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -1595,7 +1641,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 CONFIGURE_WRFIO_PHDF5 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 CONFIGURE_WRFIO_PHDF5 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -1628,6 +1674,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -1721,6 +1771,7 @@ ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DR
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -1744,7 +1795,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int wrfio_mcel gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int wrfio_mcel gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( cat ../tools/gen_comms_warning ../external/RSL_LITE/gen_comms.c > ../tools/gen_comms.c )
@@ -1775,6 +1826,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 wrfio_mcel : 
 	( cd ../external/io_mcel ; \
@@ -1864,6 +1919,7 @@ ARCHFLAGS       =       $(COREDEFS) -DDM_PARALLEL -DRSL_LITE -DINTIO -DIWORDSIZE
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/RSL_LITE -lrsl_lite -L/bgl/local/lib -lmass -lmassv \
                         -L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
@@ -1886,7 +1942,7 @@ PNETCDFPATH     =       CONFIGURE_PNETCDF_PATH
 CC_TOOLS        =       cc
 WRF_CONVERT = 0
 
-externals : wrf_ioapi_includes ../external/RSL_LITE/librsl_lite.a CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF wrfio_int module_dm.F esmf_time gen_comms.c
+externals : wrf_ioapi_includes ../external/RSL_LITE/librsl_lite.a CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF wrfio_int module_dm.F esmf_time gen_comms.c fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -1911,6 +1967,10 @@ wrfio_grib1 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -2016,6 +2076,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -2031,7 +2092,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -2059,6 +2120,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -2151,6 +2216,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -2166,7 +2232,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -2194,6 +2260,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -2291,6 +2361,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/RSL_LITE -lrsl_lite  \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1 \
@@ -2308,7 +2379,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2341,6 +2412,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
@@ -2441,6 +2516,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/RSL_LITE -lrsl_lite \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -2458,7 +2534,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int ../external/RSL/librsl_lite.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int ../external/RSL/librsl_lite.a gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2491,6 +2567,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL/RSL/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
@@ -2576,6 +2656,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/RSL_LITE -lrsl_lite  \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
                         -L../external/io_grib1 -lio_grib1 \
@@ -2593,7 +2674,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int ../external/RSL_LITE/librsl_lite.a gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2626,6 +2707,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCFLAGS_ESMF)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
@@ -2720,6 +2805,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -2735,7 +2821,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -2768,6 +2854,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2827,6 +2917,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -2842,7 +2933,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -2874,6 +2965,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 module_io_mm5.o : module_io_mm5.F
@@ -2925,6 +3020,7 @@ ARCHFLAGS       = $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share
@@ -2940,7 +3036,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2  module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2  module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -2987,6 +3083,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 #LIB             =       CONFIGURE_NETCDF_LIB_PATH 
 LIB             = 	../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time  \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share
@@ -2996,7 +3093,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2  esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2  esmf_time fftpack
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
 
 wrfio_nf : 
@@ -3048,10 +3145,10 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
-			-L../external/fftpack/fftpack5 -lfftpack \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCFLAGS) -byteswapio CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -3096,7 +3193,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -O2 " RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3173,6 +3270,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -3188,7 +3286,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -3217,6 +3315,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3300,6 +3402,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -3316,7 +3419,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3348,6 +3451,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -3426,6 +3533,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -3441,7 +3549,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -3470,6 +3578,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -3542,10 +3654,10 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
-			-L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       -byteswapio CONFIGURE_LDFLAGS
@@ -3594,7 +3706,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -O2 " RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -3674,6 +3786,7 @@ INCLUDE_MODULES = ../main -I../external/io_int -I../external/esmf_time_f90 \
 PERL = perl
 REGISTRY = Registry
 LIB = -L../external/io_netcdf -lwrfio_nf $(OMP) -LCONFIGURE_NETCDF_PATH/lib -lnetcdf -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -3692,7 +3805,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3725,6 +3838,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='mpicc -w -I.' \
@@ -3801,6 +3918,7 @@ INCLUDE_MODULES = ../main -I../external/io_netcdf -I../external/io_int -I../exte
 PERL = perl
 REGISTRY = Registry
 LIB = -Vaxlib -L../external/io_netcdf -lwrfio_nf $(OMP) -L/u/ncsa/straka/AUGUST.test/WRFV1/netcdfintel7/lib -lnetcdf -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -3817,7 +3935,7 @@ RANLIB = ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       ecc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -3850,6 +3968,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include' \
@@ -3924,6 +4046,7 @@ CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) $(ENVCOMPDEFS) $(POUND_DEF)
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =	CONFIGURE_NETCDF_LIB_PATH ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/esmf_time_f90 -lesmf_time \
 			-L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -3934,7 +4057,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -3963,6 +4086,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4051,6 +4178,7 @@ INCLUDE_MODULES =       -I ../main -I../external/io_netcdf -I../external/io_int 
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
 			-L../external/io_grib_share -lio_grib_share \
@@ -4066,7 +4194,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -4096,6 +4224,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4181,6 +4313,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
 			-L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -4197,7 +4330,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4230,6 +4363,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
@@ -4335,6 +4472,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  \
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       -L../external/io_netcdf -lwrfio_nf -L/usr/local/netcdf/current/lib -lnetcdf -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -4365,7 +4503,7 @@ FLIC_MACROS = LMvpp.m4 -B 14000
 VECTOR = 1
 
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int  esmf_time  module_dm.F
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int  esmf_time  module_dm.F fftpack
 
 module_dm.F:
 	( /sbin/cp module_dm_warning module_dm.F ; \
@@ -4395,6 +4533,10 @@ wrfio_grib2 :
 esmf_time :
 	( cd ../external/esmf_time_f90 ;\
  	make FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(CPPFLAGS) -I../../inc " )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4484,6 +4626,7 @@ INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                     CONFIGURE_NETCDF_LIB_PATH \
                     -L../external/RSL_LITE -lrsl_lite \
                     -L../external/io_grib1 -lio_grib1 \
@@ -4503,7 +4646,7 @@ M4                = m4 -B 14000
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time
+externals : CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -4543,6 +4686,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC='icc -I. -w -O3 -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
@@ -4624,6 +4771,7 @@ INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                     CONFIGURE_NETCDF_LIB_PATH \
                     -L../external/io_int -lwrfio_int \
                     -L../external/io_grib1 -lio_grib1 \
@@ -4642,7 +4790,7 @@ M4                = m4 -B 14000
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -4679,6 +4827,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 mediation_integrate.o : mediation_integrate.F
@@ -4754,6 +4906,7 @@ INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../
 PERL              = perl
 REGISTRY          = Registry
 LIB               = -L../external/io_netcdf -lwrfio_nf \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                     CONFIGURE_NETCDF_LIB_PATH \
                     -L../external/io_int -lwrfio_int \
                     -L../external/io_grib1 -lio_grib1 \
@@ -4772,7 +4925,7 @@ M4                = m4 -B 14000
 RANLIB            = ranlib
 NETCDFPATH	  = CONFIGURE_NETCDF_PATH
 
-externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time
+externals : CONFIGURE_WRFIO_NF wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; \
@@ -4809,6 +4962,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 mediation_integrate.o : mediation_integrate.F
@@ -4898,6 +5055,7 @@ PERL            =       perl
 REGISTRY        =       Registry
 
 LIB             =       -L../external/io_netcdf -lwrfio_nf CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/RSL_LITE -lrsl_lite \
                         -L../external/io_int -lwrfio_int  \
                         -L../external/io_grib1 -lio_grib1 \
@@ -4918,7 +5076,7 @@ M4              =       m4 -B14000
 RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
@@ -4949,6 +5107,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) -f free -N 255" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" \
@@ -5026,6 +5188,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5041,7 +5204,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5070,6 +5233,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5135,6 +5302,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5150,7 +5318,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5180,6 +5348,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5245,6 +5417,7 @@ INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  -I../exter
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/io_int -lwrfio_int \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5260,7 +5433,7 @@ RANLIB          =       echo
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5290,6 +5463,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5361,6 +5538,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 #LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv 
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -5379,7 +5557,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5406,6 +5584,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -5486,6 +5668,7 @@ ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORD
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -lxlsmp \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -5502,7 +5685,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5529,6 +5712,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 
 module_configure.o : module_configure.F
@@ -5587,6 +5774,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5602,7 +5790,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5631,6 +5819,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5702,6 +5894,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5717,7 +5910,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5746,6 +5939,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5818,6 +6015,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5833,7 +6031,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 module_dm.F : ../external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
@@ -5862,6 +6060,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -5936,6 +6138,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -5951,7 +6154,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -5980,6 +6183,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6056,6 +6263,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite $(OMP) \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -6072,7 +6280,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6104,6 +6312,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -6189,6 +6401,7 @@ PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
 #LIB             =       CONFIGURE_NETCDF_LIB_PATH -lmass -lmassv 
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_int -lwrfio_int \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
@@ -6207,7 +6420,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -6234,6 +6447,10 @@ wrfio_grib2 :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -6308,8 +6525,8 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
-			-L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib_share -lio_grib_share \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCFLAGS) 
@@ -6361,7 +6578,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -6434,11 +6651,11 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/RSL_LITE -lrsl_lite \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
-			-L../external/fftpack/fftpack5 -lfftpack \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time 
 LDFLAGS         =       $(FCFLAGS) CONFIGURE_LDFLAGS
@@ -6492,7 +6709,7 @@ esmf_time :
 
 fftpack :
 	( cd ../external/fftpack/fftpack5 ; \
-	  make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -6561,6 +6778,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -6576,7 +6794,7 @@ RANLIB          =       ranlib
 NETCDFPATH      =       CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       $(CC)
                                                                                 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
                                                                                 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -6606,6 +6824,10 @@ esmf_time :
 	( cd ../external/esmf_time_f90 ; \
 	make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
                                                                                 
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
 shift_domain_em.o : shift_domain_em.F
@@ -6675,6 +6897,7 @@ EXTRAMODULES    =
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -6690,7 +6913,7 @@ RANLIB          =       ranlib
 NETCDFPATH      =       CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       pathcc
                                                                                 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
                                                                                 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6729,6 +6952,10 @@ esmf_time :
 	( cd ../external/esmf_time_f90 ; \
 	make FC="$(FC) $(FCDEBUG) $(FCBASEOPTS) " CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
                                                                                 
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" FC='mpif90 $(FCFLAGS) -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
                                                                                 
@@ -6804,6 +7031,7 @@ INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -6824,7 +7052,7 @@ RANLIB          =       ranlib
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       gcc
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6856,6 +7084,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -6932,6 +7164,7 @@ INCLUDE_MODULES =       -I../main -I../external/io_netcdf -I../external/io_int -
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
 			-L../external/io_int -lwrfio_int \
 			../frame/module_internal_header_util.o ../frame/pack_utils.o -L../external/esmf_time_f90 -lesmf_time -L$(SX_BASE_CPLUS)/lib -lcpp
@@ -6952,7 +7185,7 @@ CC_TOOLS        =       cc
 #### because the Fortran compiler complains about long source lines.          ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -6984,6 +7217,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" AR="$(AR_BASE)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
@@ -7063,6 +7300,7 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -7083,7 +7321,7 @@ CC_TOOLS        =       $(CC)
 #### because the Fortran compiler complains about long source lines.          ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7113,6 +7351,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7179,6 +7421,7 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -7199,7 +7442,7 @@ CC_TOOLS        =       $(CC)
 #### because the Fortran compiler complains about long source lines.          ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int module_dm.F esmf_time fftpack
 
 module_dm.F :
 	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F )
@@ -7228,6 +7471,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7300,6 +7547,7 @@ INCLUDE_MODULES =       -fmod=../main -I../external/io_netcdf -I../external/io_i
 PERL            =       perl
 REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL_LITE -lrsl_lite \
+                        -L../external/fftpack/fftpack5 -lfftpack \
                         -L../external/io_grib1 -lio_grib1 \
                         CONFIGURE_GRIB2_LIB \
                         -L../external/io_grib_share -lio_grib_share \
@@ -7321,7 +7569,7 @@ CC_TOOLS        =       cc
 #### because the Fortran compiler complains about long source lines.          ####
 SED_FTN = sed -f ../arch/no_file_line.sed
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -7353,6 +7601,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
@@ -7444,6 +7696,7 @@ PERL            =       perl
 REGISTRY        =       Registry
 
 LIB             =       CONFIGURE_NETCDF_LIB_PATH \
+                        ../external/fftpack/fftpack5/libfftpack.a \
 			../external/io_int/libwrfio_int.a \
                         ../frame/module_internal_header_util.o ../frame/pack_utils.o \
                         ../external/esmf_time_f90/libesmf_time.a \
@@ -7462,7 +7715,7 @@ NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 LIBWRFLIB       =       libwrflib.a
 
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 ../external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : ../external/RSL_LITE/gen_comms.c
 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
@@ -7492,6 +7745,10 @@ wrfio_int :
 esmf_time : 
 	( cd ../external/esmf_time_f90 ; \
 	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 ../external/RSL_LITE/librsl_lite.a :
 	( cd ../external/RSL_LITE ; \
@@ -7545,6 +7802,2116 @@ module_io.o module_dm.o :
 	/bin/sed -e '/MPI_ADDRESS_KIND=4/d' -e '/DEC\$$/d' '$(MPdir)'/Include/mpif.h > mpif.h
 	$(FC) -o $*.o -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
+############################################################
+#ARCH    Generic Intel Itanium2 ia64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, OpenMP, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+#        To improve performance on Itanium2 architecture you might want to use '-IPF-fp-relaxed' flag, which enables
+#        use of faster but slightly less accurate code sequences for math functions, such as divide and sqrt,
+#        and enables the performance of more aggressive floating-point transformations, which may affect accuracy.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               = -openmp -fpp -auto
+OMPCPP            = -D_OPENMP
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE -openmp
+FCOPTIM           = -O3 -unroll0
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias -tpp2 \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Generic Intel Itanium2 ia64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+#        To improve performance on Itanium2 architecture you might want to use '-IPF-fp-relaxed' flag, which enables
+#        use of faster but slightly less accurate code sequences for math functions, such as divide and sqrt,
+#        and enables the performance of more aggressive floating-point transformations, which may affect accuracy.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               =
+OMPCPP            =
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE
+FCOPTIM           = -O3 -unroll0
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias -tpp2 \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Dual-Core Intel Itanium2 Processor 9000 Sequence ia64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, OpenMP, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+#        To improve performance on Itanium2 architecture you might want to use '-IPF-fp-relaxed' flag, which enables
+#        use of faster but slightly less accurate code sequences for math functions, such as divide and sqrt,
+#        and enables the performance of more aggressive floating-point transformations, which may affect accuracy.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               = -openmp -fpp -auto
+OMPCPP            = -D_OPENMP
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE -openmp
+FCOPTIM           = -O3 -unroll0
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias -mtune=itanium2-p9000 \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# OpenMP workaround for solve_em.F
+# This should be fixed in newer versions of Intel Fortran Compiler (somewhere after 9.1.041).
+# You can check if you really need this workaround by building without the following rule
+# and making sure that output of "nm solve_em.o | grep kmp" contains kmpc_fork_call.
+solve_em.o : solve_em.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC)  -c $(FCBASEOPTS) $(FCDEBUG) $(OMP) -O0 -override-limits $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Dual-Core Intel Itanium2 Processor 9000 Sequence ia64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+#        To improve performance on Itanium2 architecture you might want to use '-IPF-fp-relaxed' flag, which enables
+#        use of faster but slightly less accurate code sequences for math functions, such as divide and sqrt,
+#        and enables the performance of more aggressive floating-point transformations, which may affect accuracy.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               =
+OMPCPP            =
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE
+FCOPTIM           = -O3 -unroll0
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias -mtune=itanium2-p9000 \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Generic Intel 64 x86_64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, OpenMP, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               = -openmp -fpp -auto
+OMPCPP            = -D_OPENMP
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE -openmp
+FCOPTIM           = -O3
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+solve_em.o : solve_em.F
+module_dm.o : module_dm.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) $(OMP) -O0 $(MODULE_DIRS) -mP2OPT_vec_xform_level=103 $*.f90
+
+############################################################
+#ARCH    Generic Intel 64 x86_64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               =
+OMPCPP            =
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE
+FCOPTIM           = -O3
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+module_dm.o : module_dm.F
+solve_em.o : solve_em.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) -O0 $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Generic Intel 64 x86_64 Linux, ifort+icc 9.x,10.x SM-Parallel (OpenMP, no nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        =
+OMP               = -openmp -fpp -auto
+OMPCPP            = -D_OPENMP
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          =
+FC                = ifort
+LD                = $(FC)
+CC                = icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c    -openmp
+FCOPTIM           = -O3
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                     \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE)  -C -P  \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF  wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+solve_em.o : solve_em.F
+module_dm.o : module_dm.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) $(OMP) -O0 $(MODULE_DIRS) -mP2OPT_vec_xform_level=103 $*.f90
+
+############################################################
+#ARCH    Generic Intel 64 x86_64 Linux, ifort+icc 9.x,10.x Sequential (no nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        =
+OMP               =
+OMPCPP            =
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          =
+FC                = ifort
+LD                = $(FC)
+CC                = icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c
+FCOPTIM           = -O3
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                     \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE)  -C -P  \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF  wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+module_dm.o : module_dm.F
+solve_em.o : solve_em.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) -O0 $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Intel Core 2 Duo/Quad (Intel 64) x86_64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, OpenMP, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               = -openmp -fpp -auto
+OMPCPP            = -D_OPENMP
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE -openmp
+FCOPTIM           = -O3 -xT
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+solve_em.o : solve_em.F
+module_dm.o : module_dm.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) $(OMP) -O0 $(MODULE_DIRS) -mP2OPT_vec_xform_level=103 $*.f90
+
+############################################################
+#ARCH    Intel Core 2 Duo/Quad (Intel 64) x86_64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, RSL_LITE)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        = 1
+OMP               =
+OMPCPP            =
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          = $(MPICH)
+FC                = $(MPI_HOME)/bin/mpif90 -f90=ifort
+LD                = $(FC)
+CC                = $(MPI_HOME)/bin/mpicc -cc=icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c -DDM_PARALLEL  -I../external/RSL_LITE
+FCOPTIM           = -O3 -xT
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                    -L../external/RSL_LITE -lrsl_lite \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE) -I../external/RSL_LITE -C -P `cat ../inc/dm_comm_cpp_flags` \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals :  CONFIGURE_WRFIO_NF ../external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+gen_comms.c : ../external/RSL_LITE/gen_comms.c
+	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; \
+          cat ../external/RSL_LITE/gen_comms.c >> ../tools/gen_comms.c )
+
+module_dm.F : ../external/RSL_LITE/module_dm.F
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat ../external/RSL_LITE/module_dm.F >> module_dm.F )
+
+../external/RSL_LITE/librsl_lite.a :
+	( cd ../external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	 FC='$(FC) $(FCFLAGS) -I../../.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+module_dm.o : module_dm.F
+solve_em.o : solve_em.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) -O0 $(MODULE_DIRS) $*.f90
+
+############################################################
+#ARCH    Intel Core 2 Duo/Quad (Intel 64) x86_64 Linux, ifort+icc 9.x,10.x SM-Parallel (OpenMP, no nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        =
+OMP               = -openmp -fpp -auto
+OMPCPP            = -D_OPENMP
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          =
+FC                = ifort
+LD                = $(FC)
+CC                = icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c    -openmp
+FCOPTIM           = -O3 -xT
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                     \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE)  -C -P  \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF  wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+solve_em.o : solve_em.F
+module_dm.o : module_dm.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) $(OMP) -O0 $(MODULE_DIRS) -mP2OPT_vec_xform_level=103 $*.f90
+
+############################################################
+#ARCH    Intel Core 2 Duo/Quad (Intel 64) x86_64 Linux, ifort+icc 9.x,10.x Sequential (no nesting)
+#
+# Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
+#        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
+#
+#        By default, some files are compiled without optimizations to speed up compilation. Removing
+#        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
+#        Out Of Memory messages, but might produce binaries which are substantially faster.
+#
+#        If you got Out Of Memory message, there are several options:
+#        	1. Check your memory limits (ulimit -a), possibly increasing swap partitions size.
+#        	2. Remove any debugging flags (-g, -check, -traceback).
+#        	3. Force the problematic file to be compiled with less optimizations (see examples at the end of this file), try
+#        	   -no-ip compiler flag.
+#
+#        This configuration is aimed at accuracy. To improve performance (at the expence of accuracy) you might
+#        consider removing '-fp-model precise' flag from FCBASEOPTS. This enables non value-safe optimizations.
+#        Another option is to add '-ftz' flag, which flushes denormal results to zero when the application is in
+#        the gradual underflow mode. It may improve performance if the denormal values are not critical to the
+#        behavior of your workload.
+
+#        If you have Intel MPI installed and wish to use instead, make the
+#        following changes to settings below:
+#        FC                = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        CC                = $(MPI_HOME)/bin64/mpiicc -nocompchk
+
+DMPARALLEL        =
+OMP               =
+OMPCPP            =
+INCLUDE           = ../external/io_netcdf/
+MAX_PROC          = 1024
+MPI_HOME          =
+FC                = ifort
+LD                = $(FC)
+CC                = icc
+SCC               = icc
+CC_TOOLS          = $(SCC)
+SFC               = ifort
+CFLAGS            = -w -O3 -ip  -c
+FCOPTIM           = -O3 -xT
+FCDEBUG           = # -g -traceback
+FCBASEOPTS        = -align all -FR -convert big_endian \
+                    -fno-alias -fno-fnalias  \
+                    -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
+FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
+ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+                    -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    -DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS    =
+ESMF_IO_LIB       = ESMFIOLIB
+ESMF_IO_LIB_EXT   = ESMFIOEXTLIB
+INCLUDE_MODULES   = -I../main -I../external/io_netcdf -I../external/io_int -I../external/esmf_time_f90 \
+                    -I../external -I../frame -I../share -I../phys -I../inc
+PERL              = perl
+REGISTRY          = Registry
+LIB               = -L../external/io_netcdf -lwrfio_nf $(OMP) \
+                    CONFIGURE_NETCDF_LIB_PATH \
+                     \
+                    -L../external/io_grib1 -lio_grib1 \
+                    CONFIGURE_GRIB2_LIB \
+                    -L../external/io_grib_share -lio_grib_share \
+                    -L../external/io_int -lwrfio_int \
+                    ../frame/module_internal_header_util.o ../frame/pack_utils.o \
+                        -L../external/fftpack/fftpack5 -lfftpack \
+                     -L../external/esmf_time_f90 -lesmf_time
+LDFLAGS           = -O3 -ip $(OMP) CONFIGURE_LDFLAGS
+CPP               = /lib/cpp -C -P -traditional
+POUND_DEF         = -DNO_RRTM_PHYSICS  -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS          = -I$(LIBINCLUDE) -C -P -traditional $(COREDEFS) $(ARCHFLAGS) $(OMPCPP) \
+                    -I$(INCLUDE)  -C -P  \
+                    $(POUND_DEF) $(COREDEFS)
+AR                = ar ru
+M4                = m4
+RANLIB            = ranlib
+NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF  wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
+
+module_dm.F :
+	( /bin/cp module_dm_warning module_dm.F ; \
+          cat module_dm_stubs.F >> module_dm.F )
+
+wrfio_nf :
+	( cd ../external/io_netcdf ; \
+          make NETCDFPATH=CONFIGURE_NETCDF_PATH CPP="$(CPP)" FC="$(FC) -I../.. $(FCFLAGS)" \
+          TRADFLAG="-traditional" RANLIB="$(RANLIB)" ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../../inc ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../ioapi_share/wrf_status_codes.h ../io_phdf5 ; \
+	/bin/cp ../ioapi_share/wrf_io_flags.h ../io_quilt )
+
+wrfio_int :
+	( cd ../external/io_int ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  SFC="$(SFC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" \
+		  ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" all )
+
+wrfio_grib_share :
+	( cd ../external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive)
+
+wrfio_grib1 :
+	( cd ../external/io_grib1 ; \
+          make CC="$(CC)" CPP="$(CPP)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+wrfio_grib2 :
+	( cd ../external/io_grib2 ; \
+          make CC="$(CC) CONFIGURE_GRIB2_INC" CPP="$(CPP) CONFIGURE_GRIB2_INC" RM="$(RM)" TRADFLAG="-traditional" RANLIB="$(RANLIB)" \
+		  FREE="-FR" FIXED="-FI" \
+          FC="$(FC) -I$(MPI_HOME)/include $(FCDEBUG) $(FCFLAGS)" archive )
+
+esmf_time :
+	( cd ../external/esmf_time_f90 ; \
+	  make FC="$(FC) $(FCDEBUG) $(FCFLAGS)" CPP="$(CPP) -I../../inc -I. $(POUND_DEF)" )
+
+fftpack :
+	( cd ../external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+
+# Compile these without high optimization and no interprocedural
+# optimizations to speed compile. Commenting them out may result
+# in longer compilation time, but might produce substantialy faster
+# binaries.
+mediation_integrate.o : mediation_integrate.F
+mediation_interp_domain.o : mediation_interp_domain.F
+mediation_feedback_domain.o : mediation_feedback_domain.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_histout.o : wrf_histout.F
+wrf_restartout.o : wrf_restartout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_histin.o : wrf_histin.F
+wrf_restartin.o : wrf_restartin.F
+module_initialize_real.o: module_initialize_real.F
+solve_interface.o : solve_interface.F
+shift_domain_em.o : shift_domain_em.F
+module_io_wrf.o : module_io_wrf.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+start_domain.o : start_domain.F
+mediation_force_domain.o : mediation_force_domain.F
+module_configure.o : module_configure.F
+
+mediation_integrate.o mediation_interp_domain.o mediation_feedback_domain.o \
+module_configure.o                                              \
+wrf_auxinput1out.o wrf_histout.o wrf_restartout.o wrf_inputin.o \
+wrf_auxinput1in.o wrf_histin.o wrf_restartin.o module_initialize_real.o \
+module_domain.o module_dm.o module_io_wrf.o start_domain.o solve_interface.o \
+shift_domain_em.o                                              \
+mediation_force_domain.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c -no-ip $(FCBASEOPTS) $(FCDEBUG) $(MODULE_DIRS) $*.f90
+
+# Force even lower optimization level for these files to decrease
+# compilation time and lower memory demands
+module_dm.o : module_dm.F
+solve_em.o : solve_em.F
+
+solve_em.o \
+module_dm.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) -O0 $(MODULE_DIRS) $*.f90
 
 ##################################################################
 #ARCH  NULL

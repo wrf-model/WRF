@@ -130,6 +130,9 @@ use module_io
      grid%imask_xstag = 1
      grid%imask_ystag = 1
      grid%imask_xystag = 1
+#if (EM_CORE == 1)
+     grid%press_adj = .FALSE.
+#endif
      CALL start_domain ( grid , .TRUE. )
    ELSE
      CALL domain_clock_get( grid, current_timestr=timestr )
@@ -148,6 +151,9 @@ use module_io
      grid%imask_xstag = 1
      grid%imask_ystag = 1
      grid%imask_xystag = 1
+#if (EM_CORE == 1)
+     grid%press_adj = .FALSE.
+#endif
      CALL start_domain ( grid , .TRUE. )
    ENDIF
 

@@ -215,6 +215,7 @@ SUBROUTINE med_nest_move ( parent, nest )
        config_flags%restart = .FALSE.
        grid%restart = .FALSE.
        CALL nl_set_restart ( 1, .FALSE. )
+       grid%press_adj = .FALSE.
        CALL start_domain ( parent , .FALSE. )
        config_flags%restart = saved_restart_value
        grid%restart = saved_restart_value
@@ -231,6 +232,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      config_flags%restart = .FALSE.
      CALL nl_set_restart ( 1, .FALSE. )
      grid%restart = .FALSE.
+     nest%press_adj = .FALSE.
      CALL start_domain ( nest , .FALSE. )
      config_flags%restart = saved_restart_value
      grid%restart = saved_restart_value

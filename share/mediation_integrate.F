@@ -473,6 +473,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      nest%imask_xstag = 1
      nest%imask_ystag = 1
      nest%imask_xystag = 1
+     nest%press_adj = .TRUE.
      CALL start_domain ( nest , .TRUE. )
 ! kludge: 20040604
      CALL get_ijk_from_grid (  parent ,                   &
@@ -502,6 +503,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      parent%imask_ystag = 1
      parent%imask_xystag = 1
 
+     parent%press_adj = .FALSE.
      CALL start_domain ( parent , .TRUE. )
 
      parent%acsnow     = save_acsnow
@@ -544,6 +546,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      nest%imask_xstag = 1
      nest%imask_ystag = 1
      nest%imask_xystag = 1
+     nest%press_adj = .FALSE.
      CALL start_domain ( nest , .TRUE. )
 #ifndef MOVE_NESTS
 ! this doesn't need to be done for moving nests, since ht_coarse is part of the restart

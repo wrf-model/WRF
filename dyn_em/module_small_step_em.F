@@ -21,7 +21,7 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             mut, muts, mudf,              &
                             u_save, v_save, w_save,       &
                             t_save, ph_save, mu_save,     &
-                            ww, ww_save, h_div,           &
+                            ww, ww_save,                  &
                             dnw, c2a, pb, p, alt,         &
                             msfux, msfuy, msfvx,          &
                             msfvx_inv,                    &
@@ -52,8 +52,7 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                                                               v_save,   &
                                                               w_save,   &
                                                               t_save,   &
-                                                              ph_save,  &
-                                                              h_div
+                                                              ph_save
 
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: u_2,   &
                                                               v_2,   &
@@ -317,18 +316,6 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
       ENDDO
       ENDDO
       ENDDO
-
-    DO j=j_start, j_end
-    DO k=k_start, k_end
-    DO i=i_start, i_end
-       h_div(i,k,j) = (                                               &
-                   rdy*( (muv(i,j+1)*v_1(i,k,j+1)*msfvx_inv(i,j+1))   &
-                        -(muv(i,j  )*v_1(i,k,j  )*msfvx_inv(i,j  )) ) &
-                  +rdx*( (muu(i+1,j)*u_1(i+1,k,j)/msfuy(i+1,j))       &
-                        -(muu(i  ,j)*u_1(i,k,j  )/msfuy(i  ,j)) ))
-    ENDDO
-    ENDDO
-    ENDDO
 
 END SUBROUTINE small_step_prep
 
@@ -754,13 +741,13 @@ END SUBROUTINE calc_coef_w
 
 SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                         p, pb,                         &
-                        ph, php, alt, al, h_div, mu,   &
+                        ph, php, alt, al, mu,          &
                         muu, cqu, muv, cqv, mudf,      &
                         msfux, msfuy, msfvx,           &
                         msfvx_inv, msfvy,              &
                         rdx, rdy, dts,                 &
                         cf1, cf2, cf3, fnm, fnp,       &
-                        emdiv,hmdiv,                   &
+                        emdiv,                         &
                         rdnw, config_flags, spec_zone, &
                         non_hydrostatic,               &
                         ids, ide, jds, jde, kds, kde,  &
@@ -798,8 +785,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                                              alt,     &
                                              al,      &
                                              cqu,     &
-                                             cqv,     &
-                                             h_div
+                                             cqv
 
 
       REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: muu,  &
@@ -824,8 +810,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                                                                 cf1,    &
                                                                 cf2,    &
                                                                 cf3,    &
-                                                                emdiv,  &
-                                                                hmdiv
+                                                                emdiv
     
 
 !  Local 3d array from the stack (note tile size)
@@ -1012,8 +997,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
    DO k = k_start, k_end
      DO i = i_start_up, i_end_up
-       u(i,k,j)=u(i,k,j)-dts*cqu(i,k,j)*dpxy(i,k)+mudf_xy(i)        &
-                +hmdiv*dx*(h_div(i,k,j)-h_div(i-1,k,j))/msfuy(i,j)
+       u(i,k,j)=u(i,k,j)-dts*cqu(i,k,j)*dpxy(i,k)+mudf_xy(i) 
      ENDDO
    ENDDO
 
@@ -1101,8 +1085,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
      DO k = k_start, k_end
        DO i = i_start, i_end
-         v(i,k,j)=v(i,k,j)-dts*cqv(i,k,j)*dpxy(i,k)+mudf_xy(i)     &
-                   +hmdiv*dy*(h_div(i,k,j)-h_div(i,k,j-1))*msfvx_inv(i,j)
+         v(i,k,j)=v(i,k,j)-dts*cqv(i,k,j)*dpxy(i,k)+mudf_xy(i) 
        ENDDO
      ENDDO
    END IF
@@ -1138,7 +1121,7 @@ END SUBROUTINE advance_uv
 SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                          mu, mut, muave, muts, muu, muv,      &
                          mudf, uam, vam, wwam, t, t_1,        &
-                         t_ave, ft, h_div, mu_tend,           &
+                         t_ave, ft, mu_tend,                  &
                          rdx, rdy, dts, epssm,                &
                          dnw, fnm, fnp, rdnw,                 &
                          msfux, msfuy, msfvx, msfvx_inv,      &
@@ -1177,7 +1160,6 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                                               t_ave,  &
                                               uam,    &
                                               vam,    &
-                                              h_div,  &
                                               wwam
                                               
   REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: muu,  &
@@ -1209,10 +1191,9 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                                                             dts,    &
                                                             epssm
 
-!  Local 3d array from the stack (note tile size)
+!  Local arrays from the stack (note tile size)
 
-!  REAL, DIMENSION (its:ite, kts:kte) :: wdtn, dvdxi
-  REAL, DIMENSION (its:ite, kts:kte) :: wdtn
+  REAL, DIMENSION (its:ite, kts:kte) :: wdtn, dvdxi
   REAL, DIMENSION (its:ite) :: dmdt
 
   INTEGER :: i,j,k, i_start, i_end, j_start, j_end, k_start, k_end
@@ -1289,12 +1270,12 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 
      DO k=k_start, k_end
      DO i=i_start, i_end
-         h_div(i,k,j) = msftx(i,j)*msfty(i,j)*(                                    &
+         dvdxi(i,k) = msftx(i,j)*msfty(i,j)*(                                      &
                      rdy*( (v(i,k,j+1)+muv(i,j+1)*v_1(i,k,j+1)*msfvx_inv(i,j+1))   &
                           -(v(i,k,j  )+muv(i,j  )*v_1(i,k,j  )*msfvx_inv(i,j  )) ) &
                     +rdx*( (u(i+1,k,j)+muu(i+1,j)*u_1(i+1,k,j)/msfuy(i+1,j))       &
                           -(u(i,k,j  )+muu(i  ,j)*u_1(i,k,j  )/msfuy(i  ,j)) ))
-        dmdt(i)    = dmdt(i) + dnw(k)*h_div(i,k,j)
+        dmdt(i)    = dmdt(i) + dnw(k)*dvdxi(i,k)
      ENDDO
      ENDDO
      DO i=i_start, i_end
@@ -1307,7 +1288,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 
      DO k=2,k_end
      DO i=i_start, i_end
-       ww(i,k,j)=ww(i,k-1,j)-dnw(k-1)*(dmdt(i)+h_div(i,k-1,j)+mu_tend(i,j))/msfty(i,j)
+       ww(i,k,j)=ww(i,k-1,j)-dnw(k-1)*(dmdt(i)+dvdxi(i,k-1)+mu_tend(i,j))/msfty(i,j)
      ENDDO
      END DO
 
@@ -1379,12 +1360,6 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
               ( u(i+1,k,j)*(t_1(i+1,k,j)+t_1(i  ,k,j))     &
                -u(i  ,k,j)*(t_1(i  ,k,j)+t_1(i-1,k,j)) ) ) &
              + rdnw(k)*( wdtn(i,k+1)-wdtn(i,k) ) )       
-     ENDDO
-     ENDDO
-
-     DO k=k_start, k_end
-     DO i=i_start, i_end
-         h_div(i,k,j) = h_div(i,k,j)/(msftx(i,j)*msfty(i,j))
      ENDDO
      ENDDO
 

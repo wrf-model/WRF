@@ -1538,7 +1538,7 @@ BENCH_START(small_step_prep_tim)
                             grid%em_mut, grid%em_muts, grid%em_mudf,                                   &
                             grid%em_u_save, grid%em_v_save, w_save,                                    &
                             grid%em_t_save, ph_save, mu_save,                                          &
-                            grid%em_ww, ww1, grid%em_h_div,                                            &
+                            grid%em_ww, ww1,                                                           &
                             grid%em_dnw, c2a, grid%em_pb, grid%em_p, grid%em_alt,                      &
                             grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,                         &
                             grid%msfvy, grid%msftx,grid%msfty,                                         &
@@ -1674,14 +1674,6 @@ BENCH_START(set_phys_bc2_tim)
                            grid%j_start(ij), grid%j_end(ij),                 &
                            k_start    , k_end                     )
 
-         CALL set_physical_bc3d( grid%em_h_div, 'p', config_flags,             &
-                                 ids, ide, jds, jde, kds, kde, &
-                                 ims, ime, jms, jme, kms, kme, &
-                                 ips, ipe, jps, jpe, kps, kpe, &
-                           grid%i_start(ij), grid%i_end(ij),                 &
-                           grid%j_start(ij), grid%j_end(ij),                 &
-                           k_start    , k_end                     )
-
          CALL set_physical_bc2d( grid%em_mu_1, 't', config_flags,          &
                                  ids, ide, jds, jde,               &
                                  ims, ime, jms, jme,               &
@@ -1723,12 +1715,12 @@ BENCH_START(advance_uv_tim)
          CALL advance_uv ( grid%em_u_2, grid%em_ru_tend, grid%em_v_2, grid%em_rv_tend,        &
                            grid%em_p, grid%em_pb,                                             &
                            grid%em_ph_2, grid%em_php, grid%em_alt,  grid%em_al,               &
-                           grid%em_h_div, grid%em_mu_2,                                       &
+                           grid%em_mu_2,                                                      &
                            grid%em_muu, cqu, grid%em_muv, cqv, grid%em_mudf,                  &
                            grid%msfux, grid%msfuy, grid%msfvx, grid%msfvx_inv, grid%msfvy,    &
                            grid%rdx, grid%rdy, dts_rk,                                        &
                            grid%cf1, grid%cf2, grid%cf3, grid%em_fnm, grid%em_fnp,            &
-                           grid%emdiv, grid%hmdiv,                                            &
+                           grid%emdiv,                                                        &
                            grid%em_rdnw, config_flags,grid%spec_zone,                         &
                            config_flags%non_hydrostatic,                                      &
                            ids, ide, jds, jde, kds, kde,                                      &
@@ -1834,7 +1826,7 @@ BENCH_START(advance_mu_t_tim)
                            grid%em_mu_2, grid%em_mut, muave, grid%em_muts, grid%em_muu, grid%em_muv,  &
                            grid%em_mudf, grid%em_ru_m, grid%em_rv_m, grid%em_ww_m,                    &
                            grid%em_t_2, grid%em_t_save, t_2save, t_tend,                              &
-                           grid%em_h_div, mu_tend,                                                    &
+                           mu_tend,                                                                   &
                            grid%rdx, grid%rdy, dts_rk, grid%epssm,                                    &
                            grid%em_dnw, grid%em_fnm, grid%em_fnp, grid%em_rdnw,                       &
                            grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,                         &
@@ -2110,14 +2102,6 @@ BENCH_START(phys_bc_tim)
                                  k_start    , k_end               )
 
          CALL set_physical_bc3d( grid%em_p, 'p', config_flags,             &
-                                 ids, ide, jds, jde, kds, kde,     &
-                                 ims, ime, jms, jme, kms, kme,     &
-                                 ips, ipe, jps, jpe, kps, kpe,     &
-                                 grid%i_start(ij), grid%i_end(ij), &
-                                 grid%j_start(ij), grid%j_end(ij), &
-                                 k_start    , k_end               )
-
-         CALL set_physical_bc3d( grid%em_h_div, 'p', config_flags,             &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  ips, ipe, jps, jpe, kps, kpe,     &

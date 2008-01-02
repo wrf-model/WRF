@@ -473,7 +473,7 @@ fprintf(fp,"          grid%%bdy_mask       , &  ! bdy_mask\n") ;
         if ( sw_io == GEN_OUTPUT ) {
 fprintf(fp,"          dryrun             , &  ! flag\n") ;
         }
-fprintf(stderr,"name %s memord %s\n",p->name,memord) ;
+/* fprintf(stderr,"name %s memord %s\n",p->name,memord) ; */
 fprintf(fp,"          '%s'               , &  ! MemoryOrder\n",memord) ;
         strcpy(stagstr, "") ;
         if ( p->members->stag_x ) strcat(stagstr, "X") ;

@@ -134,55 +134,14 @@ integer::oops1,oops2
       INTEGER :: lev500 , loop_count
       REAL    :: zl , zu , pl , pu , z500 , dz500 , tvsfc , dpmu
 
+      LOGICAL , PARAMETER :: want_full_levels = .TRUE.
+      LOGICAL , PARAMETER :: want_half_levels = .FALSE.
+
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
 #ifdef DM_PARALLEL
 #    include "em_data_calls.inc"
-#endif
-
-#if 0
-      SELECT CASE ( model_data_order )
-         CASE ( DATA_ORDER_ZXY )
-            kds = grid%sd31 ; kde = grid%ed31 ;
-            ids = grid%sd32 ; ide = grid%ed32 ;
-            jds = grid%sd33 ; jde = grid%ed33 ;
-
-            kms = grid%sm31 ; kme = grid%em31 ;
-            ims = grid%sm32 ; ime = grid%em32 ;
-            jms = grid%sm33 ; jme = grid%em33 ;
-
-            kts = grid%sp31 ; kte = grid%ep31 ;   ! note that tile is entire patch
-            its = grid%sp32 ; ite = grid%ep32 ;   ! note that tile is entire patch
-            jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
-
-         CASE ( DATA_ORDER_XYZ )
-            ids = grid%sd31 ; ide = grid%ed31 ;
-            jds = grid%sd32 ; jde = grid%ed32 ;
-            kds = grid%sd33 ; kde = grid%ed33 ;
-
-            ims = grid%sm31 ; ime = grid%em31 ;
-            jms = grid%sm32 ; jme = grid%em32 ;
-            kms = grid%sm33 ; kme = grid%em33 ;
-
-            its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
-            jts = grid%sp32 ; jte = grid%ep32 ;   ! note that tile is entire patch
-            kts = grid%sp33 ; kte = grid%ep33 ;   ! note that tile is entire patch
-
-         CASE ( DATA_ORDER_XZY )
-            ids = grid%sd31 ; ide = grid%ed31 ;
-            kds = grid%sd32 ; kde = grid%ed32 ;
-            jds = grid%sd33 ; jde = grid%ed33 ;
-
-            ims = grid%sm31 ; ime = grid%em31 ;
-            kms = grid%sm32 ; kme = grid%em32 ;
-            jms = grid%sm33 ; jme = grid%em33 ;
-
-            its = grid%sp31 ; ite = grid%ep31 ;   ! note that tile is entire patch
-            kts = grid%sp32 ; kte = grid%ep32 ;   ! note that tile is entire patch
-            jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
-
-      END SELECT
 #endif
 
       !  Dimension information stored in grid data structure.
@@ -223,7 +182,7 @@ integer::oops1,oops2
       !  For backward compatibility, we might need to assign the map factors from
       !  what they were, to what they are.
 
-      IF      ( ( config_flags%polar ) .AND. ( flag_metgrid .EQ. 1 ) ) THEN
+      IF      ( ( config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=max(jds+1,jts),min(jde-1,jte)
             DO i=its,min(ide-1,ite)
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
@@ -241,7 +200,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
-      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_metgrid .NE. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,ite
                grid%msfvx(i,j) = grid%msfv(i,j)
@@ -257,14 +216,14 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_metgrid .EQ. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( flag_metgrid .NE. 1 ) THEN
-         CALL wrf_error_fatal ( 'SI data cannot be used for a global run' )
+      ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+         CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
 
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
@@ -374,10 +333,10 @@ integer::oops1,oops2
          IF ( flag_soilhgt .EQ. 1) THEN
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
-                  IF ( grid%landmask(i,j) .GT. 0.5 ) THEN
+!                 IF ( grid%landmask(i,j) .GT. 0.5 ) THEN
                      grid%em_ght_gc(i,1,j) = grid%toposoil(i,j)
                      grid%em_ht_gc(i,j)= grid%toposoil(i,j)
-                  END IF
+!                 END IF
                END DO
            END DO
          END IF
@@ -541,30 +500,44 @@ integer::oops1,oops2
             we_have_tavgsfc = .FALSE.
          END IF
 
-         IF ( ( flag_psfc .EQ. 1 ) .AND. ( flag_soilhgt .EQ. 1 ) .AND. &
-              ( config_flags%sfcp_to_sfcp ) ) THEN
+print *,'DAVE FIX THIS'
+flag_slp = 1
+         IF      ( ( flag_psfc    .EQ. 1 ) .AND. &
+                   ( flag_soilhgt .EQ. 1 ) .AND. &
+                   ( flag_slp     .EQ. 1 ) .AND. &
+                   ( .NOT. config_flags%sfcp_to_sfcp ) ) THEN
+            CALL sfcprs3(grid%em_ght_gc, grid%em_p_gc, grid%ht, &
+                         grid%em_pslv_gc, grid%psfc, &
+                         ids , ide , jds , jde , 1   , num_metgrid_levels , &
+                         ims , ime , jms , jme , 1   , num_metgrid_levels , &
+                         its , ite , jts , jte , 1   , num_metgrid_levels )
+         ELSE IF ( ( flag_psfc    .EQ. 1 ) .AND. &
+                   ( flag_soilhgt .EQ. 1 ) .AND. &
+                   ( config_flags%sfcp_to_sfcp ) ) THEN
             CALL sfcprs2(grid%em_t_gc, grid%em_qv_gc, grid%em_ght_gc, grid%em_psfc_gc, grid%ht, &
                          grid%em_tavgsfc, grid%em_p_gc, grid%psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
                          ims , ime , jms , jme , 1   , num_metgrid_levels , &
                          its , ite , jts , jte , 1   , num_metgrid_levels )
-         ELSE
+         ELSE IF ( flag_slp     .EQ. 1 ) THEN
             CALL sfcprs (grid%em_t_gc, grid%em_qv_gc, grid%em_ght_gc, grid%em_pslv_gc, grid%ht, &
                          grid%em_tavgsfc, grid%em_p_gc, grid%psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
                          ims , ime , jms , jme , 1   , num_metgrid_levels , &
                          its , ite , jts , jte , 1   , num_metgrid_levels )
+         ELSE
+            CALL wrf_error_fatal ( 'not enough info for a p sfc computation' )
+         END IF
  
-            !  If we have no input surface pressure, we'd better stick something in there.
+         !  If we have no input surface pressure, we'd better stick something in there.
 
-            IF ( flag_psfc .NE. 1 ) THEN
-               DO j = jts, MIN(jte,jde-1)
-                 DO i = its, MIN(ite,ide-1)
-                    grid%em_psfc_gc(i,j) = grid%psfc(i,j)
-                    grid%em_p_gc(i,1,j) = grid%psfc(i,j)
-                 END DO
-               END DO
-            END IF
+         IF ( flag_psfc .NE. 1 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+              DO i = its, MIN(ite,ide-1)
+                 grid%em_psfc_gc(i,j) = grid%psfc(i,j)
+                 grid%em_p_gc(i,1,j) = grid%psfc(i,j)
+              END DO
+            END DO
          END IF
          
          !  Integrate the mixing ratio to get the vapor pressure.
@@ -610,21 +583,69 @@ integer::oops1,oops2
                            ids , ide , jds , jde , 1   , num_metgrid_levels , &
                            ims , ime , jms , jme , 1   , num_metgrid_levels , &
                            its , ite , jts , jte , 1   , num_metgrid_levels )
-   
+         
          !  On the eta surfaces, compute the dry pressure = mu eta, stored in 
          !  grid%em_pb, since it is a pressure, and we don't need another kms:kme 3d
          !  array floating around.  The grid%em_pb array is re-computed as the base pressure
          !  later after the vertical interpolations are complete.
    
-         CALL p_dry ( grid%em_mu0 , grid%em_znw , grid%p_top , grid%em_pb , &
+         CALL p_dry ( grid%em_mu0 , grid%em_znw , grid%p_top , grid%em_pb , want_full_levels , &
                       ids , ide , jds , jde , kds , kde , &
                       ims , ime , jms , jme , kms , kme , &
                       its , ite , jts , jte , kts , kte )
-         
+
          !  All of the vertical interpolations are done in dry-pressure space.  The
          !  input data has had the moisture removed (grid%em_pd_gc).  The target levels (grid%em_pb)
          !  had the vapor pressure removed from the surface pressure, then they were
          !  scaled by the eta levels.
+
+         interp_type = 2
+         lagrange_order = grid%lagrange_order
+         lowest_lev_from_sfc = .FALSE.
+         use_levels_below_ground = .TRUE.
+         use_surface = .TRUE.
+         zap_close_levels = grid%zap_close_levels
+         force_sfc_in_vinterp = 0
+         t_extrap_type = grid%t_extrap_type
+         extrap_type = 1
+
+         !  For the height field, the lowest level pressure is the slp (approximately "dry").  The
+         !  lowest level of the input height field (to be associated with slp) then is an array
+         !  of zeros.
+         
+         DO j = jts, MIN(jte,jde-1)
+            DO i = its, MIN(ite,ide-1)
+               grid%em_psfc_gc(i,j) = grid%em_pd_gc(i,1,j)
+               grid%em_pd_gc(i,1,j) = grid%em_pslv_gc(i,j) - ( grid%em_p_gc(i,1,j) - grid%em_pd_gc(i,1,j) )
+               grid%em_ht_gc(i,j) = grid%em_ght_gc(i,1,j)
+               grid%em_ght_gc(i,1,j) = 0.
+            END DO
+         END DO
+
+         CALL vert_interp ( grid%em_ght_gc , grid%em_pd_gc , grid%em_ph0 , grid%em_pb , &
+                            num_metgrid_levels , 'Z' , &
+                            interp_type , lagrange_order , extrap_type , &
+                            lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                            zap_close_levels , force_sfc_in_vinterp , &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+
+         !  Put things back to normal.
+
+         DO j = jts, MIN(jte,jde-1)
+            DO i = its, MIN(ite,ide-1)
+               grid%em_pd_gc(i,1,j) = grid%em_psfc_gc(i,j)
+               grid%em_ght_gc(i,1,j) = grid%em_ht_gc(i,j)
+            END DO
+         END DO
+
+         !  Now the rest of the variables on half-levels to inteprolate.
+
+         CALL p_dry ( grid%em_mu0 , grid%em_znw , grid%p_top , grid%em_pb , want_half_levels , &
+                      ids , ide , jds , jde , kds , kde , &
+                      ims , ime , jms , jme , kms , kme , &
+                      its , ite , jts , jte , kts , kte )
 
          interp_type = grid%interp_type
          lagrange_order = grid%lagrange_order
@@ -1547,6 +1568,7 @@ endif
                   grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
                END DO
          
+#if 1
                !  This is the hydrostatic equation used in the model after the small timesteps.  In 
                !  the model, grid%em_al (inverse density) is computed from the geopotential.
          
@@ -1556,6 +1578,13 @@ endif
                               + grid%em_mu_2(i,j)*grid%em_alb(i,k-1,j) )
                   grid%em_ph0(i,k,j) = grid%em_ph_2(i,k,j) + grid%em_phb(i,k,j)
                END DO
+#else
+               !  Get the perturbation geopotential from the 3d height array from WPS.
+
+               DO k  = 2,kte
+                  grid%em_ph_2(i,k,j) = grid%em_ph0(i,k,j)*g - grid%em_phb(i,k,j)
+               END DO
+#endif
    
                !  Adjust the column pressure so that the computed 500 mb height is close to the
                !  input value (of course, not when we are doing hybrid input).
@@ -3329,7 +3358,7 @@ print *,'p target= ',target_x
 #ifndef VERT_UNIT
 !---------------------------------------------------------------------
 
-   SUBROUTINE p_dry ( mu0 , eta , pdht , pdry , &
+   SUBROUTINE p_dry ( mu0 , eta , pdht , pdry , full_levs , &
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              its , ite , jts , jte , kts , kte )
@@ -3342,6 +3371,8 @@ print *,'p target= ',target_x
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
 
+      LOGICAL :: full_levs
+
       REAL , DIMENSION(ims:ime,        jms:jme) , INTENT(IN)     :: mu0
       REAL , DIMENSION(        kms:kme        ) , INTENT(IN)     :: eta
       REAL                                                       :: pdht
@@ -3352,17 +3383,28 @@ print *,'p target= ',target_x
       INTEGER :: i , j , k 
       REAL , DIMENSION(        kms:kme        )                  :: eta_h
 
-      DO k = kts , kte-1
-         eta_h(k) = ( eta(k) + eta(k+1) ) * 0.5
-      END DO
-
-      DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte-1
-            DO i = its , MIN (ide-1 , ite )
-                  pdry(i,k,j) = eta_h(k) * mu0(i,j) + pdht
+      IF ( full_levs ) THEN
+         DO j = jts , MIN ( jde-1 , jte )
+            DO k = kts , kte
+               DO i = its , MIN (ide-1 , ite )
+                     pdry(i,k,j) = eta(k) * mu0(i,j) + pdht
+               END DO
             END DO
          END DO
-      END DO
+
+      ELSE
+         DO k = kts , kte-1
+            eta_h(k) = ( eta(k) + eta(k+1) ) * 0.5
+         END DO
+   
+         DO j = jts , MIN ( jde-1 , jte )
+            DO k = kts , kte-1
+               DO i = its , MIN (ide-1 , ite )
+                     pdry(i,k,j) = eta_h(k) * mu0(i,j) + pdht
+               END DO
+            END DO
+         END DO
+      END IF
 
    END SUBROUTINE p_dry
 
@@ -4497,6 +4539,103 @@ print *,'namelist p_top (Pa) = ',p_top
 
    END SUBROUTINE sfcprs2
 
+!---------------------------------------------------------------------
+
+   SUBROUTINE sfcprs3( height , p , ter , slp , psfc , &
+                       ids , ide , jds , jde , kds , kde , &
+                       ims , ime , jms , jme , kms , kme , &
+                       its , ite , jts , jte , kts , kte )
+
+      !  Computes the surface pressure by vertically interpolating
+      !  linearly (or log) in z the pressure, to the targeted topography.
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) ::  ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte 
+
+      REAL , DIMENSION (ims:ime,kms:kme,jms:jme) , INTENT(IN ):: height, p
+      REAL , DIMENSION (ims:ime,        jms:jme) , INTENT(IN ):: ter , slp
+      REAL , DIMENSION (ims:ime,        jms:jme) , INTENT(OUT):: psfc
+      
+      INTEGER                     :: i
+      INTEGER                     :: j
+      INTEGER                     :: k
+
+      LOGICAL                     :: found_loc
+
+      REAL :: zl , zu , pl , pu , zm
+
+      !  Loop over each grid point
+
+      DO j = jts , MIN(jde-1,jte)
+         DO i = its , MIN(ide-1,ite)
+    
+            !  Find the trapping levels
+
+            found_loc = .FALSE.
+
+            !  Normal sort of scenario - the model topography is somewhere between
+            !  the height values of 1000 mb and the top of the model.
+
+            found_k_loc : DO k = kts+1 , kte-2
+               IF ( ( height(i,k  ,j) .LE. ter(i,j) ) .AND. &
+                    ( height(i,k+1,j) .GT. ter(i,j) ) ) THEN
+                  zl = height(i,k  ,j)
+                  zu = height(i,k+1,j)
+                  zm = ter(i,j)
+                  pl = p(i,k  ,j)
+                  pu = p(i,k+1,j)
+                  psfc(i,j) = EXP ( ( LOG(pl) * ( zm - zu ) + LOG(pu) * ( zl - zm ) ) / ( zl - zu ) )
+                  found_loc = .TRUE.
+                  EXIT found_k_loc
+               END IF
+            END DO found_k_loc
+
+            !  Interpolate betwixt slp and the first isobaric level above - this is probably the
+            !  usual thing over the ocean.
+
+            IF ( .NOT. found_loc ) THEN
+               IF ( slp(i,j) .GE. p(i,2,j) ) THEN
+                  zl = 0.
+                  zu = height(i,2  ,j)
+                  zm = ter(i,j)
+                  pl = slp(i,j)
+                  pu = p(i,2  ,j)
+                  psfc(i,j) = EXP ( ( LOG(pl) * ( zm - zu ) + LOG(pu) * ( zl - zm ) ) / ( zl - zu ) )
+                  found_loc = .TRUE.
+               ELSE
+                  found_slp_loc : DO k = kts+1 , kte-2
+                     IF ( ( slp(i,j) .GE. p(i,k+1,j) ) .AND. &
+                          ( slp(i,j) .LT. p(i,k  ,j) ) ) THEN
+                        zl = 0.
+                        zu = height(i,k+1,j)
+                        zm = ter(i,j)
+                        pl = slp(i,j)
+                        pu = p(i,k+1,j)
+                        psfc(i,j) = EXP ( ( LOG(pl) * ( zm - zu ) + LOG(pu) * ( zl - zm ) ) / ( zl - zu ) )
+                        found_loc = .TRUE.
+                        EXIT found_slp_loc
+                     END IF
+                  END DO found_slp_loc
+               END IF
+            END IF
+
+            !  Did we do what we wanted done.
+
+            IF ( .NOT. found_loc ) THEN
+               print *,'i,j = ',i,j     
+               print *,'p column = ',p(i,2:,j)
+               print *,'z column = ',height(i,2:,j)
+               print *,'model topo = ',ter(i,j)
+               CALL wrf_error_fatal ( ' probs with sfc p computation ' )
+            END IF
+
+         END DO
+      END DO
+
+   END SUBROUTINE sfcprs3
 !---------------------------------------------------------------------
 
    SUBROUTINE filter_topo ( ht_in , xlat , msftx , &

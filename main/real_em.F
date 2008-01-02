@@ -118,6 +118,12 @@ real::t1,t2
 
    CALL  wrf_message ( program_name )
 
+   !  There are variables in the Registry that are only required for the real
+   !  program, fields that come from the WPS package.  We define the run-time
+   !  flag that says to allocate space for these input-from-WPS-only arrays.
+
+   CALL nl_set_use_wps_input ( 1 , REALONLY )
+
    !  Allocate the space for the mother of all domains.
 
    NULLIFY( null_domain )
@@ -413,8 +419,6 @@ real::t1,t2,t3,t4
 
       CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
       CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
-
-!     CALL start_domain ( grid , .TRUE. )
 
 #ifdef WRF_CHEM
       IF ( loop == 1 ) THEN

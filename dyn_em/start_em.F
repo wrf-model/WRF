@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------
 
-   SUBROUTINE start_domain_em ( grid, allowed_to_read  &
+   SUBROUTINE start_domain_em ( grid, allowed_to_read &
 ! Actual arguments generated from Registry
 # include "em_dummy_new_args.inc"
 !
@@ -488,7 +488,7 @@
 
    ENDIF
 
-   IF ( ( grid%id .NE. 1 ) .AND. .NOT. ( config_flags%restart ) .AND. &
+   IF ( grid%press_adj .and. ( grid%id .NE. 1 ) .AND. .NOT. ( config_flags%restart ) .AND. &
        ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)

@@ -1,6 +1,6 @@
 MODULE module_optional_si_input
 
-   INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt
+   INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
               flag_qg       , flag_qni
@@ -279,6 +279,14 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_metgrid  = itmp
       END IF
+
+      flag_mf_xy = 0 
+
+      flag_name(1:8) = 'MF_XY   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_mf_xy    = itmp
+      END IF
     
    END SUBROUTINE optional_metgrid
 
@@ -408,6 +416,7 @@ USE module_io_domain
       flag_psfc     = 0 
       flag_soilhgt  = 0 
       flag_toposoil = 0 
+      flag_slp      = 0 
 
       flag_name(1:8) = 'TOPOSOIL'
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -425,6 +434,12 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_soilhgt  = itmp
+      END IF
+
+      flag_name(1:8) = 'SLP     '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_slp      = itmp
       END IF
     
    END SUBROUTINE optional_lsm

@@ -100,7 +100,7 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
 {
   node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
-  char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG] ;
+  char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG], fname[NAMELEN_LONG] ;
   char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
 
@@ -157,15 +157,25 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
                 fprintf(fp,"   %s_units_table( idomain, P_%s ) = '%s'\n",assoc_4d,c,x->units) ;
                 fprintf(fp,"   F_%s = .TRUE.\n",c) ;
               } else if ((p = get_entry( c , Domain.fields )) != NULL ) {
-                fprintf(fp2,"IF(TRIM(vname).EQ.'%s')THEN\n",p->name) ;
-                fprintf(fp2,"  IF(uses.EQ.0)THEN\n");
-                fprintf(fp2,"    in_use = model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
-                fprintf(fp2,"    uses = 1\n") ;
-                fprintf(fp2,"  ELSE\n") ;
-                fprintf(fp2,"    in_use = in_use.OR.model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(idomain)":"",assoc_namelist_choice) ;
-                fprintf(fp2,"  ENDIF\n") ;
-                fprintf(fp2,"ENDIF\n") ;
-       
+                int tag ;
+                for ( tag = 1 ; tag <= p->ntl ; tag++ )
+                  {
+                  if (!strncmp("dyn_",p->use,4)) {
+                    sprintf(fname,"%s_%s",p->use+4,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+                  } else if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
+                    strcpy(fname,p->name) ;
+                  } else {
+                    strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+                  }
+                  fprintf(fp2,"IF(TRIM(vname).EQ.'%s')THEN\n",fname) ;
+                  fprintf(fp2,"  IF(uses.EQ.0)THEN\n");
+                  fprintf(fp2,"    in_use = model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
+                  fprintf(fp2,"    uses = 1\n") ;
+                  fprintf(fp2,"  ELSE\n") ;
+                  fprintf(fp2,"    in_use = in_use.OR.model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(idomain)":"",assoc_namelist_choice) ;
+                  fprintf(fp2,"  ENDIF\n") ;
+                  fprintf(fp2,"ENDIF\n") ;
+                }
               } else {
                 fprintf(stderr, "WARNING: %s is not a member of 4D array %s\n",c,assoc_4d);continue;
               }

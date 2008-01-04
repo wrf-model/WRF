@@ -445,9 +445,9 @@ if      ( $REAL8 == TRUE ) then
 	set CORES = ( em_real em_quarter_ss )
 endif
 
-if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $NESTED != TRUE ) && ( $REAL8 != TRUE )   ) then
+if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $NESTED != TRUE ) && ( $REAL8 != TRUE ) && ( $GLOBAL != TRUE )   ) then
 	set PHYSOPTS =	( 1 2 3 4 5 )
-else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( ( $NESTED == TRUE ) || ( $REAL8 == TRUE ) ) ) then
+else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( ( $NESTED == TRUE ) || ( $REAL8 == TRUE ) || ( $GLOBAL == TRUE ) ) ) then
 	set PHYSOPTS =	( 1 2 3 4 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
 	if ( $FDDA2 == TRUE ) then
@@ -589,7 +589,7 @@ cat >! dom_real << EOF
 EOF
 else if ( $dataset == global ) then
 cat >! dom_real << EOF
- time_step                           = 2400
+ time_step                           = 600
  time_step_fract_num                 = 00
  time_step_fract_den                 = 112
  max_dom                             = 1,
@@ -1059,7 +1059,7 @@ else if ( $dataset == jan00 ) then
 else if ( $dataset == chem ) then
 	set filetag_real = ( 2006-04-06_00:00:00  2006-04-06_12:00:00 )
 else if ( $dataset == global ) then
-	set filetag_real=2007-10-18_12:00:00
+	set filetag_real=2008-01-02_12:00:00
 endif
 
 set filetag_ideal=0001-01-01_00:00:00
@@ -1795,9 +1795,9 @@ banner 7
 				sed -e 's/-lmassv//g'  -e 's/-lmass//g'  -e 's/-DNATIVE_MASSV//g' -e '/^FCBASEOPTS/s/#//g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 			else if ( `uname` == Linux ) then
 				if ( ( $compopt == $COMPOPTS[1] ) || ( $compopt == $COMPOPTS[3] ) ) then
-					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed -e '/^OMP/d' -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' -e '/^FCBASEOPTS/s/.*/\0 -O0/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				else
-					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
+					sed              -e '/^FCOPTIM/d' -e '/^FCDEBUG/s/#-g/-g/g' -e '/^FCBASEOPTS/s/.*/\0 -O0/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 				endif
 				sed -e '/^#PGI	/s/#PGI	/	/g' ./configure.wrf >! foo ; /bin/mv foo configure.wrf
 			else if ( `uname` == OSF1 ) then

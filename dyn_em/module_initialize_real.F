@@ -500,8 +500,6 @@ integer::oops1,oops2
             we_have_tavgsfc = .FALSE.
          END IF
 
-print *,'DAVE FIX THIS'
-flag_slp = 1
          IF      ( ( flag_psfc    .EQ. 1 ) .AND. &
                    ( flag_soilhgt .EQ. 1 ) .AND. &
                    ( flag_slp     .EQ. 1 ) .AND. &

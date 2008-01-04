@@ -1437,7 +1437,7 @@ convert_nmm.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows ARW and NMM nesting)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -1590,7 +1590,7 @@ convert_nmm.o    :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt $*.f90
 
 ###########################################################
-#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows ARW and NMM nesting )(PARALLEL HDF5)
+#ARCH	AIX DM-Parallel          (RSL_LITE, IBM-MPI, Allows nesting )(PARALLEL HDF5)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3366,7 +3366,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 #PGI	fi
 
 ###########################################################
-#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows ARW and NMM nesting)
+#ARCH     PC Linux i486 i586 i686, PGI compiler  DM-Parallel (RSL_LITE, MPICH, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -3620,7 +3620,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows ARW and NMM nesting, No periodic LBCs)
+#ARCH    PC Linux x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows nesting)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -3748,7 +3748,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows ARW and NMM nesting )
+#ARCH    Intel Itanium2 ia64 madison Linux  (e.g. mpp2 at PNNL) , efc71 compiler DM-Parallel (RSL_LITE, MPICH, Allows nesting )
 # Notes for running on PNNL cluster:
 # 
 # 1. source /home/oehmen/.mycshrc
@@ -4573,7 +4573,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o  start_domain.o :
 	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows ARW and NMM nesting)
+#ARCH   SGI Altix, Intel Itanium2 ia64 Linux, ifort DM-Parallel (RSL_LITE, VMI, SGI MPI, Allows nesting)
 #
 #  'setenv F_UFMTENDIAN big' in run scripts not necessary
 #  since -convert big_endian is in FCBASEOPTS
@@ -6996,7 +6996,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
 
 ###########################################################
-#ARCH    Cray XT3 Catamount/Linux x86_64 (Opteron), PGI 5.2 or higher DM-Parallel (RSL_LITE, MPICH, Allows nesting, Periodic in X only )
+#ARCH    Cray XT3 Catamount/Linux x86_64 (Opteron), PGI 5.2 or higher DM-Parallel (RSL_LITE, MPICH, Allows nesting)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -7647,7 +7647,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 
 
 ###########################################################
-#ARCH    PC Interix x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows ARW and NMM nesting, No periodic LBCs)
+#ARCH    PC Interix x86_64 (IA64 and Opteron), PGI 5.2 or higher DM-Parallel   (RSL_LITE, MPICH, Allows nesting)
 #        Note that for 5.1.x comment out -Mpia=fast
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -7851,7 +7851,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias -tpp2 \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8022,7 +8022,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias -tpp2 \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8193,7 +8193,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias -mtune=itanium2-p9000 \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8375,7 +8375,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias -mtune=itanium2-p9000 \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8543,7 +8543,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8724,7 +8724,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8905,7 +8905,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9078,7 +9078,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9251,7 +9251,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9432,7 +9432,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9613,7 +9613,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9786,7 +9786,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
                     -fno-alias -fno-fnalias  \
                     -I$(INCLUDE) -I. -fp-model precise $(FCDEBUG)
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
-ARCHFLAGS         = -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
+ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)

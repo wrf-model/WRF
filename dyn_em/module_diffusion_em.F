@@ -653,8 +653,6 @@
 !-----------------------------------------------------------------------
 ! Calculate dw/dx.
 
-if ((config_flags%diff_opt.eq.2).or.(config_flags%km_opt.eq.2).or.(config_flags%km_opt.eq.3)) then
-
     i_start = its
     i_end   = MIN( ite, ide-1 )
     j_start = jts
@@ -915,18 +913,6 @@ if ((config_flags%diff_opt.eq.2).or.(config_flags%km_opt.eq.2).or.(config_flags%
     END DO
 
 ! End addition of the second term to defor23.
-
-else  ! defor13 and defor23 not needed
-
-    DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-      defor13(i,k,j)= 0.
-      defor23(i,k,j)= 0.
-   enddo
-   enddo
-   enddo
-endif
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -983,7 +969,7 @@ endif
 
     SUBROUTINE calculate_km_kh( config_flags, dt,                        &
                                 dampcoef, zdamp, damp_opt,               &
-                                xkmh, xkmv, xkhh, xkhv,                  &
+                                xkmh, xkmhd, xkmv, xkhh, xkhv,           &
                                 BN2, khdif, kvdif, div,                  &
                                 defor11, defor22, defor33,               &
                                 defor12, defor13, defor23,               &
@@ -1034,7 +1020,7 @@ endif
     :: moist
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
-    :: xkmv, xkmh, xkhv, xkhh, BN2  
+    :: xkmv, xkmh, xkmhd, xkhv, xkhh, BN2  
 
     REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),  INTENT( IN )  &
     :: defor11, defor22, defor33, defor12, defor13, defor23,      &
@@ -1063,17 +1049,6 @@ endif
     j_start = jts
     j_end   = MIN( jte, jde-1 )
 
-! Select a scheme for calculating diffusion coefficients.
-
-    km_coef: SELECT CASE( config_flags%km_opt )
-
-      CASE (1)
-            CALL isotropic_km( config_flags, xkmh, xkmv,                &
-                               xkhh, xkhv, khdif, kvdif,                &
-                               ids, ide, jds, jde, kds, kde,            &
-                               ims, ime, jms, jme, kms, kme,            &
-                               its, ite, jts, jte, kts, kte             )
-      CASE (2)  
     CALL calculate_N2( config_flags, BN2, moist,           &
                        theta, t, p, p8w, t8w,              &
                        dnw, dn, rdz, rdzw,                 &
@@ -1082,7 +1057,18 @@ endif
                        ims, ime, jms, jme, kms, kme,       &
                        its, ite, jts, jte, kts, kte        )
 
-            CALL tke_km(       config_flags, xkmh, xkmv,                &
+! Select a scheme for calculating diffusion coefficients.
+
+    km_coef: SELECT CASE( config_flags%km_opt )
+
+      CASE (1)
+            CALL isotropic_km( config_flags, xkmh, xkmhd, xkmv,         &
+                               xkhh, xkhv, khdif, kvdif,                &
+                               ids, ide, jds, jde, kds, kde,            &
+                               ims, ime, jms, jme, kms, kme,            &
+                               its, ite, jts, jte, kts, kte             )
+      CASE (2)  
+            CALL tke_km(       config_flags, xkmh, xkmhd, xkmv,         &
                                xkhh, xkhv, BN2, tke, p8w, t8w, theta,   &
                                rdz, rdzw, dx, dy, cr_len,               &
                                kh_tke_upper_bound, kv_tke_upper_bound,  &
@@ -1090,15 +1076,7 @@ endif
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
       CASE (3)  
-    CALL calculate_N2( config_flags, BN2, moist,           &
-                       theta, t, p, p8w, t8w,              &
-                       dnw, dn, rdz, rdzw,                 &
-                       n_moist, cf1, cf2, cf3, warm_rain,  &
-                       ids, ide, jds, jde, kds, kde,       &
-                       ims, ime, jms, jme, kms, kme,       &
-                       its, ite, jts, jte, kts, kte        )
-
-            CALL smag_km(      config_flags, xkmh, xkmv,                &
+            CALL smag_km(      config_flags, xkmh, xkmhd, xkmv,         &
                                xkhh, xkhv, BN2, div,                    &
                                defor11, defor22, defor33,               &
                                defor12, defor13, defor23,               &
@@ -1107,7 +1085,7 @@ endif
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
       CASE (4)  
-            CALL smag2d_km(    config_flags, xkmh, xkmv,                &
+            CALL smag2d_km(    config_flags, xkmh, xkmhd, xkmv,         &
                                xkhh, xkhv, defor11, defor22, defor12,   &
                                rdzw, dx, dy,                            &
                                ids, ide, jds, jde, kds, kde,            &
@@ -1119,7 +1097,7 @@ endif
     END SELECT km_coef
 
     IF ( damp_opt .eq. 1 ) THEN
-      CALL cal_dampkm( config_flags, xkmh, xkhh, xkmv, xkhv,    &
+      CALL cal_dampkm( config_flags, xkmhd, xkmh, xkhh, xkmv, xkhv,   &
                        dx, dy, dt, dampcoef, rdz, rdzw, zdamp,  &
                        msftx, msfty,                            &
                        ids, ide, jds, jde, kds, kde,            &
@@ -1131,7 +1109,7 @@ endif
 
 !=======================================================================
 
-SUBROUTINE cal_dampkm( config_flags,xkmh,xkhh,xkmv,xkhv,                       &
+SUBROUTINE cal_dampkm( config_flags,xkmhd,xkmh,xkhh,xkmv,xkhv,                 &
                        dx,dy,dt,dampcoef,                                      &
                        rdz, rdzw ,zdamp,                                       &
                        msftx, msfty,                                           &
@@ -1153,7 +1131,8 @@ SUBROUTINE cal_dampkm( config_flags,xkmh,xkhh,xkmv,xkhv,                       &
    REAL    ,          INTENT(IN   )           :: zdamp,dx,dy,dt,dampcoef
 
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT)    ::     xkmh , &
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT)    ::    xkmhd, &
+                                                                         xkmh , &
                                                                          xkhh , &
                                                                          xkmv , &
                                                                          xkhv 
@@ -1250,6 +1229,7 @@ SUBROUTINE cal_dampkm( config_flags,xkmh,xkhh,xkmv,xkhv,                       &
    DO j = j_start, j_end
    DO k = kts,ktf
    DO i = i_start, i_end
+      xkmhd(i,k,j)=max(xkmhd(i,k,j),dampk(i,k,j))
       xkmh(i,k,j)=max(xkmh(i,k,j),dampk(i,k,j))
       xkhh(i,k,j)=max(xkhh(i,k,j),dampk(i,k,j))
       xkmv(i,k,j)=max(xkmv(i,k,j),dampkv(i,k,j))
@@ -1497,7 +1477,7 @@ END SUBROUTINE cal_dampkm
 !=======================================================================
 
 SUBROUTINE isotropic_km( config_flags,                                         &
-                         xkmh,xkmv,xkhh,xkhv,khdif,kvdif,                      &
+                         xkmh,xkmhd,xkmv,xkhh,xkhv,khdif,kvdif,                &
                          ids,ide, jds,jde, kds,kde,                            &
                          ims,ime, jms,jme, kms,kme,                            &
                          its,ite, jts,jte, kts,kte                            )
@@ -1516,6 +1496,7 @@ SUBROUTINE isotropic_km( config_flags,                                         &
    REAL    ,          INTENT(IN   )           :: khdif,kvdif               
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::     xkmh, &
+                                                                        xkmhd, &
                                                                          xkmv, &
                                                                          xkhh, &
                                                                          xkhv
@@ -1543,6 +1524,7 @@ SUBROUTINE isotropic_km( config_flags,                                         &
    DO k = kts, ktf
    DO i = i_start, i_end
       xkmh(i,k,j)=khdif
+      xkmhd(i,k,j)=khdif
       xkmv(i,k,j)=kvdif
       xkhh(i,k,j)=khdif3
       xkhv(i,k,j)=kvdif3
@@ -1555,7 +1537,7 @@ END SUBROUTINE isotropic_km
 !=======================================================================
 !=======================================================================
 
-SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
+SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
                     div,defor11,defor22,defor33,defor12,                       &
                     defor13,defor23,                                           &
                     rdzw,dx,dy,cr_len_in,                                      &
@@ -1581,6 +1563,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
                                                                          rdzw
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::     xkmh, &
+                                                                        xkmhd, &
                                                                          xkmv, &
                                                                          xkhh, &
                                                                          xkhv
@@ -1678,6 +1661,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
          tmp=tmp**0.5
          xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
+         xkmhd(i,k,j)=xkmh(i,k,j)
          xkmv(i,k,j)=max(c_s*c_s*mlen_v*mlen_v*tmp, 1.0E-6*mlen_v*mlen_v )
          xkmv(i,k,j)=min(xkmv(i,k,j), 10.*mlen_v )
          xkhh(i,k,j)=xkmh(i,k,j)/pr
@@ -1694,6 +1678,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
          tmp=tmp**0.5
          xkmh(i,k,j)=max(c_s*c_s*deltas*deltas*tmp, 1.0E-6*deltas*deltas )
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*deltas )
+         xkmhd(i,k,j)=xkmh(i,k,j)
          xkmv(i,k,j)=xkmh(i,k,j)
          xkhh(i,k,j)=xkmh(i,k,j)/pr
          xkhv(i,k,j)=xkmv(i,k,j)/pr
@@ -1707,7 +1692,7 @@ END SUBROUTINE smag_km
 !=======================================================================
 !=======================================================================
 
-SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
+SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
                     defor11,defor22,defor12,                                   &
                     rdzw,dx,dy,                                                &
                     ids,ide, jds,jde, kds,kde,                                 &
@@ -1731,6 +1716,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) ::     rdzw
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::     xkmh, &
+                                                                        xkmhd, &
                                                                          xkmv, &
                                                                          xkhh, &
                                                                          xkhv
@@ -1789,6 +1775,7 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
 !        xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=c_s*c_s*mlen_h*mlen_h*tmp
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
+         xkmhd(i,k,j)=xkmh(i,k,j)
          xkmv(i,k,j)=0.
          xkhh(i,k,j)=xkmh(i,k,j)/pr
          xkhv(i,k,j)=0.
@@ -1801,7 +1788,7 @@ END SUBROUTINE smag2d_km
 !=======================================================================
 !=======================================================================
 
-    SUBROUTINE tke_km( config_flags, xkmh, xkmv, xkhh, xkhv,         &
+    SUBROUTINE tke_km( config_flags, xkmh, xkmhd, xkmv, xkhh, xkhv,  &
                        bn2, tke, p8w, t8w, theta,                    &
                        rdz, rdzw, dx,dy, cr_len_in,                  &
                        kh_tke_upper_bound, kv_tke_upper_bound,       &
@@ -1839,7 +1826,7 @@ END SUBROUTINE smag2d_km
     :: tke, p8w, t8w, theta, rdz, rdzw, bn2
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
-    :: xkmh, xkmv, xkhh, xkhv
+    :: xkmh, xkmhd, xkmv, xkhh, xkhv
 
     REAL, INTENT( IN )  &
     :: kh_tke_upper_bound, kv_tke_upper_bound
@@ -1936,6 +1923,7 @@ END SUBROUTINE smag2d_km
         END IF
         xkmh(i,k,j)  = MAX( c_k * tmp * mlen_h, 1.0E-6 * mlen_h * mlen_h )
         xkmh(i,k,j)  = MIN( xkmh(i,k,j), 10.0 * mlen_h )
+        xkmhd(i,k,j) = xkmh(i,k,j)
         xkmv(i,k,j)  = MAX( c_k * tmp * mlen_v, 1.0E-6 * deltas * deltas )
         xkmv(i,k,j)  = MIN( xkmv(i,k,j), 10.0 * deltas )
         pr_inv_h     = 1./prandtl
@@ -1959,6 +1947,7 @@ END SUBROUTINE smag2d_km
         deltas       = ( dx * dy / rdzw(i,k,j) )**0.33333333
         xkmh(i,k,j)  = c_k * tmp * l_scale(i,k,j)
         xkmh(i,k,j)  = MIN( kh_tke_upper_bound,  xkmh(i,k,j) )
+        xkmhd(i,k,j) = xkmh(i,k,j)
         xkmv(i,k,j)  = c_k * tmp * l_scale(i,k,j)
         xkmv(i,k,j)  = MIN( kv_tke_upper_bound,  xkmv(i,k,j) )
         pr_inv       = 1.0 + 2.0 * l_scale(i,k,j) / deltas
@@ -2050,12 +2039,11 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                     thp, theta, mu, tke, config_flags,         &
                                     defor11, defor22, defor12,                 &
                                     defor13, defor23, div,                     &
-                                    moist, chem, scalar,                             &
+                                    moist, chem, scalar,                       &
                                     msfux, msfuy, msfvx, msfvy,                &
                                     msftx, msfty, xkmh, xkhh,km_opt,           &
                                     rdx, rdy, rdz, rdzw, fnm, fnp,             &
-                                    cf1, cf2, cf3,                             &
-                                    ht, dx, dy, dt, zx, zy, dn, dnw,           &
+                                    cf1, cf2, cf3, zx, zy, dn, dnw,            &
                                     ids, ide, jds, jde, kds, kde,              &
                                     ims, ime, jms, jme, kms, kme,              &
                                     its, ite, jts, jte, kts, kte               )
@@ -2073,7 +2061,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
    INTEGER ,        INTENT(IN   ) ::        n_moist, n_chem, n_scalar, km_opt
 
-   REAL ,           INTENT(IN   ) ::        cf1, cf2, cf3, dx, dy, dt
+   REAL ,           INTENT(IN   ) ::        cf1, cf2, cf3
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    fnm
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    fnp
@@ -2086,7 +2074,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                                                     msfvy, &
                                                                     msftx, &
                                                                     msfty, &
-                                                                      mu, ht
+                                                                      mu
 
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::rt_tendf,&
                                                                  ru_tendf,&
@@ -2148,7 +2136,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    defor11, defor12, div,                  &
                                    tke(ims,kms,jms),                       &
                                    msfux, msfuy, xkmh, rdx, rdy, fnm, fnp, &
-                                   zx, zy, rdzw, dx, dy, dt,                &
+                                   zx, zy, rdzw,                           &
                                    ids, ide, jds, jde, kds, kde,           &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
@@ -2157,7 +2145,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    defor12, defor22, div,                  &
                                    tke(ims,kms,jms),                       &
                                    msfvx, msfvy, xkmh, rdx, rdy, fnm, fnp, &
-                                   zx, zy, rdzw, dx, dy, dt,                &
+                                   zx, zy, rdzw,                           &
                                    ids, ide, jds, jde, kds, kde,           &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
@@ -2166,7 +2154,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    defor13, defor23, div,                  &
                                    tke(ims,kms,jms),                       &
                                    msftx, msfty, xkmh, rdx, rdy, fnm, fnp, &
-                                   zx, zy, rdz, dx, dy, dt,                 &
+                                   zx, zy, rdz,                            &
                                    ids, ide, jds, jde, kds, kde,           &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
@@ -2175,8 +2163,8 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    msftx, msfty, msfux, msfuy,             &
                                    msfvx, msfvy, xkhh, rdx, rdy,           &
                                    fnm, fnp, cf1, cf2, cf3,                &
-                                   ht, dx, dy, dt, zx, zy, rdz, rdzw, dnw, dn,    &
-                                   .false.,   'T',                          &
+                                   zx, zy, rdz, rdzw, dnw, dn,             &
+                                   .false.,                                &
                                    ids, ide, jds, jde, kds, kde,           &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
@@ -2188,8 +2176,8 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    msftx, msfty, msfux, msfuy,             &
                                    msfvx, msfvy, xkhh, rdx, rdy,           &
                                    fnm, fnp, cf1, cf2, cf3,                &
-                                   ht, dx, dy, dt, zx, zy, rdz, rdzw, dnw, dn,      &
-                                   .true.,    'E',                        &
+                                   zx, zy, rdz, rdzw, dnw, dn,             &
+                                   .true.,                                 &
                                    ids, ide, jds, jde, kds, kde,           &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
@@ -2204,8 +2192,8 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                        msftx, msfty, msfux, msfuy,        &
                                        msfvx, msfvy, xkhh, rdx, rdy,      &
                                        fnm, fnp, cf1, cf2, cf3,           &
-                                       ht, dx, dy, dt, zx, zy, rdz, rdzw, dnw, dn,   &
-                                       .false.,  'M',                          &
+                                       zx, zy, rdz, rdzw, dnw, dn,        &
+                                       .false.,                           &
                                        ids, ide, jds, jde, kds, kde,      &
                                        ims, ime, jms, jme, kms, kme,      &
                                        its, ite, jts, jte, kts, kte      )
@@ -2224,8 +2212,8 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                      msftx, msfty, msfux, msfuy,       &
                                      msfvx, msfvy, xkhh, rdx, rdy,     &
                                      fnm, fnp, cf1, cf2, cf3,          &
-                                     ht, dx, dy, dt, zx, zy, rdz, rdzw, dnw, dn,    &
-                                     .false.,  'S',                         &
+                                     zx, zy, rdz, rdzw, dnw, dn,       &
+                                     .false.,                          &
                                      ids, ide, jds, jde, kds, kde,     &
                                      ims, ime, jms, jme, kms, kme,     &
                                      its, ite, jts, jte, kts, kte     )
@@ -2243,8 +2231,8 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                      msftx, msfty, msfux, msfuy,       &
                                      msfvx, msfvy, xkhh, rdx, rdy,     &
                                      fnm, fnp, cf1, cf2, cf3,          &
-                                     ht, dx, dy, dt, zx, zy, rdz, rdzw, dnw, dn,    &
-                                     .false.,  'S',                         &
+                                     zx, zy, rdz, rdzw, dnw, dn,       &
+                                     .false.,                          &
                                      ids, ide, jds, jde, kds, kde,     &
                                      ims, ime, jms, jme, kms, kme,     &
                                      its, ite, jts, jte, kts, kte     )
@@ -2262,7 +2250,7 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, mu, config_flags,          &
                                      defor11, defor12, div, tke,          &
                                      msfux, msfuy,                        &
                                      xkmh, rdx, rdy, fnm, fnp,            &
-                                     zx, zy, rdzw, dx, dy, dt,             &
+                                     zx, zy, rdzw,                        &
                                      ids, ide, jds, jde, kds, kde,        &
                                      ims, ime, jms, jme, kms, kme,        &
                                      its, ite, jts, jte, kts, kte        )
@@ -2299,7 +2287,7 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, mu, config_flags,          &
                                                                       zy
 
    REAL ,                                        INTENT(IN   ) ::    rdx, &
-                                                                     rdy,dx, dy, dt
+                                                                     rdy
 ! Local data
    
    INTEGER :: i, j, k, ktf
@@ -2307,12 +2295,12 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, mu, config_flags,          &
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: is_ext,ie_ext,js_ext,je_ext  
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme) :: xkxloc
-   
    REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    :: titau1avg, &
                                                               titau2avg, &
-                                                                 titau1, &
-                                                                 titau2 
+                                                                 titau1, & 
+                                                                 titau2, & 
+                                                                 xkxavg, & 
+                                                                  rravg
 ! new
 !                                                                 zxavg, & 
 !                                                                 zyavg
@@ -2366,20 +2354,8 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, mu, config_flags,          &
    ie_ext=0
    js_ext=0
    je_ext=0
-
-! Limit the diffusion coefficient to 40% of the theoretical stability limit
-   DO j = j_start-1, j_end+1
-   DO k = kts,ktf
-   DO i = i_start-1, i_end+1
-   xkxloc(i,k,j) = min(xkmh(i,k,j),0.05*dx*dy/dt*(1./rdzw(i,k,j)/max(1./rdzw(i,k,j),&
-    abs(zx(i,k,j))*dx,abs(zx(i+1,k,j))*dx,abs(zx(i,k,j-1))*dx,abs(zx(i-1,k,j))*dx,abs(zx(i,k,j+1))*dx,&
-    abs(zy(i,k,j))*dy,abs(zy(i-1,k,j))*dy,abs(zy(i,k,j+1))*dy,abs(zy(i-1,k,j+1))*dy))**2)
-   ENDDO
-   ENDDO
-   ENDDO   
-
    CALL cal_titau_11_22_33( config_flags, titau1,            &
-                            mu, tke, xkxloc, defor11,          &
+                            mu, tke, xkmh, defor11,          &
                             is_ext, ie_ext, js_ext, je_ext,  &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
@@ -2390,10 +2366,8 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, mu, config_flags,          &
    ie_ext=0
    js_ext=0
    je_ext=1
-
-
    CALL cal_titau_12_21( config_flags, titau2,            &
-                         mu, xkxloc, defor12,               &
+                         mu, xkmh, defor12,               &
                          is_ext, ie_ext, js_ext, je_ext,  &
                          ids, ide, jds, jde, kds, kde,    &
                          ims, ime, jms, jme, kms, kme,    &
@@ -2456,7 +2430,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, mu, config_flags,          &
                                      defor12, defor22, div, tke,          &
                                      msfvx, msfvy,                        &
                                      xkmh, rdx, rdy, fnm, fnp,            &
-                                     zx, zy, rdzw, dx, dy, dt,             &
+                                     zx, zy, rdzw,                        &
                                      ids, ide, jds, jde, kds, kde,        &
                                      ims, ime, jms, jme, kms, kme,        &
                                      its, ite, jts, jte, kts, kte        )
@@ -2491,7 +2465,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, mu, config_flags,          &
                                                                     rdzw
 
    REAL ,                                        INTENT(IN   ) ::    rdx, &
-                                                                     rdy,dx, dy, dt
+                                                                     rdy
 
 ! Local data
 
@@ -2500,12 +2474,12 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, mu, config_flags,          &
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: is_ext,ie_ext,js_ext,je_ext  
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme) :: xkxloc
-
    REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    :: titau1avg, &
                                                               titau2avg, &
                                                                  titau1, &
-                                                                 titau2
+                                                                 titau2, &
+                                                                 xkxavg, &
+                                                                  rravg
 ! new
 !                                                                 zxavg, &
 !                                                                 zyavg
@@ -2558,20 +2532,8 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, mu, config_flags,          &
    ie_ext=1
    js_ext=0
    je_ext=0
-
-! Limit the diffusion coefficient to 40% of the theoretical stability limit
-   DO j = j_start-1, j_end+1
-   DO k = kts,ktf
-   DO i = i_start-1, i_end+1
-   xkxloc(i,k,j) = min(xkmh(i,k,j),0.05*dx*dy/dt*(1./rdzw(i,k,j)/max(1./rdzw(i,k,j),&
-    abs(zx(i,k,j))*dx,abs(zx(i+1,k,j))*dx,abs(zx(i,k,j-1))*dx,abs(zx(i+1,k,j-1))*dx,&
-    abs(zy(i,k,j))*dy,abs(zy(i-1,k,j))*dy,abs(zy(i,k,j+1))*dy,abs(zy(i,k,j-1))*dy,abs(zy(i+1,k,j))*dy))**2)
-   ENDDO
-   ENDDO
-   ENDDO 
-
    CALL cal_titau_12_21( config_flags, titau1,          &
-                         mu, xkxloc, defor12,             &
+                         mu, xkmh, defor12,             &
                          is_ext,ie_ext,js_ext,je_ext,   &
                          ids, ide, jds, jde, kds, kde,  &
                          ims, ime, jms, jme, kms, kme,  &
@@ -2582,9 +2544,8 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, mu, config_flags,          &
    ie_ext=0
    js_ext=1
    je_ext=0
-
    CALL cal_titau_11_22_33( config_flags, titau2,           &
-                            mu, tke, xkxloc, defor22,         &
+                            mu, tke, xkmh, defor22,         &
                             is_ext, ie_ext, js_ext, je_ext, &
                             ids, ide, jds, jde, kds, kde,   &
                             ims, ime, jms, jme, kms, kme,   &
@@ -2646,7 +2607,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, mu, config_flags,          &
                                      defor13, defor23, div, tke,          &
                                      msftx, msfty,                        &
                                      xkmh, rdx, rdy, fnm, fnp,            &
-                                     zx, zy, rdz, dx, dy, dt,              &
+                                     zx, zy, rdz,                         &
                                      ids, ide, jds, jde, kds, kde,        &
                                      ims, ime, jms, jme, kms, kme,        &
                                      its, ite, jts, jte, kts, kte        )
@@ -2681,7 +2642,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, mu, config_flags,          &
                                                                      rdz
 
    REAL ,                                        INTENT(IN   ) ::    rdx, &
-                                                                     rdy,dx, dy, dt
+                                                                     rdy
 
 ! Local data
 
@@ -2690,12 +2651,12 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, mu, config_flags,          &
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: is_ext,ie_ext,js_ext,je_ext  
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme) :: xkxloc
-
    REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    :: titau1avg, &
                                                               titau2avg, &
                                                                  titau1, &
-                                                                 titau2
+                                                                 titau2, &
+                                                                 xkxavg, &
+                                                                  rravg
 ! new
 !                                                                 zxavg, &
 !                                                                 zyavg
@@ -2747,20 +2708,8 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, mu, config_flags,          &
    ie_ext=1
    js_ext=0
    je_ext=0
-
-! Limit the diffusion coefficient to 40% of the theoretical stability limit
-   DO j = j_start-1, j_end+1
-   DO k = kts,ktf
-   DO i = i_start-1, i_end+1
-   xkxloc(i,k,j) = min(xkmh(i,k,j),0.05*dx*dy/dt*(1./rdz(i,k,j))/max(1./rdz(i,k,j),&
-                   abs(zx(i,k,j))*dx,abs(zx(i+1,k,j))*dx,&
-                   abs(zy(i,k,j))*dy,abs(zy(i,k,j+1))*dy)**2 )
-   ENDDO
-   ENDDO
-   ENDDO   
-
    CALL cal_titau_13_31( config_flags, titau1, defor13,   &
-                         mu, xkxloc, fnm, fnp,              &
+                         mu, xkmh, fnm, fnp,              &
                          is_ext, ie_ext, js_ext, je_ext,  &
                          ids, ide, jds, jde, kds, kde,    &
                          ims, ime, jms, jme, kms, kme,    &
@@ -2771,9 +2720,8 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, mu, config_flags,          &
    ie_ext=0
    js_ext=0
    je_ext=1
-
    CALL cal_titau_23_32( config_flags, titau2, defor23,   &
-                         mu, xkxloc, fnm, fnp,              &
+                         mu, xkmh, fnm, fnp,              &
                          is_ext, ie_ext, js_ext, je_ext,  &
                          ids, ide, jds, jde, kds, kde,    &
                          ims, ime, jms, jme, kms, kme,    &
@@ -2841,8 +2789,8 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
                                    msftx, msfty, msfux, msfuy,            &
                                    msfvx, msfvy, xkhh, rdx, rdy,          &
                                    fnm, fnp, cf1, cf2, cf3,               &
-                                   ht, dx, dy, dt, zx, zy, rdz, rdzw, dn, dnw,    &
-                                   doing_tke, charvar,                     &
+                                   zx, zy, rdz, rdzw, dn, dnw,            &
+                                   doing_tke,                             &
                                    ids, ide, jds, jde, kds, kde,          &
                                    ims, ime, jms, jme, kms, kme,          &
                                    its, ite, jts, jte, kts, kte           )
@@ -2874,7 +2822,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msftx
    REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msfty
 
-   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   mu, ht
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   mu
 
 !  REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1),                 &
 !         INTENT(IN   ) ::                                         xkhh
@@ -2891,9 +2839,8 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
                                                                       zy
 
    REAL ,                                        INTENT(IN   ) ::    rdx, &
-                                                                     rdy,dx, dy, dt
-   character*1 charvar
-   
+                                                                     rdy
+
 ! Local data
 
    INTEGER :: i, j, k, ktf
@@ -2912,9 +2859,8 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    REAL , DIMENSION( its:ite, kts:kte, jts:jte)            ::  tmptendf
 
    REAL    :: mrdx, mrdy, rcoup
-   REAL    :: tmpzx, tmpzy, tmpzeta_z,tgrmin,tgrmax
-   INTEGER :: ktes1,ktes2,ii,jj
-   logical :: limtgrad
+   REAL    :: tmpzx, tmpzy, tmpzeta_z
+   INTEGER :: ktes1,ktes2
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -2947,8 +2893,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    j_start = jts
    j_end   = MIN(jte,jde-1)
 
-   limtgrad = .true.
-
    IF ( config_flags%open_xs .or. config_flags%specified .or. &
         config_flags%nested) i_start = MAX(ids+1,its)
    IF ( config_flags%open_xe .or. config_flags%specified .or. &
@@ -2959,14 +2903,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
         config_flags%nested) j_end   = MIN(jde-2,jte)
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
-
-  if (limtgrad) then ! limit vertical temperature gradient in metric term to reduce possible overcorrection
-   tgrmin = -0.005  ! -0.5K/100m
-   tgrmax = 0.08    ! +8K/100m
-  else
-   tgrmin = -100.
-   tgrmax = 100.
-  endif
 
 ! diffusion of the TKE needs mutiple 2
 
@@ -2982,16 +2918,12 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
 
 ! H1 = partial var over partial x
 
-! Limit the diffusion coefficient to 40% of the theoretical stability limit
    DO j = j_start, j_end
    DO k = kts, ktf
    DO i = i_start, i_end + 1
 ! new
 !     zxavg(i,k,j) =0.5*( zx(i-1,k,j)+ zx(i,k,j))
-!      xkxavg(i,k,j)=0.5*(xkhh(i-1,k,j)+xkhh(i,k,j))
-      xkxavg(i,k,j)=min(0.5*(xkhh(i-1,k,j)+xkhh(i,k,j)),0.05*dx*dx/dt*0.5*(1./rdzw(i,k,j)+1./rdzw(i-1,k,j))/ &
-                    max(0.5*(1./rdzw(i,k,j)+1./rdzw(i-1,k,j)),abs(zx(i,k,j))*dx,abs(zx(i+1,k,j))*dx )**2)
-                    
+      xkxavg(i,k,j)=0.5*(xkhh(i-1,k,j)+xkhh(i,k,j))
    ENDDO
    ENDDO
    ENDDO
@@ -3005,7 +2937,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
 
-
    DO j = j_start, j_end
    DO i = i_start, i_end + 1
       H1avg(i,kts  ,j)=0.5*(cf1*var(i  ,1,j)+cf2*var(i  ,2,j)+ &
@@ -3018,20 +2949,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
 
- if (charvar.eq.'T') then    ! use temperature gradient limiter to avoid instability
-
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end + 1
-      tmpzx = 0.5*( zx(i,k,j)+ zx(i,k+1,j))
-      H1(i,k,j)=-msfuy(i,j)*xkxavg(i,k,j)*(                      &
-                 rdx*(var(i,k,j)-var(i-1,k,j)) - tmpzx*         &
-                     max(tgrmin,min(tgrmax,(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j))) )
-   ENDDO
-   ENDDO
-   ENDDO
-
- else
    DO j = j_start, j_end
    DO k = kts, ktf
    DO i = i_start, i_end + 1
@@ -3048,21 +2965,15 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
    ENDDO
- endif
 
 ! H2 = partial var over partial y
 
-
-! Limit the diffusion coefficient to 40% of the theoretical stability limit
    DO j = j_start, j_end + 1
    DO k = kts, ktf
    DO i = i_start, i_end
 ! new
 !     zyavg(i,k,j) =0.5*( zy(i,k,j-1)+ zy(i,k,j))
-!      xkxavg(i,k,j)=0.5*(xkhh(i,k,j-1)+xkhh(i,k,j))
-      xkxavg(i,k,j)=min(0.5*(xkhh(i,k,j-1)+xkhh(i,k,j)),0.05*dy*dy/dt*0.5*(1./rdzw(i,k,j)+1./rdzw(i,k,j-1))/ &
-                    max(0.5*(1./rdzw(i,k,j)+1./rdzw(i,k,j-1)),abs(zy(i,k,j))*dy,abs(zy(i,k,j+1))*dy )**2)
-                    
+      xkxavg(i,k,j)=0.5*(xkhh(i,k,j-1)+xkhh(i,k,j))
    ENDDO
    ENDDO
    ENDDO
@@ -3077,7 +2988,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
 
-
    DO j = j_start, j_end + 1
    DO i = i_start, i_end
       H2avg(i,kts  ,j)=0.5*(cf1*var(i,1,j  )+cf2*var(i  ,2,j)+ &
@@ -3090,21 +3000,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
 
- if (charvar.eq.'T') then    ! use temperature gradient limiter to avoid instability
-
-   DO j = j_start, j_end + 1
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      tmpzy = 0.5*( zy(i,k,j)+ zy(i,k+1,j))
-
-      H2(i,k,j)=-msfvy(i,j)*xkxavg(i,k,j)*(                       &
-                 rdy*(var(i,k,j)-var(i,k,j-1)) - tmpzy*          &
-                max(tgrmin,min(tgrmax,(H2avg(i ,k+1,j)-H2avg(i,k,j))*rdzw(i,k,j))) )
-   ENDDO
-   ENDDO
-   ENDDO
-
- else
    DO j = j_start, j_end + 1
    DO k = kts, ktf
    DO i = i_start, i_end
@@ -3122,7 +3017,6 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
    ENDDO
- endif
 
    DO j = j_start, j_end
    DO k = kts+1, ktf
@@ -3179,7 +3073,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
    ENDDO
    ENDDO
    ENDDO
-   
+           
    IF ( doing_tke ) THEN
       DO j = j_start, j_end
       DO k = kts,ktf
@@ -4485,7 +4379,7 @@ END SUBROUTINE vertical_diffusion_s
 !=======================================================================
 
 SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
-                    defor12,defor13,defor23,xkmh,xkmv,xkhh,xkhv,tke,       &
+                    defor12,defor13,defor23,xkmh,xkmhd,xkmv,xkhh,xkhv,tke, &
                     RUBLTEN, RVBLTEN,                                      &
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
@@ -4513,6 +4407,7 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                                                  defor13, &
                                                                  defor23, &
                                                                     xkmh, &
+                                                                   xkmhd, &
                                                                     xkmv, &
                                                                     xkhh, &
                                                                     xkhv, &
@@ -4540,13 +4435,20 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
 
    ! move out of the conditional, below; this one is needed for 
    ! all diff_opt cases.  JM
-   CALL set_physical_bc3d( xkmh    , 't', config_flags,                   &
+   CALL set_physical_bc3d( xkmhd   , 't', config_flags,                   &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &
                                 ips, ipe, jps, jpe, kps, kpe,             &
                                 its, ite, jts, jte, kts, kte              )
 
    IF(config_flags%diff_opt .eq. 2) THEN
+
+   CALL set_physical_bc3d( xkmh    , 't', config_flags,                   &
+                                ids, ide, jds, jde, kds, kde,             &
+                                ims, ime, jms, jme, kms, kme,             &
+                                ips, ipe, jps, jpe, kps, kpe,             &
+                                its, ite, jts, jte, kts, kte              )
+
 
    CALL set_physical_bc3d( xkmv    , 't', config_flags,                   &
                                 ids, ide, jds, jde, kds, kde,             &
@@ -5616,4 +5518,5 @@ END SUBROUTINE phy_bc
 
 !=======================================================================
 !=======================================================================
+
 

@@ -217,8 +217,11 @@ module_radiation_driver.o: \
 		module_ra_hs.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
+		../frame/module_dm.o \
+		../frame/module_domain.o \
 		../frame/module_wrf_error.o \
 		../frame/module_configure.o \
+		../share/module_bc.o  \
 		../share/module_model_constants.o 
 
 module_surface_driver.o: \

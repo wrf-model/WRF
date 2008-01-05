@@ -75,6 +75,8 @@
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
+ slope_rad                           = 0,
+ topo_shading                        = 0,
  /
 
  &fdda

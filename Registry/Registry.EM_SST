@@ -614,6 +614,10 @@ state   real    ht             ij      misc         1         -     i012rhdus  "
 state   real    ht_fine        ij      misc         1         -     -          "HGT_FINE"         "Fine Terrain Height"   "m"
 state   real    ht_int         ij      misc         1         -     -          "HGT_INT"          "Terrain Height Horizontally Interpolated"   "m"
 state   real    ht_input       ij      misc         1         -     -          "HGT_INPUT"        "Terrain Height from FG Input File"   "m"
+state   real    ht_shad        ijb     misc         1         -     hdf=(bdy_interp:dt)         "HGT_SHAD"        "Height of orographic shadow"   "m"
+i1      real    ht_loc         ij      misc         1         -     - 
+i1      integer  shadowmask    ij      misc         1         -     - 
+state   integer min_ptchsz     -       misc         1         -     r
 
 state   real    TSK            ij      misc         1         -     i012rhdu=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
 state   real    TSK_SAVE       ij      misc         1         -     -         "TSK_SAVE" "SURFACE SKIN TEMPERATURE, EXTRA COPY FOR SEA ICE TESTS in REAL"       "K"
@@ -1043,6 +1047,9 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
+rconfig   real    shadlen                 namelist,physics      1            25000.    -    "shadow_length" "maximum length of orographic shadow" "m"
+rconfig   integer slope_rad               namelist,physics      max_domains    0       -     "slope_rad"  "1: use slope-dependent radiation, 0:not" ""
+rconfig   integer topo_shading            namelist,physics      max_domains    0       -     "topo_shading" "1: apply topographic shading to radiation, 0:not" ""
 
 #FDDA namelist parameters
 rconfig   real    FGDT                    namelist,fdda         max_domains    0       h        "FGDT"          ""      ""
@@ -1307,6 +1314,7 @@ halo      HALO_EM_CHEM_E_7 dyn_em 80:chem
 halo      HALO_EM_SCALAR_E_3 dyn_em 24:scalar
 halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_SCALAR_E_7 dyn_em 80:scalar
+halo      HALO_TOPOSHAD phys 24:ht_shad
 
 halo      HALO_EM_MOIST_OLD_E_3 dyn_em 24:moist_old
 halo      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old

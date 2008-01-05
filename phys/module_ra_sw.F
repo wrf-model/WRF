@@ -18,6 +18,8 @@ CONTAINS
                     ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
                     its,ite, jts,jte, kts,kte,                    &
+                    slope_rad,topo_shading,ht,                    & ! Optional
+                    dx,dy,sina,cosa,shadowmask,                   & ! Optional
                     cosz_urb2d,omg_urb2d                          & !Optional urban
                     )
 !------------------------------------------------------------------
@@ -59,9 +61,16 @@ CONTAINS
    REAL, INTENT(IN   )   ::                        GMT,R,CP,G,dt
 !
    INTEGER, INTENT(IN  ) ::                               JULDAY  
+
+
+
 !
 ! Optional
 !
+   REAL, OPTIONAL, INTENT(IN) ::       dx,dy
+
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         OPTIONAL, INTENT(IN) ::       sina,cosa,ht
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN    ) ::                                        &
@@ -72,8 +81,13 @@ CONTAINS
                                                             QS3D, &
                                                             QG3D
 
+   INTEGER, OPTIONAL, INTENT(IN) ::   slope_rad,topo_shading
+
+   INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: shadowmask
+
    LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
  
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZ_URB2D, OMG_URB2D !Optional urban
 ! LOCAL VARS
  
    REAL, DIMENSION( kts:kte ) ::                                  &
@@ -91,14 +105,19 @@ CONTAINS
 !
    REAL::      XLAT0,XLONG0,ALB0,GSW0
 
-   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZ_URB2D, OMG_URB2D !Optional urban
    REAL :: COSZ, OMG   !urban
 !
    INTEGER :: i,j,K,NK
    LOGICAL :: predicate
    real :: aer_dry1(kts:kte),aer_water1(kts:kte)
 
+  real :: sinalpha,cosalpha,hx,hy,slope,slp_azi,pi
+  integer :: shadow
+
 !------------------------------------------------------------------
+
+pi = 4.*atan(1.)
+
    j_loop: DO J=jts,jte
    i_loop: DO I=its,ite
 
@@ -215,13 +234,57 @@ CONTAINS
          XLONG0=XLONG(I,J)
          ALB0=ALBEDO(I,J)
 
+      IF(PRESENT(slope_rad) .AND. PRESENT(shadowmask))THEN
+! Computations for slope-dependent radiation
+
+         sinalpha = sina(i,j)
+         cosalpha = cosa(i,j)
+
+! Compute slope and slope azimuth of local grid point
+
+       if ((i.ge.ids+1).and.(i.le.ide-2)) then
+         hx = (ht(i+1,j)-ht(i-1,j))/(2.*dx)
+       else if (i.eq.ids) then
+         hx = (ht(i+1,j)-ht(i,j))/dx
+       else if (i.eq.ide-1) then
+         hx = (ht(i,j)-ht(i-1,j))/dx
+       endif
+       if ((j.ge.jds+1).and.(j.le.jde-2)) then
+         hy = (ht(i,j+1)-ht(i,j-1))/(2.*dy)
+       else if (i.eq.ids) then
+         hy = (ht(i,j+1)-ht(i,j))/dy
+       else if (i.eq.ide-1) then
+         hy = (ht(i,j)-ht(i,j-1))/dy
+       endif
+
+       slope = atan((hx**2+hy**2)**.5) 	
+         if (slope.lt.1.e-4) then
+           slope = 0.
+           slp_azi = 0.
+         else
+           slp_azi = atan2(hx,hy)+pi  
+! Rotate slope azimuth to lat-lon grid
+           if (cosalpha.ge.0) then
+             slp_azi = slp_azi - asin(sinalpha) 
+           else
+             slp_azi = slp_azi - (pi - asin(sinalpha))
+           endif
+         endif
+
+         if (topo_shading.eq.1) then
+           shadow = shadowmask(i,j)
+         else
+           shadow = 0
+         endif
+      ENDIF
+
          CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
                      T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
                      XTIME,GMT,RHO01D,DZ,                        &
                      R,CP,G,DECLIN,SOLCON,                       &
                      COSZ, OMG,                                  & !urban
                      RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
-                     kts,kte                                     )
+                     kts,kte,slope_rad,shadow,slp_azi,slope      )
 
        IF (PRESENT(COSZ_URB2D) .AND.  PRESENT(OMG_URB2D)) THEN   
          COSZ_URB2D(I,J)=COSZ !urban
@@ -246,7 +309,7 @@ CONTAINS
                      R,CP,G,DECLIN,SOLCON,             		  &
                      COSZ, OMG,                                   & !urban
                      RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,    &
-                     kts,kte                            	  )
+                     kts,kte,slope_rad,shadow,slp_azi,slope       )
 !------------------------------------------------------------------
 !     TO CALCULATE SHORT-WAVE ABSORPTION AND SCATTERING IN CLEAR
 !     AIR AND REFLECTION AND ABSORPTION IN CLOUD LAYERS (STEPHENS,
@@ -280,7 +343,11 @@ CONTAINS
 !
    INTEGER, INTENT(IN) :: icloud
    REAL, INTENT(INOUT)  ::                                   GSW
-!
+! For slope-dependent radiation
+
+   INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,shadow
+   REAL, OPTIONAL,    INTENT(IN) :: slp_azi,slope
+
 ! LOCAL VARS
 !
    REAL, DIMENSION( kts:kte+1 ) ::                         SDOWN
@@ -324,6 +391,11 @@ CONTAINS
       REAL :: xxlat,ww
       INTEGER :: iil,ii,jjl,ju,k,iu
 
+! For slope-dependent radiation
+
+   REAL :: diffuse_frac, corr_fac, csza_slp
+
+
       GSW=0.0
       bext340=5.E-6
       bexth2o=5.E-6
@@ -337,7 +409,7 @@ CONTAINS
       COSZ = CSZA  !urban
       OMG  = HRANG !urban
 
-!     RETURN IF NIGHT
+!     RETURN IF NIGHT        
       IF(CSZA.LE.1.E-9)GOTO 7
 !
       DO K=kts, kte
@@ -459,6 +531,39 @@ CONTAINS
   200   CONTINUE
 !
         GSW=(1.-ALBEDO)*SDOWN(kte+1)
+
+    IF (PRESENT(slope_rad)) THEN
+! Slope-dependent solar radiation part
+
+      if (slope_rad.eq.1) then
+
+!  Parameterize diffuse fraction of global solar radiation as a function of the ratio between TOA radiation and surface global radiation
+
+        diffuse_frac = min(1.,1/(max(0.1,2.1-2.8*log(log(SDOWN(kts)/max(SDOWN(kte+1),1.e-3))))))
+        if ((slope.eq.0).or.(diffuse_frac.eq.1).or.(csza.lt.1.e-2)) then  ! no topographic effects when all radiation is diffuse or the sun is too close to the horizon
+        corr_fac = 1
+        goto 140
+        endif
+
+! cosine of zenith angle over sloping topography
+
+        csza_slp = ((SIN(XXLAT)*COS(HRANG))*(-cos(slp_azi)*sin(slope))-SIN(HRANG)*(sin(slp_azi)*sin(slope))+(COS(XXLAT)*COS(HRANG))* &
+                    cos(slope))*COS(DECLIN)+(COS(XXLAT)*(cos(slp_azi)*sin(slope))+ SIN(XXLAT)*cos(slope))*SIN(DECLIN)
+        IF(csza_slp.LE.1.E-4) csza_slp = 0
+
+! Topographic shading
+
+        if (shadow.eq.1) csza_slp = 0
+
+! Correction factor for sloping topography; the diffuse fraction of solar radiation is assumed to be unaffected by the slope
+        corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
+
+ 140	continue   
+
+        GSW=(1.-ALBEDO)*SDOWN(kte+1)*corr_fac 
+        
+      endif
+    ENDIF
 
     7 CONTINUE
 !

@@ -49,8 +49,7 @@ CONTAINS
               ,waer300, waer400, waer600, waer999                         & ! jcb
               ,qc_adjust ,qi_adjust                                       & ! jm
               ,cu_rad_feedback, aer_ra_feedback                           & ! jm
-
-                                                                          )
+              ,ht,dx,dy,sina,cosa,shadowmask,slope_rad ,topo_shading      ) ! slope-dependent radiation
 
 !-------------------------------------------------------------------------
 
@@ -239,7 +238,7 @@ CONTAINS
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
-     &           i_start,i_end,j_start,j_end
+                i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
@@ -407,7 +406,15 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT)  ::                       taucldi,taucldc
- 
+
+! Variables for slope-dependent radiation
+
+     REAL, OPTIONAL, INTENT(IN) :: dx,dy
+     INTEGER, OPTIONAL, INTENT(IN) :: slope_rad,topo_shading
+     REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: sina,cosa,ht
+     INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
+
+
 ! LOCAL  VAR
 
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
@@ -553,6 +560,7 @@ CONTAINS
 
      CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
                    DEGRAD,DPD                                )
+
 
      if(present(DECLIN_URB))DECLIN_URB=DECLIN  ! urban
 
@@ -773,7 +781,9 @@ CONTAINS
                     ,QG3D=qg                                           &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
-                                                                       )
+                    ,slope_rad=slope_rad,topo_shading=topo_shading     &
+                    ,shadowmask=shadowmask                             &
+                    ,ht=ht,dx=dx,dy=dy,sina=sina,cosa=cosa             )
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
@@ -988,6 +998,178 @@ CONTAINS
      END SELECT accumulate_sw_select
 
    END SUBROUTINE radiation_driver
+
+   SUBROUTINE pre_radiation_driver ( grid, config_flags                   &
+              ,itimestep, ra_call_offset                                  &
+              ,XLAT, XLONG, GMT, julian, xtime, RADT, STEPRA              &
+              ,ht,dx,dy,sina,cosa,shadowmask,slope_rad ,topo_shading      &
+              ,shadlen,ht_shad,ht_loc                                     &
+              ,ht_shad_bxs, ht_shad_bxe                                   &
+              ,ht_shad_bys, ht_shad_bye                                   &
+              ,nested, min_ptchsz                                         &
+              ,spec_bdy_width                                             &
+              ,ids, ide, jds, jde, kds, kde                               &
+              ,ims, ime, jms, jme, kms, kme                               &
+              ,ips, ipe, jps, jpe, kps, kpe                               &
+              ,i_start, i_end                                             &
+              ,j_start, j_end                                             &
+              ,kts, kte                                                   &
+              ,num_tiles                                                  )
+
+   USE module_dm
+   USE module_domain
+   USE module_bc
+   USE module_model_constants
+
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       ips,ipe, jps,jpe, kps,kpe, &
+                                                         kts,kte, &
+                                       num_tiles
+
+   TYPE(domain)                   , INTENT(INOUT)  :: grid
+   TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
+
+   INTEGER, INTENT(IN  ) :: itimestep, ra_call_offset, stepra,    &
+                            slope_rad, topo_shading,              &
+                            spec_bdy_width
+
+   INTEGER, INTENT(INOUT) :: min_ptchsz
+
+   INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                   &
+                i_start,i_end,j_start,j_end
+
+   REAL, INTENT(IN  )   :: GMT, radt, julian, xtime, dx, dy, shadlen
+
+   REAL, DIMENSION( ims:ime, jms:jme ),                           &
+         INTENT(IN   )  ::                                  XLAT, &
+                                                           XLONG, &
+                                                              HT, &
+                                                            SINA, &
+                                                            COSA
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  ::  ht_shad,ht_loc
+
+   REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ),        &
+                      INTENT(IN   ) :: ht_shad_bxs, ht_shad_bxe
+   REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ),        &
+                      INTENT(IN   ) :: ht_shad_bys, ht_shad_bye
+
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                        &
+         INTENT(INOUT)  ::                            shadowmask
+
+   LOGICAL,      INTENT(IN   )    :: nested
+
+!Local
+! For orographic shading
+   INTEGER :: niter,ni,psx,psy,idum,jdum,i,j,ij
+   REAL :: DECLIN,SOLCON
+
+! Determine minimum patch size for slope-dependent radiation
+   if (itimestep .eq. 1) then
+     psx = ipe-ips+1
+     psy = jpe-jps+1
+     min_ptchsz = min(psx,psy)
+     idum = 0
+     jdum = 0
+   endif
+
+# ifdef DM_PARALLEL
+   if (itimestep .eq. 1) then
+     call wrf_dm_minval_integer (psx,idum,jdum)
+     call wrf_dm_minval_integer (psy,idum,jdum)
+     min_ptchsz = min(psx,psy)
+   endif
+# endif
+
+! Topographic shading
+   
+   if ((topo_shading.eq.1).and.(itimestep .eq. 1 .or. &
+        mod(itimestep,STEPRA) .eq. 1 + ra_call_offset))  then
+
+!---------------
+! Calculate constants for short wave radiation
+   
+   CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,DEGRAD,DPD)
+   
+! Make a local copy of terrain height field
+     do j=jms,jme
+     do i=ims,ime
+       ht_loc(i,j) = ht(i,j)
+     enddo
+     enddo
+! Determine if iterations are necessary for shadows to propagate from one patch to another
+     if ((ids.eq.ips).and.(ide.eq.ipe).and.(jds.eq.jps).and.(jde.eq.jpe)) then
+       niter = 1
+     else
+       niter = int(shadlen/(dx*min_ptchsz)+3)
+     endif
+
+
+
+    IF( nested ) THEN
+
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
+
+      DO ij = 1 , num_tiles
+
+           CALL spec_bdyfield(ht_shad,                         &
+                               ht_shad_bxs, ht_shad_bxe,       &
+                               ht_shad_bys, ht_shad_bye,       &
+                               'm', config_flags, spec_bdy_width, 2,&
+                               ids,ide, jds,jde, 1  ,1  ,  & ! domain dims
+                               ims,ime, jms,jme, 1  ,1  ,  & ! memory dims
+                               ips,ipe, jps,jpe, 1  ,1  ,  & ! patch  dims
+                               i_start(ij), i_end(ij),         &
+                               j_start(ij), j_end(ij),         &
+                               1    , 1             )
+      ENDDO
+    ENDIF
+
+     do ni = 1, niter
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij,i,j )
+         do ij = 1 , num_tiles
+
+         call toposhad_init (ht_shad,ht_loc,                         &
+                       shadowmask,nested,ni,                         &
+                       ids,ide, jds,jde, kds,kde,                    &
+                       ims,ime, jms,jme, kms,kme,                    &
+                       ips,min(ipe,ide-1), jps,min(jpe,jde-1), kps,kpe,      &
+                       i_start(ij),min(i_end(ij), ide-1),j_start(ij),&
+                       min(j_end(ij), jde-1), kts, kte               )
+
+         enddo
+   !$OMP END PARALLEL DO
+
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij,i,j )
+       do ij = 1 , num_tiles
+
+       call toposhad (xlat,xlong,sina,cosa,xtime,gmt,radt,declin,    &
+                       dx,dy,ht_shad,ht_loc,ni,                      &
+                       shadowmask,shadlen,                           &
+                       ids,ide, jds,jde, kds,kde,                    &
+                       ims,ime, jms,jme, kms,kme,                    &
+                       ips,min(ipe,ide-1), jps,min(jpe,jde-1), kps,kpe,        &
+                       i_start(ij),min(i_end(ij), ide-1),j_start(ij),&
+                       min(j_end(ij), jde-1), kts, kte               )
+
+       enddo
+   !$OMP END PARALLEL DO
+
+#ifdef DM_PARALLEL
+#     include "HALO_TOPOSHAD.inc"
+#endif
+     enddo
+   endif
+
+   END SUBROUTINE pre_radiation_driver
 
 !---------------------------------------------------------------------
 !BOP
@@ -1300,5 +1482,393 @@ CONTAINS
     ENDDO          !--- End DO j
 
    END SUBROUTINE cal_cldfra2
+
+
+   SUBROUTINE toposhad_init(ht_shad,ht_loc,shadowmask,nested,iter,   &
+                       ids,ide, jds,jde, kds,kde,                    & 
+                       ims,ime, jms,jme, kms,kme,                    &
+                       ips,ipe, jps,jpe, kps,kpe,                    &
+                       its,ite, jts,jte, kts,kte                     )
+
+   USE module_model_constants
+
+ implicit none
+
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       ips,ipe, jps,jpe, kps,kpe, &
+                                       its,ite, jts,jte, kts,kte
+
+   LOGICAL, INTENT(IN)      :: nested
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  ::  ht_shad, ht_loc
+
+   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: shadowmask
+   INTEGER, INTENT(IN)      :: iter
+
+! Local variables
+
+   INTEGER :: i, j
+
+ if (iter.eq.1) then
+
+! Initialize shadow mask
+   do j=jts,jte
+   do i=its,ite
+     shadowmask(i,j) = 0
+   ENDDO
+   ENDDO
+
+! Initialize shading height 
+
+   IF ( nested ) THEN  ! Do not overwrite input from parent domain
+     do j=max(jts,jds+2),min(jte,jde-3)
+     do i=max(its,ids+2),min(ite,ide-3)
+       ht_shad(i,j) = ht_loc(i,j)-0.001
+     ENDDO
+     ENDDO
+   ELSE
+     do j=jts,jte
+     do i=its,ide
+       ht_shad(i,j) = ht_loc(i,j)-0.001
+     ENDDO
+     ENDDO
+   ENDIF
+
+   IF ( nested ) THEN  ! Check if a shadow exceeding the topography height is available at the lateral domain edge from nesting
+     if (its.eq.ids) then
+       do j=jts,jte
+         if (ht_shad(its,j) .gt. ht_loc(its,j)) then
+           shadowmask(its,j) = 1
+           ht_loc(its,j) = ht_shad(its,j)
+         endif
+         if (ht_shad(its+1,j) .gt. ht_loc(its+1,j)) then
+           shadowmask(its+1,j) = 1
+           ht_loc(its+1,j) = ht_shad(its+1,j)
+         endif
+       enddo
+     endif
+     if (ite.eq.ide-1) then
+       do j=jts,jte
+         if (ht_shad(ite,j) .gt. ht_loc(ite,j)) then
+           shadowmask(ite,j) = 1
+           ht_loc(ite,j) = ht_shad(ite,j)
+         endif
+         if (ht_shad(ite-1,j) .gt. ht_loc(ite-1,j)) then
+           shadowmask(ite-1,j) = 1
+           ht_loc(ite-1,j) = ht_shad(ite-1,j)
+         endif
+       enddo
+     endif
+     if (jts.eq.jds) then
+       do i=its,ite
+         if (ht_shad(i,jts) .gt. ht_loc(i,jts)) then
+           shadowmask(i,jts) = 1
+           ht_loc(i,jts) = ht_shad(i,jts)
+         endif
+         if (ht_shad(i,jts+1) .gt. ht_loc(i,jts+1)) then
+           shadowmask(i,jts+1) = 1
+           ht_loc(i,jts+1) = ht_shad(i,jts+1)
+         endif
+       enddo
+     endif
+     if (jte.eq.jde-1) then
+       do i=its,ite
+         if (ht_shad(i,jte) .gt. ht_loc(i,jte)) then
+           shadowmask(i,jte) = 1
+           ht_loc(i,jte) = ht_shad(i,jte)
+         endif
+         if (ht_shad(i,jte-1) .gt. ht_loc(i,jte-1)) then
+           shadowmask(i,jte-1) = 1
+           ht_loc(i,jte-1) = ht_shad(i,jte-1)
+         endif
+       enddo
+     endif
+   ENDIF
+
+ else
+
+! Fill the local topography field at the points next to internal tile boundaries with ht_shad values
+! A 2-pt halo has been applied to the ht_shad before the repeated call of this subroutine
+
+   if ((its.ne.ids).and.(its.eq.ips)) then
+     do j=jts-2,jte+2
+       ht_loc(its-1,j) = max(ht_loc(its-1,j),ht_shad(its-1,j))
+       ht_loc(its-2,j) = max(ht_loc(its-2,j),ht_shad(its-2,j))
+     enddo
+   endif
+   if ((ite.ne.ide-1).and.(ite.eq.ipe)) then
+     do j=jts-2,jte+2
+       ht_loc(ite+1,j) = max(ht_loc(ite+1,j),ht_shad(ite+1,j))
+       ht_loc(ite+2,j) = max(ht_loc(ite+2,j),ht_shad(ite+2,j))
+     enddo
+   endif
+   if ((jts.ne.jds).and.(jts.eq.jps)) then
+     do i=its-2,ite+2
+       ht_loc(i,jts-1) = max(ht_loc(i,jts-1),ht_shad(i,jts-1))
+       ht_loc(i,jts-2) = max(ht_loc(i,jts-2),ht_shad(i,jts-2))
+     enddo
+   endif
+   if ((jte.ne.jde-1).and.(jte.eq.jpe)) then
+     do i=its-2,ite+2
+       ht_loc(i,jte+1) = max(ht_loc(i,jte+1),ht_shad(i,jte+1))
+       ht_loc(i,jte+2) = max(ht_loc(i,jte+2),ht_shad(i,jte+2))
+     enddo
+   endif
+
+ endif
+
+   END SUBROUTINE toposhad_init
+
+
+
+
+   SUBROUTINE toposhad(xlat,xlong,sina,cosa,xtime,gmt,radfrq,declin, &
+                       dx,dy,ht_shad,ht_loc,iter,                    &
+                       shadowmask,shadlen,                    &
+                       ids,ide, jds,jde, kds,kde,                    & 
+                       ims,ime, jms,jme, kms,kme,                    &
+                       ips,ipe, jps,jpe, kps,kpe,                    &
+                       its,ite, jts,jte, kts,kte                     )
+
+
+   USE module_model_constants
+
+ implicit none
+
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       ips,ipe, jps,jpe, kps,kpe, &
+                                       its,ite, jts,jte, kts,kte
+
+   INTEGER,   INTENT(IN) ::      iter
+
+   REAL, INTENT(IN)      ::        RADFRQ,XTIME,DECLIN,dx,dy,gmt,shadlen
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)  :: XLAT, XLONG, sina, cosa
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  ::  ht_shad,ht_loc
+
+   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: shadowmask
+
+! Local variables
+
+   REAL :: pi, xt24, wgt, ri, rj, argu, sol_azi, topoelev, dxabs, tloctm, hrang, xxlat, csza
+   INTEGER :: gpshad, ii, jj, i1, i2, j1, j2, i, j
+
+
+
+ XT24=MOD(XTIME+RADFRQ*0.5,1440.)
+ pi = 4.*atan(1.)
+ gpshad = int(shadlen/dx+1.)
+
+ if (iter.eq.1) then  
+
+
+   j_loop1: DO J=jts,jte
+   i_loop1: DO I=its,ite
+
+     TLOCTM=GMT+XT24/60.+XLONG(i,j)/15.
+     HRANG=15.*(TLOCTM-12.)*DEGRAD
+     XXLAT=XLAT(i,j)*DEGRAD
+     CSZA=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
+
+     if (csza.lt.1.e-2) then   ! shadow mask does not need to be computed
+     shadowmask(i,j) = 0
+     ht_shad(i,j) = ht_loc(i,j)-0.001
+     goto 120
+     endif
+
+! Solar azimuth angle
+
+     argu=(csza*sin(XXLAT)-sin(DECLIN))/(sin(acos(csza))*cos(XXLAT))
+     if (argu.gt.1) argu = 1
+     if (argu.lt.-1) argu = -1
+     sol_azi = sign(acos(argu),sin(HRANG))+pi  ! azimuth angle of the sun
+     if (cosa(i,j).ge.0) then
+       sol_azi = sol_azi + asin(sina(i,j))  ! rotation towards WRF grid 
+     else
+       sol_azi = sol_azi + pi - asin(sina(i,j)) 
+     endif
+
+! Scan for higher surrounding topography
+
+          if ((sol_azi.gt.1.75*pi).or.(sol_azi.lt.0.25*pi)) then ! sun is in the northern quarter
+
+            do jj = j+1,j+gpshad
+              ri = i + (jj-j)*tan(sol_azi)
+              i1 = int(ri) 
+              i2 = i1+1
+              wgt = ri-i1
+              dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
+              if ((jj.ge.jpe+1).or.(i1.le.ips-1).or.(i2.ge.ipe+1)) then
+                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+                goto 120
+              endif
+              topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+
+          else if (sol_azi.lt.0.75*pi) then  ! sun is in the eastern quarter
+            do ii = i+1,i+gpshad
+              rj = j - (ii-i)*tan(pi/2.+sol_azi)
+              j1 = int(rj)
+              j2 = j1+1
+              wgt = rj-j1
+              dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
+              if ((ii.ge.ipe+1).or.(j1.le.jps-1).or.(j2.ge.jpe+1)) then
+                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+                goto 120
+              endif
+              topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+
+          else if (sol_azi.lt.1.25*pi) then ! sun is in the southern quarter
+            do jj = j-1,j-gpshad,-1
+              ri = i + (jj-j)*tan(sol_azi)
+              i1 = int(ri)
+              i2 = i1+1
+              wgt = ri-i1
+              dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
+              if ((jj.le.jps-1).or.(i1.le.ips-1).or.(i2.ge.ipe+1)) then
+                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+                goto 120
+              endif
+              topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+
+          else                          ! sun is in the western quarter
+            do ii = i-1,i-gpshad,-1
+              rj = j - (ii-i)*tan(pi/2.+sol_azi)
+              j1 = int(rj)
+              j2 = j1+1
+              wgt = rj-j1
+              dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
+              if ((ii.le.ips-1).or.(j1.le.jps-1).or.(j2.ge.jpe+1)) then
+                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+                goto 120
+              endif
+              topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+          endif
+
+ 120      continue
+
+   ENDDO i_loop1
+   ENDDO j_loop1
+
+ else   ! iteration > 1
+
+
+   j_loop2: DO J=jts,jte
+   i_loop2: DO I=its,ite
+
+!     if (shadowmask(i,j).eq.-1) then  ! this indicates that the search ended at a lateral boundary during iteration 1
+
+       TLOCTM=GMT+XT24/60.+XLONG(i,j)/15.
+       HRANG=15.*(TLOCTM-12.)*DEGRAD
+       XXLAT=XLAT(i,j)*DEGRAD
+       CSZA=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
+
+! Solar azimuth angle
+
+       argu=(csza*sin(XXLAT)-sin(DECLIN))/(sin(acos(csza))*cos(XXLAT))
+       if (argu.gt.1) argu = 1
+       if (argu.lt.-1) argu = -1
+       sol_azi = sign(acos(argu),sin(HRANG))+pi  ! azimuth angle of the sun
+       if (cosa(i,j).ge.0) then
+         sol_azi = sol_azi + asin(sina(i,j))  ! rotation towards WRF grid 
+       else
+         sol_azi = sol_azi + pi - asin(sina(i,j)) 
+       endif
+
+! Scan for higher surrounding topography
+
+          if ((sol_azi.gt.1.75*pi).or.(sol_azi.lt.0.25*pi)) then ! sun is in the northern quarter
+
+            do jj = j+1,j+gpshad
+              ri = i + (jj-j)*tan(sol_azi)
+              i1 = int(ri) 
+              i2 = i1+1
+              wgt = ri-i1
+              dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
+              if ((jj.ge.min(jde,jpe+3)).or.(i1.le.max(ids-1,ips-3)).or.(i2.ge.min(ide,ipe+3))) goto 220
+              topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+
+          else if (sol_azi.lt.0.75*pi) then  ! sun is in the eastern quarter
+            do ii = i+1,i+gpshad
+              rj = j - (ii-i)*tan(pi/2.+sol_azi)
+              j1 = int(rj)
+              j2 = j1+1
+              wgt = rj-j1
+              dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
+              if ((ii.ge.min(ide,ipe+3)).or.(j1.le.max(jds-1,jps-3)).or.(j2.ge.min(jde,jpe+3))) goto 220
+              topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+
+          else if (sol_azi.lt.1.25*pi) then ! sun is in the southern quarter
+            do jj = j-1,j-gpshad,-1
+              ri = i + (jj-j)*tan(sol_azi)
+              i1 = int(ri)
+              i2 = i1+1
+              wgt = ri-i1
+              dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
+              if ((jj.le.max(jds-1,jps-3)).or.(i1.le.max(ids-1,ips-3)).or.(i2.ge.min(ide,ipe+3))) goto 220
+              topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+
+          else                          ! sun is in the western quarter
+            do ii = i-1,i-gpshad,-1
+              rj = j - (ii-i)*tan(pi/2.+sol_azi)
+              j1 = int(rj)
+              j2 = j1+1
+              wgt = rj-j1
+              dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
+              if ((ii.le.max(ids-1,ips-3)).or.(j1.le.max(jds-1,jps-3)).or.(j2.ge.min(jde,jpe+3))) goto 220
+              topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
+              if (sin(topoelev).ge.csza) then
+                shadowmask(i,j) = 1
+                ht_shad(i,j) = max(ht_shad(i,j),ht_loc(i,j)+dxabs*(tan(topoelev)-tan(asin(csza))))
+              endif
+            enddo
+          endif
+
+ 220      continue
+!     endif
+
+   ENDDO i_loop2
+   ENDDO j_loop2
+
+ endif ! iteration
+
+   END SUBROUTINE toposhad
 
 END MODULE module_radiation_driver

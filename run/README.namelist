@@ -82,6 +82,11 @@ Other output options:
  auxhist2_interval (max_dom)         = 10,      ; interval in minutes
  io_form_auxhist2                    = 2,       ; output in netCDF
 
+For SST updating (used only with sst_update=1):
+ 
+ auxinput4_inname                    = "wrflowinp_d<domain>" 
+ auxinput4_interval                  = 360      ; minutes generally matches time given by interval_seconds
+
 Additional settings when running WRFVAR:
 
  write_input                         = t,       ; write input-formatted data as output
@@ -385,6 +390,9 @@ Namelist variables for controling the automatic moving nest:
                                                 ; at same interval as boundary file. To read this, the time-control
                                                 ; namelist must include  auxinput4_interval,  auxinput4_end_h, and
                                                 ; auxinput4_inname = "wrflowinp_d<domain>"
+ slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
+ topo_shading                        = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
+ shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain

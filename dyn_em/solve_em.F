@@ -554,9 +554,28 @@ BENCH_END(phy_prep_tim)
 ! Open MP loops are in physics drivers
 ! radiation
 
-!-----------------------------------------------------------------
-! urban related variable are added to arguments of radiation_driver
-!-----------------------------------------------------------------
+! this driver is only needed to handle non-local shadowing effects
+         CALL pre_radiation_driver ( grid, config_flags                        & 
+              ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    & 
+              ,XLAT=grid%xlat, XLONG=grid%xlong, GMT=grid%gmt                  &
+              ,julian=grid%julian, xtime=grid%xtime, RADT=grid%radt            &
+              ,STEPRA=grid%stepra                                              & 
+              ,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa  &
+              ,shadowmask=shadowmask,slope_rad=config_flags%slope_rad          &
+              ,topo_shading=config_flags%topo_shading                          & 
+              ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc                              & 
+              ,ht_shad_bxs=grid%ht_shad_bxs, ht_shad_bxe=grid%ht_shad_bxe      &
+              ,ht_shad_bys=grid%ht_shad_bys, ht_shad_bye=grid%ht_shad_bye      &
+              ,nested=config_flags%nested, min_ptchsz=grid%min_ptchsz          & 
+              ,spec_bdy_width=config_flags%spec_bdy_width                      &
+            ! indexes
+     &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
+     &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe          &
+     &        ,i_start=grid%i_start,i_end=min(grid%i_end, ide-1)          &
+     &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)          &
+     &        ,kts=k_start, kte=min(k_end,kde-1)                          &
+     &        ,num_tiles=grid%num_tiles                                   )
 
          CALL wrf_debug ( 200 , ' call radiation_driver' )
 BENCH_START(rad_driver_tim)
@@ -648,7 +667,8 @@ BENCH_START(rad_driver_tim)
      &        ,GAER300=grid%gaer1, GAER400=grid%gaer2, GAER600=grid%gaer3, GAER999=grid%gaer4 & ! jcb
      &        ,WAER300=grid%waer1, WAER400=grid%waer2, WAER600=grid%waer3, WAER999=grid%waer4 & ! jcb
 #endif
-     &                                                              )
+     &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
+               ,shadowmask=shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa    )
 
 BENCH_END(rad_driver_tim)
 

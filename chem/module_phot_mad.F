@@ -1316,7 +1316,7 @@
 ! if you have aerosols....
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-        if(haveaer)then
+        if(haveaer.and.ktau.gt.1)then
               aerext(1)=pm2_5_dry(i,1,j)*bext340+ &
               pm2_5_water(i,1,j)*bexth2o
               aerext(1)=aerext(1)*1.e3

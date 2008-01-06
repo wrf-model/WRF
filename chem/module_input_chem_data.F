@@ -332,7 +332,7 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   select case(chem_opt)
   case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP, &
-        RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ, &
+        RACMPM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ, &
         CHEM_TRACER)
      call setup_gasprofile_map_radm_racm
 
@@ -2581,11 +2581,7 @@ SUBROUTINE input_chem_profile (si_grid)
 !-----------------------------------------------------------------------
 subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      dz8w,t_phy,p_phy,rho_phy,chem,                                   &
-     e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,       &
-     e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,               &
-     e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,         &
-     e_no2,e_ch3oh,e_c2h5oh,e_iso,                                    &
-     e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                        &
+     emis_ant,                                           &
      ids,ide, jds,jde, kds,kde,                                       &
      ims,ime, jms,jme, kms,kme,                                       &
      its,ite, jts,jte, kts,kte,                                       &
@@ -2608,13 +2604,9 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
        INTENT(INOUT ) :: chem
   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),    &
        INTENT(IN   ) ::  dz8w,t_phy,p_phy,rho_phy
-  REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),                       &
+  REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_emis_ant ),          &
        INTENT(IN ) ::                                                   &
-       e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,                       &
-       e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,       &
-       e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3, &
-       e_no2,e_ch3oh,e_c2h5oh,e_iso,                                    &
-       e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc
+                emis_ant
   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                      &
        INTENT(IN   ), OPTIONAL ::                                       &
        ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,         &
@@ -2636,42 +2628,42 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      convg = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
      print*,"ADJUSTED EMISSIONS (PPM) AT (i,k,j):",i,k,j
      print*,"dtstep,dz8w(i,k,j):",dtstep,dz8w(i,k,j)
-     print*,"e_pm25 i,j:",e_pm25i(i,k,j)*conva, &
-          e_pm25j(i,k,j)*conva
-     print*,"e_ec i,j:",e_eci(i,k,j)*conva, &
-          e_ecj(i,k,j)*conva
-     print*,"e_org i,j:",e_orgi(i,k,j)*conva, &
-          e_orgj(i,k,j)*conva
-     print*,"e_so2:",e_so2(i,k,j)*convg
-     print*,"e_no:",e_no(i,k,j)*convg
-     print*,"e_co:",e_co(i,k,j)*convg
-     print*,"e_eth:",e_eth(i,k,j)*convg
-     print*,"e_hc3:",e_hc3(i,k,j)*convg
-     print*,"e_hc5:",e_hc5(i,k,j)*convg
-     print*,"e_hc8:",e_hc8(i,k,j)*convg
-     print*,"e_xyl:",e_xyl(i,k,j)*convg
-     print*,"e_ol2:",e_ol2(i,k,j)*convg
-     print*,"e_olt:",e_olt(i,k,j)*convg
-     print*,"e_oli:",e_oli(i,k,j)*convg
-     print*,"e_tol:",e_tol(i,k,j)*convg
-     print*,"e_csl:",e_csl(i,k,j)*convg
-     print*,"e_hcho:",e_hcho(i,k,j)*convg
-     print*,"e_ald:",e_ald(i,k,j)*convg
-     print*,"e_ket:",e_ket(i,k,j)*convg
-     print*,"e_ora2:",e_ora2(i,k,j)*convg
-     print*,"e_pm25:",e_pm25(i,k,j)*conva
-     print*,"e_pm10:",e_pm10(i,k,j)*conva
-     print*,"e_nh3:",e_nh3(i,k,j)*convg
-     print*,"e_no2:",e_no2(i,k,j)*convg
-     print*,"e_ch3oh:",e_ch3oh(i,k,j)*convg
-     print*,"e_c2h5oh:",e_c2h5oh(i,k,j)*convg
-     print*,"e_iso:",e_iso(i,k,j)*convg
-     print*,"e_so4 f,c:",e_so4j(i,k,j)*conva, &
-          e_so4c(i,k,j)*conva
-     print*,"e_no3 f,c:",e_no3j(i,k,j)*conva, &
-          e_no3c(i,k,j)*conva
-     print*,"e_orgc:",e_orgc(i,k,j)*conva
-     print*,"e_ecc:",e_ecc(i,k,j)*conva
+     print*,"e_pm25 i,j:",emis_ant(i,k,j,p_e_pm25i)*conva, &
+          emis_ant(i,k,j,p_e_pm25j)*conva
+     print*,"e_ec i,j:",emis_ant(i,k,j,p_e_eci)*conva, &
+          emis_ant(i,k,j,p_e_ecj)*conva
+     print*,"e_org i,j:",emis_ant(i,k,j,p_e_orgi)*conva, &
+          emis_ant(i,k,j,p_e_orgj)*conva
+     print*,"e_so2:",emis_ant(i,k,j,p_e_so2)*convg
+     print*,"e_no:",emis_ant(i,k,j,p_e_no)*convg
+     print*,"e_co:",emis_ant(i,k,j,p_e_co)*convg
+     print*,"e_eth:",emis_ant(i,k,j,p_e_eth)*convg
+     print*,"e_hc3:",emis_ant(i,k,j,p_e_hc3)*convg
+     print*,"e_hc5:",emis_ant(i,k,j,p_e_hc5)*convg
+     print*,"e_hc8:",emis_ant(i,k,j,p_e_hc8)*convg
+     print*,"e_xyl:",emis_ant(i,k,j,p_e_xyl)*convg
+     print*,"e_ol2:",emis_ant(i,k,j,p_e_ol2)*convg
+     print*,"e_olt:",emis_ant(i,k,j,p_e_olt)*convg
+     print*,"e_oli:",emis_ant(i,k,j,p_e_oli)*convg
+     print*,"e_tol:",emis_ant(i,k,j,p_e_tol)*convg
+     print*,"e_csl:",emis_ant(i,k,j,p_e_csl)*convg
+     print*,"e_hcho:",emis_ant(i,k,j,p_e_hcho)*convg
+     print*,"e_ald:",emis_ant(i,k,j,p_e_ald)*convg
+     print*,"e_ket:",emis_ant(i,k,j,p_e_ket)*convg
+     print*,"e_ora2:",emis_ant(i,k,j,p_e_ora2)*convg
+     print*,"e_pm25:",emis_ant(i,k,j,p_e_pm25)*conva
+     print*,"e_pm10:",emis_ant(i,k,j,p_e_pm10)*conva
+     print*,"e_nh3:",emis_ant(i,k,j,p_e_nh3)*convg
+     print*,"e_no2:",emis_ant(i,k,j,p_e_no2)*convg
+     print*,"e_ch3oh:",emis_ant(i,k,j,p_e_ch3oh)*convg
+     print*,"e_c2h5oh:",emis_ant(i,k,j,p_e_c2h5oh)*convg
+     print*,"e_iso:",emis_ant(i,k,j,p_e_iso)*convg
+     print*,"e_so4 f,c:",emis_ant(i,k,j,p_e_so4j)*conva, &
+          emis_ant(i,k,j,p_e_so4c(i,k,j)*conva
+     print*,"e_no3 f,c:",emis_ant(i,k,j,p_e_no3j)*conva, &
+          emis_ant(i,k,j,p_e_no3c(i,k,j)*conva
+     print*,"e_orgc:",emis_ant(i,k,j,p_e_orgc)*conva
+     print*,"e_ecc:",emis_ant(i,k,j,p_e_ecc)*conva
      print*
   else
      print*,"dz8w=0 so cannot show adjusted emissions"
@@ -2802,65 +2794,65 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
      call wrf_message( TRIM( message ) )
 
          read(91)dumc0
-         grid%e_so2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so2)=dumc0
          read(91)dumc0
-         grid%e_no(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no)=dumc0
          read(91)dumc0
-         grid%e_ald(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ald)=dumc0
          read(91)dumc0
-         grid%e_hcho(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hcho)=dumc0
          read(91)dumc0
-         grid%e_ora2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ora2)=dumc0
          read(91)dumc0
-         grid%e_nh3(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_nh3)=dumc0
          read(91)dumc0
-         grid%e_hc3(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc3)=dumc0
          read(91)dumc0
-         grid%e_hc5(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc5)=dumc0
          read(91)dumc0
-         grid%e_hc8(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc8)=dumc0
          read(91)dumc0
-         grid%e_eth(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eth)=dumc0
          read(91)dumc0
-         grid%e_co(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_co)=dumc0
          read(91)dumc0
-         grid%e_ol2(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ol2)=dumc0
          read(91)dumc0
-         grid%e_olt(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_olt)=dumc0
          read(91)dumc0
-         grid%e_oli(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_oli)=dumc0
          read(91)dumc0
-         grid%e_tol(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_tol)=dumc0
          read(91)dumc0
-         grid%e_xyl(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_xyl)=dumc0
          read(91)dumc0
-         grid%e_ket(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ket)=dumc0
          read(91)dumc0
-         grid%e_csl(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_csl)=dumc0
          read(91)dumc0
-         grid%e_iso(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_iso)=dumc0
          read(91)dumc0
-         grid%e_pm25i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25i)=dumc0
          read(91)dumc0
-         grid%e_pm25j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25j)=dumc0
          read(91)dumc0
-         grid%e_so4i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4i)=dumc0
          read(91)dumc0
-         grid%e_so4j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4j)=dumc0
          read(91)dumc0
-         grid%e_no3i(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3i)=dumc0
          read(91)dumc0
-         grid%e_no3j(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3j)=dumc0
          read(91)dumc0
-         grid%e_orgi(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgi)=dumc0
          read(91)dumc0
-         grid%e_orgj(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgj)=dumc0
          read(91)dumc0
-         grid%e_eci(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eci)=dumc0
          read(91)dumc0
-         grid%e_ecj(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ecj)=dumc0
          read(91)dumc0
-         grid%e_pm10(ids:ide-1,kds:grid%kemit,jds:jde-1)=dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm_10)=dumc0
 
     DEALLOCATE ( dumc0 )
    RETURN

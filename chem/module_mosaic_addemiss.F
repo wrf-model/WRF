@@ -30,8 +30,7 @@ CONTAINS
 !----------------------------------------------------------------------
    subroutine mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
                config_flags, chem, slai, ust, smois, ivgtyp, isltyp,       &
-               e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,    &
-               e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc,     &
+               emis_ant,                                                   &
                dust_emiss_active, seasalt_emiss_active,                    &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
@@ -43,8 +42,9 @@ CONTAINS
 !
 
    USE module_configure, only:  grid_config_rec_type
-   USE module_state_description, only:  num_chem, param_first_scalar,   &
-      emiss_inpt_default, emiss_inpt_pnnl_rs, emiss_inpt_pnnl_cm
+   USE module_state_description
+!  USE module_state_description, only:  num_chem, param_first_scalar,   &
+!     emiss_inpt_default, emiss_inpt_pnnl_rs, emiss_inpt_pnnl_cm,num_emis_ant
    USE module_data_mosaic_asect
 
    IMPLICIT NONE
@@ -73,10 +73,9 @@ CONTAINS
 ! aerosol emissions arrays ((ug/m3)*m/s)
 !
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                          &
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant ),            &
          INTENT(IN ) ::                                                    &
-          e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,         &
-          e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc
+                         emis_ant
 
 ! 1/(dry air density) and layer thickness (m)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
@@ -244,9 +243,18 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte,                                  &
                14,                                                         &
-               e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,    &
-               e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                   &
-               e_ecc,e_ecc,e_ecc,e_ecc,e_ecc,e_ecc,e_ecc                   )
+               emis_ant(ims,kms,jms,p_e_pm_10),emis_ant(ims,kms,jms,p_e_pm_25), &
+               emis_ant(ims,kms,jms,p_e_pm25i),emis_ant(ims,kms,jms,p_e_pm25j), &
+               emis_ant(ims,kms,jms,p_e_eci),emis_ant(ims,kms,jms,p_e_ecj),     &
+               emis_ant(ims,kms,jms,p_e_orgi),emis_ant(ims,kms,jms,p_e_orgj),   &
+               emis_ant(ims,kms,jms,p_e_so4j),emis_ant(ims,kms,jms,p_e_so4c),   &
+               emis_ant(ims,kms,jms,p_e_no3j),emis_ant(ims,kms,jms,p_e_no3c),   &
+               emis_ant(ims,kms,jms,p_e_orgc),emis_ant(ims,kms,jms,p_e_ecc),    &
+               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
+               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
+               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
+               emis_ant(ims,kms,jms,p_e_ecc))
+
 
 	p1st = param_first_scalar
 
@@ -261,31 +269,31 @@ CONTAINS
 
 ! compute mass emissions [(ug/m3)*m/s] for each species
 ! using the apportioning fractions
-	aem_so4 = fr_aem_mosaic_f(n)*e_so4j(i,k,j)   &
-	        + fr_aem_mosaic_c(n)*e_so4c(i,k,j)   &
-	        + fr_aem_sorgam_i(n)*e_so4i(i,k,j)   &
-	        + fr_aem_sorgam_j(n)*e_so4j(i,k,j)
+	aem_so4 = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_so4j)   &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_so4c)   &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_so4i)   &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_so4j)
 
-	aem_no3 = fr_aem_mosaic_f(n)*e_no3j(i,k,j)   &
-	        + fr_aem_mosaic_c(n)*e_no3c(i,k,j)   &
-	        + fr_aem_sorgam_i(n)*e_no3i(i,k,j)   &
-	        + fr_aem_sorgam_j(n)*e_no3j(i,k,j)
+	aem_no3 = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_no3j)   &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_no3c)   &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_no3i)   &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_no3j)
 
-	aem_oc  = fr_aem_mosaic_f(n)*e_orgj(i,k,j)   &
-	        + fr_aem_mosaic_c(n)*e_orgc(i,k,j)   &
-	        + fr_aem_sorgam_i(n)*e_orgi(i,k,j)   &
-	        + fr_aem_sorgam_j(n)*e_orgj(i,k,j)
+	aem_oc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_orgj)   &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgc)   &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_orgi)   &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_orgj)
 
-	aem_bc  = fr_aem_mosaic_f(n)*e_ecj(i,k,j)    &
-	        + fr_aem_mosaic_c(n)*e_ecc(i,k,j)    &
-	        + fr_aem_sorgam_i(n)*e_eci(i,k,j)    &
-	        + fr_aem_sorgam_j(n)*e_ecj(i,k,j)
+	aem_bc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_ecj)    &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_ecc)    &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_eci)    &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_ecj)
 
-	aem_oin = fr_aem_mosaic_f(n)*e_pm25j(i,k,j)  &
-	        + fr_aem_mosaic_c(n)*e_pm10(i,k,j)   &
-	        + fr_aem_sorgam_i(n)*e_pm25i(i,k,j)  &
-	        + fr_aem_sorgam_j(n)*e_pm25j(i,k,j)  &
-	        + fr_aem_sorgam_c(n)*e_pm10(i,k,j)
+	aem_oin = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_pm25j)  &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_pm_10)   &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_pm25i)  &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_pm25j)  &
+	        + fr_aem_sorgam_c(n)*emis_ant(i,k,j,p_e_pm_10)
 
 ! emissions for these species are currently zero
 	aem_nh4 = 0.0
@@ -365,9 +373,17 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte,                                  &
                14,                                                         &
-               e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,    &
-               e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                   &
-               e_ecc,e_ecc,e_ecc,e_ecc,e_ecc,e_ecc,e_ecc                   )
+               emis_ant(ims,kms,jms,p_e_pm_10),emis_ant(ims,kms,jms,p_e_pm_25), &
+               emis_ant(ims,kms,jms,p_e_pm25i),emis_ant(ims,kms,jms,p_e_pm25j), &
+               emis_ant(ims,kms,jms,p_e_eci),emis_ant(ims,kms,jms,p_e_ecj),     &
+               emis_ant(ims,kms,jms,p_e_orgi),emis_ant(ims,kms,jms,p_e_orgj),   &
+               emis_ant(ims,kms,jms,p_e_so4j),emis_ant(ims,kms,jms,p_e_so4c),   &
+               emis_ant(ims,kms,jms,p_e_no3j),emis_ant(ims,kms,jms,p_e_no3c),   &
+               emis_ant(ims,kms,jms,p_e_orgc),emis_ant(ims,kms,jms,p_e_ecc),    &
+               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
+               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
+               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
+               emis_ant(ims,kms,jms,p_e_ecc))
 
 
 ! do seasalt emissions

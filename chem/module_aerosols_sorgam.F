@@ -15,9 +15,7 @@ CONTAINS
                t8w,alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
-               e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
-               e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,                                                  &
+               emis_ant,vdrog3,                                         &
                kemit,                                                   &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
@@ -44,10 +42,9 @@ CONTAINS
            cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2
 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),                     &
+   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_emis_ant ),                     &
          INTENT(INOUT ) ::                                             &
-           e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,           &
-           e_so4i,e_so4j,e_no3i,e_no3j
+         emis_ant
 
    REAL,  DIMENSION(ims:ime,kms:kme-0,jms:jme,ldrog),                  &
            INTENT(IN   ) ::                                            &
@@ -336,17 +333,17 @@ CONTAINS
          cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)
          cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
       else
-         epmcoarse(1) = e_pm10(i,k,j)/dz8w(i,k,j)
-         epm25i(1)    = e_pm25i(i,k,j)/dz8w(i,k,j)
-         epm25j(1)    = e_pm25j(i,k,j)/dz8w(i,k,j)
-         eeci_in      = e_eci(i,k,j)/dz8w(i,k,j)
-         eecj_in      = e_ecj(i,k,j)/dz8w(i,k,j)
-         eorgi_in     = e_orgi(i,k,j)/dz8w(i,k,j)
-         eorgj_in     = e_orgj(i,k,j)/dz8w(i,k,j)
-         cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)+e_so4j(i,k,j)/dz8w(i,k,j)*dtstep
-         cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)+e_so4i(i,k,j)/dz8w(i,k,j)*dtstep
-         cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)+e_no3j(i,k,j)/dz8w(i,k,j)*dtstep
-         cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)+e_no3i(i,k,j)/dz8w(i,k,j)*dtstep
+         epmcoarse(1) = emis_ant(i,k,j,p_e_pm_10)/dz8w(i,k,j)
+         epm25i(1)    = emis_ant(i,k,j,p_e_pm25i)/dz8w(i,k,j)
+         epm25j(1)    = emis_ant(i,k,j,p_e_pm25j)/dz8w(i,k,j)
+         eeci_in      = emis_ant(i,k,j,p_e_eci)/dz8w(i,k,j)
+         eecj_in      = emis_ant(i,k,j,p_e_ecj)/dz8w(i,k,j)
+         eorgi_in     = emis_ant(i,k,j,p_e_orgi)/dz8w(i,k,j)
+         eorgj_in     = emis_ant(i,k,j,p_e_orgj)/dz8w(i,k,j)
+         cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)+emis_ant(i,k,j,p_e_so4j)/dz8w(i,k,j)*dtstep
+         cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)+emis_ant(i,k,j,p_e_so4i)/dz8w(i,k,j)*dtstep
+         cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)+emis_ant(i,k,j,p_e_no3j)/dz8w(i,k,j)*dtstep
+         cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)+emis_ant(i,k,j,p_e_no3i)/dz8w(i,k,j)*dtstep
       end if
 !rs. nitrate, nh3, sulf
       cblk(1,vsulf) = vsulf_in

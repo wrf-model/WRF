@@ -8,9 +8,7 @@ CONTAINS
 ! in the future. aerosols are already added somewhere else....
 !
    subroutine add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem, &
-               e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,        &
-               e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,    &
-               e_pm25,e_pm10,e_nh3,                                        &
+               emis_ant,                                                   &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -36,10 +34,9 @@ CONTAINS
 ! emissions arrays
 !
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant ),            &
          INTENT(IN ) ::                                                    &
-           e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,&
-           e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3
+               emis_ant        
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
          INTENT(IN ) ::        rho_phy
 
@@ -76,68 +73,68 @@ CONTAINS
            (k <= CHEM_DBG_K .and. k >= CHEM_DBG_K)  ) then
           print*
           print*,"Converted emissions for RADM2:"
-          print*,"e_csl=",e_csl(i,k,j)*conv_rho
-          print*,"e_iso=",e_iso(i,k,j)*conv_rho
-          print*,"e_so2=",e_so2(i,k,j)*conv_rho
-          print*,"e_no=",e_no(i,k,j)*conv_rho
-          print*,"e_ald=",e_ald(i,k,j)*conv_rho
-          print*,"e_hcho=",e_hcho(i,k,j)*conv_rho
-          print*,"e_ora2=",e_ora2(i,k,j)*conv_rho
-          print*,"e_nh3=",e_nh3(i,k,j)*conv_rho
-          print*,"e_hc3=",e_hc3(i,k,j)*conv_rho
-          print*,"e_hc5=",e_hc5(i,k,j)*conv_rho
-          print*,"e_hc8=",e_hc8(i,k,j)*conv_rho
-          print*,"e_eth=",e_eth(i,k,j)*conv_rho
-          print*,"e_co=",e_co(i,k,j)*conv_rho
-          print*,"e_ol2=",e_ol2(i,k,j)*conv_rho
-          print*,"e_olt=",e_olt(i,k,j)*conv_rho
-          print*,"e_oli=",e_oli(i,k,j)*conv_rho
-          print*,"e_tol=",e_tol(i,k,j)*conv_rho
-          print*,"e_xyl=",e_xyl(i,k,j)*conv_rho
-          print*,"e_ket=",e_ket(i,k,j)*conv_rho
+          print*,"e_csl=",emis_ant(i,k,j,p_e_csl)*conv_rho
+          print*,"e_iso=",emis_ant(i,k,j,p_e_iso)*conv_rho
+          print*,"e_so2=",emis_ant(i,k,j,p_e_so2)*conv_rho
+          print*,"e_no=",emis_ant(i,k,j,p_e_no)*conv_rho
+          print*,"e_ald=",emis_ant(i,k,j,p_e_ald)*conv_rho
+          print*,"e_hcho=",emis_ant(i,k,j,p_e_hcho)*conv_rho
+          print*,"e_ora2=",emis_ant(i,k,j,p_e_ora2)*conv_rho
+          print*,"e_nh3=",emis_ant(i,k,j,p_e_nh3)*conv_rho
+          print*,"e_hc3=",emis_ant(i,k,j,p_e_hc3)*conv_rho
+          print*,"e_hc5=",emis_ant(i,k,j,p_e_hc5)*conv_rho
+          print*,"e_hc8=",emis_ant(i,k,j,p_e_hc8)*conv_rho
+          print*,"e_eth=",emis_ant(i,k,j,p_e_eth)*conv_rho
+          print*,"e_co=",emis_ant(i,k,j,p_e_co)*conv_rho
+          print*,"e_ol2=",emis_ant(i,k,j,p_e_ol2)*conv_rho
+          print*,"e_olt=",emis_ant(i,k,j,p_e_olt)*conv_rho
+          print*,"e_oli=",emis_ant(i,k,j,p_e_oli)*conv_rho
+          print*,"e_tol=",emis_ant(i,k,j,p_e_tol)*conv_rho
+          print*,"e_xyl=",emis_ant(i,k,j,p_e_xyl)*conv_rho
+          print*,"e_ket=",emis_ant(i,k,j,p_e_ket)*conv_rho
        end if
 #endif
 
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
-                         +e_csl(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_csl)*conv_rho
         chem(i,k,j,p_iso)  = chem(i,k,j,p_iso)                         &
-                         +e_iso(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_iso)*conv_rho
         chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                         &
-                         +e_so2(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_so2)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
-                         +e_no(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_no)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
-                         +e_ald(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_ald)*conv_rho
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
-                         +e_hcho(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_hcho)*conv_rho
         chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                       &
-                         +e_ora2(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_ora2)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
-                         +e_nh3(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_nh3)*conv_rho
         chem(i,k,j,p_hc3)  = chem(i,k,j,p_hc3)                         &
-                         +e_hc3(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_hc3)*conv_rho
         chem(i,k,j,p_hc5)  = chem(i,k,j,p_hc5)                         &
-                         +e_hc5(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_hc5)*conv_rho
         chem(i,k,j,p_hc8)  = chem(i,k,j,p_hc8)                         &
-                         +e_hc8(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_hc8)*conv_rho
         chem(i,k,j,p_eth)  = chem(i,k,j,p_eth)                         &
-                         +e_eth(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_eth)*conv_rho
         chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
-                         +e_co(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_co)*conv_rho
         if(p_ol2.gt.1)chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)           &
-                         +e_ol2(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_ol2)*conv_rho
         if(p_ete.gt.1)chem(i,k,j,p_ete)  = chem(i,k,j,p_ete)           &
-                         +e_ol2(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_ol2)*conv_rho
         chem(i,k,j,p_olt)  = chem(i,k,j,p_olt)                         &
-                         +e_olt(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_olt)*conv_rho
         chem(i,k,j,p_oli)  = chem(i,k,j,p_oli)                         &
-                         +e_oli(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_oli)*conv_rho
         chem(i,k,j,p_tol)  = chem(i,k,j,p_tol)                         &
-                         +e_tol(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_tol)*conv_rho
         chem(i,k,j,p_xyl)  = chem(i,k,j,p_xyl)                         &      
-                         +e_xyl(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_xyl)*conv_rho
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &     
-                         +e_ket(i,k,j)*conv_rho
+                         +emis_ant(i,k,j,p_e_ket)*conv_rho
       END DO                                                          
  100  continue
 

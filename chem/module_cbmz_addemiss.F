@@ -23,10 +23,7 @@ CONTAINS
 
 !----------------------------------------------------------------------
    subroutine cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,       &
-               rho_phy, chem,                                             &
-               e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt, &
-               e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,         &
-               e_no2,e_ch3oh,e_c2h5oh,                                    &
+               rho_phy, chem,emis_ant,                                    &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -58,12 +55,9 @@ CONTAINS
 ! emissions arrays (v.1: ppm m/min; v.2: mole km^-2 hr^-1)
 !
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                          &
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant),&
          INTENT(IN ) ::                                                    &
-          e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,       &
-          e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,               &
-          e_no2,e_ch3oh,e_c2h5oh
-
+                         emis_ant
 ! layer thickness (m)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::   dz8w, rho_phy
@@ -76,16 +70,25 @@ CONTAINS
 
 
 ! do mass check initial calc
-      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(            &
-               id, config_flags, 1, 'cbmz_addemiss',                       &
-               dtstep, efact1, dz8w, chem, chem_sum,                       &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte,                                  &
-               21,                                                         &
-               e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
-               e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,          &
-               e_no2,e_ch3oh,e_c2h5oh                                      )
+      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(               &
+               id, config_flags, 1, 'cbmz_addemiss',                          &
+               dtstep, efact1, dz8w, chem, chem_sum,                          &
+               ids,ide, jds,jde, kds,kde,                                     &
+               ims,ime, jms,jme, kms,kme,                                     &
+               its,ite, jts,jte, kts,kte,                                     &
+               21,                                                            &
+               emis_ant(ims,kms,jms,p_e_so2),emis_ant(ims,kms,jms,p_e_no),    &
+               emis_ant(ims,kms,jms,p_e_co),emis_ant(ims,kms,jms,p_e_eth),    &
+               emis_ant(ims,kms,jms,p_e_hc3),emis_ant(ims,kms,jms,p_e_hc5),   &
+               emis_ant(ims,kms,jms,p_e_hc8),emis_ant(ims,kms,jms,p_e_xyl),   &
+               emis_ant(ims,kms,jms,p_e_ol2),emis_ant(ims,kms,jms,p_e_olt),   &
+               emis_ant(ims,kms,jms,p_e_oli),emis_ant(ims,kms,jms,p_e_tol),   &
+               emis_ant(ims,kms,jms,p_e_csl),emis_ant(ims,kms,jms,p_e_hcho),  &
+               emis_ant(ims,kms,jms,p_e_ald),emis_ant(ims,kms,jms,p_e_ket),   &
+               emis_ant(ims,kms,jms,p_e_ora2),emis_ant(ims,kms,jms,p_e_nh3),  &
+               emis_ant(ims,kms,jms,p_e_no2),emis_ant(ims,kms,jms,p_e_ch3oh), &
+               emis_ant(ims,kms,jms,p_e_c2h5oh))
+
 
 
 !       
@@ -105,57 +108,57 @@ CONTAINS
            (k <= CHEM_DBG_K .and. k >= CHEM_DBG_K)  ) then
           print*
           print*,"Converted emissions for CBMZ:"
-          print*,"e_csl=",e_csl(i,k,j)*conv
-          print*,"e_so2=",e_so2(i,k,j)*conv
-          print*,"e_no=",e_no(i,k,j)*conv
-          print*,"e_ald=",e_ald(i,k,j)*conv
-          print*,"e_hcho=",e_hcho(i,k,j)*conv
-          print*,"e_ora2=",e_ora2(i,k,j)*conv
-          print*,"e_nh3=",e_nh3(i,k,j)*conv
-          print*,"e_hc3=",e_hc3(i,k,j)*conv
-          print*,"e_hc5=",e_hc5(i,k,j)*conv
-          print*,"e_hc8=",e_hc8(i,k,j)*conv
-          print*,"e_eth=",e_eth(i,k,j)*conv
-          print*,"e_co=",e_co(i,k,j)*conv
-          print*,"e_ol2=",e_ol2(i,k,j)*conv
-          print*,"e_olt=",e_olt(i,k,j)*conv
-          print*,"e_oli=",e_oli(i,k,j)*conv
-          print*,"e_tol=",e_tol(i,k,j)*conv
-          print*,"e_xyl=",e_xyl(i,k,j)*conv
-          print*,"e_ket=",e_ket(i,k,j)*conv
+          print*,"e_csl=",emis_ant(i,k,j,p_e_csl)*conv
+          print*,"e_so2=",emis_ant(i,k,j,p_e_so2)*conv
+          print*,"e_no=",emis_ant(i,k,j,p_e_no)*conv
+          print*,"e_ald=",emis_ant(i,k,j,p_e_ald)*conv
+          print*,"e_hcho=",emis_ant(i,k,j,p_e_hcho)*conv
+          print*,"e_ora2=",emis_ant(i,k,j,p_e_ora2)*conv
+          print*,"e_nh3=",emis_ant(i,k,j,p_e_nh3)*conv
+          print*,"e_hc3=",emis_ant(i,k,j,p_e_hc3)*conv
+          print*,"e_hc5=",emis_ant(i,k,j,p_e_hc5)*conv
+          print*,"e_hc8=",emis_ant(i,k,j,p_e_hc8)*conv
+          print*,"e_eth=",emis_ant(i,k,j,p_e_eth)*conv
+          print*,"e_co=",emis_ant(i,k,j,p_e_co)*conv
+          print*,"e_ol2=",emis_ant(i,k,j,p_e_ol2)*conv
+          print*,"e_olt=",emis_ant(i,k,j,p_e_olt)*conv
+          print*,"e_oli=",emis_ant(i,k,j,p_e_oli)*conv
+          print*,"e_tol=",emis_ant(i,k,j,p_e_tol)*conv
+          print*,"e_xyl=",emis_ant(i,k,j,p_e_xyl)*conv
+          print*,"e_ket=",emis_ant(i,k,j,p_e_ket)*conv
        end if
 #endif
 
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
-                         +e_csl(i,k,j)*conv 
+                         +emis_ant(i,k,j,p_e_csl)*conv 
         chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                         &
-                         +e_so2(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_so2)*conv
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
-                         +e_no(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_no)*conv
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
-                         +e_ald(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_ald)*conv
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
-                         +e_hcho(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_hcho)*conv
         chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                       &
-                         +e_ora2(i,k,j)*conv 
+                         +emis_ant(i,k,j,p_e_ora2)*conv 
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
-                         +e_nh3(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_nh3)*conv
         chem(i,k,j,p_eth)  = chem(i,k,j,p_eth)                         &
-                         +e_eth(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_eth)*conv
         chem(i,k,j,p_co)  = chem(i,k,j,p_co)                           &
-                         +e_co(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_co)*conv
         chem(i,k,j,p_ol2)  = chem(i,k,j,p_ol2)                         &
-                         +e_ol2(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_ol2)*conv
         chem(i,k,j,p_olt)  = chem(i,k,j,p_olt)                         &
-                         +e_olt(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_olt)*conv
         chem(i,k,j,p_oli)  = chem(i,k,j,p_oli)                         &
-                         +e_oli(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_oli)*conv
         chem(i,k,j,p_tol)  = chem(i,k,j,p_tol)                         &
-                         +e_tol(i,k,j)*conv
+                         +emis_ant(i,k,j,p_e_tol)*conv
         chem(i,k,j,p_xyl)  = chem(i,k,j,p_xyl)                         &
-                         +e_xyl(i,k,j)*conv       
+                         +emis_ant(i,k,j,p_e_xyl)*conv       
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &
-                         +e_ket(i,k,j)*conv       
+                         +emis_ant(i,k,j,p_e_ket)*conv       
 
 ! when emissions input file is "radm2sorg" variety, calc par emissions as a 
 !   combination of the anthropogenic emissions for radm2 primary voc species
@@ -163,24 +166,24 @@ CONTAINS
              (config_flags%emiss_inpt_opt == EMISS_INPT_PNNL_RS) ) then
             chem(i,k,j,p_par) = chem(i,k,j,p_par)             &
                 + conv*                                       &
-                  ( 0.4*e_ald(i,k,j) + 2.9*e_hc3(i,k,j)       &
-                  + 4.8*e_hc5(i,k,j) + 7.9*e_hc8(i,k,j)       &
-                  + 0.9*e_ket(i,k,j) + 2.8*e_oli(i,k,j)       &
-                  + 1.8*e_olt(i,k,j) + 1.0*e_ora2(i,k,j) )
+                  ( 0.4*emis_ant(i,k,j,p_e_ald) + 2.9*emis_ant(i,k,j,p_e_hc3)       &
+                  + 4.8*emis_ant(i,k,j,p_e_hc5) + 7.9*emis_ant(i,k,j,p_e_hc8)       &
+                  + 0.9*emis_ant(i,k,j,p_e_ket) + 2.8*emis_ant(i,k,j,p_e_oli)       &
+                  + 1.8*emis_ant(i,k,j,p_e_olt) + 1.0*emis_ant(i,k,j,p_e_ora2) )
 
 ! when emissions input file is "cbmzmosaic" variety, 
 !   the par emissions are read into e_hc5
 !   and there are emissions for other species
         else
             chem(i,k,j,p_par) = chem(i,k,j,p_par)             &
-                + conv*e_hc5(i,k,j)
+                + conv*emis_ant(i,k,j,p_e_hc5)
 
             chem(i,k,j,p_no2) = chem(i,k,j,p_no2)             &
-                + conv*e_no2(i,k,j)
+                + conv*emis_ant(i,k,j,p_e_no2)
             chem(i,k,j,p_ch3oh)  = chem(i,k,j,p_ch3oh)        &
-                + conv*e_ch3oh(i,k,j)
+                + conv*emis_ant(i,k,j,p_e_ch3oh)
             chem(i,k,j,p_c2h5oh) = chem(i,k,j,p_c2h5oh)       &
-                + conv*e_c2h5oh(i,k,j)
+                + conv*emis_ant(i,k,j,p_e_c2h5oh)
         end if
 
       END DO                                                          
@@ -188,16 +191,24 @@ CONTAINS
 
 
 ! do mass check final calc
-      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(            &
-               id, config_flags, 2, 'cbmz_addemiss',                       &
-               dtstep, efact1, dz8w, chem, chem_sum,                       &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte,                                  &
-               21,                                                         &
-               e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
-               e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,          &
-               e_no2,e_ch3oh,e_c2h5oh                                      )
+      if (cbmz_addemiss_masscheck > 0) call addemiss_masscheck(               &
+               id, config_flags, 2, 'cbmz_addemiss',                          &
+               dtstep, efact1, dz8w, chem, chem_sum,                          &
+               ids,ide, jds,jde, kds,kde,                                     &
+               ims,ime, jms,jme, kms,kme,                                     &
+               its,ite, jts,jte, kts,kte,                                     &
+               21,                                                            &
+               emis_ant(ims,kms,jms,p_e_so2),emis_ant(ims,kms,jms,p_e_no),    &
+               emis_ant(ims,kms,jms,p_e_co),emis_ant(ims,kms,jms,p_e_eth),    &
+               emis_ant(ims,kms,jms,p_e_hc3),emis_ant(ims,kms,jms,p_e_hc5),   &
+               emis_ant(ims,kms,jms,p_e_hc8),emis_ant(ims,kms,jms,p_e_xyl),   &
+               emis_ant(ims,kms,jms,p_e_ol2),emis_ant(ims,kms,jms,p_e_olt),   &
+               emis_ant(ims,kms,jms,p_e_oli),emis_ant(ims,kms,jms,p_e_tol),   &
+               emis_ant(ims,kms,jms,p_e_csl),emis_ant(ims,kms,jms,p_e_hcho),  &
+               emis_ant(ims,kms,jms,p_e_ald),emis_ant(ims,kms,jms,p_e_ket),   &
+               emis_ant(ims,kms,jms,p_e_ora2),emis_ant(ims,kms,jms,p_e_nh3),  &
+               emis_ant(ims,kms,jms,p_e_no2),emis_ant(ims,kms,jms,p_e_ch3oh), &
+               emis_ant(ims,kms,jms,p_e_c2h5oh))
 
 
    END subroutine cbmz_addemiss_anthro

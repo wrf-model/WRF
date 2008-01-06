@@ -3,46 +3,46 @@ state   integer emissframes    -        -          -         -     -         "em
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Chemistry Variables  (all shared at this point)
 # emissions first
-state    real  e_iso          i+j     misc        1         Z      i5h      "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"         "mol km^-2 hr^-1"
-state    real  e_so2          i+j     misc        1         Z      i5h      "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_no           i+j     misc        1         Z      i5      "E_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_co           i+j     misc        1         Z      i5h      "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_eth          i+j     misc        1         Z      i5      "E_ETH"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_hc3          i+j     misc        1         Z      i5      "E_HC3"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_hc5          i+j     misc        1         Z      i5      "E_HC5"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_hc8          i+j     misc        1         Z      i5      "E_HC8"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_xyl          i+j     misc        1         Z      i5      "E_XYL"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_ol2          i+j     misc        1         Z      i5      "E_OL2"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_olt          i+j     misc        1         Z      i5      "E_OLT"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_oli          i+j     misc        1         Z      i5      "E_OLI"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_tol          i+j     misc        1         Z      i5      "E_TOL"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_csl          i+j     misc        1         Z      i5      "E_CSL"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_hcho         i+j     misc        1         Z      i5      "E_HCHO"              "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_ald          i+j     misc        1         Z      i5      "E_ALD"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_ket          i+j     misc        1         Z      i5      "E_KET"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_ora2         i+j     misc        1         Z      i5      "E_ORA2"              "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_nh3          i+j     misc        1         Z      i5      "E_NH3"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm25         i+j     misc        1         Z      i5      "E_PM25"              "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm10         i+j     misc        1         Z      i5      "E_PM10"              "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm25i        i+j     misc        1         Z      i5      "E_PM25I"             "EMISSION RATE OF UNIDEN. PM2.5 MASS"  "ug/m3 m/s"
-state    real  e_pm25j        i+j     misc        1         Z      i5      "E_PM25J"             "EMISSION RATE OF J-MODE UNIDEN. PM2.5 MASS"   "ug/m3 m/s"
-state    real  e_eci          i+j     misc        1         Z      i5      "E_ECI"               "EMISSION RATE OF I-MODE EC"          "ug/m3 m/s"
-state    real  e_ecj          i+j     misc        1         Z      i5      "E_ECJ"               "EMISSION RATE OF J-MODE EC"          "ug/m3 m/s"
-state    real  e_orgi         i+j     misc        1         Z      i5      "E_ORGI"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
-state    real  e_orgj         i+j     misc        1         Z      i5      "E_ORGJ"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
-state    real  e_so4i         i+j     misc        1         Z      i5      "E_SO4I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
-state    real  e_so4j         i+j     misc        1         Z      i5      "E_SO4J"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
-state    real  e_no3i         i+j     misc        1         Z      i5     "E_NO3I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
-state    real  e_no3j         i+j     misc        1         Z      i5      "E_NO3J"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_iso          i+jf     emis_ant     1         Z      i5h      "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"         "mol km^-2 hr^-1"
+state    real  e_so2          i+jf     emis_ant     1         Z      i5h      "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_no           i+jf     emis_ant     1         Z      i5      "E_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_co           i+jf     emis_ant     1         Z      i5h      "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_eth          i+jf     emis_ant     1         Z      i5      "E_ETH"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_hc3          i+jf     emis_ant     1         Z      i5      "E_HC3"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_hc5          i+jf     emis_ant     1         Z      i5      "E_HC5"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_hc8          i+jf     emis_ant     1         Z      i5      "E_HC8"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_xyl          i+jf     emis_ant     1         Z      i5      "E_XYL"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_ol2          i+jf     emis_ant     1         Z      i5      "E_OL2"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_olt          i+jf     emis_ant     1         Z      i5      "E_OLT"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_oli          i+jf     emis_ant     1         Z      i5      "E_OLI"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_tol          i+jf     emis_ant     1         Z      i5      "E_TOL"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_csl          i+jf     emis_ant     1         Z      i5      "E_CSL"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_hcho         i+jf     emis_ant     1         Z      i5      "E_HCHO"              "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_ald          i+jf     emis_ant     1         Z      i5      "E_ALD"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_ket          i+jf     emis_ant     1         Z      i5      "E_KET"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_ora2         i+jf     emis_ant     1         Z      i5      "E_ORA2"              "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_nh3          i+jf     emis_ant     1         Z      i5      "E_NH3"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_pm_25        i+jf     emis_ant     1         Z      i5      "E_PM25"              "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_pm_10        i+jf     emis_ant     1         Z      i5      "E_PM10"              "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_pm25i        i+jf     emis_ant     1         Z      i5      "E_PM25I"             "EMISSION RATE OF UNIDEN. PM2.5 MASS"  "ug/m3 m/s"
+state    real  e_pm25j        i+jf     emis_ant     1         Z      i5      "E_PM25J"             "EMISSION RATE OF J-MODE UNIDEN. PM2.5 MASS"   "ug/m3 m/s"
+state    real  e_eci          i+jf     emis_ant     1         Z      i5      "E_ECI"               "EMISSION RATE OF I-MODE EC"          "ug/m3 m/s"
+state    real  e_ecj          i+jf     emis_ant     1         Z      i5      "E_ECJ"               "EMISSION RATE OF J-MODE EC"          "ug/m3 m/s"
+state    real  e_orgi         i+jf     emis_ant     1         Z      i5      "E_ORGI"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_orgj         i+jf     emis_ant     1         Z      i5      "E_ORGJ"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_so4i         i+jf     emis_ant     1         Z      i5      "E_SO4I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_so4j         i+jf     emis_ant     1         Z      i5      "E_SO4J"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_no3i         i+jf     emis_ant     1         Z      i5     "E_NO3I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_no3j         i+jf     emis_ant     1         Z      i5      "E_NO3J"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
 
 # Additional CBMZ and MOSAIC emission variables...
-state    real  e_no2          i+j     misc        1         Z      i5     "E_NO2"                "EMISSIONS NO2"                 "mol km^-2 hr^-1"
-state    real  e_ch3oh        i+j     misc        1         Z      i5     "E_CH3OH"              "EMISSIONS CH3OH"               "mol km^-2 hr^-1"
-state    real  e_c2h5oh       i+j     misc        1         Z      i5     "E_C2H5OH"             "EMISSIONS C2H5OH"              "mol km^-2 hr^-1"
-state    real  e_so4c         i+j     misc        1         Z      i5     "E_SO4C"               "EMISSIONS COARSE SO4 AER"      "ug/m3 m/s"
-state    real  e_no3c         i+j     misc        1         Z      i5     "E_NO3C"               "EMISSIONS COARSE NO3 AER"      "ug/m3 m/s"
-state    real  e_orgc         i+j     misc        1         Z      i5     "E_ORGC"               "EMISSIONS COARSE ORG AER"      "ug/m3 m/s"
-state    real  e_ecc          i+j     misc        1         Z      i5     "E_ECC"                "EMISSIONS COARSE EC AER"       "ug/m3 m/s"
+state    real  e_no2          i+jf     emis_ant     1         Z      i5     "E_NO2"                "EMISSIONS NO2"                 "mol km^-2 hr^-1"
+state    real  e_ch3oh        i+jf     emis_ant     1         Z      i5     "E_CH3OH"              "EMISSIONS CH3OH"               "mol km^-2 hr^-1"
+state    real  e_c2h5oh       i+jf     emis_ant     1         Z      i5     "E_C2H5OH"             "EMISSIONS C2H5OH"              "mol km^-2 hr^-1"
+state    real  e_so4c         i+jf     emis_ant     1         Z      i5     "E_SO4C"               "EMISSIONS COARSE SO4 AER"      "ug/m3 m/s"
+state    real  e_no3c         i+jf     emis_ant     1         Z      i5     "E_NO3C"               "EMISSIONS COARSE NO3 AER"      "ug/m3 m/s"
+state    real  e_orgc         i+jf     emis_ant     1         Z      i5     "E_ORGC"               "EMISSIONS COARSE ORG AER"      "ug/m3 m/s"
+state    real  e_ecc          i+jf     emis_ant     1         Z      i5     "E_ECC"                "EMISSIONS COARSE EC AER"       "ug/m3 m/s"
 
 # biomassburning emission arrays (used by fire plume rise)
 state    real  ebu_no       ikj      misc           1         Z      i05h     "ebu_no"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
@@ -341,6 +341,10 @@ state   real   nh4aj       ikjftb   chem        1         -   irhusdf=(bdy_inter
 state   real   nh4ai       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4ai"         "Ammonium  conc. Aitken mode"       "ug/kg-dryair"
 state   real   no3aj       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no3aj"         "Nitrate  conc. Acc. mode"       "ug/kg-dryair"
 state   real   no3ai       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no3ai"         "Nitrate  conc. Aitken mode"       "ug/kg-dryair"
+state   real   naaj        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "naaj"          "Sodium   conc. Acc. mode"       "ug/kg-dryair"
+state   real   naai        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "naai"          "Sodium   conc. Aitken mode"       "ug/kg-dryair"
+state   real   claj        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "claj"          "Chloride conc. Acc. mode"       "ug/kg-dryair"
+state   real   clai        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "clai"          "Chloride conc. Aitken mode"       "ug/kg-dryair"
 state   real   orgaro1j    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "orgaro1j"      "SOA Anth. org. conc. from aromatics Acc. mode"    "ug/kg-dryair"
 state   real   orgaro1i    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "orgaro1i"      "SOA Anth. org. conc. from aromatics Aitken mode"    "ug/kg-dryair"
 state   real   orgaro2j    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "orgaro2j"      "SOA Anth. org. conc. from aromatics Acc. mode"    "ug/kg-dryair"
@@ -376,6 +380,10 @@ state   real   nh4cwj      ikjftb   chem        1         -   irhusdf=(bdy_inter
 state   real   nh4cwi      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4cwi"         "Ammonium  conc. Aitken mode in cloud"       "ug/kg-dryair"
 state   real   no3cwj      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no3cwj"         "Nitrate  conc. Acc. mode in cloud"       "ug/kg-dryair"
 state   real   no3cwi      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "no3cwi"         "Nitrate  conc. Aitken mode in cloud"       "ug/kg-dryair"
+state   real   nacwj       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nacwj"          "Sodium  conc. Acc. mode in cloud"       "ug/kg-dryair"
+state   real   nacwi       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nacwi"          "Sodium  conc. Aitken mode in cloud"       "ug/kg-dryair"
+state   real   clcwj       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "clcwj"          "Chloride  conc. Acc. mode in cloud"       "ug/kg-dryair"
+state   real   clcwi       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "clcwi"          "Chloride  conc. Aitken mode in cloud"       "ug/kg-dryair"
 state   real   orgaro1cwj  ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "orgaro1cwj"     "SOA Anth. org. conc. from aromatics Acc. mode in cloud"    "ug/kg-dryair"
 state   real   orgaro1cwi  ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "orgaro1cwi"     "SOA Anth. org. conc. from aromatics Aitken mode in cloud"    "ug/kg-dryair"
 state   real   orgaro2cwj  ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "orgaro2cwj"     "SOA Anth. org. conc. from aromatics Acc. mode in cloud"    "ug/kg-dryair"
@@ -714,6 +722,7 @@ rconfig   integer     vertmix_onoff       namelist,chem          max_domains    
 rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh    "chem_in_opt"         ""      ""
 rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
 rconfig   integer     drydep_opt          namelist,chem          max_domains    0       rh    "drydep_opt"          ""      ""
+rconfig   integer     emiss_opt           namelist,chem          max_domains    2       rh    "emiss_opt"       ""      ""
 rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh    "bio_emiss_opt"       ""      ""
 rconfig   integer     biomass_burn_opt    namelist,chem          max_domains    0       rh    "biomass_burn_opt"    ""      ""
 rconfig   integer     plumerisefire_frq   namelist,chem          max_domains    180     rh    "plumerisefire_frq"   ""      ""
@@ -728,11 +737,10 @@ rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    
 # CHEMISTRY PACKAGE DEFINITIONS
 #
 package   prescribe_aerosol     chem_opt==0         -             -
-package   radm2         chem_opt==1                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2
-package   radm2sorg     chem_opt==2                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
-package   racm          chem_opt==3                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2
-package   racmsorg      chem_opt==4                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
-
+package   radm2         chem_opt==1                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2
+package   radm2sorg     chem_opt==2                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
+package   racm          chem_opt==3                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hcl,ho,ho2
+package   racmsorg      chem_opt==4                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 package   cbmz          chem_opt==5                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf
 package   cbmz_bb       chem_opt==6                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 package   cbmz_mosaic_4bin chem_opt==7               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
@@ -763,6 +771,12 @@ package   radm2sorg_kpp     chem_opt==106                  -             chem:so
 # KPP mechanism from MATCH-MPI Mainz used for global chemistry
 package   nmhc9_kpp     chem_opt==200                   -             chem:o3,h2o2,ch4,op1,hcho,ch3oh,co,hno3,no3,n2o5,hno4,no,no2,isopr,mvk,iso2,isooh,mvko2,mvkooh,ison,aca,acol,hcooh,mpan,naca,pan,pa,paa,mglo,c2h6,eTooh,ald,c3h8,pRooh,acet,acooh,eTo2,pRo2,aco2,c3h6,c3h6ooh,c2h4,c4h10,buooh,mek,mekooh,mEcoco,c3h6o2,c4h9o2,meko2,onit,pRono2,ch3o2,acetol,acetp,aceto2,ch3cooh,c4h9ooh,mEoh,ho,ho2,mEo2,mEo2no2
 
+# emission package definitions
+#
+package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
+package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j
+package   ecbmz_mosaic    emiss_opt==4                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_no2,e_ch3oh,e_c2h5oh,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc
+package   ecptec          emiss_opt==5                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm_25,e_pm_10
 
 #cms--
 

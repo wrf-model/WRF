@@ -5,9 +5,7 @@
                alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,     &
                z,z_at_w,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
-               e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,           &
-               e_so4i,e_so4j,e_no3i,e_no3j,                                &
-               vdrog3,                                                     &
+               emis_ant,vdrog3,                                            &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -126,10 +124,9 @@
 ! aerosol emissions arrays
 !
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),     &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant ),     &
          INTENT(INOUT ) ::                                          &
-               e_so4i,e_so4j,e_no3i,e_no3j,                         &
-               e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10
+        emis_ant
 !
 ! arrays for aerosol/radiation feedback
 !
@@ -192,9 +189,7 @@
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
-               e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
-               e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,                                                  &
+               emis_ant,vdrog3,                                                  &
                config_flags%kemit,                                      &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
@@ -215,9 +210,7 @@
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
-               e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_pm10,        &
-               e_so4i,e_so4j,e_no3i,e_no3j,                             &
-               vdrog3,                                                  &
+               emis_ant,vdrog3,                                                  &
                config_flags%kemit,                                      &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &

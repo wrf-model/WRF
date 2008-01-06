@@ -587,14 +587,7 @@
            (k_start <= CHEM_DBG_K .and. k_end >= CHEM_DBG_K)  ) then
           call wrf_debug(15,"calling chem_dbg at top of chem_driver")
           call chem_dbg(CHEM_DBG_I,CHEM_DBG_J,CHEM_DBG_K,grid%dt,ktau,                &
-               dz8w,t_phy,p_phy,rho,chem,                                             &
-               grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,       &
-               grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                           &
-               grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,    &
-               grid%e_ora2,grid%e_nh3,grid%e_pm10,grid%e_pm25,grid%e_pm25i,           &
-               grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,            &
-               grid%e_no2,grid%e_ch3oh,grid%e_c2h5oh,grid%e_iso,                      &
-               grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
+               dz8w,t_phy,p_phy,rho,chem,emis_ant,                       &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte,kts,kte,                                              &
@@ -614,15 +607,7 @@
 #if (EM_CORE == 1 )
               grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,         &
 #endif
-              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,                                 &
-              grid%e_iso,grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,             &
-              grid%e_hc5,grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                      &
-              grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,          &
-              grid%e_ora2,grid%e_pm25,grid%e_pm10,grid%e_nh3,                              &
-              grid%e_pm25i,grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,                 &
-              grid%e_orgj,grid%e_no2,grid%e_ch3oh,                                         &
-              grid%e_c2h5oh,grid%e_so4i,grid%e_so4j,grid%e_so4c,                           &
-              grid%e_no3i,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,                  &
+              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,                        &
               grid%ebu_no,grid%ebu_co,grid%ebu_co2,grid%ebu_eth,grid%ebu_hc3,grid%ebu_hc5, &
               grid%ebu_hc8,grid%ebu_ete,grid%ebu_olt,grid%ebu_oli,grid%ebu_pm25,           &
               grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
@@ -670,14 +655,7 @@
            (k_start <= CHEM_DBG_K .and. k_end >= CHEM_DBG_K)  ) then
           call wrf_debug(15,'calling chem_dbg after emissions_driver')
           call chem_dbg(CHEM_DBG_I,CHEM_DBG_J,CHEM_DBG_K,grid%dt,ktau,                &
-               dz8w,t_phy,p_phy,rho,chem,                                             &
-               grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,       &
-               grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                           &
-               grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,    &
-               grid%e_ora2,grid%e_nh3,grid%e_pm10,grid%e_pm25,grid%e_pm25i,           &
-               grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,            &
-               grid%e_no2,grid%e_ch3oh,grid%e_c2h5oh,grid%e_iso,                      &
-               grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
+               dz8w,t_phy,p_phy,rho,chem,emis_ant,                                    &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts, kte,                                            &
@@ -721,14 +699,7 @@
              (k_start <= CHEM_DBG_K .and. k_end >= CHEM_DBG_K)  ) then
           call wrf_debug(15,'calling chem_dbg after photolysis_driver')
           call chem_dbg(CHEM_DBG_I,CHEM_DBG_J,CHEM_DBG_K,grid%dt,ktau,                &
-               dz8w,t_phy,p_phy,rho,chem,                                             &
-               grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,       &
-               grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                           &
-               grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,    &
-               grid%e_ora2,grid%e_nh3,grid%e_pm10,grid%e_pm25,grid%e_pm25i,           &
-               grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,            &
-               grid%e_no2,grid%e_ch3oh,grid%e_c2h5oh,grid%e_iso,                      &
-               grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
+               dz8w,t_phy,p_phy,rho,chem,emis_ant,                                             &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte,                                             &
@@ -767,7 +738,7 @@
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
-                 grid%e_co,config_flags%kemit,numgas,                                 &
+                 emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,numgas,                                 &
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
@@ -780,14 +751,7 @@
            (k_start <= CHEM_DBG_K .and. k_end >= CHEM_DBG_K)  ) then
           call wrf_debug(15,'calling chem_dbg after dry_deposition_driver')
           call chem_dbg(CHEM_DBG_I,CHEM_DBG_J,CHEM_DBG_K,grid%dt,ktau,                &
-               dz8w,t_phy,p_phy,rho,chem,                                             &
-               grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,       &
-               grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                           &
-               grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,    &
-               grid%e_ora2,grid%e_nh3,grid%e_pm10,grid%e_pm25,grid%e_pm25i,           &
-               grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,            &
-               grid%e_no2,grid%e_ch3oh,grid%e_c2h5oh,grid%e_iso,                      &
-               grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
+               dz8w,t_phy,p_phy,rho,chem,emis_ant,                                             &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts, kte,                                            &
@@ -910,14 +874,7 @@ CALL kpp_mechanism_driver (chem,                                                
            (k_start <= CHEM_DBG_K .and. k_end >= CHEM_DBG_K)  ) then
           call wrf_debug(15,'calling chem_dbg after mechanism_driver')
           call chem_dbg(CHEM_DBG_I,CHEM_DBG_J,CHEM_DBG_K,grid%dt,ktau,                &
-               dz8w,t_phy,p_phy,rho,chem,                                             &
-               grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,       &
-               grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                           &
-               grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,    &
-               grid%e_ora2,grid%e_nh3,grid%e_pm10,grid%e_pm25,grid%e_pm25i,           &
-               grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,            &
-               grid%e_no2,grid%e_ch3oh,grid%e_c2h5oh,grid%e_iso,                      &
-               grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
+               dz8w,t_phy,p_phy,rho,chem,emis_ant,                                             &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte,                                             &
@@ -986,9 +943,7 @@ CALL kpp_mechanism_driver (chem,                                                
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
-              grid%e_pm25i,grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,            &
-              grid%e_orgj,grid%e_pm10,grid%e_so4i,grid%e_so4j,grid%e_no3i,grid%e_no3j,&
-              vdrog3,                                                                 &
+              emis_ant,vdrog3,                                                                 &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte)
@@ -999,14 +954,7 @@ CALL kpp_mechanism_driver (chem,                                                
            (k_start <= CHEM_DBG_K .and. k_end >= CHEM_DBG_K)  ) then
           call wrf_debug(15,'calling chem_dbg after aerosols_driver')
           call chem_dbg(CHEM_DBG_I,CHEM_DBG_J,CHEM_DBG_K,grid%dt,ktau,                &
-               dz8w,t_phy,p_phy,rho,chem,                                             &
-               grid%e_so2,grid%e_no,grid%e_co,grid%e_eth,grid%e_hc3,grid%e_hc5,       &
-               grid%e_hc8,grid%e_xyl,grid%e_ol2,grid%e_olt,                           &
-               grid%e_oli,grid%e_tol,grid%e_csl,grid%e_hcho,grid%e_ald,grid%e_ket,    &
-               grid%e_ora2,grid%e_nh3,grid%e_pm10,grid%e_pm25,grid%e_pm25i,           &
-               grid%e_pm25j,grid%e_eci,grid%e_ecj,grid%e_orgi,grid%e_orgj,            &
-               grid%e_no2,grid%e_ch3oh,grid%e_c2h5oh,grid%e_iso,                      &
-               grid%e_so4j,grid%e_so4c,grid%e_no3j,grid%e_no3c,grid%e_orgc,grid%e_ecc,&
+               dz8w,t_phy,p_phy,rho,chem,emis_ant,                                             &
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts, kte,                                            &

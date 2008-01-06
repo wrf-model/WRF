@@ -6,11 +6,7 @@ CONTAINS
 
     subroutine emissions_driver(id,ktau,dtstep,DX,stepfirepl,              &
          config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
-         v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                    &
-         e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
-         e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
-         e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,          &
-         e_c2h5oh,e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc,  &
+         v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
          ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
          ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
          ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
@@ -70,13 +66,9 @@ CONTAINS
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
          INTENT(INOUT ) ::                               e_bio
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant),&
          INTENT(IN ) ::                                                    &
-          e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,       &
-          e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,        &
-          e_pm10,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,    &
-          e_ch3oh,e_c2h5oh,e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,      &
-          e_orgc,e_ecc
+         emis_ant
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
          INTENT(INOUT ) ::                                                 &
            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
@@ -201,11 +193,7 @@ CONTAINS
            firesize_agsv,firesize_aggr,                                    &
            config_flags, t_phy,moist,                                      &
            chem,rho_phy,vvel,u_phy,v_phy,p_phy,                       &
-           e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,&
-           e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,&
-           e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,        &
-           e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,              &
-           z_at_w,z,                                                       &
+           emis_ant,z_at_w,z,                                                       &
            ids,ide, jds,jde, kds,kde,                                      &
            ims,ime, jms,jme, kms,kme,                                      &
            its,ite, jts,jte, kts,kte                                       )
@@ -299,10 +287,7 @@ CONTAINS
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
        call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
-            e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,        &
-            e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,    &
-            e_pm25,e_pm10,e_nh3,                                        &
-            ids,ide, jds,jde, kds,kde,                                  &
+            emis_ant,ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
@@ -329,10 +314,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_anthro')
        call cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,        &
             rho_phy, chem,                                               &
-            e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,   &
-            e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,           &
-            e_no2,e_ch3oh,e_c2h5oh,                                      &
-            ids,ide, jds,jde, kds,kde,                                   &
+            emis_ant,ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
@@ -340,7 +322,7 @@ CONTAINS
        ! module
        if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
          call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
-              rho_phy, chem, e_bio, ne_area, e_iso,                      &
+              rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
               ids,ide, jds,jde, kds,kde,                                 &
               ims,ime, jms,jme, kms,kme,                                 &
               its,ite, jts,jte, kts,kte                                  )
@@ -352,17 +334,17 @@ CONTAINS
              do k=kts,min(config_flags%kemit,kte-ksub)
                 conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
-                     +e_so2(i,k,j)*conv
+                     +emis_ant(i,k,j,p_e_so2)*conv
                 chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
-                     +e_co(i,k,j)*conv
+                     +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
-                     +e_co(i,k,j)*conv
+                     +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                   &
-                     +e_co(i,k,j)*conv
+                     +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
-                     +e_co(i,k,j)*conv
+                     +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                 &
-                     +e_co(i,k,j)*conv
+                     +emis_ant(i,k,j,p_e_co)*conv
              end do
           end do
        end do
@@ -380,9 +362,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling add_emiss_cptec')
        call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
-            e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,         &
-            e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,     &
-            e_pm25,e_pm10,e_nh3,                                         &
+            emis_ant,                                                    &
 !           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,       &
 !           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,  &
 !           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,    &
@@ -400,8 +380,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
-            e_pm10,e_pm25,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,     &
-            e_so4i,e_so4j,e_so4c,e_no3i,e_no3j,e_no3c,e_orgc,e_ecc,      &
+            emis_ant,                                                    &
             dust_emiss_active, seasalt_emiss_active,                     &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &

@@ -211,6 +211,17 @@ call wrf_message("**************************************************************
           enddo
    END SELECT kpp_select
    aer_select: SELECT CASE(config_flags%chem_opt)
+     CASE (RACMPM_KPP)
+        do l=numgas+1,num_chem
+           do j=jts,jte
+              do k=kts,kte
+                 kk = min(k,kte-1)
+                 do i=its,ite
+                    chem(i,k,j,l)=1.
+                 enddo
+              enddo
+           enddo
+        enddo
      CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG,RACMSORG_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
@@ -222,7 +233,7 @@ call wrf_message("**************************************************************
                its,ite, jts,jte, kts,kte                             )
 !...Convert aerosols to mixing ratio
         if(config_flags%chem_in_opt == 0 )then
-        do l=p_so4aj,num_chem
+        do l=numgas+1,num_chem
            do j=jts,jte
               do k=kts,kte
                  kk = min(k,kte-1)

@@ -132,47 +132,47 @@ SUBROUTINE med_read_bin_chem_emissopt3 ( grid , config_flags )
 
 
          read(92)dumc1
-         grid%e_so2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_so2)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_no(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_no)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_ald(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ald)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_hcho(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hcho)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_ora2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ora2)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_nh3(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_nh3)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_hc3(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc3)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_hc5(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc5)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_hc8(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc8)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_eth(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_eth)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_co(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_co)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_ol2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ol2)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_olt(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_olt)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_oli(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_oli)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_tol(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_tol)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_xyl(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_xyl)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_ket(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ket)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_csl(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_csl)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_iso(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_iso)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_pm25(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_pm_25)=dumc1(ids:ide-1,jds:jde-1)
          read(92)dumc1
-         grid%e_pm10(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_pm_10)=dumc1(ids:ide-1,jds:jde-1)
 
      CALL construct_filename1 ( bdyname , '../../run/emissfire' , grid%id , 2 )
 

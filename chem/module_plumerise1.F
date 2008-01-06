@@ -29,11 +29,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            firesize_agsv,firesize_aggr,                                   &
            config_flags, t_phy,moist,                                     &
            chem,rho_phy,vvel,u_phy,v_phy,p_phy,                              &
-           e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,  &
-           e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,e_pm10,e_nh3,  &
-           e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,e_ch3oh,          &
-           e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc,                &
-           z_at_w,z,                                                       &
+           emis_ant,z_at_w,z,                                                       &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -68,12 +64,9 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,       &
            firesize_agsv,firesize_aggr
 
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme ),            &
+   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant ),            &
          INTENT(IN ) ::                                                    &
-          e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,       &
-          e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_pm25,        &
-          e_pm10,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_no2,    &
-          e_ch3oh,e_c2h5oh,e_so4j,e_so4c,e_no3j,e_no3c,e_orgc,e_ecc
+                     emis_ant
 !
 !
 !

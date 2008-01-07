@@ -593,13 +593,12 @@ CONTAINS
 #ifdef DM_PARALLEL
         ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 # include "HALO_NMM_MG2.inc"
-
 #endif
-!
+                         
 #ifdef DM_PARALLEL
 # include "HALO_NMM_MG3.inc"
 #endif
-!
+                  
        do K=1,num_metgrid_levels
         do J=JTS,min(JTE,JDE-1)
          do I=ITS,min(ITE,IDE-1)
@@ -664,7 +663,7 @@ CONTAINS
      &,            .TRUE.,.TRUE.,.TRUE.               & ! extrap, ignore_lowest, t_field
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
-     &,            ITS,ITE,JTS,JTE,KTS,KTE )
+     &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
                   
                   
       CALL interp_press2press_lin(p3dv_in, p3dv_out        &
@@ -672,14 +671,14 @@ CONTAINS
      &,            .FALSE.,.TRUE.,.FALSE.              &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
-     &,            ITS,ITE,JTS,JTE,KTS,KTE )
+     &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
                   
       CALL interp_press2press_lin(p3dv_in, p3dv_out        &
      &,            V_gc, V,num_metgrid_levels          &
      &,            .FALSE.,.TRUE.,.FALSE.              &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
-     &,            ITS,ITE,JTS,JTE,KTS,KTE )
+     &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
                   
        IF (hyb_coor) THEN
        CALL wind_adjust(p3dv_in,p3dv_out,U_gc,V_gc,U,V  &
@@ -711,7 +710,7 @@ CONTAINS
      &,            .FALSE.,.TRUE.                      &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
-     &,            ITS,ITE,JTS,JTE,KTS,KTE )
+     &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
                   
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP)
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP2)
@@ -2441,7 +2440,7 @@ CONTAINS
         dum2d(I,J)= exp(log(BOT_INPUT_PRESS) + dlnpdz * &
                         (TERRAIN_HGT_T(I,J) - BOT_INPUT_HGT) )
 
-         IF (dum2d(I,J) .lt. 57000. .or. dum2d(I,J) .gt. 108000.) THEN
+         IF (dum2d(I,J) .lt. 50000. .or. dum2d(I,J) .gt. 108000.) THEN
            write(message,*) 'bad dum2d(b): ', I,J,DUM2D(I,J)
            CALL wrf_message(message)
            write(message,*) 'BOT_INPUT_PRESS, dlnpdz, TERRAIN_HGT_T, BOT_INPUT_HGT: ', &
@@ -2502,7 +2501,7 @@ CONTAINS
               IF ( TERRAIN_HGT_T(I,J) .eq. Z3D_IN(i,j,L) ) THEN
 ! problematic with HGT_M substitution for "input" surface height?
                 dum2d(i,j)=PRESS3D_IN(I,J,L)
-                IF (dum2d(I,J) .lt. 50000. .or. dum2d(I,J) .gt. 110000.) THEN
+                IF (dum2d(I,J) .lt. 50000. .or. dum2d(I,J) .gt. 108000.) THEN
                   write(message,*) 'bad dum2d(e): ', I,J,DUM2D(I,J)
                   CALL wrf_message(message)
                 ENDIF
@@ -2511,7 +2510,7 @@ CONTAINS
 
             IF ( TERRAIN_HGT_T(I,J) .eq. TOPO_IN(I,J)) THEN
               dum2d(I,J)=PSFC_IN(I,J)
-              IF (dum2d(I,J) .lt. 50000. .or. dum2d(I,J) .gt. 110000.) THEN
+              IF (dum2d(I,J) .lt. 50000. .or. dum2d(I,J) .gt. 108000.) THEN
                 write(message,*) 'bad dum2d(f): ', I,J,DUM2D(I,J)
                 CALL wrf_message(message)
               ENDIF
@@ -2552,9 +2551,33 @@ CONTAINS
         write(message,*) minval(dum2d,MASK=DEFINED_PSFC),maxval(dum2d,MASK=DEFINED_PSFC)
         CALL wrf_message(message)
 
-        IF (minval(dum2d,MASK=DEFINED_PSFC) .lt. 50000. .or. maxval(dum2d,MASK=DEFINED_PSFC) .gt. 110000.) THEN
-	  CALL wrf_error_fatal("quit due to crazy surface pressure")
-        ENDIF
+!         IF (minval(dum2d,MASK=DEFINED_PSFC) .lt. 50000. .or. maxval(dum2d,MASK=DEFINED_PSFC) .gt. 108000.) THEN
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+
+          IF (DEFINED_PSFC(I,J) .AND. dum2d(I,J) .lt. 50000. ) THEN
+            IF (TERRAIN_HGT_T(I,J) .gt. 4500.) THEN
+              WRITE(message,*) 'low surface pressure allowed because surface height is: ', TERRAIN_HGT_T(I,J)
+              CALL wrf_debug(2,message)
+            ELSE
+              CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+            ENDIF
+          ENDIF
+
+          IF (DEFINED_PSFC(I,J) .AND. dum2d(I,J) .gt. 108000. ) THEN
+            IF (TERRAIN_HGT_T(I,J) .lt. -10.) THEN
+              WRITE(message,*) 'high surface pressure allowed because surface height is: ', TERRAIN_HGT_T(I,J)
+              CALL wrf_debug(2,message)
+            ELSE
+              CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+            ENDIF
+          ENDIF
+
+         END DO
+        END DO
+
+      
 
 !! "traditional" isobaric only approach ------------------------------------------------
 
@@ -2653,9 +2676,40 @@ CONTAINS
        CALL wrf_message(message)
        write(message,*) minval(DUM2DB,MASK=DEFINED_PSFCB),maxval(DUM2DB,MASK=DEFINED_PSFCB)
        CALL wrf_message(message)
-       IF (minval(DUM2DB,MASK=DEFINED_PSFCB) .lt. 50000. .or. maxval(DUM2DB,MASK=DEFINED_PSFCB) .gt. 108000.) THEN
-         call wrf_error_fatal("quit due to crazy surface pressure")
-       ENDIF
+
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+
+          IF (DEFINED_PSFCB(I,J) .AND. dum2db(I,J) .lt. 50000. ) THEN
+            IF (TERRAIN_HGT_T(I,J) .gt. 4500.) THEN
+              WRITE(message,*) 'low surface pressure allowed because surface height is: ', TERRAIN_HGT_T(I,J)
+              CALL wrf_debug(2,message)
+            ELSE
+              CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+            ENDIF
+          ENDIF
+
+          IF (DEFINED_PSFCB(I,J) .AND. dum2db(I,J) .gt. 108000. ) THEN
+            IF (TERRAIN_HGT_T(I,J) .lt. -10.) THEN
+              WRITE(message,*) 'high surface pressure allowed because surface height is: ', TERRAIN_HGT_T(I,J)
+              CALL wrf_debug(2,message)
+            ELSE
+              CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+            ENDIF
+          ENDIF
+
+!          IF (DEFINED_PSFCB(I,J) .AND. ( dum2db(I,J) .lt. 50000. .OR. dum2db(I,J) .gt. 108000. )) THEN
+!          IF (TERRAIN_HGT_T(I,J) .gt. -10. .and. TERRAIN_HGT_T(I,J) .lt. 5000.) THEN
+!            write(0,*) 'I,J, terrain_hgt_t, dum2db: ', I,J, terrain_hgt_t(I,J),dum2db(I,J)
+!	    CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+!          ELSE
+!            WRITE(message,*) 'surface pressure allowed because surface height is extreme value of: ', TERRAIN_HGT_T(I,J)
+!            CALL wrf_debug(2,message)
+!          ENDIF
+!          ENDIF
+
+         ENDDO
+        ENDDO
 
 !!!!! end traditional
 
@@ -2688,15 +2742,35 @@ CONTAINS
           CALL wrf_message(message)
         ENDIF
 
-	IF (psfc_out(I,J) .lt. 50000. .or. psfc_out(I,J) .gt. 107000.) THEN
-	  write(message,*) 'bad combo on psfc_out: ', I,J, psfc_out(I,J)
-          CALL wrf_message(message)
-	  write(message,*) 'DEFINED_PSFC, dum2d: ', DEFINED_PSFC(I,J),dum2d(I,J)
-          CALL wrf_message(message)
-	  write(message,*) 'DEFINED_PSFCB, DUM2DB: ', DEFINED_PSFCB(I,J),DUM2DB(I,J)
-          CALL wrf_message(message)
-	  call wrf_error_fatal("psfc_out looks BAD")
-	ENDIF
+          IF (PSFC_OUT(I,J) .lt. 50000. ) THEN
+            IF (TERRAIN_HGT_T(I,J) .gt. 4500.) THEN
+              WRITE(message,*) 'low surface pressure allowed because surface height is: ', TERRAIN_HGT_T(I,J)
+              CALL wrf_debug(2,message)
+            ELSE
+	      write(message,*) 'possibly bad combo on psfc_out: ', I,J, psfc_out(I,J)
+              CALL wrf_debug(2,message)
+	      write(message,*) 'DEFINED_PSFC, dum2d: ', DEFINED_PSFC(I,J),dum2d(I,J)
+              CALL wrf_debug(2,message)
+	      write(message,*) 'DEFINED_PSFCB, DUM2DB: ', DEFINED_PSFCB(I,J),DUM2DB(I,J)
+              CALL wrf_debug(2,message)
+              CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+            ENDIF
+          ENDIF
+
+          IF (PSFC_OUT(I,J) .gt. 108000. ) THEN
+            IF (TERRAIN_HGT_T(I,J) .lt. -10.) THEN
+              WRITE(message,*) 'high surface pressure allowed because surface height is: ', TERRAIN_HGT_T(I,J)
+              CALL wrf_debug(2,message)
+            ELSE
+	      write(message,*) 'possibly bad combo on psfc_out: ', I,J, psfc_out(I,J)
+              CALL wrf_debug(2,message)
+	      write(message,*) 'DEFINED_PSFC, dum2d: ', DEFINED_PSFC(I,J),dum2d(I,J)
+              CALL wrf_debug(2,message)
+	      write(message,*) 'DEFINED_PSFCB, DUM2DB: ', DEFINED_PSFCB(I,J),DUM2DB(I,J)
+              CALL wrf_debug(2,message)
+              CALL wrf_error_fatal("quit due to unrealistic surface pressure")
+            ENDIF
+          ENDIF
 
        ENDDO
        ENDDO
@@ -2761,7 +2835,7 @@ CONTAINS
      &,                             extrapolate,ignore_lowest,TFIELD    & 
      &,                             IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                             IMS,IME,JMS,JME,KMS,KME             &
-     &,                             ITS,ITE,JTS,JTE,KTS,KTE )
+     &,                             ITS,ITE,JTS,JTE,KTS,KTE, internal_time )
 
     ! Interpolates data from one set of pressure surfaces to
     ! another set of pressures
@@ -2769,6 +2843,7 @@ CONTAINS
     INTEGER                            :: IDS,IDE,JDS,JDE,KDS,KDE
     INTEGER                            :: IMS,IME,JMS,JME,KMS,KME
     INTEGER                            :: ITS,ITE,JTS,JTE,KTS,KTE,generic
+    INTEGER                            :: internal_time
 
 !    REAL, INTENT(IN)                   :: press_in(IMS:IME,generic,JMS:JME)
     REAL, INTENT(IN)                   :: press_in(IMS:IME,JMS:JME,generic)
@@ -2804,7 +2879,16 @@ CONTAINS
     ENDIF
 
     DO j = JTS, min(JTE,JDE-1)
-      DO i = ITS, min(ITE,IDE-1)
+      test_i: DO i = ITS, min(ITE,IDE-1)
+
+     IF (internal_time_loop .gt. 1) THEN
+        IF (J .ne. JDS .and. J .ne. JDE-1 .and. &
+          I .ne. IDS .and. I .ne. IDE-1 ) THEN
+!! not on boundary
+          CYCLE test_i
+        ENDIF 
+     ENDIF 
+
 
        col_smooth=.false.
 
@@ -2931,7 +3015,7 @@ CONTAINS
        enddo
         endif
 
-      ENDDO
+      ENDDO test_i
     ENDDO
   END SUBROUTINE interp_press2press_lin
 
@@ -3022,7 +3106,7 @@ CONTAINS
      &,                             extrapolate,ignore_lowest           & 
      &,                             IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                             IMS,IME,JMS,JME,KMS,KME             &
-     &,                             ITS,ITE,JTS,JTE,KTS,KTE )
+     &,                             ITS,ITE,JTS,JTE,KTS,KTE, internal_time )
 
     ! Interpolates ln(data) from one set of pressure surfaces to
     ! another set of pressures
@@ -3030,12 +3114,14 @@ CONTAINS
     INTEGER                            :: IDS,IDE,JDS,JDE,KDS,KDE
     INTEGER                            :: IMS,IME,JMS,JME,KMS,KME
     INTEGER                            :: ITS,ITE,JTS,JTE,KTS,KTE,generic
+    INTEGER                            :: internal_time
 
 !    REAL, INTENT(IN)                   :: press_in(IMS:IME,generic,JMS:JME)
     REAL, INTENT(IN)                   :: press_in(IMS:IME,JMS:JME,generic)
     REAL, INTENT(IN)                   :: press_out(IMS:IME,JMS:JME,KDS:KDE-1)
 !    REAL, INTENT(IN)                   :: data_in(IMS:IME,generic,JMS:JME)
-    REAL, INTENT(IN)                   :: data_in(IMS:IME,JMS:JME,generic)
+!    REAL, INTENT(IN)                   :: data_in(IMS:IME,JMS:JME,generic)
+    REAL                               :: data_in(IMS:IME,JMS:JME,generic)
     REAL, INTENT(OUT)                  :: data_out(IMS:IME,JMS:JME,KMS:KME)
     LOGICAL, INTENT(IN)                :: extrapolate, ignore_lowest
 
@@ -3043,6 +3129,15 @@ CONTAINS
     INTEGER                            :: k,kk
     REAL                               :: desired_press
     REAL                               :: dlnvaldlnp,dlnp
+
+
+      DO K=1,generic
+      DO j = JTS, min(JTE,JDE-1)
+      DO i = ITS, min(ITE,IDE-1)
+        DATA_IN(I,J,K)=max(DATA_in(I,J,K),1.e-13)
+      ENDDO
+      ENDDO
+      ENDDO
 
       DO K=KMS,KME
       DO J=JMS,JME
@@ -3059,7 +3154,16 @@ CONTAINS
     ENDIF
 
     DO j = JTS, min(JTE,JDE-1)
-      DO i = ITS, min(ITE,IDE-1)
+     test_i:  DO i = ITS, min(ITE,IDE-1)
+
+      IF (internal_time .gt. 1) THEN
+        IF (J .ne. JDS .and. J .ne. JDE-1 .and. &
+            I .ne. IDS .and. I .ne. IDE-1 ) THEN
+!! not on boundary
+          CYCLE test_i
+        ENDIF 
+      ENDIF
+
 
         output_loop: DO k = KDS,KDE-1
 
@@ -3139,7 +3243,7 @@ CONTAINS
             ENDDO input_loop
           ENDIF
         ENDDO output_loop
-      ENDDO
+      ENDDO test_i
     ENDDO
   END SUBROUTINE interp_press2press_log
 

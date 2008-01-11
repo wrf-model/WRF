@@ -15,7 +15,7 @@ CONTAINS
                t8w,alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,    &
-               emis_ant,vdrog3,                                         &
+               vdrog3,                                                  &
                kemit,                                                   &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
@@ -41,10 +41,6 @@ CONTAINS
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,    &
            cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2
 
-!   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_emis_ant ),                     &
-         INTENT(INOUT ) ::                                             &
-         emis_ant
 
    REAL,  DIMENSION(ims:ime,kms:kme-0,jms:jme,ldrog),                  &
            INTENT(IN   ) ::                                            &
@@ -320,31 +316,35 @@ CONTAINS
 !
 ! Set emissions to zero when above level kemit.
 !
-      if( k > kemit ) then
-         epmcoarse(1) = 0.
-         epm25i(1)    = 0.
-         epm25j (1)   = 0.
-         eeci_in      = 0.
-         eecj_in      = 0.
-         eorgi_in     = 0.
-         eorgj_in     = 0.
          cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)
          cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)
          cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)
          cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
-      else
-         epmcoarse(1) = emis_ant(i,k,j,p_e_pm_10)/dz8w(i,k,j)
-         epm25i(1)    = emis_ant(i,k,j,p_e_pm25i)/dz8w(i,k,j)
-         epm25j(1)    = emis_ant(i,k,j,p_e_pm25j)/dz8w(i,k,j)
-         eeci_in      = emis_ant(i,k,j,p_e_eci)/dz8w(i,k,j)
-         eecj_in      = emis_ant(i,k,j,p_e_ecj)/dz8w(i,k,j)
-         eorgi_in     = emis_ant(i,k,j,p_e_orgi)/dz8w(i,k,j)
-         eorgj_in     = emis_ant(i,k,j,p_e_orgj)/dz8w(i,k,j)
-         cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)+emis_ant(i,k,j,p_e_so4j)/dz8w(i,k,j)*dtstep
-         cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)+emis_ant(i,k,j,p_e_so4i)/dz8w(i,k,j)*dtstep
-         cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)+emis_ant(i,k,j,p_e_no3j)/dz8w(i,k,j)*dtstep
-         cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)+emis_ant(i,k,j,p_e_no3i)/dz8w(i,k,j)*dtstep
-      end if
+!     if( k > kemit ) then
+!        epmcoarse(1) = 0.
+!        epm25i(1)    = 0.
+!        epm25j (1)   = 0.
+!        eeci_in      = 0.
+!        eecj_in      = 0.
+!        eorgi_in     = 0.
+!        eorgj_in     = 0.
+!        cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)
+!        cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)
+!        cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)
+!        cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
+!     else
+!        epmcoarse(1) = emis_ant(i,k,j,p_e_pm_10)/dz8w(i,k,j)
+!        epm25i(1)    = emis_ant(i,k,j,p_e_pm25i)/dz8w(i,k,j)
+!        epm25j(1)    = emis_ant(i,k,j,p_e_pm25j)/dz8w(i,k,j)
+!        eeci_in      = emis_ant(i,k,j,p_e_eci)/dz8w(i,k,j)
+!        eecj_in      = emis_ant(i,k,j,p_e_ecj)/dz8w(i,k,j)
+!        eorgi_in     = emis_ant(i,k,j,p_e_orgi)/dz8w(i,k,j)
+!        eorgj_in     = emis_ant(i,k,j,p_e_orgj)/dz8w(i,k,j)
+!        cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)+emis_ant(i,k,j,p_e_so4j)/dz8w(i,k,j)*dtstep
+!        cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)+emis_ant(i,k,j,p_e_so4i)/dz8w(i,k,j)*dtstep
+!        cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)+emis_ant(i,k,j,p_e_no3j)/dz8w(i,k,j)*dtstep
+!        cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)+emis_ant(i,k,j,p_e_no3i)/dz8w(i,k,j)*dtstep
+!     end if
 !rs. nitrate, nh3, sulf
       cblk(1,vsulf) = vsulf_in
       cblk(1,vhno3) = nitrate_in
@@ -357,7 +357,7 @@ CONTAINS
 
 
       if(debug_level.ge.1)then
-     if(i.eq.20.and.j.eq.20.and.k.eq.19)then
+     if(i.eq.its.and.j.eq.jts.and.k.eq.kts)then
         print*,'in a_mechanisms',i,j,k
         print*,'NSPCSDA, BLKSIZE',NSPCSDA, BLKSIZE
         print*,'k,DTA,PRES,TEMP,RELHUM',k,DTstep,10.*P(k),T(k),RH(k)
@@ -7173,8 +7173,8 @@ END SUBROUTINE vdvg
 
 !Option for alternate ic's
         if( aer_ic_opt == AER_IC_DEFAULT ) then
-          chem(i,k,j,p_so4aj)=chem(ii,kk,jj,p_sulf)*CONVFAC(i,k,j)*MWSO4*splitfac*so4vaptoaer
-          chem(i,k,j,p_so4ai)=chem(ii,kk,jj,p_sulf)*CONVFAC(i,k,j)*MWSO4* &
+          chem(i,k,j,p_so4aj)=chem(ii,kk,jj,p_sulf)*CONVFAC(ii,kk,jj)*MWSO4*splitfac*so4vaptoaer
+          chem(i,k,j,p_so4ai)=chem(ii,kk,jj,p_sulf)*CONVFAC(ii,kk,jj)*MWSO4* &
         (1.-splitfac)*so4vaptoaer
           chem(i,k,j,p_sulf)=chem(ii,kk,jj,p_sulf)*(1.-so4vaptoaer)
           chem(i,k,j,p_nh4aj) = 10.E-05
@@ -7305,34 +7305,78 @@ END SUBROUTINE vdvg
 !    2000<z<3000   mult = 1.00 + (z-2000.)*(0.25-1.0)/(3000.-2000.)
 !    3000<z<5000   mult = 0.25 + (z-3000.)*(0.125-0.25)/(5000.-3000.)
 ! or in reduced form:
-        if( z <= 2000. ) then
+!jdf comment these values and have another profile consistent with mosaic
+!       if( z <= 2000. ) then
+!          mult = 1.0
+!       elseif( z > 2000. &
+!            .and. z <= 3000. ) then
+!          mult = 1.0 - 0.00075*(z-2000.)
+!       elseif( z > 3000. &
+!            .and. z <= 5000. ) then
+!          mult = 0.25 - 4.166666667e-5*(z-3000.)
+!       else
+!          mult = 0.125
+!       end if
+        if( z <= 500. ) then
            mult = 1.0
-        elseif( z > 2000. &
-             .and. z <= 3000. ) then
-           mult = 1.0 - 0.00075*(z-2000.)
-        elseif( z > 3000. &
+        elseif( z > 500. &
+             .and. z <= 1000. ) then
+           mult = 1.0 - 0.001074*(z-500.)
+        elseif( z > 1000. &
              .and. z <= 5000. ) then
-           mult = 0.25 - 4.166666667e-5*(z-3000.)
+           mult = 0.463 - 0.000111*(z-1000.)
         else
-           mult = 0.125
+           mult = 0.019
         end if
 
 ! These should match what is in sorgam_set_aer_bc_pnnl.
 ! Values as of 2-Dec-2004:
+!jdf comment these values and have another profile consistent with mosaic
+!     chem(i,k,j,p_sulf)     = mult*conmin
+!     chem(i,k,j,p_so4aj)    = mult*2.375
+!     chem(i,k,j,p_so4ai)    = mult*0.179
+!     chem(i,k,j,p_nh4aj)    = mult*0.9604
+!     chem(i,k,j,p_nh4ai)    = mult*0.0196
+!     chem(i,k,j,p_no3aj)    = mult*0.0650
+!     chem(i,k,j,p_no3ai)    = mult*0.0050
+!     chem(i,k,j,p_ecj)      = mult*0.1630
+!     chem(i,k,j,p_eci)      = mult*0.0120
+!     chem(i,k,j,p_p25j)     = mult*0.6350
+!     chem(i,k,j,p_p25i)     = mult*0.0490
+!     chem(i,k,j,p_antha)    = mult*2.2970
+!     chem(i,k,j,p_orgpaj)   = mult*0.9300
+!     chem(i,k,j,p_orgpai)   = mult*0.0700
+!     chem(i,k,j,p_orgaro1j) = conmin
+!     chem(i,k,j,p_orgaro1i) = conmin
+!     chem(i,k,j,p_orgaro2j) = conmin
+!     chem(i,k,j,p_orgaro2i) = conmin
+!     chem(i,k,j,p_orgalk1j) = conmin
+!     chem(i,k,j,p_orgalk1i) = conmin
+!     chem(i,k,j,p_orgole1j) = conmin
+!     chem(i,k,j,p_orgole1i) = conmin
+!     chem(i,k,j,p_orgba1j)  = conmin
+!     chem(i,k,j,p_orgba1i)  = conmin
+!     chem(i,k,j,p_orgba2j)  = conmin
+!     chem(i,k,j,p_orgba2i)  = conmin
+!     chem(i,k,j,p_orgba3j)  = conmin
+!     chem(i,k,j,p_orgba3i)  = conmin
+!     chem(i,k,j,p_orgba4j)  = conmin
+!     chem(i,k,j,p_orgba4i)  = conmin
+!     chem(i,k,j,p_seas)     = mult*0.229
       chem(i,k,j,p_sulf)     = mult*conmin
-      chem(i,k,j,p_so4aj)    = mult*2.375
-      chem(i,k,j,p_so4ai)    = mult*0.179
-      chem(i,k,j,p_nh4aj)    = mult*0.9604
-      chem(i,k,j,p_nh4ai)    = mult*0.0196
-      chem(i,k,j,p_no3aj)    = mult*0.0650
-      chem(i,k,j,p_no3ai)    = mult*0.0050
-      chem(i,k,j,p_ecj)      = mult*0.1630
-      chem(i,k,j,p_eci)      = mult*0.0120
-      chem(i,k,j,p_p25j)     = mult*0.6350
-      chem(i,k,j,p_p25i)     = mult*0.0490
-      chem(i,k,j,p_antha)    = mult*2.2970
-      chem(i,k,j,p_orgpaj)   = mult*0.9300
-      chem(i,k,j,p_orgpai)   = mult*0.0700
+      chem(i,k,j,p_so4aj)    = mult*0.300*0.97
+      chem(i,k,j,p_so4ai)    = mult*0.300*0.03
+      chem(i,k,j,p_nh4aj)    = mult*0.094*0.97
+      chem(i,k,j,p_nh4ai)    = mult*0.094*0.03
+      chem(i,k,j,p_no3aj)    = mult*0.001*0.97
+      chem(i,k,j,p_no3ai)    = mult*0.001*0.03
+      chem(i,k,j,p_ecj)      = mult*0.013*0.97
+      chem(i,k,j,p_eci)      = mult*0.013*0.03
+      chem(i,k,j,p_p25j)     = mult*4.500*0.97
+      chem(i,k,j,p_p25i)     = mult*4.500*0.03
+      chem(i,k,j,p_antha)    = mult*4.500/2.0
+      chem(i,k,j,p_orgpaj)   = mult*0.088*0.97
+      chem(i,k,j,p_orgpai)   = mult*0.088*0.03
       chem(i,k,j,p_orgaro1j) = conmin
       chem(i,k,j,p_orgaro1i) = conmin
       chem(i,k,j,p_orgaro2j) = conmin
@@ -7349,8 +7393,233 @@ END SUBROUTINE vdvg
       chem(i,k,j,p_orgba3i)  = conmin
       chem(i,k,j,p_orgba4j)  = conmin
       chem(i,k,j,p_orgba4i)  = conmin
-      chem(i,k,j,p_seas)     = mult*0.229
+      chem(i,k,j,p_seas)     = mult*1.75
 
     END SUBROUTINE sorgam_init_aer_ic_pnnl
+
+!------------------------------------------------------------------------
+SUBROUTINE sorgam_addemiss(                                             &
+     dtstep, u10, v10, alt, dz8w, xland, chem,                          &
+     emis_ant,                                                          &
+     seasalt_emiss_active,kemit,                                        &
+     ids,ide, jds,jde, kds,kde,                                         &
+     ims,ime, jms,jme, kms,kme,                                         &
+     its,ite, jts,jte, kts,kte                                          )
+!
+! Routine to apply aerosol emissions for MADE/SORGAM...
+! William.Gustafson@pnl.gov; 3-May-2007
+! Modified by
+! steven.peckham@noaa.gov;   8-Jan-2008
+!------------------------------------------------------------------------
+
+  USE module_state_description, only:  num_chem
+
+  INTEGER,      INTENT(IN   ) :: seasalt_emiss_active, kemit,           &
+                                 ids,ide, jds,jde, kds,kde,             &
+                                 ims,ime, jms,jme, kms,kme,             &
+                                 its,ite, jts,jte, kts,kte
+
+  REAL, INTENT(IN   ) ::    dtstep
+
+! trace species mixing ratios (aerosol mass = ug/kg-air; number = #/kg-air)
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),               &
+       INTENT(INOUT ) ::   chem
+!
+! aerosol emissions arrays ((ug/m3)*m/s)
+!
+   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_emis_ant ),                     &
+         INTENT(IN    ) ::                                             &
+         emis_ant
+
+! 1/(dry air density) and layer thickness (m)
+  REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                      &
+       INTENT(IN   ) ::                                                 &
+       alt, dz8w
+
+  REAL,  DIMENSION( ims:ime , jms:jme ),                                &
+       INTENT(IN   ) ::                                                 &
+       u10, v10, xland
+
+! Local variables...
+  real, dimension(its:ite,kts:kemit,jts:jte) :: factor
+!
+! Get the emissions unit conversion factor including the time step.
+! Changes emissions from [ug/m3 m/s] to [ug/kg_dryair/timestep]
+!
+  factor(its:ite,kts:kemit,jts:jte) = alt(its:ite,kts:kemit,jts:jte)*dtstep/ &
+                  dz8w(its:ite,kts:kemit,jts:jte)
+!
+! Increment the aerosol numbers...
+!
+! Aitken mode first...
+
+  chem(its:ite,kts:kemit,jts:jte,p_nu0) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_nu0) +                   &
+       factor(its:ite,kts:kemit,jts:jte)*factnumn*(                                  &
+       anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25i) +            &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci) ) +                      &
+       orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgi) )
+
+! Accumulation mode next...
+  
+  chem(its:ite,kts:kemit,jts:jte,p_ac0) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_ac0) +                   &
+       factor(its:ite,kts:kemit,jts:jte)*factnuma*(                                  &
+       anthfac*( emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25j) +            &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj) ) +                      &
+       orgfac*emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgj) )
+
+! And now the coarse mode...
+
+  chem(its:ite,kts:kemit,jts:jte,p_corn) =                       &
+       chem(its:ite,kts:kemit,jts:jte,p_corn) +                  &
+       factor(its:ite,kts:kemit,jts:jte)*factnumc*anthfac*                           &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm_10)
+!
+! Increment the aerosol masses...
+!
+  chem(its:ite,kts:kemit,jts:jte,p_antha) =                      &
+       chem(its:ite,kts:kemit,jts:jte,p_antha) +                 &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm_10)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_p25j) =                       &
+       chem(its:ite,kts:kemit,jts:jte,p_p25j) +                  &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25j)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_p25i) =                       &
+       chem(its:ite,kts:kemit,jts:jte,p_p25i) +                  &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_pm25i)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_ecj) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_ecj) +                   &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_ecj)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_eci) =                        &
+       chem(its:ite,kts:kemit,jts:jte,p_eci) +                   &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_eci)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_orgpaj) =                     &
+       chem(its:ite,kts:kemit,jts:jte,p_orgpaj) +                &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgj)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_orgpai) =                     &
+       chem(its:ite,kts:kemit,jts:jte,p_orgpai) +                &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_orgi)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_so4aj) =                      &
+       chem(its:ite,kts:kemit,jts:jte,p_so4aj) +                 &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_so4j)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_so4ai) =                      &
+       chem(its:ite,kts:kemit,jts:jte,p_so4ai) +                 &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_so4i)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_no3aj) =                      &
+       chem(its:ite,kts:kemit,jts:jte,p_no3aj) +                 &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_no3j)*factor(its:ite,kts:kemit,jts:jte)
+
+  chem(its:ite,kts:kemit,jts:jte,p_no3ai) =                      &
+       chem(its:ite,kts:kemit,jts:jte,p_no3ai) +                 &
+       emis_ant(its:ite,kts:kemit,jts:jte,p_e_no3i)*factor(its:ite,kts:kemit,jts:jte)
+!
+! Get the sea salt emissions...
+!
+  if( seasalt_emiss_active > 0 ) then
+     call sorgam_seasalt_emiss(                                  &
+          dtstep, u10, v10, alt, dz8w, xland, chem,              &
+          ids,ide, jds,jde, kds,kde,                             &
+          ims,ime, jms,jme, kms,kme,                             &
+          its,ite, jts,jte, kts,kte                              )
+  end if
+
+END SUBROUTINE sorgam_addemiss
+
+
+!------------------------------------------------------------------------
+SUBROUTINE sorgam_seasalt_emiss(                                        &
+     dtstep, u10, v10, alt, dz8w, xland, chem,                          &
+     ids,ide, jds,jde, kds,kde,                                         &
+     ims,ime, jms,jme, kms,kme,                                         &
+     its,ite, jts,jte, kts,kte                                          )
+!
+! Routine to calculate seasalt emissions for SORGAM over the time
+! dtstep...
+! William.Gustafson@pnl.gov; 10-May-2007
+!------------------------------------------------------------------------
+
+   USE module_mosaic_addemiss, only:    seasalt_emitfactors_1bin
+
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   ) :: ids,ide, jds,jde, kds,kde,            &
+                                  ims,ime, jms,jme, kms,kme,            &
+                                  its,ite, jts,jte, kts,kte
+
+   REAL, INTENT(IN   ) ::    dtstep
+
+! 10-m wind speed components (m/s)
+   REAL,  DIMENSION( ims:ime , jms:jme ),                               &
+          INTENT(IN   ) ::   u10, v10, xland
+
+! trace species mixing ratios (aerosol mass = ug/kg; number = #/kg)
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),              &
+         INTENT(INOUT ) ::   chem
+
+! alt  = 1.0/(dry air density) in (m3/kg)
+! dz8w = layer thickness in (m)
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                     &
+         INTENT(IN   ) ::   alt, dz8w
+
+! local variables
+   integer :: i, j, k, l, l_na, l_cl, n
+    integer :: p1st
+
+    real :: dum, dumdlo, dumdhi, dumoceanfrac, dumspd10
+    real :: factaa, factbb
+
+    real :: ssemfact_numb
+    real :: ssemfact_mass
+
+
+!   compute emissions factors for the coarse mode (2.5-10 um)
+!   and setup in units of cm
+    dumdlo = 2.5e-4
+    dumdhi = 10e-4
+    call seasalt_emitfactors_1bin( -99, dumdlo, dumdhi,   &
+         ssemfact_numb, dum, ssemfact_mass )
+
+!   convert mass emissions factor from (g/m2/s) to (ug/m2/s)
+    ssemfact_mass = ssemfact_mass*1.0e6
+
+!   loop over i,j and apply seasalt emissions
+    k = kts
+    do j = jts, jte
+    do i = its, ite
+
+    !Skip this point if over land. xland=1 for land and 2 for water.
+    !Also, there is no way to differentiate fresh from salt water.
+    !Currently, this assumes all water is salty.
+       if( xland(i,j) < 1.5 ) cycle
+
+    !wig: As far as I can tell, only real.exe knows the fractional breakdown
+    !     of land use. So, in wrf.exe, dumoceanfrac will always be 1.
+       dumoceanfrac = 1. !fraction of grid i,j that is salt water
+       dumspd10 = dumoceanfrac* &
+            ( (u10(i,j)*u10(i,j) + v10(i,j)*v10(i,j))**(0.5*3.41) )
+
+!   factaa is (s*m2/kg-air)
+!   factaa*ssemfact_mass(n) is (s*m2/kg-air)*(ug/m2/s) = ug/kg-air
+!   factaa*ssemfact_numb(n) is (s*m2/kg-air)*( #/m2/s) =  #/kg-air
+       factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
+       factbb = factaa * dumspd10
+
+       chem(i,k,j,p_seas) = chem(i,k,j,p_seas) +   &
+                            factbb * ssemfact_mass 
+
+       chem(i,k,j,p_corn) = chem(i,k,j,p_corn) +   &
+                            factbb * ssemfact_numb
+    end do !i
+    end do !j
+END SUBROUTINE sorgam_seasalt_emiss
 
 END Module module_aerosols_sorgam

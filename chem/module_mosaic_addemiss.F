@@ -395,12 +395,13 @@ CONTAINS
                its,ite, jts,jte, kts,kte                                   )
 
 ! do dust emissions
-        if (dust_emiss_active > 0)   &
-            call mosaic_dust_emiss( slai, ust, smois, ivgtyp, isltyp,      &
-               id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+! jdf: preliminary version that has not been made generic for situation
+!       if (dust_emiss_active > 0)   &
+!           call mosaic_dust_emiss( slai, ust, smois, ivgtyp, isltyp,      &
+!              id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+!              ids,ide, jds,jde, kds,kde,                                  &
+!              ims,ime, jms,jme, kms,kme,                                  &
+!              its,ite, jts,jte, kts,kte                                   )
 
 	return
 

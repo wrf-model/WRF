@@ -63,6 +63,7 @@ dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
 dimspec    q      2     namelist=levsiz           z          levsiz
 dimspec    d      2     namelist=paerlev          z          paerlev
 dimspec    v      -     constant=1                z          one
+dimspec    =      -     constant=4                c          num_bands
 dimspec    ?      2     namelist=nmegan           z          megan_species
 
 
@@ -177,7 +178,6 @@ state    real   tp             ikj     dyn_em      2         -
 i1       real   t_2save        ikj     dyn_em      1         -   
 state    real   t_save         ikj     dyn_em      1         -               "t_save"
 #
-
 
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \

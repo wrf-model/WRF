@@ -55,6 +55,11 @@
 ! and Development program.
 !**********************************************************************************  
 	module module_fastj_mie
+	
+! jcb 2007-feb-01  added capability to calculate aerosol backscatter
+! units (km)^-1
+! need to divide by 4*pie to get units of (km*ster)-1
+! jcb 2007-feb-01  now calculate true extinctionm units km^-1
 
 
 ! rce 2005-apr-22 - want lunerr = -1 for wrf-chem 3d; 
@@ -90,12 +95,13 @@
 !        extaer  ! aerosol extinction
 !        l2,l3,l4,l5,l6,l7 ! Legendre coefficients, numbered 0,1,2,......
 !        sizeaer ! average wet radius
+!	 bscoef ! aerosol backscatter coefficient with units km-1 * steradian -1  JCB 2007/02/01
 !----------------------------------------------------------------------
         subroutine mieaer( &
 	          id, iclm, jclm, nbin_a,   &
               number_bin, radius_wet, refindx,   &
               dz, isecfrm0, lpar, &
-              sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
+              sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7,bscoef)  ! added bscoef JCB 2007/02/01
 
         USE module_data_mosaic_other, only : kmaxd
         USE module_data_mosaic_therm, ONLY: nbin_a_maxd
@@ -109,6 +115,7 @@
         integer, intent(in) :: lpar
         real, dimension (nspint, kmaxd+1),intent(out) :: sizeaer,extaer,waer,gaer,tauaer
         real, dimension (nspint, kmaxd+1),intent(out) :: l2,l3,l4,l5,l6,l7
+        real, dimension (nspint, kmaxd+1),intent(out) :: bscoef  !JCB 2007/02/01
         real, dimension (nspint),save :: wavmid !cm
         data wavmid     &
             / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
@@ -138,6 +145,7 @@
         real ppmom5     ! 5     ...
         real ppmom6     ! 6     ...
         real ppmom7     ! 7     ...
+        real sback2     ! JCB 2007/02/01 sback*conjg(sback)
 
         integer ns 	    ! Spectral loop index
         integer i  	    ! Longitude loop index
@@ -180,13 +188,15 @@
       real pmom5(ncoef,prefr,prefi,nspint)	! phase function expansion, #5
       real pmom6(ncoef,prefr,prefi,nspint)	! phase function expansion, #6
       real pmom7(ncoef,prefr,prefi,nspint)  	! phase function expansion, #7
+      real sback2p(ncoef,prefr,prefi,nspint)    ! JCB 2007/02/01 - backscatter
 
-      save :: extp,albp,asmp,ascat,pmom2,pmom3,pmom4,pmom5,pmom6,pmom7
+      save :: extp,albp,asmp,ascat,pmom2,pmom3,pmom4,pmom5,pmom6,pmom7,sback2p ! JCB 2007/02/01 - added sback2p
 !--------------
       real cext(ncoef),casm(ncoef),cpmom2(ncoef)
       real cscat(ncoef)  ! JCB 2004/02/09
       real cpmom3(ncoef),cpmom4(ncoef),cpmom5(ncoef)
       real cpmom6(ncoef),cpmom7(ncoef)
+      real cpsback2p(ncoef) ! JCB 2007/02/09  - backscatter
       integer itab,jtab
       real ttab,utab
 
@@ -199,6 +209,7 @@
       real*8 gqsc(nsiz) ! array of asymmetry factor * scattering efficiency
       real asymm(nsiz)  ! array of asymmetry factor
       real scat(nsiz)   ! JCB 2004/02/09
+      real sb2(nsiz)     ! JCB 2007/02/01 - 4*abs(sback)^2/(size parameter)^2 backscattering efficiency
 !     specabs = absorption coeff / unit dry mass
 !     specscat = scattering coeff / unit dry mass
       complex*16 crefin,crefd,crefw
@@ -383,6 +394,11 @@
 		  p5(n)=pmom(5,1)/pmom(0,1)*11.0
 		  p6(n)=pmom(6,1)/pmom(0,1)*13.0
 		  p7(n)=pmom(7,1)/pmom(0,1)*15.0
+! backscattering efficiency, Bohren and Huffman, page 122
+! as stated by Bohren and Huffman, this is 4*pie times what is should be
+! may need to be smoothed - a very rough function - for the time being we won't apply smoothing
+! and let the integration over the size distribution be the smoothing
+		  sb2(n)=4.0*sback*dconjg(sback)/(thesize*thesize) ! JCB 2007/02/01  
 		enddo
   100          continue
 !
@@ -395,6 +411,7 @@
                call fitcurv_nolog(rs,p5,pmom5(1,nr,ni,ns),ncoef,nsiz)
 	       call fitcurv_nolog(rs,p6,pmom6(1,nr,ni,ns),ncoef,nsiz)
                call fitcurv_nolog(rs,p7,pmom7(1,nr,ni,ns),ncoef,nsiz)
+               call fitcurv(rs,sb2,sback2p(1,nr,ni,ns),ncoef,nsiz) ! JCB 2007/02/01 - backscattering efficiency             
 
   120       continue
   200    continue
@@ -424,6 +441,7 @@
 		l5(ns,klevel)=0.0
 		l6(ns,klevel)=0.0
 		l7(ns,klevel)=0.0
+		bscoef(ns,klevel)=0.0  ! JCB 2007/02/01 - backscattering coefficient
 		if(thesum.le.1e-21)goto 1000 ! set everything = 0 if no aerosol !wig changed 0.0 to 1e-21, 31-Oct-2005
 
 ! loop over the bins
@@ -515,6 +533,9 @@
                   call binterp(pmom7(1,1,1,ns),ncoef,nrefr,nrefi,   &
                                refr,refi,refrtab,refitab,itab,jtab,   &
                                ttab,utab,cpmom7)
+                  call binterp(sback2p(1,1,1,ns),ncoef,nrefr,nrefi,   &
+                               refr,refi,refrtab,refitab,itab,jtab,   &
+                               ttab,utab,cpsback2p)
 
 !                 chebyshev polynomials
 
@@ -581,11 +602,19 @@
                   enddo
 		  if(ppmom7.le.0.0.or.sizem.le.0.03e-04)ppmom7=0.0
 !
+                  sback2=0.5*cpsback2p(1) ! JCB 2007/02/01 - backscattering efficiency
+                  do nc=2,ncoef
+                     sback2=sback2+ch(nc)*cpsback2p(nc)
+                  enddo
+                     sback2=exp(sback2)
+		  if(sback2.le.0.0)sback2=0.0
+!
+!
 ! weights:
 	weighte=pext*pie*exp(x)**2 ! JCB, extinction cross section
 	weights=pscat*pie*exp(x)**2 ! JCB, scattering cross section
        	tauaer(ns,klevel)=tauaer(ns,klevel)+weighte*number_bin(m,klevel)  ! must be multiplied by deltaZ
-	extaer(ns,klevel)=extaer(ns,klevel)+pext*number_bin(m,klevel)
+!	extaer(ns,klevel)=extaer(ns,klevel)+pext*number_bin(m,klevel) ! not the true extinction, JCB 2007/02/01
 	sizeaer(ns,klevel)=sizeaer(ns,klevel)+exp(x)*10000.0*   &
       	number_bin(m,klevel)
         waer(ns,klevel)=waer(ns,klevel)+weights*number_bin(m,klevel) !JCB
@@ -598,10 +627,11 @@
 	l5(ns,klevel)=l5(ns,klevel)+weights*ppmom5*number_bin(m,klevel)
 	l6(ns,klevel)=l6(ns,klevel)+weights*ppmom6*number_bin(m,klevel)
 	l7(ns,klevel)=l7(ns,klevel)+weights*ppmom7*number_bin(m,klevel)	
+! convert backscattering efficiency to backscattering coefficient, units (cm)^-1
+	bscoef(ns,klevel)=bscoef(ns,klevel)+pie*exp(x)**2*sback2*number_bin(m,klevel) ! JCB 2007/02/01 - backscatter coefficient,
 
         end do ! end of nbin_a loop
 ! take averages - weighted by cross section - new code JCB 2004/02/09
-	extaer(ns,klevel)=extaer(ns,klevel)/thesum
 	sizeaer(ns,klevel)=sizeaer(ns,klevel)/thesum
 	gaer(ns,klevel)=gaer(ns,klevel)/waer(ns,klevel) ! JCB removed *3 factor 2/9/2004
 ! because factor is applied in subroutine opmie, file zz01fastj_mod.f
@@ -611,7 +641,10 @@
 	l5(ns,klevel)=l5(ns,klevel)/waer(ns,klevel)
 	l6(ns,klevel)=l6(ns,klevel)/waer(ns,klevel)
 	l7(ns,klevel)=l7(ns,klevel)/waer(ns,klevel)
-! this must be last!! JCB 2007/02/09
+! backscatter coef, divide by 4*Pie to get units of (km*ster)^-1 JCB 2007/02/01
+	bscoef(ns,klevel)=bscoef(ns,klevel)*1.0e5  ! JCB 2007/02/01 - units are now (km)^-1
+	extaer(ns,klevel)=tauaer(ns,klevel)*1.0e5  ! JCB 2007/02/01 - now true extincion, units (km)^-1
+! this must be last!! JCB 2007/02/01
 	waer(ns,klevel)=waer(ns,klevel)/tauaer(ns,klevel) ! JCB
 
  70   continue ! bail out if no aerosol;go on to next wavelength bin
@@ -622,7 +655,7 @@
 2000   continue  ! end of klevel loop
 !
 ! before returning, multiply tauaer by depth of individual cells.
-! tauaer is in cm, dz in m; multiply dz by 100 to convert from m to cm.
+! tauaer is in cm-1, dz in m; multiply dz by 100 to convert from m to cm.
   	do ns = 1, nspint
   	do klevel = 1, lpar
   	   tauaer(ns,klevel) = tauaer(ns,klevel) * dz(klevel)* 100.   

@@ -45,6 +45,7 @@ CONTAINS
   USE module_bioemi_simple
   USE module_bioemi_beis311
   USE module_bioemi_megan2
+  USE module_aerosols_sorgam, only: sorgam_addemiss
   USE module_cbmz_addemiss
   USE module_mosaic_addemiss
   USE module_add_emis_cptec
@@ -173,7 +174,7 @@ CONTAINS
 ! by other mechanisms when they are linked to these emissions sources.
 !
       dust_emiss_active    = 0
-      seasalt_emiss_active = 1
+      seasalt_emiss_active = 0
 
 !!$    ksub=1
 !!$#if ( NMM_CORE == 1 )
@@ -375,6 +376,16 @@ CONTAINS
     END SELECT emiss_select
 
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
+
+    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
+          RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
+       call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
+       call sorgam_addemiss( dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            emis_ant,                                                   &
+            seasalt_emiss_active,config_flags%kemit,                    &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
 
     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')

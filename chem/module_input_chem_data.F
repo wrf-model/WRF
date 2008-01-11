@@ -2413,34 +2413,60 @@ SUBROUTINE input_chem_profile (si_grid)
 !    2000<z<3000   mult = 1.00 + (z-2000.)*(0.25-1.0)/(3000.-2000.)
 !    3000<z<5000   mult = 0.25 + (z-3000.)*(0.125-0.25)/(5000.-3000.)
 ! or in reduced form:
-        if( z <= 2000. ) then
+!       if( z <= 2000. ) then
+!          mult = 1.0
+!       elseif( z > 2000. &
+!            .and. z <= 3000. ) then
+!          mult = 1.0 - 0.00075*(z-2000.)
+!       elseif( z > 3000. &
+!            .and. z <= 5000. ) then
+!          mult = 0.25 - 4.166666667e-5*(z-3000.)
+!       else
+!          mult = 0.125
+!       end if
+        if( z <= 500. ) then
            mult = 1.0
-        elseif( z > 2000. &
-             .and. z <= 3000. ) then
-           mult = 1.0 - 0.00075*(z-2000.)
-        elseif( z > 3000. &
+        elseif( z > 500. &
+             .and. z <= 1000. ) then
+           mult = 1.0 - 0.001074*(z-500.)
+        elseif( z > 1000. &
              .and. z <= 5000. ) then
-           mult = 0.25 - 4.166666667e-5*(z-3000.)
+           mult = 0.463 - 0.000111*(z-1000.)
         else
-           mult = 0.125
+           mult = 0.019
         end if
 
 ! These should match what is in sorgam_init_aer_ic_pnnl.
 ! Boundary values as of 2-Dec-2004:
-      bv_so4aj  = mult*2.375
-      bv_so4ai  = mult*0.179
-      bv_nh4aj  = mult*0.9604
-      bv_nh4ai  = mult*0.0196
-      bv_no3aj  = mult*0.0650
-      bv_no3ai  = mult*0.0050
-      bv_ecj    = mult*0.1630
-      bv_eci    = mult*0.0120
-      bv_p25j   = mult*0.6350
-      bv_p25i   = mult*0.0490
-      bv_orgpaj = mult*0.9300
-      bv_orgpai = mult*0.0700
-      bv_antha  = mult*2.2970
-      bv_seas   = mult*0.2290
+!     bv_so4aj  = mult*2.375
+!     bv_so4ai  = mult*0.179
+!     bv_nh4aj  = mult*0.9604
+!     bv_nh4ai  = mult*0.0196
+!     bv_no3aj  = mult*0.0650
+!     bv_no3ai  = mult*0.0050
+!     bv_ecj    = mult*0.1630
+!     bv_eci    = mult*0.0120
+!     bv_p25j   = mult*0.6350
+!     bv_p25i   = mult*0.0490
+!     bv_orgpaj = mult*0.9300
+!     bv_orgpai = mult*0.0700
+!     bv_antha  = mult*2.2970
+!     bv_seas   = mult*0.2290
+!     bv_soila  = conmin
+      bv_so4aj = mult*0.300*0.97
+      bv_so4ai = mult*0.300*0.03
+      bv_nh4aj = mult*0.094*0.97
+      bv_nh4ai = mult*0.094*0.03
+      bv_no3aj = mult*0.001*0.97
+      bv_no3ai = mult*0.001*0.03
+      bv_ecj   = mult*0.013*0.97
+      bv_eci   = mult*0.013*0.03
+      bv_p25j  = mult*4.500*0.97
+      bv_p25i  = mult*4.500*0.03
+      bv_antha = mult*4.500/2.0
+      bv_orgpaj = mult*0.088*0.97
+      bv_orgpai = mult*0.088*0.03
+      bv_seas   = mult*1.75
       bv_soila  = conmin
 
 ! m3... calculations should match the very end of module_aerosols_sorgam.F
@@ -2541,6 +2567,7 @@ SUBROUTINE input_chem_profile (si_grid)
 !      / 18500., 14050., 11150., 9355., 7705., 6120., 4675., 3430.,
 !         2430.,  1720.,  1195., 781.5,  494., 298.5, 148.5,  42.5
  
+#if (CASENAME != 4)
       if( p_o3 > 1 ) then
 #if (CASENAME == 0)
                                           !Rounded to closest level:
@@ -2552,7 +2579,226 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_o3-1),11:16) = 3.50e-8 !35 ppbv below 1 km
          xl(iref(p_o3-1),3:10)  = 6.00e-8 !60 ppbv > 2 km and < stratosphere
 #endif
+#if (CASENAME == 2)
+         xl(iref(p_o3-1),12:16) = 2.50e-8
+         xl(iref(p_o3-1),11:11) = 3.10e-8
+         xl(iref(p_o3-1),10:10) = 3.20e-8
+         xl(iref(p_o3-1),9:9)   = 3.60e-8
+         xl(iref(p_o3-1),8:8)   = 4.20e-8
+         xl(iref(p_o3-1),7:7)   = 4.20e-8
+         xl(iref(p_o3-1),6:6)   = 4.20e-8
+         xl(iref(p_o3-1),5:5)   = 3.80e-8
+         xl(iref(p_o3-1),4:4)   = 3.80e-8
+         xl(iref(p_o3-1),3:3)   = 5.80e-8
+         xl(iref(p_o3-1),2:2)   = 1.04e-7
+         xl(iref(p_o3-1),1:1)   = 2.00e-7
+         xl(iref(p_co-1),12:16) = 1.00e-7
+         xl(iref(p_co-1),11:11) = 1.00e-7
+         xl(iref(p_co-1),10:10) = 9.80e-8
+         xl(iref(p_co-1),9:9)   = 8.80e-8
+         xl(iref(p_co-1),8:8)   = 7.80e-8
+         xl(iref(p_co-1),7:7)   = 7.70e-8
+         xl(iref(p_co-1),6:6)   = 8.00e-8
+         xl(iref(p_co-1),5:5)   = 8.20e-8
+         xl(iref(p_co-1),4:4)   = 8.20e-8
+         xl(iref(p_co-1),3:3)   = 8.20e-8
+         xl(iref(p_co-1),2:2)   = 6.50e-8
+         xl(iref(p_co-1),1:1)   = 6.10e-8
+         xl(iref(p_so2-1),12:16) = 6.00e-11
+         xl(iref(p_so2-1),11:11) = 1.00e-11
+         xl(iref(p_so2-1),10:10) = 4.00e-12
+         xl(iref(p_so2-1),9:9)   = 5.00e-12
+         xl(iref(p_so2-1),8:8)   = 2.00e-12
+         xl(iref(p_so2-1),7:7)   = 2.00e-12
+         xl(iref(p_so2-1),6:6)   = 5.00e-12
+         xl(iref(p_so2-1),5:5)   = 4.00e-12
+         xl(iref(p_so2-1),4:4)   = 5.00e-12
+         xl(iref(p_so2-1),3:3)   = 1.00e-11
+         xl(iref(p_so2-1),2:2)   = 2.00e-12
+         xl(iref(p_so2-1),1:1)   = 5.00e-13
+         xl(iref(p_no2-1),12:16) = 1.00e-11
+         xl(iref(p_no2-1),11:11) = 1.50e-11
+         xl(iref(p_no2-1),10:10) = 1.80e-11
+         xl(iref(p_no2-1),9:9)   = 1.90e-11
+         xl(iref(p_no2-1),8:8)   = 2.80e-11
+         xl(iref(p_no2-1),7:7)   = 3.20e-11
+         xl(iref(p_no2-1),6:6)   = 2.60e-11
+         xl(iref(p_no2-1),5:5)   = 1.80e-11
+         xl(iref(p_no2-1),4:4)   = 1.70e-11
+         xl(iref(p_no2-1),3:3)   = 4.30e-11
+         xl(iref(p_no2-1),2:2)   = 2.50e-10
+         xl(iref(p_no2-1),1:1)   = 2.80e-10
+         xl(iref(p_h2o2-1),12:16) = 0.18e-8
+         xl(iref(p_h2o2-1),11:11) = 0.13e-8
+         xl(iref(p_h2o2-1),10:10) = 0.30e-9
+         xl(iref(p_h2o2-1),9:9)   = 0.77e-9
+         xl(iref(p_h2o2-1),8:8)   = 0.30e-9
+         xl(iref(p_h2o2-1),7:7)   = 0.25e-9
+         xl(iref(p_h2o2-1),6:6)   = 0.21e-9
+         xl(iref(p_h2o2-1),5:5)   = 0.23e-9
+         xl(iref(p_h2o2-1),4:4)   = 0.24e-9
+         xl(iref(p_h2o2-1),3:3)   = 0.36e-9
+         xl(iref(p_h2o2-1),2:2)   = 0.15e-10
+         xl(iref(p_h2o2-1),1:1)   = 0.17e-10
+         xl(iref(p_hno3-1),12:16) = 0.98e-11
+         xl(iref(p_hno3-1),11:11) = 0.58e-11
+         xl(iref(p_hno3-1),10:10) = 0.53e-11
+         xl(iref(p_hno3-1),9:9)   = 0.53e-11
+         xl(iref(p_hno3-1),8:8)   = 0.67e-11
+         xl(iref(p_hno3-1),7:7)   = 0.82e-11
+         xl(iref(p_hno3-1),6:6)   = 0.82e-11
+         xl(iref(p_hno3-1),5:5)   = 0.21e-11
+         xl(iref(p_hno3-1),4:4)   = 0.39e-11
+         xl(iref(p_hno3-1),3:3)   = 0.57e-10
+         xl(iref(p_hno3-1),2:2)   = 0.17e-9
+         xl(iref(p_hno3-1),1:1)   = 0.12e-9
+         xl(iref(p_no3-1),12:16) = 0.98e-11
+         xl(iref(p_no3-1),11:11) = 0.58e-11
+         xl(iref(p_no3-1),10:10) = 0.53e-11
+         xl(iref(p_no3-1),9:9)   = 0.53e-11
+         xl(iref(p_no3-1),8:8)   = 0.68e-11
+         xl(iref(p_no3-1),7:7)   = 0.25e-11
+         xl(iref(p_no3-1),6:6)   = 0.82e-11
+         xl(iref(p_no3-1),5:5)   = 0.21e-11
+         xl(iref(p_no3-1),4:4)   = 0.39e-11
+         xl(iref(p_no3-1),3:3)   = 0.57e-10
+         xl(iref(p_no3-1),2:2)   = 0.17e-9
+         xl(iref(p_no3-1),1:1)   = 0.12e-9
+         xl(iref(p_n2o5-1),12:16) = 0.12e-14
+         xl(iref(p_n2o5-1),11:11) = 0.11e-12
+         xl(iref(p_n2o5-1),10:10) = 0.20e-12
+         xl(iref(p_n2o5-1),9:9)   = 0.25e-12
+         xl(iref(p_n2o5-1),8:8)   = 0.98e-12
+         xl(iref(p_n2o5-1),7:7)   = 0.12e-11
+         xl(iref(p_n2o5-1),6:6)   = 0.13e-11
+         xl(iref(p_n2o5-1),5:5)   = 0.45e-12
+         xl(iref(p_n2o5-1),4:4)   = 0.38e-12
+         xl(iref(p_n2o5-1),3:3)   = 0.94e-12
+         xl(iref(p_n2o5-1),2:2)   = 0.16e-11
+         xl(iref(p_n2o5-1),1:1)   = 0.11e-11
+         xl(iref(p_nh3-1),12:16) = 0.14e-9
+         xl(iref(p_nh3-1),11:11) = 0.60e-10
+         xl(iref(p_nh3-1),10:10) = 0.30e-10
+         xl(iref(p_nh3-1),9:9)   = 0.24e-10
+         xl(iref(p_nh3-1),8:8)   = 0.49e-11
+         xl(iref(p_nh3-1),7:7)   = 0.19e-11
+         xl(iref(p_nh3-1),6:6)   = 0.41e-11
+         xl(iref(p_nh3-1),5:5)   = 0.11e-11
+         xl(iref(p_nh3-1),4:4)   = 0.52e-11
+         xl(iref(p_nh3-1),3:3)   = 0.35e-10
+         xl(iref(p_nh3-1),2:2)   = 0.86e-11
+         xl(iref(p_nh3-1),1:1)   = 0.84e-11
+         xl(iref(p_hcho-1),12:16) = 4.00e-10
+         xl(iref(p_hcho-1),11:11) = 4.20e-10
+         xl(iref(p_hcho-1),10:10) = 3.60e-10
+         xl(iref(p_hcho-1),9:9)   = 3.00e-10
+         xl(iref(p_hcho-1),8:8)   = 1.80e-10
+         xl(iref(p_hcho-1),7:7)   = 1.40e-10
+         xl(iref(p_hcho-1),6:6)   = 7.60e-11
+         xl(iref(p_hcho-1),5:5)   = 6.20e-11
+         xl(iref(p_hcho-1),4:4)   = 5.20e-11
+         xl(iref(p_hcho-1),3:3)   = 8.80e-11
+         xl(iref(p_hcho-1),2:2)   = 1.30e-11
+         xl(iref(p_hcho-1),1:1)   = 1.40e-11
+         xl(iref(p_ket-1),12:16) = 0.19e-9
+         xl(iref(p_ket-1),11:11) = 0.15e-9
+         xl(iref(p_ket-1),10:10) = 0.13e-9
+         xl(iref(p_ket-1),9:9)   = 0.98e-10
+         xl(iref(p_ket-1),8:8)   = 0.54e-10
+         xl(iref(p_ket-1),7:7)   = 0.46e-10
+         xl(iref(p_ket-1),6:6)   = 0.66e-10
+         xl(iref(p_ket-1),5:5)   = 0.64e-10
+         xl(iref(p_ket-1),4:4)   = 0.68e-10
+         xl(iref(p_ket-1),3:3)   = 0.63e-10
+         xl(iref(p_ket-1),2:2)   = 0.91e-11
+         xl(iref(p_ket-1),1:1)   = 0.55e-11
+         xl(iref(p_par-1),12:16) = 0.75e-10+0.68e-10
+         xl(iref(p_par-1),11:11) = 0.50e-10+0.21e-10
+         xl(iref(p_par-1),10:10) = 0.41e-10+0.11e-10
+         xl(iref(p_par-1),9:9)   = 0.37e-10+0.17e-10
+         xl(iref(p_par-1),8:8)   = 0.24e-10+0.53e-11
+         xl(iref(p_par-1),7:7)   = 0.22e-10+0.45e-11
+         xl(iref(p_par-1),6:6)   = 0.31e-10+0.79e-11
+         xl(iref(p_par-1),5:5)   = 0.28e-10+0.22e-11
+         xl(iref(p_par-1),4:4)   = 0.29e-10+0.26e-11
+         xl(iref(p_par-1),3:3)   = 0.29e-10+0.43e-11
+         xl(iref(p_par-1),2:2)   = 0.16e-10+0.18e-12
+         xl(iref(p_par-1),1:1)   = 0.17e-10+0.26e-12
+         xl(iref(p_olt-1),12:16) = 0.54e-13
+         xl(iref(p_olt-1),11:11) = 0.52e-13
+         xl(iref(p_olt-1),10:10) = 0.33e-13
+         xl(iref(p_olt-1),9:9)   = 0.16e-13
+         xl(iref(p_olt-1),8:8)   = 0.20e-14
+         xl(iref(p_olt-1),7:7)   = 0.14e-14
+         xl(iref(p_olt-1),6:6)   = 0.37e-14
+         xl(iref(p_olt-1),5:5)   = 0.26e-15
+         xl(iref(p_olt-1),4:4)   = 0.40e-15
+         xl(iref(p_olt-1),3:3)   = 0.15e-14
+         xl(iref(p_olt-1),2:2)   = 0.33e-17
+         xl(iref(p_olt-1),1:1)   = 0.27e-15
+         xl(iref(p_ol2-1),12:16) = 0.87e-12
+         xl(iref(p_ol2-1),11:11) = 0.10e-11
+         xl(iref(p_ol2-1),10:10) = 0.68e-12
+         xl(iref(p_ol2-1),9:9)   = 0.38e-12
+         xl(iref(p_ol2-1),8:8)   = 0.38e-12
+         xl(iref(p_ol2-1),7:7)   = 0.45e-13
+         xl(iref(p_ol2-1),6:6)   = 0.58e-13
+         xl(iref(p_ol2-1),5:5)   = 0.52e-14
+         xl(iref(p_ol2-1),4:4)   = 0.12e-13
+         xl(iref(p_ol2-1),3:3)   = 0.66e-13
+         xl(iref(p_ol2-1),2:2)   = 0.14e-14
+         xl(iref(p_ol2-1),1:1)   = 0.51e-13
+         xl(iref(p_ald-1),12:16) = 0.30e-10
+         xl(iref(p_ald-1),11:11) = 0.28e-10
+         xl(iref(p_ald-1),10:10) = 0.22e-10
+         xl(iref(p_ald-1),9:9)   = 0.16e-10
+         xl(iref(p_ald-1),8:8)   = 0.10e-10
+         xl(iref(p_ald-1),7:7)   = 0.83e-11
+         xl(iref(p_ald-1),6:6)   = 0.89e-11
+         xl(iref(p_ald-1),5:5)   = 0.93e-11
+         xl(iref(p_ald-1),4:4)   = 0.98e-11
+         xl(iref(p_ald-1),3:3)   = 0.10e-10
+         xl(iref(p_ald-1),2:2)   = 0.93e-12
+         xl(iref(p_ald-1),1:1)   = 0.64e-12
+         xl(iref(p_tol-1),12:16) = 0.29e-11/2.0
+         xl(iref(p_tol-1),11:11) = 0.16e-11/2.0
+         xl(iref(p_tol-1),10:10) = 0.12e-11/2.0
+         xl(iref(p_tol-1),9:9)   = 0.97e-12/2.0
+         xl(iref(p_tol-1),8:8)   = 0.16e-12/2.0
+         xl(iref(p_tol-1),7:7)   = 0.13e-12/2.0
+         xl(iref(p_tol-1),6:6)   = 0.13e-12/2.0
+         xl(iref(p_tol-1),5:5)   = 0.28e-13/2.0
+         xl(iref(p_tol-1),4:4)   = 0.42e-13/2.0
+         xl(iref(p_tol-1),3:3)   = 0.12e-12/2.0
+         xl(iref(p_tol-1),2:2)   = 0.39e-15/2.0
+         xl(iref(p_tol-1),1:1)   = 0.11e-14/2.0
+         xl(iref(p_xyl-1),12:16) = 0.29e-11/2.0
+         xl(iref(p_xyl-1),11:11) = 0.16e-11/2.0
+         xl(iref(p_xyl-1),10:10) = 0.12e-11/2.0
+         xl(iref(p_xyl-1),9:9)   = 0.97e-12/2.0
+         xl(iref(p_xyl-1),8:8)   = 0.16e-12/2.0
+         xl(iref(p_xyl-1),7:7)   = 0.13e-12/2.0
+         xl(iref(p_xyl-1),6:6)   = 0.13e-12/2.0
+         xl(iref(p_xyl-1),5:5)   = 0.28e-13/2.0
+         xl(iref(p_xyl-1),4:4)   = 0.42e-13/2.0
+         xl(iref(p_xyl-1),3:3)   = 0.12e-12/2.0
+         xl(iref(p_xyl-1),2:2)   = 0.39e-15/2.0
+         xl(iref(p_xyl-1),1:1)   = 0.11e-14/2.0
+         xl(iref(p_eth-1),12:16) = 0.60e-9
+         xl(iref(p_eth-1),11:11) = 0.63e-9
+         xl(iref(p_eth-1),10:10) = 0.49e-9
+         xl(iref(p_eth-1),9:9)   = 0.51e-9
+         xl(iref(p_eth-1),8:8)   = 0.44e-9
+         xl(iref(p_eth-1),7:7)   = 0.43e-9
+         xl(iref(p_eth-1),6:6)   = 0.45e-9
+         xl(iref(p_eth-1),5:5)   = 0.47e-9
+         xl(iref(p_eth-1),4:4)   = 0.48e-9
+         xl(iref(p_eth-1),3:3)   = 0.47e-9
+         xl(iref(p_eth-1),2:2)   = 0.38e-9
+         xl(iref(p_eth-1),1:1)   = 0.36e-9
+#endif
       end if
+#endif
 
 #if (CASENAME == 1)
 ! so2 profile based on mirage 2 output, used for neaqs case, 7-20-05 egc

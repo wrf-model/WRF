@@ -57,6 +57,7 @@ MODULES =                           \
   module_ctrans_grell.o             \
   module_emissions_anthropogenics.o \
   module_cbmz_initmixrats.o         \
+  module_optical_averaging.o        \
   module_mosaic_initmixrats.o       \
   module_mosaic_wetscav.o           \
   module_cmu_dvode_solver.o         \
@@ -71,6 +72,7 @@ OBJS    =                           \
         chem_driver.o               \
         cloudchem_driver.o          \
         photolysis_driver.o         \
+        optical_driver.o         \
         mechanism_driver.o          \
         emissions_driver.o          \
         dry_dep_driver.o            \
@@ -119,7 +121,7 @@ module_zero_plumegen_coms.o:
 
 module_add_emis_cptec.o: 
 
-module_cbmz_addemiss.o: 
+module_cbmz_addemiss.o: module_aerosols_sorgam.o
 
 module_cbmz_rodas_prep.o: 
 
@@ -153,7 +155,7 @@ module_data_sorgam.o:
 
 module_data_isrpia.o:
 
-module_isrpia.o: module_data_isrpia.o
+module_isrpia.o: module_data_isrpia.o module_mosaic_addemiss.o
 
 module_aerosols_sorgam.o: module_isrpia.o
 

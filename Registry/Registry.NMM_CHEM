@@ -56,6 +56,8 @@ dimspec    +      2     namelist=kemit            z          emissions_zdim
 dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
 dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
 dimspec    d      2     namelist=paerlev          z          paerlev
+dimspec    =      -     constant=4                c          num_bands
+dimspec    ?      2     namelist=nmegan           z          megan_species
 
 
 #### 7. Edit the Registry file and create the state data assocaited with this

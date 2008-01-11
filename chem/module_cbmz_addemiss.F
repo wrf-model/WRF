@@ -1,4 +1,4 @@
-!**********************************************************************************  
+!**************************************************************************  
 ! This computer software was prepared by Battelle Memorial Institute, hereinafter
 ! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
@@ -269,7 +269,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte,                               &
-               kms, 13,                                                 &
+               13,                                                      &
                e_bio(ims,jms,lald),  e_bio(ims,jms,lhc3),               &
                e_bio(ims,jms,lhc5),  e_bio(ims,jms,lhc8),               &
                e_bio(ims,jms,lhcho), e_bio(ims,jms,liso),               &
@@ -368,7 +368,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte,                               &
-               kms, 13,                                                 &
+               13,                                                      &
                e_bio(ims,jms,lald),  e_bio(ims,jms,lhc3),               &
                e_bio(ims,jms,lhc5),  e_bio(ims,jms,lhc8),               &
                e_bio(ims,jms,lhcho), e_bio(ims,jms,liso),               &

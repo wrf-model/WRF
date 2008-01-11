@@ -1,6 +1,6 @@
 !WRF:MODEL_LAYER:INITIALIZATION
 !
-   subroutine chem_init (id,chem,scalar,dt,bioemdt,photdt,chemdt,stepbioe,  &
+   subroutine chem_init (id,chem,emis_ant,scalar,dt,bioemdt,photdt,chemdt,stepbioe,  &
                stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,&
                g,aerwrf,config_flags,alt,t,p,CONVFAC,                &
                gd_cloud, gd_cloud2,                                  &
@@ -8,6 +8,7 @@
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
                gaer1,gaer2,gaer3,gaer4,                              &
                waer1,waer2,waer3,waer4,                              &
+               l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                  &
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,chem_in_opt,       &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
@@ -40,12 +41,18 @@
                                gd_cloud_b, gd_cloud2_b,              &
                                gaer1,gaer2,gaer3,gaer4,              &
                                waer1,waer2,waer3,waer4
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , 1:4 )   ,         &
+          INTENT(INOUT   ) ::                                        &
+                               l2aer,l3aer,l4aer,l5aer,l6aer,l7aer
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(IN   ) ::                                           &
                                z_at_w,t,p,alt,convfac
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,       &
           INTENT(INOUT   ) ::                                        &
                               chem 
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_emis_ant ) ,       &
+          INTENT(INOUT   ) ::                                        &
+                              emis_ant
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_scalar ) ,     &
           INTENT(INOUT   ) ::                                        &
                               scalar
@@ -118,8 +125,41 @@ call wrf_message("**************************************************************
                 waer2(i,k,j) = 0.
                 waer3(i,k,j) = 0.
                 waer4(i,k,j) = 0.
+                l2aer(i,k,j,1) = 0.
+                l2aer(i,k,j,2) = 0.
+                l2aer(i,k,j,3) = 0.
+                l2aer(i,k,j,4) = 0.
+                l3aer(i,k,j,1) = 0.
+                l3aer(i,k,j,2) = 0.
+                l3aer(i,k,j,3) = 0.
+                l3aer(i,k,j,4) = 0.
+                l4aer(i,k,j,1) = 0.
+                l4aer(i,k,j,2) = 0.
+                l4aer(i,k,j,3) = 0.
+                l4aer(i,k,j,4) = 0.
+                l5aer(i,k,j,1) = 0.
+                l5aer(i,k,j,2) = 0.
+                l5aer(i,k,j,3) = 0.
+                l5aer(i,k,j,4) = 0.
+                l6aer(i,k,j,1) = 0.
+                l6aer(i,k,j,2) = 0.
+                l6aer(i,k,j,3) = 0.
+                l6aer(i,k,j,4) = 0.
+                l7aer(i,k,j,1) = 0.
+                l7aer(i,k,j,2) = 0.
+                l7aer(i,k,j,3) = 0.
+                l7aer(i,k,j,4) = 0.
              end do
           end do
+       end do
+       do l=1,num_emis_ant
+       do j=jts,jte
+          do k=kts,kte
+             do i=its,ite
+                emis_ant(i,k,j,l) = 0.
+             end do
+          end do
+       end do
        end do
     end if
     do j=jts,jte

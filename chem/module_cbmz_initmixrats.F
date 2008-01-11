@@ -6,6 +6,8 @@
 !
 ! CBMZ module: see module_cbmz.F for information and terms of use
 !**********************************************************************************  
+
+#define CASENAME 0
       module module_cbmz_initmixrats
 
 
@@ -93,6 +95,7 @@
        end do
     end do
 
+#if CASENAME !=4
 !
 !   when (gas_ic_opt == gas_ic_pnnl) AND (chem_in_opt == 0),
 !   set ozone (and other gas?) to "Texas August 2000" values
@@ -107,6 +110,7 @@
 	    end do
 	    end do
 	end if
+#endif
 
 !
 !   compute hcl initial mixing ratio based on the article:

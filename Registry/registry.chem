@@ -1,12 +1,13 @@
 
-state   integer emissframes    -        -          -         -     -         "emissframes"           ""         ""
+state   integer emissframes    -         -          -        -        -      "emissframes"           ""         ""
+state   real     -            i+jf    emis_ant      -        -        -         -                    "Anthropogenic Emissions"         ""
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Chemistry Variables  (all shared at this point)
 # emissions first
 state    real  e_iso          i+jf     emis_ant     1         Z      i5h      "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"         "mol km^-2 hr^-1"
-state    real  e_so2          i+jf     emis_ant     1         Z      i5h      "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_so2          i+jf     emis_ant     1         Z      i5h     "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_no           i+jf     emis_ant     1         Z      i5      "E_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_co           i+jf     emis_ant     1         Z      i5h      "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_co           i+jf     emis_ant     1         Z      i5h     "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_eth          i+jf     emis_ant     1         Z      i5      "E_ETH"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_hc3          i+jf     emis_ant     1         Z      i5      "E_HC3"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_hc5          i+jf     emis_ant     1         Z      i5      "E_HC5"               "EMISSIONS"          "mol km^-2 hr^-1"
@@ -32,7 +33,7 @@ state    real  e_orgi         i+jf     emis_ant     1         Z      i5      "E_
 state    real  e_orgj         i+jf     emis_ant     1         Z      i5      "E_ORGJ"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
 state    real  e_so4i         i+jf     emis_ant     1         Z      i5      "E_SO4I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
 state    real  e_so4j         i+jf     emis_ant     1         Z      i5      "E_SO4J"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
-state    real  e_no3i         i+jf     emis_ant     1         Z      i5     "E_NO3I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
+state    real  e_no3i         i+jf     emis_ant     1         Z      i5      "E_NO3I"              "EMISSION RATE OF I-MODE ORG. AER."   "ug/m3 m/s"
 state    real  e_no3j         i+jf     emis_ant     1         Z      i5      "E_NO3J"              "EMISSION RATE OF J-MODE ORG. AER."   "ug/m3 m/s"
 
 # Additional CBMZ and MOSAIC emission variables...
@@ -190,6 +191,16 @@ state    real  waer1           ikj     misc        1         -      hr        "W
 state    real  waer2           ikj     misc        1         -      hr        "WAER2"                 "bin 2 layer single-scattering albedo" "?"
 state    real  waer3           ikj     misc        1         -      hr        "WAER3"                 "bin 3 layer single-scattering albedo" "?"
 state    real  waer4           ikj     misc        1         -      hr        "WAER4"                 "bin 4 layer single-scattering albedo" "?"
+state    real  bscoef1         ikj     misc        1         -      rh       "BSCOEF1"               "bin 1 layer backscatter" "?"
+state    real  bscoef2         ikj     misc        1         -      rh       "BSCOEF2"               "bin 2 layer backscatter" "?"
+state    real  bscoef3         ikj     misc        1         -      rh       "BSCOEF3"               "bin 3 layer backscatter" "?"
+state    real  bscoef4         ikj     misc        1         -      rh       "BSCOEF4"               "bin 4 layer backscatter" "?"
+state    real  l2aer          ikj=     misc        1         -      r        "L2AER"                 "legendre polynomial 2" "?"
+state    real  l3aer          ikj=     misc        1         -      r        "L3AER"                 "legendre polynomial 3" "?"
+state    real  l4aer          ikj=     misc        1         -      r        "L4AER"                 "legendre polynomial 4" "?"
+state    real  l5aer          ikj=     misc        1         -      r        "L5AER"                 "legendre polynomial 5" "?"
+state    real  l6aer          ikj=     misc        1         -      r        "L6AER"                 "legendre polynomial 6" "?"
+state    real  l7aer          ikj=     misc        1         -      r        "L7AER"                 "legendre polynomial 7" "?"
 
 # non-transported aerosol variables
 state    real  h2oaj           ikj     misc        1         -      r        "h2oaj"                 "Aerosol water conc. Acc.mode"         "?"
@@ -722,7 +733,7 @@ rconfig   integer     vertmix_onoff       namelist,chem          max_domains    
 rconfig   integer     chem_in_opt         namelist,chem          max_domains    0       rh    "chem_in_opt"         ""      ""
 rconfig   integer     phot_opt            namelist,chem          max_domains    0       rh    "phot_opt"            ""      ""
 rconfig   integer     drydep_opt          namelist,chem          max_domains    0       rh    "drydep_opt"          ""      ""
-rconfig   integer     emiss_opt           namelist,chem          max_domains    2       rh    "emiss_opt"       ""      ""
+rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
 rconfig   integer     bio_emiss_opt       namelist,chem          max_domains    0       rh    "bio_emiss_opt"       ""      ""
 rconfig   integer     biomass_burn_opt    namelist,chem          max_domains    0       rh    "biomass_burn_opt"    ""      ""
 rconfig   integer     plumerisefire_frq   namelist,chem          max_domains    180     rh    "plumerisefire_frq"   ""      ""
@@ -733,6 +744,7 @@ rconfig   integer     aer_bc_opt          namelist,chem          max_domains    
 rconfig   integer     aer_ic_opt          namelist,chem          max_domains    1       rh    "aer_ic_opt"          ""      ""
 rconfig   logical     have_bcs_chem       namelist,chem          max_domains    .false. rh    "have_bcs_chem"       ""      ""
 rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
+rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -787,6 +799,11 @@ package   gunther1      bio_emiss_opt==1             -             -
 package   beis311       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             -
 package   biomassb      biomass_burn_opt==1             -             -
+package   volume_approx    aer_op_opt==1                -             -
+package   maxwell_approx   aer_op_opt==2                -             -
+package   volume_exact     aer_op_opt==3                -             -
+package   maxwell_exact    aer_op_opt==4                -             -
+package   shell_exact      aer_op_opt==5                -             -
 
 # emiss_inpt_default        = radm2-sorgam emissions in "standard(=grell)" wrf-chem
 # emiss_inpt_pnnl_cm        = cbmz-mosaic  emissions in "PNNL" format

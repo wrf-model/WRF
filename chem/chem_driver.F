@@ -596,9 +596,10 @@
 #endif
 
 !--- emissions
+
     if(config_flags%emiss_inpt_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
-! jdf add smois for dust emissions
+
       call emissions_driver(grid%id,ktau,grid%dt,grid%DX,grid%stepfirepl,               &
               config_flags, grid%stepbioe,                                                 &
 #if (NMM_CORE == 1)
@@ -665,6 +666,25 @@
      endif
 
 !
+! calculate aerosol optical properities
+!
+      if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)                                &
+           .and. config_flags%chem_opt /= CHEM_TRACER) then
+         call wrf_debug(15,'calling optical driver')
+         call optical_driver (grid%id,ktau,grid%dt,config_flags,haveaer,              &
+              chem,dz8w,rri,                                                          &
+              grid%h2oai,grid%h2oaj,                                                  &
+              grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                    &
+              grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                            &
+              grid%waer1,grid%waer2,grid%waer3,grid%waer4,                            &
+              grid%bscoef1,grid%bscoef2,grid%bscoef3,grid%bscoef4,                    &
+              grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,      &
+              ids,ide, jds,jde, kds,kde,                                              &
+              ims,ime, jms,jme, kms,kme,                                              &
+              its,ite, jts,jte, kts,kte)
+      endif
+
+!
 ! calculate photolysis rates
       if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)                                &
            .and. config_flags%chem_opt /= CHEM_TRACER) then
@@ -688,6 +708,8 @@
               grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                    &
               grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                            &
               grid%waer1,grid%waer2,grid%waer3,grid%waer4,                            &
+              grid%bscoef1,grid%bscoef2,grid%bscoef3,grid%bscoef4,                    &
+              grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,      &
               grid%pm2_5_dry,grid%pm2_5_water,grid%uvrad,                             &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
@@ -931,6 +953,7 @@ CALL kpp_mechanism_driver (chem,                                                
 !   now do aerosols
 !
 	if(config_flags%aerchem_onoff>0)then
+
         call aerosols_driver (grid%id,ktau,grid%dt,ktauc,config_flags,dtstepc,        &
 #if (NMM_CORE==1)
               rri,t_phy,moist_trans,grid%aerwrf,p8w,t8w,                              &
@@ -943,7 +966,7 @@ CALL kpp_mechanism_driver (chem,                                                
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
-              emis_ant,vdrog3,                                                                 &
+              vdrog3,                                                                 &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte)
@@ -969,7 +992,6 @@ CALL kpp_mechanism_driver (chem,                                                
        end if
 #endif
        endif
-
 
 
 !

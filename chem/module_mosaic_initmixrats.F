@@ -11,6 +11,9 @@
 !  CASENAME = 0   Uses Texas August 2004 case values and profiles
 !             1   Uses same concentrations as TX, but uses different
 !                 profiles depending on the species. (NEAQS2004 case)
+!             2   Mexico City
+!             3   Mexico City for Testbed, to be consistent with MADE/SORGAM too
+!             4   bc,ic values from wrfinput and wrfbdy files
 #define CASENAME 0
 
 	module module_mosaic_initmixrats
@@ -74,6 +77,7 @@
 !   local variables
         integer :: i, ic, j, k
 
+#if (CASENAME == 0) || (CASENAME == 1) || (CASENAME == 2) || (CASENAME == 3)
 	if (config_flags%aer_ic_opt == aer_ic_pnnl) then
 	    call mosaic_init_wrf_mixrats_opt2(   &
 		iflagaa, config_flags,           &
@@ -112,6 +116,7 @@
           end do
        end do
     end do
+#endif
 
 	return
 	end subroutine mosaic_init_wrf_mixrats
@@ -634,12 +639,14 @@
 !                 longer match those in mosaic_addemiss.
 !rce 10-May-2005, changed fr8b_coar to values determined by jdf
 	real, save :: fr8b_coar(8) =   &
-        (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
+        (/ 0.0,  0.0,  0.0,  0.019,  0.0212,  0.1101,  0.2751, 0.7018 /) ! jdf Testbed
+!jdf    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
 !       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! 01-Apr-2005
 !       (/ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.16,  0.84  /) ! "old"
 
 	real, save :: fr8b_fine(8) =   &
-        (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
+        (/ 0.0245, 0.1472, 0.3501, 0.3317, 0.1251, 0.0186, 0.0011, 0.0/) !jdf Testbed
+!jdf    (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
 !       (/ 0.0275, 0.0426, 0.2303, 0.3885, 0.1100, 0.2011, 0., 0./) !15-Nov-2004 values
 !	(/ 0.01, 0.05, 0.145, 0.60, 0.145, 0.05, 0.00, 0.00 /)
 !	(/ 0.04, 0.10, 0.35, 0.29, 0.15, 0.07, 0.00, 0.00 /)
@@ -733,6 +740,58 @@
 	qcoar_hysw = 0.0
 	qfine_watr = 0.0
 	qcoar_watr = 0.0
+#if (CASENAME == 2)
+!       qfine_so4 = 0.50
+!       qcoar_so4 = 0.50/2.0
+!       qfine_no3 = 0.75
+!       qcoar_no3 = 0.75/2.0
+!       qfine_cl  = 0.10
+!       qcoar_cl  = 0.10/2.0
+!       qfine_nh4 = 0.30
+!       qcoar_nh4 = 0.30/2.0
+!       qfine_na  = 0.20
+!       qcoar_na  = 0.20/2.0
+!       qfine_oin = 4.00
+!       qcoar_oin = 4.00/2.0
+!       qfine_oc  = 3.00
+!       qcoar_oc  = 3.00/2.0
+!       qfine_bc  = 0.50
+!       qcoar_bc  = 0.50/2.0
+        qfine_so4 = 0.300
+        qcoar_so4 = 0.300/2.0
+        qfine_no3 = 0.001
+        qcoar_no3 = 0.001/2.0
+        qfine_cl  = 1.050
+        qcoar_cl  = 1.05/02.0
+        qfine_nh4 = 0.094
+        qcoar_nh4 = 0.094/2.0
+        qfine_na  = 0.700
+        qcoar_na  = 0.700/2.0
+        qfine_oin = 4.500
+        qcoar_oin = 4.500/2.0
+        qfine_oc  = 0.088
+        qcoar_oc  = 0.088/2.0
+        qfine_bc  = 0.013
+        qcoar_bc  = 0.013/2.0
+#endif
+#if (CASENAME == 3)
+        qfine_so4 = 0.300
+        qcoar_so4 = 0.0
+        qfine_nh4 = 0.094
+        qcoar_nh4 = 0.0
+        qfine_no3 = 0.001
+        qcoar_no3 = 0.0
+        qfine_cl  = 0.0
+        qcoar_cl  = 1.050
+        qfine_na  = 0.000
+        qcoar_na  = 0.700
+        qfine_oin = 4.500
+        qcoar_oin = 4.500/2.0
+        qfine_oc  = 0.088
+        qcoar_oc  = 0.0
+        qfine_bc  = 0.013
+        qcoar_bc  = 0.0
+#endif
 
 !!$! old values from 23-Apr-2004:
 !!$	qfine_so4 = 2.554
@@ -979,6 +1038,124 @@
 #if (CASENAME == 1)
         end if				!close l3 comparison block
 #endif
+#if (CASENAME == 2)
+!     if( z(it,kt,jt) <= 3000. ) then
+!       mult = 1.0
+!     elseif( z(it,kt,jt) > 3000. &
+!       .and. z(it,kt,jt) <= 5000. ) then
+!       mult = 1.0 - 0.0004375*(z(it,kt,jt)-3000.)
+!     else
+!        mult = 0.125
+!     end if
+!
+!     if( z(it,kt,jt) <= 5000. ) then
+!       mult = 1.0
+!     elseif( z(it,kt,jt) > 5000. &
+!       .and. z(it,kt,jt) <= 7000. ) then
+!       mult = 1.0 - 0.0004375*(z(it,kt,jt)-5000.)
+!     else
+!        mult = 0.125
+!     end if
+      mult=1.0
+      if ( (l3 == lptr_so4_aer(m,itype,iphase)) .or. &
+           (l3 == lptr_no3_aer(m,itype,iphase)) .or. &
+           (l3 == lptr_nh4_aer(m,itype,iphase)) ) then
+! so4, no3 and nh4 aerosol profiles
+        if( z(it,kt,jt) <= 500. ) then
+          mult = 1.000
+        elseif( z(it,kt,jt) > 500. &
+          .and. z(it,kt,jt) <= 1000. ) then
+          mult = 1.000 - 0.0010740*(z(it,kt,jt)-500.)
+        elseif( z(it,kt,jt) > 1000. &
+          .and. z(it,kt,jt) <= 5000. ) then
+          mult = 0.463 - 0.0001110*(z(it,kt,jt)-1000.)
+        elseif( z(it,kt,jt) > 5000. &
+          .and. z(it,kt,jt) <= 20000. ) then
+          mult = 0.019
+        else
+          mult = 0.019
+        end if
+      else if ( (l3 == lptr_na_aer(m,itype,iphase)) .or. &
+                (l3 == lptr_cl_aer(m,itype,iphase)) ) then
+! na and cl aerosol profiles
+        if( z(it,kt,jt) <= 500. ) then
+          mult = 1.000
+        elseif( z(it,kt,jt) > 500. &
+          .and. z(it,kt,jt) <= 1000. ) then
+          mult = 1.000 - 0.0014260*(z(it,kt,jt)-500.)
+        elseif( z(it,kt,jt) > 1000. &
+          .and. z(it,kt,jt) <= 5000. ) then
+          mult = 0.287 - 0.0000643*(z(it,kt,jt)-1000.)
+        elseif( z(it,kt,jt) > 5000. &
+          .and. z(it,kt,jt) <= 10000. ) then
+          mult = 0.030
+        elseif( z(it,kt,jt) > 10000. &
+          .and. z(it,kt,jt) <= 20000. ) then
+          mult = 0.030 - 0.0000028*(z(it,kt,jt)-10000.)
+        else
+          mult = 0.002
+        end if
+      else if ( (l3 == lptr_oc_aer(m,itype,iphase)) .or. &
+                (l3 == lptr_bc_aer(m,itype,iphase)) ) then
+! oc and bc aerosol profile
+        if( z(it,kt,jt) <= 500. ) then
+          mult = 1.000
+        elseif( z(it,kt,jt) > 500. &
+          .and. z(it,kt,jt) <= 1000. ) then
+          mult = 1.000 - 0.0002500*(z(it,kt,jt)-500.)
+        elseif( z(it,kt,jt) > 1000. &
+          .and. z(it,kt,jt) <= 5000. ) then
+          mult = 0.875 - 0.0001843*(z(it,kt,jt)-1000.)
+        elseif( z(it,kt,jt) > 5000. &
+          .and. z(it,kt,jt) <= 20000. ) then
+          mult = 0.138
+        else
+          mult = 0.138
+        end if
+      else if ( l3 == lptr_oin_aer(m,itype,iphase) ) then
+! oin aerosol profile
+        if( z(it,kt,jt) <= 500. ) then
+          mult = 1.000
+        elseif( z(it,kt,jt) > 500. &
+          .and. z(it,kt,jt) <= 1000. ) then
+          mult = 1.000 - 0.0007340*(z(it,kt,jt)-500.)
+        elseif( z(it,kt,jt) > 1000. &
+          .and. z(it,kt,jt) <= 5000. ) then
+          mult = 0.633 - 0.0001103*(z(it,kt,jt)-1000.)
+        elseif( z(it,kt,jt) > 5000. &
+          .and. z(it,kt,jt) <= 10000. ) then
+          mult = 0.192 - 0.0000080*(z(it,kt,jt)-5000.)
+        elseif( z(it,kt,jt) > 10000. &
+          .and. z(it,kt,jt) <= 20000. ) then
+          mult = 0.152 - 0.0000137*(z(it,kt,jt)-10000.)
+        else
+          mult = 0.015
+        end if
+      else
+        if( z(it,kt,jt) <= 5000. ) then
+          mult = 1.0
+        elseif( z(it,kt,jt) > 5000. &
+          .and. z(it,kt,jt) <= 7000. ) then
+          mult = 1.0 - 0.0004375*(z(it,kt,jt)-5000.)
+        else
+           mult = 0.125
+        end if
+      end if
+#endif
+#if (CASENAME == 3)
+      mult = 1.000
+      if( z(it,kt,jt) <= 500. ) then
+        mult = 1.000
+      elseif( z(it,kt,jt) > 500. &
+        .and. z(it,kt,jt) <= 1000. ) then
+        mult = 1.000 - 0.0010740*(z(it,kt,jt)-500.)
+      elseif( z(it,kt,jt) > 1000. &
+        .and. z(it,kt,jt) <= 5000. ) then
+        mult = 0.463 - 0.0001110*(z(it,kt,jt)-1000.)
+      else
+        mult = 0.019
+      end if
+#endif
 
 		    chem(it,kt,jt,l3) = mult*rclm(1,l1)
 !wig 28-May-2004, ...end block
@@ -1129,6 +1306,7 @@
 	real, parameter :: chem_bv_def = 1.0e-20
 !wig 10-May-2004, added mult
 	real :: dumvol1p, mult
+        integer :: iflg
 	real :: qcoar, qfine, qval
 
 	real :: fr_coar(8), fr_fine(8)
@@ -1138,11 +1316,13 @@
 !                 in module_mosaic_addemiss.F). Note that these values no
 !                 longer match those in mosaic_addemiss.
 	real, save :: fr8b_coar(8) =   &
-        (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
+        (/ 0.0,  0.0,  0.0,  0.019,  0.0212,  0.1101,  0.2751, 0.7018 /) ! jdf Testbed
+!jdf    (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /) ! 10-May-2005
 !       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! 01-Apr-2005
 !		(/ 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.16, 0.84 /)
 	real, save :: fr8b_fine(8) =   &
-        (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
+        (/ 0.0245, 0.1472, 0.3501, 0.3317, 0.1251, 0.0186, 0.0011, 0.0/) !jdf Testbed
+!jdf    (/ 0.006, 0.024, 0.231, 0.341, 0.140, 0.258, 0., 0./) !5-Apr-2005 values
 !       (/ 0.0275, 0.0426, 0.2303, 0.3885, 0.1100, 0.2011, 0., 0./) !15-Nov-2004 values
 !		(/ 0.01, 0.05, 0.145, 0.60, 0.145, 0.05, 0.00, 0.00 /)
 !		(/ 0.04, 0.10, 0.35, 0.29, 0.15, 0.07, 0.00, 0.00 /)
@@ -1322,6 +1502,131 @@
       end if			! end nc block comparison
     end do SIZE_LOOP
 #endif
+#if (CASENAME == 2)
+!     if( zz <= 3000. ) then
+!       mult = 1.0
+!     elseif( zz > 3000. &
+!       .and. zz <= 5000. ) then
+!       mult = 1.0 - 0.0004375*(zz-3000.)
+!     else
+!        mult = 0.125
+!     end if
+!     if( zz <= 5000. ) then
+!       mult = 1.0
+!     elseif( zz > 5000. &
+!       .and. zz <= 7000. ) then
+!       mult = 1.0 - 0.0004375*(zz-5000.)
+!     else
+!        mult = 0.125
+!     end if
+      mult=1.0
+      iflg=0
+      do 2901 m = 1, nsize_aer(itype)
+      if(iflg.eq.1) goto 2902
+      if( ( nch .eq. lptr_so4_aer(m,itype,iphase) ) .or.  &
+        (nch .eq. lptr_no3_aer(m,itype,iphase) ) .or.  &
+        (nch .eq. lptr_nh4_aer(m,itype,iphase) )  )then
+! so4, no3 and nh4 aerosol profiles
+        if( zz <= 500. ) then
+          mult = 1.000
+        elseif( zz > 500. &
+          .and. zz <= 1000. ) then
+          mult = 1.000 - 0.0010740*(zz-500.)
+        elseif( zz > 1000. &
+          .and. zz <= 5000. ) then
+          mult = 0.463 - 0.0001110*(zz-1000.)
+        elseif( zz > 5000. &
+          .and. zz <= 20000. ) then
+          mult = 0.019
+        else
+          mult = 0.019
+        end if
+        iflg=1
+      else if ( (nch .eq. lptr_na_aer(m,itype,iphase) ) .or.   &
+                (nch .eq. lptr_cl_aer(m,itype,iphase) ) ) then
+! na and cl aerosol profiles
+        if( zz <= 500. ) then
+          mult = 1.000
+        elseif( zz > 500. &
+          .and. zz <= 1000. ) then
+          mult = 1.000 - 0.0014260*(zz-500.)
+        elseif( zz > 1000. &
+          .and. zz <= 5000. ) then
+          mult = 0.287 - 0.0000643*(zz-1000.)
+        elseif( zz > 5000. &
+          .and. zz <= 10000. ) then
+          mult = 0.030
+        elseif( zz > 10000. &
+          .and. zz <= 20000. ) then
+          mult = 0.030 - 0.0000028*(zz-10000.)
+        else
+          mult = 0.002
+        end if
+        iflg=1
+      else if ( (nch .eq. lptr_oc_aer(m,itype,iphase) ) .or.   &
+                (nch .eq. lptr_bc_aer(m,itype,iphase) ) ) then
+! oc and bc aerosol profile
+        if( zz <= 500. ) then
+          mult = 1.000
+        elseif( zz > 500. &
+          .and. zz <= 1000. ) then
+          mult = 1.000 - 0.0002500*(zz-500.)
+        elseif( zz > 1000. &
+          .and. zz <= 5000. ) then
+          mult = 0.875 - 0.0001843*(zz-1000.)
+        elseif( zz > 5000. &
+          .and. zz <= 20000. ) then
+          mult = 0.138
+        else
+          mult = 0.138
+        end if
+        iflg=1
+      else if  (nch .eq. lptr_oin_aer(m,itype,iphase))  then
+! oin aerosol profile
+        if( zz <= 500. ) then
+          mult = 1.000
+        elseif( zz > 500. &
+          .and. zz <= 1000. ) then
+          mult = 1.000 - 0.0007340*(zz-500.)
+        elseif( zz > 1000. &
+          .and. zz <= 5000. ) then
+          mult = 0.633 - 0.0001103*(zz-1000.)
+        elseif( zz > 5000. &
+          .and. zz <= 10000. ) then
+          mult = 0.192 - 0.0000080*(zz-5000.)
+        elseif( zz > 10000. &
+          .and. zz <= 20000. ) then
+          mult = 0.152 - 0.0000137*(zz-10000.)
+        else
+          mult = 0.015
+        end if
+        iflg=1
+      else
+        if( zz <= 5000. ) then
+          mult = 1.0
+        elseif( zz > 5000. &
+          .and. zz <= 7000. ) then
+          mult = 1.0 - 0.0004375*(zz-5000.)
+        else
+           mult = 0.125
+        end if
+      end if
+2901  continue
+2902  continue
+#endif
+#if (CASENAME == 3)
+      if( zz <= 500. ) then
+        mult = 1.000
+      elseif( zz > 500. &
+        .and. zz <= 1000. ) then
+        mult = 1.000 - 0.0010740*(zz-500.)
+      elseif( zz > 1000. &
+        .and. zz <= 5000. ) then
+        mult = 0.463 - 0.0001110*(zz-1000.)
+      else
+        mult = 0.019
+      end if
+#endif
 !   Set values for fine and coarse mass concentrations, and
 !   compute fine/coarse volume concentrations. These are also set in
 !   mosaic_init_wrf_mixrats_opt2.
@@ -1357,6 +1662,58 @@
 	qcoar_hysw = mult*0.0
 	qfine_watr = mult*0.0
 	qcoar_watr = mult*0.0
+#if (CASENAME == 2)
+!       qfine_so4 = mult*0.50
+!       qcoar_so4 = mult*0.50/2.0
+!       qfine_no3 = mult*0.75
+!       qcoar_no3 = mult*0.75/2.0
+!       qfine_cl  = mult*0.10
+!       qcoar_cl  = mult*0.10/2.0
+!       qfine_nh4 = mult*0.30
+!       qcoar_nh4 = mult*0.30/2.0
+!       qfine_na  = mult*0.20
+!       qcoar_na  = mult*0.20/2.0
+!       qfine_oin = mult*4.00
+!       qcoar_oin = mult*4.00/2.0
+!       qfine_oc  = mult*3.00
+!       qcoar_oc  = mult*3.00/2.0
+!       qfine_bc  = mult*0.50
+!       qcoar_bc  = mult*0.50/2.0
+        qfine_so4 = mult*0.300
+        qcoar_so4 = mult*0.300/2.0
+        qfine_no3 = mult*0.001
+        qcoar_no3 = mult*0.001/2.0
+        qfine_cl  = mult*1.050
+        qcoar_cl  = mult*1.05/02.0
+        qfine_nh4 = mult*0.094
+        qcoar_nh4 = mult*0.094/2.0
+        qfine_na  = mult*0.700
+        qcoar_na  = mult*0.700/2.0
+        qfine_oin = mult*4.500
+        qcoar_oin = mult*4.500/2.0
+        qfine_oc  = mult*0.088
+        qcoar_oc  = mult*0.088/2.0
+        qfine_bc  = mult*0.013
+        qcoar_bc  = mult*0.013/2.0
+#endif
+#if (CASENAME == 3)
+        qfine_so4 = mult*0.300
+        qcoar_so4 = mult*0.0
+        qfine_nh4 = mult*0.094
+        qcoar_nh4 = mult*0.0
+        qfine_no3 = mult*0.001
+        qcoar_no3 = mult*0.0
+        qfine_cl  = mult*0.0
+        qcoar_cl  = mult*1.050
+        qfine_na  = mult*0.000
+        qcoar_na  = mult*0.700
+        qfine_oin = mult*4.500
+        qcoar_oin = mult*4.500/2.0
+        qfine_oc  = mult*0.088
+        qcoar_oc  = mult*0.0
+        qfine_bc  = mult*0.013
+        qcoar_bc  = mult*0.0
+#endif
 !!$! old values from 23-Apr-2004:
 !!$	qfine_so4 = mult*2.554
 !!$	qcoar_so4 = mult*0.242

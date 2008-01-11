@@ -11,6 +11,8 @@
                tauaer1,tauaer2,tauaer3,tauaer4,                          &
                gaer1,gaer2,gaer3,gaer4,                                  &
                waer1,waer2,waer3,waer4,                                  &
+               bscoef1,bscoef2,bscoef3,bscoef4,                          &
+               l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                      &
                pm2_5_dry,pm2_5_water,uvrad,                              &
                ids,ide, jds,jde, kds,kde,                                &
                ims,ime, jms,jme, kms,kme,                                &
@@ -59,10 +61,14 @@
 ! arrays that hold the aerosol optical properties
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
-         INTENT(INOUT ) ::                                             &
+         INTENT(IN ) ::                                                &
            tauaer1,tauaer2,tauaer3,tauaer4,                            &
            gaer1,gaer2,gaer3,gaer4,                                    &
-           waer1,waer2,waer3,waer4
+           waer1,waer2,waer3,waer4,                                    &
+           bscoef1,bscoef2,bscoef3,bscoef4                              
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, 1:4 ),                  &  
+         INTENT(IN ) ::                                                &
+           l2aer,l3aer,l4aer,l5aer,l6aer,l7aer
 !
 ! array that holds all advected chemical species
 !
@@ -126,6 +132,8 @@
                tauaer1,tauaer2,tauaer3,tauaer4,                        &
                gaer1,gaer2,gaer3,gaer4,                                &
                waer1,waer2,waer3,waer4,                                &
+               bscoef1,bscoef2,bscoef3,bscoef4,                        &
+               l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                    &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )

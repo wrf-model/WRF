@@ -67,6 +67,8 @@
                tauaer1,tauaer2,tauaer3,tauaer4,                        &
                gaer1,gaer2,gaer3,gaer4,                                &
                waer1,waer2,waer3,waer4,                                &
+               bscoef1,bscoef2,bscoef3,bscoef4,                        &
+               l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                    &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
@@ -78,7 +80,7 @@
    USE module_data_mosaic_asect
    USE module_data_mosaic_other
    USE module_fastj_mie
-   USE module_mosaic_therm, only: aerosol_optical_properties
+!  USE module_mosaic_therm, only: aerosol_optical_properties
    USE module_mosaic_driver, only: mapaer_tofrom_host
    USE module_fastj_data, only:  nb, nc
 
@@ -103,7 +105,7 @@
    integer nspint           ! Num of spectral intervals across solar 
    parameter ( nspint = 4 ) ! spectrum for FAST-J
    real, dimension (nspint),save :: wavmid !cm
-   real, dimension (nspint, kmaxd+1),save :: sizeaer,extaer,waer,gaer,tauaer
+   real, dimension (nspint, kmaxd+1),save :: sizeaer,extaer,waer,gaer,tauaer,bscoef
    real, dimension (nspint, kmaxd+1),save :: l2,l3,l4,l5,l6,l7
    data wavmid     &
        / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
@@ -142,10 +144,17 @@
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,          &
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob, &
-           ph_n2o5,                                                 &
-           tauaer1,tauaer2,tauaer3,tauaer4,                        &
-           gaer1,gaer2,gaer3,gaer4,                                &
-           waer1,waer2,waer3,waer4
+           ph_n2o5
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
+         INTENT(IN ) ::                                             &
+           tauaer1,tauaer2,tauaer3,tauaer4,                         &
+           gaer1,gaer2,gaer3,gaer4,                                 &
+           waer1,waer2,waer3,waer4,                                 &
+           bscoef1,bscoef2,bscoef3,bscoef4                          
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, 1:4 ),               &
+         INTENT(IN ) ::                                             &
+           l2aer,l3aer,l4aer,l5aer,l6aer,l7aer                      
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),         &
          INTENT(INOUT ) ::                                chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
@@ -253,24 +262,50 @@
        end do
 
        if( processingAerosols ) then
+         do k = kts, lpar
+           l2(1,k)=l2aer(iclm,k,jclm,1)
+           l2(2,k)=l2aer(iclm,k,jclm,2)
+           l2(3,k)=l2aer(iclm,k,jclm,3)
+           l2(4,k)=l2aer(iclm,k,jclm,4)
+           l3(1,k)=l3aer(iclm,k,jclm,1)
+           l3(2,k)=l3aer(iclm,k,jclm,2)
+           l3(3,k)=l3aer(iclm,k,jclm,3)
+           l3(4,k)=l3aer(iclm,k,jclm,4)
+           l4(1,k)=l4aer(iclm,k,jclm,1)
+           l4(2,k)=l4aer(iclm,k,jclm,2)
+           l4(3,k)=l4aer(iclm,k,jclm,3)
+           l4(4,k)=l4aer(iclm,k,jclm,4)
+           l5(1,k)=l5aer(iclm,k,jclm,1)
+           l5(2,k)=l5aer(iclm,k,jclm,2)
+           l5(3,k)=l5aer(iclm,k,jclm,3)
+           l5(4,k)=l5aer(iclm,k,jclm,4)
+           l6(1,k)=l6aer(iclm,k,jclm,1)
+           l6(2,k)=l6aer(iclm,k,jclm,2)
+           l6(3,k)=l6aer(iclm,k,jclm,3)
+           l6(4,k)=l6aer(iclm,k,jclm,4)
+           l7(1,k)=l7aer(iclm,k,jclm,1)
+           l7(2,k)=l7aer(iclm,k,jclm,2)
+           l7(3,k)=l7aer(iclm,k,jclm,3)
+           l7(4,k)=l7aer(iclm,k,jclm,4)
+         enddo
 ! take chem data and extract 1 column to create rsub(l,k,m) array	  
-          call mapaer_tofrom_host( 0,                     &
-               ims,ime, jms,jme, kms,kme,                    &
-               its,ite, jts,jte, kts,kte,                    &
-               iclm, jclm, kts,lpar,                         &
-               num_moist, num_chem, moist, chem,             &
-               t_phy, p_phy, rho_phy                         )
+!         call mapaer_tofrom_host( 0,                     &
+!              ims,ime, jms,jme, kms,kme,                    &
+!              its,ite, jts,jte, kts,kte,                    &
+!              iclm, jclm, kts,lpar,                         &
+!              num_moist, num_chem, moist, chem,             &
+!              t_phy, p_phy, rho_phy                         )
 ! generate aerosol optical properties for cells in this column
 ! subroutine is located in file module_mosaic_therm
-          call aerosol_optical_properties(iclm, jclm, lpar, refindx, &
-               radius_wet, number_bin)
+!         call aerosol_optical_properties(iclm, jclm, lpar, refindx, &
+!              radius_wet, number_bin)
 ! execute mie code , located in file module_fastj_mie
-          CALL wrf_debug(250,'fastj_driver: calling mieaer')
-          call mieaer(                            &
-               id, iclm, jclm, nbin_a,            &
-               number_bin, radius_wet, refindx,   &
-               dz, isecfrm0, lpar,                &
-               sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
+!         CALL wrf_debug(250,'fastj_driver: calling mieaer')
+!         call mieaer(                            &
+!              id, iclm, jclm, nbin_a,            &
+!              number_bin, radius_wet, refindx,   &
+!              dz, isecfrm0, lpar,                &
+!              sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7,bscoef)
        end if
 
 ! set lat, long
@@ -313,20 +348,24 @@
            ph_n2o5                                                  )
 ! put the aerosol optical properties into the wrf arrays (this is hard-
 ! coded to 4 spectral bins, nspint)
-      do k=kts,kte
-         tauaer1(iclm,k,jclm) = tauaer(1,k)
-         tauaer2(iclm,k,jclm) = tauaer(2,k)
-         tauaer3(iclm,k,jclm) = tauaer(3,k)
-         tauaer4(iclm,k,jclm) = tauaer(4,k)
-         gaer1(iclm,k,jclm)   = gaer(1,k)
-         gaer2(iclm,k,jclm)   = gaer(2,k)
-         gaer3(iclm,k,jclm)   = gaer(3,k)
-         gaer4(iclm,k,jclm)   = gaer(4,k)
-         waer1(iclm,k,jclm)   = waer(1,k)
-         waer2(iclm,k,jclm)   = waer(2,k)
-         waer3(iclm,k,jclm)   = waer(3,k)
-         waer4(iclm,k,jclm)   = waer(4,k)
-      end do
+!     do k=kts,kte
+!        tauaer1(iclm,k,jclm) = tauaer(1,k)
+!        tauaer2(iclm,k,jclm) = tauaer(2,k)
+!        tauaer3(iclm,k,jclm) = tauaer(3,k)
+!        tauaer4(iclm,k,jclm) = tauaer(4,k)
+!        gaer1(iclm,k,jclm)   = gaer(1,k)
+!        gaer2(iclm,k,jclm)   = gaer(2,k)
+!        gaer3(iclm,k,jclm)   = gaer(3,k)
+!        gaer4(iclm,k,jclm)   = gaer(4,k)
+!        waer1(iclm,k,jclm)   = waer(1,k)
+!        waer2(iclm,k,jclm)   = waer(2,k)
+!        waer3(iclm,k,jclm)   = waer(3,k)
+!        waer4(iclm,k,jclm)   = waer(4,k)
+!        bscoef1(iclm,k,jclm) = bscoef(1,k)
+!        bscoef2(iclm,k,jclm) = bscoef(2,k)
+!        bscoef3(iclm,k,jclm) = bscoef(3,k)
+!        bscoef4(iclm,k,jclm) = bscoef(4,k)
+!     end do
 
     end do
     end do
@@ -667,9 +706,7 @@
 	   col_ozone(k) = ozone(k)
 	end do
 
-!	surface_albedo=0.055
-!jdf
- 	surface_albedo=0.05
+ 	surface_albedo=0.055
 
 ! set aerosol parameters needed by Fast-J	                         	         	
         if (processingAerosols) then

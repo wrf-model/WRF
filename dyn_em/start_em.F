@@ -870,7 +870,7 @@
             enddo
          enddo
 
-         CALL chem_init (grid%id,chem,scalar,grid%dt,grid%bioemdt,grid%photdt,     &
+         CALL chem_init (grid%id,chem,emis_ant,scalar,grid%dt,grid%bioemdt,grid%photdt,     &
                          grid%chemdt,                                       &
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
                          grid%plumerisefire_frq,z_at_w,g,grid%aerwrf,config_flags,            &
@@ -880,6 +880,7 @@
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &
+               grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,                  &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
                          grid%chem_in_opt,                                  &
                          ids , ide , jds , jde , kds , kde ,                &

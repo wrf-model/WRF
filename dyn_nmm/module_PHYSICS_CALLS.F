@@ -629,7 +629,7 @@
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
      &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ             &
-     &                ,MOIST,RMOL                                       &
+     &                ,MOIST,RMOL,MOL                                   &
      &                ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT               &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
@@ -728,11 +728,12 @@
      &                                                ,AKHS,AKMS        &
      &                                                ,ALBEDO           &
      &                                                ,BGROFF,CMC       &
-     &                                                ,MAVAIL           &
+     &                                                ,MAVAIL,MOL       &
      &                                                ,PBLH,POTEVP      &
      &                                                ,POTFLX,PREC      &
      &                                                ,QCG,QS,QSG       &
      &                                                ,QVG,QZ0          &
+     &                                                ,RMOL             &
      &                                                ,SFCEVP           &
      &                                                ,SFCLHX,SFCSHX    &
      &                                                ,SI,SMSTOT        &
@@ -814,11 +815,11 @@
      &                                  ,EXNSFC,FACTRS,FLHC,FLQC,GZ1OZ0 &
      &                                  ,ONE,PDSL,PLM,PSFC_OUT,PSIH     &
      &                                  ,PSIM,Q2X,QLOW,RAIN,RAINBL      &
-     &                                  ,RLW_DN_SFC,RMOL,RSW_NET_SFC    &
+     &                                  ,RLW_DN_SFC,RSW_NET_SFC         &
      &                                  ,RSW_DN_SFC                     &
      &                                  ,SFCEVPX,SFCZ,SNOW,SNOWC,SNOWH  &
      &                                  ,TH2X,THLOW,TLOW,VGFRCK         &
-     &                                  ,WSPD,XLAND
+     &                                  ,WSPD,XLAND,REGIME,HOL
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY,DZ   &
      &                                          ,P_PHY,P8W,PI_PHY       &
@@ -1134,7 +1135,8 @@
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
-     &          ,MAVAIL=ONE,RMOL=RMOL,NUM_SOIL_LAYERS=NSOIL,P8W=P8W &
+     &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
+     &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,QSFC=QS  &
      &          ,QSHLTR=QSHLTR,QZ0=QZ0,RAINCV=RAIN                      &
@@ -1178,6 +1180,8 @@
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban
      &          ,NUM_ROAD_LAYERS=NUM_ROAD_LAYERS                        & ! urban
+! for YSU
+     &          ,REGIME=REGIME                                          &
      &                                                          )
 !
 !-----------------------------------------------------------------------
@@ -1245,7 +1249,8 @@
      &               ,QR_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
-     &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
+     &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
+     &               ,HOL=HOL)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1

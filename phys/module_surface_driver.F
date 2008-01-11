@@ -578,7 +578,6 @@ CONTAINS
      sfclay_select: SELECT CASE(sf_sfclay_physics)
 
      CASE (SFCLAYSCHEME)
-#if (NMM_CORE != 1)
 ! DX varies spatially in NMM, therefore, SFCLAY cannot be called
 ! because it takes a scalar DX. NMM passes in a dummy value for this
 ! scalar.  NEEDS FURTHER ATTENTION. JM 20050215
@@ -602,9 +601,6 @@ CONTAINS
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
 
-#else
-       CALL wrf_error_fatal('SFCLAY cannot be used with NMM')
-#endif
       CASE (MYJSFCSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN

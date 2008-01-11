@@ -1110,7 +1110,7 @@
      &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
      &            ,Q2,U,V,THS,NMM_TSK,SST,PREC,SNO                     &
      &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ                &
-     &            ,MOIST,RMOL                                          &
+     &            ,MOIST,RMOL,MOL                                      &
      &            ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT                  &
      &            ,THZ0,QZ0,UZ0,VZ0,QSH,MAVAIL                         &
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &

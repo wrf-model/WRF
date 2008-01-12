@@ -262,14 +262,14 @@ CONTAINS
    CHARACTER*80 :: message
    INTEGER :: ISWATER
    INTEGER :: ucmcall
-! to be added to namelist: option to use climatological monthly albedo
-   LOGICAL :: usebgalb
+   LOGICAL :: usemonalb
 
    INTEGER :: i, j, k, itf, jtf
 integer myproc
 
 !-----------------------------------------------------------------
    ucmcall=config_flags%ucmcall
+   usemonalb=config_flags%usemonalb
 #if ( EM_CORE == 1 ) 
    obs_twindo=config_flags%obs_twindo
 #endif
@@ -294,9 +294,7 @@ integer myproc
    XMAVA=0.3
 
 #if (NMM_CORE == 1)
-   usebgalb = .TRUE.
-#else
-   usebgalb = .FALSE.
+   if (.not.usemonalb) CALL wrf_error_fatal('usemonalb should always be true for NMM')
 #endif
 
    CALL nl_get_cen_lat(id,cen_lat)
@@ -367,7 +365,7 @@ integer myproc
                 landuse_ISICE, landuse_LUCATS,                      &
                 landuse_LUSEAS, landuse_ISN,                        &
                 lu_state,                                           &
-                allowed_to_read , usebgalb ,                        &
+                allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 its, ite, jts, jte, kts, kte                       ) 
@@ -502,7 +500,7 @@ integer myproc
                 znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu, &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
                 lu_state,                                           &
-                allowed_to_read , usebgalb ,                        &
+                allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
                 its, ite, jts, jte, kts, kte                       )
@@ -518,7 +516,7 @@ integer myproc
    INTEGER , INTENT(IN)           :: iswater, julday
    REAL    , INTENT(IN)           :: cen_lat
    CHARACTER*4, INTENT(IN)        :: mminlu
-   LOGICAL,  INTENT(IN)           :: allowed_to_read , usebgalb
+   LOGICAL,  INTENT(IN)           :: allowed_to_read , usemonalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
                                                                znt, Z0, thc, xland, xicem
@@ -670,7 +668,7 @@ integer myproc
 ! Set arrays according to lu_index
       itf = min0(ite, ide-1)
       jtf = min0(jte, jde-1)
-      IF(usebgalb)CALL wrf_message ( 'Climatological albedo is used instead of table values' )
+      IF(usemonalb)CALL wrf_message ( 'Climatological albedo is used instead of table values' )
       DO j = jts, jtf
         DO i = its, itf
           IS=nint(lu_index(i,j))
@@ -683,7 +681,7 @@ integer myproc
           IF(IS.EQ.0)THEN                                                
             IS=ISWATER                                                  
           ENDIF                                                        
-          IF(.NOT.usebgalb)ALBBCK(I,J)=ALBD(IS,ISN)/100.                                  
+          IF(.NOT.usemonalb)ALBBCK(I,J)=ALBD(IS,ISN)/100.                                  
           ALBEDO(I,J)=ALBBCK(I,J)
           IF(SNOWC(I,J) .GT. 0.5)ALBEDO(I,J)=ALBBCK(I,J)*(1.+SCFX(IS))
           THC(I,J)=THERIN(IS,ISN)/100.                               
@@ -985,7 +983,7 @@ integer myproc
    USE module_bl_mrf
    USE module_bl_gfs
    USE module_sf_myjsfc
-   USE module_sf_noahlsm
+   USE module_sf_noahdrv
    USE module_sf_urban
    USE module_sf_ruclsm
    USE module_bl_myjpbl

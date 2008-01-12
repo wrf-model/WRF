@@ -870,6 +870,7 @@ rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8     
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics      1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer ucmcall                 namelist,physics      1            0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
+rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 
 
 # nmm variables

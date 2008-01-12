@@ -390,6 +390,8 @@ Namelist variables for controling the automatic moving nest:
                                                 ; at same interval as boundary file. To read this, the time-control
                                                 ; namelist must include  auxinput4_interval,  auxinput4_end_h, and
                                                 ; auxinput4_inname = "wrflowinp_d<domain>"
+ usemonalb                           = .true.   ; use monthly albedo map instead of LANDUSE.TBL value
+                                                ; (must be used for NMM and recommended for sst_update=1)
  slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
  topo_shading                        = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
@@ -505,6 +507,7 @@ The following are for observation nudging:
  epssm (max_dom)                     = .1,	; time off-centering for vertical sound waves
  non_hydrostatic (max_dom)           = .true.,	; whether running the model in hydrostatic or non-hydro mode
  pert_coriolis (max_dom)             = .false.,	; Coriolis only acts on wind perturbation (idealized)
+ top_lid (max_dom)                   = .false., ; Zero vertical motion at top of domain
  mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
                                                   highly idealized numerical tests; damp_opt must not be 1 if ".true."
                                                   is chosen. .false. means subtract 1-d base-state profile before mixing

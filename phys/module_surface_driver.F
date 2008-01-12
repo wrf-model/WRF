@@ -72,7 +72,7 @@ CONTAINS
    USE module_sf_sfclay
    USE module_sf_myjsfc
    USE module_sf_gfs
-   USE module_sf_noahlsm
+   USE module_sf_noahdrv
    USE module_sf_ruclsm
 #if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
@@ -755,7 +755,7 @@ CONTAINS
            frpcpn=.true.
          ENDIF
 
-         CALL wrf_debug(100,'in NOAH LSM')
+         CALL wrf_debug(100,'in NOAH DRV')
            CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &

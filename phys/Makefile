@@ -32,6 +32,7 @@ MODULES = \
 	module_sf_sfclay.o \
 	module_sf_gfs.o \
 	module_sf_slab.o  \
+	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
         module_sf_urban.o  \
 	module_sf_lsm_nmm.o  \
@@ -126,6 +127,8 @@ module_sf_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o \
 		 module_progtm.o
 
+module_sf_noahdrv.o: module_sf_noahlsm.o 
+
 module_sf_noahlsm.o: ../share/module_model_constants.o  \
                      module_sf_urban.o
 
@@ -147,7 +150,7 @@ module_physics_init.o : \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
-		module_sf_noahlsm.o		\
+		module_sf_noahdrv.o		\
 		module_sf_ruclsm.o		\
 		module_bl_ysu.o			\
 		module_bl_mrf.o			\
@@ -229,7 +232,7 @@ module_surface_driver.o: \
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
 		module_sf_gfs.o  		\
-		module_sf_noahlsm.o		\
+		module_sf_noahdrv.o		\
 		module_sf_ruclsm.o		\
 		module_sf_sfcdiags.o		\
 		../frame/module_state_description.o \

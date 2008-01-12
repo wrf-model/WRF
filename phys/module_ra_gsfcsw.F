@@ -823,6 +823,8 @@ CONTAINS
       DO K=kts,kte          
          NK=kme-1-K+kms
          DO I=its,ite
+! FIX FROM GODDARD FOR NEGATIVE VALUES
+            TTEN2D(I,NK)=MAX(TTEN2D(I,NK),0.)
             RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+TTEN2D(I,NK)/pi3D(I,K,J)
          ENDDO
       ENDDO

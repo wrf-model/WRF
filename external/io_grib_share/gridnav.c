@@ -288,7 +288,7 @@ int fill_proj_parms(GridNav *gridnav)
             if (fabs(gridnav->proj.truelat1 - gridnav->proj.truelat2) < .01) 
 		{
 		    gridnav->proj_transform.parm2 = 
-			sin(gridnav->proj.truelat1 / RAD_TO_DEG);
+                        fabs(sin(gridnav->proj.truelat1 / RAD_TO_DEG));
 		}
 	    else 
 		{

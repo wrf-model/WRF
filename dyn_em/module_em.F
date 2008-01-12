@@ -180,11 +180,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          msfvy, msftx, msfty,                             &
                          xlat, f, e, sina, cosa,                          &
                          fnm, fnp, rdn, rdnw,                             &
-                         dt, rdx, rdy, khdif, kvdif, xkmhd,               &
+                         dt, rdx, rdy, khdif, kvdif, xkmhd, xkhh,         &
                          diff_6th_opt, diff_6th_factor,                   &
                          dampcoef,zdamp,damp_opt,                         &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
-                         non_hydrostatic,                                 &
+                         non_hydrostatic, top_lid,                        &
                          u_frame, v_frame,                                &
                          ids, ide, jds, jde, kds, kde,                    &
                          ims, ime, jms, jme, kms, kme,                    &
@@ -200,7 +200,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                             ims, ime, jms, jme, kms, kme, &
                                             its, ite, jts, jte, kts, kte
 
-   LOGICAL ,               INTENT(IN   ) :: non_hydrostatic
+   LOGICAL ,               INTENT(IN   ) :: non_hydrostatic, top_lid
 
    INTEGER ,               INTENT(IN   ) :: n_moist, rk_step
 
@@ -228,7 +228,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                          cqu,     &
                                                          cqv,     &
                                                          t_init,  &
-                                                         xkmhd,  &
+                                                         xkmhd,   &
+                                                         xkhh,    &
                                                          h_diabatic
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) ,              &
@@ -452,6 +453,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                      cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
                                      msfvx,msfvy,msftx,msfty,        &
                                      config_flags, non_hydrostatic,  &
+                                     top_lid,                        &
                                      ids, ide, jds, jde, kds, kde,   &
                                      ims, ime, jms, jme, kms, kme,   &
                                      its, ite, jts, jte, kts, kte   )
@@ -554,7 +556,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                          config_flags, t_init,            &
                                          msfux, msfuy, msfvx, msfvx_inv,  &
                                          msfvy, msftx, msfty,             &
-                                         khdq , xkmhd, rdx, rdy,          &
+                                         khdq , xkhh, rdx, rdy,           &
                                          ids, ide, jds, jde, kds, kde,    &
                                          ims, ime, jms, jme, kms, kme,    &
                                          its, ite, jts, jte, kts, kte    )

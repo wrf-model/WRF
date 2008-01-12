@@ -1050,7 +1050,7 @@ BENCH_START(calc_tke_tim)
 
           CALL wrf_debug ( 200 , ' call calculate_km_kh' )
           CALL calculate_km_kh( config_flags,grid%dt,grid%dampcoef,grid%zdamp,config_flags%damp_opt,     &
-                                grid%xkmh,grid%xkmhd,grid%xkmv,grid%xkhh,grid%xkhv,grid%bn2,               &
+                                grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,grid%bn2,               &
                                 grid%khdif,grid%kvdif,grid%div,                             &
                                 grid%defor11,grid%defor22,grid%defor33,grid%defor12,             &
                                 grid%defor13,grid%defor23,                             &
@@ -1092,7 +1092,7 @@ BENCH_START(phy_bc_tim)
        CALL wrf_debug ( 200 , ' call phy_bc' )
        CALL phy_bc (config_flags,grid%div,grid%defor11,grid%defor22,grid%defor33,            &
                             grid%defor12,grid%defor13,grid%defor23,                     &
-                            grid%xkmh,grid%xkmhd,grid%xkmv,grid%xkhh,grid%xkhv,                   &
+                            grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,                   &
                             grid%em_tke_2,                          &
                             grid%rublten, grid%rvblten,                            &
                             ids, ide, jds, jde, kds, kde,                &
@@ -1127,7 +1127,6 @@ BENCH_END(phy_bc_tim)
 ! grid%div           x
 ! grid%xkmv          x
 ! grid%xkmh          x
-! grid%xkmhd         x
 ! grid%xkhv          x
 ! grid%xkhh          x
 ! tke           x
@@ -1309,7 +1308,7 @@ BENCH_START(hor_diff_tim)
                                       grid%defor11, grid%defor22, grid%defor12,             &
                                       grid%defor13, grid%defor23, grid%div,                 &
                                       moist, chem, scalar,                   &
-                                      grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,grid%msfty, grid%xkmhd, grid%xkhh, config_flags%km_opt, &
+                                      grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt, &
                                       grid%rdx, grid%rdy, grid%em_rdz, grid%em_rdzw,                   &
                                       grid%em_fnm, grid%em_fnp, grid%cf1, grid%cf2, grid%cf3,               &
                                       grid%em_zx, grid%em_zy, grid%em_dn, grid%em_dnw,                       &
@@ -1415,11 +1414,11 @@ BENCH_START(rk_tend_tim)
                          grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,                                   &
                          grid%msfvy, grid%msftx,grid%msfty, grid%xlat, grid%f, grid%e, grid%sina, grid%cosa,  &
                          grid%em_fnm, grid%em_fnp, grid%em_rdn, grid%em_rdnw,                                 &
-                         grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, grid%xkmhd,                     &
+                         grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, grid%xkmh, grid%xkhh,           &
                          grid%diff_6th_opt, grid%diff_6th_factor,                                             &
                          grid%dampcoef,grid%zdamp,config_flags%damp_opt,                                      &
                          grid%cf1, grid%cf2, grid%cf3, grid%cfn, grid%cfn1, num_3d_m,                         &
-                         config_flags%non_hydrostatic,                                                        &
+                         config_flags%non_hydrostatic, config_flags%top_lid,                                  &
                          grid%u_frame, grid%v_frame,                                                          &
                          ids, ide, jds, jde, kds, kde,                                                        &
                          ims, ime, jms, jme, kms, kme,                                                        &
@@ -1582,6 +1581,7 @@ BENCH_START(small_step_prep_tim)
                            grid%em_mut, cqw,                 &
                            grid%em_rdn, grid%em_rdnw, c2a,   &
                            dts_rk, g, grid%epssm,            &
+                           config_flags%top_lid,             &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -1739,7 +1739,7 @@ BENCH_START(advance_uv_tim)
                            grid%cf1, grid%cf2, grid%cf3, grid%em_fnm, grid%em_fnp,            &
                            grid%emdiv,                                                        &
                            grid%em_rdnw, config_flags,grid%spec_zone,                         &
-                           config_flags%non_hydrostatic,                                      &
+                           config_flags%non_hydrostatic, config_flags%top_lid,                &
                            ids, ide, jds, jde, kds, kde,                                      &
                            ims, ime, jms, jme, kms, kme,                                      &
                            grid%i_start(ij), grid%i_end(ij),                                  &
@@ -1951,7 +1951,7 @@ BENCH_START(advance_w_tim)
                           grid%rdx, grid%rdy, dts_rk, t0, grid%epssm,      &
                           grid%em_dnw, grid%em_fnm, grid%em_fnp, grid%em_rdnw, grid%em_rdn,         &
                           grid%cf1, grid%cf2, grid%cf3, grid%msftx, grid%msfty, &
-                          config_flags,                     &
+                          config_flags,  config_flags%top_lid,                    &
                           ids,ide, jds,jde, kds,kde,        & ! domain dims
                           ims,ime, jms,jme, kms,kme,        & ! memory dims
                           grid%i_start(ij), grid%i_end(ij), &
@@ -2589,7 +2589,7 @@ BENCH_START(rk_scalar_tend_tim)
                               grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,         &
                               grid%msfvy, grid%msftx,grid%msfty,                         & 
                               grid%rdx, grid%rdy, grid%em_rdn, grid%em_rdnw, grid%khdif, &
-                              grid%kvdif, grid%xkmhd,                                    &
+                              grid%kvdif, grid%xkhh,                                     &
                               grid%diff_6th_opt, grid%diff_6th_factor,                   &
                               config_flags%pd_moist,            &
                               ids, ide, jds, jde, kds, kde,     &
@@ -2720,7 +2720,7 @@ BENCH_START(tke_adv_tim)
                            grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,         &
                            grid%msfvy, grid%msftx,grid%msfty,                         &
                            grid%rdx, grid%rdy, grid%em_rdn, grid%em_rdnw, grid%khdif, &
-                           grid%kvdif, grid%xkmhd,                                    &
+                           grid%kvdif, grid%xkhh,                                     &
                            grid%diff_6th_opt, grid%diff_6th_factor,                   &
                            config_flags%pd_tke,              &
                            ids, ide, jds, jde, kds, kde,     &
@@ -2804,7 +2804,7 @@ BENCH_START(chem_adv_tim)
                              grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
                              grid%msfvy, grid%msftx,grid%msfty,                 &
                              grid%rdx, grid%rdy, grid%em_rdn, grid%em_rdnw,     &
-                             grid%khdif, grid%kvdif, grid%xkmhd,                &
+                             grid%khdif, grid%kvdif, grid%xkhh,                 &
                              grid%diff_6th_opt, grid%diff_6th_factor,           &
                              config_flags%pd_chem,                              &
                              ids, ide, jds, jde, kds, kde,                      &
@@ -2939,7 +2939,7 @@ BENCH_END(chem_adv_tim)
                              grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
                              grid%msfvy, grid%msftx,grid%msfty,               &
                              grid%rdx, grid%rdy, grid%em_rdn, grid%em_rdnw,   &
-                             grid%khdif, grid%kvdif, grid%xkmhd,              &
+                             grid%khdif, grid%kvdif, grid%xkhh,               &
                              grid%diff_6th_opt, grid%diff_6th_factor,         &
                              config_flags%pd_scalar,           &
                              ids, ide, jds, jde, kds, kde,     &

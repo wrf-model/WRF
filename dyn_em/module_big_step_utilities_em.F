@@ -1922,6 +1922,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                                          cf1,cf2,cf3,rdx,rdy,msfux,msfuy,&
                                          msfvx,msfvy,msftx,msfty,        &
                                          config_flags, non_hydrostatic,  &
+                                         top_lid,                        &
                                          ids, ide, jds, jde, kds, kde,   &
                                          ims, ime, jms, jme, kms, kme,   &
                                          its, ite, jts, jte, kts, kte   )
@@ -1933,7 +1934,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
-   LOGICAL, INTENT (IN   ) :: non_hydrostatic
+   LOGICAL, INTENT (IN   ) :: non_hydrostatic, top_lid
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
@@ -2018,6 +2019,13 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                          +cf3*(p(i,k+2,j-1)+p(i,k+2,j))  )
           dpn(i,kde) = 0.
         ENDDO
+        IF (top_lid) THEN
+          DO i = i_start, itf
+            dpn(i,kde) = .5*( cf1*(p(i,kde-1,j-1)+p(i,kde-1,j))   &
+                             +cf2*(p(i,kde-2,j-1)+p(i,kde-2,j))   &
+                             +cf3*(p(i,kde-3,j-1)+p(i,kde-3,j))  )
+          ENDDO
+        ENDIF
                
         DO k=2,ktf
           DO i = i_start, itf
@@ -2087,6 +2095,13 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                          +cf3*(p(i-1,k+2,j)+p(i,k+2,j))  )
           dpn(i,kde) = 0.
         ENDDO
+        IF (top_lid) THEN
+          DO i = i_start, itf
+            dpn(i,kde) = .5*( cf1*(p(i-1,kde-1,j)+p(i,kde-1,j))   &
+                             +cf2*(p(i-1,kde-2,j)+p(i,kde-2,j))   &
+                             +cf3*(p(i-1,kde-3,j)+p(i,kde-3,j))  )
+          ENDDO
+        ENDIF
                
         DO k=2,ktf
           DO i = i_start, itf
@@ -2376,7 +2391,6 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
 
    REAL :: mrdx, mkrdxm, mkrdxp, &
            mrdy, mkrdym, mkrdyp
-   REAL :: pr_inv
 
    LOGICAL :: specified
 
@@ -2387,7 +2401,6 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
 !
 !</DESCRIPTION>
 
-   pr_inv = 1./prandtl
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
@@ -2544,13 +2557,13 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr_inv
-         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr_inv
+         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx
+         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx
          mrdx=msftx(i,j)*msfty(i,j)*rdx
-!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr_inv
-         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr_inv
-!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr_inv
-         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr_inv
+!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
+         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
+!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
+         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
          mrdy=msftx(i,j)*msfty(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+( &
@@ -2617,7 +2630,6 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
 
    REAL :: mrdx, mkrdxm, mkrdxp, &
            mrdy, mkrdym, mkrdyp
-   REAL :: pr_inv
 
    LOGICAL :: specified
 
@@ -2629,7 +2641,6 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
 !
 !</DESCRIPTION>
 
-   pr_inv = 1./prandtl
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
@@ -2651,13 +2662,13 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx*pr_inv
-         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx*pr_inv
+         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx
+         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx
          mrdx=msftx(i,j)*msfty(i,j)*rdx
-!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr_inv
-!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr_inv
-         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy*pr_inv
-         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy*pr_inv
+!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
+!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
+         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
+         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
          mrdy=msftx(i,j)*msfty(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+(                        &

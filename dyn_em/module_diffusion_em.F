@@ -671,7 +671,7 @@
 
     DO j = jts, jte
     DO i = its, ite
-      mm(i,j) = msfuy(i,j) * msfuy(i,j)
+      mm(i,j) = msfux(i,j) * msfuy(i,j)
     END DO
     END DO
 
@@ -813,7 +813,31 @@
 
     DO j = jts, jte
     DO i = its, ite
-      mm(i,j) = msfvy(i,j) * msfvy(i,j)
+      mm(i,j) = msfvx(i,j) * msfvy(i,j)
+    END DO
+    END DO
+
+! Apply a coordinate transformation to vertical velocity, w.  Added by CW 7/19/07
+
+    DO j = j_start, j_end
+    DO k = kts, kte
+    DO i = i_start, i_end
+      hat(i,k,j) = w(i,k,j) / msftx(i,j)
+    END DO
+    END DO
+    END DO
+
+    i = i_start-1
+    DO j = j_start, MIN( jte, jde-1 )
+    DO k = kts, kte
+      hat(i,k,j) = w(i,k,j) / msftx(i,j)
+    END DO
+    END DO
+
+    j = j_start-1
+    DO k = kts, kte
+    DO i = i_start, MIN( ite, ide-1 )
+      hat(i,k,j) = w(i,k,j) / msftx(i,j)
     END DO
     END DO
 
@@ -969,7 +993,7 @@
 
     SUBROUTINE calculate_km_kh( config_flags, dt,                        &
                                 dampcoef, zdamp, damp_opt,               &
-                                xkmh, xkmhd, xkmv, xkhh, xkhv,           &
+                                xkmh, xkmv, xkhh, xkhv,                  &
                                 BN2, khdif, kvdif, div,                  &
                                 defor11, defor22, defor33,               &
                                 defor12, defor13, defor23,               &
@@ -1020,7 +1044,7 @@
     :: moist
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
-    :: xkmv, xkmh, xkmhd, xkhv, xkhh, BN2  
+    :: xkmv, xkmh, xkhv, xkhh, BN2  
 
     REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),  INTENT( IN )  &
     :: defor11, defor22, defor33, defor12, defor13, defor23,      &
@@ -1062,13 +1086,13 @@
     km_coef: SELECT CASE( config_flags%km_opt )
 
       CASE (1)
-            CALL isotropic_km( config_flags, xkmh, xkmhd, xkmv,         &
+            CALL isotropic_km( config_flags, xkmh, xkmv,                &
                                xkhh, xkhv, khdif, kvdif,                &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
       CASE (2)  
-            CALL tke_km(       config_flags, xkmh, xkmhd, xkmv,         &
+            CALL tke_km(       config_flags, xkmh, xkmv,                &
                                xkhh, xkhv, BN2, tke, p8w, t8w, theta,   &
                                rdz, rdzw, dx, dy, cr_len,               &
                                kh_tke_upper_bound, kv_tke_upper_bound,  &
@@ -1076,7 +1100,7 @@
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
       CASE (3)  
-            CALL smag_km(      config_flags, xkmh, xkmhd, xkmv,         &
+            CALL smag_km(      config_flags, xkmh, xkmv,                &
                                xkhh, xkhv, BN2, div,                    &
                                defor11, defor22, defor33,               &
                                defor12, defor13, defor23,               &
@@ -1085,7 +1109,7 @@
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
       CASE (4)  
-            CALL smag2d_km(    config_flags, xkmh, xkmhd, xkmv,         &
+            CALL smag2d_km(    config_flags, xkmh, xkmv,                &
                                xkhh, xkhv, defor11, defor22, defor12,   &
                                rdzw, dx, dy,                            &
                                ids, ide, jds, jde, kds, kde,            &
@@ -1097,7 +1121,7 @@
     END SELECT km_coef
 
     IF ( damp_opt .eq. 1 ) THEN
-      CALL cal_dampkm( config_flags, xkmhd, xkmh, xkhh, xkmv, xkhv,   &
+      CALL cal_dampkm( config_flags, xkmh, xkhh, xkmv, xkhv,    &
                        dx, dy, dt, dampcoef, rdz, rdzw, zdamp,  &
                        msftx, msfty,                            &
                        ids, ide, jds, jde, kds, kde,            &
@@ -1109,7 +1133,7 @@
 
 !=======================================================================
 
-SUBROUTINE cal_dampkm( config_flags,xkmhd,xkmh,xkhh,xkmv,xkhv,                 &
+SUBROUTINE cal_dampkm( config_flags,xkmh,xkhh,xkmv,xkhv,                       &
                        dx,dy,dt,dampcoef,                                      &
                        rdz, rdzw ,zdamp,                                       &
                        msftx, msfty,                                           &
@@ -1131,8 +1155,7 @@ SUBROUTINE cal_dampkm( config_flags,xkmhd,xkmh,xkhh,xkmv,xkhv,                 &
    REAL    ,          INTENT(IN   )           :: zdamp,dx,dy,dt,dampcoef
 
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT)    ::    xkmhd, &
-                                                                         xkmh , &
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT)    ::     xkmh , &
                                                                          xkhh , &
                                                                          xkmv , &
                                                                          xkhv 
@@ -1229,7 +1252,6 @@ SUBROUTINE cal_dampkm( config_flags,xkmhd,xkmh,xkhh,xkmv,xkhv,                 &
    DO j = j_start, j_end
    DO k = kts,ktf
    DO i = i_start, i_end
-      xkmhd(i,k,j)=max(xkmhd(i,k,j),dampk(i,k,j))
       xkmh(i,k,j)=max(xkmh(i,k,j),dampk(i,k,j))
       xkhh(i,k,j)=max(xkhh(i,k,j),dampk(i,k,j))
       xkmv(i,k,j)=max(xkmv(i,k,j),dampkv(i,k,j))
@@ -1477,7 +1499,7 @@ END SUBROUTINE cal_dampkm
 !=======================================================================
 
 SUBROUTINE isotropic_km( config_flags,                                         &
-                         xkmh,xkmhd,xkmv,xkhh,xkhv,khdif,kvdif,                &
+                         xkmh,xkmv,xkhh,xkhv,khdif,kvdif,                      &
                          ids,ide, jds,jde, kds,kde,                            &
                          ims,ime, jms,jme, kms,kme,                            &
                          its,ite, jts,jte, kts,kte                            )
@@ -1496,7 +1518,6 @@ SUBROUTINE isotropic_km( config_flags,                                         &
    REAL    ,          INTENT(IN   )           :: khdif,kvdif               
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::     xkmh, &
-                                                                        xkmhd, &
                                                                          xkmv, &
                                                                          xkhh, &
                                                                          xkhv
@@ -1524,7 +1545,6 @@ SUBROUTINE isotropic_km( config_flags,                                         &
    DO k = kts, ktf
    DO i = i_start, i_end
       xkmh(i,k,j)=khdif
-      xkmhd(i,k,j)=khdif
       xkmv(i,k,j)=kvdif
       xkhh(i,k,j)=khdif3
       xkhv(i,k,j)=kvdif3
@@ -1537,7 +1557,7 @@ END SUBROUTINE isotropic_km
 !=======================================================================
 !=======================================================================
 
-SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
+SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
                     div,defor11,defor22,defor33,defor12,                       &
                     defor13,defor23,                                           &
                     rdzw,dx,dy,cr_len_in,                                      &
@@ -1563,7 +1583,6 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
                                                                          rdzw
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::     xkmh, &
-                                                                        xkmhd, &
                                                                          xkmv, &
                                                                          xkhh, &
                                                                          xkhv
@@ -1661,7 +1680,6 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
          tmp=tmp**0.5
          xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
-         xkmhd(i,k,j)=xkmh(i,k,j)
          xkmv(i,k,j)=max(c_s*c_s*mlen_v*mlen_v*tmp, 1.0E-6*mlen_v*mlen_v )
          xkmv(i,k,j)=min(xkmv(i,k,j), 10.*mlen_v )
          xkhh(i,k,j)=xkmh(i,k,j)/pr
@@ -1678,7 +1696,6 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,BN2,                &
          tmp=tmp**0.5
          xkmh(i,k,j)=max(c_s*c_s*deltas*deltas*tmp, 1.0E-6*deltas*deltas )
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*deltas )
-         xkmhd(i,k,j)=xkmh(i,k,j)
          xkmv(i,k,j)=xkmh(i,k,j)
          xkhh(i,k,j)=xkmh(i,k,j)/pr
          xkhv(i,k,j)=xkmv(i,k,j)/pr
@@ -1692,7 +1709,7 @@ END SUBROUTINE smag_km
 !=======================================================================
 !=======================================================================
 
-SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
+SUBROUTINE smag2d_km( config_flags,xkmh,xkmv,xkhh,xkhv,                        &
                     defor11,defor22,defor12,                                   &
                     rdzw,dx,dy,                                                &
                     ids,ide, jds,jde, kds,kde,                                 &
@@ -1716,7 +1733,6 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) ::     rdzw
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::     xkmh, &
-                                                                        xkmhd, &
                                                                          xkmv, &
                                                                          xkhh, &
                                                                          xkhv
@@ -1775,7 +1791,6 @@ SUBROUTINE smag2d_km( config_flags,xkmh,xkmhd,xkmv,xkhh,xkhv,                  &
 !        xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
          xkmh(i,k,j)=c_s*c_s*mlen_h*mlen_h*tmp
          xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
-         xkmhd(i,k,j)=xkmh(i,k,j)
          xkmv(i,k,j)=0.
          xkhh(i,k,j)=xkmh(i,k,j)/pr
          xkhv(i,k,j)=0.
@@ -1788,7 +1803,7 @@ END SUBROUTINE smag2d_km
 !=======================================================================
 !=======================================================================
 
-    SUBROUTINE tke_km( config_flags, xkmh, xkmhd, xkmv, xkhh, xkhv,  &
+    SUBROUTINE tke_km( config_flags, xkmh, xkmv, xkhh, xkhv,         &
                        bn2, tke, p8w, t8w, theta,                    &
                        rdz, rdzw, dx,dy, cr_len_in,                  &
                        kh_tke_upper_bound, kv_tke_upper_bound,       &
@@ -1826,7 +1841,7 @@ END SUBROUTINE smag2d_km
     :: tke, p8w, t8w, theta, rdz, rdzw, bn2
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
-    :: xkmh, xkmhd, xkmv, xkhh, xkhv
+    :: xkmh, xkmv, xkhh, xkhv
 
     REAL, INTENT( IN )  &
     :: kh_tke_upper_bound, kv_tke_upper_bound
@@ -1923,7 +1938,6 @@ END SUBROUTINE smag2d_km
         END IF
         xkmh(i,k,j)  = MAX( c_k * tmp * mlen_h, 1.0E-6 * mlen_h * mlen_h )
         xkmh(i,k,j)  = MIN( xkmh(i,k,j), 10.0 * mlen_h )
-        xkmhd(i,k,j) = xkmh(i,k,j)
         xkmv(i,k,j)  = MAX( c_k * tmp * mlen_v, 1.0E-6 * deltas * deltas )
         xkmv(i,k,j)  = MIN( xkmv(i,k,j), 10.0 * deltas )
         pr_inv_h     = 1./prandtl
@@ -1947,7 +1961,6 @@ END SUBROUTINE smag2d_km
         deltas       = ( dx * dy / rdzw(i,k,j) )**0.33333333
         xkmh(i,k,j)  = c_k * tmp * l_scale(i,k,j)
         xkmh(i,k,j)  = MIN( kh_tke_upper_bound,  xkmh(i,k,j) )
-        xkmhd(i,k,j) = xkmh(i,k,j)
         xkmv(i,k,j)  = c_k * tmp * l_scale(i,k,j)
         xkmv(i,k,j)  = MIN( kv_tke_upper_bound,  xkmv(i,k,j) )
         pr_inv       = 1.0 + 2.0 * l_scale(i,k,j) / deltas
@@ -4379,7 +4392,7 @@ END SUBROUTINE vertical_diffusion_s
 !=======================================================================
 
 SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
-                    defor12,defor13,defor23,xkmh,xkmhd,xkmv,xkhh,xkhv,tke, &
+                    defor12,defor13,defor23,xkmh,xkmv,xkhh,xkhv,tke,       &
                     RUBLTEN, RVBLTEN,                                      &
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
@@ -4407,7 +4420,6 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                                                  defor13, &
                                                                  defor23, &
                                                                     xkmh, &
-                                                                   xkmhd, &
                                                                     xkmv, &
                                                                     xkhh, &
                                                                     xkhv, &
@@ -4433,15 +4445,8 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
 
    ENDIF
 
-   ! move out of the conditional, below; this one is needed for 
+   ! move out of the conditional, below; horiz coeffs needed for 
    ! all diff_opt cases.  JM
-   CALL set_physical_bc3d( xkmhd   , 't', config_flags,                   &
-                                ids, ide, jds, jde, kds, kde,             &
-                                ims, ime, jms, jme, kms, kme,             &
-                                ips, ipe, jps, jpe, kps, kpe,             &
-                                its, ite, jts, jte, kts, kte              )
-
-   IF(config_flags%diff_opt .eq. 2) THEN
 
    CALL set_physical_bc3d( xkmh    , 't', config_flags,                   &
                                 ids, ide, jds, jde, kds, kde,             &
@@ -4449,14 +4454,15 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                 ips, ipe, jps, jpe, kps, kpe,             &
                                 its, ite, jts, jte, kts, kte              )
 
-
-   CALL set_physical_bc3d( xkmv    , 't', config_flags,                   &
+   CALL set_physical_bc3d( xkhh    , 't', config_flags,                   &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &
                                 ips, ipe, jps, jpe, kps, kpe,             &
                                 its, ite, jts, jte, kts, kte              )
 
-   CALL set_physical_bc3d( xkhh    , 't', config_flags,                   &
+   IF(config_flags%diff_opt .eq. 2) THEN
+
+   CALL set_physical_bc3d( xkmv    , 't', config_flags,                   &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &
                                 ips, ipe, jps, jpe, kps, kpe,             &

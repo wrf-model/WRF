@@ -90,14 +90,16 @@
  obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
  obs_rinxy                           = 240.,240.,180.,180,180
  obs_rinsig                          = 0.1,
- obs_twindo                          = 0.6666667,
+ obs_twindo                          = 0.6666667,0.6666667,0.6666667,0.6666667,0.6666667,
  obs_npfi                            = 10,
- obs_ionf                            = 2,
+ obs_ionf                            = 2, 2, 2, 2, 2,
  obs_idynin                          = 0,
  obs_dtramp                          = 40.,
+ obs_nobs_prt                        = 10, 10, 10, 10, 10,
  obs_ipf_errob                       = .true.
  obs_ipf_nudob                       = .true.
  obs_ipf_in4dob                      = .true.
+ obs_ipf_init                        = .true.
  /
 
  &dynamics

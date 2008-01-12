@@ -724,6 +724,11 @@ BENCH_START(surf_driver_tim)
      &        ,WSPD=wspd               ,XICE=grid%xice     ,XLAND=grid%xland        &
      &        ,Z0=grid%z0              ,Z=grid%em_z        ,ZNT=grid%znt            &
      &        ,ZS=grid%zs              ,XICEM=grid%xicem   ,ISICE=grid%landuse_isice&
+     &        ,USTM=grid%ustm          ,CK=grid%ck         ,CKA=grid%cka            &
+     &                                 ,CD=grid%cd         ,CDA=grid%cda            &
+     &        ,ISFTCFLX=config_flags%isftcflx                                       &
+     &        ,OMLCALL=config_flags%omlcall ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma &
+     &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml, HUML=grid%huml, HVML=grid%hvml, F=grid%f &
      &        ,ISWATER=iswater &
      &        ,DECLIN_URB=grid%declin_urb  ,COSZ_URB2D=grid%cosz_urb2d    & !I urban
      &        ,OMG_URB2D=grid%omg_urb2d    ,xlat_urb2d=grid%XLAT          & !I urban
@@ -1240,7 +1245,7 @@ BENCH_START(tke_rhs_tim)
                           grid%dx,grid%dy,grid%dt,grid%em_zx,grid%em_zy,grid%em_rdz,grid%em_rdzw,grid%em_dn,       &
                           grid%em_dnw,config_flags%mix_cr_len,  &
                           grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV),&
-                          grid%ust, rho,                              &
+                          grid%ustm, rho,                             &
                           ids, ide, jds, jde, kds, kde,               &
                           ims, ime, jms, jme, kms, kme,               &
                           grid%i_start(ij), grid%i_end(ij),           &
@@ -1279,7 +1284,7 @@ BENCH_START(vert_diff_tim)
                                       grid%div, moist, chem, scalar,                  &
                                       grid%xkmv, grid%xkhv, config_flags%km_opt,                        &
                                       grid%em_fnm, grid%em_fnp, grid%em_dn, grid%em_dnw, grid%em_rdz, grid%em_rdzw, &
-                                      grid%hfx, grid%qfx, grid%ust, rho,         &
+                                      grid%hfx, grid%qfx, grid%ustm, rho,        &
                                       ids, ide, jds, jde, kds, kde,              &
                                       ims, ime, jms, jme, kms, kme,              &
                                       grid%i_start(ij), grid%i_end(ij),          &
@@ -1350,9 +1355,9 @@ BENCH_END(hor_diff_tim)
                   grid%obs_coef_pstr,                                  &             
                   grid%obs_rinxy,                                      &
                   grid%obs_rinsig,                                     &
-                  grid%obs_twindo,                                     &
                   grid%obs_npfi,                                       &
                   grid%obs_ionf,                                       &
+                  grid%obs_nobs_prt,                                   &
                   grid%obs_idynin,                                     &
                   grid%obs_dtramp,                                     &
                   model_config_rec%cen_lat(1),                         &

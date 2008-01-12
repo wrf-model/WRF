@@ -23,7 +23,8 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     uratx,vratx,tratx                             )
+                     uratx,vratx,tratx,                            &
+                     ustm,ck,cka,cd,cda,isftcflx                   )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -41,6 +42,8 @@ CONTAINS
 !-- PSFC        surface pressure (Pa)
 !-- ZNT         roughness length (m)
 !-- UST         u* in similarity theory (m/s)
+!-- USTM        u* in similarity theory (m/s) without vconv correction
+!               used to couple with TKE scheme
 !-- PBLH        PBL height from previous time (m)
 !-- MAVAIL      surface moisture availability (between 0 and 1)
 !-- ZOL         z/L height over Monin-Obukhov length
@@ -81,6 +84,11 @@ CONTAINS
 !-- KARMAN      Von Karman constant
 !-- EOMEG       angular velocity of earth's rotation (rad/s)
 !-- STBOLT      Stefan-Boltzmann constant (W/m^2/K^4)
+!-- ck          enthalpy exchange coeff at 10 meters
+!-- cd          momentum exchange coeff at 10 meters
+!-- cka         enthalpy exchange coeff at the lowest model level
+!-- cda         momentum exchange coeff at the lowest model level
+!-- isftcflx    =0, (Charnock and Carlson-Boland); =1, AHW Ck, Cd
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -172,6 +180,12 @@ CONTAINS
  
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::              uratx,vratx,tratx
+
+      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -212,7 +226,9 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte,                         &
-                uratx(ims,j),vratx(ims,j),tratx(ims,j)             )
+                uratx(ims,j),vratx(ims,j),tratx(ims,j),            &
+                isftcflx,                                          &
+                USTM(ims,j),CK(ims,j),CKA(ims,j),CD(ims,j),CDA(ims,j) )
       ENDDO
 
 
@@ -232,7 +248,9 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     uratx,vratx,tratx                             )
+                     uratx,vratx,tratx,                            &
+                     isftcflx,                                     &
+                     ustm,ck,cka,cd,cda                            )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -305,6 +323,11 @@ CONTAINS
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(OUT)     ::              uratx,vratx,tratx
 
+      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
+                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
+
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite )        ::                 ZA, &
@@ -313,8 +336,10 @@ CONTAINS
                                                            THX,QX, &
                                                             PSIH2, &
                                                             PSIM2, &
-                                                            PSIH10, &
-                                                            PSIM10, &
+                                                           PSIH10, &
+                                                           PSIM10, &
+                                                           DENOMQ, &
+                                                            WSPDI, &
                                                            GZ2OZ0, &
                                                            GZ10OZ0
 !
@@ -331,8 +356,8 @@ CONTAINS
 
       REAL    ::  PL,THCON,TVCON,E1
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
-      REAL    ::  DTG,PSIX,USTM,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2
-      REAL    ::  FLUXC,VSGD
+      REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
+      REAL    ::  FLUXC,VSGD,Z0Q
 !-------------------------------------------------------------------
       KL=kte
 
@@ -626,6 +651,8 @@ CONTAINS
         PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))
         PSIH2(I)=AMIN1(PSIH2(I),0.9*GZ2OZ0(I))
         PSIM10(I)=AMIN1(PSIM10(I),0.9*GZ10OZ0(I))
+! AHW: mods to compute ck, cd
+        PSIH10(I)=AMIN1(PSIH10(I),0.9*GZ10OZ0(I))
 
         RMOL(I) = ZOL(I)/ZA(I)  
 
@@ -650,8 +677,28 @@ CONTAINS
         PSIQ=ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I)   
         PSIT2=GZ2OZ0(I)-PSIH2(I)                                     
         PSIQ2=ALOG(KARMAN*UST(I)*2./XKA+2./ZL)-PSIH2(I)                                   
+! AHW: mods to compute ck, cd
+        PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
+        IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
+           Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
+!          Z0Q = 0.62*1.5E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.))**2
+           PSIQ=ALOG(ZA(I)/Z0Q)-PSIH(I)
+           PSIT=PSIQ
+           PSIQ2=ALOG(2./Z0Q)-PSIH2(I)
+           PSIQ10=ALOG(10./Z0Q)-PSIH10(I)
+           PSIT2=PSIQ2
+        ENDIF
+        IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN
+           Ck(I)=(karman/psix10)*(karman/psiq10)
+           Cd(I)=(karman/psix10)*(karman/psix10)
+           Cka(I)=(karman/psix)*(karman/psiq)
+           Cda(I)=(karman/psix)*(karman/psix)
+        ENDIF
 ! TO PREVENT OSCILLATIONS AVERAGE WITH OLD VALUE 
         UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
+! TKE coupling: compute ust without vconv for use in tke scheme
+        WSPDI(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))
+        USTM(I)=0.5*USTM(I)+0.5*KARMAN*WSPDI(I)/PSIX
         U10(I)=UX(I)*PSIX10/PSIX                                    
         V10(I)=VX(I)*PSIX10/PSIX                                   
         TH2(I)=THGB(I)+DTG*PSIT2/PSIT                                
@@ -678,15 +725,11 @@ CONTAINS
           tratx(I) = THX(I)/TH2(I)
         ENDIF
 
-        USTM=AMAX1(UST(I),0.1)                                                 
-        IF((XLAND(I)-1.5).GE.0)THEN                                            
-          UST(I)=UST(I)                                                      
-        ELSE                                                                     
-          UST(I)=USTM                                                          
+        IF((XLAND(I)-1.5).LT.0.)THEN                                            
+          UST(I)=AMAX1(UST(I),0.1)
         ENDIF                                                                    
-!       write(*,1002)UST(I),USTM,I,J
- 1002   format(f15.12,2x,f15.12,2x,f15.12,2x,f15.12,2x,f15.12)
         MOL(I)=KARMAN*DTG/PSIT/PRT                              
+!       DENOMQ(I)=PSIQ
   330 CONTINUE                                                                   
 !                                                                                
   335 CONTINUE                                                                   
@@ -704,15 +747,21 @@ CONTAINS
                                                                                  
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
-          ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+          IF ( ISFTCFLX.EQ.0 ) THEN
+             ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+! AHW: change roughness length, and hence the drag coefficients Ck and Cd
+          ELSE IF ( ISFTCFLX.EQ.1 ) THEN
+             ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
+             ZNT(I)=MIN(ZNT(I),2.85e-3)
+             ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
+!            ZNT(I)=MAX(ZNT(I),1.27e-7)
+          ENDIF
+          ZL = ZNT(I)
+        ELSE
+          ZL = 0.01
         ENDIF                                                                    
-        IF((XLAND(I)-1.5).GE.0)THEN                                            
-          ZL=ZNT(I)                                                            
-        ELSE                                                                     
-          ZL=0.01                                                                
-        ENDIF                                                                    
-        FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   & 
-                ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))          
+        FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
+                ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
         DTTHX=ABS(THX(I)-THGB(I))                                            
         IF(DTTHX.GT.1.E-5)THEN                                                   
           FLHC(I)=CPM(I)*RHOX(I)*UST(I)*MOL(I)/(THX(I)-THGB(I))          

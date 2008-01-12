@@ -41,8 +41,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                nudge_wind, nudge_temp, nudge_mois,               &
                nudge_pstr,                                       &
                coef_wind, coef_temp, coef_mois,                  &
-               coef_pstr, rinxy, rinsig, twindo,                 &
-               npfi, ionf, idynin, dtramp,                       &
+               coef_pstr, rinxy, rinsig,                         &
+               npfi, ionf, nobs_prt, idynin, dtramp,             &
                xlatc_cg, xlonc_cg, true_lat1, true_lat2,         &
                map_proj, i_parent_start, j_parent_start,         &
                parent_grid_ratio, maxdom, itimestep,             &
@@ -110,9 +110,9 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, intent(in) :: coef_pstr
   REAL, intent(inout)  :: rinxy
   REAL, intent(inout)  :: rinsig
-  REAL, intent(inout)  :: twindo
   INTEGER, intent(in) :: npfi
   INTEGER, intent(in) :: ionf
+  INTEGER, intent(in) :: nobs_prt      ! Number of current obs to print info.
   INTEGER, intent(in) :: idynin
   REAL, intent(inout) :: dtramp
   REAL, intent(in) :: xlatc_cg         ! center latitude  of coarse grid
@@ -222,11 +222,11 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
         CALL ERROB(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
                    uratx, vratx, tratx,                              &
                    nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,    &
-                   fdob%levidn, parid, fdob%nstat,                   &
+                   fdob%levidn, parid, fdob%nstat, fdob%nstaw,       &
                    nudge_wind, nudge_temp, nudge_mois, nudge_pstr,   &
                    fdob%rio, fdob%rjo, fdob%rko, varobs, errf,       &
                    i_parent_start, j_parent_start, ktau,             &
-                   parent_grid_ratio, npfi, iprt_errob,              &
+                   parent_grid_ratio, npfi, nobs_prt, iprt_errob,    &
                    ids,ide, jds,jde, kds,kde,                        &
                    ims,ime, jms,jme, kms,kme,                        &
                    its,ite, jts,jte, kts,kte)
@@ -290,7 +290,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   inest, restart, ktau, fdob%ktaur, xtime,           &
                   mut(ims,j), msftx(ims,j), msfty(ims,j),            &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
-                  npfi, ionf, rinxy, twindo,                         &
+                  npfi, ionf, rinxy, fdob%window,                    &
                   fdob%levidn,                                       &
                   parid, nstat, i_parent_start, j_parent_start,      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
@@ -314,7 +314,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   inest, restart, ktau, fdob%ktaur, xtime,           &
                   mut(ims,j), msftx(ims,j), msfty(ims,j),            &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
-                  npfi, ionf, rinxy, twindo,                         &
+                  npfi, ionf, rinxy, fdob%window,                    &
                   fdob%levidn,                                       &
                   parid, nstat, i_parent_start, j_parent_start,      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
@@ -339,7 +339,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 inest, restart, ktau, fdob%ktaur, xtime,             &
                 muu(ims,j), msfux(ims,j), msfuy(ims,j),              &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
-                npfi, ionf, rinxy, twindo,                           &
+                npfi, ionf, rinxy, fdob%window,                      &
                 fdob%levidn,                                         &
                 parid, nstat, i_parent_start, j_parent_start,        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
@@ -360,7 +360,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 inest, restart, ktau, fdob%ktaur, xtime,             &
                 muv(ims,j), msfvx(ims,j), msfvy(ims,j),              &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
-                npfi, ionf, rinxy, twindo,                           &
+                npfi, ionf, rinxy, fdob%window,                      &
                 fdob%levidn,                                         &
                 parid, nstat, i_parent_start, j_parent_start,        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &

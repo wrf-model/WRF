@@ -48,6 +48,10 @@ CONTAINS
      &          ,potevp,snopcx,soiltb,sr                              &
              !  Optional observation nudging
      &          ,uratx,vratx,tratx                                    &
+             !  Optional simple oml model
+     &          ,omlcall,oml_hml0,oml_gamma                           &
+     &          ,tml,t0ml,hml,h0ml,huml,hvml,f                        &
+     &          ,ustm,ck,cka,cd,cda,isftcflx                          &
                                                                       )
 
 #if ( ! NMM_CORE == 1 )
@@ -192,6 +196,13 @@ CONTAINS
 !-- DZS
 !-- num_soil_layers number of soil layer
 !-- IFSNOW      ifsnow=1 for snow-cover effects
+!-- omlcall       whether to call simple ocean mixed layer model from slab (1 = use oml)
+!-- oml_hml0      initial mixed layer depth (if real-data not available, default 50 m)
+!-- oml_gamma     lapse rate below mixed layer in ocean (default 0.14 K m-1)
+!-- ck            enthalpy exchange coeff at 10 meters
+!-- cd            momentum exchange coeff at 10 meters
+!-- cka           enthalpy exchange coeff at the lowest model level
+!-- cda           momentum exchange coeff at the lowest model level
 !
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -331,7 +342,15 @@ CONTAINS
 !
 ! Optional
 !
+!  arguments for Ocean Mixed Layer Model
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
 
+   INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX
+   INTEGER, OPTIONAL, INTENT(IN )::   OMLCALL
+   REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
+   REAL   , OPTIONAL, INTENT(IN )::   OML_GAMMA
 !
 !  Observation nudging
 !
@@ -596,7 +615,8 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               uratx,vratx,tratx                                   )
+               uratx,vratx,tratx,                                  &
+               ustm,ck,cka,cd,cda,isftcflx                         )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
@@ -684,7 +704,9 @@ CONTAINS
              p1000mb,                                             &
              ids,ide, jds,jde, kds,kde,                           &
              ims,ime, jms,jme, kms,kme,                           &
-             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,&
+             tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy,f,g,     &
+             omlcall,oml_gamma                                    )
 
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -699,8 +721,6 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
-       ELSE
-         CALL wrf_error_fatal('Lacking arguments for SLAB in surface driver')
        ENDIF
 
 #if ( NMM_CORE == 1 )

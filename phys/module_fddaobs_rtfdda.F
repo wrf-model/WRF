@@ -39,12 +39,14 @@ CONTAINS
 
 !------------------------------------------------------------------------------
   SUBROUTINE fddaobs_init(obs_nudge_opt, maxdom, inest, parid,         &
-                          dx_coarse, restart, obs_twindo, itimestep,   &
+                          dx_coarse, restart, obs_twindo_cg,           &
+                          obs_twindo, itimestep,                       &
                           true_lat1, true_lat2, map_proj,              &
                           e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,    &
 #if ( EM_CORE == 1 )
                           fdob,                                        &
 #endif
+                          iprt,                                        &
                           ids,ide, jds,jde, kds,kde,                   &
                           ims,ime, jms,jme, kms,kme,                   &
                           its,ite, jts,jte, kts,kte)     
@@ -69,7 +71,8 @@ CONTAINS
   INTEGER, intent(in)  :: parid(maxdom)
   REAL    ,intent(in)  :: dx_coarse    ! coarse-domain grid cell-size (km)
   LOGICAL, intent(in)  :: restart
-  REAL, intent(inout)  :: obs_twindo
+  REAL, intent(in)     :: obs_twindo_cg  ! time window on coarse grid
+  REAL, intent(in)     :: obs_twindo
   INTEGER, intent(in)  :: itimestep
   REAL,    intent(in)  :: true_lat1    ! truelat1 for map projection
   REAL,    intent(in)  :: true_lat2    ! truelat2 for map projection
@@ -82,6 +85,7 @@ CONTAINS
 #if ( EM_CORE == 1 ) 
   TYPE(fdob_type), intent(inout)  :: fdob
 #endif
+  LOGICAL, intent(in)  :: iprt         ! Flag enabling printing warning messages
 
 ! Local variables
   logical            :: nudge_flag      ! nudging flag for this nest 
@@ -95,24 +99,32 @@ CONTAINS
   real               :: xn1
 
 #if ( EM_CORE == 1 ) 
-! This routine should only be called once. This is a check to make
-! certain that initialization only happens once.
-  if (fdob%domain_init .ne. 1) then
-!   Obs-nudging will be initialized on this call
-    fdob%domain_init = 1
-  else
-!   Obs-nudging has already been initialized, so return
-    return
-  endif
 
-! Set flag for nudging on pressure (not sigma) surfaces
+! Set flag for nudging on pressure (not sigma) surfaces.
   fdob%iwtsig = 0
 
 ! Set ending nudging date (used with dynamic ramp-down) to zero.
   fdob%datend = 0.
 
-! Convert twindo from minutes to hours.
-  obs_twindo = obs_twindo / 60.
+! Set time window.
+  fdob%window = obs_twindo
+
+  if(inest.eq.1) then
+    if(obs_twindo .eq. 0.) then
+      if(iprt) then
+        write(6,'(/a)') '*** WARNING: TWINDO=0 on the coarse domain.'
+        write(6,'(a/)') '*** Did you forget to set twindo in the fdda namelist?'
+      endif
+    endif
+  else        ! nest
+    if(obs_twindo .eq. 0.) then
+      fdob%window = obs_twindo_cg
+      if(iprt) then
+        write(6,'(/a,i2)') 'WARNING: TWINDO=0. for nest ',inest
+        write(6,'(a,f12.5,a/)') 'Default to coarse-grid value of ', obs_twindo_cg,' hrs'
+      endif
+    endif
+  endif
 
 ! Initialize flags.
 
@@ -200,10 +212,10 @@ CONTAINS
 SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                  uratx, vratx, tratx, nndgv,                    & 
                  nerrf, niobf, maxdom, levidn, parid, nstat,    &
-                 iswind,                                        &
+                 nstaw, iswind,                                 &
                  istemp, ismois, ispstr, rio, rjo, rko, varobs, &
                  errf, i_parent_start, j_parent_start,          &
-                 ktau, iratio, npfi, iprt,                      &
+                 ktau, iratio, npfi, nobs_prt, iprt,            &
                  ids,ide, jds,jde, kds,kde,                     &
                  ims,ime, jms,jme, kms,kme,                     &
                  its,ite, jts,jte, kts,kte  )
@@ -262,8 +274,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   INTEGER, INTENT(IN)  :: ktau
   INTEGER, INTENT(IN)  :: iratio                       ! Nest to parent gridsize ratio.
   INTEGER, INTENT(IN)  :: npfi                         ! Coarse-grid diagnostics freq.
+  INTEGER, INTENT(IN)  :: nobs_prt                     ! Number of current obs to print info.
   LOGICAL, INTENT(IN)  :: iprt                         ! Print flag
-  INTEGER, INTENT(IN)  :: nstat
+  INTEGER, INTENT(IN)  :: nstat                        ! # stations held for use
+  INTEGER, INTENT(IN)  :: nstaw                        ! # stations in current window
   INTEGER, intent(in)  :: iswind
   INTEGER, intent(in)  :: istemp
   INTEGER, intent(in)  :: ismois
@@ -312,10 +326,16 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! Define staggers for U, V, and T grids, referenced from non-staggered grid.
   real, parameter :: gridx_t = 0.5     ! Mass-point x stagger
   real, parameter :: gridy_t = 0.5     ! Mass-point y stagger
-  real, parameter :: gridx_u = 0.0     ! U-point x stagger
-  real, parameter :: gridy_u = 0.5     ! U-point y stagger
-  real, parameter :: gridx_v = 0.5     ! V-point x stagger
-  real, parameter :: gridy_v = 0.0     ! V-point y stagger
+!AJB test: SET U-NUDGE ON MASS-POINT
+! real, parameter :: gridx_u = 0.0     ! U-point x stagger
+! real, parameter :: gridy_u = 0.5     ! U-point y stagger
+  real, parameter :: gridx_u = 0.5     ! Mass-point
+  real, parameter :: gridy_u = 0.5     ! Mass-point
+!AJB test: SET V-NUDGE ON MASS-POINT
+! real, parameter :: gridx_v = 0.5     ! V-point x stagger
+! real, parameter :: gridy_v = 0.0     ! V-point y stagger
+  real, parameter :: gridx_v = 0.5     ! Mass-point
+  real, parameter :: gridy_v = 0.5     ! Mass-point
 
   real :: dummy = 99999.
 
@@ -330,6 +350,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   integer iobm,jobm,iobp,jobp,kobp,inpf,i,j
   integer i_start,i_end,j_start,j_end    ! loop ranges for uratio,vratio calc.
   integer k_start,k_end
+  integer ips                            ! For printing obs information
 
   real gridx,gridy,dxob,dyob,dzob,dxob_ms,dyob_ms
   real pob
@@ -355,7 +376,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
   if (iprt) then
     write(6,'(a,i5,a,i2,a,i5,a)') '++++++CALL ERROB AT KTAU = ', &
-            KTAU,' AND INEST = ',INEST,':  NSTA = ',NSTA,' ++++++'
+            KTAU,' AND INEST = ',INEST,':  NSTA = ',NSTAW,' ++++++'
   endif
 
   ERRF = 0.0    ! Zero out errf array
@@ -637,6 +658,19 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
       ENDDO      ! END FINE MESH LOOP OVER NSTA
     
     ENDIF      ! end if(inest.eq.1)
+
+! Print obs information.
+    if (iprt) then
+      if(ityp.eq.3) then   !mass-point case
+        ips = min(nstaw,nobs_prt)
+        if(ips.gt.0) then
+          write(6,*) '  OBS#    I       J       K'
+        endif
+        do n=1,ips
+          write(6,'(2x,i4,3f8.2)') n,ra(n),rb(n),rc(n)
+        enddo
+      endif
+    endif
 
 !   INITIALIZE THE ARRAY OF DIFFERENCES BETWEEN THE OBSERVATIONS
 !   AND THE LOCAL FORECAST VALUES TO ZERO.  FOR THE FINE MESH
@@ -1347,6 +1381,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 ! Local variables
   integer :: mm(maxdom)
+  integer :: kobs                  ! k-lev below obs (for obs straddling pblt)
   real :: ra(niobf)
   real :: rb(niobf)
   real :: psurf(niobf)
@@ -1974,9 +2009,23 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
  326          continue
 
 ! yliu: single-level upper-air data will act either above or below the PBL top
-!          komax=min0(kpblt(i), komax) 
-              if(komax.gt.kpblt(i)) komin=max0(kpblt(i), komin) 
-              if(komin.lt.kpblt(i)) komax=min0(kpblt(i), komax) 
+! ajb: Reset komin or komax. if kobs>kpblt, komin=kpblt+1, else komax=kpblt  
+
+              if( (kpblt(i).le.komax) .and. (kpblt(i).ge.komin) ) then
+                 kobs = 1
+                 OBS_K: do k = komin, komax
+                     if( pob .gt. .001*(pbase(i,k)+pp(i,k)) ) then
+                        kobs = k
+                        EXIT OBS_K
+                     endif
+                 enddo OBS_K
+
+                 if(kobs.gt.kpblt(i)) then
+                     komin=max0(kobs, komin)   ! kobs here is kpblt(i)+1
+                 else
+                     komax=min0(kpblt(i), komax)
+                 endif
+              endif
 ! yliu end
 !
 !           print *,'1 level, komin,komax=',komin,komax

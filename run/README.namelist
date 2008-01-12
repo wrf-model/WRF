@@ -218,6 +218,7 @@ Namelist variables for controling the automatic moving nest:
  max_vortex_speed                    = 40       ; used to compute the search radius for the new vortex position
  corral_dist                         = 8        ; how many coarse grid cells the moving nest is allowed to get
                                                   near the mother domain boundary
+ track_level                         = 50000    ; pressure value in Pa where the vortex is tracked
 
  tile_sz_x                           = 0,       ; number of points in tile x direction
  tile_sz_y                           = 0,       ; number of points in tile y direction
@@ -395,6 +396,10 @@ Namelist variables for controling the automatic moving nest:
  slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
  topo_shading                        = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
+ omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes)
+ oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
+ oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
+ isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new)
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
@@ -425,8 +430,6 @@ The following are for observation nudging:
                                                   in time_control namelist
  max_obs                             = 150000   ; max number of observations used on a domain during any 
                                                   given time window
- nobs_ndg_vars                       = 5,       ; number of nudging variables; do not change
- nobs_err_flds                       = 9,       ; number of error fields; do not change
  fdda_start                          = 0        ; obs nudging start time in minutes
  fdda_end                            = 180      ; obs nudging end time in minutes
  obs_nudge_wind (max_dom)            = 1        ; whether to nudge wind: (=0 off)
@@ -439,17 +442,19 @@ The following are for observation nudging:
  obs_coef_pstr                       = 0.       ; nudging coefficient for surface pressure, unit: s-1 (not used)
  obs_rinxy                           = 200.,    ; horizonal radius of influence in km
  obs_rinsig                          = 0.1,     ; vertical radius of influence in eta
- obs_twindo                          = 0.66667  ; half-period time window over which an observation 
+ obs_twindo (max_dom)                = 0.66667  ; half-period time window over which an observation 
                                                   will be used for nudging (hours)
  obs_npfi                            = 10,      ; freq in coarse grid timesteps for diag prints
- obs_ionf                            = 2        ; freq in coarse grid timesteps for obs input and err calc
+ obs_ionf (max_dom)                  = 2        ; freq in coarse grid timesteps for obs input and err calc
  obs_idynin                          = 0        ; for dynamic initialization using a ramp-down function to gradually
                                                   turn off the FDDA before the pure forecast (=1 on)
  obs_dtramp                          = 40       ; time period in minutes over which the nudging is ramped down 
                                                   from one to zero.
+ obs_nobs_prt (max_dom)              = 10,      ; Number of current obs to print grid coord. info.
  obs_ipf_in4dob                      = .true.   ; print obs input diagnostics (=.false. off)
  obs_ipf_errob                       = .true.   ; print obs error diagnostics (=.false. off)
  obs_ipf_nudob                       = .true.   ; print obs nudge diagnostics (=.false. off)
+ obs_ipf_init                        = .true.   ; Enable obs init warning messages
  /
 
 

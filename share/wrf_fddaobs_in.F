@@ -75,8 +75,9 @@
                   grid%obs_nudge_opt,  grid%obs_nudge_wind, grid%obs_nudge_temp, &
                   grid%obs_nudge_mois, grid%obs_nudge_pstr, grid%obs_coef_wind,  & 
                   grid%obs_coef_temp,  grid%obs_coef_mois,  grid%obs_coef_pstr,  &
-                  grid%obs_rinxy,      grid%obs_rinsig,     grid%obs_twindo,     &
-                  grid%obs_npfi,       grid%obs_ionf,       grid%obs_idynin,     &
+                  grid%obs_rinxy,      grid%obs_rinsig,     grid%fdob%window,    &
+                  grid%obs_npfi,       grid%obs_ionf,       grid%obs_nobs_prt,   &
+                  grid%obs_idynin,                                               &
                   grid%obs_dtramp,     grid%fdob,           grid%fdob%varobs,    &
                   grid%fdob%timeob,    grid%fdob%nlevs_ob,  grid%fdob%lev_in_ob, &
                   grid%fdob%plfo,      grid%fdob%elevob,    grid%fdob%rio,       &
@@ -104,7 +105,7 @@
                     ismois, ispstr, giv,                                 &
                     git, giq, gip,                                       &
                     rinxy, rinsig, twindo,                               &
-                    npfi, ionf, idynin,                                  &
+                    npfi, ionf, nobs_prt, idynin,                        &
                     dtramp, fdob, varobs,                                &
                     timeob, nlevs_ob, lev_in_ob,                         &
                     plfo, elevob, rio,                                   &
@@ -167,6 +168,7 @@
   REAL, intent(in)     :: twindo        ! (time window)/2 (min) for nudging
   INTEGER, intent(in)  :: npfi          ! coarse-grid time-step frequency for diagnostics
   INTEGER, intent(in)  :: ionf          ! coarse-grid time-step frequency for obs-nudging calcs
+  INTEGER, intent(in)  :: nobs_prt      ! Number of current obs to print grid information for.
   INTEGER, intent(in)  :: idynin        ! for dynamic initialization using a ramp-down function
   REAL, intent(in)     :: dtramp        ! time period in minutes for ramping
   TYPE(fdob_type), intent(inout)  :: fdob     ! derived data type for obs data
@@ -196,7 +198,10 @@
   LOGICAL, intent(in) :: iprt                 ! print flag
       
 !***  DECLARATIONS FOR IMPLICIT NONE                                    
-  integer :: n, nsta, ndum, nopen, nlast, nvol, idate, imm, iss
+  integer :: n, ndum, nopen, nlast, nvol, idate, imm, iss
+  integer :: nsta                             ! number of stations held in timeobs array 
+  integer :: nstaw                            ! # stations within the actual time window
+  integer :: ips                              ! # stations to report printout
   integer :: meas_count, imc, njend, njc, njcc, julob
   real    :: hourob, rjulob
   real    :: xhour, tback, tforwd, rjdate1, timanl1, rtimob
@@ -207,6 +212,7 @@
   real    :: ref_pres_data, ref_pres_qc, psfc_data, psfc_qc
   real    :: precip_data, precip_qc, tbar, twdop
   real*8  :: tempob
+  INTEGER, EXTERNAL :: nvals_le_limit         ! for finding #obs with timeobs <= tforwd
 
 ! Local variables
   character*14 date_char
@@ -237,7 +243,6 @@
 ! set number of obs=0 if at start or restart
   IF(KTAU.EQ.KTAUR)fdob%NSTAT=0
   NSTA=fdob%NSTAT
-  fdob%WINDOW=TWINDO
   XHOUR=(XTIME-DTMIN)/60.
   XHOUR=AMAX1(XHOUR,0.0)
 
@@ -300,8 +305,6 @@
       ENDDO
     ENDIF
   ENDIF
-
-! print *,'in4dob, after setting RIO, RJO: nsta = ',nsta
 
 ! FIND THE LAST OBS IN THE LIST
   NLAST=0
@@ -440,17 +443,6 @@
 
       rio(n)=ri
       rjo(n)=rj
-
-      if (iprt) THEN
-         if(n.le.3) then
-                     write(6,'(/,a,i5,a,f8.2,a,f8.2,a,f8.2,a,f8.2/)') &
-                                            ' OBS N = ',n,      &
-                                            ' RIO = ',rio(n),   &
-                                            ' RJO = ',rjo(n),   &
-                                            ' LAT = ',latitude, &
-                                            ' LON = ',longitude
-         endif
-      endif
 
       read(nvol,1021)id,namef
  1021 FORMAT(2x,2(a40,3x))
@@ -1082,7 +1074,6 @@
 ! REMOVE OLD OBS DENOTED BY 99999. AT THE FRONT OF TIMEOB ARRAY
     IF (iprt) THEN
       print *,'after 190 ndum=',ndum,nsta
-      print *,'timeob=',timeob(1),timeob(2)
     ENDIF
     NDUM=ABS(NDUM)
     NMOVE=NIOBF-NDUM
@@ -1128,8 +1119,25 @@
     NSTA=N
 !   nsta=n-1         ! yliu test
   ENDDO recalc
- 
-  IF (iprt) write(6,160) KTAU,XTIME,NSTA
+
+! Find the number of stations that are actually within the time window.
+  nstaw = nvals_le_limit(nsta, timeob, tforwd)
+
+! Print obs information.
+  if (iprt) then
+    ips = min(nstaw,nobs_prt)
+    if(ips.gt.0) then
+      write(6,'(/a,i4,a,i2)') 'PRINTING INFO FOR FIRST',ips,  &
+                              ' OBSERVATIONS FOR NEST ',inest
+      write(6,*) '  OBS#    I       J      LAT     LON    TIME(hrs)'
+    endif
+    do n=1,ips
+        write(6,'(2x,i4,2f8.2,2f8.2,3x,f8.5)')                     &
+                n,rio(n)-.5,rjo(n)-.5,latitude,longitude,timeob(n)
+    enddo
+  endif
+
+  IF (iprt) write(6,160) KTAU,XTIME,NSTAW
   IF(KTAU.EQ.KTAUR)THEN
     IF(nudge_opt.EQ.1)THEN
       TWDOP=TWINDO*60.
@@ -1164,6 +1172,7 @@
     IF (iprt) write(6,601) INEST,IONF
   ENDIF
   fdob%NSTAT=NSTA
+  fdob%NSTAW=NSTAW
 
 555   FORMAT(1X,'   ABOVE THE SURFACE LAYER, OBS NUDGING IS PERFORMED',  &
       ' ON PRESSURE LEVELS,')
@@ -1565,6 +1574,31 @@ SUBROUTINE llxy_lam (xlat,xlon,X,Y,xlatc, xlonc,xn,ds,       &
 
       RETURN
   END SUBROUTINE llxy
+
+  INTEGER FUNCTION nvals_le_limit(isize, values, limit)
+!------------------------------------------------------------------------------
+! PURPOSE: Return the number of values in a (real) non-decreasing array that
+!          are less than or equal to the specified upper limit.
+! NOTE: It is important that the array is non-decreasing!
+!      
+!------------------------------------------------------------------------------
+  IMPLICIT NONE
+
+  INTEGER, INTENT(IN) :: isize           ! Size of input array
+  REAL,    INTENT(IN) :: values(isize)   ! Input array of reals
+  REAL,    INTENT(IN) :: limit           ! Upper limit
+
+! Local variables
+  integer :: n
+
+! Search the array from largest to smallest values.
+   find_nvals: DO n = isize, 1, -1
+                 if(values(n).le.limit) EXIT find_nvals
+               ENDDO find_nvals
+  nvals_le_limit = n
+
+  RETURN
+  END FUNCTION nvals_le_limit
 
 #endif
 !-----------------------------------------------------------------------

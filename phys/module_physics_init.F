@@ -72,6 +72,7 @@ CONTAINS
                          TRL_URB3D, TBL_URB3D, TGL_URB3D,        & !Optional urban
                          SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,  & !Optional urban
                          TS_URB2D, FRC_URB2D, UTYPE_URB2D,       & !Optional urban
+                         TML,T0ML,HML,H0ML,HUML,HVML,            & !Optional oml
                          itimestep                               & !Optional obs fdda
 #if ( EM_CORE == 1 )
                          ,fdob                                   & !Optional obs fdda
@@ -205,6 +206,10 @@ CONTAINS
    REAL, DIMENSION(:), INTENT(INOUT)   :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL,  INTENT(IN)  :: allowed_to_read, moved
 
+! ocean mixed layer
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+             TML,T0ML,HML,H0ML,HUML,HVML
+
 !fdda
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
@@ -256,22 +261,26 @@ CONTAINS
 
    REAL    :: ALBLND,ZZLND,ZZWTR,THINLD,XMAVA,CEN_LAT,pptop 
    REAL,     DIMENSION( kms:kme )  :: sfull, shalf
-   REAL :: obs_twindo
+   REAL :: obs_twindo_cg, obs_twindo
    
    CHARACTER*4 :: MMINLU_loc
    CHARACTER*80 :: message
    INTEGER :: ISWATER
    INTEGER :: ucmcall
+   REAL    :: oml_hml0
    LOGICAL :: usemonalb
 
    INTEGER :: i, j, k, itf, jtf
 integer myproc
 
 !-----------------------------------------------------------------
+
    ucmcall=config_flags%ucmcall
    usemonalb=config_flags%usemonalb
 #if ( EM_CORE == 1 ) 
+   obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
+   oml_hml0=config_flags%oml_hml0
 #endif
 
 !-- should be from the namelist
@@ -419,6 +428,7 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 allowed_to_read ,                               &
+                start_of_simulation ,                           &
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
                 XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,    & !Optional urban
@@ -427,7 +437,9 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D, UCMCALL,      & !Optional urban
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte                    )
+                its, ite, jts, jte, kts, kte,                   &
+                oml_hml0,                                       & !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
@@ -477,7 +489,7 @@ integer myproc
                   model_config_rec%parent_id,                   &
                   model_config_rec%dx(1),                       &
                   config_flags%restart,                         &
-                  obs_twindo,                                   &
+                  obs_twindo_cg, obs_twindo,                    &
                   itimestep,                                    &
                   config_flags%truelat1,                        &
                   config_flags%truelat2,                        &
@@ -487,6 +499,7 @@ integer myproc
                   model_config_rec%s_we(1),                     &
                   model_config_rec%e_we(1),                     &
                   fdob,                                         &
+                  model_config_rec%obs_ipf_init,                &
                   ids, ide, jds, jde, kds, kde,                 &
                   ims, ime, jms, jme, kms, kme,                 &
                   its, ite, jts, jte, kts, kte                  )
@@ -966,6 +979,7 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 allowed_to_read,                                &
+                start_of_simulation,                            &
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -975,7 +989,9 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,UCMCALL,       & !Optional urban
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte                    )
+                its, ite, jts, jte, kts, kte,                   &
+                oml_hml0,                                       & !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE module_sf_slab
@@ -1089,6 +1105,11 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
 
+! Optional OML variables
+   REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+                                        TML,T0ML,HML,H0ML,HUML,HVML
+   REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
+   LOGICAL,  INTENT(IN) :: start_of_simulation
 
 !-- calculate pbl time step
 
@@ -1143,13 +1164,16 @@ integer myproc
    sfc_select: SELECT CASE(config_flags%sf_surface_physics)
 
       CASE (SLABSCHEME)
+
            CALL slabinit(TSK,TMN,                              &
                          TSLB,ZS,DZS,num_soil_layers,          & 
-                         restart,                              &
-                         allowed_to_read ,                     &
+                         allowed_to_read ,start_of_simulation ,&
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
-                         its, ite, jts, jte, kts, kte          )
+                         its, ite, jts, jte, kts, kte,         &
+                         oml_hml0,                             &
+                         tml, t0ml, hml, h0ml, huml, hvml      )
+
 #if (NMM_CORE == 1)
       CASE (NMMLSMSCHEME)
            CALL nmmlsminit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
@@ -1554,10 +1578,11 @@ integer myproc
 
 !-------------------------------------------------------------------
    SUBROUTINE fdob_init(obs_nudge_opt, maxdom, inest, parid,       &
-                        dx_coarse, restart, obs_twindo, itimestep, &
+                        dx_coarse, restart, obs_twindo_cg,         &
+                        obs_twindo, itimestep,                     &
                         true_lat1, true_lat2, map_proj,            &
-                        s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
-                        fdob,                                      &
+                        s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,        &
+                        fdob, ipf_init,                            &
                         ids, ide, jds, jde, kds, kde,              &
                         ims, ime, jms, jme, kms, kme,              &
                         its, ite, jts, jte, kts, kte               )
@@ -1578,7 +1603,8 @@ integer myproc
    INTEGER , INTENT(IN)    :: parid(maxdom)
    REAL    , INTENT(IN)    :: dx_coarse
    LOGICAL , INTENT(IN)    :: restart
-   REAL    , INTENT(INOUT) :: obs_twindo
+   REAL    , INTENT(IN)    :: obs_twindo_cg   ! twindo on course grid
+   REAL    , INTENT(IN)    :: obs_twindo
    INTEGER , INTENT(IN)    :: itimestep
    REAL    , INTENT(IN)    :: true_lat1
    REAL    , INTENT(IN)    :: true_lat2
@@ -1591,15 +1617,17 @@ integer myproc
    TYPE(fdob_type), INTENT(INOUT)  :: fdob
 
    INTEGER                 :: e_sn         ! ending   north-south grid index
+   LOGICAL                 :: ipf_init     ! print warnings detected at initialzn
 !--------------------------------------------------------------------
 !-- initialize fdda obs-nudging scheme
 
       e_sn = jde
       CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
-                        dx_coarse, restart, obs_twindo, itimestep, &
+                        dx_coarse, restart, obs_twindo_cg,         &
+                        obs_twindo, itimestep,                     &
                         true_lat1, true_lat2, map_proj,            &
                         e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
-                        fdob,                                      &  
+                        fdob, ipf_init,                            &
                         ids,ide, jds,jde, kds,kde,                 &  
                         ims,ime, jms,jme, kms,kme,                 &  
                         its,ite, jts,jte, kts,kte)

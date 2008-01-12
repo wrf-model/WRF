@@ -643,7 +643,7 @@ END SUBROUTINE calc_p_rho
 SUBROUTINE calc_coef_w( a,alpha,gamma,              &
                         mut, cqw,                   &
                         rdn, rdnw, c2a,             &
-                        dts, g, epssm,              &
+                        dts, g, epssm, top_lid,     &
                         ids,ide, jds,jde, kds,kde,  & ! domain dims
                         ims,ime, jms,jme, kms,kme,  & ! memory dims
                         its,ite, jts,jte, kts,kte  )  ! tile   dims
@@ -656,6 +656,7 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
   INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
   INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
 
+  LOGICAL,      INTENT(IN   )    :: top_lid
 
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN   ) :: c2a,  &
                                                                cqw
@@ -679,7 +680,7 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
   REAL  :: b, c
 
   INTEGER :: i, j, k, i_start, i_end, j_start, j_end, k_start, k_end
-  INTEGER :: ij, ijp, ijm
+  INTEGER :: ij, ijp, ijm, lid_flag
 
 !<DESCRIPTION>
 !
@@ -700,12 +701,15 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
       IF(j_end == jde) j_end = j_end - 1
       IF(i_end == ide) i_end = i_end - 1
 
+      lid_flag=1
+      IF(top_lid)lid_flag=0
+
      outer_j_loop:  DO j = j_start, j_end
 
         DO i = i_start, i_end
           cof(i)  = (.5*dts*g*(1.+epssm)/mut(i,j))**2
           a(i, 2 ,j) = 0.
-          a(i,kde,j) =-2.*cof(i)*rdnw(kde-1)**2*c2a(i,kde-1,j)
+          a(i,kde,j) =-2.*cof(i)*rdnw(kde-1)**2*c2a(i,kde-1,j)*lid_flag
           gamma(i,1 ,j) = 0.
         ENDDO
 
@@ -749,7 +753,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                         cf1, cf2, cf3, fnm, fnp,       &
                         emdiv,                         &
                         rdnw, config_flags, spec_zone, &
-                        non_hydrostatic,               &
+                        non_hydrostatic, top_lid,      &
                         ids, ide, jds, jde, kds, kde,  &
                         ims, ime, jms, jme, kms, kme,  &
                         its, ite, jts, jte, kts, kte  )
@@ -762,7 +766,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
       TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
-      LOGICAL, INTENT(IN   ) :: non_hydrostatic
+      LOGICAL, INTENT(IN   ) :: non_hydrostatic, top_lid
 
       INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
       INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
@@ -969,7 +973,13 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                       +cf3*(p(i,3,j)+p(i-1,3,j)) )
        dpn(i,kde) = 0.
      ENDDO
-
+     IF (top_lid) THEN
+       DO i = i_start_up, i_end_up
+         dpn(i,kde) =.5*( cf1*(p(i-1,kde-1,j)+p(i,kde-1,j))   &
+                         +cf2*(p(i-1,kde-2,j)+p(i,kde-2,j))   &
+                         +cf3*(p(i-1,kde-3,j)+p(i,kde-3,j))  )
+       ENDDO
+     ENDIF
 
      DO k = k_start+1, k_end
        DO i = i_start_up, i_end_up
@@ -1057,7 +1067,13 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                         +cf3*(p(i,3,j)+p(i,3,j-1)) )
          dpn(i,kde) = 0.
        ENDDO
-
+     IF (top_lid) THEN
+       DO i = i_start, i_end
+         dpn(i,kde) =.5*( cf1*(p(i,kde-1,j-1)+p(i,kde-1,j))   &
+                         +cf2*(p(i,kde-2,j-1)+p(i,kde-2,j))   &
+                         +cf3*(p(i,kde-3,j-1)+p(i,kde-3,j))  )
+       ENDDO
+     ENDIF
 
        DO k = k_start+1, k_end
          DO i = i_start, i_end
@@ -1380,7 +1396,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                       rdx, rdy, dts, t0, epssm,   &
                       dnw, fnm, fnp, rdnw, rdn,   &
                       cf1, cf2, cf3, msftx, msfty,&
-                      config_flags,               &
+                      config_flags, top_lid,      &
                       ids,ide, jds,jde, kds,kde,  & ! domain dims
                       ims,ime, jms,jme, kms,kme,  & ! memory dims
                       its,ite, jts,jte, kts,kte  )  ! tile   dims
@@ -1399,6 +1415,8 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
   INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
   INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
   INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+
+  LOGICAL,      INTENT(IN   )    :: top_lid
 
       REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), &
             INTENT(INOUT) ::                          &
@@ -1566,6 +1584,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     DO k=2,k_end+1
     DO i=i_start, i_end
       rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)*mut_inv(i)
+      if(top_lid .and. k.eq.k_end+1)rhs(i,k)=0.
     ENDDO
     ENDDO
 
@@ -1635,6 +1654,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
          -dts*g*(2.*rdnw(k-1)*                                      &
                    c2a(i,k-1,j)*alt(i,k-1,j)*t_2ave(i,k-1,j)        &
               + muave(i,j)) )
+       if(top_lid)w(i,k,j) = 0.
     ENDDO
 
     DO k=2,k_end+1

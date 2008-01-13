@@ -14,13 +14,13 @@ end
 
 SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags   &
 !
-#include "em_dummy_new_args.inc"
+#include "dummy_new_args.inc"
 !
                  )
          USE module_domain
          USE module_configure
          TYPE(domain), POINTER :: grid , ngrid
-#include <em_dummy_new_decl.inc>
+#include <dummy_new_decl.inc>
 
       INTEGER nlev
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,k
@@ -44,7 +44,7 @@ SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags   &
       nlev  = ckde - ckds + 1
 
       ! code here to interpolate the data into the nested domain
-#  include "em_nest_interpdown_interp.inc"
+#  include "nest_interpdown_interp.inc"
 
       RETURN
 

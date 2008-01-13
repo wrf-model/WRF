@@ -111,18 +111,20 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
   for ( pkg = Packages ; pkg != NULL ; pkg = pkg->next )
   {
     strcpy( assoc_namelist_var , pkg->pkg_assoc ) ;
+
     if ((c = index( assoc_namelist_var , '=' ))==NULL) continue ;
     *c = '\0' ; c += 2 ;
     strcpy( assoc_namelist_choice , c ) ;
     if ((rconfig=get_rconfig_entry ( assoc_namelist_var )) == NULL )
      { fprintf(stderr,
        "WARNING: There is no associated namelist variable %s\n",
-        assoc_namelist_var) ; return(1) ; }
+        assoc_namelist_var) ; continue ; }
     fprintf(fp,"  IF (model_config_rec%%%s%s==%s)THEN\n",
 		 assoc_namelist_var,
 		 (atoi(rconfig->nentries)!=1)?"(idomain)":"",  /* a little tricky; atoi of nentries will be '0' for a string like max_domains */
 		 assoc_namelist_choice) ;
     strcpy(scalars_str,pkg->pkg_4dscalars) ;
+
 
     if ((scalars = strtok_rentr(scalars_str,";", &pos1)) != NULL)
     {
@@ -160,9 +162,7 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
                 int tag ;
                 for ( tag = 1 ; tag <= p->ntl ; tag++ )
                   {
-                  if (!strncmp("dyn_",p->use,4)) {
-                    sprintf(fname,"%s_%s",p->use+4,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-                  } else if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
+                  if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
                     strcpy(fname,p->name) ;
                   } else {
                     strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;

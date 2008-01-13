@@ -23,7 +23,7 @@ int show_nodelist1( node_t * p , int indent ) ;
 #endif
 
 int gen_state_struct ( char * fname ) ;
-int gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_point , int mask , int layer ) ;
+int gen_decls ( FILE * fp ,  node_t * node , int sw_ranges, int sw_point , int mask , int layer ) ;
 int gen_state_subtypes ( char * fname ) ;
 int gen_state_subtypes1 ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask ) ;
 int print_warning( FILE * fp , char * fname ) ;
@@ -58,12 +58,6 @@ char * index_with_firstelem( char * pre , char * dref , int bdy , char * tmp , n
 char * declare_array_as_pointer( char * tmp, node_t * p ) ;
 char * field_type( char * tmp , node_t * p ) ;
 
-int init_core_table() ;
-int add_core_name ( char * name ) ;
-int get_num_cores() ;
-char * get_core_name ( char * name ) ;
-char * get_corename_i(int i) ;
-
 /* For typedef history -ajb */
 int init_typedef_history() ;
 int add_typedef_name ( char * name ) ;
@@ -72,8 +66,8 @@ char * get_typedef_name ( char * name ) ;
 char * get_typename_i(int i) ;
 
 int gen_alloc ( char * dirname ) ;
-int gen_alloc1 ( char * dirname , char * corename ) ;
-int gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node , int sw ) ;
+int gen_alloc1 ( char * dirname ) ;
+int gen_alloc2 ( FILE * fp , char * structname , node_t * node , int sw ) ;
 
 int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
@@ -84,12 +78,12 @@ int gen_scalar_indices1 ( FILE * fp, FILE * fp2 ) ;
 int gen_actual_args ( char * dirname ) ;
 int gen_dummy_args ( char * dirname ) ;
 int gen_dummy_decls ( char * dn ) ;
-int gen_args ( char * dirname , char * corename , int sw ) ;
-int gen_args1 ( FILE * fp , char * outstr, char * structname , char * corename , node_t * node , int *linelen , int sw , int deep ) ;
+int gen_args ( char * dirname , int sw ) ;
+int gen_args1 ( FILE * fp , char * outstr, char * structname , node_t * node , int *linelen , int sw , int deep ) ;
 
 int gen_scalar_derefs ( char * dirname ) ;
-int scalar_derefs ( char * dirname , char * corename ) ;
-int scalar_derefs1 ( FILE * fp , char * corename , node_t * node, int direction ) ;
+int scalar_derefs ( char * dirname ) ;
+int scalar_derefs1 ( FILE * fp , node_t * node, int direction ) ;
 
 int set_mark ( int val , node_t * lst ) ;
 int set_mark_4d ( int val , node_t * lst ) ;

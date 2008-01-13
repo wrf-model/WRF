@@ -1,15 +1,14 @@
  &time_control
- run_days                            = 1,
+ run_days = 0 ,
  run_hours                           = 0,   
  run_minutes                         = 0,
- run_seconds                         = 0,
+ run_seconds = 900 ,
  start_year                          = 2005,
  start_month                         = 01,
  start_day                           = 23,
  start_hour                          = 00,
  start_minute                        = 00,
  start_second                        = 00,
- tstart                              = 00,
  end_year                            = 2005,
  end_month                           = 01,
  end_day                             = 24,
@@ -17,27 +16,23 @@
  end_minute                          = 00,
  end_second                          = 00,
  interval_seconds                    = 10800,
- history_interval                    = 60
- frames_per_outfile                  = 1,
+ history_interval = 15 
+ frames_per_outfile = 200,
  restart                             = .false.,
  restart_interval                    = 6000,
- reset_simulation_start              = F,
- io_form_input                       = 2
  io_form_history                     = 2
  io_form_restart                     = 2
+ io_form_input                       = 2
  io_form_boundary                    = 2
- io_form_auxinput1                   = 2
- auxinput1_inname                    = "met_nmm.d<domain>.<date>"
- debug_level                         = 1 
+ debug_level                         = 1
+ auxinput1_inname                    = "wrf_real_input_nm.d<domain>.<date>"
  /
-
- &fdda
-/
+ auxinput1_inname                    = "met_nm.d<domain>.<date>"
 
  &domains
- time_step                           = 34,
- time_step_fract_num                 = 2,
- time_step_fract_den                 = 7,
+ time_step                           = 45,
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
  max_dom                             = 1,
  s_we                                = 1,
  e_we                                = 56,
@@ -45,61 +40,80 @@
  e_sn                                = 92,
  s_vert                              = 1,
  e_vert                              = 38,
- num_metgrid_levels                  = 40,
- dx                                  = .096,
- dy                                  = .095,
+ dx                                  = .097500,
+ dy                                  = .090600,
  grid_id                             = 1,
- p_top_requested                     = 5000.
- ptsgm                               = 42000.,
- eta_levels   =   1.000, 0.994, 0.983, 0.968, 0.950, 0.930, 0.908, 0.882, 0.853, 0.821,
-                  0.788, 0.752, 0.715, 0.677, 0.637, 0.597, 0.557, 0.517, 0.477,
-                  0.438, 0.401, 0.365, 0.332, 0.302, 0.274, 0.248, 0.224, 0.201,
-                  0.179, 0.158, 0.138, 0.118, 0.098, 0.078, 0.058, 0.038, 0.018, 0.000
  tile_sz_x		   	     = 0,
  tile_sz_y		   	     = 0,
- numtiles			     = 1
-/
+ numtiles			     = 1,
+ nproc_x = 4
+ nproc_y = 1
+ /
+
  &physics
  mp_physics                          = 5,
  ra_lw_physics                       = 99,
  ra_sw_physics                       = 99,
- nrads                               = 105, 
- nradl                               = 105,
+ radt                                = 10,
+ nrads                               = 200,
+ nradl                               = 200,
  co2tf                               = 1,
  sf_sfclay_physics                   = 2,
  sf_surface_physics                  = 99,
  bl_pbl_physics                      = 2,
- nphs                                = 6,
+ bldt                                = 3,
+ nphs                                = 10,
  cu_physics                          = 2,
- ncnvc                               = 6,
- tprec                               = 3,
- theat                               = 6,
- tclod                               = 6,
- trdsw                               = 6,
- trdlw                               = 6,
- tsrfc                               = 6,
- pcpflg                              = .false.,
+ cudt                                = 3,
+ ncnvc                               = 10,
  isfflx                              = 0,
  ifsnow                              = 0,
  icloud                              = 0,
  num_soil_layers                     = 4,
- mp_zero_out                         = 0
+ mp_zero_out                         = 0,
+ /
+
+ &fdda
  /
 
  &dynamics
- dyn_opt                             = 4
+ rk_ord                              = 3,
+ diff_opt                            = 0,
+ km_opt                              = 1,
+ damp_opt                            = 1,
+ zdamp                               = 5000.,
+ dampcoef                            = 0.01,
+ khdif                               = 0,
+ kvdif                               = 0,
+ mix_cr_len			     = 200.,
+ smdiv                               = 0.1,
+ emdiv                               = 0.01,
+ epssm                               = 0.1,
+ time_step_sound                     = 4,
  /
 
  &bdy_control
  spec_bdy_width                      = 1,
+ spec_zone                           = 1,
+ relax_zone                          = 4,
  specified                           = .true.,
- nested                              = .false.
+ periodic_x                          = .false.,
+ symmetric_xs                        = .false.,
+ symmetric_xe                        = .false.,
+ open_xs                             = .false.,
+ open_xe                             = .false.,
+ periodic_y                          = .false.,
+ symmetric_ys                        = .false.,
+ symmetric_ye                        = .false.,
+ open_ys                             = .false.,
+ open_ye                             = .false.,
+ nested                              = .false.,
  /
 
  &grib2
-/
+ /
 
  &namelist_quilt
  nio_tasks_per_group = 0,
- nio_groups = 1
+ nio_groups = 1,
  /

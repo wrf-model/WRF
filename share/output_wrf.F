@@ -31,7 +31,7 @@
     INTEGER filestate
     LOGICAL dryrun
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
-    INTEGER dyn_opt, diff_opt, km_opt, damp_opt,  &
+    INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics
     REAL    khdif, kvdif, swrad_scat
@@ -153,7 +153,6 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call nl_get_dyn_opt       ( 1, dyn_opt                       )
     call nl_get_diff_opt      ( 1, diff_opt                      )
     call nl_get_km_opt        ( 1, km_opt                        )
     call nl_get_damp_opt      ( 1, damp_opt                      )
@@ -305,26 +304,17 @@
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
-    SELECT CASE ( dyn_opt )
 #if (NMM_CORE == 1)
-        CASE ( dyn_nmm )
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'E' , ierr )
 #endif
 #if (EM_CORE == 1)
-        CASE ( dyn_em )
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'C' , ierr )
 #endif
 #if (COAMPS_CORE == 1 )
-        CASE ( dyn_coamps )
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'B' , ierr )
 #endif
-        CASE DEFAULT
-          ! we don't know; don't put anything in the file
-    END SELECT
 
 ! added these fields for W. Skamarock, 020402, JM
-    ibuf(1) = dyn_opt
-    CALL wrf_put_dom_ti_integer ( fid , 'DYN_OPT' ,  ibuf , 1 , ierr )
     ibuf(1) = diff_opt
     CALL wrf_put_dom_ti_integer ( fid , 'DIFF_OPT' ,  ibuf , 1 , ierr )
     ibuf(1) = km_opt

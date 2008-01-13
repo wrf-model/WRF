@@ -602,8 +602,6 @@ reg_parse( FILE * infile )
       strcpy(field_struct->use,"-") ;
       if ( strcmp( tokens[FIELD_USE], "-" ) ) /* that is, if not equal "-" */
         { strcpy( field_struct->use , tokens[FIELD_USE] ) ;
-          if ( ! defining_rconfig_field && ! field_struct->scalar_array_member && !strncmp( tokens[FIELD_USE], "dyn_", 4 ) )
-             add_core_name( tokens[FIELD_USE]+4 ) ;
         }
 
       /* specific settings for RCONFIG entries */

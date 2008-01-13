@@ -661,8 +661,8 @@ SUBROUTINE input_ext_chem_file (si_grid)
           ALLOCATE(  si_zsig(ims:ime,kms:kme,jms:jme) )
           ALLOCATE(  ch_zsig(ims:ime,kms:kme,jms:jme) )
 #if ( EM_CORE == 1 )
-          si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
-          ch_zsigf = ( chgrid%em_ph_1 +  chgrid%em_phb) / grav
+          si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
+          ch_zsigf = ( chgrid%ph_1 +  chgrid%phb) / grav
 #endif
 
 #if ( NMM_CORE == 1 )
@@ -674,13 +674,13 @@ SUBROUTINE input_ext_chem_file (si_grid)
        IF(chgrid%sigma.EQ. 1)THEN
          do j=jps,jpe
          do i=ips,ipe
-           pdsl(i,j)=chgrid%nmm_pd(i,j)
+           pdsl(i,j)=chgrid%pd(i,j)
          ENDDO
          ENDDO
        ELSE
          do j=jps,jpe
          do i=ips,ipe
-           pdsl(i,j)=chgrid%nmm_res(i,j)*chgrid%nmm_pd(i,j)
+           pdsl(i,j)=chgrid%res(i,j)*chgrid%pd(i,j)
          enddo
          enddO
        ENDIF
@@ -690,7 +690,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
       do j=jps,jpe
         do k=kps,kpe
         do i=ips,ipe
-          pint(i,k,j)=si_grid%nmm_eta1(k)*chgrid%nmm_pdtop+si_grid%nmm_eta2(k)*pdsl(i,j)+chgrid%nmm_pt
+          pint(i,k,j)=si_grid%eta1(k)*chgrid%pdtop+si_grid%eta2(k)*pdsl(i,j)+chgrid%pt
           ch_zsigf(i,k,j)=pint(i,k,j)
         ENDDO
         ENDDO
@@ -701,13 +701,13 @@ SUBROUTINE input_ext_chem_file (si_grid)
        IF(si_grid%sigma.EQ. 1)THEN
          do j=jps,jpe
          do i=ips,ipe
-           pdsl(i,j)=si_grid%nmm_pd(i,j)
+           pdsl(i,j)=si_grid%pd(i,j)
          ENDDO
          ENDDO
        ELSE
          do j=jps,jpe
          do i=ips,ipe
-           pdsl(i,j)=si_grid%nmm_res(i,j)*si_grid%nmm_pd(i,j)
+           pdsl(i,j)=si_grid%res(i,j)*si_grid%pd(i,j)
          enddo
          enddO
        ENDIF
@@ -718,9 +718,9 @@ SUBROUTINE input_ext_chem_file (si_grid)
       do j=jps,jpe
         do k=kps,kpe
         do i=ips,ipe
-          pint(i,k,j)=si_grid%nmm_eta1(k)*si_grid%nmm_pdtop+si_grid%nmm_eta2(k)*pdsl(i,j)+si_grid%nmm_pt
+          pint(i,k,j)=si_grid%eta1(k)*si_grid%pdtop+si_grid%eta2(k)*pdsl(i,j)+si_grid%pt
 !         if (i.EQ. ips .and. j .EQ. jps) then
-!         print *,k,pint(i,k,j),si_grid%nmm_eta1(k),si_grid%nmm_pdtop,si_grid%nmm_eta2(k),pdsl(i,j),si_grid%nmm_pt
+!         print *,k,pint(i,k,j),si_grid%eta1(k),si_grid%pdtop,si_grid%eta2(k),pdsl(i,j),si_grid%pt
 !         endif
           si_zsigf(i,k,j)=pint(i,k,j)
         ENDDO
@@ -773,7 +773,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
          IF( time_loop .EQ. num_steps(2) ) THEN
 
 !        ! input chemistry sigma levels
-!         ch_zsigf = ( chgrid%em_ph_1 +  chgrid%em_phb) / grav
+!         ch_zsigf = ( chgrid%ph_1 +  chgrid%phb) / grav
 !         do k=1,kde-1
 !           ch_zsig(:,k,:) = 0.5 * ( ch_zsigf(:,k,:) + ch_zsigf(:,k+1,:) ) 
 !         enddo
@@ -1042,7 +1042,7 @@ SUBROUTINE input_chem_profile (si_grid)
 
 #if ( ! EM_CORE == 0 )
      write(message,'(A)') 'WRF_EM_CORE  '
-     si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
+     si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
 #endif
 #if ( ! NMM_CORE == 0 )
    ! Get scalar grid point heights
@@ -1055,13 +1055,13 @@ SUBROUTINE input_chem_profile (si_grid)
        IF(si_grid%sigma.EQ. 1)THEN
          do j=jps,jpe
          do i=ips,ipe
-           pdsl(i,j)=si_grid%nmm_pd(i,j)
+           pdsl(i,j)=si_grid%pd(i,j)
          ENDDO
          ENDDO
        ELSE
          do j=jps,jpe
          do i=ips,ipe
-           pdsl(i,j)=si_grid%nmm_res(i,j)*si_grid%nmm_pd(i,j)
+           pdsl(i,j)=si_grid%res(i,j)*si_grid%pd(i,j)
          enddo
          enddO
        ENDIF
@@ -1075,24 +1075,24 @@ SUBROUTINE input_chem_profile (si_grid)
 !     print *,' jps=',jps,' jpe=',jpe
 !     print *,' kps=',kps,' kpe=',kpe
 !     print *,' sigma=',si_grid%sigma
-!     print *,' pdtop=',si_grid%nmm_pdtop,' pt=',si_grid%nmm_pt
+!     print *,' pdtop=',si_grid%pdtop,' pt=',si_grid%pt
 
       do j=jps,jpe
         do k=kps,kpe
         do i=ips,ipe
-          pint(i,k,j)=si_grid%nmm_eta1(k)*si_grid%nmm_pdtop+si_grid%nmm_eta2(k)*pdsl(i,j)+si_grid%nmm_pt
+          pint(i,k,j)=si_grid%eta1(k)*si_grid%pdtop+si_grid%eta2(k)*pdsl(i,j)+si_grid%pt
           si_zsigf(i,k,j)=pint(i,k,j)
         ENDDO
         ENDDO
       ENDDO
 !       do k=kps,kpe
-!          print *,k,pint(1,k,1),si_grid%nmm_eta1(k),si_grid%nmm_pdtop,si_grid%nmm_eta2(k),pdsl(1,1),si_grid%nmm_pt
+!          print *,k,pint(1,k,1),si_grid%eta1(k),si_grid%pdtop,si_grid%eta2(k),pdsl(1,1),si_grid%pt
 !       enddo
 !
 !  si_zsigf = si_grid%z
 #endif
 
-!  si_zsigf = (si_grid%em_ph_1 + si_grid%em_phb) / grav
+!  si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
 
    do k=1,kde-1
      si_zsig(:,k,:) = 0.5 * ( si_zsigf(:,k,:) + si_zsigf(:,k+1,:) ) 

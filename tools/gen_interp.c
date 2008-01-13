@@ -38,12 +38,11 @@ int contains_tok( char *s1, char *s2, char *delims )
 }
   
 
-char halo_define[4*4096], halo_use[NAMELEN], halo_id[NAMELEN], upper_case_corename[NAMELEN], x[NAMELEN] ;
+char halo_define[4*4096], halo_use[NAMELEN], halo_id[NAMELEN], x[NAMELEN] ;
 
 int 
 gen_nest_interp ( char * dirname )
 {
-  char * corename ;
   char * fnlst[] = { "nest_forcedown_interp.inc" , "nest_interpdown_interp.inc" , 
                      "nest_feedbackup_interp.inc", "nest_feedbackup_smooth.inc",
                      0L } ;
@@ -52,37 +51,25 @@ gen_nest_interp ( char * dirname )
   char ** fnp ; char * fn ;
   char fname[NAMELEN] ;
   FILE * fp ;
-  int i ;
 
   for ( fnp = fnlst , ipath = 0 ; *fnp ; fnp++ , ipath++ )
   {
     fn = *fnp ;
-    for ( i = 0 ; i < get_num_cores() ; i++ )
-    {
-      corename = get_corename_i(i) ;
-      if ( dirname == NULL || corename == NULL ) return(1) ;
-      if ( strlen(dirname) > 0 )
-       { sprintf(fname,"%s/%s_%s",dirname,corename,fn) ; }
-      else
-       { sprintf(fname,"%s_%s",corename,fn) ; }
-      if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
-      print_warning(fp,fname) ;
+    if ( dirname == NULL ) return(1) ;
+    if ( strlen(dirname) > 0 )
+     { sprintf(fname,"%s/%s",dirname,fn) ; }
+    else
+     { sprintf(fname,"%s",fn) ; }
+    if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
+    print_warning(fp,fname) ;
 
-strcpy( upper_case_corename , corename ) ;
-make_upper_case( upper_case_corename ) ;
-if      ( down_path[ipath] == INTERP_DOWN ) { sprintf(halo_id,"HALO_%s_INTERP_DOWN",upper_case_corename) ; }
-else if ( down_path[ipath] == FORCE_DOWN  ) { sprintf(halo_id,"HALO_%s_FORCE_DOWN",upper_case_corename) ; }
-else if ( down_path[ipath] == INTERP_UP   ) { sprintf(halo_id,"HALO_%s_INTERP_UP",upper_case_corename) ; }
-else if ( down_path[ipath] == SMOOTH_UP   ) { sprintf(halo_id,"HALO_%s_INTERP_SMOOTH",upper_case_corename) ; }
+if      ( down_path[ipath] == INTERP_DOWN ) { sprintf(halo_id,"HALO_INTERP_DOWN") ; }
+else if ( down_path[ipath] == FORCE_DOWN  ) { sprintf(halo_id,"HALO_FORCE_DOWN") ; }
+else if ( down_path[ipath] == INTERP_UP   ) { sprintf(halo_id,"HALO_INTERP_UP") ; }
+else if ( down_path[ipath] == SMOOTH_UP   ) { sprintf(halo_id,"HALO_INTERP_SMOOTH") ; }
 sprintf(halo_define,"80:") ;
-sprintf(halo_use,"dyn_%s",corename) ;
-
-#if 0
-      gen_nest_interp1 ( fp , Domain.fields, corename, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?1:2 ) ;
-#else
-      gen_nest_interp1 ( fp , Domain.fields, corename, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?2:2 ) ;
-#endif
-
+sprintf(halo_use,"") ;
+      gen_nest_interp1 ( fp , Domain.fields, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?2:2 ) ;
 {
   node_t * comm_struct ;
   comm_struct = new_node( HALO ) ;
@@ -93,15 +80,14 @@ sprintf(halo_use,"dyn_%s",corename) ;
 }
 
 
-      close_the_file(fp) ;
-    }
+    close_the_file(fp) ;
   }
   return(0) ; 
 }
 
 
 int
-gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname, int down_path , int use_nest_time_level )
+gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , int use_nest_time_level )
 {
   int i, ii ;
   char * fn = "nest_interp.inc" ;
@@ -120,7 +106,7 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
   char nddim2[3][2][NAMELEN] ;
   char nmdim2[3][2][NAMELEN] ;
   char npdim2[3][2][NAMELEN] ;
-  char vname[NAMELEN] ; char vname2[NAMELEN] ; char tag[NAMELEN], tag2[NAMELEN] ; char core[NAMELEN], core2[NAMELEN] ;
+  char vname[NAMELEN] ; char tag[NAMELEN], tag2[NAMELEN] ; 
   char fcn_name[NAMELEN] ;
   char xstag[NAMELEN], ystag[NAMELEN] ;
   char dexes[NAMELEN] ;
@@ -147,12 +133,6 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * corename , char * fourdname
 
     if ( io_mask & down_path )
     {
-      if ((!strncmp( p->use, "dyn_", 4) && !strcmp(p->use+4,corename)) || strncmp( p->use, "dyn_", 4))
-      {
-
-        if (!strncmp( p->use, "dyn_", 4))   sprintf(core,"%s_",corename,vname) ;
-        else                                sprintf(core,"") ;
-
         if ( p->ntl > 1 ) { sprintf(tag,"_2") ; sprintf(tag2,"_%d", use_nest_time_level) ; }
         else              { sprintf(tag,"")   ; sprintf(tag2,"")                         ; }
 
@@ -167,7 +147,6 @@ if ( ! contains_tok ( halo_define , x , ":," ) ) {
           strcpy(dexes,"grid%sm31,grid%sm32,grid%sm33") ;
           sprintf(vname,"%s%s(%s,itrace)",p->name,tag,dexes) ;
           strcpy(ndexes,"ngrid%sm31,ngrid%sm32,ngrid%sm33") ;
-          sprintf(vname2,"%s%s%s(%s,itrace)",core,p->name,tag2,ndexes) ;
 
           if ( down_path & SMOOTH_UP ) {
             strcpy( fcn_name , p->members->next->smoothu_fcn_name ) ;
@@ -183,7 +162,6 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
  if ( halo_define[strlen(halo_define)-1] == ':' ) { strcat(halo_define,vname) ; }
  else                                             { strcat(halo_define,",") ; strcat(halo_define,vname) ; }
 }
-          sprintf(vname2,"%s%s%s",core,p->name,tag2) ;
           if ( down_path & SMOOTH_UP ) {
             strcpy( fcn_name , p->smoothu_fcn_name ) ;
 	  } else {
@@ -240,7 +218,7 @@ fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
 
-fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
+fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, vname ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
@@ -248,7 +226,7 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 pdim[0][0], pdim[0][1], pdim2[1][0], pdim2[1][1], pdim[2][0], pdim[2][1] ) ;
 if ( ! (down_path  & SMOOTH_UP)  ) {
-fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname2) ;
+fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname) ;
 }
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
                 nddim[0][0], nddim[0][1], nddim[1][0], nddim[1][1], nddim[2][0], nddim[2][1] ) ;
@@ -301,29 +279,27 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
              {
                if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
                {
-  	         if (!strncmp( nd->use, "dyn_", 4))   sprintf(core2,"%s_",corename,vname) ;
-	         else                                 sprintf(core2,"") ;
                  if ( nd->boundary_array ) {
                    if ( sw_new_bdys ) {
                      int bdy ;
                      for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
                        if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                         fprintf(fp,",%s%s,ngrid%%%s%s%s  &\n", nd->name, bdy_indicator(bdy), core2, nd->name, bdy_indicator(bdy) ) ;
+                         fprintf(fp,",%s%s,ngrid%%%s%s  &\n", nd->name, bdy_indicator(bdy), nd->name, bdy_indicator(bdy) ) ;
                        } else {
                          char c ;
                          c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
-                         fprintf(fp,",%s%s%s(c%cms,1,1,itrace),ngrid%%%s%s%s(n%cms,1,1,itrace)  &\n", core2, nd->name, bdy_indicator(bdy), c, core2, nd->name, bdy_indicator(bdy), c  ) ;
+                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", nd->name, bdy_indicator(bdy), c, nd->name, bdy_indicator(bdy), c  ) ;
                        }
                      }
                    } else {
                      if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                       fprintf(fp,",%s,ngrid%%%s%s  &\n", nd->name, core2, nd->name ) ;
+                       fprintf(fp,",%s,ngrid%%%s  &\n", nd->name, nd->name ) ;
                      } else {
-                       fprintf(fp,",%s%s(1,1,1,1,itrace),ngrid%%%s%s(1,1,1,1,itrace)  &\n", core2, nd->name, core2, nd->name ) ;
+                       fprintf(fp,",%s(1,1,1,1,itrace),ngrid%%%s(1,1,1,1,itrace)  &\n", nd->name, nd->name ) ;
                      }
                    }
                  } else {
-                   fprintf(fp,",grid%%%s%s,ngrid%%%s%s  &\n", core2, nd->name, core2, nd->name ) ;
+                   fprintf(fp,",grid%%%s,ngrid%%%s  &\n",  nd->name,  nd->name ) ;
                  }
                }
                else
@@ -341,7 +317,6 @@ fprintf(fp,"                  ) \n") ;
 fprintf(fp,"ENDDO\n") ;
         }
 
-        }
      }
   }
 

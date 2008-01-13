@@ -39,40 +39,15 @@ CONTAINS
 
       !  Local data.
 
-      INTEGER :: dyn_opt 
       INTEGER :: idum1, idum2
 
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-
-#include "deref_kludge.h"
-
-      CALL nl_get_dyn_opt ( head_grid%id, dyn_opt )
-      
       CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
-
-      IF (      dyn_opt .eq. 1 &
-           .or. dyn_opt .eq. 2 &
-           .or. dyn_opt .eq. 3 &
-                                          ) THEN
-        CALL wrf_error_fatal ( "no RK version within dyn_nmm, dyn_opt wrong in namelist, wrf_error_fataling" )
-
-     ELSEIF ( dyn_opt .eq. 4 ) THEN
 
         CALL init_domain_nmm (grid &
 !
-#include <nmm_actual_args.inc>
+#include <actual_args.inc>
 !
       )
-
-      ELSE
-         WRITE(0,*)' init_domain: unknown or unimplemented dyn_opt = ',dyn_opt
-        CALL wrf_error_fatal ( "ERROR-dyn_opt-wrong-in-namelist" )
-      ENDIF
 
    END SUBROUTINE init_domain
 
@@ -80,7 +55,7 @@ CONTAINS
 !---------------------------------------------------------------------
    SUBROUTINE init_domain_nmm ( grid &
 !
-# include <nmm_dummy_args.inc>
+# include <dummy_args.inc>
 !
    )
 
@@ -92,7 +67,7 @@ CONTAINS
 !     TYPE (domain), POINTER :: grid
       TYPE (domain)          :: grid
 
-# include <nmm_dummy_decl.inc>
+# include <dummy_decl.inc>
 
       TYPE (grid_config_rec_type)              :: config_flags
 
@@ -204,23 +179,13 @@ CONTAINS
         REAL, PARAMETER:: TG0=258.16
         REAL, PARAMETER:: TGA=30.0
 
-
-#ifdef DEREF_KLUDGE
-!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-
-#include "deref_kludge.h"
-
         if (ALLOCATED(ADUM2D)) DEALLOCATE(ADUM2D)
         if (ALLOCATED(TG_ALT)) DEALLOCATE(TG_ALT)
 
 #define COPY_IN
-#include <nmm_scalar_derefs.inc>
+#include <scalar_derefs.inc>
 #ifdef DM_PARALLEL
-#    include <nmm_data_calls.inc>
+#    include <data_calls.inc>
 #endif
 
       SELECT CASE ( model_data_order )
@@ -1909,7 +1874,7 @@ CONTAINS
 !==================================================================================
 
 #define COPY_OUT
-#include <nmm_scalar_derefs.inc>
+#include <scalar_derefs.inc>
       RETURN
 
    END SUBROUTINE init_domain_nmm
@@ -3442,12 +3407,12 @@ CONTAINS
 
         do KS=1,nsmth
 
-         grid%nmm_ht_gc=h
+         grid%ht_gc=h
 #ifdef DM_PARALLEL
 # include "HALO_NMM_MG.inc"
 #endif
-         h=grid%nmm_ht_gc
-         h_old=grid%nmm_ht_gc
+         h=grid%ht_gc
+         h_old=grid%ht_gc
 
           do J=JTS,min(JTE,JDE-1)
            do I=ITS, min(ITE,IDE-1)
@@ -3483,7 +3448,7 @@ CONTAINS
 
         do J=JMS,JME
          do I=IMS,IME
-         grid%nmm_ht_gc(I,J)=h(I,J)
+         grid%ht_gc(I,J)=h(I,J)
          enddo 
         enddo
 #ifdef DM_PARALLEL
@@ -3491,7 +3456,7 @@ CONTAINS
 #endif
          do J=JMS,JME
          do I=IMS,IME
-         h(I,J)=grid%nmm_ht_gc(I,J)
+         h(I,J)=grid%ht_gc(I,J)
          enddo 
         enddo
 
@@ -3548,7 +3513,7 @@ CONTAINS
 
         do J=JMS,JME
          do I=IMS,IME
-         grid%nmm_ht_gc(I,J)=h(I,J)
+         grid%ht_gc(I,J)=h(I,J)
          enddo 
         enddo
 #ifdef DM_PARALLEL
@@ -3556,7 +3521,7 @@ CONTAINS
 #endif
         do J=JMS,JME
          do I=IMS,IME
-         h(I,J)=grid%nmm_ht_gc(I,J)
+         h(I,J)=grid%ht_gc(I,J)
         enddo 
         enddo
 

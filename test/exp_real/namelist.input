@@ -4,7 +4,6 @@
  time_step_fract_den			= 1,
  restart                             = .false.,
  max_dom                             = 1,
- dyn_opt                             = 4,
  rk_ord                              = 3,
  diff_opt                            = 0,
  km_opt                              = 1,

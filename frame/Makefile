@@ -59,7 +59,7 @@ module_state_description.F : ../Registry/$(REGISTRY)
 		  ( cd .. ; tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
 
 md_calls.inc : md_calls.m4
-	if [ $(M4) -eq NA ] ; then \
+	if [ "$(M4)" = NA ] ; then \
 	  /bin/cp ../arch/md_calls.inc . ; \
 	else \
 	  $(M4) md_calls.m4 > md_calls.inc ; \

@@ -827,7 +827,6 @@ rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .f
 
 # Dynamics
 # dynamics option (see package definitions, below)
-rconfig   integer dyn_opt                 namelist,dynamics	1             1       irh   "dyn_opt"               ""      ""
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -905,14 +904,6 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 
 #key      package       associated                package          associated 4d scalars
 #         name          namelist choice           state vars
-
-package   dyn_nodyn     dyn_opt==0                   -             -
-package   dyn_nmm       dyn_opt==4                   -             -
-
-
-#### 9. Edit the Registry file to set up '5' as the value of the
-**** namelist variable dyn_opt that means to select our exp dyncore.
-package   dyn_exp       dyn_opt==5                   -             -
 
 #package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv

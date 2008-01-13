@@ -63,15 +63,15 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
 
 ! 1D constants (Z)
 
-   nest%em_fnm    = parent%em_fnm
-   nest%em_fnp    = parent%em_fnp
-   nest%em_rdnw   = parent%em_rdnw
-   nest%em_rdn    = parent%em_rdn
-   nest%em_dnw    = parent%em_dnw
-   nest%em_dn     = parent%em_dn
-   nest%em_znu    = parent%em_znu
-   nest%em_znw    = parent%em_znw
-   nest%em_t_base = parent%em_t_base
+   nest%fnm    = parent%fnm
+   nest%fnp    = parent%fnp
+   nest%rdnw   = parent%rdnw
+   nest%rdn    = parent%rdn
+   nest%dnw    = parent%dnw
+   nest%dn     = parent%dn
+   nest%znu    = parent%znu
+   nest%znw    = parent%znw
+   nest%t_base = parent%t_base
    nest%u_base    = parent%u_base
    nest%v_base    = parent%v_base
    nest%qv_base   = parent%qv_base
@@ -269,7 +269,7 @@ END SUBROUTINE input_terrain_rsmas
 
 SUBROUTINE update_after_feedback_em ( grid  &
 !
-#include "em_dummy_new_args.inc"
+#include "dummy_new_args.inc"
 !
                  )
 !
@@ -296,18 +296,13 @@ SUBROUTINE update_after_feedback_em ( grid  &
    TYPE(domain) , TARGET         :: grid
 
    !  Definitions of dummy arguments
-#include <em_dummy_new_decl.inc>
+#include <dummy_new_decl.inc>
 
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
 
   CALL wrf_debug( 500, "entering update_after_feedback_em" )
-
-#ifdef DM_PARALLEL
-#    define REGISTER_I1
-#      include <em_data_calls.inc>
-#endif
 
 !  Obtain dimension information stored in the grid data structure.
   CALL get_ijk_from_grid (  grid ,                   &

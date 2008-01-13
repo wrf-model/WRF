@@ -21,7 +21,7 @@ gen_state_struct ( char * dirname )
   if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_decls ( fp , "", &Domain , COLON_RANGE , POINTERDECL , FIELD | RCONFIG | FOURD , DRIVER_LAYER ) ;
+  gen_decls ( fp , &Domain , COLON_RANGE , POINTERDECL , FIELD | RCONFIG | FOURD , DRIVER_LAYER ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
@@ -46,25 +46,16 @@ gen_state_subtypes ( char * dirname )
 int
 gen_dummy_decls ( char * dn )
 {
-  int i ;
   FILE * fp ;
   char fname[NAMELEN] ;
-  char corename[NAMELEN] ;
-  char * fn = "_dummy_decl.inc" ;
+  char * fn = "dummy_decl.inc" ;
 
   if ( dn == NULL ) return(1) ;
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-  {
-    strcpy( corename , get_corename_i(i) ) ;
-    if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s%s",dn,corename,fn) ; }
-    else                  { sprintf(fname,"%s%s",corename,fn) ; }
-    if ((fp = fopen( fname , "w" )) == NULL ) continue ;
+  if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s",dn,fn) ; }
+  else                  { sprintf(fname,"%s",fn) ; }
+  if ((fp = fopen( fname , "w" )) != NULL ) {
     print_warning(fp,fname) ;
-#if 0
-    gen_decls ( fp, corename, &Domain , GRIDREF , NOPOINTERDECL , FIELD | RCONFIG | FOURD , MEDIATION_LAYER ) ;
-#else
-    gen_decls ( fp, corename, &Domain , GRIDREF , NOPOINTERDECL , FIELD | FOURD , MEDIATION_LAYER ) ;
-#endif
+    gen_decls ( fp, &Domain , GRIDREF , NOPOINTERDECL , FIELD | FOURD , MEDIATION_LAYER ) ;
     fprintf(fp,"#undef COPY_IN\n") ;
     fprintf(fp,"#undef COPY_OUT\n") ;
     close_the_file( fp ) ;
@@ -75,21 +66,16 @@ gen_dummy_decls ( char * dn )
 int
 gen_dummy_decls_new ( char * dn )
 {
-  int i ;
   FILE * fp ;
   char fname[NAMELEN] ;
-  char corename[NAMELEN] ;
-  char * fn = "_dummy_new_decl.inc" ;
+  char * fn = "dummy_new_decl.inc" ;
 
   if ( dn == NULL ) return(1) ;
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-  {
-    strcpy( corename , get_corename_i(i) ) ;
-    if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s%s",dn,corename,fn) ; }
-    else                  { sprintf(fname,"%s%s",corename,fn) ; }
-    if ((fp = fopen( fname , "w" )) == NULL ) continue ;
+  if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s",dn,fn) ; }
+  else                  { sprintf(fname,"%s",fn) ; }
+  if ((fp = fopen( fname , "w" )) != NULL ) {
     print_warning(fp,fname) ;
-    gen_decls ( fp, corename, &Domain , GRIDREF , NOPOINTERDECL , FOURD | FIELD | BDYONLY , MEDIATION_LAYER ) ;
+    gen_decls ( fp, &Domain , GRIDREF , NOPOINTERDECL , FOURD | FIELD | BDYONLY , MEDIATION_LAYER ) ;
     fprintf(fp,"#undef COPY_IN\n") ;
     fprintf(fp,"#undef COPY_OUT\n") ;
     close_the_file( fp ) ;
@@ -101,41 +87,36 @@ gen_dummy_decls_new ( char * dn )
 int
 gen_i1_decls ( char * dn )
 {
-  int i ;
   FILE * fp ;
   char  fname[NAMELEN], post[NAMELEN] ;
-  char * fn = "_i1_decl.inc" ;
-  char corename[NAMELEN] ;
+  char * fn = "i1_decl.inc" ;
   char * dimspec ;
   node_t * p ; 
 
   if ( dn == NULL ) return(1) ;
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-  {
-    strcpy(corename,get_corename_i(i)) ;
-    if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s%s",dn,corename,fn) ; }
-    else                  { sprintf(fname,"%s%s",corename,fn) ; }
-    if ((fp = fopen( fname , "w" )) == NULL ) continue ;
+  if ( strlen(dn) > 0 ) { sprintf(fname,"%s/%s",dn,fn) ; }
+  else                  { sprintf(fname,"%s",fn) ; }
+  if ((fp = fopen( fname , "w" )) != NULL ) {
     print_warning(fp,fname) ;
-    gen_decls ( fp , corename, &Domain , GRIDREF , NOPOINTERDECL , I1 , MEDIATION_LAYER ) ;
+    gen_decls ( fp , &Domain , GRIDREF , NOPOINTERDECL , I1 , MEDIATION_LAYER ) ;
 
     /* now generate tendencies for 4d vars if specified  */
     for ( p = FourD ; p != NULL ; p = p->next )
     {
       if ( p->node_kind & FOURD && p->has_scalar_array_tendencies )
       {
-	sprintf(fname,"%s_tend",p->name) ;
+        sprintf(fname,"%s_tend",p->name) ;
         sprintf(post,",num_%s)",p->name) ;
-	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ;
+        dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ;
         /*          type dim pdecl   name */
         fprintf(fp, "%-10s%-20s%-10s :: %s\n",
                     field_type( t1, p ) ,
                     dimspec ,
                     "" ,
                     fname ) ;
-	sprintf(fname,"%s_old",p->name) ;
+        sprintf(fname,"%s_old",p->name) ;
         sprintf(post,",num_%s)",p->name) ;
-	dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ;
+        dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ;
         /*          type dim pdecl   name */
         fprintf(fp, "#ifndef NO_I1_OLD\n") ;
         fprintf(fp, "%-10s%-20s%-10s :: %s\n",
@@ -144,7 +125,6 @@ gen_i1_decls ( char * dn )
                     "" ,
                     fname ) ;
         fprintf(fp, "#endif\n") ;
-
       }
     }
     close_the_file( fp ) ;
@@ -153,7 +133,7 @@ gen_i1_decls ( char * dn )
 }
 
 int
-gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_point , int mask , int layer )
+gen_decls ( FILE * fp , node_t * node , int sw_ranges, int sw_point , int mask , int layer )
 {
   node_t * p ; 
   int tag, ipass ;
@@ -187,27 +167,17 @@ gen_decls ( FILE * fp , char * corename , node_t * node , int sw_ranges, int sw_
 
       for ( tag = 1 ; tag <= p->ntl ; tag++ ) 
       {
-
-        /* if this is a core-specific variable, if we are generating non-driver-layer              */
-        /* declarations, and if this not a variable for the core named in corename, short-circuit  */
-        if (!strncmp( p->use, "dyn_", 4 ) && layer != DRIVER_LAYER && strcmp( p->use+4, corename)) continue ;
-
-        /* if this is a core-specific variable, prepend the name of the core to                    */
-        /* the variable at the driver level                                                        */
-        if (!strncmp( p->use, "dyn_", 4 ) && layer == DRIVER_LAYER )
-          sprintf(fname,"%s_%s",p->use+4,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-        else
-          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+        strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
 
         if ( ! p->boundary_array || ! sw_new_bdys ) {
           switch ( sw_ranges )
           {
-	    case COLON_RANGE :
-	      dimspec=dimension_with_colons( ",DIMENSION(",t2,p,")" ) ; break ;
-	    case GRIDREF :
-	      dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
-	    case ARGADJ :
-	      dimspec=dimension_with_ranges( "",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
+            case COLON_RANGE :
+              dimspec=dimension_with_colons( ",DIMENSION(",t2,p,")" ) ; break ;
+            case GRIDREF :
+              dimspec=dimension_with_ranges( "grid%",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
+            case ARGADJ :
+              dimspec=dimension_with_ranges( "",",DIMENSION(",-1,t2,p,post,"" ) ; break ;
           }
         } else {
           dimspec="dummy" ; /* allow fall through on next tests. dimension with ranges will be called again anyway for bdy arrays */
@@ -287,7 +257,7 @@ gen_state_subtypes1 ( FILE * fp , node_t * node , int sw_ranges , int sw_point ,
           add_typedef_name ( tempname ) ;
           gen_state_subtypes1 ( fp , p->type , sw_ranges , sw_point , mask ) ;
           fprintf(fp,"TYPE %s\n",p->type->name) ;
-          gen_decls ( fp , "", p->type , sw_ranges , sw_point , mask , DRIVER_LAYER ) ;
+          gen_decls ( fp , p->type , sw_ranges , sw_point , mask , DRIVER_LAYER ) ;
           fprintf(fp,"END TYPE %s\n",p->type->name) ;
         }
       }

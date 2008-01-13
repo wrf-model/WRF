@@ -10,35 +10,30 @@
 int
 gen_alloc ( char * dirname )
 {
-  int i ;
-  
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-  {
-    gen_alloc1( dirname , get_corename_i(i) ) ; 
-    gen_ddt_write( dirname, get_corename_i(i) ) ;
-  }
+  gen_alloc1( dirname ) ; 
+  gen_ddt_write( dirname ) ;
   return(0) ;
 }
 
 int
-gen_alloc1 ( char * dirname , char * corename )
+gen_alloc1 ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_allocs.inc" ;
+  char * fn = "allocs.inc" ;
 
-  if ( dirname == NULL || corename == NULL ) return(1) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%s",dirname,corename,fn) ; }
-  else                       { sprintf(fname,"%s%s",corename,fn) ; }
+  if ( dirname == NULL ) return(1) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_alloc2( fp , "grid%", corename , &Domain, 1 ) ;
+  gen_alloc2( fp , "grid%", &Domain, 1 ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, int sw ) /* 1 = allocate, 2 = just count */
+gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
   int tag ;
@@ -52,12 +47,9 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
     if ( (p->ndims > 0 || p->boundary_array) && (  /* any array or a boundary array and...   */
-          (p->node_kind & FOURD) ||                /* scalar arrays or...                    */
-                                                   /* if it's a core specific field and we're doing that core or...  */
-          (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) ||
-                                                   /* it is not a core specific field        */
-          (p->node_kind & FIELD && ( strncmp("dyn_",p->use,4)))
-                         ))
+          (p->node_kind & FIELD) ||                /* scalar arrays                          */
+          (p->node_kind & FOURD) )                 /* scalar arrays                          */
+                         )
     {
       if ( p->type != NULL ) {
         tchar = '?' ;
@@ -73,11 +65,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
                                     sprintf(post_for_count, ")" ) ;   }
       for ( tag = 1 ; tag <= p->ntl ; tag++ )
       {
-        /* if this is a core-specific variable, prepend the name of the core to   */
-        /* the variable at the driver level                                       */
-        if (!strncmp("dyn_",p->use,4)&&!strcmp( corename , p->use+4 )) {
-          sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-        } else if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
+        if ( !strcmp ( p->use , "_4d_bdy_array_") ) {
           strcpy(fname,p->name) ;
         } else {
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
@@ -100,7 +88,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
          for ( bdy = 1 ; bdy <= 4 ; bdy++ )
          {
            if( p->type != NULL && tchar != '?' ) {
-	     fprintf(fp,"  num_bytes_allocated = num_bytes_allocated + (%s) * %cWORDSIZE\n",
+	     fprintf(fp,"  num_bytes_allocated = num_bytes_allocated + &\n(%s) * %cWORDSIZE\n",
                          array_size_expression("", "(", bdy, t2, p, post_for_count, "model_config_rec%"),
                          tchar) ;
            }
@@ -124,7 +112,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
          }
        } else {
          if( p->type != NULL && tchar != '?' ) {
-	   fprintf(fp,"  num_bytes_allocated = num_bytes_allocated + (%s) * %cWORDSIZE\n",
+	   fprintf(fp,"  num_bytes_allocated = num_bytes_allocated + &\n(%s) * %cWORDSIZE\n",
                    array_size_expression("", "(", -1, t2, p, post_for_count, "model_config_rec%"),
                    tchar) ;
          }
@@ -172,22 +160,13 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
     if ( p->type != NULL )
     {
       if ( p->type->type_type == SIMPLE && p->ndims == 0 &&
-               ((!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) || strncmp("dyn_",p->use,4)) &&
                (!strcmp(p->type->name,"integer") || 
                         !strcmp(p->type->name,"logical") || 
                         !strcmp(p->type->name,"real") ||
                         !strcmp(p->type->name,"doubleprecision"))
               )
       {
-          if (!strncmp( "dyn_" , p->use , 4 ))
-          {
-            if (!strcmp( corename , p->use+4 ))
-              sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-          }
-          else
-          {
-            strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-          }
+          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
           if ( sw == 1 ) {
             if( !strcmp( p->type->name , "real" ) || 
                 !strcmp( p->type->name , "doubleprecision" )  ) { /* if a real */
@@ -208,7 +187,7 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_alloc2(fp,x, corename, p->type, sw) ;
+        gen_alloc2(fp,x, p->type, sw) ;
       }
     }
   }
@@ -218,51 +197,46 @@ gen_alloc2 ( FILE * fp , char * structname , char * corename , node_t * node, in
 int
 gen_alloc_count ( char * dirname )
 {
-  int i ;
-
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-  {
-    gen_alloc_count1( dirname , get_corename_i(i) ) ;
-  }
+  gen_alloc_count1( dirname ) ;
   return(0) ;
 }
 
 int
-gen_alloc_count1 ( char * dirname , char * corename )
+gen_alloc_count1 ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_alloc_count.inc" ;
+  char * fn = "alloc_count.inc" ;
 
-  if ( dirname == NULL || corename == NULL ) return(1) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%s",dirname,corename,fn) ; }
-  else                       { sprintf(fname,"%s%s",corename,fn) ; }
+  if ( dirname == NULL ) return(1) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_alloc2( fp , "grid%", corename , &Domain, 0 ) ;
+  gen_alloc2( fp , "grid%", &Domain, 0 ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_ddt_write ( char * dirname , char * corename )
+gen_ddt_write ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_write_ddt.inc" ;
+  char * fn = "write_ddt.inc" ;
 
-  if ( dirname == NULL || corename == NULL ) return(1) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%s",dirname,corename,fn) ; }
-  else                       { sprintf(fname,"%s%s",corename,fn) ; }
+  if ( dirname == NULL ) return(1) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_ddt_write1( fp , "grid%", corename , &Domain ) ;
+  gen_ddt_write1( fp , "grid%", &Domain ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node )
+gen_ddt_write1 ( FILE * fp , char * structname , node_t * node )
 {
   node_t * p ;
   int tag ;
@@ -275,23 +249,15 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
     if ( (p->ndims > 1 && ! p->boundary_array) && (  /* any array or a boundary array and...   */
-          (p->node_kind & FOURD) ||                /* scalar arrays or...                    */
-                                                   /* if it's a core specific field and we're doing that core or...  */
-          (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) ||
-                                                   /* it is not a core specific field        */
-          (p->node_kind & FIELD && ( strncmp("dyn_",p->use,4)))
-                         ))
+          (p->node_kind & FIELD) ||                  /* scalar arrays or...                    */
+          (p->node_kind & FOURD) )                   /* scalar arrays or...                    */
+                         )
     {
       if ( p->node_kind & FOURD ) { sprintf(post,",num_%s)",field_name(t4,p,0)) ; }
       else                        { sprintf(post,")") ; }
       for ( tag = 1 ; tag <= p->ntl ; tag++ )
       {
-        /* if this is a core-specific variable, prepend the name of the core to   */
-        /* the variable at the driver level                                       */
-        if (!strncmp("dyn_",p->use,4)&&!strcmp( corename , p->use+4 ))
-          sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-        else
-          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+       strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
 
        if ( p->node_kind & FOURD ) {
          fprintf(fp, "write(0,*)'%s',%s%s(IDEBUG,KDEBUG,JDEBUG,2)\n",fname,structname,fname) ;
@@ -302,29 +268,6 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
 
       }
     }
-#if 0
-    if ( p->type != NULL )
-    {
-      if ( p->type->type_type == SIMPLE && p->ndims == 0 &&
-               ((!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) || strncmp("dyn_",p->use,4)) &&
-               (!strcmp(p->type->name,"integer") ||
-                        !strcmp(p->type->name,"real") ||
-                        !strcmp(p->type->name,"doubleprecision"))
-              )
-      {
-          if (!strncmp( "dyn_" , p->use , 4 ))
-          {
-            if (!strcmp( corename , p->use+4 ))
-              sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-          }
-          else
-          {
-            strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-          }
-          fprintf(fp, "write(iunit)%s%s\n",structname,fname) ;
-      }
-    }
-#endif
   }
   return(0) ;
 }
@@ -332,34 +275,29 @@ gen_ddt_write1 ( FILE * fp , char * structname , char * corename , node_t * node
 int
 gen_dealloc ( char * dirname )
 {
-  int i ;
-  
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-  {
-    gen_dealloc1( dirname , get_corename_i(i) ) ; 
-  }
+  gen_dealloc1( dirname ) ; 
   return(0) ;
 }
 
 int
-gen_dealloc1 ( char * dirname , char * corename )
+gen_dealloc1 ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_deallocs.inc" ;
+  char * fn = "deallocs.inc" ;
 
-  if ( dirname == NULL || corename == NULL ) return(1) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s%s",dirname,corename,fn) ; }
-  else                       { sprintf(fname,"%s%s",corename,fn) ; }
+  if ( dirname == NULL ) return(1) ;
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_dealloc2( fp , "grid%", corename , &Domain ) ;
+  gen_dealloc2( fp , "grid%", &Domain ) ;
   close_the_file( fp ) ;
   return(0) ;
 }
 
 int
-gen_dealloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
+gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
 {
   node_t * p ;
   int tag ;
@@ -372,23 +310,15 @@ gen_dealloc2 ( FILE * fp , char * structname , char * corename , node_t * node )
   for ( p = node->fields ; p != NULL ; p = p->next )
   {
     if ( (p->ndims > 0 || p->boundary_array) && (  /* any array or a boundary array and...   */
-          (p->node_kind & FOURD) ||                /* scalar arrays or...                    */
-                                                   /* if it's a core specific field and we're doing that core or...  */
-          (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) ||
-                                                   /* it is not a core specific field        */
-          (p->node_kind & FIELD && ( strncmp("dyn_",p->use,4)))
-                         ))
+          (p->node_kind & FIELD) ||                /* scalar arrays or                       */
+          (p->node_kind & FOURD) )                 /* scalar arrays or                       */
+                         )
     {
       if ( p->node_kind & FOURD ) { sprintf(post,",num_%s)",field_name(t4,p,0)) ; }
       else                        { sprintf(post,")") ; }
       for ( tag = 1 ; tag <= p->ntl ; tag++ )
       {
-        /* if this is a core-specific variable, prepend the name of the core to   */
-        /* the variable at the driver level                                       */
-        if (!strncmp("dyn_",p->use,4)&&!strcmp( corename , p->use+4 ))
-          sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-        else
-          strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+        strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
 
         if ( p->boundary && sw_new_bdys ) {
           { int bdy ; 
@@ -422,7 +352,6 @@ structname, fname, structname, fname ) ;
     if ( p->type != NULL )
     {
       if ( p->type->type_type == SIMPLE && p->ndims == 0 &&
-               ((!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) || strncmp("dyn_",p->use,4)) &&
                (!strcmp(p->type->name,"integer") ||
                         !strcmp(p->type->name,"real") ||
                         !strcmp(p->type->name,"doubleprecision"))
@@ -432,7 +361,7 @@ structname, fname, structname, fname ) ;
       else if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_dealloc2(fp,x, corename, p->type) ;
+        gen_dealloc2(fp,x, p->type) ;
       }
     }
   }

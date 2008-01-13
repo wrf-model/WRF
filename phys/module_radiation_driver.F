@@ -1188,7 +1188,7 @@ CONTAINS
        enddo
    !$OMP END PARALLEL DO
 
-#ifdef DM_PARALLEL
+#if defined( DM_PARALLEL ) && (EM_CORE == 1)
 #     include "HALO_TOPOSHAD.inc"
 #endif
      enddo

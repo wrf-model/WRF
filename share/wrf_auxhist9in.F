@@ -41,7 +41,6 @@ SUBROUTINE wrf_auxhist9in ( fid , grid , config_flags , switch , ierr )
     CHARACTER*19  new_date
     CHARACTER*24  base_date
     INTEGER idt
-    INTEGER itmp, dyn_opt
     INTEGER :: ide_compare , jde_compare , kde_compare
     ierr = 0
 
@@ -50,7 +49,6 @@ SUBROUTINE wrf_auxhist9in ( fid , grid , config_flags , switch , ierr )
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    CALL nl_get_dyn_opt ( 1 , dyn_opt )
 
 #include <wrf_auxhist9in.inc>
 

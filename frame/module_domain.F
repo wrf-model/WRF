@@ -1060,7 +1060,7 @@ CONTAINS
       LOGICAL , INTENT(IN)            :: inter_domain_in
 
       !  Local data.
-      INTEGER dyn_opt, idum1, idum2, spec_bdy_width
+      INTEGER idum1, idum2, spec_bdy_width
       INTEGER num_bytes_allocated
       REAL    initial_data_value
       CHARACTER (LEN=256) message
@@ -1092,60 +1092,26 @@ CONTAINS
       setinitval = setinitval_in
 #endif
 
-      CALL nl_get_dyn_opt( 1, dyn_opt )
       CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )
 
       num_bytes_allocated = 0 
 
-
-      IF ( dyn_opt == DYN_NODYN ) THEN
-
-        IF ( grid%id .EQ. 1 ) &
-          CALL wrf_message ( 'DYNAMICS OPTION: dynamics disabled ' )
-
-#if ALLOW_NODYN
-# include <nodyn_allocs.inc>
-#else
-        WRITE(message,*)                                        &
-          "To run the the NODYN option, recompile ",            &
-          "-DALLOW_NODYN in ARCHFLAGS settings of configure.wrf"
-        CALL wrf_error_fatal( message )
-#endif
-
 #if (EM_CORE == 1)
-      ELSE IF ( dyn_opt == DYN_EM ) THEN
-        IF ( grid%id .EQ. 1 ) CALL wrf_message ( &
+      IF ( grid%id .EQ. 1 ) CALL wrf_message ( &
           'DYNAMICS OPTION: Eulerian Mass Coordinate ')
-# include <em_allocs.inc>
 #endif
 #if (NMM_CORE == 1)
-      ELSE IF ( dyn_opt == DYN_NMM ) THEN
-        IF ( grid%id .EQ. 1 ) &
+      IF ( grid%id .EQ. 1 ) &
           CALL wrf_message ( 'DYNAMICS OPTION: nmm dyncore' )
-# include <nmm_allocs.inc>
 #endif
 #if (COAMPS_CORE == 1)
-      ELSE IF ( dyn_opt == DYN_COAMPS ) THEN
         IF ( grid%id .EQ. 1 ) &
           CALL wrf_message ( 'DYNAMICS OPTION: coamps dyncore' )
-# include <coamps_allocs.inc>
-#endif
-#if (EXP_CORE==1)
-      ELSE IF ( dyn_opt == DYN_EXP ) THEN
-        IF ( grid%id .EQ. 1 ) &
-          CALL wrf_message ( 'DYNAMICS OPTION: experimental dyncore' )
-# include <exp_allocs.inc>
 #endif
 
-      ELSE
-      
-        WRITE( wrf_err_message , * )&
-          'Invalid specification of dynamics: dyn_opt = ',dyn_opt
-        CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-      ENDIF
-
+# include <allocs.inc>
       WRITE(message,*)&
           'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
       CALL  wrf_debug( 1, message )
@@ -1272,33 +1238,9 @@ CONTAINS
 
       !  Local data.
 
-      INTEGER                             :: dyn_opt, ierr
+      INTEGER                             ::  ierr
 
-      CALL nl_get_dyn_opt( 1, dyn_opt )
-
-      IF      ( .FALSE. )           THEN
-
-#if (EM_CORE == 1)
-      ELSE IF ( dyn_opt == DYN_EM ) THEN
-# include <em_deallocs.inc>
-#endif
-#if (NMM_CORE == 1)
-      ELSE IF ( dyn_opt == DYN_NMM ) THEN
-# include <nmm_deallocs.inc>
-#endif
-#if (COAMPS_CORE == 1)
-      ELSE IF ( dyn_opt == DYN_COAMPS ) THEN
-# include <coamps_deallocs.inc>
-#endif
-#if (EXP_CORE==1)
-      ELSE IF ( dyn_opt == DYN_EXP ) THEN
-# include <exp_deallocs.inc>
-#endif
-      ELSE
-        WRITE( wrf_err_message , * )'dealloc_space_field: ', &
-          'Invalid specification of dynamics: dyn_opt = ',dyn_opt
-        CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-      ENDIF
+# include <deallocs.inc>
 
    END SUBROUTINE dealloc_space_field
 

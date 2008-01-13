@@ -91,7 +91,6 @@
  /
 
  &dynamics
- dyn_opt                             = 2,
  rk_ord                              = 3,
  w_damping                           = 0,
  diff_opt                            = 1,

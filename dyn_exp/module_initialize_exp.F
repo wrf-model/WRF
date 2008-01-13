@@ -127,7 +127,6 @@ CONTAINS
    !  Input data.
    TYPE (domain), POINTER :: grid 
    !  Local data.
-   INTEGER                :: dyn_opt 
    INTEGER :: idum1, idum2
 
 #ifdef DEREF_KLUDGE
@@ -139,20 +138,13 @@ CONTAINS
 
 #include "deref_kludge.h"
 
-   CALL nl_get_dyn_opt( 1, dyn_opt )
-   
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
-   IF ( dyn_opt .eq. DYN_EXP  ) THEN
      CALL init_domain_exp( grid &
 !
-#include <exp_actual_args.inc>
+#include <actual_args.inc>
 !
                         )
-   ELSE
-     WRITE(0,*)' init_domain: unknown or unimplemented dyn_opt = ',dyn_opt
-     CALL wrf_error_fatal ( ' init_domain: unknown or unimplemented dyn_opt ' )
-   ENDIF
 
    END SUBROUTINE init_domain
 

@@ -135,8 +135,6 @@ get_entry ( char * name , node_t * node )
         return(p) ;
       }
     }
-
-    
   }
   return(NULL) ;
 }
@@ -162,11 +160,6 @@ get_entry_r ( char * name , char * use , node_t * node )
 
   for ( p = node ; p != NULL ; p = p->next )
   {
-    if ( !strncmp( use, "dyn_", 4 ) && !strncmp( p->use, "dyn_", 4 ) && strcmp( p->use, use ) )
-    {
-      continue ;
-    }
-
     strcpy( tmp, name ) ;
 
     /* first check for exact match */

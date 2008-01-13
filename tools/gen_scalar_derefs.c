@@ -13,10 +13,7 @@
 int
 gen_scalar_derefs ( char * dirname )
 {
-  int i ;
-  
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-    scalar_derefs ( dirname , get_corename_i(i) ) ; 
+  scalar_derefs ( dirname  ) ; 
   return(0) ;
 }
 
@@ -24,20 +21,20 @@ gen_scalar_derefs ( char * dirname )
 #define DIR_COPY_IN  2
 
 int
-scalar_derefs ( char * dirname , char * corename )
+scalar_derefs ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "_scalar_derefs.inc" ;
+  char * fn = "scalar_derefs.inc" ;
   char * p ;
   int linelen ;
   char outstr[64*4096] ;
 
-  if ( dirname == NULL || corename == NULL ) return(1) ;
+  if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) 
-   { sprintf(fname,"%s/%s%s",dirname,corename, fn) ; }
+   { sprintf(fname,"%s/%s",dirname,fn) ; }
   else                       
-   { sprintf(fname,"%s%s",corename,fn) ; }
+   { sprintf(fname,"%s",fn) ; }
 
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
@@ -47,9 +44,9 @@ scalar_derefs ( char * dirname , char * corename )
     fprintf(fp,"#undef CPY\n") ;
     fprintf(fp,"#undef CPYC\n") ;
     fprintf(fp,"#ifdef COPY_OUT\n") ;
-    scalar_derefs1 ( fp , corename , &Domain, DIR_COPY_OUT ) ;
+    scalar_derefs1 ( fp , &Domain, DIR_COPY_OUT ) ;
     fprintf(fp,"#else\n") ;
-    scalar_derefs1 ( fp , corename , &Domain, DIR_COPY_IN ) ;
+    scalar_derefs1 ( fp , &Domain, DIR_COPY_IN ) ;
     fprintf(fp,"#endif\n") ;
   }
   fprintf(fp,"! END SCALAR DEREFS\n") ;
@@ -58,7 +55,7 @@ scalar_derefs ( char * dirname , char * corename )
 }
 
 int
-scalar_derefs1 ( FILE * fp , char * corename, node_t * node, int direction )
+scalar_derefs1 ( FILE * fp , node_t * node, int direction )
 {
   node_t * p ;
   int tag ;
@@ -74,31 +71,20 @@ scalar_derefs1 ( FILE * fp , char * corename, node_t * node, int direction )
     if ( p->ndims > 0 ) continue ; 
 
     if (                 (
-                                                   /* if it's a core specific field and we're doing that core or... */
-          (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)))
-                                                   /* it is not a core specific field and it is not a derived type -ajb */
-       || (p->node_kind & FIELD && (p->type->type_type != DERIVED) && ( strncmp("dyn_",p->use,4)))
-#if 0
-                                                   /* it is a state variable */
-       || (p->node_kind & RCONFIG )
-#endif
+          (p->node_kind & FIELD )
+                                                   /* it is not a derived type -ajb */
+       || (p->node_kind & FIELD && (p->type->type_type != DERIVED) )
                          )
        )
     {
       for ( tag = 1 ; tag <= p->ntl ; tag++ )
       {
-        char * x ;
-        /* if this is a core-specific variable, prepend the name of the core to */
-        /* the variable at the driver level */
-        if ((!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) ) { x = "C" ; } else { x = "" ; }
         strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
         /* generate deref */
         if ( direction == DIR_COPY_OUT ) {
-          if ( (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) ) { fprintf(fp, " grid%%%s_%s = %s\n",corename,fname,fname) ; }
-          else                                { fprintf(fp, " grid%%%s    = %s\n",fname,fname ) ; }
+          fprintf(fp, " grid%%%s    = %s\n",fname,fname ) ;
         } else {
-          if ( (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4)) ) { fprintf(fp, " %s = grid%%%s_%s\n",fname,corename,fname) ; }
-          else                                { fprintf(fp, " %s = grid%%%s\n",fname,fname ) ; }
+          fprintf(fp, " %s = grid%%%s\n",fname,fname ) ;
         }
       }
     }

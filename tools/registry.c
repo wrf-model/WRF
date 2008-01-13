@@ -117,7 +117,6 @@ main( int argc, char *argv[], char *env[] )
   init_parser() ;
   init_type_table() ;
   init_dim_table() ;
-  init_core_table() ;
 
   if ( !strcmp(fname_in,"") ) fp_in = stdin ;
   else

@@ -420,11 +420,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%em_mub_fine , nest%em_mub , &
+       CALL  store_terrain ( nest%mub_fine , nest%mub , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%em_phb_fine , nest%em_phb , &
+       CALL  store_terrain ( nest%phb_fine , nest%phb , &
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
@@ -445,11 +445,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  blend_terrain ( nest%em_mub_fine , nest%em_mub , &
+       CALL  blend_terrain ( nest%mub_fine , nest%mub , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  blend_terrain ( nest%em_phb_fine , nest%em_phb , &
+       CALL  blend_terrain ( nest%phb_fine , nest%phb , &
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
@@ -720,11 +720,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     KTS = parent%sp33
     KTE = parent%ep33
 
-    CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD,  &
-                             parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,      &
-                             parent%nmm_FIS,parent%nmm_QSH,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,   &
-                             parent%nmm_ETA1,parent%nmm_ETA2,                               &
-                             parent%nmm_DETA1,parent%nmm_DETA2,                             &
+    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
+                             parent%PINT,parent%T,parent%Q,parent%CWM,      &
+                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
+                             parent%ETA1,parent%ETA2,                               &
+                             parent%DETA1,parent%DETA2,                             &
                              IDS,IDE,JDS,JDE,KDS,KDE,                                       &
                              IMS,IME,JMS,JME,KMS,KME,                                       &
                              ITS,ITE,JTS,JTE,KTS,KTE                                        )
@@ -759,13 +759,13 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
 !   Initialize some more constants required especially for terrain adjustment processes
 
-    nest%nmm_PSTD=parent%nmm_PSTD
-    nest%nmm_KZMAX=KME
-    parent%nmm_KZMAX=KME  ! just for safety
+    nest%PSTD=parent%PSTD
+    nest%KZMAX=KME
+    parent%KZMAX=KME  ! just for safety
 
     DO J = JTS, MIN(JTE,JDE-1)
       DO I = ITS, MIN(ITE,IDE-1)
-       nest%nmm_fis(I,J)=nest%nmm_hres_fis(I,J)
+       nest%fis(I,J)=nest%hres_fis(I,J)
      ENDDO
     ENDDO
 
@@ -900,11 +900,11 @@ SUBROUTINE med_nest_force ( parent , nest )
     KTE = parent%ep33
 
 
-    CALL BASE_STATE_PARENT ( parent%nmm_Z3d,parent%nmm_Q3d,parent%nmm_T3d,parent%nmm_PSTD, &
-                             parent%nmm_PINT,parent%nmm_T,parent%nmm_Q,parent%nmm_CWM,     &
-                             parent%nmm_FIS,parent%nmm_QSH,parent%nmm_PD,parent%nmm_pdtop,parent%nmm_pt,  &
-                             parent%nmm_ETA1,parent%nmm_ETA2,                              &
-                             parent%nmm_DETA1,parent%nmm_DETA2,                            &
+    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD, &
+                             parent%PINT,parent%T,parent%Q,parent%CWM,     &
+                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,  &
+                             parent%ETA1,parent%ETA2,                              &
+                             parent%DETA1,parent%DETA2,                            &
                              IDS,IDE,JDS,JDE,KDS,KDE,                                      &
                              IMS,IME,JMS,JME,KMS,KME,                                      &
                              ITS,ITE,JTS,JTE,KTS,KTE                                       )

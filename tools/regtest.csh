@@ -1533,7 +1533,9 @@ endif
 #	And we can stick the input data where we want, the WRFV2 directory has been created.
 
 ( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
-( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
+#( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
+( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; \
+  sed '/dyn_opt/d' $thedatanmm/namelist.input.regtest >! ./namelist.input.regtest )
 #DAVE###################################################
 ( cd WRFV2/test/em_real ; ls -ls )
 ( cd WRFV2/test/nmm_real ; ls -ls )

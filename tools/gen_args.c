@@ -15,10 +15,7 @@
 int
 gen_actual_args ( char * dirname )
 {
-  int i ;
-  
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-    gen_args ( dirname , get_corename_i(i) , ACTUAL ) ; 
+  gen_args ( dirname , ACTUAL ) ; 
   return(0) ;
 }
 
@@ -26,20 +23,14 @@ gen_actual_args ( char * dirname )
 int
 gen_actual_args_new ( char * dirname )
 {
-  int i ;
-
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-    gen_args ( dirname , get_corename_i(i) , ACTUAL_NEW ) ;
+  gen_args ( dirname , ACTUAL_NEW ) ;
   return(0) ;
 }
 
 int
 gen_dummy_args ( char * dirname )
 {
-  int i ;
- 
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-    gen_args ( dirname , get_corename_i(i) , DUMMY ) ;
+  gen_args ( dirname , DUMMY ) ;
   return(0) ;
 }
 
@@ -47,15 +38,12 @@ gen_dummy_args ( char * dirname )
 int
 gen_dummy_args_new ( char * dirname )
 {
-  int i ;
-
-  for ( i = 0 ; i < get_num_cores() ; i++ )
-    gen_args ( dirname , get_corename_i(i) , DUMMY_NEW ) ;
+  gen_args ( dirname , DUMMY_NEW ) ;
   return(0) ;
 }
 
 int
-gen_args ( char * dirname , char * corename , int sw )
+gen_args ( char * dirname , int sw )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
@@ -64,19 +52,19 @@ gen_args ( char * dirname , char * corename , int sw )
   int linelen ;
   char outstr[64*4096] ;
 
-  if ( dirname == NULL || corename == NULL ) return(1) ;
+  if ( dirname == NULL ) return(1) ;
   if ( strlen(dirname) > 0 ) 
-   { sprintf(fname,"%s/%s%s%s%s",dirname,corename,
-             (sw==ACTUAL||sw==ACTUAL_NEW)?"_actual":"_dummy",(sw==ACTUAL_NEW||sw==DUMMY_NEW)?"_new":"",fn) ; }
+   { sprintf(fname,"%s/%s%s%s",dirname,
+             (sw==ACTUAL||sw==ACTUAL_NEW)?"actual":"dummy",(sw==ACTUAL_NEW||sw==DUMMY_NEW)?"_new":"",fn) ; }
   else                       
-   { sprintf(fname,"%s%s%s%s",corename,
-             (sw==ACTUAL||sw==ACTUAL_NEW)?"_actual":"_dummy",(sw==ACTUAL_NEW||sw==DUMMY_NEW)?"_new":"",fn) ; }
+   { sprintf(fname,"%s%s%s",
+             (sw==ACTUAL||sw==ACTUAL_NEW)?"actual":"dummy",(sw==ACTUAL_NEW||sw==DUMMY_NEW)?"_new":"",fn) ; }
 
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
   linelen = 0 ;
   strcpy(outstr,",") ;
-  gen_args1 ( fp , outstr, (sw==ACTUAL||sw==ACTUAL_NEW)?"grid%":"", corename ,
+  gen_args1 ( fp , outstr, (sw==ACTUAL||sw==ACTUAL_NEW)?"grid%":"",
               &Domain , &linelen , sw , 0 ) ;
   /* remove trailing comma */
   if ((p=rindex(outstr,','))!=NULL) *p = '\0' ;
@@ -86,7 +74,7 @@ gen_args ( char * dirname , char * corename , int sw )
 }
 
 int
-gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename , 
+gen_args1 ( FILE * fp , char * outstr , char * structname , 
             node_t * node , int *linelen , int sw , int deep )
 {
   node_t * p ;
@@ -109,15 +97,9 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
     if ( p->ndims == 0 && p->type->type_type != DERIVED && sw_limit_args ) continue ; 
 
     if (                 (
-          (p->node_kind & FOURD)                   /* scalar arrays or... */
-                                                   /* if it's a core specific field and we're doing that core or... */
-       || (p->node_kind & FIELD && (!strncmp("dyn_",p->use,4)&&!strcmp(corename,p->use+4))) 
-                                                   /* it is not a core specific field and it is not a derived type -ajb */
-       || (p->node_kind & FIELD && (p->type->type_type != DERIVED) && ( strncmp("dyn_",p->use,4))) 
-#if 0
-                                                   /* it is a state variable */
-       || (p->node_kind & RCONFIG )
-#endif
+          (p->node_kind & FOURD)                   /* scalar arrays or */
+                                                   /* it is not a derived type -ajb */
+       || (p->node_kind & FIELD && (p->type->type_type != DERIVED) ) 
                          )
        )
     {
@@ -132,10 +114,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
           if ( p->boundary_array && sw_new_bdys ) {
             int bdy ;
             for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
-              if (!strncmp("dyn_",p->use,4) && !strcmp( corename , p->use+4 ) && sw==ACTUAL)
-                sprintf(fname,"%s_%s",corename,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
-              else
-                strcpy(fname,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
+              strcpy(fname,field_name_bdy(t4,p,(p->ntl>1)?tag:0,bdy)) ;
 	      strcpy(indices,"") ;
               if ( sw_deref_kludge && sw==ACTUAL ) 
 	        sprintf(indices, "%s",index_with_firstelem("(","",bdy,t2,p,post)) ;
@@ -147,10 +126,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
 	      *linelen += lenarg ;
             }
           } else {
-            if (!strncmp("dyn_",p->use,4) && !strcmp( corename , p->use+4 ) && sw==ACTUAL)
-              sprintf(fname,"%s_%s",corename,field_name(t4,p,(p->ntl>1)?tag:0)) ;
-            else
-              strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
+            strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
             strcpy(indices,"") ;
             if ( sw_deref_kludge && sw==ACTUAL )
               sprintf(indices, "%s",index_with_firstelem("(","",-1,t2,p,post)) ;
@@ -171,7 +147,7 @@ gen_args1 ( FILE * fp , char * outstr , char * structname , char * corename ,
         if ( deep )
         {
           sprintf(x,"%s%s%%",structname,p->name ) ;
-          gen_args1(fp, outstr, (sw==ACTUAL)?x:"", corename, p->type,linelen,sw,deep) ;
+          gen_args1(fp, outstr, (sw==ACTUAL)?x:"", p->type,linelen,sw,deep) ;
         }
         else
         {

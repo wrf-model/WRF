@@ -64,7 +64,6 @@
  /
 
  &dynamics
- dyn_opt                             = 2,
  rk_ord                              = 3,
  diff_opt                            = 2,
  km_opt                              = 2,

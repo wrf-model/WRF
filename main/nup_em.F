@@ -455,14 +455,14 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
     CALL wrf_get_dom_ti_integer ( in_id , 'ISWATER' , iswater , 1 , icnt , ierr ) 
   ENDIF
 
-  parent_grid%em_fnm    = nested_grid%em_fnm
-  parent_grid%em_fnp    = nested_grid%em_fnp
-  parent_grid%em_rdnw   = nested_grid%em_rdnw
-  parent_grid%em_rdn    = nested_grid%em_rdn
-  parent_grid%em_dnw    = nested_grid%em_dnw
-  parent_grid%em_dn     = nested_grid%em_dn 
-  parent_grid%em_znu    = nested_grid%em_znu
-  parent_grid%em_znw    = nested_grid%em_znw
+  parent_grid%fnm    = nested_grid%fnm
+  parent_grid%fnp    = nested_grid%fnp
+  parent_grid%rdnw   = nested_grid%rdnw
+  parent_grid%rdn    = nested_grid%rdn
+  parent_grid%dnw    = nested_grid%dnw
+  parent_grid%dn     = nested_grid%dn 
+  parent_grid%znu    = nested_grid%znu
+  parent_grid%znw    = nested_grid%znw
 
   parent_grid%zs        = nested_grid%zs
   parent_grid%dzs       = nested_grid%dzs

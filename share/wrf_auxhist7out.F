@@ -27,8 +27,7 @@
     INTEGER , DIMENSION(3) :: patch_start , patch_end
     INTEGER i,j
     INTEGER julyr, julday, idt, iswater , map_proj
-    REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2
-    INTEGER dyn_opt, diff_opt, km_opt, damp_opt,  &
+    REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2, &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics
     REAL    khdif, kvdif
@@ -45,7 +44,6 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call nl_get_dyn_opt ( 1 , dyn_opt                       )
 
     ! note that the string current_date comes in through use association
     ! of module_io_wrf

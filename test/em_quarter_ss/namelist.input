@@ -1,7 +1,7 @@
  &time_control
- run_days                            = 0,
+ run_days = 00,
  run_hours                           = 0,
- run_minutes                         = 60,
+ run_minutes = 2,
  run_seconds                         = 0,
  start_year                          = 0001, 0001, 0001,
  start_month                         = 01,   01,   01,
@@ -15,8 +15,8 @@
  end_hour                            = 00,   00,   00,
  end_minute                          = 120,  120,  120,
  end_second                          = 00,   00,   00,
- history_interval                    = 30,   10,   10,
- frames_per_outfile                  = 1000, 1000, 1000,
+ history_interval = 2,   10,   10,
+ frames_per_outfile = 100, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 120,
  io_form_history                     = 2
@@ -51,7 +51,7 @@
  /
 
  &physics
- mp_physics                          = 1,     1,     1,
+ mp_physics                          = 2,     2,     2,
  ra_lw_physics                       = 0,     0,     0,
  ra_sw_physics                       = 0,     0,     0,
  radt                                = 30,    30,    30,
@@ -72,11 +72,10 @@
  /
 
  &dynamics
- dyn_opt                             = 2,
  rk_ord                              = 3,
  diff_opt                            = 2,
- km_opt                              = 2,
- damp_opt                            = 2,
+ km_opt                              = 3,
+ damp_opt                            = 1,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.003,  0.003,  0.003
  khdif                               = 500,    500,    500,
@@ -84,8 +83,8 @@
  smdiv                               = 0.1,    0.1,    0.1,
  emdiv                               = 0.01,   0.01,   0.01,
  epssm                               = 0.1,    0.1,    0.1
+ non_hydrostatic                     = .false., .false., .false.,
  mix_full_fields                     = .true., .true., .true.,
- non_hydrostatic                     = .true., .true., .true.,
  time_step_sound                     = 6,      6,      6,
  h_mom_adv_order                     = 5,      5,      5,
  v_mom_adv_order                     = 3,      3,      3,
@@ -98,16 +97,16 @@
  /
 
  &bdy_control
- periodic_x                          = .false.,.false.,.false.,
+ periodic_x                          = .true., .false.,.false.,
+ open_xs                             = .false.,.false.,.false.,
+ open_xe                             = .false.,.false.,.false.,
+ periodic_y                          = .true., .false.,.false.,
+ open_ys                             = .false.,.false.,.false.,
+ open_ye                             = .false.,.false.,.false.,
  symmetric_xs                        = .false.,.false.,.false.,
  symmetric_xe                        = .false.,.false.,.false.,
- open_xs                             = .true., .false.,.false.,
- open_xe                             = .true., .false.,.false.,
- periodic_y                          = .false.,.false.,.false.,
  symmetric_ys                        = .false.,.false.,.false.,
  symmetric_ye                        = .false.,.false.,.false.,
- open_ys                             = .true., .false.,.false.,
- open_ye                             = .true., .false.,.false.,
  nested                              = .false., .true., .true.,
  /
 

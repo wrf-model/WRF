@@ -1,6 +1,6 @@
 SUBROUTINE solve_em      ( grid , config_flags     &
 !
-#include <em_dummy_new_args.inc>
+#include <dummy_new_args.inc>
 !
                  )
 
@@ -12,7 +12,7 @@ SUBROUTINE solve_em      ( grid , config_flags     &
    TYPE(domain) , INTENT(INOUT)                  :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)      :: config_flags
 
-#include <em_dummy_new_decl.inc>
+#include <dummy_new_decl.inc>
 
 END SUBROUTINE solve_em
 

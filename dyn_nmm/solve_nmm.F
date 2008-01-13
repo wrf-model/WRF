@@ -9,7 +9,7 @@
 !
       SUBROUTINE SOLVE_NMM(GRID,CONFIG_FLAGS                            &
 !
-#include "nmm_dummy_args.inc"
+#include "dummy_args.inc"
 !
      &           )
 !-----------------------------------------------------------------------
@@ -55,7 +55,7 @@
 ! JM, 20050819
 !
 !----------------------------
-#include <nmm_dummy_decl.inc>
+#include <dummy_decl.inc>
 !----------------------------
 !
 !***  STRUCTURE THAT CONTAINS RUN-TIME CONFIGURATION (NAMELIST) DATA FOR DOMAIN
@@ -151,7 +151,7 @@
 !
 !-----------------------------------------------------------------------
 #define COPY_IN
-#include <nmm_scalar_derefs.inc>
+#include <scalar_derefs.inc>
 !-----------------------------------------------------------------------
 !
 ! TRICK PROBLEMATIC COMPILERS INTO NOT PERFORMING COPY-IN/COPY-OUT BY ADDING
@@ -169,10 +169,6 @@
 ! I1 DATA TO BE COMMUNICATED IN THIS ROUTINE IF NECESSARY.
 !
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-#    define REGISTER_I1
-#    include <nmm_data_calls.inc>
-#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1664,7 +1660,7 @@
 #endif
 !
 #define COPY_OUT
-#include <nmm_scalar_derefs.inc>
+#include <scalar_derefs.inc>
       Return
 !----------------------------------------------------------------------
 !**********************************************************************

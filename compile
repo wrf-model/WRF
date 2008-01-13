@@ -233,6 +233,7 @@ else
   echo "."
   echo " "
 
+  setenv PWD `pwd`
   # This incredible hackery due to OSF1 $(PWD) not changing during 
   # build via regtest.csh ...  
   # Note that $WRF_SRC_ROOT_DIR is only used by the OSF1 build.  

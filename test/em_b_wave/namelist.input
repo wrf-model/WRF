@@ -1,7 +1,7 @@
  &time_control
- run_days                            = 5,
+ run_days = 00,
  run_hours                           = 0,
- run_minutes                         = 0,
+ run_minutes = 100,
  run_seconds                         = 0,
  start_year                          = 0001, 0001, 0001,
  start_month                         = 01,   01,   01,
@@ -15,8 +15,8 @@
  end_hour                            = 00,   00,   00,
  end_minute                          = 00,   00,   00,
  end_second                          = 00,   00,   00,
- history_interval                    = 360,  360,  360,
- frames_per_outfile                  = 1000, 1000, 1000,
+ history_interval = 100,  360,  360,
+ frames_per_outfile = 100, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 3600,
  io_form_history                     = 2
@@ -51,7 +51,7 @@
  /
 
  &physics
- mp_physics                          = 0,     0,     0,
+ mp_physics                          = 2,     2,     2,
  ra_lw_physics                       = 0,     0,     0,
  ra_sw_physics                       = 0,     0,     0,
  radt                                = 30,    30,    30,
@@ -71,7 +71,6 @@
  /
 
  &dynamics
- dyn_opt                             = 2,
  rk_ord                              = 3,
  diff_opt                            = 1,
  km_opt                              = 1,
@@ -83,7 +82,7 @@
  smdiv                               = 0.1,    0.1,    0.1,
  emdiv                               = 0.01,   0.01,   0.01,
  epssm                               = 0.1,    0.1,    0.1
- non_hydrostatic                     = .true., .true., .true.,
+ non_hydrostatic                     = .false., .false., .false.,
  time_step_sound                     = 4,      4,      4,
  h_mom_adv_order                     = 5,      5,      5,
  v_mom_adv_order                     = 3,      3,      3,

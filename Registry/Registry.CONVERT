@@ -301,7 +301,6 @@ rconfig   integer co2tf                   namelist,physics	1            0       
 
 # Dynamics
 # dynamics option (see package definitions, below)
-rconfig   integer dyn_opt                 namelist,dynamics	1             2       irh   "dyn_opt"               ""      ""
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -492,9 +491,6 @@ state   real    lon_lr_d       -       dyn_em       -         -     -       "lon
 
 #key      package       associated                package          associated 4d scalars
 #         name          namelist choice           state vars
-
-package   dyn_nodyn    dyn_opt==0                   -             -
-package   dyn_em       dyn_opt==2                   -             -
 
 #package   passivec1     chem_opt==0                  -             
 package   passiveqv     mp_physics==0                -             moist:qv

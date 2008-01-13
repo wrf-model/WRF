@@ -441,53 +441,6 @@ add_warning ( char * fname )
   return(system(commline)) ;
 }
 
-static int NumCores ;
-static char dyncores[MAX_DYNCORES][NAMELEN] ;
-
-int
-init_core_table()
-{
-  NumCores = 0 ;
-  return(0) ;
-}
-
-int
-get_num_cores()
-{
-  return( NumCores ) ;
-}
-
-char *
-get_corename_i(int i)
-{
-  if ( i >= 0 && i < NumCores ) return( dyncores[i] ) ;
-  return(NULL) ;
-}
-
-int
-add_core_name ( char * name )
-{
-  if ( name == NULL ) return(1) ;
-  if (get_core_name ( name ) == NULL )
-  {
-    if ( NumCores >= MAX_DYNCORES ) return(1) ;
-    strcpy( dyncores[NumCores++] , name ) ;
-  }
-  return(0) ;
-}
-
-char *
-get_core_name ( char * name )
-{
-  int i ;
-  if ( name == NULL ) return(NULL) ;
-  for ( i = 0 ; i < NumCores ; i++ )
-  {
-    if ( !strcmp(name,dyncores[i]) ) return( dyncores[i] ) ; 
-  }
-  return(NULL) ;
-}
-
 /* DESTRUCTIVE */
 char *
 make_upper_case ( char * str )

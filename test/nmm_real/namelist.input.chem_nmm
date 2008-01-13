@@ -88,7 +88,6 @@
  /
 
  &dynamics
- dyn_opt                             = 4
  /
 
  &bdy_control

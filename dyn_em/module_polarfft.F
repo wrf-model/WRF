@@ -151,7 +151,7 @@ call wrf_get_myproc(myproc)
 ! U & V
    IF ( flag_uv .EQ. 1 ) THEN
      IF ( piggyback_mu ) THEN
-       grid%em_u_2(ips:ipe,kde,jps:jpe) = grid%em_mu_2(ips:ipe,jps:jpe) 
+       grid%u_2(ips:ipe,kde,jps:jpe) = grid%mu_2(ips:ipe,jps:jpe) 
      ENDIF
 #ifdef DM_PARALLEL
 # include "XPOSE_POLAR_FILTER_V_z2x.inc"
@@ -171,14 +171,14 @@ call wrf_get_myproc(myproc)
                                 ipsx, ipex, jpsx, jpex, kpsx, k_end )
 # include "XPOSE_POLAR_FILTER_U_x2z.inc"
 #else
-     CALL polar_filter_3d( grid%em_v_2, grid%clat, .false.,     &
+     CALL polar_filter_3d( grid%v_2, grid%clat, .false.,     &
                                 fft_filter_type, dclat,             &
                                 ids, ide, jds, jde, kds, kde,       &
                                 ims, ime, jms, jme, kms, kme,       &
                                 ips, ipe, jps, jpe, kps, MIN(kde-1,kpe) )
      k_end = MIN(kde-1,kpe)
      IF ( piggyback_mu ) k_end = MIN(kde,kpe)
-     CALL polar_filter_3d( grid%em_u_2, grid%clat, piggyback_mu,     &
+     CALL polar_filter_3d( grid%u_2, grid%clat, piggyback_mu,     &
                                 fft_filter_type, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,     &
                                 ims, ime, jms, jme, kms, kme,       &
@@ -186,7 +186,7 @@ call wrf_get_myproc(myproc)
 #endif
 
      IF ( piggyback_mu ) THEN
-       grid%em_mu_2(ips:ipe,jps:jpe) = grid%em_u_2(ips:ipe,kde,jps:jpe)
+       grid%mu_2(ips:ipe,jps:jpe) = grid%u_2(ips:ipe,kde,jps:jpe)
        piggyback_mu = .FALSE.
      ENDIF
    ENDIF
@@ -195,7 +195,7 @@ call wrf_get_myproc(myproc)
 ! T
    IF ( flag_t .EQ. 1 ) THEN
      IF ( piggyback_mu ) THEN
-       grid%em_t_2(ips:ipe,kde,jps:jpe) = grid%em_mu_2(ips:ipe,jps:jpe)
+       grid%t_2(ips:ipe,kde,jps:jpe) = grid%mu_2(ips:ipe,jps:jpe)
      ENDIF
 #ifdef DM_PARALLEL
 # include "XPOSE_POLAR_FILTER_T_z2x.inc"
@@ -210,14 +210,14 @@ call wrf_get_myproc(myproc)
 #else
      k_end = MIN(kde-1,kpe)
      IF ( piggyback_mu ) k_end = MIN(kde,kpe)
-     CALL polar_filter_3d( grid%em_t_2, grid%clat, piggyback_mu,     &
+     CALL polar_filter_3d( grid%t_2, grid%clat, piggyback_mu,     &
                                 fft_filter_type, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,     &
                                 ims, ime, jms, jme, kms, kme,       &
                                 ips, ipe, jps, jpe, kps, k_end )
 #endif
      IF ( piggyback_mu ) THEN
-       grid%em_mu_2(ips:ipe,jps:jpe) = grid%em_t_2(ips:ipe,kde,jps:jpe)
+       grid%mu_2(ips:ipe,jps:jpe) = grid%t_2(ips:ipe,kde,jps:jpe)
        piggyback_mu = .FALSE.
      ENDIF
    ENDIF
@@ -242,12 +242,12 @@ call wrf_get_myproc(myproc)
                                  ipsx, ipex, jpsx, jpex, kpsx, kpex )
 # include "XPOSE_POLAR_FILTER_PH_x2z.inc"
 #else
-      CALL polar_filter_3d( grid%em_w_2, grid%clat,  .false.,     &
+      CALL polar_filter_3d( grid%w_2, grid%clat,  .false.,     &
                                  fft_filter_type, 0.,                &
                                  ids, ide, jds, jde, kds, kde,       &
                                  ims, ime, jms, jme, kms, kme, &
                                  ips, ipe, jps, jpe, kps, kpe )
-      CALL polar_filter_3d( grid%em_ph_2, grid%clat, .false.,     &
+      CALL polar_filter_3d( grid%ph_2, grid%clat, .false.,     &
                                  fft_filter_type, 0.,                &
                                  ids, ide, jds, jde, kds, kde,       &
                                  ims, ime, jms, jme, kms, kme, &
@@ -268,7 +268,7 @@ call wrf_get_myproc(myproc)
                                  ipsx, ipex, jpsx, jpex, kpsx, kpex )
 # include "XPOSE_POLAR_FILTER_WW_x2z.inc"
 #else
-      CALL polar_filter_3d( grid%em_ww_m, grid%clat, .false.,     &
+      CALL polar_filter_3d( grid%ww_m, grid%clat, .false.,     &
                                  fft_filter_type, 0.,                &
                                  ids, ide, jds, jde, kds, kde,       &
                                  ims, ime, jms, jme, kms, kme, &
@@ -280,7 +280,7 @@ call wrf_get_myproc(myproc)
 ! RU AND RV
    IF ( flag_rurv .EQ. 1 ) THEN
      IF ( piggyback_mut ) THEN
-       grid%em_ru_m(ips:ipe,kde,jps:jpe) = grid%em_mut(ips:ipe,jps:jpe)
+       grid%ru_m(ips:ipe,kde,jps:jpe) = grid%mut(ips:ipe,jps:jpe)
      ENDIF
 #ifdef DM_PARALLEL
 # include "XPOSE_POLAR_FILTER_RV_z2x.inc"
@@ -300,21 +300,21 @@ call wrf_get_myproc(myproc)
                                 ipsx, ipex, jpsx, jpex, kpsx, k_end )
 #include "XPOSE_POLAR_FILTER_RU_x2z.inc"
 #else
-     CALL polar_filter_3d( grid%em_rv_m, grid%clat, .false.,     &
+     CALL polar_filter_3d( grid%rv_m, grid%clat, .false.,     &
                                 fft_filter_type, dclat,             &
                                 ids, ide, jds, jde, kds, kde,       &
                                 ims, ime, jms, jme, kms, kme, &
                                 ips, ipe, jps, jpe, kps, MIN(kde-1,kpe) )
      k_end = MIN(kde-1,kpe)
      IF ( piggyback_mut ) k_end = MIN(kde,kpe)
-     CALL polar_filter_3d( grid%em_ru_m, grid%clat, piggyback_mut,     &
+     CALL polar_filter_3d( grid%ru_m, grid%clat, piggyback_mut,     &
                                 fft_filter_type, 0.,                &
                                 ids, ide, jds, jde, kds, kde-1,       &
                                 ims, ime, jms, jme, kms, kme, &
                                 ips, ipe, jps, jpe, kps, k_end )
 #endif
      IF ( piggyback_mut ) THEN
-       grid%em_mut(ips:ipe,jps:jpe) = grid%em_ru_m(ips:ipe,kde,jps:jpe)
+       grid%mut(ips:ipe,jps:jpe) = grid%ru_m(ips:ipe,kde,jps:jpe)
        piggyback_mut = .FALSE.
      ENDIF
    ENDIF

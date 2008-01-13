@@ -12,13 +12,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine chem_driver ( grid , config_flags   &
  
-#if ( EM_CORE == 1 )
-#include "em_dummy_new_args.inc"
-#endif
-
-#if ( NMM_CORE == 1 )
-#include "nmm_dummy_new_args.inc"
-#endif
+#include "dummy_new_args.inc"
  
                  )
 !----------------------------------------------------------------------
@@ -59,16 +53,14 @@
    TYPE(domain) , TARGET          :: grid
    !
    !  Definitions of dummy arguments to solve
+# include <dummy_new_decl.inc>
 #if ( EM_CORE == 1 )
-#include <em_dummy_new_decl.inc>
-#define NO_I1_OLD
-!#include <em_i1_decl_new.inc>
+# define NO_I1_OLD
 #endif
 #if ( NMM_CORE == 1 )
-#include <nmm_dummy_new_decl.inc>
-#ifdef DM_PARALLEL
+# ifdef DM_PARALLEL
       INCLUDE "mpif.h"
-#endif
+# endif
 #endif
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -194,7 +186,7 @@
 !***  IN NMM SET CONTROLS FOR TILES TO PATCHES
 !
 !-----------------------------------------------------------------------
-      KTAU=GRID%NMM_NTSD
+      KTAU=GRID%NTSD
       IDF=IDE-1
       JDF=JDE-1
       KDF=KDE-2 !wig: do not do chem at the top level to mimic what used to be done (also prevents a solver failure at kde-1 for MADE/SORGAM)
@@ -324,49 +316,49 @@
   k_end           = min(kpe,kde-1)
 ! this should be in seperate routine!!!!!!
       GRID%SIGMA=1
-      grid%nmm_HYDRO=.FALSE.
+      grid%HYDRO=.FALSE.
       its=max(its,MYIS1)
       jts=max(jts,MYJS2)
       ite=min(ite,MYIE1)
       jte=min(jte,MYJE2)
       DO J=jts,jte
       DO I=its,ite
-        pbl_h(i,j)=grid%nmm_pblh(i,j)
+        pbl_h(i,j)=grid%pblh(i,j)
 !
 !       PDSL=PD(I,J)*RES(I,J)
 !-----------------------------------------------------------------------
 !*** LONG AND SHORTWAVE FLUX AT GROUND SURFACE
 !-----------------------------------------------------------------------
-        IF(grid%nmm_CZMEAN(I,J)>0.) THEN
-          FACTRS(I,J)=grid%nmm_CZEN(I,J)/grid%nmm_CZMEAN(I,J)
+        IF(grid%CZMEAN(I,J)>0.) THEN
+          FACTRS(I,J)=grid%CZEN(I,J)/grid%CZMEAN(I,J)
         ELSE
           FACTRS(I,J)=0.
         ENDIF
-        grid%GSW(I,J)=(grid%nmm_RSWIN(I,J)-grid%nmm_RSWOUT(I,J))*grid%nmm_HBM2(I,J)*FACTRS(I,J)
-        P8W(I,KTE+1,J)=grid%nmm_PT
-        grid%XLAT(I,J)=grid%nmm_GLAT(I,J)/DEGRAD
-        grid%XLONG(I,J)=grid%nmm_GLON(I,J)/DEGRAD
-        grid%XLAND(I,J)=grid%nmm_SM(I,J)+1.
-        grid%PSFC(i,j)=grid%nmm_PD(I,J)+grid%nmm_PDTOP+grid%nmm_PT
-        grid%UST(I,J)=grid%nmm_USTAR(I,J)
+        grid%GSW(I,J)=(grid%RSWIN(I,J)-grid%RSWOUT(I,J))*grid%HBM2(I,J)*FACTRS(I,J)
+        P8W(I,KTE+1,J)=grid%PT
+        grid%XLAT(I,J)=grid%GLAT(I,J)/DEGRAD
+        grid%XLONG(I,J)=grid%GLON(I,J)/DEGRAD
+        grid%XLAND(I,J)=grid%SM(I,J)+1.
+        grid%PSFC(i,j)=grid%PD(I,J)+grid%PDTOP+grid%PT
+        grid%UST(I,J)=grid%USTAR(I,J)
         REXNSFC(I,J)=(grid%PSFC(i,j)*1.E-5)**CAPA
-        TSFC(I,J)=grid%nmm_THS(I,J)*REXNSFC(I,J)
+        TSFC(I,J)=grid%THS(I,J)*REXNSFC(I,J)
         grid%TSK(I,J)=TSFC(I,J)
 
         T8W(I,1,J)=TSFC(I,J) 
-        P8W(I,KTS,J)=grid%nmm_ETA1(KTS)*grid%nmm_PDTOP+grid%nmm_ETA2(KTS)*grid%nmm_PDSL(i,j)+grid%nmm_PT
+        P8W(I,KTS,J)=grid%ETA1(KTS)*grid%PDTOP+grid%ETA2(KTS)*grid%PDSL(i,j)+grid%PT
 !       
 !-----------------------------------------------------------------------
 !***  FILL THE SINGLE-COLUMN INPUT
 !-----------------------------------------------------------------------
 !
-        z_at_w(i,kts,j)=grid%nmm_fis(i,j)/g
+        z_at_w(i,kts,j)=grid%fis(i,j)/g
         DO K=KTS,KTE+1
-           vvel(i,k,j)=grid%nmm_w(i,j,k)
-           DPL=grid%nmm_DETA1(K)*grid%nmm_PDTOP+grid%nmm_DETA2(K)*grid%nmm_PDSL(i,j)
-          QL(K)=AMAX1(grid%nmm_Q(I,J,K),EPSQ)
-          PLYR=grid%nmm_AETA1(K)*grid%nmm_PDTOP+grid%nmm_AETA2(K)*grid%nmm_PDSL(i,j)+grid%nmm_PT
-          TL(K)=grid%nmm_T(I,J,K)
+           vvel(i,k,j)=grid%w(i,j,k)
+           DPL=grid%DETA1(K)*grid%PDTOP+grid%DETA2(K)*grid%PDSL(i,j)
+          QL(K)=AMAX1(grid%Q(I,J,K),EPSQ)
+          PLYR=grid%AETA1(K)*grid%PDTOP+grid%AETA2(K)*grid%PDSL(i,j)+grid%PT
+          TL(K)=grid%T(I,J,K)
 !
 ! here rri is inverse density!
 !
@@ -374,7 +366,7 @@
           RRI(I,K,J)=1./RHO(i,k,j)
           T_PHY(I,K,J)=TL(K)
           moist_trans(I,K,J,P_QV)=QL(K)/(1.-QL(K))
-          P8W(I,K+1,J)=grid%nmm_ETA1(K+1)*grid%nmm_PDTOP+grid%nmm_ETA2(K+1)*grid%nmm_PDSL(i,j)+grid%nmm_PT
+          P8W(I,K+1,J)=grid%ETA1(K+1)*grid%PDTOP+grid%ETA2(K+1)*grid%PDSL(i,j)+grid%PT
           P_PHY(I,K,J)=PLYR
           DZ8W(I,K,J)=TL(K)*(P608*QL(K)+1.)*R_D                           &
      &                 *(P8W(I,K,J)-P8W(I,K+1,J))                       &
@@ -406,18 +398,18 @@
 !
         DO K=KTS,KTE
           DO I=MYIS_P1,MYIE_P1
-            WMSK=grid%nmm_VTM(I+grid%nmm_IHE(J),J,K)+grid%nmm_VTM(I+grid%nmm_IHW(J),J,K)                    &
-     &          +grid%nmm_VTM(I,J+1,K)+grid%nmm_VTM(I,J-1,K)
+            WMSK=grid%VTM(I+grid%IHE(J),J,K)+grid%VTM(I+grid%IHW(J),J,K)                    &
+     &          +grid%VTM(I,J+1,K)+grid%VTM(I,J-1,K)
             IF(WMSK>0.)THEN
               RWMSK=1./WMSK
-              U_PHY(I,K,J)=(grid%nmm_U(I+grid%nmm_IHE(J),J,K)*grid%nmm_VTM(I+grid%nmm_IHE(J),J,K)           &
-     &                     +grid%nmm_U(I+grid%nmm_IHW(J),J,K)*grid%nmm_VTM(I+grid%nmm_IHW(J),J,K)       &
-     &                     +grid%nmm_U(I,J+1,K)*grid%nmm_VTM(I,J+1,K)                 &
-     &                     +grid%nmm_U(I,J-1,K)*grid%nmm_VTM(I,J-1,K))*RWMSK
-              V_PHY(I,K,J)=(grid%nmm_V(I+grid%nmm_IHE(J),J,K)*grid%nmm_VTM(I+grid%nmm_IHE(J),J,K)           &
-     &                     +grid%nmm_V(I+grid%nmm_IHW(J),J,K)*grid%nmm_VTM(I+grid%nmm_IHW(J),J,K)       &
-     &                     +grid%nmm_V(I,J+1,K)*grid%nmm_VTM(I,J+1,K)                 &
-     &                     +grid%nmm_V(I,J-1,K)*grid%nmm_VTM(I,J-1,K))*RWMSK
+              U_PHY(I,K,J)=(grid%U(I+grid%IHE(J),J,K)*grid%VTM(I+grid%IHE(J),J,K)           &
+     &                     +grid%U(I+grid%IHW(J),J,K)*grid%VTM(I+grid%IHW(J),J,K)       &
+     &                     +grid%U(I,J+1,K)*grid%VTM(I,J+1,K)                 &
+     &                     +grid%U(I,J-1,K)*grid%VTM(I,J-1,K))*RWMSK
+              V_PHY(I,K,J)=(grid%V(I+grid%IHE(J),J,K)*grid%VTM(I+grid%IHE(J),J,K)           &
+     &                     +grid%V(I+grid%IHW(J),J,K)*grid%VTM(I+grid%IHW(J),J,K)       &
+     &                     +grid%V(I,J+1,K)*grid%VTM(I,J+1,K)                 &
+     &                     +grid%V(I,J-1,K)*grid%VTM(I,J-1,K))*RWMSK
             ELSE
               U_PHY(I,K,J)=0.
               V_PHY(I,K,J)=0.
@@ -455,15 +447,15 @@
       do j=jps,min(jde-1,jpe)
          do k=kps,kpe
             do i=ips,min(ide-1,ipe)
-              vvel(i,k,j)=grid%em_w_2(i,k,j)
-              zmid(i,k,j)=grid%em_z(i,k,j)
+              vvel(i,k,j)=grid%w_2(i,k,j)
+              zmid(i,k,j)=grid%z(i,k,j)
             enddo
          enddo
       enddo
       do j=jps,min(jde-1,jpe)
          do k=kps,min(kde-1,kpe)
             do i=ips,min(ide-1,ipe)
-              rri(i,k,j)=grid%em_alt(i,k,j)
+              rri(i,k,j)=grid%alt(i,k,j)
             enddo
          enddo
       enddo
@@ -569,12 +561,12 @@
 #if ( EM_CORE == 1 )
          CALL wrf_debug ( 15 , ' call chem_prep' )
          CALL chem_prep ( config_flags,                                               &
-                         grid%em_u_2, grid%em_v_2, grid%em_p, grid%em_pb,             &
-                         grid%em_alt,grid%em_ph_2, grid%em_phb, grid%em_t_2,          &
+                         grid%u_2, grid%v_2, grid%p, grid%pb,             &
+                         grid%alt,grid%ph_2, grid%phb, grid%t_2,          &
                          moist, num_3d_m, rho,                                        &
                          p_phy,  u_phy, v_phy,                                        &
-                         p8w, t_phy, t8w, grid%em_z, z_at_w,                          &
-                         dz8w, grid%em_fnm, grid%em_fnp,                              &
+                         p8w, t_phy, t8w, grid%z, z_at_w,                          &
+                         dz8w, grid%fnm, grid%fnp,                              &
                          ids, ide, jds, jde, kds, kde,                                &
                          ims, ime, jms, jme, kms, kme,                                &
                          its,ite,jts,jte,                                             &
@@ -631,7 +623,7 @@
               grid%ebio_no,                                                                &
          !shc stuff for MEGAN v2.04
 #if (NMM_CORE == 1)
-              grid%T2,grid%nmm_RSWIN,                                                         &
+              grid%T2,grid%RSWIN,                                                         &
 #endif
 #if (EM_CORE == 1 )
               grid%T2,grid%swdown,                                                         &

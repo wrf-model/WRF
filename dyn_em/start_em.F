@@ -2,7 +2,7 @@
 
    SUBROUTINE start_domain_em ( grid, allowed_to_read &
 ! Actual arguments generated from Registry
-# include "em_dummy_new_args.inc"
+# include "dummy_new_args.inc"
 !
 )
 
@@ -38,7 +38,7 @@
    LOGICAL , INTENT(IN)   :: allowed_to_read
 
    !  Definitions of dummy arguments to this routine (generated from Registry).
-# include "em_dummy_new_decl.inc"
+# include "dummy_new_decl.inc"
 
    !  Structure that contains run-time configuration (namelist) data for domain
    TYPE (grid_config_rec_type)              :: config_flags
@@ -82,12 +82,6 @@
    TYPE(WRFU_TimeInterval) :: stepTime
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
 
-! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
-! generated from the registry.  The definition of REGISTER_I1 allows
-! I1 data to be communicated in this routine if necessary.
-#ifdef DM_PARALLEL
-#    include "em_data_calls.inc"
-#endif
   CALL get_ijk_from_grid ( grid ,                               &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -376,22 +370,22 @@
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
 
             DO k = 1, kte-1
-               grid%em_pb(i,k,j) = grid%em_znu(k)*(p_surf - grid%p_top) + grid%p_top
-               grid%em_t_init(i,k,j) = (t00 + A*LOG(grid%em_pb(i,k,j)/p00))*(p00/grid%em_pb(i,k,j))**(r_d/cp) - t0
-               grid%em_alb(i,k,j) = (r_d/p1000mb)*(grid%em_t_init(i,k,j)+t0)*(grid%em_pb(i,k,j)/p1000mb)**cvpm
+               grid%pb(i,k,j) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+               grid%t_init(i,k,j) = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+               grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
 
             !  Base state mu is defined as base state surface pressure minus grid%p_top
 
-            grid%em_mub(i,j) = p_surf - grid%p_top
+            grid%mub(i,j) = p_surf - grid%p_top
 
             !  Integrate base geopotential, starting at terrain elevation.  This assures that
             !  the base state is in exact hydrostatic balance with respect to the model equations.
             !  This field is on full levels.
 
-            grid%em_phb(i,1,j) = grid%ht(i,j) * g
+            grid%phb(i,1,j) = grid%ht(i,j) * g
             DO k  = 2,kte
-               grid%em_phb(i,k,j) = grid%em_phb(i,k-1,j) - grid%em_dnw(k-1)*grid%em_mub(i,j)*grid%em_alb(i,k-1,j)
+               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
             END DO
          END DO
       END DO
@@ -411,7 +405,7 @@
        DO k = kts,kte-1
        DO i = its, min(ite,ide-1)
            IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-             grid%em_t_1(i,k,j)=grid%em_t_2(i,k,j)
+             grid%t_1(i,k,j)=grid%t_2(i,k,j)
            ENDIF
        ENDDO
        ENDDO
@@ -420,7 +414,7 @@
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
            IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-             grid%em_mu_1(i,j)=grid%em_mu_2(i,j)
+             grid%mu_1(i,j)=grid%mu_2(i,j)
            ENDIF
        ENDDO
        ENDDO
@@ -429,26 +423,26 @@
 !  reconstitute base-state fields
 
     IF(config_flags%max_dom .EQ. 1)THEN
-! with single domain, grid%em_t_init from wrfinput is OK to use
+! with single domain, grid%t_init from wrfinput is OK to use
      DO j = jts,min(jte,jde-1)
      DO k = kts,kte-1
      DO i = its, min(ite,ide-1)
        IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-         grid%em_pb(i,k,j) = grid%em_znu(k)*grid%em_mub(i,j)+grid%p_top
-         grid%em_alb(i,k,j) = (r_d/p1000mb)*(grid%em_t_init(i,k,j)+t0)*(grid%em_pb(i,k,j)/p1000mb)**cvpm
+         grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+         grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
        ENDIF
      ENDDO
      ENDDO
      ENDDO
     ELSE
-! with nests, grid%em_t_init generally needs recomputations (since it is not interpolated)
+! with nests, grid%t_init generally needs recomputations (since it is not interpolated)
      DO j = jts,min(jte,jde-1)
      DO k = kts,kte-1
      DO i = its, min(ite,ide-1)
        IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-         grid%em_pb(i,k,j) = grid%em_znu(k)*grid%em_mub(i,j)+grid%p_top
-         grid%em_alb(i,k,j) = -grid%em_rdnw(k)*(grid%em_phb(i,k+1,j)-grid%em_phb(i,k,j))/grid%em_mub(i,j)
-         grid%em_t_init(i,k,j) = grid%em_alb(i,k,j)*(p1000mb/r_d)/((grid%em_pb(i,k,j)/p1000mb)**cvpm) - t0
+         grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+         grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
+         grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
        ENDIF
      ENDDO
      ENDDO
@@ -463,10 +457,10 @@
            qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
-           grid%em_p(i,k,j) = - 0.5*(grid%em_mu_1(i,j)+qvf1*grid%em_mub(i,j))/grid%em_rdnw(k)/qvf2
+           grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_1(i,k,j)+t0)*qvf*(((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
-           grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf*(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
          ENDIF
        ENDDO
 
@@ -476,11 +470,11 @@
            qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
            qvf2 = 1./(1.+qvf1)
            qvf1 = qvf1*qvf2
-           grid%em_p(i,k,j) = grid%em_p(i,k+1,j) - (grid%em_mu_1(i,j) + qvf1*grid%em_mub(i,j))/qvf2/grid%em_rdn(k+1)
+           grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
            qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_1(i,k,j)+t0)*qvf* &
-                        (((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
-           grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
          ENDIF
        ENDDO
        ENDDO
@@ -493,13 +487,13 @@
        ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
-            grid%em_mu_2(i,j) = grid%em_mu_2(i,j) + grid%em_al(i,1,j) / ( grid%em_alt(i,1,j) * grid%em_alb(i,1,j) ) * &
+            grid%mu_2(i,j) = grid%mu_2(i,j) + grid%al(i,1,j) / ( grid%alt(i,1,j) * grid%alb(i,1,j) ) * &
                                     g * ( grid%ht(i,j) - grid%ht_fine(i,j) )
          END DO
        END DO
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
-          grid%em_mu_1(i,j)=grid%em_mu_2(i,j)
+          grid%mu_1(i,j)=grid%mu_2(i,j)
        ENDDO
        ENDDO
 
@@ -562,7 +556,7 @@ grid%dfi_stage = 1
 ! The tiling is to handle the fact that we may be masking off part of the computation.
    DO ij = 1, grid%num_tiles
 
-     CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%em_znw, grid%em_znu,   &
+     CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rthcuten, grid%rqvcuten, grid%rqrcuten,           &
                       grid%rqccuten, grid%rqscuten, grid%rqicuten,           &
@@ -656,33 +650,33 @@ grid%dfi_stage = 1
 !         *        * * *    * * * * *
 !                           * * * * *
 !
-!j  grid%em_u_1                          x
-!j  grid%em_u_2                          x
-!j  grid%em_v_1                          x
-!j  grid%em_v_2                          x
-!j  grid%em_w_1                          x
-!j  grid%em_w_2                          x
-!j  grid%em_t_1                          x
-!j  grid%em_t_2                          x
-!j grid%em_ph_1                          x
-!j grid%em_ph_2                          x
+!j  grid%u_1                          x
+!j  grid%u_2                          x
+!j  grid%v_1                          x
+!j  grid%v_2                          x
+!j  grid%w_1                          x
+!j  grid%w_2                          x
+!j  grid%t_1                          x
+!j  grid%t_2                          x
+!j grid%ph_1                          x
+!j grid%ph_2                          x
 !
-!j  grid%em_t_init                       x
+!j  grid%t_init                       x
 !
-!j  grid%em_phb   x
-!j  grid%em_ph0   x
-!j  grid%em_php   x
-!j   grid%em_pb   x
-!j   grid%em_al   x
-!j  grid%em_alt   x
-!j  grid%em_alb   x
+!j  grid%phb   x
+!j  grid%ph0   x
+!j  grid%php   x
+!j   grid%pb   x
+!j   grid%al   x
+!j  grid%alt   x
+!j  grid%alb   x
 !
 !  the following are 2D (xy) variables
 !
-!j grid%em_mu_1                          x
-!j grid%em_mu_2                          x
-!j grid%em_mub   x
-!j grid%em_mu0   x
+!j grid%mu_1                          x
+!j grid%mu_2                          x
+!j grid%mub   x
+!j grid%mu0   x
 !j grid%ht    x
 !j grid%msftx x
 !j grid%msfty x
@@ -715,23 +709,23 @@ grid%dfi_stage = 1
 #endif
 
 
-   CALL set_physical_bc3d( grid%em_u_1 , 'U' , config_flags ,                  &
+   CALL set_physical_bc3d( grid%u_1 , 'U' , config_flags ,                  &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_u_2 , 'U' , config_flags ,                  &
+   CALL set_physical_bc3d( grid%u_2 , 'U' , config_flags ,                  &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
 
-   CALL set_physical_bc3d( grid%em_v_1 , 'V' , config_flags ,                  &
+   CALL set_physical_bc3d( grid%v_1 , 'V' , config_flags ,                  &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_v_2 , 'V' , config_flags ,                  &
+   CALL set_physical_bc3d( grid%v_2 , 'V' , config_flags ,                  &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
@@ -746,15 +740,15 @@ grid%dfi_stage = 1
                            its , ite , jts , jte   )
 
    IF ( .not. config_flags%restart ) THEN 
-   CALL set_w_surface(  config_flags, grid%em_znw,                         &
-                        grid%em_w_1, grid%ht, grid%em_u_1, grid%em_v_1, grid%cf1, &
+   CALL set_w_surface(  config_flags, grid%znw,                         &
+                        grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
                         its, ite, jts, jte, kts, kte,                      &
                         ims, ime, jms, jme, kms, kme                      )
-   CALL set_w_surface(  config_flags, grid%em_znw,                         &
-                        grid%em_w_2, grid%ht, grid%em_u_2, grid%em_v_2, grid%cf1, &
+   CALL set_w_surface(  config_flags, grid%znw,                         &
+                        grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                         ids, ide, jds, jde, kds, kde,                      &
                         ips, ipe, jps, jpe, kps, kpe,                      &
@@ -764,100 +758,100 @@ grid%dfi_stage = 1
 
 ! finished setting kinematic condition for w at the surface
 
-   CALL set_physical_bc3d( grid%em_w_1 , 'W' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%w_1 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_w_2 , 'W' , config_flags ,                 &
-                         ids , ide , jds , jde , kds , kde ,        &
-                         ims , ime , jms , jme , kms , kme ,        &
-                         its , ite , jts , jte , kts , kte ,        &
-                         its , ite , jts , jte , kts , kte )
-
-   CALL set_physical_bc3d( grid%em_ph_1 , 'W' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%w_2 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
 
-   CALL set_physical_bc3d( grid%em_ph_2 , 'W' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%ph_1 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
 
-   CALL set_physical_bc3d( grid%em_t_1 , 't' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%ph_2 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
 
-   CALL set_physical_bc3d( grid%em_t_2 , 't' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%t_1 , 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
 
-   CALL set_physical_bc2d( grid%em_mu_1, 't' , config_flags ,   &
+   CALL set_physical_bc3d( grid%t_2 , 't' , config_flags ,                 &
+                         ids , ide , jds , jde , kds , kde ,        &
+                         ims , ime , jms , jme , kms , kme ,        &
+                         its , ite , jts , jte , kts , kte ,        &
+                         its , ite , jts , jte , kts , kte )
+
+   CALL set_physical_bc2d( grid%mu_1, 't' , config_flags ,   &
                            ids , ide , jds , jde ,  &
                            ims , ime , jms , jme ,  &
                            its , ite , jts , jte ,  &
                            its , ite , jts , jte   )
-   CALL set_physical_bc2d( grid%em_mu_2, 't' , config_flags ,   &
+   CALL set_physical_bc2d( grid%mu_2, 't' , config_flags ,   &
                            ids , ide , jds , jde ,  &
                            ims , ime , jms , jme ,  &
                            its , ite , jts , jte ,  &
                            its , ite , jts , jte   )
-   CALL set_physical_bc2d( grid%em_mub , 't' , config_flags ,   &
+   CALL set_physical_bc2d( grid%mub , 't' , config_flags ,   &
                            ids , ide , jds , jde ,  &
                            ims , ime , jms , jme ,  &
                            its , ite , jts , jte ,  &
                            its , ite , jts , jte   )
-   CALL set_physical_bc2d( grid%em_mu0 , 't' , config_flags ,   &
+   CALL set_physical_bc2d( grid%mu0 , 't' , config_flags ,   &
                            ids , ide , jds , jde ,  &
                            ims , ime , jms , jme ,  &
                            its , ite , jts , jte ,  &
                            its , ite , jts , jte   )
 
 
-   CALL set_physical_bc3d( grid%em_phb , 'W' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%phb , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_ph0 , 'W' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%ph0 , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_php , 'W' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%php , 'W' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
 
-   CALL set_physical_bc3d( grid%em_pb , 't' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%pb , 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_al , 't' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%al , 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_alt , 't' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%alt , 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d( grid%em_alb , 't' , config_flags ,                 &
+   CALL set_physical_bc3d( grid%alb , 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
-   CALL set_physical_bc3d(grid%em_t_init, 't' , config_flags ,                 &
+   CALL set_physical_bc3d(grid%t_init, 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
@@ -901,11 +895,11 @@ grid%dfi_stage = 1
          do j=jts,min(jte,jde-1)
             do i=its,min(ite,ide-1)
                do k=kts,kte
-                 z_at_w(i,k,j)=(grid%em_ph_2(i,k,j)+grid%em_phb(i,k,j))/g
+                 z_at_w(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
                enddo
                do k=kts,min(kte,kde-1)
-                 tempfac=(grid%em_t_1(i,k,j) + t0)*((grid%em_p(i,k,j) + grid%em_pb(i,k,j))/p1000mb)**rcp
-                 convfac(i,k,j) = (grid%em_p(i,k,j)+grid%em_pb(i,k,j))/rgasuniv/tempfac
+                 tempfac=(grid%t_1(i,k,j) + t0)*((grid%p(i,k,j) + grid%pb(i,k,j))/p1000mb)**rcp
+                 convfac(i,k,j) = (grid%p(i,k,j)+grid%pb(i,k,j))/rgasuniv/tempfac
                enddo
             enddo
          enddo
@@ -914,7 +908,7 @@ grid%dfi_stage = 1
                          grid%chemdt,                                       &
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
                          grid%plumerisefire_frq,z_at_w,g,grid%aerwrf,config_flags,            &
-                         grid%em_alt,grid%em_t_1,grid%em_p,convfac,                              &
+                         grid%alt,grid%t_1,grid%p,convfac,                              &
                          grid%gd_cloud, grid%gd_cloud2,                                  &
                          grid%gd_cloud_b, grid%gd_cloud2_b,                              &
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
@@ -934,7 +928,7 @@ grid%dfi_stage = 1
         select case (config_flags%chem_opt)
         case (RADM2SORG, RACMSORG)
            call sum_pm_sorgam (                                             &
-                grid%em_alt, chem, grid%h2oaj, grid%h2oai,                                    &
+                grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
@@ -942,7 +936,7 @@ grid%dfi_stage = 1
 
         case (CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
            call sum_pm_mosaic (                                             &
-                grid%em_alt, chem,                                                  &
+                grid%alt, chem,                                                  &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &

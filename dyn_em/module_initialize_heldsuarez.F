@@ -39,27 +39,15 @@ CONTAINS
    !  Input data.
    TYPE (domain), POINTER :: grid 
    !  Local data.
-   INTEGER                :: dyn_opt 
    INTEGER :: idum1, idum2
 
-   CALL nl_get_dyn_opt( 1, dyn_opt )
-   
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
-   IF (      dyn_opt .eq. 1 &
-        .or. dyn_opt .eq. 2 &
-        .or. dyn_opt .eq. 3 &
-                                       ) THEN
      CALL init_domain_rk( grid &
 !
-#include <em_actual_new_args.inc>
+#include <actual_new_args.inc>
 !
                         )
-
-   ELSE
-     WRITE(0,*)' init_domain: unknown or unimplemented dyn_opt = ',dyn_opt
-     call wrf_error_fatal ( ' init_domain: unknown or unimplemented dyn_opt ' )
-   ENDIF
 
    END SUBROUTINE init_domain
 
@@ -67,7 +55,7 @@ CONTAINS
 
    SUBROUTINE init_domain_rk ( grid &
 !
-# include <em_dummy_new_args.inc>
+# include <dummy_new_args.inc>
 !
 )
    IMPLICIT NONE
@@ -75,7 +63,7 @@ CONTAINS
    !  Input data.
    TYPE (domain), POINTER :: grid
 
-# include <em_dummy_decl.inc>
+# include <dummy_decl.inc>
 
    TYPE (grid_config_rec_type)              :: config_flags
 
@@ -93,10 +81,6 @@ CONTAINS
    REAL :: thtmp, ptmp, temp(3), cof1, cof2
 
    INTEGER :: icm,jcm
-
-#ifdef DM_PARALLEL
-#    include <em_data_calls.inc>
-#endif
 
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -254,29 +238,29 @@ CONTAINS
    grid%map_proj = 0
 
    DO k = kds, kde
-      grid%em_znw(k) = 1. - REAL(k-kds)/REAL(kde-kds)
+      grid%znw(k) = 1. - REAL(k-kds)/REAL(kde-kds)
    END DO
 
    DO k=1, kde-1
-    grid%em_dnw(k) = grid%em_znw(k+1) - grid%em_znw(k)
-    grid%em_rdnw(k) = 1./grid%em_dnw(k)
-    grid%em_znu(k) = 0.5*(grid%em_znw(k+1)+grid%em_znw(k))
+    grid%dnw(k) = grid%znw(k+1) - grid%znw(k)
+    grid%rdnw(k) = 1./grid%dnw(k)
+    grid%znu(k) = 0.5*(grid%znw(k+1)+grid%znw(k))
    ENDDO
    DO k=2, kde-1
-    grid%em_dn(k) = 0.5*(grid%em_dnw(k)+grid%em_dnw(k-1))
-    grid%em_rdn(k) = 1./grid%em_dn(k)
-    grid%em_fnp(k) = .5* grid%em_dnw(k  )/grid%em_dn(k)
-    grid%em_fnm(k) = .5* grid%em_dnw(k-1)/grid%em_dn(k)
+    grid%dn(k) = 0.5*(grid%dnw(k)+grid%dnw(k-1))
+    grid%rdn(k) = 1./grid%dn(k)
+    grid%fnp(k) = .5* grid%dnw(k  )/grid%dn(k)
+    grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%em_dn(2)+grid%em_dn(3))/(grid%em_dn(2)+grid%em_dn(3))*grid%em_dnw(1)/grid%em_dn(2) 
-   cof2 =     grid%em_dn(2)        /(grid%em_dn(2)+grid%em_dn(3))*grid%em_dnw(1)/grid%em_dn(3) 
-   grid%cf1  = grid%em_fnp(2) + cof1
-   grid%cf2  = grid%em_fnm(2) - cof1 - cof2
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
+   grid%cf1  = grid%fnp(2) + cof1
+   grid%cf2  = grid%fnm(2) - cof1 - cof2
    grid%cf3  = cof2       
 
-   grid%cfn  = (.5*grid%em_dnw(kde-1)+grid%em_dn(kde-1))/grid%em_dn(kde-1)
-   grid%cfn1 = -.5*grid%em_dnw(kde-1)/grid%em_dn(kde-1)
+   grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
+   grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
 
 
    ! Need to add perturbations to initial profile.  Set up random number
@@ -294,11 +278,11 @@ CONTAINS
    ! Values of geopotential (base, perturbation, and at p0) at the surface
    DO j = jts, jte
    DO i = its, ite
-      grid%em_phb(i,1,j) = grid%ht(i,j)*g
-      grid%em_php(i,1,j) = 0.         ! This is perturbation geopotential
+      grid%phb(i,1,j) = grid%ht(i,j)*g
+      grid%php(i,1,j) = 0.         ! This is perturbation geopotential
                               ! Since this is an initial condition, there
                               ! should be no perturbation!
-      grid%em_ph0(i,1,j) = grid%ht(i,j)*g
+      grid%ph0(i,1,j) = grid%ht(i,j)*g
    ENDDO
    ENDDO
 
@@ -306,20 +290,20 @@ CONTAINS
    DO J = jts, jte
    DO I = its, ite
 
-      p_surf = p0 * EXP(-(g*grid%em_phb(i,1,j)/g)/(r_d*T0))
-      grid%em_mub(i,j) = p_surf-grid%p_top
+      p_surf = p0 * EXP(-(g*grid%phb(i,1,j)/g)/(r_d*T0))
+      grid%mub(i,j) = p_surf-grid%p_top
 
       ! given p (coordinate), calculate theta and compute 1/rho from equation
       ! of state
 
       DO K = kts, kte-1
-         p_level = grid%em_znu(k)*(p_surf - grid%p_top) + grid%p_top
-         grid%em_pb(i,k,j) = p_level
+         p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+         grid%pb(i,k,j) = p_level
 
-         grid%em_t_init(i,k,j) = T0*(p0/p_level)**rcp
-         grid%em_t_init(i,k,j) = grid%em_t_init(i,k,j) - t0
+         grid%t_init(i,k,j) = T0*(p0/p_level)**rcp
+         grid%t_init(i,k,j) = grid%t_init(i,k,j) - t0
 
-         grid%em_alb(i,k,j)=(r_d/p1000mb)*(grid%em_t_init(i,k,j)+t0)*(grid%em_pb(i,k,j)/p1000mb)**cvpm
+         grid%alb(i,k,j)=(r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
       END DO
 
       ! calculate hydrostatic balance (alternatively we could interpolate
@@ -327,7 +311,7 @@ CONTAINS
       ! state is in exact hydrostatic balance with respect to the model eqns.
 
       DO k = kts+1, kte
-         grid%em_phb(i,k,j) = grid%em_phb(i,k-1,j) - grid%em_dnw(k-1)*grid%em_mub(i,j)*grid%em_alb(i,k-1,j)
+         grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
       ENDDO
 
    ENDDO
@@ -349,24 +333,24 @@ CONTAINS
    DO I = its, ite
 
       ! At this point p_top is already set. find the DRY mass in the column
-      pd_surf = p0 * EXP(-(g*grid%em_phb(i,1,j)/g)/(r_d*T0))
+      pd_surf = p0 * EXP(-(g*grid%phb(i,1,j)/g)/(r_d*T0))
 
       ! compute the perturbation mass (mu/mu_1/mu_2) and the full mass
-      grid%em_mu_1(i,j) = pd_surf-grid%p_top - grid%em_mub(i,j)
-      grid%em_mu_2(i,j) = grid%em_mu_1(i,j)
-      grid%em_mu0(i,j)  = grid%em_mu_1(i,j) + grid%em_mub(i,j)
+      grid%mu_1(i,j) = pd_surf-grid%p_top - grid%mub(i,j)
+      grid%mu_2(i,j) = grid%mu_1(i,j)
+      grid%mu0(i,j)  = grid%mu_1(i,j) + grid%mub(i,j)
 
       ! given the dry pressure and coordinate system, calculate the
       ! perturbation potential temperature (t/t_1/t_2)
 
       DO k = kds, kde-1
-         p_level = grid%em_znu(k)*(pd_surf - grid%p_top) + grid%p_top
-         grid%em_t_1(i,k,j) = T0*(p0/p_level)**rcp
+         p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
+         grid%t_1(i,k,j) = T0*(p0/p_level)**rcp
          ! Add a small perturbation to initial isothermal profile
          CALL random_number(tperturb)
-         grid%em_t_1(i,k,j)=grid%em_t_1(i,k,j)*(1.0+0.004*(tperturb-0.5))
-         grid%em_t_1(i,k,j) = grid%em_t_1(i,k,j)-t0
-         grid%em_t_2(i,k,j) = grid%em_t_1(i,k,j)
+         grid%t_1(i,k,j)=grid%t_1(i,k,j)*(1.0+0.004*(tperturb-0.5))
+         grid%t_1(i,k,j) = grid%t_1(i,k,j)-t0
+         grid%t_2(i,k,j) = grid%t_1(i,k,j)
       END DO
 
 
@@ -380,12 +364,12 @@ CONTAINS
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
 
-      ! grid%em_p(i,k,j) = - 0.5*grid%em_mu_1(i,j)/grid%em_rdnw(k)
-      grid%em_p(i,k,j) = - 0.5*(grid%em_mu_1(i,j)+qvf1*grid%em_mub(i,j))/grid%em_rdnw(k)/qvf2
+      ! grid%p(i,k,j) = - 0.5*grid%mu_1(i,j)/grid%rdnw(k)
+      grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
       qvf = 1. + rvovrd*grid%moist(i,k,j,P_QV)
-      grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_1(i,k,j)+t0)*qvf* &
-                  (((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
-      grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
+      grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                  (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+      grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
 
       !  down the column
 
@@ -393,25 +377,25 @@ CONTAINS
          qvf1 = 0.5*(grid%moist(i,k,j,P_QV)+grid%moist(i,k+1,j,P_QV))
          qvf2 = 1./(1.+qvf1)
          qvf1 = qvf1*qvf2
-         grid%em_p(i,k,j) = grid%em_p(i,k+1,j) - (grid%em_mu_1(i,j) + qvf1*grid%em_mub(i,j))/qvf2/grid%em_rdn(k+1)
+         grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
          qvf = 1. + rvovrd*grid%moist(i,k,j,P_QV)
-         grid%em_alt(i,k,j) = (r_d/p1000mb)*(grid%em_t_1(i,k,j)+t0)*qvf* &
-                     (((grid%em_p(i,k,j)+grid%em_pb(i,k,j))/p1000mb)**cvpm)
-         grid%em_al(i,k,j) = grid%em_alt(i,k,j) - grid%em_alb(i,k,j)
+         grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                     (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+         grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
       enddo
 
       ! this is the hydrostatic equation used in the model after the
       ! small timesteps.  In the model, al (inverse density)
       ! is computed from the geopotential.
 
-      grid%em_ph_1(i,1,j) = 0.
+      grid%ph_1(i,1,j) = 0.
       DO k  = kts+1,kte
-         grid%em_ph_1(i,k,j) = grid%em_ph_1(i,k-1,j) - (1./grid%em_rdnw(k-1))*(  &
-                      (grid%em_mub(i,j)+grid%em_mu_1(i,j))*grid%em_al(i,k-1,j)+  &
-                       grid%em_mu_1(i,j)*grid%em_alb(i,k-1,j)  )
+         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (1./grid%rdnw(k-1))*(  &
+                      (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+  &
+                       grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
 
-         grid%em_ph_2(i,k,j) = grid%em_ph_1(i,k,j)
-         grid%em_ph0(i,k,j) = grid%em_ph_1(i,k,j) + grid%em_phb(i,k,j)
+         grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
       ENDDO
 
    END DO
@@ -423,10 +407,10 @@ CONTAINS
    DO J = jts, jte
    DO K = kts, kte-1
    DO I = its, ite
-      grid%em_u_1(i,k,j) = 0.
-      grid%em_u_2(i,k,j) = 0.
-      grid%em_v_1(i,k,j) = 0.
-      grid%em_v_2(i,k,j) = 0.
+      grid%u_1(i,k,j) = 0.
+      grid%u_2(i,k,j) = 0.
+      grid%v_1(i,k,j) = 0.
+      grid%v_2(i,k,j) = 0.
    END DO
    END DO
    END DO
@@ -435,9 +419,9 @@ CONTAINS
    DO j=jts, jte
    DO k=kds, kde
    DO i=its, ite
-      grid%em_ww(i,k,j)  = 0.
-      grid%em_w_1(i,k,j) = 0.
-      grid%em_w_2(i,k,j) = 0.
+      grid%ww(i,k,j)  = 0.
+      grid%w_1(i,k,j) = 0.
+      grid%w_2(i,k,j) = 0.
       grid%h_diabatic(i,k,j) = 0.
    END DO
    END DO
@@ -445,7 +429,7 @@ CONTAINS
 
   
    DO k=kts,kte
-      grid%em_t_base(k)  = grid%em_t_init(its,k,jts)
+      grid%t_base(k)  = grid%t_init(its,k,jts)
       grid%qv_base(k) = 0.
       grid%u_base(k)  = 0.
       grid%v_base(k)  = 0.
@@ -458,14 +442,14 @@ CONTAINS
    ! temperature.
    DO J = jts, MIN(jte, jde-1)
    DO I = its, MIN(ite, ide-1)
-      thtmp   = grid%em_t_2(i,1,j)+t0
-      ptmp    = grid%em_p(i,1,j)+grid%em_pb(i,1,j)
+      thtmp   = grid%t_2(i,1,j)+t0
+      ptmp    = grid%p(i,1,j)+grid%pb(i,1,j)
       temp(1) = thtmp * (ptmp/p1000mb)**rcp
-      thtmp   = grid%em_t_2(i,2,j)+t0
-      ptmp    = grid%em_p(i,2,j)+grid%em_pb(i,2,j)
+      thtmp   = grid%t_2(i,2,j)+t0
+      ptmp    = grid%p(i,2,j)+grid%pb(i,2,j)
       temp(2) = thtmp * (ptmp/p1000mb)**rcp
-      thtmp   = grid%em_t_2(i,3,j)+t0
-      ptmp    = grid%em_p(i,3,j)+grid%em_pb(i,3,j)
+      thtmp   = grid%t_2(i,3,j)+t0
+      ptmp    = grid%p(i,3,j)+grid%pb(i,3,j)
       temp(3) = thtmp * (ptmp/p1000mb)**rcp
       grid%tsk(I,J)=cf1*temp(1)+cf2*temp(2)+cf3*temp(3)
       grid%tmn(I,J)=grid%tsk(I,J)-0.5

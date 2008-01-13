@@ -114,25 +114,25 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 
 !   soil configuration
 
-    nest%nmm_sldpth  = parent%nmm_sldpth
-    nest%nmm_dzsoil  = parent%nmm_dzsoil
-    nest%nmm_rtdpth  = parent%nmm_rtdpth
+    nest%sldpth  = parent%sldpth
+    nest%dzsoil  = parent%dzsoil
+    nest%rtdpth  = parent%rtdpth
 
 !   numerical set up
 
-    nest%nmm_deta        = parent%nmm_deta
-    nest%nmm_aeta        = parent%nmm_aeta
-    nest%nmm_etax        = parent%nmm_etax
-    nest%nmm_dfl         = parent%nmm_dfl
-    nest%nmm_deta1       = parent%nmm_deta1
-    nest%nmm_aeta1       = parent%nmm_aeta1
-    nest%nmm_eta1        = parent%nmm_eta1
-    nest%nmm_deta2       = parent%nmm_deta2
-    nest%nmm_aeta2       = parent%nmm_aeta2
-    nest%nmm_eta2        = parent%nmm_eta2
-    nest%nmm_pdtop       = parent%nmm_pdtop
-    nest%nmm_pt          = parent%nmm_pt
-    nest%nmm_dfrlg       = parent%nmm_dfrlg
+    nest%deta        = parent%deta
+    nest%aeta        = parent%aeta
+    nest%etax        = parent%etax
+    nest%dfl         = parent%dfl
+    nest%deta1       = parent%deta1
+    nest%aeta1       = parent%aeta1
+    nest%eta1        = parent%eta1
+    nest%deta2       = parent%deta2
+    nest%aeta2       = parent%aeta2
+    nest%eta2        = parent%eta2
+    nest%pdtop       = parent%pdtop
+    nest%pt          = parent%pt
+    nest%dfrlg       = parent%dfrlg
     nest%num_soil_layers = parent%num_soil_layers
     nest%num_moves       = parent%num_moves
 
@@ -143,15 +143,15 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
 ! state  logical upstrm   -      dyn_nmm     -      -      -
 
 
-    nest%nmm_dlmd   = nest%dx
-    nest%nmm_dphd   = nest%dy
-    nest%nmm_dy_nmm = erad*(nest%nmm_dphd*dtr)
-    nest%nmm_cpgfv  = -nest%dt/(48.*nest%nmm_dy_nmm)
-    nest%nmm_en     = nest%dt/( 4.*nest%nmm_dy_nmm)*dtad
-    nest%nmm_ent    = nest%dt/(16.*nest%nmm_dy_nmm)*dtad
-    nest%nmm_f4d    = -.5*nest%dt*dtad
-    nest%nmm_f4q    = -nest%dt*dtad
-    nest%nmm_ef4t   = .5*nest%dt/cp
+    nest%dlmd   = nest%dx
+    nest%dphd   = nest%dy
+    nest%dy_nmm = erad*(nest%dphd*dtr)
+    nest%cpgfv  = -nest%dt/(48.*nest%dy_nmm)
+    nest%en     = nest%dt/( 4.*nest%dy_nmm)*dtad
+    nest%ent    = nest%dt/(16.*nest%dy_nmm)*dtad
+    nest%f4d    = -.5*nest%dt*dtad
+    nest%f4q    = -nest%dt*dtad
+    nest%ef4t   = .5*nest%dt/cp
 
 !  Other output configurations that will make grads happy 
 
@@ -236,7 +236,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !   Now compute Geodetic lat/lon (Positive East) of parent grid in degrees
 
-    CALL EARTH_LATLON ( parent%nmm_HLAT,parent%nmm_HLON,parent%nmm_VLAT,parent%nmm_VLON,  & !output
+    CALL EARTH_LATLON ( parent%HLAT,parent%HLON,parent%VLAT,parent%VLON,  & !output
                         parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,                    & !inputs 
                         parent_CLAT,parent_CLON,                                          &
                         IDS,IDE,JDS,JDE,KDS,KDE,                                          &
@@ -276,7 +276,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 !   as the parent grid
 !
 
-    CALL EARTH_LATLON ( nest%nmm_HLAT,nest%nmm_HLON,nest%nmm_VLAT,nest%nmm_VLON, & ! output
+    CALL EARTH_LATLON ( nest%HLAT,nest%HLON,nest%VLAT,nest%VLON, & ! output
                         nest_DLMD,nest_DPHD,nest_WBD,nest_SBD,                   & ! nest inputs
                         parent_CLAT,parent_CLON,                                 & ! parent central lat/lon
                         IDS,IDE,JDS,JDE,KDS,KDE,                                 & ! nested domain dimension
@@ -285,10 +285,10 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !   Determine the weights of nested grid h points nearest to H points of parent domain 
 
-    CALL G2T2H( nest%nmm_IIH,nest%nmm_JJH,                       & ! output grid index on nested grid
-                nest%nmm_HBWGT1,nest%nmm_HBWGT2,                 & ! output weights on the nested grid 
-                nest%nmm_HBWGT3,nest%nmm_HBWGT4,                 &
-                nest%nmm_HLAT,nest%nmm_HLON,                     & ! target (nest) input lat lon in degrees
+    CALL G2T2H( nest%IIH,nest%JJH,                       & ! output grid index on nested grid
+                nest%HBWGT1,nest%HBWGT2,                 & ! output weights on the nested grid 
+                nest%HBWGT3,nest%HBWGT4,                 &
+                nest%HLAT,nest%HLON,                     & ! target (nest) input lat lon in degrees
                 parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,   & ! parent res, western and south boundaries
                 parent_CLAT,parent_CLON,                         & ! parent central lat,lon, all in degrees
                 parent%ed31,parent%ed33,                         & ! parent imax and jmax
@@ -299,10 +299,10 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !   Determine the weights of nested grid v points nearest to V points of parent domain
 
-    CALL G2T2V( nest%nmm_IIV,nest%nmm_JJV,                       & ! output grid index on nested grid
-                nest%nmm_VBWGT1,nest%nmm_VBWGT2,                 & ! output weights on the nested grid
-                nest%nmm_VBWGT3,nest%nmm_VBWGT4,                 &
-                nest%nmm_VLAT,nest%nmm_VLON,                     & ! target (nest) input lat lon in degrees
+    CALL G2T2V( nest%IIV,nest%JJV,                       & ! output grid index on nested grid
+                nest%VBWGT1,nest%VBWGT2,                 & ! output weights on the nested grid
+                nest%VBWGT3,nest%VBWGT4,                 &
+                nest%VLAT,nest%VLON,                     & ! target (nest) input lat lon in degrees
                 parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,   & ! parent res, western and south boundaries
                 parent_CLAT,parent_CLON,                         & ! parent central lat,lon, all in degrees
                 parent%ed31,parent%ed33,                         & ! parent imax and jmax
@@ -312,17 +312,17 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !*** CHECK WEIGHTS AT MASS AND VELOCITY POINTS
 
-     CALL WEIGTS_CHECK(nest%nmm_HBWGT1,nest%nmm_HBWGT2,          & ! output weights on the nested grid
-                       nest%nmm_HBWGT3,nest%nmm_HBWGT4,          &
-                       nest%nmm_VBWGT1,nest%nmm_VBWGT2,          & ! output weights on the nested grid
-                       nest%nmm_VBWGT3,nest%nmm_VBWGT4,          &
+     CALL WEIGTS_CHECK(nest%HBWGT1,nest%HBWGT2,          & ! output weights on the nested grid
+                       nest%HBWGT3,nest%HBWGT4,          &
+                       nest%VBWGT1,nest%VBWGT2,          & ! output weights on the nested grid
+                       nest%VBWGT3,nest%VBWGT4,          &
                        IDS,IDE,JDS,JDE,KDS,KDE,                  & !
                        IMS,IME,JMS,JME,KMS,KME,                  & ! nested grid configuration
                        ITS,ITE,JTS,JTE,KTS,KTE                   )
 
 !*** CHECK DOMAIN BOUNDS BEFORE PROCEEDING TO INTERPOLATION
 !
-    CALL BOUNDS_CHECK( nest%nmm_IIH,nest%nmm_JJH,nest%nmm_IIV,nest%nmm_JJV,   &
+    CALL BOUNDS_CHECK( nest%IIH,nest%JJH,nest%IIV,nest%JJV,   &
                        nest%i_parent_start,nest%j_parent_start,nest%shw,      &
                        IDS,IDE,JDS,JDE,KDS,KDE,                               & !
                        IMS,IME,JMS,JME,KMS,KME,                               & ! nested grid configuration
@@ -2109,12 +2109,12 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
         WRITE(0,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
         WRITE(0,*)'WRFSI LAT      COMPUTED LAT'
-        WRITE(0,*)lah_nest(1,1),nest%nmm_hlat(1,1)
+        WRITE(0,*)lah_nest(1,1),nest%hlat(1,1)
         WRITE(0,*)'WRFSI LON      COMPUTED LON'
-        WRITE(0,*)loh_nest(1,1),nest%nmm_hlon(1,1)
+        WRITE(0,*)loh_nest(1,1),nest%hlon(1,1)
 
-        IF(ABS(lah_nest(1,1)-nest%nmm_hlat(1,1)) .GE. 0.5 .OR.  & 
-           ABS(loh_nest(1,1)-nest%nmm_hlon(1,1)) .GE. 0.5)THEN 
+        IF(ABS(lah_nest(1,1)-nest%hlat(1,1)) .GE. 0.5 .OR.  & 
+           ABS(loh_nest(1,1)-nest%hlon(1,1)) .GE. 0.5)THEN 
             WRITE(0,*)'CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO' 
             CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
         ENDIF
@@ -2159,7 +2159,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
       DO J=JDS,JDE
        DO I =IDS,IDE
         IF(I.GE.ITS .AND. I .LE. MIN(ide-1,ite) .AND. J.GE.JTS  .AND. J .LE. MIN(jde-1,jte))THEN
-          nest%nmm_hres_fis(I,J)=DATA1(I,J)
+          nest%hres_fis(I,J)=DATA1(I,J)
         ENDIF
        ENDDO
       ENDDO
@@ -2179,16 +2179,11 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
    IMPLICIT NONE
    TYPE(domain) , POINTER                     :: parent, nest, grid
 !
-#ifdef DEREF_KLUDGE
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
 !
    INTERFACE
      SUBROUTINE med_initialize_nest_nmm ( grid  &   
 !
-# include <nmm_dummy_args.inc>
+# include <dummy_args.inc>
 !
                            )
         USE module_domain
@@ -2196,7 +2191,7 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
         USE module_timing
         IMPLICIT NONE
         TYPE(domain) , POINTER                  :: grid
-#include <nmm_dummy_decl.inc>
+#include <dummy_decl.inc>
      END SUBROUTINE med_initialize_nest_nmm 
    END INTERFACE
 
@@ -2209,30 +2204,9 @@ SUBROUTINE med_init_domain_constants_nmm ( parent, nest)   !, config_flags)
 
    grid => nest
 
-#ifdef DEREF_KLUDGE
-   sm31             = grid%sm31
-   em31             = grid%em31
-   sm32             = grid%sm32
-   em32             = grid%em32
-   sm33             = grid%sm33
-   em33             = grid%em33
-   sm31x            = grid%sm31x
-   em31x            = grid%em31x
-   sm32x            = grid%sm32x
-   em32x            = grid%em32x
-   sm33x            = grid%sm33x
-   em33x            = grid%em33x
-   sm31y            = grid%sm31y
-   em31y            = grid%em31y
-   sm32y            = grid%sm32y
-   em32y            = grid%em32y
-   sm33y            = grid%sm33y
-   em33y            = grid%em33y
-#endif
-
    CALL med_initialize_nest_nmm( grid &   
 !
-# include <nmm_actual_args.inc>
+# include <actual_args.inc>
 !
                        )
 
@@ -2240,7 +2214,7 @@ END SUBROUTINE med_init_domain_constants_nmm
 
 SUBROUTINE med_initialize_nest_nmm( grid &
 !
-# include <nmm_dummy_args.inc>
+# include <dummy_args.inc>
 !
                            )
 
@@ -2303,39 +2277,12 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: DTR=0.01745329
 
    !  Definitions of dummy arguments to solve
-#include <nmm_dummy_decl.inc>
-
-#ifdef DEREF_KLUDGE
-   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
-   INTEGER     :: sm31x, em31x, sm32x, em32x, sm33x, em33x
-   INTEGER     :: sm31y, em31y, sm32y, em32y, sm33y, em33y
-#endif
-
-#ifdef DEREF_KLUDGE
-   sm31             = grid%sm31
-   em31             = grid%em31
-   sm32             = grid%sm32
-   em32             = grid%em32
-   sm33             = grid%sm33
-   em33             = grid%em33
-   sm31x            = grid%sm31x
-   em31x            = grid%em31x
-   sm32x            = grid%sm32x
-   em32x            = grid%em32x
-   sm33x            = grid%sm33x
-   em33x            = grid%em33x
-   sm31y            = grid%sm31y
-   em31y            = grid%em31y
-   sm32y            = grid%sm32y
-   em32y            = grid%em32y
-   sm33y            = grid%sm33y
-   em33y            = grid%em33y
-#endif
+#include <dummy_decl.inc>
 
 #define COPY_IN
-#include <nmm_scalar_derefs.inc>
+#include <scalar_derefs.inc>
 #ifdef DM_PARALLEL
-#      include <nmm_data_calls.inc>
+#      include <data_calls.inc>
 #endif
 
    CALL get_ijk_from_grid (  grid ,                           &
@@ -3035,7 +2982,7 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
 
 !    WRITE(0,*)'ALAT AND ALON=',ALAT,ALON
 
-    CALL EARTH_LATLON ( parent%nmm_HLAT,parent%nmm_HLON,parent%nmm_VLAT,parent%nmm_VLON, & !output
+    CALL EARTH_LATLON ( parent%HLAT,parent%HLON,parent%VLAT,parent%VLON, & !output
                         parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,                   & !inputs
                         parent_CLAT,parent_CLON,                                         &
                         IDS,IDE,JDS,JDE,KDS,KDE,                                         &
@@ -3052,12 +2999,12 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
 
      DO J = JTS,min(JTE,JDE-1)
       DO I = ITS,min(ITE,IDE-1)
-        DIFF1 = ABS(ALAT - parent%nmm_HLAT(I,J))
-        DIFF2 = ABS(ALON - parent%nmm_HLON(I,J))
+        DIFF1 = ABS(ALAT - parent%HLAT(I,J))
+        DIFF2 = ABS(ALON - parent%HLON(I,J))
         IF(DIFF1 .LE. ERR .AND. DIFF2 .LE. ERR)THEN
          ILOC=I
          JLOC=J
-!         WRITE(0,*)'ITERATED',ERR,ITER,I,J,parent%nmm_HLAT(I,J),ALAT,parent%nmm_HLON(I,J),ALON
+!         WRITE(0,*)'ITERATED',ERR,ITER,I,J,parent%HLAT(I,J),ALAT,parent%HLON(I,J),ALON
         ENDIF
       ENDDO
      ENDDO
@@ -3090,7 +3037,7 @@ END SUBROUTINE initial_nest_pivot
 !============================================================================================
 #endif
 
-LOGICAL FUNCTION nmm_cd_feedback_mask_orig( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
+LOGICAL FUNCTION cd_feedback_mask_orig( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
    INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
    LOGICAL, INTENT(IN) :: xstag, ystag
 
@@ -3100,14 +3047,14 @@ LOGICAL FUNCTION nmm_cd_feedback_mask_orig( pig, ips_save, ipe_save , pjg, jps_s
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 
-   nmm_cd_feedback_mask_orig = ( pig .ge. ips_save+1        .and.      &
+   cd_feedback_mask_orig = ( pig .ge. ips_save+1        .and.      &
                             pjg .ge. jps_save+1        .and.      &
                             pig .le. ipe_save-1  +ioff .and.      &
                             pjg .le. jpe_save-1  +joff           )
 
-END FUNCTION nmm_cd_feedback_mask_orig
+END FUNCTION cd_feedback_mask_orig
 
-LOGICAL FUNCTION nmm_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
+LOGICAL FUNCTION cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
    INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
    LOGICAL, INTENT(IN) :: xstag, ystag
 
@@ -3117,14 +3064,14 @@ LOGICAL FUNCTION nmm_cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, 
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 
-   nmm_cd_feedback_mask = ( pig .ge. ips_save+1 .and. &
+   cd_feedback_mask = ( pig .ge. ips_save+1 .and. &
                             pjg .ge. jps_save+2 .and. &
                             pig .le. ipe_save-1-mod(pjg-jps_save,2) .and. &
                             pjg .le. jpe_save-2 )
 
-END FUNCTION nmm_cd_feedback_mask
+END FUNCTION cd_feedback_mask
 
-LOGICAL FUNCTION nmm_cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
+LOGICAL FUNCTION cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
    INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
    LOGICAL, INTENT(IN) :: xstag, ystag
 
@@ -3134,12 +3081,12 @@ LOGICAL FUNCTION nmm_cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
    
-   nmm_cd_feedback_mask_v = ( pig .ge. ips_save+1 .and. &
+   cd_feedback_mask_v = ( pig .ge. ips_save+1 .and. &
                             pjg .ge. jps_save+2 .and. &
                             pig .le. ipe_save-1-mod(pjg-jps_save+1,2) .and. &
                             pjg .le. jpe_save-2 )
 
-END FUNCTION nmm_cd_feedback_mask_v
+END FUNCTION cd_feedback_mask_v
 
 
 !----------------------------------------------------------------------------

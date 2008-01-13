@@ -1131,7 +1131,6 @@ rconfig   logical     obs_ipf_init        namelist,fdda            1            
 
 # Dynamics
 # dynamics option (see package definitions, below)
-rconfig   integer dyn_opt                 namelist,dynamics	1             2       irh   "dyn_opt"               ""      ""
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -1234,9 +1233,6 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 #key      package       associated                package          associated 4d scalars
 #         name          namelist choice           state vars
 
-package   dyn_nodyn    dyn_opt==0                   -             -
-package   dyn_em       dyn_opt==2                   -             -
-
 #package   passivec1     chem_opt==0                  -             
 package   passiveqv     mp_physics==0                -             moist:qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
@@ -1281,7 +1277,12 @@ package   kfscheme       cu_physics==99              -             -
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten
 
 package   restofwrf      use_wps_input==0            -             -
-package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,qv_gc,qr_gc qc_gc qs_gc,qi_gc,qg_gc,qni_gc
+ifdef RUC_CLOUD
+package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qni_gc
+endif
+ifndef RUC_CLOUD
+package   realonly       use_wps_input==1            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,qv_gc
+endif
 
 
 # only need to specify these once; not for every io_form* variable

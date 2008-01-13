@@ -464,7 +464,9 @@
     CALL wrf_put_dom_ti_real ( fid , 'DX' ,  config_flags%dx , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'DY' ,  config_flags%dy , 1 , ierr )
 #endif
-    CALL wrf_put_dom_ti_real ( fid , 'DT' ,  config_flags%dt , 1 , ierr )
+! Updated by T. Hutchinson to use adaptive time step.
+    CALL wrf_put_dom_ti_real ( fid , 'DT' ,  grid%dt , 1 , ierr )
+!    CALL wrf_put_dom_ti_real ( fid , 'DT' ,  config%dt , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'CEN_LAT' ,  config_flags%cen_lat , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'CEN_LON' ,  config_flags%cen_lon , 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'TRUELAT1',  config_flags%truelat1, 1 , ierr )

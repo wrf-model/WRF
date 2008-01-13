@@ -38,7 +38,7 @@ CONTAINS
               ,i_start, i_end                                             &
               ,j_start, j_end                                             &
               ,kts, kte                                                   &
-              ,num_tiles                                                  &
+              ,num_tiles, CURR_SECS, adapt_step_flag                      &
               ,qv,qc,qr,qi,qs,qg,qndrop                                   &
               ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop                     &
               ,CLDFRA ,Pb                                                 &
@@ -352,6 +352,8 @@ CONTAINS
                                                    julian, xtime
 !
    INTEGER, INTENT(IN  ) ::                    JULDAY, itimestep
+   REAL, INTENT(IN ),OPTIONAL     ::                    CURR_SECS
+   LOGICAL, INTENT(IN ),OPTIONAL  ::              ADAPT_STEP_FLAG
 
    INTEGER,INTENT(IN)                                       :: NPHS
    REAL, DIMENSION( ims:ime, jms:jme ),INTENT(OUT)          ::    &
@@ -433,6 +435,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_temp,qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
+   REAL    ::    next_rad_time
+   LOGICAL ::    run_param
 !------------------------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
@@ -447,8 +451,29 @@ CONTAINS
 ! ra_call_offset =  0 gives new method where radiation may be called just after output
 !                     and is also consistent with removal of offset in new XTIME
 ! also need to account for stepra=1 which always has zero modulo output
-   Radiation_step: IF (itimestep .eq. 1 .or. mod(itimestep,STEPRA) .eq. 1 + ra_call_offset &
-                                        .or. STEPRA .eq. 1 ) THEN
+
+!
+! Calculate whether or not to run the radiation step.
+! If CURR_SECS is passed in, we will calculate based upon that.  If it
+!   is not passed in, we'll do the old method of using the time STEP number
+!   
+  if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
+     if ( (itimestep .eq. 1) .or. (radt .eq. 0) .or. &
+          ( CURR_SECS + dt >= ( int( CURR_SECS / ( radt * 60 ) + 1 ) * radt * 60) ) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
+  else
+     if ( (itimestep .eq. 1) .or. (mod(itimestep,STEPRA) .eq. 1 + ra_call_offset) .or. &
+          (STEPRA .eq. 1) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
+  endif
+
+   Radiation_step: IF ( run_param ) then
 
 ! CAM-specific additional radiation frequency - cam_abs_freq_s (=21600s by default)
      STEPABS = nint(cam_abs_freq_s/(dt*STEPRA))*STEPRA

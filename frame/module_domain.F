@@ -135,6 +135,15 @@ MODULE module_domain
 
       ! Have clocks and times been initialized yet?
       LOGICAL :: time_set
+!
+! The following are used by the adaptive time step
+! T. Hutchinson, WSI  1/11/07
+!
+      REAL :: max_cfl_val
+      REAL :: last_max_vert_cfl
+      REAL :: max_vert_cfl
+      REAL :: max_horiz_cfl
+      Type(WRFU_TimeInterval) :: last_dtInterval
 
    END TYPE domain
 

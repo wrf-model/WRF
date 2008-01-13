@@ -95,14 +95,26 @@ SUBROUTINE solve_em ( grid , config_flags  &
    INTEGER :: idum1, idum2, dynamics_option
 
    INTEGER :: rk_order, iwmax, jwmax, kwmax
-   REAL :: dt_rk, dts_rk, dtm, wmax
+   REAL :: dt_rk, dts_rk, dts, dtm, wmax
+   REAL ,DIMENSION(16)  :: max_vert_cfl_tmp, max_horiz_cfl_tmp
+   LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
+   REAL :: curr_secs
+   INTEGER :: num_sound_steps
+   INTEGER :: idex, jdex
+   REAL    :: max_msft, max_msftx, max_msfty
+   REAL    :: spacing
+   
 
    INTEGER :: ii, jj !kk is above after l,kte
    REAL    :: dclat
 
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
+
+   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
+   REAL                                       :: real_time
+   LOGICAL                                    :: adapt_step_flag
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include <bench_solve_em_def.h>
@@ -247,15 +259,100 @@ IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 #endif
 
  rk_order = config_flags%rk_ord
+
+
+  !
+  ! Calculate current time in seconds since beginning of model run.
+  !   Unfortunately, ESMF does not seem to have a way to return
+  !   floating point seconds based on a TimeInterval.  So, we will
+  !   calculate it here--but, this is not clean!!
+  !
+ tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
+ if (ABS(tmpTimeInterval%basetime%Sd) < 1) then
+    curr_secs = tmpTimeInterval%basetime%S
+ else
+    curr_secs = real_time(tmpTimeInterval)
+ endif
+
+!-----------------------------------------------------------------------------
+! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
+!   In this call, we do the time-step adaptation.
+!
+ if (config_flags%use_adaptive_time_step) then
+    CALL adapt_timestep(grid, config_flags)
+    adapt_step_flag = .TRUE.
+ else
+    adapt_step_flag = .FALSE.
+ endif
+! End of adaptive time step modifications
+!-----------------------------------------------------------------------------
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !
+  ! Update the specified boundary arrays.  This was moved to this routine by 
+  !    T. Hutchinson, WSI, when implementing the adaptive time step.
+  !
+
+  IF (config_flags%specified) THEN
+     
+     ! Arrays for specified boundary conditions
+     !
+     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
+        grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+        grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+     ENDDO
+     
+  ELSE IF (config_flags%nested) THEN
+     
+     ! Arrays for specified boundary conditions
+     
+     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
+        grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+        grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
+     ENDDO
+     
+  ENDIF
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
  IF (grid%time_step_sound == 0) THEN
 ! auto-set option
 ! This function will give 4 for 6*dx and 6 for 10*dx and returns even numbers only
-   grid%time_step_sound = max ( 2 * ( INT (300.*grid%dt/grid%dx-0.01) + 1 ), 4 )
-   WRITE(wrf_err_message,*)'dx, dt, time_step_sound=',grid%dx,grid%dt,grid%time_step_sound
+!
+! Added MAXVAL(msft) to the denominator to better calculate num_sound_steps (T. Hutchinson, WSI)
+!
+    max_msftx=MAXVAL(grid%msftx)
+    max_msfty=MAXVAL(grid%msfty)
+#ifdef DM_PARALLEL
+  call wrf_dm_maxval(max_msftx, idex, jdex)    
+  call wrf_dm_maxval(max_msfty, idex, jdex)    
+#endif
+  max_msft=MAX(max_msftx, max_msfty)
+  spacing = min(grid%dx, grid%dy)
+
+   num_sound_steps = max ( 2 * ( INT (300. * grid%dt / (spacing / max_msft) - 0.01 ) + 1 ), 4 )
+   WRITE(wrf_err_message,*)'min grid spacing, dt, time_step_sound=',spacing,grid%dt,num_sound_steps
    CALL wrf_debug ( 50 , wrf_err_message )
+ ELSE
+    num_sound_steps = grid%time_step_sound
  ENDIF
 
- grid%dts = grid%dt/float(grid%time_step_sound)
+#ifdef DM_PARALLEL
+  call wrf_dm_maxval(grid%max_vert_cfl, idex, jdex)
+#endif
+  
+  if (config_flags%time_step < 0) then
+     WRITE(wrf_err_message,*)'variable dt, max horiz cfl, max vert cfl: ',&
+          grid%dt, grid%max_horiz_cfl, grid%max_vert_cfl
+     CALL wrf_debug ( 50 , wrf_err_message )
+  endif
+
+ grid%max_cfl_val = 0
+ grid%max_horiz_cfl = 0
+ grid%max_vert_cfl = 0
+
+ dts = grid%dt/float(num_sound_steps)
 
  Runge_Kutta_loop:  DO rk_step = 1, rk_order
 
@@ -272,12 +369,12 @@ IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 
        IF ( rk_step == 1) THEN
              dt_rk  = 0.5*grid%dt
-             dts_rk = grid%dts
-             number_of_small_timesteps = grid%time_step_sound/2
+             dts_rk = dts
+             number_of_small_timesteps = num_sound_steps/2
        ELSE
              dt_rk = grid%dt
-             dts_rk = grid%dts
-             number_of_small_timesteps = grid%time_step_sound
+             dts_rk = dts
+             number_of_small_timesteps = num_sound_steps
        ENDIF
 
    ELSE IF ( rk_order == 3 ) THEN ! third order Runge-Kutta
@@ -288,12 +385,12 @@ IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
             number_of_small_timesteps = 1
        ELSE IF (rk_step == 2) THEN
             dt_rk  = 0.5*grid%dt
-            dts_rk = grid%dts
-            number_of_small_timesteps = grid%time_step_sound/2
+            dts_rk = dts
+            number_of_small_timesteps = num_sound_steps/2
        ELSE
             dt_rk = grid%dt
-            dts_rk = grid%dts
-            number_of_small_timesteps = grid%time_step_sound
+            dts_rk = dts
+            number_of_small_timesteps = num_sound_steps
        ENDIF
 
    ELSE
@@ -613,6 +710,7 @@ BENCH_START(rad_driver_tim)
      &        ,CAM_ABS_DIM1=grid%cam_abs_dim1, CAM_ABS_DIM2=grid%cam_abs_dim2 &
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
+              ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
@@ -700,6 +798,7 @@ BENCH_START(surf_driver_tim)
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
      &        ,P8W=p8w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
      &        ,PSFC=grid%psfc          ,PSHLTR=grid%pshltr      ,PSIH=psih          &
+     &        ,BLDT=grid%bldt     ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag  &
      &        ,PSIM=psim          ,P_PHY=p_phy        ,Q10=grid%q10            &
      &        ,Q2=grid%q2              ,QFX=grid%qfx            ,QSFC=grid%qsfc          &
      &        ,QSHLTR=grid%qshltr      ,QZ0=grid%qz0            ,RAINCV=grid%raincv      &
@@ -783,7 +882,8 @@ BENCH_START(pbl_driver_tim)
       CALL pbl_driver(                                                    &
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                 &
-     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct              &
+     &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
+     &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct         &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
      &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h      ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
@@ -832,8 +932,10 @@ BENCH_START(cu_driver_tim)
      &             ,W=grid%em_w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx                &
-     &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,NCA=grid%nca               &
-     &             ,HTOP=grid%cutop    ,HBOT=grid%cubot      ,KPBL=grid%kpbl             &
+     &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
+     &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec         &
+     &             , NCA=grid%nca                                         &
+     &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl             &
      &             ,DZ8W=dz8w     ,P8W=p8w                                &
      &             ,W0AVG=grid%w0avg   ,STEPCU=grid%stepcu                          &
      &             ,CLDEFI=grid%cldefi ,LOWLYR=grid%lowlyr ,XLAND=grid%xland             &
@@ -1429,10 +1531,27 @@ BENCH_START(rk_tend_tim)
                          ims, ime, jms, jme, kms, kme,                                                        &
                          grid%i_start(ij), grid%i_end(ij),                                                    &
                          grid%j_start(ij), grid%j_end(ij),                                                    &
-                         k_start, k_end                                                                      )
+                         k_start, k_end,                                                                      &
+                         max_vert_cfl_tmp(ij), max_horiz_cfl_tmp(ij)                                         )
    END DO
    !$OMP END PARALLEL DO
 BENCH_END(rk_tend_tim)
+
+DO ij = 1 , grid%num_tiles
+   if (max_horiz_cfl_tmp(ij) .gt. grid%max_horiz_cfl) then
+      grid%max_horiz_cfl = max_horiz_cfl_tmp(ij)
+   endif
+   if (max_vert_cfl_tmp(ij) .gt. grid%max_vert_cfl) then
+      grid%max_vert_cfl = max_vert_cfl_tmp(ij)
+   endif
+END DO
+   
+if (grid%max_horiz_cfl .gt. grid%max_cfl_val) then
+   grid%max_cfl_val = grid%max_horiz_cfl
+endif
+if (grid%max_vert_cfl .gt. grid%max_cfl_val) then
+   grid%max_cfl_val = grid%max_vert_cfl
+endif
 
 BENCH_START(relax_bdy_dry_tim)
    !$OMP PARALLEL DO   &
@@ -3439,9 +3558,9 @@ BENCH_END(bc_end_tim)
 BENCH_START(advance_ppt_tim)
       CALL wrf_debug ( 200 , ' call advance_ppt' )
       CALL advance_ppt(grid%rthcuten,grid%rqvcuten,grid%rqccuten,grid%rqrcuten, &
-                     grid%rqicuten,grid%rqscuten,grid%rainc,grid%raincv,grid%nca,    &
+                     grid%rqicuten,grid%rqscuten,grid%rainc,grid%raincv,grid%pratec, grid%nca,    &
                      grid%htop,grid%hbot,grid%cutop,grid%cubot,                 &
-                     grid%cuppt, config_flags,                   &
+                     grid%cuppt, grid%dt, config_flags,                   &
                      ids,ide, jds,jde, kds,kde,             &
                      ims,ime, jms,jme, kms,kme,             &
                      grid%i_start(ij), grid%i_end(ij),      &
@@ -4069,3 +4188,341 @@ BENCH_END(bc_2d_tim)
 
 END SUBROUTINE solve_em
 
+SUBROUTINE adapt_timestep(grid, config_flags)
+
+!--------------------------------------------------------------------------
+!<DESCRIPTION>
+!<pre>
+!
+! This routine sets the time step based on the cfl condition.  It's used to
+!   dynamically adapt the timestep as the model runs.
+!
+! T. Hutchinson, WSI
+! March 2007
+!
+!</pre>
+!</DESCRIPTION>
+!--------------------------------------------------------------------------
+
+! Driver layer modules
+  USE module_domain
+  USE module_configure
+  USE module_dm
+
+  IMPLICIT NONE
+
+  TYPE(domain) , TARGET , INTENT(INOUT)      :: grid
+  TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  LOGICAL                                    :: use_last2
+  REAL                                       :: curr_secs
+  REAL                                       :: max_increase_factor
+  REAL                                       :: time_to_output, &
+                                                time_to_bc
+  INTEGER                                    :: idex=0, jdex=0
+  INTEGER                                    :: rc
+  TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, dtInterval
+  INTEGER                                    :: num_small_steps
+  integer                                    :: tile
+  LOGICAL                                    :: stepping_to_bc
+  INTEGER                                    :: bc_time, output_time
+  double precision                           :: dt
+  INTEGER, PARAMETER                         :: precision = 100
+  INTEGER                                    :: dt_num, dt_den, dt_whole
+  REAL                                       :: factor
+  INTEGER                                    :: num, den
+  TYPE(WRFU_TimeInterval)                    :: last_dtInterval
+  REAL                                       :: real_time
+
+  !
+  ! If use_last2 is true, this routine will use the time step
+  !   from 2 steps ago to compute the next time step.  This
+  !   is used along with step_to_output and step_to_bc
+
+  use_last2 = .FALSE.
+
+  !
+  ! For nests, we only want to change nests' time steps when the time is 
+  !    conincident with the parent's time.  So, if dtbc is not
+  !    zero, simply return and leave the last time step in place.
+  !
+  if (config_flags%nested) then
+     if (abs(grid%dtbc) > 0.0001) then
+        return
+     endif
+  endif
+
+  last_dtInterval = grid%last_dtInterval
+
+  !
+  ! Get current time
+  !
+
+  tmpTimeInterval = domain_get_current_time ( grid ) - &
+       domain_get_start_time ( grid )
+
+  !
+  ! Calculate current time in seconds since beginning of model run.
+  !   Unfortunately, ESMF does not seem to have a way to return
+  !   floating point seconds based on a TimeInterval.  So, we will
+  !   calculate it here--but, this is not clean!!
+  !
+  curr_secs = real_time(tmpTimeInterval)
+
+  !
+  ! Calculate the maximum allowable increase in the time step given
+  !   the user input max_step_increase_pct value and the nest ratio.
+  !
+  if (config_flags%nested) then
+     max_increase_factor = 1. + &
+          grid%parent_time_step_ratio * grid%max_step_increase_pct / 100.     
+  else
+     max_increase_factor = 1. + grid%max_step_increase_pct / 100.
+  endif
+
+  !
+  ! If this is the first time step of the model run (indicated by current_time 
+  !    eq start_time), then set the time step to the input starting_time_step.
+  !
+  ! Else, calculate the time step based on cfl.
+  !
+  if (domain_get_current_time ( grid ) .eq. domain_get_start_time ( grid )) then
+     CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=1)
+     curr_secs = 0
+     CALL WRFU_TimeIntervalSet(last_dtInterval, Sn=0, Sd=1)
+
+  else
+     if (grid%max_cfl_val < 0.001) then 
+        !
+        ! If the max_cfl_val is small, then we increase dtInterval the maximum
+        !    amount allowable.
+        !
+        num = INT(max_increase_factor * precision + 0.5)
+        den = precision
+        dtInterval = last_dtInterval * num / den
+
+     else
+        !
+        ! If the max_cfl_val is greater than the user input target cfl, we 
+        !    reduce the time step, 
+        ! else, we increase it.
+        !
+        if (grid%max_cfl_val .gt. grid%target_cfl) then
+           !
+           ! If we are reducing the time step, we go below target cfl by half the
+           !   difference between max and target.
+           !   This tends to keep the model more stable.
+           !
+           
+           factor = ( (grid%target_cfl - 0.5 * &
+                (grid%max_cfl_val - grid%target_cfl) ) / grid%max_cfl_val )
+           num = INT(factor * precision + 0.5)
+           den = precision
+
+           dtInterval = last_dtInterval * num / den
+
+        else
+           !
+           ! Linearly increase dtInterval (we'll limit below)
+           !
+           
+           factor = grid%target_cfl / grid%max_cfl_val
+           num = INT(factor * precision + 0.5)
+           den = precision
+           dtInterval = last_dtInterval * num / den
+        endif
+
+     endif
+
+  endif
+
+  ! Limit the increase of dtInterval to the specified input limit
+
+  num = NINT( max_increase_factor * precision )
+  den = precision
+  tmpTimeInterval = last_dtInterval * num / den
+  if ( (domain_get_current_time ( grid ) .ne. domain_get_start_time ( grid )) &
+       .and. (dtInterval .gt. tmpTimeInterval ) ) then
+     dtInterval = tmpTimeInterval
+  endif
+
+  !
+  ! Here, we round off dtInterval to nearest 1/100.  This prevents
+  !    the denominator from getting too large and causing overflow.
+  !
+  dt = real_time(dtInterval)
+  num = NINT(dt * precision)
+  den = precision
+  CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+
+  ! Limit the maximum dtInterval based on user input
+
+  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%max_time_step, Sd=1)
+  if (dtInterval .gt. tmpTimeInterval ) then
+     dtInterval = tmpTimeInterval
+  endif
+
+  ! Limit the minimum dtInterval based on user input.
+
+  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%min_time_step, &
+       Sd=grid%parent_time_step_ratio)
+  if (dtInterval .lt. tmpTimeInterval ) then
+     dtInterval = tmpTimeInterval
+  endif
+
+  !
+  ! Now, if this is a nest, we round down the time step to the nearest 
+  !   value that divides evenly into the parent time step.
+  !
+  if (config_flags%nested) then
+     ! We'll calculate real numbers to get the number of small steps:
+     
+     dt = real_time(dtInterval)
+
+     num_small_steps = CEILING( grid%parents(1)%ptr%dt / dt )
+
+#ifdef DM_PARALLEL
+     call wrf_dm_maxval(num_small_steps, idex, jdex)
+#endif
+     dtInterval = domain_get_time_step(grid%parents(1)%ptr) / &
+          num_small_steps
+  endif
+
+  !
+  ! Setup the values for several variables from the tile with the
+  !   minimum dt.
+  !
+  dt = real_time(dtInterval)
+
+#ifdef DM_PARALLEL
+  call wrf_dm_mintile_double(dt, tile)
+  dt_num = dtInterval%basetime%Sn
+  dt_den = dtInterval%basetime%Sd
+  dt_whole = dtInterval%basetime%S
+  call wrf_dm_tile_val_int(dt_num, tile)
+  call wrf_dm_tile_val_int(dt_den, tile)
+  call wrf_dm_tile_val_int(dt_whole, tile)
+  CALL WRFU_TimeIntervalSet(dtInterval, Sn = dt_whole*dt_den + dt_num, Sd = dt_den)
+
+  call wrf_dm_maxtile_real(grid%max_cfl_val, tile)
+  call wrf_dm_maxtile_real(grid%max_vert_cfl, tile)
+  call wrf_dm_maxtile_real(grid%max_horiz_cfl, tile)
+#endif
+
+  !
+  ! Assure that we fall on a BC time.  Due to a bug in WRF, the time
+  !   step must fall on the boundary times.
+  !
+
+  time_to_bc = grid%interval_seconds - grid%dtbc
+  num = INT(time_to_bc * precision + 0.5)
+  den = precision
+  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+   
+  if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
+       ( tmpTimeInterval .GT. dtInterval ) ) then
+     dtInterval = tmpTimeInterval / 2
+     
+     use_last2 = .TRUE.
+     stepping_to_bc = .true.
+
+  elseif (tmpTimeInterval .LE. dtInterval) then
+
+     bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
+          * ( grid%interval_seconds )
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
+     dtInterval = tmpTimeInterval - &
+          (domain_get_current_time(grid) - domain_get_start_time(grid))
+
+     use_last2 = .TRUE.
+     stepping_to_bc = .true.
+  else
+     stepping_to_bc = .false.
+  endif
+
+  !
+  ! If the user has requested that we step to output, then
+  !   assure that we fall on an output time.  We look out two time steps to
+  !   avoid having a very short time step.  Very short time steps can cause model
+  !   instability.
+  !
+
+  if ((grid%step_to_output_time) .and. (.not. stepping_to_bc) .and. &
+       (.not. config_flags%nested)) then
+
+     time_to_output = grid%history_interval*60 - &
+          mod(curr_secs, grid%history_interval*60.0)
+     num = INT(time_to_output * precision + 0.5)
+     den = precision
+     call WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
+
+     if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
+          ( tmpTimeInterval .GT. dtInterval ) ) then
+        dtInterval = tmpTimeInterval / 2
+        use_last2 = .TRUE.
+
+     elseif (tmpTimeInterval .LE. dtInterval) then
+        !
+        ! We will do some tricks here to assure that we fall exactly on an 
+        !   output time.  Without the tricks, round-off error causes problems!
+        !
+
+        !
+        ! Calculate output time.  We round to nearest history time to assure 
+        !    we don't have any rounding error.
+        !
+        output_time = NINT ( (curr_secs + time_to_output) /  &
+             ( grid%history_interval * 60 ) ) * (grid%history_interval * 60)
+        CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=output_time)
+        dtInterval = tmpTimeInterval - &
+             (domain_get_current_time(grid) - domain_get_start_time(grid))
+
+        use_last2 = .TRUE.
+     endif
+  endif
+
+  if (use_last2) then
+     grid%last_dtInterval = last_dtInterval
+  else
+     grid%last_dtInterval = dtInterval
+  endif
+
+  grid%dt = real_time(dtInterval)
+
+  grid%last_max_vert_cfl = grid%max_vert_cfl
+
+  !
+  ! Update the clock based on the new time step
+  !
+  CALL WRFU_ClockSet ( grid%domain_clock,        &
+       timeStep=dtInterval, &
+       rc=rc )
+
+
+END SUBROUTINE adapt_timestep
+
+FUNCTION real_time( timeinterval ) RESULT ( out_time )
+
+  USE module_domain
+
+  IMPLICIT NONE 
+
+! This function returns a floating point time from an input time interval
+!  
+! Unfortunately, the ESMF did not provide this functionality.
+!
+! Be careful with the output because, due to rounding, the time is only
+!   approximate.
+!
+! Todd Hutchinson, WSI
+! 4/17/2007
+
+! !RETURN VALUE:
+      REAL :: out_time
+
+! !ARGUMENTS:
+      TYPE(WRFU_TimeInterval), intent(in) :: timeinterval
+
+      out_time = timeinterval%basetime%S + &
+           REAL(timeinterval%basetime%Sn) / REAL(timeinterval%basetime%Sd)
+END FUNCTION 

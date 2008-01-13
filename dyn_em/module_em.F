@@ -188,7 +188,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          u_frame, v_frame,                                &
                          ids, ide, jds, jde, kds, kde,                    &
                          ims, ime, jms, jme, kms, kme,                    &
-                         its, ite, jts, jte, kts, kte                    )
+                         its, ite, jts, jte, kts, kte,                    &
+                         max_vert_cfl, max_horiz_cfl)
 
    IMPLICIT NONE
 
@@ -297,6 +298,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    INTEGER, INTENT( IN ) :: damp_opt
 
    REAL, INTENT( IN ) :: zdamp, dampcoef
+
+   REAL, INTENT( OUT ) :: max_horiz_cfl
+   REAL, INTENT( OUT ) :: max_vert_cfl
 
    REAL    :: kdift, khdq, kvdq, cfn, cfn1, cf1, cf2, cf3
    INTEGER :: i,j,k
@@ -465,8 +469,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   ims, ime, jms, jme, kms, kme,   &
                   its, ite, jts, jte, kts, kte   )
 
-  CALL w_damp   ( rw_tend, ww, w, mut, rdnw, dt,    &
-                    config_flags%w_damping,         &
+  CALL w_damp   ( rw_tend, max_vert_cfl,            &
+                    max_horiz_cfl,                  &
+                    u, v, ww, w, mut, rdnw,         &
+                    rdx, rdy, msfux, msfuy, msfvx,  &
+                    msfvy, dt, config_flags%w_damping,&
                     ids, ide, jds, jde, kds, kde,   &
                     ims, ime, jms, jme, kms, kme,   &
                     its, ite, jts, jte, kts, kte   )

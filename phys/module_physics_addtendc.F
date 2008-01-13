@@ -686,9 +686,9 @@ END SUBROUTINE phy_fg_ten
 
 !----------------------------------------------------------------------
 SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
-                     RQICUTEN,RQSCUTEN,RAINC,RAINCV,NCA,              &
+                     RQICUTEN,RQSCUTEN,RAINC,RAINCV,PRATEC,NCA,       &
                      HTOP,HBOT,CUTOP,CUBOT,                           &
-                     CUPPT, config_flags,                             &
+                     CUPPT, DT, config_flags,                         &
                      ids,ide, jds,jde, kds,kde,                       &
                      ims,ime, jms,jme, kms,kme,                       &
                      its,ite, jts,jte, kts,kte                        )     
@@ -718,12 +718,14 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                RAINC, &
                                                          RAINCV, &
+                                                         PRATEC, &
                                                             NCA, &
                                                            HTOP, &
                                                            HBOT, &
                                                           CUTOP, &
                                                           CUBOT, &
                                                           CUPPT
+   REAL, INTENT(IN) ::                                       DT
 
 ! LOCAL  VAR
 
@@ -757,8 +759,8 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
 
    DO J = j_start,j_end
    DO i = i_start,i_end
-      RAINC(I,J)=RAINC(I,J)+RAINCV(I,J)
-      CUPPT(I,J)=CUPPT(I,J)+RAINCV(I,J)/1000.
+      RAINC(I,J)=RAINC(I,J)+PRATEC(I,J)*DT
+      CUPPT(I,J)=CUPPT(I,J)+PRATEC(I,J)*DT/1000.
    ENDDO
    ENDDO
 
@@ -769,9 +771,9 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
         DO J = j_start,j_end
         DO i = i_start,i_end
 
-           IF ( NINT(NCA(I,J)).GT. 0 ) THEN
+           IF ( NCA(I,J) .GT. 0 ) THEN
 
-              IF ( NINT(NCA(I,J)) .eq. 1 ) THEN
+              IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
 
               ! set tendency to zero
                  RAINCV(I,J)=0.
@@ -785,7 +787,8 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                  ENDDO
               ENDIF
 
-              NCA(I,J)=NCA(I,J)-1. ! Decrease NCA
+!              NCA(I,J)=NCA(I,J)-1. ! Decrease NCA
+              NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
 
            ENDIF
 !
@@ -824,10 +827,11 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
            IF(NCUBOT>0.AND.NCUBOT<KDE)THEN
              HBOT(I,J)=MIN(CUBOT(I,J),HBOT(I,J))
            ENDIF
+           IF ( NCA(I,J) .GT. 0 ) THEN
 
-           IF ( NINT(NCA(I,J)).GT. 0 ) THEN
 
-              IF ( NINT(NCA(I,J)) .eq. 1 ) THEN
+              IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
+!              IF ( NINT(NCA(I,J)) .eq. 1 ) THEN
 
               ! set tendency to zero
                  RAINCV(I,J)=0.
@@ -841,7 +845,8 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                  ENDDO
               ENDIF
 
-              NCA(I,J)=NCA(I,J)-1. ! Decrease NCA
+              NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
+!              NCA(I,J)=NCA(I,J)-1. ! Decrease NCA
 
            ENDIF
 !

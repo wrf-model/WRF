@@ -79,6 +79,7 @@
    REAL :: lon1 , lon2 , lon3 , lon4
    INTEGER :: num_points_lat_lon , iloc , jloc
    CHARACTER (LEN=132) :: message
+   TYPE(WRFU_TimeInterval) :: stepTime
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
 
 ! Needed by some comm layers, e.g. RSL. If needed, nmm_data_calls.inc is
@@ -516,6 +517,44 @@
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
    CALL domain_setgmtetc( grid, start_of_simulation )
+
+!-----------------------------------------------------------------------------
+! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
+!
+!
+
+!KLUDGE start waiting for Michael
+grid%dfi_opt = 0
+grid%dfi_stage = 1
+
+   IF ( ( grid%use_adaptive_time_step ) .AND. &
+        ( ( grid%dfi_opt .EQ. 0 ) .OR. ( grid%dfi_stage .EQ. 1 ) ) ) THEN
+!KLUDGE end   waiting for Michael
+
+!  Calculate any variables that were not set
+
+      grid%starting_time_step = NINT(6 * MIN(grid%dx,grid%dy) / 1000)
+      
+      grid%max_time_step = 3*grid%starting_time_step
+
+!     Set a starting timestep.
+
+      grid%dt = grid%starting_time_step / grid%parent_time_step_ratio
+
+!     Check to assure that time_step_sound is to be dynamically set.
+
+      CALL nl_set_time_step_sound ( 1 , 0 ) 
+      grid%time_step_sound = 0
+
+!     This first call just initializes variables.
+
+      CALL adapt_timestep(grid, config_flags)
+
+   END IF
+
+! End of adaptive time step modifications
+!-----------------------------------------------------------------------------
+
 
    CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
 

@@ -167,7 +167,17 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
      ! note that this will involve communication on multiple DM procs
      grid => parent_grid
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-     CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags   &
+#    include "deref_kludge.h"
+     
+     !
+     ! Added following line to handle adaptive time step.  This should probably
+     !   go somewhere else, but I'm not sure where.
+     !   
+     ! T. Hutchinson, WSI  1/23/07
+     !
+     nested_grid%intermediate_grid%dt = grid%dt
+
+     CALL interp_domain_em_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags  &
 !
 #         include "em_actual_new_args.inc"
 !

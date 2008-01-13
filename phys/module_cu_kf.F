@@ -14,7 +14,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde                     &
               ,ims,ime, jms,jme, kms,kme                     &
               ,its,ite, jts,jte, kts,kte                     &
-              ,DT,KTAU,DX                                    &
+              ,DT,KTAU,DX,CUDT,CURR_SECS,ADAPT_STEP_FLAG     &
               ,rho                                           &
               ,RAINCV,NCA                                    &
               ,U,V,TH,T,W,QV,dz8w,Pcps,pi                    &
@@ -57,6 +57,9 @@ CONTAINS
                                                          pi
 !
    REAL,  INTENT(IN   ) :: DT, DX
+   REAL,  INTENT(IN   ) :: CUDT
+   REAL,  INTENT(IN   ) :: CURR_SECS
+   LOGICAL,INTENT(IN  ) :: ADAPT_STEP_FLAG
 
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
           INTENT(INOUT) ::                                   &
@@ -126,6 +129,8 @@ CONTAINS
    INTEGER :: i,j,k,NTST,ICLDCK
 
    LOGICAL :: qi_flag , qs_flag
+   LOGICAL :: run_param
+   REAL    :: next_cu_time
 
 !----------------------------------------------------------------------
 
@@ -171,8 +176,26 @@ CONTAINS
 !                                                                     
    RTHCUMAX=0.
 
-   IF(ICLDCK.EQ.0 .or. KTAU .eq. 1) then
+!
+! Modified for adaptive time step
+!
+   if (adapt_step_flag) then
+   if ( (KTAU .eq. 1) .or. (cudt .eq. 0) .or. &
+        ( CURR_SECS + dt >= ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
+      run_param = .TRUE.
+   else
+      run_param = .FALSE.
+   endif
 
+   else
+      if (MOD(KTAU,NTST) .EQ. 0 .or. KTAU .eq. 1) then
+         run_param = .TRUE.
+      else
+         run_param = .FALSE.
+      endif
+   endif
+
+   IF (run_param) then
      DO J = jts,jte  
      DO I= its,ite
         CU_ACT_FLAG(i,j) = .true.

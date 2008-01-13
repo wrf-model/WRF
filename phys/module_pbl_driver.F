@@ -7,6 +7,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE pbl_driver(                                          &
                   itimestep,dt,u_frame,v_frame                     &
+                 ,bldt,curr_secs,adapt_step_flag                   &
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt,ht                                 &
                  ,ust,pblh,hfx,qfx,grdflx                          &
@@ -200,7 +201,9 @@ CONTAINS
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 !
    REAL,       INTENT(IN   )    ::     DT,DX
-
+   REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
+   REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
+   LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -317,6 +320,8 @@ CONTAINS
    LOGICAL :: radiation
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
    CHARACTER*256 :: message
+   REAL    :: next_bl_time
+   LOGICAL :: run_param
 
 !------------------------------------------------------------------
 !
@@ -335,8 +340,25 @@ CONTAINS
 ! RAINBL in mm (Accumulation between PBL calls)
 
 
-  IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
+!
+! Modified for adaptive time step
+!
+  if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
+     if ( (itimestep .eq. 1) .or. (bldt .eq. 0) .or. &
+          ( CURR_SECS + dt >= ( int( CURR_SECS / ( bldt * 60 ) + 1 ) * bldt * 60) ) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
+  else
+     if ( (itimestep .eq. 1) .or. (mod(itimestep,STEPBL) .eq. 0) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
+  endif
 
+ IF (run_param) THEN
   radiation = .false.
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
@@ -345,7 +367,16 @@ CONTAINS
  
    DTMIN=DT/60.
 ! PBL schemes need PBL time step for updates
-   DTBL=DT*STEPBL
+
+   if (PRESENT(BLDT)) THEN
+      if (bldt .eq. 0) then
+         DTBL = dt
+      ELSE
+         DTBL=bldt
+      endif
+   else
+      DTBL=DT*STEPBL
+   endif
 
 ! SAVE OLD VALUES
 

@@ -8,7 +8,7 @@ CONTAINS
 !-------------------------------------------------------------
    SUBROUTINE GRELLDRV(                                         &
                DT,itimestep,DX                                  &
-              ,rho,RAINCV                                       &
+              ,rho,RAINCV,PRATEC                                &
               ,U,V,t,W,q,p,pi                                   &
               ,dz8w,p8w,XLV,CP,G,r_v                            &
               ,STEPCU,htop,hbot                                 &
@@ -69,7 +69,7 @@ CONTAINS
 !
 
    REAL, DIMENSION( ims:ime , jms:jme ),                        &
-         INTENT(INOUT) ::                 RAINCV, MASS_FLUX,    &
+         INTENT(INOUT) ::         RAINCV, PRATEC, MASS_FLUX,    &
                           APR_GR,APR_W,APR_MC,APR_ST,APR_AS,    &
                               APR_CAPMA,APR_CAPME,APR_CAPMI,htop,hbot
 !+lxz
@@ -181,6 +181,7 @@ CONTAINS
         cuten(i)=0.
         iact_old_gr(i,j)=0
         mass_flux(i,j)=0.
+        pratec(i,j) = 0.
         raincv(i,j)=0.
         CU_ACT_FLAG(i,j) = .true.
      ENDDO
@@ -315,6 +316,7 @@ CONTAINS
 !             cuten(i)=0.
               if(i.ge.ibeg.and.i.le.iend)then
               if(pret(i).gt.0.)then
+                 pratec(i,j)=pret(i)
                  raincv(i,j)=pret(i)*dt
                  cuten(i)=1.
                  rkbcon = kte+kts - kbcon(i)

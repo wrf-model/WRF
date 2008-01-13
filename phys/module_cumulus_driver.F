@@ -13,8 +13,8 @@ CONTAINS
                      ,u,v,th,t,w                                      &
                      ,p,pi,rho                                        &
                  ! --Other arguments
-                     ,itimestep,dt,dx                                 &
-                     ,rainc,raincv,nca                                &
+                     ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,rainc,raincv,pratec,nca                         &
                      ,dz8w,p8w,forcet,forceq                          &
                      ,w0avg,stepcu,gsw                                &
                      ,cldefi,lowlyr,xland,cu_act_flag,warm_rain       &
@@ -102,6 +102,8 @@ CONTAINS
 ! Qs         snow mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- DT            time step (second)
+!-- CUDT          cumulus time step (minute)
+!-- curr_secs     current forecast time (seconds)
 !-- itimestep     number of time step (integer)   
 !-- DX            horizontal space interval (m)
 !-- rr            dry air density (kg/m^3)
@@ -121,6 +123,7 @@ CONTAINS
 !
 !-- RAINC         accumulated total cumulus scheme precipitation (mm)
 !-- RAINCV        cumulus scheme precipitation (mm)
+!-- PRATEC        precipitiation rate from cumulus scheme (mm/s)
 !-- NCA           counter of the cloud relaxation 
 !                 time in KF cumulus scheme (integer)
 !-- u_phy         u-velocity interpolated to theta points (m/s)
@@ -243,6 +246,10 @@ CONTAINS
                                                     ,    CLDEFI 
  
 
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
+        PRATEC
+   REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratec
+                                                    
    INTEGER, DIMENSION( ims:ime , jms:jme ),                      &
                     INTENT(IN) ::                          KPBL
 
@@ -251,6 +258,11 @@ CONTAINS
           INTENT(INOUT) :: CU_ACT_FLAG
 
    REAL,  INTENT(IN   ) :: DT, DX
+   REAL,  INTENT(IN   ),OPTIONAL :: CUDT
+   REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
+   LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+   REAL   :: cudt_pass, curr_secs_pass
+   LOGICAL :: adapt_step_flag_pass
 
 !
 ! optional arguments
@@ -307,6 +319,27 @@ CONTAINS
 
 !-----------------------------------------------------------------
 
+   if (.not. PRESENT(CURR_SECS)) then
+      curr_secs_pass = -1
+   else 
+      curr_secs_pass = curr_secs
+   endif
+
+   if (.not. PRESENT(CUDT)) then
+      cudt_pass = -1
+   else
+      cudt_pass = cudt
+   endif
+
+   if (.not. PRESENT(adapt_step_flag)) then
+      adapt_step_flag_pass = .false.
+   else
+      adapt_step_flag_pass = adapt_step_flag
+   endif
+
+   ! Initialize prate to 0
+   tmppratec(:,:) = 0
+
    IF (cu_physics .eq. 0) return
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
@@ -330,7 +363,10 @@ CONTAINS
 
           CALL KFCPS(                                           &
               ! order independent arguments
-                DT=dt ,KTAU=itimestep ,DX=dx ,RHO=rho           &
+                DT=dt ,KTAU=itimestep ,DX=dx , CUDT=cudt_pass   &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,RHO=rho                                         &
                ,U=u ,V=v ,TH=th ,T=t ,W=w                       &
                ,PCPS=p ,PI=pi                                   &
                ,XLV0=xlv0 ,XLV1=xlv1 ,XLS0=xls0 ,XLS1=xls1      &
@@ -357,8 +393,12 @@ CONTAINS
      CASE (BMJSCHEME)
           CALL wrf_debug(100,'in bmj_cps')
           CALL BMJDRV(                                          &
-                TH=th,T=T ,RAINCV=raincv, RHO=rho               &
+                TH=th,T=T ,RAINCV=raincv, PRATEC=tmppratec      &
+               ,RHO=rho                                         &
                ,DT=dt ,ITIMESTEP=itimestep ,STEPCU=stepcu       &
+               ,CUDT=cudt_pass                                  &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
                ,CUTOP=htop, CUBOT=hbot, KPBL=kpbl               &
                ,DZ8W=dz8w ,PINT=p8w, PMID=p, PI=pi              &
                ,CP=cp ,R=r_d ,ELWV=xlv ,ELIV=xls ,G=g           &
@@ -377,7 +417,11 @@ CONTAINS
           CALL wrf_debug(100,'in kf_eta_cps')
           CALL KF_ETA_CPS(                                      &
                 U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho              &
-               ,RAINCV=raincv, NCA=nca ,DZ8W=dz8w               &
+               ,CUDT=cudt_pass                                  &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,RAINCV=raincv, PRATEC=tmppratec, NCA=nca        &
+               ,DZ8W=dz8w                                       &
                ,PCPS=p, PI=pi ,W0AVG=W0AVG                      &
                ,CUTOP=HTOP,CUBOT=HBOT                           &
                ,XLV0=XLV0 ,XLV1=XLV1 ,XLS0=XLS0 ,XLS1=XLS1      &
@@ -406,6 +450,7 @@ CONTAINS
                ,U=u,V=v,T=t,W=w ,RHO=rho                        &
                ,P=p,PI=pi ,Q=qv_curr ,RAINCV=raincv             &
                ,DZ8W=dz8w,P8W=p8w,XLV=xlv,CP=cp,G=g,R_V=r_v     &
+               ,PRATEC=tmppratec                                &
                ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
                ,APR_ST=apr_st,APR_AS=apr_as                     &
                ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
@@ -438,13 +483,17 @@ CONTAINS
      CASE (SASSCHEME)
                                                                                                                                            
           CALL wrf_debug(100,'in cu_sas')
+          CALL wrf_debug(0,'warn: sas cumulus will not work properly with an adaptive time step')
             CALL CU_SAS(                                        &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
-               ,RAINCV=RAINCV,HTOP=HTOP,HBOT=HBOT               &
+               ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,CUDT=cudt_pass                                  &
+               ,CURR_SECS=curr_secs_pass                        &
+               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -465,6 +514,12 @@ CONTAINS
       ENDDO
       !$OMP END PARALLEL DO
 
+      !
+      ! Copy pratec back to output array, if necessary.
+      !
+      if (PRESENT(PRATEC)) then
+         pratec(:,:) = tmppratec(:,:)
+      endif
    END SUBROUTINE cumulus_driver
 
 END MODULE module_cumulus_driver

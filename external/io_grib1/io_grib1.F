@@ -67,6 +67,7 @@ module gr1_data_info
      integer :: fcst_secs_rainnc
      real, dimension(:,:), pointer         :: rainc, rainnc
   END TYPE prevdata
+  TYPE (prevdata), DIMENSION(500)          :: lastdata
 
   TYPE :: initdata
      real,         dimension(:,:), pointer :: snod
@@ -80,7 +81,10 @@ module gr1_data_info
      character*120                          :: lastDateStr
   END TYPE prestype
 
+  character*120, dimension(maxDomains)     :: lastDateStr
+
   TYPE (prestype), dimension(maxDomains)   :: pressure
+  TYPE (prestype), dimension(maxDomains)   :: geopotential
 
   integer                                  :: center, subcenter, parmtbl
 
@@ -118,8 +122,13 @@ subroutine ext_gr1_ioinit(SysDepInfo,Status)
   do i = 1, maxDomains
     pressure(i)%newtime = .false.
     pressure(i)%lastDateStr = ''
+    geopotential(i)%newtime = .false.
+    geopotential(i)%lastDateStr = ''
+    lastDateStr(i) = ''
   enddo
 
+  lastdata%fcst_secs_rainc = 0
+  lastdata%fcst_secs_rainnc = 0
   FileStatus(1:maxFileHandles) = WRF_FILE_NOT_OPENED
   WrfIOnotInitialized = .false.
 
@@ -610,6 +619,7 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
   logical :: new_domain
   real    :: region_center_lat, region_center_lon
   integer :: dom_xsize, dom_ysize;
+  integer :: ierr
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_write_field for parameter'//VarName)
 
@@ -639,6 +649,30 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
      this_domain = max_domain
      new_domain = .true.
   endif
+
+  !
+  ! If the time has changed, we open a new file.  This is a kludge to get
+  !   around slowness in WRF that occurs when opening a new data file the
+  !   standard way.
+  !
+#ifdef GRIB_ONE_TIME_PER_FILE
+  if (lastDateStr(this_domain) .ne. DateStr) then
+     write(DataFile(DataHandle),'(A8,i2.2,A1,A19)') 'wrfout_d',this_domain,'_',DateStr
+     print *,'Opening new file: ',trim(DataFile(DataHandle))
+
+     call ext_gr1_ioclose ( DataHandle, Status )
+     CALL open_file(TRIM(DataFile(DataHandle)), 'w', FileFd(DataHandle), ierr)
+     if (ierr .ne. 0) then
+        print *,'Could not open new file: ',DataFile(DataHandle)
+        print *,'  Appending to old file.'
+     else
+        ! Just set used back to .true. here, since ioclose set it to false.
+        used(DataHandle) = .true.
+     endif
+     td_output(DataHandle) = ''
+  endif
+  lastDateStr(this_domain) = DateStr
+#endif
 
   output = .true.
   zsize = 1
@@ -680,6 +714,10 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
   if (new_domain) then
      ALLOCATE(firstdata(this_domain)%snod(xsize,ysize))
      firstdata(this_domain)%snod(:,:) = 0.0
+     ALLOCATE(lastdata(this_domain)%rainc(xsize,ysize))
+     lastdata(this_domain)%rainc(:,:) = 0.0
+     ALLOCATE(lastdata(this_domain)%rainnc(xsize,ysize))
+     lastdata(this_domain)%rainnc(:,:) = 0.0
   endif
 
   if (zsize .eq. 0) then 
@@ -758,29 +796,28 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
   if (opened(DataHandle) .and. committed(DataHandle)) then
 
 
-     !
-     ! The following code to compute full pressure was removed by 
-     !  Todd Hutchinson since there are times when base-state and 
-     !  perturbation are required (i.e., for a restart)
-     !
+#ifdef OUTPUT_FULL_PRESSURE
 
      ! 
      ! The following is a kludge to output full pressure instead of the two 
      !  fields of base-state pressure and pressure perturbation.
      !
+     ! This code can be turned on by adding -DOUTPUT_FULL_PRESSURE to the 
+     !  compile line
+     !
      
-!     if ((OutName .eq. 'P') .or. (OutName.eq.'PB')) then
-!        do idx = 1, len(MemoryOrder)
-!           if (MemoryOrder(idx:idx) .eq. 'X') then
-!              idx1=idx
-!           endif
-!           if (MemoryOrder(idx:idx) .eq. 'Y') then
-!              idx2=idx
-!           endif
-!           if (MemoryOrder(idx:idx) .eq. 'Z') then
-!              idx3=idx
-!           endif
-!        enddo
+     if ((OutName .eq. 'P') .or. (OutName.eq.'PB')) then
+        do idx = 1, len(MemoryOrder)
+            if (MemoryOrder(idx:idx) .eq. 'X') then
+              idx1=idx
+           endif
+           if (MemoryOrder(idx:idx) .eq. 'Y') then
+              idx2=idx
+           endif
+           if (MemoryOrder(idx:idx) .eq. 'Z') then
+              idx3=idx
+           endif
+        enddo
 
         ! 
         ! Allocate space for pressure values (this variable holds 
@@ -789,23 +826,74 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
         !   pressure).
         !
 
-!        if (.not. ASSOCIATED(pressure(this_domain)%vals)) then
-!           ALLOCATE(pressure(this_domain)%vals(MemoryStart(1):MemoryEnd(1), &
-!                MemoryStart(2):MemoryEnd(2),MemoryStart(3):MemoryEnd(3)))
-!        endif
-!        if (DateStr .NE. &
-!             pressure(this_domain)%lastDateStr) then
-!           pressure(this_domain)%newtime = .true.
-!        endif
-!        if (pressure(this_domain)%newtime) then
-!           pressure(this_domain)%vals = Field(1,:,:,:)
-!           pressure(this_domain)%newtime = .false.
-!           output = .false.
-!        else 
-!           output = .true.
-!        endif
-!        pressure(this_domain)%lastDateStr=DateStr
-!     endif
+        if (.not. ASSOCIATED(pressure(this_domain)%vals)) then
+           ALLOCATE(pressure(this_domain)%vals(MemoryStart(1):MemoryEnd(1), &
+                MemoryStart(2):MemoryEnd(2),MemoryStart(3):MemoryEnd(3)))
+        endif
+        if (DateStr .NE. &
+             pressure(this_domain)%lastDateStr) then
+           pressure(this_domain)%newtime = .true.
+        endif
+        if (pressure(this_domain)%newtime) then
+           pressure(this_domain)%vals = Field(1,:,:,:)
+           pressure(this_domain)%newtime = .false.
+           output = .false.
+        else 
+           output = .true.
+        endif
+        pressure(this_domain)%lastDateStr=DateStr
+     endif
+#endif
+
+#ifdef OUTPUT_FULL_GEOPOTENTIAL
+
+     ! 
+     ! The following is a kludge to output full geopotential height instead 
+     !  of the two fields of base-state geopotential and perturbation 
+     !  geopotential.
+     !
+     ! This code can be turned on by adding -DOUTPUT_FULL_GEOPOTENTIAL to the 
+     !  compile line
+     !
+     
+     if ((OutName .eq. 'PHB') .or. (OutName.eq.'PH')) then
+        do idx = 1, len(MemoryOrder)
+            if (MemoryOrder(idx:idx) .eq. 'X') then
+              idx1=idx
+           endif
+           if (MemoryOrder(idx:idx) .eq. 'Y') then
+              idx2=idx
+           endif
+           if (MemoryOrder(idx:idx) .eq. 'Z') then
+              idx3=idx
+           endif
+        enddo
+
+        ! 
+        ! Allocate space for geopotential values (this variable holds 
+        !   geopotential to be used 
+        !   later to sum base-state and perturbation to get full 
+        !   geopotential).
+        !
+
+        if (.not. ASSOCIATED(geopotential(this_domain)%vals)) then
+           ALLOCATE(geopotential(this_domain)%vals(MemoryStart(1):MemoryEnd(1), &
+                MemoryStart(2):MemoryEnd(2),MemoryStart(3):MemoryEnd(3)))
+        endif
+        if (DateStr .NE. &
+             geopotential(this_domain)%lastDateStr) then
+           geopotential(this_domain)%newtime = .true.
+        endif
+        if (geopotential(this_domain)%newtime) then
+           geopotential(this_domain)%vals = Field(1,:,:,:)
+           geopotential(this_domain)%newtime = .false.
+           output = .false.
+        else 
+           output = .true.
+        endif
+        geopotential(this_domain)%lastDateStr=DateStr
+     endif
+#endif
 
      if (output) then 
         if (StartDate == '') then
@@ -950,7 +1038,7 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
            ! For precip, we setup the accumulation period, and output a precip
            !    rate for time-step precip.
            !
-           if ((OutName .eq. 'RAINCV') .or. (OutName .eq. 'RAINNCV')) then
+           if (OutName .eq. 'RAINNCV') then
               ! Convert time-step precip to precip rate.
               data = data/timestep
               accum_period = 0
@@ -958,29 +1046,57 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
               accum_period = 0
            endif
 
+#ifdef OUTPUT_FULL_PRESSURE
            !
-           ! Computation of full-pressure removed since there are 
+           ! Computation of full-pressure off by default since there are 
            !  uses for base-state and perturbation (i.e., restarts
            !
-!           if ((OutName .eq. 'P') .or. (OutName.eq.'PB')) then
-!              if (idx3 .eq. 1) then
-!                 data = data + &
-!                      pressure(this_domain)%vals(z, &
-!                      patchstart(2):patchend(2),patchstart(3):patchend(3))
-!              elseif (idx3 .eq. 2) then
-!                 data = data + &
-!                      pressure(this_domain)%vals(patchstart(1):patchend(1), &
-!                      z,patchstart(3):patchend(3))
-!              elseif (idx3 .eq. 3) then
-!                 data = data + &
-!                      pressure(this_domain)%vals(patchstart(1):patchend(1), &
-!                      patchstart(2):patchend(2),z)
-!              else
-!                 call wrf_message ('error in idx3, continuing')
-!              endif
-!
-!              OutName = 'P'
-!           endif
+            if ((OutName .eq. 'P') .or. (OutName.eq.'PB')) then
+               if (idx3 .eq. 1) then
+                  data = data + &
+                       pressure(this_domain)%vals(z, &
+                       patchstart(2):patchend(2),patchstart(3):patchend(3))
+               elseif (idx3 .eq. 2) then
+                  data = data + &
+                       pressure(this_domain)%vals(patchstart(1):patchend(1), &
+                       z,patchstart(3):patchend(3))
+               elseif (idx3 .eq. 3) then
+                  data = data + &
+                       pressure(this_domain)%vals(patchstart(1):patchend(1), &
+                       patchstart(2):patchend(2),z)
+               else
+                  call wrf_message ('error in idx3, continuing')
+               endif
+
+               OutName = 'P'
+            endif
+#endif
+
+#ifdef OUTPUT_FULL_GEOPOTENTIAL
+           !
+           ! Computation of full-geopotential off by default since there are 
+           !  uses for base-state and perturbation (i.e., restarts
+           !
+            if ((OutName .eq. 'PHB') .or. (OutName.eq.'PH')) then
+               if (idx3 .eq. 1) then
+                  data = data + &
+                       geopotential(this_domain)%vals(z, &
+                       patchstart(2):patchend(2),patchstart(3):patchend(3))
+               elseif (idx3 .eq. 2) then
+                  data = data + &
+                       geopotential(this_domain)%vals(patchstart(1):patchend(1), &
+                       z,patchstart(3):patchend(3))
+               elseif (idx3 .eq. 3) then
+                  data = data + &
+                       geopotential(this_domain)%vals(patchstart(1):patchend(1), &
+                       patchstart(2):patchend(2),z)
+               else
+                  call wrf_message ('error in idx3, continuing')
+               endif
+
+               OutName = 'PHP'
+            endif
+#endif
 
            !
            !    Output current level
@@ -991,10 +1107,70 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
                 proj_central_lon, proj_center_flag, truelat1, truelat2, &
                 grib_tables, grid_info)
            
+           !
+           ! Here, we copy data to a temporary array.  After write_grib,
+           !    we copy back from the temporary array to the permanent
+           !    array.  write_grib modifies data.  For certain fields that
+           !    we use below, we want the original (unmodified) data 
+           !    values.  This kludge assures that we have the original
+           !    values.
+           !
+
+           if ((OutName .eq. 'RAINC') .or. (OutName .eq. 'RAINNC') .or. &
+                (OutName .eq. 'SNOWH')) then
+              tmpdata(:,:) = data(:,:)
+           endif
+
            CALL write_grib(grid_info, FileFd(DataHandle), data)
+
+           if ((OutName .eq. 'RAINC') .or. (OutName .eq. 'RAINNC') .or. &
+                (OutName .eq. 'SNOWH')) then
+              data(:,:) = tmpdata(:,:)
+           endif
 
            CALL free_grid_info(grid_info)
            
+           !
+           ! If this is the total accumulated rain, call write_grib again 
+           !   to output the accumulation since the last output time as well.
+           !   This is somewhat of a kludge to meet the requirements of PF.
+           !
+           if ((OutName .eq. 'RAINC') .or. (OutName .eq. 'RAINNC') .or. &
+                (OutName .eq. 'SNOWH')) then
+              if (OutName .eq. 'RAINC') then
+                 data(:,:) = data(:,:) - lastdata(this_domain)%rainc(:,:)
+                 lastdata(this_domain)%rainc(:,:) = tmpdata(:,:)
+                 accum_period = fcst_secs - &
+                      lastdata(this_domain)%fcst_secs_rainc
+                 lastdata(this_domain)%fcst_secs_rainc = fcst_secs
+                 TmpVarName = 'ACPCP'
+              else if (OutName .eq. 'RAINNC') then
+                 tmpdata(:,:) = data(:,:)
+                 data(:,:) = data(:,:) - lastdata(this_domain)%rainnc(:,:)
+                 lastdata(this_domain)%rainnc(:,:) = tmpdata(:,:)
+                 accum_period = fcst_secs - &
+                      lastdata(this_domain)%fcst_secs_rainnc
+                 lastdata(this_domain)%fcst_secs_rainnc = fcst_secs
+                 TmpVarName = 'NCPCP'
+              else if (OutName .eq. 'SNOWH') then
+                 if (fcst_secs .eq. 0) then
+                    firstdata(this_domain)%snod(:,:) = data(:,:)
+                 endif
+                 data(:,:) = data(:,:) - firstdata(this_domain)%snod(:,:)
+                 TmpVarName = 'SNOWCU'
+              endif
+
+              CALL load_grid_info(TmpVarName, StartDate, vert_unit, level1(z),&
+                   level2(z), fcst_secs, accum_period, wg_grid_id, &
+                   projection, xsize, ysize, region_center_lat, &
+                   region_center_lon, dx, dy, proj_central_lon, &
+                   proj_center_flag, truelat1, truelat2, grib_tables, &
+                   grid_info)
+           
+              CALL write_grib(grid_info, FileFd(DataHandle), data)
+              CALL free_grid_info(grid_info)
+           endif
+
         enddo
      endif
   endif
@@ -2602,6 +2778,8 @@ SUBROUTINE ext_gr1_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  &
      full_ysize = Data(1)
   else if (Element == 'MAP_PROJ') then
      projection = Data(1)
+  else if (Element == 'WG_GRID_ID') then
+     wg_grid_id = Data(1)
   endif
 
   if (committed(DataHandle)) then

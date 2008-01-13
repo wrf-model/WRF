@@ -175,8 +175,8 @@
 173:RDX:Inverse X Grid Length [1/km]:RDX:9
 174:RDY:Inverse Y Grid Length [1/km]:RDY:9
 175:MLYNO:Model layer number (from bottom up) [non-dim]:NEST_POS:
-176:NLAT:Latitude (-90 to +90) [deg]:XLAT:4
-177:ELON:East longitude (0-360) [deg]:XLONG:4
+176:NLAT:Latitude (-90 to +90) [deg]:XLAT,XLAT_U,XLAT_V:4
+177:ELON:East longitude (0-360) [deg]:XLONG,XLONG_U,XLONG_V:4
 178:ICMR:Ice mixing ratio [kg/kg]:QICE:5
 179:GRMR:Graupel mixing ratio:QGRAUP:5
 180:QNI:Ice Crystal Number Concentration:QNI:0
@@ -247,11 +247,11 @@
 245:var245:undefined::
 246:var246:undefined::
 247:NPRATE:Non-convective Precip Rate[kg/m^2/s]:RAINNCV:7
-248:CPRATE:Convective Precip Rate[kg/m^2/s]:RAINCV:7 
+248:CPRATE:Convective Precip Rate[kg/m^2/s]:PRATEC:7 
 249:TMN:Ground Reservoir Temperature [K]:TMN:3
 250:var250:undefined::
 251:var251:undefined::
-252:var252:undefined::
+252:RAINCV:undefined:RAINCV:4
 253:TNCPCP:Cumulative Large scale precipitation [kg/m^2]:RAINNC:3
 254:TACPCP:Cumulative Convective precipitation [kg/m^2]:RAINC:3
 255:var255:undefined::
@@ -424,16 +424,16 @@
 165:SOILM2:Soil moisture content 10-40 cm [kg/m^2]:SM010040:2
 166:SOILM3:Soil moisture content 40-100 cm [kg/m^2]:SM040100:2
 167:SOILM4:Soil moisture content 100-200 cm [kg/m^2]:SM100200:2
-168:var168:undefined::
-169:var169:undefined::
-170:var170:undefined::
-171:var171:undefined::
-172:var172:undefined::
-173:var173:undefined::
-174:var174:undefined::
-175:var175:undefined::
-176:var176:undefined::
-177:var177:undefined::
+168:SR:Fraction of frozen precipitation:SR:2
+169:POTEVP::POTEVP:4
+170:SNOPCX::SNOPCX:2
+171:SOILTB::SOILTB:2
+172:XTIME:Minutes since simulation start:XTIME:3
+173:RHOSN:Snow Density [kg/m^3]:RHOSN:2
+174:QNDROPSOURCE:Droplet number source [#/kg/s]:QNDROPSOURCE:3
+175:SNOWNC:Accumulated total grid scale snow and ice [mm]:SNOWNC:1
+176:GRAUPELNC:Accumulated total grid scale graupel [mm]:GRAUPELNC:1
+177:OLR:TOA Outgoing Long Wave [W/m^2]:OLR:1
 178:var178:undefined::
 179:var179:undefined::
 180:var180:undefined::

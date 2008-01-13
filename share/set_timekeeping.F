@@ -9,6 +9,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    TYPE(WRFU_TimeInterval) :: interval, run_length
    TYPE(WRFU_Time) :: startTime, stopTime
    TYPE(WRFU_TimeInterval) :: stepTime
+   TYPE(WRFU_TimeInterval) :: tmp_step
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
    INTEGER :: vortex_interval
@@ -325,8 +326,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __FILE__ , &
                             __LINE__  )
    ELSE
-      stepTime = domain_get_time_step( grid%parents(1)%ptr ) / &
-                 grid%parent_time_step_ratio
+      tmp_step = domain_get_time_step( grid%parents(1)%ptr )
+      if (tmp_step%basetime%S .lt. 0) then
+         stepTime = domain_get_time_step( grid%parents(1)%ptr )
+      else
+         stepTime = domain_get_time_step( grid%parents(1)%ptr ) / &
+              grid%parent_time_step_ratio
+      endif
       grid%dt = grid%parents(1)%ptr%dt / grid%parent_time_step_ratio
       CALL nl_set_dt( grid%id, grid%dt )
    ENDIF

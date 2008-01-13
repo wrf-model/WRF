@@ -19,8 +19,8 @@ CONTAINS
               ids,ide, jds,jde, kds,kde                      &
              ,ims,ime, jms,jme, kms,kme                      &
              ,its,ite, jts,jte, kts,kte                      &
-             ,DT,KTAU,DX                                     &
-             ,rho,RAINCV,NCA                                 &
+             ,DT,KTAU,DX,CUDT,CURR_SECS,ADAPT_STEP_FLAG      &
+             ,rho,RAINCV,PRATEC,NCA                          &
              ,U,V,TH,T,W,dz8w,Pcps,pi                        &
              ,W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R,G,EP1           &
              ,EP2,SVP1,SVP2,SVP3,SVPT0                       &
@@ -67,9 +67,15 @@ CONTAINS
                                                       W0AVG
 
    REAL,  INTENT(IN   ) :: DT, DX
+   REAL,  INTENT(IN   ) :: CUDT
+   REAL,  INTENT(IN   ) :: CURR_SECS
+   LOGICAL,INTENT(IN   ) :: ADAPT_STEP_FLAG
 !
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
           INTENT(INOUT) ::                           RAINCV
+
+   REAL,    DIMENSION( ims:ime , jms:jme ),                  &
+          INTENT(INOUT) ::                           PRATEC
 
    REAL,    DIMENSION( ims:ime , jms:jme ),                  &
             INTENT(INOUT) ::                            NCA
@@ -134,7 +140,12 @@ CONTAINS
 
    REAL    ::         TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp,RTHCUMAX
 
-   INTEGER :: i,j,k,NTST,ICLDCK
+   INTEGER :: i,j,k,NTST
+   REAL    :: next_cu_time
+   REAL    :: lastdt = -1.0
+   REAL    :: W0AVGfctr, W0fctr, W0den
+   LOGICAL :: run_param
+   
 !
    DXSQ=DX*DX
 
@@ -148,6 +159,20 @@ CONTAINS
    IF ( PRESENT(F_QI) ) flag_qi = F_QI
    IF ( PRESENT(F_QS) ) flag_qs = F_QS
 !
+   if (lastdt < 0) then
+      lastdt = dt
+   endif
+   
+   if (cudt .ge. 0) then
+      W0AVGfctr = 2 * CUDT * 60 - LASTDT
+      W0fctr = LASTDT
+      W0den = 2 * CUDT * 60
+   else
+      W0AVGfctr = (TST-1.)
+      W0fctr = 1.
+      W0den = TST
+   endif
+
   DO J = jts,jte
       DO K=kts,kte
          DO I= its,ite
@@ -156,16 +181,45 @@ CONTAINS
 !            RHOE=Pcps(I,K,J)/(R*TV)
 !            W0=-101.9368*SCR1/RHOE
             W0=0.5*(w(I,K,J)+w(I,K+1,J))
-            W0AVG(I,K,J)=(W0AVG(I,K,J)*(TST-1.)+W0)/TST
+
+!           Old:            
+!
+!            W0AVG(I,K,J)=(W0AVG(I,K,J)*(TST-1.)+W0)/TST            
+!
+!           New, to support adaptive time step:
+!
+            W0AVG(I,K,J) = ( W0AVG(I,K,J) * W0AVGfctr + W0 * W0fctr ) / W0den
          ENDDO
       ENDDO
    ENDDO
+   lastdt = dt
+
+            
 !
 !...CHECK FOR CONVECTIVE INITIATION EVERY 5 MINUTES (OR NTST/2)...
 !
 !----------------------
-   ICLDCK=MOD(KTAU,NTST)
-   IF(ICLDCK.EQ.0 .or. KTAU .eq. 1) then
+
+!
+! Modified for adaptive time step
+!
+   if (adapt_step_flag) then
+      if ( (KTAU .eq. 1) .or. (cudt .eq. 0) .or. &
+           ( CURR_SECS + dt >= ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
+         run_param = .TRUE.
+      else
+         run_param = .FALSE.
+      endif
+
+   else
+      if (MOD(KTAU,NTST) .EQ. 0 .or. KTAU .eq. 1) then
+         run_param = .TRUE.
+      else
+         run_param = .FALSE.
+      endif
+   endif
+
+   if (run_param) then
 !
      DO J = jts,jte
      DO I= its,ite
@@ -191,6 +245,7 @@ CONTAINS
             RAINCV(I,J)=0.
             CUTOP(I,J)=KTS
             CUBOT(I,J)=KTE+1
+            PRATEC(I,J)=0.
 !
 ! assign vars from 3D to 1D
 
@@ -210,9 +265,9 @@ CONTAINS
                  XLV0,XLV1,XLS0,XLS1,CP,R,G,        &
                  EP2,SVP1,SVP2,SVP3,SVPT0,          &
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
-                 RAINCV,NCA,NTST,                   &
+                 RAINCV,PRATEC,NCA,NTST,            &
                  flag_QI,flag_QS,warm_rain,         &
-                 CUTOP,CUBOT,                       &
+                 CUTOP,CUBOT,CUDT,                  &
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte)
@@ -272,9 +327,9 @@ CONTAINS
                       XLV0,XLV1,XLS0,XLS1,CP,R,G,          &
                       EP2,SVP1,SVP2,SVP3,SVPT0,            &
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
-                      RAINCV,NCA,NTST,                     &
+                      RAINCV,PRATEC,NCA,NTST,              &
                       F_QI,F_QS,warm_rain,                 &
-                      CUTOP,CUBOT,                         &
+                      CUTOP,CUBOT,CUDT,                    &
                       ids,ide, jds,jde, kds,kde,           &
                       ims,ime, jms,jme, kms,kme,           &
                       its,ite, jts,jte, kts,kte)
@@ -326,8 +381,12 @@ CONTAINS
             INTENT(INOUT) ::                       RAINCV
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
+            INTENT(INOUT) ::                       PRATEC
+
+      REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(OUT) ::                          CUBOT, &
                                                     CUTOP
+      REAL,  INTENT(IN   ) :: CUDT
 !
 !...DEFINE LOCAL VARIABLES...
 !
@@ -2061,7 +2120,8 @@ iter:     DO NCOUNT=1,10
   4455  format(8f11.3) 
        ENDIF
         CNDTNF=(1.-EQFRC(LFS))*(QLIQ(LFS)+QICE(LFS))*DMF(LFS)
-        RAINCV(I,J)=DT*PPTFLX*(1.-FBFRC)/DXSQ     !  PPT FB MODS
+        PRATEC(I,J)=PPTFLX*(1.-FBFRC)/DXSQ
+        RAINCV(I,J)=DT*PRATEC(I,J)     !  PPT FB MODS
 !        RAINCV(I,J)=.1*.5*DT*PPTFLX/DXSQ               !  PPT FB MODS
 !         RNC=0.1*TIMEC*PPTFLX/DXSQ
         RNC=RAINCV(I,J)*NIC
@@ -2126,12 +2186,23 @@ iter:     DO NCOUNT=1,10
 !...TIMEC, ALLOW FEEDBACK TO OCCUR ONLY DURING TADVEC...
 !     
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)
-        NCA(I,J)=FLOAT(NIC)
-        IF(ISHALL.EQ.1)THEN
-          TIMEC = 2400.
-          NCA(I,J) = FLOAT(NTST)
-          NSHALL = NSHALL+1
-        ENDIF 
+        if (cudt .ge. 0) then
+           NCA(I,J) = TADVEC
+           IF(ISHALL.EQ.1)THEN
+              TIMEC = 2400.
+              NCA(I,J) = CUDT*60.
+              NSHALL = NSHALL+1
+           ENDIF           
+        else
+           NCA(I,J)=FLOAT(NIC)
+           IF(ISHALL.EQ.1)THEN
+              TIMEC = 2400.
+              NCA(I,J) = FLOAT(NTST)
+              
+              NSHALL = NSHALL+1
+           ENDIF
+        endif
+
         DO K=1,KX
 !         IF(IMOIST(INEST).NE.2)THEN
 !
@@ -2197,7 +2268,8 @@ iter:     DO NCOUNT=1,10
           DTDT(K)=(TG(K)-T0(K))/TIMEC
           DQDT(K)=(QG(K)-Q0(K))/TIMEC
         ENDDO
-        RAINCV(I,J)=DT*PPTFLX*(1.-FBFRC)/DXSQ     !  PPT FB MODS
+        PRATEC(I,J)=PPTFLX*(1.-FBFRC)/DXSQ
+        RAINCV(I,J)=DT*PRATEC(I,J)
 !        RAINCV(I,J)=.1*.5*DT*PPTFLX/DXSQ               !  PPT FB MODS
 !         RNC=0.1*TIMEC*PPTFLX/DXSQ
         RNC=RAINCV(I,J)*NIC

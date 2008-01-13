@@ -90,6 +90,17 @@ dimspec    v      -     constant=1                z          one
 state    real  LU_INDEX         ij      misc        1         -     i02rh01d=(interp_fcnm)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
+# znw, znu, dzs, and zs must be listed before any 3-d fields
+# in order for the grib output module to work correctly.  The grib output
+# module retrieves the vertical levels from these parameters.  If znw, znu
+# dzs, and zs are not listed first, vertical level will not be encoded at 
+# time 0.
+
+state    real    znu            k       dyn_em      1         -     irh       "znu"  "eta values on half (mass) levels"  ""
+state    real    znw            k       dyn_em      1         Z     i01rh     "znw"  "eta values on full (w) levels"  ""
+state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
+state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
+
 #
 # Variables from WPS
 #
@@ -247,8 +258,6 @@ state    real    rdnw           k       dyn_em      1         -     irh       "r
 state    real    rdn            k       dyn_em      1         -     irh       "rdn"  "inverse d(eta) values between half (mass) levels"   ""
 state    real    dnw            k       dyn_em      1         -     irh       "dnw" "d(eta) values between full (w) levels"   ""
 state    real    dn             k       dyn_em      1         -     irh       "dn " "d(eta) values between half (mass) levels"   ""
-state    real    znu            k       dyn_em      1         -     irh       "znu"  "eta values on half (mass) levels"  ""
-state    real    znw            k       dyn_em      1         Z     i01rh     "znw"  "eta values on full (w) levels"  ""
 state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATE T IN IDEALIZED CASES"         "K"      
 state    real    z              ikj     dyn_em      1         -     -         " " " " " "
 i1       real    mu_3d          ikj     dyn_em      1         -                                          
@@ -434,8 +443,6 @@ state   real   vegcat              ij    misc          1     -     i12     "VEGC
 # soil model variables  (Note that they are marked as staggered in the vertical dimension
 # because they are "fully dimensioned" -- they use every element in that dim
 state    real   TSLB           ilj       misc      1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)           "TSLB"     "SOIL TEMPERATURE"   "K"
-state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
-state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
 
 # urban model variables
 state    real   DZR             l        em      -            Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
@@ -676,6 +683,7 @@ state    real  W0AVG           ikj      misc        1         -      r        "W
                                                 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  PRATEC           ij      misc        1         -      h        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
 state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"      
@@ -887,6 +895,11 @@ state   real  dmudt            ij       misc        1         -     -         "d
 state   real  pk1m             ij       misc        1         -     -         "pk1m"            "surface pressure at previous step"                 "Pa"
 state   real  mu_2m            ij       misc        1         -     -         "mu_2m"           "mu_2 at previous step"                             "Pa"
 
+state   real    max_cfl         -       misc        1         -     -       "max_cfl"           "maximum CFL value in grid at a time" "-"
+#KLUDGE waiting for Michael
+state   integer dfi_opt         -       misc        1         -     -       "dfi_opt"           "digital filter option: 0=regular WRF run, 1=DFL, 2=DDFI, 3=TDFI" "-"
+state   integer dfi_stage       -       misc        1         -     -       "dfi_stage"         "digital filter stage: -2=setup, -1=backward, 0=forward, 1=WRF forecast"
+
 # Ocean Mixed-Layer State Variables
 state   real    TML            ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "TML"    "OCEAN MIXED-LAYER TEMPERATURE"   "K"
 state   real    T0ML           ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "T0ML"   "INITIAL OCEAN MIXED-LAYER TEMPERATURE"   "K"
@@ -951,6 +964,15 @@ rconfig   logical nocolons                namelist,time_control         1       
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     
 rconfig   integer time_step_fract_num     namelist,domains	1             0       ih   "time_step_fract_num"     
 rconfig   integer time_step_fract_den     namelist,domains	1             1       ih   "time_step_fract_den"     
+
+rconfig   integer min_time_step           namelist,domains      1             -1      h    "min_time_step"
+rconfig   integer max_time_step           namelist,domains      1             -1      h    "max_time_step"
+rconfig   real    target_cfl              namelist,domains      1            1.1      h    "target_cfl"
+rconfig   integer max_step_increase_pct   namelist,domains      1              5      h    "max_step_increase_pct"
+rconfig   integer starting_time_step      namelist,domains      1             -1      h    "starting_time_step"
+rconfig   logical step_to_output_time     namelist,domains      1         .false.     h    "step_to_output_time"
+rconfig   logical use_adaptive_time_step  namelist,domains      1         .false.     h    "use_adaptive_time_step"
+
 rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""
 rconfig   integer s_we                    namelist,domains	max_domains    1       irh    "s_we"          ""      ""
 rconfig   integer e_we                    namelist,domains	max_domains    32      irh    "e_we"          ""      ""
@@ -1309,10 +1331,10 @@ halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
 halo      HALO_EM_TKE_F dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
 halo      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
-halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb,h_div
+halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
-halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf,h_div
+halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
 halo      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut
 halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
 halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
@@ -1376,8 +1398,8 @@ period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2
 period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten
-period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb,h_div
-period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf,h_div
+period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
+period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf
 period    PERIOD_BDY_EM_B2 dyn_em 2:ru_tend,rv_tend
 period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfvx,msfvy,muu,msfux,msfuy,msfvx_inv
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2

@@ -3427,6 +3427,122 @@ messages(120)=  s5e5
 #endif
    END SUBROUTINE get_full_obs_vector
 
+
+
+
+
+
+   SUBROUTINE wrf_dm_maxtile_real ( val , tile)
+      IMPLICIT NONE
+      REAL val, val_all( rsl_nproc )
+      INTEGER tile
+      INTEGER ierr
+
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the maximum of all values passed and its tile number.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
+      val = val_all(1)
+      tile = 1
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .GT. val ) THEN
+           tile = i
+           val = val_all(i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_maxtile_real
+
+
+   SUBROUTINE wrf_dm_mintile_real ( val , tile)
+      IMPLICIT NONE
+      REAL val, val_all( rsl_nproc )
+      INTEGER tile
+      INTEGER ierr
+
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the minimum of all values passed and its tile number.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      CALL mpi_allgather ( val, 1, getrealmpitype(), val_all , 1, getrealmpitype(), comm, ierr )
+      val = val_all(1)
+      tile = 1
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .LT. val ) THEN
+           tile = i
+           val = val_all(i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_mintile_real
+
+
+   SUBROUTINE wrf_dm_mintile_double ( val , tile)
+      IMPLICIT NONE
+      DOUBLE PRECISION val, val_all( rsl_nproc )
+      INTEGER tile
+      INTEGER ierr
+
+! <DESCRIPTION>
+! Collective operation. Each processor calls passing a local value and its index; on return
+! all processors are passed back the minimum of all values passed and its tile number.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      CALL mpi_allgather ( val, 1, MPI_DOUBLE_PRECISION, val_all , 1, MPI_DOUBLE_PRECISION, comm, ierr )
+      val = val_all(1)
+      tile = 1
+      DO i = 2, rsl_nproc
+        IF ( val_all(i) .LT. val ) THEN
+           tile = i
+           val = val_all(i)
+        ENDIF
+      ENDDO
+#endif
+   END SUBROUTINE wrf_dm_mintile_double
+
+
+   SUBROUTINE wrf_dm_tile_val_int ( val , tile)
+      IMPLICIT NONE
+      INTEGER val, val_all( rsl_nproc )
+      INTEGER tile
+      INTEGER ierr
+
+! <DESCRIPTION>
+! Collective operation. Get value from input tile.
+!
+! </DESCRIPTION>
+      INTEGER i, comm
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+
+      CALL wrf_get_dm_communicator ( comm )
+      CALL mpi_allgather ( val, 1, MPI_INTEGER, val_all , 1, MPI_INTEGER, comm, ierr )
+      val = val_all(tile)
+#endif
+   END SUBROUTINE wrf_dm_tile_val_int
+
+
+
+
+
 END MODULE module_dm
 
 !=========================================================================

@@ -52,6 +52,8 @@ CONTAINS
      &          ,omlcall,oml_hml0,oml_gamma                           &
      &          ,tml,t0ml,hml,h0ml,huml,hvml,f                        &
      &          ,ustm,ck,cka,cd,cda,isftcflx                          &
+             !  Optional adaptive time step
+     &          ,bldt,curr_secs,adapt_step_flag                       &
                                                                       )
 
 #if ( ! NMM_CORE == 1 )
@@ -329,6 +331,9 @@ CONTAINS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
    REAL, INTENT(IN )::   DT
    REAL, INTENT(IN )::   DX
+   REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
+   REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
+   LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
 
 !  arguments for NCAR surface physics
 
@@ -470,6 +475,10 @@ CONTAINS
 
 !------------------------------------------------------------------
    CHARACTER*256 :: message
+   REAL    :: next_bl_time
+   LOGICAL :: run_param
+!
+!
 !------------------------------------------------------------------
 !
 
@@ -555,7 +564,29 @@ CONTAINS
     !$OMP END PARALLEL DO
   ENDIF
 
-  IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
+
+!
+! Modified for adaptive time step
+!
+  
+  if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
+     if ( (itimestep .eq. 1) .or. (bldt .eq. 0) .or. &
+          ( CURR_SECS + dt >= ( int( CURR_SECS / ( bldt * 60 ) + 1 ) * bldt * 60) ) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
+  else
+     if ( (itimestep .eq. 1) .or. (mod(itimestep,STEPBL) .eq. 0) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
+  endif
+
+  IF ( run_param ) then
+
+! IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
 
   radiation = .false.
   myj = .false.
@@ -569,7 +600,16 @@ CONTAINS
      DTMIN=DT/60.
 ! Surface schemes need PBL time step for updates and accumulations
 ! Assume these schemes provide no tendencies
-     DTBL=DT*STEPBL
+
+     if (PRESENT(BLDT)) then
+        if (bldt .eq. 0) then
+           DTBL = dt
+        ELSE
+           DTBL=bldt
+        endif
+     else
+        DTBL=DT*STEPBL
+     endif
 
 ! SAVE OLD VALUES
 

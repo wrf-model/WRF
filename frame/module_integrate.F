@@ -348,7 +348,11 @@ RECURSIVE SUBROUTINE integrate ( grid )
                      '                                                                '
 ! end KLUDGE
            CALL domain_clock_get ( grid, current_timestr=message2 )
-           WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
+           if (config_flags%time_step >= 0) then
+              WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
+           else
+              WRITE ( message , FMT = '("main (dt=",F6.2,"): time ",A," on domain ",I3)' ) grid%dt, TRIM(message2), grid%id
+           endif
            CALL end_timing ( TRIM(message) )
          END IF
          CALL med_endup_step ( grid , config_flags )

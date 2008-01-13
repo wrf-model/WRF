@@ -2230,8 +2230,10 @@ END SUBROUTINE pg_buoy_w
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
-                      w_damping,                      &
+SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
+                      u, v, ww, w, mut, rdnw,         &
+                      rdx, rdy, msfux, msfuy,         &
+                      msfvx, msfvy, dt, w_damping,    &
                       ids, ide, jds, jde, kds, kde,   &
                       ims, ime, jms, jme, kms, kme,   &
                       its, ite, jts, jte, kts, kte   )
@@ -2246,23 +2248,34 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
                                        ims, ime, jms, jme, kms, kme, &
                                        its, ite, jts, jte, kts, kte
 
-   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   ww, w
+   REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   u, v, ww, w
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) ::  rw_tend
+
+   REAL, INTENT(OUT) ::  max_vert_cfl
+   REAL, INTENT(OUT) ::  max_horiz_cfl
+   REAL              ::  horiz_cfl
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mut
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw
 
    REAL, INTENT(IN)    :: dt
-   REAL                :: cfl, cf_n, cf_d, maxcfl, maxdub, maxdeta
+   REAL, INTENT(IN)    :: rdx, rdy
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux, msfuy
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfvx, msfvy
+
+   REAL                :: vert_cfl, cf_n, cf_d, maxdub, maxdeta
 
    INTEGER :: itf, jtf, i, j, k, maxi, maxj, maxk
    INTEGER :: some
    CHARACTER*512 :: temp
+
    CHARACTER (LEN=256) :: time_str
    CHARACTER (LEN=256) :: grid_str
 
+   integer :: total
+   
 !<DESCRIPTION>
 !
 !  w_damp computes a damping term for the vertical velocity when the
@@ -2272,37 +2285,55 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
 !  unphysically large heating rates coming from the cumulus parameterization 
 !  schemes run at moderately high resolutions (dx ~ O(10) km).
 !
+!  Additionally, w_damp returns the maximum cfl values due to vertical motion and
+!  horizontal motion.  These values are returned via the max_vert_cfl and 
+!  max_horiz_cfl variables.  (Added by T. Hutchinson, WSI, 3/5/2007)
+!
 !</DESCRIPTION>
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
    some = 0
-   maxcfl = 0.
+   max_vert_cfl = 0.
+   max_horiz_cfl = 0.
+   total = 0
 
    IF ( w_damping == 1 ) THEN
      DO j = jts,jtf
 
      DO k = 2, kde-1
      DO i = its,itf
-#if 0
-        cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-        if(cfl .gt. w_beta)then
+#if 1
+        vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
+
+        IF ( vert_cfl > max_vert_cfl ) THEN
+           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
+           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
+        ENDIF
+        
+        horiz_cfl = max( abs(u(i,k,j) * rdx * msfux(i,j)),                          &
+             abs(v(i,k,j) * rdy * msfvy(i,j)) )
+        if (horiz_cfl > max_horiz_cfl) then
+           max_horiz_cfl = horiz_cfl
+        endif
+        
+        if(vert_cfl .gt. w_beta)then
 #else
 ! restructure to get rid of divide
+!
+! This had been used for efficiency, but with the addition of returning the cfl values, 
+!   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
+!
         cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
 #endif
-           cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-           IF ( cfl > maxcfl ) THEN
-             maxcfl = cfl ; maxi = i ; maxj = j ; maxk = k 
-             maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-           ENDIF
-           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
+
+           WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
-           if ( cfl > 2. ) some = some + 1
-           rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(cfl-w_beta)*mut(i,j)
+           if ( vert_cfl > 2. ) some = some + 1
+           rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_beta)*mut(i,j)
         endif
      END DO
      ENDDO
@@ -2313,17 +2344,36 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
 
      DO k = 2, kde-1
      DO i = its,itf
+
+#if 1
+        vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
+        
+        IF ( vert_cfl > max_vert_cfl ) THEN
+           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
+           maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
+        ENDIF
+        
+        horiz_cfl = max( abs(u(i,k,j) * rdx * msfux(i,j) * dt),                          &
+             abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
+
+        if (horiz_cfl > max_horiz_cfl) then
+           max_horiz_cfl = horiz_cfl
+        endif
+        
+        if(vert_cfl .gt. w_beta)then
+#else
+! restructure to get rid of divide
+!
+! This had been used for efficiency, but with the addition of returning the cfl values, 
+!   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
+!
         cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
-           cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-           IF ( cfl > maxcfl ) THEN
-             maxcfl = cfl ; maxi = i ; maxj = j ; maxk = k 
-             maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
-           ENDIF
-           WRITE(temp,*)i,j,k,' cfl,w,d(eta)=',cfl,w(i,k,j),-1./rdnw(k)
+#endif
+           WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
-           if ( cfl > 2. ) some = some + 1
+           if ( vert_cfl > 2. ) some = some + 1
         endif
      END DO
      ENDDO
@@ -2335,7 +2385,7 @@ SUBROUTINE w_damp( rw_tend, ww, w, mut, rdnw, dt,     &
      WRITE(wrf_err_message,*)some,                                            &
             ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
-     WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' cfl,w,d(eta)=',maxcfl, &
+     WRITE(wrf_err_message,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
                              maxdub,maxdeta
      CALL wrf_debug ( 0 , TRIM(wrf_err_message) )
    ENDIF

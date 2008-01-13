@@ -78,7 +78,8 @@ CONTAINS
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE                         &
      &                 ,DT,ITIMESTEP,STEPCU                             &
-     &                 ,RAINCV,CUTOP,CUBOT,KPBL                         &
+     &                 ,CUDT, CURR_SECS, ADAPT_STEP_FLAG                &
+     &                 ,RAINCV,PRATEC,CUTOP,CUBOT,KPBL                  &
      &                 ,TH,T,QV                                         &
      &                 ,PINT,PMID,PI,RHO,DZ8W                           &
      &                 ,CP,R,ELWV,ELIV,G,TFRZ,D608                      &
@@ -110,11 +111,17 @@ CONTAINS
      &    ,OPTIONAL                                                     &
      &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN 
 ! 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CLDEFI,RAINCV
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CLDEFI,RAINCV,   &
+           PRATEC
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CUBOT,CUTOP
 !
       LOGICAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CU_ACT_FLAG
+
+! Adaptive time-step variables
+      REAL,  INTENT(IN   ) :: CUDT
+      REAL,  INTENT(IN   ) :: CURR_SECS
+      LOGICAL,INTENT(IN   ) :: ADAPT_STEP_FLAG
 !
 !-----------------------------------------------------------------------
 !***
@@ -127,8 +134,10 @@ CONTAINS
 ! 
       REAL,DIMENSION(KTS:KTE) :: DPCOL,DQDT,DTDT,PCOL,QCOL,TCOL
 !
-      INTEGER :: I,J,K,KFLIP,ICLDCK,LMH
-!
+      INTEGER :: I,J,K,KFLIP,LMH
+
+      LOGICAL :: run_param
+!     
 !***  Begin debugging convection
       REAL :: DELQ,DELT,PLYR
       INTEGER :: IMD,JMD
@@ -145,7 +154,22 @@ CONTAINS
 !
 !***  CHECK TO SEE IF THIS IS A CONVECTION TIMESTEP
 !                                                                        
-      ICLDCK=MOD(ITIMESTEP,STEPCU)                                              
+      if (adapt_step_flag) then
+         if ( (ITIMESTEP .eq. 0) .or. (cudt .eq. 0) .or. &
+         ( CURR_SECS + dt >= ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
+         run_param = .TRUE.
+      else
+         run_param = .FALSE.
+      endif
+      
+      else
+         if (MOD(ITIMESTEP,STEPCU) .EQ. 0 .or. ITIMESTEP .eq. 0) then
+            run_param = .TRUE.
+         else
+            run_param = .FALSE.
+         endif
+      endif
+      
 !-----------------------------------------------------------------------
 !                                                                      
 !***  COMPUTE CONVECTION EVERY STEPCU*DT/60.0 MINUTES
@@ -156,7 +180,7 @@ CONTAINS
       PRINT_DIAG=.FALSE.
 !***  End debugging convection
 
-      IF(ICLDCK==0.OR.ITIMESTEP==0)THEN
+      IF(run_param)THEN
 !
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -176,6 +200,7 @@ CONTAINS
           ENDDO
 !
           RAINCV(I,J)=0.
+          PRATEC(I,J)=0.
           PCPCOL=0.
           PSFC=PINT(I,LOWLYR(I,J),J)
           PTOP=PINT(I,KTE+1,J)      ! KTE+1=KME
@@ -241,6 +266,7 @@ CONTAINS
 !***  TO MILLIMETERS PER STEP FOR OUTPUT.
 !
           RAINCV(I,J)=PCPCOL*1.E3/STEPCU
+          PRATEC(I,J)=PCPCOL*1.E3/(STEPCU * DT)
 !
 !***  CONVECTIVE CLOUD TOP AND BOTTOM FROM THIS CALL
 !

@@ -776,6 +776,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
               IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
 
               ! set tendency to zero
+                 PRATEC(I,J)=0.
                  RAINCV(I,J)=0.
                  DO k = k_start,k_end
                     RTHCUTEN(i,k,j)=0.
@@ -787,7 +788,6 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                  ENDDO
               ENDIF
 
-!              NCA(I,J)=NCA(I,J)-1. ! Decrease NCA
               NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
 
            ENDIF
@@ -827,13 +827,14 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
            IF(NCUBOT>0.AND.NCUBOT<KDE)THEN
              HBOT(I,J)=MIN(CUBOT(I,J),HBOT(I,J))
            ENDIF
+
            IF ( NCA(I,J) .GT. 0 ) THEN
 
 
-              IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
-!              IF ( NINT(NCA(I,J)) .eq. 1 ) THEN
+              IF ( NINT(NCA(I,J) / DT) .LE. 1 ) THEN
 
               ! set tendency to zero
+                 PRATEC(I,J)=0.
                  RAINCV(I,J)=0.
                  DO k = k_start,k_end
                     RTHCUTEN(i,k,j)=0.

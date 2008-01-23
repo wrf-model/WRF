@@ -601,15 +601,25 @@ CONTAINS
 ! Surface schemes need PBL time step for updates and accumulations
 ! Assume these schemes provide no tendencies
 
-     if (PRESENT(BLDT)) then
-        if (bldt .eq. 0) then
-           DTBL = dt
-        ELSE
-           DTBL=bldt
-        endif
-     else
-        DTBL=DT*STEPBL
-     endif
+    if (PRESENT(BLDT)) then
+       if (bldt .eq. 0) then
+          DTBL = dt
+       ELSE
+          if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
+             call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
+                              "time-step should be 0 (i.e., equivalent to model time-step).  "// &
+                              "In order to proceed, for boundary layer calculations, the "// &
+                              "boundary layer time-step"// &
+                              " will be rounded to the nearest minute, possibly resulting in"// &
+                              " innacurate results.")
+             DTBL=bldt*60
+          else
+             DTBL=DT*STEPBL
+          endif
+       endif
+    else
+       DTBL=DT*STEPBL
+    endif
 
 ! SAVE OLD VALUES
 

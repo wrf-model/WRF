@@ -163,7 +163,7 @@ CONTAINS
       lastdt = dt
    endif
    
-   if (cudt .ge. 0) then
+   if (ADAPT_STEP_FLAG) then
       W0AVGfctr = 2 * CUDT * 60 - LASTDT
       W0fctr = LASTDT
       W0den = 2 * CUDT * 60
@@ -203,9 +203,10 @@ CONTAINS
 !
 ! Modified for adaptive time step
 !
-   if (adapt_step_flag) then
+   if (ADAPT_STEP_FLAG) then
       if ( (KTAU .eq. 1) .or. (cudt .eq. 0) .or. &
-           ( CURR_SECS + dt >= ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
+           ( CURR_SECS + dt >= &
+           ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
          run_param = .TRUE.
       else
          run_param = .FALSE.
@@ -229,8 +230,9 @@ CONTAINS
 
      DO J = jts,jte
        DO I=its,ite
+          
 
-         IF ( NINT(NCA(I,J)) .gt. 0 ) then
+         IF ( NCA(I,J) .ge. 0.5*DT ) then
             CU_ACT_FLAG(i,j) = .false.
          ELSE
 
@@ -2186,22 +2188,12 @@ iter:     DO NCOUNT=1,10
 !...TIMEC, ALLOW FEEDBACK TO OCCUR ONLY DURING TADVEC...
 !     
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)
-        if (cudt .ge. 0) then
-           NCA(I,J) = TADVEC
-           IF(ISHALL.EQ.1)THEN
-              TIMEC = 2400.
-              NCA(I,J) = CUDT*60.
-              NSHALL = NSHALL+1
-           ENDIF           
-        else
-           NCA(I,J)=FLOAT(NIC)
-           IF(ISHALL.EQ.1)THEN
-              TIMEC = 2400.
-              NCA(I,J) = FLOAT(NTST)
-              
-              NSHALL = NSHALL+1
-           ENDIF
-        endif
+        NCA(I,J) = TADVEC
+        IF(ISHALL.EQ.1)THEN
+           TIMEC = 2400.
+           NCA(I,J) = CUDT*60.
+           NSHALL = NSHALL+1
+        ENDIF
 
         DO K=1,KX
 !         IF(IMOIST(INEST).NE.2)THEN

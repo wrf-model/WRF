@@ -337,8 +337,8 @@ CONTAINS
       adapt_step_flag_pass = adapt_step_flag
    endif
 
-   ! Initialize prate to 0
-   tmppratec(:,:) = 0
+   ! Initialize tmppratec to pratec
+   tmppratec(:,:) = pratec(:,:)
 
    IF (cu_physics .eq. 0) return
 

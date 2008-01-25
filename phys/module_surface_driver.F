@@ -17,8 +17,11 @@ CONTAINS
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
      &          ,xicem,isice,iswater,ct,tke_myj                       &
      &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
-     &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss                        &
+     &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss               &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
+     &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
+     &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
+     &          ,pxlsm_soil_nudge                                     & ! PX-LSM
             !  Optional urban 
      &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
@@ -40,12 +43,16 @@ CONTAINS
      &           ,f_qv,f_qc,f_qr                                      &
      &           ,f_qi,f_qs,f_qg                                      &
              !  Other optionals (more or less em specific)
-     &          ,capg,hol,mol                                   &
-     &          ,rainncv,rainbl,regime,thc                         &
+     &          ,capg,hol,mol                                         &
+     &          ,rainncv,rainbl,regime,thc                            &
      &          ,qsg,qvg,qcg,soilt1,tsnav                             &
      &          ,smfr3d,keepfr3dflag                                  &
              !  Other optionals (more or less nmm specific)
      &          ,potevp,snopcx,soiltb,sr                              &
+             !  Optional observation PX LSM surface nudging
+     &          ,t2_ndg_old, q2_ndg_old, t2_ndg_new, q2_ndg_new       &
+     &          ,sn_ndg_old, sn_ndg_new                               &
+     &          ,t2obs, q2obs                                         &
              !  Optional observation nudging
      &          ,uratx,vratx,tratx                                    &
              !  Optional simple oml model
@@ -60,17 +67,21 @@ CONTAINS
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
                                        ,GFSSFCSCHEME              &
+                                       ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
-                                       ,RUCLSMSCHEME
+                                       ,RUCLSMSCHEME              &
+                                       ,PXLSMSCHEME
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
                                        ,GFSSFCSCHEME              &
+                                       ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
                                        ,NMMLSMSCHEME              &
                                        ,LSMSCHEME                 &
-                                       ,RUCLSMSCHEME
+                                       ,RUCLSMSCHEME              &
+                                       ,PXLSMSCHEME
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
@@ -80,6 +91,8 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv
    USE module_sf_ruclsm
+   USE module_sf_pxsfclay
+   USE module_sf_pxlsm
 #if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
 #endif
@@ -94,9 +107,11 @@ CONTAINS
    !  surface layer: (between surface and pbl)
    !      1. sfclay
    !      2. myjsfc
+   !      7. Pleim surface layer
    !  surface: ground temp/lsm scheme:
    !      1. slab
    !      2. Noah LSM
+   !      7. Pleim-Xiu LSM
    !      99. NMM LSM (NMM core only)
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -206,6 +221,14 @@ CONTAINS
 !-- cka           enthalpy exchange coeff at the lowest model level
 !-- cda           momentum exchange coeff at the lowest model level
 !
+!-- LANDUSEF     Landuse fraction                      ! P-X LSM
+!-- SOILCTOP     Top soil fraction                     ! P-X LSM
+!-- SOILCBOT     Bottom soil fraction                  ! P-X LSM
+!-- RA           Aerodynamic resistence                        ! P-X LSM
+!-- RS           Stomatal resistence                   ! P-X LSM
+!-- NLCAT        Number of landuse categories          ! P-X LSM
+!-- NSCAT        Number of soil categories             ! P-X LSM
+!
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -233,14 +256,18 @@ CONTAINS
      &          ,ims,ime,jms,jme,kms,kme                              &
      &          ,kts,kte,num_tiles
 
-   INTEGER, INTENT(IN) :: sf_sfclay_physics,sf_surface_physics,ra_lw_physics,sst_update
+   INTEGER, INTENT(IN)::   NLCAT
+   INTEGER, INTENT(IN)::   NSCAT
+
+   INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
+                          ra_lw_physics, sst_update
 
    INTEGER, INTENT(IN) :: ucmcall                                     !urban
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
-   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ISLTYP
+   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::  ISLTYP
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   IVGTYP
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   LOWLYR
    INTEGER, INTENT(IN )::   IFSNOW
@@ -272,7 +299,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKMS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   CANWAT
-
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   GRDFLX
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   HFX
@@ -363,6 +389,27 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   vratx  !Added for obs-nudging
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   tratx  !Added for obs-nudging
 !
+!  PX LSM Surface Grid Analysis nudging
+!
+   INTEGER, OPTIONAL, INTENT(IN)    :: pxlsm_smois_init, pxlsm_soil_nudge, ANAL_INTERVAL
+   REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , OPTIONAL, INTENT(INOUT)::   LANDUSEF
+   REAL, DIMENSION( ims:ime, NSCAT, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SOILCTOP, SOILCBOT
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT)::   VEGF_PX
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   RA
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   RS
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   LAI
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   T2OBS
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   Q2OBS
+
+   REAL,       DIMENSION( ims:ime,  jms:jme ),                           &
+               OPTIONAL, INTENT(INOUT)    ::      t2_ndg_old,            &
+                                                  q2_ndg_old,            &
+                                                  t2_ndg_new,            &
+                                                  q2_ndg_new,            &
+                                                  sn_ndg_old,            &
+                                                  sn_ndg_new 
+!
+!
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
 ! optional arguments at compile time; these flags all the model
@@ -383,7 +430,7 @@ CONTAINS
                       ! 2 time levels; if only one then use CURR
                       qv_curr, qc_curr, qr_curr                  &
                      ,qi_curr, qs_curr, qg_curr
-
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)   ::   snowncv
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   capg
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   emiss
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT)::   hol
@@ -543,7 +590,10 @@ CONTAINS
             SH2O(I,NK,J) = 0.0
           ENDDO
         ENDIF
-        IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SST(i,j)
+        IF(XLAND(i,j) .GT. 1.5) THEN
+          TSK(i,j)   =SST(i,j)
+          TSLB(i,1,j)=SST(i,j)
+        ENDIF
         IF(XLAND(i,j) .LT. 1.5 .AND. XICEM(I,J) .GT. 0.5 .AND. XICE(I,J) .LT. 0.5)THEN
 ! sea-ice point turns to water point
           XICEM(I,J) = XICE(I,J)
@@ -670,6 +720,30 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
+
+
+     CASE (PXSFCSCHEME)
+#if (NMM_CORE != 1)
+       IF (PRESENT(qv_curr)                            .AND.    &
+           PRESENT(mol)        .AND.  PRESENT(regime)  .AND.    &
+                                                      .TRUE. ) THEN
+         CALL wrf_debug( 100, 'in PX Surface Layer scheme' )
+         CALL PXSFCLAY(u_phytmp,v_phytmp,t_phy,th_phy,qv_curr,&
+               p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+               xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
+               u10,v10,                                            &
+               gz1oz0,wspd,br,isfflx,dx,                           &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
+               ids,ide, jds,jde, kds,kde,                          &
+               ims,ime, jms,jme, kms,kme,                          &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for PX Surface Layer in surface driver')
+       ENDIF
+#else
+       CALL wrf_error_fatal('PX Surface Layer scheme cannot be used with NMM')
+#endif
 
       CASE (MYJSFCSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
@@ -956,6 +1030,44 @@ CONTAINS
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for RUCLSM in surface driver')
+       ENDIF
+
+     CASE (PXLSMSCHEME)
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
+           PRESENT(emiss)      .AND.  PRESENT(t2)      .AND.    &
+           PRESENT(qsg)        .AND.  PRESENT(qvg)     .AND.    &
+           PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
+           PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
+           PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
+                                                      .TRUE. ) THEN
+           CALL wrf_debug(100,'in P-X LSM')
+           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,    &     
+                      psfc, gsw, glw, rainbl, emiss,                  &
+                      ITIMESTEP, num_soil_layers, DT, anal_interval,  & 
+                      xland, albbck, albedo, snoalb, smois, tslb,     &
+                      mavail,T2, Q2, svpt0, svp1, svp2, svp3,         &
+                      zs, dzs, psih,                                 &
+                      landusef,soilctop,soilcbot,vegfra, vegf_px,     &
+                      isltyp,ra,rs,lai,nlcat,nscat,                   &
+                      hfx,qfx,lh,tsk,znt,canwat,                      &
+                      grdflx,sfcevp, shdmin,shdmax,                   &
+                      snowc,pblh,rmol,ust,capg,dtbl,                  &
+                      t2_ndg_old,t2_ndg_new,q2_ndg_old,q2_ndg_new,    &
+                      sn_ndg_old, sn_ndg_new, snow, snowh,snowncv,    &
+                      t2obs, q2obs, pxlsm_smois_init, pxlsm_soil_nudge, &
+                      ids,ide, jds,jde, kds,kde,                      &
+                      ims,ime, jms,jme, kms,kme,                      &
+                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)                      
+
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              CHKLOWQ(I,J)= 1.0
+              TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP 
+           ENDDO
+           ENDDO
+
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for P-X LSM in surface driver')
        ENDIF
 
      CASE DEFAULT

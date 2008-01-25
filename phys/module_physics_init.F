@@ -995,13 +995,16 @@ integer myproc
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE module_sf_slab
+   USE module_sf_pxsfclay
    USE module_bl_ysu
    USE module_bl_mrf
    USE module_bl_gfs
+   USE module_bl_acm
    USE module_sf_myjsfc
    USE module_sf_noahdrv
    USE module_sf_urban
    USE module_sf_ruclsm
+   USE module_sf_pxlsm
    USE module_bl_myjpbl
 #if (NMM_CORE == 1)
    USE module_sf_lsm_nmm
@@ -1124,6 +1127,9 @@ integer myproc
       CASE (SFCLAYSCHEME)
            CALL sfclayinit( allowed_to_read )
            isfc = 1
+      CASE (PXSFCSCHEME)
+           CALL pxsfclayinit( allowed_to_read )
+           isfc = 1
       CASE (MYJSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
 #if ( NMM_CORE == 1 )
@@ -1230,6 +1236,17 @@ integer myproc
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
 
+      CASE (PXLSMSCHEME)
+          CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
+                     SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
+                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
+                     FNDSOILW, FNDSNOWH,                       &
+                     num_soil_layers, restart,                 &
+                     allowed_to_read ,                         &
+                     ids,ide, jds,jde, kds,kde,                &
+                     ims,ime, jms,jme, kms,kme,                &
+                     its,ite, jts,jte, kts,kte                 )
+
       CASE DEFAULT
 
    END SELECT sfc_select
@@ -1254,6 +1271,17 @@ integer myproc
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay scheme for this pbl option' )
            CALL mrfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,                   &
+                        restart,                              &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+      CASE (ACMPBLSCHEME)
+           if(isfc .ne. 1)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           CALL acminit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &

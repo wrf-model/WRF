@@ -20,6 +20,7 @@ CONTAINS
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
                  ,kpbl,ct,lh,snow,xice                             &
+                 ,znu, znw, mut                                    & ! ACMPBL
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -36,7 +37,7 @@ CONTAINS
                                                                    )
 !------------------------------------------------------------------
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME
 
    USE module_model_constants
 
@@ -46,12 +47,14 @@ CONTAINS
    USE module_bl_ysu
    USE module_bl_mrf
    USE module_bl_gfs
+   USE module_bl_acm
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
    !  pbl scheme:
    !      1. ysupbl
    !      2. myjpbl
+   !      7.  acmpbl
    !      99. mrfpbl
    !
 !------------------------------------------------------------------
@@ -199,6 +202,10 @@ CONTAINS
                INTENT(IN   )    ::                        LOWLYR
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+
+   REAL,       DIMENSION( kms:kme ),                              &
+               OPTIONAL, INTENT(IN   )    ::               znu,   &
+                                                           znw
 !
    REAL,       INTENT(IN   )    ::     DT,DX
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
@@ -300,6 +307,9 @@ CONTAINS
                INTENT(INOUT)    ::                           HOL, &
                                                              MOL, &
                                                           REGIME
+   REAL,       DIMENSION( ims:ime, jms:jme )                    , &
+               OPTIONAL                                         , &
+               INTENT(IN)    ::                           mut
 
 !  LOCAL  VAR
 
@@ -566,6 +576,33 @@ CONTAINS
            ELSE
                CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
            ENDIF
+ 
+      CASE (ACMPBLSCHEME)
+           
+           !!  These are values that are not supplied to pbl driver, but are required by ACM
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                                                        .TRUE.  ) THEN
+             CALL wrf_debug(100,'in ACM PBL')
+
+             CALL ACMPBL(                                                        &
+               XTIME=itimestep, DTPBL=dtbl, ZNW=znw, SIGMAH=znu               &
+              ,U3D=u_phytmp, V3D=v_phytmp, PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy            &
+              ,QV3D=qv_curr, QC3D=qc_curr, QI3D=qi_curr, RR3D=rho                &
+              ,UST=UST, HFX=HFX, QFX=QFX, TSK=tsk                               &
+              ,PSFC=PSFC, EP1=EP_1, G=g, ROVCP=rcp,RD=r_D,CPD=cp                 &
+              ,PBLH=pblh, KPBL2D=kpbl, REGIME=regime                            &
+              ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut                        &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten                 &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                   &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                   &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte                   &   
+                                                                      )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
+           ENDIF
+
 
      CASE DEFAULT
 

@@ -725,6 +725,9 @@ real::t1,t2
          DO j = jps , jpe
             DO i = ips , ipe
                grid%fdda2d(i,1,j,p_mu_ndg_old) = grid%mu_2(i,j)
+               grid%fdda2d(i,1,j,p_t2_ndg_old) = grid%t2(i,j)
+               grid%fdda2d(i,1,j,p_q2_ndg_old) = grid%q2(i,j)
+               grid%fdda2d(i,1,j,p_sn_ndg_old) = grid%snow(i,j)
             END DO
          END DO
       END IF
@@ -836,6 +839,9 @@ real::t1,t2
          DO j = jps , jpe
             DO i = ips , ipe
                grid%fdda2d(i,1,j,p_mu_ndg_new) = grid%mu_2(i,j)
+               grid%fdda2d(i,1,j,p_t2_ndg_new) = grid%t2(i,j)
+               grid%fdda2d(i,1,j,p_q2_ndg_new) = grid%q2(i,j)
+               grid%fdda2d(i,1,j,p_sn_ndg_new) = grid%snow(i,j)
             END DO
          END DO
       END IF
@@ -1003,6 +1009,9 @@ real::t1,t2
             DO j = jps , jpe
                DO i = ips , ipe
                   grid%fdda2d(i,1,j,p_mu_ndg_old) = grid%fdda2d(i,1,j,p_mu_ndg_new)
+                  grid%fdda2d(i,1,j,p_t2_ndg_old) = grid%fdda2d(i,1,j,p_t2_ndg_new)
+                  grid%fdda2d(i,1,j,p_q2_ndg_old) = grid%fdda2d(i,1,j,p_q2_ndg_new)
+                  grid%fdda2d(i,1,j,p_sn_ndg_old) = grid%fdda2d(i,1,j,p_sn_ndg_new)
                END DO
             END DO
          END IF

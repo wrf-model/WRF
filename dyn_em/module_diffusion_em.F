@@ -998,9 +998,9 @@
                                 defor11, defor22, defor33,               &
                                 defor12, defor13, defor23,               &
                                 tke, p8w, t8w, theta, t, p, moist,       &
-                                dn, dnw, dx, dy, rdz, rdzw, cr_len,      &
+                                dn, dnw, dx, dy, rdz, rdzw, isotropic,   &
                                 n_moist, cf1, cf2, cf3, warm_rain,       &
-                                kh_tke_upper_bound, kv_tke_upper_bound,  &
+                                mix_upper_bound,                         &
                                 msftx, msfty,                            &
                                 ids, ide, jds, jde, kds, kde,            &
                                 ims, ime, jms, jme, kms, kme,            &
@@ -1026,7 +1026,7 @@
     :: config_flags   
 
     INTEGER, INTENT( IN )  &
-    :: n_moist, damp_opt,             & 
+    :: n_moist, damp_opt, isotropic,  & 
        ids, ide, jds, jde, kds, kde,  &
        ims, ime, jms, jme, kms, kme,  &
        its, ite, jts, jte, kts, kte 
@@ -1035,7 +1035,7 @@
     :: warm_rain
 
     REAL, INTENT( IN )  &
-    :: cr_len, dx, dy, zdamp, dt, dampcoef, cf1, cf2, cf3, khdif, kvdif
+    :: dx, dy, zdamp, dt, dampcoef, cf1, cf2, cf3, khdif, kvdif
 
     REAL, DIMENSION( kms:kme ), INTENT( IN )  &
     :: dnw, dn
@@ -1054,7 +1054,7 @@
     :: tke
 
     REAL, INTENT( IN )  &
-    :: kh_tke_upper_bound, kv_tke_upper_bound
+    :: mix_upper_bound
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: msftx, msfty
@@ -1094,8 +1094,8 @@
       CASE (2)  
             CALL tke_km(       config_flags, xkmh, xkmv,                &
                                xkhh, xkhv, BN2, tke, p8w, t8w, theta,   &
-                               rdz, rdzw, dx, dy, cr_len,               &
-                               kh_tke_upper_bound, kv_tke_upper_bound,  &
+                               rdz, rdzw, dx, dy, dt, isotropic,        &
+                               mix_upper_bound,                         &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
@@ -1104,7 +1104,8 @@
                                xkhh, xkhv, BN2, div,                    &
                                defor11, defor22, defor33,               &
                                defor12, defor13, defor23,               &
-                               rdzw, dx, dy, cr_len,                    &
+                               rdzw, dx, dy, dt, isotropic,             &
+                               mix_upper_bound,                         &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                its, ite, jts, jte, kts, kte             )
@@ -1560,7 +1561,8 @@ END SUBROUTINE isotropic_km
 SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
                     div,defor11,defor22,defor33,defor12,                       &
                     defor13,defor23,                                           &
-                    rdzw,dx,dy,cr_len_in,                                      &
+                    rdzw,dx,dy,dt,isotropic,                                   &
+                    mix_upper_bound,                                           &
                     ids,ide, jds,jde, kds,kde,                                 &
                     ims,ime, jms,jme, kms,kme,                                 &
                     its,ite, jts,jte, kts,kte                                  )
@@ -1576,7 +1578,8 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
                                                  ims, ime, jms, jme, kms, kme, &
                                                  its, ite, jts, jte, kts, kte
 
-   REAL    ,          INTENT(IN   )           :: cr_len_in, dx, dy
+   INTEGER ,          INTENT(IN   )           :: isotropic
+   REAL    ,          INTENT(IN   )           :: dx, dy, dt, mix_upper_bound
 
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) ::      BN2, &
@@ -1599,7 +1602,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
 ! LOCAL VARS
 
    INTEGER :: i_start, i_end, j_start, j_end, ktf, i, j, k
-   REAL    :: deltas, tmp, pr, mlen_h, mlen_v, cr_len
+   REAL    :: deltas, tmp, pr, mlen_h, mlen_v
 
    REAL, DIMENSION( its:ite , kts:kte , jts:jte )                 ::     def2
 
@@ -1625,7 +1628,6 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
    pr = prandtl
-   cr_len = cr_len_in
 
    do j=j_start,j_end
    do k=kts,ktf
@@ -1667,10 +1669,7 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
    enddo
    enddo
 !
-   cr_len = dx + 1.  !  hardwire for mixing length = (dx*dy*dz)**(1/3).
-                     !  remove this for the alternate formulation
-
-   IF (dx .gt. cr_len) THEN
+   IF (isotropic .EQ. 0) THEN
       mlen_h=sqrt(dx*dy)
       DO j = j_start, j_end
       DO k = kts, ktf
@@ -1679,11 +1678,13 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
          tmp=max(0.,def2(i,k,j)-BN2(i,k,j)/pr)
          tmp=tmp**0.5
          xkmh(i,k,j)=max(c_s*c_s*mlen_h*mlen_h*tmp, 1.0E-6*mlen_h*mlen_h )
-         xkmh(i,k,j)=min(xkmh(i,k,j), 10.*mlen_h )
+         xkmh(i,k,j)=min(xkmh(i,k,j), mix_upper_bound * mlen_h * mlen_h / dt )
          xkmv(i,k,j)=max(c_s*c_s*mlen_v*mlen_v*tmp, 1.0E-6*mlen_v*mlen_v )
-         xkmv(i,k,j)=min(xkmv(i,k,j), 10.*mlen_v )
+         xkmv(i,k,j)=min(xkmv(i,k,j), mix_upper_bound * mlen_v * mlen_v / dt )
          xkhh(i,k,j)=xkmh(i,k,j)/pr
+         xkhh(i,k,j)=min(xkhh(i,k,j), mix_upper_bound * mlen_h * mlen_h / dt )
          xkhv(i,k,j)=xkmv(i,k,j)/pr
+         xkhv(i,k,j)=min(xkhv(i,k,j), mix_upper_bound * mlen_v * mlen_v / dt )
       ENDDO
       ENDDO
       ENDDO
@@ -1695,10 +1696,13 @@ SUBROUTINE smag_km( config_flags,xkmh,xkmv,xkhh,xkhv,BN2,                      &
          tmp=max(0.,def2(i,k,j)-BN2(i,k,j)/pr)
          tmp=tmp**0.5
          xkmh(i,k,j)=max(c_s*c_s*deltas*deltas*tmp, 1.0E-6*deltas*deltas )
-         xkmh(i,k,j)=min(xkmh(i,k,j), 10.*deltas )
+         xkmh(i,k,j)=min(xkmh(i,k,j), mix_upper_bound * dx * dy / dt )
          xkmv(i,k,j)=xkmh(i,k,j)
+         xkmv(i,k,j)=min(xkmv(i,k,j), mix_upper_bound / rdzw(i,k,j) / rdzw(i,k,j) / dt )
          xkhh(i,k,j)=xkmh(i,k,j)/pr
+         xkhh(i,k,j)=min(xkhh(i,k,j), mix_upper_bound * dx * dy / dt )
          xkhv(i,k,j)=xkmv(i,k,j)/pr
+         xkhv(i,k,j)=min(xkhv(i,k,j), mix_upper_bound / rdzw(i,k,j) / rdzw(i,k,j) / dt )
       ENDDO
       ENDDO
       ENDDO
@@ -1805,8 +1809,8 @@ END SUBROUTINE smag2d_km
 
     SUBROUTINE tke_km( config_flags, xkmh, xkmv, xkhh, xkhv,         &
                        bn2, tke, p8w, t8w, theta,                    &
-                       rdz, rdzw, dx,dy, cr_len_in,                  &
-                       kh_tke_upper_bound, kv_tke_upper_bound,       &
+                       rdz, rdzw, dx,dy, dt, isotropic,              &
+                       mix_upper_bound,                              &
                        ids, ide, jds, jde, kds, kde,                 &
                        ims, ime, jms, jme, kms, kme,                 &
                        its, ite, jts, jte, kts, kte                  )
@@ -1834,8 +1838,9 @@ END SUBROUTINE smag2d_km
        ims, ime, jms, jme, kms, kme,  &
        its, ite, jts, jte, kts, kte
 
+    INTEGER, INTENT( IN )  :: isotropic
     REAL, INTENT( IN )  &
-    :: cr_len_in, dx, dy
+    :: dx, dy, dt
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
     :: tke, p8w, t8w, theta, rdz, rdzw, bn2
@@ -1844,7 +1849,7 @@ END SUBROUTINE smag2d_km
     :: xkmh, xkmv, xkhh, xkhv
 
     REAL, INTENT( IN )  &
-    :: kh_tke_upper_bound, kv_tke_upper_bound
+    :: mix_upper_bound
 
 ! Local variables.
 
@@ -1856,7 +1861,7 @@ END SUBROUTINE smag2d_km
 
     REAL  &
     :: deltas, tmp, mlen_s, mlen_h, mlen_v, tmpdz,  &
-       thetasfc, thetatop, minkx, pr_inv, pr_inv_h, pr_inv_v, cr_len
+       thetasfc, thetatop, minkx, pr_inv, pr_inv_h, pr_inv_v
 
     INTEGER  &
     :: i_start, i_end, j_start, j_end, ktf, i, j, k
@@ -1889,7 +1894,6 @@ END SUBROUTINE smag2d_km
 ! is no way to generate tke without pre-existing tke.  Use
 ! tke_seed if the drag and flux are off.
 
-    cr_len = cr_len_in
     tke_seed = tke_seed_value
     if( (config_flags%tke_drag_coefficient .gt. epsilon) .or.  &
         (config_flags%tke_heat_flux .gt. epsilon)  ) tke_seed = 0.
@@ -1921,10 +1925,7 @@ END SUBROUTINE smag2d_km
     END DO
     END DO
 
-    cr_len = dx + 1.0 !  hardwire for mixing length = (dx*dy*dz)**(1/3).
-                      !  remove this for the alternate formulation
-
-    IF ( dx .gt. cr_len ) THEN
+    IF ( isotropic .EQ. 0 ) THEN
       mlen_h = SQRT( dx * dy )
       DO j = j_start, j_end
       DO k = kts, ktf
@@ -1937,9 +1938,9 @@ END SUBROUTINE smag2d_km
           mlen_v = MIN( mlen_v, mlen_s )
         END IF
         xkmh(i,k,j)  = MAX( c_k * tmp * mlen_h, 1.0E-6 * mlen_h * mlen_h )
-        xkmh(i,k,j)  = MIN( xkmh(i,k,j), 10.0 * mlen_h )
+        xkmh(i,k,j)  = MIN( xkmh(i,k,j), mix_upper_bound * mlen_h *mlen_h / dt )
         xkmv(i,k,j)  = MAX( c_k * tmp * mlen_v, 1.0E-6 * deltas * deltas )
-        xkmv(i,k,j)  = MIN( xkmv(i,k,j), 10.0 * deltas )
+        xkmv(i,k,j)  = MIN( xkmv(i,k,j), mix_upper_bound * deltas *deltas / dt )
         pr_inv_h     = 1./prandtl
         pr_inv_v     = 1.0 + 2.0 * mlen_v / deltas
         xkhh(i,k,j)  = xkmh(i,k,j) * pr_inv_h
@@ -1960,12 +1961,12 @@ END SUBROUTINE smag2d_km
         tmp          = SQRT( MAX( tke(i,k,j), tke_seed ) )
         deltas       = ( dx * dy / rdzw(i,k,j) )**0.33333333
         xkmh(i,k,j)  = c_k * tmp * l_scale(i,k,j)
-        xkmh(i,k,j)  = MIN( kh_tke_upper_bound,  xkmh(i,k,j) )
+        xkmh(i,k,j)  = MIN( mix_upper_bound * dx * dy / dt,  xkmh(i,k,j) )
         xkmv(i,k,j)  = c_k * tmp * l_scale(i,k,j)
-        xkmv(i,k,j)  = MIN( kv_tke_upper_bound,  xkmv(i,k,j) )
+        xkmv(i,k,j)  = MIN( mix_upper_bound / rdzw(i,k,j) / rdzw(i,k,j) / dt ,  xkmv(i,k,j) )
         pr_inv       = 1.0 + 2.0 * l_scale(i,k,j) / deltas
-        xkhh(i,k,j)  = MIN( kh_tke_upper_bound*pr_inv, xkmh(i,k,j) * pr_inv )
-        xkhv(i,k,j)  = MIN( kv_tke_upper_bound*pr_inv, xkmv(i,k,j) * pr_inv )
+        xkhh(i,k,j)  = MIN( mix_upper_bound * dx * dy / dt, xkmh(i,k,j) * pr_inv )
+        xkhv(i,k,j)  = MIN( mix_upper_bound / rdzw(i,k,j) / rdzw(i,k,j) / dt, xkmv(i,k,j) * pr_inv )
       END DO
       END DO
       END DO
@@ -4537,7 +4538,7 @@ END SUBROUTINE phy_bc
                         cf1, cf2, cf3, msftx, msfty,            &
                         xkmh, xkmv, xkhv,                       &
                         rdx, rdy, dx, dy, dt, zx, zy,           &
-                        rdz, rdzw, dn, dnw, cr_len,             &
+                        rdz, rdzw, dn, dnw, isotropic,          &
                         hfx, qfx, qv, ust, rho,                 &
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
@@ -4556,8 +4557,9 @@ END SUBROUTINE phy_bc
        ims, ime, jms, jme, kms, kme,  &
        its, ite, jts, jte, kts, kte
 
+    INTEGER, INTENT( IN )  :: isotropic
     REAL, INTENT( IN )  &
-    :: cf1, cf2, cf3, dt, rdx, rdy, dx, dy, cr_len
+    :: cf1, cf2, cf3, dt, rdx, rdy, dx, dy
 
     REAL, DIMENSION( kms:kme ), INTENT( IN )  &
     :: fnm, fnp, dnw, dn
@@ -4609,7 +4611,7 @@ END SUBROUTINE phy_bc
 
     CALL tke_dissip(   tendency, config_flags,                &
                        mu, tke, bn2, theta, p8w, t8w, z,      &
-                       dx, dy,rdz, rdzw, cr_len,              &
+                       dx, dy,rdz, rdzw, isotropic,           &
                        ids, ide, jds, jde, kds, kde,          &
                        ims, ime, jms, jme, kms, kme,          &
                        its, ite, jts, jte, kts, kte           )
@@ -4776,7 +4778,7 @@ END SUBROUTINE phy_bc
 
     SUBROUTINE tke_dissip( tendency, config_flags,            &
                            mu, tke, bn2, theta, p8w, t8w, z,  &
-                           dx, dy, rdz, rdzw, cr_len_in,      &
+                           dx, dy, rdz, rdzw, isotropic,      &
                            ids, ide, jds, jde, kds, kde,      &
                            ims, ime, jms, jme, kms, kme,      &
                            its, ite, jts, jte, kts, kte       )
@@ -4805,8 +4807,9 @@ END SUBROUTINE phy_bc
         ims, ime, jms, jme, kms, kme,  &
         its, ite, jts, jte, kts, kte
 
+    INTEGER, INTENT( IN )  :: isotropic
     REAL, INTENT( IN )  &
-    :: dx, dy, cr_len_in
+    :: dx, dy
  
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
     :: tendency
@@ -4833,7 +4836,7 @@ END SUBROUTINE phy_bc
 
     REAL  &
     :: disp_len, deltas, coefc, tmpdz, len_s, thetasfc,  &
-       thetatop, len_0, tketmp, tmp, cr_len, ce1, ce2
+       thetatop, len_0, tketmp, tmp, ce1, ce2
 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -4858,11 +4861,7 @@ END SUBROUTINE phy_bc
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
-    cr_len = cr_len_in
-    cr_len = dx + 1.0 !  hardwire for mixing length = (dx*dy*dz)**(1/3).
-                      !  remove this for the alternate formulation
-
-    IF (dx .gt. cr_len) THEN
+    IF (isotropic .EQ. 0) THEN
 
       DO j = j_start, j_end
         DO i = i_start, i_end

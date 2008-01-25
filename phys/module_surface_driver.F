@@ -1073,8 +1073,10 @@ CONTAINS
      CASE DEFAULT
 
        WRITE( message , * ) &
-        'The surface option does not exist: sf_surface_physics = ', sf_surface_physics
-       CALL wrf_error_fatal ( message )
+        'No land surface physics option is used: sf_surface_physics = ', sf_surface_physics
+        CALL wrf_message ( message )
+!       'The surface option does not exist: sf_surface_physics = ', sf_surface_physics
+!      CALL wrf_error_fatal ( message )
 
      END SELECT sfc_select
      ENDDO

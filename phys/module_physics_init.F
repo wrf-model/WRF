@@ -1649,6 +1649,8 @@ integer myproc
 !--------------------------------------------------------------------
 !-- initialize fdda obs-nudging scheme
 
+      IF ( obs_nudge_opt(inest) .eq. 0 ) RETURN
+
       e_sn = jde
       CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
                         dx_coarse, restart, obs_twindo_cg,         &

@@ -10,6 +10,7 @@ MODULES = \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
 	module_bl_myjpbl.o \
+	module_bl_acm.o \
 	module_cu_kf.o  \
 	module_cu_bmj.o \
 	module_cu_kfeta.o \
@@ -22,6 +23,7 @@ MODULES = \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
 	module_mp_thompson.o \
+	module_mp_gsfcgce.o \
         module_mp_morr_two_moment.o \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
@@ -36,9 +38,11 @@ MODULES = \
 	module_sf_noahlsm.o  \
         module_sf_urban.o  \
 	module_sf_lsm_nmm.o  \
+	module_sf_pxlsm.o \
 	module_sf_ruclsm.o \
 	module_sf_sfcdiags.o \
 	module_sf_myjsfc.o \
+	module_sf_pxsfclay.o \
 	module_physics_addtendc.o \
 	module_physics_init.o \
 	module_gfs_machine.o \
@@ -134,6 +138,8 @@ module_sf_noahlsm.o: ../share/module_model_constants.o  \
 
 module_sf_ruclsm.o: ../frame/module_wrf_error.o
 
+module_sf_pxlsm.o: ../share/module_model_constants.o
+
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
@@ -150,11 +156,15 @@ module_physics_init.o : \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
+		module_sf_pxsfclay.o		\
+		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
 		module_sf_ruclsm.o		\
+		module_sf_pxlsm.o		\
 		module_bl_ysu.o			\
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\
+		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
@@ -168,6 +178,7 @@ module_physics_init.o : \
 		module_fdda_psufddagd.o		\
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
+		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -182,6 +193,7 @@ module_microphysics_driver.o: \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_thompson.o            \
+		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
@@ -201,6 +213,7 @@ module_cumulus_driver.o: \
 
 module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
+		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
 		module_bl_gfs.o \
@@ -231,9 +244,11 @@ module_surface_driver.o: \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
+		module_sf_pxsfclay.o		\
 		module_sf_gfs.o  		\
 		module_sf_noahdrv.o		\
 		module_sf_ruclsm.o		\
+		module_sf_pxlsm.o		\
 		module_sf_sfcdiags.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \

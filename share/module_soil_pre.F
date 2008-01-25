@@ -477,6 +477,18 @@ print *,'WATER CHANGE = ',change_water
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
+      ELSE IF ( ( sf_surface_physics .EQ. 7 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+         CALL init_soil_depth_7 ( zs , dzs , num_soil_layers )
+         CALL init_soil_7_real ( tsk , tmn , smois , sh2o, tslb , &
+                                 st_input , sm_input , sw_input, landmask , sst , &
+                                 zs , dzs , &
+                                 st_levels_input , sm_levels_input , sw_levels_input, &
+                                 num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                                 num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 ids , ide , jds , jde , kds , kde , &
+                                 ims , ime , jms , jme , kms , kme , &
+                                 its , ite , jts , jte , kts , kte )
       END IF
 
    END SUBROUTINE process_soil_real
@@ -826,6 +838,28 @@ cycle
       END IF
 
    END SUBROUTINE init_soil_depth_3
+
+   SUBROUTINE init_soil_depth_7 ( zs , dzs , num_soil_layers )
+
+      IMPLICIT NONE
+   
+      INTEGER, INTENT(IN) :: num_soil_layers
+   
+      REAL, DIMENSION(1:num_soil_layers), INTENT(OUT)  ::  zs,dzs
+   
+      INTEGER                   ::      l
+
+      dzs = (/ 0.01 , 0.99 /)
+
+      IF ( num_soil_layers .NE. 2 ) THEN
+         PRINT '(A)','Usually, the PX LSM uses 2 layers.  Change this in the namelist.'
+         CALL wrf_error_fatal ( 'PXLSM_uses_2_layers' )
+      END IF
+
+      zs(1) = 0.5 * dzs(1)
+      zs(2) = dzs(1) + 0.5 * dzs(2)
+
+   END SUBROUTINE init_soil_depth_7
 
    SUBROUTINE init_soil_1_real ( tsk , tmn , tslb , zs , dzs , &
                                  num_soil_layers , real_data_init_type , &
@@ -1587,6 +1621,283 @@ cycle
       DEALLOCATE (zhave)
 
    END SUBROUTINE init_soil_3_real
+   SUBROUTINE init_soil_7_real ( tsk , tmn , smois , sh2o , tslb , &
+                                 st_input , sm_input , sw_input , landmask , sst ,     &
+                                 zs , dzs ,                                            &
+                                 st_levels_input , sm_levels_input , sw_levels_input , &
+                                 num_soil_layers , num_st_levels_input ,               &
+                                 num_sm_levels_input ,  num_sw_levels_input ,          &
+                                 num_st_levels_alloc , num_sm_levels_alloc ,           &
+                                 num_sw_levels_alloc ,                                 &
+                                 flag_sst , flag_soilt000 , flag_soilmt000 ,           &
+                                 ids , ide , jds , jde , kds , kde ,                   &
+                                 ims , ime , jms , jme , kms , kme ,                   &
+                                 its , ite , jts , jte , kts , kte )
+
+      ! for soil temperature and moisture initialization for the PX LSM
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: num_soil_layers , &
+                              num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                              num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+                              ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte 
+
+      INTEGER , INTENT(IN) :: flag_sst, flag_soilt000, flag_soilmt000
+
+      INTEGER , DIMENSION(1:num_st_levels_input) , INTENT(INOUT) :: st_levels_input
+      INTEGER , DIMENSION(1:num_sm_levels_input) , INTENT(INOUT) :: sm_levels_input
+      INTEGER , DIMENSION(1:num_sw_levels_input) , INTENT(INOUT) :: sw_levels_input
+
+      REAL , DIMENSION(ims:ime,1:num_st_levels_alloc,jms:jme) , INTENT(INOUT) :: st_input
+      REAL , DIMENSION(ims:ime,1:num_sm_levels_alloc,jms:jme) , INTENT(INOUT) :: sm_input
+      REAL , DIMENSION(ims:ime,1:num_sw_levels_alloc,jms:jme) , INTENT(INOUT) :: sw_input
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
+
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: tmn
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tsk
+      REAL , DIMENSION(num_soil_layers) :: zs , dzs
+
+      REAL , DIMENSION(ims:ime,num_soil_layers,jms:jme) , INTENT(OUT) :: tslb , smois , sh2o
+
+      REAL , ALLOCATABLE , DIMENSION(:) :: zhave
+
+      INTEGER :: i , j , l , lout , lin , lwant , lhave , num
+      REAL    :: temp
+      LOGICAL :: found_levels
+
+      !  Are there any soil temp and moisture levels - ya know, they are mandatory.
+
+      num = num_st_levels_input * num_sm_levels_input
+
+      IF ( num .GE. 1 ) THEN
+
+         !  Ordered levels that we have data for.
+
+         ALLOCATE ( zhave( MAX(num_st_levels_input,num_sm_levels_input,num_sw_levels_input) +2) )
+
+         !  Sort the levels for temperature.
+         outert : DO lout = 1 , num_st_levels_input-1
+            innert : DO lin = lout+1 , num_st_levels_input
+               IF ( st_levels_input(lout) .GT. st_levels_input(lin) ) THEN
+                  temp = st_levels_input(lout) 
+                  st_levels_input(lout) = st_levels_input(lin)
+                  st_levels_input(lin) = NINT(temp)
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        temp = st_input(i,lout+1,j)
+                        st_input(i,lout+1,j) = st_input(i,lin+1,j)
+                        st_input(i,lin+1,j) = temp
+                     END DO
+                  END DO
+               END IF
+            END DO innert
+         END DO outert
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               st_input(i,1,j) = tsk(i,j)
+               st_input(i,num_st_levels_input+2,j) = tmn(i,j)
+            END DO
+         END DO
+   
+         !  Sort the levels for moisture.
+  
+         outerm: DO lout = 1 , num_sm_levels_input-1
+            innerm : DO lin = lout+1 , num_sm_levels_input
+              IF ( sm_levels_input(lout) .GT. sm_levels_input(lin) ) THEN
+                  temp = sm_levels_input(lout) 
+                  sm_levels_input(lout) = sm_levels_input(lin)
+                  sm_levels_input(lin) = NINT(temp)
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        temp = sm_input(i,lout+1,j)
+                        sm_input(i,lout+1,j) = sm_input(i,lin+1,j)
+                        sm_input(i,lin+1,j) = temp
+                     END DO
+                  END DO
+               END IF
+            END DO innerm
+         END DO outerm
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               sm_input(i,1,j) = sm_input(i,2,j)
+               sm_input(i,num_sm_levels_input+2,j) = sm_input(i,num_sm_levels_input+1,j)
+            END DO
+         END DO
+   
+         !  Sort the levels for liquid moisture.
+   
+         outerw: DO lout = 1 , num_sw_levels_input-1
+            innerw : DO lin = lout+1 , num_sw_levels_input
+               IF ( sw_levels_input(lout) .GT. sw_levels_input(lin) ) THEN
+                  temp = sw_levels_input(lout) 
+                  sw_levels_input(lout) = sw_levels_input(lin)
+                  sw_levels_input(lin) = NINT(temp)
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        temp = sw_input(i,lout+1,j)
+                        sw_input(i,lout+1,j) = sw_input(i,lin+1,j)
+                        sw_input(i,lin+1,j) = temp
+                     END DO
+                  END DO
+               END IF
+            END DO innerw
+         END DO outerw
+        IF ( num_sw_levels_input .GT. 1 ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,1,j) = sw_input(i,2,j)
+                  sw_input(i,num_sw_levels_input+2,j) = sw_input(i,num_sw_levels_input+1,j)
+               END DO
+            END DO
+         END IF
+
+         found_levels = .TRUE.
+
+      ELSE IF ( ( num .LE. 0 ) .AND. (  start_date .NE. current_date ) ) THEN
+
+         found_levels = .FALSE.
+
+      ELSE
+         CALL wrf_error_fatal ( &
+         'No input soil level data (temperature, moisture or liquid, or all are missing). Required for PX LSM.' )
+      END IF
+
+      !  Is it OK to continue?
+
+      IF ( found_levels ) THEN
+
+         !  Here are the levels that we have from the input for temperature.  The input levels plus
+         !  two more: the skin temperature at 0 cm, and the annual mean temperature at 300 cm.
+
+         zhave(1) = 0.
+         DO l = 1 , num_st_levels_input
+            zhave(l+1) = st_levels_input(l) / 100.
+        END DO
+         zhave(num_st_levels_input+2) = 300. / 100.
+   
+         !  Interpolate between the layers we have (zhave) and those that we want (zs).
+   
+         z_wantt : DO lwant = 1 , num_soil_layers
+            z_havet : DO lhave = 1 , num_st_levels_input +2 -1
+               IF ( ( zs(lwant) .GE. zhave(lhave  ) ) .AND. &
+                    ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        tslb(i,lwant,j)= ( st_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
+                                           st_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
+                                                                   ( zhave(lhave+1) - zhave(lhave) )
+                     END DO
+                  END DO
+                  EXIT z_havet
+               END IF
+            END DO z_havet
+         END DO z_wantt
+
+         !  Here are the levels that we have from the input for moisture.  The input levels plus
+         !  two more: a value at 0 cm and one at 300 cm.  The 0 cm value is taken to be identical
+         !  to the most shallow layer's value.  Similarly, the 300 cm value is taken to be the same
+         !  as the most deep layer's value.
+   
+         zhave(1) = 0.
+         DO l = 1 , num_sm_levels_input
+            zhave(l+1) = sm_levels_input(l) / 100.
+         END DO
+        zhave(num_sm_levels_input+2) = 300. / 100.
+   
+         !  Interpolate between the layers we have (zhave) and those that we want (zs).
+   
+         z_wantm : DO lwant = 1 , num_soil_layers
+            z_havem : DO lhave = 1 , num_sm_levels_input +2 -1
+               IF ( ( zs(lwant) .GE. zhave(lhave  ) ) .AND. &
+                    ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        smois(i,lwant,j)= ( sm_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
+                                            sm_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
+                                                                    ( zhave(lhave+1) - zhave(lhave) )
+                     END DO
+                  END DO
+                  EXIT z_havem
+               END IF
+            END DO z_havem
+         END DO z_wantm
+   
+         !  Any liquid soil moisture to worry about?
+   
+         IF ( num_sw_levels_input .GT. 1 ) THEN
+   
+            zhave(1) = 0.
+            DO l = 1 , num_sw_levels_input
+               zhave(l+1) = sw_levels_input(l) / 100.
+            END DO
+            zhave(num_sw_levels_input+2) = 300. / 100.
+      
+          !  Interpolate between the layers we have (zhave) and those that we want (zs).
+      
+            z_wantw : DO lwant = 1 , num_soil_layers
+               z_havew : DO lhave = 1 , num_sw_levels_input +2 -1
+                  IF ( ( zs(lwant) .GE. zhave(lhave  ) ) .AND. &
+                       ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
+                     DO j = jts , MIN(jde-1,jte)
+                        DO i = its , MIN(ide-1,ite)
+                           sh2o(i,lwant,j)= ( sw_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
+                                               sw_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
+                                                                       ( zhave(lhave+1) - zhave(lhave) )
+                        END DO
+                     END DO
+                     EXIT z_havew
+                  END IF
+               END DO z_havew
+            END DO z_wantw
+   
+         END IF
+   
+  
+        !  Over water, put in reasonable values for soil temperature and moisture.  These won't be
+        !  used, but they will make a more continuous plot.
+  
+     DO j = jts , MIN(jde-1,jte)
+        DO i = its , MIN(ide-1,ite)
+             tslb(i,1,j)= tsk(i,j)
+             tslb(i,2,j)= tmn(i,j)
+        END DO
+     END DO
+
+         IF ( flag_sst .EQ. 1 ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( landmask(i,j) .LT. 0.5 ) THEN
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)= sst(i,j)
+                        smois(i,l,j)= 1.0
+                        sh2o (i,l,j)= 1.0
+                     END DO
+                  END IF
+               END DO
+            END DO
+         ELSE
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( landmask(i,j) .LT. 0.5 ) THEN
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)= tsk(i,j)
+                        smois(i,l,j)= 1.0
+                        sh2o (i,l,j)= 1.0
+                     END DO
+                  END IF
+               END DO
+            END DO
+         END IF
+   
+         DEALLOCATE (zhave)
+
+      END IF
+
+   END SUBROUTINE init_soil_7_real
+
 
 END MODULE module_soil_pre
 
@@ -2178,7 +2489,7 @@ cycle
 
                IF (landmask(i,j) .GT. 0.5 ) THEN
    
-                  IF ( sf_surface_physics .EQ. 1 ) THEN
+                  IF ( sf_surface_physics .EQ. 1 .OR. sf_surface_physics .EQ. 7) THEN
                      tmn(i,j) = tmn(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
                   END IF
                   

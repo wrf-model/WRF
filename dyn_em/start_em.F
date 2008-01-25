@@ -174,9 +174,9 @@
      DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
        grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
        grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-!      spongeweight=exp(-(loop-2)/3.)
-!      grid%fcx(loop) = grid%fcx(loop)*spongeweight
-!      grid%gcx(loop) = grid%gcx(loop)*spongeweight
+       spongeweight=exp(-(loop-(grid%spec_zone + 1))*config_flags%spec_exp)
+       grid%fcx(loop) = grid%fcx(loop)*spongeweight
+       grid%gcx(loop) = grid%gcx(loop)*spongeweight
      ENDDO
 
    ELSE IF (config_flags%nested) THEN

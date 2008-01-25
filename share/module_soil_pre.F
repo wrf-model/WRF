@@ -929,7 +929,7 @@ cycle
    
       INTEGER, INTENT(IN   )    ::      num_soil_layers
    
-      REAL, DIMENSION( ims:ime , 1 , jms:jme ), INTENT(OUT) :: tslb
+      REAL, DIMENSION( ims:ime , num_soil_layers , jms:jme ), INTENT(OUT) :: tslb
       REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT) :: xland
       INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(OUT) :: ivgtyp
    
@@ -954,12 +954,13 @@ cycle
             ENDDO
          ENDDO
       ENDIF
-      DO j=jts,jtf
-         DO i=its,itf
-           xland(i,j)  = 2
-           ivgtyp(i,j) = 7
-         ENDDO
-      ENDDO
+
+!     DO j=jts,jtf
+!        DO i=its,itf
+!          xland(i,j)  = 2
+!          ivgtyp(i,j) = 7
+!        ENDDO
+!     ENDDO
 
    END SUBROUTINE init_soil_1_ideal
 
@@ -1336,33 +1337,20 @@ cycle
       DO j=jts,jtf
          DO l=1,num_soil_layers
             DO i=its,itf
-   
-               smois(i,1,j)=0.10
-               smois(i,2,j)=0.10
-               smois(i,3,j)=0.10
-               smois(i,4,j)=0.10
+               if (xland(i,j) .lt. 1.5) then  
+               smois(i,1,j)=0.30
+               smois(i,2,j)=0.30
+               smois(i,3,j)=0.30
+               smois(i,4,j)=0.30
       
-               tslb(i,1,j)=295.           
-               tslb(i,2,j)=297.          
-               tslb(i,3,j)=293.         
-               tslb(i,4,j)=293. 
-
+               tslb(i,1,j)=290.
+               tslb(i,2,j)=290.
+               tslb(i,3,j)=290.         
+               tslb(i,4,j)=290. 
+               endif
             ENDDO
          ENDDO
       ENDDO                                 
-
-      DO j=jts,jtf
-         DO i=its,itf
-            xland(i,j)  =   2
-            tmn(i,j)    = 294. 
-            xice(i,j)   =   0.
-            vegfra(i,j) =   0. 
-            snow(i,j)   =   0.
-            canwat(i,j) =   0.
-            ivgtyp(i,j) =   7
-            isltyp(i,j) =   8
-         ENDDO
-      ENDDO
 
    END SUBROUTINE init_soil_2_ideal
 

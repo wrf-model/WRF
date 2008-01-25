@@ -3280,7 +3280,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     ENDDO
     ENDDO
 
-  CASE (1) ! ustar computed from surface routine
+  CASE (1,2) ! ustar computed from surface routine
     DO j = j_start, j_end
     DO i = i_start, i_end+1
        V0_u=0.
@@ -3296,7 +3296,6 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     ENDDO
     ENDDO
  
-!
     DO j = j_start, j_end+1
     DO i = i_start, i_end
        V0_v=0.
@@ -3357,7 +3356,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 !
 !
   hflux: SELECT CASE( config_flags%isfflx )
-  CASE (0) ! with fixed surface heat flux given in the namelist
+  CASE (0,2) ! with fixed surface heat flux given in the namelist
     heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
                                             ! set in namelist.input
     DO j = j_start, j_end
@@ -3443,7 +3442,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
   qflux: SELECT CASE( config_flags%isfflx )
   CASE (0)
 ! do nothing
-  CASE (1) ! with surface moisture flux 
+  CASE (1,2) ! with surface moisture flux 
     IF ( im == P_QV ) THEN
        DO j = j_start, j_end
        DO i = i_start, i_end
@@ -3453,6 +3452,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        ENDDO
        ENDDO
     ENDIF
+
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT qflux
@@ -4736,9 +4736,9 @@ END SUBROUTINE phy_bc
 ! WCS 040331
 
   hflux: SELECT CASE( config_flags%isfflx )
-  CASE (0) ! with fixed surface heat flux given in the namelist
+  CASE (0,2) ! with fixed surface heat flux given in the namelist
    heat_flux0 = config_flags%tke_heat_flux  ! constant heat flux value
-                                           ! set in namelist.input
+                                            ! set in namelist.input
 ! LES mods
    K=KTS
    DO j = j_start, j_end
@@ -4749,6 +4749,7 @@ END SUBROUTINE phy_bc
 
    ENDDO
    ENDDO   
+
   CASE (1) ! use surface heat flux computed from surface routine
    K=KTS
    DO j = j_start, j_end
@@ -4761,6 +4762,7 @@ END SUBROUTINE phy_bc
 
    ENDDO
    ENDDO   
+
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
   END SELECT hflux
@@ -4901,6 +4903,7 @@ END SUBROUTINE phy_bc
         tketmp  = MAX( tke(i,k,j), 1.0e-6 )
 
 ! Apply Deardorff's (1980) "wall effect" at the bottom of the domain. 
+! For LES with fine grid, no need for this wall effect!
 
         IF ( k .eq. kts .or. k .eq. ktf ) then
           coefc = 3.9
@@ -5172,7 +5175,7 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-  CASE (1) ! ustar computed from surface routine
+  CASE (1,2) ! ustar computed from surface routine
 
     DO j = j_start, j_end
     DO i = i_start, i_end
@@ -5246,7 +5249,7 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
-  CASE (1) ! ustar computed from surface routine
+  CASE (1,2) ! ustar computed from surface routine
 
     DO j = j_start, j_end   
     DO i = i_start, i_end

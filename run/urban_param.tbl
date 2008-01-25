@@ -1,9 +1,9 @@
 Urban Parameters depending on Urban type 
 USGS 
 3, 'ZR[m] Z0C[m] Z0HC[m] ZDC[m] SVF    R      RW     HGT    CDS   AS    AH    BETR  BETB  BETG  FRC_URB  UrbanType' 
-1,  10.,  1.0,   1.0,    2.0,   0.48,  0.50,  0.50,  0.50,  0.1,  0.4,  0.0,  0.0,  0.0,  0.0   0.95    'Commercial' 
-2,  7.5,  0.75,  0.75,   1.5,   0.56,  0.50,  0.50,  0.40,  0.1,  0.3,  0.0,  0.0,  0.0,  0.0   0.9     'High Intensity Res' 
-3,  5.,   0.5,   0.5,    1.0,   0.62,  0.50,  0.50,  0.30,  0.1,  0.2,  0.0,  0.0,  0.0,  0.0   0.5     'Low Intensity Res' 
+1,  10.,  1.0,   1.0,    2.0,   0.48,  0.50,  0.50,  0.50,  0.1,  0.4,  90.0, 0.0,  0.0,  0.0   0.95    'Commercial' 
+2,  7.5,  0.75,  0.75,   1.5,   0.56,  0.50,  0.50,  0.40,  0.1,  0.3,  50.0, 0.0,  0.0,  0.0   0.9     'High Intensity Res' 
+3,  5.,   0.5,   0.5,    1.0,   0.62,  0.50,  0.50,  0.30,  0.1,  0.2,  20.0, 0.0,  0.0,  0.0   0.5     'Low Intensity Res' 
 CAPR [cal/cm/cm/cm/degC] 
 0.50 
 CAPB [cal/cm/cm/cm/degC] 
@@ -86,4 +86,9 @@ Ch of Wall and Road [1: M-O Similarity Theory,  2: Empirical Form (recommend)]
 2 
 Surface and Layer Temperatures [1: 4-layer model,  2: Force-Restore method] 
 1 
+ahoption [0: no ah,  1: add ah to FLXTH]
+0
+AH Diurnal profile for Summer (tloc from 1~12 and 13~24) :
+0.16 0.13 0.08 0.07 0.08 0.26 0.67 0.99 0.89 0.79 0.74 0.73
+0.75 0.76 0.82 0.90 1.00 0.95 0.68 0.61 0.53 0.35 0.21 0.18
  

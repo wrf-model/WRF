@@ -4967,17 +4967,27 @@ END SUBROUTINE phy_prep
 
 !  add microphysics theta diff to perturbation theta, set h_diabatic
 
+     IF ( config_flags%no_mp_heating .eq. 0 ) THEN
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
+         t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
+         h_diabatic(i,k,j) = (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
+     ENDDO
+     ENDDO
+     ENDDO
 
-       t_new(i,k,j) = t_new(i,k,j) + (th_phy(i,k,j)-h_diabatic(i,k,j))
-       h_diabatic(i,k,j) = (th_phy(i,k,j)-h_diabatic(i,k,j))/dt
-!       h_diabatic(i,k,j) = 0.
+     ELSE
 
+     DO j = j_start, j_end
+     DO k = k_start, k_end
+     DO i = i_start, i_end
+!        t_new(i,k,j) = t_new(i,k,j)
+         h_diabatic(i,k,j) = 0.
      ENDDO
      ENDDO
      ENDDO
+     ENDIF
 
    END SUBROUTINE moist_physics_finish_em
 

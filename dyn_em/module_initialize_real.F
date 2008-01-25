@@ -841,6 +841,11 @@ integer::oops1,oops2
                CALL wrf_error_fatal ( 'Not enough soil temperature data for RUC LSM scheme.')
             END IF
 
+         CASE (PXLSMSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for P-X LSM scheme.')
+            END IF
+
       END SELECT enough_data
 
       !  For sf_surface_physics = 1, we want to use close to a 30 cm value
@@ -887,6 +892,46 @@ integer::oops1,oops2
          CASE (LSMSCHEME)
 
          CASE (RUCLSMSCHEME)
+
+         CASE (PXLSMSCHEME)
+
+            IF      ( flag_tavgsfc  .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     grid%tmn(i,j) = grid%tavgsfc(i,j)
+                  END DO
+               END DO
+            ELSE IF ( flag_st010040 .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     grid%tmn(i,j) = grid%st010040(i,j)
+                  END DO
+               END DO
+            ELSE IF ( flag_st040100 .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     grid%tmn(i,j) = grid%st040100(i,j)
+                  END DO
+               END DO
+            ELSE IF ( flag_st100200 .EQ. 1 ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     grid%tmn(i,j) = grid%st100200(i,j)
+                  END DO
+               END DO
+            ELSE
+               CALL wrf_debug ( 0 , 'No 10-40 cm or 40-100 cm soil temperature data for grid%em_tmn')
+               CALL wrf_debug ( 0 , 'Using 1 degree static annual mean temps' )
+            END IF
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                   grid%tmn(i,j) =(10 * grid%st000010(i,j) + 30 * grid%st010040(i,j) +    &
+                                   60 * grid%st040100(i,j) + 100* grid%st100200(i,j) )/200
+                  grid%tmn(i,j) = grid%st010040(i,j)
+                  !grid%tmn(i,j) = grid%st040100(i,j)
+                  !grid%tmn(i,j) = grid%st100200(i,j)
+               END DO
+            END DO
 
       END SELECT fix_bottom_level_for_temp
 
@@ -987,7 +1032,7 @@ integer::oops1,oops2
          
       adjust_soil : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
             CALL adjust_soil_temp_new ( grid%tmn , model_config_rec%sf_surface_physics(grid%id) , &
                                         grid%tsk , grid%ht , grid%toposoil , grid%landmask , flag_soilhgt , flag_tavgsfc , &
                                         grid%st000010 , grid%st010040 , grid%st040100 , grid%st100200 , grid%st010200 , &
@@ -1008,7 +1053,7 @@ integer::oops1,oops2
 
       fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) .AND. &
@@ -1078,7 +1123,7 @@ integer::oops1,oops2
    
       interpolate_soil_tmw : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
             CALL process_soil_real ( grid%tsk , grid%tmn , &
                                   grid%landmask , grid%sst , &
                                   st_input , sm_input , sw_input , st_levels_input , sm_levels_input , sw_levels_input , &
@@ -1160,6 +1205,18 @@ integer::oops1,oops2
                ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
                   ! no op
                END IF
+
+             CASE ( PXLSMSCHEME )
+               iicount = 0
+               IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0. )
+                     END DO
+                  END DO
+               ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
+                  ! no op
+               END IF
    
          END SELECT account_for_zero_soil_moisture
       END IF
@@ -1183,7 +1240,8 @@ integer::oops1,oops2
                IF ( ( ( grid%tslb(i,1,j) .LT. 170. ) .OR. ( grid%tslb(i,1,j) .GT. 400. ) ) .AND. &
                        ( grid%landmask(i,j) .GT. 0.5 ) ) THEN
                      IF ( ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME    ) .AND. &
-                          ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ) ) THEN
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ).AND. &
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. PXLSMSCHEME ) ) THEN
                         print *,'error in the grid%tslb'
                         print *,'i,j=',i,j
                         print *,'grid%landmask=',grid%landmask(i,j)
@@ -1204,7 +1262,7 @@ integer::oops1,oops2
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
-                           CASE ( LSMSCHEME , RUCLSMSCHEME )
+                           CASE ( LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
                               CALL wrf_error_fatal ( 'Assigning constant soil moisture, bad idea')
                               DO ns = 1 , model_config_rec%num_soil_layers
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &

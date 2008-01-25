@@ -427,9 +427,9 @@ state   real   shdmin              ij    misc          1     -     i012r   "SHDM
 state   real   snoalb              ij    misc          1     -     i012r   "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
 state   real   slopecat            ij    misc          1     -     i12     "SLOPECAT"      "SLOPE CATEGORY"  ""
 state   real   toposoil            ij    misc          1     -     i12     "SOILHGT"       "ELEVATION OF LSM DATA"  "m"
-state   real   landusef            iuj   misc          1     Z     i12     "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
-state   real   soilctop            isj   misc          1     Z     i12     "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
-state   real   soilcbot            isj   misc          1     Z     i1      "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
+state   real   landusef            iuj   misc          1     Z     i012r   "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
+state   real   soilctop            isj   misc          1     Z     i012    "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
+state   real   soilcbot            isj   misc          1     Z     i012    "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
 state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
 
@@ -505,6 +505,14 @@ state    real   DECLIN_URB       -     misc        1         -       r       "DE
 # RUC LSM
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r        "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
+
+# Additional for P-X PBL and LSM
+state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"   "s m-1"
+state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"       "s m-1"
+state    real   LAI              ij     misc        1         -      r        "LAI"          "Leaf area index"          "area/area"
+state    real   VEGF_PX          ij     misc        1         -      r        "VEGF_PX"      "Vegetation Fraction for PX LSM"    "area/area"
+state    real   T2OBS            ij     misc        1         -      r        "T2OBS"        "2-m temperature from analysis "          "K"
+state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "         "kg/kg"
 
 # MRF PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
@@ -830,7 +838,7 @@ state    real  CDA              ij      misc        1         -      r        "C
 state    real  UST              ij      misc        1         -      rh       "UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"      
 state    real  USTM             ij      misc        1         -      r        "USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
 i1       real  HOL              ij      misc        1         -      -        "HOL"                   "PBL HEIGHT OVER MONIN-OBUKHOV LENGTH"         ""
-state    real  RMOL             ij      misc        1         -     r        "RMOL"                   "1./Monin Ob. Length"                      ""
+state    real  RMOL             ij      misc        1         -      r        "RMOL"                  "1./Monin Ob. Length"                      ""
 state    real  MOL              ij      misc        1         -      r        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"      
 state    real  PBLH             ij      misc        1         -      rh       "PBLH"                  "PBL HEIGHT"         "m"      
 state    real  CAPG             ij      misc        1         -      r        "CAPG"                  "HEAT CAPACITY FOR SOIL"                       "J K-1 m-3"      
@@ -892,6 +900,12 @@ state    real  PH_NDG_OLD        ikjf     fdda3d      1         Z      igr      
 state    real    -               ivjf     fdda2d      1         Z     -    -
 state    real  MU_NDG_NEW        ivjf     fdda2d      1         Z      igr      "MU_NDG_NEW"              "NEW PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
 state    real  MU_NDG_OLD        ivjf     fdda2d      1         Z      igr      "MU_NDG_OLD"              "OLD PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+state    real  T2_NDG_NEW        ivjf     fdda2d      1         -      igr      "T2_NDG_NEW"               "NEW 2m TEMP FOR PX LSM "  "K"
+state    real  Q2_NDG_NEW        ivjf     fdda2d      1         -      igr      "Q2_NDG_NEW"               "NEW 2m WATER VAPOR MIX RATIO FOR PX LSM "  "kg/kg"
+state    real  T2_NDG_OLD        ivjf     fdda2d      1         -      igr      "T2_NDG_OLD"               "OLD 2m TEMP F FOR PX LSM"  "K"
+state    real  Q2_NDG_OLD        ivjf     fdda2d      1         -      igr      "Q2_NDG_OLD"               "OLD 2m WATER VAPOR MIX RATIO  FOR PX LSM"  "kg/kg"
+state    real  SN_NDG_NEW        ivjf     fdda2d      1         -      igr      "SN_NDG_NEW"               "NEW Snow Depth "  "m"
+state    real  SN_NDG_OLD        ivjf     fdda2d      1         -      igr      "SN_NDG_OLD"               "OLD Snow Depth"  "m"
 
 
 # flag for nest movement
@@ -1048,6 +1062,8 @@ rconfig   real      max_dz          namelist,domains    1               1000.
 
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
+rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""
+rconfig   integer     gsfcgce_2ice        namelist,physics      1              0       rh       "gsfcgce select 2ice/3ice"  ""      ""
 rconfig   integer     progn               namelist,physics      max_domains    0       rh       "progn"                 ""      ""
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
@@ -1078,7 +1094,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
-rconfig   integer ucmcall                 namelist,physics      1            0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
+rconfig   integer ucmcall                 namelist,physics      max_domains  0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
 rconfig   logical usemonalb               namelist,physics      1            .false.   h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   integer co2tf                   namelist,physics	1            1         -    "co2tf" "GFDL radiation co2 flag" ""
 rconfig   integer ra_call_offset          namelist,physics	1            0         -    "ra_call_offset" "radiation call offset in timesteps (-1=old, 0=new offset)" ""
@@ -1088,6 +1104,7 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
+rconfig   integer pxlsm_smois_init           namelist,physics  max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"  ""
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "activate simple ocean mixed layer model  0=no, 1=yes"   ""
 rconfig   real    oml_hml0                namelist,physics      1            50        h     "oml_hml0"    "oml initial mixed layer depth value"   "m"
 rconfig   real    oml_gamma               namelist,physics      1            0.14      h     "oml_gamma"   "oml deep water lapse rate"   "K m-1"
@@ -1169,6 +1186,8 @@ rconfig   logical     pd_chem             namelist,dynamics	max_domains    .fals
 rconfig   logical     pd_scalar           namelist,dynamics	max_domains    .false. rh    "pd_scalar"        "positive-definite RK3 transport switch"      ""
 rconfig   logical     pd_tke              namelist,dynamics	max_domains    .false. rh    "pd_tke"           "positive-definite RK3 transport switch"      ""
 rconfig   logical top_radiation           namelist,dynamics	max_domains    .false. rh    "top_radiation"         ""      ""
+rconfig   integer mix_isotropic           namelist,dynamics    max_domains    0       h    "mix_isotropic"            "0=anistropic, 1=isotropic"      ""
+rconfig   real    mix_upper_bound         namelist,dynamics    max_domains    0.1     h    "mix_upper_bound"         "non-dimensional limit"      ""
 rconfig   logical top_lid                 namelist,dynamics     max_domains    .false. rh    "top_lid"               ""      ""
 rconfig   real    mix_cr_len              namelist,dynamics	max_domains    200.    h    "mix_cr_len"            ""      ""
 rconfig   real    tke_upper_bound         namelist,dynamics	max_domains    1000.   h    "tke_upper_bound"            ""      ""
@@ -1208,6 +1227,7 @@ rconfig   logical open_ys                 namelist,bdy_control	max_domains    .f
 rconfig   logical open_ye                 namelist,bdy_control	max_domains    .false. rh    "open_ye"               ""      ""
 rconfig   logical polar                   namelist,bdy_control	max_domains    .false. rh    "polar"                 ""      ""
 rconfig   logical nested                  namelist,bdy_control	max_domains    .false. rh    "nested"                ""      ""
+rconfig   real    spec_exp                namelist,bdy_control          1     0.      irh    "spec_exp"              ""      ""
 rconfig   integer real_data_init_type     namelist,bdy_control		1                 1    irh   "real_data_init_type"   "REAL DATA INITIALIZATION OPTIONS: 1=SI, 2=MM5, 3=GENERIC" "PRE-PROCESSOR TYPES"
 
 rconfig   integer background_proc_id      namelist,grib2 	        1     255    rh    "background_proc_id"    "Background processing id for grib2"  ""
@@ -1253,6 +1273,7 @@ package   wsm3scheme    mp_physics==3                -             moist:qv,qc,q
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg;scalar:qt
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
+package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 
@@ -1272,12 +1293,15 @@ package   gfdlswscheme  ra_sw_physics==99            -             -
 package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
+package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
+package   pxlsmscheme    sf_surface_physics==7       -             fdda2d:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
+package   acmpblscheme   bl_pbl_physics==7           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   kfetascheme    cu_physics==1               -             -
@@ -1286,7 +1310,7 @@ package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   kfscheme       cu_physics==99              -             -
 
-package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new
+package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new,t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,sn_ndg_new,sn_ndg_old;state:rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten
 
 package   restofwrf      use_wps_input==0            -             -
 ifdef RUC_CLOUD

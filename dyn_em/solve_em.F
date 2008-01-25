@@ -843,6 +843,22 @@ BENCH_START(surf_driver_tim)
      &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
      &        ,ucmcall=grid%ucmcall                                       & !H urban
+           ! P-X LSM Variables
+     &        ,LANDUSEF=grid%landusef, SOILCTOP=grid%soilctop             &   ! P-X LSM
+     &        ,SOILCBOT=grid%soilcbot                                     &   ! P-X LSM
+     &        ,RA=grid%ra, RS=grid%rs, LAI=grid%lai                       &   ! P-X LSM
+     &        ,NLCAT=grid%num_land_cat,  NSCAT=grid%num_soil_cat          &   ! P-X LSM
+     &        ,VEGF_PX=grid%vegf_px, SNOWNCV=grid%snowncv                 &   ! P-X LSM
+     &        ,ANAL_INTERVAL=config_flags%interval_seconds                &   ! P-X LSM
+     &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
+     &        ,PXLSM_SOIL_NUDGE=config_flags%grid_fdda                    &   ! P-X LSM
+           ! Optional PX LSM nudging
+     &        ,t2_ndg_old=fdda2d(ims,1,jms,P_t2_ndg_old)                  &
+     &        ,q2_ndg_old=fdda2d(ims,1,jms,P_q2_ndg_old)                  &
+     &        ,t2_ndg_new=fdda2d(ims,1,jms,P_t2_ndg_new)                  &
+     &        ,q2_ndg_new=fdda2d(ims,1,jms,P_q2_ndg_new)                  &
+     &        ,sn_ndg_old=fdda2d(ims,1,jms,P_sn_ndg_old)                  &
+     &        ,sn_ndg_new=fdda2d(ims,1,jms,P_sn_ndg_new)                  &
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
@@ -858,6 +874,7 @@ BENCH_START(surf_driver_tim)
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,CAPG=grid%capg, EMISS=grid%emiss, HOL=hol,MOL=grid%mol                    &
+     &        ,T2OBS=grid%t2obs, Q2OBS=grid%q2obs                         &
      &        ,RAINBL=grid%rainbl,SR=grid%sr                                              &
      &        ,RAINNCV=grid%rainncv,REGIME=regime,T2=grid%t2,THC=grid%thc                &
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav          & ! ruc lsm
@@ -901,6 +918,8 @@ BENCH_START(pbl_driver_tim)
      &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
      &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
      &        ,NUM_TILES=grid%num_tiles                                   &
+          ! Variables Required by ACM PBL  - jp
+     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut                     &
           ! optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
@@ -1155,9 +1174,9 @@ BENCH_START(calc_tke_tim)
                                 grid%defor13,grid%defor23,                             &
                                 grid%tke_2,p8w,t8w,th_phy,           &
                                 t_phy,p_phy,moist,grid%dn,grid%dnw,                    &
-                                grid%dx,grid%dy,grid%rdz,grid%rdzw,config_flags%mix_cr_len,num_3d_m,          &
+                                grid%dx,grid%dy,grid%rdz,grid%rdzw,config_flags%mix_isotropic,num_3d_m,          &
                                 grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,                    &
-                                grid%kh_tke_upper_bound, grid%kv_tke_upper_bound,      &
+                                grid%mix_upper_bound,                        &
                                 grid%msftx, grid%msfty,                      &
                                 ids,ide, jds,jde, kds,kde,                   &
                                 ims,ime, jms,jme, kms,kme,                   &
@@ -1337,7 +1356,7 @@ BENCH_START(tke_rhs_tim)
                           th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,grid%fnp,             &
                           grid%cf1,grid%cf2,grid%cf3,grid%msftx,grid%msfty,grid%xkmh,grid%xkmv,grid%xkhv,grid%rdx,grid%rdy,    &
                           grid%dx,grid%dy,grid%dt,grid%zx,grid%zy,grid%rdz,grid%rdzw,grid%dn,       &
-                          grid%dnw,config_flags%mix_cr_len,  &
+                          grid%dnw,config_flags%mix_isotropic,  &
                           grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV),&
                           grid%ustm, rho,                             &
                           ids, ide, jds, jde, kds, kde,               &
@@ -3686,6 +3705,8 @@ BENCH_START(micro_driver_tim)
      &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG         &  
      &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten            &  
      &        , qicuten=grid%rqicuten,mu=grid%mut                    &  
+     &        , HAIL=config_flags%gsfcgce_hail                          & ! for gsfcgce
+     &        , ICE2=config_flags%gsfcgce_2ice                          & ! for gsfcgce
                                                                           )
 BENCH_END(micro_driver_tim)
 

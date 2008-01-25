@@ -29,6 +29,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qrcuten, qscuten, qicuten, mu                     & 
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
+                      ,hail,ice2                                         & ! for gsfcgce
                       ,w ,z                                              &
                       ,rainnc, rainncv                                   &
                       ,snownc, snowncv                                   &
@@ -37,7 +38,8 @@ SUBROUTINE microphysics_driver(                                          &
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT
+                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,GSFCGCESCHEME
 
 
 ! Model Layer
@@ -53,6 +55,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
+   USE module_mp_gsfcgce
    USE module_mp_morr_two_moment 
     
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
@@ -192,6 +195,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER,    INTENT(IN   )    :: mp_physics
    LOGICAL,    INTENT(IN   )    :: specified
    INTEGER, OPTIONAL, INTENT(IN   )    :: chem_opt, progn
+   INTEGER, OPTIONAL, INTENT(IN   )    :: hail, ice2
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
@@ -455,6 +459,49 @@ SUBROUTINE microphysics_driver(                                          &
         ENDIF
 
 !
+        CASE (GSFCGCESCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling GSFCGCE' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR )                           .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( HAIL    ) .AND. PRESENT ( ICE2    ) .AND.  &
+                  PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
+               CALL gsfcgce(                                        &
+                  TH=th                                             &
+                 ,QV=qv_curr                                        &
+                 ,QL=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
+                 ,HT=ht, DZ8W=dz8w, GRAV=G,  CP=cp                  &
+                 ,RAIR=r_d, RVAPOR=R_v                              &
+                 ,XLS=xls, XLV=xlv, XLF=xlf                         &
+                 ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0                             &
+                 ,ITIMESTEP=itimestep                               &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,RAINNC=rainnc, RAINNCV=rainncv                    &
+                 ,SNOWNC=snownc, SNOWNCV=snowncv ,SR=sr             &
+                 ,GRAUPELNC=graupelnc ,GRAUPELNCV=graupelncv        &
+                 ,F_QG=f_qg                                         &
+                 ,QG=qg_curr                                        &
+                 ,IHAIL=hail, ICE2=ice2                             &
+                                                                    )
+! HAIL = 1,  run gsfcgce with hail option
+!        0,  run gsfcgce with graupel option   <---- default
+!        note: no effect if ice2 = 1
+! ICE2 = 1,  run gsfcgce with only snow, ice
+!        2,  run gsfcgce with only graupel, ice
+!        0,  run gsfcgce with snow, ice and hail/graupel   <---- default
+
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling GSFCGCE' )
+             ENDIF
 
         CASE (LINSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lin_et_al' )

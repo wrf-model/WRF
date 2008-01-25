@@ -243,6 +243,7 @@ Namelist variables for controling the automatic moving nest:
                                      = 4, WSM 5-class scheme
                                      = 5, Ferrier (new Eta) microphysics
                                      = 6, WSM 6-class graupel scheme
+                                     = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
                                      = 8, Thompson et al. scheme
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -255,6 +256,16 @@ Namelist variables for controling the automatic moving nest:
                                                ; if they fall below a critical value
  mp_zero_out_thresh                  = 1.e-8   ; critical value for moist array threshold, below which
                                                ; moist arrays (except for Qv) are set to zero (kg/kg)
+
+ gsfcgce_hail                        = 0       ; for running gsfcgce microphysics with graupel
+                                     = 1       ; for running gsfcgce microphysics with hail
+                                                 default value = 0
+ gsfcgce_2ice                        = 0       ; for running with snow, ice and graupel/hail
+                                     = 1       ; for running with only ice and snow
+                                     = 2       ; for running with only ice and graupel
+                                                 (only used in very extreme situation)
+                                                 default value = 0
+                                                 gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -307,18 +318,21 @@ Namelist variables for controling the automatic moving nest:
                                      = 1, Monin-Obukhov scheme
                                      = 2, Monin-Obukhov (Janjic) scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 7, Pleim-Xiu surface layer (ARW only)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
                                      = 1, thermal diffusion scheme
-                                     = 2, Noah land-surface model
+                                     = 2, Unified Noah land-surface model
                                      = 3, RUC land-surface model
+                                     = 7, Pleim-Xiu LSM (ARW)
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 7, ACM2 (Pleim) PBL (ARW)
                                      = 99, MRF scheme (to be removed)
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -373,7 +387,10 @@ Namelist variables for controling the automatic moving nest:
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
- ucmcall                             = 0,       ; activate urban canopy model (in Noah LSM only) (0=no, 1=yes)
+ ucmcall(max_dom)                    = 0,       ; activate urban canopy model (in Noah LSM only) (0=no, 1=yes)
+
+ pxlsm_smois_init(max_dom)           = 1        ;PXLSM Soil moisture initialization option 
+                                                   0-From analysis 1-From MAVAIL
 
  maxiens                             = 1,       ; Grell-Devenyi only
  maxens                              = 3,       ; G-D only
@@ -459,7 +476,6 @@ The following are for observation nudging:
 
 
  &dynamics
- dyn_opt                             = 2,	; dynamical core option: advanced research WRF core (Eulerian mass)
  rk_ord                              = 3,	; time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order
                                                   3 = Runge-Kutta 3rd order
@@ -516,6 +532,8 @@ The following are for observation nudging:
  mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
                                                   highly idealized numerical tests; damp_opt must not be 1 if ".true."
                                                   is chosen. .false. means subtract 1-d base-state profile before mixing
+ mix_isotropic(max_dom)              = 0        ; 0=anistropic vertical/horizontal diffusion coeffs, 1=isotropic
+ mix_upper_bound(max_dom)            = 0.1      ; non-dimensional upper limit for diffusion coeffs
  tke_drag_coefficient(max_dom)       = 0.,      ; surface drag coefficient (Cd, dimensionless) for diff_opt=2 only
  tke_heat_flux(max_dom)              = 0.,      ; surface thermal flux (H/(rho*cp), K m/s) for diff_opt=2 only
  h_mom_adv_order (max_dom)           = 5,       ; horizontal momentum advection order (5=5th, etc.)
@@ -558,6 +576,8 @@ The following are for observation nudging:
  relax_zone                          = 4,       ; number of points in relaxation zone (spec b.c. option)
  specified (max_dom)                 = .false., ; specified boundary conditions (only can be used for domain 1)
                                                   the above 4 are used for real-data runs
+ spec_exp                            = 0.       ; exponential multiplier for relaxation zone ramp for specified=.t.
+                                                  (0.=linear ramp default, e.g. 0.33=~3*dx exp decay factor)
 
  periodic_x (max_dom)                = .false., ; periodic boundary conditions in x direction
  symmetric_xs (max_dom)              = .false., ; symmetric boundary conditions at x start (west)

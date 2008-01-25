@@ -1182,6 +1182,8 @@
      &          ,NUM_ROAD_LAYERS=NUM_ROAD_LAYERS                        & ! urban
 ! for YSU
      &          ,REGIME=REGIME                                          &
+! for PX LSM
+     &          ,NLCAT=grid%num_land_cat,  NSCAT=grid%num_soil_cat      & ! P-X LSM
      &                                                          )
 !
 !-----------------------------------------------------------------------

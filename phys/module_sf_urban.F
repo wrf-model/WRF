@@ -36,6 +36,8 @@ MODULE module_sf_urban
 
    INTEGER                         :: BOUNDR_DATA,BOUNDB_DATA,BOUNDG_DATA
    INTEGER                         :: CH_SCHEME_DATA, TS_SCHEME_DATA
+   INTEGER                         :: ahoption        ! Miao, 2007/01/17, cal. ah
+   REAL, DIMENSION(1:24)           :: ahdiuprf        ! ah diurnal profile, tloc: 1-24
 
    INTEGER                         :: allocate_status 
 
@@ -399,16 +401,26 @@ MODULE module_sf_urban
    REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST
 
    INTEGER :: iteration, K 
+   INTEGER :: tloc
 
 !-------------------------------------------------------------------------------
 ! Set parameters
 !-------------------------------------------------------------------------------
+
+! Miao, 2007/01/17, cal. ah
+   if(ahoption==1) then
+     tloc=mod(int(OMG/PI*180./15.+12.+0.5 ),24)
+     if(tloc==0) tloc=24
+   endif
 
    CALL read_param(UTYPE,ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,CDS,AS,AH,  &
                    CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG,  &
                    EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,     &
                    BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,           &
                    BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME)
+
+! Miao, 2007/01/17, cal. ah
+   if(ahoption==1) AH=AH*ahdiuprf(tloc)
 
    IF( ZDC+Z0C+2. >= ZA) THEN
     PRINT *, 'ZDC + Z0C + 2m is larger than the 1st WRF level' 
@@ -871,7 +883,12 @@ MODULE module_sf_urban
 !-------------------------------------------------------------------------------
 
    FLXUV  = ( R*CDR + RW*CDC )*UA*UA
-   FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG )
+! Miao, 2007/01/17, cal. ah
+   if(ahoption==1) then
+     FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG ) + AH/RHOO/CPP
+   else
+     FLXTH  = ( R*FLXTHR  + W*FLXTHB  + RW*FLXTHG )
+   endif
    FLXHUM = ( R*FLXHUMR + W*FLXHUMB + RW*FLXHUMG )
    FLXG =   ( R*G0R + W*G0B + RW*G0G )
    LNET =     R*RR + W*RB + RW*RG
@@ -1472,6 +1489,13 @@ ENDIF
    READ(11,*) CH_SCHEME_DATA
    READ(11,*)
    READ(11,*) TS_SCHEME_DATA
+! Miao, 2007/01/17, cal. ah
+   READ(11,*)
+   READ(11,*) ahoption
+   if(ahoption==1) then
+     READ(11,*)
+     READ(11,*) (ahdiuprf(k),k=1,24)
+   endif
 
    CLOSE(11)
 
@@ -1595,6 +1619,7 @@ ENDIF
       XXXB_URB2D(I,J)=0.
       XXXG_URB2D(I,J)=0.
       XXXC_URB2D(I,J)=0.
+
 
       TC_URB2D(I,J)=TSURFACE0_URB(I,J)+0.
       TR_URB2D(I,J)=TSURFACE0_URB(I,J)+0.

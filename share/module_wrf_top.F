@@ -53,6 +53,23 @@ MODULE module_wrf_top
       USE module_domain
       TYPE(domain), POINTER :: grid
      END SUBROUTINE Setup_Timekeeping
+
+#if (EM_CORE == 1)
+     SUBROUTINE wrf_dfi_write_initialized_state( )
+     END SUBROUTINE wrf_dfi_write_initialized_state
+ 
+     SUBROUTINE wrf_dfi_bck_init( )
+     END SUBROUTINE wrf_dfi_bck_init
+     
+     SUBROUTINE wrf_dfi_fwd_init( )
+     END SUBROUTINE wrf_dfi_fwd_init
+     
+     SUBROUTINE wrf_dfi_fst_init( )
+     END SUBROUTINE wrf_dfi_fst_init
+     
+     SUBROUTINE wrf_dfi_array_reset ( )
+     END SUBROUTINE wrf_dfi_array_reset
+#endif
    END INTERFACE
 
 
@@ -189,6 +206,13 @@ CONTAINS
    CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
 
+#if (EM_CORE == 1)
+   ! In case we are doing digital filter initialization, set dfi_stage = DFI_SETUP 
+   !   to indicate in Setup_Timekeeping that we want forecast start and
+   !   end times at this point 
+   head_grid%dfi_stage = DFI_SETUP 
+#endif
+
    CALL Setup_Timekeeping (head_grid)
 
 !<DESCRIPTION>
@@ -296,6 +320,95 @@ CONTAINS
    END SUBROUTINE wrf_finalize
 
 
+   SUBROUTINE wrf_dfi()
+!<DESCRIPTION>
+! Runs a digital filter initialization procedure.
+!</DESCRIPTION>
+      IMPLICIT NONE
+
+#if (EM_CORE == 1)
+      ! Initialization procedure
+      IF ( config_flags%dfi_opt .NE. DFI_NODFI ) THEN
+   
+         SELECT CASE ( config_flags%dfi_opt ) 
+     
+            CASE (DFI_DFL)
+               wrf_err_message = 'Initializing with DFL'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               wrf_err_message = '   Filtering forward in time'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               CALL wrf_dfi_fwd_init()
+               CALL wrf_run()
+   
+               CALL wrf_dfi_array_reset()
+   
+               CALL wrf_dfi_fst_init()
+   
+               IF ( config_flags%dfi_write_filtered_input ) THEN
+                  CALL wrf_dfi_write_initialized_state()
+               END IF
+   
+            CASE (DFI_DDFI)
+               wrf_err_message = 'Initializing with DDFI'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               wrf_err_message = '   Integrating backward in time'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               CALL wrf_dfi_bck_init()
+               CALL wrf_run()
+   
+               wrf_err_message = '   Filtering forward in time'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               CALL wrf_dfi_fwd_init()
+               CALL wrf_run()
+   
+               CALL wrf_dfi_array_reset()
+   
+               CALL wrf_dfi_fst_init()
+   
+               IF ( config_flags%dfi_write_filtered_input ) THEN
+                  CALL wrf_dfi_write_initialized_state()
+               END IF
+   
+            CASE (DFI_TDFI)
+               wrf_err_message = 'Initializing with TDFI'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               wrf_err_message = '   Integrating backward in time'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               CALL wrf_dfi_bck_init()
+               CALL wrf_run()
+   
+               CALL wrf_dfi_array_reset()
+   
+               wrf_err_message = '   Filtering forward in time'
+               CALL wrf_message(TRIM(wrf_err_message))
+   
+               CALL wrf_dfi_fwd_init()
+               CALL wrf_run()
+   
+               CALL wrf_dfi_array_reset()
+   
+               CALL wrf_dfi_fst_init()
+   
+               IF ( config_flags%dfi_write_filtered_input ) THEN
+                  CALL wrf_dfi_write_initialized_state()
+               END IF
+   
+            CASE DEFAULT
+               wrf_err_message = 'Unrecognized DFI_OPT in namelist'
+               CALL wrf_error_fatal(TRIM(wrf_err_message))
+   
+         END SELECT
+   
+      END IF
+#endif
+
+   END SUBROUTINE wrf_dfi
+
 END MODULE module_wrf_top
-
-

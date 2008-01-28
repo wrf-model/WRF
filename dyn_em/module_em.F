@@ -304,6 +304,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
    REAL    :: kdift, khdq, kvdq, cfn, cfn1, cf1, cf2, cf3
    INTEGER :: i,j,k
+   INTEGER :: time_step
 
 !<DESCRIPTION>
 !
@@ -386,9 +387,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     its, ite, jts, jte, 1, 1 )
 
      !  advection tendencies
+     CALL nl_get_time_step ( 1, time_step )
 
      CALL advect_u ( u, u , ru_tend, ru, rv, ww,   &
-                     mut, config_flags,            &
+                     mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
                      msftx, msfty,                 &
                      fnm, fnp, rdx, rdy, rdnw,     &
@@ -397,7 +399,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                      its, ite, jts, jte, kts, kte )
 
      CALL advect_v ( v, v , rv_tend, ru, rv, ww,   &
-                     mut, config_flags,            &
+                     mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
                      msftx, msfty,                 &
                      fnm, fnp, rdx, rdy, rdnw,     &
@@ -407,7 +409,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      IF (non_hydrostatic)                          &
      CALL advect_w ( w, w, rw_tend, ru, rv, ww,    &
-                     mut, config_flags,            &
+                     mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
                      msftx, msfty,                 &
                      fnm, fnp, rdx, rdy, rdn,      &
@@ -418,7 +420,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 !  theta flux divergence
 
      CALL advect_scalar ( t, t, t_tend, ru, rv, ww,     &
-                          mut, config_flags,            &
+                          mut, time_step, config_flags, &
                           msfux, msfuy, msfvx, msfvy,   &
                           msftx, msfty, fnm, fnp,       &
                           rdx, rdy, rdnw,               &
@@ -870,6 +872,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    ! Local data
   
    INTEGER :: im, i,j,k
+   INTEGER :: time_step
 
    REAL    :: khdq, kvdq, tendency
 
@@ -891,6 +894,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                       ims, ime, jms, jme, kms, kme, &
                       its, ite, jts, jte, kts, kte )
 
+     CALL nl_get_time_step ( 1, time_step )
+
       IF( (rk_step == 3) .and. pd_advection ) THEN
 
        CALL advect_scalar_pd       ( scalar(ims,kms,jms,im),             &
@@ -910,7 +915,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
        CALL advect_scalar     ( scalar(ims,kms,jms,im),        &
                                 scalar(ims,kms,jms,im),        &
                                 advect_tend(ims,kms,jms),      &
-                                ru, rv, ww, mut, config_flags, &
+                                ru, rv, ww, mut, time_step,    &
+                                config_flags,                  &
                                 msfux, msfuy, msfvx, msfvy,    &
                                 msftx, msfty, fnm, fnp,        &
                                 rdx, rdy, rdnw,                &

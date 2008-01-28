@@ -517,13 +517,8 @@
 !
 !
 
-!KLUDGE start waiting for Michael
-grid%dfi_opt = 0
-grid%dfi_stage = 1
-
    IF ( ( grid%use_adaptive_time_step ) .AND. &
-        ( ( grid%dfi_opt .EQ. 0 ) .OR. ( grid%dfi_stage .EQ. 1 ) ) ) THEN
-!KLUDGE end   waiting for Michael
+        ( ( grid%dfi_opt .EQ. DFI_NODFI ) .OR. ( grid%dfi_stage .EQ. DFI_FST ) ) ) THEN
 
 !  Calculate any variables that were not set
 

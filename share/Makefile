@@ -19,6 +19,7 @@ MODULES =                       \
 	module_soil_pre.o
 
 OBJS    = 		\
+	dfi.o				\
 	mediation_integrate.o		\
 	mediation_interp_domain.o	\
 	mediation_force_domain.o	\
@@ -156,6 +157,12 @@ module_date_time.o: ../frame/module_wrf_error.o ../frame/module_configure.o \
 		module_model_constants.o 
 
 module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
+
+dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o ../frame/module_timing.o \
+		module_model_constants.o module_date_time.o module_io_domain.o \
+		$(ESMF_MOD_DEPENDENCE)
 
 module_optional_si_input.o: module_io_wrf.o module_io_domain.o \
 		../frame/module_domain.o ../frame/module_configure.o

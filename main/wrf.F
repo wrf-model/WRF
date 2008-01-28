@@ -17,8 +17,11 @@ PROGRAM wrf
 
    IMPLICIT NONE
 
-   ! Initialize WRF model.  
+   ! Set up WRF model.  
    CALL wrf_init
+
+   ! Run digital filter initialization if requested.
+   CALL wrf_dfi
 
    ! WRF model time-stepping.  Calls integrate().  
    CALL wrf_run

@@ -13,6 +13,10 @@ SUBROUTINE Setup_Timekeeping ( grid )
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
    INTEGER :: end_year,end_month,end_day,end_hour,end_minute,end_second
    INTEGER :: vortex_interval
+#if (EM_CORE == 1)
+   INTEGER :: dfi_fwdstop_year,dfi_fwdstop_month,dfi_fwdstop_day,dfi_fwdstop_hour,dfi_fwdstop_minute,dfi_fwdstop_second
+   INTEGER :: dfi_bckstop_year,dfi_bckstop_month,dfi_bckstop_day,dfi_bckstop_hour,dfi_bckstop_minute,dfi_bckstop_second
+#endif
 
    INTEGER :: history_interval  , restart_interval  ,  &
               history_interval_mo, restart_interval_mo,  &
@@ -252,48 +256,213 @@ SUBROUTINE Setup_Timekeeping ( grid )
                          __FILE__ , &
                          __LINE__  )
 
-   CALL nl_get_start_year(grid%id,start_year)
-   CALL nl_get_start_month(grid%id,start_month)
-   CALL nl_get_start_day(grid%id,start_day)
-   CALL nl_get_start_hour(grid%id,start_hour)
-   CALL nl_get_start_minute(grid%id,start_minute)
-   CALL nl_get_start_second(grid%id,start_second)
-   CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
-                                H=start_hour, M=start_minute, S=start_second,&
-                                      rc=rc)
-   CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                         'WRFU_TimeSet(startTime) FAILED', &
-                         __FILE__ , &
-                         __LINE__  )
+#if (EM_CORE == 1)
+   IF ( (grid%dfi_opt .EQ. DFI_NODFI) .OR. (grid%dfi_stage .EQ. DFI_SETUP) ) THEN
+#endif
+      CALL nl_get_start_year(grid%id,start_year)
+      CALL nl_get_start_month(grid%id,start_month)
+      CALL nl_get_start_day(grid%id,start_day)
+      CALL nl_get_start_hour(grid%id,start_hour)
+      CALL nl_get_start_minute(grid%id,start_minute)
+      CALL nl_get_start_second(grid%id,start_second)
+      CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                   H=start_hour, M=start_minute, S=start_second,&
+                                   rc=rc)
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeSet(startTime) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+#if (EM_CORE == 1)
+   ELSE
+      IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN
+         IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_FST ) THEN
+            run_length = grid%stop_subtime - grid%start_subtime
+            CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
+! What about fractional seconds?
+            run_seconds = run_seconds / 2
+            CALL WRFU_TimeIntervalSet ( run_length, S=run_seconds, rc=rc )
+            CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                         H=start_hour, M=start_minute, S=start_second,&
+                                         rc=rc)
+            startTime = startTime + run_length
+            CALL WRFU_TimeGet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                         H=start_hour, M=start_minute, S=start_second,&
+                                         rc=rc)
+         END IF
+
+      ELSE IF ( grid%dfi_opt .EQ. DFI_DDFI ) THEN
+         IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
+            CALL nl_get_dfi_bckstop_year(grid%id,start_year)
+            CALL nl_get_dfi_bckstop_month(grid%id,start_month)
+            CALL nl_get_dfi_bckstop_day(grid%id,start_day)
+            CALL nl_get_dfi_bckstop_hour(grid%id,start_hour)
+            CALL nl_get_dfi_bckstop_minute(grid%id,start_minute)
+            CALL nl_get_dfi_bckstop_second(grid%id,start_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_BCK ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_FST ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
+         END IF
+
+      ELSE IF ( grid%dfi_opt .EQ. DFI_TDFI ) THEN
+         IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
+            CALL nl_get_dfi_bckstop_year(grid%id,start_year)
+            CALL nl_get_dfi_bckstop_month(grid%id,start_month)
+            CALL nl_get_dfi_bckstop_day(grid%id,start_day)
+            CALL nl_get_dfi_bckstop_hour(grid%id,start_hour)
+            CALL nl_get_dfi_bckstop_minute(grid%id,start_minute)
+            CALL nl_get_dfi_bckstop_second(grid%id,start_second)
+
+            run_length = grid%start_subtime - grid%stop_subtime
+            CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
+! What about fractional seconds?
+            run_seconds = run_seconds / 2
+            CALL WRFU_TimeIntervalSet ( run_length, S=run_seconds, rc=rc )
+            CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                         H=start_hour, M=start_minute, S=start_second,&
+                                         rc=rc)
+            startTime = startTime + run_length
+            CALL WRFU_TimeGet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                         H=start_hour, M=start_minute, S=start_second,&
+                                         rc=rc)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_BCK ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_FST ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
+         END IF
+      END IF
+      CALL WRFU_TimeSet(startTime, YY=start_year, MM=start_month, DD=start_day, &
+                                   H=start_hour, M=start_minute, S=start_second,&
+                                   rc=rc)
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                            'WRFU_TimeSet(startTime) FAILED', &
+                            __FILE__ , &
+                            __LINE__  )
+   END IF
+#endif
+
    CALL nl_get_run_days(1,run_days)
    CALL nl_get_run_hours(1,run_hours)
    CALL nl_get_run_minutes(1,run_minutes)
    CALL nl_get_run_seconds(1,run_seconds)
 
-   IF ( grid%id .EQ. head_grid%id .AND. &
-        ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
-     CALL WRFU_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
-     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+#if (EM_CORE == 1)
+   IF ( (grid%dfi_opt .EQ. DFI_NODFI) .OR. (grid%dfi_stage .EQ. DFI_SETUP) .OR. (grid%dfi_stage .EQ. DFI_FST)) THEN
+#endif
+
+      IF ( grid%id .EQ. head_grid%id .AND. &
+           ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
+        CALL WRFU_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_TimeIntervalSet(run_length) FAILED', &
                            __FILE__ , &
                            __LINE__  )
-     stopTime = startTime + run_length
-   ELSE
-     CALL nl_get_end_year(grid%id,end_year)
-     CALL nl_get_end_month(grid%id,end_month)
-     CALL nl_get_end_day(grid%id,end_day)
-     CALL nl_get_end_hour(grid%id,end_hour)
-     CALL nl_get_end_minute(grid%id,end_minute)
-     CALL nl_get_end_second(grid%id,end_second)
-     CALL WRFU_TimeSet(stopTime, YY=end_year, MM=end_month, DD=end_day, &
+        stopTime = startTime + run_length
+      ELSE
+        CALL nl_get_end_year(grid%id,end_year)
+        CALL nl_get_end_month(grid%id,end_month)
+        CALL nl_get_end_day(grid%id,end_day)
+        CALL nl_get_end_hour(grid%id,end_hour)
+        CALL nl_get_end_minute(grid%id,end_minute)
+        CALL nl_get_end_second(grid%id,end_second)
+        CALL WRFU_TimeSet(stopTime, YY=end_year, MM=end_month, DD=end_day, &
                                  H=end_hour, M=end_minute, S=end_second,&
                                  rc=rc )
-     CALL wrf_check_error( WRFU_SUCCESS, rc, &
+        CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_TimeSet(stopTime) FAILED', &
                            __FILE__ , &
                            __LINE__  )
-     run_length = stopTime - startTime
-   ENDIF
+        run_length = stopTime - startTime
+      ENDIF
+
+#if (EM_CORE == 1)
+   ELSE
+
+      IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN 
+         IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
+            CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
+            CALL nl_get_dfi_fwdstop_month(grid%id,end_month)
+            CALL nl_get_dfi_fwdstop_day(grid%id,end_day)
+            CALL nl_get_dfi_fwdstop_hour(grid%id,end_hour)
+            CALL nl_get_dfi_fwdstop_minute(grid%id,end_minute)
+            CALL nl_get_dfi_fwdstop_second(grid%id,end_second)
+         END IF
+
+      ELSE IF ( grid%dfi_opt .EQ. DFI_DDFI ) THEN 
+         IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
+            CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
+            CALL nl_get_dfi_fwdstop_month(grid%id,end_month)
+            CALL nl_get_dfi_fwdstop_day(grid%id,end_day)
+            CALL nl_get_dfi_fwdstop_hour(grid%id,end_hour)
+            CALL nl_get_dfi_fwdstop_minute(grid%id,end_minute)
+            CALL nl_get_dfi_fwdstop_second(grid%id,end_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_BCK ) THEN
+            CALL nl_get_dfi_bckstop_year(grid%id,end_year)
+            CALL nl_get_dfi_bckstop_month(grid%id,end_month)
+            CALL nl_get_dfi_bckstop_day(grid%id,end_day)
+            CALL nl_get_dfi_bckstop_hour(grid%id,end_hour)
+            CALL nl_get_dfi_bckstop_minute(grid%id,end_minute)
+            CALL nl_get_dfi_bckstop_second(grid%id,end_second)
+         END IF
+
+      ELSE IF ( grid%dfi_opt .EQ. DFI_TDFI ) THEN 
+         IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
+            CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
+            CALL nl_get_dfi_fwdstop_month(grid%id,end_month)
+            CALL nl_get_dfi_fwdstop_day(grid%id,end_day)
+            CALL nl_get_dfi_fwdstop_hour(grid%id,end_hour)
+            CALL nl_get_dfi_fwdstop_minute(grid%id,end_minute)
+            CALL nl_get_dfi_fwdstop_second(grid%id,end_second)
+         ELSE IF ( grid%dfi_stage .EQ. DFI_BCK ) THEN
+            CALL nl_get_dfi_bckstop_year(grid%id,end_year)
+            CALL nl_get_dfi_bckstop_month(grid%id,end_month)
+            CALL nl_get_dfi_bckstop_day(grid%id,end_day)
+            CALL nl_get_dfi_bckstop_hour(grid%id,end_hour)
+            CALL nl_get_dfi_bckstop_minute(grid%id,end_minute)
+            CALL nl_get_dfi_bckstop_second(grid%id,end_second)
+         END IF
+      END IF
+      CALL WRFU_TimeSet(stopTime, YY=end_year, MM=end_month, DD=end_day, &
+                         H=end_hour, M=end_minute, S=end_second,&
+                                rc=rc)
+
+      CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                   'WRFU_TimeSet(dfistopfwdTime) FAILED', &
+                   __FILE__ , &
+                   __LINE__  )
+
+      run_length = stopTime - startTime
+
+   END IF
+#endif
+
    IF ( run_length .GT. zero_time ) THEN
      padding_interval = one_hour
    ELSE

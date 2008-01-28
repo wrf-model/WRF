@@ -127,7 +127,7 @@ END SUBROUTINE mass_flux_divergence
 
 SUBROUTINE advect_u   ( u, u_old, tendency,            &
                         ru, rv, rom,                   &
-                        mut, config_flags,             &
+                        mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
                         fzm, fzp,                      &
@@ -168,6 +168,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
+   INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
    
@@ -199,7 +200,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    flux3(q_im2, q_im1, q_i, q_ip1, ua) =                         &
             flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-            sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
+            sign(1,time_step)*sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
    flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =           &
                       ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)       &
@@ -207,7 +208,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =           &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)     &
-            -sign(1.,ua)*(                              &
+            -sign(1,time_step)*sign(1.,ua)*(                     &
               (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
@@ -1546,7 +1547,7 @@ END SUBROUTINE advect_u
 
 SUBROUTINE advect_v   ( v, v_old, tendency,            &
                         ru, rv, rom,                   &
-                        mut, config_flags,             &
+                        mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
                         fzm, fzp,                      &
@@ -1587,6 +1588,8 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
+   INTEGER ,                                     INTENT(IN   ) :: time_step
+
 
    ! Local data
    
@@ -1621,7 +1624,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
+           sign(1,time_step)*sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
    flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
                       ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)   &
@@ -1629,7 +1632,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(                             &
+            -sign(1,time_step)*sign(1.,ua)*(                    &
               (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
@@ -3023,7 +3026,7 @@ END SUBROUTINE advect_v
 
 SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
                              ru, rv, rom,                   &
-                             mut, config_flags,             &
+                             mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
                              msftx, msfty,                  &
                              fzm, fzp,                      &
@@ -3064,6 +3067,8 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
+   INTEGER ,                                     INTENT(IN   ) :: time_step
+
 
    ! Local data
    
@@ -3097,7 +3102,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
+           sign(1,time_step)*sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
       flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
           ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)                  &
@@ -3105,7 +3110,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(                             &
+            -sign(1,time_step)*sign(1.,ua)*(                    &
               (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
@@ -4335,7 +4340,7 @@ END SUBROUTINE advect_scalar
 
 SUBROUTINE advect_w    ( w, w_old, tendency,            &
                          ru, rv, rom,                   &
-                         mut, config_flags,             &
+                         mut, time_step, config_flags,  &
                          msfux, msfuy, msfvx, msfvy,    &
                          msftx, msfty,                  &
                          fzm, fzp,                      &
@@ -4376,6 +4381,8 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
+   INTEGER ,                                     INTENT(IN   ) :: time_step
+
 
    ! Local data
    
@@ -4407,7 +4414,7 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
       flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
            flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
+           sign(1,time_step)*sign(1.,ua)*((q_ip1 - q_im2)-3.*(q_i-q_im1))/12.0
 
       flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
                       ( 37.*(q_i+q_im1) - 8.*(q_ip1+q_im2)      &
@@ -4415,7 +4422,7 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
       flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
            flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1.,ua)*(                             &
+            -sign(1,time_step)*sign(1.,ua)*(                    &
               (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )/60.0
 
 
@@ -7628,17 +7635,29 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    DO k=kts, ktf
    DO i=i_start, i_end
 
-     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
-                - dt*( msftx(i,j)*msfty(i,j)*(               &
-                       rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
-                       rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
+     ! ADT note:
+     ! Since fq{x,y,z}l are based on coupled variables (ru,rv,rom)
+     ! I'm guessing this "msft" here is to cancel those out in order
+     ! to make these comparisons work..., ADT Eq. 48
+     !ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)                   &
+     !           - dt*( msft(i,j)*( rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))      &
+     !                             +rdy*(fqyl(i,k,j+1)-fqyl(i,k,j)) )    &
+     !                         +rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j))   )  
+     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)                   &
+                - dt*( msfty(i,j)*rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))       &
+                      +msftx(i,j)*rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))       &
                       +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
 
-     flux_out = dt*( (msftx(i,j)*msfty(i,j))*(                    &
-                                rdx*(  max(0.,fqx (i+1,k,j))      &
+     !flux_out = dt*(msft(i,j)*( rdx*(  max(0.,fqx (i+1,k,j))      &
+     !                                 -min(0.,fqx (i  ,k,j)) )    &
+     !                          +rdy*(  max(0.,fqy (i,k,j+1))      &
+     !                                 -min(0.,fqy (i,k,j  )) ) )  &
+     !                      +rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
+     !                                 -max(0.,fqz (i,k  ,j)) )   )
+     flux_out = dt*( msfty(i,j)*rdx*(  max(0.,fqx (i+1,k,j))      &
                                       -min(0.,fqx (i  ,k,j)) )    &
-                               +rdy*(  max(0.,fqy (i,k,j+1))      &
-                                      -min(0.,fqy (i,k,j  )) ) )  &
+                    +msftx(i,j)*rdy*(  max(0.,fqy (i,k,j+1))      &
+                                      -min(0.,fqy (i,k,j  )) )    &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
@@ -7712,7 +7731,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
      ! Un-"canceled" map scale factor, ADT Eq. 48
      tendency (i,k,j) = tendency(i,k,j)                           &
-               - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+               - msfty(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
                                    +fqyl(i,k,j+1)-fqyl(i,k,j))   )
 
   ENDDO

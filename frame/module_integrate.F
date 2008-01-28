@@ -260,6 +260,11 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE(domain), POINTER :: grid
      END SUBROUTINE
 
+     SUBROUTINE dfi_accumulate( grid )
+       USE module_domain
+       TYPE(domain), POINTER :: grid
+     END SUBROUTINE
+
    END INTERFACE
 
    ! This allows us to reference the current grid from anywhere beneath 
@@ -291,6 +296,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
          IF ( a_nest_was_opened ) THEN
             CALL set_overlaps ( grid )   ! find overlapping and set pointers
          END IF
+
+         ! Accumulation calculation for DFI
+         CALL dfi_accumulate ( grid )
+
          CALL med_before_solve_io ( grid , config_flags )
          grid_ptr => grid
          DO WHILE ( ASSOCIATED( grid_ptr ) )
@@ -348,15 +357,15 @@ RECURSIVE SUBROUTINE integrate ( grid )
                      '                                                                '
 ! end KLUDGE
            CALL domain_clock_get ( grid, current_timestr=message2 )
-           if (config_flags%time_step >= 0) then
-              WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
-           else
-              WRITE ( message , FMT = '("main (dt=",F6.2,"): time ",A," on domain ",I3)' ) grid%dt, TRIM(message2), grid%id
-           endif
+           WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
            CALL end_timing ( TRIM(message) )
          END IF
          CALL med_endup_step ( grid , config_flags )
       END DO
+
+      ! Accumulation calculation for DFI
+      CALL dfi_accumulate ( grid )
+
       ! Avoid double writes on nests if this is not really the last time;
       ! Do check for write if the parent domain is ending.
       IF ( grid%id .EQ. 1 ) THEN               ! head_grid

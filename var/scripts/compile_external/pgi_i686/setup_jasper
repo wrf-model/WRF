@@ -1,0 +1,5 @@
+#!/bin/ksh
+export CC=pgcc
+./configure --prefix=$PWD --disable-libjpeg 
+make
+make install

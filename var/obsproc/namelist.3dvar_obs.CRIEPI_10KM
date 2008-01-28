@@ -1,0 +1,67 @@
+&record1
+ obs_gts_filename = '/balsa3/guo/CWB/RO/Vandenb/wetprf_decoder/GPS_wetPrf.decoded',
+ obs_gps_filename = '',
+ obs_err_filename = 'obserr.txt',
+/
+ obs_gts_filename = '/balsa3/guo/CWB/RO/Make_OSSE_data/xgpsrf_data.little_r',
+
+&record2
+ time_window_min  = '2002-06-12_16:00:00',
+ time_analysis    = '2002-06-12_18:00:00',
+ time_window_max  = '2002-06-12_19:00:00',
+/
+
+&record3
+ max_number_of_obs        = 8000,
+ fatal_if_exceed_max_obs  = .TRUE.,
+/
+
+&record4
+ qc_test_vert_consistency = .TRUE.,
+ qc_test_convective_adj   = .TRUE.,
+ qc_test_above_lid        = .TRUE.,
+ remove_above_lid         = .TRUE.,
+ domain_check_h           = .true.,
+ Thining_SATOB            = .FALSE.,
+ Thining_SSMI             = .FALSE.,
+ Thining_QSCAT            = .FALSE.,
+/
+
+&record5
+ print_gts_read           = .TRUE.,
+ print_gpspw_read         = .TRUE.,
+ print_recoverp           = .TRUE.,
+ print_duplicate_loc      = .TRUE.,
+ print_duplicate_time     = .TRUE.,
+ print_recoverh           = .TRUE.,
+ print_qc_vert            = .TRUE.,
+ print_qc_conv            = .TRUE.,
+ print_qc_lid             = .TRUE.,
+ print_uncomplete         = .TRUE.,
+/
+
+&record6
+ ptop =   2000.,
+ ps0  = 100000.,
+ ts0  =    300.,
+ tlp  =     50.,
+/
+
+&record7
+ IPROJ =      1,
+ PHIC  =   36.0,
+ XLONC = -100.0,
+ TRUELAT1= 30.0,
+ TRUELAT2= 60.0,
+/
+
+&record8
+ IDD    =   1,
+ MAXNES =   1,
+ NESTIX =  200,  200,  136,  181,  211,
+ NESTJX =  200,  200,  181,  196,  211,
+ DIS    =  10.,  10.,  3.3,  1.1,  1.1,
+ NUMC   =    1,    1,   2,     3,    4,
+ NESTI  =    1,   40,  28,    35,   45,
+ NESTJ  =    1,   60,  25,    65,   55,
+ /

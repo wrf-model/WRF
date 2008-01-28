@@ -1,0 +1,15 @@
+#!/bin/ksh
+cd src
+# edit Makefile to have
+# FC = mpxlf90_r
+# FC77 = f77
+# FFLAGS= -O2 -qmaxmem=8192 -qstrict  -qflttrap=zerodivide:invalid:nanq:enable -qsigtrap=xl__trce \
+#         -qdpc=e -qsuffix=cpp=F90 -qfree=F90 -qspillsize=860
+# Edit Makefile_lib
+# comment out lapack.f from compiled routines
+make clean
+make lib_basic lib_cld lib_scat
+ranlib *.a
+rm *.o
+cd ..
+ln -fs src/librttov*.a librttov.a

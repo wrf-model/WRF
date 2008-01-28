@@ -1,0 +1,79 @@
+
+&record1
+ obs_gts_filename = '/ocotillo1/dmbarker/ob.little_r',
+ fg_format        = 'WRF',
+ obs_err_filename = 'obserr.txt',
+/
+
+&record2
+ time_window_min  = '2006-09-30_22:00:00',
+ time_analysis    = '2006-10-01_00:00:00',
+ time_window_max  = '2006-10-01_02:00:00',
+/
+
+&record3
+ max_number_of_obs        = 70000,
+ fatal_if_exceed_max_obs  = .TRUE.,
+/
+
+&record4
+ qc_test_vert_consistency = .TRUE.,
+ qc_test_convective_adj   = .TRUE.,
+ qc_test_above_lid        = .TRUE.,
+ remove_above_lid         = .TRUE.,
+ domain_check_h           = .true.,
+ Thining_SATOB            = .FALSE.,
+ Thining_SSMI             = .FALSE.,
+ Thining_QSCAT            = .TRUE.,
+/
+
+&record5
+ print_gts_read           = .TRUE.,
+ print_gpspw_read         = .TRUE.,
+ print_recoverp           = .TRUE.,
+ print_duplicate_loc      = .TRUE.,
+ print_duplicate_time     = .TRUE.,
+ print_recoverh           = .TRUE.,
+ print_qc_vert            = .TRUE.,
+ print_qc_conv            = .TRUE.,
+ print_qc_lid             = .TRUE.,
+ print_uncomplete         = .TRUE.,
+/
+
+&record6
+ ptop =   5000.,
+ base_pres  = 100000.,
+ base_temp  =    290.,
+ base_lapse =     50.,
+/
+ ps0  = 100000.,
+ ts0  =    300.,
+ tlp  =     50.,
+
+&record7
+ IPROJ =   1,
+ PHIC         =  37.74000,
+ XLONC        = 129.51000,
+ TRUELAT1= 60.,
+ TRUELAT2= 30.,
+ MOAD_CEN_LAT =  37.74000,
+ STANDARD_LON =  129.51,
+/ 
+/
+
+&record8
+ IDD    =   1,
+ MAXNES =   2,
+ NESTIX =   54,  128,  121,  181,  211,
+ NESTJX =   71,  222,  133,  196,  211,
+ DIS    =    45.,  45.,  15.,  1.1,  1.1,
+ NUMC   =    1,    1,   2,     3,    4,
+ NESTI  =    1,    1,  29,    35,   45,
+ NESTJ  =    1,    1,  27,    65,   55,
+ /
+
+&record9
+  prepbufr_output_filename='prepbufr_obs_gts.3dvar'
+  prepbufr_table_filename='prepbufr_table_filename'
+  output_ob_format=2
+/

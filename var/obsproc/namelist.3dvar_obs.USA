@@ -1,0 +1,68 @@
+
+&record1
+ obs_gts_filename = '/balsa3/guo/GPS_JUN11/obs.2002061100',
+ obs_gps_filename = '',
+ obs_err_filename = 'obserr.txt',
+/
+
+&record2
+ time_window_min  = '2002-06-10_23:00:00',
+ time_analysis    = '2002-06-11_00:00:00',
+ time_window_max  = '2002-06-11_01:00:00',
+/
+
+&record3
+ max_number_of_obs        = 8000,
+ fatal_if_exceed_max_obs  = .TRUE.,
+/
+
+&record4
+ qc_test_vert_consistency = .TRUE.,
+ qc_test_convective_adj   = .TRUE.,
+ qc_test_above_lid        = .TRUE.,
+ remove_above_lid         = .TRUE.,
+ domain_check_h           = .true.,
+ Thining_SATOB            = .FALSE.,
+ Thining_SSMI             = .FALSE.,
+ Thining_QSCAT            = .FALSE.,
+/
+
+&record5
+ print_gts_read           = .TRUE.,
+ print_gpspw_read         = .TRUE.,
+ print_recoverp           = .TRUE.,
+ print_duplicate_loc      = .TRUE.,
+ print_duplicate_time     = .TRUE.,
+ print_recoverh           = .TRUE.,
+ print_qc_vert            = .TRUE.,
+ print_qc_conv            = .TRUE.,
+ print_qc_lid             = .TRUE.,
+ print_uncomplete         = .TRUE.,
+/
+
+&record6
+ ptop =  10000.,
+ ps0  = 100000.,
+ ts0  =    273.,
+ tlp  =     50.,
+/
+
+&record7
+ IPROJ =   1,
+ PHIC  =  40.0,
+ XLONC = -98.0,
+ TRUELAT1=30.,
+ TRUELAT2=60.,
+/
+
+&record8
+ IDD    =   1,
+ MAXNES =   2,
+ NESTIX =  130,  124,  136,  181,  211,
+ NESTJX =  194,  121,  181,  196,  211,
+ DIS    =  30.,  10.,  3.3,  1.1,  1.1,
+ NUMC   =    1,    1,   2,     3,    4,
+ NESTI  =    1,   40,  28,    35,   45,
+ NESTJ  =    1,   60,  25,    65,   55,
+ /
+

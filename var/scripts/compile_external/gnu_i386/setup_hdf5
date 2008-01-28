@@ -1,0 +1,13 @@
+#!/bin/ksh
+export CFLAGS='-O2'
+export FC='g95'
+export F90='g95'
+export FFLAGS='-O2'
+export F90FLAGS='-O2'
+make clean
+./configure --enable-fortran --prefix=$PWD
+make all
+make install
+
+ranlib lib/*.a
+rm src/*.o

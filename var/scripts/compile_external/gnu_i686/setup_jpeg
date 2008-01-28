@@ -1,0 +1,9 @@
+#!/bin/ksh
+export CC=gcc
+make clean
+./configure
+make
+mkdir -p lib include
+mv libjpeg.a lib
+cp *.h include
+ranlib lib/libjpeg.a

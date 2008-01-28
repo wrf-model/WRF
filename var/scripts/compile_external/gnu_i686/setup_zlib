@@ -1,0 +1,8 @@
+#!/bin/ksh
+export CC=gcc
+make clean
+./configure
+make
+mkdir -p lib include
+cp libz.a lib
+cp *.h include

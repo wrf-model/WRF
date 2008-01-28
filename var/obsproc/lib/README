@@ -1,0 +1,12 @@
+Libraries for the obsproc program
+
+cwordsh: contains NCEP'S cwordsh to block and unblock
+         bufr files.
+	 http://www.nco.ncep.noaa.gov/sib/decoders/BUFRLIB/toc/cwordsh/
+
+ecmwf:   currently empty. Used for the ecmwf bufr library
+
+
+ncep:    contains the latest ncep bufr library (1/31/06), with added
+         makefile so it compiles on various architectures.
+	 http://www.nco.ncep.noaa.gov/sib/decoders/BUFRLIB/

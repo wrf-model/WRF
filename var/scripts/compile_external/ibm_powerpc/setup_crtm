@@ -1,0 +1,10 @@
+#!/bin/ksh
+export FC_EXTRA_FLAGS=-O2
+cd src
+make clean
+rm -f *.a
+make ibm
+rm *.o
+ranlib libCRTM.a
+cd ..
+ln -fs src/libCRTM.a libcrtm.a

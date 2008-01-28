@@ -1,0 +1,13 @@
+#!/bin/ksh
+export CFLAGS='-O2'
+export FC='xlf'
+export F90='xlf'
+export FFLAGS='-O2'
+export F90FLAGS='-O2'
+export M4=/usr/local/bin/m4
+export ZLIB=~wrfhelp/external/zlib/zlib-1.2.3/xlc_powerpc
+export JPEG=~wrfhelp/external/jpeg/jpeg-6b/xlc_powerpc
+./configure --enable-fortran --with-zlib=$ZLIB --with-jpeg=$JPEG --prefix=$PWD
+make all
+make install
+ranlib lib/*.a

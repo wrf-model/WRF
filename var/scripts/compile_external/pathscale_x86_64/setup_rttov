@@ -1,0 +1,9 @@
+#!/bin/ksh
+cd src
+# Uncomment the pathscale lines from Makefile and add -O2
+# Comment out lapack.f from Makefile_lib
+make clean
+make lib_basic lib_cld lib_scat
+rm *.o
+cd ..
+ln -fs src/librttov*.a librttov.a

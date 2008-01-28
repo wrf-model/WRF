@@ -1,0 +1,9 @@
+#!/bin/ksh
+cd src
+# edit make.macros and change LINUX_FLAGS_PGI_PROD and DEBUG to Big_Endian
+make clean
+rm -f *.a
+make pgi
+rm *.o
+cd ..
+ln -fs src/libCRTM.a libcrtm.a

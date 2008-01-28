@@ -1,0 +1,16 @@
+    
+ For running following NCL scripts in this directory
+
+      analysis_horz.ncl
+      analysis_vert.ncl
+      analysis_inc_horz.ncl
+      analysis_inc_vert.ncl
+
+
+ Make sure that you created "wrf_user_fortran_util_0.so" 
+
+ To create this file use following command
+
+   WRAPIT wrf_user_fortran_util_0.f
+
+ Note: Make sure that you have NCL Version: 4.2.0.a.034 upward 

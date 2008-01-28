@@ -1,0 +1,139 @@
+#!/bin/csh -f
+
+set arglist=""
+
+if (! $?COMPILE_PROCS) then
+   setenv COMPILE_PROCS 1
+endif
+
+
+if ( !  -e configure.wrfvar  ) then
+  echo "You need to configure the code first."
+  echo "Please do ./configure and then ./compile."
+  exit 1
+endif
+
+# these settings get passed down through the environment in the
+# calls to Make
+setenv WRF_EM_CORE 0
+setenv WRF_NMM_CORE 0
+setenv WRF_COAMPS_CORE 0
+setenv WRF_EXP_CORE 0
+setenv WRF_DA_CORE 0
+
+set valid_arg = 0
+
+foreach a ( $argv )
+  if ( "$a" == "-h" ) then
+    goto hlp
+  else
+    # we probably needs to add consistent check here.
+
+    set arglist = ( $arglist $a )
+
+    if ( "$a" == "em" || "$a" == "all_em" || \ "$a" == "chem" || "$a" == "diffwrf" ) then
+      set valid_arg = 1
+      setenv WRF_EM_CORE 1
+    else if ( "$a" == "all_nmm" || "$a" == "nmm" ) then
+      set valid_arg = 1
+      setenv WRF_NMM_CORE 1
+    else if ( "$a" == "decode_airs" ) then
+      set valid_arg = 1
+    else if ( "$a" == "wrfvar" || "$a" == "convertor" || "$a" == "be" \
+          || "$a" == "da_utils" || "$a" == "all_wrfvar" ) then
+      set valid_arg = 1
+      setenv WRF_EM_CORE 1
+      setenv WRF_DA_CORE 1
+    endif
+  endif
+end
+
+if( $valid_arg != 1 ) then
+  echo "You need to compile corresponding to your configure option."
+  echo "Type <compile wrfvar>      Wrfvar"
+  echo "Type <compile be>          Background error generator"
+  echo "Type <compile da_utils>    Data assimilation utilities (verification, bias corrections etc)"
+  echo "Type <compile all_wrfvar>  Compile wrfvar be and da_utils"
+  echo "Type <compile convertor>   Convertors for converting KMA data to and from NetCDF data format"
+  echo "Type <compile decode_airs> AIRS decoding"
+  echo "Type <compile em>          WRF (EM) model"
+  echo "Type <compile nmm>         WRF (NMM) model"
+  echo "Type <compile all_em>      wrf_em and EM test routines"
+  echo "Type <compile all_nmm>     wrf_nmm and NMM test routines"
+  echo "Type <compile diffwrf>     diffwrf"
+  exit 2
+endif
+
+if ( $arglist == "" ) then
+  goto hlp
+else
+  unsetenv A2DCASE
+  setenv A2DCASE `echo $arglist | grep 2d`
+
+  if ( $WRF_EM_CORE == 1 && $WRF_NMM_CORE == 1 ) then
+    echo "Cannot compile both EM and NMM cores in same executable yet."
+    exit 2
+  endif
+
+  if ($WRF_EM_CORE == 0 && $WRF_NMM_CORE == 0 ) then
+    echo "Cannot compile because both EM and NMM cores are set to 0."
+    exit 2
+  endif
+
+  if ($WRF_NMM_CORE == 1) then
+    grep -q DM_PARALLEL configure.wrfvar
+    if ( $status == 1 ) then
+      echo NMM_CORE must be configured for DM parallel
+      echo Please rerun the configure script and chose a DM parallel option
+      exit 3
+    endif
+    setenv REGISTRY Registry.NMM
+    # integrity check for a kludge where a hard coded value in the 
+    # registry must match the same value in arch/preamble
+    set registryvalue=`grep 'dimspec.* q ' ../Registry/$REGISTRY | sed -e 's/..*constant=//' -e 's/ ..*$//'`
+    set configurevalue=`grep 'DNMM_MAX_DIM=.*' configure.wrfvar | sed -e 's/..*-DNMM_MAX_DIM=//' -e 's/ ..*$//'`
+    if ( $registryvalue != $configurevalue ) then
+      echo "Harded coded value of dimspec q in Registry ($registryvalue) does not"
+      echo "equal the hard coded value of NMM_MAX_DIM in configure..wrfvar ($configurevalue)"
+      echo "Please fix and try again."
+      exit 2
+    endif
+  endif
+
+  echo " "
+  echo -n "**** Compiling: "
+  if ( $WRF_EM_CORE ) echo -n "WRF_EM_CORE "
+  if ( $WRF_NMM_CORE ) echo -n "WRF_NMM_CORE "
+  if ( $WRF_COAMPS_CORE ) echo -n "WRF_COAMPS_CORE "
+  if ( $WRF_EXP_CORE ) echo -n "WRF_EXP_CORE "
+  if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "
+  echo "."
+  echo " "
+
+  # seperate setup stage for make programs that don't update include
+  # files before using them. gnu make good. Aix make bad
+  make links
+  make depend
+  time make -j$COMPILE_PROCS -r $arglist A2DCASE="$A2DCASE"
+
+endif
+
+exit 0
+
+hlp:
+
+echo ' '
+echo 'Usage:'
+echo ' '
+echo '   compile wrf           compile wrf dir (NOTE: no real.exe, ndown.exe, or ideal.exe generated)'
+echo ' '
+echo '   or choose a test case (see README_test_cases for details) :'
+foreach d ( `/bin/ls test` )
+  if ( "$d" != "CVS" ) then
+    echo "      compile $d"
+  endif
+end
+echo ' '
+echo '  compile -h                 help message'
+
+

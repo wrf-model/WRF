@@ -20,6 +20,7 @@ LIBINCLUDE      =       .
 COREDEFS = -DEM_CORE=$(WRF_EM_CORE) \
            -DNMM_CORE=$(WRF_NMM_CORE) -DNMM_MAX_DIM=2600 \
 	   -DCOAMPS_CORE=$(WRF_COAMPS_CORE) \
+	   -DDA_CORE=$(WRF_DA_CORE) \
            -DEXP_CORE=$(WRF_EXP_CORE)
 
 #### Single location for defining total number of domains.  You need
@@ -51,7 +52,7 @@ CONFIG_BUF_LEN	=	16384
 NATIVE_RWORDSIZE = 4
 
 #### Default sed command and script for Fortran source files ####
-SED_FTN = sed -f ../arch/standard.sed
+SED_FTN = sed -f $(WRF_SRC_ROOT_DIR)/arch/standard.sed
 
 # Hack to work around $(PWD) not changing during OSF1 build.  
 # $(IO_GRIB_SHARE_DIR) is reset during the OSF1 build only.  

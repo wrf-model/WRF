@@ -1,0 +1,8 @@
+#!/bin/ksh
+export MPICC=$MPIHOME/bin/mpicc
+export MPIF77=$MPIHOME/bin/mpif77
+export FC=xlf
+export CC=xlc
+./configure
+make
+make install

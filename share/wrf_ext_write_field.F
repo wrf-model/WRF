@@ -146,7 +146,8 @@
 !           ( Var(1:4) /= 'XLAT'  ) ) THEN
 ! JM used trim instead, to avoid spurious errors when bounds checking on
       IF ( ( ( TRIM(MemoryOrder) == 'XY' ) .OR. &
-             ( TRIM(MemoryOrder) == 'XZY' ) ) .AND. &
+             ( TRIM(MemoryOrder) == 'XZY' ) .OR. &
+             ( TRIM(MemoryOrder) == 'XYZ' ) ) .AND. &
            ( TRIM(Var) /= 'XLONG' ) .AND. &
            ( TRIM(Var) /= 'XLAT'  ) ) THEN
         horiz_stagger = .FALSE.

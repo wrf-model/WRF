@@ -1,0 +1,68 @@
+
+&record1
+ obs_gts_filename = '../Test_data/obs_decoded.1998053012',
+ obs_gps_filename = '../Test_data/GPS_TPW_obs.taiwan',
+ obs_err_filename = 'obserr.txt',
+/
+
+&record2
+ time_window_min  = '1998-05-30_11:00:00',
+ time_analysis    = '1998-05-30_12:00:00',
+ time_window_max  = '1998-05-30_13:59:59',
+/
+
+&record3
+ max_number_of_obs        = 10000,
+ fatal_if_exceed_max_obs  = .TRUE.,
+/
+
+&record4
+ qc_test_vert_consistency = .TRUE.,
+ qc_test_convective_adj   = .TRUE.,
+ qc_test_above_lid        = .TRUE.,
+ remove_above_lid         = .TRUE.,
+ domain_check_h           = .true.,
+ Thining_SATOB            = .FALSE.,
+ Thining_SSMI             = .FALSE.,
+ Thining_QSCAT            = .FALSE.,
+/
+
+&record5
+ print_gts_read           = .TRUE.,
+ print_gpspw_read         = .TRUE.,
+ print_recoverp           = .TRUE.,
+ print_duplicate_loc      = .TRUE.,
+ print_duplicate_time     = .TRUE.,
+ print_recoverh           = .TRUE.,
+ print_qc_vert            = .TRUE.,
+ print_qc_conv            = .TRUE.,
+ print_qc_lid             = .TRUE.,
+ print_uncomplete         = .TRUE.,
+/
+
+&record6
+ ptop =  10000.,
+ ps0  = 100000.,
+ ts0  =    273.15,
+ tlp  =     50.,
+/
+
+&record7
+ IPROJ    =   1,
+ PHIC     =  28.5,
+ XLONC    = 116.0,
+ TRUELAT1 =  10.,
+ TRUELAT2 =  45.,
+/
+
+&record8
+ IDD    =   2,
+ MAXNES =   5,
+ NESTIX =   97,   74,  110,  130,  192,
+ NESTJX =  111,   92,  110,  146,  148,
+ DIS    = 135., 135.,  45.,  15.,   5.,
+ NUMC   =    1,    1,   2,     3,    4,
+ NESTI  =    1,   12,  16,    33,   36,
+ NESTJ  =    1,   10,  31,    30,   56,
+ /
+

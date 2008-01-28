@@ -1,0 +1,6 @@
+#!/bin/ksh
+rm -f *.o
+ftn -c -O2 -f fixed -sreal64 -dp -eh *.f
+cc -c -DUNDERSCORE *.c
+ar -ru libbufr.a *.o
+rm *.o

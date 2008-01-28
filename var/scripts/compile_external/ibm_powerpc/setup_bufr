@@ -1,0 +1,11 @@
+#!/bin/ksh
+export AR="ar -ru"
+export FC=xlf_r
+export CC=xlc
+export FCFLAGS="-O2 -qrealsize=8"
+export CCFLAGS="-O2"
+rm -f *.o *.a
+$FC -c $FCFLAGS *.f
+$CC -c $CCFLAGS *.c
+$AR libbufr.a *.o
+

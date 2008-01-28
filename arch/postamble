@@ -1,7 +1,7 @@
 
 # These sub-directory builds are identical across all architectures
 wrfio_esmf :
-	( cd ../external/io_esmf ; \
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_esmf ; \
 	make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " )
 
 
@@ -15,19 +15,19 @@ RM	= 	rm -f
 #	There is probably no reason to modify these rules
 
 wrf_ioapi_includes :
-	( cd ../external/ioapi_share ; \
+	( cd $(WRF_SRC_ROOT_DIR)/external/ioapi_share ; \
 	$(MAKE) NATIVE_RWORDSIZE="$(NATIVE_RWORDSIZE)" RWORDSIZE="$(RWORDSIZE)" )
 
 .F.i:
 	$(RM) $@
-	$(CPP) -I../inc $(CPPFLAGS) $*.F > $@
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.F > $@
 	mv $*.i $(DEVTOP)/pick/$*.f90
 	cp $*.F $(DEVTOP)/pick
 
 .F.o:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
 	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 #PGI	if [ ! -e $@ ] ; then \
@@ -40,7 +40,7 @@ wrf_ioapi_includes :
 .F.f90:
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $@
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $@
 	$(RM) $*.b
 
 .f90.o:

@@ -1,0 +1,14 @@
+#!/bin/ksh
+cd src
+# edit Makefile to have
+# FC=g95
+# FC77=g95
+# FFLAGS=-O2 -ftrace=full
+# Edit Makefile_lib
+# comment out lapack.f from compiled routines
+make clean
+make lib_basic lib_cld lib_scat
+ranlib *.a
+rm *.o
+cd ..
+ln -fs src/librttov*.a librttov.a

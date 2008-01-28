@@ -92,6 +92,7 @@ CONTAINS
 
    END SUBROUTINE init_module_optional_si_input
 
+#if (DA_CORE != 1)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE optional_si_input ( grid , fid )
@@ -1051,5 +1052,5 @@ USE module_io_domain
    END FUNCTION char2int2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+#endif
 END MODULE module_optional_si_input

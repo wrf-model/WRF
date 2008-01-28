@@ -1,0 +1,5 @@
+#!/bin/ksh
+export CC=gcc
+./configure
+make clean
+make

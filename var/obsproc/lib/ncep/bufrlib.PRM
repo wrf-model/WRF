@@ -1,0 +1,93 @@
+C-----------------------------------------------------------------------
+C	Maximum number of BUFR files that can be connected to the
+C	BUFRLIB software (for reading or writing) at any one time.
+
+	PARAMETER ( NFILES = 32 )
+C-----------------------------------------------------------------------
+C	Maximum length (in bytes) of a BUFR message that can be
+C	read or written by the BUFRLIB software.
+
+#ifdef SUPERSIZE
+	PARAMETER ( MXMSGL = 2500000 )
+#else
+	PARAMETER ( MXMSGL = 50000 )
+#endif
+	PARAMETER ( MXMSGLD4 = MXMSGL/4 )
+C-----------------------------------------------------------------------
+C	Maximum number of Section 3 FXY descriptors that can be
+C	written into a BUFR message by the BUFRLIB software.
+C	(NOTE: This parameter must also be identically defined 
+C	       within "bufrlib.h" for use by several C routines!)
+
+	PARAMETER ( MAXNC = 300 )
+C-----------------------------------------------------------------------
+C	Maximum number of default Section 0 or Section 1 values
+C	that can be overwritten within a BUFR message by the
+C	BUFRLIB software.
+
+	PARAMETER ( MXS01V = 10 )
+C-----------------------------------------------------------------------
+C	Maximum number of data values per subset in a compressed
+C	BUFR message.
+
+#ifdef SUPERSIZE
+	PARAMETER ( MXCDV = 50000 )
+#else
+	PARAMETER ( MXCDV = 2000 )
+#endif
+C-----------------------------------------------------------------------
+C	Maximum number of subsets in a compressed BUFR message.
+
+	PARAMETER ( MXCSB = 4000 )
+C-----------------------------------------------------------------------
+C	Maximum number of entries in the internal BUFR Table A.
+
+	PARAMETER ( MAXTBA = 60 )
+C-----------------------------------------------------------------------
+C	Maximum number of entries in the internal BUFR Table B.
+
+	PARAMETER ( MAXTBB = 250 )
+C-----------------------------------------------------------------------
+C	Maximum number of entries in the internal BUFR Table D.
+
+	PARAMETER ( MAXTBD = 250 )
+C-----------------------------------------------------------------------
+C	Maximum number of child descriptors that can be included
+C       within the sequence definition of a Table D descriptor.
+C	(NOTE: This value does *not* need to take into account
+C	       the recursive resolution of any child descriptors
+C	       which may themselves be Table D descriptors!)
+
+	PARAMETER ( MAXCD = 250 )
+C-----------------------------------------------------------------------
+C	Maximum number of entries in the internal jump/link table.
+
+#ifdef SUPERSIZE
+	PARAMETER ( MAXJL = 100000 )
+#else
+	PARAMETER ( MAXJL = 16000 )
+#endif
+C-----------------------------------------------------------------------
+C	Maximum number of entries in the internal string cache.
+
+	PARAMETER ( MXS = 1000 )
+C-----------------------------------------------------------------------
+C	Maximum number of BUFR messages that can be stored within
+C	internal memory.
+
+	PARAMETER ( MAXMSG = 200000 )
+C-----------------------------------------------------------------------
+C	Maximum number of bytes that can be used to store BUFR
+C	messages within internal memory.
+
+	PARAMETER ( MAXMEM = 50000000 )
+C-----------------------------------------------------------------------
+C	Maximum number of bytes that can be copied between BUFR
+C	messages within internal memory.
+
+#ifdef SUPERSIZE
+	PARAMETER ( MXIMB = 100000 )
+#else
+	PARAMETER ( MXIMB = 50000 )
+#endif
+C-----------------------------------------------------------------------

@@ -13,6 +13,12 @@ include ./configure.wrf
 EM_MODULE_DIR = -I../dyn_em
 EM_MODULES =  $(EM_MODULE_DIR)
 
+DA_WRFVAR_MODULES = $(INCLUDE_MODULES)
+DA_WRFVAR_MODULES_2 = $(INC_MOD_WRFVAR)
+
+DA_CONVERTOR_MOD_DIR = -I../var/convertor -p../var/convertor
+DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
+
 
 #### 3.d.   add macros to specify the modules for this core
 
@@ -58,6 +64,26 @@ wrf : framework_only
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
+
+all_wrfvar : da be
+
+da :
+	/bin/rm -f main/libwrflib.a
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" REGISTRY="Registry" framework
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" shared
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" dyn_em
+	( cd var/da; make -r da )
+
+be : 
+	/bin/rm -f main/libwrflib.a
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" REGISTRY="Registry" framework
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" shared
+	( cd var/da; $(MAKE) da )
+	( cd var/gen_be; $(MAKE) gen_be )
 
 ### 3.a.  rules to build the framework and then the experimental core
 
@@ -359,8 +385,8 @@ ext :
 framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) framework; \
-	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="../$(ESMF_MOD_DEPENDENCE)" diffwrf; \
-	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="../$(ESMF_MOD_DEPENDENCE)" diffwrf ; cd ../../frame )
+	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" diffwrf; \
+	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" diffwrf ; cd ../../frame )
 
 shared :
 	@ echo '--------------------------------------'

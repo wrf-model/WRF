@@ -1,0 +1,11 @@
+#!/bin/ksh
+# Edit make.macros and remove from LINUX_FLAGS_G95_PROD and _DEBUG the lines
+# '-malign-double' and '-std=f95'
+cd src
+make clean
+rm -f *.a
+make g95
+rm *.o
+mkdir -p ../include
+cp *.mod ../include
+cp libCRTM.a ../libcrtm.a

@@ -1,0 +1,17 @@
+#!/bin/ksh
+cd src
+export CC='gcc'
+export CXX='g++'
+export CPPFLAGS='-DNDEBUG -DpgiFortran'
+export CFLAGS='-O2'
+export FC='pgf90'
+export F90='pgf90'
+export FFLAGS='-O2'
+export F90FLAGS='-O2'
+make clean
+./configure
+make all
+make install
+rm *.o
+cd ..
+ln -fs lib/*.a .

@@ -1,0 +1,6 @@
+#!/bin/ksh
+export CC=xlc
+./configure --prefix=$PWD --disable-libjpeg
+make
+make install
+

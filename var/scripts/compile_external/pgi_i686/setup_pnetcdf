@@ -1,0 +1,9 @@
+#!/bin/ksh
+export MPICC=$MPIHOME/bin/mpicc
+export MPIF77=$MPIHOME/bin/mpif77
+export FC=pgf90
+export CC=pgcc
+make clean
+./configure --prefix=$PWD
+make
+make install

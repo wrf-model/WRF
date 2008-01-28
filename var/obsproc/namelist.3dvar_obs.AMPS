@@ -1,0 +1,68 @@
+
+&record1
+ obs_gts_filename = '/cape6/rizvi/data/modis/modis-20021201',
+ obs_err_filename = 'obserr.txt',
+ fg_format        = 'MM5' ,
+/
+
+&record2
+ time_window_min  = '2002-12-01_10:30:00',
+ time_analysis    = '2002-12-01_12:00:00',
+ time_window_max  = '2002-12-01_13:30:00',
+/
+
+&record3
+ max_number_of_obs        = 140000,
+ fatal_if_exceed_max_obs  = .TRUE.,
+/
+
+&record4
+ qc_test_vert_consistency = .TRUE.,
+ qc_test_convective_adj   = .TRUE.,
+ qc_test_above_lid        = .TRUE.,
+ remove_above_lid         = .TRUE.,
+ domain_check_h           = .true.,
+ Thining_SATOB            = .FALSE.,
+ Thining_SSMI             = .FALSE.,
+ Thining_QSCAT            = .FALSE.,
+/
+
+&record5
+ print_gts_read           = .TRUE.,
+ print_gpspw_read         = .TRUE.,
+ print_recoverp           = .TRUE.,
+ print_duplicate_loc      = .TRUE.,
+ print_duplicate_time     = .TRUE.,
+ print_recoverh           = .TRUE.,
+ print_qc_vert            = .TRUE.,
+ print_qc_conv            = .TRUE.,
+ print_qc_lid             = .TRUE.,
+ print_uncomplete         = .TRUE.,
+/
+
+&record6
+ ptop =  10000.,
+ ps0  = 100000.,
+ ts0  =    265.0,
+ tlp  =     50.,
+/
+
+&record7
+ IPROJ    =     2,
+ PHIC     = -87.4,
+ XLONC    = 180.0,
+ TRUELAT1 =  -71.,
+ TRUELAT2 =   91.,
+/
+
+&record8
+ IDD      =   2,
+ MAXNES   =        2,
+ NESTIX   =      145,      208,      141,      112,      103,
+ NESTJX   =      110,      220,      141,      121,      103,
+ DIS      =    90.00,    30.00,    10.00,    10.00,     10.0,
+ NUMC     =        1,        1,        1,        1,        1,
+ NESTI    =        1,       38,        1,        1,        1,
+ NESTJ    =        1,       18,        1,        1,        1 /
+
+

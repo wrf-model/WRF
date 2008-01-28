@@ -1,0 +1,10 @@
+#!/bin/ksh
+# Edit make.macros and remove from LINUX_FLAGS_G95_PROD and _DEBUG the lines
+# '-std=f95
+cd src
+make clean
+rm -f *.a
+make g95
+rm *.o
+cd ..
+ln -fs src/libCRTM.a libcrtm.a

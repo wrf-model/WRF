@@ -1,0 +1,16 @@
+This file is intended to track the tags created by CVS.
+
+Version History
+---------------
+
+cvs tag kma_2005_project        (April 14, 2006)       tag for KMA 2005 Project
+cvs tag V2_11                   (March 6, 2006)        tag for WRFVAR_V2.1.1 bug fixed releasey 
+cvs tag V2_1                    (August 5, 2005)       tag for WRFVAR_V2.1 releasey 
+cvs -r tag version_2_0_4_0	(April 15, 2005)       tag for KMA.
+cvs -r tag version_2_1_1	(February 15, 2005)    tag for WRF.
+cvs -r tag afwa_version_2_0_2_plus        (September 16, 2004)    tag for AFWA IOC.
+cvs -r tag version_2_1_0 (September 16, 2004) - 3DVAR_OBSPROC (for GPS Ref, 
+                                                                   KMA CE map projection)
+cvs -r tag version_2_0_4 (January 26, 2004)  - 3DVAR_OBSPROC (for bad AMPS obs file)
+cvs -r tag version_2_0_3 (January 23, 2004)  - 3DVAR_OBSPROC (for GPSZD FM-114)
+cvs -r tag version_2_0_2 (January  9, 2004)  - 3DVAR_OBSPROC (for AFWA and AMPS)

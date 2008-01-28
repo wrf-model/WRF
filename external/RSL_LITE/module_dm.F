@@ -150,11 +150,11 @@ write(0,*)'reordering mesh'
 ! debug
       CALL mpi_comm_rank( local_communicator_periodic, mytask, ierr )
       CALL mpi_cart_coords( local_communicator_periodic, mytask, 2, coords, ierr )
-        write(0,*)'periodic coords ',mytask, coords
+!        write(0,*)'periodic coords ',mytask, coords
 
       CALL mpi_comm_rank( local_communicator, mytask, ierr )
       CALL mpi_cart_coords( local_communicator, mytask, 2, coords, ierr )
-        write(0,*)'non periodic coords ',mytask, coords
+!        write(0,*)'non periodic coords ',mytask, coords
       mytask_x = coords(2)   ! col task (x)
       mytask_y = coords(1)   ! row task (y)
       CALL nl_set_nproc_x ( 1, ntasks_x )
@@ -879,6 +879,15 @@ write(0,*)'reordering mesh'
       CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_SUM, local_communicator, ierr )
       wrf_dm_sum_real = retval
    END FUNCTION wrf_dm_sum_real
+
+   SUBROUTINE wrf_dm_sum_reals (inval, retval)
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      REAL, INTENT(IN)  :: inval(:)
+      REAL, INTENT(OUT) :: retval(:)
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval, SIZE(inval), getrealmpitype(), MPI_SUM, local_communicator, ierr )
+   END SUBROUTINE wrf_dm_sum_reals
 
    INTEGER FUNCTION wrf_dm_sum_integer ( inval )
       IMPLICIT NONE

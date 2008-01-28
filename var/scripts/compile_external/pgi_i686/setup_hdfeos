@@ -1,0 +1,7 @@
+#!/bin/ksh
+export HDFLIB=~wrfhelp/external/hdf/hdf4.2r1/pgi_i686/lib
+export HDFINC=~wrfhelp/external/hdf/hdf4.2r1/pgi_i686/include
+./bin/INSTALL-HDFEOS
+cd lib
+ln -s linux/*.a .
+

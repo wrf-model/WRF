@@ -1,0 +1,22 @@
+export SETUP=g95
+
+export FC=g95
+export F90=g95
+export F77=g95
+export CC=gcc
+export CXX=g++
+export LOADER=g95
+
+export FFLAGS="-O2"
+export F90FLAGS="-O2"
+
+export CCFLAGS=-O2
+export CXXFLAGS=-O2
+export CPPFLAGS=
+
+export LD=mpif90
+export LDFLAGS=
+make clean
+./configure --prefix=$PWD
+make
+make install

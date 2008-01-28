@@ -1,0 +1,36 @@
+This file explains how to compile the NCEP BUFRLIB software, which is
+described in detail at http://www.nco.ncep.noaa.gov/sib/decoders/BUFRLIB/,
+and whose usage is governed by the terms and conditions of the disclaimer
+http://www.nws.noaa.gov/disclaimer.html
+
+The NCEP BUFRLIB software has been compiled and tested across a wide variety
+of UNIX platforms, including AIX 4.x and 5.x, HP-UX 9.x and 10.x, IRIX 6.x,
+SunOS 5.x and RedHat Linux 5.2; thus, it should port with minimal difficulty
+to any UNIX system.  In general, no special compiler flags are required,
+and therefore the simple commands:
+
+    $AC -c *.c
+    $FC -c *.f
+
+where $AC and $FC point to, respectively, the local ANSI C and FORTRAN 77
+compilers, should suffice for most systems.  However, it is recommended to
+then assemble all of the compiled object files into an archive library via:
+
+    ar crv $BUFRLIB *.o
+
+where $BUFRLIB points to the desired pathname for the BUFRLIB archive library.
+This archive library can then be easily linked whenever the user's application
+program is subsequently compiled on the same local system.
+
+
+JFB additions  2/1/06
+
+Need to run cpp on bufrlib.PRM as follows
+
+/lib/cpp -I. -C -P -DLINUX -traditional -Dlinux bufrlib.PRM > bufrlib.prm
+
+set -DSUPERSIZE to use large arrays.
+
+compile C routines with cc -DUNDERSCORE if you are on a machine
+which requires a trailing underscore to interface with Fortran.
+See bufrlib.h for more info.

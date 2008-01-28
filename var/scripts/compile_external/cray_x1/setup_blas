@@ -1,0 +1,3 @@
+# Use Cray's own blas in libsci. To satify configuration program, BLAS
+# still needs to be set to some arbitrary value
+export BLAS=$HOME

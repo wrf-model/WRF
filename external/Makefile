@@ -12,7 +12,6 @@ superclean :
 	( cd io_grib2 ; make superclean )
 	( cd io_esmf ;  make superclean )
 	( cd ioapi_share ;  make superclean )
-	( cd RSL/RSL ; make superclean )
 	( cd RSL_LITE ; make superclean )
 	( cd fftpack/fftpack5 ; make superclean )
 

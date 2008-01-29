@@ -214,6 +214,8 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
         if ( p->node_kind & FOURD )
 	{
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
+        } else {
+fprintf(fp,"IF ( in_use_for_config( grid%%id , '%s' ) ) THEN \n", vname ) ;
 	}
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
@@ -315,6 +317,8 @@ fprintf(fp,"                  ) \n") ;
         if ( p->node_kind & FOURD )
         {
 fprintf(fp,"ENDDO\n") ;
+        } else {
+fprintf(fp,"ENDIF\n") ; /* in_use_from_config */
         }
 
      }

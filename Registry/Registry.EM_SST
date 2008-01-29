@@ -1087,6 +1087,7 @@ rconfig   logical adjust_heights          namelist,domains	1              .false
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""
+rconfig   logical grid_allowed            namelist,domains      max_domains    .true.  irh    "allowed"       ""      ""
 rconfig   integer parent_id               namelist,domains	max_domains    0       h     "parent_id"             ""      ""
 rconfig   integer i_parent_start          namelist,domains	max_domains    1       rh     "i_parent_start"                ""      ""
 rconfig   integer j_parent_start          namelist,domains	max_domains    1       rh     "j_parent_start"                ""      ""

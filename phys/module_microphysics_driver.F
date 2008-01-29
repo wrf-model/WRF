@@ -19,6 +19,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,lowlyr,sr, id                                     &
                       ,ids,ide, jds,jde, kds,kde                         &
                       ,ims,ime, jms,jme, kms,kme                         &
+                      ,ips,ipe, jps,jpe, kps,kpe                         &
                       ,i_start,i_end,j_start,j_end,kts,kte               &
                       ,num_tiles, naer                                   &
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
@@ -199,6 +200,7 @@ SUBROUTINE microphysics_driver(                                          &
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
    INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme
+   INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
    INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
@@ -313,11 +315,11 @@ SUBROUTINE microphysics_driver(                                          &
      sz = 0
    ENDIF
 
+#ifndef RUN_ON_GPU
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n )
 
    DO ij = 1 , num_tiles
-
        IF (channel) THEN
          its = max(i_start(ij),ids)
          ite = min(i_end(ij),ide-1)
@@ -327,6 +329,19 @@ SUBROUTINE microphysics_driver(                                          &
        ENDIF
        jts = max(j_start(ij),jds+sz)
        jte = min(j_end(ij),jde-1-sz)
+#else
+   DO ij = 1 , 1
+       IF (channel) THEN
+         its = max(ips,ids)
+         ite = min(ipe,ide-1)
+       ELSE
+         its = max(ips,ids+sz)
+         ite = min(ipe,ide-1-sz)
+       ENDIF
+       jts = max(jps,jds+sz)
+       jte = min(jpe,jde-1-sz)
+#endif
+
 
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
 
@@ -670,7 +685,9 @@ SUBROUTINE microphysics_driver(                                          &
       END SELECT micro_select 
 
    ENDDO
+#ifndef RUN_ON_GPU
    !$OMP END PARALLEL DO
+#endif
 
    CALL wrf_debug ( 200 , 'microphysics_driver: returning from' )
 

@@ -73,7 +73,8 @@ gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allo
 
 /* check for errors in memory allocation */
 
-       fprintf(fp,"IF(in_use_for_config(id,'%s')",fname) ;
+       if ( ! p->boundary_array ) { fprintf(fp,"IF(in_use_for_config(id,'%s')",fname) ; } 
+       else                       { fprintf(fp,"IF(.TRUE.") ; }
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
             ! ( p->io_mask & INTERP_DOWN || p->io_mask & FORCE_DOWN || p->io_mask & INTERP_UP || p->io_mask & SMOOTH_UP ) )
        {
@@ -153,7 +154,7 @@ gen_alloc2 ( FILE * fp , char * structname , node_t * node, int sw ) /* 1 = allo
 
        }
 
-       fprintf(fp,"ENDIF\n") ;
+       fprintf(fp,"ENDIF\n") ;  /* end of in_use conditional */
 
       }
     }

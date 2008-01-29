@@ -33,6 +33,7 @@
 #      define F_PACK_INT f_pack_int
 #      define F_UNPACK_LINT f_unpack_lint
 #      define F_UNPACK_INT f_unpack_int
+#      define RSL_LITE_GET_HOSTNAME rsl_lite_get_hostname
 # else
 #   ifdef F2CSTYLE
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1__
@@ -68,6 +69,7 @@
 #      define F_PACK_INT f_pack_int__
 #      define F_UNPACK_LINT f_unpack_lint__
 #      define F_UNPACK_INT f_unpack_int__
+#      define RSL_LITE_GET_HOSTNAME rsl_lite_get_hostname__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
 #      define BYTE_BCAST byte_bcast_
@@ -102,6 +104,7 @@
 #      define F_PACK_INT f_pack_int_
 #      define F_UNPACK_LINT f_unpack_lint_
 #      define F_UNPACK_INT f_unpack_int_
+#      define RSL_LITE_GET_HOSTNAME rsl_lite_get_hostname_
 #   endif
 # endif
 #endif

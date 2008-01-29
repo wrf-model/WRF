@@ -21,23 +21,23 @@ SUBROUTINE normalize_basetime( basetime )
   ! factor so abs(Sn) < Sd
   IF ( basetime%Sd > 0 ) THEN
     IF ( ABS( basetime%Sn ) .GE. basetime%Sd ) THEN
-!PRINT *,'DEBUG:  normalize_basetime() A1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+PRINT *,'DEBUG:  normalize_basetime() A1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
       basetime%S = basetime%S + ( basetime%Sn / basetime%Sd )
       basetime%Sn = mod( basetime%Sn, basetime%Sd )
-!PRINT *,'DEBUG:  normalize_basetime() A2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+PRINT *,'DEBUG:  normalize_basetime() A2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
     ! change sign of Sn if it does not match S
     IF ( ( basetime%S > 0 ) .AND. ( basetime%Sn < 0 ) ) THEN
-!PRINT *,'DEBUG:  normalize_basetime() B1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+PRINT *,'DEBUG:  normalize_basetime() B1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
       basetime%S = basetime%S - 1_ESMF_KIND_I8
       basetime%Sn = basetime%Sn + basetime%Sd
-!PRINT *,'DEBUG:  normalize_basetime() B2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+PRINT *,'DEBUG:  normalize_basetime() B2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
     IF ( ( basetime%S < 0 ) .AND. ( basetime%Sn > 0 ) ) THEN
-!PRINT *,'DEBUG:  normalize_basetime() C1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+PRINT *,'DEBUG:  normalize_basetime() C1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
       basetime%S = basetime%S + 1_ESMF_KIND_I8
       basetime%Sn = basetime%Sn - basetime%Sd
-!PRINT *,'DEBUG:  normalize_basetime() C2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+PRINT *,'DEBUG:  normalize_basetime() C2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
   ENDIF
 !PRINT *,'DEBUG:  END normalize_basetime()'
@@ -306,22 +306,25 @@ SUBROUTINE timegetmonth( time, MM )
   ! locals
   INTEGER :: nfeb
   INTEGER :: i
-  TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
 #if defined PLANET
   MM = 0
 #else
-  IF ( nfeb(time%YR) == 29 ) THEN
-    MMbdys => monthbdysleap
-  ELSE
-    MMbdys => monthbdys
-  ENDIF
   MM = -1
-  DO i = 1,MONTHS_PER_YEAR
-    IF ( ( time%basetime >= MMbdys(i-1) ) .AND. ( time%basetime < MMbdys(i) ) ) THEN
-      MM = i
-      EXIT
-    ENDIF
-  ENDDO
+  IF ( nfeb(time%YR) == 29 ) THEN
+    DO i = 1,MONTHS_PER_YEAR
+      IF ( ( time%basetime >= monthbdysleap(i-1) ) .AND. ( time%basetime < monthbdysleap(i) ) ) THEN
+        MM = i
+        EXIT
+      ENDIF
+    ENDDO
+  ELSE
+    DO i = 1,MONTHS_PER_YEAR
+      IF ( ( time%basetime >= monthbdys(i-1) ) .AND. ( time%basetime < monthbdys(i) ) ) THEN
+        MM = i
+        EXIT
+      ENDIF
+    ENDDO
+  ENDIF
 #endif
   IF ( MM == -1 ) THEN
     CALL wrf_error_fatal( 'timegetmonth:  could not extract month of year from time' )
@@ -342,19 +345,16 @@ SUBROUTINE timegetdayofmonth( time, DD )
   ! locals
   INTEGER :: nfeb
   INTEGER :: MM
-  TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
   TYPE(ESMF_BaseTime) :: tmpbasetime
 #if defined PLANET
   tmpbasetime = time%basetime
 #else
-!$$$ fix this so init just points MMbdys to the one we want for this calendar?
-  IF ( nfeb(time%YR) == 29 ) THEN
-    MMbdys => monthbdysleap
-  ELSE
-    MMbdys => monthbdys
-  ENDIF
   CALL timegetmonth( time, MM )
-  tmpbasetime = time%basetime - MMbdys(MM-1)
+  IF ( nfeb(time%YR) == 29 ) THEN
+    tmpbasetime = time%basetime - monthbdysleap(MM-1)
+  ELSE
+    tmpbasetime = time%basetime - monthbdys(MM-1)
+  ENDIF
 #endif
   DD = ( tmpbasetime%S / SECONDS_PER_DAY ) + 1
 END SUBROUTINE timegetdayofmonth
@@ -375,7 +375,6 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
   INTEGER, INTENT(OUT) :: ierr
   ! locals
   INTEGER :: nfeb
-  TYPE(ESMF_BaseTime), POINTER :: MMbdys(:)
   ierr = ESMF_SUCCESS
 !  PRINT *,'DEBUG:  BEGIN timeaddmonths()'
 #if defined PLANET
@@ -384,24 +383,11 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
   IF ( ( MM < 1 ) .OR. ( MM > MONTHS_PER_YEAR ) ) THEN
     ierr = ESMF_FAILURE
   ELSE
-!  PRINT *,'DEBUG:  timeaddmonths(): MM = ',MM
-!  PRINT *,'DEBUG:  timeaddmonths(): time%YR = ',time%YR
-!  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%S = ',time%basetime%S
-!  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%Sn = ',time%basetime%Sn
-!  PRINT *,'DEBUG:  timeaddmonths(): time%basetime%Sd = ',time%basetime%Sd
     IF ( nfeb(time%YR) == 29 ) THEN
-!  PRINT *,'DEBUG:  timeaddmonths(): leap year'
-      MMbdys => monthbdysleap
+      time%basetime = time%basetime + monthbdysleap(MM-1)
     ELSE
-!  PRINT *,'DEBUG:  timeaddmonths(): not leap year'
-      MMbdys => monthbdys
+      time%basetime = time%basetime + monthbdys(MM-1)
     ENDIF
-!  PRINT *,'DEBUG:  timeaddmonths(): done pointing to MMbdys'
-!  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%S = ',MMbdys(MM-1)%S
-!  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%Sn = ',MMbdys(MM-1)%Sn
-!  PRINT *,'DEBUG:  timeaddmonths(): MMbdys(',MM-1,')%Sd = ',MMbdys(MM-1)%Sd
-    time%basetime = time%basetime + MMbdys(MM-1)
-!  PRINT *,'DEBUG:  END timeaddmonths()'
   ENDIF
 #endif
 END SUBROUTINE timeaddmonths
@@ -908,7 +894,6 @@ SUBROUTINE print_a_time( time )
    integer rc
    CALL ESMF_TimeGet( time, timeString=s, rc=rc )
    print *,'Print a time|',TRIM(s),'|'
-   write(0,*)'Print a time|',TRIM(s),'|'
    return
 END SUBROUTINE print_a_time
 
@@ -921,7 +906,6 @@ SUBROUTINE print_a_timeinterval( time )
    integer rc
    CALL ESMFold_TimeIntervalGetString( time, s, rc )
    print *,'Print a time interval|',TRIM(s),'|'
-   write(0,*)'Print a time interval|',TRIM(s),'|'
    return
 END SUBROUTINE print_a_timeinterval
 

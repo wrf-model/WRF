@@ -1075,6 +1075,7 @@ if ( pass == 0 )
               sprintf(indices, "%s",index_with_firstelem("(","grid%",-1,t2,p,post)) ;
             }
 
+	    fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",vname) ;
 	    fprintf(fp,"CALL wrf_ext_read_field (  &\n") ;
 	    fprintf(fp,"                       fid                , &  ! DataHandle \n" ) ;
 	    fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
@@ -1142,6 +1143,7 @@ if ( pass == 0 )
 	      fprintf(fp," & \n") ;
 	    }
 	    fprintf(fp,"                       ierr )\n") ;
+	    fprintf(fp,"END IF\n" ) ;
 
             if ( ok_to_collect_distribute )
 	      fprintf(fp,"END IF\n" ) ;
@@ -1299,6 +1301,7 @@ if ( pass == 0 )
             }
 
   if ( !(p->scalar_array_member) ) {
+	    fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",vname) ;
 	    fprintf(fp,"CALL wrf_ext_write_field (  &\n") ;
 	    fprintf(fp,"                       fid                , &  ! DataHandle \n" ) ;
 	    fprintf(fp,"                       current_date(1:19) , &  ! DateStr \n" ) ;
@@ -1370,6 +1373,7 @@ if ( pass == 0 )
 	      fprintf(fp," & \n") ;
 	    }
 	    fprintf(fp,"                       ierr )\n") ;
+	    fprintf(fp,"ENDIF\n") ;
 
             if ( ok_to_collect_distribute )
 	      fprintf(fp,"END IF\n" ) ;

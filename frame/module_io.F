@@ -3471,11 +3471,23 @@ SUBROUTINE call_pkg_and_dist_real (  fcn, update_arg,                           
   INTEGER                       ,INTENT(INOUT)   :: Status
   REAL, ALLOCATABLE :: globbuf (:)
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+  INTEGER test
+  CHARACTER*128 mess
 
   IF ( wrf_dm_on_monitor() ) THEN
-    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ) )
+    ALLOCATE( globbuf( (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3) ), &
+              STAT=test )
+    IF ( test .NE. 0 ) THEN
+      write(mess,*)"module_io.b",'allocating globbuf ',&
+           (DomainEnd(1)-DomainStart(1)+3)*(DomainEnd(2)-DomainStart(2)+3)*(DomainEnd(3)-DomainStart(3)+3)
+      CALL wrf_error_fatal(mess)
+    ENDIF
   ELSE
-    ALLOCATE( globbuf( 1 ) )
+    ALLOCATE( globbuf( 1 ), STAT=test )
+    IF ( test .NE. 0 ) THEN
+      write(mess,*)"module_io.b",'allocating globbuf ',1
+      CALL wrf_error_fatal(mess)
+    ENDIF
   ENDIF
 
   globbuf = 0.

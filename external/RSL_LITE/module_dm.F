@@ -515,7 +515,7 @@ write(0,*)'reordering mesh'
          NULLIFY  (intermediate_grid%j_start)
          NULLIFY  (intermediate_grid%i_end)
          NULLIFY  (intermediate_grid%j_end)
-         intermediate_grid%id = id
+         intermediate_grid%id = id   ! these must be the same. Other parts of code depend on it (see gen_comms.c)
          intermediate_grid%num_nests = 0
          intermediate_grid%num_siblings = 0
          intermediate_grid%num_parents = 1
@@ -608,7 +608,7 @@ write(0,*)'reordering mesh'
 ! xy decomposition
 
     ips = -1
-    j = jds ;
+    j = jds
     DO i = ids, ide
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
        IF ( Px .EQ. mytask_x ) THEN
@@ -622,7 +622,7 @@ write(0,*)'reordering mesh'
        ips = 0
     ENDIF
     jps = -1
-    i = ids ;
+    i = ids
     DO j = jds, jde
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
        IF ( Py .EQ. mytask_y ) THEN
@@ -1428,8 +1428,25 @@ write(0,*)'reordering mesh'
 #endif
    END SUBROUTINE wrf_dm_tile_val_int
 
+   SUBROUTINE wrf_get_hostname  ( str )
+      CHARACTER*(*) str
+      CHARACTER tmp(512)
+      INTEGER i , n, cs
+      CALL rsl_lite_get_hostname( tmp, 512, n, cs )
+      DO i = 1, n 
+        str(i:i) = tmp(i)
+      ENDDO
+      RETURN
+   END SUBROUTINE wrf_get_hostname 
 
-
+   SUBROUTINE wrf_get_hostid  ( hostid )
+      INTEGER hostid
+      CHARACTER tmp(512)
+      INTEGER i, sz, n, cs
+      CALL rsl_lite_get_hostname( tmp, 512, n, cs )
+      hostid = cs
+      RETURN
+   END SUBROUTINE wrf_get_hostid
 
 END MODULE module_dm
 

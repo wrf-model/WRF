@@ -9,14 +9,17 @@ OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
       gen_args.o gen_config.o sym.o symtab_gen.o gen_wrf_io.o \
       gen_model_data_ord.o gen_interp.o gen_comms.o gen_scalar_derefs.o
 
-registry : $(OBJ)
+registry : $(OBJ) standard.exe
 	$(CC_TOOLS) -o registry $(DEBUG) $(LDFLAGS) $(OBJ)
+
+standard.exe : standard.o
+	$(CC) -o standard.exe $(DEBUG) $(LDFLAGS) standard.o
 
 .c.o :
 	$(CC_TOOLS) $(CFLAGS) -c $(DEBUG) $<
 
 clean:
-	/bin/rm -f $(OBJ) gen_comms.c
+	/bin/rm -f $(OBJ) gen_comms.c standard.o
 
 gen_comms.c : gen_comms.stub
 	/bin/cp gen_comms.stub gen_comms.c

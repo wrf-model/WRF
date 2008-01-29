@@ -14,25 +14,27 @@ MODULE module_nesting
 
 CONTAINS
 
-   LOGICAL FUNCTION nests_to_open ( parent , nestid , kid )
+   LOGICAL FUNCTION nests_to_open ( parent , nestid_ret , kid_ret )
       IMPLICIT NONE
       TYPE(domain) , INTENT(IN)  :: parent
-      INTEGER, INTENT(OUT)       :: nestid , kid
+      INTEGER, INTENT(OUT)       :: nestid_ret , kid_ret
       ! Local data
       INTEGER                    :: parent_id
-      INTEGER                    :: rent
+      INTEGER                    :: nestid, kid
       INTEGER                    :: s_yr,s_mm,s_dd,s_h,s_m,s_s,rc
       INTEGER                    :: e_yr,e_mm,e_dd,e_h,e_m,e_s
       INTEGER                    :: max_dom
+      LOGICAL                    :: grid_allowed
       TYPE (WRFU_Time)           :: nest_start, nest_stop
 !#define STUB_FOR_NOW
 #ifndef STUB_FOR_NOW
-      nestid = 0
-      kid = 0
+      nestid_ret = 0
+      kid_ret = 0
       nests_to_open = .false.
       CALL nl_get_max_dom( 1, max_dom )
       DO nestid = 2, max_dom
-        IF ( .NOT. active_domain( nestid ) ) THEN
+        CALL nl_get_grid_allowed( nestid, grid_allowed )
+        IF ( .NOT. active_domain( nestid ) .AND. grid_allowed ) THEN
           CALL nl_get_parent_id( nestid, parent_id )  ! from namelist
           IF ( parent_id .EQ. parent%id ) THEN
             CALL nl_get_start_year(nestid,s_yr)   ; CALL nl_get_end_year(nestid,e_yr)
@@ -48,7 +50,9 @@ CONTAINS
               DO kid = 1 , max_nests
                 IF ( .NOT. ASSOCIATED ( parent%nests(kid)%ptr ) ) THEN
                   active_domain( nestid ) = .true.
-                  nests_to_open = .true.
+                  nestid_ret = nestid
+                  kid_ret = kid
+                  nests_to_open = .TRUE.
                   RETURN
                 END IF
               END DO
@@ -57,9 +61,9 @@ CONTAINS
         END IF
       END DO
 #else
-      nestid = 0
-      kid = 0
-      nests_to_open = .false.
+      nestid_ret = 0
+      kid_ret = 0
+      nests_to_open = .FALSE.
 #endif
       RETURN
    END FUNCTION nests_to_open

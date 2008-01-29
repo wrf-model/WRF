@@ -525,7 +525,8 @@ okay_to_w = .false.
             CALL mpi_finalize(ierr)
             STOP
           ELSE
-            CALL wrf_error_fatal('Possible 32-bit overflow on output server. Try larger nio_tasks_per_group in namelist.')
+            WRITE(mess,*)'Possible 32-bit overflow on output server. Try larger nio_tasks_per_group in namelist.'
+            CALL wrf_error_fatal(mess)
           ENDIF
         ENDIF
 
@@ -763,9 +764,11 @@ okay_to_w = .false.
 
 ! Collect buffers and fields from all I/O servers in this I/O server group
 ! onto the I/O server "root"
-          CALL collect_on_comm_debug2(__FILE__,__LINE__,Trim(VarName),get_hdr_tag(obuf),sz,get_hdr_rec_size(obuf), mpi_comm_local,                    &
-                                onebyte,                           &
-                                obuf, sz,  &
+          CALL collect_on_comm_debug2(__FILE__,__LINE__,Trim(VarName),        &
+                                get_hdr_tag(obuf),sz,get_hdr_rec_size(obuf),  &
+                                mpi_comm_local,                               &
+                                onebyte,                                      &
+                                obuf, sz,                                     &
                                 bigbuf, bigbufsize )
 ! The I/O server "root" now handles collected requests from all compute 
 ! tasks served by this I/O server group (i.e. all compute tasks).  

@@ -905,7 +905,8 @@ CONTAINS
            ! Here in case we don't want to call a sw radiation scheme
            ! For example, the Held-Suarez idealized test case
            IF (lw_physics /= HELDSUAREZ) THEN
-             WRITE( wrf_err_message , * ) 'You have selected a longwave radiation option, but not a shortwave option (sw_physics = 0, lw_physics = ',lw_physics,')'
+             WRITE( wrf_err_message , * ) &
+'You have selected a longwave radiation option, but not a shortwave option (sw_physics = 0, lw_physics = ',lw_physics,')'
              CALL wrf_error_fatal ( wrf_err_message )
            END IF
 

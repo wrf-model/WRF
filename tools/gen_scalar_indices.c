@@ -172,7 +172,7 @@ gen_scalar_indices1 ( FILE * fp, FILE * fp2 )
                   fprintf(fp2,"    in_use = model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
                   fprintf(fp2,"    uses = 1\n") ;
                   fprintf(fp2,"  ELSE\n") ;
-                  fprintf(fp2,"    in_use = in_use.OR.model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(idomain)":"",assoc_namelist_choice) ;
+                  fprintf(fp2,"    in_use = in_use.OR.model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
                   fprintf(fp2,"  ENDIF\n") ;
                   fprintf(fp2,"ENDIF\n") ;
                 }

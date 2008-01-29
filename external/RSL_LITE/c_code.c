@@ -175,6 +175,19 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 #endif
 }
 
+RSL_LITE_GET_HOSTNAME ( char * hn, int * size, int *n, int *hostid ) 
+{
+   char temp[512] ;
+   char *p, *q ; 
+   int i, cs ;
+   if ( gethostname(temp,512) ) return(1) ;
+   cs = gethostid() ;
+   for ( p = temp , q = hn , i = 0 ; *p && i < *size && i < 512 ; i++ , p++ , q++ ) { *q = *p ; }
+   *n = i ;
+   *hostid = cs ;
+   return(0) ;
+}
+
 BYTE_BCAST ( char * buf, int * size, int * Fcomm )
 {
 #ifndef STUBMPI

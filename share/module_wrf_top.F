@@ -81,7 +81,14 @@ CONTAINS
 !     WRF initialization routine.
 !</DESCRIPTION>
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
+     INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice
+     INTEGER, ALLOCATABLE :: hostids(:), budds(:)
+     CHARACTER*512 hostname
+#if defined(DM_PARALLEL) && defined(RUN_ON_GPU)
+     include "mpif.h"
+#endif
 #include "version_decl"
+
 
 !<DESCRIPTION>
 ! Program_name, a global variable defined in frame/module_domain.F, is
@@ -132,6 +139,34 @@ CONTAINS
    CALL wrf_dm_initialize
 #else
    CALL initial_config
+#endif
+
+#ifdef RUN_ON_GPU
+   CALL wrf_get_myproc( myproc )
+   CALL wrf_get_nproc( nproc )
+   CALL wrf_get_hostid ( hostid ) 
+# ifdef DM_PARALLEL
+   CALL wrf_get_dm_communicator ( loccomm )
+   ALLOCATE( hostids(nproc) )
+   ALLOCATE( budds(nproc) )
+   CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
+   if ( ierr .NE. 0 ) write(0,*)__FILE__,__LINE__,'error in mpi_allgather ',ierr
+   budds = -1
+   buddcounter = 0 
+   ! mark the ones i am on the same node with
+   DO i = 1, nproc 
+      IF ( hostid .EQ. hostids(i) ) THEN
+         budds(i) = buddcounter 
+         buddcounter = buddcounter + 1
+      ENDIF
+   ENDDO
+   mydevice = budds(myproc+1)
+   DEALLOCATE( hostids )
+   DEALLOCATE( budds )
+# else
+   mydevice = 0
+# endif
+   CALL wsm5_gpu_init( myproc, nproc, mydevice )
 #endif
 
 !<DESCRIPTION>

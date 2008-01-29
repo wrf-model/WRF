@@ -457,6 +457,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
   int maxstenwidth, stenwidth ;
   char * t1, * t2 , *wordsize ;
   char varref[NAMELEN] ;
+  char varname[NAMELEN] ;
   char * pos1 , * pos2 ;
   char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
   int zdex ;
@@ -477,6 +478,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
         else
         {
 
+          strcpy( varname, t2 ) ;
           strcpy( varref, t2 ) ;
           if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
              sprintf(varref,"grid%%%s",t2) ;
@@ -518,16 +520,8 @@ fprintf(fp,"ENDDO\n") ;
             }
             else
             {
+              fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",varname) ; 
               set_mem_order( q, memord , NAMELEN) ;
-#if 0
-fprintf(fp,"CALL wrf_debug(3,'call %s %s shw=%d ws=%s xy=%d pu=%d m=%s')\n",packname,t2,shw,wordsize,xy,pu,memord) ;
-fprintf(fp,"write(wrf_err_message,*)' d ',ids, ide, jds, jde, kds, kde\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' m ',ims, ime, jms, jme, kms, kme\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, kps, kpe\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-#endif
               if       ( q->ndims == 3 ) {
 
                 dimd = get_dimnode_for_coord( q , COORD_Z ) ;
@@ -537,14 +531,6 @@ fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
                   char s[256], e[256] ;
 
                   if      ( dimd->len_defined_how == DOMAIN_STANDARD ) {
-#if 0
-fprintf(fp,"write(wrf_err_message,*)' d ',ids, ide, jds, jde, kds, kde\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' m ',ims, ime, jms, jme, kms, kme\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, kps, kpe\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-#endif
                     fprintf(fp,"CALL %s ( %s,&\n %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     if ( q->subgrid == 0 ) {
@@ -566,14 +552,6 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                       sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
                       sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
                     }
-#if 0
-fprintf(fp,"write(wrf_err_message,*)' d ',ids, ide, jds, jde, %s, %s\n",s,e ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' m ',ims, ime, jms, jme, %s, %s\n",s,e ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %s, %s\n",s,e ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-#endif
                     fprintf(fp,"CALL %s ( %s,&\n %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     if ( q->subgrid == 0 ) {
@@ -588,14 +566,6 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                   }
                   else if ( dimd->len_defined_how == CONSTANT )
                   {
-#if 0
-fprintf(fp,"write(wrf_err_message,*)' d ',ids, ide, jds, jde, %d, %d\n",dimd->coord_start,dimd->coord_end ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' m ',ims, ime, jms, jme, %d, %d\n",dimd->coord_start,dimd->coord_end ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, %d, %d\n",dimd->coord_start,dimd->coord_end ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-#endif
                     fprintf(fp,"CALL %s ( %s,&\n %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     if ( q->subgrid == 0 ) {
@@ -610,14 +580,6 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                   }
                 }
               } else if ( q->ndims == 2 ) {
-#if 0
-fprintf(fp,"write(wrf_err_message,*)' d ',ids, ide, jds, jde, 1, 1\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' m ',ims, ime, jms, jme, 1, 1\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-fprintf(fp,"write(wrf_err_message,*)' p ',ips, ipe, jps, jpe, 1, 1\n" ) ;
-fprintf(fp,"CALL wrf_debug(3,wrf_err_message)\n") ;
-#endif
                 fprintf(fp,"CALL %s ( %s,&\n %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                 if ( q->subgrid == 0 ) {
@@ -630,9 +592,7 @@ fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%s
 fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,1,1)\n") ;
                 }
               }
-#if 0
-fprintf(fp,"CALL wrf_debug(3,'back from %s')\n", packname) ;
-#endif
+              fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
             }
           }
           
@@ -1489,6 +1449,7 @@ fprintf(fp, "  ENDDO\n" ) ;
             else
 	    {
               set_mem_order( p, memord , NAMELEN) ;
+              fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",vname) ; 
               if ( !strcmp( *direction, "x" ) ) {
                 if        ( !strcmp( memord , "XYZ" ) ) {
                   fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,:) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,:)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
@@ -1526,6 +1487,7 @@ fprintf(fp, "  ENDDO\n" ) ;
 	          fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
                 }
               }
+              fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
             }
 	  }
 	}
@@ -1786,6 +1748,11 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
 	{
            grid = "" ;
 fprintf(fp,"DO itrace =  PARAM_FIRST_SCALAR, num_%s\n", p->name) ;
+        } else {
+/* note that in the case if dir != UNPACKIT and down_path == INTERP_UP the data
+   structure being used is intermediate_grid, not grid. However, intermediate_grid
+   and grid share the same id (see module_dm.F) so it will not make a difference. */
+fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s%s') ) THEN ! okay for intermediate_grid too. see comment in gen_comms.c\n",p->name,tag) ; 
 	}
 
         if ( dir == UNPACKIT ) 
@@ -1843,6 +1810,10 @@ fprintf(fp,"xv(1)=%s%s\nCALL rsl_lite_to_child_msg(RWORDSIZE,xv)\n", grid, vname
         if ( p->node_kind & FOURD )
 	{
 fprintf(fp,"ENDDO\n") ;
+	}
+        else
+	{
+fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
 	}
     }
   }

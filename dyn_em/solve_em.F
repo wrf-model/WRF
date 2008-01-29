@@ -1137,12 +1137,14 @@ BENCH_START(deform_div_tim)
        DO ij = 1 , grid%num_tiles
 
           CALL wrf_debug ( 200 , ' call cal_deform_and_div' )
-          CALL cal_deform_and_div ( config_flags,grid%u_2,grid%v_2,grid%w_2,grid%div,        &
-                                    grid%defor11,grid%defor22,grid%defor33,grid%defor12,     &
-                                    grid%defor13,grid%defor23,                     &
-                                    grid%u_base, grid%v_base,grid%msfux,grid%msfuy,grid%msfvx,grid%msfvy,grid%msftx,grid%msfty,       &
-                                    grid%rdx, grid%rdy, grid%dn, grid%dnw, grid%rdz, grid%rdzw,        &
-                                    grid%fnm,grid%fnp,grid%cf1,grid%cf2,grid%cf3,grid%zx,grid%zy,           &
+          CALL cal_deform_and_div ( config_flags,grid%u_2,grid%v_2,grid%w_2,grid%div,  &
+                                    grid%defor11,grid%defor22,grid%defor33,            &
+                                    grid%defor12,grid%defor13,grid%defor23,            &
+                                    grid%u_base, grid%v_base,grid%msfux,grid%msfuy,    &
+                                    grid%msfvx,grid%msfvy,grid%msftx,grid%msfty,       &
+                                    grid%rdx, grid%rdy, grid%dn, grid%dnw, grid%rdz,   &
+                                    grid%rdzw,grid%fnm,grid%fnp,grid%cf1,grid%cf2,     &
+                                    grid%cf3,grid%zx,grid%zy,            &
                                     ids, ide, jds, jde, kds, kde,        &
                                     ims, ime, jms, jme, kms, kme,        &
                                     grid%i_start(ij), grid%i_end(ij),    &
@@ -1167,21 +1169,23 @@ BENCH_START(calc_tke_tim)
        DO ij = 1 , grid%num_tiles
 
           CALL wrf_debug ( 200 , ' call calculate_km_kh' )
-          CALL calculate_km_kh( config_flags,grid%dt,grid%dampcoef,grid%zdamp,config_flags%damp_opt,     &
-                                grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,grid%bn2,               &
-                                grid%khdif,grid%kvdif,grid%div,                             &
-                                grid%defor11,grid%defor22,grid%defor33,grid%defor12,             &
+          CALL calculate_km_kh( config_flags,grid%dt,grid%dampcoef,grid%zdamp,         &
+                                config_flags%damp_opt,                                 &
+                                grid%xkmh,grid%xkmv,grid%xkhh,grid%xkhv,grid%bn2,      &
+                                grid%khdif,grid%kvdif,grid%div,                        &
+                                grid%defor11,grid%defor22,grid%defor33,grid%defor12,   &
                                 grid%defor13,grid%defor23,                             &
-                                grid%tke_2,p8w,t8w,th_phy,           &
+                                grid%tke_2,p8w,t8w,th_phy,                             &
                                 t_phy,p_phy,moist,grid%dn,grid%dnw,                    &
-                                grid%dx,grid%dy,grid%rdz,grid%rdzw,config_flags%mix_isotropic,num_3d_m,          &
-                                grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,                    &
-                                grid%mix_upper_bound,                        &
-                                grid%msftx, grid%msfty,                      &
-                                ids,ide, jds,jde, kds,kde,                   &
-                                ims,ime, jms,jme, kms,kme,                   &
-                                grid%i_start(ij), grid%i_end(ij),            &
-                                grid%j_start(ij), grid%j_end(ij),            &
+                                grid%dx,grid%dy,grid%rdz,grid%rdzw,                    &
+                                config_flags%mix_isotropic,num_3d_m,                   &
+                                grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,          &
+                                grid%mix_upper_bound,                                  &
+                                grid%msftx, grid%msfty,                                &
+                                ids,ide, jds,jde, kds,kde,                             &
+                                ims,ime, jms,jme, kms,kme,                             &
+                                grid%i_start(ij), grid%i_end(ij),                      &
+                                grid%j_start(ij), grid%j_end(ij),                      &
                                 k_start    , k_end                          )
        ENDDO
        !$OMP END PARALLEL DO
@@ -1278,13 +1282,16 @@ BENCH_START(update_phy_ten_tim)
 
           CALL wrf_debug ( 200 , ' call update_phy_ten' )
         CALL update_phy_ten(t_tendf, ru_tendf, rv_tendf,moist_tend,        &
-                          scalar_tend, mu_tendf,                                        &
-                          grid%rthraten,grid%rthblten,grid%rthcuten,grid%rublten,grid%rvblten,      &
-                          grid%rqvblten,grid%rqcblten,grid%rqiblten,                      &
-                          grid%rqvcuten,grid%rqccuten,grid%rqrcuten,grid%rqicuten,grid%rqscuten,    &
-                          grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,       &
-                          grid%RMUNDGDTEN,                                      &
-                          num_3d_m,num_3d_s,config_flags,rk_step,grid%adv_moist_cond,    &
+                          scalar_tend, mu_tendf,                           &
+                          grid%rthraten,grid%rthblten,grid%rthcuten,       &
+                          grid%rublten,grid%rvblten,                       &
+                          grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
+                          grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
+                          grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
+                          grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,  &
+                          grid%RMUNDGDTEN,                                 &
+                          num_3d_m,num_3d_s,config_flags,rk_step,          &
+                          grid%adv_moist_cond,                             &
                           ids, ide, jds, jde, kds, kde,                    &
                           ims, ime, jms, jme, kms, kme,                    &
                           grid%i_start(ij), grid%i_end(ij),                &
@@ -1349,21 +1356,26 @@ BENCH_START(tke_rhs_tim)
 
        DO ij = 1 , grid%num_tiles
 
-          CALL tke_rhs  ( tke_tend,grid%bn2,                               &
-                          config_flags,grid%defor11,grid%defor22,grid%defor33,       &
-                          grid%defor12,grid%defor13,grid%defor23,grid%u_2,grid%v_2,grid%w_2,grid%div,    &
-                          grid%tke_2,grid%mut,                     &
-                          th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,grid%fnp,             &
-                          grid%cf1,grid%cf2,grid%cf3,grid%msftx,grid%msfty,grid%xkmh,grid%xkmv,grid%xkhv,grid%rdx,grid%rdy,    &
-                          grid%dx,grid%dy,grid%dt,grid%zx,grid%zy,grid%rdz,grid%rdzw,grid%dn,       &
-                          grid%dnw,config_flags%mix_isotropic,  &
-                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV),&
-                          grid%ustm, rho,                             &
-                          ids, ide, jds, jde, kds, kde,               &
-                          ims, ime, jms, jme, kms, kme,               &
-                          grid%i_start(ij), grid%i_end(ij),           &
-                          grid%j_start(ij), grid%j_end(ij),           &
-                          k_start    , k_end                          )
+          CALL tke_rhs  ( tke_tend,grid%bn2,                           &
+                          config_flags,grid%defor11,grid%defor22,      &
+                          grid%defor33,                                &
+                          grid%defor12,grid%defor13,grid%defor23,      &
+                          grid%u_2,grid%v_2,grid%w_2,grid%div,         &
+                          grid%tke_2,grid%mut,                         &
+                          th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,        & 
+                          grid%fnp,grid%cf1,grid%cf2,grid%cf3,         &     
+                          grid%msftx,grid%msfty,grid%xkmh,             &
+                          grid%xkmv,grid%xkhv,grid%rdx,grid%rdy,       &
+                          grid%dx,grid%dy,grid%dt,grid%zx,grid%zy,     &
+                          grid%rdz,grid%rdzw,grid%dn,                  &
+                          grid%dnw,config_flags%mix_isotropic,         &
+                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
+                          grid%ustm, rho,                              &
+                          ids, ide, jds, jde, kds, kde,                &
+                          ims, ime, jms, jme, kms, kme,                &
+                          grid%i_start(ij), grid%i_end(ij),            &
+                          grid%j_start(ij), grid%j_end(ij),            &
+                          k_start    , k_end                           )
 
        ENDDO
        !$OMP END PARALLEL DO
@@ -1426,9 +1438,10 @@ BENCH_START(hor_diff_tim)
                                       grid%defor11, grid%defor22, grid%defor12,             &
                                       grid%defor13, grid%defor23, grid%div,                 &
                                       moist, chem, scalar,                   &
-                                      grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt, &
+                                      grid%msfux,grid%msfuy, grid%msfvx,grid%msfvy, grid%msftx,  &
+                                      grid%msfty, grid%xkmh, grid%xkhh, config_flags%km_opt,     &
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &
-                                      grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,               &
+                                      grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
                                       grid%zx, grid%zy, grid%dn, grid%dnw,                       &
                                       ids, ide, jds, jde, kds, kde,          &
                                       ims, ime, jms, jme, kms, kme,          &
@@ -3678,6 +3691,9 @@ BENCH_START(micro_driver_tim)
      &        ,ID=grid%id                                                 &
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+#ifdef RUN_ON_GPU
+     &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe          &
+#endif
      &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &
      &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)          &
      &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &

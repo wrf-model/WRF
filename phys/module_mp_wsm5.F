@@ -139,8 +139,13 @@ CONTAINS
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci, qrs
+  CHARACTER*256 :: emess
+  INTEGER :: mkx_test
   INTEGER ::               i,j,k
+
 !-------------------------------------------------------------------
+
+#ifndef RUN_ON_GPU
       DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -176,6 +181,29 @@ CONTAINS
          ENDDO
          ENDDO
       ENDDO
+#else
+      CALL get_wsm5_gpu_levels ( mkx_test )
+      IF ( mkx_test .LT. kte ) THEN
+        WRITE(emess,*)'Number of levels compiled for GPU WSM5 too small. ',&
+                      mkx_test,' < ',kte
+        CALL wrf_error_fatal(emess)
+      ENDIF
+      CALL wsm5_host (                                 &
+                    th(its:ite,kts:kte,jts:jte), pii(its:ite,kts:kte,jts:jte)    &
+                   ,q(its:ite,kts:kte,jts:jte), qc(its:ite,kts:kte,jts:jte)      &
+                   ,qi(its:ite,kts:kte,jts:jte), qr(its:ite,kts:kte,jts:jte)     &
+                   ,qs(its:ite,kts:kte,jts:jte), den(its:ite,kts:kte,jts:jte)    &
+                   ,p(its:ite,kts:kte,jts:jte), delz(its:ite,kts:kte,jts:jte)    &
+                   ,delt                                                         &
+                   ,rain(its:ite,jts:jte),rainncv(its:ite,jts:jte)               &
+                   ,sr(its:ite,jts:jte)                                          &
+                   ,snow(its:ite,jts:jte),snowncv(its:ite,jts:jte)               &
+                   ,its, ite,  jts, jte,  kts, kte     &
+                   ,its, ite,  jts, jte,  kts, kte     &
+                   ,its, ite,  jts, jte,  kts, kte     &
+          )
+#endif
+
   END SUBROUTINE wsm5
 !===================================================================
 !

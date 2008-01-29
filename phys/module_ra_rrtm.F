@@ -6627,10 +6627,6 @@ IMPLICIT NONE
 !  weighted using a mapping procedure in routine RRTMINIT to reduce              
 !  the total number of g-points from 256 to 140 for use in the CCM.              
 ! **************************************************************************     
-#ifdef G95
-! JRB hardwire unit to 98 to ensure it is read big endian by g95
-      rrtm_unit=98
-#endif
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(rrtm_unit,FILE='RRTM_DATA',                  &
                FORM='UNFORMATTED',STATUS='OLD',ERR=9009)

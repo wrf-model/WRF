@@ -1361,7 +1361,7 @@ if ( p->subgrid != 0 ) {  /* moving nests not implemented for subgrid variables 
 
     gen_halos( dirname , fname, &Shift ) ;
 
-    sprintf(fname,"shift_halo_%s.inc",*direction) ;
+    sprintf(fname,"%s/shift_halo_%s.inc",dirname,*direction) ;
     if ((fp = fopen( fname , "a" )) == NULL ) return(1) ;
 
 /* now generate the shifts themselves */

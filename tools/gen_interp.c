@@ -106,7 +106,8 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char nddim2[3][2][NAMELEN] ;
   char nmdim2[3][2][NAMELEN] ;
   char npdim2[3][2][NAMELEN] ;
-  char vname[NAMELEN] ; char tag[NAMELEN], tag2[NAMELEN] ; 
+  char vname[NAMELEN], vname2[NAMELEN] ; 
+  char tag[NAMELEN], tag2[NAMELEN] ; 
   char fcn_name[NAMELEN] ;
   char xstag[NAMELEN], ystag[NAMELEN] ;
   char dexes[NAMELEN] ;
@@ -147,6 +148,7 @@ if ( ! contains_tok ( halo_define , x , ":," ) ) {
           strcpy(dexes,"grid%sm31,grid%sm32,grid%sm33") ;
           sprintf(vname,"%s%s(%s,itrace)",p->name,tag,dexes) ;
           strcpy(ndexes,"ngrid%sm31,ngrid%sm32,ngrid%sm33") ;
+          sprintf(vname2,"%s%s(%s,itrace)",p->name,tag2,ndexes) ;
 
           if ( down_path & SMOOTH_UP ) {
             strcpy( fcn_name , p->members->next->smoothu_fcn_name ) ;
@@ -162,6 +164,7 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
  if ( halo_define[strlen(halo_define)-1] == ':' ) { strcat(halo_define,vname) ; }
  else                                             { strcat(halo_define,",") ; strcat(halo_define,vname) ; }
 }
+          sprintf(vname2,"%s%s",p->name,tag2) ;
           if ( down_path & SMOOTH_UP ) {
             strcpy( fcn_name , p->smoothu_fcn_name ) ;
 	  } else {
@@ -220,7 +223,7 @@ fprintf(fp,"IF ( in_use_for_config( grid%%id , '%s' ) ) THEN \n", vname ) ;
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
 
-fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, vname ) ;
+fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
@@ -228,7 +231,7 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 pdim[0][0], pdim[0][1], pdim2[1][0], pdim2[1][1], pdim[2][0], pdim[2][1] ) ;
 if ( ! (down_path  & SMOOTH_UP)  ) {
-fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname) ;
+fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname2) ;
 }
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
                 nddim[0][0], nddim[0][1], nddim[1][0], nddim[1][1], nddim[2][0], nddim[2][1] ) ;

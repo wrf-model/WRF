@@ -2,7 +2,7 @@
 !NCEP_MESO:MODEL_LAYER: PHYSICS
 !
 !***********************************************************************
-      SUBROUTINE RDTEMP(NTSD,DT,JULDAY,JULYR,IHRST,GLAT,GLON            &
+      SUBROUTINE RDTEMP(NTSD,DT,JULDAY,JULYR,XTIME,IHRST,GLAT,GLON      &
      &                 ,CZEN,CZMEAN,T,RSWTT,RLWTT,HBM2                  &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
@@ -47,7 +47,7 @@
 !
       INTEGER,INTENT(IN) :: IHRST,JULDAY,JULYR,NTSD
 !
-      REAL,INTENT(IN) :: DT
+      REAL,INTENT(IN) :: DT,XTIME
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CZMEAN,GLAT,GLON    &
      &                                             ,HBM2
@@ -86,7 +86,8 @@
 !
 !***  GET CURRENT VALUE OF COS(ZENITH ANGLE)
 !
-      TIMES=NTSD*DT
+!      TIMES=NTSD*DT
+      TIMES=XTIME*60.
 !
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE

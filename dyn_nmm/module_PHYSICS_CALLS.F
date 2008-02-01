@@ -834,7 +834,6 @@
 !
       LOGICAL :: E_BDY,WARM_RAIN
 !
-      INTEGER :: ucmcall
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
 !
 !-----------------------------------------------------------------------

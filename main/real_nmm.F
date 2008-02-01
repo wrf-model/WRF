@@ -1118,7 +1118,6 @@ character *24 :: temp24 , temp24b
       !  saved information stored in the *bdy3dtemp1 arrays.
 
 
-	write(0,*) 'ubdy3dtemp2(1,2,1),ubdy3dtemp1(1,2,1): ', ubdy3dtemp2(1,2,1),ubdy3dtemp1(1,2,1)
       CALL stuff_bdytend_ijk ( ubdy3dtemp2 , ubdy3dtemp1 , REAL(interval_seconds),&
                                    grid%u_btxs, grid%u_btxe, &
                                    grid%u_btys, grid%u_btye, &

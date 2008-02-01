@@ -230,6 +230,7 @@ CONTAINS
 
       END SELECT
 
+#ifdef DM_PARALLEL
       CALL WRF_GET_MYPROC(MYPE)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       call wrf_get_nprocx(inpes)
@@ -287,6 +288,7 @@ CONTAINS
 !     my_neb(8)=my_nw
 !
       deallocate(itemp)
+#endif
 
         grid%DT=float(grid%TIME_STEP)
 

@@ -14,7 +14,9 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !-----------------------------------------------------------------------
 !***
 !***  ARGUMENT VARIABLES
@@ -30,15 +32,20 @@
 !***
 !***  LOCAL VARIABLES
 !***
+#ifdef DM_PARALLEL
       REAL,ALLOCATABLE,DIMENSION(:) :: ARRAYX
 !
       INTEGER :: I,IEND,IPE,IRECV,IRTN,ISEND,ISTART,J,JEND,JSTART,KNT   &
      &,          L,MPI_COMM_COMP,NUMVALS,MYPE,NPES
       INTEGER,DIMENSION(4) :: LIMITS
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: ISTAT
+#else
+      INTEGER :: I,L,J
+#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
+#ifdef DM_PARALLEL
 !
 !***  GET OUR TASK ID AND THE COMMUNICATOR
 !
@@ -162,6 +169,20 @@
       CALL MPI_BARRIER(MPI_COMM_COMP,IRTN)
 !-----------------------------------------------------------------------
 !
+!
+!***  INITIALIZE THE OUTPUT ARRAY
+!
+      ARRAYL=0.0
+
+      DO L=LGS,LGE
+      DO J=JDS,JDE
+      DO I=IDS,IDE
+        ARRAYL(I,J,L)=ARRAYG(I,J,L)
+      ENDDO
+      ENDDO
+      ENDDO
+
+#endif
       END SUBROUTINE DSTRB
 !
 !-----------------------------------------------------------------------

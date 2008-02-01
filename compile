@@ -86,12 +86,6 @@ else
   set overwrite=0
   if ($WRF_NMM_CORE == 1 && $WRF_CHEM == 1 ) then
     echo "Chemistry not yet supported in NMM core, set WRF_CHEM to 0 "
-    grep -q DM_PARALLEL configure.wrf
-    if ( $status == 1 ) then
-      echo NMM_CORE must be configured for DM parallel
-      echo Please rerun the configure script and chose a DM parallel option
-      exit 3
-    endif
     if ( ! -f Registry/Registry ) then
       echo Registry file does not exist
       set overwrite=1
@@ -187,12 +181,6 @@ else
     endif
   endif
   if (($WRF_NMM_CORE == 1)&&($WRF_CHEM == 0 )) then
-    grep -q DM_PARALLEL configure.wrf
-    if ( $status == 1 ) then
-      echo NMM_CORE must be configured for DM parallel
-      echo Please rerun the configure script and chose a DM parallel option
-      exit 3
-    endif
     if ( ! -f Registry/Registry ) then
       set overwrite=1
     else

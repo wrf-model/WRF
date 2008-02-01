@@ -555,9 +555,9 @@
 !-----------------------------------------------------------------------
       SUBROUTINE PDTE(                                                  &
 #ifdef DM_PARALLEL
-     &                GRID,MYPE,MPI_COMM_COMP                           &
+     &                GRID,MYPE,MPI_COMM_COMP,                          &
 #endif
-     &               ,NTSD,DT,PT,ETA2,RES,HYDRO,HBM2                    &
+     &                NTSD,DT,PT,ETA2,RES,HYDRO,HBM2                    &
      &               ,PD,PDSL,PDSLO                                     &
      &               ,PETDT,DIV,PSDT                                    &
      &               ,IHE,IHW,IVE,IVW                                   &                 
@@ -618,6 +618,7 @@
 #ifdef DM_PARALLEL
 !     INCLUDE "mpif.h"
       TYPE (DOMAIN) :: GRID
+      INTEGER,INTENT(IN) :: MYPE,MPI_COMM_COMP
 #endif
 !-----------------------------------------------------------------------
       LOGICAL,INTENT(IN) :: HYDRO
@@ -625,7 +626,6 @@
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE
-      INTEGER,INTENT(IN) :: MYPE,MPI_COMM_COMP
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !

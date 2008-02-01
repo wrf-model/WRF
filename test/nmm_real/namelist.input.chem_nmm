@@ -31,9 +31,6 @@
  debug_level                         = 1 
  /
 
- &fdda
-/
-
  &domains
  time_step                           = 30,
  time_step_fract_num                 = 2,

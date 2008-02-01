@@ -288,8 +288,7 @@
      REAL,DIMENSION(nims:nime,njms:njme)         :: zs
 
   INTEGER,PARAMETER                                                :: JTB=134
-  INTEGER                                                          :: i,j,k,ii,jj
-  REAL                                                             :: dlnpdz,dum2d
+  INTEGER                                                          :: ii,jj
   REAL, DIMENSION (nims:nime,njms:njme)                            :: CWK1,CWK2,CWK3,CWK4
 
      nijds = min(nids, njds)

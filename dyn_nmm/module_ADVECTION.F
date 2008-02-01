@@ -1445,7 +1445,6 @@
 !
 #if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
       LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
-      INTEGER :: N
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,6) :: XSUMS_L
       REAL,DIMENSION(IDS:IDE,JDS:JDE,KDS:KDE,6) :: XSUMS_G
 #endif
@@ -1453,6 +1452,7 @@
       LOGICAL :: BOT,TOP
 !
       INTEGER :: I,IRECV,J,JFP,JFQ,K,LAP,LLAP,MPI_COMM_COMP
+      INTEGER :: N
 !
       INTEGER,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5,KTS:KTE) :: IFPA,IFPF   &
      &                                                     ,IFQA,IFQF   &
@@ -2474,7 +2474,6 @@
 !
 #if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
       LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
-      INTEGER :: N
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,2) :: XSUMS_L
       REAL,DIMENSION(IDS:IDE,JDS:JDE,KDS:KDE,2) :: XSUMS_G
 #endif
@@ -2482,6 +2481,7 @@
       LOGICAL :: BOT,TOP
 !
       INTEGER :: I,IRECV,J,JFP,JFQ,K,L,LAP,LLAP,MPI_COMM_COMP
+      INTEGER :: N
 !
       INTEGER,DIMENSION(ITS-5:ITE+5,JTS-5:JTE+5,KTS:KTE) :: IFPA,IFPF   &
      &                                                     ,IFQA,IFQF   &

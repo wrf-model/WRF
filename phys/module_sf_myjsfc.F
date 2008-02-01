@@ -5,7 +5,9 @@
 !----------------------------------------------------------------------
 !
       USE MODULE_MODEL_CONSTANTS
+#ifdef DM_PARALLEL
       USE MODULE_DM, ONLY : WRF_DM_MAXVAL
+#endif
 !
 !----------------------------------------------------------------------
 !
@@ -1088,7 +1090,9 @@ CONTAINS
 !       CALL MPI_ALLREDUCE(MAXLOC_IVGTYP,MAXGBL_IVGTYP,1,MPI_INTEGER   &
 !    &,                    MPI_MAX,MPI_COMM_COMP,IRECV)
         MAXGBL_IVGTYP=MAXVAL(IVGTYP)
+#ifdef DM_PARALLEL
         CALL WRF_DM_MAXVAL(MAXGBL_IVGTYP,IDUM,JDUM)
+#endif
 !
         IF (MAXGBL_IVGTYP<13) THEN
           DO J=JTS,JTE

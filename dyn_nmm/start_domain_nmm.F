@@ -69,7 +69,7 @@
 !
       INTEGER :: JHL=7
 !
-      INTEGER :: I,IEND,IER,IFE,IFE,IFS,IHH,IHL,IHRSTB,II,IRTN          &
+      INTEGER :: I,IEND,IER,IFE,IFS,IHH,IHL,IHRSTB,II,IRTN          &
      &          ,ISIZ1,ISIZ2,ISTART,ISTAT,IX,J,J00,JFE,JFS,JHH,JJ       &
      &          ,JM1,JM2,JM3,JP1,JP2,JP3,JX,KK                          &
      &          ,K,K400,KBI,KBI2,KCCO2,KNT,KNTI                         &
@@ -77,7 +77,7 @@
      &          ,N,NMAP,NRADLH,NRADSH,NREC,NS,RECL,STAT                 &
      &          ,STEPBL,STEPCU,STEPRA
 !
-      INTEGER :: IPE,MY_E,MY_N,MY_S,MY_W                                &
+      INTEGER :: MY_E,MY_N,MY_S,MY_W                                    &
      &          ,MY_NE,MY_NW,MY_SE,MY_SW,MYI,MYJ,NPE
 !
       INTEGER :: I_M

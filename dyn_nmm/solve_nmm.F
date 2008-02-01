@@ -18,12 +18,14 @@
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
       USE MODULE_CTLBLK
+#ifdef DM_PARALLEL
       USE MODULE_DM
-      USE MODULE_IGWAVE_ADJUST,		ONLY: PDTE,PFDHT,DDAMP,VTOA
-      USE MODULE_ADVECTION,		ONLY: ADVE,VAD2,HAD2,VAD2_SCAL,HAD2_SCAL
-      USE MODULE_NONHY_DYNAM,		ONLY: EPS,VADZ,HADZ
-      USE MODULE_DIFFUSION_NMM, 	ONLY: HDIFF
-      USE MODULE_BNDRY_COND,		ONLY: BOCOH,BOCOV
+#endif
+      USE MODULE_IGWAVE_ADJUST,         ONLY: PDTE,PFDHT,DDAMP,VTOA
+      USE MODULE_ADVECTION,             ONLY: ADVE,VAD2,HAD2,VAD2_SCAL,HAD2_SCAL
+      USE MODULE_NONHY_DYNAM,           ONLY: EPS,VADZ,HADZ
+      USE MODULE_DIFFUSION_NMM,         ONLY: HDIFF
+      USE MODULE_BNDRY_COND,            ONLY: BOCOH,BOCOV
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
@@ -36,7 +38,9 @@
       IMPLICIT NONE
 !
 !-----------------------------------------------------------------------
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !-----------------------------------------------------------------------
 !
 !***  INPUT DATA
@@ -171,7 +175,46 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !***********************************************************************
+!***
+!***               THE MAIN TIME INTEGRATION LOOP
+!***
 !-----------------------------------------------------------------------
+!
+!***  NTSD IS THE TIMESTEP COUNTER (Number of Time Steps Done)
+!
+!-----------------------------------------------------------------------
+!***
+!***  ADVANCE_count STARTS AT ZERO FOR ALL RUNS (REGULAR AND RESTART).
+!***
+!-----------------------------------------------------------------------
+!
+      CALL DOMAIN_CLOCK_GET(GRID,ADVANCEcOUNT=NTSD_current)
+!
+      IF(NTSD_current==0)THEN
+        IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
+          IHRST=NSTART_HOUR
+          NTSD_restart=NTSD
+        ELSE
+          IHRST=GRID%GMT
+          NSTART_HOUR=IHRST
+          NTSD_restart=0
+        ENDIF
+      ENDIF
+!
+      NTSD=NTSD_restart+NTSD_current
+      LAST_TIME=domain_last_time_step(GRID)
+!
+!-----------------------------------------------------------------------
+!
+!!!!! IF(WRF_DM_ON_MONITOR() )THEN
+        WRITE(MESSAGE,125)NTSD,NTSD*GRID%DT/3600.
+  125   FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
+        CALL WRF_MESSAGE(TRIM(MESSAGE))
+!!!!  ENDIF
+!
+!-----------------------------------------------------------------------
+      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
+      CALL WRF_GET_NPROC(NPES)
       CALL WRF_GET_MYPROC(MYPROC)
       MYPE=MYPROC
 !-----------------------------------------------------------------------
@@ -322,48 +365,8 @@
 !-----------------------------------------------------------------------
 !
       NBOCO=0
-!-----------------------------------------------------------------------
-!***
-!***               THE MAIN TIME INTEGRATION LOOP
-!***
-!-----------------------------------------------------------------------
-!
-!***  NTSD IS THE TIMESTEP COUNTER (Number of Time Steps Done)
 !
 !-----------------------------------------------------------------------
-!***
-!***  ADVANCE_count STARTS AT ZERO FOR ALL RUNS (REGULAR AND RESTART).
-!***
-!-----------------------------------------------------------------------
-!
-      CALL DOMAIN_CLOCK_GET(GRID,ADVANCEcOUNT=NTSD_current)
-!
-      IF(NTSD_current==0)THEN
-        IF(GRID%RESTART.AND.GRID%TSTART>0.)THEN
-          IHRST=NSTART_HOUR
-          NTSD_restart=NTSD
-        ELSE
-          IHRST=GRID%GMT
-          NSTART_HOUR=IHRST
-          NTSD_restart=0
-        ENDIF
-      ENDIF
-!
-      NTSD=NTSD_restart+NTSD_current
-      LAST_TIME=domain_last_time_step(GRID)
-!
-!-----------------------------------------------------------------------
-!
-!!!!! IF(WRF_DM_ON_MONITOR() )THEN
-        WRITE(MESSAGE,125)NTSD,NTSD*GRID%DT/3600.
-  125   FORMAT(' SOLVE_NMM: TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
-        CALL WRF_MESSAGE(TRIM(MESSAGE))
-!!!!  ENDIF
-!
-!-----------------------------------------------------------------------
-!
-      CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
-      CALL WRF_GET_NPROC(NPES)
 !
 #if (NMM_NEST == 1)
 !-----------------------------------------------------------------------------
@@ -524,9 +527,9 @@
 !
       CALL PDTE(                                                        &
 #ifdef DM_PARALLEL
-     &            GRID,MYPE,MPI_COMM_COMP                               &
+     &            GRID,MYPE,MPI_COMM_COMP,                              &
 #endif
-     &           ,NTSD,GRID%DT,PT,ETA2,RES,HYDRO,HBM2                   &
+     &            NTSD,GRID%DT,PT,ETA2,RES,HYDRO,HBM2                   &
      &           ,PD,PDSL,PDSLO                                         &
      &           ,PETDT,DIV,PSDT                                        &
      &           ,IHE,IHW,IVE,IVW                                       &
@@ -1073,7 +1076,12 @@
 !
       btimx=timef()
 !
-      CALL RDTEMP(NTSD,GRID%DT,GRID%JULDAY,GRID%JULYR,IHRST,GLAT,GLON  &
+!     Pass in XTIME (elapsed time from start of parent) to compute
+!     the time passed into the zenith angle code consistently between
+!     RDTEMP and RADIATION.
+
+      CALL RDTEMP(NTSD,GRID%DT,GRID%JULDAY,GRID%JULYR                  &
+     &           ,GRID%XTIME,IHRST,GLAT,GLON                           &
      &           ,CZEN,CZMEAN,T,RSWTT,RLWTT,HBM2                       &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                              &
      &           ,IMS,IME,JMS,JME,KMS,KME                              &
@@ -1682,7 +1690,9 @@
       USE MODULE_EXT_INTERNAL
 !
       IMPLICIT NONE
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
@@ -1696,8 +1706,10 @@
 !
 !*** LOCAL VARIABLES
 !
+#ifdef DM_PARALLEL
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
       INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
+#endif
       INTEGER,DIMENSION(2) :: IM_REM,JM_REM,IT_REM,JT_REM
 !
       INTEGER :: I,IENDX,IER,IPE,IRECV,IRTN,ISEND,IUNIT                &
@@ -1744,6 +1756,7 @@
       DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
+#ifdef DM_PARALLEL
       IF(MYPE==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -1821,6 +1834,16 @@
         ENDDO
 !
       ENDIF
+#else
+
+        DO J=JDS,JDE-1
+          IENDX=IDE-1
+          IF(MOD(J,2)==0)IENDX=IENDX-1
+          WRITE(IUNIT)(ARRAY(I,K,J),I=1,IENDX)
+        ENDDO
+
+#endif
+
 !
 !----------------------------------------------------------------------
   500 CONTINUE
@@ -1841,7 +1864,9 @@
       USE MODULE_EXT_INTERNAL
 !
       IMPLICIT NONE
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
@@ -1855,8 +1880,10 @@
 !
 !*** LOCAL VARIABLES
 !
+#ifdef DM_PARALLEL
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
       INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
+#endif
       INTEGER,DIMENSION(2) :: IM_REM,JM_REM,IT_REM,JT_REM
 !
       INTEGER :: I,IENDX,IER,IPE,IRECV,IRTN,ISEND,IUNIT                &
@@ -1919,6 +1946,7 @@
       DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
+#ifdef DM_PARALLEL
       IF(MYPE==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -1996,6 +2024,15 @@
         ENDDO
 !
       ENDIF
+#else
+
+        DO J=JDS,JDE-1
+          IENDX=IDE-1
+          IF(MOD(J,2)==0)IENDX=IENDX-1
+          WRITE(IUNIT)(ARRAY(I,K,J),I=1,IENDX)
+        ENDDO
+
+#endif
 !
 !----------------------------------------------------------------------
   500 CONTINUE
@@ -2019,12 +2056,14 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
-     &                     ,MYPE,MPI_COMM_COMP,NTSD      
+     &                     ,MYPE,MPI_COMM_COMP,NTSD
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT,T,Q   &
                                                            ,U,V,Q2,W
@@ -2129,7 +2168,9 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: MPI_COMM_COMP,MYPE,NPES,NTSD
       REAL,INTENT(IN) :: TIME_LCL
@@ -2138,8 +2179,10 @@
 !
 !*** LOCAL VARIABLES
 !
+#ifdef DM_PARALLEL
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
       INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
+#endif
       INTEGER,ALLOCATABLE,DIMENSION(:) :: ID_PE,IPE_SORT
 !
       INTEGER :: IPE,IPE_MAX,IPE_MEDIAN,IPE_MIN,IRECV,IRTN,ISEND       &
@@ -2177,6 +2220,7 @@
 !
 !----------------------------------------------------------------------
 !
+#ifdef DM_PARALLEL
       IF(MYPE==0)THEN
         ALLOCATE(TIME(1:NPES))
         ALLOCATE(SORT_TIME(1:NPES))
@@ -2262,6 +2306,7 @@
       ENDIF
 !----------------------------------------------------------------------
 !
+#endif
       END SUBROUTINE TIME_STATS
 !
 !----------------------------------------------------------------------
@@ -2393,7 +2438,9 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
+#ifdef DM_PARALLEL
       INCLUDE "mpif.h"
+#endif
 !----------------------------------------------------------------------
 !
       INTEGER,INTENT(IN) :: MPI_COMM_COMP,MYPE
@@ -2421,6 +2468,7 @@
                                                 ! IDE and JDE are each
                                                 ! one greater than the
                                                 ! true grid size.
+#ifdef DM_PARALLEL
 !
       layer_loop:  DO K=KTS,KTE
 !
@@ -2475,6 +2523,7 @@
   102     FORMAT(9X,' MEAN=',E13.6,' STDEV=',E13.6,' RMS=',E13.6)
         ENDDO
       ENDIF
+#endif
 !----------------------------------------------------------------------
       END SUBROUTINE FIELD_STATS
 !----------------------------------------------------------------------

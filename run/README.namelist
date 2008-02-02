@@ -267,6 +267,9 @@ Namelist variables for controling the automatic moving nest:
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
 
+ no_mp_heating                       = 0       ; normal
+                                     = 1       ; turn off latent heating from a microphysics scheme
+
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
                                      = 1, rrtm scheme

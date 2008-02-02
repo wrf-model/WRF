@@ -1072,9 +1072,11 @@ CONTAINS
 
      CASE DEFAULT
 
+       IF ( itimestep .eq. 1 ) THEN
        WRITE( message , * ) &
         'No land surface physics option is used: sf_surface_physics = ', sf_surface_physics
         CALL wrf_message ( message )
+       ENDIF
 
      END SELECT sfc_select
      ENDDO

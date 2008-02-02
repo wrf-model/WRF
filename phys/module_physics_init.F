@@ -267,6 +267,7 @@ CONTAINS
    CHARACTER*80 :: message
    INTEGER :: ISWATER
    INTEGER :: ucmcall
+   INTEGER :: omlcall
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
 
@@ -281,6 +282,7 @@ integer myproc
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
    oml_hml0=config_flags%oml_hml0
+   omlcall=config_flags%omlcall
 #endif
 
 !-- should be from the namelist
@@ -438,7 +440,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
-                oml_hml0,                                       & !Optional oml
+                oml_hml0, omlcall,                              & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
@@ -990,7 +992,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
-                oml_hml0,                                       & !Optional oml
+                oml_hml0, omlcall,                              & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
@@ -1111,6 +1113,7 @@ integer myproc
 ! Optional OML variables
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TML,T0ML,HML,H0ML,HUML,HVML
+   INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
    LOGICAL,  INTENT(IN) :: start_of_simulation
 
@@ -1177,7 +1180,7 @@ integer myproc
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte,         &
-                         oml_hml0,                             &
+                         oml_hml0, omlcall,                    &
                          tml, t0ml, hml, h0ml, huml, hvml      )
 
 #if (NMM_CORE == 1)

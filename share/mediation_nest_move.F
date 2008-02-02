@@ -291,7 +291,8 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    INTEGER :: fje, fjs, fie, fis, fimloc, fjmloc, imloc, jmloc
    INTEGER :: i_parent_start, j_parent_start
    INTEGER :: max_vortex_speed, vortex_interval  ! meters per second and seconds
-   REAL    :: rsmooth = 100.  ! kilometers?
+   INTEGER :: track_level
+   REAL    :: rsmooth = 100000.  ! in meters
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
@@ -304,6 +305,10 @@ character*256 message, message2
    CALL nl_get_parent_grid_ratio ( grid%id , pgr )
    CALL nl_get_i_parent_start    ( grid%id , i_parent_start )
    CALL nl_get_j_parent_start    ( grid%id , j_parent_start )
+   CALL nl_get_track_level       ( grid%id , track_level )
+
+!  WRITE(mess,*)'Vortex is tracked at ', track_level
+!  CALL wrf_message(mess)
 
    CALL get_ijk_from_grid (  grid ,                        &
                              ids, ide, jds, jde, kds, kde, &
@@ -360,6 +365,7 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
 
 #  if (EM_CORE == 1)
      CALL compute_500mb_height ( grid%ph_2 , grid%phb, grid%p, grid%pb, height_l , &
+                                 track_level,                  &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  ips, ipe, jps, jpe, kps, kpe  )
@@ -444,6 +450,8 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
        pmin = 99999999.0     ! make this very large to be sure we find a minumum
        DO j = js, je
        DO i = is, ie
+         ! adjust approximately to sea level pressure (same as below: ATCF)
+         psfc(i,j)=psfc(i,j)+11.38*terrain(i,j)
          IF ( psfc(i,j) .LT. pmin ) THEN
            pmin = psfc(i,j)
            imploc = i
@@ -559,7 +567,8 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
                                        timestr(1:19),                               &
                                        xlat(i,j),                                   &
                                        xlong(i,j),                                  &
-                                       0.01*pmin+0.1138*terrain(imploc,jmploc),     &
+                                       0.01*pmin,                                   &
+!already computed above                0.01*pmin+0.1138*terrain(imploc,jmploc),     &
                                        maxws*1.94
         CALL wrf_message(TRIM(mess))
                             

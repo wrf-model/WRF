@@ -301,7 +301,7 @@
 !..END DECLARATIONS
 !+---+-----------------------------------------------------------------+
 !+---+
-!
+!
 
       CONTAINS
 
@@ -621,7 +621,7 @@
 
       END SUBROUTINE thompson_init
 !+---+-----------------------------------------------------------------+
-!
+!
 !+---+-----------------------------------------------------------------+
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
@@ -816,7 +816,7 @@
             if (qv1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qv ', qv1d(k),        &
                         ' at i,j,k=', i,j,k
-             CALL wrf_debug(0, mp_debug)
+             CALL wrf_debug(150, mp_debug)
             endif
          enddo
 
@@ -841,7 +841,7 @@
       END SUBROUTINE mp_gt_driver
 
 !+---+-----------------------------------------------------------------+
-!
+!
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
 !.. This subroutine computes the moisture tendencies of water vapor,
@@ -2508,7 +2508,7 @@
 
       end subroutine mp_thompson
 !+---+-----------------------------------------------------------------+
-!
+!
 !+---+-----------------------------------------------------------------+
 !..Creation of the lookup tables and support functions found below here.
 !+---+-----------------------------------------------------------------+
@@ -2589,7 +2589,7 @@
 
       end subroutine qr_acr_qg
 !+---+-----------------------------------------------------------------+
-!
+!
 !+---+-----------------------------------------------------------------+
 !..Rain collecting snow (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
@@ -2731,7 +2731,7 @@
 
       end subroutine qr_acr_qs
 !+---+-----------------------------------------------------------------+
-!
+!
 !+---+-----------------------------------------------------------------+
 !..This is a literal adaptation of Bigg (1954) probability of drops of
 !..a particular volume freezing.  Given this probability, simply freeze
@@ -2810,7 +2810,7 @@
 
       end subroutine freezeH2O
 !+---+-----------------------------------------------------------------+
-!
+!
 !+---+-----------------------------------------------------------------+
 !..Cloud ice converting to snow since portion greater than min snow
 !.. size.  Given cloud ice content (kg/m**3), number concentration
@@ -2864,7 +2864,7 @@
       enddo
 
       end subroutine qi_aut_qs
-!
+!
 !+---+-----------------------------------------------------------------+
 !..Variable collision efficiency for rain collecting cloud water using
 !.. method of Beard and Grover, 1974 if a/A less than 0.25; otherwise

@@ -558,7 +558,7 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,               &
                        ims,ime, jms,jme, kms,kme,               &
                        its,ite, jts,jte, kts,kte,               &
-                       oml_hml0,                                &
+                       oml_hml0, omlcall,                       &
                        tml,t0ml,hml,h0ml,huml,hvml              )
 !----------------------------------------------------------------
    IMPLICIT NONE
@@ -581,6 +581,7 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme ) , OPTIONAL          , &
             INTENT(INOUT)    ::     TML, T0ML, HML, H0ML, HUML, HVML
    REAL   , OPTIONAL, INTENT(IN   )    ::     oml_hml0
+   INTEGER, OPTIONAL, INTENT(IN   )    ::     omlcall
 
 !  LOCAR VAR
 
@@ -592,6 +593,7 @@ CONTAINS
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
+   IF ( PRESENT(omlcall) .AND. omlcall .EQ. 1) THEN
    WRITE(message,*)'Initializing OML with HML0 = ', oml_hml0
    CALL wrf_debug (1, TRIM(message))
 
@@ -608,6 +610,7 @@ CONTAINS
        HVML(I,J)=0.
      ENDDO
      ENDDO
+   ENDIF
    ENDIF
 
    END SUBROUTINE slabinit

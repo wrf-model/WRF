@@ -1,22 +1,22 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 0,
- run_minutes                         = 400,
+ run_hours                           = 1,
+ run_minutes                         = 0,
  run_seconds                         = 0,
- start_year                          = 2007, 0001, 0001,
- start_month                         = 10,   01,   01,
- start_day                           = 18,   01,   01,
+ start_year                          = 2008, 0001, 0001,
+ start_month                         = 01,   01,   01,
+ start_day                           = 02,   01,   01,
  start_hour                          = 12,   00,   00,
  start_minute                        = 00,   00,   00,
  start_second                        = 00,   00,   00,
- end_year                            = 2007, 0010, 0010,
- end_month                           = 10,   01,   01,
- end_day                             = 18,   01,   01,
+ end_year                            = 2008, 0010, 0010,
+ end_month                           = 01,   01,   01,
+ end_day                             = 02,   01,   01,
  end_hour                            = 12,   00,   00,
  end_minute                          = 00,   00,   00,
  end_second                          = 00,   00,   00,
- history_interval                    = 400,   30,   30,
- frames_per_outfile                  = 100,  100,  100,
+ history_interval                    = 60,   30,   30,
+ frames_per_outfile                  = 200,  100,  100,
  restart                             = .false.,
  restart_interval_h                  = 1120,
  io_form_history                     = 2
@@ -24,22 +24,23 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = 0
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
  /
 
  &domains
- time_step                           = 2400
+ time_step                           = 600
  time_step_fract_num                 = 00
  time_step_fract_den                 = 112
  max_dom                             = 1,
  s_we                                = 1,     1,     1,
- e_we                                = 65,     41,    41,
+ e_we                                = 257,    41,    41,
  s_sn                                = 1,     1,     1,
- e_sn                                = 33,     81,    81,
+ e_sn                                = 129,    81,    81,
  s_vert                              = 1,     1,     1,
  e_vert                              = 41,    41,    41,
  num_metgrid_levels                  = 27
- dx                                  = 625373.288,20000, 4000,
- dy                                  = 625373.288,20000, 4000,
+ dx                                  = 156343.322,20000, 4000,
+ dy                                  = 156343.322,20000, 4000,
  p_top_requested                     = 5000
  grid_id                             = 1,     2,     3,
  parent_id                           = 0,     1,     2,
@@ -52,22 +53,21 @@
  /
 
  &physics
- mp_physics                          = 3,     0,     0,
- ra_lw_physics                       = 1,     0,     0,
- ra_sw_physics                       = 1,     0,     0,
+ mp_physics                          = 3,     3,     3,
+ ra_lw_physics                       = 1,     1,     1,
+ ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 1,     0,     0,
- sf_surface_physics                  = 1,     0,     0,
- bl_pbl_physics                      = 1,     0,     0,
+ sf_sfclay_physics                   = 1,     1,     1,
+ sf_surface_physics                  = 1,     1,     1,
+ bl_pbl_physics                      = 1,     1,     1,
  bldt                                = 0,     0,     0,
- cu_physics                          = 3,     0,     0,
- cudt                                = 0,     5,     5,
+ cu_physics                          = 1,     1,     0,
+ cudt                                = 5,     5,     5,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 5,
- ucmcall                             = 0,
  mp_zero_out                         = 0,
  maxiens                             = 1,
  maxens                              = 3,
@@ -98,9 +98,13 @@
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
- polar_filter                        = 5,
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+ polar_filter                        = 1,
+ fft_filter_lat                      = 45.,
  w_damping                           = 1,
- fft_filter_type                     = 1,
  /
 
  &bdy_control

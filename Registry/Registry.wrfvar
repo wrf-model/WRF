@@ -143,6 +143,7 @@ state    real   g_mu            ijb     misc        2         -     \
      irh03usdf=(bdy_interp:dt)   "g_mu"  "perturbation dry air mass in column" "Pa"
 state    real   mub             ij     dyn_em      1         -     irhdus       "mub" "base state dry air mass in column" "Pa"
 state    real   mub_fine        ij     dyn_em      1         -      -           "mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
+state    real   mub_save        ij     dyn_em      1         -      -           "mub_save" "nest temp, holds orig fine grid mub" "Pa"
 state    real   mu0             ij     dyn_em      1         -     i01rdu       "mu0" "initial dry mass in column" "Pa"
 
 #diagnostic for looking at nest position in output. A mungy version of terrain height.
@@ -878,6 +879,7 @@ rconfig   logical input_from_file         namelist,time_control		max_domains    
 rconfig   integer fine_input_stream       namelist,time_control		max_domains    0       irh    "fine_input_stream"      "0 THROUGH 11, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
 rconfig   logical input_from_hires        namelist,time_control		max_domains    .false. irh    "input_from_hires"     "T/F INPUT FOR THIS DOMAIN FROM USGS HI RES TERRAIN"  ""
 rconfig   character rsmas_data_path       namelist,time_control		1              "."     -    "rsmas_data_path"      ""  ""
+rconfig   logical all_ic_times            namelist,time_control		1              .false. irh    "all_ic_times"     "T/F WRITE ALL IC TIME PERIODS"  ""
 
 include registry.io_boilerplate
 
@@ -1124,8 +1126,7 @@ rconfig   real    base_pres               namelist,dynamics	1          100000.  
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
 rconfig   integer polar_filter            namelist,dynamics     1              0       h    "polar_filter"   ""   "0=no polar filtering (default), 1=before acoustic steps, 2=before end of timestep, 3=both"
-rconfig   integer fft_filter_type         namelist,dynamics     1              1       h    "fft_filter_type"   ""   "1=cutoff filter (maximum wavenumber), 2=gouge filter (mid-wavelengths removed)"
-rconfig   logical polar_filter_rk_once    namelist,dynamics     1            .false.  irh   "polar_filter_rk_once"    ""   ""
+rconfig   real    fft_filter_lat          namelist,dynamics     1              45.     h    "fft_filter_lat"   ""   "grid latitude to start polar filter"
 rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""
 rconfig   logical do_coriolis             namelist,dynamics	max_domains  .true.   irh  "do_coriolis"    ""   ""
 rconfig   logical do_curvature            namelist,dynamics	max_domains  .true.   irh  "do_curvature"   ""   ""

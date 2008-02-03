@@ -1,4 +1,4 @@
-!REAL:MODEL_LAYER:INITIALIZATION
+!_EAL:MODEL_LAYER:INITIALIZATION
 
 #ifndef VERT_UNIT
 !  This MODULE holds the routines which are used to perform various initializations
@@ -267,6 +267,7 @@ integer::oops1,oops2
             !  distance on each computational latitude loop.
 
             CALL filter_topo ( grid%ht_xxx , grid%clat_xxx , grid%mf_xxx , &
+                               grid%fft_filter_lat , &
                                ids, ide, jds, jde, 1 , 1 , &
                                imsx, imex, jmsx, jmex, 1, 1, &
                                ipsx, ipex, jpsx, jpex, 1, 1 )
@@ -291,6 +292,7 @@ integer::oops1,oops2
             END DO
 #else
             CALL filter_topo ( grid%ht , grid%clat , grid%msftx , &
+                               grid%fft_filter_lat , &
                                ids, ide, jds, jde, 1,1,           &
                                ims, ime, jms, jme, 1,1,           &
                                its, ite, jts, jte, 1,1 ) 
@@ -4673,7 +4675,7 @@ print *,'namelist p_top (Pa) = ',p_top
    END SUBROUTINE sfcprs3
 !---------------------------------------------------------------------
 
-   SUBROUTINE filter_topo ( ht_in , xlat , msftx , &
+   SUBROUTINE filter_topo ( ht_in , xlat , msftx , fft_filter_lat , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte ) 
@@ -4684,6 +4686,7 @@ print *,'namelist p_top (Pa) = ',p_top
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte 
 
+      REAL , INTENT(IN) :: fft_filter_lat
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: ht_in
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: xlat , msftx
 
@@ -4703,11 +4706,6 @@ print *,'namelist p_top (Pa) = ',p_top
          CALL wrf_error_fatal ( 'filtering assumes all values on X' )
       END IF
 
-      !  We filter from the pole to a particular latitude heading towards the equator.
-      !  But gosh, which latitude?
-
-      length_scale = 1.1
-
       !  Starting at the south pole, we find where the
       !  grid distance is big enough, then go back a point.  Continuing to the
       !  north pole, we find the first small grid distance.  These are the 
@@ -4717,7 +4715,7 @@ print *,'namelist p_top (Pa) = ',p_top
       j_lat_pos = jde + 1
       loop_neg : DO j = jts , MIN(jde-1,jte)
          IF ( xlat(its,j) .LT. 0.0 ) THEN
-            IF ( msftx(its,j) .LT. length_scale ) THEN
+            IF ( ABS(xlat(its,j)) .LT. fft_filter_lat ) THEN
                j_lat_neg = j - 1
                EXIT loop_neg
             END IF
@@ -4726,7 +4724,7 @@ print *,'namelist p_top (Pa) = ',p_top
 
       loop_pos : DO j = jts , MIN(jde-1,jte)
          IF ( xlat(its,j) .GT. 0.0 ) THEN
-            IF ( msftx(its,j) .GE. length_scale ) THEN
+            IF ( xlat(its,j) .GE. fft_filter_lat ) THEN
                j_lat_pos = j
                EXIT loop_pos
             END IF

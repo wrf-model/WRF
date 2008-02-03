@@ -1918,7 +1918,7 @@ BENCH_END(advance_uv_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite  = .FALSE.                                &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -2027,7 +2027,7 @@ BENCH_END(advance_mu_t_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite  = .FALSE.                                &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -2132,7 +2132,7 @@ BENCH_END(advance_w_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite  = .FALSE.                                &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -2399,7 +2399,7 @@ BENCH_END(small_step_finish_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite  = .FALSE.                                &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -3239,7 +3239,7 @@ BENCH_END(calc_p_rho_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite=.FALSE.                                   &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -3276,7 +3276,7 @@ BENCH_END(calc_p_rho_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite=.FALSE.                                   &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -3313,7 +3313,7 @@ BENCH_END(calc_p_rho_tim)
                  ,flag_scalar        = im                                     &
                  ,positive_definite=.FALSE.                                   &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -3805,7 +3805,7 @@ BENCH_START(moist_phys_end_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite=.FALSE.                                   &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -3911,7 +3911,7 @@ BENCH_END(moist_phys_end_tim)
                  ,flag_scalar        = 0                                      &
                  ,positive_definite=.FALSE.                                   &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
@@ -3953,7 +3953,7 @@ BENCH_END(moist_phys_end_tim)
                  ,flag_scalar        = im                                     &
                  ,positive_definite=.FALSE.                                   &
                  ,moist=moist,chem=chem,scalar=scalar                         &
-                 ,fft_filter_type = config_flags%fft_filter_type              &
+                 ,fft_filter_lat = config_flags%fft_filter_lat                &
                  ,dclat = dclat                                               &
                  ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                  ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &

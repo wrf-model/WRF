@@ -15,7 +15,6 @@ MODULES =                 		\
         module_bc_em.o                  \
         module_init_utilities.o         \
 	module_damping_em.o		\
-	module_positive_definite.o	\
 	module_polarfft.o		\
 	$(CASE_MODULE)
 
@@ -96,11 +95,8 @@ module_em.o:    module_big_step_utilities_em.o module_advect_em.o \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o 
 
-module_polarfft.o: module_positive_definite.o \
-		../share/module_model_constants.o \
+module_polarfft.o: ../share/module_model_constants.o \
 		../frame/module_wrf_error.o
-
-module_positive_definite.o: ../frame/module_wrf_error.o
 
 module_small_step_em.o: \
 		../frame/module_configure.o  \

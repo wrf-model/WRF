@@ -421,7 +421,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        CALL wrf_debug ( 0 , message )
 
 ! store horizontally interpolated terrain in temp location
-       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+       CALL  store_terrain ( nest%ht_int  , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
@@ -445,8 +445,19 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                       ips , ipe , jps , jpe , 1   , 1   )
        ENDIF
 
+       ! save elevation and mub for temp and qv adjustment
+
+       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+       CALL  store_terrain ( nest%mub_save , nest%mub , &
+                             ids , ide , jds , jde , 1   , 1   , &
+                             ims , ime , jms , jme , 1   , 1   , &
+                             ips , ipe , jps , jpe , 1   , 1   )
+
 ! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
-       CALL  blend_terrain ( nest%ht_fine , nest%ht , &
+       CALL  blend_terrain ( nest%ht_int  , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
@@ -459,6 +470,15 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )
 
+       !  adjust temp and qv
+
+       CALL adjust_tempqv ( nest%mub , nest%mub_fine , &
+                            nest%znw , nest%p_top , &
+                            nest%t_2 , nest%p , nest%moist(ims,kms,jms,P_QV) , &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            ips , ipe , jps , jpe , kps , kpe )
+ 
      ELSE
        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
                                      ' by horizontally interpolating parent domain #' ,parent%id, &

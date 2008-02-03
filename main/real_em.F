@@ -956,15 +956,15 @@ real::t1,t2
       !  OK, for all of the loops, we output the initialzation data, which would allow us to
       !  start the model at any of the available analysis time periods.
 
-!     WRITE ( loop_char , FMT = '(I4.4)' ) loop
-!     CALL open_w_dataset ( id1, 'wrfinput'//loop_char , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
-!     IF ( ierr .NE. 0 ) THEN
-!       CALL wrf_error_fatal( 'real: error opening wrfinput'//loop_char//' for writing' )
-!     END IF
-
-!     CALL calc_current_date ( grid%id , 0. )
-!     CALL output_model_input ( id1, grid , config_flags , ierr )
-!     CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
+      IF ( config_flags%all_ic_times ) THEN
+         CALL construct_filename2a ( inpname , 'wrfinput_d<domain>.<date>' , grid%id , 2 , TRIM(current_date) )
+         CALL open_w_dataset ( id1, inpname , grid , config_flags , output_model_input , "DATASET=INPUT", ierr )
+         IF ( ierr .NE. 0 ) THEN
+            CALL wrf_error_fatal( 'real: error opening' // inpname // ' for writing' )
+         END IF
+         CALL output_model_input ( id1, grid , config_flags , ierr )
+         CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
+      END IF
 
       !  Is this or is this not the last time time?  We can remove some unnecessary
       !  stores if it is not.

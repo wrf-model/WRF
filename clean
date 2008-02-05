@@ -9,7 +9,7 @@ foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools )
                       wrfdata whatiread rsl.* show_domain* )
 end
 
-( cd var/da ; make clean )
+( cd var ; make clean )
 
 ( cd tools/CodeBase ; make clean )
 
@@ -17,7 +17,7 @@ end
 
 
 if ( "$1" == '-a' ) then
-  ( cd var/da ; make superclean )
+  ( cd var ; make superclean )
   if ( -f configure.wrf ) then
     /bin/cp configure.wrf configure.wrf.backup
     /bin/rm -f configure.wrf

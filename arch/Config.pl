@@ -15,6 +15,7 @@ $sw_esmflib_path="";
 $sw_esmfinc_path="";
 $sw_ldflags=""; 
 $sw_compileflags=""; 
+$sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
@@ -84,6 +85,12 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  else
    {
    printf "\$JASPERLIB or \$JASPERINC not found in environment, configuring to build without grib2 I/O...\n" ;
+   }
+
+# When compiling DA code, we need to always use 8-byte reals.
+ if ( $ENV{WRF_DA_CORE} == "1" )
+   {
+     $sw_rwordsize = "8";  
    }
 
 # A separately-installed ESMF library is required to build the ESMF 
@@ -164,6 +171,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
+    $_ =~ s/CONFIGURE_RWORDSIZE/$sw_rwordsize/g ;
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;

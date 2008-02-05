@@ -6,7 +6,7 @@ SFC		=	$(FC)
 LD		=	f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	$(FCBASEOPTS)
@@ -18,7 +18,7 @@ ESMF_IO_LIB     =       ESMFIOLIB
 ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
-ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS
+ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS $(DA_ARCHFLAGS)
 LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp -C -P
@@ -117,7 +117,7 @@ FC		=	f90
 SFC		=	$(FC)
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS		=	-freeform -I. -w
@@ -130,7 +130,8 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem  \
                        	-I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
-                        -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS
+			$(DA_ARCHFLAGS) \
+                        -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS 
 LDFLAGS		=       CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP		=	/lib/cpp
@@ -230,7 +231,7 @@ CC              =       cc
 SCC		=	$(CC)
 CFLAGS          =       -64 -DLANDREAD_STUB -DNCARIBM_NOC99
 FCOPTIM         =       -O3
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -64 -cpp -OPT:Olimit=5269 $(FCDEBUG) -w
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
@@ -242,6 +243,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
                         -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
@@ -348,13 +350,14 @@ SFC		=	$(FC)
 LD              =       f90 -n32 -mips4 -w
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -n32 -mips4
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -freeform -I. -w
 FCFLAGS         =       -freeform -I. -O3 -OPT:roundoff=3:IEEE_arithmetic=3 -OPT:fold_arith_limit=2001
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
                         -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -462,7 +465,7 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -64 -DLANDREAD_STUB -DNCARIBM_NOC99
 FCOPTIM         =       -O3
@@ -476,6 +479,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
                         -DINTIO -DLIMIT_ARGS -DLANDREAD_STUB
 PERL            =       CONFIGURE_PERL_PATH
@@ -577,7 +581,7 @@ SFC		=	$(FC)
 LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
 CFLAGS          =	-DNCARIBM_NOC99
@@ -595,6 +599,7 @@ INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROO
 			-M$(WRF_SRC_ROOT_DIR)/frame -M$(WRF_SRC_ROOT_DIR)/share -M$(WRF_SRC_ROOT_DIR)/phys -M$(WRF_SRC_ROOT_DIR)/inc -M$(WRF_SRC_ROOT_DIR)/chem \
 			-M$(WRF_SRC_ROOT_DIR)/dyn_em 
 ARCHFLAGS       =       $(COREDEFS) -DINTIO -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
@@ -718,7 +723,7 @@ SFC		=	$(FC)
 LD              =       f95
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-xtypemap=real:$(RSIZEBITS),integer:32
 CFLAGS          =	-DNCARIBM_NOC99
@@ -736,6 +741,7 @@ INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROO
 			-M$(WRF_SRC_ROOT_DIR)/frame -M$(WRF_SRC_ROOT_DIR)/share -M$(WRF_SRC_ROOT_DIR)/phys -M$(WRF_SRC_ROOT_DIR)/inc -M$(WRF_SRC_ROOT_DIR)/chem \
 			-M$(WRF_SRC_ROOT_DIR)/dyn_em 
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
@@ -842,7 +848,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc_r
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
@@ -858,6 +864,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS  -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -987,7 +994,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc_r
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99 -DSTUBMPI
 FCOPTIM         =       -O2 -qarch=auto
@@ -1003,6 +1010,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1137,7 +1145,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc_r
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99
 FCOPTIM         =       -O2 -qarch=auto
@@ -1153,6 +1161,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS  -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1290,7 +1299,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc_r
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99 -DSTUBMPI
 FCOPTIM         =       -O2 -qarch=auto
@@ -1306,6 +1315,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DNATIVE_MASSV
 PERL            =       CONFIGURE_PERL_PATH
@@ -1448,7 +1458,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE  -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
@@ -1466,6 +1476,7 @@ INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROO
                         -I$(WRF_SRC_ROOT_DIR)/external/io_int $(ESMF_IO_INC) \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc $(ESMF_MOD_INC)
 ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+			$(DA_ARCHFLAGS) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PNETCDF_FLAG \
                         -DTRIEDNTRUE -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS  -DNATIVE_MASSV -DNMM_NEST=$(WRF_NMM_NEST) $(ESMF_IO_DEFS)
@@ -1601,7 +1612,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE  -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -DDM_PARALLEL  \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -DNCARIBM_NOC99
@@ -1618,6 +1629,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf  -I$(WRF_SRC_ROOT_DIR)/external/io_phdf5 -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/inc -I$(WRF_SRC_ROOT_DIR)/chem
 ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+			$(DA_ARCHFLAGS) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
 			-DLIMIT_ARGS  -DNATIVE_MASSV
 PERL            =       perl
@@ -1750,7 +1762,7 @@ SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 MCELHOME        =       /home/bluesky/bettenc/disttest
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE  -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -DDM_PARALLEL  \
@@ -1766,6 +1778,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/inc -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 ARCHFLAGS       =       -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+			$(DA_ARCHFLAGS) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE   -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DMCELIO -DLIMIT_ARGS \
                          -DNATIVE_MASSV
 PERL            =       perl
@@ -2049,7 +2062,7 @@ FC              =       $(SFC)
 LD              =       $(FC)
 CC              =       $(SCC)
 
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -DLANDREAD_STUB -DDM_PARALLEL
 FCOPTIM         =       -O2 -qarch=440
@@ -2062,6 +2075,7 @@ INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROO
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc 
 
 ARCHFLAGS       =       $(COREDEFS) -DDM_PARALLEL -DRSL_LITE -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG CONFIGURE_PNETCDF_FLAG \
 			-DLIMIT_ARGS  -DNATIVE_MASSV -DLANDREAD_STUB
 
@@ -2202,9 +2216,10 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+			$(DA_ARCHFLAGS) \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE
 PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
@@ -2341,9 +2356,10 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+			$(DA_ARCHFLAGS) \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE
 PROMOTION	=	-real_size $(RSIZEBITS) -integer_size `expr 4 \* 8`
@@ -2485,9 +2501,10 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+			$(DA_ARCHFLAGS) \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -2640,9 +2657,10 @@ SFC             =       echo # mpif90
 LD              =       echo # mpif90
 CC              =       echo # mpicc
 SCC		=	echo # cc
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       $(COREDEFS) -DAUTODOC_BUILD CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO \
+			$(DA_ARCHFLAGS) \
                         -DDM_PARALLEL="'<b>DM_PARALLEL</b>'" -DRSL_LITE="'<b>RSL_LITE</b>'" \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -2780,9 +2798,10 @@ SFC		=	f90
 LD              =       mpif90
 CC              =       mpicc
 SCC		=	cc
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 ARCHFLAGS       =       $(COREDEFS) -DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+			$(DA_ARCHFLAGS) \
                         -DDM_PARALLEL -DRSL_LITE \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
 			-DLIMIT_ARGS -DFLOATSAFE \
@@ -2934,7 +2953,7 @@ SFC		=	$(FC)
 LD              =       fort
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
@@ -2944,6 +2963,7 @@ FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -3046,7 +3066,7 @@ SFC		=	$(FC)
 LD              =       fort
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DF2CSTYLE 
 FCOPTIM         =       -fast -O4
@@ -3056,6 +3076,7 @@ FCBASEOPTS      =       -w -convert big_endian -automatic -cpp -free -I. \
                         -arch host $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -3157,7 +3178,7 @@ SFC		=	$(FC)
 LD              =       frt
 CC              =       vcc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
 FCFLAGS         =       -Free -X9 -Am
@@ -3165,6 +3186,7 @@ FCFLAGS         =       -Free -X9 -Sw -Wv,-Of,-te,-ilfunc,-noalias,-m3,-P255 -Oe
 FCDEBUG         =       # -g
 FCBASEOPTS      =       $(FCFLAGS)
 ARCHFLAGS       = $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS
 PERL            =       CONFIGURE_PERL_PATH
 REGISTRY        =       Registry
@@ -3214,7 +3236,7 @@ SFC		=	$(FC)
 CC              =       cc
 SCC		=	$(CC)
 NATIVE_RWORDSIZE =      8
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 # does this PROMOTION flag work on Cray?  
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
@@ -3222,6 +3244,7 @@ FCFLAGS		=	-f free -N 255 -I.
 FCDEBUG         =       # -g
 FCBASEOPTS	=	$(FCFLAGS)
 ARCHFLAGS       =       $(COREDEFS) -DCRAY CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS
 LDFLAGS		= CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
@@ -3273,7 +3296,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 SFC             =       $(FC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
@@ -3283,6 +3306,7 @@ FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 #FCBASEOPTS      =       -w -byteswapio -Mfree -Mipa=fast,inline,safe  $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -3398,7 +3422,7 @@ FC              =       pgf90
 LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 SFC             =       $(FC)
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =
@@ -3408,6 +3432,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -3527,7 +3552,7 @@ LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=gcc
 SCC		=	gcc
 SFC             =       pgf90
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE
@@ -3541,6 +3566,7 @@ FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS -DNMM_NEST=$(WRF_NMM_NEST)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -4155,7 +4181,7 @@ LD              =       pgf90
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DLANDREAD_STUB
 FCOPTIM		=	-fastsse #-Mipa=fast
@@ -4164,6 +4190,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS -DLANDREAD_STUB
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -4275,7 +4302,7 @@ LD              =       mpif90
 CC              =       mpicc
 SCC		=	gcc
 SFC             =       pgf90
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
@@ -4285,6 +4312,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
+			$(DA_ARCHFLAGS) \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS -DLANDREAD_STUB -DNMM_NEST=$(WRF_NMM_NEST)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -4406,7 +4434,7 @@ LD         = mpif90
 CC         = mpicc
 SCC        = gcc
 SFC        = efc
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS     = -DDM_PARALLEL -w -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
              -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -size_lp64 -I/usr/lib/mpi/mpi_intel/include
@@ -4417,6 +4445,7 @@ FCNOOPTS = -O0 $(FCDEBUG) -FR -I$(INCLUDE) -w -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64 
 ARCHFLAGS = $(COREDEFS) -DDM_PARALLEL \
             -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
+            $(DA_ARCHFLAGS) \
             -DGRIB1 CONFIGURE_GRIB2_FLAG -DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -4540,7 +4569,7 @@ LD = efc
 CC = ecc -I. -I/usr/local/vmi/mpich/include
 SCC		=	$(CC)
 SFC = efc
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS = -DDM_PARALLEL -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
 -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -size_lp64
@@ -4550,6 +4579,7 @@ FCBASEOPTS = $(FCDEBUG) -w -FR -I$(INCLUDE) -I. -cm
 FCFLAGS = $(FCOPTIM) $(FCBASEOPTS) $(OMP) -size_lp64
 ARCHFLAGS = $(COREDEFS) -DRSL_LITE -DDM_PARALLEL \
 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
+$(DA_ARCHFLAGS) \
 -DGRIB1 CONFIGURE_GRIB2_FLAG 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -4662,7 +4692,7 @@ FC		=	ifort
 CC              =       gcc
 SCC		=	$(CC)
 SFC		=	$(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCDEBUG         =       # -g
@@ -4677,6 +4707,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -module $(WRF_SRC_ROOT_DIR)/main -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/external -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/inc -I$(WRF_SRC_ROOT_DIR)/chem
 ARCHFLAGS       =       $(COREDEFS)  -DLIMIT_ARGS -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
+			$(DA_ARCHFLAGS) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG
 LD		=	$(FC)
 LDFLAGS		=	$(FCFLAGS) $(OMP) CONFIGURE_LDFLAGS
@@ -4800,7 +4831,7 @@ LD              =       ifort
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 CFLAGS          =
@@ -4809,6 +4840,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -4933,7 +4965,7 @@ LD              =       mpif90 -f90=ifort
 CC              =       mpicc -cc=gcc
 SCC		=	gcc
 SFC             =       ifort
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS	=	`expr $(RWORDSIZE) \* 8`
 PROMOTION	=	-real_size $(RSIZEBITS)
 FCOPTIM		=	-O3 # -xW
@@ -4942,6 +4974,7 @@ FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
                         -DMPI  \
 			-DLIMIT_ARGS 
 CFLAGS          =       -w -DDM_PARALLEL $(ARCHFLAGS) \
@@ -5093,8 +5126,8 @@ CC		=	cc
 SCC		=	$(CC)
 LD		=	$(FC)
 NATIVE_RWORDSIZE =      8
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-ARCHFLAGS	= $(COREDEFS)	-DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+ARCHFLAGS	= $(COREDEFS)	-DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) $(DA_ARCHFLAGS)
 PROMOTION	=	
 CFLAGS		=	$(ARCHFLAGS)
 
@@ -5267,6 +5300,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -5436,6 +5470,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -5609,6 +5644,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -5770,6 +5806,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -5935,6 +5972,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -6115,6 +6153,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -6288,6 +6327,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -6460,6 +6500,7 @@ FCBASEOPTS        = -ftz -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -6599,7 +6640,7 @@ X1_CROSS_COMP = "cc"
 X1_CROSS_CFLG = "-hcommand"
 CC_TOOLS        = 	$(X1_CROSS_COMP) $(X1_CROSS_CFLG)
 
-RWORDSIZE         = $(NATIVE_RWORDSIZE)
+RWORDSIZE         = CONFIGURE_RWORDSIZE
 FCDEBUG         =       # -g
 FCBASEOPTS      =       -f free -N 255 -I. -x omp -dy
 FCFLAGS_LOWOPT  =       $(FCBASEOPTS) -O1
@@ -6619,6 +6660,7 @@ INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/inc \
                         -p$(WRF_SRC_ROOT_DIR)/dyn_em -p $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90
 ARCHFLAGS       =       $(COREDEFS) -DRSL_LITE -DDM_PARALLEL -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) \
                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS -Dcrayx1
 
 PERL            =       perl
@@ -6898,8 +6940,9 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+			$(DA_ARCHFLAGS) \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -7012,8 +7055,9 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+			$(DA_ARCHFLAGS) \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DSitanium2 -DNOUNDERSCORE
@@ -7127,8 +7171,9 @@ SFC		=	$(FC)
 LD              =       f90
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 ARCHFLAGS       =       $(COREDEFS) CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DLIMIT_ARGS -DFLOATSAFE \
+			$(DA_ARCHFLAGS) \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       $(ARCHFLAGS) +DS2.0a -DNOUNDERSCORE
@@ -7245,7 +7290,7 @@ LD              =       xlf90_r
 #CC              =       cc_r
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       = $(NATIVE_RWORDSIZE)
+RWORDSIZE       = CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB -I /usr/include/sys -DMACOS
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
@@ -7260,6 +7305,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/inc -I$(WRF_SRC_ROOT_DIR)/chem
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS  -DLANDREAD_STUB -DMAC_KLUDGE
 #			-DLIMIT_ARGS  -DNATIVE_MASSV -DMACOS
@@ -7377,7 +7423,7 @@ SFC		=	$(FC)
 LD              =       xlf90_r
 CC              =       cc
 SCC		=	$(CC)
-RWORDSIZE       = $(NATIVE_RWORDSIZE)
+RWORDSIZE       = CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB -I /usr/include/sys -DMACOS
 FCOPTIM         =       -O2 -qarch=auto -qunroll=yes #-qfloat=nomaf
@@ -7392,6 +7438,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/inc -I$(WRF_SRC_ROOT_DIR)/chem
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS  -DLANDREAD_STUB -DMACOS -DMAC_KLUDGE
 PERL            =       CONFIGURE_PERL_PATH
@@ -7483,7 +7530,7 @@ LD              =       pgf90
 CC              =       pgcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DMACOS
 FCOPTIM		=	-O2 # -fast
@@ -7492,6 +7539,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DMACOS \
 			-DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7603,7 +7651,7 @@ LD              =       ifort
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS       =       `expr $(RWORDSIZE) \* 8`
 PROMOTION       =       -real_size $(RSIZEBITS)
 CFLAGS          =       -DMACOS
@@ -7612,6 +7660,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DMACOS \
 			-DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7724,7 +7773,7 @@ LD              =       ifort
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS       =       `expr $(RWORDSIZE) \* 8`
 PROMOTION       =       -real_size $(RSIZEBITS)
 CFLAGS          =       -DMACOS -DSTUBMPI
@@ -7733,6 +7782,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp -DSTUBMPI
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DMACOS \
 			-DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7847,7 +7897,7 @@ LD              =       ifort
 CC              =       gcc
 SCC		=	$(CC)
 SFC             =       $(FC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 RSIZEBITS       =       `expr $(RWORDSIZE) \* 8`
 PROMOTION       =       -real_size $(RSIZEBITS)
 CFLAGS          =       -DMACOS
@@ -7856,6 +7906,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -FR -cm -w -I. $(FCDEBUG) -convert big_endian -mp
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG -DMACOS \
 			-DLIMIT_ARGS 
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -7968,7 +8019,7 @@ LD              =       mpif90 -f90=pgf90
 CC              =       mpicc -cc=pgcc
 SCC		=	pgcc
 SFC             =       pgf90
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -DMACOS
@@ -7982,6 +8033,7 @@ FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL -DMACOS \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS -DNMM_NEST=$(WRF_NMM_NEST)
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -8108,7 +8160,7 @@ LD              =       xlf90_r
 #CC              =       cc_r
 CC              =       gcc-3.3
 SCC		=	$(CC)
-RWORDSIZE       = $(NATIVE_RWORDSIZE)
+RWORDSIZE       = CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
 CFLAGS          =       -DNOUNDERSCORE -DLANDREAD_STUB -I /usr/include/sys -DMACOS
 FCOPTIM         =       -O3 -qarch=auto #-qfloat=nomaf
@@ -8123,6 +8175,7 @@ ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
 INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                         -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/inc -I$(WRF_SRC_ROOT_DIR)/chem
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         CONFIGURE_NETCDF_FLAG \
 			-DLIMIT_ARGS  -DLANDREAD_STUB -DMAC_KLUDGE
 #			-DLIMIT_ARGS  -DNATIVE_MASSV -DMACOS
@@ -8233,7 +8286,7 @@ FC              =       g95
 LD              =       g95
 CC              =       gcc -DMACOS -DF2CSTYLE
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 SFC             =       $(FC)
 # g95 does not like -r4. if you want promotion to -r8 add it to PROMOTION below
 #PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -8244,6 +8297,7 @@ FCDEBUG		=	#-g -O0
 FCBASEOPTS      =       -Wno=101,139,155,158 -fendian=big -ffree-form -ffree-line-length-huge $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          -DNETCDF -DGRIB1 -DLIMIT_ARGS -DG95 -DMACOS -DF2CSTYLE
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -8358,7 +8412,7 @@ LD              =       mpif90 -f90=g95
 CC              =       mpicc -cc=gcc -DMACOS -DF2CSTYLE
 SCC		=	gcc -DMACOS -DF2CSTYLE
 SFC             =       g95
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 # g95 does not like -r4. if you want promotion to -r8 add it to PROMOTION below
 #PROMOTION      =       -r$(RWORDSIZE) -i4
 PROMOTION       =       -i4
@@ -8370,6 +8424,7 @@ FCBASEOPTS      =       -Wno=101,139,155,158 -ffree-line-length-huge -fendian=bi
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS -DNMM_NEST=$(WRF_NMM_NEST) -DG95 -DMACOS -DF2CSTYLE
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -8619,7 +8674,7 @@ LD              =       pathf90
 CC              =       pathcc
 SCC             =       $(CC)
 NATIVE_RWORDSIZE=       4
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 SFC             =       $(FC)
 PROMOTION       =       -r$(RWORDSIZE) -i4
 CFLAGS          =       
@@ -8628,6 +8683,7 @@ FCDEBUG         =       #-g
 FCBASEOPTS      =       -w -byteswapio -freeform -fno-second-underscore $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
                         -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -8738,7 +8794,7 @@ CC              =       mpicc  -cc=pathcc
 SCC             =       pathcc
 SFC             =       pathf90
 NATIVE_RWORDSIZE=	4
-RWORDSIZE	=	$(NATIVE_RWORDSIZE)
+RWORDSIZE	=	CONFIGURE_RWORDSIZE
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE
 FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
@@ -8747,6 +8803,7 @@ FCBASEOPTS      =       -w -byteswapio -freeform -fno-second-underscore $(FCDEBU
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
                         -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -8870,7 +8927,7 @@ LD              =       ftn
 CC              =       gcc -DMPI2_SUPPORT
 SCC		=	gcc
 SFC             =       mpif90
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 CFLAGS          =       -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
@@ -8882,6 +8939,7 @@ FCBASEOPTS      =       -w -byteswapio -Mfree $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS -DLANDREAD_STUB  -DXT3_Catamount
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -9004,7 +9062,7 @@ LD              =       sxmpif90
 CC              =       sxmpic++
 SCC		=	sxmpic++
 SFC             =       sxmpif90
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	
 CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE
@@ -9015,6 +9073,7 @@ FCBASEOPTS      =       -f4 -Wf,-P i $(FCDEBUG)
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -9139,7 +9198,7 @@ FC              =       g95
 LD              =       g95
 CC              =       gcc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 SFC             =       $(FC)
 # g95 does not like -r8. if you want -r8, just add it to PROMOTION below
 #PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -9150,6 +9209,7 @@ FCDEBUG		=	#-g
 FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS -DG95
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9260,7 +9320,7 @@ FC              =       g95
 LD              =       g95
 CC              =       gcc
 SCC		=	$(CC)
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 SFC             =       $(FC)
 # g95 does not like -r4. if you want promotion to -r8 add it to PROMOTION below
 #PROMOTION	=	-r$(RWORDSIZE) -i4
@@ -9271,6 +9331,7 @@ FCDEBUG		=	#-g -O0
 FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big -ffree-form -ffree-line-length-huge $(FCDEBUG) # -Mlfs
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                          CONFIGURE_NETCDF_FLAG -DGRIB1 CONFIGURE_GRIB2_FLAG \
 			-DLIMIT_ARGS -DG95
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
@@ -9386,7 +9447,7 @@ LD              =       mpif90 -f90=g95
 CC              =       mpicc -cc=gcc
 SCC		=	gcc
 SFC             =       g95
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 # g95 does not like -r4. if you want promotion to -r8 add it to PROMOTION below
 #PROMOTION      =       -r$(RWORDSIZE) -i4
 PROMOTION       =       -i4
@@ -9398,6 +9459,7 @@ FCBASEOPTS      =       -Wno=101,139,155,158 -fno-second-underscore -fendian=big
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
+			$(DA_ARCHFLAGS) \
 			-DLIMIT_ARGS -DNMM_NEST=$(WRF_NMM_NEST) -DG95
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
@@ -9529,7 +9591,7 @@ MSMPdir         =       'C:\Program Files\Microsoft Compute Cluster Pack'
 MSMPinc         =       /I'C:\Program Files\Microsoft Compute Cluster Pack\Include'
 MSMPlib         =       'C:\Program Files\Microsoft Compute Cluster Pack\Lib\AMD64\msmpi.lib'
 
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-r$(RWORDSIZE) -i4
 
 CFLAGS          =       -DLANDREAD_STUB -DMEMCPY_FOR_BCOPY -DMS_SUA -DDM_PARALLEL \
@@ -9543,6 +9605,7 @@ FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(MPinc)
 ARCHFLAGS       =       $(COREDEFS) \
                         -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
+			$(DA_ARCHFLAGS) \
                         -DNETCDF -DINTIO \
                         -DNO_NAMELIST_PRINT  \
                         -DLIMIT_ARGS -DLANDREAD_STUB -DNMM_NEST=$(WRF_NMM_NEST) -DMEMCPY_FOR_BCOPY
@@ -9714,6 +9777,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -9885,6 +9949,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -10056,6 +10121,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -10238,6 +10304,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -10406,6 +10473,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -10587,6 +10655,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -10768,6 +10837,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -10941,6 +11011,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -11114,6 +11185,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -11295,6 +11367,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DRSL_LITE -DDM_PARALLEL \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -11476,6 +11549,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =
@@ -11649,6 +11723,7 @@ FCBASEOPTS        = -align all -FR -convert big_endian \
 FCFLAGS           = $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS         = $(COREDEFS) -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO   \
                     -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNETCDF \
+                    $(DA_ARCHFLAGS) \
                     -DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS    =

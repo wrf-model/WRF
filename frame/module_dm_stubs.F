@@ -18,6 +18,14 @@ MODULE module_dm
       wrf_dm_min_real = inval
    END FUNCTION wrf_dm_min_real
 
+   SUBROUTINE wrf_dm_min_reals ( inval, retval, n )
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: n
+      REAL, INTENT(IN) :: inval(:)
+      REAL, INTENT(OUT) :: retval(:)
+      retval(:) = inval(:)
+   END SUBROUTINE wrf_dm_min_reals
+
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
       REAL inval

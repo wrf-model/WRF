@@ -16,7 +16,8 @@ MODULES =                       \
 	module_wrf_top.o \
 	module_optional_si_input.o	\
 	module_compute_geop.o           \
-	module_soil_pre.o
+	module_soil_pre.o		\
+	module_llxy.o
 
 OBJS    = 		\
 	dfi.o				\
@@ -33,6 +34,7 @@ OBJS    = 		\
         interp_fcn.o sint.o             \
         input_wrf.o                     \
         output_wrf.o                    \
+        wrf_timeseries.o                \
         wrf_ext_write_field.o           \
         wrf_ext_read_field.o            \
         wrf_inputout.o        		\
@@ -88,6 +90,7 @@ OBJS    = 		\
         wrf_bdyin.o             	\
         wrf_histin.o            	\
         wrf_restartin.o                 \
+        wrf_tsin.o                      \
         landread.o
 
 
@@ -118,7 +121,7 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 		../frame/module_timing.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
-start_domain.o: start_domain_em.int ../frame/module_domain.o ../frame/module_configure.o
+start_domain.o: start_domain_em.int wrf_timeseries.o ../frame/module_domain.o ../frame/module_configure.o
 
 module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
 		../frame/module_wrf_error.o
@@ -141,6 +144,13 @@ output_wrf.o:   ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_state_description.o \
                 ../frame/module_configure.o module_io_wrf.o  \
 		$(ESMF_MOD_DEPENDENCE)
+
+wrf_timeseries.o: wrf_tsin.o \
+		module_model_constants.o \
+		module_llxy.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o
 
 input_wrf.o:    ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_state_description.o \
@@ -320,6 +330,7 @@ wrf_histin.o                    : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_restartin.o                 : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
+wrf_tsin.o	                : ../frame/module_domain.o
 
 
 # DO NOT DELETE

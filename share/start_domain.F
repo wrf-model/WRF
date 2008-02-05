@@ -14,16 +14,18 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
    !  Local data.
    INTEGER :: idum1, idum2
 
-#if ((EM_CORE == 1) && (DA_CORE != 1))
    INTERFACE
+#if ((EM_CORE == 1) && (DA_CORE != 1))
 #    include "start_domain_em.int"
-   END INTERFACE
 #endif
 #if (NMM_CORE == 1)
-   INTERFACE
 #    include "start_domain_nmm.int"
-   END INTERFACE
 #endif
+      SUBROUTINE calc_ts_locations( grid )
+         USE module_domain
+         TYPE (domain) :: grid
+      END SUBROUTINE calc_ts_locations
+   END INTERFACE
 
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
@@ -49,6 +51,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
                          )
 #endif
 
+   CALL calc_ts_locations( grid )
 
 END SUBROUTINE start_domain
 

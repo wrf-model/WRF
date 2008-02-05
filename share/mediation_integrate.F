@@ -218,6 +218,9 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    TYPE(domain)                               :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
+   ! Compute time series variables
+   CALL calc_ts(grid)
+
    RETURN
 END SUBROUTINE med_after_solve_io
 
@@ -1074,6 +1077,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
        CALL med_restart_out ( grid , config_flags )
      ENDIF
    ENDIF
+
+   ! Write out time series
+   CALL write_ts( grid )
 
    RETURN
 END SUBROUTINE med_last_solve_io

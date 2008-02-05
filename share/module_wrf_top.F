@@ -245,7 +245,7 @@ CONTAINS
    ! In case we are doing digital filter initialization, set dfi_stage = DFI_SETUP 
    !   to indicate in Setup_Timekeeping that we want forecast start and
    !   end times at this point 
-   head_grid%dfi_stage = DFI_SETUP 
+   IF ( head_grid%dfi_opt .NE. DFI_NODFI ) head_grid%dfi_stage = DFI_SETUP
 #endif
 
    CALL Setup_Timekeeping (head_grid)

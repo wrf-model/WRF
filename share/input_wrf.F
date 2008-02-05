@@ -595,6 +595,8 @@
     ELSE IF ( switch .EQ. boundary_only ) THEN
       CALL wrf_bdyin( fid , grid , config_flags , switch , ierr )
     ENDIF
+
+    CALL wrf_tsin( grid , ierr )
 #else
     CALL wrf_message ( "ALL I/O DISABLED IN share/module_io_wrf.F")
 #endif

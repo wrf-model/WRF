@@ -145,6 +145,16 @@ MODULE module_domain
       REAL :: max_horiz_cfl
       Type(WRFU_TimeInterval) :: last_dtInterval
 
+      ! Time series location information
+      INTEGER :: ntsloc, ntsloc_domain
+      INTEGER :: next_ts_time
+      INTEGER, POINTER, DIMENSION(:) :: itsloc, jtsloc, id_tsloc
+      REAL, POINTER, DIMENSION(:) :: lattsloc, lontsloc
+      CHARACTER (LEN=5), POINTER, DIMENSION(:) :: nametsloc
+      CHARACTER (LEN=25), POINTER, DIMENSION(:) :: desctsloc
+      CHARACTER (LEN=256), POINTER, DIMENSION(:) :: ts_filename
+      LOGICAL :: have_calculated_tslocs
+
    END TYPE domain
 
    !  Now that a "domain" TYPE exists, we can use it to store a few pointers
@@ -1013,6 +1023,16 @@ CONTAINS
 
       grid => new_grid
 
+! Allocate storage for time series metadata
+      ALLOCATE( grid%lattsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%lontsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%nametsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%desctsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%itsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%jtsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%id_tsloc( grid%max_ts_locs ) )
+      ALLOCATE( grid%ts_filename( grid%max_ts_locs ) )
+
 #ifdef DM_PARALLEL
       CALL wrf_get_dm_communicator ( grid%communicator )
       CALL wrf_dm_define_comms( grid )
@@ -1199,6 +1219,30 @@ CONTAINS
       IF ( ASSOCIATED( grid%j_end ) ) THEN
         DEALLOCATE( grid%j_end )
       ENDIF
+      IF ( ASSOCIATED( grid%itsloc ) ) THEN
+        DEALLOCATE( grid%itsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%jtsloc ) ) THEN
+        DEALLOCATE( grid%jtsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%id_tsloc ) ) THEN
+        DEALLOCATE( grid%id_tsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%lattsloc ) ) THEN
+        DEALLOCATE( grid%lattsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%lontsloc ) ) THEN
+        DEALLOCATE( grid%lontsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%nametsloc ) ) THEN
+        DEALLOCATE( grid%nametsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%desctsloc ) ) THEN
+        DEALLOCATE( grid%desctsloc )
+      ENDIF 
+      IF ( ASSOCIATED( grid%ts_filename ) ) THEN
+        DEALLOCATE( grid%ts_filename )
+      ENDIF 
       DEALLOCATE( grid )
       NULLIFY( grid )
 

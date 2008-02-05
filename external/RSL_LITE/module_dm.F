@@ -871,6 +871,16 @@ write(0,*)'reordering mesh'
       wrf_dm_min_real = retval
    END FUNCTION wrf_dm_min_real
 
+   SUBROUTINE wrf_dm_min_reals ( inval, retval, n )
+      IMPLICIT NONE
+      INCLUDE 'mpif.h'
+      INTEGER n
+      REAL inval(*)
+      REAL retval(*)
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval , n, getrealmpitype(), MPI_MIN, local_communicator, ierr )
+   END SUBROUTINE wrf_dm_min_reals
+
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
       INCLUDE 'mpif.h'

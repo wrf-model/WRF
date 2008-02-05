@@ -63,7 +63,6 @@
  epssm                               = .1,
  khdif                               = 0,
  kvdif                               = 0,
- mix_cr_len                          = 200.,
  radt                                = 30,
  bldt                                = 0,
  cudt                                = 5,

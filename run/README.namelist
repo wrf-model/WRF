@@ -371,8 +371,12 @@ Namelist variables for controling the automatic moving nest:
 
  isfflx                              = 1,	; heat and moisture fluxes from the surface
                                                   (only works for sf_sfclay_physics = 1)
-                                                  1 = with fluxes from the surface
+                                                  1 = with fluxes from the surface 
                                                   0 = no flux from the surface
+                                                      with bl_pbl_physics=0 this uses tke_drag_coefficient
+                                                      and tke_heat_flux in vertical diffusion
+                                                  2 = use drag from sf_sfclay_physics and heat flux from
+                                                      tke_heat_flux with bl_pbl_physics=0
  ifsnow                              = 0,	; snow-cover effects
                                                   (only works for sf_surface_physics = 1)
                                                   1 = with snow-cover effect

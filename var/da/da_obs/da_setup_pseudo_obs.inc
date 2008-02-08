@@ -55,6 +55,8 @@ subroutine da_setup_pseudo_obs(iv, ob)
       iv%info(pseudo)%dy(:,n) = pseudo_y-real(iv%info(pseudo)%j(:,n))
       iv%info(pseudo)%dxm(:,n)=1.0-iv%info(pseudo)%dx(:,n)
       iv%info(pseudo)%dym(:,n)=1.0-iv%info(pseudo)%dy(:,n)
+      iv%info(pseudo)%levels(:) = 1
+
 
       if (pseudo_var(1:1) == 'u' .or. pseudo_var(1:1) == 'U') then
          iv%pseudo(n) % u % inv = pseudo_val

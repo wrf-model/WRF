@@ -52,7 +52,7 @@ if( $valid_arg != 1 ) then
   echo "You need to compile corresponding to your configure option."
   echo "Type <compile wrfvar>      Wrfvar"
   echo "Type <compile be>          Background error generator"
-  echo "Type <compile da_utils>    Data assimilation utilities (verification, bias corrections etc)"
+  echo "Type <compile da_utils>    Data assimilation utilities (verification etc)"
   echo "Type <compile all_wrfvar>  Compile wrfvar be and da_utils"
   echo "Type <compile convertor>   Convertors for converting KMA data to and from NetCDF data format"
   echo "Type <compile decode_airs> AIRS decoding"

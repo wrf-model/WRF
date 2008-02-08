@@ -1,3 +1,18 @@
+Updated by Y.-R. Guo, 31 January 2008
+
+1) Bug fix in module_recoverh.F90 -->
+              SUBROUTINE recover_h_from_ptq(P,T,Q,HGT,KXS,K_START,K_TOP)
+
+   it must be processed separately when k >= kxs under k_start == 0.
+
+2) Add the limitation on iproj setting in module_namelist.F90
+
+   modified codes:
+  
+       src/module_namelist.F90
+       src/module_recoverh.F90
+   and README
+ 
 Updated by Y.-R. Guo, 10 May 2007
 
 1) To make the namelist variables in record6 more understandable:

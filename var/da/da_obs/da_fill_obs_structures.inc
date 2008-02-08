@@ -98,36 +98,6 @@ subroutine da_fill_obs_structures(iv, ob)
    iv % airsr_ef_t = 1.0
    iv % airsr_ef_q = 1.0
 
-   !-------------------------------
-   ! Find out if pseudo ob is local
-   !-------------------------------
-
-   if (num_pseudo > 0) then
-      outside = .false.
-      i = int(pseudo_x)
-      j = int(pseudo_y)
-
-      if (fg_format == fg_format_kma_global) then
-         if ((j < jts-1) .or. (j > jte)) outside = .true.
-      else
-         if ((i < ids)   .or. (i >= ide) .or. (j < jds)   .or. (j >= jde)) outside = .true.
-         if ((i < its-1) .or. (i >  ite) .or. (j < jts-1) .or. (j >  jte)) outside = .true.
-      end if
-   else
-      outside = .true.
-   end if
-
-   if (outside) then
-      iv%info(pseudo)%nlocal          = 0
-      ob%nlocal(pseudo)               = 0
-      iv%info(pseudo)%ntotal          = 0
-      iv%info(pseudo)%plocal(iv%time) = 0
-   else
-      iv%info(pseudo)%nlocal          = num_pseudo
-      ob%nlocal(pseudo)               = num_pseudo
-      iv%info(pseudo)%ntotal          = num_pseudo
-      iv%info(pseudo)%plocal(iv%time) = num_pseudo
-   end if
 
    !---------------------------------------------------------------------------
    ! [1.0] Allocate innovation vector and observation structures:

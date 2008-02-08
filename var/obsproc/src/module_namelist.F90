@@ -366,6 +366,16 @@ MODULE MODULE_NAMELIST
         CALL error_handler (proc_file, error_message, time_analysis, fatal)
    END IF
 
+   if (iproj <0 .or.iproj > 3) then
+      write (0,'(/a)') '*** Please check the iproj setting??? '
+      write (0,'(5x,a)') 'iproj = 0 ===> PROJ_LATLON for Global domain.' 
+      write (0,'(5x,a)') 'iproj = 1 ===> PROJ_LC for Lambert Congormsl.'
+      write (0,'(5x,a)') 'iproj = 2 ===> PROJ_PS for Polar Stereographic.'
+      write (0,'(5x,a)') 'iproj = 3 ===> PROJ_ME for Mercator'
+      write (0,'(a)') '??? iproj setting outside the range......'
+      STOP
+   endif
+
    if (fg_format == 'WRF') then
       print '(/a/)','=== 3DVAR_OBSPROC is used for WRF 3DVAR ===' 
 
@@ -390,7 +400,7 @@ MODULE MODULE_NAMELIST
         yyc = real(iix)/2.
         call map_set(imap_proj, cen_lat, cen_lon, xxc, yyc, dds, &
                      standard_lon, truelat1, truelat2, map_info)
-        print *,'map_info:'
+        print *,'map_info:', imap_proj, iproj
         print *,'code,lat1,lon1,dx,dlat,dlon,stdlon,truelat1,truelat2,hemi,cone,polei,polej,rsw,rebydx,knowni,knownj,init'
         print *, map_info
 

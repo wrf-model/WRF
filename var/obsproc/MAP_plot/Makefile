@@ -18,7 +18,7 @@ DEVTOP = .
 
 
 all:	make_rules
-	($(RM) $(OBJ));      
+	($(RM_CMD))   ;
 	(cd Dir_map   ;  $(MAKE));
 
 little_f:make_rules

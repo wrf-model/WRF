@@ -34,6 +34,7 @@ subroutine da_allocate_observations (iv)
    if (iv%info(radar)%nlocal     > 0) allocate(iv%radar    (1:iv%info(radar)%nlocal))
    if (iv%info(bogus)%nlocal     > 0) allocate(iv%bogus    (1:iv%info(bogus)%nlocal))
    if (iv%info(airsr)%nlocal     > 0) allocate(iv%airsr    (1:iv%info(airsr)%nlocal))
+   if (iv%info(pseudo)%nlocal    > 0) allocate(iv%pseudo   (1:iv%info(pseudo)%nlocal))
 
    do i=1,num_ob_indexes
       if (iv%info(i)%nlocal > 0) then

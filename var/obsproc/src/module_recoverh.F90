@@ -361,7 +361,6 @@ first_level: &
     !
     ! Obs without temperature and/or height are processed here
     ! 
-
      IF (K_start == 0) THEN
 
         DO k = 1, kxs
@@ -397,19 +396,31 @@ first_level: &
 !     print '(" Computed k=",i3,"  pp,hh,qc:",2f11.2,i8)', k-1,p(k-1),HGT(k-1)%data, HGT(k-1)%qc
 
                else
-                  AA = P(k+1) - P(k)
-                  BB = P(k-1) - P(k)
-                  CC = AA - BB
-                  HGT(k-1)%data = (HGT(k+1)%data*BB + HGT(k)%data * CC) / AA
+                  if ( k <= kxs-1 ) then
+                    AA = P(k+1) - P(k)
+                    BB = P(k-1) - P(k)
+                    CC = AA - BB
+                    HGT(k-1)%data = (HGT(k+1)%data*BB + HGT(k)%data * CC) / AA
+                  else
+! Y.-R. Guo (1/31/2008): must be processed separately when k >= kxs 
+                    AA = HGT(k)%data - ref_height (P  (k) )
+                    HGT(k-1)%data = HGT(k-1)%data + AA
+                  endif
 ! Y.-R. Guo (10/25/2005), Y.-R. Guo (01/16/2006):
                   if (HGT(k-1)%qc>0) HGT(k-1)%qc   = - HGT(k-1)%qc
                endif
             else
             ! HGT at level k is computed
-               AA = P(k+1) - P(k-1)
-               BB = P(k)   - P(k-1)
-               CC = AA - BB
-               HGT(k)%data = (HGT(k+1)%data*BB + HGT(k-1)%data * CC) / AA
+               if ( k <= kxs-1 ) then
+                 AA = P(k+1) - P(k-1)
+                 BB = P(k)   - P(k-1)
+                 CC = AA - BB
+                 HGT(k)%data = (HGT(k+1)%data*BB + HGT(k-1)%data * CC) / AA
+               else
+! Y.-R. Guo (1/31/2008): must be processed separately when k >= kxs 
+                 AA = HGT(k-1)%data - ref_height (P  (k-1) )
+                 HGT(k)%data = HGT(k)%data + AA
+               endif
 ! Y.-R. Guo (10/25/2005), Y.-R. Guo (01/16/2006):
                if (HGT(k-1)%qc>0) HGT(k-1)%qc   = - HGT(k-1)%qc
             endif
@@ -487,7 +498,6 @@ temp_search: &
 
      HWK(1) = HGT(k_start)%data * G
 
-!
 !     ... INTEGRATE HYDROSTATIC EQN
 !
 hydro_int:  &

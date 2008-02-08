@@ -7,13 +7,14 @@ CONTAINS
     subroutine emissions_driver(id,ktau,dtstep,DX,stepfirepl,              &
          config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
+         tsk,erod,g,                                       &
          ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
          ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
          ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
          ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef,   &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
-         u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,                    &
+         u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
          xland,xlat,xlong,z_at_w,z,smois,                                  &
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
@@ -41,12 +42,17 @@ CONTAINS
   USE module_configure
   USE module_state_description
   USE module_data_radm2
+  USE module_data_sorgam, only : mw_so4_aer
+  USE module_model_constants, only : mwdry
   USE module_emissions_anthropogenics
   USE module_bioemi_simple
-  USE module_bioemi_beis311
+  USE module_bioemi_beis313
   USE module_bioemi_megan2
   USE module_aerosols_sorgam, only: sorgam_addemiss
   USE module_cbmz_addemiss
+  USE gocart_dust
+  USE gocart_seasalt
+  USE module_dms_emis
   USE module_mosaic_addemiss
   USE module_add_emis_cptec
   USE module_add_emiss_burn
@@ -70,6 +76,18 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant),&
          INTENT(IN ) ::                                                    &
          emis_ant
+   REAL, DIMENSION( ims:ime, jms:jme),&
+         INTENT(IN ) ::                                                 &
+         dms_0,tsk
+   REAL, DIMENSION( ims:ime, jms:jme,3),&
+         INTENT(IN ) ::                                                 &
+         erod
+!  REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTional, &
+!        INTENT(INOUT ) ::                                                 &
+!        emis_dust
+!  REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_seas),OPTIONAL,&
+!        INTENT(INOUT ) ::                                                 &
+!        emis_seas
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
          INTENT(INOUT ) ::                                                 &
            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
@@ -154,7 +172,7 @@ CONTAINS
    !shc end stuff for MEGAN v2.04
 
       REAL,      INTENT(IN   ) ::                                      &
-                            dtstep, dx, gmt
+                            dtstep, dx, gmt, g
 !
 ! Local variables...
 !
@@ -170,16 +188,57 @@ CONTAINS
 
 ! Flags for turning on or off sea salt and/or dust emissions...
 !    >0 = sea salt/dust emissions turned on
-! As of Nov. 2007 this only works for MOSAIC, but is intended to be used
-! by other mechanisms when they are linked to these emissions sources.
+! As of Nov. 2007 these only are used for MOSAIC
+! the gocart dust and seasalt modules are namelist defined
 !
       dust_emiss_active    = 0
-      seasalt_emiss_active = 0
+      seasalt_emiss_active = 1
+!
+      seasalt_select:  SELECT CASE(config_flags%seas_opt)
+      CASE (SEASGOCART)
+        CALL wrf_debug(15,'Gocart sea salt emissions')
+         call gocart_seasalt_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,                  &
+         xland,xlat,xlong,dx,g, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+
+      CASE DEFAULT 
+        CALL wrf_debug(00,'no sea salt emissions')
+        if(seasalt_emiss_active.eq.1)CALL wrf_debug(15,'MOSAIC dust emissions')
+      END SELECT seasalt_select
+      dust_select:  SELECT CASE(config_flags%dust_opt)
+      CASE (DUSTGOCART)
+        CALL wrf_debug(15,'Gocart dust emissions')
+        call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                  &
+         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+      CASE DEFAULT 
+        if(dust_emiss_active.eq.1)CALL wrf_debug(15,'MOSAIC dust emissions')
+        CALL wrf_debug(15,'no dust emissions')
+      END SELECT dust_select
+      dms_select:  SELECT CASE(config_flags%dmsemis_opt)
+      CASE (DMSGOCART)
+        call gocart_dmsemis(dtstep,config_flags,alt,t_phy,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,dms_0,tsk,                  &
+         ivgtyp,isltyp,xland,dx,g, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+      CASE DEFAULT 
+        CALL wrf_debug(15,'no dms emissions')
+      END SELECT dms_select
 
 !!$    ksub=1
 !!$#if ( NMM_CORE == 1 )
     ksub=0
 !!$#endif
+!!! ***********   FIRE!!!! ****************************************
+!
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
      CASE (BIOMASSB)
        if(ktau.eq.1.or.mod(ktau,stepfirepl).eq.0)then
@@ -213,6 +272,8 @@ CONTAINS
      CASE DEFAULT 
        CALL wrf_debug(15,'no biomass burning')
     END SELECT fire_select
+!!**************** END FIRE, BEGIN BIOGENIC EMISSIONS
+!
     bioem_select: SELECT CASE(config_flags%bio_emiss_opt)
      CASE (GUNTHER1)
      CALL wrf_debug(15,'biogenic emissions: calling Gunther1')
@@ -225,14 +286,14 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
        endif
-     CASE (BEIS311)
+     CASE (BEIS313)
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then
          if(config_flags%chem_opt > RACMSORG .AND. config_flags%chem_opt < 100  ) then !<100: kpp mechs, e.g. RACMSORG_KPP
              CALL wrf_error_fatal( &
-              "emissions_driver: beis3.1.1 biogenic emis. not currently implemented for CBMZ")
+              "emissions_driver: beis3.1.3 biogenic emis. not currently implemented for CBMZ")
          endif
-         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.1')
-         call bio_emissions_beis311(id,config_flags,ktau,dtstep,       &
+         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.3')
+         call bio_emissions_beis313(id,config_flags,ktau,dtstep,       &
                julday,gmt,xlat,xlong,t_phy,p_phy,gsw,                  &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
@@ -278,6 +339,8 @@ CONTAINS
                                                      
     END SELECT bioem_select
 
+!!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
+!
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
@@ -349,6 +412,26 @@ CONTAINS
              end do
           end do
        end do
+    CASE (GOCART_SIMPLE)
+!
+! simple fix for now
+!
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
+                     +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
+                     +(emis_ant(i,k,j,p_e_so4i)+emis_ant(i,k,j,p_e_so4j))*alt(i,k,j)*dtstep/dz8w(i,k,j)*mwdry/mw_so4_aer
+             end do
+          end do
+       end do
+! do this here for now, quick and dirty
 
     CASE DEFAULT
        call wrf_debug(15,'emissions_driver NOT CALLING gas add_... routines')

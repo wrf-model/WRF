@@ -2,6 +2,9 @@ MODULE module_sf_noahdrv
 
 !-------------------------------
   USE module_sf_noahlsm
+#ifdef WRF_CHEM
+  USE module_data_gocart_dust
+#endif
 !-------------------------------
 
 !
@@ -1047,6 +1050,14 @@ CONTAINS
       CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
                             "of ISLTYP. Is this field in the input?" )
    ENDIF
+#ifdef WRF_CHEM
+!
+! need this parameter for dust parameterization in wrf/chem
+!
+   do I=1,NSLTYPE
+      porosity(i)=maxsmc(i)
+   enddo
+#endif
 
 ! initialize soil liquid water content SH2O
 

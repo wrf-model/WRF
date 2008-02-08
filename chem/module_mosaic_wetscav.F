@@ -95,7 +95,7 @@ CONTAINS
 !----------------------------------------------------------------------
    USE module_configure
    USE module_state_description
-   USE module_model_constants
+!  USE module_model_constants
    USE module_model_constants, only: g,rhowater, mwdry
    USE module_dep_simple, only: is_aerosol
 

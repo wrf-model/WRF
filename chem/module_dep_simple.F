@@ -222,6 +222,22 @@
          end do
       end if
 
+! For the additional CBM4 species, assign similar RADM counter parts for
+! now. Short lived species get a zero velocity since dry dep should be
+! unimportant.
+!     
+      if  (config_flags%chem_opt == CBM4_KPP          )   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_open)        = ddvel(i,j,p_xyl)
+               ddvel(i,j,p_ro2)         = 0
+               ddvel(i,j,p_xo2)         = 0
+               ddvel(i,j,p_ald2)        = ddvel(i,j,p_ald)
+               ddvel(i,j,p_iso)        = 0
+            end do
+         end do
+      end if
+
 END SUBROUTINE wesely_driver
 
 ! **********************************************************************
@@ -1071,6 +1087,8 @@ END SUBROUTINE wesely_driver
 !     Effective Henry''s law coefficient at pH 7
 !     [KH298]=mole/(l atm)
 
+        if (config_flags%chem_opt /= CBM4_KPP) then
+
         hstar(p_no2) = 6.40E-3
         hstar(p_no) = 1.90E-3
         hstar(p_pan) = 2.97E+0
@@ -1241,7 +1259,7 @@ END SUBROUTINE wesely_driver
         dvj(p_no2) = 0.147
         dvj(p_no) = 0.183
         dvj(p_pan) = 0.091
-        dvj(p_o3) = 0.175
+        dvj(p_o3)   = 0.175
         dvj(p_hcho) = 0.183
         dvj(p_aco3) = 0.115
         dvj(p_tpan) = 0.082
@@ -1257,7 +1275,7 @@ END SUBROUTINE wesely_driver
         dvj(p_ket) = 0.118
         dvj(p_gly) = 0.131
         dvj(p_mgly) = 0.118
-        dvj(p_dcb) = 0.107
+        dvj(p_dcb)  = 0.107
         dvj(p_onit) = 0.092
         dvj(p_so2) = 0.126
         dvj(p_eth) = 0.183
@@ -1288,6 +1306,117 @@ END SUBROUTINE wesely_driver
 ! Ratio of diffusion coeffi
           scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
         END DO
+
+        else ! CB4
+        hstar(p_no2)   = 6.40E-3
+        hstar(p_no)    = 1.90E-3
+        hstar(p_pan)   = 2.97E+0
+        hstar(p_o3)    = 1.13E-2
+        hstar(p_hcho)  = 2.97E+3
+        hstar(p_hono)  = 3.47E+5
+        hstar(p_no3)   = 1.50E+1
+        hstar(p_h2o2)  = 7.45E+4
+        hstar(p_co)    = 8.20E-3
+        hstar(p_ald2)  = 1.14E+1
+        hstar(p_onit)  = 1.13E+0
+        hstar(p_so2)   = 2.53E+5
+        hstar(p_eth)   = 2.00E-3
+        hstar(p_ole)   = 3.05E-3 !(average of oli and olt)
+        hstar(p_tol)   = 1.51E-1
+        hstar(p_cres)  = 4.00E+5
+        hstar(p_xyl)   = 1.45E-1
+        hstar(p_iso)   = 4.76E-3
+        hstar(p_hno3)  = 2.69E+13
+        hstar(p_nh3)   = 1.04E+4
+        hstar(p_n2o5)  = 1.00E+10
+        hstar(p_par)   = 1.13E-3  
+
+!     -DH/R (for temperature correction)
+!     [-DH/R]=K
+
+        dhr(p_no2)  = 2500.
+        dhr(p_no)   = 1480.
+        dhr(p_pan)  = 5760.
+        dhr(p_o3)   = 2300.
+        dhr(p_hcho) = 7190.
+        dhr(p_hono) = 3775.
+        dhr(p_no3)  = 0.
+        dhr(p_h2o2) = 6615.
+        dhr(p_co)   = 0.
+        dhr(p_ald2) = 6266.
+        dhr(p_onit) = 5487.
+        dhr(p_so2)  = 5816.
+        dhr(p_eth) = 0.
+        dhr(p_ole)  = 0.
+        dhr(p_tol)  = 0.
+        dhr(p_cres) = 0.
+        dhr(p_xyl)  = 0.
+        dhr(p_iso)  = 0.
+        dhr(p_hno3) = 8684.
+        dhr(p_nh3)  = 3660.
+        dhr(p_n2o5) = 0.
+        dhr(p_par)  = 0.  
+!     REACTIVITY FACTORS
+!     [f0]=1
+
+        f0(p_no2)  = 0.1
+        f0(p_no)   = 0.
+        f0(p_pan)  = 0.1
+        f0(p_o3)   = 1.
+        f0(p_hcho) = 0.
+        f0(p_hono) = 0.1
+        f0(p_no3)  = 1.
+        f0(p_h2o2) = 1.
+        f0(p_co)   = 0.
+        f0(p_ald2) = 0.
+        f0(p_onit) = 0.
+        f0(p_so2)  = 0.
+        f0(p_eth)  = 0.
+        f0(p_ole)  = 0.
+        f0(p_tol)  = 0.
+        f0(p_csl)  = 0.
+        f0(p_xyl)  = 0.
+        f0(p_iso)  = 0.
+        f0(p_hno3) = 0.
+        f0(p_nh3)  = 0.
+        f0(p_n2o5) = 1.
+        f0(p_par)  = 0.   
+!     DIFFUSION COEFFICIENTS
+!     [DV]=cm2/s (assumed: 1/SQRT(molar mass) when not known)
+
+        dvj(p_no2)  = 0.147
+        dvj(p_no)   = 0.183
+        dvj(p_pan)  = 0.091
+        dvj(p_o3)   = 0.175
+        dvj(p_hcho) = 0.183
+        dvj(p_hono) = 0.153
+        dvj(p_no3)  = 0.127
+        dvj(p_h2o2) = 0.171
+        dvj(p_co)   = 0.189
+        dvj(p_ald2) = 0.151
+        dvj(p_onit) = 0.092
+        dvj(p_so2)  = 0.126
+        dvj(p_eth)  = 0.183
+        dvj(p_ole)  = 0.135
+        dvj(p_tol)  = 0.104
+        dvj(p_csl)  = 0.096
+        dvj(p_xyl)  = 0.097
+        dvj(p_iso)  = 0.121
+        dvj(p_hno3) = 0.126
+        dvj(p_nh3)  = 0.227
+        dvj(p_n2o5) = 0.110
+        dvj(p_par)  = 0.118  
+        DO l = 1, numgas
+          hstar4(l) = hstar(l) ! preliminary              
+! Correction of diff. coeff
+          dvj(l) = dvj(l)*(293.15/298.15)**1.75
+          sc = 0.15/dvj(l) ! Schmidt Number at 20°C   
+          dratio(l) = 0.242/dvj(l) !                                            ! of water vapor and gas at
+! Ratio of diffusion coeffi
+          scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
+
+       end DO
+    end if
 
 
 

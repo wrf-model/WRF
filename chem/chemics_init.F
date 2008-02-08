@@ -1,9 +1,10 @@
 !WRF:MODEL_LAYER:INITIALIZATION
 !
    subroutine chem_init (id,chem,emis_ant,scalar,dt,bioemdt,photdt,chemdt,stepbioe,  &
-               stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,&
-               g,aerwrf,config_flags,alt,t,p,CONVFAC,                &
-               gd_cloud, gd_cloud2,                                  &
+               stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,xlat,xlong,&
+               g,aerwrf,config_flags,alt,t,p,CONVFAC,ttday,tcosz,julday,gmt,    &
+               gd_cloud, gd_cloud2,raincv_a,raincv_b,                                  &
+               gd_cloud_a, gd_cloud2_a,                              &
                gd_cloud_b, gd_cloud2_b,                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
                gaer1,gaer2,gaer3,gaer4,                              &
@@ -14,22 +15,27 @@
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
 
-!  IMPLICIT NONE
    USE module_domain
    USE module_configure
    USE module_state_description
    USE module_phot_mad
    USE module_aerosols_sorgam
    USE module_dep_simple
+   USE module_data_gocart_dust
+   USE module_data_gocart_seas
+   USE module_data_gocartchem
+   USE module_gocart_chem ! , only: szangle
+   USE module_cbm4_initmixrats, only:  cbm4_init_wrf_mixrats
    USE module_cbmz_initmixrats, only:  cbmz_init_wrf_mixrats
    USE module_mosaic_driver, only:  init_data_mosaic_asect
    USE module_mosaic_initmixrats, only:  mosaic_init_wrf_mixrats
    USE module_input_chem_data, only:  get_last_gas, gasprofile_init_pnnl, setup_gasprofile_maps
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
+   IMPLICIT NONE
 
-   real  , intent(in) :: bioemdt,photdt,chemdt,plumerisefire_frq,dt
+   real  , intent(in) :: bioemdt,photdt,chemdt,plumerisefire_frq,dt,gmt
    INTEGER,      INTENT(IN   ) :: chem_in_opt
-   INTEGER,      INTENT(IN   ) :: id,                                &
+   INTEGER,      INTENT(IN   ) :: id,julday,                         &
                                   ids,ide, jds,jde, kds,kde,         &
                                   ims,ime, jms,jme, kms,kme,         &
                                   its,ite, jts,jte, kts,kte
@@ -38,6 +44,7 @@
                                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,   &
                                tauaer1,tauaer2,tauaer3,tauaer4,      &
                                gd_cloud, gd_cloud2,                  &
+                               gd_cloud_a, gd_cloud2_a,              &
                                gd_cloud_b, gd_cloud2_b,              &
                                gaer1,gaer2,gaer3,gaer4,              &
                                waer1,waer2,waer3,waer4
@@ -59,14 +66,18 @@
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
                                aerwrf
+   REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
+          INTENT(INOUT   ) ::                                        &
+                               ttday,tcosz,xlat,xlong,raincv_a,raincv_b
    real, INTENT (IN) :: g
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
 !
 ! local stuff
 !
-   integer :: i,j,k,l,numgas
-
+   integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
+   real, DIMENSION (1,1) :: sza,cosszax
+   real :: xtime,xhour,xmin,gmtp,xlonn,rlat
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
@@ -167,9 +178,17 @@ call wrf_message("**************************************************************
           do i=its,ite
              gd_cloud(i,k,j) = 0.
              gd_cloud2(i,k,j) = 0.
+             gd_cloud_a(i,k,j) = 0.
+             gd_cloud2_a(i,k,j) = 0.
              gd_cloud_b(i,k,j) = 0.
              gd_cloud2_b(i,k,j) = 0.
           end do
+       end do
+    end do
+    do j=jts,jte
+          do i=its,ite
+            raincv_a(i,j)=0.
+            raincv_b(i,j)=0.
        end do
     end do
 
@@ -255,13 +274,66 @@ call wrf_message("**************************************************************
         do l=numgas+1,num_chem
            do j=jts,jte
               do k=kts,kte
-                 kk = min(k,kte-1)
                  do i=its,ite
                     chem(i,k,j,l)=1.
                  enddo
               enddo
            enddo
         enddo
+     CASE (GOCART_SIMPLE)
+       if(config_flags%phot_opt .NE. 0 )then
+         call wrf_error_fatal("GOCART simple initialization, phot_opt  MUST BE ZERO")
+!        config_flags%phot_opt  = 0
+       endif
+       CALL wrf_debug(15,'call GOCART chem/aerosols initialization')
+        ch_dust(:,:)=0.8D-9
+        ch_ss(:,:)=1.
+        if( .NOT. config_flags%restart )then
+           do j=jts,jte
+              do k=kts,kte
+                 do i=its,ite
+                   do n=1,num_chem
+                     chem(i,k,j,n)=1.e-12
+                   enddo
+                   chem(i,k,j,p_dms)=0.1e-6
+                   chem(i,k,j,p_so2)=5.e-6
+                   chem(i,k,j,p_sulf)=3.e-6
+                   chem(i,k,j,p_msa)=0.1e-6
+                   chem(i,k,j,p_bc1)=0.1e-3
+                   chem(i,k,j,p_bc2)=0.1e-3
+                   chem(i,k,j,p_oc1)=0.1e-3
+                   chem(i,k,j,p_oc2)=0.1e-3
+                 enddo
+              enddo
+           enddo
+!
+! next is done to scale background oh and no3 in dependence on average zenith angle and day/night for no3
+! this is done since background values are only available as average/month. It will not be necessary if other
+! chemistry packages are used that provide oh,no3,h2o2
+!
+         endif
+           ndystep=86400/ifix(dt)
+           do j=jts,jte
+                 do i=its,ite
+                   tcosz(i,j)=0.
+                   ttday(i,j)=0.
+                   rlat=xlat(i,j)*3.1415926535590/180.
+                   xlonn=xlong(i,j)
+                   do n=1,ndystep
+                      xtime=n*dt/60.
+                      ixhour=ifix(gmt+.01)+ifix(xtime/60.)
+                      xhour=float(ixhour)
+                      xmin=60.*gmt+(xtime-xhour*60.)
+                      gmtp=mod(xhour,24.)
+                      gmtp=gmtp+xmin/60.
+                      CALL szangle(1, 1, julday, gmtp, sza, cosszax,xlonn,rlat)
+                      TCOSZ(i,j)=TCOSZ(I,J)+cosszax(1,1) 
+                      if(cosszax(1,1).gt.0.)ttday(i,j)=ttday(i,j)+dt
+                    enddo
+                 if(i.eq.19.and.j.eq.19)write(0,*)'in cheminit'
+                 if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
+           enddo
+          enddo
      CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG,RACMSORG_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
@@ -341,6 +413,22 @@ call wrf_message("**************************************************************
                its,ite, jts,jte, kts,kte               )
        endif
    END SELECT cbmz_select
+! initialization for cb4 gas-phase chemistry
+!
+     cb4_select: SELECT CASE(config_flags%chem_opt)
+       CASE (CBM4_KPP)
+         CALL wrf_debug(15,'initializing cbm4 gas-phase chemistry')
+         if(config_flags%chem_in_opt == 0 )then
+         if( .NOT. config_flags%restart ) &
+              call cbm4_init_wrf_mixrats(config_flags,   &
+                 z_at_w, g,                              &
+                 chem, numgas,                           &
+                 ids,ide, jds,jde, kds,kde,              &
+                 ims,ime, jms,jme, kms,kme,              &
+                 its,ite, jts,jte, kts,kte               )
+         endif
+     END SELECT cb4_select
+
 !
 ! Initialize the cloud droplet number and mass
 !

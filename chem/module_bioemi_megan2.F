@@ -48,7 +48,7 @@ CONTAINS
     USE module_state_description
     USE module_data_megan2
     USE module_data_mgn2mech
-!    USE module_bioemi_beis311, ONLY : getpar, calc_zenithb
+!    USE module_bioemi_beis313, ONLY : getpar, calc_zenithb
 
     IMPLICIT NONE
 
@@ -437,14 +437,14 @@ CONTAINS
 
 !          !...Calculate zenith angle (in radians)
 !          !...(NOTE: nonstandard longitude input here: >0 for W, <0 for E!!)
-!          !...(subroutine calc_zenithb is in module_bioemis_beis311.F)
+!          !...(subroutine calc_zenithb is in module_bioemis_beis313.F)
 !          CALL calc_zenithb(lat,-lon,julday,tmidh,zen)
 !          coszen = COS(zen)
 
           !....Convert downward solar radiation to photosynthetically
           !....active radiation
 
-!          !......(subroutine getpar is in module_bioemis_beis311.F)
+!          !......(subroutine getpar is in module_bioemis_beis313.F)
 !          CALL getpar( swd, pres, zen, pardb, pardif )
 !          par = pardb + pardif ! micro-mole/m2/s
 

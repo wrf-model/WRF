@@ -1,7 +1,7 @@
 !WRF:MODEL_LAYER:PHYSICS
 !
       SUBROUTINE aerosols_driver (id,ktau,dtstep,ktauc,config_flags,       &
-               dtstepc,                                                    &
+               dtstepc,dx,                                                 &
                alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,     &
                z,z_at_w,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
@@ -18,6 +18,7 @@
 ! *** add new modules of schemes here
 
    USE module_aerosols_sorgam
+   USE module_gocart_aerosols
    USE module_data_sorgam
    USE module_mosaic_driver, only:  mosaic_aerchem_driver
 
@@ -102,7 +103,7 @@
                                       ims,ime, jms,jme, kms,kme,    &
                                       its,ite, jts,jte, kts,kte,    &
                                       id,ktau,ktauc
-      REAL,      INTENT(IN   ) :: dtstep,dtstepc
+      REAL,      INTENT(IN   ) :: dtstep,dtstepc,dx
 !
 ! moisture variables
 !
@@ -167,6 +168,12 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
+   CASE (GOCART_SIMPLE)
+      call gocart_aerosols_driver(ktauc,dtstepc,config_flags,t_phy,moist,  &
+         chem,rho_phy,dz8w,p8w,dx,g,         &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
    CASE (RADM2SORG,RADM2SORG_KPP)
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite

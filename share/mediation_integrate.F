@@ -2296,6 +2296,147 @@ SUBROUTINE med_read_wrf_chem_emissopt4 ( grid , config_flags )
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_emissions: exit' )
 
 END SUBROUTINE med_read_wrf_chem_emissopt4
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+SUBROUTINE med_read_wrf_chem_dust_emiss ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+   USE module_configure
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+!   IF ( grid%id .EQ. 1 ) THEN
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , 'wrfchemi_dust' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_dust_emiss: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput8_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput8_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT8", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_dust_emiss: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_dust_emiss: Read dust errosion factor at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input8' )
+         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
+
+!  ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_dust_emiss: exit' )
+ 
+END SUBROUTINE  med_read_wrf_chem_dust_emiss
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+   USE module_timing
+   USE module_configure
+  ! Model layer
+   USE module_bc_time_utilities
+#ifdef DM_PARALLEL
+   USE module_dm
+#endif
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local data
+   LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
+
+   INTEGER                                :: ierr, efid
+   REAL                                   :: time, tupdate
+   real, allocatable :: dumc0(:,:,:)
+   CHARACTER (LEN=256)                    :: message, current_date_char, date_string
+   CHARACTER (LEN=80)                     :: inpname
+
+#include <wrf_io_flags.h>
+!   IF ( grid%id .EQ. 1 ) THEN
+
+      CALL domain_clock_get( grid, current_timestr=current_date_char )
+
+      CALL construct_filename1 ( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
+      WRITE(message,*)'mediation_integrate: med_read_wrf_chem_gocart_bg: Open file ',TRIM(inpname)
+      CALL wrf_message( TRIM(message) )
+
+     if( grid%auxinput9_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput9_oid , config_flags , "DATASET=AUXINPUT9" )
+     endif
+
+      CALL open_r_dataset ( grid%auxinput9_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT9", ierr )
+        IF ( ierr .NE. 0 ) THEN
+           WRITE( message , * ) 'med_read_wrf_chem_gocart_bg: error opening ', TRIM( inpname )
+           CALL wrf_error_fatal( TRIM( message ) )
+        ENDIF
+
+         WRITE(message,*)'mediation_integrate: med_read_wrf_chem_gocart_bg: Read gocart_bg at time ',&
+         TRIM(current_date_char)
+         CALL wrf_message( TRIM(message) )
+
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input9' )
+         CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
+
+         CALL close_dataset ( grid%auxinput9_oid , config_flags , "DATASET=AUXINPUT9" )
+
+!
+!         CALL wrf_global_to_patch_real ( backg_no3_io , grid%backg_no3 , grid%domdesc, ' ' , 'xyz' ,         &
+!                                         ids, ide-1 , jds , jde-1 , kds , kde-1, &
+!                                         ims, ime   , jms , jme   , kms , kme  , &
+!                                         ips, ipe   , jps , jpe   , kps , kpe    )
+!
+!  ENDIF
+   CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_gocart_bg: exit' )
+ 
+END SUBROUTINE  med_read_wrf_chem_gocart_bg
+
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -344,6 +344,29 @@ bioemiss_conv_megan2 : wrf
 	        /bin/cp -f namelist.input namelist.input.backup ; fi ; \
 	        /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
+#### Dust errosion factor emissions converter
+
+dust_conv : wrf
+	@ echo '--------------------------------------'
+	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_dust )
+	( cd test/em_real ; /bin/rm -f convert_dust.exe ; ln -s ../../chem/convert_dust.exe . )
+	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+
+#### GOCART background state for oh, no3 and h2o2 converter
+
+gocart_conv : wrf
+	@ echo '--------------------------------------'
+	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_gocart )
+	( cd test/em_real ; /bin/rm -f convert_gocart.exe ; ln -s ../../chem/convert_gocart.exe . )
+	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+
+
 #### nmm converter
 
 nmm_real : nmm_wrf

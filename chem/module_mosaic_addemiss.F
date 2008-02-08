@@ -387,13 +387,20 @@ CONTAINS
 
 
 ! do seasalt emissions
-	if (seasalt_emiss_active > 0)   &
+	if (seasalt_emiss_active == 1)   &
 	    call mosaic_seasalt_emiss(                                     &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
 
+!       if (seasalt_emiss_active == 2)   &
+!            call mosaic_seasalt_emiss(                                     &
+!               id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+!               ids,ide, jds,jde, kds,kde,                                  &
+!               ims,ime, jms,jme, kms,kme,                                  &
+!               its,ite, jts,jte, kts,kte                                   )
+!
 ! do dust emissions
 ! jdf: preliminary version that has not been made generic for situation
 !       if (dust_emiss_active > 0)   &

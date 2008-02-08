@@ -7,11 +7,12 @@ CONTAINS
 
     subroutine dry_dep_driver(id,ktau,dtstep,config_flags,                &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
-               p_phy,chem,rho_phy,dz8w,exch_h,                            &
+               p_phy,chem,rho_phy,dz8w,exch_h,hfx,dx,                     &
                cldfra, cldfra_old,                                        &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
-               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2,   &
+               xland,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,                &
+               anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
                e_co,kemit,numgas,                                         &
                ids,ide, jds,jde, kds,kde,                                 &
@@ -25,6 +26,8 @@ CONTAINS
   USE module_vertmx_wrf
   USE module_data_sorgam
   USE module_aerosols_sorgam
+  USE module_gocart_settling
+  USE module_gocart_drydep
   USE module_mosaic_drydep, only:  mosaic_drydep_driver
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate
   IMPLICIT NONE
@@ -75,9 +78,10 @@ CONTAINS
                                                      pbl,       &
                                                      rmol,       &
                                                      ust,       &
+                                                     hfx,       &
                                                      xlat,      &
                                                      xlong,     &
-                                                     znt
+                                                   xland,znt
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
@@ -89,7 +93,7 @@ CONTAINS
 	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
 
       REAL,      INTENT(IN   ) ::                               &
-                             dtstep,gmt
+                             dtstep,gmt,dx
 
 !--- deposition and emissions stuff
 ! .. Parameters ..
@@ -149,7 +153,7 @@ CONTAINS
 !
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES WITH WESELY METHOD')
 
-       IF( config_flags%chem_opt /= CHEM_TRACER ) THEN
+       IF( config_flags%chem_opt /= CHEM_TRACER  .and. config_flags%chem_opt /= GOCART_SIMPLE ) THEN
           call wesely_driver(id,ktau,dtstep,                                 &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
@@ -159,6 +163,19 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
+       ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE) then
+!
+! this does aerosol species (dust,seas, bc,oc) for gocart only
+!
+         call gocart_drydep_driver(dtstep,                                &
+               config_flags,numgas,                                       &
+               t_phy,moist,p8w,t8w,                                       &
+               p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
+               ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,                  &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
        ELSE
           !Set dry deposition velocity to zero when using the
           !chemistry tracer mode.
@@ -258,7 +275,7 @@ CONTAINS
 !   do not need lho,lho2
 !   (03-may-2006 rce - calc dryrho_1d and pass it to vertmx)
 !
-      dep_vel_o3(i,j)=ddvel(i,j,p_o3)
+      if(p_o3.gt.1)dep_vel_o3(i,j)=ddvel(i,j,p_o3)
       do nv=2,num_chem-0
          do k=kts,kte
 !           pblst(k)=max(epsilc,chem(i,k,j,nv))
@@ -329,6 +346,19 @@ CONTAINS
 		its,ite, jts,jte, kts,kte                         )
    CASE DEFAULT
    END SELECT mixactivate_select
+   settling_select: SELECT CASE(config_flags%chem_opt)
+   CASE (GOCART_SIMPLE)
+       CALL wrf_debug(15,'call gocart settling routine')
+         call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
+         chem,rho_phy,dz8w,p8w,p_phy,         &
+         dx,g, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+   CASE DEFAULT
+       CALL wrf_debug(15,'no settling routine')
+   END SELECT settling_select
+
        CALL wrf_debug(15,'end of dry_dep_driver')
 
 END SUBROUTINE dry_dep_driver

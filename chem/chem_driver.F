@@ -1,5 +1,3 @@
-!WRF:MODEL_LAYER:CHEMICS
-!
 #if ( NMM_CORE == 1 )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !NCEP_MESO:MEDIATION_LAYER:SOLVER
@@ -38,6 +36,7 @@
   USE module_aerosols_sorgam
   USE module_chem_utilities
   USE module_ctrans_grell
+  USE module_convtrans_prep
   USE module_dry_dep_driver
   USE module_emissions_driver
   USE module_wetscav_driver, only: wetscav_driver
@@ -489,73 +488,15 @@
 ! no time average available in first half hour
 !   
        if( config_flags%chem_conv_tr>0)then
-         if(ktau.le.stepave)then
-           do j=jts,jte
-                do i=its,ite
-                     grid%raincv_b(i,j)=grid%raincv(i,j)
-                enddo
-           enddo
-          endif
-! 
-! build time average, and stored in raincv_b to be used by convective transport routine
-!   
-          if(mod(ktau,stepave).ne.0)then
-           do j=jts,jte
-                do i=its,ite
-                   grid%raincv_a(i,j)=grid%raincv_a(i,j)+grid%raincv(i,j)
-                enddo
-           enddo
-          else if(mod(ktau,stepave).eq.0)then
-           do j=jts,jte
-                do i=its,ite
-                   grid%raincv_b(i,j)=grid%raincv_a(i,j)/float(stepave)
-                   grid%raincv_a(i,j)=0.
-                enddo
-           enddo
-         endif
-       endif   ! chem_conv_tr
-!
-! do the same for convwective parameterization cloud water mix ratio, 
-! currently only for cu_physics=3, used by both photolysis and atmospheric radiation
-!
-       if(config_flags%cu_rad_feedback)then
-       if( config_flags%cu_physics == 3 )then
-         if(ktau.le.stepave)then
-           do j=jts,jte
-                do k=kts,kte
-                     do i=its,ite
-                          grid%gd_cloud_b(i,k,j)=grid%gd_cloud(i,k,j)
-                          grid%gd_cloud2_b(i,k,j)=grid%gd_cloud2(i,k,j)
-                     enddo
-                enddo
-           enddo
-         endif   ! stepave
-!
-! 
-!
-          if(mod(ktau,stepave).ne.0)then
-           do j=jts,jte
-                do k=kts,kte
-                     do i=its,ite
-                       grid%gd_cloud_a(i,k,j)=grid%gd_cloud_a(i,k,j)+grid%gd_cloud(i,k,j)
-                       grid%gd_cloud2_a(i,k,j)=grid%gd_cloud2_a(i,k,j)+grid%gd_cloud2(i,k,j)
-                     enddo
-                enddo
-           enddo
-          else if(mod(ktau,stepave).eq.0)then
-           do j=jts,jte
-                do k=kts,kte
-                     do i=its,ite
-                       grid%gd_cloud_b(i,k,j)=grid%gd_cloud_a(i,k,j)/float(stepave)
-                       grid%gd_cloud_a(i,k,j)=0.
-                       grid%gd_cloud2_b(i,k,j)=grid%gd_cloud2_a(i,k,j)/float(stepave)
-                       grid%gd_cloud2_a(i,k,j)=0.
-                     enddo
-                enddo
-           enddo
-          endif !stepave
-       endif ! cu_physics
-       endif ! cu_rad_feedback
+           call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
+               grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
+               grid%gd_cloud2_a,grid%gd_cloud2_b,stepave,ktau,grid%dt,        &
+               config_flags%cu_rad_feedback,  config_flags%cu_physics,      &
+               ids,ide, jds,jde, kds,kde,                                   &
+               ims,ime, jms,jme, kms,kme,                                   &
+               its,ite, jts,jte,kts,kte                                     )
+
+       endif ! chem_conv_tr
 !
 !
 #if ( EM_CORE == 1 )
@@ -598,9 +539,9 @@
               grid%gmt,grid%julday,rri,t_phy,moist_trans,p8w,t8w,u_phy,v_phy,vvel,         &
 #endif
 #if (EM_CORE == 1 )
-              grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,         &
+              grid%gmt,grid%julday,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
 #endif
-              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,                        &
+              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,grid%tsk,grid%erod,g,   &
               grid%ebu_no,grid%ebu_co,grid%ebu_co2,grid%ebu_eth,grid%ebu_hc3,grid%ebu_hc5, &
               grid%ebu_hc8,grid%ebu_ete,grid%ebu_olt,grid%ebu_oli,grid%ebu_pm25,           &
               grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
@@ -609,7 +550,7 @@
               grid%mean_fct_agef,grid%mean_fct_agsv,grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
-              grid%ust,grid%znt,                                                           &
+              grid%ust,grid%znt,grid%dms_0,                                                &
               grid%xland,grid%xlat,grid%xlong,                                             &
               z_at_w,zmid,grid%smois,                                                      &
               grid%sebio_iso,grid%sebio_oli,grid%sebio_api,grid%sebio_lim,                 &
@@ -743,12 +684,12 @@
 #if (EM_CORE == 1)
                  grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
-                 rri,p_phy,chem,rho,dz8w,grid%exch_h,                                 &
+                 rri,p_phy,chem,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,                &
                  grid%cldfra, grid%cldfra_old,                                        &
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &
-                 zmid,z_at_w,                                                         &
+                 zmid,z_at_w,grid%xland,                                              &
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
@@ -845,15 +786,16 @@ n2o5_het=0.
 #if (EM_CORE == 1)
               grid%gmt,grid%julday,t_phy,moist,p8w,t8w,                               &
 #endif
-              p_phy,chem,rho,dz8w,                                                    &
-              zmid,z_at_w,                                                            &
-              vdrog3,vcsulf_old,                                                      &
+              p_phy,chem,rho,dz8w,grid%dx,g,                                          &
+              zmid,z_at_w,grid%xlat,grid%xlong,                                       &
+              vdrog3,vcsulf_old,grid%ttday,grid%tcosz,                                &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &
               grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,            &
               grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,grid%ph_hcochest,     &
               grid%ph_ch3o2h,grid%ph_ch3coo2h,grid%ph_ch3ono2,grid%ph_hcochob,        &
-              grid%ph_n2o5,grid%ph_o2,grid%addt,grid%addx,grid%addc,grid%etep,        &
+              grid%ph_n2o5,grid%ph_o2,grid%backg_oh,grid%backg_h2o2,grid%backg_no3,   &
+              grid%addt,grid%addx,grid%addc,grid%etep,        &
               grid%oltp,grid%olip,grid%cslp,grid%limp,grid%hc5p,grid%hc8p,grid%tolp,  &
               grid%xylp,grid%apip,grid%isop,grid%hc3p,grid%ethp,grid%o3p,grid%tco3,   &
               grid%mo2,grid%o1d,grid%olnn,grid%rpho,grid%xo2,                         &
@@ -868,7 +810,13 @@ n2o5_het=0.
    CALL wrf_debug(15,'calling kpp_mechanism_driver')
 CALL kpp_mechanism_driver (chem,                                                      &
    grid%id,dtstepc,config_flags,                                                      &
-   p_phy,t_phy,rho,moist_trans,                                                       &
+   p_phy,t_phy,rho,                                                                   &
+#if (NMM_CORE == 1)
+   moist_trans,                                                                       &
+#endif
+#if (EM_CORE == 1)
+   moist,                                                                             &
+#endif
    vdrog3, ldrog,                                                                     &
 !
 #include <call_to_kpp_mech_drive.inc>
@@ -876,7 +824,6 @@ CALL kpp_mechanism_driver (chem,                                                
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &
    its,ite,jts,jte,kts,kte)
-!  k_start    , min(k_end,kde-ksubt)                                                  )
 
 
 !cms--
@@ -946,7 +893,7 @@ CALL kpp_mechanism_driver (chem,                                                
 !
 	if(config_flags%aerchem_onoff>0)then
 
-        call aerosols_driver (grid%id,ktau,grid%dt,ktauc,config_flags,dtstepc,        &
+        call aerosols_driver (grid%id,ktau,grid%dt,ktauc,config_flags,dtstepc,grid%dx,&
 #if (NMM_CORE==1)
               rri,t_phy,moist_trans,grid%aerwrf,p8w,t8w,                              &
 #endif

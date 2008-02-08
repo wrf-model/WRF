@@ -1,7 +1,16 @@
-MODULE module_bioemi_beis311
+MODULE module_bioemi_beis313
 
-!  BEIS3.11 Emissions Module for WRF-Chem
-!  Written by Greg Frost 6/2004
+!  BEIS3.13 Emissions Module for WRF-Chem
+!  BEIS3.11 Written by Greg Frost 6/2004
+!
+!  Modified to BEIS3.13 by Stu McKeen 9/27/07
+! Note: species to vegetation assignment table (beis3_efac_v0.99_053105.txt) must be
+! applied to front end for BEIS3.13 reference emission files - done outside of WRF-Chem
+! BEIS3.13 also recommends 10meter or 2m air temp. for isoprene emissions, (no guidance)
+! See: Changes to the Biogenic Emissions Inventory System Version 3 (BEIS3)
+! Donna Schwede, George Pouliot, and Tom Pierce, presented at 2005 CMAS conference:
+! available on the web at http://www/cmascenter.org/conference/2005/archive.cfm
+!
 !  Using off-line gridded standard biogenic emissions
 !  for each model compound with such emissions,
 !  model shortwave solar flux (isoprene only),
@@ -15,7 +24,7 @@ MODULE module_bioemi_beis311
 !23456789 123456789 123456789 123456789 123456789 123456789 123456789 12
 
     CONTAINS
-      SUBROUTINE bio_emissions_beis311(id,config_flags,ktau,dtstep,    &
+      SUBROUTINE bio_emissions_beis313(id,config_flags,ktau,dtstep,    &
                julday,gmt,xlat,xlong,t_phy,p_phy,gsw,                  &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
@@ -129,13 +138,13 @@ MODULE module_bioemi_beis311
 !   hrno           algorithm to estimate NO emissions; does not include precipitation adjustment
 
 !***************************************
-!   begin body of subroutine bio_emissions_beis311
+!   begin body of subroutine bio_emissions_beis313
                          
 ! hour into integration
       gmtp=float(ktau)*dtstep/3600.
 !     
       gmtp=mod(gmt+gmtp,24.)
-      write(mesg,*) 'calculate beis311 emissions at gmtp = ',gmtp
+      write(mesg,*) 'calculate beis313 emissions at gmtp = ',gmtp
       call wrf_debug(15,mesg)
       DO 100 j=jts,jte  
       DO 100 i=its,ite  
@@ -288,6 +297,9 @@ MODULE module_bioemi_beis311
             REAL FUNCTION clnew( zen, pardb, pardif, tlai )
 
 !........  Function to calculate csubl based on zenith angle, PAR, and LAI 
+!******** Reference:CN98
+!      Campbell, G.S. and J.M. Norman. 1998. An Introduction to Environmental Biophysics,
+!      Springer-Verlag, New York.
 
             IMPLICIT NONE
 
@@ -295,7 +307,11 @@ MODULE module_bioemi_beis311
             REAL, INTENT (IN) :: pardif   ! diffuse PAR ( umol/m2-s)
             REAL, INTENT (IN) :: zen      ! solar zenith angle (radians)
             REAL, INTENT (IN) :: tlai     ! leaf area index for grid cell
+!.............  Local variables
             REAL kbe                ! extinction coefficient for direct beam
+            REAL ALPHA              ! leave absorptivity
+            REAL KD                 ! extinction coefficient for diffuse radiation
+            REAL SQALPHA            ! square root of alpha
             REAL canparscat         ! exponentially wtd scattered PAR (umol/m2-s)
             REAL canpardif          ! exponentially wtd diffuse PAR (umol/m2-s)
             REAL parshade           ! PAR on shaded leaves (umol/m2-s)
@@ -304,24 +320,29 @@ MODULE module_bioemi_beis311
             REAL fracsun            ! fraction of leaves that are sunlit
             REAL fracshade          ! fraction of leaves that are shaded
 
+            ALPHA = 0.8
+            SQALPHA = SQRT(0.8)
+            KD = 0.68
+
 !...........  CN98 - eqn 15.4, assume x=1
 
             kbe = 0.5 * SQRT(1. + TAN( zen ) * TAN( zen ))
  
 !..........   CN98 - p. 261 (this is usually small)
 
-            canparscat = 0.5 * pardb * (EXP(-0.894 * kbe * tlai) -     &
+            canparscat = 0.5 * pardb * (EXP(-1.*sqalpha*kbe*tlai) -    &
                      EXP(-1.* kbe * tlai))
 
 !..........   CN98 - p. 261 (assume exponentially wtd avg)
 
-            canpardif  = pardif * (1. - EXP(-0.61 * tlai))/(0.61 * tlai)
+            canpardif  = pardif * (1.-EXP(-1.*sqalpha*kd*tlai)) /      &
+                     (sqalpha*kd*tlai)
 
 !.........    CN98 - p. 261 (for next 3 eqns)
 
             parshade   = canpardif + canparscat
-	    parsun     = kbe * (pardb + pardif) + parshade
-	    laisun     = (1. - EXP( -kbe * tlai))/kbe
+	    parsun     = kbe * pardb  + parshade
+	    laisun     = (1. - EXP( -1. * kbe * tlai))/kbe
 	    fracsun    = laisun/tlai
 	    fracshade  = 1. - fracsun
 
@@ -339,22 +360,26 @@ MODULE module_bioemi_beis311
             REAL FUNCTION cguen( partmp ) 
 
 !..........  Guenther's equation for computing light correction
+!    Reference:   Guenther, A., B. Baugh, G. Brasseur, J. Greenberg, P. Harley, L. Klinger,
+!   D. Serca, and L. Vierling, 1999: Isoprene emission estimates and uncertainties
+!   for the Central African EXPRESSO Study domain. J. Geophys. Res., 104, 30625-30639.
 
             IMPLICIT NONE
             REAL, INTENT (IN) :: partmp
-            REAL, PARAMETER :: alpha2 = 0.00000729 
+            REAL, PARAMETER :: alpha = 0.001
+            REAL, PARAMETER :: cl = 1.42
 
             IF ( partmp .LE. 0.01) THEN
                cguen = 0.0
             ELSE
-               cguen = (0.0028782 * partmp) /                         &
-                   SQRT(1. + alpha2 * partmp * partmp)
+               cguen = (alpha *cl * partmp) /                         &
+                   SQRT(1. + alpha * alpha * partmp * partmp)
             ENDIF
  
             RETURN
             END FUNCTION cguen
 
-      END SUBROUTINE bio_emissions_beis311
+      END SUBROUTINE bio_emissions_beis313
 
 !=================================================================
 
@@ -372,6 +397,7 @@ MODULE module_bioemi_beis311
         ! zenith - in radians (GJF, 6/2004)
         ! remove azimuth angle calculation since not needed (GJF, 6/2004)
         ! .. Scalar Arguments ..
+        CHARACTER*256   ::   mesg
         REAL :: gmt, lat, long, zenith
         INTEGER :: ijd
         ! .. Local Scalars ..
@@ -380,7 +406,6 @@ MODULE module_bioemi_beis311
           pi, ra, rdecl, reqt, rlt, rml, rphi, rra, ssw, sw, tab, w, wr, &
           yt, zpt, zr
         INTEGER :: jd
-        CHARACTER*256   ::   mesg
         ! .. Intrinsic Functions ..
         INTRINSIC acos, atan, cos, min, sin, tan
         ! convert to radians
@@ -579,7 +604,7 @@ MODULE module_bioemi_beis311
 
         END SUBROUTINE getpar
 
-   SUBROUTINE hrno( julday, growagno, ngrowagno, nonagno, tairin, e_no)
+      SUBROUTINE hrno( julday, growagno, ngrowagno, nonagno, tairin, e_no)
 
 !***********************************************************************
 !  subroutine body starts at line  150
@@ -855,4 +880,4 @@ MODULE module_bioemi_beis311
       END FUNCTION growseason
 
 
-END MODULE module_bioemi_beis311
+END MODULE module_bioemi_beis313

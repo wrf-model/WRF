@@ -2,12 +2,13 @@
 !
     subroutine mechanism_driver(id,ktau,dtstep,ktauc,dtstepc,          &
                config_flags,gmt,julday,t_phy,moist,p8w,t8w,            &
-               p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,vcsulf_old,     &
+               p_phy,chem,rho_phy,dz8w,dx,g,z,z_at_w,xlat,xlong,vdrog3,&
+               vcsulf_old,ttday,tcosz,     &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
-               ph_n2o5,ph_o2,                                          &
+               ph_n2o5,ph_o2,backg_oh,backg_h2o2,backg_no3,            &
                addt,addx,addc,etep,oltp,olip,cslp,limp,hc5p,hc8p,tolp, &
                xylp,apip,isop,hc3p,ethp,o3p,tco3,mo2,o1d,olnn,rpho,xo2,&
                ketp,olnd,                                              &
@@ -22,6 +23,7 @@
   USE module_data_racm
   USE module_radm
   USE module_racm
+  USE module_gocart_chem
   USE module_aerosols_sorgam
   USE module_cbmz, only:	cbmz_driver
    IMPLICIT NONE
@@ -33,7 +35,7 @@
    INTEGER,      INTENT(IN   ) ::                                      &
                                   ktau,ktauc
       REAL,      INTENT(IN   ) ::                                      &
-                                  dtstep,dtstepc,gmt
+                                  dtstep,dtstepc,gmt,dx,g
 !
 ! advected moisture variables
 !
@@ -44,6 +46,9 @@
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),             &
          INTENT(INOUT ) ::                                   chem
+   REAL, DIMENSION( ims:ime, jms:jme ),                       &
+         INTENT(IN ) ::                                             &
+          xlat,xlong,ttday,tcosz
 
 !
 ! arrays that hold the photolysis rates
@@ -73,7 +78,7 @@
                                                       t_phy,           &
                                                       p_phy,           &
                                                       dz8w,            &
-                                                      z    ,           &
+                        z    ,backg_oh,backg_h2o2,backg_no3,           &
                                               t8w,p8w,z_at_w ,         &
                                                     rho_phy
 ! ..
@@ -96,6 +101,15 @@
 ! select chemical mechanism
 !
    chem_select: SELECT CASE(config_flags%chem_opt)
+     CASE (GOCART_SIMPLE)
+       CALL wrf_debug(15,'calling gocart chem from mechanism_driver')
+       call gocart_chem_driver(ktauc,dtstepc,config_flags,gmt,julday,t_phy,moist,  &
+         chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,backg_no3,         &
+         dx,g,xlat,xlong,ttday,tcosz, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+
      CASE (RADM2)
        CALL wrf_debug(15,'calling radm2 from mechanism_driver')
        call radm_driver(id,ktauc,dtstepc,config_flags,                 &

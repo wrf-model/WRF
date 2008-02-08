@@ -36,7 +36,8 @@ MODULE module_data_sorgam
 !mh    are species which are deposited with the same rate
 
       INTEGER laerdvc, lnonaerdvc, l1ae, laero, imodes, aspec
-      PARAMETER (laerdvc=34,lnonaerdvc=8+lspcv)
+!     PARAMETER (laerdvc=34,lnonaerdvc=8+lspcv)
+      PARAMETER (laerdvc=39,lnonaerdvc=8+lspcv)
       PARAMETER (l1ae=laerdvc+lnonaerdvc)
       PARAMETER (laero=4,imodes=4,aspec=1)
 !     LAERDVC  number of advected aerosol dynamic parameters for a given
@@ -126,7 +127,7 @@ MODULE module_data_sorgam
 
 	integer, parameter :: maxd_atype = 3
 	integer, parameter :: maxd_asize = 1
-	integer, parameter :: maxd_acomp = 17
+	integer, parameter :: maxd_acomp = 19
 	integer, parameter :: maxd_aphase = 2
 	integer, save :: ai_phase ! interstitial phase of aerosol
 	integer, save :: cw_phase ! cloud water phase of aerosol
@@ -175,6 +176,8 @@ MODULE module_data_sorgam
       	  lptr_so4_aer(maxd_asize,maxd_atype,maxd_aphase),      &
       	  lptr_nh4_aer(maxd_asize,maxd_atype,maxd_aphase),      &
       	  lptr_no3_aer(maxd_asize,maxd_atype,maxd_aphase),      &
+      	  lptr_na_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_cl_aer(maxd_asize,maxd_atype,maxd_aphase),       &
       	  lptr_orgaro1_aer(maxd_asize,maxd_atype,maxd_aphase),       &
       	  lptr_orgaro2_aer(maxd_asize,maxd_atype,maxd_aphase),       &
       	  lptr_orgalk_aer(maxd_asize,maxd_atype,maxd_aphase),       &
@@ -201,6 +204,8 @@ MODULE module_data_sorgam
 	real, parameter :: mw_oc_aer  = 1.0
 	real, parameter :: mw_ec_aer  = 1.0
 	real, parameter :: mw_water_aer  = 18.016
+	real, parameter :: mw_cl_aer  = 35.450
+	real, parameter :: mw_na_aer  = 22.990
 
 !   dry densities (g/cm3)
 	real, parameter :: dens_so4_aer = 1.80
@@ -210,6 +215,8 @@ MODULE module_data_sorgam
 	real, parameter :: dens_oc_aer  = 1.00
 	real, parameter :: dens_ec_aer  = 1.70
 	real, parameter :: dens_ca_aer  = 2.20
+	real, parameter :: dens_cl_aer  = 2.20
+	real, parameter :: dens_na_aer  = 2.20
 
 !   water density (g/cm3)
 	real, parameter :: dens_water_aer  = 1.0
@@ -223,6 +230,8 @@ MODULE module_data_sorgam
 	real, parameter :: hygro_ec_aer  = 1.e-6
 	real, parameter :: hygro_ca_aer  = 0.1
 	real, parameter :: hygro_co3_aer = 0.1
+	real, parameter :: hygro_cl_aer  = 1.16
+	real, parameter :: hygro_na_aer  = 1.16
 !     param.inc stop
 
 ! //////////////////////////////////////////////////////////////////////
@@ -284,185 +293,205 @@ MODULE module_data_sorgam
       INTEGER vno3aj
       PARAMETER (vno3aj=5)
 
-! index for Aitken mode nitrate concentratio
+! index for Aitken mode nitrate concentration
       INTEGER vno3ai
       PARAMETER (vno3ai=6)
 
+! index for Accumulation mode aerosol sodium
+      INTEGER vnaaj
+      PARAMETER (vnaaj=7)
+
+! index for Aitken mode sodium concentratio
+      INTEGER vnaai
+      PARAMETER (vnaai=8)
+
+! index for Accumulation mode aerosol chloride
+      INTEGER vclaj
+      PARAMETER (vclaj=9)
+
+! index for Aitken mode chloride concentratio
+      INTEGER vclai
+      PARAMETER (vclai=10)
+
 ! index for Accumulation mode anthropogen
       INTEGER vorgaro1j
-      PARAMETER (vorgaro1j=7)
+      PARAMETER (vorgaro1j=11)
 
 ! index for Aitken mode anthropogenic org
       INTEGER vorgaro1i
-      PARAMETER (vorgaro1i=8)
+      PARAMETER (vorgaro1i=12)
 
 ! index for Accumulation mode anthropogen
       INTEGER vorgaro2j
-      PARAMETER (vorgaro2j=9)
+      PARAMETER (vorgaro2j=13)
 
 ! index for Aitken mode anthropogenic org
       INTEGER vorgaro2i
-      PARAMETER (vorgaro2i=10)
+      PARAMETER (vorgaro2i=14)
 
 ! index for Accumulation mode anthropogen
       INTEGER vorgalk1j
-      PARAMETER (vorgalk1j=11)
+      PARAMETER (vorgalk1j=15)
 
 ! index for Aitken mode anthropogenic org
       INTEGER vorgalk1i
-      PARAMETER (vorgalk1i=12)
+      PARAMETER (vorgalk1i=16)
 
 ! index for Accumulation mode anthropogen
       INTEGER vorgole1j
-      PARAMETER (vorgole1j=13)
+      PARAMETER (vorgole1j=17)
 
 ! index for Aitken mode anthropogenic org
       INTEGER vorgole1i
-      PARAMETER (vorgole1i=14)
+      PARAMETER (vorgole1i=18)
 
 ! index for Accumulation mode biogenic aero
       INTEGER vorgba1j
-      PARAMETER (vorgba1j=15)
+      PARAMETER (vorgba1j=19)
 
 ! index for Aitken mode biogenic aerosol co
       INTEGER vorgba1i
-      PARAMETER (vorgba1i=16)
+      PARAMETER (vorgba1i=20)
 
 ! index for Accumulation mode biogenic aero
       INTEGER vorgba2j
-      PARAMETER (vorgba2j=17)
+      PARAMETER (vorgba2j=21)
 
 ! index for Aitken mode biogenic aerosol co
       INTEGER vorgba2i
-      PARAMETER (vorgba2i=18)
+      PARAMETER (vorgba2i=22)
 
 ! index for Accumulation mode biogenic aero
       INTEGER vorgba3j
-      PARAMETER (vorgba3j=19)
+      PARAMETER (vorgba3j=23)
 
 ! index for Aitken mode biogenic aerosol co
       INTEGER vorgba3i
-      PARAMETER (vorgba3i=20)
+      PARAMETER (vorgba3i=24)
 
 ! index for Accumulation mode biogenic aero
       INTEGER vorgba4j
-      PARAMETER (vorgba4j=21)
+      PARAMETER (vorgba4j=25)
 
 ! index for Aitken mode biogenic aerosol co
       INTEGER vorgba4i
-      PARAMETER (vorgba4i=22)
+      PARAMETER (vorgba4i=26)
 
 ! index for Accumulation mode primary anthro
       INTEGER vorgpaj
-      PARAMETER (vorgpaj=23)
+      PARAMETER (vorgpaj=27)
 
 ! index for Aitken mode primary anthropogeni
       INTEGER vorgpai
-      PARAMETER (vorgpai=24)
+      PARAMETER (vorgpai=28)
 
 ! index for Accumulation mode aerosol elemen
       INTEGER vecj
-      PARAMETER (vecj=25)
+      PARAMETER (vecj=29)
 
 ! index for Aitken mode elemental carbon    
       INTEGER veci
-      PARAMETER (veci=26)
+      PARAMETER (veci=30)
 
 ! index for Accumulation mode primary PM2.5 
       INTEGER vp25aj
-      PARAMETER (vp25aj=27)
+      PARAMETER (vp25aj=31)
 
 ! index for Aitken mode primary PM2.5 concen
       INTEGER vp25ai
-      PARAMETER (vp25ai=28)
+      PARAMETER (vp25ai=32)
 
 ! index for coarse mode anthropogenic aeroso
       INTEGER vantha
-      PARAMETER (vantha=29)
+      PARAMETER (vantha=33)
 
 ! index for coarse mode marine aerosol conce
       INTEGER vseas
-      PARAMETER (vseas=30)
+      PARAMETER (vseas=34)
 
 ! index for coarse mode soil-derived aerosol
       INTEGER vsoila
-      PARAMETER (vsoila=31)
+      PARAMETER (vsoila=35)
 
 ! index for Aitken mode number              
       INTEGER vnu0
-      PARAMETER (vnu0=32)
+      PARAMETER (vnu0=36)
 
 ! index for accum  mode number              
       INTEGER vac0
-      PARAMETER (vac0=33)
+      PARAMETER (vac0=37)
 
 ! index for coarse mode number              
       INTEGER vcorn
-      PARAMETER (vcorn=34)
+      PARAMETER (vcorn=38)
 
 ! index for Accumulation mode aerosol water 
       INTEGER vh2oaj
-      PARAMETER (vh2oaj=35)
+      PARAMETER (vh2oaj=39)
 
 ! index for Aitken mode aerosol water concen
       INTEGER vh2oai
-      PARAMETER (vh2oai=36)
+      PARAMETER (vh2oai=40)
 
 ! index for Aitken mode 3'rd moment         
       INTEGER vnu3
-      PARAMETER (vnu3=37)
+      PARAMETER (vnu3=41)
 
 ! index for Accumulation mode 3'rd moment   
       INTEGER vac3
-      PARAMETER (vac3=38)
+      PARAMETER (vac3=42)
 
 ! index for coarse mode 3rd moment          
       INTEGER vcor3
-      PARAMETER (vcor3=39)
+      PARAMETER (vcor3=43)
 
 ! index for sulfuric acid vapor concentratio
       INTEGER vsulf
-      PARAMETER (vsulf=40)
+      PARAMETER (vsulf=44)
 
 ! index for nitric acid vapor concentration 
       INTEGER vhno3
-      PARAMETER (vhno3=41)
+      PARAMETER (vhno3=45)
 
 ! index for ammonia gas concentration       
       INTEGER vnh3
-      PARAMETER (vnh3=42)
+      PARAMETER (vnh3=46)
+
+! index for HCL gas concentration       
+      INTEGER vhcl
+      PARAMETER (vhcl=47)
 
 ! index for cond. vapor from aromatics   
       INTEGER vcvaro1
-      PARAMETER (vcvaro1=43)
+      PARAMETER (vcvaro1=48)
 
 ! index for cond. vapor from aromatics   
       INTEGER vcvaro2
-      PARAMETER (vcvaro2=44)
+      PARAMETER (vcvaro2=49)
 
 ! index for cond. vapor from anth. alkane
       INTEGER vcvalk1
-      PARAMETER (vcvalk1=45)
+      PARAMETER (vcvalk1=50)
 
 ! index for cond. vapor from anth. olefin
       INTEGER vcvole1
-      PARAMETER (vcvole1=46)
+      PARAMETER (vcvole1=51)
 
 ! index for cond. vapor from biogenics   
       INTEGER vcvapi1
-      PARAMETER (vcvapi1=47)
+      PARAMETER (vcvapi1=52)
 
 ! index for cond. vapor from biogenics   
       INTEGER vcvapi2
-      PARAMETER (vcvapi2=48)
+      PARAMETER (vcvapi2=53)
 
 ! index for cond. vapor from biogenics   
       INTEGER vcvlim1
-      PARAMETER (vcvlim1=49)
+      PARAMETER (vcvlim1=54)
 
 ! index for cond. vapor from biogenics   
       INTEGER vcvlim2
-      PARAMETER (vcvlim2=50)
+      PARAMETER (vcvlim2=55)
 
 !           COMMON /CBLKINDCS/
 !    &         VSO4AJ,VSO4AI,VNH4AJ,VNH4AI,VNO3AJ,VNO3AI,
@@ -813,6 +842,14 @@ MODULE module_data_sorgam
       REAL rhoanth
       PARAMETER (rhoanth=2.2E3)
 
+! bulk density of aerosol sodium          
+      REAL rhona
+      PARAMETER (rhona=2.2E3)
+
+! bulk density of aerosol chloride          
+      REAL rhocl
+      PARAMETER (rhocl=2.2E3)
+
 ! *** Factors for converting aerosol mass concentration [ ug m**-3] to
 !      	  to 3rd moment concentration [ m**3 m^-3]
 
@@ -839,6 +876,12 @@ MODULE module_data_sorgam
 
       REAL anthfac
       PARAMETER (anthfac=f6dpim9/rhoanth)
+
+      REAL nafac
+      PARAMETER (nafac=f6dpim9/rhona)
+
+      REAL clfac
+      PARAMETER (clfac=f6dpim9/rhocl)
 
 !  starting standard surface pressure [ Pa ]  
       REAL pss0

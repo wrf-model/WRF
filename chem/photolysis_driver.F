@@ -24,6 +24,8 @@
    USE module_model_constants
    USE module_phot_mad
    USE module_phot_fastj
+   USE module_ftuv_driver
+
    INTEGER,      INTENT(IN   ) :: id,julday,                           &
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
@@ -137,6 +139,23 @@
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
+     CASE (FTUV)
+       call wrf_debug(15,'calling ftuv_driver')
+!      call ftuv_radm2_driver(                                         &
+!                             id, ktau, dtstep, config_flags,          &
+!                             gmt, julday,                             &
+!                             p_phy, t_phy, rho_phy, p8w, t8w,         &
+!                             xlat, xlong, z, z_at_w,                  &
+!                             moist, chem, gd_cloud,gd_cloud2,         &
+!                             ph_no2,ph_o31d,ph_o33p,ph_hono,          &
+!                             ph_hno3,ph_hno4,ph_no3o2,ph_no3o,        &
+!                             ph_h2o2,ph_ch2om,ph_ch2or,ph_ch3cho,        &
+!                             ph_ch3o2h,ph_op2,ph_ch3coo2h,ph_ch3coch3,ph_hcocho,     &
+!                             ph_hcochob,ph_ch3cocho,ph_hcochest,ph_ch3ono2,          &
+!                             ph_macr,ph_ch3coc2h5,                    &
+!                             ids,ide, jds,jde, kds,kde,               &
+!                             ims,ime, jms,jme, kms,kme,               &
+!                             its,ite, jts,jte, kts,kte                )
      CASE DEFAULT
 
    END SELECT chem_phot_select

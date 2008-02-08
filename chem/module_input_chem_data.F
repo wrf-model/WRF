@@ -340,6 +340,11 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
         CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
      call setup_gasprofile_map_cbmz(numgas)
 
+  case (CBM4_KPP)
+     call setup_gasprofile_map_cbm4(numgas)
+
+  case (GOCART_SIMPLE)
+     call wrf_debug("setup_profile_maps: nothing done for gocart simple")
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
 
@@ -421,6 +426,53 @@ SUBROUTINE setup_gasprofile_map_cbmz(numgas)
   ggnam(numgas+1:numgas+3)   = (/'HC3 ','HC5 ','HC8 '/)
   
 END SUBROUTINE setup_gasprofile_map_cbmz
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Maps for indices and fractional apportionment of the default
+! species profiles to the CBM4 species for ICs and BCs. The profiles
+! for HC3, HC5, and HC8 used for RADM are tacked onto the end of the
+! CBM4 list in order to construct the PAR species.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE setup_gasprofile_map_cbm4(numgas)
+  integer, intent(in) :: numgas
+  integer, parameter :: listlast = 24
+  iref(:)    = 7 !default value
+  iref(1:listlast) = (/12,19, 2, 2, 1, 3, &
+                        4, 9, 8,  &
+                        6,30,30,10, 6, &
+                        6,15,23,23, &
+                        23,23,23, &
+                        7,28,29          /)
+
+  fracref(:)    = 1. !default value
+  fracref(1:listlast) = (/1.,1.,.75,.25,1.,1., &
+                          1.,1.,1., &
+                          6.25E-5,.1,.9,1.,1., &
+                          1.,7,1.,1.,   &
+                          1.,1.,1.,   &
+                          1.,1.,1.            /)
+
+  ggnam(:) = 'JUNK' !default value - not really all junk, the
+                    !last species all just goto the default
+  ggnam(1:listlast) = (/ 'SO2 ','SULF','NO2 ','NO  ','O3  ','HNO3', &
+                         'H2O2','ALD2','HCHO', &
+                         'NH3 ','N2O5','NO3 ','PAN ','ETH ', &
+                         'CO  ','OLE ','TOL ','XYL ', &
+                         'HONO','ONIT','CRES', &
+                         'ISO ','HO  ','HO2 '                      /)
+!
+! After the CBM4 species, add the RADM HC3, HC5, and HC8 to be used
+! for constructing PAR..
+!
+  if( numgas < listlast ) &
+       call wrf_error_fatal("numgas < listlast in setup_gasprofile_map_cbm4")
+  iref(numgas+1:numgas+7)    = (/   26,     13,    11,  17,   15,     15,   6/)
+  fracref(numgas+1:numgas+7) = (/   1.,     1.,    1.,   1.,   .5,   1.,   7.5E-4/)
+  ggnam(numgas+1:numgas+7)   = (/'HC3 ','HC5 ','HC8 ','KET ','OLI ','OLT ','ORA2'/)
+  
+END SUBROUTINE setup_gasprofile_map_cbm4
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1152,6 +1204,7 @@ SUBROUTINE input_chem_profile (si_grid)
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2,lo ) :: stor
 
     REAL :: hc358 !wig, 2-May-2007
+    REAL :: olit
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -1227,6 +1280,27 @@ SUBROUTINE input_chem_profile (si_grid)
                  0.4*chem(i,k,j,p_ald) + hc358                     &
                  + 0.9*chem(i,k,j,p_ket) + 2.8*chem(i,k,j,p_oli)   &
                  + 1.8*chem(i,k,j,p_olt) + 1.0*chem(i,k,j,p_ora2)
+         end do
+         end do
+         end do
+
+
+
+      CASE (CBM4_KPP)
+         do j = ny1,ny2
+         do k = nz1,nz2
+         do i = nx1,nx2
+            !Construct the sum of the profiles for hc3, hc5, & hc8
+            hc358 = ( 2.9*fracref(numgas+1)*stor(i,k,j,iref(numgas+1)) &
+                     +4.8*fracref(numgas+2)*stor(i,k,j,iref(numgas+2)) &
+                     +7.9*fracref(numgas+3)*stor(i,k,j,iref(numgas+3)) &
+                    )*1.E6
+            olit = ( 0.9*fracref(numgas+4)*stor(i,k,j,iref(numgas+4)) &
+                     +2.8*fracref(numgas+5)*stor(i,k,j,iref(numgas+5)) &
+                     +1.8*fracref(numgas+6)*stor(i,k,j,iref(numgas+6)) &
+                     +1.0*fracref(numgas+7)*stor(i,k,j,iref(numgas+7)) &
+                    )*1.E6
+            chem(i,k,j,p_par) =  0.4*chem(i,k,j,p_ald2) + hc358  + olit
          end do
          end do
          end do
@@ -1430,7 +1504,40 @@ SUBROUTINE input_chem_profile (si_grid)
    
   END SUBROUTINE bdy_chem_value_sorgam
 
+  SUBROUTINE bdy_chem_value_gocart ( chem, nch )
+
+! This subroutine is called to set the boundary values of chemistry
+! species when chem_opt==CHEM_TRACER. Typically, the boundary values
+! here should be set to match those in input_chem_profile so that the
+! interior and boundary values are the same.
+! William.Gustafson@pnl.gov; 16-Jun-2005
+
+    IMPLICIT NONE
+
+    REAL,    intent(OUT)  :: chem
+    INTEGER, intent(IN)   :: nch        ! index number of chemical species
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if( nch == p_so2  ) then
+       chem = 5.e-6
+    else if( nch == p_sulf ) then
+       chem = 3.e-6
+    else if( nch == p_dms ) then
+       chem = 1.e-16
+    else if( nch == p_msa ) then
+       chem = 1.e-16
+    else if( nch == p_bc1 ) then
+       chem = 1.e-2
+    else if( nch == p_bc2 ) then
+       chem = 1.e-2
+    else if( nch == p_oc1 ) then
+       chem = 1.e-2
+    else if( nch == p_oc2 ) then
+       chem = 1.e-2
+    else
+       chem = 1.e-12
+    end if
+
+  END SUBROUTINE bdy_chem_value_GOCART
   SUBROUTINE bdy_chem_value_tracer ( chem, nch )
 
 ! This subroutine is called to set the boundary values of chemistry
@@ -1600,6 +1707,9 @@ SUBROUTINE input_chem_profile (si_grid)
           IF (z .EQ. zprof(k) )THEN 
             stor = cprof(k)
             EXIT input_loop
+          ELSE IF (z .EQ. zprof(k+1) )THEN
+            stor = cprof(k+1)
+            EXIT input_loop
           ELSE IF ( (z .GT. zprof(k)) .AND. &
                     (z .LT. zprof(k+1)) ) THEN
             wgt0 = (z   - zprof(k+1)) / &
@@ -1741,6 +1851,8 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 4
       else if (config_flags%chem_opt == CHEM_TRACER) then
           i_bdy_method = 5
+      else if (config_flags%chem_opt == GOCART_SIMPLE) then
+          i_bdy_method = 7
       end if
       if (have_bcs_chem) i_bdy_method =6
       if (ic .lt. param_first_scalar) i_bdy_method = 0
@@ -1794,6 +1906,8 @@ SUBROUTINE input_chem_profile (si_grid)
                         chem(i,k,j), alt(i,k,j), z(i,k,j), ic, config_flags )
                 else if (i_bdy_method .eq. 5) then
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
+                else if (i_bdy_method .eq. 7) then
+                   CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
                 else
@@ -1837,6 +1951,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bye(i,k,1),chem_btye(i,k,1),dt,ic)
+                else if (i_bdy_method .eq. 7) then
+                   CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1879,6 +1995,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxs(j,k,1),chem_btxs(j,k,1),dt,ic)
+                else if (i_bdy_method .eq. 7) then
+                   CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1921,6 +2039,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_tracer ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bxe(j,k,1),chem_btxe(j,k,1),dt,ic)
+                else if (i_bdy_method .eq. 7) then
+                   CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2333,6 +2453,12 @@ SUBROUTINE input_chem_profile (si_grid)
 
      case (CHEM_TRACER)
         get_last_gas = p_co
+
+     case (GOCART_SIMPLE)
+        get_last_gas = p_msa
+
+     case (CBM4_KPP)
+        get_last_gas = p_ho2
 
      case default
         call wrf_error_fatal("get_last_gas: could not decipher chem_opt value")

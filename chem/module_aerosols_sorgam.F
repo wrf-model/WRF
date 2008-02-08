@@ -1,11 +1,10 @@
-
-
 MODULE module_aerosols_sorgam
 !
   USE module_state_description
   USE module_data_radm2
   USE module_data_sorgam
   USE module_radm
+  USE module_isrpia, only: isoropia
 !
       IMPLICIT NONE
 #define cw_species_are_in_registry
@@ -97,6 +96,8 @@ CONTAINS
                     ! input NH3 to CBLK  [ug/m^3]
       REAL nh3_in
                     ! input SO4 vapor    [ug/m^3]
+      REAL hcl_in
+
       REAL vsulf_in
 
       REAL so4rat_in
@@ -133,6 +134,10 @@ CONTAINS
 ! molecular weight for NH3
       REAL mwnh3
       PARAMETER (mwnh3=17.03061)
+
+! molecular weight for HCL
+      REAL mwhcl
+      PARAMETER (mwhcl=36.46100)
 
 !bs molecular weight for Organic Spec
 !     REAL mworg
@@ -228,6 +233,7 @@ CONTAINS
                soilrat_in = 0.
                nitrate_in =max(epsilc,chem(i,k,j,p_hno3)*convfac*mwhno3)
                nh3_in = max(epsilc,chem(i,k,j,p_nh3)*convfac*mwnh3)
+               hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
                vsulf_in = max(epsilc,chem(i,k,j,p_sulf)*convfac*mwso4)
       if(i.eq.20.and.j.eq.20.and.k.eq.19)then
         print *,'vsulfin = ',vsulf_in,chem(i,k,j,p_sulf),convfac,mwso4
@@ -320,6 +326,10 @@ CONTAINS
          cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)
          cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)
          cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
+         cblk(1,VNAAJ   )  = chem(i,k,j,p_naaj)
+         cblk(1,VNAAI   )  = chem(i,k,j,p_naai)
+         cblk(1,VCLAJ   )  = chem(i,k,j,p_claj)
+         cblk(1,VCLAI   )  = chem(i,k,j,p_clai)
 !     if( k > kemit ) then
 !        epmcoarse(1) = 0.
 !        epm25i(1)    = 0.
@@ -349,6 +359,7 @@ CONTAINS
       cblk(1,vsulf) = vsulf_in
       cblk(1,vhno3) = nitrate_in
       cblk(1,vnh3) = nh3_in
+      cblk(1,vhcl) = hcl_in
       cblk(1,VNH4AJ   ) =   chem(i,k,j,p_nh4aj)
       cblk(1,VNH4AI   ) =   chem(i,k,j,p_nh4ai)
       cblk(1,VNU0     ) =   max(1.e7,chem(i,k,j,p_nu0))
@@ -379,6 +390,10 @@ CONTAINS
       chem(i,k,j,p_nh4ai) = cblk(1,VNH4AI   )
       chem(i,k,j,p_no3aj) = cblk(1,VNO3AJ   )
       chem(i,k,j,p_no3ai) = cblk(1,VNO3AI   )
+      chem(i,k,j,p_naaj) = cblk(1,VNAAJ   )
+      chem(i,k,j,p_naai) = cblk(1,VNAAI   )
+      chem(i,k,j,p_claj) = cblk(1,VCLAJ   )
+      chem(i,k,j,p_clai) = cblk(1,VCLAI   )
       chem(i,k,j,p_orgaro1j) = cblk(1,VORGARO1J)
       chem(i,k,j,p_orgaro1i) = cblk(1,VORGARO1I)
       chem(i,k,j,p_orgaro2j) = cblk(1,VORGARO2J)
@@ -424,6 +439,7 @@ CONTAINS
       chem(i,k,j,p_sulf)=max(epsilc,cblk(1,vsulf)/CONVFAC/MWSO4)
       chem(i,k,j,p_hno3)=max(epsilc,cblk(1,vhno3)/CONVFAC/MWHNO3)
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
+      chem(i,k,j,p_hcl)=max(epsilc,cblk(1,vhcl)/CONVFAC/MWHCL)
       enddo         ! k-loop
  100  continue      ! i,j-loop
 
@@ -2764,6 +2780,13 @@ END SUBROUTINE sorgam_depdriver
       REAL fraci
 !.......................................................................
       REAL fracj
+!
+! ISOROPIA variables double precision
+!
+      real(kind=8) wi(5),wt(5),wt_save(5)
+      real(kind=8) rhi,tempi,cntrl(2)
+      real(kind=8) gas(3),aerliq(12),aersld(9),other(6)
+      character*15 scasi
 
 !      WRITE(20,*) ' IN EQL 3 '
 
@@ -2779,36 +2802,46 @@ END SUBROUTINE sorgam_depdriver
         temp = blkta(lcell)
         rh = blkrh(lcell)
 
+        rhi = amin1( rh,0.995 )
+        tempi = temp
+        cntrl(1) = 0.d0         ! 0 = forward problem
+        cntrl(2) = 0.d0         ! 0 = solids and liquid allowed
+
+        wi(1) = (cblk(lcell,vnaaj)  + cblk(lcell,vnaai))/mw_na_aer*1.e-6      ! sodium
+
+        wi(2) = (cblk(lcell,vsulf)/(mw_so4_aer+2.) +                         &
+                (cblk(lcell,vso4aj) +  cblk(lcell,vso4ai))/mw_so4_aer)*1.e-6        ! sulfate
+
+        wi(3) = (cblk(lcell,vnh3)/(mw_nh4_aer-1.) +                               &
+                (cblk(lcell,vnh4aj) +  cblk(lcell,vnh4ai))/mw_nh4_aer)*1.e-6        ! ammoinum
+
+        wi(4) = (cblk(lcell,vhno3)/(mw_no3_aer+1.) +                             &
+                (cblk(lcell,vno3aj) +  cblk(lcell,vno3ai))/mw_no3_aer)*1.e-6   ! nitrate
+
+       
+        wi(5) = (cblk(lcell,vhcl)/(mw_cl_aer-1.) +                               &
+                (cblk(lcell,vclaj)  + cblk(lcell,vclai))/mw_cl_aer)*1.e-6      ! chloride
+
+
+        wt_save(1) = wi(1) ! sodium
+        wt_save(2) = wi(2) ! sulfate
+        wt_save(3) = wi(3) ! ammoinum
+        wt_save(4) = wi(4) ! nitrate
+        wt_save(5) = wi(5) ! chloride
+
+        call isoropia(wi,rhi,tempi,cntrl,wt,gas,aerliq,aersld,scasi,other)
+
+
 ! *** the following is an interim procedure. Assume the i-mode has the
 !     same relative mass concentrations as the total mass. Use SO4 as
-!     the surrogate. The results of this should be the same as those
-!     from the original RPM.
+!     the surrogate. 
 
-! *** do total aerosol
 
-        so4 = cblk(lcell,vso4aj) + cblk(lcell,vso4ai)
+! *** update gas / vapor phase
 
-!iamodels3
-        no3 = cblk(lcell,vno3aj) + cblk(lcell,vno3ai)
-!    &                        + CBLK(LCELL, VHNO3)
-
-        hno3 = cblk(lcell,vhno3)
-
-!iamodels3
-
-        nh3 = cblk(lcell,vnh3)
-
-        nh4 = cblk(lcell,vnh4aj) + cblk(lcell,vnh4ai)
-!    &                        + CBLK(LCELL, VNH3)
-
-!bs           CALL rpmares(SO4,HNO3,NO3,NH3,NH4,RH,TEMP,
-!bs     &             ASO4,ANO3,AH2O,ANH4,GNH3,GNO3)
-!bs
-!bs * call old version of rpmares
-!bs
-        CALL rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
-          gnh3,gno3)
-!bs
+        cblk(lcell,vnh3)  = gas(1)*1.e6*17.
+        cblk(lcell,vhno3) = gas(2)*1.e6*63.
+        cblk(lcell,vhcl) = gas(3)*1.e6*36.
 
 ! *** get modal fraction
         fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
@@ -2816,24 +2849,25 @@ END SUBROUTINE sorgam_depdriver
 
 ! *** update do i-mode
 
-        cblk(lcell,vh2oai) = fraci*ah2o
-        cblk(lcell,vnh4ai) = fraci*anh4
-        cblk(lcell,vno3ai) = fraci*ano3
+        cblk(lcell,vh2oai) = fraci*aerliq(8)*18.*1.e6
+        cblk(lcell,vnh4ai) = fraci*(wt_save(3) - gas(1))
+        cblk(lcell,vno3ai) = fraci*(wt_save(4) - gas(2))
+        cblk(lcell,vclai)  = fraci*(wt_save(5) - gas(3))
+        cblk(lcell,vnaai)  = fraci*wi(1)
 
 ! *** update accumulation mode:
 
-        cblk(lcell,vh2oaj) = fracj*ah2o
-        cblk(lcell,vnh4aj) = fracj*anh4
-        cblk(lcell,vno3aj) = fracj*ano3
+        cblk(lcell,vh2oaj) = fracj*aerliq(8)*18.*1.e6
+        cblk(lcell,vnh4aj) = fracj*(wt_save(3) - gas(1))
+        cblk(lcell,vno3aj) = fracj*(wt_save(4) - gas(2))
+        cblk(lcell,vclaj)  = fracj*(wt_save(5) - gas(3))
+        cblk(lcell,vnaaj)  = fracj*wi(1)
 
 
-! *** update gas / vapor phase
-
-        cblk(lcell,vnh3) = gnh3
-        cblk(lcell,vhno3) = gno3
 
       END DO
-!  end loop on cells                     
+!  end loop on cells
+
       RETURN
 
 !bs ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS *!
@@ -3626,7 +3660,9 @@ END SUBROUTINE sorgam_depdriver
 !        cblk(lcell,vnu3) = max(conmin,(so4fac*cblk(lcell, & ! ghan
         cblk(lcell,vnu3) = so4fac*cblk(lcell, &
           vso4ai)+nh4fac*cblk(lcell,vnh4ai)+h2ofac*cblk(lcell, &
-          vh2oai)+no3fac*cblk(lcell,vno3ai)+orgfac*cblk(lcell, &
+          vh2oai)+no3fac*cblk(lcell,vno3ai)+                   &
+          nafac*cblk(lcell,vnaai)+  clfac*cblk(lcell,vclai)+   &
+          orgfac*cblk(lcell, &
           vorgaro1i)+orgfac*cblk(lcell,vorgaro2i)+orgfac*cblk(lcell, &
           vorgalk1i)+orgfac*cblk(lcell,vorgole1i)+orgfac*cblk(lcell, &
           vorgba1i)+orgfac*cblk(lcell,vorgba2i)+orgfac*cblk(lcell, &
@@ -3641,7 +3677,9 @@ END SUBROUTINE sorgam_depdriver
 !        cblk(lcell,vac3) = max(conmin,(so4fac*cblk(lcell, & ! ghan
         cblk(lcell,vac3) = so4fac*cblk(lcell, &
           vso4aj)+nh4fac*cblk(lcell,vnh4aj)+h2ofac*cblk(lcell, &
-          vh2oaj)+no3fac*cblk(lcell,vno3aj)+orgfac*cblk(lcell, &
+          vh2oaj)+no3fac*cblk(lcell,vno3aj) +                  &
+          nafac*cblk(lcell,vnaaj)+  clfac*cblk(lcell,vclaj)+   &
+          orgfac*cblk(lcell, &
           vorgaro1j)+orgfac*cblk(lcell,vorgaro2j)+orgfac*cblk(lcell, &
           vorgalk1j)+orgfac*cblk(lcell,vorgole1j)+orgfac*cblk(lcell, &
           vorgba1j)+orgfac*cblk(lcell,vorgba2j)+orgfac*cblk(lcell, &
@@ -6805,9 +6843,21 @@ END SUBROUTINE vdvg
 	mw_mastercomp_aer(   17) =  mw_ca_aer + mw_co3_aer
 	hygro_mastercomp_aer(17) = hygro_ca_aer + hygro_co3_aer
 
+  	name_mastercomp_aer(18)  = 'sodium'
+  	dens_mastercomp_aer(18)  = dens_na_aer
+  	mw_mastercomp_aer(  18)  =   mw_na_aer
+  	hygro_mastercomp_aer(18) = hygro_na_aer
+  
+  	name_mastercomp_aer(19)  = 'chloride'
+  	dens_mastercomp_aer(19)  = dens_cl_aer
+  	mw_mastercomp_aer(  19)  =   mw_cl_aer
+  	hygro_mastercomp_aer(19) = hygro_cl_aer
+
 	lptr_so4_aer(:,:,:)      = 1
 	lptr_nh4_aer(:,:,:)      = 1
 	lptr_no3_aer(:,:,:)      = 1
+	lptr_na_aer(:,:,:)       = 1
+	lptr_cl_aer(:,:,:)       = 1
 	lptr_orgaro1_aer(:,:,:)  = 1
 	lptr_orgaro2_aer(:,:,:)  = 1
 	lptr_orgalk_aer(:,:,:)  = 1
@@ -6824,12 +6874,13 @@ END SUBROUTINE vdvg
 	lptr_soil_aer(:,:,:) = 1
 	numptr_aer(:,:,:)          = 1
 
-
 ! Accumulation mode
-	ncomp_aer(1) = 14
-      	  lptr_so4_aer(1,1,ai_phase)= p_so4aj
-      	  lptr_nh4_aer(1,1,ai_phase) = p_nh4aj
-      	  lptr_no3_aer(1,1,ai_phase) = p_no3aj
+	ncomp_aer(1) = 16
+      	  lptr_so4_aer(1,1,ai_phase)  = p_so4aj
+      	  lptr_nh4_aer(1,1,ai_phase)  = p_nh4aj
+      	  lptr_no3_aer(1,1,ai_phase)  = p_no3aj
+      	  lptr_na_aer(1,1,ai_phase)   = p_naaj
+      	  lptr_cl_aer(1,1,ai_phase)   = p_claj
       	  lptr_orgaro1_aer(1,1,ai_phase) = p_orgaro1j
       	  lptr_orgaro2_aer(1,1,ai_phase) = p_orgaro2j
       	  lptr_orgalk_aer(1,1,ai_phase) = p_orgalk1j
@@ -6843,10 +6894,12 @@ END SUBROUTINE vdvg
       	  lptr_p25_aer(1,1,ai_phase) = p_p25j
 	numptr_aer(1,1,ai_phase)          = p_ac0
 ! Aitken mode
-	ncomp_aer(2) = 14
+	ncomp_aer(2) = 16
       	  lptr_so4_aer(1,2,ai_phase)= p_so4ai
       	  lptr_nh4_aer(1,2,ai_phase) = p_nh4ai
       	  lptr_no3_aer(1,2,ai_phase) = p_no3ai
+      	  lptr_na_aer(1,2,ai_phase)  = p_naai
+      	  lptr_cl_aer(1,2,ai_phase)  = p_clai
       	  lptr_orgaro1_aer(1,2,ai_phase) = p_orgaro1i
       	  lptr_orgaro2_aer(1,2,ai_phase) = p_orgaro2i
       	  lptr_orgalk_aer(1,2,ai_phase) = p_orgalk1i
@@ -7000,6 +7053,16 @@ END SUBROUTINE vdvg
 		massptr_aer(ll,n,itype,iphase) = lptr_soil_aer(n,itype,iphase)
 		mastercompptr_aer(ll,itype) = 17
 	    end if
+	    if (lptr_na_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_na_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 18
+	    end if
+	    if (lptr_cl_aer(n,itype,iphase) .ge. p1st) then
+		ll = ll + 1
+		massptr_aer(ll,n,itype,iphase) = lptr_cl_aer(n,itype,iphase)
+		mastercompptr_aer(ll,itype) = 19
+            endif
 	    ncomp_aer_nontracer(itype) = ll
 
 	    ncomp_aer(itype) = ll
@@ -7181,6 +7244,10 @@ END SUBROUTINE vdvg
           chem(i,k,j,p_nh4ai) = 10.E-05
           chem(i,k,j,p_no3aj) = 10.E-05
           chem(i,k,j,p_no3ai) = 10.E-05
+          chem(i,k,j,p_naaj)  = 10.E-05
+          chem(i,k,j,p_naai)  = 10.E-05
+          chem(i,k,j,p_claj)  = 10.E-05
+          chem(i,k,j,p_clai)  = 10.E-05
         elseif( aer_ic_opt == AER_IC_PNNL ) then
            zz = (z_at_w(i,k,j)+z_at_w(i,k+1,j))*0.5
            call sorgam_init_aer_ic_pnnl(   &
@@ -7192,7 +7259,9 @@ END SUBROUTINE vdvg
 
 !... i-mode
       m3nuc = so4fac*chem(i,k,j,p_so4ai) + nh4fac*chem(i,k,j,p_nh4ai) + &
-        no3fac*chem(i,k,j,p_no3ai) + orgfac*chem(i,k,j,p_orgaro1i) + &
+        no3fac*chem(i,k,j,p_no3ai) +                                    &
+        nafac*chem(i,k,j,p_naai) + clfac*chem(i,k,j,p_clai) +           &
+        orgfac*chem(i,k,j,p_orgaro1i) + &
         orgfac*chem(i,k,j,p_orgaro2i) + orgfac*chem(i,k,j,p_orgalk1i) + &
         orgfac*chem(i,k,j,p_orgole1i) + orgfac*chem(i,k,j,p_orgba1i) + &
         orgfac*chem(i,k,j,p_orgba2i) + orgfac*chem(i,k,j,p_orgba3i) + &
@@ -7201,7 +7270,9 @@ END SUBROUTINE vdvg
 
 !... j-mode
       m3acc = so4fac*(chem(i,k,j,p_so4aj)) + nh4fac*(chem(i,k,j,p_nh4aj)) + &
-        no3fac*(chem(i,k,j,p_no3aj)) + orgfac*(chem(i,k,j,p_orgaro1j)) + &
+        no3fac*(chem(i,k,j,p_no3aj)) +                                      &
+        nafac*chem(i,k,j,p_naaj) + clfac*chem(i,k,j,p_claj) +           & 
+        orgfac*(chem(i,k,j,p_orgaro1j)) + &
         orgfac*(chem(i,k,j,p_orgaro2j)) + orgfac*(chem(i,k,j,p_orgalk1j)) + &
         orgfac*(chem(i,k,j,p_orgole1j)) + orgfac*(chem(i,k,j,p_orgba1j)) + &
         orgfac*(chem(i,k,j,p_orgba2j)) + orgfac*(chem(i,k,j,p_orgba3j)) + &
@@ -7228,6 +7299,10 @@ END SUBROUTINE vdvg
           chem(i,k,j,p_nh4ai) = 10.E-05
           chem(i,k,j,p_no3aj) = 10.E-05
           chem(i,k,j,p_no3ai) = 10.E-05
+          chem(i,k,j,p_naaj)  = 10.E-05
+          chem(i,k,j,p_naai)  = 10.E-05
+          chem(i,k,j,p_claj)  = 10.E-05
+          chem(i,k,j,p_clai)  = 10.E-05
         endif
 !jdf
         enddo
@@ -7370,6 +7445,10 @@ END SUBROUTINE vdvg
       chem(i,k,j,p_nh4ai)    = mult*0.094*0.03
       chem(i,k,j,p_no3aj)    = mult*0.001*0.97
       chem(i,k,j,p_no3ai)    = mult*0.001*0.03
+      chem(i,k,j,p_naaj)     = 10.E-05
+      chem(i,k,j,p_naai)     = 10.E-05
+      chem(i,k,j,p_claj)     = 10.E-05
+      chem(i,k,j,p_clai)     = 10.E-05
       chem(i,k,j,p_ecj)      = mult*0.013*0.97
       chem(i,k,j,p_eci)      = mult*0.013*0.03
       chem(i,k,j,p_p25j)     = mult*4.500*0.97
@@ -7524,12 +7603,19 @@ SUBROUTINE sorgam_addemiss(                                             &
 !
 ! Get the sea salt emissions...
 !
-  if( seasalt_emiss_active > 0 ) then
+  if( seasalt_emiss_active == 1 ) then
      call sorgam_seasalt_emiss(                                  &
           dtstep, u10, v10, alt, dz8w, xland, chem,              &
           ids,ide, jds,jde, kds,kde,                             &
           ims,ime, jms,jme, kms,kme,                             &
           its,ite, jts,jte, kts,kte                              )
+  end if
+  if( seasalt_emiss_active == 2 ) then
+!     call Monahan_seasalt_emiss(                                 &
+!          dtstep, u10, v10, alt, dz8w, xland, chem,              &
+!          ids,ide, jds,jde, kds,kde,                             &
+!          ims,ime, jms,jme, kms,kme,                             &
+!          its,ite, jts,jte, kts,kte                              )
   end if
 
 END SUBROUTINE sorgam_addemiss

@@ -4392,7 +4392,9 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
-
+#ifdef WRF_CHEM
+  USE module_data_gocart_dust
+#endif
    IMPLICIT NONE
 
 
@@ -4457,6 +4459,14 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                             "of ISLTYP. Is this field in the input?" )
    ENDIF
 
+#ifdef WRF_CHEM
+!
+! need this parameter for dust parameterization in wrf/chem
+!
+   do I=1,NSLTYPE
+      porosity(i)=maxsmc(i)
+   enddo
+#endif
    DO J=jts,jtf
        DO I=its,itf
 

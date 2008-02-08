@@ -360,7 +360,7 @@
         its,ite, jts,jte, kts,kte                                )
 !
    USE module_configure
-   USE module_state_description
+!  USE module_state_description
    USE module_model_constants
    USE module_data_mosaic_asect
    USE module_data_mosaic_other
@@ -650,7 +650,7 @@
         its,ite, jts,jte, kts,kte                                )
 !
    USE module_configure
-   USE module_state_description
+!  USE module_state_description
    USE module_model_constants
    USE module_state_description, only:  param_first_scalar
    USE module_data_sorgam

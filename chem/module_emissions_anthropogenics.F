@@ -222,8 +222,8 @@ CONTAINS
                   e_bio(i,j,p_ol2-1)*conv_rho
  100  continue
 !     enddo
-     CASE (BEIS311)
-     CALL wrf_debug(100,'adding biogenic emissions: beis3.1.1')
+     CASE (BEIS313)
+     CALL wrf_debug(100,'adding biogenic emissions: beis3.1.3')
       do j=jts,jte  
       do i=its,ite  
         conv_rho=4.828e-4/rho_phy(i,kts,j)*dtstep/(dz8w(i,kts,j)*60.)

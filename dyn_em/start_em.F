@@ -598,6 +598,8 @@
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
                       grid%rqvndgdten,grid%rmundgdten,                  &     ! Optional
                       grid%FGDT,grid%stepfg,                        &     ! Optional
+                      grid%cugd_tten,grid%cugd_ttens,grid%cugd_qvten,        &   ! Optional
+                      grid%cugd_qvtens,grid%cugd_qcten,                 &   ! Optional
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
                       grid%QC_URB2D, grid%XXXR_URB2D,grid%XXXB_URB2D,        & !Optional urban
@@ -902,9 +904,12 @@
          CALL chem_init (grid%id,chem,emis_ant,scalar,grid%dt,grid%bioemdt,grid%photdt,     &
                          grid%chemdt,                                       &
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
-                         grid%plumerisefire_frq,z_at_w,g,grid%aerwrf,config_flags,            &
-                         grid%alt,grid%t_1,grid%p,convfac,                              &
-                         grid%gd_cloud, grid%gd_cloud2,                                  &
+                         grid%plumerisefire_frq,z_at_w,grid%xlat,grid%xlong,g,           &
+                         grid%aerwrf,config_flags,            &
+                         grid%alt,grid%t_1,grid%p,convfac,grid%ttday,grid%tcosz,         &
+                         grid%julday,grid%gmt,&
+                         grid%gd_cloud, grid%gd_cloud2,grid%raincv_a,grid%raincv_b,     &
+                         grid%gd_cloud_a, grid%gd_cloud2_a,                              &
                          grid%gd_cloud_b, grid%gd_cloud2_b,                              &
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &

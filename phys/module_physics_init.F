@@ -63,6 +63,8 @@ CONTAINS
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RQVNDGDTEN,RMUNDGDTEN,                  &    ! Optional
                          FGDT,STEPFG,                            &    ! Optional
+                         cugd_tten,cugd_ttens,cugd_qvten,        &    ! Optional
+                         cugd_qvtens,cugd_qcten,                 &    ! Optional
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
                          DZR, DZB, DZG,                          & !Optional urban
@@ -190,7 +192,9 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_MYJ
-
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+             cugd_tten,cugd_ttens,cugd_qvten,                &
+             cugd_qvtens,cugd_qcten
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              XLAND,ZNT,Z0,UST,MOL,LU_INDEX,                         &
              PBLH,THC,MAVAIL,HFX,QFX,RAINBL
@@ -452,6 +456,8 @@ integer myproc
                 RTHFTEN, RQVFTEN,                               &
                 APR_GR,APR_W,APR_MC,APR_ST,APR_AS,              &
                 APR_CAPMA,APR_CAPME,APR_CAPMI,                  &
+                cugd_tten,cugd_ttens,cugd_qvten,                &
+                cugd_qvtens,cugd_qcten,                         &
                 allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -1326,6 +1332,8 @@ integer myproc
                       RTHFTEN, RQVFTEN,                           &
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI,              &
+                      cugd_tten,cugd_ttens,cugd_qvten,            &
+                      cugd_qvtens,cugd_qcten,                     &
                       allowed_to_read, start_of_simulation,       &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
@@ -1334,7 +1342,8 @@ integer myproc
    USE module_cu_kf
    USE module_cu_kfeta
    USE MODULE_CU_BMJ
-   USE module_cu_gd
+   USE module_cu_gd,  ONLY : GDINIT
+   USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -1353,8 +1362,10 @@ integer myproc
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &
-            RTHCUTEN, RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN,     &
-            RQSCUTEN
+            RTHCUTEN, RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
+   REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+                        cugd_tten,cugd_ttens,cugd_qvten,            &
+                        cugd_qvtens,cugd_qcten
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
@@ -1437,6 +1448,21 @@ integer myproc
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
+#if ( EM_CORE == 1 )
+     CASE (G3SCHEME)
+          CALL g3init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
+                      MASS_FLUX,cp,restart,                       &
+                      P_QC,P_QI,PARAM_FIRST_SCALAR,               &
+                      RTHFTEN, RQVFTEN,                           &
+                      APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
+                      APR_CAPMA,APR_CAPME,APR_CAPMI,              &
+                      cugd_tten,cugd_ttens,cugd_qvten,            &
+                      cugd_qvtens,cugd_qcten,                     &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+#endif
      CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &

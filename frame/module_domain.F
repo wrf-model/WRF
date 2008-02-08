@@ -27,7 +27,6 @@ MODULE module_domain
 
    USE module_driver_constants
    USE module_machine
-   USE module_state_description
    USE module_configure
    USE module_wrf_error
    USE module_utility

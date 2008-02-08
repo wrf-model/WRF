@@ -126,6 +126,10 @@ int print_call_or_def( FILE * fp , node_t *p, char * callorsub,
 int print_decl( FILE * fp , node_t *p, char * communicator, 
                 int need_config_flags )
   {
+  fprintf(fp,"  USE module_domain, ONLY:domain\n") ;
+  fprintf(fp,"  USE module_configure, ONLY:grid_config_rec_type,in_use_for_config\n") ;
+  fprintf(fp,"  USE module_state_description, ONLY:PARAM_FIRST_SCALAR\n") ;
+  fprintf(fp,"  USE module_driver_constants\n") ;
   fprintf(fp,"  TYPE(domain) ,               INTENT(IN) :: grid\n") ;
   if (need_config_flags == 1) 
     fprintf(fp,"  TYPE(grid_config_rec_type) , INTENT(IN) :: config_flags\n") ;

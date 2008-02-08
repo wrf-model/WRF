@@ -1283,6 +1283,7 @@
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
+     &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !

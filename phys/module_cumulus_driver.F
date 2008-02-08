@@ -3,10 +3,11 @@
 
 MODULE module_cumulus_driver
 CONTAINS
-   SUBROUTINE cumulus_driver(                                         &
+   SUBROUTINE cumulus_driver(grid                                     &
                  ! Order dependent args for domain, mem, and tile dims
-                      ids,ide, jds,jde, kds,kde                       &
+                     ,ids,ide, jds,jde, kds,kde                       &
                      ,ims,ime, jms,jme, kms,kme                       &
+                     ,ips,ipe, jps,jpe, kps,kpe                       &
                      ,i_start,i_end,j_start,j_end,kts,kte,num_tiles   &
                  ! Order independent args (use VAR= in call)
                  ! --Prognostic
@@ -30,8 +31,10 @@ CONTAINS
                      ,qi_prev, qs_prev, qg_prev                       &
                  ! Optional arguments for GD scheme
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
-                     ,apr_capme,apr_capmi                             &
-                     ,mass_flux,xf_ens,pr_ens                         &
+                     ,apr_capme,apr_capmi,edt_out,clos_choice         &
+                     ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
+                     ,cugd_tten,cugd_qvten,cugd_qcten                 &
+                     ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2      &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
@@ -46,14 +49,18 @@ CONTAINS
    USE module_model_constants
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
+                                          ,G3SCHEME                   &
                                           ,SASSCHEME
 
 ! *** add new modules of schemes here
 
    USE module_cu_kf
    USE module_cu_bmj
+   USE module_dm
+   USE module_domain, ONLY: domain
    USE module_cu_kfeta
-   USE module_cu_gd
+   USE module_cu_gd, ONLY : GRELLDRV
+   USE module_cu_g3, ONLY : G3DRV,CONV_GRELL_SPREAD3D
    USE module_cu_sas
 
    !  This driver calls subroutines for the cumulus parameterizations.
@@ -204,11 +211,15 @@ CONTAINS
                                                         kts,kte, &
                                       itimestep, num_tiles
    LOGICAL periodic_x, periodic_y
+   TYPE(domain) , INTENT(INOUT)          :: grid
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::                             &
-                           ensdim,maxiens,maxens,maxens2,maxens3
+                  ensdim,maxiens,maxens,maxens2,maxens3
+
+   INTEGER, OPTIONAL,     INTENT(IN   )    ::                    &
+                   cugd_avedx,clos_choice
 
    INTEGER,      INTENT(IN   )    ::   cu_physics
    INTEGER,      INTENT(IN   )    ::   STEPCU
@@ -258,6 +269,8 @@ CONTAINS
           INTENT(INOUT) :: CU_ACT_FLAG
 
    REAL,  INTENT(IN   ) :: DT, DX
+   INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
+                                      ips,ipe, jps,jpe, kps,kpe,imomentum
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
@@ -280,6 +293,8 @@ CONTAINS
                      ,rqicuten,rqscuten,rqgcuten                 &
                      ,rqvblten,rqvften                           &
                      ,rthraten,rthblten                          &
+                     ,cugd_tten,cugd_qvten,cugd_qcten            &
+                     ,cugd_ttens,cugd_qvtens                     &
                                                       ,   forcet &
                                                       ,   forceq &
                      ,rthften,rthcuten
@@ -288,7 +303,7 @@ CONTAINS
                     OPTIONAL,                                    &
                     INTENT(INOUT) ::                             &
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
-               ,apr_capme,apr_capmi                              &
+               ,apr_capme,apr_capmi,edt_out                      &
                                                     , MASS_FLUX
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
@@ -341,6 +356,30 @@ CONTAINS
    tmppratec(:,:) = pratec(:,:)
 
    IF (cu_physics .eq. 0) return
+      if(cu_physics .eq. 5 ) then
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij,i,j,k,its,ite,jts,jte )
+
+      DO ij = 1 , num_tiles
+        its = i_start(ij)
+        ite = i_end(ij)
+        jts = j_start(ij)
+        jte = j_end(ij)
+        do j=jts,min(jte,jde-1)
+        do k=kts,kte
+        do i=its,min(ite,ide-1)
+           RTHFTEN(i,k,j)=(RTHFTEN(i,k,j)+RTHRATEN(i,k,j) &
+                               +RTHBLTEN(i,k,j))*pi(i,k,j)
+           RQVFTEN(i,k,j)=RQVFTEN(i,k,j)+RQVBLTEN(i,k,j)
+       enddo
+       enddo
+       enddo
+      ENDDO
+      !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
+#     include "HALO_CUP_G3_IN.inc"
+#endif
+      endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -468,10 +507,10 @@ CONTAINS
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
 #if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               & 
+               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
 #else
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              & 
+               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
 #endif
                ,RTHRATEN=RTHRATEN,RTHBLTEN=RTHBLTEN             &
@@ -503,6 +542,45 @@ CONTAINS
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                                 )
+     CASE (G3SCHEME)
+          CALL wrf_debug(100,'in grelldrv')
+          CALL G3DRV(                                           &
+                DT=dt, ITIMESTEP=itimestep, DX=dx               &
+               ,U=u,V=v,T=t,W=w ,RHO=rho                        &
+               ,P=p,PI=pi,Q=qv_curr,RAINCV=raincv               &
+               ,DZ8W=dz8w ,P8W=p8w,XLV=xlv,CP=cp,G=g,R_V=r_v    &
+               ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
+               ,APR_ST=apr_st,APR_AS=apr_as,PRATEC=tmppratec    &
+               ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
+               ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
+               ,XF_ENS=xf_ens,PR_ENS=pr_ens,HT=ht               &
+               ,xland=xland,gsw=gsw,edt_out=edt_out             &
+               ,GDC=gd_cloud,GDC2=gd_cloud2                     &
+               ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
+               ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
+               ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
+               ,imomentum=imomentum                             &
+               ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
+               ,MAXENS2=maxens2,MAXENS3=maxens3,ichoice=clos_choice &
+               ,STEPCU=STEPCU,htop=htop,hbot=hbot               &
+               ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+               ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
+              ! optionals
+#if (NMM_CORE == 1 )
+               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
+               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
+#else
+               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
+               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
+#endif
+               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+                                                                )
 
      CASE DEFAULT 
 
@@ -513,6 +591,25 @@ CONTAINS
 
       ENDDO
       !$OMP END PARALLEL DO
+   IF(cu_physics .eq. 5 )then
+#ifdef DM_PARALLEL
+#     include "HALO_CUP_G3_OUT.inc"
+#endif
+        call conv_grell_spread3d(rthcuten=rthcuten,rqvcuten=rqvcuten                &
+     &            ,rqccuten=rqccuten,raincv=raincv,cugd_avedx=cugd_avedx            &
+     &            ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten,rqicuten=rqicuten      &
+     &            ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens                    &
+     &            ,cugd_qcten=cugd_qcten,pi_phy=pi,moist_qv=qv_curr                 &
+     &            ,PRATEC=tmppratec,dt=dt,num_tiles=num_tiles                       &
+     &            ,imomentum=imomentum                             &
+     &            ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,F_QI=F_QI,F_QS=F_QS                &
+     &            ,ids=IDS,ide=IDE, jds=JDS,jde=JDE, kds=KDS,kde=KDE                &
+     &            ,ips=IPS,ipe=IPE, jps=JPS,jpe=JPE, kps=KPS,kpe=KPE                &
+     &            ,ims=IMS,ime=IME, jms=JMS,jme=JME, kms=KMS,kme=KME                &
+     &            ,i_start=i_start,i_end=i_end                                      &
+     &            ,j_start=j_start,j_end=j_end                                      &
+     &            ,kts=kts, kte=kte)
+   endif
 
       !
       ! Copy pratec back to output array, if necessary.

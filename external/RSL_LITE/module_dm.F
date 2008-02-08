@@ -3,8 +3,6 @@
 MODULE module_dm
 
    USE module_machine
-   USE module_configure
-   USE module_state_description
    USE module_wrf_error
    USE module_driver_constants
    USE module_comm_dm
@@ -81,6 +79,7 @@ CONTAINS
    END SUBROUTINE MPASPECT
 
    SUBROUTINE wrf_dm_initialize
+      USE module_configure
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INTEGER :: local_comm, local_comm2, new_local_comm, group, newgroup, p, p1, ierr
@@ -2781,7 +2780,6 @@ END
       USE module_domain
       USE module_configure
       USE module_dm
-      USE module_state_description
       IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -2845,7 +2843,6 @@ END
              USE module_domain
              USE module_configure
              USE module_dm
-             USE module_state_description
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid
@@ -3304,7 +3301,6 @@ integer myproc
       USE module_domain
       USE module_configure
       USE module_dm
-      USE module_state_description
       IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3389,7 +3385,6 @@ integer myproc
              USE module_domain
              USE module_configure
              USE module_dm
-             USE module_state_description
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid

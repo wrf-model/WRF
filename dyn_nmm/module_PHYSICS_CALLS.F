@@ -1686,6 +1686,7 @@
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
+     &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -1716,6 +1717,7 @@
       INTEGER,INTENT(IN) :: ENSDIM                                      &
      &                     ,IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
 !
@@ -2055,9 +2057,10 @@
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 !
-      CALL CUMULUS_DRIVER(                                              &
-     &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
+      CALL CUMULUS_DRIVER(GRID                                          &
+     &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
+     &                 ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
      &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &

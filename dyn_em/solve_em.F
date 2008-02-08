@@ -30,6 +30,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_radiation_driver
    USE module_surface_driver
    USE module_cumulus_driver
+   USE module_cu_g3
    USE module_microphysics_driver
    USE module_microphysics_zero_out
    USE module_pbl_driver
@@ -104,7 +105,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
    INTEGER :: idex, jdex
    REAL    :: max_msft, max_msftx, max_msfty
    REAL    :: spacing
-   
 
    INTEGER :: ii, jj !kk is above after l,kte
    REAL    :: dclat
@@ -176,7 +176,6 @@ SUBROUTINE solve_em ( grid , config_flags  &
                             sids, side, sjds, sjde, skds, skde,    &
                             sims, sime, sjms, sjme, skms, skme,    &
                             sips, sipe, sjps, sjpe, skps, skpe    )
-
   k_start         = kps
   k_end           = kpe
 
@@ -936,10 +935,11 @@ BENCH_END(pbl_driver_tim)
 
           CALL wrf_debug ( 200 , ' call cumulus_driver' )
 
+
 BENCH_START(cu_driver_tim)
-         CALL cumulus_driver(                                             &
+         CALL cumulus_driver(grid                                             &
                  ! Prognostic variables
-     &              U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy             &
+     &             ,U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=t_phy             &
      &             ,W=grid%w_2     ,P=p_phy   ,PI=pi_phy  ,RHO=rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx                &
@@ -954,11 +954,14 @@ BENCH_START(cu_driver_tim)
      &             ,APR_ST=grid%apr_st ,APR_AS=grid%apr_as ,APR_CAPMA=grid%apr_capma     &
      &             ,APR_CAPME=grid%apr_capme          ,APR_CAPMI=grid%apr_capmi     &
      &             ,MASS_FLUX=grid%mass_flux          ,XF_ENS=grid%xf_ens           &
-     &             ,PR_ENS=grid%pr_ens ,HT=grid%ht                                  &
+     &             ,PR_ENS=grid%pr_ens ,HT=grid%ht,EDT_OUT=grid%edt_out             &
+     &             ,imomentum=grid%imomentum,clos_choice=grid%clos_choice       &
+     &             ,cugd_tten=grid%cugd_tten,cugd_qvten=grid%cugd_qvten,cugd_qcten=grid%cugd_qcten   &
+     &             ,cugd_ttens=grid%cugd_ttens,cugd_qvtens=grid%cugd_qvtens   &
      &             ,ENSDIM=config_flags%ensdim ,MAXIENS=config_flags%maxiens ,MAXENS=config_flags%maxens         &
      &             ,MAXENS2=config_flags%maxens2                ,MAXENS3=config_flags%maxens3       &
      &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=grid%warm_rain        &
-     &             ,GSW=grid%gsw &
+     &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx &
                    ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
                    ,PERIODIC_Y=config_flags%periodic_y  &
                  ! Selection flag
@@ -966,6 +969,7 @@ BENCH_START(cu_driver_tim)
                  ! Dimension arguments
      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+     &             ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
      &             ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
      &             ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
      &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &

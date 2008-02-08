@@ -768,7 +768,7 @@ state    real  W0AVG           ikj      misc        1         -      r        "W
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
 state    real  PRATEC           ij      misc        1         -      h        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
-state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
+state    real  RAINCV           ij      misc        1         -      rh       "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"      
 state    real  SNOWNC           ij      misc        1         -      rhdu     "SNOWNC"                "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"               "mm"
@@ -778,16 +778,23 @@ state    real  GRAUPELNCV       ij      misc        1         -      r        "G
 state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""      
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
-state    real  apr_gr           ij      misc         1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
-state    real  apr_w            ij      misc         1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
-state    real  apr_mc           ij      misc         1         -      r       "APR_MC"                "PRECIP FROM CLOSURE KRISH MV"    "mm hour-1"
-state    real  apr_st           ij      misc         1         -      r       "APR_ST"                "PRECIP FROM CLOSURE STABILITY"   "mm hour-1"
-state    real  apr_as           ij      misc         1         -      r       "APR_AS"                "PRECIP FROM CLOSURE AS-TYPE"     "mm hour-1"
-state    real  apr_capma        ij      misc         1         -      r       "APR_CAPMA"             "PRECIP FROM MAX CAP"             "mm hour-1"
-state    real  apr_capme        ij      misc         1         -      r       "APR_CAPME"             "PRECIP FROM MEAN CAP"            "mm hour-1"
-state    real  apr_capmi        ij      misc         1         -      r       "APR_CAPMI"             "PRECIP FROM MIN CAP"             "mm hour-1"
-state    real  xf_ens           ije     misc        1         Z      r        "XF_ENS"                "MASS FLUX PDF IN GRELL CUMULUS SCHEME"    "mb hour-1"  
-state    real  pr_ens           ije     misc        1         Z      r        "PR_ENS"                "PRECIP RATE PDF IN GRELL CUMULUS SCHEME"  "mb hour-1" 
+state    real  apr_gr           ij      misc        1         -      r       "APR_GR"                "PRECIP FROM CLOSURE OLD_GRELL"   "mm hour-1"
+state    real  apr_w            ij      misc        1         -      r       "APR_W"                 "PRECIP FROM CLOSURE W"           "mm hour-1"
+state    real  apr_mc           ij      misc        1         -      r       "APR_MC"                "PRECIP FROM CLOSURE KRISH MV"    "mm hour-1"
+state    real  apr_st           ij      misc        1         -      r       "APR_ST"                "PRECIP FROM CLOSURE STABILITY"   "mm hour-1"
+state    real  apr_as           ij      misc        1         -      r       "APR_AS"                "PRECIP FROM CLOSURE AS-TYPE"     "mm hour-1"
+state    real  apr_capma        ij      misc        1         -      r       "APR_CAPMA"             "PRECIP FROM MAX CAP"             "mm hour-1"
+state    real  apr_capme        ij      misc        1         -      r       "APR_CAPME"             "PRECIP FROM MEAN CAP"            "mm hour-1"
+state    real  apr_capmi        ij      misc        1         -      r       "APR_CAPMI"             "PRECIP FROM MIN CAP"             "mm hour-1"
+state    real  edt_out          ij      misc        1         -      h        "EDT_OUT"             "EDT FROM GD SCHEME"             ""
+state    real  xf_ens           ije     misc        1         Z      r        "XF_ENS"                "MASS FLUX PDF IN GRELL CUMULUS SCHEME"     "mb hour-1"
+state    real  pr_ens           ije     misc        1         Z      r        "PR_ENS"                "PRECIP RATE PDF IN GRELL CUMULUS SCHEME"    "mb hour-1"
+state    real  cugd_tten        ikj     misc        1         -      h        "CUGD_TTEN"             "INITIAL TTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_qvten       ikj     misc        1         -      h        "CUGD_QVTEN"            "INITIAL QTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_ttens       ikj     misc        1         -      h        "CUGD_TTENS"            "INITIAL SUBSIDENCE TTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_qvtens      ikj     misc        1         -      h        "CUGD_QVTENS"           "INITIAL SUBSIDNCE QTENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+state    real  cugd_qcten       ikj     misc        1         -      h        "CUGD_QCTEN"            "INITIAL TEMPERATURE TENDENCY OUT OFF GRELL CUMULUS SCHEME"  "K s-1"
+#state    real  ACLWUPTC         ij      misc       1         -      rhdu     "ACLWUPTC"              "ACCUMULATED UPWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "J m-2"
 state    real  RTHFTEN          ikj     misc        1         -      r        "RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"  "K s-1"      
 state    real  RQVFTEN          ikj     misc        1         -      r        "RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"     "kg s-1"
 
@@ -1183,6 +1190,9 @@ rconfig   integer maxens                  namelist,physics	1             3      
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
 rconfig   integer maxens3                 namelist,physics	1            16       irh    "maxens3"                    ""      ""
 rconfig   integer ensdim                  namelist,physics	1            144      irh    "ensdim"                    ""      ""
+rconfig   integer cugd_avedx              namelist,physics      1            1      irh    "cugd_avedx"                    ""      ""
+rconfig   integer clos_choice             namelist,physics      1             0       rh    "clos_choice"                    ""      ""
+rconfig   integer imomentum               namelist,physics      1             0       rh    "imomentum"                    "momentum transport in G3 scheme"      ""
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
@@ -1408,6 +1418,7 @@ package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
+package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten
 package   kfscheme       cu_physics==99              -             -
 
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new,t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,sn_ndg_new,sn_ndg_old;state:rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten
@@ -1493,6 +1504,8 @@ halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,
 halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
 halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
 halo      HALO_EM_MOIST_E_7 dyn_em 80:moist
+halo      HALO_CUP_G3_IN dyn_em 24:RTHFTEN,RQVFTEN,w_2
+halo      HALO_CUP_G3_OUT dyn_em 48:cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,raincv
 halo      HALO_EM_CHEM_E_3 dyn_em 24:chem
 halo      HALO_EM_CHEM_E_5 dyn_em 48:chem
 halo      HALO_EM_CHEM_E_7 dyn_em 80:chem

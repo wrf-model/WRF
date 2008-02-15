@@ -204,7 +204,7 @@ CONTAINS
    enddo
       do 100 j=jts,jte
          do 100 i=its,ite
-           debug_level=1
+           debug_level=0
             do k=kts,kte
                t(k) = t_phy(i,k,j)
                p(k) = .001*p_phy(i,k,j)
@@ -320,8 +320,15 @@ CONTAINS
       cblk(1,VCVLIM1  ) =   0.
       cblk(1,VCVLIM2  ) =   0.
 !
-! Set emissions to zero when above level kemit.
+! Set emissions to zero 
 !
+         epmcoarse(1) = 0.
+         epm25i(1)    = 0.
+         epm25j (1)   = 0.
+         eeci_in      = 0.
+         eecj_in      = 0.
+         eorgi_in     = 0.
+         eorgj_in     = 0.
          cblk(1,VSO4AJ   ) = chem(i,k,j,p_so4aj)
          cblk(1,VSO4AI   ) = chem(i,k,j,p_so4ai)
          cblk(1,VNO3AJ   ) = chem(i,k,j,p_no3aj)
@@ -330,6 +337,9 @@ CONTAINS
          cblk(1,VNAAI   )  = chem(i,k,j,p_naai)
          cblk(1,VCLAJ   )  = chem(i,k,j,p_claj)
          cblk(1,VCLAI   )  = chem(i,k,j,p_clai)
+!
+! Set emissions to zero when above level kemit.
+!
 !     if( k > kemit ) then
 !        epmcoarse(1) = 0.
 !        epm25i(1)    = 0.

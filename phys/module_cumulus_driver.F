@@ -356,6 +356,7 @@ CONTAINS
    tmppratec(:,:) = pratec(:,:)
 
    IF (cu_physics .eq. 0) return
+#if  ( EM_CORE == 1 )
       if(cu_physics .eq. 5 ) then
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij,i,j,k,its,ite,jts,jte )
@@ -377,9 +378,10 @@ CONTAINS
       ENDDO
       !$OMP END PARALLEL DO
 #ifdef DM_PARALLEL
-#     include "HALO_CUP_G3_IN.inc"
+#include "HALO_CUP_G3_IN.inc"
 #endif
       endif
+#endif 
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -591,6 +593,7 @@ CONTAINS
 
       ENDDO
       !$OMP END PARALLEL DO
+#if  ( EM_CORE == 1 )
    IF(cu_physics .eq. 5 )then
 #ifdef DM_PARALLEL
 #     include "HALO_CUP_G3_OUT.inc"
@@ -610,6 +613,7 @@ CONTAINS
      &            ,j_start=j_start,j_end=j_end                                      &
      &            ,kts=kts, kte=kte)
    endif
+#endif
 
       !
       ! Copy pratec back to output array, if necessary.

@@ -68,7 +68,7 @@ dimspec    !      -     namelist=max_ts_locs      c          max_ts_locs
 dimspec    v      -     constant=1                z          one
 dimspec    =      -     constant=4                c          num_bands
 dimspec    ?      2     namelist=nmegan           z          megan_species
-dimspec    !      2     namelist=kfuture          z          klevs_for_dust
+dimspec    %      2     namelist=kfuture          z          klevs_for_dust
 dimspec    .      3     namelist=errosion_dim     z          dust_errosion_dimension
 
 

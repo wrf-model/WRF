@@ -580,7 +580,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,rt_tendf,    &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-   CASE (GDSCHEME)
+   CASE (GDSCHEME, G3SCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &

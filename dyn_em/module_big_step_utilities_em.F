@@ -1339,8 +1339,6 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                                                                      phb, & 
                                                                     w
 
-! pjj/cray
-!  REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(  OUT) :: ph_tend
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) :: ph_tend
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: muu, muv, mut,   &
@@ -4789,9 +4787,6 @@ END SUBROUTINE phy_prep
                                                z_at_w,  &
                                                  dz8w,  &
                                                   p8w
-! pjj/cray
-!                                                 p8w,  &
-!                                          h_diabatic
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),       &
          INTENT(INOUT) ::                         h_diabatic

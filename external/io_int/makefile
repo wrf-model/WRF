@@ -37,9 +37,9 @@ diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_ma
 			if [ -f ../../frame/pack_utils.o ] ; then \
 			mv diffwrf.F diffwrf.F90    ; \
 			$(CPP1)  -I../ioapi_share diffwrf.F90 > diffwrf.f  ; \
-			$(SFC) -c $(FFLAGS) -I../ioapi_share diffwrf.f    ; \
+			$(FC) -c $(FFLAGS) -I../ioapi_share diffwrf.f    ; \
 			mv diffwrf.F90 diffwrf.F ; \
-			$(SFC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) \
+			$(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) \
                         ../../frame/pack_utils.o ../../frame/module_internal_header_util.o \
                         ../../frame/module_driver_constants.o \
 			../../frame/module_machine.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o \

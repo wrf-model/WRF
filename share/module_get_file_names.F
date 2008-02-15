@@ -58,12 +58,6 @@ CONTAINS
          CALL SYSTEM ( '( cat .foo | wc -l > .foo1 )' )
          unix_access_ok = .TRUE.
 #endif
-#ifdef NONSTANDARD_EXEC
-         CALL SYSTEM ( TRIM ( command ) ) 
-         CALL SYSTEM ( '( cat .foo | wc -l > .foo1 )' )
-         unix_access_ok = .TRUE.
-#endif
-
          !  Test to be sure that we did indeed hit one of the ifdefs.
 
          IF ( .NOT. unix_access_ok ) THEN
@@ -135,10 +129,6 @@ print *,TRIM(eligible_file_name(loop))
          !   We clean up our own messes.
 
 #ifdef NONSTANDARD_SYSTEM 
-         CALL SYSTEM ( '/bin/rm -f .foo'  )
-         CALL SYSTEM ( '/bin/rm -f .foo1' )
-#endif
-#ifdef NONSTANDARD_EXEC
          CALL SYSTEM ( '/bin/rm -f .foo'  )
          CALL SYSTEM ( '/bin/rm -f .foo1' )
 #endif

@@ -1342,7 +1342,10 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
 }
 
 /* make sure that the only things we are shifting are arrays that have a decomposed X and a Y dimension */
-        if ( get_dimnode_for_coord( p , COORD_X ) && get_dimnode_for_coord( p , COORD_Y ) ) {
+/* also make sure we don't shift or halo any transpose variables (ALL_X_ON_PROC or ALL_Y_ON_PROC) */
+        if ( get_dimnode_for_coord( p , COORD_X ) && get_dimnode_for_coord( p , COORD_Y ) && 
+             !(p->proc_orient == ALL_X_ON_PROC || p->proc_orient == ALL_Y_ON_PROC) ) {
+          
 if ( p->subgrid != 0 ) {  /* moving nests not implemented for subgrid variables */
   if ( sw_move && ! said_it2 ) { fprintf(stderr,"Info only - not an error: Moving nests not implemented for subgrid variables \n") ;
   said_it2 = 1 ; }
@@ -1378,6 +1381,8 @@ if ( !strcmp( p->name , "xf_ens" ) || !strcmp( p->name , "pr_ens" ) ||
      !strcmp( p->name , "emstot" ) || !strcmp( p->name , "obs_savwt" ) ) {
   continue ;
 }
+/* do not shift transpose variables */
+if ( p->proc_orient == ALL_X_ON_PROC || p->proc_orient == ALL_Y_ON_PROC ) continue ;
 
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array )
       {

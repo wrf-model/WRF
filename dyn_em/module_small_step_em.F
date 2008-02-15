@@ -68,11 +68,9 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                                                                 alt, &
                                                                 ww
 
-! pjj/cray
-! REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(INOUT) :: mu_1
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(INOUT) :: mu_1,mu_2
 
-  REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(INout) :: mub,  &
+  REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(IN   ) :: mub,  &
                                                                muu,  &
                                                                muv,  &
                                                                mut,  &
@@ -87,8 +85,6 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(  OUT) :: muus, &
                                                                muvs, &
                                                                muts, &
-!pjj/cray
-!                                                              mu_2, &
                                                                mudf
 
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(  OUT) :: mu_save
@@ -521,17 +517,12 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
 
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(  OUT) :: al,   &
                                                                p
-! pjj/cray
-!                                                             p,    &
-!                                                             pm1
 
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(IN   ) :: alt,   &
                                                               t_2,   &
                                                               t_1,   &
                                                               c2a
 
-! pjj/cray
-! REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph, pm1
 
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(IN   ) :: mu,   &

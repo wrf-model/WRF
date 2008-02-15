@@ -185,12 +185,6 @@ main( int argc, char *argv[], char *env[] )
   gen_nest_interp( "inc" ) ;
   gen_scalar_derefs( "inc" ) ;
 
-#if 1
-  system( "touch inc/em_nest_feedbackup_smooth.inc" ) ;
-  system( "touch inc/em_nest_feedbackup_unpack.inc" ) ;
-#endif
-
-
 /* this has to happen after gen_nest_interp, which adds halos to the AST */
   gen_comms( "inc" ) ;    /* this is either package supplied (by copying a */
                           /* gen_comms.c file into this directory) or a    */

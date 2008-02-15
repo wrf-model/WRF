@@ -434,7 +434,6 @@ subroutine GetDim(MemoryOrder,NDim,Status)
     case ('0')  ! NDim=0 for scalars.  TBH:  20060502
       NDim = 0
     case default
-      print *, 'memory order = ',MemOrd,'  ',MemoryOrder
       Status = WRF_WARN_BAD_MEMORYORDER
       return
   end select

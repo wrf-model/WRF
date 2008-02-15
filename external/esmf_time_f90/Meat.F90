@@ -21,23 +21,23 @@ SUBROUTINE normalize_basetime( basetime )
   ! factor so abs(Sn) < Sd
   IF ( basetime%Sd > 0 ) THEN
     IF ( ABS( basetime%Sn ) .GE. basetime%Sd ) THEN
-PRINT *,'DEBUG:  normalize_basetime() A1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() A1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
       basetime%S = basetime%S + ( basetime%Sn / basetime%Sd )
       basetime%Sn = mod( basetime%Sn, basetime%Sd )
-PRINT *,'DEBUG:  normalize_basetime() A2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() A2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
     ! change sign of Sn if it does not match S
     IF ( ( basetime%S > 0 ) .AND. ( basetime%Sn < 0 ) ) THEN
-PRINT *,'DEBUG:  normalize_basetime() B1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() B1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
       basetime%S = basetime%S - 1_ESMF_KIND_I8
       basetime%Sn = basetime%Sn + basetime%Sd
-PRINT *,'DEBUG:  normalize_basetime() B2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() B2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
     IF ( ( basetime%S < 0 ) .AND. ( basetime%Sn > 0 ) ) THEN
-PRINT *,'DEBUG:  normalize_basetime() C1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() C1:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
       basetime%S = basetime%S + 1_ESMF_KIND_I8
       basetime%Sn = basetime%Sn - basetime%Sd
-PRINT *,'DEBUG:  normalize_basetime() C2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
+!PRINT *,'DEBUG:  normalize_basetime() C2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
   ENDIF
 !PRINT *,'DEBUG:  END normalize_basetime()'

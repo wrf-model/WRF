@@ -824,7 +824,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    LOGICAL , INTENT(IN   ) :: moist_step
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                &
-                                         INTENT(INOUT)  :: scalar, scalar_old
+                                         INTENT(IN   )  :: scalar, scalar_old
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                      &
                                          INTENT(INOUT)  :: scalar_tends

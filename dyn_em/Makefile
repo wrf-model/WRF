@@ -37,6 +37,7 @@ OBJS    = 		        \
         shift_domain_em.o       \
         couple_or_uncouple_em.o \
         nest_init_utils.o	\
+        adapt_timestep_em.o     \
         interp_domain_em.o
  
 
@@ -241,6 +242,11 @@ solve_em.o:     module_small_step_em.o \
 		../phys/module_fddagd_driver.o \
 		../phys/module_fddaobs_driver.o \
 		../phys/module_physics_addtendc.o
+
+adapt_timestep_em.o: \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_dm.o
 
 #		../chem/module_chem_utilities.o \
 # 		../chem/module_input_chem_data.o

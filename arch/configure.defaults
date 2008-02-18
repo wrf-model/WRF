@@ -1553,6 +1553,7 @@ wrf_inputin.o : wrf_inputin.F
 wrf_inputout.o : wrf_inputout.F
 wrf_histin.o : wrf_histin.F
 wrf_histout.o : wrf_histout.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1580,7 +1581,7 @@ solve_nmm.o : solve_nmm.F
 
 wrf_bdyout.o wrf_bdyin.o \
 wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_configure.o module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
@@ -1703,6 +1704,7 @@ wrf_inputin.o : wrf_inputin.F
 wrf_inputout.o : wrf_inputout.F
 wrf_histin.o : wrf_histin.F
 wrf_histout.o : wrf_histout.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1730,7 +1732,7 @@ solve_nmm.o : solve_nmm.F
 
 wrf_bdyout.o wrf_bdyin.o \
 wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_configure.o module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
@@ -1854,6 +1856,7 @@ $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -1883,6 +1886,7 @@ module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
 module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o \
+module_configure.o \
 mediation_force_domain.o \
 mediation_integrate.o \
 mediation_interp_domain.o \
@@ -1999,6 +2003,7 @@ wrf_inputin.o : wrf_inputin.F
 wrf_inputout.o : wrf_inputout.F
 wrf_histin.o : wrf_histin.F
 wrf_histout.o : wrf_histout.F
+module_configure.o : module_configure.F
 module_io_mm5.o : module_io_mm5.F
 module_si_io.o : module_si_io.F
 module_io_wrf.o : module_io_wrf.F
@@ -2026,7 +2031,7 @@ solve_nmm.o : solve_nmm.F
 
 wrf_bdyout.o wrf_bdyin.o \
 wrf_restartout.o wrf_restartin.o wrf_inputin.o wrf_inputout.o wrf_histin.o wrf_histout.o \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
+module_configure.o module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
 module_start.o module_initialize.o module_initialize_b_wave.o  \
 module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
 module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \

@@ -333,6 +333,7 @@ CONTAINS
           QSBT   = EP_2 * VAPPRS / (SFCPRS - VAPPRS)
           RH2MOD  = QA2(I,J) / QSBT
           
+        IF(PXLSM_SOIL_NUDGE .EQ. 1)THEN
           !-- 2 m Temp and RH for Nudging
           T2_OLD = T2_NDG_OLD(I,J)
           T2_NEW     = T2_NDG_NEW(I,J)
@@ -346,6 +347,7 @@ CONTAINS
           T2OBS(I,J) = CORB * T2_OLD +  CORE * T2_NEW
           Q2OBS(I,J) = CORB * Q2_NDG_OLD(I,J) +  CORE * Q2_NDG_NEW(I,J)
           SNOBS = CORB * SN_NDG_OLD(I,J) +  CORE * SN_NDG_NEW(I,J)  
+        ENDIF
                     
           USTAR  = MAX(UST(I,J),0.01)
           Z0     = ZNT(I,J)

@@ -2813,7 +2813,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, mu, config_flags, var,       &
                                    msftx, msfty, msfux, msfuy,            &
                                    msfvx, msfvy, xkhh, rdx, rdy,          &
                                    fnm, fnp, cf1, cf2, cf3,               &
-                                   zx, zy, rdz, rdzw, dn, dnw,            &
+                                   zx, zy, rdz, rdzw, dnw, dn,            &
                                    doing_tke,                             &
                                    ids, ide, jds, jde, kds, kde,          &
                                    ims, ime, jms, jme, kms, kme,          &

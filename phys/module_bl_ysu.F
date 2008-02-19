@@ -13,6 +13,7 @@ contains
                   rqvblten,rqcblten,rqiblten,flag_qi,                          &
                   cp,g,rovcp,rd,rovg,                                          &
                   dz8w,z,xlv,rv,psfc,                                          &
+                  znu,znw,mut,p_top,                                           &
                   znt,ust,zol,hol,hpbl,psim,psih,                              &
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                            &
                   dt,dtmin,kpbl2d,                                             &
@@ -181,20 +182,51 @@ contains
              optional                                                        , &
              intent(inout)   ::                                       rqiblten
 !
+   real,     dimension( kms:kme )                                            , &
+             optional                                                        , &
+             intent(in   )   ::                                           znu, &
+                                                                          znw
+!
+   real,     dimension( ims:ime, jms:jme )                                   , &
+             optional                                                        , &
+             intent(in   )   ::                                           mut
+!
+   real,     optional, intent(in   )   ::                               p_top
+!
 !local
    integer ::  i,j,k
+   real,     dimension( its:ite, kts:kte )  ::                       rqibl2dt, &
+                                                                          pdh
+   real,     dimension( its:ite, kts:kte+1 )  ::                         pdhi
 !
    do j = jts,jte
+      if(present(mut))then
+! For ARW we will replace p and p8w with dry hydrostatic pressure
+        do k = kts,kte+1
+          do i = its,ite
+             if(k.le.kte)pdh(i,k) = mut(i,j)*znu(k) + p_top
+             pdhi(i,k) = mut(i,j)*znw(k) + p_top
+          enddo
+        enddo
+      else
+        do k = kts,kte+1
+          do i = its,ite
+             if(k.le.kte)pdh(i,k) = p3d(i,k,j)
+             pdhi(i,k) = p3di(i,k,j)
+          enddo
+        enddo
+      endif
       call ysu2d(J=j,ux=u3d(ims,kms,j),vx=v3d(ims,kms,j)                       &
               ,tx=t3d(ims,kms,j)                                               &
               ,qx=qv3d(ims,kms,j),qcx=qc3d(ims,kms,j)                          &
               ,qix=qi3d(ims,kms,j)                                             &
-              ,p2d=p3d(ims,kms,j),p2di=p3di(ims,kms,j)                         &
+              ,p2d=pdh(its,kts),p2di=pdhi(its,kts)                             &
               ,pi2d=pi3d(ims,kms,j)                                            &
               ,utnp=rublten(ims,kms,j),vtnp=rvblten(ims,kms,j)                 &
               ,ttnp=rthblten(ims,kms,j),qtnp=rqvblten(ims,kms,j)               &
-              ,qctnp=rqcblten(ims,kms,j),qitnp=rqiblten(ims,kms,j)             &
+              ,qctnp=rqcblten(ims,kms,j),qitnp=rqibl2dt(its,kts)               &
               ,cp=cp,g=g,rovcp=rovcp,rd=rd,rovg=rovg                           &
+              ,dz8w2d=dz8w(ims,kms,j),z2d=z(ims,kms,j)                         &
               ,xlv=xlv,rv=rv                                                   &
               ,psfcpa=psfc(ims,j),znt=znt(ims,j),ust=ust(ims,j)                &
               ,zol=zol(ims,j),hol=hol(ims,j),hpbl=hpbl(ims,j)                  &
@@ -208,7 +240,6 @@ contains
               ,ep1=ep1,ep2=ep2,karman=karman,eomeg=eomeg                       &
               ,stbolt=stbolt                                                   &
               ,exch_hx=exch_h(ims,kms,j)                                       &
-              ,flag_qi=flag_qi                                                 &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
@@ -216,6 +247,7 @@ contains
       do k = kts,kte
         do i = its,ite
            rthblten(i,k,j) = rthblten(i,k,j)/pi3d(i,k,j)
+           if(present(rqiblten))rqiblten(i,k,j) = rqibl2dt(i,k)
         enddo
       enddo
     enddo
@@ -228,12 +260,12 @@ contains
                   utnp,vtnp,ttnp,                                              &
                   qtnp,qctnp,qitnp,                                            &
                   cp,g,rovcp,rd,rovg,                                          &
-                  xlv,rv,psfcpa,                                               &
+                  dz8w2d,z2d,xlv,rv,psfcpa,                                    &
                   znt,ust,zol,hol,hpbl,psim,psih,                              &
                   xland,hfx,qfx,tsk,gz1oz0,wspd,br,                            &
                   dt,dtmin,kpbl1d,                                             &
                   svp1,svp2,svp3,svpt0,ep1,ep2,karman,eomeg,stbolt,            &
-                  exch_hx,flag_qi,                                             &
+                  exch_hx,                                                     &
                   u10,v10,                                                     &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -296,23 +328,31 @@ contains
    real,     intent(in )     ::     svp1,svp2,svp3,svpt0
    real,     intent(in )     ::     ep1,ep2,karman,eomeg,stbolt
 !
+   real,     dimension( ims:ime, kms:kme ),                                    &
+             intent(in)      ::                                        dz8w2d, &
+                                                                          z2d
+!
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(in   )   ::                                            tx, &
                                                                            qx, &
 			               			  	          qcx, &
  		 		               		                  qix, &
-                                                                          p2d, &
                                                                          pi2d
-   real,     dimension( ims:ime, kms:kme )                                   , &
+   real,     dimension( its:ite, kts:kte+1 )                                 , &
              intent(in   )   ::                                          p2di
+!
+   real,     dimension( its:ite, kts:kte )                                   , &
+             intent(in   )   ::                                           p2d
+!
+   real,     dimension( its:ite, kts:kte )                                   , &
+             intent(inout)   ::                                         qitnp
 !
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(inout)   ::                                          utnp, &
-                						         vtnp, &
-	               			        		         ttnp, &
-		               	        			         qtnp, &
-			               				        qctnp, &
-				               			        qitnp
+                                                                         vtnp, &
+                                                                         ttnp, &
+                                                                         qtnp, &
+                                                                        qctnp
 !
    real,     dimension( ims:ime )                                            , &
              intent(inout)   ::                                           hol, &
@@ -335,8 +375,6 @@ contains
    real,     dimension( ims:ime ), intent(in   )   ::                     tsk
    real,     dimension( ims:ime ), intent(inout)   ::                     zol
    integer,  dimension( ims:ime ), intent(out  )   ::                  kpbl1d
-!
-   logical, intent(in)        :: flag_qi
 !
 !
    real,     dimension( ims:ime, kms:kme )                                   , &
@@ -478,29 +516,29 @@ contains
      rhox(i) = ps(i)*1000./(rd*tx(i,1))
    enddo
 !
-   do k = kts,kte
-     do i = its,ite
-       tvx(i,k) = tx(i,k)*(1.+ep1*qx(i,k))
-       del(i,k) = p2di(i,k)-p2di(i,k+1)
-       dzq(i,k) = del(i,k)/p2d(i,k)*tvx(i,k)*rovg
-       zq(i,k+1) = dzq(i,k)+zq(i,k)
-     enddo
-   enddo
+      do k = kts,kte
+        do i = its,ite
+          zq(i,k+1) = dz8w2d(i,k)+zq(i,k)
+        enddo
+      enddo
 !
-   do k = kts,kte
-     do i = its,ite
-       za(i,1) = 0.5*(zq(i,1)+zq(i,2))
-       dza(i,1) = za(i,1)
-     enddo
-   enddo
+      do k = kts,kte
+        do i = its,ite
+          za(i,k) = 0.5*(zq(i,k)+zq(i,k+1))
+          dzq(i,k) = zq(i,k+1)-zq(i,k)
+          del(i,k) = p2di(i,k)-p2di(i,k+1)
+        enddo
+      enddo
 !
-   do k = kts,kte-1
-     do i = its,ite
-       dza(i,k+1) = (p2d(i,k)-p2d(i,k+1))/p2di(i,k+1)*                         &
-                    0.5*(tvx(i,k)+tvx(i,k+1))*rovg
-       za(i,k+1) = za(i,k)+dza(i,k+1)
-     enddo
-   enddo
+      do i = its,ite
+        dza(i,1) = za(i,1)
+      enddo
+!
+      do k = kts+1,kte
+        do i = its,ite
+          dza(i,k) = za(i,k)-za(i,k-1)
+        enddo
+      enddo
 !
    do i = its,ite
      govrth(i) = g/thx(i,1)
@@ -1011,7 +1049,7 @@ contains
              qctnp(i,k) = qctnp(i,k)+qctend
            elseif(ic.eq.3) then
              qitend = (f3(i,k,ic)-qix(i,k))*rdt
-             if(flag_qi)qitnp(i,k) = qitnp(i,k)+qitend
+             qitnp(i,k) = qitnp(i,k)+qitend
            endif
          enddo
        enddo

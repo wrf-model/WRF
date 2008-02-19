@@ -2092,8 +2092,13 @@ CONTAINS
 !         IF(IHAIL.EQ.1) PGAUT(I,J)=max(RN2*Y1(I,J)*(QS(I,J)-BND2),0.0)
                y2(i,j)=exp(rn18a*(t0-tair(i,j)))
 !JJS              PGFR(I,J)=r2ice*max(R18R*(Y2(I,J)-1.)/ZR(I,J)**7., 0.0)
+!              pgfr(i,j)=r2ice*max(r18r*(y2(i,j)-1.)* &
+!                                    (zr(i,j)**(-7.)), 0.0)
+!        modify to prevent underflow on some computers (JD)
+               temp = 1./zr(i,j)
+               temp = temp*temp*temp*temp*temp*temp*temp
                pgfr(i,j)=r2ice*max(r18r*(y2(i,j)-1.)* &
-                                     (zr(i,j)**(-7.)), 0.0)
+                                    temp, 0.0)
             endif
 
 !JJS  175    CONTINUE

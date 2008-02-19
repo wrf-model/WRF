@@ -903,7 +903,7 @@ BENCH_START(pbl_driver_tim)
      &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
      &        ,NUM_TILES=grid%num_tiles                                   &
           ! Variables Required by ACM PBL  - jp
-     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut                     &
+     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &
           ! optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &

@@ -20,7 +20,7 @@ CONTAINS
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
                  ,kpbl,ct,lh,snow,xice                             &
-                 ,znu, znw, mut                                    & ! ACMPBL
+                 ,znu, znw, mut, p_top                             &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -310,6 +310,8 @@ CONTAINS
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                OPTIONAL                                         , &
                INTENT(IN)    ::                           mut
+!
+   REAL,       OPTIONAL, INTENT(IN)    ::               p_top
 
 !  LOCAL  VAR
 
@@ -470,6 +472,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,Z=z,XLV=XLV,RV=r_v,PSFC=PSFC               &
+              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
               ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh            &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &

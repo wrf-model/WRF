@@ -200,6 +200,9 @@ integer::oops1,oops2
             END DO
          END DO
       ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+         IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
+            CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
+         END IF
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)

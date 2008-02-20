@@ -206,9 +206,7 @@ SUBROUTINE adapt_timestep(grid, config_flags)
 
 #ifdef DM_PARALLEL
   call wrf_dm_mintile_double(dt, tile)
-  dt_num = dtInterval%basetime%Sn
-  dt_den = dtInterval%basetime%Sd
-  dt_whole = dtInterval%basetime%S
+  CALL WRFU_TimeIntervalGet(dtInterval,Sn=dt_num,Sd=dt_den,S=dt_whole)
   call wrf_dm_tile_val_int(dt_num, tile)
   call wrf_dm_tile_val_int(dt_den, tile)
   call wrf_dm_tile_val_int(dt_whole, tile)
@@ -329,10 +327,15 @@ FUNCTION real_time( timeinterval ) RESULT ( out_time )
 
 ! !RETURN VALUE:
       REAL :: out_time
+      INTEGER :: dt_num, dt_den, dt_whole
 
 ! !ARGUMENTS:
       TYPE(WRFU_TimeInterval), intent(in) :: timeinterval
 
-      out_time = timeinterval%basetime%S + &
-           REAL(timeinterval%basetime%Sn) / REAL(timeinterval%basetime%Sd)
+      CALL WRFU_TimeIntervalGet(timeinterval,Sn=dt_num,Sd=dt_den,S=dt_whole)
+      if (ABS(dt_den) < 1) then
+         out_time = dt_whole
+      else
+         out_time = dt_whole + dt_num / REAL(dt_den)
+      endif
 END FUNCTION 

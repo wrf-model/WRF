@@ -496,12 +496,8 @@ SUBROUTINE Setup_Timekeeping ( grid )
                             __LINE__  )
    ELSE
       tmp_step = domain_get_time_step( grid%parents(1)%ptr )
-      if (tmp_step%basetime%S .lt. 0) then
-         stepTime = domain_get_time_step( grid%parents(1)%ptr )
-      else
-         stepTime = domain_get_time_step( grid%parents(1)%ptr ) / &
-              grid%parent_time_step_ratio
-      endif
+      stepTime = domain_get_time_step( grid%parents(1)%ptr ) / &
+           grid%parent_time_step_ratio
       grid%dt = grid%parents(1)%ptr%dt / grid%parent_time_step_ratio
       CALL nl_set_dt( grid%id, grid%dt )
    ENDIF

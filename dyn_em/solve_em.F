@@ -258,11 +258,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
   !   calculate it here--but, this is not clean!!
   !
     tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
-    IF (ABS(tmpTimeInterval%basetime%Sd) < 1) THEN
-      curr_secs = tmpTimeInterval%basetime%S
-    ELSE
-      curr_secs = real_time(tmpTimeInterval)
-    ENDIF
+    curr_secs = real_time(tmpTimeInterval)
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
@@ -4134,4 +4130,3 @@ BENCH_END(bc_2d_tim)
   RETURN
 
 END SUBROUTINE solve_em
-

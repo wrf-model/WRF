@@ -642,7 +642,7 @@ CONTAINS
 
         !-- CHECK FOR WATER
         FWAT = LANDUSEF(I,KWAT,J)
-        IF (FWAT .GT. 1.0) THEN
+        IF (FWAT .GT. 0.99) THEN
           XLAI(I,J)   = LAIMX(KWAT)
           XLAIMN(I,J) = LAIMN(KWAT)
           RSTMIN(I,J) = RSMIN(KWAT)

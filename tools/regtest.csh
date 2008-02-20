@@ -8,7 +8,7 @@
 #BSUB -n 4                              # number of total tasks
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
-#BSUB -J regular.test                   # job name
+#BSUB -J regtest                        # job name
 #BSUB -q share                          # queue
 #BSUB -W 3:00                           # wallclock time
 #BSUB -P 64000400
@@ -36,7 +36,8 @@
 #	These need to be changed for your particular set of runs.  This is
 #	where email gets sent.
 
-if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 	set FAIL_MAIL = ( ${user}@noaa.gov )
 	set GOOD_MAIL = ( ${user}@noaa.gov )
 
@@ -76,7 +77,8 @@ if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) || ( `hostname | cut -
         set argv = ( -D today )
 	set argv = ( -env )
 	set WRFREGFILE = /mmm/users/gill/wrf.tar
-	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 		set argv = ( -f /nbns/meso/wx22tb/regression_tests/wrf.tar )
 	else
 		set argv = ( -f wrf.tar )
@@ -104,11 +106,12 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
 	set WRFREGDATANMM = /users/gill/WRF-data-NMM
 else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) || \
-          ( `hostname | cut -c 1-2` == bv ) ) then
+          ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATAEM = /mmm/users/gill/WRF_regression_data/processed
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
-else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 	set WRFREGDATAEM = /nbns/meso/wx22tb/regression_tests/WRF-data-EM
 	set WRFREGDATANMM = /nbns/meso/wx22tb/regression_tests/WRF-data-NMM
 else
@@ -320,13 +323,22 @@ unsetenv ESMFLIB
 unsetenv ESMFINC
 
 if ( $ESMF_LIB == TRUE ) then
-	if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bv ) ) then
+	if      ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bv ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for MPI tests"
 		setenv OBJECT_MODE 64
 		set ESMFLIBSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
 		set ESMFINCSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
+		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
+		echo "Using ESMFINC = ${ESMFINCSAVE}"
+	else if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bl ) ) then
+		echo "A separately installed version of the latest ESMF library"
+		echo "(NOT the ESMF library included in the WRF tarfile) will"
+		echo "be used for MPI tests (taken from Tom's directory)"
+		setenv OBJECT_MODE 64
+		set ESMFLIBSAVE = /mmm/users/gill/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
+		set ESMFINCSAVE = /mmm/users/gill/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
 		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
 		echo "Using ESMFINC = ${ESMFINCSAVE}"
 	else
@@ -446,9 +458,9 @@ if      ( $REAL8 == TRUE ) then
 endif
 
 if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $NESTED != TRUE ) && ( $REAL8 != TRUE ) && ( $GLOBAL != TRUE )   ) then
-	set PHYSOPTS =	( 1 2 3 4 5 )
+	set PHYSOPTS =	( 1 2 3 4 5 6 7 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( ( $NESTED == TRUE ) || ( $REAL8 == TRUE ) || ( $GLOBAL == TRUE ) ) ) then
-	set PHYSOPTS =	( 1 2 3 4 )
+	set PHYSOPTS =	( 1 2 3 4 5 6 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
 	if ( $FDDA2 == TRUE ) then
 		set PHYSOPTS_FDDA = BOTH
@@ -666,10 +678,16 @@ cat >! time_real_1  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! damp_real_1  << EOF
+ damp_opt                            = 0,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+EOF
+
 cat >! phys_real_2 << EOF
  mp_physics                          = 4,     4,     4,
  ra_lw_physics                       = 1,     1,     1,
- ra_sw_physics                       = 2,     2,     2,
+ ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 2,     2,     2,
  sf_surface_physics                  = 2,     2,     2,
@@ -677,6 +695,8 @@ cat >! phys_real_2 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 2,     2,     0,
  cudt                                = 5,     5,     5,
+ slope_rad                           = 1,     1,     1,
+ topo_shading                        = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -705,6 +725,12 @@ cat >! time_real_2  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! damp_real_2  << EOF
+ damp_opt                            = 0,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+EOF
+
 cat >! phys_real_3 << EOF
  mp_physics                          = 5,     5,     5,
  ra_lw_physics                       = 1,     1,     1,
@@ -716,6 +742,9 @@ cat >! phys_real_3 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 3,     3,     0,
  cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -740,6 +769,12 @@ cat >! time_real_3  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! damp_real_3  << EOF
+ damp_opt                            = 1,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+EOF
+
 cat >! phys_real_4 << EOF
  mp_physics                          = 6,     6,     6,
  ra_lw_physics                       = 1,     1,     1,
@@ -749,7 +784,7 @@ cat >! phys_real_4 << EOF
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 2,     2,     2,
  bldt                                = 0,     0,     0,
- cu_physics                          = 2,     2,     0,
+ cu_physics                          = 3,     3,     0,
  cudt                                = 5,     5,     5,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -776,7 +811,112 @@ cat >! time_real_4  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! damp_real_4  << EOF
+ damp_opt                            = 1,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.01,   0.01,   0.01
+EOF
+
 cat >! phys_real_5 << EOF
+ mp_physics                          = 10,    10,    10,
+ ra_lw_physics                       = 1,     1,     1,
+ ra_sw_physics                       = 1,     1,     1,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 7,     7,     7,
+ sf_surface_physics                  = 1,     1,     1,
+ bl_pbl_physics                      = 7,     7,     7,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 1,     1,     0,
+ cudt                                = 5,     5,     5,
+ slope_rad                           = 1,     1,     1, 
+ topo_shading                        = 0,     0,     0, 
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ ucmcall                             = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 5,
+ mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
+ levsiz                              = 59
+ paerlev                             = 29
+ cam_abs_freq_s                      = 21600
+ cam_abs_dim1                        = 4
+ cam_abs_dim2                        = 28
+EOF
+
+cat >! dyn_real_5  << EOF
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_5  << EOF
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! damp_real_5  << EOF
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.05,   0.05,   0.05
+EOF
+
+cat >! phys_real_6 << EOF
+ mp_physics                          = 7,     7,     7,
+ ra_lw_physics                       = 1,     1,     1,
+ ra_sw_physics                       = 2,     2,     2,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 7,     7,     7,
+ sf_surface_physics                  = 1,     1,     1,
+ bl_pbl_physics                      = 7,     7,     7,
+ bldt                                = 0,     0,     0,
+ cu_physics                          = 2,     2,     0,
+ cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ ucmcall                             = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 5,
+ mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
+ levsiz                              = 59
+ paerlev                             = 29
+ cam_abs_freq_s                      = 21600
+ cam_abs_dim1                        = 4
+ cam_abs_dim2                        = 28
+EOF
+
+cat >! dyn_real_6  << EOF
+ pd_moist                            = .false., .false., .false.,
+ pd_scalar                           = .false., .false., .false.,
+ pd_chem                             = .false., .false., .false.,
+ pd_tke                              = .false., .false., .false.,
+EOF
+
+cat >! time_real_6  << EOF
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! damp_real_6  << EOF
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.05,   0.05,   0.05
+EOF
+
+cat >! phys_real_7 << EOF
  mp_physics                          = 8,     8,     8,
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
@@ -785,7 +925,7 @@ cat >! phys_real_5 << EOF
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 2,     2,     2,
  bldt                                = 0,     0,     0,
- cu_physics                          = 2,     2,     0,
+ cu_physics                          = 3,     3,     0,
  cudt                                = 5,     5,     5,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -808,18 +948,24 @@ EOF
 
 if ( $GLOBAL == TRUE ) then
 	sed -e 's/ cam_abs_dim2 *= [0-9][0-9]/ cam_abs_dim2 = 41/g' phys_real_5 >! phys_foo
-	mv phys_foo phys_real_5
+	mv phys_foo phys_real_7
 endif
 
-cat >! dyn_real_5  << EOF
+cat >! dyn_real_7  << EOF
  pd_moist                            = .false., .false., .false.,
  pd_scalar                           = .false., .false., .false.,
  pd_chem                             = .false., .false., .false.,
  pd_tke                              = .false., .false., .false.,
 EOF
 
-cat >! time_real_5  << EOF
+cat >! time_real_7  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! damp_real_7  << EOF
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.05,   0.05,   0.05
 EOF
 
 cat >! fdda_real_1 << EOF
@@ -851,8 +997,6 @@ EOF
 cat >! fdda_real_2 << EOF
  obs_nudge_opt                       = 1,1,1,1,1
  max_obs                             = 150000,
- nobs_ndg_vars                       = 5,
- nobs_err_flds                       = 9,
  obs_nudge_wind                      = 1,1,1,1,1
  obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
  obs_nudge_temp                      = 1,1,1,1,1
@@ -899,8 +1043,6 @@ cat >! fdda_real_3 << EOF
  io_form_gfdda                       = 2,
  obs_nudge_opt                       = 1,1,1,1,1
  max_obs                             = 150000,
- nobs_ndg_vars                       = 5,
- nobs_err_flds                       = 9,
  obs_nudge_wind                      = 1,1,1,1,1
  obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
  obs_nudge_temp                      = 1,1,1,1,1
@@ -1104,7 +1246,7 @@ if ( $ARCH[1] == AIX ) then
 			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
 		endif
 		set CUR_DIR = ${LOADL_STEP_INITDIR}
-	else if   ( `hostname | cut -c 1-2` == bv ) then
+	else if   ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) then
 		set job_id              = $LSB_JOBID
 		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
 		set TMPDIR              = $DEF_DIR
@@ -1115,11 +1257,11 @@ if ( $ARCH[1] == AIX ) then
 			mkdir -p $DEF_DIR
 			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
 		endif
-	else if ( ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) && ( ! $?LOADL_JOB_NAME ) ) then
+	else if ( ( ( `hostname | cut -c 1-2` != bl ) && ( `hostname | cut -c 1-2` != bv ) ) && ( ! $?LOADL_JOB_NAME ) ) then
 		echo "${0}: ERROR::  This batch script must be submitted via"
 		echo "${0}:          LoadLeveler on an AIX machine\!"
 		exit
-	else if   ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) then
+	else if   ( ( `hostname | cut -c 1-2` != bl ) && ( `hostname | cut -c 1-2` != bv ) ) then
 		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
 		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
 		set TMPDIR              = $DEF_DIR
@@ -1147,7 +1289,10 @@ if ( $ARCH[1] == AIX ) then
 		set MPIRUNCOMMAND       =  poe 
 	else if ( `hostname | cut -c 1-2` == bv ) then
 		set MPIRUNCOMMAND       =  mpirun.lsf
-	else if ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) then
+	else if ( `hostname | cut -c 1-2` == bl ) then
+		set MPIRUNCOMMAND       =  mpirun.lsf
+	else if ( ( `hostname | cut -c 1-2` != bs ) && \
+	          ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) then
 		set MPIRUNCOMMAND       =  poe
 	endif
 	if ( $CHEM == TRUE ) then
@@ -1534,6 +1679,7 @@ endif
 
 ( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
 #( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
+#	INFRASTRUCTURE
 ( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; \
   sed '/dyn_opt/d' $thedatanmm/namelist.input.regtest >! ./namelist.input.regtest )
 #DAVE###################################################
@@ -1968,6 +2114,7 @@ banner 12
 					endif
 					cp ${CUR_DIR}/time_real_${phys_option} time_opt
 					cp ${CUR_DIR}/dom_real dom_real
+					cp ${CUR_DIR}/damp_real_${phys_option} damp_real
 					if ( -e fdda_opt ) rm fdda_opt
 					cat " grid_fdda=0" > fdda_opt
 					if ( -e fdda_time ) rm fdda_time
@@ -2004,6 +2151,7 @@ EOF
 					    -e '/^ pd_moist/,/pd_tke/d' -e '/^ v_sca_adv_order/r ./dyn_opt' \
 					    -e '/^ auxinput1_inname/d' -e '/^ debug_level/r ./time_opt' \
 					    -e '/^ time_step /,/^ smooth_option/d' -e '/^ &domains/r ./dom_real' \
+					    -e '/^ damp_opt /,/^ dampcoef/d' -e '/^ base_temp/r ./damp_real' \
 					    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format' \
 					    -e 's/ frames_per_outfile *= [0-9][0-9]*/ frames_per_outfile = 200/g' \
 					    -e 's/ run_days *= [0-9][0-9]*/ run_days = 0/g' \
@@ -2011,12 +2159,15 @@ EOF
 					    -e 's/ run_minutes *= [0-9][0-9]*/ run_minutes = 0/g' \
 					    -e '/^ &fdda/r fdda_opt' \
 					    -e '/^ debug_level/r fdda_time' \
+					    -e '/dyn_opt/d' \
 					namelist.input.temp >! namelist.input
 				
 				#	The chem run has its own namelist, due to special input files (io_form not tested for chem)
 
 				else if ( $CHEM == TRUE ) then
-					cp namelist.input.chem_test_${phys_option} namelist.input
+#					cp namelist.input.chem_test_${phys_option} namelist.input
+#	INFRASTRUCTURE
+					sed '/dyn_opt/d' namelist.input.chem_test_${phys_option} >! namelist.input
 					if ( -e met_em.d01.${filetag} ) then
 						\rm met_em.d01.*
 					endif
@@ -2568,6 +2719,8 @@ banner 25
 						echo "NOTE  one I/O quilt server enabled for $core physics $phys_option parallel $compopt..." >>! ${DEF_DIR}/wrftest.output
 					endif
 				endif
+
+				/bin/cp namelist.input $TMPDIR/namelist.input.$core.${phys_option}.$compopt
 #DAVE###################################################
 echo built namelist 
 ls -ls namelist.input
@@ -2748,6 +2901,8 @@ banner 29
 	                        else
 	                                set RIGHT_SIZE = FALSE
 	                        endif
+#	INFRASTRUCTURE
+set RIGHT_SIZE = TRUE
 	
 	                        #       1p vs Num_Procs MPI
 	
@@ -2806,6 +2961,8 @@ banner 29
 				else
 					set RIGHT_SIZE_OMP = FALSE
 				endif
+#	INFRASTRUCTURE
+set RIGHT_SIZE_OMP = TRUE
 	
 				BYPASS_OPENMP_SUMMARY1:
 	
@@ -2823,6 +2980,8 @@ banner 29
 				else
 					set RIGHT_SIZE_MPI = FALSE
 				endif
+#	INFRASTRUCTURE
+set RIGHT_SIZE_MPI = TRUE
 	
 				#	Are we skipping the OpenMP runs?
 	
@@ -2931,6 +3090,8 @@ banner 29
 								set fooc = ( ` \ls -ls ${cmpfile} `)
 								set sizeb = $foob[6]
 								set sizec = $fooc[6]
+#	INFRASTRUCTURE
+set sizeb = $sizec
 								if ( $sizeb == $sizec ) then
 									$DIFFWRF ${basefile} ${cmpfile} >& /dev/null
 									if ( -e fort.88 ) then
@@ -3018,6 +3179,8 @@ banner 29
 								set fooc = ( ` \ls -ls ${cmpfile} `)
 								set sizeb = $foob[6]
 								set sizec = $fooc[6]
+#	INFRASTRUCTURE
+set sizeb = $sizec
 								if ( $sizeb == $sizec ) then
 									$DIFFWRF ${basefile} ${cmpfile} >& /dev/null
 									if ( -e fort.88 ) then

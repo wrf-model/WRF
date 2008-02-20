@@ -2798,7 +2798,7 @@ cycle
            CALL wrf_message ( message )
            ALLOCATE ( zhave( MAX(num_st_levels_input,num_sm_levels_input,num_sw_levels_input)  ) )
          ELSE
-           write(message, FMT='(A)') ' Assume Naoh LSM input'
+           write(message, FMT='(A)') ' Assume Noah LSM input'
            CALL wrf_message ( message )
          ALLOCATE ( zhave( MAX(num_st_levels_input,num_sm_levels_input,num_sw_levels_input) +2) )
          END IF

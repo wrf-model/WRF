@@ -4674,7 +4674,8 @@ END SUBROUTINE pole_point_bc
 
 !  decouple advective forcing required by Grell-Devenyi scheme
 
-   if ( config_flags%cu_physics == GDSCHEME ) then
+   if(( config_flags%cu_physics == GDSCHEME ) .OR.    &
+      ( config_flags%cu_physics == G3SCHEME )) then
 
       DO J=j_start,j_end
       DO I=i_start,i_end

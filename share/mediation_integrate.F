@@ -1993,6 +1993,9 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
       else if( config_flags%io_style_emissions == 1 ) then
 
          tupdate = mod( time, (12. * 3600.) )
+         IF( tupdate .LT. grid%dt ) THEN
+            tupdate = 0.
+         ENDIF
          IF( currentTime + stepTime .GE. stopTime .AND. &
               grid%auxinput5_oid .NE. 0 ) THEN
             CALL close_dataset ( grid%auxinput5_oid , config_flags , "DATASET=AUXINPUT5" )
@@ -2038,7 +2041,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
          CALL wrf_message( TRIM(message) )
 !
 ! hourly updates to emissions
-         IF ( ( mod( time, 3600. ) .LT. 0.001   ) .AND. &
+         IF ( ( mod( time, 3600. ) .LT. grid%dt   ) .AND. &
               ( currentTime + stepTime .LT. stopTime ) ) THEN
 !           IF ( wrf_dm_on_monitor() ) CALL start_timing
 

@@ -6,9 +6,9 @@
     HONO        = H + 2O + N ;  {nitrous acid}
     HNO3        = H + N + 3O ;  { nitric acid }
     PNA         = H + 4 O + N ; {HO2NO2 peroxynitric acid}
-    O1D         = O ;           {oxygen atomic first singlet state}
+    O1D_CB4     = O ;           {oxygen atomic first singlet state}
     O           = O ;           {oxygen atomic ground state (3P)}
-    OH          = O + H ;       {hydroxyl radical}
+    HO          = O + H ;       {hydroxyl radical}
     O3          = 3O ;          {ozone}
     HO2         = H + 2O ;      {perhydroxyl radical}
     H2O2        = 2H + 2O ;     {hydrogen peroxide}
@@ -35,7 +35,4 @@
 #DEFFIX
     H2O         = H + 2O ;      {water}
     H2          = 2H ;          {molecular hydrogen}
-    O2          = 2O ;          {molecular oxygen}
-    N2          = 2N ;          {molecular nitrogen}
-    CH4         = C + 4H ;      {methane}
     M           = IGNORE ;      {third body}

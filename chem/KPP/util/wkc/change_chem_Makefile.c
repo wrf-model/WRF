@@ -13,7 +13,7 @@ change_chem_Makefile (   )
 {
 knode_t * p1, * p2, * pm1;
  FILE * ch_Makefile, * t_Makefile; 
- char inln[4096]; 
+ char inln[NAMELEN]; 
  char kname[NAMELEN];
  char * org_Mf = "chem/Makefile_org";
  char * t_Mf = "chem/Makefile.temp";
@@ -37,7 +37,7 @@ knode_t * p1, * p2, * pm1;
 
 
   /* loop over lines in chem/Makefile */
-   while ( fgets ( inln , 4096 , ch_Makefile ) != NULL ){
+   while ( fgets ( inln , NAMELEN , ch_Makefile ) != NULL ){
 
 
      /* printf("%s ", inln ); */ 

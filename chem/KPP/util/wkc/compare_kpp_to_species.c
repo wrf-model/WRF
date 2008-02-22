@@ -31,7 +31,7 @@ compare_kpp_to_species  ( char * kpp_dirname)
   char name1[NAMELEN], name2[NAMELEN], name3[NAMELEN] ;
   char equivfilename[NAMELEN];
   FILE * equivFile;  
-  char inln[4096], newln[4096];
+  char inln[NAMELEN], newln[NAMELEN];
   int in_comment, got_it;
   char wrf_name[NAMELEN], kpp_name[NAMELEN];
   int i;
@@ -93,17 +93,17 @@ compare_kpp_to_species  ( char * kpp_dirname)
 	  fprintf(stderr," Found file %s\n",equivfilename);
 	
      /* loop over lines in wrf_kpp_equiv file */
-	 while ( fgets ( inln , 4096 , equivFile ) != NULL ){
+	 while ( fgets ( inln , NAMELEN , equivFile ) != NULL ){
           if (  DEBUGR == 1 ) printf(" i  %s ", inln );
 
 
            int j;
-            for(j = 0; j < 4096 ; j++) wrf_name[j]='\0';
-            for(j = 0; j < 4096 ; j++) kpp_name[j]='\0';
+            for(j = 0; j < NAMELEN ; j++) wrf_name[j]='\0';
+            for(j = 0; j < NAMELEN ; j++) kpp_name[j]='\0';
 
            int n=0;
            in_comment = 0;
-              for(j = 0; j < 4096 ; j++) newln[j]='\0';
+              for(j = 0; j < NAMELEN ; j++) newln[j]='\0';
 
 	    while ( inln[n] !=  '\0' ){
               if (inln[n] == '!') {

@@ -141,7 +141,7 @@ DIR * dir;
 struct dirent * entry;          
 struct stat dir_stat;
 char fulldirname[NAMELEN], spcfilename[NAMELEN];
-char inln[4096], kpp_spec[4096];
+char inln[NAMELEN], kpp_spec[NAMELEN];
 FILE * spcFile;
 int   in_comment, got_it;
 
@@ -204,7 +204,7 @@ int   in_comment, got_it;
          add_node_to_end( q , &(KPP_packs) ) ;
 
 	 /* loop over lines in KPP species file */
-	 while ( fgets ( inln , 4096 , spcFile ) != NULL ){
+	 while ( fgets ( inln , NAMELEN , spcFile ) != NULL ){
 	      if ( DEBUGR == 1 ){    printf("%s  ", inln); } 
          /* strip from comments (loop through letters) */
 	 int n=0;
@@ -213,7 +213,7 @@ int   in_comment, got_it;
          in_comment = 0;
          got_it = 0;
 
-            for(j = 0; j < 4096 ; j++) kpp_spec[j]='\0';
+            for(j = 0; j < NAMELEN ; j++) kpp_spec[j]='\0';
 	  while ( inln[n] !=  '\0' ){ 
 	   if ( inln[n] == '{') in_comment=1;
 	    if ( in_comment == 0 ) {

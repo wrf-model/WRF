@@ -207,9 +207,9 @@ state    real   U10              ij     misc        1         -     irh01      "
 state    real   V10              ij     misc        1         -     irh01      "V10"                "V at 10 M"         "m s-1"
 
 # these next 4 are for observational nudging
-state    real   uratx           ij      misc        1         -     ir          "URATX"            "Ratio of U over U10 on mass points "         "dimensionless"
-state    real   vratx           ij      misc        1         -     ir          "VRATX"            "Ratio of V over V10 on mass points "         "dimensionless"   
-state    real   tratx           ij      misc        1         -     ir          "TRATX"            "Ratio of T over TH2 on mass points "         "dimensionless"   
+state    real   uratx           ij      misc        1         -      r          "URATX"            "Ratio of U over U10 on mass points "         "dimensionless"
+state    real   vratx           ij      misc        1         -      r          "VRATX"            "Ratio of V over V10 on mass points "         "dimensionless"   
+state    real   tratx           ij      misc        1         -      r          "TRATX"            "Ratio of T over TH2 on mass points "         "dimensionless"   
 
 # Other
 state   real    rdx            -        misc      -         -     irh       "rdx"                   "INVERSE X GRID LENGTH"         ""      

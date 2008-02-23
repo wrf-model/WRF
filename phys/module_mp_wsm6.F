@@ -288,7 +288,7 @@ CONTAINS
             cpmcal, xlcal, lamdar, lamdas, lamdag, diffus,        &
             viscos, xka, venfac, conden, diffac,                  &
             x, y, z, a, b, c, d, e,                               &
-            qdt, holdrr, holdrs, holdrg, supcol, pvt,             &
+            qdt, holdrr, holdrs, holdrg, supcol, supcolt, pvt,    &
             coeres, supsat, dtcld, xmi, eacrs, satdt,             &
             qimax, diameter, xni0, roqi0,                         &
             fallsum, fallsum_qsi, fallsum_qg,                     &
@@ -723,7 +723,8 @@ CONTAINS
           if(supcol.gt.0..and.qci(i,k,1).gt.qmin) then
 !           pfrzdtc = min(pfrz1*(exp(pfrz2*supcol)-1.)                  &
 !              *den(i,k)/denr/xncr*qci(i,k,1)**2*dtcld,qci(i,k,1))
-            pfrzdtc = min(pfrz1*(exp(pfrz2*supcol)-1.)                  &
+            supcolt=min(supcol,50.)
+            pfrzdtc = min(pfrz1*(exp(pfrz2*supcolt)-1.)                 &
             *den(i,k)/denr/xncr*qci(i,k,1)*qci(i,k,1)*dtcld,qci(i,k,1))
             qci(i,k,2) = qci(i,k,2) + pfrzdtc
             t(i,k) = t(i,k) + xlf/cpm(i,k)*pfrzdtc
@@ -739,8 +740,9 @@ CONTAINS
 !                 *rslope(i,k,1)*dtcld,qrs(i,k,1))
             temp = rslope3(i,k,1)
             temp = temp*temp*rslope(i,k,1)
+            supcolt=min(supcol,50.)
             pfrzdtr = min(20.*(pi*pi)*pfrz1*n0r*denr/den(i,k)           &
-                  *(exp(pfrz2*supcol)-1.)*temp*dtcld,                   &
+                  *(exp(pfrz2*supcolt)-1.)*temp*dtcld,                  &
                   qrs(i,k,1))
             qrs(i,k,3) = qrs(i,k,3) + pfrzdtr
             t(i,k) = t(i,k) + xlf/cpm(i,k)*pfrzdtr

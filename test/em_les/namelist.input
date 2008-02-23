@@ -83,6 +83,7 @@
  kvdif                               = 1.,      1.,    .05,
  c_s                                 = 0.18
  c_k                                 = 0.10
+ mix_isotropic                       = 1
  smdiv                               = 0.1,    0.1,    0.1,
  emdiv                               = 0.01,   0.01,   0.01,
  epssm                               = 0.1,    0.1,    0.1

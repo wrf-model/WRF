@@ -44,8 +44,8 @@
  p_top_requested                     = 5000
  grid_id                             = 1,     2,     3,
  parent_id                           = 0,     1,     2,
- i_parent_start                      = 0,     17,    17,
- j_parent_start                      = 0,     33,    33,
+ i_parent_start                      = 1,     17,    17,
+ j_parent_start                      = 1,     33,    33,
  parent_grid_ratio                   = 1,     5,     5,
  parent_time_step_ratio              = 1,     5,     5,
  feedback                            = 1,

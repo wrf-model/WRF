@@ -44,8 +44,8 @@
  dy                                  = 30000, 10000,  3333,
  grid_id                             = 1,     2,     3,
  parent_id                           = 0,     1,     2,
- i_parent_start                      = 0,     31,    30,
- j_parent_start                      = 0,     17,    30,
+ i_parent_start                      = 1,     31,    30,
+ j_parent_start                      = 1,     17,    30,
  parent_grid_ratio                   = 1,     3,     3,
  parent_time_step_ratio              = 1,     3,     3,
  feedback                            = 1,
@@ -81,7 +81,6 @@
  /
 
  &dynamics
- rk_ord                              = 3,
  w_damping                           = 0,
  diff_opt                            = 1,
  km_opt                              = 4,
@@ -100,10 +99,10 @@
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
  non_hydrostatic                     = .true., .true., .true.,
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ pd_moist                            = .true., .true., .true.,
+ pd_scalar                           = .true., .true., .true.,
+ pd_chem                             = .true., .true., .true.,
+ pd_tke                              = .true., .true., .true.,
  /
 
  &bdy_control

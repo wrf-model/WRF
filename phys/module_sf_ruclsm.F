@@ -469,32 +469,6 @@ CONTAINS
              zshalf(k)=0.5*(zsmain(k-1) + zsmain(k))
           enddo
 
-!-- definition of number of soil levels in the rooting zone
-     IF(iforest(ivgtyp(i,j)).ne.1) THEN
-!---- non forests and deciduous forests
-         do k=2,nzs
-         if(zsmain(k).ge.0.4) then
-            NROOT=K
-            goto  111
-         endif
-         enddo
-
-     ELSE
-!---- evergreen and mixed forests
-         do k=2,nzs
-         if(zsmain(k).ge.1.1) then
-            NROOT=K
-            goto  111
-         endif
-         enddo
-     ENDIF
- 111   continue
-
-!-----
-    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
-         print *,' ZS, ZSMAIN, ZSHALF, CONFLX --->', zs,zsmain,zshalf,conflx
-         print *,'NROOT, iforest, ivgtyp, i,j ', nroot,iforest(ivgtyp(i,j)),ivgtyp(I,J),I,J
-    ENDIF
 
 !------------------------------------------------------------
 !-----  DDZS and DSDZ1 are for implicit soilution of soil eqns.
@@ -551,6 +525,33 @@ CONTAINS
                      EMISSL(I,J),PC(i,j),ZNT(I,J),QWRTZ,       &
 !                     EMISSL(I,J),PC(i,j),ZNTL(I,J),QWRTZ,       &
                      RHOCS,BCLH,DQM,KSAT,PSIS,QMIN,REF,WILT     )
+
+!-- definition of number of soil levels in the rooting zone
+     IF(iforest(ivgtyp(i,j)).ne.1) THEN
+!---- non forests and deciduous forests
+         do k=2,nzs
+         if(zsmain(k).ge.0.4) then
+            NROOT=K
+            goto  111
+         endif
+         enddo
+
+     ELSE
+!---- evergreen and mixed forests
+         do k=2,nzs
+         if(zsmain(k).ge.1.1) then
+            NROOT=K
+            goto  111
+         endif
+         enddo
+     ENDIF
+ 111   continue
+
+!-----
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+         print *,' ZS, ZSMAIN, ZSHALF, CONFLX --->', zs,zsmain,zshalf,conflx
+         print *,'NROOT, iforest, ivgtyp, i,j ', nroot,iforest(ivgtyp(i,j)),ivgtyp(I,J),I,J
+    ENDIF
 
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
 

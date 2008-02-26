@@ -226,7 +226,7 @@ gen_get_nl_config ( char * dirname )
     {
       strcpy(howset,p->howset) ;
       fprintf(fp,"SUBROUTINE nl_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;
-      if ( sw_ifort_kludge ) {
+      if ( sw_fort_kludge ) {
         fprintf(fp,"  USE module_configure\n") ;
       }
       fprintf(fp,"  %s , INTENT(%s) :: %s\n",p->type->name,intnt,p->name) ;
@@ -235,7 +235,7 @@ gen_get_nl_config ( char * dirname )
       if ( sw == 0 ) /* get */
       {
         if ( !strcmp( p->nentries, "1" )) {
-          if ( ! sw_ifort_kludge ) {
+          if ( ! sw_fort_kludge ) {
             fprintf(fp,"  IF ( id_id .NE. 1 ) THEN\n") ;
             fprintf(fp,"    call wrf_debug(1,&\n'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
                             gs,p->name, p->name ) ;
@@ -247,7 +247,7 @@ gen_get_nl_config ( char * dirname )
             fprintf(fp,"  %s = model_config_rec%%%s\n",p->name,p->name) ;
           }
         } else {
-          if ( ! sw_ifort_kludge ) {
+          if ( ! sw_fort_kludge ) {
             if        ( !strcmp( p->nentries, "max_domains" )) {
               fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
               fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;
@@ -275,7 +275,7 @@ gen_get_nl_config ( char * dirname )
       else   /* set */
       {
         if ( !strcmp( p->nentries, "1" )) {
-          if ( ! sw_ifort_kludge ) {
+          if ( ! sw_fort_kludge ) {
             fprintf(fp,"  IF ( id_id .NE. 1 ) THEN\n") ;
             fprintf(fp,"    call wrf_debug(1,&\n'WARNING in nl_%s_%s: %s applies to all domains. First arg ignored.')\n",
                             gs,p->name, p->name ) ;
@@ -287,7 +287,7 @@ gen_get_nl_config ( char * dirname )
             fprintf(fp,"  model_config_rec%%%s = %s \n",p->name,p->name) ;
           }
         } else {
-          if ( ! sw_ifort_kludge ) {
+          if ( ! sw_fort_kludge ) {
             if        ( !strcmp( p->nentries, "max_domains" )) {
               fprintf(fp,"  IF ( id_id .LT. 1 .OR. id_id .GT. model_config_rec%%max_dom ) THEN\n") ;
               fprintf(fp,"    WRITE(emess,*)'nl_%s_%s: Out of range domain number: ',id_id\n",gs,p->name) ;

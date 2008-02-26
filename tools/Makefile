@@ -13,7 +13,7 @@ registry : $(OBJ) standard.exe
 	$(CC_TOOLS) -o registry $(DEBUG) $(LDFLAGS) $(OBJ)
 
 standard.exe : standard.o
-	$(CC) -o standard.exe $(DEBUG) $(LDFLAGS) standard.o
+	$(CC_TOOLS) -o standard.exe $(DEBUG) $(LDFLAGS) standard.o
 
 .c.o :
 	$(CC_TOOLS) $(CFLAGS) -c $(DEBUG) $<

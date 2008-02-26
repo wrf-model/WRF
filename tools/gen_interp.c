@@ -218,7 +218,11 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 	{
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
         } else {
+#if 0
 fprintf(fp,"IF ( in_use_for_config( grid%%id , '%s' ) ) THEN \n", vname ) ;
+#else
+fprintf(fp,"IF ( SIZE( %s%s ) .GT. 1 ) THEN \n", grid, vname2 ) ;
+#endif
 	}
 
 fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;

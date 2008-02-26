@@ -33,7 +33,7 @@ main( int argc, char *argv[], char *env[] )
   sw_all_x_staggered       = 0 ;
   sw_move                  = 0 ;
   sw_all_y_staggered       = 0 ;
-  sw_ifort_kludge          = 0 ;
+  sw_fort_kludge          = 0 ;
   sw_dm_serial_in_only      = 0 ; /* input and bdy data set is distributed by node 0, 
                                      other data streams are written to file per process */
   sw_new_bdys              = 0 ;
@@ -67,8 +67,8 @@ main( int argc, char *argv[], char *env[] )
       if (!strcmp(*argv,"-DMOVE_NESTS")) {
         sw_move = 1 ;
       }
-      if (!strcmp(*argv,"-DIFORT_KLUDGE")) {
-        sw_ifort_kludge = 1 ;
+      if (!strcmp(*argv,"-DMOVE_NL_OUTSIDE_MODULE_CONFIGURE")) {
+        sw_fort_kludge = 1 ;
       }
       if (!strcmp(*argv,"-DD3VAR_IRY_KLUDGE")) {
 #if 0

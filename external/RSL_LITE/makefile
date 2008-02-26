@@ -43,7 +43,8 @@ f_pack.o:	        f_pack.F90
 			$(FC) -o $@ $(FFLAGS) -c f_pack.F90
 
 f_xpose.o:	        f_xpose.F90 f_pack.o
-			$(FC) -o $@ $(FFLAGS) -c f_xpose.F90
+			$(CPP) f_xpose.F90 > f_xpose.f
+			$(FC) -o $@ $(FFLAGS) -c f_xpose.f
 
 clean : 
 			/bin/rm -f *.f *.o *.mod *.obj *.i

@@ -228,6 +228,7 @@ CONTAINS
         rh, qs, denfac, rslope, rslope2, rslope3, rslopeb,        &
         pgen, paut, pacr, pisd, pres, pcon, fall, falk,           &
         xl, cpm, work1, work2, xni, qs0, n0sfac
+  INTEGER, DIMENSION( its:ite ) ::  kwork1, kwork2
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
               falkc, work1c, work2c, fallc
 ! variables for optimization
@@ -538,7 +539,6 @@ CONTAINS
         mstep(i) = 0
       enddo
       do k = kts, kte
-!
         do i = its, ite
           if(t(i,k).ge.t0c) then
             mstep(i) = k
@@ -547,18 +547,18 @@ CONTAINS
       enddo
 !
       do i = its, ite
-        if(mstep(i).ne.0.and.w(i,mstep(i)).gt.0.) then
-          work1(i,1) = float(mstep(i) + 1)
-          work1(i,2) = float(mstep(i))
-        else
-          work1(i,1) = float(mstep(i))
-          work1(i,2) = float(mstep(i))
+        kwork2(i) = mstep(i)
+        kwork1(i) = mstep(i)
+        if(mstep(i).ne.0) then
+          if (w(i,mstep(i)).gt.0.) then
+            kwork1(i) = mstep(i) + 1
+          endif
         endif
       enddo
 !
       do i = its, ite
-        k  = nint(work1(i,1))
-        kk = nint(work1(i,2))
+        k  = kwork1(i)
+        kk = kwork2(i)
         if(k*kk.ge.1) then
           qrsci = qrs(i,k) + qci(i,k)
           if(qrsci.gt.0..or.fall(i,kk).gt.0.) then

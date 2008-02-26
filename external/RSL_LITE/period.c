@@ -7,7 +7,9 @@
 
 #define STANDARD_OUTPUT 1
 
-#include "mpi.h"
+#ifndef STUBMPI
+# include "mpi.h"
+#endif
 #include "rsl_lite.h"
 
 static int yp_curs, ym_curs, xp_curs, xm_curs ;
@@ -22,6 +24,7 @@ RSL_LITE_INIT_PERIOD (
                 int * me0, int * np0 , int * np_x0 , int * np_y0 ,
                 int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
 {
+#ifndef STUBMPI
   int n3dR, n2dR, typesizeR ;
   int n3dI, n2dI, typesizeI ;
   int n3dD, n2dD, typesizeD ;
@@ -86,6 +89,7 @@ RSL_LITE_INIT_PERIOD (
     }
   }
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
+#endif
 }
 
 
@@ -95,6 +99,7 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
            int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
 {
+#ifndef STUBMPI
   int me, np, np_x, np_y ;
   int shw , typesize ;
   int ids , ide , jds , jde , kds , kde ;
@@ -355,13 +360,17 @@ RSL_LITE_PACK_PERIOD ( int* Fcomm0, char * buf , int * shw0 , int * typesize0 , 
       }
     }
   }
+#endif
 }
 
+#ifndef STUBMPI
 static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;
+#endif
 
 RSL_LITE_EXCH_PERIOD_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
+#ifndef STUBMPI
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, nbytes ;
   MPI_Status stat ;
@@ -402,10 +411,12 @@ fprintf(stderr,"RSL_LITE_EXCH_PERIOD_X disabled\n") ;
 # endif
 #endif
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
+#endif
 }
 
 RSL_LITE_EXCH_PERIOD_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
+#ifndef STUBMPI
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, nbytes ;
   MPI_Status stat ;
@@ -446,5 +457,6 @@ fprintf(stderr,"RSL_LITE_EXCH_PERIOD_Y disabled\n") ;
 # endif
 #endif
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
+#endif
 }
 

@@ -13,7 +13,6 @@ MODULES =                       \
 	module_io_domain.o	\
 	module_model_constants.o \
 	module_MPP.o \
-	module_wrf_top.o \
 	module_optional_si_input.o	\
 	module_compute_geop.o           \
 	module_soil_pre.o		\
@@ -216,15 +215,6 @@ mediation_nest_move.o: ../frame/module_domain.o ../frame/module_configure.o ../f
 
 set_timekeeping.o: ../frame/module_domain.o ../frame/module_configure.o \
                    $(ESMF_MOD_DEPENDENCE)
-
-module_wrf_top.o: ../frame/module_machine.o \
-                  ../frame/module_domain.o \
-                  ../frame/module_integrate.o \
-                  ../frame/module_driver_constants.o \
-                  ../frame/module_configure.o \
-                  ../frame/module_timing.o \
-                  ../frame/module_wrf_error.o \
-                  $(ESMF_MOD_DEPENDENCE)
 
 wrf_inputout.o                  : ../frame/module_domain.o \
 				../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o 

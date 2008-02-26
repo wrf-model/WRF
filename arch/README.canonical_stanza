@@ -1,0 +1,74 @@
+###########################################################
+#ARCH    <os> (fortran) compiler with (C) compiler # serial smpar dmpar dm+sm
+#
+# (The last four words on the line above indicate what parallel modes are supported for this build.
+#  Presence of serial indicates the code can be built single-threaded and an option will be presented
+#  by the configure script for this.  Likewise, presence of smpar indicates shared-memory parallel (OpenMP),
+#  dmpar indicates distributed memory parallel (MPI), and dm+sm indicates both.  The comment character
+#  before the first word is not necessary but it makes the choices neater when the configure script 
+#  displays them to the user)
+#
+# (The settings below should be all that are needed per architecture/installation. The rest of the 
+#  configuration settings are based on these and are done in the postamble (arch/postamble) )
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # (compiler dependent option for openmp, e.g. -mp for pgi; leave commented out)
+SFC             =       (serial fortran compiler)
+SCC             =       (serial C compiler)
+DM_FC           =       (Fortran compile command for mpi, eg: mpif90 -f90=$(SFC))
+DM_CC           =       (C compile comand for mpi, eg: mpicc -cc=$(SCC))
+FC              =       CONFIGURE_FC    (leave as is: to be filled in by configure depending on parallel option)
+CC              =       CONFIGURE_CC    (leave as is: to be filled in by configure depending on parallel option
+LD              =       $(FC)		(usually leave as is)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE   # filled in by configure or hard coded to 8 (for var)
+PROMOTION       =       (compiler specific option for promtion: e.g. -r$(RWORDSIZE) -i4)
+ARCH_LOCAL      =       (local additions to ARCHFLAGS)
+CFLAGS_LOCAL    =       (local additions to CFLAGS)
+FCOPTIM         =       (optimization options to Fortran compiler)
+FCDEBUG         =       (debug and no optimization options to Fortran compiler)
+FORMAT_FIXED    =       (fortran compiler option for fixed format)
+FORMAT_FREE     =       (fortran compiler option for free format)
+FCSUFFIX        =       (tell the compiler what a fortran file's suffix looks like -- AIX needs)
+BYTESWAPIO      =       (option to give bigendian unformatted fortran output, if needed)
+FCBASEOPTS      =       $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) (basic options to fortran compiler, but not optim.)
+MODULE_SRCH_FLAG =      (flag to compiler to tell it where to search for modules -- PGI needs)
+TRADFLAG        =       (flag to cpp to tell it to act like it did before script kiddies got hold of it)
+CPP             =       (cpp command)
+AR              =       (ar command)
+M4              =       (m4 command)
+RANLIB          =       (ranlib command if needed)
+
+---
+Here is an example:
+
+###########################################################
+#ARCH    Darwin PGI compiler with pgcc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp
+SFC             =       pgf90
+SCC             =       pgcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMACOS -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -DMACOS
+FCOPTIM         =       -O2 -fast
+FCDEBUG         =       # -g -O0
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =     -module
+TRADFLAG        =      -traditional
+CPP             =      cpp -C -P -xassembler-with-cpp
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib

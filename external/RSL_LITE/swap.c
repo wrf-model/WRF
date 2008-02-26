@@ -7,7 +7,9 @@
 
 #define STANDARD_OUTPUT 1
 
-#include "mpi.h"
+#ifndef STUBMPI
+# include "mpi.h"
+#endif
 #include "rsl_lite.h"
 
 #define  UP_EVEN(A)   ((A)+abs((A)%2))
@@ -21,7 +23,9 @@ static int *y_curs = NULL ;
 static int *x_curs = NULL ;
 static int *x_peermask = NULL ;
 static int *nbytes = NULL ; 
+#ifndef STUBMPI
 static MPI_Request *x_recv = NULL , *x_send = NULL ;
+#endif
 
 RSL_LITE_INIT_SWAP ( 
                 int * Fcomm ,
@@ -34,6 +38,7 @@ RSL_LITE_INIT_SWAP (
                 int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
                 int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
 {
+#ifndef STUBMPI
   int n3dR, n2dR, typesizeR ;
   int n3dI, n2dI, typesizeI ;
   int n3dD, n2dD, typesizeD ;
@@ -107,6 +112,7 @@ RSL_LITE_INIT_SWAP (
        buffer_for_proc ( P , nbytes[P], RSL_SENDBUF ) ;
      }
   }
+#endif
 }
 
 RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
@@ -115,6 +121,7 @@ RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , i
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
            int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
 {
+#ifndef STUBMPI
   int me, np, np_x, np_y ;
   int odd , typesize ;
   int ids , ide , jds , jde , kds , kde ;
@@ -287,10 +294,12 @@ RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , i
       }
     }
   }
+#endif
 }
 
 RSL_LITE_SWAP ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
+#ifndef STUBMPI
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, nb ;
   MPI_Status stat ;
@@ -326,5 +335,6 @@ fprintf(stderr,"RSL_LITE_SWAP disabled\n") ;
 # endif
 #endif
   for ( i = 0 ; i < np ; i++ ) {  x_curs[i] = 0 ;  }
+#endif
 }
 

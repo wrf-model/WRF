@@ -1067,7 +1067,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 wrf_bdyout.o : wrf_bdyout.F
@@ -1371,7 +1371,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 module_sm.o 	: module_sm.F
 module_tiles.o	: module_tiles.F
@@ -1542,7 +1542,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 wrf_bdyout.o : wrf_bdyout.F
@@ -1693,7 +1693,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 wrf_bdyout.o : wrf_bdyout.F
@@ -1853,7 +1853,7 @@ wrfio_mcel :
 
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
 module_configure.o : module_configure.F
@@ -1991,7 +1991,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 solve_interface.o : solve_interface.F
 	$(RM) $@
@@ -2440,7 +2440,7 @@ fftpack :
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; \
-          make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -2737,7 +2737,7 @@ fftpack :
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; \
-          make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 nest_init_utils.o : nest_init_utils.F
 module_optional_si_input.o : module_optional_si_input.F
@@ -3487,7 +3487,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4099,7 +4099,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -4235,7 +4235,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='mpicc -w -I.' \
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='mpicc -w -I.' \
 	  FC="$(FC) $(PROMOTION) $(FCFLAGS) -cm -w " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
@@ -4366,7 +4366,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include' \
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='ecc -Vaxlib -I. -cm -w -I/usr/local/vmi/mpich/include' \
 	FC="$(FC) $(PROMOTION) $(FCFLAGS) -cm -w -Vaxlib -I$(WRF_SRC_ROOT_DIR)/.. " MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
@@ -4765,7 +4765,7 @@ fftpack :
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; \
-          make CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -5062,7 +5062,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -5232,7 +5232,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -5734,7 +5734,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -5915,7 +5915,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -6445,7 +6445,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" \
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" \
                                      MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
@@ -7406,7 +7406,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -7660,7 +7660,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -8057,7 +8057,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -8304,7 +8304,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" FC='mpif90 $(FCFLAGS) -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC='mpif90 $(FCFLAGS) -byteswapio' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
                                                                                 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -8438,7 +8438,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC) $(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -8572,7 +8572,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -8959,7 +8959,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -9106,7 +9106,7 @@ fftpack :
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; \
           /bin/sed -e '/MPI_ADDRESS_KIND=4/d' -e '/DEC\$$/d' '$(MPdir)'/Include/mpif.h > mpif.h ; \
-          make CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
+          make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -byteswapio" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -9236,6 +9236,7 @@ AR                = ar ru
 M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+ENVCOMPDEFS     =       CONFIGURE_COMPILEFLAGS
 
 externals :  CONFIGURE_WRFIO_NF $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
 
@@ -9248,7 +9249,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -9420,7 +9421,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -9592,7 +9593,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -9775,7 +9776,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -9944,7 +9945,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -10037,7 +10038,7 @@ module_dm.o :
 	$(FC) -c $(FCBASEOPTS) $(FCDEBUG) $(OMP) -O0 $(MODULE_DIRS) -mP2OPT_vec_xform_level=103 $*.f90
 
 ############################################################
-#ARCH    Generic Intel 64 x86_64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, RSL_LITE)
+#ARCH  Z  Generic Intel 64 x86_64 Linux, ifort+icc 9.x,10.x DM-Parallel (MPICH, RSL_LITE)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
 #        for experimental implementation of vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCHFLAGS
@@ -10114,6 +10115,7 @@ AR                = ar ru
 M4                = m4
 RANLIB            = ranlib
 NETCDFPATH	      = CONFIGURE_NETCDF_PATH
+ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 
 externals :  CONFIGURE_WRFIO_NF $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms.c wrfio_int module_dm.F wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 esmf_time fftpack
 
@@ -10126,7 +10128,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -10656,7 +10658,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :
@@ -10838,7 +10840,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
           cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC='$(CC) -I. $(CFLAGS) -DMPI2_SUPPORT -I$(MPI_HOME)/include '\
 	 FC='$(FC) $(FCFLAGS) -I$(WRF_SRC_ROOT_DIR)/.. ' MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) )
 
 wrfio_nf :

@@ -8,7 +8,6 @@
                                sm1x, em1x, sm2x, em2x, sm3x, em3x )
          USE duplicate_of_driver_constants
          implicit none
-         include 'mpif.h'
          integer, intent(in) :: sd1, ed1, sd2, ed2, sd3, ed3, & 
                                 sp1, ep1, sp2, ep2, sp3, ep3, & 
                                 sm1, em1, sm2, em2, sm3, em3, & 
@@ -17,6 +16,10 @@
          integer, intent(in) :: np, comm, r_wordsize, i_wordsize
          integer, intent(in) :: dir ! 1 is a->ax, otherwise ax->a
          integer, intent(in) :: memorder
+         integer, dimension((ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*max(1,(r_wordsize/i_wordsize)))         :: a
+         integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize)))   :: ax
+#ifndef STUBMPI
+         include 'mpif.h'
 
 !local
          integer   ::         ids, ide, jds, jde, kds, kde, & 
@@ -25,8 +28,6 @@
                               ipsx, ipex, jpsx, jpex, kpsx, kpex, & 
                               imsx, imex, jmsx, jmex, kmsx, kmex
 
-         integer, dimension((ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*max(1,(r_wordsize/i_wordsize)))         :: a
-         integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize)))   :: ax
          integer, dimension(0:(ep1-sp1+1)*(ep2-sp2+1)*(ep3-sp3+1)*max(1,(r_wordsize/i_wordsize)))       :: zbuf
          integer, dimension(0:(ep1x-sp1x+1)*(ep2x-sp2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize))) :: xbuf
 
@@ -172,6 +173,7 @@
              call mpi_abort(ierr)
            endif
          enddo
+#endif
          return
       end subroutine trans_z2x
 
@@ -185,7 +187,6 @@
                                sm1y, em1y, sm2y, em2y, sm3y, em3y )
          USE duplicate_of_driver_constants
          implicit none
-         include 'mpif.h'
          integer, intent(in) :: memorder
          integer, intent(in) ::  sd1, ed1, sd2, ed2, sd3, ed3, &
                                  sp1x, ep1x, sp2x, ep2x, sp3x, ep3x, &
@@ -195,9 +196,11 @@
 
          integer, intent(in) :: np, comm, r_wordsize, i_wordsize
          integer, intent(in) :: dir ! 1 is a->ax, otherwise ax->a
-
          integer, dimension((ep1x-sp1x+1)*(ep2x-ep2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize)))   :: ax
          integer, dimension((ep1y-sp1y+1)*(ep2y-sp2y+1)*(ep3y-sp3y+1)*max(1,(r_wordsize/i_wordsize)))   :: ay
+#ifndef STUBMPI
+         include 'mpif.h'
+
          integer, dimension(0:(ep1x-sp1x+1)*(ep2x-sp2x+1)*(ep3x-sp3x+1)*max(1,(r_wordsize/i_wordsize))) :: xbuf
          integer, dimension(0:(ep1y-sp1y+1)*(ep2y-sp2y+1)*(ep3y-sp3y+1)*max(1,(r_wordsize/i_wordsize))) :: ybuf
 
@@ -354,6 +357,7 @@
              call mpi_abort(ierr)
            endif
          enddo
+#endif
          return
       end subroutine trans_x2y
 

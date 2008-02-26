@@ -229,7 +229,8 @@ END FUNCTION nsecondsinyear
 SUBROUTINE initdaym 
   USE esmf_basemod
   USE esmf_basetimemod
-  USE ESMF_CalendarMod
+  USE ESMF_CalendarMod, only : months_per_year, mday, daym, mdaycum, monthbdys, &
+                               mdayleap, mdayleapcum, monthbdysleap, daymleap
   IMPLICIT NONE
   INTEGER i,j,m
   m = 1
@@ -271,7 +272,7 @@ END SUBROUTINE initdaym
 
 !$$$ useful, but not used at the moment...  
 SUBROUTINE compute_dayinyear(YR,MM,DD,dayinyear)
-  use ESMF_CalendarMod
+  use ESMF_CalendarMod, only : mday
 IMPLICIT NONE
       INTEGER, INTENT(IN)  :: YR,MM,DD   ! DD is day of month
       INTEGER, INTENT(OUT) :: dayinyear
@@ -299,7 +300,7 @@ SUBROUTINE timegetmonth( time, MM )
   USE esmf_basemod
   USE esmf_basetimemod
   USE esmf_timemod
-  USE esmf_calendarmod
+  USE ESMF_CalendarMod, only : MONTHS_PER_YEAR, monthbdys, monthbdysleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time
   INTEGER, INTENT(OUT) :: MM
@@ -338,7 +339,7 @@ SUBROUTINE timegetdayofmonth( time, DD )
   USE esmf_basemod
   USE esmf_basetimemod
   USE esmf_timemod
-  USE esmf_calendarmod
+  USE esmf_calendarmod, only : monthbdys, monthbdysleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(IN) :: time
   INTEGER, INTENT(OUT) :: DD
@@ -368,7 +369,7 @@ SUBROUTINE timeaddmonths( time, MM, ierr )
   USE esmf_basemod
   USE esmf_basetimemod
   USE esmf_timemod
-  USE esmf_calendarmod
+  USE esmf_calendarmod, only : MONTHS_PER_YEAR, monthbdys, monthbdysleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   INTEGER, INTENT(IN) :: MM
@@ -399,7 +400,7 @@ SUBROUTINE timeincmonth( time )
   USE esmf_basemod
   USE esmf_basetimemod
   USE esmf_timemod
-  USE esmf_calendarmod
+  USE esmf_calendarmod, only : mday, mdayleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   ! locals
@@ -427,7 +428,7 @@ SUBROUTINE timedecmonth( time )
   USE esmf_basemod
   USE esmf_basetimemod
   USE esmf_timemod
-  USE esmf_calendarmod
+  USE esmf_calendarmod, only : mday, months_per_year, mdayleap
   IMPLICIT NONE
   TYPE(ESMF_Time), INTENT(INOUT) :: time
   ! locals

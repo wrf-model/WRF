@@ -111,7 +111,8 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 #if (EM_CORE == 1 && defined( DM_PARALLEL ))
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
-# ifndef SGIALTIX
+# if defined(MOVE_NESTS) || (!defined(SGIALTIX))
+
   CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
@@ -138,7 +139,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-# ifndef SGIALTIX
+# if defined(MOVE_NESTS) || (!defined(SGIALTIX))
   CALL dealloc_space_field ( grid )
 # endif
 #endif
@@ -157,7 +158,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
 !    CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,   &
-#ifndef SGIALTIX
+#if defined(MOVE_NESTS) || (!defined(SGIALTIX))
   CALL alloc_space_field ( grid, grid%id , 1 , 3 , .FALSE. ,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
@@ -186,7 +187,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#ifndef SGIALTIX
+#if defined(MOVE_NESTS) || (!defined(SGIALTIX))
   CALL dealloc_space_field ( grid )
 #endif
 

@@ -463,7 +463,11 @@ RSL_LITE_MERGE_MSGS ( mytask_p, ntasks_p, Fcomm )
 /* common code */
 rsl_lite_allgather_msgs ( mytask_p, ntasks_p, comm )
   int_p mytask_p, ntasks_p ;
+#ifndef STUBMPI
   MPI_Comm comm ;
+#else
+  int comm ;
+#endif
 {
   int P ;
   char *work ;

@@ -81,6 +81,7 @@ CONTAINS
    SUBROUTINE wrf_dm_initialize
       USE module_configure
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER :: local_comm, local_comm2, new_local_comm, group, newgroup, p, p1, ierr
       INTEGER, ALLOCATABLE, DIMENSION(:) :: ranks
@@ -121,7 +122,6 @@ CONTAINS
       CALL mpi_comm_rank( local_comm, mytask, ierr )
 ! extra code to reorder the communicator 20051212jm
       IF ( reorder_mesh ) THEN
-write(0,*)'reordering mesh'
         ALLOCATE (ranks(ntasks))
         CALL mpi_comm_dup ( local_comm , local_comm2, ierr )
         CALL mpi_comm_group ( local_comm2, group, ierr )
@@ -169,8 +169,16 @@ write(0,*)'reordering mesh'
       CALL MPI_Comm_split(comdup,mytask_x,mytask,local_communicator_y,ierr)
       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('MPI_Comm_split fails for y in 20061228 mod')
 ! end 20061228
-
       CALL wrf_set_dm_communicator ( local_communicator )
+#else
+      ntasks = 1
+      ntasks_x = 1
+      ntasks_y = 1
+      mytask = 0
+      mytask_x = 0
+      mytask_y = 0
+#endif
+
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
@@ -542,7 +550,7 @@ write(0,*)'reordering mesh'
          intermediate_grid%sm33y                           = c_sm3y
          intermediate_grid%em33y                           = c_em3y
 
-#ifdef SGIALTIX
+#if defined(SGIALTIX) && (! defined(MOVE_NESTS) )
          ! allocate space for the intermediate domain
          CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
@@ -854,61 +862,90 @@ write(0,*)'reordering mesh'
 
    REAL FUNCTION wrf_dm_max_real ( inval )
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_MAX, local_communicator, ierr )
       wrf_dm_max_real = retval
+#else
+      REAL inval
+      wrf_dm_max_real = inval
+#endif
    END FUNCTION wrf_dm_max_real
 
    REAL FUNCTION wrf_dm_min_real ( inval )
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_MIN, local_communicator, ierr )
       wrf_dm_min_real = retval
+#else
+      REAL inval
+      wrf_dm_min_real = inval
+#endif
    END FUNCTION wrf_dm_min_real
 
    SUBROUTINE wrf_dm_min_reals ( inval, retval, n )
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       INTEGER n
       REAL inval(*)
       REAL retval(*)
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval , n, getrealmpitype(), MPI_MIN, local_communicator, ierr )
+#else
+      retval(1:n) = inval(1:n)
+#endif
    END SUBROUTINE wrf_dm_min_reals
 
    REAL FUNCTION wrf_dm_sum_real ( inval )
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       REAL inval, retval
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, getrealmpitype(), MPI_SUM, local_communicator, ierr )
       wrf_dm_sum_real = retval
+#else
+      REAL inval
+      wrf_dm_sum_real = inval
+#endif
    END FUNCTION wrf_dm_sum_real
 
    SUBROUTINE wrf_dm_sum_reals (inval, retval)
       IMPLICIT NONE
-      INCLUDE 'mpif.h'
       REAL, INTENT(IN)  :: inval(:)
       REAL, INTENT(OUT) :: retval(:)
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval, SIZE(inval), getrealmpitype(), MPI_SUM, local_communicator, ierr )
+#else
+      retval = inval
+#endif
    END SUBROUTINE wrf_dm_sum_reals
 
    INTEGER FUNCTION wrf_dm_sum_integer ( inval )
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER inval, retval
       INTEGER ierr
       CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_SUM, local_communicator, ierr )
       wrf_dm_sum_integer = retval
+#else
+      INTEGER inval
+      wrf_dm_sum_integer = inval
+#endif
    END FUNCTION wrf_dm_sum_integer
 
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       REAL val, val_all( ntasks )
       INTEGER idex, jdex, ierr
@@ -928,11 +965,16 @@ write(0,*)'reordering mesh'
            jdex = dex_all(2,i)
         ENDIF
       ENDDO
+#else
+      REAL val
+      INTEGER idex, jdex, ierr
+#endif
    END SUBROUTINE wrf_dm_maxval_real
 
 #ifndef PROMOTE_FLOAT
    SUBROUTINE wrf_dm_maxval_doubleprecision ( val, idex, jdex )
       IMPLICIT NONE
+# ifndef STUBMPI
       INCLUDE 'mpif.h'
       DOUBLE PRECISION val, val_all( ntasks )
       INTEGER idex, jdex, ierr
@@ -952,11 +994,16 @@ write(0,*)'reordering mesh'
            jdex = dex_all(2,i)
         ENDIF
       ENDDO
+# else
+      DOUBLE PRECISION val
+      INTEGER idex, jdex, ierr
+# endif
    END SUBROUTINE wrf_dm_maxval_doubleprecision
 #endif
 
    SUBROUTINE wrf_dm_maxval_integer ( val, idex, jdex )
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER val, val_all( ntasks )
       INTEGER idex, jdex, ierr
@@ -976,6 +1023,10 @@ write(0,*)'reordering mesh'
            jdex = dex_all(2,i)
         ENDIF
       ENDDO
+#else
+      INTEGER val
+      INTEGER idex, jdex
+#endif
    END SUBROUTINE wrf_dm_maxval_integer
 
 !  For HWRF some additional computation is required. This is gopal's doing
@@ -1076,6 +1127,7 @@ write(0,*)'reordering mesh'
    END SUBROUTINE wrf_dm_minval_integer     ! End of gopal's doing
 
    SUBROUTINE split_communicator
+#ifndef STUBMPI
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
@@ -1126,10 +1178,11 @@ write(0,*)'reordering mesh'
       CALL wrf_set_dm_communicator( mpi_comm_local )
 
       DEALLOCATE( icolor )
-
+#endif
    END SUBROUTINE split_communicator
 
    SUBROUTINE init_module_dm
+#ifndef STUBMPI
       IMPLICIT NONE
       INTEGER mpi_comm_local, ierr, mytask, nproc
       INCLUDE 'mpif.h'
@@ -1146,6 +1199,7 @@ write(0,*)'reordering mesh'
 	CALL wrf_set_dm_communicator ( MPI_COMM_WORLD )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
+#endif
    END SUBROUTINE init_module_dm
 
 ! stub
@@ -1168,8 +1222,6 @@ write(0,*)'reordering mesh'
 !           errors at each observation point on all processors. 
 !       
 !------------------------------------------------------------------------------
-#ifndef STUBMPI
-    INCLUDE 'mpif.h'
         
     INTEGER, INTENT(IN)   :: nsta                ! Observation index.
     INTEGER, INTENT(IN)   :: nerrf               ! Number of error fields.
@@ -1178,6 +1230,9 @@ write(0,*)'reordering mesh'
     LOGICAL, INTENT(IN)   :: MP_LOCAL_VOBMASK(NIOBF)
     LOGICAL, INTENT(IN)   :: MP_LOCAL_COBMASK(NIOBF)
     REAL, INTENT(INOUT)   :: errf(nerrf, niobf)
+
+#ifndef STUBMPI
+    INCLUDE 'mpif.h'
         
 ! Local declarations
     integer i, n, nlocal_dot, nlocal_crs
@@ -1516,12 +1571,18 @@ END SUBROUTINE wrf_dm_patch_domain
 
 SUBROUTINE wrf_termio_dup
   IMPLICIT NONE
+  INTEGER mytask, ntasks
+#ifndef STUBMPI
+  INTEGER ierr
   INCLUDE 'mpif.h'
-  INTEGER mytask, ntasks, ierr
   CALL mpi_comm_size(MPI_COMM_WORLD, ntasks, ierr )
   CALL mpi_comm_rank(MPI_COMM_WORLD, mytask, ierr )
   write(0,*)'starting wrf task ',mytask,' of ',ntasks
   CALL rsl_error_dup1( mytask )
+#else
+  mytask = 0
+  ntasks = 1
+#endif
 END SUBROUTINE wrf_termio_dup
 
 SUBROUTINE wrf_get_myproc( myproc )
@@ -1559,14 +1620,18 @@ END SUBROUTINE wrf_get_nprocy
 SUBROUTINE wrf_dm_bcast_bytes ( buf , size )
    USE module_dm
    IMPLICIT NONE
+#ifndef STUBMPI
    INCLUDE 'mpif.h'
+#endif
    INTEGER size
 #ifndef NEC
    INTEGER*1 BUF(size)
 #else
    CHARACTER*1 BUF(size)
 #endif
+#ifndef STUBMPI
    CALL BYTE_BCAST ( buf , size, local_communicator )
+#endif
    RETURN
 END SUBROUTINE wrf_dm_bcast_bytes
 
@@ -1578,6 +1643,7 @@ SUBROUTINE wrf_dm_bcast_string( BUF, N1 )
 !
 ! </DESCRIPTION>
    CHARACTER*(*) buf
+#ifndef STUBMPI
    INTEGER ibuf(256),i,n
    CHARACTER*256 tstr
    n = n1
@@ -1595,6 +1661,7 @@ SUBROUTINE wrf_dm_bcast_string( BUF, N1 )
        buf(i:i) = char(ibuf(i))
      ENDDO
    ENDIF
+#endif
    RETURN
 END SUBROUTINE wrf_dm_bcast_string
 
@@ -1685,26 +1752,36 @@ END
 
    SUBROUTINE wrf_abort
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr
       CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
+#else
+      STOP
+#endif
    END SUBROUTINE wrf_abort
 
    SUBROUTINE wrf_dm_shutdown
       IMPLICIT NONE
+#ifndef STUBMPI
       INTEGER ierr
       CALL MPI_FINALIZE( ierr )
+#endif
       RETURN
    END SUBROUTINE wrf_dm_shutdown
 
    LOGICAL FUNCTION wrf_dm_on_monitor()
       USE module_dm
       IMPLICIT NONE
+#ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER tsk, ierr, mpi_comm_local
       CALL wrf_get_dm_communicator( mpi_comm_local )
       CALL mpi_comm_rank ( mpi_comm_local, tsk , ierr )
       wrf_dm_on_monitor = tsk .EQ. 0
+#else
+      wrf_dm_on_monitor = .TRUE.
+#endif
       RETURN
    END FUNCTION wrf_dm_on_monitor
 
@@ -1858,17 +1935,18 @@ END
        INTEGER                         DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3A 
+       CHARACTER *(*) stagger,ordering
+       INTEGER domdesc,typesize,ierr
+       REAL globbuf(*)
+       REAL buf(*)
+#ifndef STUBMPI
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
        INTEGER                         ids,ide,jds,jde,kds,kde,&
                                        ims,ime,jms,jme,kms,kme,&
                                        ips,ipe,jps,jpe,kps,kpe
-       CHARACTER *(*) stagger,ordering
        LOGICAL, EXTERNAL :: wrf_dm_on_monitor, has_char
-       INTEGER fid,domdesc,typesize,ierr
-       REAL globbuf(*)
-       REAL buf(*)
 
        INTEGER i, j, k,  ndim
        INTEGER  Patch(3,2), Gpatch(3,2,ntasks)
@@ -1981,6 +2059,7 @@ END
          CALL end_timing('wrf_patch_to_global_generic')
        ENDIF
        DEALLOCATE( tmpbuf )
+#endif
        RETURN
     END SUBROUTINE wrf_patch_to_global_generic
 
@@ -2275,13 +2354,14 @@ END
        INTEGER                         DS1a,DE1a,DS2a,DE2a,DS3a,DE3a,&
                                        MS1a,ME1a,MS2a,ME2a,MS3a,ME3a,&
                                        PS1a,PE1a,PS2a,PE2a,PS3a,PE3A 
+       CHARACTER *(*) stagger,ordering
+       INTEGER domdesc,typesize,ierr
+       REAL globbuf(*)
+       REAL buf(*)
+#ifndef STUBMPI
        INTEGER                         DS1,DE1,DS2,DE2,DS3,DE3,&
                                        MS1,ME1,MS2,ME2,MS3,ME3,&
                                        PS1,PE1,PS2,PE2,PS3,PE3
-       CHARACTER *(*) stagger,ordering
-       INTEGER fid,domdesc,typesize,ierr
-       REAL globbuf(*)
-       REAL buf(*)
        LOGICAL, EXTERNAL :: wrf_dm_on_monitor, has_char
 
        INTEGER i,j,k,ord,ord2d,ndim
@@ -2388,6 +2468,7 @@ END
 
 
        DEALLOCATE ( tmpbuf )
+#endif
        RETURN
     END SUBROUTINE wrf_global_to_patch_generic
 
@@ -3592,11 +3673,12 @@ integer myproc
                                 ierr )
    USE module_dm
    IMPLICIT NONE
-   INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
    REAL, DIMENSION(*) :: Field, globbuf
+#ifndef STUBMPI
+   INCLUDE 'mpif.h'
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
@@ -3608,6 +3690,7 @@ integer myproc
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
+#endif
 
    END SUBROUTINE wrf_gatherv_real
 
@@ -3621,7 +3704,6 @@ integer myproc
                                 ierr )
    USE module_dm
    IMPLICIT NONE
-   INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
@@ -3630,6 +3712,8 @@ integer myproc
 ! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
 ! if we were not indexing the globbuf and Field arrays it would not even matter
    REAL, DIMENSION(*) :: Field, globbuf
+#ifndef STUBMPI
+   INCLUDE 'mpif.h'
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
@@ -3641,6 +3725,7 @@ integer myproc
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
+#endif
 
    END SUBROUTINE wrf_gatherv_double
 
@@ -3653,11 +3738,12 @@ integer myproc
                                 communicator                , &    ! communicator
                                 ierr )
    IMPLICIT NONE
-   INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
    INTEGER, DIMENSION(*) :: Field, globbuf
+#ifndef STUBMPI
+   INCLUDE 'mpif.h'
 
            CALL mpi_gatherv( Field( field_ofst ),      &    ! sendbuf
                             my_count ,                       &    ! sendcount
@@ -3669,6 +3755,7 @@ integer myproc
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
+#endif
 
    END SUBROUTINE wrf_gatherv_integer
 
@@ -3684,11 +3771,12 @@ integer myproc
                                 ierr )
    USE module_dm
    IMPLICIT NONE
-   INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
    REAL, DIMENSION(*) :: Field, globbuf
+#ifndef STUBMPI
+   INCLUDE 'mpif.h'
 
            CALL mpi_scatterv(                                &
                             globbuf( glob_ofst ) ,           &    ! recvbuf
@@ -3701,6 +3789,7 @@ integer myproc
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
+#endif
 
    END SUBROUTINE wrf_scatterv_real
 
@@ -3715,15 +3804,16 @@ integer myproc
                                 ierr )
    USE module_dm
    IMPLICIT NONE
-   INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
+   REAL, DIMENSION(*) :: Field, globbuf
+#ifndef STUBMPI
+   INCLUDE 'mpif.h'
 ! this next declaration is REAL, not DOUBLE PRECISION because it will be autopromoted
 ! to double precision by the compiler when WRF is compiled for 8 byte reals. Only reason
 ! for having this separate routine is so we pass the correct MPI type to mpi_scatterv
 ! if we were not indexing the globbuf and Field arrays it would not even matter
-   REAL, DIMENSION(*) :: Field, globbuf
 
            CALL mpi_scatterv(                                &
                             globbuf( glob_ofst ) ,           &    ! recvbuf
@@ -3736,6 +3826,7 @@ integer myproc
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
+#endif
 
    END SUBROUTINE wrf_scatterv_double
 
@@ -3749,11 +3840,12 @@ integer myproc
                                 communicator                , &    ! communicator
                                 ierr )
    IMPLICIT NONE
-   INCLUDE 'mpif.h'
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
    INTEGER , DIMENSION(*) :: counts, displs
    INTEGER, DIMENSION(*) :: Field, globbuf
+#ifndef STUBMPI
+   INCLUDE 'mpif.h'
 
            CALL mpi_scatterv(                                &
                             globbuf( glob_ofst ) ,           &    ! recvbuf
@@ -3766,6 +3858,7 @@ integer myproc
                             root                           , &    ! root
                             communicator                   , &    ! communicator
                             ierr )
+#endif
 
    END SUBROUTINE wrf_scatterv_integer
 ! end new stuff 20070124

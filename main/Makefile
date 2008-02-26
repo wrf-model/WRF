@@ -4,7 +4,7 @@ LN      =       ln -sf
 MAKE    =       make -i -r
 RM      =       rm -f
 
-MODULES = 
+MODULES =  module_wrf_top.F
 
 OBJS    =
 
@@ -12,13 +12,13 @@ LIBPATHS =
 
 include ../configure.wrf
 
-$(SOLVER)_wrf : wrf.o
+$(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)
-	$(LD) -o wrf.exe $(LDFLAGS) wrf.o $(LIBWRFLIB) $(LIB)
+	$(LD) -o wrf.exe $(LDFLAGS) wrf.o $(LIBWRFLIB) $(LIB) ../main/module_wrf_top.o
 
-$(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o
-	$(RANLIB) libwrflib.a
-	$(LD) -o wrf_SST_ESMF.exe $(LDFLAGS) wrf_SST_ESMF.o wrf_ESMFMod.o $(LIBWRFLIB) $(LIB)
+$(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o ../main/module_wrf_top.o
+	$(RANLIB) $(LIBWRFLIB)
+	$(LD) -o wrf_SST_ESMF.exe $(LDFLAGS) wrf_SST_ESMF.o wrf_ESMFMod.o $(LIBWRFLIB) $(LIB) ../main/module_wrf_top.o
 
 $(SOLVER)_ideal : module_initialize ideal.o
 	$(RANLIB) $(LIBWRFLIB)
@@ -146,10 +146,19 @@ real_em.o: \
 #	../chem/module_input_chem_data.o \
 #	../chem/module_input_chem_bioemiss.o \
 
-wrf.o:  ../share/module_wrf_top.o
+wrf.o:  ../main/module_wrf_top.o
 
-wrf_ESMFMod.o:  ../share/module_wrf_top.o
+wrf_ESMFMod.o:  ../main/module_wrf_top.o
 
 wrf_SST_ESMF.o:  wrf_ESMFMod.o
+
+module_wrf_top.o: ../frame/module_machine.o \
+                  ../frame/module_domain.o \
+                  ../frame/module_integrate.o \
+                  ../frame/module_driver_constants.o \
+                  ../frame/module_configure.o \
+                  ../frame/module_timing.o \
+                  ../frame/module_wrf_error.o \
+                  $(ESMF_MOD_DEPENDENCE)
 
 # DO NOT DELETE

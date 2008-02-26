@@ -524,7 +524,11 @@ fprintf(fp,"ENDDO\n") ;
             }
             else
             {
+#if 0
               fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",varname) ; 
+#else
+              fprintf(fp,"IF ( SIZE(%s) .GT. 1 ) THEN\n",varref ) ; 
+#endif
               set_mem_order( q, memord , NAMELEN) ;
               if       ( q->ndims == 3 ) {
 
@@ -1458,7 +1462,11 @@ fprintf(fp, "  ENDDO\n" ) ;
             else
 	    {
               set_mem_order( p, memord , NAMELEN) ;
+#if 0
               fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",vname) ; 
+#else
+              fprintf(fp,"IF ( SIZE( grid%%%s ) .GT. 1 ) THEN\n",vname) ; 
+#endif
               if ( !strcmp( *direction, "x" ) ) {
                 if        ( !strcmp( memord , "XYZ" ) ) {
                   fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,:) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,:)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
@@ -1761,7 +1769,11 @@ fprintf(fp,"DO itrace =  PARAM_FIRST_SCALAR, num_%s\n", p->name) ;
 /* note that in the case if dir != UNPACKIT and down_path == INTERP_UP the data
    structure being used is intermediate_grid, not grid. However, intermediate_grid
    and grid share the same id (see module_dm.F) so it will not make a difference. */
+#if 0
 fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s%s') ) THEN ! okay for intermediate_grid too. see comment in gen_comms.c\n",p->name,tag) ; 
+#else
+fprintf(fp,"IF ( SIZE(%s%s%s) .GT. 1 ) THEN ! okay for intermediate_grid too. see comment in gen_comms.c\n",grid,p->name,tag) ; 
+#endif
 	}
 
         if ( dir == UNPACKIT ) 

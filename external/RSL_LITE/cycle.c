@@ -336,8 +336,8 @@ RSL_LITE_CYCLE ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 )
 {
   int me, np, np_x, np_y ;
   int yp, ym, xp, xm, nb ;
-  MPI_Status stat ;
 #ifndef STUBMPI
+  MPI_Status stat ;
   MPI_Comm comm, *comm0, dummy_comm ;
   int i, P ;
 

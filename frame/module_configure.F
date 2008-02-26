@@ -336,13 +336,7 @@ CONTAINS
      END DO
    END SUBROUTINE init_module_configure
 
-! When the compiler has Intel Inside (TM) (that is, ifort), the large
-! number of nl_get and nl_set routines inside the module causes the
-! compiler to never finish with this routine. For ifort, move the
-! routines outside the module. Note, the registry generates a 
-! USE module_configure for all the nl_get and nl_set routines
-! if IFORT_KLUDGE is in effect.
-#ifdef IFORT_KLUDGE
+#ifdef MOVE_NL_OUTSIDE_MODULE_CONFIGURE
 
 END MODULE module_configure
 

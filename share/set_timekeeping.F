@@ -6,8 +6,8 @@ SUBROUTINE Setup_Timekeeping ( grid )
    TYPE(domain), POINTER :: grid
 ! Local
    TYPE(WRFU_TimeInterval) :: begin_time, end_time, zero_time, one_minute, one_hour, padding_interval
-   TYPE(WRFU_TimeInterval) :: interval, run_length
-   TYPE(WRFU_Time) :: startTime, stopTime
+   TYPE(WRFU_TimeInterval) :: interval, run_length, dfl_length
+   TYPE(WRFU_Time) :: startTime, stopTime, initialTime
    TYPE(WRFU_TimeInterval) :: stepTime
    TYPE(WRFU_TimeInterval) :: tmp_step
    INTEGER :: start_year,start_month,start_day,start_hour,start_minute,start_second
@@ -283,6 +283,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_start_minute(grid%id,start_minute)
             CALL nl_get_start_second(grid%id,start_second)
          ELSE IF ( grid%dfi_stage .EQ. DFI_FST ) THEN
+            CALL nl_get_start_year(grid%id,start_year)
+            CALL nl_get_start_month(grid%id,start_month)
+            CALL nl_get_start_day(grid%id,start_day)
+            CALL nl_get_start_hour(grid%id,start_hour)
+            CALL nl_get_start_minute(grid%id,start_minute)
+            CALL nl_get_start_second(grid%id,start_second)
+
             run_length = grid%stop_subtime - grid%start_subtime
             CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
 ! What about fractional seconds?
@@ -380,6 +387,21 @@ SUBROUTINE Setup_Timekeeping ( grid )
       IF ( grid%id .EQ. head_grid%id .AND. &
            ( run_days .gt. 0 .or. run_hours .gt. 0 .or. run_minutes .gt. 0 .or. run_seconds .gt. 0 )) THEN
         CALL WRFU_TimeIntervalSet ( run_length , D=run_days, H=run_hours, M=run_minutes, S=run_seconds, rc=rc )
+#if (EM_CORE == 1)
+        IF ( grid%dfi_stage .EQ. DFI_FST .AND. grid%dfi_opt .EQ. DFI_DFL ) THEN
+           CALL nl_get_start_year(grid%id,start_year)
+           CALL nl_get_start_month(grid%id,start_month)
+           CALL nl_get_start_day(grid%id,start_day)
+           CALL nl_get_start_hour(grid%id,start_hour)
+           CALL nl_get_start_minute(grid%id,start_minute)
+           CALL nl_get_start_second(grid%id,start_second)
+           CALL WRFU_TimeSet(initialTime, YY=start_year, MM=start_month, DD=start_day, &
+                                        H=start_hour, M=start_minute, S=start_second,&
+                                        rc=rc)
+           dfl_length = startTime - initialTime
+           run_length = run_length - dfl_length
+        END IF
+#endif
         CALL wrf_check_error( WRFU_SUCCESS, rc, &
                            'WRFU_TimeIntervalSet(run_length) FAILED', &
                            __FILE__ , &

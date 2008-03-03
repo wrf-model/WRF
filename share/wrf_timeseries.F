@@ -38,6 +38,11 @@ SUBROUTINE calc_ts_locations( grid )
               ipsy, ipey, jpsy, jpey, kpsy, kpey
 
 
+   IF ( grid%ntsloc .LE. 0 ) THEN
+      grid%ntsloc_domain = 0
+      RETURN
+   END IF
+
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    IF ( grid%dfi_stage == DFI_FST ) THEN
 #endif

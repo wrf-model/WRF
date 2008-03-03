@@ -34,8 +34,9 @@ subroutine da_jo_and_grady_gpsref( iv, re, jo, jo_grad_y)
          end do
       end if
 
-      jo % gpsref_ref = 0.5 * jo % gpsref_ref    
    end do
+
+   jo % gpsref_ref = 0.5 * jo % gpsref_ref    
 
    if (trace_use_dull) call da_trace_exit("da_jo_and_grady_gpsref")
 

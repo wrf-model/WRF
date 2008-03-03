@@ -7635,29 +7635,17 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    DO k=kts, ktf
    DO i=i_start, i_end
 
-     ! ADT note:
-     ! Since fq{x,y,z}l are based on coupled variables (ru,rv,rom)
-     ! I'm guessing this "msft" here is to cancel those out in order
-     ! to make these comparisons work..., ADT Eq. 48
-     !ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)                   &
-     !           - dt*( msft(i,j)*( rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))      &
-     !                             +rdy*(fqyl(i,k,j+1)-fqyl(i,k,j)) )    &
-     !                         +rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j))   )  
-     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)                   &
-                - dt*( msfty(i,j)*rdx*(fqxl(i+1,k,j)-fqxl(i,k,j))       &
-                      +msftx(i,j)*rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))       &
+     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+                - dt*( msftx(i,j)*msfty(i,j)*(               &
+                       rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
+                       rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
                       +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
 
-     !flux_out = dt*(msft(i,j)*( rdx*(  max(0.,fqx (i+1,k,j))      &
-     !                                 -min(0.,fqx (i  ,k,j)) )    &
-     !                          +rdy*(  max(0.,fqy (i,k,j+1))      &
-     !                                 -min(0.,fqy (i,k,j  )) ) )  &
-     !                      +rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
-     !                                 -max(0.,fqz (i,k  ,j)) )   )
-     flux_out = dt*( msfty(i,j)*rdx*(  max(0.,fqx (i+1,k,j))      &
+     flux_out = dt*( (msftx(i,j)*msfty(i,j))*(                    &
+                                rdx*(  max(0.,fqx (i+1,k,j))      &
                                       -min(0.,fqx (i  ,k,j)) )    &
-                    +msftx(i,j)*rdy*(  max(0.,fqy (i,k,j+1))      &
-                                      -min(0.,fqy (i,k,j  )) )    &
+                               +rdy*(  max(0.,fqy (i,k,j+1))      &
+                                      -min(0.,fqy (i,k,j  )) ) )  &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
@@ -7731,7 +7719,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
      ! Un-"canceled" map scale factor, ADT Eq. 48
      tendency (i,k,j) = tendency(i,k,j)                           &
-               - msfty(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+               - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
                                    +fqyl(i,k,j+1)-fqyl(i,k,j))   )
 
   ENDDO

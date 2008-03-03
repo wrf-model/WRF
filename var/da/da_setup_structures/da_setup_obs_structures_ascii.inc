@@ -1,8 +1,8 @@
 subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
-   !---------------------------------------------------------------------------
+   !-------------------------------------------------------------------------
    ! Purpose: Define, allocate and read of observation structure.
-   !---------------------------------------------------------------------------
+   !-------------------------------------------------------------------------
 
    implicit none
 
@@ -12,37 +12,9 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
    character(len=filename_len)  :: filename
    integer                      :: n, i, j, k
-   logical                      :: outside
+
    if (trace_use) call da_trace_entry("da_setup_obs_structures_ascii")
 
-   !-------------------------------
-   ! Find out if pseudo ob is local
-   !-------------------------------
-   if (num_pseudo > 0) then
-      iv%time = 1
-      outside = .false.
-      i = int(pseudo_x)
-      j = int(pseudo_y)
-      if (fg_format == fg_format_kma_global) then
-         if ((j < jts-1) .or. (j > jte)) outside = .true.
-      else
-         if ((i < ids)   .or. (i >= ide) .or. (j < jds)   .or. (j >= jde)) outside = .true.
-         if ((i < its-1) .or. (i >  ite) .or. (j < jts-1) .or. (j >  jte)) outside = .true.
-      end if
-   else
-      outside = .true.
-   end if
-   if (outside) then
-      iv%info(pseudo)%nlocal          = 0
-      ob%nlocal(pseudo)               = 0
-      iv%info(pseudo)%ntotal          = 0
-      iv%info(pseudo)%plocal(iv%time) = 0
-   else
-      iv%info(pseudo)%nlocal          = num_pseudo
-      ob%nlocal(pseudo)               = num_pseudo
-      iv%info(pseudo)%ntotal          = num_pseudo
-      iv%info(pseudo)%max_lev         = 1            
-   end if
    !--------------------------------------------------------------------------
    ! [1.0] Scan GTS observation header and get idea of number of obs:
    !--------------------------------------------------------------------------

@@ -281,7 +281,7 @@ subroutine da_scan_obs_bufr (iv, filename)
             case default
                write(unit=message(1), fmt='(a, 2i12)') &
                   'unsaved obs found with kx & t29= ',kx,t29
-               call da_warning(__FILE__,__LINE__,message(1:1))
+               !call da_warning(__FILE__,__LINE__,message(1:1))
             end select
          end select
       end do dup_loop   

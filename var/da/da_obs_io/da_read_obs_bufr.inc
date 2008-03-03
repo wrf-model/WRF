@@ -135,7 +135,7 @@ subroutine da_read_obs_bufr (iv, filename)
       if (print_detail_obs) then
          ! Simplistic approach, could be improved to get it all done on PE 0
          if (.NOT. outside) then
-            write(unit=stdout,fmt='(A,I4,A,F8.2,A,F8.2,A,I3,A,2I3)') &
+            write(unit=stdout,fmt='(A,1X,I8,1X,A,F8.2,A,F8.2,A,1X,A,I3,1X,A,2F8.3)') &
                "Report",report,"at",platform%info%lon,"E",platform%info%lat,"N", &
                "on processor", myproc,"position", platform%loc%x,platform%loc%y
          end if
@@ -351,7 +351,7 @@ subroutine da_read_obs_bufr (iv, filename)
             'pstar: ', platform%info%pstar, &
             'level: ', platform%info%levels, &
             'kx:    ', kx
-      else if ((nlevels < 1) .and. ((kx /= 164) .or. (kx /= 174))) then
+      else if ((nlevels < 1) .and. ((kx /= 164) .and. (kx /= 174))) then
          write(unit=stderr, fmt='(/a/)') &
             'Warning: Too few levels.'
   
@@ -461,28 +461,31 @@ subroutine da_read_obs_bufr (iv, filename)
                   iv%sonde_sfc(nlocal(sonde_sfc))%q = iv%sonde_sfc(nlocal(sonde_sfc))%u
                end if
 
-               if (nlevels < 1) cycle reports
+               ! Xin comment it out based on ascii obs. becasue it will cause uninitialed error.
+               ! if (nlevels < 1) cycle reports
+               if (nlevels > 0) then
 
-               allocate (iv%sound(nlocal(sound))%h (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%p (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%u (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%v (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%t (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%q (1:nlevels))
+                  allocate (iv%sound(nlocal(sound))%h (1:nlevels))
+                  allocate (iv%sound(nlocal(sound))%p (1:nlevels))
+                  allocate (iv%sound(nlocal(sound))%u (1:nlevels))
+                  allocate (iv%sound(nlocal(sound))%v (1:nlevels))
+                  allocate (iv%sound(nlocal(sound))%t (1:nlevels))
+                  allocate (iv%sound(nlocal(sound))%q (1:nlevels))
 
-               j = 0
-               do i = 1, old_nlevels
-                  if (i == surface_level) cycle
+                  j = 0
+                  do i = 1, old_nlevels
+                     if (i == surface_level) cycle
 
-                  j=j+1
+                        j=j+1
 
-                  iv%sound(nlocal(sound))%h(j) = platform%each(i)%height
-                  iv%sound(nlocal(sound))%p(j) = platform%each(i)%p%inv
-                  iv%sound(nlocal(sound))%u(j) = platform%each(i)%u
-                  iv%sound(nlocal(sound))%v(j) = platform%each(i)%v
-                  iv%sound(nlocal(sound))%t(j) = platform%each(i)%t
-                  iv%sound(nlocal(sound))%q(j) = platform%each(i)%q
-               end do
+                        iv%sound(nlocal(sound))%h(j) = platform%each(i)%height
+                        iv%sound(nlocal(sound))%p(j) = platform%each(i)%p%inv
+                        iv%sound(nlocal(sound))%u(j) = platform%each(i)%u
+                        iv%sound(nlocal(sound))%v(j) = platform%each(i)%v
+                        iv%sound(nlocal(sound))%t(j) = platform%each(i)%t
+                        iv%sound(nlocal(sound))%q(j) = platform%each(i)%q
+                  end do
+               end if
 
             case (221) ;           ! Pilot 
                if (.not.use_pilotobs) cycle reports
@@ -506,6 +509,8 @@ subroutine da_read_obs_bufr (iv, filename)
                      iv%pilot(nlocal(pilot))%u(i) = platform%each(i)%u
                      iv%pilot(nlocal(pilot))%v(i) = platform%each(i)%v
                   end do
+            case default
+               exit dup_loop
             end select
 
          case (41)

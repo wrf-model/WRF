@@ -14,11 +14,11 @@ include ../configure.wrf
 
 $(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)
-	$(LD) -o wrf.exe $(LDFLAGS) wrf.o $(LIBWRFLIB) $(LIB) ../main/module_wrf_top.o
+	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
 
 $(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)
-	$(LD) -o wrf_SST_ESMF.exe $(LDFLAGS) wrf_SST_ESMF.o wrf_ESMFMod.o $(LIBWRFLIB) $(LIB) ../main/module_wrf_top.o
+	$(LD) -o wrf_SST_ESMF.exe $(LDFLAGS) wrf_SST_ESMF.o wrf_ESMFMod.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
 
 $(SOLVER)_ideal : module_initialize ideal.o
 	$(RANLIB) $(LIBWRFLIB)

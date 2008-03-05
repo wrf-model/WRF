@@ -623,7 +623,7 @@ CONTAINS
       CALAOU  = .TRUE.
       CALAIN  = .TRUE.
       FRST    = .TRUE.
-      SCASE   = '??'
+      SCASE   = 'xx'
       SULRATW = 2.D0
       SODRAT  = ZERO
       NOFER   = 0
@@ -1232,7 +1232,7 @@ CONTAINS
       CALAOU  = .TRUE.
       CALAIN  = .TRUE.
       FRST    = .TRUE.
-      SCASE   = '??'
+      SCASE   = 'xx'
       SULRATW = 2.D0
       SODRAT  = ZERO
       NOFER   = 0
@@ -1580,7 +1580,7 @@ CONTAINS
       CALAOU  = .TRUE.
       CALAIN  = .TRUE.
       FRST    = .TRUE.
-      SCASE   = '??'
+      SCASE   = 'xx'
       SULRATW = 2.D0
       NOFER   = 0
       STKOFL  =.FALSE.

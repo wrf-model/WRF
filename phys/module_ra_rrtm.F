@@ -3822,7 +3822,7 @@ CONTAINS
 !     TBOUND = Tw(kte+1)                                                        
       TBOUND = TSFC
       IF(TBOUND .GT. 340.)THEN
-        WRITE( errmess , '(A,I4)' ) 'rrtm: TBOUND exceeds table limit: reset ',TBOUND
+        WRITE( errmess , '(A,F10.3)' ) 'rrtm: TBOUND exceeds table limit: reset ',TBOUND
         CALL wrf_message (errmess)
         TBOUND = 339.99
       ENDIF

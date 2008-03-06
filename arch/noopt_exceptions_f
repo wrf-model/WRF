@@ -11,6 +11,7 @@
 convert_nmm.o : convert_nmm.F
 init_modules_em.o : init_modules_em.F
 input_wrf.o : input_wrf.F
+module_io.o : module_io.F
 module_comm_dm.o : module_comm_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
@@ -122,10 +123,11 @@ wrf_tsin.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
+	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
 
 # compile without OMP
 input_wrf.o \
+module_io.o \
 wrf_auxhist10in.o \
 wrf_auxhist10out.o \
 wrf_auxhist11in.o \
@@ -186,4 +188,4 @@ module_configure.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

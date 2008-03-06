@@ -94,6 +94,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  $sw_dmparallelflag = "" ;
  $sw_nest_opt = "" ; 
  $sw_comms_external = "gen_comms_serial module_dm_serial" ;
+
  if ( $sw_dmparallel eq "RSL_LITE" ) 
  {
   $sw_fc = "\$(DM_FC)" ;
@@ -377,6 +378,8 @@ while ( <CONFIGURE_DEFAULTS> )
           $sw_comms_external = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite" ;
           $sw_dmparallel = "RSL_LITE" ;
           $sw_dmparallelflag = "-DDM_PARALLEL" ;
+          $sw_fc = "\$(DM_FC)" ;
+          $sw_cc = "\$(DM_CC)" ;
         }  # only one option in v3.0
       }
     }

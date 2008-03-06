@@ -18,7 +18,7 @@ ESMF_LIB_FLAGS  =
 ESMF_IO_LIB     =    ESMFIOLIB
 ESMF_IO_LIB_EXT =    ESMFIOEXTLIB
 INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
-                     $(WRF_SRC_ROOT_DIR)/main \
+                      -I$(WRF_SRC_ROOT_DIR)/main \
                       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf \
                       -I$(WRF_SRC_ROOT_DIR)/external/io_int \
                       -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
@@ -42,7 +42,7 @@ LIB_EXTERNAL    = \
                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_GRIB2_LIB
 
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL)
-LDFLAGS         =    $(OMP) $(FCFLAGS) CONFIGURE_LDFLAGS
+LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
 ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
 CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH

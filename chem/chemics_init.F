@@ -11,6 +11,7 @@
                waer1,waer2,waer3,waer4,                              &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                  &
                pm2_5_dry,pm2_5_water,pm2_5_dry_ec,chem_in_opt,       &
+               kemit,                                                &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -35,7 +36,7 @@
 
    real  , intent(in) :: bioemdt,photdt,chemdt,plumerisefire_frq,dt,gmt
    INTEGER,      INTENT(IN   ) :: chem_in_opt
-   INTEGER,      INTENT(IN   ) :: id,julday,                         &
+   INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
                                   ids,ide, jds,jde, kds,kde,         &
                                   ims,ime, jms,jme, kms,kme,         &
                                   its,ite, jts,jte, kts,kte
@@ -57,7 +58,7 @@
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_chem ) ,       &
           INTENT(INOUT   ) ::                                        &
                               chem 
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_emis_ant ) ,       &
+   REAL,  DIMENSION( ims:ime , 1:kemit , jms:jme, num_emis_ant ) ,       &
           INTENT(INOUT   ) ::                                        &
                               emis_ant
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, num_scalar ) ,     &
@@ -165,7 +166,7 @@ call wrf_message("**************************************************************
        end do
        do l=1,num_emis_ant
        do j=jts,jte
-          do k=kts,kte
+          do k=1,kemit
              do i=its,ite
                 emis_ant(i,k,j,l) = 0.
              end do

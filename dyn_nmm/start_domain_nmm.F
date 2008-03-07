@@ -1853,6 +1853,7 @@
                GAER1,GAER2,GAER3,GAER4,                              &
                WAER1,WAER2,WAER3,WAER4,                              &
                PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC,GRID%CHEM_IN_OPT,  &
+               GRID%KEMIT,                                           &
                IDS , IDE , JDS , JDE , KDS , KDE ,                   &
                IMS , IME , JMS , JME , KMS , KME ,                   &
                ITS , ITE , JTS , JTE , KTS , KTE                     )

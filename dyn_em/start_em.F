@@ -916,7 +916,7 @@
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &
                grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,                  &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
-                         grid%chem_in_opt,                                  &
+                         grid%chem_in_opt,grid%kemit,                       &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
                          its , ite , jts , jte , kts , kte                  )

@@ -846,7 +846,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       cc_r
+CC              =       xlc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -992,7 +992,7 @@ mediation_force_domain.o start_domain.o module_integrate.o :
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       cc_r
+CC              =       xlc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -1143,7 +1143,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       cc_r
+CC              =       xlc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -1297,7 +1297,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       cc_r
+CC              =       xlc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -1454,7 +1454,7 @@ convert_nmm.o :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       cc_r
+SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
@@ -1609,7 +1609,7 @@ convert_nmm.o    :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       cc_r
+SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
@@ -1760,7 +1760,7 @@ convert_nmm.o    :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       cc_r
+SCC             =       xlc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r

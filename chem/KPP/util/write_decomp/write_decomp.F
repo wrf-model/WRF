@@ -37,7 +37,9 @@ PROGRAM write_decomp
 !    OPEN (UNIT=oun, FILE='module_kpp_mechX_decomp.F', STATUS='UNKNOWN')
     
 
-    WRITE(fname,*) 'decomp_',TRIM(mech),'.inc'
+!   WRITE(fname,*) 'decomp_',TRIM(mech),'.inc'
+    WRITE(fname,fmt='(3a)') 'decomp_',TRIM(mech),'.inc'
+    PRINT *,"fname:<",TRIM(fname),">"
     OPEN (UNIT=oun, FILE=TRIM(fname), STATUS='UNKNOWN')
 
 !     WRITE(oun, *) "MODULE module_decomp_", TRIM(mech)

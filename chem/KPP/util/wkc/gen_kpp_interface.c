@@ -99,7 +99,7 @@ FILE  * kpp_if;
 
 
        /* 1-D water and 3rd body concentrations, temperature  */
-       wki_one_d_vars ( kpp_if );
+       wki_one_d_vars ( kpp_if,  p1 );
 
 
        /* fprintf(stderr, "1 MATCHING PACKS:  %s \n", p2->name); */

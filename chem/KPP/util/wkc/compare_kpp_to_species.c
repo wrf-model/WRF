@@ -35,9 +35,7 @@ compare_kpp_to_species  ( char * kpp_dirname)
   int in_comment, got_it;
   char wrf_name[NAMELEN], kpp_name[NAMELEN];
   int i;
-  int got_h2o, got_air;
-
-
+  int got_h2o; 
 
   /*  first find matching packages */
 
@@ -339,25 +337,25 @@ compare_kpp_to_species  ( char * kpp_dirname)
      }
 
 
-     got_air = 0;
+     p1 -> got_air = 0;
      got_h2o = 0;
      /* take care of water, third body */
      for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
     	  strcpy( name1, pm1->name );
           make_upper_case(name1);
-       if ( strcmp (name1, kpp_h2o) == 0) {
+       if ( strcmp (name1, kpp_third_body) == 0) {
           pm1->found_match = 2;
            strcpy( pm1->assoc_wrf_name,  "WATER VAPOR");
-           got_air = 1;
+           p1 -> got_air = 1;
        }
-       if ( strcmp (name1, kpp_third_body) == 0) {
+       if ( strcmp (name1, kpp_h2o) == 0) {
           pm1->found_match = 2;
           strcpy( pm1->assoc_wrf_name,  "THIRD BODY");
           got_h2o = 1;
        }
      }
 
-     if  ( got_air != 1 ) {
+     if  ( p1 -> got_air != 1 ) {
                   fprintf(stderr, "ERROR: variable name for third body in KPP species file is expected to be  %s, but was not found in %s species file \n",  kpp_third_body,  p2->name);
                   /* exit (0); */
                 } 

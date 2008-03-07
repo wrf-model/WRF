@@ -3,7 +3,6 @@
 
 
 
-
 typedef struct knode_struct {
 
   char          name[NAMELEN] ;
@@ -23,6 +22,8 @@ typedef struct knode_struct {
   /* flag whether variable is declared as radical species */
   int is_radical ;
 
+  /* flag if M (third body conc) is found in .spc file */
+  int got_air ;
 
 } knode_t ;
 

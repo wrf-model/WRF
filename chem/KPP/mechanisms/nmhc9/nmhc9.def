@@ -38,7 +38,8 @@
       RALKE = F * K0M / ( 1.D0 + KK )
       END FUNCTION
 !---------------------------------------------------------------------  
-!TROE(FIX(I_M),TEMP,.933,2.85D-30,-2.67,3.13D-11,363.)!Dransfield et al.'99(GRL) this call in XYZ.eqn
+!TROE(FIX(I_M),TEMP,.933,2.85D-30,-2.67,3.13D-11,363.)
+!Dransfield et al.'99(GRL) this call in XYZ.eqn
 !---------------------------------------------------------------------
       REAL(KIND=dp) FUNCTION TROE2(M,T,beta,k0,k0e,kinf,Tc)
       REAL(KIND=dp) :: M,T,beta,k0,k0e,kinf,Tc

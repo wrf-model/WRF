@@ -32,7 +32,9 @@ decl_misc (  FILE * ofile )
 
 
 
- fprintf(ofile,"    REAL(KIND=dp) :: conv, oconv \n\n");
+ fprintf(ofile,"    REAL(KIND=dp) :: conv, oconv \n");
+
+ fprintf(ofile,"    REAL(KIND=dp) :: C_M \n\n");
 
  fprintf(ofile,"    INTEGER :: i,j,k,n \n");
 
@@ -301,12 +303,20 @@ wki_prelim( FILE * ofile )
 
 
 int
-wki_one_d_vars( FILE * ofile )
+wki_one_d_vars( FILE * ofile,   knode_t * pp )
 {
 
 
+  if ( pp -> got_air == 1 ) {
    fprintf(ofile,"      ! 3rd body concentration (molec/cm^3)\n");
-   fprintf(ofile,"    FIX(indf_M)  = REAL(dens2con_a * rho_phy(i,k,j), KIND=dp)\n\n");
+   fprintf(ofile,"    FIX(indf_M)  = REAL(dens2con_a * rho_phy(i,k,j), KIND=dp)\n");
+   fprintf(ofile,"    C_M = FIX(indf_M)\n\n");
+  } else {
+    fprintf(ofile,"    C_M = 0.0_dp ! not used \n\n");
+  }
+
+ 
+
 
    fprintf(ofile,"      ! water concentration (molec/cm^3)\n");
    fprintf(ofile,"    FIX(indf_H2O) = REAL(dens2con_w * moist(i,k,j,P_QV) * rho_phy(i,k,j), KIND=dp)\n\n\n");

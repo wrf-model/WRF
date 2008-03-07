@@ -58,7 +58,7 @@ int gen_kpp_pdecl( FILE * ofile, knode_t * nl  );
 int wki_prelim( FILE * ofile );
 int wki_start_loop( FILE * ofile );
 int wki_end_loop( FILE * ofile );
-int wki_one_d_vars ( FILE * ofile );
+int wki_one_d_vars ( FILE * ofile, knode_t * pp );
 
 #define PROTOS_H_KPP
 #endif

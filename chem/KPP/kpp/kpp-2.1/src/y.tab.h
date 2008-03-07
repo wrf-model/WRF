@@ -72,6 +72,6 @@
 #define TPTID 328
 #define USEID 329
 typedef union{
-  char str[80];
+  char str[200];
 } YYSTYPE;
 extern YYSTYPE yylval;

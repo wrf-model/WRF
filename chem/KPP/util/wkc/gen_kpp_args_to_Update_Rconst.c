@@ -42,9 +42,10 @@ gen_kpp_args_to_Update_Rconst( )
    
 
 
-               
-        fprintf(args_to_urc,"             FIX(indf_M), FIX(indf_H2O), TEMP & \n" );
-        fprintf(args_urc,"                C_M, C_H2O, TEMP & \n" );
+   
+         fprintf(args_to_urc,"             C_M, FIX(indf_H2O), TEMP & \n" );
+         fprintf(args_urc,"                C_M, C_H2O, TEMP & \n" );
+
 
         fprintf(decls_urc,"\n   IMPLICIT NONE\n");
 
@@ -57,7 +58,8 @@ gen_kpp_args_to_Update_Rconst( )
 
         fprintf(decls_urc,"    REAL(KIND=dp), INTENT(IN)  :: C_M, C_H2O,&\n");
         fprintf(decls_urc,"                                  TEMP\n\n\n");
-
+    
+        
 
         /* declare pointers to photolysis rates */
         gen_kpp_pdecl(decls_urc, WRFC_jvals);

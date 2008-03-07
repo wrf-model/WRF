@@ -1169,6 +1169,16 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas) = 0.0001
 !     si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 0.0001
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_co ) = 0.08
+   ELSE IF ( si_grid%chem_opt == GOCART_SIMPLE ) THEN
+      si_grid%chem(ims:ime,kms:kme,jms:jme,1:num_chem) = 1.e-12
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 5.e-6
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_sulf) = 5.e-6
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_dms) = 1.e-16
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_msa) = 1.e-16
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_bc1 ) = 1.e-2
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_bc2 ) = 1.e-2
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_oc1 ) = 1.e-2
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_oc2 ) = 1.e-2
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
                               si_grid%chem_opt, si_zsig, si_grid%chem)
@@ -1507,10 +1517,6 @@ SUBROUTINE input_chem_profile (si_grid)
   SUBROUTINE bdy_chem_value_gocart ( chem, nch )
 
 ! This subroutine is called to set the boundary values of chemistry
-! species when chem_opt==CHEM_TRACER. Typically, the boundary values
-! here should be set to match those in input_chem_profile so that the
-! interior and boundary values are the same.
-! William.Gustafson@pnl.gov; 16-Jun-2005
 
     IMPLICIT NONE
 

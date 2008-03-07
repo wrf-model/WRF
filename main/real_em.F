@@ -442,7 +442,19 @@ real::t1,t2,t3,t4
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
- 
+
+              IF(grid%dust_opt >= 1 ) THEN !shc
+                 message = 'READING DUST EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_dust_emiss ( grid , config_flags)
+              END IF
+
+              IF(grid%chem_opt == 300 ) THEN !shc
+                 message = 'READING GOCART BACKGROUND DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_gocart_bg ( grid , config_flags)
+              END IF
+
            ELSEIF(grid%chem_in_opt == 0)then
               ! Generate chemistry data from a idealized vertical profile
               message = 'STARTING WITH BACKGROUND CHEMISTRY '
@@ -464,6 +476,18 @@ real::t1,t2,t3,t4
 !                CALL  wrf_message ( message )
 !                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
 !             END IF
+
+              IF(grid%dust_opt >= 1 ) THEN !shc
+                 message = 'READING DUST EMISSIONS DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_dust_emiss ( grid , config_flags)
+              END IF
+
+              IF(grid%chem_opt == 300 ) THEN !shc
+                 message = 'READING GOCART BACKGROUND DATA'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_gocart_bg ( grid , config_flags)
+              END IF
 
            ELSE
              message = 'RUNNING WITHOUT CHEMISTRY INITIALIZATION'

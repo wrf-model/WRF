@@ -6,7 +6,7 @@ MODULE GOCART_DUST
 CONTAINS
   subroutine gocart_dust_driver(ktau,dt,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                  &
-         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g, &
+         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -27,9 +27,9 @@ CONTAINS
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
-!  REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL,&
-!        INTENT(INOUT ) ::                                                 &
-!        emis_dust
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL,&
+         INTENT(INOUT ) ::                                                 &
+         emis_dust
   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
       INTENT(INOUT) ::                               smois
    REAL,  DIMENSION( ims:ime , jms:jme, 3 )                   ,               &
@@ -93,6 +93,7 @@ CONTAINS
 !  volumetric soil moisture over porosity
 !
      gwet(1,1)=smois(i,1,j)/porosity(isltyp(i,j))
+     gwet(1,1)=.1
      ndt=ifix(dt)
      airden(1,1)=rho_phy(i,kts,j)
      dxy(1)=dx*dx
@@ -105,11 +106,11 @@ CONTAINS
      chem(i,kts,j,p_dust_4)=tc(4)*1.e+9
      chem(i,kts,j,p_dust_5)=tc(5)*1.e+9
 ! for output diagnostics
-!    emis_dust(i,1,j,p_edust1)=bems(1)
-!    emis_dust(i,1,j,p_edust2)=bems(2)
-!    emis_dust(i,1,j,p_edust3)=bems(3)
-!    emis_dust(i,1,j,p_edust4)=bems(4)
-!    emis_dust(i,1,j,p_edust5)=bems(5)
+     emis_dust(i,1,j,p_edust1)=bems(1)
+     emis_dust(i,1,j,p_edust2)=bems(2)
+     emis_dust(i,1,j,p_edust3)=bems(3)
+     emis_dust(i,1,j,p_edust4)=bems(4)
+     emis_dust(i,1,j,p_edust5)=bems(5)
      endif
   enddo
   enddo

@@ -7,7 +7,7 @@ CONTAINS
     subroutine emissions_driver(id,ktau,dtstep,DX,stepfirepl,              &
          config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
-         tsk,erod,g,                                       &
+         tsk,erod,g,emis_seas,emis_dust,                                   &
          ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
          ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
          ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
@@ -82,13 +82,15 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::                                                 &
          erod
-!  REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTional, &
-!        INTENT(INOUT ) ::                                                 &
-!        emis_dust
-!  REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_seas),OPTIONAL,&
-!        INTENT(INOUT ) ::                                                 &
-!        emis_seas
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTional, &
+         INTENT(INOUT ) ::                                                 &
+         emis_dust
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_seas),                    &
+         OPTIONAL,                                                         &
+         INTENT(INOUT ) ::                                                 &
+         emis_seas
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
+         OPTIONAL,                                                         &
          INTENT(INOUT ) ::                                                 &
            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
@@ -96,6 +98,7 @@ CONTAINS
            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2
 
    REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
+         OPTIONAL,                                                         &
          INTENT(IN ) ::                                                    &
            mean_fct_agtf,mean_fct_agef,                                    &
            mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,        &
@@ -132,6 +135,7 @@ CONTAINS
       INTENT(INOUT) ::                               smois
 
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
+         OPTIONAL,                                                         &
           INTENT(INOUT   ) ::                                                 &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
@@ -199,13 +203,13 @@ CONTAINS
         CALL wrf_debug(15,'Gocart sea salt emissions')
          call gocart_seasalt_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,u10,v10,p8w,                  &
-         xland,xlat,xlong,dx,g, &
+         xland,xlat,xlong,dx,g,emis_seas, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
 
       CASE DEFAULT 
-        CALL wrf_debug(00,'no sea salt emissions')
+        CALL wrf_debug(15,'no sea salt emissions')
         if(seasalt_emiss_active.eq.1)CALL wrf_debug(15,'MOSAIC dust emissions')
       END SELECT seasalt_select
       dust_select:  SELECT CASE(config_flags%dust_opt)
@@ -213,7 +217,7 @@ CONTAINS
         CALL wrf_debug(15,'Gocart dust emissions')
         call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                  &
-         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g, &
+         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )

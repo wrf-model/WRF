@@ -73,7 +73,7 @@ CONTAINS
 ! aerosol emissions arrays ((ug/m3)*m/s)
 !
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                          &
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant ),            &
+   REAL, DIMENSION( ims:ime,   1:config_flags%kemit, jms:jme,num_emis_ant ),            &
          INTENT(IN ) ::                                                    &
                          emis_ant
 
@@ -243,17 +243,17 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte,                                  &
                14,                                                         &
-               emis_ant(ims,kms,jms,p_e_pm_10),emis_ant(ims,kms,jms,p_e_pm_25), &
-               emis_ant(ims,kms,jms,p_e_pm25i),emis_ant(ims,kms,jms,p_e_pm25j), &
-               emis_ant(ims,kms,jms,p_e_eci),emis_ant(ims,kms,jms,p_e_ecj),     &
-               emis_ant(ims,kms,jms,p_e_orgi),emis_ant(ims,kms,jms,p_e_orgj),   &
-               emis_ant(ims,kms,jms,p_e_so4j),emis_ant(ims,kms,jms,p_e_so4c),   &
-               emis_ant(ims,kms,jms,p_e_no3j),emis_ant(ims,kms,jms,p_e_no3c),   &
-               emis_ant(ims,kms,jms,p_e_orgc),emis_ant(ims,kms,jms,p_e_ecc),    &
-               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
-               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
-               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
-               emis_ant(ims,kms,jms,p_e_ecc))
+               emis_ant(ims,  1,jms,p_e_pm_10),emis_ant(ims,  1,jms,p_e_pm_25), &
+               emis_ant(ims,  1,jms,p_e_pm25i),emis_ant(ims,  1,jms,p_e_pm25j), &
+               emis_ant(ims,  1,jms,p_e_eci),emis_ant(ims,  1,jms,p_e_ecj),     &
+               emis_ant(ims,  1,jms,p_e_orgi),emis_ant(ims,  1,jms,p_e_orgj),   &
+               emis_ant(ims,  1,jms,p_e_so4j),emis_ant(ims,  1,jms,p_e_so4c),   &
+               emis_ant(ims,  1,jms,p_e_no3j),emis_ant(ims,  1,jms,p_e_no3c),   &
+               emis_ant(ims,  1,jms,p_e_orgc),emis_ant(ims,  1,jms,p_e_ecc),    &
+               emis_ant(ims,  1,jms,p_e_ecc),emis_ant(ims,  1,jms,p_e_ecc),     &
+               emis_ant(ims,  1,jms,p_e_ecc),emis_ant(ims,  1,jms,p_e_ecc),     &
+               emis_ant(ims,  1,jms,p_e_ecc),emis_ant(ims,  1,jms,p_e_ecc),     &
+               emis_ant(ims,  1,jms,p_e_ecc))
 
 
 	p1st = param_first_scalar
@@ -264,7 +264,7 @@ CONTAINS
 	do 1900 n = 1, nsize_aer(itype)
 
 	do 1830 j = jts, jte
-	do 1820 k = kts, min(config_flags%kemit,kte)
+	do 1820 k =   1, min(config_flags%kemit,kte)
 	do 1810 i = its, ite
 
 ! compute mass emissions [(ug/m3)*m/s] for each species
@@ -373,17 +373,17 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte,                                  &
                14,                                                         &
-               emis_ant(ims,kms,jms,p_e_pm_10),emis_ant(ims,kms,jms,p_e_pm_25), &
-               emis_ant(ims,kms,jms,p_e_pm25i),emis_ant(ims,kms,jms,p_e_pm25j), &
-               emis_ant(ims,kms,jms,p_e_eci),emis_ant(ims,kms,jms,p_e_ecj),     &
-               emis_ant(ims,kms,jms,p_e_orgi),emis_ant(ims,kms,jms,p_e_orgj),   &
-               emis_ant(ims,kms,jms,p_e_so4j),emis_ant(ims,kms,jms,p_e_so4c),   &
-               emis_ant(ims,kms,jms,p_e_no3j),emis_ant(ims,kms,jms,p_e_no3c),   &
-               emis_ant(ims,kms,jms,p_e_orgc),emis_ant(ims,kms,jms,p_e_ecc),    &
-               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
-               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
-               emis_ant(ims,kms,jms,p_e_ecc),emis_ant(ims,kms,jms,p_e_ecc),     &
-               emis_ant(ims,kms,jms,p_e_ecc))
+               emis_ant(ims,  1,jms,p_e_pm_10),emis_ant(ims,  1,jms,p_e_pm_25), &
+               emis_ant(ims,  1,jms,p_e_pm25i),emis_ant(ims,  1,jms,p_e_pm25j), &
+               emis_ant(ims,  1,jms,p_e_eci),emis_ant(ims,  1,jms,p_e_ecj),     &
+               emis_ant(ims,  1,jms,p_e_orgi),emis_ant(ims,  1,jms,p_e_orgj),   &
+               emis_ant(ims,  1,jms,p_e_so4j),emis_ant(ims,  1,jms,p_e_so4c),   &
+               emis_ant(ims,  1,jms,p_e_no3j),emis_ant(ims,  1,jms,p_e_no3c),   &
+               emis_ant(ims,  1,jms,p_e_orgc),emis_ant(ims,  1,jms,p_e_ecc),    &
+               emis_ant(ims,  1,jms,p_e_ecc),emis_ant(ims,  1,jms,p_e_ecc),     &
+               emis_ant(ims,  1,jms,p_e_ecc),emis_ant(ims,  1,jms,p_e_ecc),     &
+               emis_ant(ims,  1,jms,p_e_ecc),emis_ant(ims,  1,jms,p_e_ecc),     &
+               emis_ant(ims,  1,jms,p_e_ecc))
 
 
 ! do seasalt emissions
@@ -403,12 +403,12 @@ CONTAINS
 !
 ! do dust emissions
 ! jdf: preliminary version that has not been made generic for situation
-!       if (dust_emiss_active > 0)   &
-!           call mosaic_dust_emiss( slai, ust, smois, ivgtyp, isltyp,      &
-!              id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
-!              ids,ide, jds,jde, kds,kde,                                  &
-!              ims,ime, jms,jme, kms,kme,                                  &
-!              its,ite, jts,jte, kts,kte                                   )
+        if (dust_emiss_active > 0)   &
+            call mosaic_dust_emiss( slai, ust, smois, ivgtyp, isltyp,      &
+               id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
 
 	return
 
@@ -792,18 +792,36 @@ CONTAINS
 END MODULE module_mosaic_addemiss
 
 !----------------------------------------------------------------------
+
    subroutine mosaic_dust_emiss(  slai,ust, smois, ivgtyp, isltyp,         &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
 !
-! adds dust emissions for mosaic aerosol species
-! This is a simple dust scheme at this point, based more on Mahowald et al., 1999
-! Many things are hard coded in to this first version (e.g. 8 aerosol bins)
+! adds dust emissions for mosaic aerosol species (i.e. emission tendencies
+! over time dtstep are applied to the aerosol mixing ratios)
 !
-! (i.e., emissions tendencies over time dtstep are applied 
-! to the aerosol mixing ratios)
+! This is a simple dust scheme based on Shaw et al. (2008) to appear in
+! Atmospheric Environment, recoded by Jerome Fast
+!
+! NOTE: 
+! 1) This version only works with the 8-bin version of MOSAIC.
+! 2) Dust added to MOSAIC's other inorganic specie, OIN.  If Ca and CO3 are 
+!    activated in the Registry, a small fraction also added to Ca and CO3.
+! 3) The main departure from Shaw et al., is now alphamask is computed since
+!    the land-use categories in that paper and in WRF differ.  WRF currently 
+!    does not have that many land-use categories and adhoc assumptions had to
+!    be made. This version was tested for Mexico in the dry season.  The main
+!    land-use categories in WRF that are likely dust sources are grass, shrub,
+!    and savannna (that WRF has in the desert regions of NW Mexico).  Having
+!    dust emitted from these types for other locations and other times of the
+!    year is not likely to be valid.
+! 4) An upper bound on ustar was placed because the surface parameterizations
+!    in WRF can produce unrealistically high values that lead to very high
+!    dust emission rates.
+! 5) Other departures' from Shaw et al. noted below, but are probably not as
+!    important as 2) and 3).
 !
 
    USE module_configure, only:  grid_config_rec_type
@@ -937,8 +955,6 @@ END MODULE module_mosaic_addemiss
             dumspd10=0.
          endif
 
-! The parameters are based on Shaw et al. (2007) to be submitted to Atmos. Environ.
-
 ! part1 - compute vegetation mask
 !
 ! * f8, f50, f51, f52 refer to vegetation classes from the Olsen categories
@@ -952,10 +968,6 @@ END MODULE module_mosaic_addemiss
 
          alphamask=0.001
          if (ivgtyp(i,j) .eq. 7) then
-!          f8=0.05
-!          f50=0.05
-!          f51=0.70
-!          f52=0.00
            f8=0.005
            f50=0.00
            f51=0.10
@@ -963,10 +975,6 @@ END MODULE module_mosaic_addemiss
            alphamask=(f8+f50)*1.0+(f51+f52)*0.5
          endif
          if (ivgtyp(i,j) .eq. 8) then
-!          f8=0.10
-!          f50=0.05
-!          f51=0.00
-!          f52=0.85
            f8=0.010
            f50=0.00
            f51=0.00
@@ -974,10 +982,6 @@ END MODULE module_mosaic_addemiss
            alphamask=(f8+f50)*1.0+(f51+f52)*0.5
          endif
          if (ivgtyp(i,j) .eq. 10) then
-!          f8=0.05
-!          f50=0.05
-!          f51=0.50
-!          f52=0.00
            f8=0.00
            f50=0.00
            f51=0.01
@@ -1054,8 +1058,11 @@ END MODULE module_mosaic_addemiss
 !        wetfactor=1.0
 
 ! part5 - dustflux
+! lower bound on ustar = 20 cm/s as in Shaw et al, but set upper
+! bound to 100 cm/s
 
          ustar1=ust(i,j)*100.0
+         if(ustar1.gt.100.0) ustar1=100.0
          ustart0=20.0
          ustart=ustart0*wetfactor
          if(ustar1.le.ustart) then
@@ -1110,7 +1117,6 @@ END MODULE module_mosaic_addemiss
         return
 
    END subroutine mosaic_dust_emiss
-
 
 !----------------------------------------------------------------------
    subroutine addemiss_masscheck( id, config_flags, iflagaa, fromwhere,    &

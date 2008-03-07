@@ -192,6 +192,7 @@
 	real dgnum_nsm(nmaxd_nsm), sigmag_nsm(nmaxd_nsm)
 	real aaprof_nsm(maxd_acomp+1,nmaxd_nsm)
 	real bbprof_nsm(nmaxd_nsm)
+!       real erfc_num_recipes
 
 	character*80 msg
 	character*10 dumname

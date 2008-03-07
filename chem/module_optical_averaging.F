@@ -1,4 +1,4 @@
-!*********************************************************************************  
+!*********************************************************************************
 ! This computer software was prepared by Battelle Memorial Institute, hereinafter
 ! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
@@ -49,7 +49,7 @@
 ! under the auspices of Atmospheric Science Program of the Office of Biological
 ! and Environmental Research the PNNL Laboratory Research and Directed Research
 ! and Development program.
-!**********************************************************************************  
+!**********************************************************************************
 	module module_optical_averaging
 	
         implicit none
@@ -196,55 +196,74 @@
           radius_wet_col(isize,k) = radius_wet(iclm,k,jclm,isize)
           refindx_col(isize,k)    = refindx(iclm,k,jclm,isize)
           refr=real(refindx_col(isize,k))
-          radius_core_col(isize,k) = radius_core(iclm,k,jclm,isize)
-          refindx_core_col(isize,k) = refindx_core(iclm,k,jclm,isize)
+          radius_core_col(isize,k)   = radius_core(iclm,k,jclm,isize)
+          refindx_core_col(isize,k)  = refindx_core(iclm,k,jclm,isize)
           refindx_shell_col(isize,k) = refindx_shell(iclm,k,jclm,isize)
+
+! JCB, Feb. 20, 2008:  in the case of shell/core and the use of the Mie 
+! routine, set the refractive index of the shell used in the printout
+! equal to the actual refractive index of the shell
+          if(option_method.eq.3.and.option_mie.eq.2) &
+               refindx_col(isize,k) = refindx_shell(iclm,k,jclm,isize) ! JCB
+
+! JCB, Feb. 20, 2008:  set core radius = 0 for very small cores; this
+! prevents problems with full-blown Mie calculations that do not deal
+! well with very small cores.  For very small cores, the amount of
+! absorption is negligible, and therefore setting the core radius to zero
+! has virtually no effect on calculated optical properties
+          if(radius_wet_col(isize,k) < 1e-20) then
+               radius_core_col(isize,k)=0.0             
+          else if(radius_core_col(isize,k)/radius_wet_col(isize,k)**3.le.0.0001) then
+               radius_core_col(isize,k)=0.0  ! JCB
+          end if
        enddo
        enddo
        isecfrm0 = ifix ( (ktau-1) * dtstep )
-       if (option_method .le. 2) then 
+
+       if (option_method .eq. 2) then
           do k = kts, kte
           do isize = 1, nbin_o
-             radius_core_col(isize,k) = 0.0
-             refindx_core_col(isize,k) = cmplx(0.0,0.0)
-          enddo
-          enddo
-       endif
-       if (option_method .eq. 2) then 
-          do k = kts, kte
-          do isize = 1, nbin_o
-           fv = (radius_core_col(k,isize)/radius_wet_col(k,isize))**3 ! volume fraction
-           aa=(refindx_core_col(k,isize)**2+2.0*refindx_shell(iclm,k,jclm,isize)**2)
-           bb=fv*(refindx_core_col(k,isize)**2-refindx_shell(iclm,k,jclm,isize)**2)
+           fv = (radius_core_col(isize,k)/radius_wet_col(isize,k))**3 ! volume fraction
+           aa=(refindx_core_col(isize,k)**2+2.0*refindx_shell(iclm,k,jclm,isize)**2)
+           bb=fv*(refindx_core_col(isize,k)**2-refindx_shell(iclm,k,jclm,isize)**2)
            refindx_col(isize,k)= refindx_shell(iclm,k,jclm,isize)*sqrt((aa+2.0*bb)/(aa-bb))
            refr=real(refindx_col(isize,k))
           enddo
           enddo
        endif
+
+       if (option_method .le. 2) then
+          do k = kts, kte
+          do isize = 1, nbin_o
+             radius_core_col(isize,k) = 0.0
+             refindx_core_col(isize,k) = cmplx(0.0,0.0)
+           enddo
+          enddo
+      endif
 !
-       if(id.eq.1.and.iclm.eq.84.and.jclm.eq.52) then
-         print*,'jdf printout 1'
-         do isize = 1, nbin_o
-            write(*,888) isize,number_bin_col(isize,1),                &
-                   radius_wet_col(isize,1),radius_core_col(isize,1),   &
-                   real(refindx_col(isize,1)),                         &
-                   imag(refindx_col(isize,1)),                         &
-                   real(refindx_core_col(isize,1)),                    &
-                   imag(refindx_core_col(isize,1)),dz(1)
-         enddo
-       endif
-       if(id.eq.2.and.iclm.eq.59.and.jclm.eq.63) then
-         print*,'jdf printout 2'
-         do isize = 1, nbin_o
-            write(*,888) isize,number_bin_col(isize,1),                &
-                   radius_wet_col(isize,1),radius_core_col(isize,1),   &
-                   real(refindx_col(isize,1)),                         &
-                   imag(refindx_col(isize,1)),                         &
-                   real(refindx_core_col(isize,1)),                    &
-                   imag(refindx_core_col(isize,1)),dz(1)
-         enddo
-       endif
-  888  format(i3,9e12.5)
+!!$       if(id.eq.1.and.iclm.eq.84.and.jclm.eq.52) then
+!!$         print*,'jdf printout 1'
+!!$         do isize = 1, nbin_o
+!!$            write(*,888) isize,number_bin_col(isize,1),                &
+!!$                   radius_wet_col(isize,1),radius_core_col(isize,1),   &
+!!$                   real(refindx_col(isize,1)),                         &
+!!$                   imag(refindx_col(isize,1)),                         &
+!!$                   real(refindx_core_col(isize,1)),                    &
+!!$                   imag(refindx_core_col(isize,1)),dz(1)
+!!$         enddo
+!!$       endif
+!!$       if(id.eq.2.and.iclm.eq.59.and.jclm.eq.63) then
+!!$         print*,'jdf printout 2'
+!!$         do isize = 1, nbin_o
+!!$            write(*,888) isize,number_bin_col(isize,1),                &
+!!$                   radius_wet_col(isize,1),radius_core_col(isize,1),   &
+!!$                   real(refindx_col(isize,1)),                         &
+!!$                   imag(refindx_col(isize,1)),                         &
+!!$                   real(refindx_core_col(isize,1)),                    &
+!!$                   imag(refindx_core_col(isize,1)),dz(1)
+!!$         enddo
+!!$       endif
+!!$  888  format(i3,9e12.5)
 !
        if (option_mie .eq. 1) then 
           call mieaer(id, iclm, jclm, nbin_o,                          &
@@ -312,35 +331,35 @@
          l7aer(iclm,k,jclm,3) = l7(3,k)
          l7aer(iclm,k,jclm,4) = l7(4,k)
        enddo
-       if(id.eq.1.and.iclm.eq.84.and.jclm.eq.52) then
-          write(*,889) sizeaer(1,1),sizeaer(2,1),sizeaer(3,1),sizeaer(4,1)
-          write(*,889) extaer(1,1),extaer(2,1),extaer(3,1),extaer(4,1)
-          write(*,889) waer(1,1),waer(2,1),waer(3,1),waer(4,1)
-          write(*,889) gaer(1,1),gaer(2,1),gaer(3,1),gaer(4,1)
-          write(*,889) tauaer(1,1),tauaer(2,1),tauaer(3,1),tauaer(4,1)
-          write(*,889) bscoef(1,1),bscoef(2,1),bscoef(3,1),bscoef(4,1)
-          write(*,889) l2(1,1),l2(2,1),l2(3,1),l2(4,1)
-          write(*,889) l3(1,1),l3(2,1),l3(3,1),l3(4,1)
-          write(*,889) l4(1,1),l4(2,1),l4(3,1),l4(4,1)
-          write(*,889) l5(1,1),l5(2,1),l5(3,1),l5(4,1)
-          write(*,889) l6(1,1),l6(2,1),l6(3,1),l6(4,1)
-          write(*,889) l7(1,1),l7(2,1),l7(3,1),l7(4,1)
-       endif
-       if(id.eq.2.and.iclm.eq.59.and.jclm.eq.63) then
-          write(*,889) sizeaer(1,1),sizeaer(2,1),sizeaer(3,1),sizeaer(4,1)
-          write(*,889) extaer(1,1),extaer(2,1),extaer(3,1),extaer(4,1)
-          write(*,889) waer(1,1),waer(2,1),waer(3,1),waer(4,1)
-          write(*,889) gaer(1,1),gaer(2,1),gaer(3,1),gaer(4,1)
-          write(*,889) tauaer(1,1),tauaer(2,1),tauaer(3,1),tauaer(4,1)
-          write(*,889) bscoef(1,1),bscoef(2,1),bscoef(3,1),bscoef(4,1)
-          write(*,889) l2(1,1),l2(2,1),l2(3,1),l2(4,1)
-          write(*,889) l3(1,1),l3(2,1),l3(3,1),l3(4,1)
-          write(*,889) l4(1,1),l4(2,1),l4(3,1),l4(4,1)
-          write(*,889) l5(1,1),l5(2,1),l5(3,1),l5(4,1)
-          write(*,889) l6(1,1),l6(2,1),l6(3,1),l6(4,1)
-          write(*,889) l7(1,1),l7(2,1),l7(3,1),l7(4,1)
-       endif
-  889  format(4e12.5)
+!!$       if(id.eq.1.and.iclm.eq.84.and.jclm.eq.52) then
+!!$          write(*,889) sizeaer(1,1),sizeaer(2,1),sizeaer(3,1),sizeaer(4,1)
+!!$          write(*,889) extaer(1,1),extaer(2,1),extaer(3,1),extaer(4,1)
+!!$          write(*,889) waer(1,1),waer(2,1),waer(3,1),waer(4,1)
+!!$          write(*,889) gaer(1,1),gaer(2,1),gaer(3,1),gaer(4,1)
+!!$          write(*,889) tauaer(1,1),tauaer(2,1),tauaer(3,1),tauaer(4,1)
+!!$          write(*,889) bscoef(1,1),bscoef(2,1),bscoef(3,1),bscoef(4,1)
+!!$          write(*,889) l2(1,1),l2(2,1),l2(3,1),l2(4,1)
+!!$          write(*,889) l3(1,1),l3(2,1),l3(3,1),l3(4,1)
+!!$          write(*,889) l4(1,1),l4(2,1),l4(3,1),l4(4,1)
+!!$          write(*,889) l5(1,1),l5(2,1),l5(3,1),l5(4,1)
+!!$          write(*,889) l6(1,1),l6(2,1),l6(3,1),l6(4,1)
+!!$          write(*,889) l7(1,1),l7(2,1),l7(3,1),l7(4,1)
+!!$       endif
+!!$       if(id.eq.2.and.iclm.eq.59.and.jclm.eq.63) then
+!!$          write(*,889) sizeaer(1,1),sizeaer(2,1),sizeaer(3,1),sizeaer(4,1)
+!!$          write(*,889) extaer(1,1),extaer(2,1),extaer(3,1),extaer(4,1)
+!!$          write(*,889) waer(1,1),waer(2,1),waer(3,1),waer(4,1)
+!!$          write(*,889) gaer(1,1),gaer(2,1),gaer(3,1),gaer(4,1)
+!!$          write(*,889) tauaer(1,1),tauaer(2,1),tauaer(3,1),tauaer(4,1)
+!!$          write(*,889) bscoef(1,1),bscoef(2,1),bscoef(3,1),bscoef(4,1)
+!!$          write(*,889) l2(1,1),l2(2,1),l2(3,1),l2(4,1)
+!!$          write(*,889) l3(1,1),l3(2,1),l3(3,1),l3(4,1)
+!!$          write(*,889) l4(1,1),l4(2,1),l4(3,1),l4(4,1)
+!!$          write(*,889) l5(1,1),l5(2,1),l5(3,1),l5(4,1)
+!!$          write(*,889) l6(1,1),l6(2,1),l6(3,1),l6(4,1)
+!!$          write(*,889) l7(1,1),l7(2,1),l7(3,1),l7(4,1)
+!!$       endif
+!!$  889  format(4e12.5)
      enddo
      enddo
 !
@@ -412,6 +431,7 @@
    real  conv1a, conv1b
    real  mass_dry_a, mass_wet_a, vol_dry_a , vol_wet_a , vol_shell,  &
          dp_dry_a  , dp_wet_a  , num_a     , dp_bc_a
+   real  num_a_lo  , num_a_hi
    real  refr
 !
 ! Define refractive indicies
@@ -446,9 +466,13 @@
       ref_index_hno3   = cmplx(1.50,0.)
       ref_index_hcl    = cmplx(1.50,0.)
       ref_index_msa    = cmplx(1.43,0.)     ! assumed
-      ref_index_oc     = cmplx(1.45,0.)
-      ref_index_bc     = cmplx(1.82,0.74)
-      ref_index_oin    = cmplx(1.55,0.006)
+      ref_index_oc     = cmplx(1.45,0.)  ! JCB, Feb. 20, 2008: no complex part?
+! JCB, Feb. 20, 2008:  set the refractive index of BC equal to the midpoint
+! of ranges given in Bond and Bergstrom, Light absorption by carboneceous
+! particles: an investigative review 2006, Aerosol Sci. and Tech., 40:27-67.
+!      ref_index_bc     = cmplx(1.82,0.74), old value
+      ref_index_bc     = cmplx(1.85,0.71)
+      ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: if  "other inorganics" includes dust, then this refractive index should be wavelength depedent
       ref_index_aro1   = cmplx(1.45,0.)
       ref_index_aro2   = cmplx(1.45,0.)
       ref_index_alk1   = cmplx(1.45,0.)
@@ -471,7 +495,11 @@
       dens_ca    = 2.6        ! used
       dens_oin   = 2.6        ! used
       dens_oc    = 1.0        ! used
-      dens_bc    = 1.7        ! used
+! JCB, Feb. 20, 2008:  the density of BC is updated to reflect values
+! published by Bond and Bergstrom, Light absorption by carboneceous
+! particles: an investigative review 2006, Aerosol Sci. and Tech., 40:27-67.
+!      dens_bc    = 1.7        ! used, old value
+      dens_bc    =  1.8        !  midpoint of Bond and Bergstrom value
       dens_aro1  = 1.0
       dens_aro2  = 1.0
       dens_alk1  = 1.0
@@ -576,6 +604,24 @@
                        vol_msa  + vol_co3  + vol_ca
           vol_wet_a  = vol_dry_a + vol_h2o
           vol_shell  = vol_wet_a - vol_bc
+! jdf: Adjustment of aerosol number if it falls outside of reasonable bounds.
+! This is necessary since advection scheme will cause the mass and number
+! prognostic equations to give inconsistent values, usually at sharp gradients
+! of these quantities.
+          num_a_lo=1.90985*vol_dry_a/(dlo_sect(isize,itype)**3)
+          num_a_hi=1.90985*vol_dry_a/(dhi_sect(isize,itype)**3)
+          if(num_a.gt.num_a_lo) then
+!           if(i.eq.84.and.j.eq.52) then
+!             print*,'jdf adjust lower',k,isize,vol_dry_a,num_a,num_a_lo,num_a_hi
+!           endif
+            num_a=num_a_lo
+          elseif(num_a.lt.num_a_hi) then
+!           if(i.eq.84.and.j.eq.52) then
+!             print*,'jdf adjust higher',k,isize,vol_dry_a,num_a,num_a_lo,num_a_hi
+!           endif
+            num_a=num_a_hi
+          endif
+!
           dp_dry_a   = (1.90985*vol_dry_a/num_a)**0.3333333
           dp_wet_a   = (1.90985*vol_wet_a/num_a)**0.3333333
           dp_bc_a    = (1.90985*vol_bc/num_a)**0.3333333
@@ -777,9 +823,14 @@
       ref_index_hno3   = cmplx(1.50,0.)
       ref_index_hcl    = cmplx(1.50,0.)
       ref_index_msa    = cmplx(1.43,0.)     ! assumed
-      ref_index_oc     = cmplx(1.45,0.)
-      ref_index_bc     = cmplx(1.82,0.74)
-      ref_index_oin    = cmplx(1.55,0.006)
+      ref_index_oc     = cmplx(1.45,0.)  ! JCB, Feb. 20, 2008: no complex part?
+! JCB, Feb. 20, 2008:  set the refractive index of BC equal to the
+! midpoint of ranges given in Bond and Bergstrom, Light absorption by
+! carboneceous particles: an investigative review 2006, Aerosol Sci.
+! and Tech., 40:27-67.
+!     ref_index_bc     = cmplx(1.82,0.74) old value
+      ref_index_bc     = cmplx(1.85,0.71)
+      ref_index_oin    = cmplx(1.55,0.006)  ! JCB, Feb. 20, 2008: if  "other inorganics" includes dust, then this refractive index should be wavelength depedent
       ref_index_aro1   = cmplx(1.45,0.)
       ref_index_aro2   = cmplx(1.45,0.)
       ref_index_alk1   = cmplx(1.45,0.)
@@ -802,7 +853,11 @@
       dens_ca    = 2.6        ! used
       dens_oin   = 2.6        ! used
       dens_oc    = 1.0        ! used
-      dens_bc    = 1.7        ! used
+! JCB, Feb. 20, 2008:  the density of BC is updated to reflect values
+! published by Bond and Bergstrom, Light absorption by carboneceous
+! particles: an investigative review 2006, Aerosol Sci. and Tech., 40:27-67.
+!      dens_bc    = 1.7        ! used, old value
+      dens_bc    =  1.8        !  midpoint of Bond and Bergstrom value
       dens_aro1  = 1.0
       dens_aro2  = 1.0
       dens_alk1  = 1.0
@@ -871,6 +926,12 @@
         mass_ocj = 0.0
         mass_bci = 0.0
         mass_bcj = 0.0
+        mass_cai = 0.0
+        mass_caj = 0.0
+        mass_co3i = 0.0
+        mass_co3j = 0.0
+        mass_msai = 0.0
+        mass_msaj = 0.0
         mass_h2oi = 0.0
         mass_h2oj = 0.0
         mass_antha = 0.0
@@ -882,10 +943,13 @@
         num_aj = 0.0
         num_ai = 0.0
         num_ac = 0.0
+
 ! convert ug / kg dry air to g / cc  air
         conv1a = (1.0/alt(i,k,j)) * 1.0e-12
 ! convert # / kg dry air to # / cc  air
         conv1b = (1.0/alt(i,k,j)) * 1.0e-6
+
+! Accumulation mode...
         l=lptr_so4_aer(1,1,iphase)
         if (l .ge. p1st)  mass_so4j= chem(i,k,j,l)*conv1a
         l=lptr_no3_aer(1,1,iphase)
@@ -915,10 +979,12 @@
         l=lptr_ec_aer(1,1,iphase)
         if (l .ge. p1st)  mass_bcj= chem(i,k,j,l)*conv1a
         l=numptr_aer(1,1,iphase)
-        mass_h2oj= h2oaj(i,k,j) * 1.0e-12
         if (l .ge. p1st)  num_aj= chem(i,k,j,l)*conv1b
+        mass_h2oj= h2oaj(i,k,j) * 1.0e-12
         mass_ocj=mass_aro1j+mass_aro2j+mass_alk1j+mass_ole1j+ &
                  mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j+mass_paj
+
+! Aitken mode...
         l=lptr_so4_aer(1,2,iphase)
         if (l .ge. p1st)  mass_so4i= chem(i,k,j,l)*conv1a
         l=lptr_no3_aer(1,2,iphase)
@@ -947,11 +1013,13 @@
         if (l .ge. p1st)  mass_pai= chem(i,k,j,l)*conv1a
         l=lptr_ec_aer(1,2,iphase)
         if (l .ge. p1st)  mass_bci= chem(i,k,j,l)*conv1a
-        mass_h2oi= h2oai(i,k,j) * 1.0e-12
         l=numptr_aer(1,2,iphase)
         if (l .ge. p1st)  num_ai= chem(i,k,j,l)*conv1b
+        mass_h2oi= h2oai(i,k,j) * 1.0e-12
         mass_oci=mass_aro1i+mass_aro2i+mass_alk1i+mass_ole1i+ &
                  mass_ba1i+mass_ba2i+mass_ba3i+mass_ba4i+mass_pai
+
+! Coarse mode...
         l=lptr_anth_aer(1,3,iphase)
         if (l .ge. p1st)  mass_antha= chem(i,k,j,l)*conv1a
         l=lptr_seas_aer(1,3,iphase)
@@ -960,20 +1028,21 @@
         if (l .ge. p1st)  mass_soil= chem(i,k,j,l)*conv1a
         l=numptr_aer(1,3,iphase)
         if (l .ge. p1st)  num_ac= chem(i,k,j,l)*conv1b
+
         vol_ai = (mass_so4i/dens_so4)+(mass_no3i/dens_no3)+ &
                  (mass_nh4i/dens_nh4)+(mass_oini/dens_oin)+ &
                  (mass_aro1i/dens_oc)+(mass_alk1i/dens_oc)+ &
                  (mass_ole1i/dens_oc)+(mass_ba1i/dens_oc)+  &
                  (mass_ba2i/dens_oc)+(mass_ba3i/dens_oc)+   &
                  (mass_ba4i/dens_oc)+(mass_pai/dens_oc)+    &
-                 (mass_bci/dens_bc)
+                 (mass_aro2i/dens_oc)+(mass_bci/dens_bc)
         vol_aj = (mass_so4j/dens_so4)+(mass_no3j/dens_no3)+ &
                  (mass_nh4j/dens_nh4)+(mass_oinj/dens_oin)+ &
                  (mass_aro1j/dens_oc)+(mass_alk1j/dens_oc)+ &
                  (mass_ole1j/dens_oc)+(mass_ba1j/dens_oc)+  &
                  (mass_ba2j/dens_oc)+(mass_ba3j/dens_oc)+   &
                  (mass_ba4j/dens_oc)+(mass_paj/dens_oc)+    &
-                 (mass_bcj/dens_bc)
+                 (mass_aro2j/dens_oc)+(mass_bcj/dens_bc)
         vol_ac = (mass_antha/dens_oin)+ &
                  (mass_seas*(22.9897/58.4428)/dens_na)+ &
                  (mass_seas*(35.4270/58.4428)/dens_cl)+ &
@@ -1004,6 +1073,7 @@
         dgnum_um=max(dgmin,ss3)*1.0e+04
         call sect02(dgnum_um,sginic,drydens,iflag,duma,nbin_o,dlo_um,dhi_um, &
           xnum_sectc,xmas_sectc)
+
         do isize = 1, nbin_o
           xdia_cm(isize)=xdia_um(isize)*1.0e-04
           mass_so4 = mass_so4i*xmas_secti(isize) + mass_so4j*xmas_sectj(isize)
@@ -1028,20 +1098,15 @@
           vol_bc  = mass_bc  / dens_bc
           vol_na  = mass_na  / dens_na
           vol_cl  = mass_cl  / dens_cl
-          vol_msa = mass_msa / dens_msa
-          vol_co3 = mass_co3 / dens_co3
-          vol_ca  = mass_ca  / dens_ca
           vol_h2o = mass_h2o / dens_h2o
           mass_dry_a = mass_so4 + mass_no3 + mass_nh4 + mass_oin + &
-                       mass_oc  + mass_bc  + mass_na  + mass_cl  + &
-                       mass_msa + mass_co3 + mass_ca
+                       mass_oc  + mass_bc  + mass_na  + mass_cl
           mass_wet_a = mass_dry_a + mass_h2o 
           vol_dry_a  = vol_so4  + vol_no3  + vol_nh4  + vol_oin  + &
-                       vol_oc   + vol_bc   + vol_na   + vol_cl   + &
-                       vol_msa  + vol_co3  + vol_ca
+                       vol_oc   + vol_bc   + vol_na   + vol_cl
           vol_wet_a  = vol_dry_a + vol_h2o
           vol_shell  = vol_wet_a - vol_bc
-          num_a = vol_wet_a / (0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
+          num_a      = vol_wet_a / (0.52359877*xdia_cm(isize)*xdia_cm(isize)*xdia_cm(isize))
           ri_dum     = (0.0,0.0)
           ri_dum     = (ref_index_nh4so4 * mass_so4 / dens_so4) +  &
                        (ref_index_nh4no3 * mass_no3 / dens_no3) +  &
@@ -1051,9 +1116,6 @@
                        (ref_index_bc     * mass_bc  / dens_bc) +   &
                        (ref_index_nacl   * mass_na  / dens_na) +   &
                        (ref_index_nacl   * mass_cl  / dens_cl) +   &
-                       (ref_index_msa    * mass_msa / dens_msa) +  &
-                       (ref_index_caco3  * mass_ca  / dens_ca) +   &
-                       (ref_index_caco3  * mass_co3 / dens_co3) +  &
                        (ref_index_h2o    * mass_h2o / dens_h2o) 
 !
 ! for some reason MADE/SORGAM occasionally produces zero aerosols so
@@ -1077,9 +1139,6 @@
                        (ref_index_oc     * mass_oc  / dens_oc) +   &
                        (ref_index_nacl   * mass_na  / dens_na) +   &
                        (ref_index_nacl   * mass_cl  / dens_cl) +   &
-                       (ref_index_msa    * mass_msa / dens_msa) +  &
-                       (ref_index_caco3  * mass_ca  / dens_ca) +   &
-                       (ref_index_caco3  * mass_co3 / dens_co3) +  &
                        (ref_index_h2o    * mass_h2o / dens_h2o) 
           endif
           if(dp_wet_a/2.0 .lt. dlo_um*1.0e-4/2.0) then
@@ -1212,7 +1271,8 @@
         integer numang,nmom,ipolzn,momdim
         real*8 pmom(0:7,1)
         logical perfct,anyang,prnt(2)
-        logical first
+        logical, save :: first
+        data first/.true./
         integer, parameter ::  nsiz=200,nlog=30,ncoef=50
 !
         real p2(nsiz),p3(nsiz),p4(nsiz),p5(nsiz)
@@ -1222,27 +1282,23 @@
         data xmu/1./,anyang/.false./
         data numang/0/
         complex*16 s1(1),s2(1)
-        data first/.true./
-        save first
         real*8 mimcut
         data perfct/.false./,mimcut/0.0/
         data nmom/7/,ipolzn/0/,momdim/7/
         data prnt/.false.,.false./
 !     coefficients for parameterizing aerosol radiative properties
 !     in terms of refractive index and wet radius
-      real extp(ncoef,prefr,prefi,nspint)	! specific extinction
-      real albp(ncoef,prefr,prefi,nspint)	! single scat alb
-      real asmp(ncoef,prefr,prefi,nspint)	! asymmetry factor
-      real ascat(ncoef,prefr,prefi,nspint)	! scattering efficiency, JCB 2004/02/09
-      real pmom2(ncoef,prefr,prefi,nspint)	! phase function expansion, #2
-      real pmom3(ncoef,prefr,prefi,nspint)	! phase function expansion, #3
-      real pmom4(ncoef,prefr,prefi,nspint)	! phase function expansion, #4
-      real pmom5(ncoef,prefr,prefi,nspint)	! phase function expansion, #5
-      real pmom6(ncoef,prefr,prefi,nspint)	! phase function expansion, #6
-      real pmom7(ncoef,prefr,prefi,nspint)  	! phase function expansion, #7
-      real sback2p(ncoef,prefr,prefi,nspint)    ! JCB 2007/02/01 - backscatter
-
-      save :: extp,albp,asmp,ascat,pmom2,pmom3,pmom4,pmom5,pmom6,pmom7,sback2p ! JCB 2007/02/01 - added sback2p
+      real, save :: extp(ncoef,prefr,prefi,nspint)	! specific extinction
+      real, save :: albp(ncoef,prefr,prefi,nspint)	! single scat alb
+      real, save :: asmp(ncoef,prefr,prefi,nspint)	! asymmetry factor
+      real, save :: ascat(ncoef,prefr,prefi,nspint)	! scattering efficiency, JCB 2004/02/09
+      real, save :: pmom2(ncoef,prefr,prefi,nspint)	! phase function expansion, #2
+      real, save :: pmom3(ncoef,prefr,prefi,nspint)	! phase function expansion, #3
+      real, save :: pmom4(ncoef,prefr,prefi,nspint)	! phase function expansion, #4
+      real, save :: pmom5(ncoef,prefr,prefi,nspint)	! phase function expansion, #5
+      real, save :: pmom6(ncoef,prefr,prefi,nspint)	! phase function expansion, #6
+      real, save :: pmom7(ncoef,prefr,prefi,nspint) ! phase function expansion, #7
+      real, save :: sback2p(ncoef,prefr,prefi,nspint) ! JCB 2007/02/01 - backscatter
 !--------------
       real cext(ncoef),casm(ncoef),cpmom2(ncoef)
       real cscat(ncoef)  ! JCB 2004/02/09
@@ -1369,7 +1425,7 @@
         refimax=-imag(crefw)
 
 !       aerosol mode loop
-        specrefndx(1)=cmplx(1.82,-0.74) ! max values from Rahul, 7 Nov 2002
+        specrefndx(1)=cmplx(1.85,-0.71) ! max values from Bond and Bergstrom
 !
 	
 	do i=1,ltype ! loop over all possible refractive indices
@@ -1416,7 +1472,14 @@
             do 120 ni=1,nrefi
 
                refrtab(nr)=refrmin+(nr-1)*drefr
-               refitab(ni)=refimin+(ni-1)*drefi
+! JCB, Feb. 20, 2008:   here we fix a conceptual problem associated with
+! the old Ghan code. See Steve Ghan's updated method;  Ghan and Zaveri,
+! Parameterization of optical properties for hydrated internally mixed
+! aerosol, J. Geophys. Res., 112, D10201, doi:10.1029/2006JD007927, 2007.
+! JCB      refitab(ni)=refimin+(ni-1)*drefi, old code
+! JCB, note that the complex part of the refractive index is < 0
+		refitab(ni)=refimin/0.2*(0.2**real(ni))  ! JCB change, slightly different parameters than Ghan and Zaveri
+		if(ni.eq.nrefi)refitab(nrefi)=0.0  ! JCB change
                crefd=cmplx(refrtab(nr),refitab(ni))
 
 !              mie calculations of optical efficiencies
@@ -1507,7 +1570,7 @@
 		if(radius_wet_col(m,klevel).le.rmin)then
 		  radius_wet_col(m,klevel)=rmin
 		  write( msg, '(a, 5i4,1x, e11.4)' )	&
-		  'FASTJ mie: radius_wet set to rmin,'  //	&
+		  'mieaer: radius_wet set to rmin,'  //	&
 		  'id,i,j,k,m,rm(m,k)', id, iclm, jclm, klevel, m, radius_wet_col(m,klevel)
 		  call peg_message( lunerr, msg )
 !		   write(6,'('' particle size too small '')')
@@ -1515,7 +1578,7 @@
 !
 		if(radius_wet_col(m,klevel).gt.rmax)then
 		   write( msg, '(a, 5i4,1x, e11.4)' )	&
-                'FASTJ mie: radius_wet set to rmax,'  //	&
+                'mieaer: radius_wet set to rmax,'  //	&
                 'id,i,j,k,m,rm(m,k)', &
                 id, iclm, jclm, klevel, m, radius_wet_col(m,klevel)
            call peg_message( lunerr, msg )
@@ -1538,7 +1601,7 @@
 ! retain this diagnostic code
 		  if(abs(refr).gt.10.0.or.abs(refr).le.0.001)then
                      write ( msg, '(a,1x, e14.5)' )  &
-           'FASTJ mie /refr/ outside range 1e-3 - 10 ' //  &
+           'mieaer /refr/ outside range 1e-3 - 10 ' //  &
            'refr= ', refr
          	     call peg_message( lunerr, msg )
 !                      print *,'refr=',refr
@@ -1546,7 +1609,7 @@
                   endif
                   if(abs(refi).gt.10.)then
                      write ( msg, '(a,1x, e14.5)' )  &
-           'FASTJ mie /refi/ >10 '  //  &
+           'mieaer /refi/ >10 '  //  &
             'refi', refi
          	     call peg_message( lunerr, msg )                  
 !                      print *,'refi=',refi
@@ -2047,7 +2110,7 @@
       parameter ( maxtrm = 1100 )
       parameter ( onethr = 1./3. )
 !
-      logical   anysav, calcmo(4), noabs, ok, pass1, persav, yesang
+      logical   anysav, calcmo(4), noabs, ok, persav, yesang
       integer   npquan
       integer i,j,n,nmosav,iposav,numsav,ntrm,nangd2
       real*8      mim, mimsav, mre, mm, np1dn
@@ -2059,9 +2122,9 @@
       complex*16   cbiga( maxtrm ), lita( maxtrm ), litb( maxtrm ),   &
                 sp( maxang ), sm( maxang ), sps( mxang2 ), sms( mxang2 )
       equivalence  ( cbiga, rbiga )
-      save  pass1
-      sq( ctmp ) = dble( ctmp )**2 + dimag( ctmp )**2
+      logical, save :: pass1
       data  pass1 / .true. /
+      sq( ctmp ) = dble( ctmp )**2 + dimag( ctmp )**2
 !
 !
       if ( pass1 )  then
@@ -2549,15 +2612,15 @@
       integer maxtrm,maxmom,mxmom2,maxrcp
       parameter  ( maxtrm = 1102, maxmom = 2*maxtrm, mxmom2 = maxmom/2,   &
                    maxrcp = 4*maxtrm + 2 )
-      real*8      am( 0:maxtrm ), bi( 0:mxmom2 ), bidel( 0:mxmom2 ),   &
-                 recip( maxrcp )
+      real*8      am( 0:maxtrm ), bi( 0:mxmom2 ), bidel( 0:mxmom2 )
+      real*8, save :: recip( maxrcp )
       complex*16 cm( maxtrm ), dm( maxtrm ), cs( maxtrm ), ds( maxtrm ),   &
                  c( maxtrm ), d( maxtrm )
       integer k,j,l,nummom,ld2,idel,m,i,mmax,imax
       real*8 thesum
       equivalence  ( c, cm ),  ( d, dm )
-      logical    pass1, evenl
-      save  pass1, recip
+      logical evenl
+      logical, save :: pass1
       data  pass1 / .true. /
 !
 !
@@ -3107,13 +3170,14 @@
 !    mm       + 1  and - 1, alternately
 !
       implicit none
-      integer   n,maxit,mm,kk,kount
-      real*8     xx,eps1,eps2
+      integer   n,mm,kk,kount
+      integer, save :: maxit
+      data  maxit / 10000 /
+      real*8     xx
+      real*8, save :: eps1,eps2
+      data  eps1 / 1.d-2 /, eps2 / 1.d-8 /
       complex*16   zinv
       complex*16   cak, capt, cdenom, cdtd, cnumer, cntn
-!      data  eps1 / 1.e - 2 /, eps2 / 1.e - 8 /
-      data  eps1 / 1.d-2 /, eps2 / 1.d-8 /
-      data  maxit / 10000 /
 !
 !                                      *** ref. 1, eqs. 25a, 27
       confra = ( n + 1 ) * zinv
@@ -3476,19 +3540,20 @@
       USE module_peg_util, only:  peg_message, peg_error_fatal
 
       implicit none
-      logical       fatal, once
+      logical       fatal
+      logical, save :: once
+      data once / .false. /
       character*80 msg
       character*(*) messag
-      integer       maxmsg, nummsg
-      save          maxmsg, nummsg, once
-      data nummsg / 0 /,  maxmsg / 100 /,  once / .false. /
+      integer, save :: maxmsg, nummsg
+      data nummsg / 0 /,  maxmsg / 100 /
 !
 !
       if ( fatal )  then
 !         write ( *, '(2a)' )  ' ******* error >>>>>>  ', messag
 !         stop
    	  write( msg, '(a)' )   &
-                  'FASTJ mie fatal error ' //   &
+                  'optical averaging mie fatal error ' //   &
                   messag                  
                   call peg_message( lunerr, msg )             
                   call peg_error_fatal( lunerr, msg )
@@ -3499,12 +3564,12 @@
 !         if ( .not.once )  write ( *,99 )
 	 if ( .not.once )then
 	    write( msg, '(a)' )   &
-             'FASTJ mie: too many warning messages -- no longer printing '
+             'optical averaging mie: too many warning messages -- no longer printing '
             call peg_message( lunerr, msg )
          end if    
          once = .true.
       else
-         msg =   'FASTJ mie warning '  // messag
+         msg =   'optical averaging mie warning '  // messag
          call peg_message( lunerr, msg )  
 !         write ( *, '(2a)' )  ' ******* warning >>>>>>  ', messag
       endif
@@ -3529,16 +3594,15 @@
       implicit none
       character*(*)  varnam
       logical        erflag
-      integer        maxmsg, nummsg
       character*80 msg
-      save  nummsg, maxmsg
+      integer, save :: maxmsg, nummsg
       data  nummsg / 0 /,  maxmsg / 50 /     
 !
 !
       nummsg = nummsg + 1
 !      write ( *, '(3a)' )  ' ****  input variable  ', varnam,   &
 !                           '  in error  ****'
-        msg = 'FASTJ mie input variable in error ' // varnam                   
+        msg = 'optical averaging mie input variable in error ' // varnam                   
       call peg_message( lunerr, msg )
       erflag = .true.
       if ( nummsg.eq.maxmsg )   &     
@@ -3879,7 +3943,7 @@
 		  radius_wet_col(m,klevel)=rmin
                   radius_core_col(m,klevel)=rmin*ratio
 		  write( msg, '(a, 5i4,1x, e11.4)' )	&
-		  'FASTJ mie: radius_wet set to rmin,'  //	&
+		  'mieaer_sc: radius_wet set to rmin,'  //	&
 		  'id,i,j,k,m,rm(m,k)', id, iclm, jclm, klevel, m, radius_wet_col(m,klevel)
 		  call peg_message( lunerr, msg )
 !		   write(6,'('' particle size too small '')')
@@ -3887,7 +3951,7 @@
 !
 		if(radius_wet_col(m,klevel).gt.rmax)then
 		   write( msg, '(a, 5i4,1x, e11.4)' )	&
-                'FASTJ mie: radius_wet set to rmax,'  //	&
+                'mieaer_sc: radius_wet set to rmax,'  //	&
                 'id,i,j,k,m,rm(m,k)', &
                 id, iclm, jclm, klevel, m, radius_wet_col(m,klevel)
            call peg_message( lunerr, msg )
@@ -5229,10 +5293,9 @@
       integer maxtrm,maxmom,mxmom2,maxrcp
       parameter  ( maxtrm = 1102, maxmom = 2*maxtrm, mxmom2 = maxmom/2, maxrcp = 4*maxtrm + 2 )
       real*8      am( 0:maxtrm ), bi( 0:mxmom2 ), bidel( 0:mxmom2 ), recip( maxrcp )
-      complex*16 cm( maxtrm ), dm( maxtrm ), cs( maxtrm ), ds( maxtrm ), c( maxtrm ), d( maxtrm )
+      complex*16 cm( maxtrm ), dm( maxtrm ), cs( maxtrm ), ds( maxtrm )
       integer k,j,l,nummom,ld2,idel,m,i,mmax,imax
       real*8 sum
-      equivalence  ( c, cm ),  ( d, dm )
       logical    pass1, evenl
       save  pass1, recip
       data  pass1 / .true. /
@@ -5287,8 +5350,8 @@
       if ( ipolzn.ge.0 )  then
 !
          do  20  k = 1, ntrm + 2
-            c( k ) = ( 2*k - 1 ) * cm( k )
-            d( k ) = ( 2*k - 1 ) * dm( k )
+            cm( k ) = ( 2*k - 1 ) * cm( k )
+            dm( k ) = ( 2*k - 1 ) * dm( k )
    20    continue
 !
       else
@@ -5304,8 +5367,8 @@
    30    continue
 !
          do  40  k = 1, ntrm + 2
-            c( k ) = ( 2*k - 1 ) * cs( k )
-            d( k ) = ( 2*k - 1 ) * ds( k )
+            cm( k ) = ( 2*k - 1 ) * cs( k )
+            dm( k ) = ( 2*k - 1 ) * ds( k )
    40    continue
 !
       end if
@@ -5375,8 +5438,8 @@
                sum = 0.0
                do  100  m = ld2, mmax - i
                   sum = sum + am( m ) * &
-                           ( dble( c(m-i+1) * dconjg( c(m+i+idel) ) ) &
-                           + dble( d(m-i+1) * dconjg( d(m+i+idel) ) ) )
+                           ( dble( cm(m-i+1) * dconjg( cm(m+i+idel) ) ) &
+                           + dble( dm(m-i+1) * dconjg( dm(m+i+idel) ) ) )
   100          continue
                pmom( l,1 ) = pmom( l,1 ) + bidel( i ) * sum
   110       continue

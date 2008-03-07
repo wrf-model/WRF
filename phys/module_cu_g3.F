@@ -1,4 +1,3 @@
-#define NEWJ
 !WRF:MODEL_LAYER:PHYSICS
 !
 
@@ -446,8 +445,7 @@ CONTAINS
            xfi_ens,pri_ens,XLANDi,gswi,edti_out,subt,subq,        &
 ! ruc          lv_p,rv_p,cpd_p,g0_p,ichoice,ipr,jpr,                  &
            xlv,r_v,cp,g,ichoice,ipr,jpr,ens4,high_resolution,     &
-           ids,ide, jds,jde, kds,kde,                             &
-           ims,ime, jms,jme, kms,kme,                             &
+           itf,jtf,ktf,                                           &
            its,ite, jts,jte, kts,kte                             )
 
 
@@ -466,9 +464,6 @@ CONTAINS
                cugd_tten(I,K,J)=outt(i,k)*cuten(i) 
                cugd_qvten(I,K,J)=outq(i,k)*cuten(i)
                cugd_qcten(I,K,J)=outqc(i,k)*cuten(i)
-!              if(i.eq.ipr.and.j.eq.jpr)then
-!                write(0,*)cugd_ttens(I,K,J),cugd_tten(I,K,J),cugd_qvten(I,K,J),cugd_qcten(I,K,J),cugd_qvtens(I,K,J)
-!              endif
             ENDDO
             ENDDO
             DO I=ibegc,iendc
@@ -504,7 +499,8 @@ CONTAINS
                 DO K=kts,ktf
                 DO I=ibegc,iendc
                    RQCCUTEN(I,K,J)=outqc(I,K)*cuten(i)
-                   RQCCUTEN(I,K,J)=0.
+                   IF ( PRESENT( GDC ) ) GDC(I,K,J)=CUPCLW(I,K)*cuten(i)
+                   IF ( PRESENT( GDC2 ) ) GDC2(I,K,J)=0.
                 ENDDO
                 ENDDO
               ENDIF
@@ -520,13 +516,12 @@ CONTAINS
                       RQICUTEN(I,K,J)=outqc(I,K)*cuten(i)
                       cugd_qcten(i,k,j)=0.
                       RQCCUTEN(I,K,J)=0.
+                      IF ( PRESENT( GDC2 ) ) GDC2(I,K,J)=CUPCLW(I,K)*cuten(i)
                    else
                       RQICUTEN(I,K,J)=0.
                       RQCCUTEN(I,K,J)=outqc(I,K)*cuten(i)
+                      IF ( PRESENT( GDC ) ) GDC(I,K,J)=CUPCLW(I,K)*cuten(i)
                    endif
-!                  if(i.eq.ipr.and.j.eq.jpr)then
-!                      write(0,*)'rqc,rqi  ',RQCCUTEN(I,K,J),RQICUTEN(I,K,J)
-!                  endif
                 ENDDO
                 ENDDO
               ENDIF
@@ -545,16 +540,14 @@ CONTAINS
               APR_CAPMA,APR_CAPME,APR_CAPMI,kbcon,ktop,cupclw,         &   !-lxz
               xf_ens,pr_ens,xland,gsw,edt_out,subt,subq,               &
               xl,rv,cp,g,ichoice,ipr,jpr,ens4,high_resolution,         &
-              ids,ide, jds,jde, kds,kde,                               &
-              ims,ime, jms,jme, kms,kme,                               &
+              itf,jtf,ktf,                                             &
               its,ite, jts,jte, kts,kte                         )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,                                     &
-        ims,ime, jms,jme, kms,kme,ktau,                         &
+        itf,jtf,ktf,ktau,                                              &
         its,ite, jts,jte, kts,kte,ipr,jpr,ens4,high_resolution
      integer, intent (in   )              ::                           &
         j,ensdim,maxiens,maxens,maxens2,maxens3,ichoice,iens
@@ -749,11 +742,6 @@ CONTAINS
      logical :: keep_going
 
 
-     integer :: itf,jtf,ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
-     jtf=MIN(jte,jde-1)
 
       day=86400.
       do i=its,itf
@@ -828,31 +816,6 @@ CONTAINS
           cap_max(i)=cap_maxs
           if(gsw(i,j).lt.1.or.high_resolution.eq.1)cap_max(i)=25.
         iresult=0
-!       massfld=0.
-!     call cup_direction2(i,j,direction,iact, &
-!          cu_mfx,iresult,0,massfld,  &
-!          ids,ide, jds,jde, kds,kde, &
-!          ims,ime, jms,jme, kms,kme, &
-!          its,ite, jts,jte, kts,kte)
-!         cap_max(i)=cap_maxs
-!      if(iresult.eq.1)then
-!         cap_max(i)=cap_maxs+20.
-!      endif
-! tkmax for RUC
-!      if(tkmax(i).lt.2.)cap_max(i)=25.
-!         if(gsw(i,j).lt.1.)cap_max(i)=25.
-!
-! folloing for RUC model, or RR with WRF if radar rain tendency exists
-!
-!      if (ktau.le.120) then
-!        if (iact(i,j).eq.1.) then
-!           cap_max(i)=200.
-!           cap_max_increment(i) = 10.
-!        else if(iact(i,j).eq.2) then
-!           cap_max(i)=10.
-!           cap_max_increment(i) = 1.
-!        endif
-!      end if
 
       enddo
 !
@@ -874,11 +837,6 @@ CONTAINS
       do nens=1,maxens2
          edt_ens(nens)=.95-float(nens)*.01
       enddo
-!     if(j.eq.jpr)then
-!       print *,'radius ensemble ',iens,radius
-!       print *,mbdt_ens
-!       print *,edt_ens
-!     endif
 !
 !--- environmental conditions, FIRST HEIGHTS
 !
@@ -895,13 +853,11 @@ CONTAINS
 !
       call cup_env(z,qes,he,hes,t,q,p,z1, &
            psur,ierr,tcrit,0,xl,cp,   &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_env(zo,qeso,heo,heso,tn,qo,po,z1, &
            psur,ierr,tcrit,0,xl,cp,   &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- environmental values on cloud levels
@@ -909,14 +865,12 @@ CONTAINS
       call cup_env_clev(t,qes,q,he,hes,z,p,qes_cup,q_cup,he_cup, &
            hes_cup,z_cup,p_cup,gamma_cup,t_cup,psur, &
            ierr,z1,xl,rv,cp,          &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_env_clev(tn,qeso,qo,heo,heso,zo,po,qeso_cup,qo_cup, &
            heo_cup,heso_cup,zo_cup,po_cup,gammao_cup,tn_cup,psur,  &
            ierr,z1,xl,rv,cp,          &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
       if(ierr(i).eq.0)then
@@ -928,7 +882,6 @@ CONTAINS
         endif
       enddo
  25   continue
-!
 !
 !--- level where detrainment for downdraft starts
 !
@@ -948,8 +901,7 @@ CONTAINS
 !------- DETERMINE LEVEL WITH HIGHEST MOIST STATIC ENERGY CONTENT - K22
 !
       CALL cup_MAXIMI(HEO_CUP,3,KBMAX,K22,ierr, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
        DO 36 i=its,itf
          IF(ierr(I).eq.0.)THEN
@@ -961,27 +913,18 @@ CONTAINS
 !
       call cup_kbcon(cap_max_increment,1,k22,kbcon,heo_cup,heso_cup, &
            ierr,kbmax,po_cup,cap_max, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
-!     call cup_kbcon_cin(1,k22,kbcon,heo_cup,heso_cup,z,tn_cup, &
-!          qeso_cup,ierr,kbmax,po_cup,cap_max,xl,cp,&
-!          ids,ide, jds,jde, kds,kde, &
-!          ims,ime, jms,jme, kms,kme, &
-!          its,ite, jts,jte, kts,kte)
 !
 !--- increase detrainment in stable layers
 !
       CALL cup_minimi(HEso_cup,Kbcon,kstabm,kstabi,ierr,  &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
       IF(ierr(I).eq.0.)THEN
         if(kstabm(i)-1.gt.kstabi(i))then
            do k=kstabi(i),kstabm(i)-1
-!            cd(i,k)=cd(i,k-1)+1.5*entr_rate
-!            if(cd(i,k).gt.10.0*entr_rate)cd(i,k)=10.0*entr_rate
              cd(i,k)=cd(i,k-1)+.15*entr_rate
              if(cd(i,k).gt.1.0*entr_rate)cd(i,k)=1.0*entr_rate
            enddo
@@ -993,20 +936,17 @@ CONTAINS
 !
       call cup_up_he(k22,hkb,z_cup,cd,mentr_rate,he_cup,hc, &
            kbcon,ierr,dby,he,hes_cup, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_up_he(k22,hkbo,zo_cup,cd,mentr_rate,heo_cup,hco, &
            kbcon,ierr,dbyo,heo,heso_cup, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 
 !--- DETERMINE CLOUD TOP - KTOP
 !
       call cup_ktop(1,dbyo,kbcon,ktop,ierr, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       DO 37 i=its,itf
          kzdown(i)=0
@@ -1025,8 +965,7 @@ CONTAINS
 !--- DOWNDRAFT ORIGINATING LEVEL - JMIN
 !
       call cup_minimi(HEso_cup,K22,kzdown,JMIN,ierr, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       DO 100 i=its,ite
       IF(ierr(I).eq.0.)THEN
@@ -1081,12 +1020,10 @@ CONTAINS
 !c--- normalized updraft mass flux profile
 !
       call cup_up_nms(zu,z_cup,mentr_rate,cd,kbcon,ktop,ierr,k22, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_up_nms(zuo,zo_cup,mentr_rate,cd,kbcon,ktop,ierr,k22, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !c--- normalized downdraft mass flux profile,also work on bottom detrainment
@@ -1094,26 +1031,22 @@ CONTAINS
 !
       call cup_dd_nms(zd,z_cup,cdd,mentrd_rate,jmin,ierr, &
            0,kdet,z1,                 &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_dd_nms(zdo,zo_cup,cdd,mentrd_rate,jmin,ierr, &
            1,kdet,z1,                 &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- downdraft moist static energy
 !
       call cup_dd_he(hes_cup,zd,hcd,z_cup,cdd,mentrd_rate, &
            jmin,ierr,he,dbyd,he_cup,  &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_dd_he(heso_cup,zdo,hcdo,zo_cup,cdd,mentrd_rate, &
            jmin,ierr,heo,dbydo,he_cup,&
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- calculate moisture properties of downdraft
@@ -1121,14 +1054,12 @@ CONTAINS
       call cup_dd_moisture_3d(zd,hcd,hes_cup,qcd,qes_cup, &
            pwd,q_cup,z_cup,cdd,mentrd_rate,jmin,ierr,gamma_cup, &
            pwev,bu,qrcd,q,he,t_cup,2,xl,high_resolution, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_dd_moisture_3d(zdo,hcdo,heso_cup,qcdo,qeso_cup, &
            pwdo,qo_cup,zo_cup,cdd,mentrd_rate,jmin,ierr,gammao_cup, &
            pwevo,bu,qrcdo,qo,heo,tn_cup,1,xl,high_resolution, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- calculate moisture properties of updraft
@@ -1136,8 +1067,7 @@ CONTAINS
       call cup_up_moisture(ierr,z_cup,qc,qrc,pw,pwav, &
            kbcon,ktop,cd,dby,mentr_rate,clw_all,      &
            q,GAMMA_cup,zu,qes_cup,k22,q_cup,xl, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do k=kts,ktf
       do i=its,itf
@@ -1147,21 +1077,18 @@ CONTAINS
       call cup_up_moisture(ierr,zo_cup,qco,qrco,pwo,pwavo, &
            kbcon,ktop,cd,dbyo,mentr_rate,clw_all, &
            qo,GAMMAo_cup,zuo,qeso_cup,k22,qo_cup,xl,&
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- calculate workfunctions for updrafts
 !
       call cup_up_aa0(aa0,z,zu,dby,GAMMA_CUP,t_cup, &
            kbcon,ktop,ierr,           &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_up_aa0(aa1,zo,zuo,dbyo,GAMMAo_CUP,tn_cup, &
            kbcon,ktop,ierr,           &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
          if(ierr(i).eq.0)then
@@ -1172,8 +1099,7 @@ CONTAINS
       enddo
       call cup_axx(tcrit,kbmax,z1,p,psur,xl,rv,cp,tx,qx,axx,ierr,    &
            cap_max,cap_max_increment,entr_rate,mentr_rate,&
-           j,ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           j,itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte,ens4)
 
 !
@@ -1181,8 +1107,7 @@ CONTAINS
 !
       call cup_dd_edt(ierr,us,vs,zo,ktop,kbcon,edt,po,pwavo, &
            pwevo,edtmax,edtmin,maxens2,edtc, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do 250 iedt=1,maxens2
         do i=its,itf
@@ -1229,27 +1154,6 @@ CONTAINS
       do i=its,itf
         aad(i)=0.
       enddo
-!     do i=its,itf
-!       if(ierr(i).eq.0)then
-!        eddt(i,j)=edt(i)
-!        EDTX(I)=EDT(I)
-!        BU(I)=0.
-!        BUO(I)=0.
-!       endif
-!     enddo
-!
-!---downdraft workfunctions
-!
-!     call cup_dd_aa0(edt,ierr,aa0,jmin,gamma_cup,t_cup, &
-!          hcd,hes_cup,z,zd,          &
-!          ids,ide, jds,jde, kds,kde, &
-!          ims,ime, jms,jme, kms,kme, &
-!          its,ite, jts,jte, kts,kte)
-!     call cup_dd_aa0(edto,ierr,aad,jmin,gammao_cup,tn_cup, &
-!          hcdo,heso_cup,zo,zdo,      &
-!          ids,ide, jds,jde, kds,kde, &
-!          ims,ime, jms,jme, kms,kme, &
-!          its,ite, jts,jte, kts,kte)
 !
 !--- change per unit mass that a model cloud would modify the environment
 !
@@ -1257,13 +1161,11 @@ CONTAINS
 !
       call cup_dellabot(ipr,jpr,heo_cup,ierr,zo_cup,po,hcdo,edto, &
            zdo,cdd,heo,dellah,dsubt,j,mentrd_rate,zo,g, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_dellabot(ipr,jpr,qo_cup,ierr,zo_cup,po,qrcdo,edto, &
            zdo,cdd,qo,dellaq,dsubq,j,mentrd_rate,zo,g,&
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- 2. everywhere else
@@ -1272,8 +1174,7 @@ CONTAINS
            heo,dellah,dsubt,j,mentrd_rate,zuo,g,                     &
            cd,hco,ktop,k22,kbcon,mentr_rate,jmin,heo_cup,kdet, &
            k22,ipr,jpr,'deep',high_resolution,                                 &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !-- take out cloud liquid water for detrainment
@@ -1284,7 +1185,6 @@ CONTAINS
        scr1(i,k)=0.
        dellaqc(i,k)=0.
        if(ierr(i).eq.0)then
-!       print *,'in vupnewg, after della ',ierr(i),aa0(i),i,j
          scr1(i,k)=qco(i,k)-qrco(i,k)
          if(k.eq.ktop(i)-0)dellaqc(i,k)= &
                       .01*zuo(i,ktop(i))*qrco(i,ktop(i))* &
@@ -1302,8 +1202,7 @@ CONTAINS
            qo,dellaq,dsubq,j,mentrd_rate,zuo,g, &
            cd,qco,ktop,k22,kbcon,mentr_rate,jmin,qo_cup,kdet, &
            k22,ipr,jpr,'deep',high_resolution,               &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte    )
 !
 !--- using dellas, calculate changed environmental profiles
@@ -1316,10 +1215,6 @@ CONTAINS
       xaa0_ens(i,3)=0.
       enddo
 
-!     mbdt=mbdt_ens(nens)
-!     do i=its,itf 
-!     xaa0_ens(i,nens)=0.
-!     enddo
       if(j.eq.jpr)then
                write(0,*)'xt',xl,'DELLAH(I,K),DELLAQ(I,K),dsubq(I,K),dsubt(i,k)'
       endif
@@ -1336,7 +1231,6 @@ CONTAINS
             IF(XQ(I,K).LE.0.)XQ(I,K)=1.E-08
              if(i.eq.ipr.and.j.eq.jpr)then
                write(0,*)k,trash,DELLAQ(I,K),dsubq(I,K),dsubt(i,k)
-!              write(0,*)'xt2',k,xt(I,K),tn(I,K),xhe(i,k),heo(i,k)
              endif
          ENDIF
       enddo
@@ -1354,8 +1248,7 @@ CONTAINS
 !
       call cup_env(xz,xqes,xhe,xhes,xt,xq,po,z1, &
            psur,ierr,tcrit,2,xl,cp,   &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- environmental values on cloud levels
@@ -1363,8 +1256,7 @@ CONTAINS
       call cup_env_clev(xt,xqes,xq,xhe,xhes,xz,po,xqes_cup,xq_cup, &
            xhe_cup,xhes_cup,xz_cup,po_cup,gamma_cup,xt_cup,psur,   &
            ierr,z1,xl,rv,cp,          &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !
@@ -1379,34 +1271,29 @@ CONTAINS
       enddo
       call cup_up_he(k22,xhkb,xz_cup,cd,mentr_rate,xhe_cup,xhc, &
            kbcon,ierr,xdby,xhe,xhes_cup, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !c--- normalized mass flux profile
 !
       call cup_up_nms(xzu,xz_cup,mentr_rate,cd,kbcon,ktop,ierr,k22, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- moisture downdraft
 !
       call cup_dd_nms(xzd,xz_cup,cdd,mentrd_rate,jmin,ierr, &
            1,kdet,z1,                 &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_dd_he(xhes_cup,xzd,xhcd,xz_cup,cdd,mentrd_rate, &
            jmin,ierr,xhe,dbyd,xhe_cup,&
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_dd_moisture_3d(xzd,xhcd,xhes_cup,xqcd,xqes_cup, &
            xpwd,xq_cup,xz_cup,cdd,mentrd_rate,jmin,ierr,gamma_cup, &
            xpwev,bu,xqrcd,xq,xhe,xt_cup,3,xl,high_resolution, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 
 !
@@ -1415,26 +1302,15 @@ CONTAINS
       call cup_up_moisture(ierr,xz_cup,xqc,xqrc,xpw,xpwav, &
            kbcon,ktop,cd,xdby,mentr_rate,clw_all, &
            xq,GAMMA_cup,xzu,xqes_cup,k22,xq_cup,xl, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- workfunctions for updraft
 !
       call cup_up_aa0(xaa0,xz,xzu,xdby,GAMMA_CUP,xt_cup, &
            kbcon,ktop,ierr,           &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
-!
-!--- workfunctions for downdraft
-!
-!
-!     call cup_dd_aa0(edtx,ierr,xaa0,jmin,gamma_cup,xt_cup, &
-!          xhcd,xhes_cup,xz,xzd,      &
-!          ids,ide, jds,jde, kds,kde, &
-!          ims,ime, jms,jme, kms,kme, &
-!          its,ite, jts,jte, kts,kte)
       do 200 nens=1,maxens
       do i=its,itf 
          if(ierr(i).eq.0)then
@@ -1488,8 +1364,7 @@ CONTAINS
 !
 !
       CALL cup_MAXIMI(HEO_CUP,3,KBMAX,K22x,ierr, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
          ierr2(i)=ierr(i)
@@ -1497,13 +1372,11 @@ CONTAINS
       enddo
       call cup_kbcon(cap_max_increment,2,k22x,kbconx,heo_cup, &
            heso_cup,ierr2,kbmax,po_cup,cap_max, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       call cup_kbcon(cap_max_increment,3,k22x,kbconx,heo_cup, &
            heso_cup,ierr3,kbmax,po_cup,cap_max, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
@@ -1514,8 +1387,7 @@ CONTAINS
            maxens,iens,iedt,maxens2,maxens3,mconv,            &
            po_cup,ktop,omeg,zdo,k22,zuo,pr_ens,edto,kbcon,    &
            massflx,iact,direction,ensdim,massfln,ichoice,edt_out,     &
-           high_resolution,ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           high_resolution,itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte,ens4,ktau)
 !
       do k=kts,ktf
@@ -1553,8 +1425,7 @@ CONTAINS
            pr_ens,maxens3,ensdim,massfln,                    &
            APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                &
            APR_CAPMA,APR_CAPME,APR_CAPMI,closure_n,xland1,   &
-           ids,ide, jds,jde, kds,kde,                        &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf,                        &
            its,ite, jts,jte, kts,kte)
       k=1
       do i=its,itf
@@ -1564,8 +1435,6 @@ CONTAINS
              write(0,*)i,j,pre(i),aa0(i)
            endif
       enddo
-!     endif
-!            print *,'j,ierr = ',j,ierr
 !
 !---------------------------done------------------------------
 !
@@ -1587,8 +1456,7 @@ CONTAINS
 
    SUBROUTINE cup_dd_aa0(edt,ierr,aa0,jmin,gamma_cup,t_cup, &
               hcd,hes_cup,z,zd,                             &
-              ids,ide, jds,jde, kds,kde,                    &
-              ims,ime, jms,jme, kms,kme,                    &
+              itf,jtf,ktf,                    &
               its,ite, jts,jte, kts,kte                    )
 
    IMPLICIT NONE
@@ -1600,8 +1468,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,                                     &
-        ims,ime, jms,jme, kms,kme,                                     &
+        itf,jtf,ktf,                                     &
         its,ite, jts,jte, kts,kte
   ! aa0 cloud work function for downdraft
   ! gamma_cup = gamma on model cloud levels
@@ -1642,10 +1509,6 @@ CONTAINS
      real                                 ::                           &
         dz
 !
-     integer :: itf, ktf
-!
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
        do i=its,itf
         aa0(i)=0.
        enddo
@@ -1670,16 +1533,14 @@ CONTAINS
 
    SUBROUTINE cup_dd_edt(ierr,us,vs,z,ktop,kbcon,edt,p,pwav, &
               pwev,edtmax,edtmin,maxens2,edtc,               &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
      integer, intent (in   )              ::                           &
         maxens2
@@ -1716,10 +1577,6 @@ CONTAINS
      real,    dimension (its:ite)         ::                           &
       vshear,sdp,vws
 
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 !
 !--- DETERMINE DOWNDRAFT STRENGTH IN TERMS OF WINDSHEAR
 !
@@ -1753,8 +1610,6 @@ CONTAINS
          IF(ierr(i).eq.0)then
             pef=(1.591-.639*VSHEAR(I)+.0953*(VSHEAR(I)**2) &
                -.00496*(VSHEAR(I)**3))
-!           if(pef.gt.edtmax)pef=edtmax
-!           if(pef.lt.edtmin)pef=edtmin
             if(pef.gt.1.)pef=1.
             if(pef.lt.0.)pef=0.
 !
@@ -1770,15 +1625,10 @@ CONTAINS
                prezk=2.4
             endif
             pefb=1./(1.+prezk)
-!           if(pefb.gt.edtmax)pefb=edtmax
-!           if(pefb.lt.edtmin)pefb=edtmin
             if(pefb.gt.1.)pefb=1.
             if(pefb.lt.0.)pefb=0.
             EDT(I)=1.-.5*(pefb+pef)
 !--- edt here is 1-precipeff!
-!           einc=(1.-edt(i))/float(maxens2)
-!           einc=edt(i)/float(maxens2+1)
-!--- 20 percent
             einc=.2*edt(i)
             do k=1,maxens2
                 edtc(i,k)=edt(i)+float(k-2)*einc
@@ -1800,8 +1650,7 @@ CONTAINS
 
    SUBROUTINE cup_dd_he(hes_cup,zd,hcd,z_cup,cdd,entr,       &
               jmin,ierr,he,dby,he_cup,                       &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -1813,8 +1662,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                                  ids,ide, jds,jde, kds,kde,           &
-                                  ims,ime, jms,jme, kms,kme,           &
+                                  itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte
   ! hcd = downdraft moist static energy
   ! he = moist static energy on model levels
@@ -1858,10 +1706,6 @@ CONTAINS
      real                                 ::                           &
         dz
 
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 
       do k=kts+1,ktf
       do i=its,itf
@@ -1898,16 +1742,14 @@ CONTAINS
               pwd,q_cup,z_cup,cdd,entr,jmin,ierr,            &
               gamma_cup,pwev,bu,qrcd,                        &
               q,he,t_cup,iloop,xl,high_resolution,           &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                                  ids,ide, jds,jde, kds,kde,           &
-                                  ims,ime, jms,jme, kms,kme,           &
+                                  itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte,high_resolution
   ! cdd= detrainment function 
   ! q = environmental q on model levels
@@ -1954,11 +1796,6 @@ CONTAINS
         i,k,ki
      real                                 ::                           &
         dh,dz,dqeva
-
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 
       do i=its,itf
          bu(i)=0.
@@ -2026,8 +1863,7 @@ CONTAINS
 
    SUBROUTINE cup_dd_nms(zd,z_cup,cdd,entr,jmin,ierr,        &
               itest,kdet,z1,                                 &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -2039,8 +1875,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                                  ids,ide, jds,jde, kds,kde,           &
-                                  ims,ime, jms,jme, kms,kme,           &
+                                  itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte
   ! z_cup = height of cloud model level
   ! z1 = terrain elevation
@@ -2091,10 +1926,6 @@ CONTAINS
      real                                 ::                           &
                                             a,perc,dz
 
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 !
 !--- perc is the percentage of mass left when hitting the ground
 !
@@ -2136,16 +1967,14 @@ CONTAINS
 
    SUBROUTINE cup_dellabot(ipr,jpr,he_cup,ierr,z_cup,p_cup,  &
               hcd,edt,zd,cdd,he,della,subs,j,mentrd_rate,z,g,     &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
      integer, intent (in   )              ::                           &
         j,ipr,jpr
@@ -2175,13 +2004,7 @@ CONTAINS
       real detdo,detdo1,detdo2,entdo,dp,dz,subin,                      &
       totmas
 !
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 !
-!
-!      if(j.eq.jpr)print *,'in cup dellabot '
       do 100 i=its,itf
       della(i,1)=0.
       subs(i,1)=0.
@@ -2211,16 +2034,14 @@ CONTAINS
               he,della,subs,j,mentrd_rate,zu,g,                             &
               cd,hc,ktop,k22,kbcon,mentr_rate,jmin,he_cup,kdet,kpbl,   &
               ipr,jpr,name,high_res,                                            &
-              ids,ide, jds,jde, kds,kde,                               &
-              ims,ime, jms,jme, kms,kme,                               &
+              itf,jtf,ktf,                               &
               its,ite, jts,jte, kts,kte                               )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
      integer, intent (in   )              ::                           &
         j,ipr,jpr,high_res
@@ -2255,17 +2076,7 @@ CONTAINS
       real detdo1,detdo2,entdo,dp,dz,subin,detdo,entup,                &
       detup,subdown,entdoj,entupk,detupk,totmas
 !
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
-!
-!
       i=ipr
-!      if(j.eq.jpr)then
-!        print *,'in dellas kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)'
-!        print *,kpbl(i),k22(i),kbcon(i),ktop(i),jmin(i)
-!      endif
        DO K=kts+1,ktf
        do i=its,itf
           della(i,k)=0.
@@ -2411,16 +2222,14 @@ CONTAINS
 
    SUBROUTINE cup_direction2(i,j,dir,id,massflx,             &
               iresult,imass,massfld,                         &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
      integer, intent (in   )              ::                           &
         i,j,imass
@@ -2545,16 +2354,14 @@ CONTAINS
 
    SUBROUTINE cup_env(z,qes,he,hes,t,q,p,z1,                 &
               psur,ierr,tcrit,itest,xl,cp,                   &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
   !
   ! ierr error value, maybe modified in this routine
@@ -2601,10 +2408,6 @@ CONTAINS
       real, dimension (its:ite,kts:kte) :: tv
       real :: tcrit,e,tvbar
 
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 
       HT(1)=XL/CP
       HT(2)=2.834E6/CP
@@ -2671,9 +2474,6 @@ CONTAINS
          if(itest.eq.0)HE(I,K)=9.81*Z(I,K)+1004.*T(I,K)+2.5E06*Q(I,K)
          HES(I,K)=9.81*Z(I,K)+1004.*T(I,K)+2.5E06*QES(I,K)
          IF(HE(I,K).GE.HES(I,K))HE(I,K)=HES(I,K)
-!         if(i.eq.2)then
-!           print *,k,z(i,k),t(i,k),p(i,k),he(i,k),hes(i,k)
-!         endif
          endif
       enddo
       enddo
@@ -2684,16 +2484,14 @@ CONTAINS
    SUBROUTINE cup_env_clev(t,qes,q,he,hes,z,p,qes_cup,q_cup,   &
               he_cup,hes_cup,z_cup,p_cup,gamma_cup,t_cup,psur, &
               ierr,z1,xl,rv,cp,                                &
-              ids,ide, jds,jde, kds,kde,                       &
-              ims,ime, jms,jme, kms,kme,                       &
+              itf,jtf,ktf,                       &
               its,ite, jts,jte, kts,kte                       )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
   !
   ! ierr error value, maybe modified in this routine
@@ -2738,10 +2536,6 @@ CONTAINS
      integer                              ::                           &
        i,k
 
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
 
       do k=kts+1,ktf
       do i=its,itf
@@ -2780,16 +2574,14 @@ CONTAINS
               xf_ens,j,name,axx,maxens,iens,iedt,maxens2,maxens3,mconv,    &
               p_cup,ktop,omeg,zd,k22,zu,pr_ens,edt,kbcon,massflx,      &
               iact_old_gr,dir,ensdim,massfln,icoic,edt_out,            &
-              high_resolution,ids,ide, jds,jde, kds,kde,               &
-              ims,ime, jms,jme, kms,kme,                               &
+              high_resolution,itf,jtf,ktf,               &
               its,ite, jts,jte, kts,kte,ens4,ktau                )
 
    IMPLICIT NONE
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte,ens4,high_resolution,ktau
      integer, intent (in   )              ::                           &
         j,ensdim,maxens,iens,iedt,maxens2,maxens3
@@ -2881,10 +2673,9 @@ CONTAINS
      real,    dimension(1:mkxcrt)         ::                           &
        pcrit,acrit,acritt
 
-     integer :: itf,nall2,ixxx,irandom
+     integer :: nall2,ixxx,irandom
      integer,  dimension (8) :: seed
 
-     itf=MIN(ite,ide-1)
 
       DATA PCRIT/850.,800.,750.,700.,650.,600.,550.,500.,450.,400.,    &
                  350.,300.,250.,200.,150./
@@ -3096,9 +2887,6 @@ CONTAINS
 !
 ! over water, enfor!e small cap for some of the closures
 !
-!               if(xland(i).lt.0.1)then
-!
-! end water treatment
                 if(xland(i).lt.0.1)then
                  if(ierr2(i).gt.0.or.ierr3(i).gt.0)then
                       xff_ens3(1) =0.
@@ -3107,8 +2895,12 @@ CONTAINS
                       massfln(i,j,nall+2)=0.
                       xff_ens3(3) =0.
                       massfln(i,j,nall+3)=0.
-                      closure_n(i)=closure_n(i)-1.
-
+                      xff_ens3(10) =0.
+                      massfln(i,j,nall+10)=0.
+                      xff_ens3(11) =0.
+                      massfln(i,j,nall+11)=0.
+                      xff_ens3(12) =0.
+                      massfln(i,j,nall+12)=0.
                       xff_ens3(7) =0.
                       massfln(i,j,nall+7)=0.
                       xff_ens3(8) =0.
@@ -3120,28 +2912,7 @@ CONTAINS
                       massfln(i,j,nall+13)=0.
                       xff_ens3(15) =0.
                       massfln(i,j,nall+15)=0.
-                      closure_n(i)=closure_n(i)-1.
                 endif
-!
-!   also take out some closures in general
-!
-                      xff_ens3(4) =0.
-                      massfln(i,j,nall+4)=0.
-                      xff_ens3(5) =0.
-                      massfln(i,j,nall+5)=0.
-                      xff_ens3(6) =0.
-                      massfln(i,j,nall+6)=0.
-                      xff_ens3(14) =0.
-                      massfln(i,j,nall+14)=0.
-                      closure_n(i)=closure_n(i)-4.
-
-                      xff_ens3(10)=0.
-                      massfln(i,j,nall+10)=0.
-                      xff_ens3(11)=0.
-                      massfln(i,j,nall+11)=0.
-                      xff_ens3(12)=0.
-                      massfln(i,j,nall+12)=0.
-                      if(ne.eq.1)closure_n(i)=closure_n(i)-3
                 endif
 !
 ! end water treatment
@@ -3154,7 +2925,7 @@ CONTAINS
 !                  call cup_direction2(i,j,dir,iact_old_gr, &
 !                       massflx,iresult,1,                  &
 !                       massfld,                            &
-!                       ids,ide, jds,jde, kds,kde,          &
+!                       itf,jtf,ktf,          &
 !                       ims,ime, jms,jme, kms,kme,          &
 !                       its,ite, jts,jte, kts,kte          )
 !                  if(i.eq.ipr.and.j.eq.jpr.and.iedt.eq.1.and.ne.eq.1)then
@@ -3356,19 +3127,17 @@ CONTAINS
                    nall2=(iens-1)*maxens3*maxens*maxens2 &
                         +(iedt-1)*maxens*maxens3 &
                         +(2-1)*maxens3
-! next 6 - ggx1
-!                     xf_ens(i,j,nall+4) = xf_ens(i,j,nall2+4)
-!                     xf_ens(i,j,nall+5) =xf_ens(i,j,nall2+5)
-!                     xf_ens(i,j,nall+6) =xf_ens(i,j,nall2+6)
-!                     xf_ens(i,j,nall+14) =xf_ens(i,j,nall2+14)
-!                     xf_ens(i,j,nall+7) =xf_ens(i,j,nall2+7)
-!                     xf_ens(i,j,nall+8) =xf_ens(i,j,nall2+8)
-!                     xf_ens(i,j,nall+9) =xf_ens(i,j,nall2+9)
-!                     xf_ens(i,j,nall+15) =xf_ens(i,j,nall2+15)
-!                     xf_ens(i,j,nall+10)=xf_ens(i,j,nall2+10)
-!                     xf_ens(i,j,nall+11)=xf_ens(i,j,nall2+11)
-!                     xf_ens(i,j,nall+12)=xf_ens(i,j,nall2+12)
-!                     xf_ens(i,j,nall+16)=xf_ens(i,j,nall2+16)
+                      xf_ens(i,j,nall+4) = xf_ens(i,j,nall2+4)
+                      xf_ens(i,j,nall+5) =xf_ens(i,j,nall2+5)
+                      xf_ens(i,j,nall+6) =xf_ens(i,j,nall2+6)
+                      xf_ens(i,j,nall+14) =xf_ens(i,j,nall2+14)
+                      xf_ens(i,j,nall+7) =xf_ens(i,j,nall2+7)
+                      xf_ens(i,j,nall+8) =xf_ens(i,j,nall2+8)
+                      xf_ens(i,j,nall+9) =xf_ens(i,j,nall2+9)
+                      xf_ens(i,j,nall+15) =xf_ens(i,j,nall2+15)
+                      xf_ens(i,j,nall+10)=xf_ens(i,j,nall2+10)
+                      xf_ens(i,j,nall+11)=xf_ens(i,j,nall2+11)
+                      xf_ens(i,j,nall+12)=xf_ens(i,j,nall2+12)
                 go to 100
              endif
           elseif(ierr(i).ne.20.and.ierr(i).ne.0)then
@@ -3384,8 +3153,7 @@ CONTAINS
 
    SUBROUTINE cup_kbcon(cap_inc,iloop,k22,kbcon,he_cup,hes_cup, &
               ierr,kbmax,p_cup,cap_max,                         &
-              ids,ide, jds,jde, kds,kde,                        &
-              ims,ime, jms,jme, kms,kme,                        &
+              itf,jtf,ktf,                        &
               its,ite, jts,jte, kts,kte                        )
 
    IMPLICIT NONE
@@ -3395,8 +3163,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
   ! 
   ! 
@@ -3426,9 +3193,6 @@ CONTAINS
         i
      real                                 ::                           &
         pbcdif,plus
-     integer :: itf
-
-     itf=MIN(ite,ide-1)
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
 !
@@ -3463,108 +3227,8 @@ CONTAINS
    END SUBROUTINE cup_kbcon
 
 
-   SUBROUTINE cup_kbcon_cin(iloop,k22,kbcon,he_cup,hes_cup,  &
-              z,tmean,qes,ierr,kbmax,p_cup,cap_max,xl,cp,    &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
-              its,ite, jts,jte, kts,kte                     )
-
-   IMPLICIT NONE
-!
-
-   ! only local wrf dimensions are need as of now in this routine
-
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
-        its,ite, jts,jte, kts,kte
-  ! 
-  ! 
-  ! 
-  ! ierr error value, maybe modified in this routine
-  !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
-        he_cup,hes_cup,p_cup,z,tmean,qes
-     real,    dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
-        cap_max
-     real                                                              &
-        ,intent (in   )                   ::                           &
-        xl,cp
-     integer, dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
-        kbmax
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
-        kbcon,k22,ierr
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        iloop
-!
-!  local variables in this routine
-!
-
-     integer                              ::                           &
-        i,k
-     real                                 ::                           &
-        cin,cin_max,dh,tprim,gamma
-!
-     integer :: itf
-
-     itf=MIN(ite,ide-1)
-!
-!
-    
-!
-!--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
-!
-       DO 27 i=its,itf
-      cin_max=-cap_max(i)
-      kbcon(i)=1
-      cin = 0.
-      IF(ierr(I).ne.0)GO TO 27
-      KBCON(I)=K22(I)
-      GO TO 32
- 31   CONTINUE
-      KBCON(I)=KBCON(I)+1
-      IF(KBCON(I).GT.KBMAX(i)+2)THEN
-         if(iloop.eq.1)ierr(i)=3
-!        if(iloop.eq.2)ierr(i)=997
-        GO TO 27
-      ENDIF
- 32   CONTINUE
-      dh      = HE_cup(I,K22(I)) - HES_cup(I,KBCON(I))
-      if (dh.lt. 0.) then
-        GAMMA=(xl/cp)*(xl/(461.525*(Tmean(I,K22(i))**2)))*QES(I,K22(i))
-        tprim = dh/(cp*(1.+gamma))
-
-        cin = cin + 9.8066 * tprim &
-              *(z(i,k22(i))-z(i,k22(i)-1)) / tmean(i,k22(i))
-        go to 31
-      end if
-
-
-!     If negative energy in negatively buoyant layer
-!       exceeds convective inhibition (CIN) threshold,
-!       then set K22 level one level up and see if that
-!       will work.
-
-      IF(cin.lT.cin_max)THEN
-!       print *,i,cin,cin_max,k22(i),kbcon(i)
-        K22(I)=K22(I)+1
-        KBCON(I)=K22(I)
-        GO TO 32
-      ENDIF
- 27   CONTINUE
-
-   END SUBROUTINE cup_kbcon_cin
-
-
    SUBROUTINE cup_ktop(ilo,dby,kbcon,ktop,ierr,              &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -3576,8 +3240,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
   ! dby = buoancy term
   ! ktop = cloud top (output)
@@ -3606,12 +3269,6 @@ CONTAINS
      integer                              ::                           &
         i,k
 !
-     integer :: itf, ktf
-
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
-!
-!
         DO 42 i=its,itf
         ktop(i)=1
          IF(ierr(I).EQ.0)then
@@ -3635,8 +3292,7 @@ CONTAINS
 
 
    SUBROUTINE cup_MAXIMI(ARRAY,KS,KE,MAXX,ierr,              &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -3648,8 +3304,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-         ids,ide, jds,jde, kds,kde,                                    &
-         ims,ime, jms,jme, kms,kme,                                    &
+         itf,jtf,ktf,                                    &
          its,ite, jts,jte, kts,kte
   ! array input array
   ! x output array with return values
@@ -3673,9 +3328,6 @@ CONTAINS
          xar
      integer                              ::                           &
          i,k
-     integer :: itf
-
-     itf=MIN(ite,ide-1)
 
        DO 200 i=its,itf
        MAXX(I)=KS
@@ -3696,8 +3348,7 @@ CONTAINS
 
 
    SUBROUTINE cup_minimi(ARRAY,KS,KEND,KT,ierr,              &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -3709,8 +3360,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-         ids,ide, jds,jde, kds,kde,                                    &
-         ims,ime, jms,jme, kms,kme,                                    &
+         itf,jtf,ktf,                                    &
          its,ite, jts,jte, kts,kte
   ! array input array
   ! x output array with return values
@@ -3729,10 +3379,6 @@ CONTAINS
          x
      integer                              ::                           &
          i,k,kstop
-
-     integer :: itf
-
-     itf=MIN(ite,ide-1)
 
        DO 200 i=its,itf
       KT(I)=KS(I)
@@ -3759,8 +3405,7 @@ CONTAINS
               maxens3,ensdim,massfln,                            &
               APR_GR,APR_W,APR_MC,APR_ST,APR_AS,                 &
               APR_CAPMA,APR_CAPME,APR_CAPMI,closure_n,xland1,    &
-              ids,ide, jds,jde, kds,kde, &
-              ims,ime, jms,jme, kms,kme, &
+              itf,jtf,ktf, &
               its,ite, jts,jte, kts,kte)
 
    IMPLICIT NONE
@@ -3772,8 +3417,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,           &
-        ims,ime, jms,jme, kms,kme,           &
+        itf,jtf,ktf,           &
         its,ite, jts,jte, kts,kte
      integer, intent (in   )              ::                           &
         j,ensdim,nx,nx2,iens,maxens3
@@ -3846,12 +3490,9 @@ CONTAINS
       character *(*), intent (in)        ::                           &
        name
 !
-     integer :: itf, ktf
      weight(1) = -999.  !this will turn off weights
      wm(1)=-999.
 
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
      tuning=0.
 !
 !
@@ -3890,8 +3531,7 @@ CONTAINS
             APR_CAPMA,APR_CAPME,APR_CAPMI,               &
             pr_gr,pr_w,pr_mc,pr_st,pr_as,                &
             pr_capma,pr_capme,pr_capmi,                  &
-            ids,ide, jds,jde, kds,kde,                   &
-            ims,ime, jms,jme, kms,kme,                   &
+            itf,jtf,ktf,                   &
             its,ite, jts,jte, kts,kte                   )
        xmb_w=0.
        call massflx_stats(pr_ens,ensdim,nx2,nx,maxens3,  &
@@ -3900,8 +3540,7 @@ CONTAINS
             APR_CAPMA,APR_CAPME,APR_CAPMI,               &
             pr_gr,pr_w,pr_mc,pr_st,pr_as,                &
             pr_capma,pr_capme,pr_capmi,                  &
-            ids,ide, jds,jde, kds,kde,                   &
-            ims,ime, jms,jme, kms,kme,                   &
+            itf,jtf,ktf,                   &
             its,ite, jts,jte, kts,kte                   )
 !
 !-- now do feedback
@@ -3959,46 +3598,6 @@ CONTAINS
         endif
       enddo
       enddo
-!
-! make sure heating rates do not go too high
-!
-      do i=its,itf
-        if(ierr(i).eq.0)then
-         DO k=kts,ktf-1
-           outtes=(outtem(i,k)+subt(i,k))*XMB(I)*86400.
-           IF((OUTTES.GT.2.*ddtes.and.k.gt.2))THEN
-             XMB(I)= 2.*ddtes/outtes * xmb(i)
-             outtes=(outtem(i,k)+subt(i,k))*XMB(I)*86400.
-           endif
-           if (outtes .lt. -ddtes) then
-             XMB(I)= -ddtes/outtes * xmb(i)
-             outtes=(outtem(i,k)+subt(i,k))*XMB(I)*86400.
-           endif
-           if (outtes .gt. .5*ddtes.and.k.le.2) then
-             XMB(I)= .5*ddtes/outtes * xmb(i)
-             outtes=(outtem(i,k)+subt(i,k))*XMB(I)*86400.
-           endif
-          enddo
-        endif
-      enddo
-      do i=its,itf
-        if(ierr(i).eq.0)then
-          xfac1(i)=xmb(i)/xfac1(i)
-          pre(i)=pre(i)*xfac1(i)
-        endif
-      enddo
-      do k=kts,ktf-1
-      do i=its,itf
-        if(ierr(i).eq.0)then
-           OUTTEM(I,K)=OUTTEM(I,K)*xfac1(i)
-           SUBT(I,K)=subt(i,k)*xfac1(i)
-           OUTQ(I,K)=outq(i,k)*xfac1(i)
-           SUBQ(I,K)=subq(i,k)*xfac1(i)
-           OUTQC(I,K)=outqc(i,k)*xfac1(i)
-           sub_mas(i,k)=sub_mas(i,k)*xfac1(i)
-        endif
-      enddo
-      enddo
 
       do i=its,itf
         if(ierr(i).eq.0)then
@@ -4014,8 +3613,7 @@ CONTAINS
 
    SUBROUTINE cup_up_aa0(aa0,z,zu,dby,GAMMA_CUP,t_cup,       &
               kbcon,ktop,ierr,                               &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -4027,8 +3625,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ids,ide, jds,jde, kds,kde,                                     &
-        ims,ime, jms,jme, kms,kme,                                     &
+        itf,jtf,ktf,                                     &
         its,ite, jts,jte, kts,kte
   ! aa0 cloud work function
   ! gamma_cup = gamma on model cloud levels
@@ -4064,11 +3661,6 @@ CONTAINS
      real                                 ::                           &
         dz,da
 !
-     integer :: itf, ktf
-
-     itf = MIN(ite,ide-1)
-     ktf = MIN(kte,kde-1)
-
         do i=its,itf
          aa0(i)=0.
         enddo
@@ -4091,8 +3683,7 @@ CONTAINS
 
    SUBROUTINE cup_up_he(k22,hkb,z_cup,cd,entr,he_cup,hc,     &
               kbcon,ierr,dby,he,hes_cup,                     &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -4104,8 +3695,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                                  ids,ide, jds,jde, kds,kde,           &
-                                  ims,ime, jms,jme, kms,kme,           &
+                                  itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte
   ! hc = cloud moist static energy
   ! hkb = moist static energy at originating level
@@ -4152,11 +3742,6 @@ CONTAINS
      real                                 ::                           &
         dz
 !
-     integer :: itf, ktf
-
-     itf = MIN(ite,ide-1)
-     ktf = MIN(kte,kde-1)
-!
 !--- moist static energy inside cloud
 !
       do k=kts,ktf
@@ -4202,8 +3787,7 @@ CONTAINS
    SUBROUTINE cup_up_moisture(ierr,z_cup,qc,qrc,pw,pwav,     &
               kbcon,ktop,cd,dby,mentr_rate,clw_all,                  &
               q,GAMMA_cup,zu,qes_cup,k22,qe_cup,xl,          &
-              ids,ide, jds,jde, kds,kde,                     &
-              ims,ime, jms,jme, kms,kme,                     &
+              itf,jtf,ktf,                     &
               its,ite, jts,jte, kts,kte                     )
 
    IMPLICIT NONE
@@ -4215,8 +3799,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                                  ids,ide, jds,jde, kds,kde,           &
-                                  ims,ime, jms,jme, kms,kme,           &
+                                  itf,jtf,ktf,           &
                                   its,ite, jts,jte, kts,kte
   ! cd= detrainment function 
   ! q = environmental q on model levels
@@ -4269,11 +3852,6 @@ CONTAINS
      real                                 ::                           &
         dh,qrch,c0,dz,radius
 !
-     integer :: itf, ktf
-
-     itf = MIN(ite,ide-1)
-     ktf = MIN(kte,kde-1)
-
         iall=0
         c0=.002
 !
@@ -4353,8 +3931,7 @@ CONTAINS
 
 
    SUBROUTINE cup_up_nms(zu,z_cup,entr,cd,kbcon,ktop,ierr,k22,  &
-              ids,ide, jds,jde, kds,kde,                        &
-              ims,ime, jms,jme, kms,kme,                        &
+              itf,jtf,ktf,                        &
               its,ite, jts,jte, kts,kte                        )
 
    IMPLICIT NONE
@@ -4367,8 +3944,7 @@ CONTAINS
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-         ids,ide, jds,jde, kds,kde,                                    &
-         ims,ime, jms,jme, kms,kme,                                    &
+         itf,jtf,ktf,                                    &
          its,ite, jts,jte, kts,kte
   ! cd= detrainment function 
      real,    dimension (its:ite,kts:kte)                              &
@@ -4403,10 +3979,6 @@ CONTAINS
          i,k
      real                                 ::                           &
          dz
-     integer :: itf, ktf
-
-     itf = MIN(ite,ide-1)
-     ktf = MIN(kte,kde-1)
 !
 !   initialize for this go around
 !
@@ -4561,8 +4133,7 @@ CONTAINS
               APR_CAPMA,APR_CAPME,APR_CAPMI,                      &
               pr_gr,pr_w,pr_mc,pr_st,pr_as,                       &
               pr_capma,pr_capme,pr_capmi,                         &
-              ids,ide, jds,jde, kds,kde,  &
-              ims,ime, jms,jme, kms,kme,  &
+              itf,jtf,ktf,  &
               its,ite, jts,jte, kts,kte)
 
    IMPLICIT NONE
@@ -4570,8 +4141,7 @@ CONTAINS
    integer, intent (in   )              ::                                    &
                      j,ensdim,maxens3,maxens,maxens2,itest
    INTEGER,      INTENT(IN   ) ::                                             &
-                                  ids,ide, jds,jde, kds,kde,                  &
-                                  ims,ime, jms,jme, kms,kme,                  &
+                                  itf,jtf,ktf,                  &
                                   its,ite, jts,jte, kts,kte
 
 
@@ -4784,99 +4354,13 @@ CONTAINS
 
    END SUBROUTINE massflx_stats
 
-
-   SUBROUTINE neg_check(dt,q,subt,subq,outq,outt,outqc,pret,its,ite,kts,kte,itf,ktf)
-
-   INTEGER,      INTENT(IN   ) ::            its,ite,kts,kte,itf,ktf
-
-     real, dimension (its:ite,kts:kte  )                    ,                 &
-      intent(inout   ) ::                                                     &
-       q,outq,outt,outqc,subt,subq
-     real, dimension (its:ite  )                            ,                 &
-      intent(inout   ) ::                                                     &
-       pret
-     real                                                                     &
-        ,intent (in  )                   ::                                   &
-        dt
-     real :: thresh,qmem,qmemf,qmem2,qtest,qmem1
-!
-! first do check on vertical heating rate
-!
-      thresh=200.01
-      do i=its,itf
-      qmemf=1.
-      qmem=0.
-      do k=kts,ktf
-         qmem=(subt(i,k)+outt(i,k))*86400.
-         if(qmem.gt.2.*thresh)then
-           qmem2=2.*thresh/qmem
-           qmemf=min(qmemf,qmem2)
-!
-!
-!          print *,'1',' adjusted massflux by factor ',i,k,qmem,qmem2,qmemf
-         endif
-         if(qmem.lt.-thresh)then
-           qmem2=-thresh/qmem
-           qmemf=min(qmemf,qmem2)
-!
-!
-!          print *,'2',' adjusted massflux by factor ',i,k,qmem,qmem2,qmemf
-         endif
-      enddo
-      do k=kts,ktf
-         outq(i,k)=outq(i,k)*qmemf
-         subq(i,k)=subq(i,k)*qmemf
-         subt(i,k)=subt(i,k)*qmemf
-         outt(i,k)=outt(i,k)*qmemf
-         outqc(i,k)=outqc(i,k)*qmemf
-      enddo
-      pret(i)=pret(i)*qmemf 
-      enddo
-!
-! check whether routine produces negative q's. This can happen, since 
-! tendencies are calculated based on forced q's. This should have no
-! influence on conservation properties, it scales linear through all
-! tendencies
-!
-      thresh=1.e-10
-      do i=its,itf
-      qmemf=1.
-      do k=kts,ktf
-         qmem=outq(i,k)+subq(i,k)
-         if(abs(qmem).gt.0.)then
-         qtest=q(i,k)+(subq(i,k)+outq(i,k))*dt
-         if(qtest.lt.thresh)then
-!
-! qmem2 would be the maximum allowable tendency
-!
-           qmem1=outq(i,k)+subq(i,k)
-           qmem2=(thresh-q(i,k))/dt
-           qmemf=min(qmemf,qmem2/qmem1)
-!          qmemf=max(0.,qmemf)
-!          print *,'4 adjusted tendencies ',i,k,qmem,qmem2,qmemf
-         endif
-         endif
-      enddo
-      do k=kts,ktf
-         outq(i,k)=outq(i,k)*qmemf
-         outt(i,k)=outt(i,k)*qmemf
-         subq(i,k)=subq(i,k)*qmemf
-         subt(i,k)=subt(i,k)*qmemf
-         outqc(i,k)=outqc(i,k)*qmemf
-      enddo
-      pret(i)=pret(i)*qmemf 
-      enddo
-
-   END SUBROUTINE neg_check
    SUBROUTINE cup_axx(tcrit,kbmax,z1,p,psur,xl,rv,cp,tx,qx,axx,ierr,    &
            cap_max,cap_max_increment,entr_rate,mentr_rate,&
-           j,ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           j,itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte,ens4)
    IMPLICIT NONE
    INTEGER,      INTENT(IN   ) ::                                             &
-                                  j,ids,ide, jds,jde, kds,kde,                &
-                                  ims,ime, jms,jme, kms,kme,                  &
+                                  j,itf,jtf,ktf,                &
                                   its,ite, jts,jte, kts,kte,ens4
      real, dimension (its:ite,kts:kte,1:ens4)                                 &
          , intent(inout) ::                                                   &
@@ -4899,7 +4383,6 @@ CONTAINS
       real, dimension (1:2) :: AE,BE,HT
       real, dimension (its:ite,kts:kte) :: tv
       real :: e,tvbar
-     integer :: itf, ktf
      integer n,i,k,iph
      real,    dimension (its:ite,kts:kte) ::                           &
         he,hes,qes,z,                                                  &
@@ -4910,8 +4393,6 @@ CONTAINS
      real,    dimension (its:ite) ::                                   &
        AA0,HKB,QKB,          &
        PWAV,BU
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
       do n=1,ens4
       do i=its,ite
        axx(i,n)=0.
@@ -5022,8 +4503,7 @@ CONTAINS
 !------- DETERMINE LEVEL WITH HIGHEST MOIST STATIC ENERGY CONTENT - K22
 !
       CALL cup_MAXIMI(HE_CUP,3,KBMAX,K22XX,ierrxx, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
        DO 36 i=its,itf
          IF(ierrxx(I).eq.0.)THEN
@@ -5035,15 +4515,13 @@ CONTAINS
 !
       call cup_kbcon(cap_max_increment,1,k22xx,kbconxx,he_cup,hes_cup, &
            ierrxx,kbmax,p_cup,cap_max, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- increase detrainment in stable layers
 !
       CALL cup_minimi(HEs_cup,Kbconxx,kstabm,kstabi,ierrxx,  &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
       IF(ierrxx(I).eq.0.)THEN
@@ -5060,30 +4538,26 @@ CONTAINS
 !
       call cup_up_he(k22xx,hkb,z_cup,cd,mentr_rate,he_cup,hc, &
            kbconxx,ierrxx,dby,he,hes_cup, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 
 !--- DETERMINE CLOUD TOP - KTOP
 !
       call cup_ktop(1,dby,kbconxx,ktopxx,ierrxx, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !c--- normalized updraft mass flux profile
 !
       call cup_up_nms(zu,z_cup,mentr_rate,cd,kbconxx,ktopxx,ierrxx,k22xx, &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
 !
 !--- calculate workfunctions for updrafts
 !
       call cup_up_aa0(aa0,z,zu,dby,GAMMA_CUP,t_cup, &
            kbconxx,ktopxx,ierrxx,           &
-           ids,ide, jds,jde, kds,kde, &
-           ims,ime, jms,jme, kms,kme, &
+           itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
       do i=its,itf
        if(ierrxx(i).eq.0)axx(i,n)=aa0(i)
@@ -5091,107 +4565,6 @@ CONTAINS
 100   continue
      END SUBROUTINE cup_axx
 
-
-!-------------------------------------------------------
-!END MODULE module_cu_gd
-       SUBROUTINE neg_check3d(dt,q,qca,qia,outt,outq,outqi,outqc,pret,    &
-               ids, ide, jds, jde, kds, kde,                              &
-               ims, ime, jms, jme, kms, kme,                              &
-               its,ite,jts,jte,kts,kte)
-!
-
-   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
-                                       ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte
-      INTEGER  itf,jtf,ktf,i,j,k
-
-      real, dimension (ims:ime,kms:kme,jms:jme) :: q,outt,outq,    &
-                  outqc,outqi,qca,qia
-      real, dimension (ims:ime,jms:jme) :: pret
-      real dt
-      real thresh,qmem,qmemf,qmem2,qtest,qmem1
-      itf=MIN(ite,ide-1)
-      ktf=MIN(kte,kde-1)
-      jtf=MIN(jte,jde-1)
-!
-! first do check on vertical heating rate
-!
-      thresh=800.01
-      do j=jts,jtf
-      do i=its,itf
-      qmemf=1.
-      qmem=0.
-      do k=kts,ktf-1
-         if(abs(outt(i,k,j)).gt.0.)then
-         qmem=abs(outt(i,k,j)*86400.)
-         if(qmem.gt.thresh)then
-           qmem2=thresh/qmem
-           qmemf=min(qmemf,qmem2)
-!
-!
-!          print *,'1',' adjusted massflux by factor ',i,k,qmem,qmem2,qmemf
-         endif
-         endif
-      enddo
-      do k=kts,ktf-1
-         outq(i,k,j)=outq(i,k,j)*qmemf
-         outt(i,k,j)=outt(i,k,j)*qmemf
-         outqc(i,k,j)=outqc(i,k,j)*qmemf
-         outqi(i,k,j)=outqi(i,k,j)*qmemf
-      enddo
-      pret(i,j)=pret(i,j)*qmemf 
-      enddo
-      enddo
-!
-! check whether routine produces negative q's. This can happen, since 
-! tendencies are calculated based on forced q's. This should have no
-! influence on conservation properties, it scales linear through all
-! tendencies
-!
-      thresh=1.e-20
-      do j=jts,jtf
-      do i=its,itf
-      qmemf=1.
-      do k=kts,ktf-1
-         qmem=outq(i,k,j)
-         if(abs(qmem).gt.0.)then
-         qtest=q(i,k,j)+outq(i,k,j)*dt
-         if(qtest.lt.thresh)then
-!
-! qmem2 would be the maximum allowable tendency
-!
-           qmem1=outq(i,k,j)
-           qmem2=(thresh-q(i,k,j))/dt
-           qmemf=min(qmemf,qmem2/qmem1)
-           qmemf=max(0.,qmemf)
-!          print *,'4 adjusted tendencies ',i,k,qmem,qmem2,qmemf
-         endif
-         endif
-      enddo
-      do k=kts,ktf-1
-         outq(i,k,j)=outq(i,k,j)*qmemf
-         outt(i,k,j)=outt(i,k,j)*qmemf
-         outqc(i,k,j)=outqc(i,k,j)*qmemf
-         outqi(i,k,j)=outqi(i,k,j)*qmemf
-      enddo
-!     pret(i,j)=pret(i,j)*qmemf 
-      enddo
-      enddo
-!
-! now check on negative qca or qia
-!
-      do j=jts,jtf
-      do i=its,itf
-      qmemf=1.
-      do k=kts,ktf-1
-         qtest=qca(i,k,j)+outqc(i,k,j)*dt
-         qmemf=qia(i,k,j)+outqi(i,k,j)*dt
-         if(qtest.lt.0.)outqc(i,k,j)=(0.-qca(i,k,j))/dt
-         if(qmemf.lt.0.)outqi(i,k,j)=(0.-qia(i,k,j))/dt
-      enddo
-      enddo
-      enddo
-      END SUBROUTINE neg_check3d 
       SUBROUTINE conv_grell_spread3d(rthcuten,rqvcuten,rqccuten,raincv,   &
      &         cugd_avedx,cugd_tten,cugd_qvten,rqicuten,cugd_ttens,       &
      &         cugd_qvtens,cugd_qcten,pi_phy,moist_qv,pratec,dt,num_tiles,&
@@ -5206,7 +4579,7 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::   num_tiles,imomentum
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
-   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
+   INTEGER,      INTENT(IN   )    ::   ids, ide, jds, jde, kds, kde,&
                                        ims,ime, jms,jme, kms,kme, &
                                        ips,ipe, jps,jpe, kps,kpe, &
                                        kts,kte,cugd_avedx
@@ -5266,11 +4639,6 @@ CONTAINS
           smtq(i,j)=0.
         enddo
         enddo
-!       qmem=1.
-!       smtt=0.
-!       smtq=0.
-!       rthcutent=0.
-!       rqvcutent=0.
         do j=jts,jte              
         do k=kts,kte              
         do i=its,ite
@@ -5435,7 +4803,7 @@ CONTAINS
 ! check heating rates
 
 !
-        thresh=400.
+        thresh=200.
         qmemf=1.
         qmem1=0.
         do k=kts,kte
@@ -5476,7 +4844,7 @@ CONTAINS
                conv_trasht(k)= .25*(rthcuten(i,k-1,j)+2.*rthcuten(i,k,j)+rthcuten(i,k+1,j))
                conv_trashq(k)= .25*(rqvcuten(i,k-1,j)+2.*rqvcuten(i,k,j)+rqvcuten(i,k+1,j))
            enddo
-           do k=kts+1,kte-1
+           do k=kts+2,kte-2
                 rthcuten(i,k,j)=conv_trasht(k)
                 rqvcuten(i,k,j)=conv_trashq(k)
            enddo

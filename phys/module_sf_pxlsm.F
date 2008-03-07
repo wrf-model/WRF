@@ -14,8 +14,9 @@ MODULE module_sf_pxlsm
   REAL, PARAMETER      :: TAUINV = 1.0 / 86400.0          ! 1/1DAY(SEC)
   REAL, PARAMETER      :: T2TFAC = 1.0 / 10.0             ! Bottom soil temp response factor
   REAL, PARAMETER      :: PI = 3.1415926
-  REAL, PARAMETER      :: PRO = 0.95
-
+  REAL, PARAMETER      :: PR0 = 0.95
+  REAL, PARAMETER      :: CZO    = 0.032
+  REAL, PARAMETER      :: OZO    = 1.E-4
 
 CONTAINS
 !
@@ -26,13 +27,11 @@ CONTAINS
                     ITIMESTEP, NSOIL, DT, ANAL_INTERVAL,        &            
                     XLAND, ALBBCK, ALBEDO, SNOALB,              &
                     SMOIS, TSLB, MAVAIL, TA2, QA2,              &
-                    SVPT0, SVP1, SVP2, SVP3,                    &
                     ZS,DZS, PSIH,                               &
                     LANDUSEF,SOILCTOP,SOILCBOT,VEGFRA,VEGF_PX,  &
                     ISLTYP,RA,RS,LAI,NLCAT,NSCAT,               & 
                     HFX,QFX,LH,TSK,ZNT,CANWAT,                  &
-                    GRDFLX,SFCEVP,                              &
-                    SHDMIN,SHDMAX,                              &
+                    GRDFLX,SHDMIN,SHDMAX,                       &
                     SNOWC,PBLH,RMOL,UST,CAPG,DTBL,              &
                     T2_NDG_OLD, T2_NDG_NEW,                     &     
                     Q2_NDG_OLD, Q2_NDG_NEW,                     & 
@@ -195,7 +194,7 @@ CONTAINS
    INTEGER,   INTENT(IN)  ::      NSOIL, ITIMESTEP, NLCAT, NSCAT,             &
                                   ANAL_INTERVAL, PXLSM_SMOIS_INIT, PXLSM_SOIL_NUDGE
 
-   REAL,     INTENT(IN )  ::     SVP1,SVP2,SVP3,SVPT0, DT,DTBL 
+   REAL,     INTENT(IN )  ::      DT,DTBL 
 
    INTEGER,   DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::   ISLTYP
 
@@ -206,7 +205,7 @@ CONTAINS
    REAL,     DIMENSION(1:NSOIL), INTENT(IN)::ZS,DZS
    REAL,     DIMENSION( ims:ime , 1:NSOIL, jms:jme ),  INTENT(INOUT)   ::  SMOIS, TSLB     
 
-   REAL,     DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: RA, RS, LAI, ZNT, SFCEVP
+   REAL,     DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: RA, RS, LAI, ZNT
    REAL,     DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: GRDFLX, TSK, TA2, QA2
 
    REAL,     DIMENSION( ims:ime , 1:NLCAT, jms:jme ), INTENT(IN):: LANDUSEF       
@@ -247,10 +246,10 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime, jms:jme ) :: XLAI, XLAIMN, RSTMIN, XVEG, XVEGMN, XSNUP
                                                   
-      REAL,     DIMENSION( ims:ime, jms:jme ) :: RADNET, ER, ETR, QST
+      REAL,     DIMENSION( ims:ime, jms:jme ) :: RADNET, EG, ER, ETR, QST
 
       REAL:: SFCPRS,TA1,DENS1,QV1,ZLVL,SOLDN,LWDN,    &
-            EMISSI,PRECIP,THETA1,VAPPRS,QSBT,RH2MOD,    &
+            EMISSI,PRECIP,THETA1,VAPPRS,QSBT,         &
             WG,W2,WR,TG,T2,USTAR,MOLX,Z0,             &
             RAIR,CPAIR,IFLAND,ISNOW,                  &
             ES,QSS,BETAP,                             &
@@ -327,12 +326,7 @@ CONTAINS
                                                       ! convert RAINBL from mm to m for PXLSM
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
           THETA1 = TH3D(i,1,j)			      ! potential temp at first layer
-         
-          !--  Relative humidity
-          VAPPRS = SVP1 * EXP(SVP2 * (TA2(I,J) - SVPT0) / (TA2(I,J) - SVP3))
-          QSBT   = EP_2 * VAPPRS / (SFCPRS - VAPPRS)
-          RH2MOD  = QA2(I,J) / QSBT
-          
+                   
         IF(PXLSM_SOIL_NUDGE .EQ. 1)THEN
           !-- 2 m Temp and RH for Nudging
           T2_OLD = T2_NDG_OLD(I,J)
@@ -348,7 +342,9 @@ CONTAINS
           Q2OBS(I,J) = CORB * Q2_NDG_OLD(I,J) +  CORE * Q2_NDG_NEW(I,J)
           SNOBS = CORB * SN_NDG_OLD(I,J) +  CORE * SN_NDG_NEW(I,J)  
         ENDIF
-                    
+          IF (IFLAND .GT. 1.5) THEN ! if over water                            
+            ZNT(I,J) = CZO * UST(I,J) * UST(I,J) / G + OZO
+          ENDIF                                                              
           USTAR  = MAX(UST(I,J),0.01)
           Z0     = ZNT(I,J)
           CPAIR  = CPD * (1.0 + 0.84 * QV1)            ! J/(K KG)
@@ -417,7 +413,7 @@ CONTAINS
                       SOLDN,  GSW(I,J), LWDN,   EMISSI, ZLVL,                   & !in
                       MOLX,    Z0,    USTAR,                                    & !in
                       SFCPRS, DENS1,  QV1,    QSS,   TA1,                       & !in
-                      THETA1, RH2MOD,   PRECIP,                                 & !in
+                      THETA1,   PRECIP,                                         & !in
                       CPAIR, PSIH(I,J),                                         & !in
                       RH2OBS,T2OBS(I,J),                                        & !in
                       VEGF_PX(I,J), ISTI,   LAI(I,J),   BETAP,                  & !in
@@ -425,7 +421,7 @@ CONTAINS
                       FWWLT, FWFC, FCGSAT,  FWSAT, FB,                          & !in
                       FC1SAT,FC2R,FAS,FJP,DZS(1),DZS(2),QST12,                  & !in
                       RADNET(I,J), GRDFLX(I,J), HFX(I,J), QFX(I,J), LH(I,J),    & !out
-                      SFCEVP(I,J), ER(I,J), ETR(I,J),                           & !out
+                      EG(I,J), ER(I,J), ETR(I,J),                               & !out
                       QST(I,J), CAPG(I,J), RS(I,J), RA(I,J),                    & !out
                       TSLB(I,1,J), TSLB(I,2,J),                                 & !out
                       SMOIS(I,1,J), SMOIS(I,2,J), WR, TA2(I,J), QA2(I,J) )
@@ -532,7 +528,7 @@ CONTAINS
                   150.0, 120.0, 200.0, 175.0, 120.0, 175.0, 200.0,9999.0,   &
                   164.0, 200.0, 100.0, 150.0, 200.0, 150.0, 100.0, 300.0/
       DATA Z00   / 50.0,  10.0,  10.0,  10.0,  10.0,  40.0,   7.0,  20.0,   &
-                   20.0,  20.0,  50.0,  50.0,  40.0,  50.0,  50.0, 0.001,   &
+                   20.0,  20.0,  50.0,  50.0,  40.0,  50.0,  50.0,   0.1,   &
                    15.0,  45.0,   5.0,  10.0,  10.0,   5.0,   5.0,   5.0/
       DATA VEG0  / 40.0,  95.0,  95.0,  95.0,  95.0,  95.0,  95.0,  70.0,   &
                    85.0,  80.0,  95.0,  95.0,  95.0,  90.0,  95.0,  0.00,   &
@@ -665,7 +661,7 @@ CONTAINS
         ENDIF
 
         IF (FWAT .GT. 0.50) THEN
-           ZNT(I,J) = 0.0001
+           ZNT(I,J) = Z0(KWAT)
         ENDIF
 
         ZNT(I,J)    = ZNT(I,J) * 0.01           !CONVERT TO M
@@ -684,7 +680,7 @@ CONTAINS
                         SOLDN,  GSW, LWDN,   EMISSI, Z1,                     & !in
                         MOL,    ZNT,    UST,                                 & !in 
                         PSURF,  DENS1,  QV1,    QSS,   TA1,                  & !in
-                        THETA1, RH2MOD,   PRECIP,                            & !in
+                        THETA1, PRECIP,                                      & !in
                         CPAIR, PSIH,                                         & !in
                         RH2OBS, T2OBS,                                       & !in
                         VEGFRC, ISTI,   LAI,   BETAP,                        & !in
@@ -726,7 +722,6 @@ CONTAINS
 !    QSS:     Saturation mixing ratio at ground
 !    TA1:     Air temperature at first half layer
 !    THETA1:  Potential temperature at first half layer
-!    RH2MOD:  Relative humidity at first half layer
 !    PRECIP:  Precipitation rate in m/s
 !    STBOLT:  STEFAN BOLTZMANN'S CONSTANT
 !    KARMAN:  VON KARMAN CONSTANT
@@ -741,9 +736,9 @@ CONTAINS
 !    RSTMIN   Minimum Stomatol resistence
 !... Outputs from SURFPX
 !    RADNET: Net radiation
-!    HFX:    SENSIBLE HEAT FLUX (W M^2)
-!    QFX:    LATENT HEAT FLUX (W M^2)
-!    GRDFLX: Ground heat flux (W M^2)
+!    HFX:    SENSIBLE HEAT FLUX (W / M^2)
+!    QFX:    TOTAL EVAP FLUX (KG / M^2 S)
+!    GRDFLX: Ground heat flux (W / M^2)
 !    QST:    Turbulent moisture scale
 !    CAPG:   THERMAL CAPACITY OF GROUND SLAB (J/M^2/K)
 !    RS:     Surface resistence
@@ -777,14 +772,14 @@ CONTAINS
       REAL ,    INTENT(IN)  :: IFLAND, ISNOW
       REAL ,    INTENT(IN)  :: SOLDN, GSW, LWDN, EMISSI, Z1
       REAL ,    INTENT(IN)  :: ZNT
-      REAL ,    INTENT(IN)  :: PSURF, DENS1, QV1, QSS, TA1,  THETA1, RH2MOD, PRECIP
+      REAL ,    INTENT(IN)  :: PSURF, DENS1, QV1, QSS, TA1,  THETA1, PRECIP
       REAL ,    INTENT(IN)  :: CPAIR
       REAL ,    INTENT(IN)  :: VEGFRC, LAI
       REAL ,    INTENT(IN)  :: RSTMIN, HC_SNOW, SNOW_FRA 
       REAL ,    INTENT(IN)  :: WWLT, WFC, CGSAT, WSAT, B, C1SAT, C2R, AS, JP
       REAL ,    INTENT(IN)  :: RH2OBS,T2OBS
       REAL ,    INTENT(IN)  :: QST12
-      
+
       REAL ,    INTENT(OUT) :: RADNET, EG, ER, ETR
       REAL ,    INTENT(OUT) :: QST, CAPG, RS, TA2, QA2
 
@@ -805,6 +800,7 @@ CONTAINS
       REAL        :: ALN10, TMP1, TMP2, TMP3, AA, AB, TST, RBH, CTVEG
       REAL        :: QST1,PHIH,PSIOB
       REAL        :: T2NUD, T2NUDF
+      REAL        :: VAPPRS, QSBT, RH2MOD
 
 !... Parameters
       REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW
@@ -858,7 +854,7 @@ CONTAINS
          !-- ADD RA AND RB FOR HEAT AND MOISTURE
         !... RB FOR HEAT = 5 /UST
         !... RB FOR WATER VAPOR =  5*(0.599/0.709)^2/3 /UST = 4.503/UST
-        RA=PRO* ( ALOG(Z1/ZNT) - PSIH )/(KARMAN*UST)
+        RA=PR0* ( ALOG(Z1/ZNT) - PSIH )/(KARMAN*UST)
         RAH = RA + 5.0 / UST
         RAW = RA + 4.503 / UST
         !--------------------------------------------------------------------
@@ -892,9 +888,12 @@ CONTAINS
         !-----------------------------------------------------------------------------------------
         ! Compute the diagnosed 2m Q and T consistent with PX LSM
         QST1 = 0.5*(QST+QST12/PHIH)
-        TA2= (THETAG + TST * (PRO / KARMAN * (ALOG(ZOBS / ZNT) - PSIOB)+5.))/CPOT
-        QA2= QV1 - QST1 * PRO/ KARMAN *  (ALOG(Z1 / ZOBS) - PSIH15)
-
+        TA2= (THETAG + TST * (PR0 / KARMAN * (ALOG(ZOBS / ZNT) - PSIOB)+5.))/CPOT
+        QA2= QV1 - QST1 * PR0/ KARMAN *  (ALOG(Z1 / ZOBS) - PSIH15)
+        !--  Relative humidity
+        VAPPRS = SVP1 * EXP(SVP2 * (TA2 - SVPT0) / (TA2 - SVP3))
+        QSBT   = EP_2 * VAPPRS / (PSURF - VAPPRS)
+        RH2MOD  = QA2 / QSBT
         !-----------------------------------------------------------------------------------------
         IF (IFLAND .LT. 1.5 ) THEN
           W2CG = AMAX1(W2,WWLT)

@@ -298,7 +298,7 @@ CONTAINS
                 INTENT(OUT)     ::                        U10,V10, &
                                                           QSFC,LH
                                     
-      REAL,     INTENT(IN   )                    ::   CP,G,ROVCP,XLV,DX 
+      REAL,     INTENT(IN   )                    ::   CP,G,ROVCP,XLV,DX,R
 
 ! MODULE-LOCAL VARIABLES, DEFINED IN SUBROUTINE SFCLAY
       REAL,     DIMENSION( its:ite ),  INTENT(IN   )   ::  dz8w1d
@@ -331,7 +331,7 @@ CONTAINS
 
       INTEGER ::  N,I,K,KK,L,NZOL,NK,NZOL2,NZOL10
 
-      REAL    ::  PL,THCON,TVCON,E1,R
+      REAL    ::  PL,THCON,TVCON,E1
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2
       REAL    ::  FLUXC,VSGD
@@ -359,8 +359,9 @@ CONTAINS
         
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
-        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       
-        QGH(I)=EP2*E1/(PSFC(I)-E1)                                                 
+        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))  
+        PL = P1D(I)/1000.                     
+        QGH(I)=EP2*E1/(PL-E1)                                                 
         CPM(I)=CP*(1.+0.8*QV1D(I))                                   
    enddo                                                                   
 

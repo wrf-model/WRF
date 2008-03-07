@@ -1045,12 +1045,12 @@ CONTAINS
                       psfc, gsw, glw, rainbl, emiss,                  &
                       ITIMESTEP, num_soil_layers, DT, anal_interval,  & 
                       xland, albbck, albedo, snoalb, smois, tslb,     &
-                      mavail,T2, Q2, svpt0, svp1, svp2, svp3,         &
-                      zs, dzs, psih,                                 &
+                      mavail,T2, Q2,                                  &
+                      zs, dzs, psih,                                  &
                       landusef,soilctop,soilcbot,vegfra, vegf_px,     &
                       isltyp,ra,rs,lai,nlcat,nscat,                   &
                       hfx,qfx,lh,tsk,znt,canwat,                      &
-                      grdflx,sfcevp, shdmin,shdmax,                   &
+                      grdflx,shdmin,shdmax,                           &
                       snowc,pblh,rmol,ust,capg,dtbl,                  &
                       t2_ndg_old,t2_ndg_new,q2_ndg_old,q2_ndg_new,    &
                       sn_ndg_old, sn_ndg_new, snow, snowh,snowncv,    &
@@ -1063,6 +1063,7 @@ CONTAINS
            DO i=i_start(ij),i_end(ij)
               CHKLOWQ(I,J)= 1.0
               TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP 
+              SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
            ENDDO
            ENDDO
 

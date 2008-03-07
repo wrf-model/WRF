@@ -1382,11 +1382,19 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    jtf=MIN(jte,jde-1)
    ktf=MIN(kte,kde-1)
 
-!  Notes on map scale factors:
-!  phi equation is:   partial d/dt(mu phi/my) = -mx partial d/dx(mu rho u/my)
-!                                               -mx partial d/dy(phi mu v/mx)
-!                                               -partial d/dz(phi mu w/my)
+!  Notes on map scale factors (WCS, 2 march 2008)
+!  phi equation is:   mu/my d/dt(phi) = -(1/my) mx mu u  d/dx(phi)
+!                                       -(1/my) my mu v d/dy(phi)
+!                                       - omega d/d_eta(phi)
 !                                               +mu g w/my
+!
+!  A little further explanation...
+!  The tendency term we are computing here is for mu/my d/dt(phi).  It is advective form 
+!  but it is multiplied be mu/my.  It will be decoupled from (mu/my) when the implicit w-phi
+!  solution is computed in subourine advance_w.  The formulation dates from the early 
+!  days of the mass coordinate model when we were testing both a flux and an advective formulation
+!  for the geopotential equation and different forms of the vertical momentum equation and the 
+!  vertically implicit solver.
 
 ! advective form for the geopotential equation
 
@@ -1399,9 +1407,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      ENDDO
      ENDDO
 
-!  Further notes on map scale factors
-!  Using nu not z, RHS term 3 is: - partial d/dnu(phi mu dnu/dt/my)
-!                               = - partial d/dnu(phi ww)
+!  RHS term 3 is: - omega partial d/dnu(phi)
 
      DO k = 2, kte-1
      DO i = its, itf
@@ -1431,11 +1437,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    END IF
 
 !  Notes on map scale factors:
-!  RHS terms 1 and 2 are: -mx partial d/dx(mu rho u/my)
-!                         -mx partial d/dy(phi mu v/mx)
-!  Here v, u, phb, ph are not coupled with mu or map scale factors
-!  ?? shouldn't there be 1/m inside by each v, u and then mx outside ??
-!  ?? maybe it's equivalent to using 'avgeraged' m outside (as given by msft)??
+!  RHS terms 1 and 2 are: -(1/my) mx u mu partial d/dx(phi)
+!                         -(1/my) my v mu partial d/dy(phi)
 
    IF (advective_order <= 2) THEN
 
@@ -1453,21 +1456,21 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdy*                       &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*               &
-                  (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))*msfvx_inv(i,j+1)  &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*               &
-                  (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))*msfvx_inv(i,j) )
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                  (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
      ENDDO
      ENDDO
 
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdy*                         &
-                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*    &
-                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))*msfvx_inv(i,j+1)  &
-                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*    &
-                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))*msfvx_inv(i,j) )
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
+                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
+                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
      ENDDO
 
    ENDDO
@@ -1486,21 +1489,21 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdx*                        &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*                &
-                  (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))/msfuy(i+1,j)   &
-                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*                &
-                  (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))/msfuy(i,j) )
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                  (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
+                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
  
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdx*                         &
-                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*    &
-                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))/msfuy(i+1,j)  &
-                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*    &
-                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))/msfuy(i,j) )
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
+                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
+                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
      ENDDO
 
    ENDDO
@@ -1521,12 +1524,12 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdy*           (          &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvx_inv(i,j) )* (1./12.)*( &
-                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                      &
-                      -(ph(i,k,j+2)-ph(i,k,j-2))                      &
-                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*(                     &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ))* (1./12.)*(   &
+                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
+                      -(ph(i,k,j+2)-ph(i,k,j-2))                                    &
+                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
                       -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
 
 
@@ -1535,12 +1538,12 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdy*           (                      &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvx_inv(i,j) )* (1./12.)*( &
-                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                 &
-                      -(ph(i,k,j+2)-ph(i,k,j-2))                                 &
-                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                               &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*(                                 &
+                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)                &
+                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  ))* (1./12.)*(   &
+                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                               &
+                      -(ph(i,k,j+2)-ph(i,k,j-2))                                               &
+                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                             &
                       -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
 
      ENDDO
@@ -1562,24 +1565,24 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdx*(                     &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))/msfuy(i+1,j)               &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))/msfuy(i,j) )* (1./12.)*( &
-                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                      &
-                      -(ph(i+2,k,j)-ph(i-2,k,j))                      &
-                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                    &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)               &
+                  +muu(i,j  )*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j) )* (1./12.)*( &
+                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                   &
+                      -(ph(i+2,k,j)-ph(i-2,k,j))                                   &
+                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                 &
                       -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
      ENDDO
      ENDDO
  
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdx*(                                 &
-                 ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))/msfuy(i+1,j)               &
-                  +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))/msfuy(i,j) )* (1./12.)*(   &
-                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                 &
-                      -(ph(i+2,k,j)-ph(i-2,k,j))                                 &
-                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                               &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                                 &
+                 ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)                &
+                  +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(i  ,j) )* (1./12.)*(  &
+                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                               &
+                      -(ph(i+2,k,j)-ph(i-2,k,j))                                               &
+                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                             &
                       -(phb(i+2,k,j)-phb(i-2,k,j))  )     )
      ENDDO
 
@@ -1604,14 +1607,14 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdy* (                    &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvx_inv(i,j) )* (1./60.)*( &
-                   45.*(ph(i,k,j+1)-ph(i,k,j-1))                      &
-                   -9.*(ph(i,k,j+2)-ph(i,k,j-2))                      &
-                      +(ph(i,k,j+3)-ph(i,k,j-3))                      &
-                  +45.*(phb(i,k,j+1)-phb(i,k,j-1))                    &
-                   -9.*(phb(i,k,j+2)-phb(i,k,j-2))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                    &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ) )* (1./60.)*(  &
+                   45.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
+                   -9.*(ph(i,k,j+2)-ph(i,k,j-2))                                    &
+                      +(ph(i,k,j+3)-ph(i,k,j-3))                                    &
+                  +45.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
+                   -9.*(phb(i,k,j+2)-phb(i,k,j-2))                                  &
                       +(phb(i,k,j+3)-phb(i,k,j-3))  )   )                
 
 
@@ -1620,14 +1623,14 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdy* (                                &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvx_inv(i,j) )* (1./60.)*( &
-                   45.*(ph(i,k,j+1)-ph(i,k,j-1))                                 &
-                   -9.*(ph(i,k,j+2)-ph(i,k,j-2))                                 &
-                      +(ph(i,k,j+3)-ph(i,k,j-3))                                 &
-                  +45.*(phb(i,k,j+1)-phb(i,k,j-1))                               &
-                   -9.*(phb(i,k,j+2)-phb(i,k,j-2))                               &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))* (                                &
+                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)                &
+                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  ) )* (1./60.)*(  &
+                   45.*(ph(i,k,j+1)-ph(i,k,j-1))                                               &
+                   -9.*(ph(i,k,j+2)-ph(i,k,j-2))                                               &
+                      +(ph(i,k,j+3)-ph(i,k,j-3))                                               &
+                  +45.*(phb(i,k,j+1)-phb(i,k,j-1))                                             &
+                   -9.*(phb(i,k,j+2)-phb(i,k,j-2))                                             &
                       +(phb(i,k,j+3)-phb(i,k,j-3))  )   )                
 
      ENDDO
@@ -1643,12 +1646,12 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      j = jds+1
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdy* (                    &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvx_inv(i,j) )* (1./12.)*( &
-                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                      &
-                      -(ph(i,k,j+2)-ph(i,k,j-2))                      &
-                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                     &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ) )* (1./12.)*(  &
+                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
+                      -(ph(i,k,j+2)-ph(i,k,j-2))                                    &
+                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
                       -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
 
 
@@ -1657,12 +1660,12 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdy* (                                &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvx_inv(i,j) )* (1./12.)*( &
-                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                 &
-                      -(ph(i,k,j+2)-ph(i,k,j-2))                                 &
-                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                               &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))* (                              &
+                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)              &
+                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j) )* (1./12.)*(  &
+                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                             &
+                      -(ph(i,k,j+2)-ph(i,k,j-2))                                             &
+                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                           &
                       -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
 
      ENDDO
@@ -1674,12 +1677,12 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      j = jde-2
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdy* (                    &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvx_inv(i,j) )* (1./12.)*( &
-                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                      &
-                      -(ph(i,k,j+2)-ph(i,k,j-2))                      &
-                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                  &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)              &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j) )* (1./12.)*(  &
+                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                  &
+                      -(ph(i,k,j+2)-ph(i,k,j-2))                                  &
+                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                &
                       -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
 
 
@@ -1688,12 +1691,12 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdy* (                                &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvx_inv(i,j+1)               &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvx_inv(i,j) )* (1./12.)*( &
-                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                 &
-                      -(ph(i,k,j+2)-ph(i,k,j-2))                                 &
-                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                               &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))* (                              &
+                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)              &
+                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j) )* (1./12.)*(  &
+                    8.*(ph(i,k,j+1)-ph(i,k,j-1))                                             &
+                      -(ph(i,k,j+2)-ph(i,k,j-2))                                             &
+                   +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                           &
                       -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
 
      ENDDO
@@ -1716,28 +1719,28 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
      DO k = 2, kte-1
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdx*(                     &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))/msfuy(i+1,j)               &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))/msfuy(i,j) )* (1./60.)*( &
-                   45.*(ph(i+1,k,j)-ph(i-1,k,j))                      &
-                   -9.*(ph(i+2,k,j)-ph(i-2,k,j))                      &
-                      +(ph(i+3,k,j)-ph(i-3,k,j))                      &
-                  +45.*(phb(i+1,k,j)-phb(i-1,k,j))                    &
-                   -9.*(phb(i+2,k,j)-phb(i-2,k,j))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./60.)*(  &
+                   45.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
+                   -9.*(ph(i+2,k,j)-ph(i-2,k,j))                                  &
+                      +(ph(i+3,k,j)-ph(i-3,k,j))                                  &
+                  +45.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
+                   -9.*(phb(i+2,k,j)-phb(i-2,k,j))                                &
                       +(phb(i+3,k,j)-phb(i-3,k,j))  )   )                
      ENDDO
      ENDDO
  
      k = kte
      DO i = i_start, itf
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdx*(                                 &
-                 ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))/msfuy(i+1,j)               &
-                  +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))/msfuy(i,j) )* (1./60.)*(   &
-                   45.*(ph(i+1,k,j)-ph(i-1,k,j))                                 &
-                   -9.*(ph(i+2,k,j)-ph(i-2,k,j))                                 &
-                      +(ph(i+3,k,j)-ph(i-3,k,j))                                 &
-                  +45.*(phb(i+1,k,j)-phb(i-1,k,j))                               &
-                   -9.*(phb(i+2,k,j)-phb(i-2,k,j))                               &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
+                 ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                  +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./60.)*(  &
+                   45.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
+                   -9.*(ph(i+2,k,j)-ph(i-2,k,j))                                           &
+                      +(ph(i+3,k,j)-ph(i-3,k,j))                                           &
+                  +45.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
+                   -9.*(phb(i+2,k,j)-phb(i-2,k,j))                                         &
                       +(phb(i+3,k,j)-phb(i-3,k,j))  )     )
      ENDDO
 
@@ -1747,21 +1750,21 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      i = ids + 1
      DO j = j_start, jtf
        DO k = 2, kte-1
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdx*(                     &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))/msfuy(i+1,j)               &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))/msfuy(i,j) )* (1./12.)*( &
-                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                      &
-                      -(ph(i+2,k,j)-ph(i-2,k,j))                      &
-                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
+                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
+                      -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
+                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
                       -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
        ENDDO
        k = kte
-       ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdx*(                                 &
-                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))/msfuy(i+1,j)               &
-                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))/msfuy(i,j) )* (1./12.)*(   &
-                   8.*(ph(i+1,k,j)-ph(i-1,k,j))                                 &
-                     -(ph(i+2,k,j)-ph(i-2,k,j))                                 &
-                  +8.*(phb(i+1,k,j)-phb(i-1,k,j))                               &
+       ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
+                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
+                   8.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
+                     -(ph(i+2,k,j)-ph(i-2,k,j))                                           &
+                  +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
                      -(phb(i+2,k,j)-phb(i-2,k,j))  )     )
 
      ENDDO
@@ -1771,21 +1774,21 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      i = ide-2
      DO j = j_start, jtf
        DO k = 2, kte-1
-        ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.25*rdx*(                     &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))/msfuy(i+1,j)               &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))/msfuy(i,j) )* (1./12.)*( &
-                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                      &
-                      -(ph(i+2,k,j)-ph(i-2,k,j))                      &
-                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                    &
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
+                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
+                      -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
+                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
                       -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
        ENDDO
        k = kte
-       ph_tend(i,k,j)=ph_tend(i,k,j) - msftx(i,j)*.5*rdx*(                                 &
-                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))/msfuy(i+1,j)               &
-                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))/msfuy(i,j) )* (1./12.)*(   &
-                   8.*(ph(i+1,k,j)-ph(i-1,k,j))                                 &
-                     -(ph(i+2,k,j)-ph(i-2,k,j))                                 &
-                  +8.*(phb(i+1,k,j)-phb(i-1,k,j))                               &
+       ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
+                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
+                   8.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
+                     -(ph(i+2,k,j)-ph(i-2,k,j))                                           &
+                  +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
                      -(phb(i+2,k,j)-phb(i-2,k,j))  )     )
 
      ENDDO
@@ -1802,22 +1805,15 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    !  south
 
    IF ( (config_flags%open_ys) .and. jts == jds ) THEN
-   ! Notes on map scale factors:
-   ! The following use only one 'mut' value, so maybe using one 1/mx value
-   ! would be correct in which case it would just cancel with the *mx on top.
-   ! So no change???
 
      j=jts
 
      DO k=2,kde
        kz = min(k,kde-1)
        DO i = its,itf
-!         vb =.5*( fnm(kz)*(v(i,kz  ,j+1)*msfvx_inv(i,j+1)+v(i,kz  ,j  )*msfvx_inv(i,j))    &
-!                 +fnp(kz)*(v(i,kz-1,j+1)*msfvx_inv(i,j+1)+v(i,kz-1,j  )*msfvx_inv(i,j)) )
          vb =.5*( fnm(kz)*(v(i,kz  ,j+1)+v(i,kz  ,j  ))    &
                  +fnp(kz)*(v(i,kz-1,j+1)+v(i,kz-1,j  )) )
          vl=amin1(vb,0.)
-!         ph_tend(i,k,j)=ph_tend(i,k,j)-msftx(i,j)*rdy*mut(i,j)*(      &
          ph_tend(i,k,j)=ph_tend(i,k,j)-rdy*mut(i,j)*(      &
                               +vl*(ph_old(i,k,j+1)-ph_old(i,k,j)))
        ENDDO
@@ -1834,12 +1830,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k=2,kde
        kz = min(k,kde-1)
        DO i = its,itf
-!        vb=.5*( fnm(kz)*(v(i,kz  ,j+1)*msfvx_inv(i,j+1)+v(i,kz  ,j)*msfvx_inv(i,j))    &
-!               +fnp(kz)*(v(i,kz-1,j+1)*msfvx_inv(i,j+1)+v(i,kz-1,j)*msfvx_inv(i,j)) )
         vb=.5*( fnm(kz)*(v(i,kz  ,j+1)+v(i,kz  ,j))   &
                +fnp(kz)*(v(i,kz-1,j+1)+v(i,kz-1,j)) )
         vr=amax1(vb,0.)
-!        ph_tend(i,k,j)=ph_tend(i,k,j)-msftx(i,j)*rdy*mut(i,j)*(      &
         ph_tend(i,k,j)=ph_tend(i,k,j)-rdy*mut(i,j)*(      &
                    +vr*(ph_old(i,k,j)-ph_old(i,k,j-1)))
        ENDDO
@@ -1855,9 +1848,6 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    !  west
 
    IF ( (config_flags%open_xs) .and. its == ids ) THEN
-   ! Notes on map scale factors
-   ! The following use only one 'mut' value, so maybe using one 1/my value
-   ! would be correct in which case we just need *(mx/my) on top???
 
      i=its
 
@@ -1911,6 +1901,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    END IF
 
   END SUBROUTINE rhs_ph
+
 
 !-------------------------------------------------------------------------------
 
@@ -4010,7 +4001,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
       IF ( config_flags%periodic_x ) i_end = ite
 
 !  Polar boundary condition
-   IF (config_flags%polar) THEN
+   IF (config_flags%map_proj == 6) THEN
 
       DO j=jts,MIN(jde-1,jte)
       DO k=kts,ktf
@@ -4063,7 +4054,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
    IF ( config_flags%open_ye .or. specified .or. &
         config_flags%nested .or. config_flags%polar) j_end   = MIN ( jde-1 , jte )
 
-   IF (config_flags%polar) THEN
+   IF (config_flags%map_proj == 6) THEN
 
       DO j=j_start,j_end
       DO k=kts,ktf

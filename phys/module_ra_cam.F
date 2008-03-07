@@ -117,7 +117,6 @@ MODULE module_ra_cam
 !            Emissivity and Absorptivity Formulation for Water Vapor
 !            Journal of Geophysical Research, vol. 91., D8, pp 8649-8666
 !
-#ifndef G95
   real(r8):: coefh(2,4) = reshape(  &
          (/ (/5.46557e+01,-7.30387e-02/), &
             (/1.09311e+02,-1.46077e-01/), &
@@ -131,12 +130,6 @@ MODULE module_ra_cam
   real(r8):: coefk(3,2) = reshape( &
             (/ (/2.48852e-01,2.09667e-03,2.60377e-06/) , &
                (/1.03594e+00,6.58620e-03,4.04456e-06/) /), (/3,2/) )
-#else
-! this use of reshape does not work in g95, as of 20061212 jm
-  real(r8):: coefh(2,4)
-  real(r8):: coefj(3,2)
-  real(r8):: coefk(3,2)
-#endif
 
   integer, parameter :: ntemp = 192 ! Number of temperatures in H2O sat. table for Tp
   real(r8) :: estblh2o(0:ntemp)       ! saturation vapor pressure for H2O for Tp rang
@@ -154,7 +147,6 @@ MODULE module_ra_cam
 !
 ! Coefficients of polynomial for f_a in T_e
 !
-#ifndef G95
   real(r8), parameter:: fat(o_fa,nbands) = reshape( (/ &
        (/-1.06665373E-01,  2.90617375E-02, -2.70642049E-04,   &   ! 0-800&1200-2200 cm^-1
           1.07595511E-06, -1.97419681E-09,  1.37763374E-12/), &   !   0-800&1200-2200 cm^-1
@@ -170,11 +162,6 @@ MODULE module_ra_cam
       (/6.53851837E-01, -1.51240299E-02,  1.21846479E-04,   &   ! 800-1200 cm^-1
        -4.04970123E-07,  6.15368936E-10, -3.52415071E-13/) /) & !   800-1200 cm^-1
       , (/o_fa,nbands/) )
-#else
-! this use of reshape does not work in g95, as of 20061212 jm
-  real(r8):: fat(o_fa,nbands)
-  real(r8):: fet(o_fe,nbands)
-#endif
 
 
       real(r8) ::  gravit     ! Acceleration of gravity (cgs)
@@ -268,8 +255,8 @@ real(r8) :: gdst(ndstsz, nspint) ! dust asymmetry parameter
 
       logical :: masterproc = .true.
       logical :: ozncyc            ! true => cycle ozone dataset
-      logical :: dosw              ! True => shortwave calculation this timestep
-      logical :: dolw              ! True => longwave calculation this timestep
+!     logical :: dosw              ! True => shortwave calculation this timestep
+!     logical :: dolw              ! True => longwave calculation this timestep
       logical :: indirect          ! True => include indirect radiative effects of sulfate aerosols
 !     logical :: doabsems          ! True => abs/emiss calculation this timestep
       logical :: radforce   = .false.          ! True => calculate aerosol shortwave forcing
@@ -280,6 +267,7 @@ real(r8) :: gdst(ndstsz, nspint) ! dust asymmetry parameter
 CONTAINS
 
 subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
+                     dolw,dosw,                                    &
                      SWUPT,SWUPTC,SWDNT,SWDNTC,                    &
                      LWUPT,LWUPTC,LWDNT,LWDNTC,                    &
                      SWUPB,SWUPBC,SWDNB,SWDNBC,                    &
@@ -315,6 +303,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                                        its,ite, jts,jte, kts,kte
    LOGICAL,    INTENT(IN   ) ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
    LOGICAL,    INTENT(INout) ::        doabsems
+   LOGICAL,    INTENT(IN   ) ::        dolw,dosw
 
    INTEGER,    INTENT(IN  )  ::        n_cldadv
    INTEGER,    INTENT(IN  )  ::        JULDAY
@@ -486,7 +475,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(its:ite,kts:kte+1)           :: emstot ! Total emissivity
    CHARACTER(LEN=256) :: msgstr
 
-#if !defined(MAC_KLUDGE) && !defined(G95)
+#if !defined(MAC_KLUDGE)
    lchnk = 1
    begchunk = ims
    endchunk = ime
@@ -524,7 +513,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       enddo
 
 ! check for uninitialized arrays
-      if(abstot_3d(its,kts,kts,jts) .eq. 0.0 .and. .not.doabsems)then
+      if(abstot_3d(its,kts,kts,jts) .eq. 0.0 .and. .not.doabsems .and. dolw)then
         CALL wrf_debug(0, 'camrad lw: CAUTION: re-calculating abstot, absnxt, emstot on restart')
         doabsems = .true.
       endif
@@ -654,7 +643,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       enddo
       enddo
 
-      if(.not.doabsems)then
+      if(.not.doabsems .and. dolw)then
 !      do kk = kts,kte+1
       do kk = 1,cam_abs_dim2
         do kk1 = kts,kte+1
@@ -716,7 +705,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    aldir, aldif, solcon, GMT,JULDAY,JULIAN,DT,XTIME,   &
                    pin, ozmixmj, ozmix, levsiz, num_months,  & 
                    m_psjp,m_psjn, aerosoljp, aerosoljn,  m_hybi, paerlev, naer_c, pmxrgn, nmxrgn, &
-                   doabsems, abstot, absnxt, emstot, &
+                   dolw, dosw, doabsems, abstot, absnxt, emstot, &
                    fsup, fsupc, fsdn, fsdnc, flup, flupc, fldn, fldnc, swcftoa, lwcftoa, olrtoa,  &
                    fsns, fsnt    ,flns    ,flnt    , &
                    qrs, qrl, flwds, rel, rei,                       &
@@ -727,15 +716,15 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
-      RTHRATENLW(I,K,J) = 1.e4*qrl(ii,kk)/(cpair*pi_phy(i,k,j))
-      RTHRATENSW(I,K,J) = 1.e4*qrs(ii,kk)/(cpair*pi_phy(i,k,j))
+      if(dolw)RTHRATENLW(I,K,J) = 1.e4*qrl(ii,kk)/(cpair*pi_phy(i,k,j))
+      if(dosw)RTHRATENSW(I,K,J) = 1.e4*qrs(ii,kk)/(cpair*pi_phy(i,k,j))
       cemiss(i,k,j)     = emis(ii,kk)
       taucldc(i,k,j)    = tauxcl(ii,kk)
       taucldi(i,k,j)    = tauxci(ii,kk)
       enddo
       enddo
 
-      if(doabsems)then
+      if(doabsems .and. dolw)then
 !      do kk = kts,kte+1
       do kk = 1,cam_abs_dim2
         do kk1 = kts,kte+1
@@ -804,13 +793,17 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
       do i = its,ite
       ii = i - its + 1
-      GLW(I,J) = flwds(ii)
-      GSW(I,J) = fsns(ii)
-! Added shortwave and longwave cloud forcing at TOA
-      swcf(i,j) = swcftoa(ii)
-      lwcf(i,j) = lwcftoa(ii)
-      olr(i,j)  = olrtoa(ii)
-      coszr(i,j) = coszrs(ii)
+! Added shortwave and longwave cloud forcing at TOA and surface
+      if(dolw)then
+        GLW(I,J) = flwds(ii)
+        lwcf(i,j) = lwcftoa(ii)
+        olr(i,j)  = olrtoa(ii)
+      endif
+      if(dosw)then
+        GSW(I,J) = fsns(ii)
+        swcf(i,j) = swcftoa(ii)
+        coszr(i,j) = coszrs(ii)
+      endif
       enddo
 
     enddo    ! j-loop
@@ -859,10 +852,8 @@ end subroutine camrad
    REAL(r8)    :: pstd
    REAL(r8)    :: rh2o, cpair
 
-#if !defined(MAC_KLUDGE) && !defined(G95)
+#if !defined(MAC_KLUDGE)
    ozncyc = .true.
-   dosw = .true.
-   dolw = .true.
    indirect = .true.
    ixcldliq = 2
    ixcldice = 3
@@ -918,7 +909,7 @@ end subroutine camrad
 
    END SUBROUTINE camradinit
 
-#if !defined(MAC_KLUDGE) && !defined(G95)
+#if !defined(MAC_KLUDGE)
 subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -2432,7 +2423,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
                   pin, ozmixmj, ozmix, levsiz, num_months,      &
                   m_psp, m_psn,  aerosoljp, aerosoljn, m_hybi, paerlev, naer_c, pmxrgn  , &
                   nmxrgn  ,                   &
-                  doabsems, abstot, absnxt, emstot, &
+                  dolw, dosw, doabsems, abstot, absnxt, emstot, &
                   fsup    ,fsupc   ,fsdn    ,fsdnc   , &
                   flup    ,flupc   ,fldn    ,fldnc   , &
                   swcf    ,lwcf    ,flut    ,          &
@@ -2479,7 +2470,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    integer, intent(in) :: num_months            ! 12 months
    integer, intent(in) :: paerlev,naer_c          ! aerosol vertical level and # species
    integer, intent(in) :: pcols, pver, pverp, pverr, pverrp, ppcnst, pcnst
-   logical, intent(in) :: doabsems
+   logical, intent(in) :: dolw,dosw,doabsems
 
 
    integer nspint            ! Num of spctrl intervals across solar spectrum
@@ -2756,6 +2747,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
          fsdsc(i) = fsdsc(i)*1.e-3
          fsntoa(i)=fsntoa(i)*1.e-3
          fsntoac(i)=fsntoac(i)*1.e-3
+         swcf(i)  = fsntoa(i) - fsntoac(i)
       end do
       ftem(:ncol,:pver) = qrs(:ncol,:pver)/cpair
 
@@ -2872,7 +2864,6 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
          flnsc(i) = flnsc(i)*1.e-3
          flwds(i) = flwds(i)*1.e-3
          lwcf(i)  = flutc(i) - flut(i)
-         swcf(i)  = fsntoa(i) - fsntoac(i)
       end do
 
 ! Added upward/downward total and clear sky fluxes

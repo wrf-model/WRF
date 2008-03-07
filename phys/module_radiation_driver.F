@@ -624,6 +624,7 @@ CONTAINS
 
      lwrad_select: SELECT CASE(lw_physics)
 
+
         CASE (RRTMSCHEME)
              CALL wrf_debug (100, 'CALL rrtm')
 
@@ -698,6 +699,7 @@ CONTAINS
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2) ) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
+                     dolw=.true.,dosw=.false.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
                      LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
@@ -769,6 +771,25 @@ CONTAINS
         ENDDO
      ENDIF
 !
+     swrad_cldfra_select: SELECT CASE(sw_physics)
+
+        CASE (CAMSWSCHEME)
+
+     IF ( PRESENT ( CLDFRA ) .AND.                           &
+          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
+
+   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+                   F_QV,F_QC,F_QI,F_QS,t,p,                &
+                   F_ICE_PHY,F_RAIN_PHY,                   &
+                   ids,ide, jds,jde, kds,kde,              &
+                   ims,ime, jms,jme, kms,kme,              &
+                   its,ite, jts,jte, kts,kte               )
+     ENDIF
+ 
+        CASE DEFAULT
+
+     END SELECT swrad_cldfra_select    
 
      swrad_select: SELECT CASE(sw_physics)
 
@@ -843,15 +864,67 @@ CONTAINS
                     ,F_QNDROP=f_qndrop                                 &
                                                                        )
         CASE (CAMSWSCHEME)
-! Temporarily lw switch already calculates sw CAM tendency, so inactive here
-
-      DO j=jts,jte
-      DO k=kts,kte
-      DO i=its,ite
-         RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
-      ENDDO
-      ENDDO
-      ENDDO
+             CALL wrf_debug(100, 'CALL camrad sw')
+             IF(cam_abs_dim1 .ne. 4 .or. cam_abs_dim2 .ne. kde .or.  &
+                paerlev .ne. 29 .or. levsiz .ne. 59 )THEN
+               WRITE( wrf_err_message , * ) &
+'set paerlev=29, levsiz=59, cam_abs_dim1=4, and cam_abs_dim2=number of levels (e_vert) in physics namelist for CAM radiation'
+               CALL wrf_error_fatal ( wrf_err_message )
+             ENDIF
+             IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
+                  PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
+                  PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
+                  .AND. PRESENT(AEROSOLC_2) ) THEN
+             CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
+                     dolw=.false.,dosw=.true.,                         &
+                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
+                     SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
+                     LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
+                     LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
+                     SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
+                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
+                     LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
+                     LWDNB=LWDNB,LWDNBC=LWDNBC,                        &
+                     SWCF=SWCF,LWCF=LWCF,OLR=RLWTOA,CEMISS=CEMISS,     &
+                     TAUCLDC=TAUCLDC,TAUCLDI=TAUCLDI,COSZR=COSZR,      &
+                     GSW=GSW,GLW=GLW,XLAT=XLAT,XLONG=XLONG,            &
+                     ALBEDO=ALBEDO,t_phy=t,TSK=TSK,EMISS=EMISS         &
+                    ,QV3D=qv                                           &
+                    ,QC3D=qc                                           &
+                    ,QR3D=qr                                           &
+                    ,QI3D=qi                                           &
+                    ,QS3D=qs                                           &
+                    ,QG3D=qg                                           &
+                    ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
+                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
+                    ,f_ice_phy=f_ice_phy,f_rain_phy=f_rain_phy         &
+                    ,p_phy=p,p8w=p8w,z=z,pi_phy=pi,rho_phy=rho,        &
+                     dz8w=dz8w,                                        &
+                     CLDFRA=CLDFRA,XLAND=XLAND,XICE=XICE,SNOW=SNOW,    &
+                     ozmixm=ozmixm,pin0=pin,levsiz=levsiz,             &
+                     num_months=n_ozmixm,                              &
+                     m_psp=m_ps_1,m_psn=m_ps_2,aerosolcp=aerosolc_1,   &
+                     aerosolcn=aerosolc_2,m_hybi0=m_hybi0,             &
+                     paerlev=paerlev, naer_c=n_aerosolc,               &
+                     cam_abs_dim1=cam_abs_dim1, cam_abs_dim2=cam_abs_dim2, &
+                     GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
+                     SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
+                   ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
+                   ,doabsems=doabsems                               &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
+             ENDIF
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
+             ENDDO
+             ENDDO
+             ENDDO
 
         CASE (GFDLSWSCHEME)
 

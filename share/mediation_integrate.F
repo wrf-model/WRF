@@ -322,7 +322,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                          ,save_rainnc             &
                                          ,save_sfcevp             &
                                          ,save_sfcrunoff          &
-                                         ,save_udrunoff
+                                         ,save_udrunoff           &
+                                         ,save_mub
 
    TYPE(WRFU_Time)        :: strt_time, cur_time
 
@@ -450,6 +451,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
        ! save elevation and mub for temp and qv adjustment
 
+       allocate (save_mub(ims:ime,jms:jme))
+
        CALL  store_terrain ( nest%ht_fine , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
@@ -475,12 +478,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
        !  adjust temp and qv
 
-       CALL adjust_tempqv ( nest%mub , nest%mub_fine , &
+       CALL adjust_tempqv ( nest%mub , nest%mub_save , &
                             nest%znw , nest%p_top , &
                             nest%t_2 , nest%p , nest%moist(ims,kms,jms,P_QV) , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             ips , ipe , jps , jpe , kps , kpe )
+
+       deallocate (save_mub)
  
      ELSE
        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&

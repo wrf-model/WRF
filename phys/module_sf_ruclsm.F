@@ -528,7 +528,7 @@ CONTAINS
 
 !-- definition of number of soil levels in the rooting zone
      IF(iforest(ivgtyp(i,j)).ne.1) THEN
-!---- non forests and deciduous forests
+!---- all vegetation types except evergreen and mixed forests
          do k=2,nzs
          if(zsmain(k).ge.0.4) then
             NROOT=K
@@ -556,8 +556,8 @@ CONTAINS
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
 
 
-        IF((XLAND(I,J)-1.5).GE.0.)THEN
-!-- Water point
+        IF((XLAND(I,J)-1.5).GE.0. .or. XICE(I,J).gt.0.5)THEN
+!-- Water or ice point
            SMAVAIL(I,J)=1.0
              SMMAX(I,J)=1.0
 !              SNOW(I,J)=0.0
@@ -604,7 +604,11 @@ CONTAINS
             SMAVAIL(I,J)=1.0
             SMMAX(I,J)=1.0
             LMAVAIL(I,J)=1.0
-!            SOILT(I,J) = MIN(273.15,SOILT(I,J))
+! RUC model approach is to keep sea-ice skin temperature equal to temperature
+! at first atmospheric level
+            SOILT(I,J)=MIN(271.,TABS)
+            ZNT(I,J)=0.011
+
 
             DO K=1,NZS
               SOILMOIS(I,K,J)=1.0
@@ -688,7 +692,7 @@ CONTAINS
                 soilt(I,J),soilt1(i,j),tsnav(i,j),dew(I,J),      &
                 qvg(I,J),qsg(I,J),qcg(I,J),SMELT(I,J),           &
                 SNOH(I,J),SNFLX(I,J),SNOM(I,J),ACSNOW(I,J),      &
-                edir(I,J),ec(I,J),ett(I,J),sfcevp(I,J),          &
+                edir(I,J),ec(I,J),ett(I,J),qfx(I,J),          &
                 lh(I,J),hfx(I,J),sflx(I,J),sublim(I,J),          &
                 evapl(I,J),prcpl(I,J),runoff1(I,J),              &
                 runoff2(I,J),soilice,soiliqw,infiltrp)
@@ -751,7 +755,8 @@ CONTAINS
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
        print *,' LAND, I=,J=, QFX, HFX after SFCTMP', i,j,lh(i,j),hfx(i,j)
     ENDIF
-        QFX    (I,J) = LH(I,J)/LV
+!!!        QFX    (I,J) = LH(I,J)/LV
+        SFCEVP (I,J) = SFCEVP (I,J) + QFX (I,J) * DT
         GRDFLX (I,J) = -1. * sflx(I,J)
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -1565,7 +1570,7 @@ CONTAINS
 !**************************************************************
            CALL TRANSF(                                       &
 !--- input variables
-              nzs,nroot,soiliqw,                              &
+              nzs,nroot,soiliqw,tabs,                         &
 !--- soil fixed fields
               dqm,qmin,ref,wilt,zshalf,                       &
 !--- output variables
@@ -1700,8 +1705,9 @@ CONTAINS
           EC1=0.
           EDIR1=0.
           ETT1=0.
-          EETA=0.
+!          EETA=0.
           QFX=- XLV*RHO*DEW
+          EETA= QFX/XLV
         ELSE
 ! ---  evaporation
           EC1 = Q1 * WETCAN
@@ -2200,7 +2206,7 @@ CONTAINS
 !**************************************************************
            CALL TRANSF(                                       &
 !--- input variables
-              nzs,nroot,soiliqw,                              &
+              nzs,nroot,soiliqw,tabs,                         &
 !--- soil fixed fields
               dqm,qmin,ref,wilt,zshalf,                       & 
 !--- output variables
@@ -2369,10 +2375,11 @@ print *, 'TSO before calling SNOWTEMP: ', tso
          EC1=0.
          EDIR1=0.
          ETT1=0.
-         EETA=0.
+!         EETA=0.
          DEW=FQ*(QVATM-QSG)
         QFX= -XLVm*RHO*DEW
         sublim=QFX/XLVm
+        eeta=QFX/XLVm
        ELSE
 ! ---  evaporation
         EC1 = Q1 * WETCAN 
@@ -3169,6 +3176,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
           ENDDO
 
         QFX= XLVM*RHO*DEW
+        EETA=QFX/XLVM
        ELSE
 ! ---  evaporation
           DO K=1,NROOT
@@ -3873,7 +3881,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
            SUBROUTINE TRANSF(                                    &
 !--- input variables
-              nzs,nroot,soiliqw,                                 &
+              nzs,nroot,soiliqw,tabs,                            &
 !--- soil fixed fields
               dqm,qmin,ref,wilt,zshalf,                          &
 !--- output variables
@@ -3895,6 +3903,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
    INTEGER,  INTENT(IN   )   ::  nroot,nzs
 
+   REAL                                                        , &
+            INTENT(IN   )    ::                            TABS
 !--- soil properties
    REAL                                                        , &
             INTENT(IN   )    ::                             DQM, &
@@ -3902,7 +3912,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                                                             REF, &
                                                            WILT
 
-   REAL,     DIMENSION(1:NZS), INTENT(IN)  ::           soiliqw, &
+   REAL,     DIMENSION(1:NZS), INTENT(IN)  ::          soiliqw,  &
                                                          ZSHALF
 
 !-- output 
@@ -3915,6 +3925,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
 !-- for non-linear root distribution
    REAL    ::  gx,sm1,sm2,sm3,sm4,ap0,ap1,ap2,ap3,ap4
+   REAL    ::  FTEM
    REAL,     DIMENSION(1:NZS)   ::           PART
 !--------------------------------------------------------------------
 
@@ -3940,6 +3951,14 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
           if(gx.lt.0.) gx=0.
         DID=zshalf(2)
           part(1)=DID*gx
+!--- air temperature function
+!     Avissar (1985) and AX 7/95
+        IF (TABS .LE. 302.15) THEN
+          FTEM = 1.0 / (1.0 + EXP(-0.41 * (TABS - 282.05)))
+        ELSE
+          FTEM = 1.0 / (1.0 + EXP(0.5 * (TABS - 314.0)))
+        ENDIF
+!---
         IF(TOTLIQ.GT.REF) THEN
           TRANF(1)=DID
         ELSE IF(TOTLIQ.LE.WILT) THEN
@@ -3949,6 +3968,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         ENDIF 
 !-- uncomment next line for non-linear root distribution
 !cc           TRANF(1)=part(1)
+          TRANF(1)=TRANF(1)*FTEM
+
         DO K=2,NROOT
         totliq=soiliqw(k)+qmin
            sm1=totliq
@@ -3972,6 +3993,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         ENDIF
 !-- uncomment next line for non-linear root distribution
 !cc          TRANF(k)=part(k)
+          TRANF(k)=TRANF(k)*FTEM
         END DO
 
 !-- TRANSUM - total for the rooting zone

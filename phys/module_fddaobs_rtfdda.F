@@ -326,16 +326,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! Define staggers for U, V, and T grids, referenced from non-staggered grid.
   real, parameter :: gridx_t = 0.5     ! Mass-point x stagger
   real, parameter :: gridy_t = 0.5     ! Mass-point y stagger
-!AJB test: SET U-NUDGE ON MASS-POINT
-! real, parameter :: gridx_u = 0.0     ! U-point x stagger
-! real, parameter :: gridy_u = 0.5     ! U-point y stagger
-  real, parameter :: gridx_u = 0.5     ! Mass-point
-  real, parameter :: gridy_u = 0.5     ! Mass-point
-!AJB test: SET V-NUDGE ON MASS-POINT
-! real, parameter :: gridx_v = 0.5     ! V-point x stagger
-! real, parameter :: gridy_v = 0.0     ! V-point y stagger
-  real, parameter :: gridx_v = 0.5     ! Mass-point
-  real, parameter :: gridy_v = 0.5     ! Mass-point
+  real, parameter :: gridx_u = 0.0     ! U-point x stagger
+  real, parameter :: gridy_u = 0.5     ! U-point y stagger
+  real, parameter :: gridx_v = 0.5     ! V-point x stagger
+  real, parameter :: gridy_v = 0.0     ! V-point y stagger
 
   real :: dummy = 99999.
 
@@ -798,10 +792,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !           This is to correct obs to model sigma level using reverse similarity theory
             if(rko(n).eq.1.0)then
-              uratiob=((1.-DXOB)*((1.-DYOB)*uratio(IOB,JOB)+     &
-                    DYOB*uratio(IOBP,JOB)                        &
-                  )+DXOB*((1.-DYOB)*uratio(IOB,JOBP)+            &
-                  DYOB*uratio(IOBP,JOBP)))
+              uratiob=((1.-DYOB)*((1.-DXOB)*uratio(IOB,JOB)+     &
+                    DXOB*uratio(IOBP,JOB)                        &
+                  )+DYOB*((1.-DXOB)*uratio(IOB,JOBP)+            &
+                  DXOB*uratio(IOBP,JOBP)))
             else
               uratiob=1.
             endif
@@ -888,10 +882,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !           This is to correct obs to model sigma level using reverse similarity theory
             if(rko(n).eq.1.0)then
-              vratiob=((1.-DXOB)*((1.-DYOB)*vratio(IOB,JOB)+     &
-                    DYOB*vratio(IOBP,JOB)                        &
-                  )+DXOB*((1.-DYOB)*vratio(IOB,JOBP)+            &
-                  DYOB*vratio(IOBP,JOBP)))
+              vratiob=((1.-DYOB)*((1.-DXOB)*vratio(IOB,JOB)+     &
+                    DXOB*vratio(IOBP,JOB)                        &
+                  )+DYOB*((1.-DXOB)*vratio(IOB,JOBP)+            &
+                  DXOB*vratio(IOBP,JOBP)))
             else
               vratiob=1.
             endif
@@ -948,10 +942,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !           This is to correct obs to model sigma level using reverse similarity theory
             if(rko(n).eq.1.0)then
-              tratxob=((1.-DXOB)*((1.-DYOB)*tratx(IOB,JOB)+        &
-                    DYOB*tratx(IOB+1,JOB)                          &
-                  )+DXOB*((1.-DYOB)*tratx(IOB,JOB+1)+              &
-                  DYOB*tratx(IOB+1,JOB+1)))
+              tratxob=((1.-DYOB)*((1.-DXOB)*tratx(IOB,JOB)+        &
+                    DXOB*tratx(IOB+1,JOB)                          &
+                  )+DYOB*((1.-DXOB)*tratx(IOB,JOB+1)+              &
+                  DXOB*tratx(IOB+1,JOB+1)))
             else
               tratxob=1.
             endif
@@ -1458,9 +1452,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     IGRID=1
   ELSEIF(IVAR.eq.1) THEN
     GRIDY=0.5
+    GRIDX=0.5              ! yliu 20080222
     IGRID=1
   ELSEIF(IVAR.eq.2) THEN
     GRIDX=0.5
+    GRIDY=0.5              ! yliu 20080222
     IGRID=1
   ENDIF
 

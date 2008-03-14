@@ -219,6 +219,7 @@
   character*40 platform,source,id,namef
   character*2 fonc
   real latitude,longitude
+  real lat_prt(100),lon_prt(100)
   logical is_sound,bogus
   LOGICAL OPENED,exist
   integer :: ieof(5),ifon(5)
@@ -427,6 +428,11 @@
         rtimob=timeob(n)
       ENDIF
       read(nvol,102)latitude,longitude
+! save lat and long for printout
+      if(n.le.100) then
+         lat_prt(n) = latitude
+         lon_prt(n) = longitude
+      endif
  102  FORMAT(2x,2(f7.2,3x))
 
 !     if(ifon.eq.4)print *,'ifon=4',latitude,longitude
@@ -438,8 +444,8 @@
                  true_lat1,true_lat2,dscg,xn,sn_maxcg,we_maxcg,       &
                  1,1,1)
 
-!ajb  ri and rj are referenced to the non-staggered grid. (For MM5, they
-!     were referenced to the dot grid.)
+!ajb  ri and rj are referenced to the non-staggered grid (not mass-pt!).
+!     (For MM5, they were referenced to the dot grid.)
 
       rio(n)=ri
       rjo(n)=rj
@@ -1123,17 +1129,19 @@
 ! Find the number of stations that are actually within the time window.
   nstaw = nvals_le_limit(nsta, timeob, tforwd)
 
-! Print obs information.
+! Print obs information, according to nobs_prt, but limit to 100 max.
   if (iprt) then
-    ips = min(nstaw,nobs_prt)
+    ips = min(nstaw,nobs_prt,100)
     if(ips.gt.0) then
-      write(6,'(/a,i4,a,i2)') 'PRINTING INFO FOR FIRST',ips,  &
+      write(6,'(/a,i4,a,i2)') 'CG MASS-PT LOCATIONS FOR FIRST',ips,  &
                               ' OBSERVATIONS FOR NEST ',inest
       write(6,*) '  OBS#    I       J      LAT     LON    TIME(hrs)'
     endif
+! Note: rio and rjo are referenced to non-staggered grid (not mass-point!)
+!       Hence subtract .5 from each to get mass-point coords.
     do n=1,ips
         write(6,'(2x,i4,2f8.2,2f8.2,3x,f8.5)')                     &
-                n,rio(n)-.5,rjo(n)-.5,latitude,longitude,timeob(n)
+                n,rio(n)-.5,rjo(n)-.5,lat_prt(n),lon_prt(n),timeob(n)
     enddo
   endif
 

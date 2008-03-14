@@ -36,7 +36,8 @@ CONTAINS
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
-                         CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,LU_INDEX,&
+                         CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,EMBCK,  & !EMBCK new 
+                         LU_INDEX,                               &
                          landuse_ISICE, landuse_LUCATS,          &
                          landuse_LUSEAS, landuse_ISN,            &
                          lu_state,                               &
@@ -154,7 +155,7 @@ CONTAINS
              CLDFRA_OLD
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
-             GSW,ALBEDO,ALBBCK,GLW,EMISS
+             GSW,ALBEDO,ALBBCK,GLW,EMISS,EMBCK                          !EMBCK new
 
    REAL,     INTENT(IN) :: GMT
 
@@ -263,7 +264,7 @@ CONTAINS
 
 ! Local data
 
-   REAL    :: ALBLND,ZZLND,ZZWTR,THINLD,XMAVA,CEN_LAT,pptop 
+   REAL    :: ALBLND,ZZLND,ZZWTR,THINLD,XMAVA,CEN_LAT,pptop
    REAL,     DIMENSION( kms:kme )  :: sfull, shalf
    REAL :: obs_twindo_cg, obs_twindo
    
@@ -347,8 +348,9 @@ integer myproc
    DO i=its,itf
      IF(XLAND(i,j) .LT. 1.5)THEN
        IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=ALBLND
+       EMBCK(i,j)=0.85
        ALBEDO(i,j)=ALBBCK(i,j)
-       EMISS(i,j)=0.85
+       EMISS(i,j)=EMBCK(i,j)
        THC(i,j)=THINLD
        ZNT(i,j)=ZZLND
 #if  ! ( NMM_CORE == 1 ) 
@@ -358,7 +360,8 @@ integer myproc
      ELSE
        IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=0.08
        ALBEDO(i,j)=ALBBCK(i,j)
-       EMISS(i,j)=0.98
+       EMBCK(i,j)=0.98
+       EMISS(i,j)=EMBCK(i,j)
        THC(i,j)=THINLD
        ZNT(i,j)=ZZWTR
 #if  ! ( NMM_CORE == 1 ) 
@@ -375,7 +378,7 @@ integer myproc
    IF(mminlu_loc .ne. '    ')THEN
 !-- initialize surface properties
 
-     CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,      &
+     CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss, embck,            &
                 znt, Z0, thc, xland, xice, xicem, julday, cen_lat, iswater, mminlu_loc,  &
                 landuse_ISICE, landuse_LUCATS,                      &
                 landuse_LUSEAS, landuse_ISN,                        &
@@ -517,8 +520,8 @@ integer myproc
    END SUBROUTINE phy_init
 
 !=====================================================================
-   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss,  &
-                znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu, &
+   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss, embck, &
+                znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu,  &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
                 lu_state,                                           &
                 allowed_to_read , usemonalb ,                       &
@@ -540,6 +543,7 @@ integer myproc
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usemonalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
+                                                               embck,                         &
                                                                znt, Z0, thc, xland, xicem
    INTEGER , INTENT(INOUT)  :: ISICE, LUCATS, LUSEAS, ISN
    REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
@@ -708,7 +712,8 @@ integer myproc
           THC(I,J)=THERIN(IS,ISN)/100.                               
           Z0(I,J)=SFZ0(IS,ISN)/100.                                
           ZNT(I,J)=Z0(I,J)
-          EMISS(I,J)=SFEM(IS,ISN)                                  
+          EMBCK(I,J)=SFEM(IS,ISN)                                  
+          EMISS(I,J)=EMBCK(I,J)                                  
           MAVAIL(I,J)=SLMO(IS,ISN)                                
           IF(IS.NE.ISWATER)THEN                                  
             XLAND(I,J)=1.0                                      
@@ -724,7 +729,8 @@ integer myproc
             THC(I,J)=THERIN(ISICE,ISN)/100.                              
             Z0(I,J)=SFZ0(ISICE,ISN)/100.                               
             ZNT(I,J)=Z0(I,J)
-            EMISS(I,J)=SFEM(ISICE,ISN)                                 
+            EMBCK(I,J)=SFEM(ISICE,ISN)                                 
+            EMISS(I,J)=EMBCK(I,J)                                  
             MAVAIL(I,J)=SLMO(ISICE,ISN)                               
           ENDIF
         ENDDO

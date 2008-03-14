@@ -759,6 +759,7 @@ BENCH_START(surf_driver_tim)
       CALL surface_driver(                                                &
      &         ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
+     &        ,EMBCK=grid%embck                                                          &
      &        ,BR=br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
      &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &

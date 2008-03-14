@@ -16,7 +16,7 @@ CONTAINS
    SUBROUTINE lsm(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   HFX,QFX,LH,GRDFLX, QGH,GSW,SWDOWN,GLW,SMSTAV,SMSTOT, &
                   SFCRUNOFF, UDRUNOFF,IVGTYP,ISLTYP,VEGFRA,     &
-                  ALBEDO,ALBBCK,ZNT,Z0,TMN,XLAND,XICE, EMISS,   &
+                  ALBEDO,ALBBCK,ZNT,Z0,TMN,XLAND,XICE,EMISS,EMBCK,   &
                   SNOWC,QSFC,RAINBL,                            &
                   num_soil_layers,DT,DZS,ITIMESTEP,             &
                   SMOIS,TSLB,SNOW,CANWAT,                       &
@@ -150,6 +150,7 @@ CONTAINS
 !-- RCSOIL      soil moisture rc factor (dimensionless)
 
 !-- EMISS       surface emissivity (between 0 and 1)
+!-- EMBCK       Background surface emissivity (between 0 and 1)
 
 !-- ROVCP       R/CP
 !               (R_d/R_v) (dimensionless)
@@ -197,7 +198,7 @@ CONTAINS
                                                             Z0, &
                                                         ALBBCK, &
                                                         RAINBL, &
-                                                        EMISS,  &
+                                                        EMBCK,  &
                                                         SR
 
 
@@ -248,7 +249,7 @@ CONTAINS
                                                         ACSNOM, &
                                                         ACSNOW, &
                                                         SNOPCX, &
-! MEK JUL2007
+                                                        EMISS,  &
                                                         POTEVP, &
                                                         ALBEDO, &
                                                            ZNT
@@ -289,6 +290,7 @@ CONTAINS
       REAL  :: SHMIN,SHMAX,DQSDT2,LWDN,PRCP,PRCPRAIN,                    &
                Q2SAT,Q2SATI,SFCPRS,SFCSPD,SFCTMP,SHDFAC,SNOALB1,         &
                SOLDN,TBOT,ZLVL, Q2K,ALBBRD, ALBEDOK, ETA, ETA_KINEMATIC, &
+               EMBRD,                                                    &
                Z0K,RUNOFF1,RUNOFF2,RUNOFF3,SHEAT,SOLNET,E2SAT,SFCTSNO,   &
 ! mek, WRF testing, expanded diagnostics
                SOLUP,LWUP,RNET,RES,Q1SFC,TAIRV,RHO,SATFLG
@@ -623,6 +625,7 @@ CONTAINS
 !        SHMIN=0.00
         ALBBRD=ALBBCK(I,J)
         Z0BRD=Z0(I,J)
+        EMBRD=EMBCK(I,J)
 !FEI: temporaray arrays above need to be changed later by using SI
 
           DO 70 NS=1,NSOIL
@@ -690,7 +693,7 @@ CONTAINS
                  DUMMY,DUMMY, DUMMY,                              &    !F PRCPRAIN not used
                  TH2,Q2SAT,DQSDT2,                                &    !I
                  VEGTYP,SOILTYP,SLOPETYP,SHDFAC,SHMIN,DUMMY,      &    !I
-                 ALBBRD, SNOALB1,TBOT, Z0BRD, Z0K, EMISSI,        &    !S
+                 ALBBRD, SNOALB1,TBOT, Z0BRD, Z0K, EMISSI, EMBRD, &    !S
                  CMC,T1,STC,SMC,SWC,SNOWHK,SNEQV,ALBEDOK,CHK,dummy,&    !H
                  ETA,SHEAT, ETA_KINEMATIC,FDOWN,                  &    !O
                  EC,EDIR,ET,ETT,ESNOW,DRIP,DEW,                   &    !O
@@ -733,6 +736,7 @@ CONTAINS
 !          SNOWH(I,J)=SNOWHK*1000.
           SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
           ALBEDO(I,J)=ALBEDOK
+          EMISS(I,J) = EMISSI
 ! MEK Nov2006 turn off
 !          ZNT(I,J)=Z0K
           TSK(I,J)=T1

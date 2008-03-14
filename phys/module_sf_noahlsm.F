@@ -9,7 +9,8 @@ MODULE module_sf_noahlsm
 !   REAL, PARAMETER    :: CP = 1004.5
   REAL, PARAMETER      :: RD = 287.04, SIGMA = 5.67E-8,                 &
                           CPH2O = 4.218E+3,CPICE = 2.106E+3,            &
-                          LSUBF = 3.335E+5
+                          LSUBF = 3.335E+5,                             &
+                          EMISSI_S = 0.95
 
 ! VEGETATION PARAMETERS
         INTEGER :: LUCATS , BARE
@@ -48,7 +49,7 @@ CONTAINS
                        COSZ,PRCPRAIN, SOLARDIRECT,                      &    !F
                        TH2,Q2SAT,DQSDT2,                                &    !I
                        VEGTYP,SOILTYP,SLOPETYP,SHDFAC,SHDMIN,SHDMAX,    &    !I
-                       ALB, SNOALB,TBOT, Z0BRD, Z0, EMISSI,             &    !S
+                       ALB, SNOALB,TBOT, Z0BRD, Z0, EMISSI, EMBRD,      &    !S
                        CMC,T1,STC,SMC,SH2O,SNOWH,SNEQV,ALBEDO,CH,CM,    &    !H
 ! ----------------------------------------------------------------------
 ! OUTPUTS, DIAGNOSTICS, PARAMETERS BELOW GENERALLY NOT NECESSARY WHEN
@@ -151,6 +152,9 @@ CONTAINS
 !                TEMPERATURE)
 !   Z0BRD      Background fixed roughness length (M)
 !   Z0         Time varying roughness length (M) as function of snow depth
+!
+!   EMBRD      Background surface emissivity (between 0 and 1)
+!   EMISSI     Surface emissivity (between 0 and 1)
 ! ----------------------------------------------------------------------
 ! 6. HISTORY (STATE) VARIABLES (H):
 ! ----------------------------------------------------------------------
@@ -257,21 +261,22 @@ CONTAINS
       CHARACTER (LEN=4), INTENT(IN)::  LLANDUSE, LSOIL
 
 ! ----------------------------------------------------------------------
-! DECLARATIONS - INTEGER
+! 1. CONFIGURATION INFORMATION (C):
 ! ----------------------------------------------------------------------
       INTEGER,INTENT(IN) ::  ICE,NSOIL,SLOPETYP,SOILTYP,VEGTYP
       INTEGER,INTENT(OUT)::  NROOT
       INTEGER  KZ, K, iout
 
 ! ----------------------------------------------------------------------
-! DECLARATIONS - REAL
+! 2. LOGICAL:
 ! ----------------------------------------------------------------------
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
                             SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
-                            EMISSI, FFROZP
+                            EMBRD, FFROZP
       REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,ALBEDO,CH,CM,                 &
-                            CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,ALB
+                            CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,ALB,&
+                            EMISSI
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: ET
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  SH2O, SMC, STC
@@ -428,6 +433,7 @@ CONTAINS
             IF (SNEQV  == 0.0) THEN
                SNCOVR = 0.0
                ALBEDO = ALB
+               EMISSI = EMBRD
             ELSE
 ! ----------------------------------------------------------------------
 ! DETERMINE SNOW FRACTIONAL COVERAGE.
@@ -436,7 +442,7 @@ CONTAINS
               CALL SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR)
 ! limit snow cover fraction to maximum of 0.98
               SNCOVR = MIN(SNCOVR,0.98)
-              CALL ALCALC (ALB,SNOALB,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO)
+              CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI)
             END IF
 ! ----------------------------------------------------------------------
 ! SNOW COVER, ALBEDO OVER SEA-ICE
@@ -444,6 +450,7 @@ CONTAINS
          ELSE
             SNCOVR = 1.0
             ALBEDO = 0.65
+            EMISSI = EMISSI_S
          END IF
 ! ----------------------------------------------------------------------
 ! THERMAL CONDUCTIVITY FOR SEA-ICE CASE
@@ -720,7 +727,7 @@ CONTAINS
   END SUBROUTINE SFLX
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE ALCALC (ALB,SNOALB,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO)
+      SUBROUTINE ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI)
 
 ! ----------------------------------------------------------------------
 ! CALCULATE ALBEDO INCLUDING SNOW EFFECT (0 -> 1)
@@ -740,12 +747,13 @@ CONTAINS
 ! SNOW ALBEDO FIELDS PROVIDED BY D. ROBINSON AND G. KUKLA
 ! (1985, JCAM, VOL 24, 402-411)
 ! ----------------------------------------------------------------------
-      REAL, INTENT(IN)  ::  ALB, SNOALB, SHDFAC, SHDMIN, SNCOVR, TSNOW
-      REAL, INTENT(OUT) ::  ALBEDO
+      REAL, INTENT(IN)  ::  ALB, SNOALB, EMBRD, SHDFAC, SHDMIN, SNCOVR, TSNOW
+      REAL, INTENT(OUT) ::  ALBEDO, EMISSI
 ! turn of vegetation effect
 !      ALBEDO = ALB + (1.0- (SHDFAC - SHDMIN))* SNCOVR * (SNOALB - ALB)
 !      ALBEDO = (1.0-SNCOVR)*ALB + SNCOVR*SNOALB !this is equivalent to below
       ALBEDO = ALB + SNCOVR*(SNOALB-ALB)
+      EMISSI = EMBRD + SNCOVR*(EMISSI_S - EMBRD)
 
 !     BASE FORMULATION (DICKINSON ET AL., 1986, COGLEY ET AL., 1990)
 !          IF (TSNOW.LE.263.16) THEN
@@ -1840,12 +1848,12 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! PREPARE PARTIAL QUANTITIES FOR PENMAN EQUATION.
 ! ----------------------------------------------------------------------
-      IF(SNEQV == 0.)THEN
         EMISSI=EMISSI_IN
+      IF(SNEQV == 0.)THEN
         ELCP1=ELCP
         LVS=LSUBC
       ELSE
-        EMISSI=0.95  ! FOR SNOW
+!        EMISSI=EMISSI_S  ! FOR SNOW
         ELCP1=ELCP*LSUBS/LSUBC
         LVS=LSUBS
       ENDIF
@@ -2530,7 +2538,8 @@ CONTAINS
                                ETP3, ETNS1, ETANRG, ETAX, EX, FLX3X,    &
                                FRCSNO,FRCSOI, PRCP1, QSAT,RSNOW, SEH,   &
                                SNCOND,SSOIL1, T11,T12, T12A, T12AX,     &
-                               T12B, T14, YY, ZZ1, EMISSI_S
+                               T12B, T14, YY, ZZ1
+!                               T12B, T14, YY, ZZ1,EMISSI_S
 
       REAL, PARAMETER       :: ESDMIN = 1.E-6, LSUBC = 2.501000E+6,     &
                                LSUBS = 2.83E+6, TFREEZ = 273.15,        &
@@ -2554,7 +2563,7 @@ CONTAINS
       EDIR1 = 0.
       EC1 = 0.
       EC = 0.
-      EMISSI_S=0.95    ! For snow
+!      EMISSI_S=0.95    ! For snow
 
       DO K = 1,NSOIL
          ET (K) = 0.
@@ -2609,6 +2618,7 @@ CONTAINS
                END DO
                ETT = ETT1*1000.
                ETNS = ETNS1*1000.
+               ETNS = ETNS1*1000.
 ! ----------------------------------------------------------------------
 
 !   end IF (SNCOVR .lt. 1.)
@@ -2646,9 +2656,11 @@ CONTAINS
       DTOT = SNOWH + DSOIL
       DENOM = 1.0+ DF1 / (DTOT * RR * RCH)
 ! surface emissivity weighted by snow cover fraction
-      T12A = ( (FDOWN - FLX1 - FLX2 -                                   &
-     &       ((SNCOVR*EMISSI_S)+EMISSI*(1.0-SNCOVR))*SIGMA *T24)/RCH    &
-     &       + TH2 - SFCTMP - ETANRG/RCH ) / RR
+!      T12A = ( (FDOWN - FLX1 - FLX2 -                                   &
+!     &       ((SNCOVR*EMISSI_S)+EMISSI*(1.0-SNCOVR))*SIGMA *T24)/RCH    &
+!     &       + TH2 - SFCTMP - ETANRG/RCH ) / RR
+      T12A = ( (FDOWN - FLX1- FLX2- EMISSI * SIGMA * T24)/ RCH                    &
+                + TH2- SFCTMP - ETANRG / RCH ) / RR
 
       T12B = DF1 * STC (1) / (DTOT * RR * RCH)
 
@@ -2713,9 +2725,10 @@ CONTAINS
             SEH = RCH * (T1- TH2)
             T14 = T1* T1
             T14 = T14* T14
-           FLX3 = FDOWN - FLX1 - FLX2 -                                 &
-                  ((SNCOVR*EMISSI_S)+EMISSI*(1-SNCOVR))*SIGMA*T14 -     &
-                    SSOIL - SEH - ETANRG
+!           FLX3 = FDOWN - FLX1 - FLX2 -                                 &
+!                  ((SNCOVR*EMISSI_S)+EMISSI*(1-SNCOVR))*SIGMA*T14 -     &
+!                    SSOIL - SEH - ETANRG
+            FLX3 = FDOWN - FLX1- FLX2- EMISSI*SIGMA * T14- SSOIL - SEH - ETANRG
             IF (FLX3 <= 0.0) FLX3 = 0.0
 ! ----------------------------------------------------------------------
 ! SNOWMELT REDUCTION DEPENDING ON SNOW COVER

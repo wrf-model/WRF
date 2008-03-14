@@ -759,6 +759,7 @@ CONTAINS
 
 !  SEA
               EPSR(I,J)=.97
+              EMBCK(I,J)=.97
               GFFC(I,J)=0.
               ALBEDO(I,J)=.06
               ALBASE(I,J)=.06
@@ -776,6 +777,7 @@ CONTAINS
         SI(I,J)=5.0*WEASD(I,J)/1000.
 ! LAND
         EPSR(I,J)=1.0
+        EMBCK(I,J)=1.0
         GFFC(I,J)=0.0 ! just leave zero as irrelevant
         SICE(I,J)=0.
         SNO(I,J)=SI(I,J)*.20

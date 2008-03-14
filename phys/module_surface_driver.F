@@ -16,7 +16,7 @@ CONTAINS
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
      &          ,xicem,isice,iswater,ct,tke_myj                       &
-     &          ,albbck,lh,sh2o,shdmax,shdmin,z0                      &
+     &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
      &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss               &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
@@ -364,6 +364,7 @@ CONTAINS
 !  arguments for NCAR surface physics
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   ALBBCK  ! INOUT needed for NMM
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   EMBCK  
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   LH
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SH2O
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
@@ -903,7 +904,7 @@ CONTAINS
            CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
-                albedo,albbck,znt,z0, tmn,xland,xice, emiss,    &
+                albedo,albbck,znt,z0, tmn,xland,xice, emiss, embck,    &
                 snowc,qsfc,rainbl,                              & 
                 num_soil_layers,dtbl,dzs,itimestep,             &
                 smois,tslb,snow,canwat,                         &

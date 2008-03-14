@@ -1120,7 +1120,7 @@
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &
      &            ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX           &
      &            ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB          &
-     &            ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR                   &
+     &            ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK             &
      &            ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR               &
      &            ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG     &
      &            ,TWBS,QWBS,SFCSHX,SFCLHX,SFCEVP                      &

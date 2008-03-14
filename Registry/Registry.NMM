@@ -248,7 +248,8 @@ state  real   cnvbot    ij    dyn_nmm   1    -     irh      "CNVBOT"    "Lowest 
 state  real   cnvtop    ij    dyn_nmm   1    -     irh      "CNVTOP"    "Highest convec cloud top lyr between outputs"    ""
 state  real   czen      ij    dyn_nmm   1    -     irh      "CZEN"      "Cosine of solar zenith angle"                    ""
 state  real   czmean    ij    dyn_nmm   1    -     irh      "CZMEAN"    "Mean CZEN between SW radiation calls"            ""
-state  real   epsr      ij    dyn_nmm   1    -     ir       "EPSR"      "Radiative emissivity"                            ""
+state  real   embck     ij    dyn_nmm   1    -     ir       "EMBCK"     "Background radiative emissivity"                 ""
+state  real   epsr      ij    dyn_nmm   1    -     irh      "EPSR"      "Radiative emissivity"                            ""
 state  real   gffc      ij    dyn_nmm   1    -     ir
 state  real   glat      ij    dyn_nmm   1    -     i01rh    "GLAT"      "Geographic latitude, radians"                    ""
 state  real   glon      ij    dyn_nmm   1    -     i01rh    "GLON"      "Geographic longitude, radians"                   ""

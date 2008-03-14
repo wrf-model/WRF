@@ -107,7 +107,7 @@
      &                                    ,RQSCUTEN,RQVCUTEN,RTHCUTEN   &
      &                                    ,RTHRATEN                     &
      &                                    ,RTHRATENLW,RTHRATENSW
-      REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,GLW,HFX                  &
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: EMISS,EMTEMP,GLW,HFX           &
      &                                  ,NCA                            &
      &                                  ,QFX,RAINBL,RAINC,RAINNC        &
      &                                  ,RAINNCV                        &
@@ -1476,6 +1476,7 @@
       ALLOCATE(SFULL(KMS:KME),STAT=I)           ; SFULL    = 0.
       ALLOCATE(SMID(KMS:KME),STAT=I)            ; SMID     = 0.
       ALLOCATE(EMISS(IMS:IME,JMS:JME),STAT=I)   ; EMISS    = 0.
+      ALLOCATE(EMTEMP(IMS:IME,JMS:JME),STAT=I)  ; EMTEMP   = 0.
       ALLOCATE(GLW(IMS:IME,JMS:JME),STAT=I)     ; GLW      = 0.
       ALLOCATE(HFX(IMS:IME,JMS:JME),STAT=I)     ; HFX      = 0.
       ALLOCATE(LOWLYR(IMS:IME,JMS:JME),STAT=I)  ; LOWLYR   = 0.
@@ -1648,7 +1649,7 @@
      &             ,CLDEFI,LOWLYR                                       &
      &             ,MASS_FLUX                                           &
      &             ,RTHFTEN, RQVFTEN                                    &
-     &             ,CLDFRA_TRANS,CLDFRA_OLD,GLW,GSW,EMISS,LU_INDEX      &
+     &             ,CLDFRA_TRANS,CLDFRA_OLD,GLW,GSW,EMISS,EMTEMP,LU_INDEX&
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
@@ -1895,6 +1896,7 @@
       DEALLOCATE(SMID)
       DEALLOCATE(DZS)
       DEALLOCATE(EMISS)
+      DEALLOCATE(EMTEMP)
       DEALLOCATE(GLW)
       DEALLOCATE(HFX)
       DEALLOCATE(LOWLYR)

@@ -2323,6 +2323,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
            ENDIF
 !
            EPSR(I,J)= 0.97              ! VALID OVER SEA SURFACE
+           EMBCK(I,J)= 0.97              ! VALID OVER SEA SURFACE
            GFFC(I,J)= 0.
            ALBEDO(I,J)=.06
            ALBASE(I,J)=.06
@@ -2340,6 +2341,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !
            SI(I,J)=5.0*WEASD(I,J)/1000. ! SNOW WATER EQ (mm) OBTAINED FROM PARENT (SI) IS INTERPOLATED 
            EPSR(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           EMBCK(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
            GFFC(I,J)=0.0                ! just leave zero as irrelevant
            SICE(I,J)=0.                 ! SEA ICE
            SNO(I,J)=SI(I,J)*.20         ! LAND-SNOW COVER 

@@ -860,7 +860,8 @@ state    real  ALBEDO           ij      misc        1         -      rh         
 state    real  CLAT             ij      misc        1         -     irdu=(copy_fcnm)             "CLAT"                "COMPUTATIONAL GRID LATITUDE, SOUTH IS NEGATIVE"                       "degree_north"
 state    real  CLONG            ij      misc        1         -     irdu=(copy_fcnm)             "CLONG"               "COMPUTATIONAL GRID LONGITUDE, WEST IS NEGATIVE"                       "degree_east"
 state    real  ALBBCK           ij      misc        1         -     i0124rh   "ALBBCK"                "BACKGROUND ALBEDO"        ""
-state    real  EMISS            ij      misc        1         -      r        "EMISS"                 "SURFACE EMISSIVITY"         "" 
+state    real  EMBCK            ij      misc        1         -      r        "EMBCK"                 "BACKGROUND EMISSIVITY"         ""
+state    real  EMISS            ij      misc        1         -      rh       "EMISS"                 "SURFACE EMISSIVITY"         "" 
 
 state    real  CLDEFI           ij      misc        1         -      r        "CLDEFI"                "precipitation efficiency in BMJ SCHEME"    ""      
 state integer  STEPRA          -        misc        1         -      r        "STEPRA"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN RADIATION CALLS"        ""

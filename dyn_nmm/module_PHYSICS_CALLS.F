@@ -635,7 +635,7 @@
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
      &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
-     &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR                &
+     &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
      &                ,TWBS,QWBS,SFCSHX,SFCLHX,SFCEVP                   &
@@ -718,10 +718,11 @@
      &                                             ,SHDMIN,SHDMAX       &
 !    &                                             ,SICE,SIGT4,SM,SR    & !Bandaid
      &                                             ,SIGT4               &
-     &                                             ,SST,VBM2,VEGFRC
+     &                                             ,SST,VBM2,VEGFRC     
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
-                                                      ,TG,SICE      
+                                                      ,TG,SICE          & 
+                                                      ,EMBCK
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ALBASE,MXSNAL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACSNOM,ACSNOW    &
@@ -1153,7 +1154,7 @@
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
-     &          ,PSFC=PSFC_OUT,EMISS=EPSR                               &
+     &          ,PSFC=PSFC_OUT,EMISS=EPSR,EMBCK=EMBCK                   &
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &

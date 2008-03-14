@@ -571,7 +571,8 @@
 #ifndef WRF_CHEM
                       cldfra_old,                                  &
 #endif
-                      grid%glw,grid%gsw,grid%emiss,grid%lu_index, &
+                      grid%glw,grid%gsw,grid%emiss,grid%embck,            &
+                      grid%lu_index,                                      &
                       grid%landuse_ISICE, grid%landuse_LUCATS,            &
                       grid%landuse_LUSEAS, grid%landuse_ISN,              &
                       grid%lu_state,                                      &

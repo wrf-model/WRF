@@ -686,7 +686,7 @@ CONTAINS
       ENDDO               ! for k loop
 !
       DO I = its,ILX
-        EDDYZ(I,KL) = EDDYZ(I,KLM)
+        EDDYZ(I,KL) = 0.0 ! EDDYZ(I,KLM) -- changed jp 3/08
       ENDDO
    END SUBROUTINE EDDYX
 

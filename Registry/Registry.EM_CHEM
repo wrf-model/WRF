@@ -250,9 +250,9 @@ i1       real   cqv            ikj     dyn_em      1         -     -
 i1       real   cqw            ikj     dyn_em      1         -     -
 i1       real   pm1            ikj     dyn_em      1         -     -
 state    real   sr             ij      dyn_em      1         -      irh         "sr" "fraction of frozen precipitation"
-state    real   potevp         ij      dyn_em      1         -        h         "potevp" "whatever"
-state    real   snopcx         ij      dyn_em      1         -        h         "snopcx" "whatever"
-state    real   soiltb         ij      dyn_em      1         -        h         "soiltb" "whatever"
+state    real   potevp         ij      dyn_em      1         -       rh         "potevp" "accumulated potential evaporation" "W m-2"
+state    real   snopcx         ij      dyn_em      1         -       rh         "snopcx" "snow phase change heat flux" "W m-2"
+state    real   soiltb         ij      dyn_em      1         -        h         "soiltb" "bottom soil temperature" "K"
 state    real    fnm            k       dyn_em      1         -     irh       "fnm"  "upper weight for vertical stretching"  ""
 state    real    fnp            k       dyn_em      1         -     irh       "fnp"  "lower weight for vertical stretching"  ""
 state    real    rdnw           k       dyn_em      1         -     irh       "rdnw"  "inverse d(eta) values between full (w) levels"   ""
@@ -778,7 +778,7 @@ state    real  W0AVG           ikj      misc        1         -      r        "W
 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
-state    real  PRATEC           ij      misc        1         -      h        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
+state    real  PRATEC           ij      misc        1         -      rh       "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
 state    real  RAINCV           ij      misc        1         -      rh       "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"      

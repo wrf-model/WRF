@@ -96,6 +96,7 @@ CONTAINS
 !
 !  Reference) Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev. 
 !             Hong and Lim (HL, 2006) J. Korean Meteor. Soc. 
+!             Dudhia, Hong and Lim (DHL, 2008) J. Meteor. Soc. Japan
 !             Lin, Farley, Orville (LFO, 1983) J. Appl. Meteor.
 !             Rutledge, Hobbs (RH83, 1983) J. Atmos. Sci.
 !             Rutledge, Hobbs (RH84, 1984) J. Atmos. Sci.
@@ -266,7 +267,7 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte , 3) ::                      &
         rh, qs, rslope, rslope2, rslope3, rslopeb,                &
         falk, fall, work1
-  REAL, DIMENSION( its:ite , kts:kte , 1) ::                      &
+  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         worka
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
               falkc, work1c, work2c, fallc
@@ -525,13 +526,13 @@ CONTAINS
           work1(i,k,1) = pvtr*rslopeb(i,k,1)*denfac(i,k)/delz(i,k)
           work1(i,k,2) = pvts*rslopeb(i,k,2)*denfac(i,k)/delz(i,k)
           work1(i,k,3) = pvtg*rslopeb(i,k,3)*denfac(i,k)/delz(i,k)
-          qsum(i,k) = qrs(i,k,2)+qrs(i,k,3)
-          if(qsum(i,k) .le. 0) then
-          qsum(i,k) = 1.E-15
-          endif
-          worka(i,k,1) = (pvts*rslopeb(i,k,2)*denfac(i,k)*qrs(i,k,2)      &
-                         +pvtg*rslopeb(i,k,3)*denfac(i,k)*qrs(i,k,3))/qsum(i,k)/delz(i,k)     
-          numdt(i) = max(nint(max(work1(i,k,1),worka(i,k,1)) &
+          qsum(i,k) = max( (qrs(i,k,2)+qrs(i,k,3)), 1.E-15)
+          IF ( qsum(i,k) .gt. 1.e-15 ) THEN
+            worka(i,k) = (work1(i,k,2)*qrs(i,k,2) + work1(i,k,3)*qrs(i,k,3))/qsum(i,k)
+          ELSE
+            worka(i,k) = 0.
+          ENDIF
+          numdt(i) = max(nint(max(work1(i,k,1),worka(i,k)) &
                     *dtcld+.5),1)
           if(numdt(i).ge.mstep(i)) mstep(i) = numdt(i)
         enddo
@@ -545,8 +546,8 @@ CONTAINS
         do i = its, ite
           if(n.le.mstep(i)) then
               falk(i,k,1) = den(i,k)*qrs(i,k,1)*work1(i,k,1)/mstep(i)
-              falk(i,k,2) = den(i,k)*qrs(i,k,2)*worka(i,k,1)/mstep(i)
-              falk(i,k,3) = den(i,k)*qrs(i,k,3)*worka(i,k,1)/mstep(i)
+              falk(i,k,2) = den(i,k)*qrs(i,k,2)*worka(i,k)/mstep(i)
+              falk(i,k,3) = den(i,k)*qrs(i,k,3)*worka(i,k)/mstep(i)
               fall(i,k,1) = fall(i,k,1)+falk(i,k,1)
               fall(i,k,2) = fall(i,k,2)+falk(i,k,2)
               fall(i,k,3) = fall(i,k,3)+falk(i,k,3)
@@ -559,8 +560,8 @@ CONTAINS
           do i = its, ite
             if(n.le.mstep(i)) then
               falk(i,k,1) = den(i,k)*qrs(i,k,1)*work1(i,k,1)/mstep(i)
-              falk(i,k,2) = den(i,k)*qrs(i,k,2)*worka(i,k,1)/mstep(i)
-              falk(i,k,3) = den(i,k)*qrs(i,k,3)*worka(i,k,1)/mstep(i)
+              falk(i,k,2) = den(i,k)*qrs(i,k,2)*worka(i,k)/mstep(i)
+              falk(i,k,3) = den(i,k)*qrs(i,k,3)*worka(i,k)/mstep(i)
               fall(i,k,1) = fall(i,k,1)+falk(i,k,1)
               fall(i,k,2) = fall(i,k,2)+falk(i,k,2)
               fall(i,k,3) = fall(i,k,3)+falk(i,k,3)
@@ -887,11 +888,12 @@ CONTAINS
           vt2r=pvtr*rslopeb(i,k,1)*denfac(i,k)
           vt2s=pvts*rslopeb(i,k,2)*denfac(i,k)
           vt2g=pvtg*rslopeb(i,k,3)*denfac(i,k)
-          qsum(i,k) = qrs(i,k,2)+qrs(i,k,3)
-          if(qsum(i,k) .le. 0) then
-          qsum(i,k) = 1.E-15
-          endif
+          qsum(i,k) = max( (qrs(i,k,2)+qrs(i,k,3)), 1.E-15)
+          if(qsum(i,k) .gt. 1.e-15) then
           vt2ave=(vt2s*qrs(i,k,2)+vt2g*qrs(i,k,3))/(qsum(i,k))
+          else
+          vt2ave=0.
+          endif
           if(supcol.gt.0.and.qci(i,k,2).gt.qmin) then
             if(qrs(i,k,1).gt.qcrmin) then
 !-------------------------------------------------------------
@@ -997,21 +999,23 @@ CONTAINS
 !
 !-------------------------------------------------------------
 ! pgacs: Accretion of snow by graupel [HL A13] [LFO 29]
-!        (S->G)
+!        (S->G): This process is eliminated in V3.0 with the 
+!        new combined snow/graupel fall speeds
 !-------------------------------------------------------------
-          if(qrs(i,k,3).gt.qcrmin.and.qrs(i,k,2).gt.qcrmin) then
-            acrfac = 5.*rslope3(i,k,2)*rslope3(i,k,2)*rslope(i,k,3)     &
-                    +2.*rslope3(i,k,2)*rslope2(i,k,2)*rslope2(i,k,3)    &
-                    +.5*rslope2(i,k,2)*rslope2(i,k,2)*rslope3(i,k,3)
-            if(supcol.gt.0) then
-              egs = exp(-0.09*supcol)
-            else
-              egs = 1.
-            endif
-            pgacs(i,k) = pi**2*egs*n0s*n0sfac(i,k)*n0g*abs(vt2ave-vt2ave)   &
-                        *(dens/den(i,k))*acrfac
-            pgacs(i,k) = min(pgacs(i,k),qrs(i,k,2)/dtcld)
-          endif
+!         if(qrs(i,k,3).gt.qcrmin.and.qrs(i,k,2).gt.qcrmin) then
+!           acrfac = 5.*rslope3(i,k,2)*rslope3(i,k,2)*rslope(i,k,3)     &
+!                   +2.*rslope3(i,k,2)*rslope2(i,k,2)*rslope2(i,k,3)    &
+!                   +.5*rslope2(i,k,2)*rslope2(i,k,2)*rslope3(i,k,3)
+!           if(supcol.gt.0) then
+!             egs = exp(-0.09*supcol)
+!           else
+!             egs = 1.
+!           endif
+!           pgacs(i,k) = pi**2*egs*n0s*n0sfac(i,k)*n0g*abs(vt2ave-vt2ave)   &
+!                       *(dens/den(i,k))*acrfac
+            pgacs(i,k) = 0.
+!           pgacs(i,k) = min(pgacs(i,k),qrs(i,k,2)/dtcld)
+!         endif
           if(supcol.le.0) then
             xlf = xlf0
 !-------------------------------------------------------------

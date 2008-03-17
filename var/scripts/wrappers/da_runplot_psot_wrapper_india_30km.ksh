@@ -32,7 +32,7 @@ export OB_DIR=${OB_DIR:-$REG_DIR/ob}
 export BE_DIR=${BE_DIR:-$REG_DIR/be}
 export RC_DIR=${RC_DIR:-$REG_DIR/rc}
 export FC_DIR=${FC_DIR:-$EXP_DIR/fc}
-export SCRIPTS_DIR=$WRFVAR_DIR/scripts
+export SCRIPTS_DIR=$WRFVAR_DIR/var/scripts
 
 #Time info
 export INITIAL_DATE=2005080500

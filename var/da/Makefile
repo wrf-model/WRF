@@ -70,6 +70,7 @@ da : da_wrfvar.exe \
              da_advance_time.exe \
              da_verif_obs.exe \
              da_verif_anal.exe \
+             da_update_bc.exe \
              da_tune_obs_desroziers.exe \
              da_tune_obs_hollingsworth1.exe \
              da_tune_obs_hollingsworth2.exe \
@@ -84,7 +85,7 @@ links :
 	@ $(LN) */*.c .
 	@ $(LN) */*.m4 .
 
-MODULE_DIRS=-I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90
+MODULE_DIRS=$(INCLUDE_MODULES)
 
 
 ##########################################################################
@@ -182,7 +183,7 @@ da_transfer_model.o:	da_transfer_model.f90
 
 da_netcdf_interface.o:	da_netcdf_interface.f90
 			$(RM) $@
-			$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDF)/include da_netcdf_interface.f90 > da_netcdf_interface.f
+			$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDFPATH)/include da_netcdf_interface.f90 > da_netcdf_interface.f
 			$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_netcdf_interface.f
 
 da_setup_structures.o:	da_setup_structures.f90 \
@@ -1088,13 +1089,29 @@ da_verif_obs_init.o: da_verif_obs_init.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_verif_obs_init.f90 > da_verif_obs_init.f
 	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_verif_obs_init.f
 
+da_module_couple_uv.o: da_module_couple_uv.f90
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_module_couple_uv.f90 > da_module_couple_uv.f
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_module_couple_uv.f
+
+da_update_bc.o: da_netcdf_interface.o da_module_couple_uv.o da_update_bc.f90
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_update_bc.f90 > da_update_bc.f
+	$(SFC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_update_bc.f
+
+da_update_bc.exe : da_update_bc.o
+	$(SFC) -o da_update_bc.exe $(FCFLAGS) $(WRFVAR_INC) $(PROMOTION) da_update_bc.o \
+	   da_netcdf_interface.o \
+	   da_module_couple_uv.o \
+	   -L$(WRF_SRC_ROOT_DIR)/main -lwrflib -L$(NETCDFPATH)/lib -lnetcdf
+
 da_etkf.o:	        da_etkf.f90 \
 			da_innerprod.inc \
                         da_matmulti.inc \
                         da_matmultiover.inc \
 			da_solve_etkf.inc
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_etkf.f90 > da_etkf.f
-	$(FC) -c $(FCFLAGS) -I$(NETCDF)/include -I$(WRF_SRC_ROOT_DIR)/frame  $(PROMOTION) da_etkf.f
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) -I$(NETCDFPATH)/include -I$(WRF_SRC_ROOT_DIR)/frame  $(PROMOTION) da_etkf.f
 
 da_gen_be.o:	        da_gen_be.f90 \
 			da_control.o			\
@@ -1117,8 +1134,8 @@ da_gen_be.o:	        da_gen_be.f90 \
 			da_readwrite_be_stage3.inc    \
 			da_readwrite_be_stage4.inc    \
 			da_stage0_initialize.inc 
-	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDF)/include da_gen_be.f90 > da_gen_be.f
-	$(FC) -c $(FCFLAGS) -I$(NETCDF)/include -I$(WRF_SRC_ROOT_DIR)/frame  $(PROMOTION) da_gen_be.f
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDFPATH)/include da_gen_be.f90 > da_gen_be.f
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) -I$(NETCDFPATH)/include -I$(WRF_SRC_ROOT_DIR)/frame  $(PROMOTION) da_gen_be.f
 
 da_spectral.o:		da_spectral.f90             \
 			da_control.o		    \
@@ -1222,37 +1239,38 @@ parkind1.o:		parkind1.f90
 
 da_wrfvar.exe:	        wrfvar_lib da_wrfvar_main.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_wrfvar_main.f90 > da_wrfvar_main.f
-	$(FC) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(ESMF_IO_INC) \
+	$(FC) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(ESMF_IO_INC) da_wrfvar_main.f \
+            -L$(WRF_SRC_ROOT_DIR)/main -lwrflib \
             -L$(BUFR) -lbufr -L$(FFTPACK) -lfftpack \
-            -L$(LAPACK) -llapack -L$(BLAS) -lblas $(PROMOTION) $(LIB) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_wrfvar_main.f
+            -L$(LAPACK) -llapack -L$(BLAS) -lblas $(PROMOTION) $(LIB)
 
 da_advance_time.exe:    wrfvar_lib da_advance_time.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_advance_time.f90 > da_advance_time.f
-	$(SFC) -o da_advance_time.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_advance_time.f
+	$(SFC) -o da_advance_time.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_advance_time.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib
 
 da_verif_obs.exe:        wrfvar_lib da_verif_obs.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_verif_obs.f90 > da_verif_obs.f
-	$(SFC) -o da_verif_obs.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_verif_obs.f
+	$(SFC) -o da_verif_obs.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_verif_obs.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib
 
 da_verif_anal.exe:       wrfvar_lib da_verif_anal.f90
-	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc  -I$(NETCDF)/include  da_verif_anal.f90 > da_verif_anal.f
-	$(SFC) -o da_verif_anal.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib $(LIB) da_verif_anal.f
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_verif_anal.f90 > da_verif_anal.f
+	$(SFC) -o da_verif_anal.exe $(FCFLAGS) $(MODULE_DIRS) -I$(NETCDFPATH)/include $(WRFVAR_INC) $(PROMOTION) da_verif_anal.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib -L$(NETCDFPATH)/lib -lnetcdf
 
 da_tune_obs_desroziers.exe: wrfvar_lib da_tune_obs_desroziers.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_tune_obs_desroziers.f90 > da_tune_obs_desroziers.f
-	$(SFC) -o da_tune_obs_desroziers.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_tune_obs_desroziers.f
+	$(SFC) -o da_tune_obs_desroziers.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_tune_obs_desroziers.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib
 
 da_tune_obs_hollingsworth1.exe: wrfvar_lib da_tune_obs_hollingsworth1.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_tune_obs_hollingsworth1.f90 > da_tune_obs_hollingsworth1.f
-	$(SFC) -o da_tune_obs_hollingsworth1.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_tune_obs_hollingsworth1.f
+	$(SFC) -o da_tune_obs_hollingsworth1.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_tune_obs_hollingsworth1.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib
 
 da_tune_obs_hollingsworth2.exe: wrfvar_lib da_tune_obs_hollingsworth2.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_tune_obs_hollingsworth2.f90 > da_tune_obs_hollingsworth2.f
-	$(SFC) -o da_tune_obs_hollingsworth2.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_tune_obs_hollingsworth2.f
+	$(SFC) -o da_tune_obs_hollingsworth2.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_tune_obs_hollingsworth2.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib
 
 da_rad_diags.exe: wrfvar_lib da_rad_diags.f90
-	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDF)/include da_rad_diags.f90 > da_rad_diags.f
-	$(SFC) -o da_rad_diags.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) -L$(WRF_SRC_ROOT_DIR)/main -lwrflib da_rad_diags.f $(LIB)
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDFPATH)/include da_rad_diags.f90 > da_rad_diags.f
+	$(SFC) -o da_rad_diags.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_rad_diags.f -L$(WRF_SRC_ROOT_DIR)/main -lwrflib -L$(NETCDFPATH)/lib -lnetcdf
 
 gen_be_ensmean.exe : gen_be_ensmean.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_ensmean.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_ensmean.o $(GEN_BE_LIB)

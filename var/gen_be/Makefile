@@ -27,13 +27,15 @@ gen_be : 	gen_be_ensrf.exe	\
 		gen_be_diags_read.exe
 	( cd ../da; $(LN) ../gen_be/*exe . )
 
+MODULE_DIRS = $(INCLUDE_MODULES)
+
 GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
 GEN_BE_LIB = $(LIB) -L$(LAPACK) -llapack -L$(BLAS) -lblas 
 
 
 GEN_BE_OBJS = $(DA)/da_etkf.o $(DA)/da_gen_be.o $(DA)/da_control.o $(DA)/da_be_spectral.o \
   $(WRF_SRC_ROOT_DIR)/frame/module_wrf_error.o $(DA)/da_reporting.o $(DA)/module_ffts.o \
-  $(WRF_SRC_ROOT_DIR)/frame/module_driver_constants.o $(DA)/da_tracing.o $(DA)/da_memory.o $(DA)/da_tools_serial.o
+  $(WRF_SRC_ROOT_DIR)/frame/module_driver_constants.o $(DA)/da_memory.o $(DA)/da_tools_serial.o
 
 gen_be_stage0_wrf.exe : gen_be_stage0_wrf.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_stage0_wrf.f90 > gen_be_stage0_wrf.f
@@ -111,7 +113,7 @@ gen_be_diags_read.exe : gen_be_diags_read.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_diags_read.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_diags_read.o $(GEN_BE_LIB)
 
 gen_be_etkf.exe : gen_be_etkf.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
-	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDF)/include gen_be_etkf.f90 > gen_be_etkf.f
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDFPATH)/include gen_be_etkf.f90 > gen_be_etkf.f
 	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_etkf.f
 	$(SFC) -o gen_be_etkf.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_etkf.o $(GEN_BE_LIB)
 
@@ -121,7 +123,7 @@ gen_be_ensrf.exe : gen_be_ensrf.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_ensrf.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_ensrf.o $(GEN_BE_LIB)
 
 gen_be_ensmean.exe : gen_be_ensmean.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
-	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDF)/include gen_be_ensmean.f90 > gen_be_ensmean.f
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDFPATH)/include gen_be_ensmean.f90 > gen_be_ensmean.f
 	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_ensmean.f
 	$(SFC) -o gen_be_ensmean.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_ensmean.o $(GEN_BE_LIB)
 

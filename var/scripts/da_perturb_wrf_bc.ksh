@@ -20,7 +20,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/perturb_wrf_bc}
 export WORK_DIR=$RUN_DIR/working
 
@@ -59,8 +59,8 @@ while [[ $DATE -le $END_DATE ]]; do
    echo "   Run WRF-Var in randomcv mode for date $DATE"
    export DA_FIRST_GUESS=${RC_DIR}/$DATE/wrfinput_d${DOMAIN}
    export DA_ANALYSIS=${RC_DIR}/$DATE/wrfinput_d${DOMAIN}.${CMEM}
-#   $WRFVAR_DIR/scripts/da_trace.ksh da_run_wrfvar $RUN_DIR >&! /dev/null
-   ${WRFVAR_DIR}/scripts/da_run_wrfvar.ksh > $RUN_DIR/index.html 2>&1
+#   $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_wrfvar $RUN_DIR >&! /dev/null
+   ${WRFVAR_DIR}/var/scripts/da_run_wrfvar.ksh > $RUN_DIR/index.html 2>&1
 
    RC=$?
    if [[ $RC != 0 ]]; then

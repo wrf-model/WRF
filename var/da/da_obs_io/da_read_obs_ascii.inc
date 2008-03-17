@@ -22,6 +22,10 @@ subroutine da_read_obs_ascii (iv, filename)
    !           Writing original errors & thicknesses
    !           desired for outputting QC obs with NTMAX = 0
    !
+   !       Date: 02/28/2008 -        Y.-R. Guo
+   !
+   !           Satem thickness error should not be divided by gravity because
+   !           the unit from obsproc is already meter, not geopotential meter.
    !---------------------------------------------------------------------------
 
    implicit none
@@ -521,12 +525,14 @@ subroutine da_read_obs_ascii (iv, filename)
             do i = nlevels, 2, -1
                iv%satem(nlocal(satem))%thickness(i)%error = &
                sqrt(iv%satem(nlocal(satem))%thickness(i )%error ** 2 + &
-                  iv%satem(nlocal(satem))%thickness(i-1)%error ** 2) / gravity
+                  iv%satem(nlocal(satem))%thickness(i-1)%error ** 2) 
+!                  iv%satem(nlocal(satem))%thickness(i-1)%error ** 2) / gravity
             end do
 
             iv%satem(nlocal(satem))%thickness(1)%error = &
                            sqrt(iv%satem(nlocal(satem))%thickness(1)%error ** 2 + &
-                           platform%loc%pw%error ** 2) / gravity
+                           platform%loc%pw%error ** 2) 
+!                           platform%loc%pw%error ** 2) / gravity
 
             ! Geostationary ot Polar orbitting Satellite AMVs:
 

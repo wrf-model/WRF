@@ -76,8 +76,8 @@ export NV=7
 export CV=${CV:-"'U'", "'V'", "'W'", "'PH'", "'T'", "'MU'", "'QVAPOR'"}
 
 # Submit script:
-export SCRIPT=$WRFVAR_DIR/scripts/da_run_etkf.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+export SCRIPT=$WRFVAR_DIR/var/scripts/da_run_etkf.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 
 exit 0
 

@@ -149,9 +149,9 @@ export NL_USE_QSCATOBS=false      # (AFWA's original)
 
 #Continuous job
 
-export SCRIPTS_DIR=$WRFVAR_DIR/scripts
+export SCRIPTS_DIR=$WRFVAR_DIR/var/scripts
 export SCRIPT=${SCRIPTS_DIR}/da_run_suite.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 
 exit 0
 

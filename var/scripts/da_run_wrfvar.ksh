@@ -7,7 +7,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/wrfvar}
 
 export WORK_DIR=$RUN_DIR/working
@@ -161,7 +161,7 @@ ln -fs $WRFVAR_DIR/run/CAM_ABS_DATA .
 ln -fs $WRFVAR_DIR/run/CAM_AEROPT_DATA .
 ln -fs $WRFVAR_DIR/run/gmao_airs_bufr.tbl .
 ln -fs $BUILD_DIR/da_wrfvar.exe .
-export PATH=$WRFVAR_DIR/scripts:$PATH
+export PATH=$WRFVAR_DIR/var/scripts:$PATH
 
 ln -fs $DA_FIRST_GUESS fg01
 ln -fs $DA_FIRST_GUESS wrfinput_d01

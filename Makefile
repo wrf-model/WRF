@@ -65,7 +65,8 @@ wrf : framework_only
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
 
-all_wrfvar : da be
+# The "da" target is a subset of the "be" target, so all_wrfvar need only build "be"
+all_wrfvar : be
 
 da :
 	/bin/rm -f main/libwrflib.a
@@ -73,7 +74,8 @@ da :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" REGISTRY="Registry" framework
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" shared
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" dyn_em
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" physics
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" em_core
 	( cd var/da; make -r da )
 
 be : 
@@ -82,6 +84,8 @@ be :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" REGISTRY="Registry" framework
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" shared
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" physics
+	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" em_core
 	( cd var/da; $(MAKE) da )
 	( cd var/gen_be; $(MAKE) gen_be )
 

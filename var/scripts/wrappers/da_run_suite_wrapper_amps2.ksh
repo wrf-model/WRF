@@ -113,8 +113,8 @@ export NL_DAMPCOEF=0.01
 export NL_TIME_STEP_SOUND=4
 export NL_MP_ZERO_OUT=0
 
-export SCRIPT=$WRFVAR_DIR/scripts/da_run_suite.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+export SCRIPT=$WRFVAR_DIR/var/scripts/da_run_suite.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 
 exit 0
 

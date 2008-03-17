@@ -97,7 +97,7 @@ export RUN_CMD=${RUN_CMD:-$RUN_CMD_DEFAULT}
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/code/$RELEASE}    # Directory containing codes.
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}  # WRF-Var code directory.
-export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/da}     # WRF-Var executable location.
+export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da} # WRF-Var executable location.
 export WPS_DIR=${WPS_DIR:-$REL_DIR/wps}           # WPS directory.
 export WPB_DIR=${WPB_DIR:-$REL_DIR/wpb}           # Perturbed LBC dir.
 export WRF_DIR=${WRF_DIR:-$REL_DIR/wrf}           # WRF directory.
@@ -114,7 +114,7 @@ export OB_DIR=${OB_DIR:-$EXP_DIR/ob}              # Observation data dir.
 export RC_DIR=${RC_DIR:-$EXP_DIR/rc}              # Reconfiguration directory
 export FC_DIR=${FC_DIR:-$EXP_DIR/fc}              # Forecast directory
 export ETKF_DIR=${ETKF_DIR:-$FC_DIR/etkf}
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 export SCRIPT=${SCRIPT:-$SCRIPTS_DIR/da_run_wrfvar.ksh}
 export VTABLE_DIR=${VTABLE_DIR:-$WPS_DIR/ungrib/Variable_Tables}
 

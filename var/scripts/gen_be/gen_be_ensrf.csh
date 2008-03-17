@@ -31,7 +31,7 @@ setenv WRFVAR_DIR /smoke/dmbarker/code/latest/wrfvar
  if ( ! $?RELEASE )       setenv RELEASE    WRF_V2.1.2
  if ( ! $?REL_DIR )       setenv REL_DIR    ${HOME}/code/${RELEASE}
  if ( ! $?WRFVAR_DIR )    setenv WRFVAR_DIR ${REL_DIR}/wrfvar
- if ( ! $?BUILD_DIR )     setenv BUILD_DIR  ${WRFVAR_DIR}/build
+ if ( ! $?BUILD_DIR )     setenv BUILD_DIR  ${WRFVAR_DIR}/var/da
  if ( ! $?REGION )        setenv REGION     con200
  if ( ! $?EXPT )          setenv EXPT       test 
  if ( ! $?DAT_DIR )       setenv DAT_DIR    ${HOME}/data/${REGION}/${EXPT}

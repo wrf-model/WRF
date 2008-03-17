@@ -40,5 +40,5 @@ export NL_E_VERT=28
 export HOSTS=$HOME/hosts
 export HOSTS=`eval echo $HOSTS`
 
-$WRFVAR_DIR/scripts/da_run_job.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 

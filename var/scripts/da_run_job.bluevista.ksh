@@ -7,7 +7,7 @@
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
 
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 
 if test ! -d $EXP_DIR; then mkdir -p $EXP_DIR; fi
 

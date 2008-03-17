@@ -8,7 +8,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/restore_data_grib}
 export WORK_DIR=$RUN_DIR/working
  

@@ -116,8 +116,8 @@ export NL_INPUTOUT_END_H=9       # Output input format end.
 #WRF-Var:
 #export NL_CHECK_MAX_IV=.false.
 
-export SCRIPT=$WRFVAR_DIR/scripts/da_run_suite.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+export SCRIPT=$WRFVAR_DIR/var/scripts/da_run_suite.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 
 exit 0
 

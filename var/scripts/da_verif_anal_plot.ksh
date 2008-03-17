@@ -11,7 +11,7 @@ echo "<PRE>"
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 
 export DATA_DIR=${DATA_DIR:-${REG_DIR}}    
 export NUM_EXPT=${NUM_EXPT:-2}

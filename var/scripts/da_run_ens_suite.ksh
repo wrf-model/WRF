@@ -48,7 +48,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/ens}
 export WORK_DIR=$RUN_DIR/working
 
@@ -104,8 +104,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/restore_data_grib
       mkdir -p $RUN_DIR
 
-      $WRFVAR_DIR/scripts/da_trace.ksh da_run_restore_data_grib $RUN_DIR
-      ${WRFVAR_DIR}/scripts/da_restore_data_grib.ksh > $RUN_DIR/index.html 2>&1
+      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_restore_data_grib $RUN_DIR
+      ${WRFVAR_DIR}/var/scripts/da_restore_data_grib.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $RC != 0; then
          echo `date` "${ERR}Failed with error$RC$END"
@@ -117,8 +117,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/restore_data_rtobs
       mkdir -p $RUN_DIR
 
-      $WRFVAR_DIR/scripts/da_trace.ksh da_run_restore_data_rtobs $RUN_DIR
-      ${WRFVAR_DIR}/scripts/da_restore_data_rtobs.ksh > $RUN_DIR/index.html 2>&1
+      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_restore_data_rtobs $RUN_DIR
+      ${WRFVAR_DIR}/var/scripts/da_restore_data_rtobs.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $RC != 0; then
          echo `date` "${ERR}Failed with error$RC$END"
@@ -130,8 +130,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/wps
       mkdir -p $RUN_DIR
 
-      $WRFVAR_DIR/scripts/da_trace.ksh da_run_wps $RUN_DIR
-      ${WRFVAR_DIR}/scripts/da_run_wps.ksh > $RUN_DIR/index.html 2>&1
+      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_wps $RUN_DIR
+      ${WRFVAR_DIR}/var/scripts/da_run_wps.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $RC != 0; then
          echo `date` "${ERR}Failed with error $RC$END"
@@ -144,8 +144,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/real
       mkdir -p $RUN_DIR
 
-      $WRFVAR_DIR/scripts/da_trace.ksh da_run_real $RUN_DIR
-      ${WRFVAR_DIR}/scripts/da_run_real.ksh > $RUN_DIR/index.html 2>&1
+      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_real $RUN_DIR
+      ${WRFVAR_DIR}/var/scripts/da_run_real.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $RC != 0; then
          echo `date` "${ERR}Failed with error $RC$END"
@@ -157,8 +157,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/wpb
       mkdir -p $RUN_DIR
 
-#      $WRFVAR_DIR/scripts/da_trace.ksh da_run_wpb $RUN_DIR
-      $WRFVAR_DIR/scripts/da_run_wpb.ksh #> $RUN_DIR/index.html 2>&1
+#      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_wpb $RUN_DIR
+      $WRFVAR_DIR/var/scripts/da_run_wpb.ksh #> $RUN_DIR/index.html 2>&1
       RC=$?
       if test $? != 0; then
          echo `date` "${ERR}Failed with error $RC$END"
@@ -170,8 +170,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/obsproc
       mkdir -p $RUN_DIR
 
-      $WRFVAR_DIR/scripts/da_trace.ksh da_run_obsproc $RUN_DIR
-      ${WRFVAR_DIR}/scripts/da_run_obsproc.ksh > $RUN_DIR/index.html 2>&1
+      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_obsproc $RUN_DIR
+      ${WRFVAR_DIR}/var/scripts/da_run_obsproc.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $RC != 0; then
          echo `date` "${ERR}Failed with error $RC$END"
@@ -189,8 +189,8 @@ while test $DATE -le $FINAL_DATE; do
            export PHASE=true
            mkdir -p $RUN_DIR
 
-           $WRFVAR_DIR/scripts/da_trace.ksh da_run_update_bc $RUN_DIR
-           $WRFVAR_DIR/scripts/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1
+           $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_update_bc $RUN_DIR
+           $WRFVAR_DIR/var/scripts/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1
            RC=$?
            if test $? != 0; then
               echo `date` "${ERR}Failed with error $RC$END"
@@ -216,8 +216,8 @@ while test $DATE -le $FINAL_DATE; do
       fi
       export DA_ANALYSIS=$FC_DIR/$DATE/analysis
 
-      $WRFVAR_DIR/scripts/da_trace.ksh da_run_wrfvar $RUN_DIR
-      ${WRFVAR_DIR}/scripts/da_run_wrfvar.ksh > $RUN_DIR/index.html 2>&1
+      $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_wrfvar $RUN_DIR
+      ${WRFVAR_DIR}/var/scripts/da_run_wrfvar.ksh > $RUN_DIR/index.html 2>&1
 
       RC=$?
       if test $RC != 0; then
@@ -237,8 +237,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/run_etkf
       mkdir -p $RUN_DIR
 
-#      $WRFVAR_DIR/scripts/da_trace.ksh gen_be_etkf $RUN_DIR
-      $WRFVAR_DIR/scripts/da_run_etkf.ksh > $RUN_DIR/index.html 2>&1
+#      $WRFVAR_DIR/var/scripts/da_trace.ksh gen_be_etkf $RUN_DIR
+      $WRFVAR_DIR/var/scripts/da_run_etkf.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $? != 0; then
          echo `date` "${ERR}Failed with error $RC$END"
@@ -267,8 +267,8 @@ while test $DATE -le $FINAL_DATE; do
             export DA_ANALYSIS=$FC_DIR/$DATE/wrfinput_d${DOMAIN}.${CMEM}
             export BDYOUT=$FC_DIR/$DATE/wrfbdy_d${DOMAIN}.${CMEM}
 
-            $WRFVAR_DIR/scripts/da_trace.ksh da_run_update_bc $RUN_DIR
-            $WRFVAR_DIR/scripts/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1 &
+            $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_update_bc $RUN_DIR
+            $WRFVAR_DIR/var/scripts/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1 &
             RC=$?
             if test $? != 0; then
                echo `date` "${ERR}Failed with error $RC$END"
@@ -294,8 +294,8 @@ while test $DATE -le $FINAL_DATE; do
          export DA_ANALYSIS=$FC_DIR/$DATE/wrfinput_d${DOMAIN}
          export BDYOUT=$FC_DIR/$DATE/wrfbdy_d${DOMAIN}
 
-         $WRFVAR_DIR/scripts/da_trace.ksh da_run_update_bc $RUN_DIR
-         $WRFVAR_DIR/scripts/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1
+         $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_update_bc $RUN_DIR
+         $WRFVAR_DIR/var/scripts/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1
          RC=$?
          if test $? != 0; then
             echo `date` "${ERR}Failed with error $RC$END"
@@ -328,8 +328,8 @@ while test $DATE -le $FINAL_DATE; do
                export WRF_BDY=$FC_DIR/$DATE/wrfbdy_d${DOMAIN}.${CMEM}
             fi
 
-            $WRFVAR_DIR/scripts/da_trace.ksh da_run_wrf $RUN_DIR
-            $WRFVAR_DIR/scripts/da_run_wrf.ksh > $RUN_DIR/index.html 2>&1 &
+            $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_wrf $RUN_DIR
+            $WRFVAR_DIR/var/scripts/da_run_wrf.ksh > $RUN_DIR/index.html 2>&1 &
             RC=$?
             if test $RC != 0; then
                echo `date` "${ERR}Failed with error $RC$END"
@@ -356,8 +356,8 @@ while test $DATE -le $FINAL_DATE; do
             export WRF_BDY=$FC_DIR/$DATE/wrfbdy_d${DOMAIN}
          fi
 
-         $WRFVAR_DIR/scripts/da_trace.ksh da_run_wrf $RUN_DIR
-         $WRFVAR_DIR/scripts/da_run_wrf.ksh > $RUN_DIR/index.html 2>&1
+         $WRFVAR_DIR/var/scripts/da_trace.ksh da_run_wrf $RUN_DIR
+         $WRFVAR_DIR/var/scripts/da_run_wrf.ksh > $RUN_DIR/index.html 2>&1
          RC=$?
          if test $RC != 0; then
             echo `date` "${ERR}Failed with error $RC$END"
@@ -370,8 +370,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/run_ensmean
       mkdir -p $RUN_DIR
 
-#      $WRFVAR_DIR/scripts/da_trace.ksh gen_be_ensmean $RUN_DIR
-      $WRFVAR_DIR/scripts/da_run_ensmean.ksh > $RUN_DIR/index.html 2>&1
+#      $WRFVAR_DIR/var/scripts/da_trace.ksh gen_be_ensmean $RUN_DIR
+      $WRFVAR_DIR/var/scripts/da_run_ensmean.ksh > $RUN_DIR/index.html 2>&1
       RC=$?
       if test $? != 0; then
          echo `date` "${ERR}Failed with error $RC$END"

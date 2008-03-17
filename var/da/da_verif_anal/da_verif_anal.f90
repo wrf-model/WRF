@@ -814,7 +814,7 @@ program da_verif_anal !---------------------------------------------------------
 
 
   implicit none
-#include "netcdf.inc"
+  include 'netcdf.inc'
 
   integer, intent(in)                                      :: output_times
   integer, intent(in)                                      :: ncl_info_unit
@@ -1320,7 +1320,7 @@ program da_verif_anal !---------------------------------------------------------
                                first, grads_dat_unit )
 
   implicit none
-#include "netcdf.inc"
+  include 'netcdf.inc'
 
 
   character (len=512), intent(in)                          :: grads_file
@@ -2344,7 +2344,7 @@ program da_verif_anal !---------------------------------------------------------
 !------------------------------------------------------------------
   subroutine handle_err(rmarker,nf_status)
 
-#include "netcdf.inc"
+  include 'netcdf.inc'
       integer, intent(in) :: nf_status
       character*(*), intent(in)        :: rmarker
       if (nf_status .ne. nf_noerr) then
@@ -2362,7 +2362,7 @@ program da_verif_anal !---------------------------------------------------------
                                       variables2d, desc2d, number_of_2dvar,      &
                                       debug  )
       
-#include "netcdf.inc"
+  include 'netcdf.inc'
 
       character (len=512), intent(in)                             ::  infile
       integer, intent(inout)                                         ::  number_of_3dvar ,number_of_2dvar
@@ -2519,7 +2519,7 @@ program da_verif_anal !---------------------------------------------------------
 !------------------------------------------------------------------
   subroutine get_dimensions(infile,nx,ny,nz)
     
-#include "netcdf.inc"
+  include 'netcdf.inc'
      character (len=512), intent(in)                          :: infile
      integer                                                  :: ncid, dimid, nf_status
      integer, intent(inout)                                   :: nx, ny, nz

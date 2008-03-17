@@ -24,7 +24,7 @@ export DAT_DIR=/ptmp/huishao/data
 export RC_DIR=/rap/datc/huishao/data/caa1/rc
 export OB_DIR=/rap/datc/huishao/data/caa1/ob
 export BE_DIR=/rap/datc/huishao/data/caa1/be
-export SCRIPTS_DIR=$WRFVAR_DIR/scripts
+export SCRIPTS_DIR=$WRFVAR_DIR/var/scripts
 
 #Time info
 export INITIAL_DATE=2006120100

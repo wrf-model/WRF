@@ -119,8 +119,8 @@ export NL_FORCE_SFC_IN_VINTERP=6  # AFWA'S original is 6,     (recommend switch 
 
 #Continuous job 
 #export CONTJOB=n
-export SCRIPT=$WRFVAR_DIR/scripts/da_run_suite.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+export SCRIPT=$WRFVAR_DIR/var/scripts/da_run_suite.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 
 exit 0
 

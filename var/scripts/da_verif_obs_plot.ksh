@@ -9,7 +9,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 
 export NUM_EXPT=${NUM_EXPT:-2}
 export EXP_DIRS=${EXP_DIRS:-${REG_DIR}/NO_NOISE ${REG_DIR}/NOISE}

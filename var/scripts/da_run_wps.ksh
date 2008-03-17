@@ -6,7 +6,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/wps}
 export WORK_DIR=$RUN_DIR/working
 
@@ -22,7 +22,7 @@ cd $WORK_DIR
 
 echo "<HTML><HEAD><TITLE>$EXPT wps</TITLE></HEAD><BODY><H1>$EXPT wps</H1><PRE>"
 
-. ${WRFVAR_DIR}/scripts/da_get_date_range.ksh
+. ${WRFVAR_DIR}/var/scripts/da_get_date_range.ksh
 
 date
 
@@ -34,7 +34,7 @@ echo 'WPS_OUTPUT_DIR <A HREF="file:'$WPS_OUTPUT_DIR'"</a>'$WPS_OUTPUT_DIR'</a>'
 echo 'RUN_DIR        <A HREF="file:'$RUN_DIR'"</a>'$RUN_DIR'</a>'
 echo 'WORK_DIR       <A HREF="file:'$WORK_DIR'"</a>'$WORK_DIR'</a>'
 
-${WRFVAR_DIR}/scripts/da_create_wps_namelist.ksh
+${WRFVAR_DIR}/var/scripts/da_create_wps_namelist.ksh
 
 cp $WORK_DIR/namelist.wps $RUN_DIR
 

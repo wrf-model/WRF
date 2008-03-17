@@ -2,7 +2,7 @@
 #-auex
 #============================================================;
 # Purpose:  wrapper for running 
-#           $WRFVAR_DIR/scripts/da_verif_obs_plot.ksh
+#           $WRFVAR_DIR/var/scripts/da_verif_obs_plot.ksh
 #============================================================;
 # Author: Syed RH Rizvi          MMM/NCAR
 # Date  : 10/09/2007
@@ -35,7 +35,7 @@ export CLEAN=false
 export FILE_PATH_STRING="wrfvar/working/gts_omb_oma"
 
 #run script
-$WRFVAR_DIR/scripts/da_verif_obs_plot.ksh
+$WRFVAR_DIR/var/scripts/da_verif_obs_plot.ksh
 
 exit
 

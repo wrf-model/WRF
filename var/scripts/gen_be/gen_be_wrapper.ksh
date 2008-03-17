@@ -32,5 +32,5 @@ export EXPT=noda
 #export FCST_RANGE=12
 
 #[2] Run gen_be:
-${WRFVAR_DIR}/scripts/gen_be/gen_be.ksh
+${WRFVAR_DIR}/var/scripts/gen_be/gen_be.ksh
 

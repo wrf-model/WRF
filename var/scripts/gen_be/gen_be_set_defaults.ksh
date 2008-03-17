@@ -70,7 +70,7 @@ export CLEAN=false
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/trunk}            # Directory containing codes.
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}  # WRF-Var code directory.
-export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/da}     # WRF-Var code build directory.
+export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da} # WRF-Var code build directory.
 export DAT_DIR=${DAT_DIR:-${HOME}/data}           # Top-level data directory.
 export REG_DIR=${REG_DIR:-$DAT_DIR/$REGION}       # Region-specific data dir.
 export EXP_DIR=${EXP_DIR:-$REG_DIR/$EXPT}         # Experiment-specific data dir.

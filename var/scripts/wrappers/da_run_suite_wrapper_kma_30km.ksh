@@ -209,7 +209,7 @@ export NL_TRACE_UNIT=0
 #export NL_PRINT_DETAIL_OBS=true
 # [4] ############   Final Confirmation    ############################
 #-------------------------------------------------------------------------
-export SCRIPT=$WRFVAR_DIR/scripts/da_run_suite.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+export SCRIPT=$WRFVAR_DIR/var/scripts/da_run_suite.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 
 exit 0

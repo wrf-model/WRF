@@ -54,7 +54,7 @@ export WRFVAR_DIR=$REL_DIR/wrfvar
 #export NL_CHECK_MAX_IV=.false.
 
 export RUN_CMD=" "
-$WRFVAR_DIR/scripts/da_run_suite.ksh
+$WRFVAR_DIR/var/scripts/da_run_suite.ksh
 
 exit 0
 

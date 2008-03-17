@@ -2,7 +2,7 @@
 #-auex
 #============================================================;
 # Purpose:  wrapper for running 
-#           $WRFVAR_DIR/scripts/da_verif_anal_plot.ksh
+#           $WRFVAR_DIR/var/scripts/da_verif_anal_plot.ksh
 #============================================================;
 # Author: Syed RH Rizvi          MMM/NCAR
 # Date  : 10/14/2007
@@ -34,7 +34,7 @@ export PLOT_WKS=pdf
 export CLEAN=false
 
 #run script
-$WRFVAR_DIR/scripts/da_verif_anal_plot.ksh
+$WRFVAR_DIR/var/scripts/da_verif_anal_plot.ksh
 
 exit
 

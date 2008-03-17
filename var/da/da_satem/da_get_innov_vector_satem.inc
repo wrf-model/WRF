@@ -2,6 +2,11 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !
+   !  03/10/2008   Y.-R. Guo
+   !
+   !    To skip the iv % satem(n) % thickness(k) % inv calculation above the
+   !    model lid.
    !-----------------------------------------------------------------------
 
    implicit none
@@ -21,7 +26,7 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
 
    real    :: pre_ma(kts-1:kte+1)
    real    :: tv_ma(kts-1:kte+1)
-   integer :: layer1,layer2
+   integer :: layer1,layer2,mm
    real    :: tv1,tv2,pres2
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_satem")
@@ -59,6 +64,8 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
 
       do k = 1, num_levs
          iv % satem(n) % thickness(k) % inv = 0.0
+
+      if ( iv%satem(n)%p(k) >= iv%ptop) then
          call da_find_layer(layer1,tv1,iv%satem(n)%p(k),pre_ma,tv_ma,kts,kte)
          call da_thickness(pre_ma,tv_ma,kts,kte,tv1,tv2,layer1,layer2,   &
             iv%satem(n)%p(k),pres2,model_thickness(k))
@@ -66,16 +73,30 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
          if (ABS(ob % satem(n) % thickness(k) - missing_r) > 1.0 .and. &
               iv % satem(n) % thickness(k)%qc /= missing_data) then
             iv % satem(n) % thickness(k) % inv = ob % satem(n) % thickness(k) - model_thickness(k)
-            ! write(unit=stdout,fmt="(A, 2F10.3,F10.0,A,F5.0,A)") &
-            !    "observed, model_thickness, layer = ", &
-            !    ob%satem(n)%thickness(k), &
-            ! model_thickness(k), 0.01*pres2, " -", &
-            ! iv%satem(n)%p(k)*0.01,'hPa'
+!                  mm = mm + 1
+!                  write(101,'(A,3I6,2x,A, 2F10.3,F10.0,A,F5.0,2(A,F10.3),A,I8)') &
+!                    "num, n,k:", mm, n, k, &
+!                    "observed, model_thickness, layer = ", &
+!                     ob%satem(n)%thickness(k), &
+!                     model_thickness(k), 0.01*pres2, " -", &
+!                     iv%satem(n)%p(k)*0.01,'hPa  ob_error:',  &
+!                     iv%Satem(n)%thickness(k)%error, " inv=", &
+!                     iv%Satem(n)%thickness(k)%inv,   " qc =", &
+!                     iv%Satem(n)%thickness(k)%qc
          end if
 
          pres2 = iv%satem(n)%p(k)
          layer2 = layer1
          tv2 = tv1
+      else
+
+!   For other type of OBS, such as SOUND, the vertical range check was
+!   complted in DA_Interpolation/to_zk.inc, but SATEM never used to_zk.
+!   So it is need the check above the model lid (YRG, 02/21/2008):
+
+               iv%Satem(n)%thickness(k)%qc = above_model_lid
+      endif
+
       end do
    end do
 

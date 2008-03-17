@@ -7,7 +7,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/scripts/da_set_defaults.ksh
+. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/obsproc}
 export WORK_DIR=$RUN_DIR/working
 
@@ -48,13 +48,13 @@ fi
 
 export FCST_RANGE_SAVE=$FCST_RANGE
 export FCST_RANGE=-$MAX_OB_RANGE
-. $WRFVAR_DIR/scripts/da_get_date_range.ksh
+. $WRFVAR_DIR/var/scripts/da_get_date_range.ksh
 export TIME_WINDOW_MIN=${END_YEAR}-${END_MONTH}-${END_DAY}_${END_HOUR}:00:00
 export FCST_RANGE=$MAX_OB_RANGE
-. $WRFVAR_DIR/scripts/da_get_date_range.ksh
+. $WRFVAR_DIR/var/scripts/da_get_date_range.ksh
 export TIME_WINDOW_MAX=${END_YEAR}-${END_MONTH}-${END_DAY}_${END_HOUR}:00:00
 export FCST_RANGE=0
-. $WRFVAR_DIR/scripts/da_get_date_range.ksh
+. $WRFVAR_DIR/var/scripts/da_get_date_range.ksh
 export TIME_ANALYSIS=${START_YEAR}-${START_MONTH}-${START_DAY}_${START_HOUR}:00:00
 export FCST_RANGE=$FCST_RANGE_SAVE
 

@@ -58,6 +58,6 @@ export NL_DYN_OPT=2
 export EXP_DIR=$DAT_DIR/$REGION/$EXPT
 export RUN_DIR=$EXP_DIR
 rm -rf $RUN_DIR
-export SCRIPT=$WRFVAR_DIR/scripts/da_run_suite.ksh
-$WRFVAR_DIR/scripts/da_run_job.ksh
+export SCRIPT=$WRFVAR_DIR/var/scripts/da_run_suite.ksh
+$WRFVAR_DIR/var/scripts/da_run_job.ksh
 

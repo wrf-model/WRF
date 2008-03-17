@@ -38,10 +38,7 @@ SUBROUTINE calc_ts_locations( grid )
               ipsy, ipey, jpsy, jpey, kpsy, kpey
 
 
-   IF ( grid%ntsloc .LE. 0 ) THEN
-      grid%ntsloc_domain = 0
-      RETURN
-   END IF
+   IF ( grid%ntsloc .LE. 0 ) RETURN
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    IF ( grid%dfi_stage == DFI_FST ) THEN
@@ -248,6 +245,8 @@ SUBROUTINE calc_ts( grid )
        ! FALSE to output T and Q at 2-m and wind at 10-m diagnostic levels:
    LOGICAL, PARAMETER :: ts_model_level = .TRUE.  
 
+   IF ( grid%ntsloc_domain .LE. 0 ) RETURN
+
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    IF ( grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage /= DFI_FST ) RETURN
 #endif
@@ -382,6 +381,8 @@ SUBROUTINE write_ts( grid )
    ! Local variables
    INTEGER :: i, n, ix, iy, iunit
    REAL, ALLOCATABLE, DIMENSION(:,:) :: ts_buf
+
+   IF ( grid%ntsloc_domain .LE. 0 ) RETURN
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
    IF ( grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage /= DFI_FST ) RETURN

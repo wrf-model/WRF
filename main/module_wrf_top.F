@@ -141,6 +141,8 @@ CONTAINS
    CALL initial_config
 #endif
 
+   CALL set_derived_rconfigs
+
 #ifdef RUN_ON_GPU
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
@@ -445,5 +447,33 @@ CONTAINS
 #endif
 
    END SUBROUTINE wrf_dfi
+
+   SUBROUTINE set_derived_rconfigs
+!<DESCRIPTION>
+! Some derived rconfig entries need to be set based on the value of other,
+! non-derived entries before package-dependent memory allocation takes place.
+! This might be employed when, for example, we want to allocate arrays in
+! a package that depends on the setting of two or more namelist variables.
+! In this subroutine, we do just that.
+!</DESCRIPTION>
+
+      IMPLICIT NONE
+
+      INTEGER :: i
+
+
+#if (EM_CORE == 1)
+      IF ( model_config_rec % dfi_opt .EQ. DFI_NODFI ) THEN
+        DO i = 1, model_config_rec % max_dom
+           model_config_rec % mp_physics_dfi(i) = -1
+        ENDDO
+      ELSE
+        DO i = 1, model_config_rec % max_dom
+           model_config_rec % mp_physics_dfi(i) = model_config_rec % mp_physics(i)
+        ENDDO
+      END IF
+#endif
+
+   END SUBROUTINE set_derived_rconfigs
 
 END MODULE module_wrf_top

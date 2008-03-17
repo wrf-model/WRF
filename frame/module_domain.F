@@ -1031,7 +1031,8 @@ CONTAINS
       ALLOCATE( grid%jtsloc( grid%max_ts_locs ) )
       ALLOCATE( grid%id_tsloc( grid%max_ts_locs ) )
       ALLOCATE( grid%ts_filename( grid%max_ts_locs ) )
-      grid%ntsloc = 0
+      grid%ntsloc        = 0
+      grid%ntsloc_domain = 0
 
 #ifdef DM_PARALLEL
       CALL wrf_get_dm_communicator ( grid%communicator )

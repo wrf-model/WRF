@@ -94,13 +94,13 @@
       CALL Setup_Timekeeping (head_grid)
 
       ! set physics options to zero
-      CALL nl_set_mp_physics( 1, head_grid%mp_physics_dfi)
-      CALL nl_set_ra_lw_physics( 1, head_grid%ra_lw_physics_dfi)
-      CALL nl_set_ra_sw_physics( 1, head_grid%ra_sw_physics_dfi)
-      CALL nl_set_sf_surface_physics( 1, head_grid%sf_surface_physics_dfi)
-      CALL nl_set_sf_sfclay_physics( 1, head_grid%sf_sfclay_physics_dfi)
-      CALL nl_set_bl_pbl_physics( 1, head_grid%bl_pbl_physics_dfi)
-      CALL nl_set_cu_physics( 1, head_grid%cu_physics_dfi)
+      CALL nl_set_mp_physics( 1, 0 )
+      CALL nl_set_ra_lw_physics( 1, 0 )
+      CALL nl_set_ra_sw_physics( 1, 0 )
+      CALL nl_set_sf_surface_physics( 1, 0 )
+      CALL nl_set_sf_sfclay_physics( 1, 0 )
+      CALL nl_set_bl_pbl_physics( 1, 0 )
+      CALL nl_set_cu_physics( 1, 0 )
 
       ! set diffusion to zero for backward integration
       CALL nl_set_km_opt( 1, head_grid%km_opt_dfi)

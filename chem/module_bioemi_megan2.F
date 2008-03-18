@@ -386,7 +386,7 @@ CONTAINS
        ! get p_of_radm2cbmz(:), p_of_radm2(:), and radm2_per_megan(:)
        CALL get_megan2radm2_table
 
-    CASE (RACM, RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP )
+    CASE (RACM, RACMSORG,RACM_KPP,GOCARTRACM_KPP,RACMSORG_KPP, RACM_MIM_KPP )
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table

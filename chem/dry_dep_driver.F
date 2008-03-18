@@ -153,7 +153,9 @@ CONTAINS
 !
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES WITH WESELY METHOD')
 
-       IF( config_flags%chem_opt /= CHEM_TRACER  .and. config_flags%chem_opt /= GOCART_SIMPLE ) THEN
+       IF( config_flags%chem_opt /= CHEM_TRACER  .and.                   &
+           config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
+           config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                                 &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
@@ -163,10 +165,41 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
-       ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE) then
+       ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
+          call wesely_driver(id,ktau,dtstep,                                 &
+               config_flags,                                              &
+               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
+               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
+               numgas,                                                    &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
 !
 ! this does aerosol species (dust,seas, bc,oc) for gocart only
 !
+         call gocart_drydep_driver(dtstep,                                &
+               config_flags,numgas,                                       &
+               t_phy,moist,p8w,t8w,                                       &
+               p_phy,chem,rho_phy,dz8w,ddvel,xland,hfx,                   &
+               ivgtyp,tsk,vegfra,pbl,ust,znt,xlat,xlong,                  &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
+
+       ELSEIF ( config_flags%chem_opt == GOCARTRACM_KPP) then
+!
+! this does aerosol species (dust,seas, bc,oc) for gocart only
+!
+          call wesely_driver(id,ktau,dtstep,                                 &
+               config_flags,                                              &
+               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
+               ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
+               numgas,                                                    &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
          call gocart_drydep_driver(dtstep,                                &
                config_flags,numgas,                                       &
                t_phy,moist,p8w,t8w,                                       &
@@ -347,7 +380,7 @@ CONTAINS
    CASE DEFAULT
    END SELECT mixactivate_select
    settling_select: SELECT CASE(config_flags%chem_opt)
-   CASE (GOCART_SIMPLE)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP)
        CALL wrf_debug(15,'call gocart settling routine')
          call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &

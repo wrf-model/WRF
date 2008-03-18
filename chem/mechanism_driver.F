@@ -3,7 +3,7 @@
     subroutine mechanism_driver(id,ktau,dtstep,ktauc,dtstepc,          &
                config_flags,gmt,julday,t_phy,moist,p8w,t8w,            &
                p_phy,chem,rho_phy,dz8w,dx,g,z,z_at_w,xlat,xlong,vdrog3,&
-               vcsulf_old,ttday,tcosz,     &
+               vcsulf_old,vcso2_old,ttday,tcosz,     &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
@@ -89,7 +89,8 @@
       real ,      INTENT(INOUT   ) ::                                  &
                       vdrog3(ims:ime,kms:kme-0,jms:jme,ldrog)
       real ,      INTENT(INOUT   ) ::                                  &
-                      vcsulf_old(ims:ime,kms:kme-0,jms:jme)
+                      vcsulf_old(ims:ime,kms:kme,jms:jme),             &
+                      vcso2_old(ims:ime,kms:kme,jms:jme)
 
 
 
@@ -101,7 +102,7 @@
 ! select chemical mechanism
 !
    chem_select: SELECT CASE(config_flags%chem_opt)
-     CASE (GOCART_SIMPLE)
+     CASE (GOCART_SIMPLE,GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart chem from mechanism_driver')
        call gocart_chem_driver(ktauc,dtstepc,config_flags,gmt,julday,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,backg_no3,         &
@@ -109,6 +110,10 @@
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
+       vcsulf_old(its:ite,kts:kte,jts:jte) = &
+            max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
+       vcso2_old(its:ite,kts:kte,jts:jte) = &
+            max(chem(its:ite,kts:kte,jts:jte,p_so2),epsilc)
 
      CASE (RADM2)
        CALL wrf_debug(15,'calling radm2 from mechanism_driver')

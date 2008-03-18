@@ -11,9 +11,11 @@ CONTAINS
                                   its,ite, jts,jte, kts,kte
  
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+           OPTIONAL,                                                   &
          INTENT(IN ) ::                                             &
            gd_cloud,gd_cloud2
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
+           OPTIONAL,                                                   &
          INTENT(INOUT ) ::                                             &
            gd_cloud_a,gd_cloud_b,gd_cloud2_a,gd_cloud2_b
    REAL, DIMENSION( ims:ime, jms:jme ),                       &
@@ -28,9 +30,13 @@ CONTAINS
 
   stepave=1800./dt
   if(ktau.le.1)then
-    gd_cloud2_a=0.
-    raincv_a=0.
-    raincv_b=0.
+    raincv_a(:,:)=0.
+    raincv_b(:,:)=0.
+  endif
+  if(present(gd_cloud2_a))then
+  if(ktau.le.1)then
+    gd_cloud2_a(:,:,:)=0.
+  endif
   endif
 ! 
 ! no time average available in first half hour

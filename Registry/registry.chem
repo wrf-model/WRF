@@ -169,7 +169,7 @@ state    real  pm10           ikj     misc        1         -      h        "pm1
 state    real  uvrad          ij      misc        1         -      -        "uv_rad "               "uvb net-radiation"                   "W m^-2"
 state    real  tcosz          ij      misc        1         -      -        "TCOSZ "               "daily average cossza"                   "?"
 state    real  ttday          ij      misc        1         -      -        "TTDAY "               ""                   "?"
-state    real  dms_0          ij      misc        1         -      -        "DMS_0 "               "dms reference concentrations"                   "?"
+state    real  dms_0          ij      misc        1         -      i07rh    "DMS_0 "               "dms reference concentrations"                   "?"
 
 # photolysis rates
 state    real  ph_o31d         ikj     misc        1         -      r        "PHOTR2"                "O31D Photolysis Rate" "min{-1}"
@@ -681,6 +681,7 @@ state   real   bc1          ikjftb   chem       1         -   irhusdf=(bdy_inter
 state   real   bc2          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "BC2"       "Hydrophilic Black Carbon"     "#/kg-dryair"
 state   real   oc1          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "OC1"       "Hydrophobic Black Carbon"     "#/kg-dryair"
 state   real   oc2          ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "OC2"       "Hydrophilic Black Carbon"     "#/kg-dryair"
+state   real   p25        ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "P25"       "other gocart primary pm25"     "#/kg-dryair"
 state   real   dust_1       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_1"    "dust size bin 1: 0.5um effective radius"     "#/kg-dryair"
 state   real   dust_2       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_2"    "dust size bin 2: 1.4um effective radius"     "#/kg-dryair "
 state   real   dust_3       ikjftb   chem       1         -   irhusdf=(bdy_interp:dt)  "DUST_3"    "dust size bin 3: 2.4um effective radius"     "#/kg-dryair "
@@ -838,10 +839,12 @@ package   cbm4_kpp          chem_opt==110                  -          chem:no,no
 # KPP mechanism from MATCH-MPI Mainz used for global chemistry
 package   nmhc9_kpp     chem_opt==200                   -             chem:o3,h2o2,ch4,op1,hcho,ch3oh,co,hno3,no3,n2o5,hno4,no,no2,isopr,mvk,iso2,isooh,mvko2,mvkooh,ison,aca,acol,hcooh,mpan,naca,pan,pa,paa,mglo,c2h6,eTooh,ald,c3h8,pRooh,acet,acooh,eTo2,pRo2,aco2,c3h6,c3h6ooh,c2h4,c4h10,buooh,mek,mekooh,mEcoco,c3h6o2,c4h9o2,meko2,onit,pRono2,ch3o2,acetol,acetp,aceto2,ch3cooh,c4h9ooh,mEoh,ho,ho2,mEo2,mEo2no2
 
-# GOCART Package (no Ozone chemistry in this choice)
-package   gocart_simple     chem_opt==300                   -             chem:so2,sulf,dms,msa,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4
+# GOCART Packages (no Ozone chemistry in this choice)
+package   gocart_simple     chem_opt==300                   -             chem:so2,sulf,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4
 
-# emission package definitions
+package   gocartracm_kpp     chem_opt==301                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4
+
+#emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
 package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j
@@ -860,8 +863,9 @@ package   ftuv          phot_opt==3                  -             -
 package   wesely        drydep_opt==1                -             -
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis313       bio_emiss_opt==2             -             -
-package   megan2        bio_emiss_opt==3             -             -
-package   biomassb      biomass_burn_opt==1             -             -
+package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
+# the following arrays only needed for burn options
+package   biomassb      biomass_burn_opt==1             -          state:ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr
 # dust and sea salt packages
 package   dustgocart    dust_opt==1                  -              emis_dust:edust1,edust2,edust3,edust4,edust5 
 package   seasgocart    seas_opt==1                  -              emis_seas:eseas1,eseas2,eseas3,eseas4

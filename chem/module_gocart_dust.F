@@ -12,6 +12,7 @@ CONTAINS
          its,ite, jts,jte, kts,kte                                         )
   USE module_configure
   USE module_state_description
+  USE module_model_constants, ONLY: mwdry
   IMPLICIT NONE
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -56,10 +57,16 @@ CONTAINS
 !
   integer :: nmx,i,j,k,ndt,imx,jmx,lmx
   integer,dimension (1,1) :: ilwi
-  real*8, DIMENSION (1,1,1,3) :: erodin
+  real*8, DIMENSION (1,1,3,1) :: erodin
   real*8, DIMENSION (5) :: tc,bems
   real*8, dimension (1,1) :: w10m,gwet,airden,airmas
   real*8, dimension (1) :: dxy
+  real*8  conver,converi
+  real dttt
+! conver=1.e-9*mwdry
+! converi=1.e9/mwdry
+  conver=1.e-9
+  converi=1.e9
 !
 ! number of dust bins
 !
@@ -75,11 +82,11 @@ CONTAINS
 !
      if(xland(i,j).lt.1.5)then
      ilwi(1,1)=1
-     tc(1)=chem(i,kts,j,p_dust_1)*1.d-9
-     tc(2)=chem(i,kts,j,p_dust_2)*1.d-9
-     tc(3)=chem(i,kts,j,p_dust_3)*1.d-9
-     tc(4)=chem(i,kts,j,p_dust_4)*1.d-9
-     tc(5)=chem(i,kts,j,p_dust_5)*1.d-9
+     tc(1)=chem(i,kts,j,p_dust_1)*conver
+     tc(2)=chem(i,kts,j,p_dust_2)*conver
+     tc(3)=chem(i,kts,j,p_dust_3)*conver
+     tc(4)=chem(i,kts,j,p_dust_4)*conver
+     tc(5)=chem(i,kts,j,p_dust_5)*conver
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
      airmas(1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
 !
@@ -87,24 +94,44 @@ CONTAINS
 !
      if(dz8w(i,kts,j).lt.12.)w10m=sqrt(u_phy(i,kts,j)*u_phy(i,kts,j)+v_phy(i,kts,j)*v_phy(i,kts,j))
      erodin(1,1,1,1)=erod(i,j,1)/dx/dx
-     erodin(1,1,1,2)=erod(i,j,2)/dx/dx
-     erodin(1,1,1,3)=erod(i,j,3)/dx/dx
+     erodin(1,1,2,1)=erod(i,j,2)/dx/dx
+     erodin(1,1,3,1)=erod(i,j,3)/dx/dx
 !
 !  volumetric soil moisture over porosity
 !
      gwet(1,1)=smois(i,1,j)/porosity(isltyp(i,j))
-     gwet(1,1)=.1
+!    gwet(1,1)=.1
      ndt=ifix(dt)
      airden(1,1)=rho_phy(i,kts,j)
      dxy(1)=dx*dx
+!    erodin(1,1,1,1)=  0.149748762553862
+!    erodin(1,1,2,1)=  7.487438878070708E-002
+!    erodin(1,1,3,1)=  7.487438878070708E-002
+!    ilwi(1,1)=           1
+!    dxy(1)=   54585850453.7552
+!    w10m(1,1)=   10.6305338763678
+!    gwet(1,1)=  9.136307984590530E-002
+!    airden(1,1)=   1.16423276395132
+!    airmas(1,1)=   8114017750938.79
+!    tc (1) =  1.000000000000000D-030
+!    tc (2) =  1.000000000000000d-030
+!    tc (3) =  1.000000000000000d-030
+!    tc(4)  =  1.000000000000000d-030
+!    tc(5)  =  1.000000000000000d-030
+!    dttt=3600.
     call source_du( imx,jmx,lmx,nmx, dt, tc, &
                      erodin, ilwi, dxy, w10m, gwet, airden, airmas, &
                      bems,config_flags%start_month,g)
-     chem(i,kts,j,p_dust_1)=tc(1)*1.e+9
-     chem(i,kts,j,p_dust_2)=tc(2)*1.e+9
-     chem(i,kts,j,p_dust_3)=tc(3)*1.e+9
-     chem(i,kts,j,p_dust_4)=tc(4)*1.e+9
-     chem(i,kts,j,p_dust_5)=tc(5)*1.e+9
+!    write(0,*)tc(1)
+!    write(0,*)tc(2)
+!    write(0,*)tc(3)
+!    write(0,*)tc(4)
+!    write(0,*)tc(5)
+     chem(i,kts,j,p_dust_1)=tc(1)*converi
+     chem(i,kts,j,p_dust_2)=tc(2)*converi
+     chem(i,kts,j,p_dust_3)=tc(3)*converi
+     chem(i,kts,j,p_dust_4)=tc(4)*converi
+     chem(i,kts,j,p_dust_5)=tc(5)*converi
 ! for output diagnostics
      emis_dust(i,1,j,p_edust1)=bems(1)
      emis_dust(i,1,j,p_edust2)=bems(2)
@@ -215,8 +242,8 @@ end subroutine gocart_dust_driver
   DO n = 1, nmx
      ! Threshold velocity as a function of the dust density and the diameter
      ! from Bagnold (1941)
-     den(n) = den_dust(n)*1.0E-3
-     diam(n) = 2.0*reff_dust(n)*1.0E2
+     den(n) = den_dust(n)*1.0D-3
+     diam(n) = 2.0*reff_dust(n)*1.0D2
      g = g0*1.0E2
      ! Pointer to the 3 classes considered in the source data files
      m = ipoint(n)
@@ -225,8 +252,8 @@ end subroutine gocart_dust_driver
         ! No flux if wet soil 
         DO i = 1,imx
            DO j = 1,jmx
-              rhoa = airden(i,j,1)*1.0E-3
-              u_ts0 = 0.13*1.0E-2*SQRT(den(n)*g*diam(n)/rhoa)* &
+              rhoa = airden(i,j,1)*1.0D-3
+              u_ts0 = 0.13*1.0D-2*SQRT(den(n)*g*diam(n)/rhoa)* &
                    SQRT(1.0+0.006/den(n)/g/(diam(n))**2.5)/ &
                    SQRT(1.928*(1331.0*(diam(n))**1.56+0.38)**0.092-1.0) 
 !             write(0,*)u_ts0,den(n),diam(n),rhoa,g

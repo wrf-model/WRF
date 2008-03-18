@@ -2,18 +2,8 @@
 !
 
 MODULE module_ctrans_grell
-!USE module_data_radm2
 USE module_cu_gd
 USE module_dep_simple
-!USE module_ctrans_aqchem
-! USE module_configure
-! USE module_state_description
-! Mole weight
-!     REAL :: WTM(NUMCHEM_radm)
-!      DATA WTM   / 64.,96.,46.,30.,48.,63.,34.,44.,30.,48.,62.,         &
-!                   76.,46.,60.,17.,108.,62.,121.,44.,72.,114.,30.,      &
-!                   28.,28.,42.,56.,92.,106.,75.,147.,47.,79.,72.,       &
-!                   58.,72.,87.,119.,108.,68.,17.,33.  /
 
 CONTAINS
 
@@ -115,17 +105,7 @@ CONTAINS
    jtf=MIN(jte,jde-1)
 !                                                                      
 !                                                                      
-!    DO J = jts,jtf  
-!    DO I=ITS,ITF
-!        if(raincv(i,j).gt.0.)then
-!          ipr=i
-!          jpr=j
-!          go to 123
-!        endif
-!    ENDDO
-!    ENDDO
 123  continue
-!    print *,ipr,jpr
      DO 100 J = jts,jtf  
      if(j.eq.jpr)print *,'dt = ',dt
      DO I=ITS,ITF
@@ -169,7 +149,7 @@ CONTAINS
      ENDDO
 !    ENDDO
 !
-!---- CALL CUMULUS PARAMETERIZATION
+!---- CALL NON_RESOLVED CONVECTIVE TRANSPORT
 !
       CALL CUP_ct(ktop,tracer,j,AAEQ,T,Q,TER11,PRET,P,tracert,  &
            hstary,DT,PSUR,US,VS,tcrit,                         &

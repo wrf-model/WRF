@@ -65,10 +65,10 @@ contains
      if(xland(i,j).gt.1.5)then
      ilwi(1,1)=0
 
-    tc(1,1,1,1)=chem(i,kts,j,p_dms)
+    tc(1,1,1,1)=chem(i,kts,j,p_dms)*1.d-6
     dmso(1,1)=dms_0(i,j)
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
-     airmas(1,1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
+     airmas(1,1,1)=-.01*(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
      dxy(1)=dx*dx
      tskin(1,1)=tsk(i,j)
 !
@@ -78,7 +78,7 @@ contains
 
     call  srcdms(imx, jmx, lmx, nmx, ndt, tc, mwdry,&
                   tskin, ilwi, dmso, w10m, airmas, dxy, emsdms, bems)
-    chem(i,kts,j,p_dms)=tc(1,1,1,1)
+    chem(i,kts,j,p_dms)=tc(1,1,1,1)*1.e6
   endif
   enddo
   enddo

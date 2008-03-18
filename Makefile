@@ -348,6 +348,18 @@ bioemiss_conv_megan2 : wrf
 	        /bin/cp -f namelist.input namelist.input.backup ; fi ; \
 	        /bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
 
+#### DMS emissions converter
+
+dms_conv : wrf
+	@ echo '--------------------------------------'
+	( cd chem ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real convert_dms )
+	( cd test/em_real ; /bin/rm -f convert_dms.exe ; ln -s ../../chem/convert_dms.exe . )
+	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_real/namelist.input . )
+
+
 #### Dust errosion factor emissions converter
 
 dust_conv : wrf

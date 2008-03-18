@@ -93,6 +93,7 @@ CONTAINS
   do nv=numgas+1,num_chem
       ddvel(i,j,nv)=dvel(1,1)
   enddo
+      ddvel(i,j,p_sulf)=dvel(1,1)
   enddo
   enddo
 end subroutine gocart_drydep_driver

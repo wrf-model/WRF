@@ -1,4 +1,5 @@
 MODULE module_gocart_aerosols
+  USE module_model_constants, only: mwdry
     INTEGER, PARAMETER ::NBC1=1, NOC1=2, NBC2=3, NOC2=4
 
 CONTAINS
@@ -9,7 +10,6 @@ CONTAINS
          its,ite, jts,jte, kts,kte                                         )
   USE module_configure
   USE module_state_description
-  USE module_model_constants, only: mwdry
   IMPLICIT NONE
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -65,6 +65,75 @@ CONTAINS
        enddo
        enddo
 end subroutine gocart_aerosols_driver
+       subroutine sum_pm_gocart (                                      &
+            alt, chem,pm2_5_dry, pm2_5_dry_ec, pm10,                   &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+   USE module_configure
+   USE module_state_description
+   IMPLICIT NONE
+   REAL, PARAMETER :: mwso4 = 96.0576
+   INTEGER,      INTENT(IN   ) :: ids,ide, jds,jde, kds,kde,               &
+                                  ims,ime, jms,jme, kms,kme,               &
+                                  its,ite, jts,jte, kts,kte
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                          &
+         INTENT(INOUT ) :: pm2_5_dry, pm2_5_dry_ec, pm10     
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                          &
+         INTENT(IN ) :: alt
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+         INTENT(IN ) ::                                   chem
+   real d_2_5,s_2_5,d_10,sulfate
+   integer i,j,k,ii,jj,n
+    d_2_5=0.286
+    s_2_5=0.942
+    d_10=0.87
+
+!
+! sum up pm2_5 and pm10 output
+!
+      pm2_5_dry(its:ite, kts:kte, jts:jte)    = 0.
+      pm10(its:ite, kts:kte, jts:jte)    = 0.
+      pm2_5_dry_ec(its:ite, kts:kte, jts:jte) = 0.
+      do j=jts,jte                    
+         jj=min(jde-1,j)              
+         do k=kts,kte
+         do i=its,ite
+            ii=min(ide-1,i)
+            sulfate=chem(ii,k,jj,p_sulf)*mwso4/mwdry*1.e3
+            do n=p_p25,p_dust_1
+               pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,n)        
+            enddo
+            pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,p_dust_2)*d_2_5     &
+                                            +chem(ii,k,jj,p_seas_1)           &        
+                                            +chem(ii,k,jj,p_seas_2)*s_2_5     &        
+                                            +sulfate
+   
+            !Convert the units from mixing ratio to concentration (ug m^-3)
+            pm2_5_dry(i,k,j)    = pm2_5_dry(i,k,j) / alt(ii,k,jj)
+      enddo
+      enddo
+      enddo
+      do j=jts,jte
+         jj=min(jde-1,j)
+         do k=kts,kte
+            do i=its,ite
+               ii=min(ide-1,i)
+               sulfate=chem(ii,k,jj,p_sulf)*mwso4/mwdry*1.e3
+               do n=p_p25,p_dust_3
+                  pm10(i,k,j) = pm10(i,k,j)+chem(ii,k,jj,n)        
+               enddo
+               do n=p_seas_1,p_seas_3
+                  pm10(i,k,j) = pm10(i,k,j)+chem(ii,k,jj,n)        
+               enddo
+               pm10(i,k,j) = pm10(i,k,j) + sulfate                 &
+                            +chem(ii,k,jj,p_dust_4)*d_10
+               pm10(i,k,j) = pm10(i,k,j)/ alt(ii,k,jj)
+            enddo
+         enddo
+      enddo
+
+end subroutine sum_pm_gocart
 
 SUBROUTINE chem_1(imx,jmx,lmx, nmx, &
      ndt1, airm, tc, chmlos, bchmlos, pc2)
@@ -95,7 +164,7 @@ SUBROUTINE chem_1(imx,jmx,lmx, nmx, &
 
   ! executable statements
 
-  r1 = 4.63E-6
+  r1 = 4.63D-6
   
   DO n = 1,nmx
      IF (n == NBC1 .OR. n == NOC1) THEN

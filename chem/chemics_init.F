@@ -252,7 +252,8 @@ call wrf_message("**************************************************************
      end if
 
    kpp_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
+     CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
+        if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
@@ -269,9 +270,11 @@ call wrf_message("**************************************************************
                 enddo
              enddo
           enddo
+        endif
    END SELECT kpp_select
    aer_select: SELECT CASE(config_flags%chem_opt)
      CASE (RACMPM_KPP)
+        if(config_flags%chem_in_opt == 0 )then
         do l=numgas+1,num_chem
            do j=jts,jte
               do k=kts,kte
@@ -281,6 +284,33 @@ call wrf_message("**************************************************************
               enddo
            enddo
         enddo
+        endif
+     CASE (GOCARTRACM_KPP)
+       CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')
+        ch_dust(:,:)=0.8D-9
+        ch_ss(:,:)=1.
+        if(config_flags%chem_in_opt == 0 )then
+        if( .NOT. config_flags%restart )then
+           do j=jts,jte
+              do k=kts,kte
+                 do i=its,ite
+!                  do n=1,num_chem
+!                    chem(i,k,j,n)=1.e-12
+!                  enddo
+                   chem(i,k,j,p_dms)=0.1e-6
+                   chem(i,k,j,p_so2)=5.e-6
+                   chem(i,k,j,p_sulf)=3.e-6
+                   chem(i,k,j,p_msa)=0.1e-6
+                   chem(i,k,j,p_bc1)=0.1e-3
+                   chem(i,k,j,p_bc2)=0.1e-3
+                   chem(i,k,j,p_oc1)=0.1e-3
+                   chem(i,k,j,p_oc2)=0.1e-3
+                   chem(i,k,j,p_p25)=1.
+                 enddo
+              enddo
+           enddo
+         endif
+         endif
      CASE (GOCART_SIMPLE)
        if(config_flags%phot_opt .NE. 0 )then
          call wrf_error_fatal("GOCART simple initialization, phot_opt  MUST BE ZERO")
@@ -290,6 +320,7 @@ call wrf_message("**************************************************************
         ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
         if( .NOT. config_flags%restart )then
+        if(config_flags%chem_in_opt == 0 )then
            do j=jts,jte
               do k=kts,kte
                  do i=its,ite
@@ -304,9 +335,11 @@ call wrf_message("**************************************************************
                    chem(i,k,j,p_bc2)=0.1e-3
                    chem(i,k,j,p_oc1)=0.1e-3
                    chem(i,k,j,p_oc2)=0.1e-3
+                   chem(i,k,j,p_p25)=1.
                  enddo
               enddo
            enddo
+         endif
 !
 ! next is done to scale background oh and no3 in dependence on average zenith angle and day/night for no3
 ! this is done since background values are only available as average/month. It will not be necessary if other
@@ -345,6 +378,7 @@ call wrf_message("**************************************************************
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
 !...Convert aerosols to mixing ratio
+        if( .NOT. config_flags%restart ) then
         if(config_flags%chem_in_opt == 0 )then
         do l=numgas+1,num_chem
            do j=jts,jte
@@ -356,6 +390,7 @@ call wrf_message("**************************************************************
               enddo
            enddo
         enddo
+        endif
         endif
         chem=max(chem,epsilc)
 

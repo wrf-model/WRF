@@ -148,7 +148,9 @@
       rhchem = MAX(5.,RHCHEM)
       if (rhchem >= 95.) wetflag = .true.
 
-      if(chem(i,kts,j,p_nh3).gt.2.*chem(i,kts,j,p_so2))highnh3 = .true.
+      if(p_nh3.gt.1)then
+         if(chem(i,kts,j,p_nh3).gt.2.*chem(i,kts,j,p_so2))highnh3 = .true.
+      endif
 
 !--- deposition
       
@@ -234,6 +236,29 @@
                ddvel(i,j,p_xo2)         = 0
                ddvel(i,j,p_ald2)        = ddvel(i,j,p_ald)
                ddvel(i,j,p_iso)        = 0
+            end do
+         end do
+      end if
+
+! For gocartracm
+!     
+      if  (config_flags%chem_opt == GOCARTRACM_KPP          )   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_sulf)        = 0.
+               ddvel(i,j,p_dms)         = 0.
+               ddvel(i,j,p_msa)         = ddvel(i,j,p_hno3)
+            end do
+         end do
+      end if
+! For gocartsimple : need msa. On the other hand sulf comes from aerosol routine
+!     
+      if  (config_flags%chem_opt == GOCART_SIMPLE          )   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_msa)         = ddvel(i,j,p_sulf)
+               ddvel(i,j,p_sulf)        = 0.
+               ddvel(i,j,p_dms)         = 0.
             end do
          end do
       end if
@@ -324,6 +349,7 @@ END SUBROUTINE wesely_driver
 10      END DO
 
 !     SPECIAL TREATMENT FOR OZONE
+        if(p_o3.gt.1)then
         hstary(p_o3) = hstar(p_o3)*exp(dhr(p_o3)*(1./t-1./298.))
         rmx = 1./(hstary(p_o3)/3000.+100.*f0(p_o3))
         rsmx = rs*dratio(p_o3) + rmx
@@ -335,6 +361,7 @@ END SUBROUTINE wesely_driver
         rcx(p_o3) = 1./(1./rsmx+1./rlux+1./(rdc+rclx)+1./(rac(iland, &
           iseason)+rgsx))
         IF (rcx(p_o3)<1.) rcx(p_o3) = 1.
+        endif
 
 !     SPECIAL TREATMENT FOR SO2 (Wesely)
 !       HSTARY(P_SO2)=HSTAR(P_SO2)*EXP(DHR(P_SO2)*(1./T-1./298.))
@@ -413,6 +440,11 @@ END SUBROUTINE wesely_driver
         IF (rcx(p_so2)<1.) rcx(p_so2) = 1.
 !     NH3 according to Erisman et al. 1994
 !       R_STOM
+!
+!
+        if(p_nh3.gt.1)then
+!
+!
         rsmx = rs*dratio(p_nh3)
 !       GRASSLAND (PASTURE DURING GRAZING)
         IF (ixxxlu(iland)==3) THEN
@@ -523,7 +555,7 @@ END SUBROUTINE wesely_driver
           END IF
         END IF
         IF (rcx(p_nh3)<1.) rcx(p_nh3) = 1.
-
+        endif
       END SUBROUTINE rc
 ! **********************************************************************
 ! ************************ SUBROUTINE DEPPART **************************

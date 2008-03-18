@@ -62,6 +62,7 @@ MODULES =                           \
   module_input_chem_bioemiss.o      \
   module_input_dust_errosion.o      \
   module_input_gocart_background.o  \
+  module_input_gocart_dms.o         \
   module_fastj_data.o               \
   module_fastj_mie.o                \
   module_phot_fastj.o               \
@@ -184,6 +185,8 @@ module_input_dust_errosion.o:
 
 module_input_gocart_background.o:
 
+module_input_gocart_dms.o:
+
 module_dep_simple.o: 
 
 module_bioemi_simple.o: 
@@ -269,6 +272,10 @@ dry_dep_driver.o: module_data_radm2.o module_dep_simple.o module_aerosols_sorgam
 convert_gocart : convert_gocart.o
 	$(RANLIB) ../main/$(LIBWRFLIB)
 	$(FC) -o convert_gocart.exe $(LDFLAGS) convert_gocart.o ../main/$(LIBWRFLIB) $(LIB)
+
+convert_dms : convert_dms.o
+	$(RANLIB) ../main/$(LIBWRFLIB)
+	$(FC) -o convert_dms.exe $(LDFLAGS) convert_dms.o ../main/$(LIBWRFLIB) $(LIB)
 
 convert_dust : convert_dust.o
 	$(RANLIB) ../main/$(LIBWRFLIB)

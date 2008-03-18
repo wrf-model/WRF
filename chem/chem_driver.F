@@ -78,8 +78,8 @@
 ! necessary for aerosols (module dependent)
 !
 #if ( NMM_CORE == 1 )
-      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::vcsulf_old
-      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog) ::vdrog3
+      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::vcsulf_old,vcso2_old
+      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog) ::vdrog3,vcso2_old
       real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::n2o5_het
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::              &
                                                               p_phy,u_phy,v_phy                   &
@@ -93,7 +93,7 @@
       REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: scalar_trans
 #endif
 #if ( EM_CORE == 1 )
-      real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old
+      real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old,vcso2_old
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog) ::vdrog3
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::n2o5_het 
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::              &
@@ -281,9 +281,12 @@
      CASE (RACMSORG_KPP)
        CALL wrf_debug(15,'calling racmsorg_kpp aerosols driver from chem_driver')
        haveaer = .false.
-     CASE (RACMSORG_AQ)
-       CALL wrf_debug(15,'calling racmsorg_aq aerosols driver from chem_driver')
-       haveaer = .true.
+     CASE (GOCART_SIMPLE)
+       CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
+       haveaer = .false.
+     CASE (GOCARTRACM_KPP)
+       CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
+       haveaer = .false.
      CASE (CBMZ)
        CALL wrf_debug(15,'calling cbmz from chem_driver')
        haveaer = .false.
@@ -788,14 +791,14 @@ n2o5_het=0.
 #endif
               p_phy,chem,rho,dz8w,grid%dx,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &
-              vdrog3,vcsulf_old,grid%ttday,grid%tcosz,                                &
+              vdrog3,vcsulf_old,vcso2_old,grid%ttday,grid%tcosz,                      &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &
               grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,            &
               grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,grid%ph_hcochest,     &
               grid%ph_ch3o2h,grid%ph_ch3coo2h,grid%ph_ch3ono2,grid%ph_hcochob,        &
               grid%ph_n2o5,grid%ph_o2,grid%backg_oh,grid%backg_h2o2,grid%backg_no3,   &
-              grid%addt,grid%addx,grid%addc,grid%etep,        &
+              grid%addt,grid%addx,grid%addc,grid%etep,                                &
               grid%oltp,grid%olip,grid%cslp,grid%limp,grid%hc5p,grid%hc8p,grid%tolp,  &
               grid%xylp,grid%apip,grid%isop,grid%hc3p,grid%ethp,grid%o3p,grid%tco3,   &
               grid%mo2,grid%o1d,grid%olnn,grid%rpho,grid%xo2,                         &
@@ -824,6 +827,11 @@ CALL kpp_mechanism_driver (chem,                                                
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &
    its,ite,jts,jte,kts,kte)
+    if(config_flags%chem_opt == 301 ) then
+       chem(its:ite,kts:kte,jts:jte,p_sulf)=vcsulf_old(its:ite,kts:kte,jts:jte)
+       chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
+   endif
+
 
 
 !cms--

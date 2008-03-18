@@ -59,16 +59,11 @@ CONTAINS
 !
 ! following arrays for busget stuff only
 !
-       chldms_oh=0.
-       chldms_no3=0.
-       chldms_x=0.
-       chpso2=0.
-       chpmsa=0.
-       chpso4=0.
-       chlso2_oh=0.
-       chlso2_aq=0.
 !
 !
+       chem_select: SELECT CASE(config_flags%chem_opt)
+          CASE (GOCART_SIMPLE)
+           CALL wrf_debug(15,'calling gocart chemistry ')
        do j=jts,jte
        do i=its,ite
         zenith=0.
@@ -80,6 +75,14 @@ CONTAINS
         cossza(1,1)=cosszax(1,1)
 !
        do k=kts,kte-1
+       chldms_oh=0.
+       chldms_no3=0.
+       chldms_x=0.
+       chpso2=0.
+       chpmsa=0.
+       chpso4=0.
+       chlso2_oh=0.
+       chlso2_aq=0.
           cldf(1,1,1)=0.
           if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
           tc(1,1,1,1)=chem(i,k,j,p_dms)*1.d-6
@@ -119,6 +122,56 @@ CONTAINS
        enddo
        enddo
        enddo
+     CASE (GOCARTRACM_KPP)
+       CALL wrf_debug(15,'calling gocart chemistry in addition to racm_kpp')
+       do j=jts,jte
+       do i=its,ite
+        zenith=0.
+        zenita=0.
+        azimuth=0.
+        rlat=xlat(i,j)*3.1415926535590/180.
+        xlonn=xlong(i,j)
+        CALL szangle(1, 1, julday, gmtp, sza, cosszax,xlonn,rlat)
+        cossza(1,1)=cosszax(1,1)
+       do k=kts,kte-1
+       chldms_oh=0.
+       chldms_no3=0.
+       chldms_x=0.
+       chpso2=0.
+       chpmsa=0.
+       chpso4=0.
+       chlso2_oh=0.
+       chlso2_aq=0.
+          cldf(1,1,1)=0.
+          if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
+          tc(1,1,1,1)=chem(i,k,j,p_dms)*1.d-6
+          tc(1,1,1,2)=chem(i,k,j,p_so2)*1.d-6
+          tc(1,1,1,3)=chem(i,k,j,p_sulf)*1.d-6
+          tc(1,1,1,4)=chem(i,k,j,p_msa)*1.d-6
+          airmas(1,1,1)=-(p8w(i,k+1,j)-p8w(i,k,j))*dx*dx/g
+          airden(1,1,1)=rho_phy(i,k,j)
+          tmp(1,1,1)=t_phy(i,k,j)
+          oh(1,1,1)=chem(i,k,j,p_ho)*1.d-6
+          h2o2(1,1,1)=chem(i,k,j,p_h2o2)*1.d-6
+          xno3(1,1,1) = chem(i,k,j,p_no3)*1.d-6
+          IF (COSSZA(1,1) > 0.0)xno3(1,1,1) = 0. 
+!         if(i.eq.19.and.j.eq.19.and.k.eq.kts)then
+!          write(0,*)backg_oh(i,k,j),backg_no3(i,k,j),ttday(i,j),tcosz(i,j)
+!         endif
+
+          call chmdrv_su( imx,jmx,lmx,&
+               nmx, dt, tmp, airden, airmas, &
+               oh, xno3, h2o2, cldf, tc, tdry,cossza,  &
+               chldms_oh, chldms_no3, chldms_x, chpso2, chpmsa, chpso4, &
+               chlso2_oh, chlso2_aq)
+          chem(i,k,j,p_dms)=tc(1,1,1,1)*1.e6
+          chem(i,k,j,p_so2)=tc(1,1,1,2)*1.e6
+          chem(i,k,j,p_sulf)=tc(1,1,1,3)*1.e6
+          chem(i,k,j,p_msa)=tc(1,1,1,4)*1.e6
+       enddo
+       enddo
+       enddo
+   END SELECT chem_select
 end subroutine gocart_chem_driver
 
 !SUBROUTINE chmdrv_su( &
@@ -245,7 +298,7 @@ SUBROUTINE chem_dms( imx,jmx,lmx,&
   
   REAL*8, PARAMETER :: eff = 1.0
   ! -- Factor to convert AIRDEN from kgair/m3 to molecules/cm3: 
-  REAL*8, PARAMETER :: f = 1000.0 / airmw * 6.022E23 * 1.0E-6
+  REAL*8, PARAMETER :: f = 1000.0 / airmw * 6.022D23 * 1.0D-6
   INTEGER :: i, j, l
   REAL(KIND=8) :: tk, o2, dms0, rk1, rk2, rk3, dms_oh, dms, xoh, xn3, xx
   

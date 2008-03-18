@@ -2,7 +2,7 @@ MODULE GOCART_SEASALT
 
 CONTAINS
   subroutine gocart_seasalt_driver(ktau,dt,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,z_at_w,                  &
+         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,                  &
          xland,xlat,xlong,dx,g,emis_seas, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -35,7 +35,7 @@ CONTAINS
           INTENT(IN   ) ::                                                 &
                                                         alt,               &
                                                       t_phy,               &
-                                               dz8w,p8w,z_at_w,            &
+                                                     dz8w,p8w,             &
                                               u_phy,v_phy,rho_phy
 
   REAL, INTENT(IN   ) :: dt,dx,g
@@ -63,7 +63,7 @@ CONTAINS
 !
 ! donṫ do dust over water!!!
 !
-     if(xland(i,j).gt.1.5.and.z_at_w(i,kts,j).lt.1.e-3)then
+     if(xland(i,j).gt.1.5)then
      ilwi(1,1)=0
      tc(1)=chem(i,kts,j,p_seas_1)*conver
      tc(2)=chem(i,kts,j,p_seas_2)*conver
@@ -85,10 +85,10 @@ CONTAINS
      chem(i,kts,j,p_seas_3)=tc(3)*converi
      chem(i,kts,j,p_seas_4)=tc(4)*converi
 ! for output diagnostics
-     emis_seas(i,1,j,p_eseas1)=bems(1)
-     emis_seas(i,1,j,p_eseas2)=bems(2)
-     emis_seas(i,1,j,p_eseas3)=bems(3)
-     emis_seas(i,1,j,p_eseas4)=bems(4)
+     emis_seas(i,1,j,p_edust1)=bems(1)
+     emis_seas(i,1,j,p_edust2)=bems(2)
+     emis_seas(i,1,j,p_edust3)=bems(3)
+     emis_seas(i,1,j,p_edust4)=bems(4)
      endif
   enddo
   enddo

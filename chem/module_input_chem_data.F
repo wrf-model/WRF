@@ -331,7 +331,7 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   integer, intent(in) :: chem_opt, numgas
 
   select case(chem_opt)
-  case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP, &
+  case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,GOCARTRACM_KPP, &
         RACMPM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ, &
         CHEM_TRACER)
      call setup_gasprofile_map_radm_racm
@@ -1171,14 +1171,15 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_co ) = 0.08
    ELSE IF ( si_grid%chem_opt == GOCART_SIMPLE ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:num_chem) = 1.e-12
-      si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 5.e-6
-      si_grid%chem(ims:ime,kms:kme,jms:jme,p_sulf) = 5.e-6
-      si_grid%chem(ims:ime,kms:kme,jms:jme,p_dms) = 1.e-16
-      si_grid%chem(ims:ime,kms:kme,jms:jme,p_msa) = 1.e-16
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 1.e-6
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_sulf) = 3.e-6
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_dms) = 1.e-6
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_msa) = 1.e-6
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_bc1 ) = 1.e-2
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_bc2 ) = 1.e-2
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_oc1 ) = 1.e-2
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_oc2 ) = 1.e-2
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_p25 ) = 1.
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
                               si_grid%chem_opt, si_zsig, si_grid%chem)
@@ -1528,9 +1529,9 @@ SUBROUTINE input_chem_profile (si_grid)
     else if( nch == p_sulf ) then
        chem = 3.e-6
     else if( nch == p_dms ) then
-       chem = 1.e-16
+       chem = 1.e-6
     else if( nch == p_msa ) then
-       chem = 1.e-16
+       chem = 1.e-6
     else if( nch == p_bc1 ) then
        chem = 1.e-2
     else if( nch == p_bc2 ) then
@@ -1539,6 +1540,8 @@ SUBROUTINE input_chem_profile (si_grid)
        chem = 1.e-2
     else if( nch == p_oc2 ) then
        chem = 1.e-2
+    else if( nch == p_p25 ) then
+       chem = 1.
     else
        chem = 1.e-12
     end if
@@ -1823,6 +1826,7 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 1
 
         if (config_flags%chem_opt == RACM_KPP .or.          &
+            config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_MIM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP ) then
@@ -2137,6 +2141,7 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 1
 
         if (config_flags%chem_opt == RACM_KPP .or.          &
+            config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_MIM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP ) then
@@ -2448,7 +2453,7 @@ SUBROUTINE input_chem_profile (si_grid)
      select case (chem_opt)
      case (0)
         get_last_gas = 0
-     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ)
+     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ)
         get_last_gas = p_ho2
 
      case (CBMZ)

@@ -73,7 +73,7 @@ CONTAINS
          INTENT(INOUT ) ::                                   chem
    REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
          INTENT(INOUT ) ::                               e_bio
-   REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme,num_emis_ant),&
+   REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
          INTENT(IN ) ::                                                    &
          emis_ant
    REAL, DIMENSION( ims:ime, jms:jme),&
@@ -149,20 +149,24 @@ CONTAINS
 
    integer, intent(in   ) :: nmegan
    real, dimension (ims:ime, jms:jme , nmegan) ,                       &
+         OPTIONAL,                                                         &
         intent(inout) ::                                               &
         EFmegan
 
 
    real, dimension (ims:ime, jms:jme ) ,                               &
+         OPTIONAL,                                                         &
         intent(in) ::                                                  &
         msebio_isop,                                                   &
         pftp_bt, pftp_nt, pftp_sb, pftp_hb
 
    real, dimension (ims:ime, jms:jme, 12 ) ,                           &
+         OPTIONAL,                                                         &
         intent(in) ::                                                  &
         mlai, mtsa, mswdown
 
    real, dimension (ims:ime, jms:jme ) ,                               &
+         OPTIONAL,                                                         &
         intent(inout) ::                                               &
         mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,                &
         mebio_acet, mebio_mbo, mebio_no
@@ -202,7 +206,7 @@ CONTAINS
       CASE (SEASGOCART)
         CALL wrf_debug(15,'Gocart sea salt emissions')
          call gocart_seasalt_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
-         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,                  &
+         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,z_at_w,                  &
          xland,xlat,xlong,dx,g,emis_seas, &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -227,6 +231,7 @@ CONTAINS
       END SELECT dust_select
       dms_select:  SELECT CASE(config_flags%dmsemis_opt)
       CASE (DMSGOCART)
+        CALL wrf_debug(15,'Gocart dms emissions')
         call gocart_dmsemis(dtstep,config_flags,alt,t_phy,u_phy,  &
          v_phy,chem,rho_phy,dz8w,u10,v10,p8w,dms_0,tsk,                  &
          ivgtyp,isltyp,xland,dx,g, &
@@ -416,6 +421,54 @@ CONTAINS
              end do
           end do
        end do
+    CASE (GOCARTRACM_KPP)
+       IF(config_flags%emiss_inpt_opt /= 3 ) then
+       IF(config_flags%kemit .GT. kte-ksub) THEN
+         k=config_flags%kemit
+         write(message,'(" WARNING: EMISSIONS_DRIVER: KEMIT > KTE ",3i6)') kme,kte-ksub,k
+         CALL WRF_MESSAGE (message)
+       ENDIF
+       call wrf_debug(15,'emissions_driver calling add_anthropogenics')
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
+            emis_ant,ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       call wrf_debug(15,'emissions_driver calling add_biogenics')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
+       call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       end if !shc
+
+       end if ! emiss_inpt_opt /= 3
+
+!
+! simple fix for now
+!
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
+                     +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
+                     +(emis_ant(i,k,j,p_e_pm25j)+emis_ant(i,k,j,p_e_pm25i) &
+                     + emis_ant(i,k,j,p_e_no3j)+emis_ant(i,k,j,p_e_no3i))  &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
+                     +(emis_ant(i,k,j,p_e_so4i)+emis_ant(i,k,j,p_e_so4j))*alt(i,k,j)*dtstep/dz8w(i,k,j)*mwdry/mw_so4_aer*1.e-3
+             end do
+          end do
+       end do
     CASE (GOCART_SIMPLE)
 !
 ! simple fix for now
@@ -430,8 +483,13 @@ CONTAINS
                      +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
                      +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
+                     +(emis_ant(i,k,j,p_e_pm25j)+emis_ant(i,k,j,p_e_pm25i) &
+                     +emis_ant(i,k,j,p_e_no3j)+emis_ant(i,k,j,p_e_no3i))   &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
                 chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
-                     +(emis_ant(i,k,j,p_e_so4i)+emis_ant(i,k,j,p_e_so4j))*alt(i,k,j)*dtstep/dz8w(i,k,j)*mwdry/mw_so4_aer
+                     +(emis_ant(i,k,j,p_e_so4i)+emis_ant(i,k,j,p_e_so4j))  &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)*mwdry/mw_so4_aer*1.e-3
              end do
           end do
        end do

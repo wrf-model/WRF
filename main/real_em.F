@@ -448,6 +448,11 @@ real::t1,t2,t3,t4
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_dust_emiss ( grid , config_flags)
               END IF
+              IF(grid%dmsemis_opt >= 1 ) THEN !shc
+                 message = 'READING DMS REFERENCE FIELDS'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_dms_emiss ( grid , config_flags)
+              END IF
 
               IF(grid%chem_opt == 300 ) THEN !shc
                  message = 'READING GOCART BACKGROUND DATA'
@@ -482,7 +487,11 @@ real::t1,t2,t3,t4
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_dust_emiss ( grid , config_flags)
               END IF
-
+              IF(grid%dmsemis_opt >= 1 ) THEN !shc
+                 message = 'READING DMS REFERENCE FIELDS'
+                 CALL  wrf_message ( message )
+                 CALL med_read_wrf_chem_dms_emiss ( grid , config_flags)
+              END IF
               IF(grid%chem_opt == 300 ) THEN !shc
                  message = 'READING GOCART BACKGROUND DATA'
                  CALL  wrf_message ( message )

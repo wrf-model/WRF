@@ -2,7 +2,7 @@
 !    into WRF input data.
 !
 
-PROGRAM convert_dust
+PROGRAM convert_dms
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    USE module_machine
@@ -14,7 +14,7 @@ PROGRAM convert_dust
    USE module_utility
    USE module_timing
    USE module_wrf_error
-   USE module_input_dust_errosion
+   USE module_input_gocart_dms
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -87,7 +87,6 @@ PROGRAM convert_dust
 
    CHARACTER(LEN= 8) :: chlanduse
 
-
    CHARACTER (LEN=80) :: inpname , eminame, dum_str, wrfinname
 
 ! these are needed on some compilers, eg compaq/alpha, to
@@ -103,7 +102,7 @@ PROGRAM convert_dust
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "WRF V3 DUST EMISSIONS PREPROCESSOR"
+   program_name = "WRF V3 DMS EMISSIONS PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -152,14 +151,14 @@ PROGRAM convert_dust
 
    CALL domain_clock_set( head_grid, &
                           time_step_seconds=model_config_rec%interval_seconds )
-   CALL       wrf_debug ( 100 , 'convert_dust: calling model_to_grid_config_rec ' )
+   CALL       wrf_debug ( 100 , 'convert_dms: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-   CALL       wrf_debug ( 100 , 'convert_dust: calling set_scalar_indices_from_config ' )
+   CALL       wrf_debug ( 100 , 'convert_dms: calling set_scalar_indices_from_config ' )
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
    !  Initialize the I/O for WRF.
 
-   CALL       wrf_debug ( 100 , 'convert_dust: calling init_wrfio' )
+   CALL       wrf_debug ( 100 , 'convert_dms: calling init_wrfio' )
    CALL init_wrfio
 
 #ifdef DM_PARALLEL
@@ -224,34 +223,18 @@ PROGRAM convert_dust
       CALL wrf_get_dom_ti_integer ( fid , 'JULYR' , julyr , 1 , icnt , ierr ) 
       CALL wrf_get_dom_ti_integer ( fid , 'JULDAY' , julday , 1 , icnt , ierr ) 
       CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' , iswater , 1 , icnt , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISICE  ' , isice   , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' , isurban , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' , isoilwater , 1 , idum1 , ierr )
+      CALL wrf_get_dom_ti_integer ( fid , 'ISICE' , isice , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' , isurban , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' , isoilwater , 1 , icnt , ierr )
       CALL wrf_get_dom_ti_char    ( fid , 'MMINLU'  , chlanduse , ierr )
 
       CALL close_dataset      ( fid , config_flags , "DATASET=INPUT" )
 
-      print *, map_proj, dx, dy, cen_lat, cen_lon,truelat1,truelat2,moad_cen_lat,iswater
+      print *, map_proj, dx, dy, cen_lat, cen_lon,truelat1,truelat2,moad_cen_lat,iswater,isoilwater
 
    !  An available simple timer from the timing module.
 
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
-
-!  CALL Setup_Timekeeping ( grid )
-   CALL domain_clock_set( grid, &
-                          time_step_seconds=model_config_rec%interval_seconds )
-   CALL domain_clock_get ( grid, current_timestr=message )
-   write(message,FMT='(A,A)') ' current_time ',Trim(message)
-   CALL  wrf_debug ( 100, message )
-
-!  CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
-!  print *,'start date=',model_config_rec%start_year(grid%id),model_config_rec%start_month(grid%id),&
-!  model_config_rec%start_day(grid%id),model_config_rec%start_hour(grid%id)
-!  print *,'end   date=',model_config_rec%end_year(grid%id),model_config_rec%end_month(grid%id),&
-!  model_config_rec%end_day(grid%id),model_config_rec%end_hour(grid%id)
-!  print *,'interval  =',model_config_rec%interval_seconds
-!  print *,'init_typ  =',model_config_rec%real_data_init_type
 
    !  Figure out the starting and ending dates in a character format.
 
@@ -290,27 +273,27 @@ PROGRAM convert_dust
 #endif
 
    ihour = start_hour
-   write(message,FMT='(A)') ' READ DUST ERROSION FACTOR '
+   write(message,FMT='(A)') ' READ DMS ERROSION FACTOR '
    CALL  wrf_debug ( 100, message )
-   CALL input_ext_chem_erod_file ( grid )
-   write(message,FMT='(A)') ' PAST DUST ERROSION FACTOR '
+   CALL input_ext_chem_gocart_dms ( grid )
+   write(message,FMT='(A)') ' PAST DMS ERROSION FACTOR '
    CALL  wrf_debug ( 100, message )
 
    grid%input_from_file = .false.
 
-   write(message,FMT='(A)') ' OPEN DUST ERROSION WRF file'
+   write(message,FMT='(A)') ' OPEN DMS ERROSION WRF file'
    CALL  wrf_debug ( 100, message )
 
-   CALL construct_filename1( inpname , 'wrfchemi_dust' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input8 , "DATASET=AUXINPUT8", ierr )
-   write(message,FMT='(A,A)') ' DUST ERROSION FACTOR file name: ',TRIM(inpname)
+   CALL construct_filename1( inpname , 'wrfchemi_dms' , grid%id , 2 )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input7 , "DATASET=AUXINPUT7", ierr )
+   write(message,FMT='(A,A)') ' DMS ERROSION FACTOR file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    
    IF ( ierr .NE. 0 ) THEN
      CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
    ENDIF
 
-   write(message,FMT='(A)') ' PAST OPEN DUST EMISSIONS WRF file '
+   write(message,FMT='(A)') ' PAST OPEN DMS EMISSIONS WRF file '
    CALL  wrf_debug ( 100, message )
 
    CALL calc_current_date ( grid%id , 0. )
@@ -325,8 +308,16 @@ PROGRAM convert_dust
          moad_cen_lat = cen_lat
       endif
 
-   write(message,FMT='(A)') ' DUST EMISSIONS: fix global attributes '
+   write(message,FMT='(A)') ' DMS EMISSIONS: fix global attributes '
    CALL  wrf_debug ( 100, message )
+
+   ! write global atributes into wrf emissions file
+
+    idum1 = 1
+!    call wrf_put_dom_ti_char    ( id1 , 'START_DATE' ,TRIM(start_date_char) , ierr )
+!    CALL wrf_put_dom_ti_integer ( id1 , 'MAP_PROJ'        , map_proj    , 1 , ierr )
+
+
       CALL nl_set_iswater(grid%id, iswater)
       CALL nl_set_isoilwater(grid%id, isoilwater)
       CALL nl_set_map_proj(grid%id, map_proj)
@@ -345,8 +336,6 @@ PROGRAM convert_dust
       CALL nl_set_mminlu(grid%id, mminlu)
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-
-   ! write global atributes into wrf emissions file
 !     config_flags%map_proj = map_proj
 !     config_flags%isice = isice
 !     config_flags%isurban = isurban
@@ -358,11 +347,9 @@ PROGRAM convert_dust
 !     config_flags%truelat1 = truelat1
 !     config_flags%truelat2 = truelat2
 !     config_flags%stand_lon = stand_lon
-!     config_flags%gmt = gmt
 !     config_flags%julyr = julyr
 !     config_flags%julday = julday
 
-!   idum1 = 1
 !     CALL wrf_put_dom_ti_integer ( id1 , 'MAP_PROJ' ,      map_proj , 1  , ierr )
 !     CALL wrf_put_dom_ti_real    ( id1 , 'DX'  , config_flags%dx  , 1  , ierr )
 !     CALL wrf_put_dom_ti_real    ( id1 , 'DY'  , config_flags%dy  , 1  , ierr )
@@ -375,17 +362,25 @@ PROGRAM convert_dust
 !     CALL wrf_put_dom_ti_real    ( id1 , 'GMT' , gmt , 1  , ierr ) 
 !     CALL wrf_put_dom_ti_integer ( id1 , 'JULYR' , julyr , 1  , ierr ) 
 !     CALL wrf_put_dom_ti_integer ( id1 , 'JULDAY' , julday , 1  , ierr ) 
-!     CALL wrf_put_dom_ti_integer ( id1 , 'ISWATER' , config_flags%iswater , 1  , ierr )
+!     
+!     print *, 'before: ',iswater,config_flags%iswater,ierr
+!     CALL wrf_put_dom_ti_integer ( id1 , 'ISWATER' ,              iswater , 1  , ierr )
+!     print *, 'after: ',iswater,config_flags%iswater,ierr
+
 !     CALL wrf_put_dom_ti_integer ( id1 , 'ISICE  ' , config_flags%isice       , 1 , ierr )
 !     CALL wrf_put_dom_ti_integer ( id1 , 'ISURBAN' , config_flags%isurban     , 1 , ierr )
 !     CALL wrf_put_dom_ti_integer ( id1 , 'ISOILWATER' , config_flags%isoilwater  , 1 , ierr )
 !     CALL wrf_put_dom_ti_char    ( id1 , 'MMINLU'  , TRIM(chlanduse)   , ierr )
 
-   CALL output_aux_model_input8 ( id1 , grid , config_flags , ierr )
+!     print *, ' '
+!     print *, map_proj, dx, dy, cen_lat, cen_lon,truelat1,truelat2,moad_cen_lat,iswater,isoilwater
 
-   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT8" )
 
-   write(message,FMT='(A)') ' DUST EMISSIONS: end of program '
+   CALL output_aux_model_input7 ( id1 , grid , config_flags , ierr )
+
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT7" )
+
+   write(message,FMT='(A)') ' DMS EMISSIONS: end of program '
    CALL  wrf_message ( message )
 
 
@@ -398,4 +393,4 @@ PROGRAM convert_dust
 
    STOP
 
-END PROGRAM convert_dust
+END PROGRAM convert_dms

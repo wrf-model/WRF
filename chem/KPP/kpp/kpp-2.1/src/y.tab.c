@@ -1,18 +1,24 @@
+#include <sys/cdefs.h>
 #ifndef lint
-/*static char yysccsid[] = "from: @(#)yaccpar	1.9 (Berkeley) 02/21/93";*/
-static char yyrcsid[] = "$Id: skeleton.c,v 1.4 1993/12/21 18:45:32 jtc Exp $";
+#if 0
+static char yysccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
+#else
+__IDSTRING(yyrcsid, "$NetBSD: skeleton.c,v 1.14 1997/10/20 03:41:16 lukem Exp $");
 #endif
+#endif
+#include <stdlib.h>
 #define YYBYACC 1
 #define YYMAJOR 1
 #define YYMINOR 9
-#define yyclearin (yychar=(-1))
+#define YYLEX yylex()
+#define YYEMPTY -1
+#define yyclearin (yychar=(YYEMPTY))
 #define yyerrok (yyerrflag=0)
 #define YYRECOVERING (yyerrflag!=0)
 #define YYPREFIX "yy"
 #line 35 "scan.y"
   #include <stdio.h>
   #include <stdlib.h>
-  #include <malloc.h>
   #include <string.h>
   #include <unistd.h>
   #include "scan.h"
@@ -43,7 +49,7 @@ static char yyrcsid[] = "$Id: skeleton.c,v 1.4 1993/12/21 18:45:32 jtc Exp $";
 typedef union{
   char str[80];
 } YYSTYPE;
-#line 47 "y.tab.c"
+#line 54 "y.tab.c"
 #define JACOBIAN 257
 #define DOUBLE 258
 #define FUNCTION 259
@@ -1003,10 +1009,11 @@ char *yyrule[] = {
 #ifdef YYMAXDEPTH
 #define YYSTACKSIZE YYMAXDEPTH
 #else
-#define YYSTACKSIZE 500
-#define YYMAXDEPTH 500
+#define YYSTACKSIZE 10000
+#define YYMAXDEPTH 10000
 #endif
 #endif
+#define YYINITSTACKSIZE 200
 int yydebug;
 int yynerrs;
 int yyerrflag;
@@ -1015,9 +1022,10 @@ short *yyssp;
 YYSTYPE *yyvsp;
 YYSTYPE yyval;
 YYSTYPE yylval;
-short yyss[YYSTACKSIZE];
-YYSTYPE yyvs[YYSTACKSIZE];
-#define yystacksize YYSTACKSIZE
+short *yyss;
+short *yysslim;
+YYSTYPE *yyvs;
+int yystacksize;
 #line 387 "scan.y"
 
 void yyerror( char * str )
@@ -1124,24 +1132,48 @@ FILE *f;
   return nError;
 }          
 
-#line 1128 "y.tab.c"
+#line 1137 "y.tab.c"
+/* allocate initial stack or double stack size, up to YYMAXDEPTH */
+int yyparse __P((void));
+static int yygrowstack __P((void));
+static int yygrowstack()
+{
+    int newsize, i;
+    short *newss;
+    YYSTYPE *newvs;
+
+    if ((newsize = yystacksize) == 0)
+        newsize = YYINITSTACKSIZE;
+    else if (newsize >= YYMAXDEPTH)
+        return -1;
+    else if ((newsize *= 2) > YYMAXDEPTH)
+        newsize = YYMAXDEPTH;
+    i = yyssp - yyss;
+    if ((newss = (short *)realloc(yyss, newsize * sizeof *newss)) == NULL)
+        return -1;
+    yyss = newss;
+    yyssp = newss + i;
+    if ((newvs = (YYSTYPE *)realloc(yyvs, newsize * sizeof *newvs)) == NULL)
+        return -1;
+    yyvs = newvs;
+    yyvsp = newvs + i;
+    yystacksize = newsize;
+    yysslim = yyss + newsize - 1;
+    return 0;
+}
+
 #define YYABORT goto yyabort
 #define YYREJECT goto yyabort
 #define YYACCEPT goto yyaccept
 #define YYERROR goto yyerrlab
 int
-#if defined(__STDC__)
-yyparse(void)
-#else
 yyparse()
-#endif
 {
-    register int yym, yyn, yystate;
+    int yym, yyn, yystate;
 #if YYDEBUG
-    register char *yys;
-    extern char *getenv();
+    char *yys;
 
-    if (yys = getenv("YYDEBUG"))
+    if ((yys = getenv("YYDEBUG")) != NULL)
     {
         yyn = *yys;
         if (yyn >= '0' && yyn <= '9')
@@ -1153,6 +1185,7 @@ yyparse()
     yyerrflag = 0;
     yychar = (-1);
 
+    if (yyss == NULL && yygrowstack()) goto yyoverflow;
     yyssp = yyss;
     yyvsp = yyvs;
     *yyssp = yystate = 0;
@@ -1181,7 +1214,7 @@ yyloop:
             printf("%sdebug: state %d, shifting to state %d\n",
                     YYPREFIX, yystate, yytable[yyn]);
 #endif
-        if (yyssp >= yyss + yystacksize - 1)
+        if (yyssp >= yysslim && yygrowstack())
         {
             goto yyoverflow;
         }
@@ -1198,10 +1231,10 @@ yyloop:
         goto yyreduce;
     }
     if (yyerrflag) goto yyinrecovery;
+    goto yynewerror;
+yynewerror:
     yyerror("syntax error");
-#ifdef lint
     goto yyerrlab;
-#endif
 yyerrlab:
     ++yynerrs;
 yyinrecovery:
@@ -1218,7 +1251,7 @@ yyinrecovery:
                     printf("%sdebug: state %d, error recovery shifting\
  to state %d\n", YYPREFIX, *yyssp, yytable[yyn]);
 #endif
-                if (yyssp >= yyss + yystacksize - 1)
+                if (yyssp >= yysslim && yygrowstack())
                 {
                     goto yyoverflow;
                 }
@@ -1667,7 +1700,7 @@ case 110:
 		    strcpy( InlineBuf, yyvsp[0].str);
 		  }
 break;
-#line 1671 "y.tab.c"
+#line 1705 "y.tab.c"
     }
     yyssp -= yym;
     yystate = *yyssp;
@@ -1710,7 +1743,7 @@ break;
         printf("%sdebug: after reduction, shifting from state %d \
 to state %d\n", YYPREFIX, *yyssp, yystate);
 #endif
-    if (yyssp >= yyss + yystacksize - 1)
+    if (yyssp >= yysslim && yygrowstack())
     {
         goto yyoverflow;
     }

@@ -47,7 +47,8 @@
 #define MAX_ATOMS	 10
 #define MAX_ATNAME	 10
 #define MAX_ATNR	250 
-#define MAX_PATH        120
+/* made bigger -- JM */
+#define MAX_PATH        1024
 #define MAX_FILES	 20
 #define MAX_EQNLEN      100
 

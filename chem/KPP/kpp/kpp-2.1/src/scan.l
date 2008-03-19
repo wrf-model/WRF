@@ -61,7 +61,7 @@
   int crtTokType;
   int nextTokType;
   int crtLine;
-  char crtFile[100];
+  char crtFile[MAX_PATH];
   char crt_rate[100];
 
   int oldnErr = 0;
@@ -353,9 +353,8 @@ YY_BUFFER_STATE newb;
   crt_filename = malloc( 1 + strlen( name ) );
   strcpy( crt_filename, name ); 
 
- 
   f = fopen( name, "r" );
-  if( f == 0 )
+  if( f == NULL )
     FatalError(3,"%s: Can't read file", name );
 
   newb = yy_create_buffer(f, YY_BUF_SIZE);

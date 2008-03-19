@@ -39,7 +39,7 @@ include ../Makefile.defs
 
 #!cmsCFLAGS=`cat ../cflags` 
 #CFLAGS= -Aa
-CFLAGS= 
+CFLAGS=  
 CLFLAGS = -lm
 
 all: kpp

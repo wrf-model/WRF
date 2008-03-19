@@ -249,8 +249,8 @@ char line[ MAX_LINE ];
 void IncludeCode( char* fmt, ... )
 {
 Va_list args;
-char buf[200];
-char cmd[500];
+char buf[4096]; /* was 200 JM */
+char cmd[4096];
 static char tmpfile[] = "kppfile.tmp";
 FILE * fp;
 

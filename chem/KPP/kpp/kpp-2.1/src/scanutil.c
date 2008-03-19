@@ -32,7 +32,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#if 0
 #include <malloc.h>
+#endif
 #include <unistd.h>
 #include <string.h>
 #include "gdata.h"
@@ -192,6 +194,7 @@ int noext;
   }
   
   sprintf(pathname, "%s/%s/%s", Home, dir, name);
+
   fp = fopen(pathname,"r");
   if( fp ) {
     fclose(fp);

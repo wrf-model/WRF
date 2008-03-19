@@ -104,8 +104,6 @@ $(LIBTARGET) :  $(MODULES) $(OBJS)
 
 include ../configure.wrf
 
-CPP = cpp
-
 clean:
 	@ echo 'use the clean script'
 

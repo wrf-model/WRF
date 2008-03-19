@@ -9,6 +9,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORD
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_NESTOPT \
                       -DGRIB1 \
+                      -DINTIO \
                       -DLIMIT_ARGS \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS)
@@ -105,7 +106,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) -byteswapio" \
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) $(BYTESWAPIO)" \
           CPP="$(CPP) -I. $(ARCHFLAGS) $(TRADFLAG)" ;\
           $(RANLIB) $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a )
 

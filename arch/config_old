@@ -1,33 +1,6 @@
 #!/bin/sh
 
-# parse argument list
-
-thiscmd=$0
-
-opt_level="-s"
-print_usage=""
-chemistry=""
-while [ $# -ge 1 ]; do
-    case $1 in
-      -d) opt_level="-d" ;;
-      -s) opt_level="-s" ;;
-      -f) opt_level="-f" ;;
-      -h) print_usage="yes" ;;
-      -help) print_usage="yes" ;;
-      -os) shift ; WRF_OS=$1 ;;
-      -mach) shift ; WRF_MACH=$1 ;;
-      chem) WRF_CHEM=1  ;;
-      kpp) WRF_KPP=1  ;;
-      titan) WRF_TITAN=1 ; break ;;
-      mars) WRF_MARS=1 ; break ;;
-      venus) WRF_VENUS=1 ; break ;;
-    esac
-    shift
-done
-if [ -n "$print_usage" ] ; then
-  echo usage: $thiscmd '[-d|-s|-f|-os os|-mach mach] [chem] [kpp]'
-  exit 
-fi
+arg1=$1
 
 # lifted from the configure file for mpich; 00/03/10 jm
 #
@@ -319,7 +292,7 @@ if [ "$os" = "AIX" ] ; then
 fi
 
 # compile options that come from the environment, such as chemistry
-# the "!" is removed by Config.pl
+# the "!" is removed by Config_old.pl
 if [ -n "$WRF_MARS" ] ; then
   if [ $WRF_MARS = 1 ] ; then
     echo building WRF for Mars
@@ -346,11 +319,11 @@ if [ -n "$WRF_CHEM" ] ; then
     echo building WRF with chemistry option
     compileflags="${compileflags}!-DWRF_CHEM"
     if [ -n "$WRF_KPP" ] ; then
-      if [ $WRF_KPP = 1 ] ; then    
+      if [ $WRF_KPP = 1 ] ; then
         echo building WRF with KPP chemistry option
         compileflags="${compileflags}!-DWRF_KPP"
       fi
-    fi 
+    fi
   else
     compileflags="${compileflags} "
   fi
@@ -360,14 +333,14 @@ fi
 
 # Found perl, so proceed with configuration
 if test -n "$PERL" ; then
-   $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
-   -compileflags=$compileflags -opt_level=$opt_level
+   $PERL arch/Config_old.pl -perl=$PERL -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+   -compileflags=$compileflags
   if test ! -f configure.wrf ; then
     exit 1
   fi
 fi
 
-if [ "$opt_level" = "-d" ] ; then
+if [ "$arg1" = "-d" ] ; then
 ls -l configure.wrf
    if [ -e configure.wrf ] ; then
      sed -e 's/FCOPTIM[	  ]*=/& # /' -e '/FCDEBUG[ 	]*=/s/#//g' configure.wrf > configure.wrf.edit
@@ -384,7 +357,7 @@ if test -f configure.wrf ; then
     ( make mpi2_test 2> /dev/null ) 1> /dev/null
     if test -e tools/mpi2_test.o ; then
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
-      sed '/^DM_CC.*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
+      sed '/^CC .*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
     else
       echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
     fi
@@ -428,6 +401,6 @@ echo "------------------------------------------------------------------------"
 echo "Settings listed above are written to configure.wrf."
 echo "If you wish to change settings, please edit that file."
 echo "If you wish to change the default options, edit the file:"
-echo "     arch/configure_new.defaults"
+echo "     arch/configure.defaults"
 echo " "
 

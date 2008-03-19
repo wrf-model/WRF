@@ -15,14 +15,10 @@ $sw_esmflib_path="";
 $sw_esmfinc_path="";
 $sw_ldflags=""; 
 $sw_compileflags=""; 
-$sw_opt_level=""; 
 $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
-$sw_dmparallel = "" ;
-$sw_ompparallel = "" ;
-$sw_stubmpi = "" ;
 
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
@@ -50,10 +46,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_mach = substr( $ARGV[0], 6 ) ;
   }
-  if ( substr( $ARGV[0], 1, 10 ) eq "opt_level=" )
-  {
-    $sw_opt_level = substr( $ARGV[0], 11 ) ;
-  }
   if ( substr( $ARGV[0], 1, 8 ) eq "ldflags=" )
   {
     $sw_ldflags = substr( $ARGV[0], 9 ) ;
@@ -76,33 +68,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $WRFCHEM = 1 ;
     } 
   }
-  if ( substr( $ARGV[0], 1, 11 ) eq "dmparallel=" )
-  {
-    $sw_dmparallel=substr( $ARGV[0], 12 ) ;
-  }
-  if ( substr( $ARGV[0], 1, 12 ) eq "ompparallel=" )
-  {
-    $sw_ompparallel=substr( $ARGV[0], 13 ) ;
-  }
   shift @ARGV ;
- }
-
- $sw_fc = "\$(SFC)" ;
- $sw_cc = "\$(SCC)" ;
- $sw_comms_lib = "" ;
- $sw_comms_include = "" ;
- $sw_dmparallelflag = "" ;
- $sw_nest_opt = "" ; 
- $sw_comms_external = "gen_comms_serial module_dm_serial" ;
-
- if ( $sw_dmparallel eq "RSL_LITE" ) 
- {
-  $sw_fc = "\$(DM_FC)" ;
-  $sw_cc = "\$(DM_CC)" ;
-  $sw_dmparallelflag = "-DDM_PARALLEL" ;
-  $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
-  $sw_comms_external = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite" ;
-  $sw_comms_include = "-I\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE" ;
  }
 
 # The jasper library is required to build Grib2 I/O.  User must set 
@@ -122,7 +88,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    }
 
 # When compiling DA code, we need to always use 8-byte reals.
- if ( $ENV{WRF_DA_CORE} eq "1" )
+ if ( $ENV{WRF_DA_CORE} == "1" )
    {
      $sw_rwordsize = "8";  
    }
@@ -155,26 +121,18 @@ until ( $validresponse ) {
   printf "Please select from among the following supported platforms.\n\n" ;
 
   $opt = 1 ;
-  open CONFIGURE_DEFAULTS, "< ./arch/configure_new.defaults" 
-      or die "Cannot open ./arch/configure_new.defaults for reading" ;
+  open CONFIGURE_DEFAULTS, "< ./arch/configure_old.defaults" 
+      or die "Cannot open ./arch/configure_old.defaults for reading" ;
   while ( <CONFIGURE_DEFAULTS> )
   {
-    for $paropt ( 'serial','smpar','dmpar','dm+sm' )
+    if ( substr( $_, 0, 5 ) eq "#ARCH" && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) )
     {
-      if ( substr( $_, 0, 5 ) eq "#ARCH"
-          && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
-          && ( index($_, $paropt) >= 0 ) )
+      $optstr[$opt] = substr($_,6) ;
+      $optstr[$opt] =~ s/^[ 	]*// ;
+      if ( substr( $optstr[$opt], 0,4 ) ne "NULL" )
       {
-        $optstr[$opt] = substr($_,6) ;
-        $optstr[$opt] =~ s/^[ 	]*// ;
-        $optstr[$opt] =~ s/#.*$//g ;
-        chomp($optstr[$opt]) ;
-        $optstr[$opt] = $optstr[$opt]." (".$paropt.")" ;
-        if ( substr( $optstr[$opt], 0,4 ) ne "NULL" )
-        {
-          printf "  %2d.  %s\n",$opt,$optstr[$opt] ;
-          $opt++ ;
-        }
+        printf "  %2d.  %s",$opt,$optstr[$opt] ;
+        $opt++ ;
       }
     }
   }
@@ -196,18 +154,14 @@ printf "------------------------------------------------------------------------
 
 $optchoice = $response ;
 
-open CONFIGURE_DEFAULTS, "cat ./arch/configure_new.defaults |"  ;
+open CONFIGURE_DEFAULTS, "< ./arch/configure_old.defaults" 
+      or die "Cannot open ./arch/configure_old.defaults for reading" ;
 $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
 {
   if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 1 )
   {
-    close CONFIGURE_DEFAULTS ;
-    if ( $sw_opt_level eq "-f" ) {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_f |"  or die "horribly" ;
-    } else {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions |"  or die "horribly" ;
-    }
+    $latchon = 0 ;
   }
   if ( $latchon == 1 )
   {
@@ -218,22 +172,6 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
     $_ =~ s/CONFIGURE_RWORDSIZE/$sw_rwordsize/g ;
-    $_ =~ s/CONFIGURE_FC/$sw_fc/g ;
-    $_ =~ s/CONFIGURE_CC/$sw_cc/g ;
-    $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
-    $_ =~ s/CONFIGURE_COMMS_INCLUDE/$sw_comms_include/g ;
-    $_ =~ s/CONFIGURE_COMMS_EXTERNAL/$sw_comms_external/g ;
-    $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
-    $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
-    $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
-#    if ( $sw_dmparallel ne "" && $sw_stubmpi ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
-    if ( $sw_dmparallel ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
-       $_ =~ s/#// ;
-    }
-    if ( $sw_ompparallel ne "" && ( $_ =~ /^OMPCPP[=\t ]/ || $_ =~ /^OMP[=\t ]/ ) ) {
-       $_ =~ s/#// ;
-       $_ =~ s/#// ;
-    }
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
@@ -290,7 +228,7 @@ while ( <CONFIGURE_DEFAULTS> )
       }
 
 
-    # ESMF substitutions in configure.defaults
+    # ESMF substitutions in configure_old.defaults
     if ( $sw_esmflib_path && $sw_esmfinc_path )
       {
       $_ =~ s:ESMFIOLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
@@ -307,91 +245,41 @@ while ( <CONFIGURE_DEFAULTS> )
         }
       }
 
-    if ( ! (substr( $_, 0, 5 ) eq "#ARCH") ) { @machopts = ( @machopts, $_ ) ; }
+    @machopts = ( @machopts, $_ ) ;
     if ( substr( $_, 0, 10 ) eq "ENVCOMPDEF" )
     {
       @machopts = ( @machopts, "WRF_CHEM\t=\t$WRFCHEM \n" ) ;
     }
   }
-
-# nesting support 
-# 0 = no nesting (only selectable for serial and smpar)
-# 1 = basic nesting (serial and smpar compile with RSL_LITE and STUBMPI; dmpar and dm+sm use RSL_LITE and MPI)
-# 2 = nesting with prescribed moves  (add -DMOVE_NESTS to ARCHFLAGS)
-# 3 = nesting with prescribed moves  (add -DMOVE_NESTS and -DVORTEX_CENTER to ARCHFLAGS) 
-
-  for $paropt ( 'serial','smpar','dmpar','dm+sm' )
+  if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 0 )
   {
-    if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 0 
-          && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
-          && ( index($_, $paropt) >= 0 ) )
+    $x=substr($_,6) ;
+    $x=~s/^[     ]*// ;
+    if ( $x eq $optstr[$optchoice] )
     {
-      $x=substr($_,6) ;
-      $x=~s/^[     ]*// ;
-      $x =~ s/#.*$//g ;
-      chomp($x) ;
-      $x = $x." (".$paropt.")" ;
-      if ( $x eq $optstr[$optchoice] )
-      {
-        $latchon = 1 ;
-        $sw_ompparallel = "" ;
-        $sw_dmparallel = "" ;
-        $validresponse = 0 ;
-        until ( $validresponse ) {
-          if ( $paropt eq 'serial' || $paropt eq 'smpar' ) {
-            printf "Compile for nesting? (0=no nesting, 1=basic, 2=preset moves, 3=vortex following) [default 0]: " ;
-          } else {
-            printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
-          }
-          $response = <STDIN> ;
-          printf "\n" ;
-          lc $response ;
-          chop $response ;
-          if ( $response == "" || ($response >= 0 && $response <= 3) )
-            { $validresponse = 1 ; }
-          else
-            { printf("\nInvalid response (%d)\n",$response);}
-        }
-        if ( $response == "" ) { 
-          if ( ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) { $response = 0 ; }
-          else                                                 { $response = 1 ; }
-        }
-        if ( $response == 0 ) {
-          if ( ! ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) { $response = 1 ; }
-        } 
-        if ( ( $response == 1 ) || ( $response == 2 ) || ( $response == 3 ) ) {
-          if ( ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) {   # nesting without MPI
-            $sw_stubmpi = "-DSTUBMPI" ;
-            $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
-            $sw_comms_external = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite" ;
-            $sw_dmparallel = "RSL_LITE" ;
-            $sw_dmparallelflag = "-DDM_PARALLEL" ;
-          }
-        } 
-        if ( $response == 2 ) {
-          $sw_nest_opt = "-DMOVE_NESTS" ; 
-        } elsif ( $response == 3 ) {
-          $sw_nest_opt = "-DMOVE_NESTS -DVORTEX_CENTER" ; 
-        }
-        if ( $paropt eq 'smpar' || $paropt eq 'dm+sm' ) { $sw_ompparallel = "OMP" ; }
-        if ( $paropt eq 'dmpar' || $paropt eq 'dm+sm' ) { 
-          $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
-          $sw_comms_external = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite" ;
-          $sw_dmparallel = "RSL_LITE" ;
-          $sw_dmparallelflag = "-DDM_PARALLEL" ;
-          $sw_fc = "\$(DM_FC)" ;
-          $sw_cc = "\$(DM_CC)" ;
-        }  # only one option in v3.0
-      }
+      $latchon = 1 ;
     }
   }
 }
 close CONFIGURE_DEFAULTS ;
-close POSTAMBLE ;
-close ARCH_NOOPT_EXCEPTIONS ;
+
+#printf "------------------------------------------------------------------------\n" ;
+#foreach $f ( @machopts )
+#{
+#  if ( substr( $f , 0 , 8 ) eq "external" ) { last ; }
+#  print $f ;
+#}
+#printf "------------------------------------------------------------------------\n" ;
+#printf "\nYou have chosen: %s",$optstr[$optchoice] ;
+#printf "Listed above are the default options for this platform.\n" ;
+#printf "Settings are written to the file configure.wrf here in the top-level\n" ;
+#printf "directory.  If you wish to change settings, please edit that file.\n" ;
+#printf "If you wish to change the default options, edit the file:\n\n" ;
+#printf "     arch/configure_old.defaults\n" ;
+#printf "\n" ;
 
 open CONFIGURE_WRF, "> configure.wrf" or die "cannot append configure.wrf" ;
-open ARCH_PREAMBLE, "< arch/preamble_new" or die "cannot open arch/preamble_new" ;
+open ARCH_PREAMBLE, "< arch/preamble_old" or die "cannot open arch/preamble_old" ;
 my @preamble;
 # apply substitutions to the preamble...
 while ( <ARCH_PREAMBLE> )
@@ -420,7 +308,7 @@ while ( <ARCH_PREAMBLE> )
 close ARCH_PREAMBLE ;
 print CONFIGURE_WRF @preamble  ;
 close ARCH_PREAMBLE ;
-printf CONFIGURE_WRF "# Settings for %s\n", $optstr[$optchoice] ;
+printf CONFIGURE_WRF "# Settings for %s", $optstr[$optchoice] ;
 print CONFIGURE_WRF @machopts  ;
 print "$ENV{WRF_MARS}" ;
 if ( $ENV{WRF_MARS} || $ENV{WRF_TITAN} || $ENV{WRF_VENUS} )
@@ -430,6 +318,9 @@ if ( $ENV{WRF_MARS} || $ENV{WRF_TITAN} || $ENV{WRF_VENUS} )
     close ARCH_PLANETAMBLE ;
 }
 
+open ARCH_POSTAMBLE, "< arch/postamble_old" or die "cannot open arch/postamble_old" ;
+while ( <ARCH_POSTAMBLE> ) { print CONFIGURE_WRF } ;
+close ARCH_POSTAMBLE ;
 close CONFIGURE_WRF ;
 
 printf "Configuration successful. To build the model type compile . \n" ;

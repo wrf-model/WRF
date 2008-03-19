@@ -1,39 +1,6 @@
-###########################################################
-#ARCH    PC Linux i486 i586 i686, PGI compiler with gcc #serial smpar dmpar dm+sm
-#
-DMPARALLEL      =       # 1
-OMPCPP		=	# -D_OPENMP
-OMP		=	# -mp
-SFC		=       pgf90
-SCC		=       gcc
-DM_FC		=	mpif90 -f90=$(SFC)
-DM_CC		=       mpicc -cc=$(SCC)
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD		=	$(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
-CFLAGS_LOCAL    =       
-LDFLAGS_LOCAL   =       
-FCOPTIM		=       -O2 -fast
-FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -Mfixed
-FORMAT_FREE     =       -Mfree
-FCSUFFIX        =       
-BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =     -module
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -C -P
-AR		=      ar ru
-M4 		=      m4 -B 14000
-RANLIB 		=      ranlib
-CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, gfortran compiler with gcc #serial smpar dmpar dm+sm
+#ARCH    Linux i486 i586 i686, gfortran compiler with gcc #serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
@@ -67,7 +34,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    PC Linux i486 i586 i686, g95 compiler with gcc #serial dmpar
+#ARCH    Linux i486 i586 i686, g95 compiler with gcc #serial dmpar
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
@@ -100,9 +67,8 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
-
 ###########################################################
-#ARCH    x86_64 Linux, PGI compiler with gcc #serial smpar dmpar dm+sm
+#ARCH    Linux x86_64, PGI compiler with gcc # serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
@@ -127,7 +93,7 @@ FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =     -module
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
 AR              =      ar ru
@@ -136,7 +102,41 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    x86_64 Linux, ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
+#ARCH    Linux i486 i586 i686, PGI compiler with gcc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP		=	# -D_OPENMP
+OMP		=	# -mp
+SFC		=       pgf90
+SCC		=       gcc
+DM_FC		=	mpif90 -f90=$(SFC)
+DM_CC		=       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD		=	$(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       
+LDFLAGS_LOCAL   =       
+FCOPTIM		=       -O2 -fast
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =       
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR		=      ar ru
+M4 		=      m4 -B 14000
+RANLIB 		=      ranlib
+CC_TOOLS        =      $(SCC)
+
+###########################################################
+#ARCH    Linux x86_64 i486 i586 i686, ifort compiler with icc (non-SGI installations) #serial smpar dmpar dm+sm
 #
 #        By default, some files are compiled without optimizations to speed up compilation. Removing
 #        respective makefile rules in the end of this file will result in longer compilation time, and, possibly
@@ -192,6 +192,113 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
+#ARCH    Linux i486 i586 i686 x86_64, PathScale compiler with pathcc #serial dmpar
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # not supported
+OMP             =       # not supported
+SFC             =       pathf90
+SCC             =       pathcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DF2CSTYLE -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -DF2CSTYLE
+LDFLAGS_LOCAL   =
+FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -fixed-form
+FORMAT_FREE     =       -free-form
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w -fno-second-underscore $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC)
+
+###########################################################
+#ARCH    SGI ia64 Linux (Altix), ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
+#
+#        By default, some files are compiled without optimizations to
+#        speed up compilation. Removing respective makefile rules in the
+#        end of this file will result in longer compilation time, and,
+#        possibly Out Of Memory messages, but might produce binaries
+#        which are substantially faster.
+#
+#        If you get Out Of Memory messages, there are several options:
+#          1. Check your memory limits (ulimit -a), possibly increasing
+#             swap partitions size.
+#          2. Remove any debugging flags (-g, -check, -traceback).
+#          3. Force the problematic file to be compiled with lower
+#             optimization (see examples at the end of this file),
+#             try the -no-ip compiler flag.
+#
+#        The default configuration is aimed at accuracy. To improve speed, at
+#        with only negligible effect on floating point accuracy,
+#        consider uncommenting the version of the FCBASEOPTS settings
+#        that uses -IPF-fp-relaxed option.
+#
+#        If you can tolerate a longer build, change the setting of
+#        FCNOOPT to -O1, for slightly faster performance.
+#
+#        If you have Intel MPI installed and wish to use instead, make
+#        the following changes to settings below:
+#        DM_FC  = $(MPI_HOME)/bin64/mpiifort -nocompchk
+#        DM_CC  = $(MPI_HOME)/bin64/mpiicc -nocompch
+#        and set MPI_HOME appropriately
+#
+#        If your SGI MPI library is not installed in the default
+#        locations (/usr/bin, /usr/include, /usr/lib), set MPI_HOME
+#        to be the path to the directory where the SGI MPI bin,
+#        include and lib directories are, and change the DM_FC,
+#        DM_CC and LIB_LOCAL settings as follows:
+#        DM_FC = $(SFC) -I$(MPI_HOME)/include
+#        DM_CC = $(SFC) -I$(MPI_HOME)/include
+#        LIB_LOCAL = -L$(MPI_HOME)/lib -lmpi 
+
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+DM_FC           =       $(SFC)
+DM_CC           =       $(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -w -O3 -ip
+LDFLAGS_LOCAL   =       -ip
+FCOPTIM         =       -O3
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+#FCBASEOPTS      =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+LIB_LOCAL       =       -L/usr/lib -lmpi 
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar ru
+M4              =      m4
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC)
+
+###########################################################
 #ARCH    x86_64 Linux, gfortran compiler with gcc  #serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
@@ -226,7 +333,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    Darwin PGI compiler with pgcc #serial smpar dmpar dm+sm
+#ARCH    Darwin (MACOS) PGI compiler with pgcc #serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
@@ -251,7 +358,7 @@ FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =     -module
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
 AR		=      ar ru
@@ -260,7 +367,41 @@ RANLIB 		=      ranlib
 CC_TOOLS        =      cc
 
 ###########################################################
-#ARCH    Darwin g95 with gcc #serial dmpar
+#ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMACOS -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS
+LDFLAGS_LOCAL   =       -ip
+FCOPTIM         =       -O3
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      cpp -C -P -xassembler-with-cpp
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      cc
+
+###########################################################
+#ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
@@ -294,7 +435,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    Darwin xlf  #serial dmpar
+#ARCH    Darwin (MACOS) xlf  #serial dmpar
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
@@ -361,5 +502,45 @@ M4 		=       m4 -B 14000
 RANLIB 		=       ranlib
 CC_TOOLS        =       cc
 
+
+###########################################################
+#ARCH    Cray XT3/4 Catamount/Linux x86_64, PGI compiler with gcc # serial dmpar 
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # not supported
+OMP             =       # not supported
+SFC             =       ftn
+SCC             =       gcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DLANDREAD_STUB -DXT3_Catamount
+CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB -DXT3_Catamount
+LDFLAGS_LOCAL   =       
+# Peter, the commented line below is from the normal x86_64 compiles using PG fortran, as recommended by PGI.  
+# The uncommented line is from the older arch/configure.defaults settings in V2.  Do you want to consider 
+# including any of the generic x86_64 PG settings in the FCOPTIM for v3?
+#FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
+FCOPTIM         =       -O3 -fastsse #-Mipa=fast
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC)
+
+###########################################################
 #ARCH  NULL
-##################################################################
+

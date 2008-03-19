@@ -1,4 +1,14 @@
-###########################################################
+#
+#  WARNING
+#
+#  THIS IS THE OLD V2 CONFIGURE DEFAULTS FILE, KEPT AROUND FOR REFERENCE
+#  BUT IS NOT USED OR MAINTAINED AT ALL IN V3.  MOST OF THE COMMON SETTINGS
+#  HAVE BEEN MOVED TO THE NEW V3 CONFIGURATION MECHANISM AND 
+#  FILE: configure_new.defaults
+#  SEVERAL OTHER SETS OF OPTIONS HAVE BEEN PRESERVED BUT MOVED INTO THE
+#  FILE: configure_old.defaults.  
+#
+##########################################################
 #ARCH	SGI 32 bit machine IRIX
 
 FC		=	f90
@@ -846,7 +856,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       xlc_r
+CC              =       cc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -992,7 +1002,7 @@ mediation_force_domain.o start_domain.o module_integrate.o :
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       xlc_r
+CC              =       cc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -1143,7 +1153,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       xlc_r
+CC              =       cc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -1297,7 +1307,7 @@ OMPCPP          =       -D_OPENMP
 FC              =       xlf90_r
 SFC		=	$(FC)
 LD              =       xlf90_r
-CC              =       xlc_r
+CC              =       cc_r
 SCC		=	$(CC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	-qrealsize=$(RWORDSIZE) -qintsize=4
@@ -1454,7 +1464,7 @@ convert_nmm.o :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
@@ -1609,7 +1619,7 @@ convert_nmm.o    :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpxlf90_r
 CC              =       mpcc_r
@@ -1760,7 +1770,7 @@ convert_nmm.o    :
 #
 DMPARALLEL      =       1
 SFC             =       xlf90_r
-SCC             =       xlc_r
+SCC             =       cc_r
 FC              =       mpxlf90_r
 LD              =       mpCC_r
 CC              =       mpcc_r

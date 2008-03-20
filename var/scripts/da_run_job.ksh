@@ -10,7 +10,6 @@ export WORK_DIR=$RUN_DIR/working
 
 export SCRIPT=${SCRIPT:-$WRFVAR_DIR/var/scripts/da_run_wrfvar.ksh}
 
-rm -rf $RUN_DIR
 mkdir -p $RUN_DIR
 cd $RUN_DIR
 

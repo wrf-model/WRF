@@ -5,7 +5,7 @@
 CC=cc
 
 .c.o:
-	$(CC) -c -O2 $<
+	$(CC) -c -O $<
 
 obj=wgrib_main.o seekgrib.o ibm2flt.o readgrib.o intpower.o cnames.o BDSunpk.o \
   flt2ieee.o wrtieee.o levels.o PDStimes.o missing.o  \

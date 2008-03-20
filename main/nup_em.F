@@ -60,11 +60,12 @@
 PROGRAM nup_em
 
    USE module_machine
-   USE module_domain
-   USE module_initialize_real
+   USE module_domain, only : domain, wrfu_timeinterval, alloc_and_configure_domain, &
+      domain_clock_set
+   USE module_initialize_real, only : wrfu_initialize
    USE module_integrate
    USE module_driver_constants
-   USE module_configure
+   USE module_configure, only : grid_config_rec_type, model_config_rec
    USE module_io_domain
    USE module_utility
 

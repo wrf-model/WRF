@@ -3,18 +3,23 @@
 PROGRAM real_data
 
    USE module_machine
-   USE module_domain
+   USE module_domain, ONLY : domain, alloc_and_configure_domain, &
+        domain_clock_set, head_grid, program_name, domain_clockprint
+   USE module_initialize_real, ONLY : wrfu_initialize, find_my_parent
    USE module_initialize_real
    USE module_io_domain
    USE module_driver_constants
-   USE module_configure
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
+        initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_timing
+   USE module_state_description, ONLY : realonly
+   USE module_symbols_util, ONLY: wrfu_cal_gregorian
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
    USE module_input_chem_emissopt3
 #endif
-   USE module_utility
+   USE module_utility, ONLY : WRFU_finalize
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -71,7 +76,7 @@ PROGRAM real_data
 real::t1,t2
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
-      USE module_domain
+      USE module_domain, ONLY : domain
       TYPE(domain), POINTER :: grid
      END SUBROUTINE Setup_Timekeeping
    END INTERFACE

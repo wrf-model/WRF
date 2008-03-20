@@ -3,7 +3,7 @@
 
 PROGRAM wrf
 
-   USE module_wrf_top
+   USE module_wrf_top, only : wrf_init, wrf_dfi, wrf_run, wrf_finalize
 
 !<DESCRIPTION>
 ! Main program of WRF model.  Responsible for starting up the model, reading in (and

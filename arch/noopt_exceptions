@@ -12,14 +12,16 @@ module_comm_dm.o : module_comm_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
 module_domain.o : module_domain.F
+module_domain_type.o : module_domain_type.F
+module_alloc_space.o : module_alloc_space.F
+module_tiles.o : module_tiles.F
 module_fddaobs_rtfdda.o : module_fddaobs_rtfdda.F
 module_initialize.o : module_initialize.F
+module_physics_init.o : module_physics_init.F
 module_initialize_b_wave.o : module_initialize_b_wave.F
 module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
 module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
 module_initialize_real.o : module_initialize_real.F
-module_initialize_real.o module_dm.o module_comm_dm.o  start_domain.o :
-module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 module_initialize_real.o: module_initialize_real.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
@@ -91,6 +93,10 @@ wrf_inputout.o : wrf_inputout.F
 wrf_restartin.o : wrf_restartin.F
 wrf_restartout.o : wrf_restartout.F
 wrf_tsin.o : wrf_tsin.F
+nl_get_0_routines.o : nl_get_0_routines.F
+nl_get_1_routines.o : nl_get_1_routines.F
+nl_set_0_routines.o : nl_set_0_routines.F
+nl_set_1_routines.o : nl_set_1_routines.F
 
 convert_nmm.o \
 init_modules_em.o \
@@ -100,7 +106,6 @@ mediation_integrate.o \
 mediation_interp_domain.o \
 module_comm_dm.o \
 module_dm.o \
-module_domain.o \
 module_fddaobs_rtfdda.o \
 module_initialize.o \
 module_initialize_b_wave.o \
@@ -113,14 +118,15 @@ module_integrate.o \
 module_io_mm5.o \
 module_io_wrf.o \
 module_si_io.o \
+module_tiles.o \
 output_wrf.o \
 shift_domain_em.o \
-solve_em.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
 start_em.o \
 wrf_fddaobs_in.o \
+module_alloc_space.o \
 wrf_tsin.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
@@ -128,9 +134,19 @@ wrf_tsin.o :
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
 
+solve_em.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(SOLVE_EM_SPECIAL) $*.f90
+
 # compile without OMP
 input_wrf.o \
 module_io.o \
+module_domain.o \
+module_domain_type.o \
+module_physics_init.o \
 wrf_auxhist10in.o \
 wrf_auxhist10out.o \
 wrf_auxhist11in.o \
@@ -186,6 +202,10 @@ wrf_inputout.o \
 wrf_restartin.o \
 wrf_restartout.o \
 module_state_description.o \
+nl_set_0_routines.o \
+nl_set_1_routines.o \
+nl_get_0_routines.o \
+nl_get_1_routines.o \
 module_configure.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 

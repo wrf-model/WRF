@@ -23,6 +23,8 @@ $sw_mach = "ARCH" ;         # ARCH will match any
 $sw_dmparallel = "" ;
 $sw_ompparallel = "" ;
 $sw_stubmpi = "" ;
+$sw_usenetcdff = "" ;    # for 3.6.2 and greater, the fortran bindings might be in a separate lib file
+$sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
@@ -53,6 +55,14 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 10 ) eq "opt_level=" )
   {
     $sw_opt_level = substr( $ARGV[0], 11 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 11 ) eq "USENETCDFF=" )
+  {
+    $sw_usenetcdff = substr( $ARGV[0], 12 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 5 ) eq "time=" )
+  {
+    $sw_time = substr( $ARGV[0], 6 ) ;
   }
   if ( substr( $ARGV[0], 1, 8 ) eq "ldflags=" )
   {
@@ -218,7 +228,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
     $_ =~ s/CONFIGURE_RWORDSIZE/$sw_rwordsize/g ;
-    $_ =~ s/CONFIGURE_FC/$sw_fc/g ;
+    $_ =~ s/CONFIGURE_FC/$sw_time $sw_fc/g ;
     $_ =~ s/CONFIGURE_CC/$sw_cc/g ;
     $_ =~ s/CONFIGURE_COMMS_LIB/$sw_comms_lib/g ;
     $_ =~ s/CONFIGURE_COMMS_INCLUDE/$sw_comms_include/g ;
@@ -226,7 +236,6 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
-#    if ( $sw_dmparallel ne "" && $sw_stubmpi ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
     if ( $sw_dmparallel ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
        $_ =~ s/#// ;
     }
@@ -238,9 +247,9 @@ while ( <CONFIGURE_DEFAULTS> )
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
         if ( $sw_os == Interix ) {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib -lnetcdf: ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib -lnetcdf $sw_usenetcdff : ;
         } else {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib -lnetcdf: ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib -lnetcdf $sw_usenetcdff : ;
         }
 	 }
     else                   

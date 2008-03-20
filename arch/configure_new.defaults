@@ -192,41 +192,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    Linux i486 i586 i686 x86_64, PathScale compiler with pathcc #serial dmpar
-#
-DMPARALLEL      =       # 1
-OMPCPP          =       # not supported
-OMP             =       # not supported
-SFC             =       pathf90
-SCC             =       pathcc
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD              =       $(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DF2CSTYLE -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM
-CFLAGS_LOCAL    =       -DF2CSTYLE
-LDFLAGS_LOCAL   =
-FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
-FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -fixed-form
-FORMAT_FREE     =       -free-form
-FCSUFFIX        =
-BYTESWAPIO      =       -byteswapio
-FCBASEOPTS      =       -w -fno-second-underscore $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -C -P
-AR              =      ar ru
-M4              =      m4 -B 14000
-RANLIB          =      ranlib
-CC_TOOLS        =      $(SCC)
-
-###########################################################
-#ARCH    SGI ia64 Linux (Altix), ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
+#ARCH    ia64 Linux (includes SGI Altix), ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
 #
 #        By default, some files are compiled without optimizations to
 #        speed up compilation. Removing respective makefile rules in the
@@ -295,6 +261,40 @@ TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
 AR              =      ar ru
 M4              =      m4
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC)
+
+###########################################################
+#ARCH    Linux i486 i586 i686 x86_64, PathScale compiler with pathcc #serial dmpar
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # not supported
+OMP             =       # not supported
+SFC             =       pathf90
+SCC             =       pathcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DF2CSTYLE -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -DF2CSTYLE
+LDFLAGS_LOCAL   =
+FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -fixed-form
+FORMAT_FREE     =       -free-form
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w -fno-second-underscore $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar ru
+M4              =      m4 -B 14000
 RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
@@ -368,6 +368,74 @@ CC_TOOLS        =      cc
 
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMACOS -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS
+LDFLAGS_LOCAL   =       -ip
+FCOPTIM         =       -O3
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      cpp -C -P -xassembler-with-cpp
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      cc
+
+###########################################################
+#ARCH    Darwin (MACOS) intel compiler with cc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       cc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DMACOS -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
+CFLAGS_LOCAL    =       -w -O3 -DMACOS
+LDFLAGS_LOCAL   =       
+FCOPTIM         =       -O3
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      cpp -C -P -xassembler-with-cpp
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      cc
+
+###########################################################
+#ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP

@@ -22,7 +22,7 @@ CONTAINS
 
   SUBROUTINE set_tiles1 ( grid , ids , ide , jds , jde , bdyw )
 
-     USE module_domain
+     USE module_domain, ONLY : domain
      USE module_driver_constants
      USE module_machine
      USE module_wrf_error
@@ -151,7 +151,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version is used to limit the domain or compute onto halos
   SUBROUTINE set_tiles2 ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
-     USE module_domain
+     USE module_domain, ONLY : domain
      USE module_driver_constants
      USE module_machine
      USE module_wrf_error
@@ -309,7 +309,7 @@ CONTAINS
 ! and coverable with 2 or three rectangles. No weird stuff...
 
   SUBROUTINE set_tiles3 ( grid , imask, ims, ime, jms, jme, ips, ipe, jps, jpe )
-     USE module_domain
+     USE module_domain, ONLY : domain
      USE module_driver_constants
      USE module_machine
      USE module_wrf_error

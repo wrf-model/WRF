@@ -7,6 +7,8 @@ RM      =       rm -f
 
 
 MODULES =       module_driver_constants.o  \
+                module_domain_type.o       \
+                module_alloc_space.o       \
                 module_domain.o            \
                 module_integrate.o         \
                 module_timing.o            \
@@ -27,6 +29,10 @@ OBJS    =       wrf_num_bytes_between.o    \
                 wrf_shutdown.o             \
                 wrf_debug.o                \
                 libmassv.o                 \
+                nl_get_0_routines.o        \
+                nl_get_1_routines.o        \
+                nl_set_0_routines.o        \
+                nl_set_1_routines.o        \
                 collect_on_comm.o
 
 #compile as a .o but do not link into the main library
@@ -85,12 +91,16 @@ module_comm_dm.o: \
 
 module_dm_stubs.F: module_domain.o
 
-module_domain.o: module_driver_constants.o \
+module_domain.o: module_domain_type.o module_alloc_space.o module_driver_constants.o \
 		module_configure.o \
 		module_machine.o  \
 		module_state_description.o \
                 module_wrf_error.o \
 		$(ESMF_MOD_DEPENDENCE)
+
+module_domain_type.o : module_driver_constants.o $(ESMF_MOD_DEPENDENCE)
+
+module_alloc_space.o : module_domain_type.o module_configure.o
 
 module_driver_constants.o: \
 		module_state_description.o \

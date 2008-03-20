@@ -29,7 +29,8 @@ MODULES = \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
 	module_ra_rrtm.o  \
-	module_ra_cam.o  \
+        module_ra_cam_support.o \
+        module_ra_cam.o \
 	module_ra_gfdleta.o \
 	module_ra_hs.o  \
 	module_sf_sfclay.o \
@@ -118,8 +119,10 @@ module_ra_gfdleta.o:  ../frame/module_dm.o
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
 		../frame/module_dm.o
 
-module_ra_cam.o: ../frame/module_wrf_error.o \
-		../frame/module_dm.o
+module_ra_cam_support.o: ../frame/module_wrf_error.o
+
+module_ra_cam.o: module_ra_cam_support.o \
+                ../frame/module_wrf_error.o
 
 module_mp_lin.o : ../frame/module_wrf_error.o
 
@@ -151,6 +154,7 @@ module_physics_addtendc.o: \
 module_physics_init.o : \
 		module_ra_rrtm.o		\
 		module_ra_cam.o		\
+		module_ra_cam_support.o		\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
 		module_ra_gfdleta.o		\

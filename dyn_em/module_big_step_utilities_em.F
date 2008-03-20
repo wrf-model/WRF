@@ -12,10 +12,10 @@
 
 MODULE module_big_step_utilities_em
 
-   USE module_domain
+   USE module_domain, ONLY : domain
    USE module_model_constants
    USE module_state_description
-   USE module_configure
+   USE module_configure, ONLY : grid_config_rec_type
    USE module_wrf_error
 
 CONTAINS

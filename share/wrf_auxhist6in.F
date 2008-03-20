@@ -2,6 +2,7 @@ SUBROUTINE wrf_auxhist6in ( fid , grid , config_flags , switch , ierr )
     USE module_domain
     USE module_state_description
     USE module_configure
+    USE module_scalar_tables
     USE module_io
     USE module_io_wrf
     USE module_date_time

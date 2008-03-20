@@ -6,26 +6,21 @@
 !
 )
 
-   USE module_domain
-   USE module_dm
-!  USE module_io_domain
+   USE module_domain, ONLY : domain, wrfu_timeinterval, get_ijk_from_grid, &
+        domain_setgmtetc
    USE module_state_description
    USE module_model_constants
-   USE module_bc
+   USE module_bc, ONLY : boundary_condition_check, set_physical_bc2d
    USE module_bc_em
-!  USE module_timing
-   USE module_configure
-   USE module_tiles
+   USE module_configure, ONLY : grid_config_rec_type
+   USE module_tiles, ONLY : set_tiles
+   USE module_dm, ONLY : wrf_dm_min_real
 
    USE module_physics_init
 #ifdef WRF_CHEM
-   USE module_aerosols_sorgam, only: sum_pm_sorgam
-   USE module_gocart_aerosols, only: sum_pm_gocart
-   USE module_mosaic_driver, only: sum_pm_mosaic
-#endif
-
-#ifdef DM_PARALLEL
-   USE module_dm
+   USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
+   USE module_gocart_aerosols, ONLY: sum_pm_gocart
+   USE module_mosaic_driver, ONLY: sum_pm_mosaic
 #endif
 
 !!debug
@@ -125,17 +120,7 @@
 
      CALL wrf_dm_bcast_real ( clat_glob , (ide-ids+1)*(jde-jds+1) )
 
-!write(0,*)__FILE__,__LINE__,' clat_glb ',ids,ide,jds,jde
-!do j = jds,jde
-!write(0,*)__FILE__,__LINE__,' clat_glb ',ids,j,clat_glob(ipsx,j) ,clat_glob(ids,j)
-!enddo
-
      grid%clat_xxx(ipsx:ipex,jpsx:jpex) = clat_glob(ipsx:ipex,jpsx:jpex)
-
-!write(0,*)__FILE__,__LINE__,' clat_xxx ',ipsx,ipex,jpsx,jpex
-!do j = jpsx,jpex
-!write(0,*)__FILE__,__LINE__,' clat_xxx ',ids,j,grid%clat_xxx(ids,j) 
-!enddo
 
      DEALLOCATE( clat_glob )
 #endif

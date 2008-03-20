@@ -17,8 +17,9 @@ SUBROUTINE interp_domain_em_part1 ( grid, ngrid, config_flags   &
 #include "dummy_new_args.inc"
 !
                  )
-         USE module_domain
-         USE module_configure
+         USE module_state_description
+         USE module_domain, ONLY : domain, get_ijk_from_grid
+         USE module_configure, ONLY : grid_config_rec_type
          TYPE(domain), POINTER :: grid , ngrid
 #include <dummy_new_decl.inc>
 

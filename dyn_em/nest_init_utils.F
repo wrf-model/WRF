@@ -1,6 +1,5 @@
 SUBROUTINE init_domain_constants_em ( parent , nest )
-   USE module_domain
-   USE module_configure
+   USE module_domain, ONLY : domain
    IMPLICIT NONE
    TYPE(domain)  :: parent , nest
 
@@ -187,15 +186,15 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
 
-   USE module_configure
-   USE module_domain
+   !USE module_configure
+   !USE module_domain
    USE module_model_constants
 
-   USE module_bc
-   USE module_io_domain
-   USE module_state_description
-   USE module_timing
-   USE module_soil_pre
+   !USE module_bc
+   !USE module_io_domain
+   !USE module_state_description
+   !USE module_timing
+   !USE module_soil_pre
    IMPLICIT NONE
 
    INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , &
@@ -251,7 +250,7 @@ SUBROUTINE input_terrain_rsmas ( grid ,                        &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
 
-   USE module_domain
+   USE module_domain, ONLY : domain
    IMPLICIT NONE
    TYPE ( domain ) :: grid
 
@@ -342,7 +341,7 @@ SUBROUTINE update_after_feedback_em ( grid  &
 !
 
 ! Driver layer modules
-   USE module_domain
+   USE module_domain, ONLY : domain, get_ijk_from_grid
    USE module_configure
    USE module_driver_constants
    USE module_machine

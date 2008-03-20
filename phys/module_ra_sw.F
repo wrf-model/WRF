@@ -234,57 +234,64 @@ pi = 4.*atan(1.)
          XLONG0=XLONG(I,J)
          ALB0=ALBEDO(I,J)
 
-      IF(PRESENT(slope_rad) .AND. PRESENT(shadowmask))THEN
+         shadow = 0
+         IF (topo_shading.eq.1) THEN
+           IF(PRESENT(slope_rad) .AND. PRESENT(shadowmask))THEN
 ! Computations for slope-dependent radiation
 
-         sinalpha = sina(i,j)
-         cosalpha = cosa(i,j)
+             sinalpha = sina(i,j)
+             cosalpha = cosa(i,j)
 
 ! Compute slope and slope azimuth of local grid point
 
-       if ((i.ge.ids+1).and.(i.le.ide-2)) then
-         hx = (ht(i+1,j)-ht(i-1,j))/(2.*dx)
-       else if (i.eq.ids) then
-         hx = (ht(i+1,j)-ht(i,j))/dx
-       else if (i.eq.ide-1) then
-         hx = (ht(i,j)-ht(i-1,j))/dx
-       endif
-       if ((j.ge.jds+1).and.(j.le.jde-2)) then
-         hy = (ht(i,j+1)-ht(i,j-1))/(2.*dy)
-       else if (i.eq.ids) then
-         hy = (ht(i,j+1)-ht(i,j))/dy
-       else if (i.eq.ide-1) then
-         hy = (ht(i,j)-ht(i,j-1))/dy
-       endif
+             if ((i.ge.ids+1).and.(i.le.ide-2)) then
+               hx = (ht(i+1,j)-ht(i-1,j))/(2.*dx)
+             else if (i.eq.ids) then
+               hx = (ht(i+1,j)-ht(i,j))/dx
+             else if (i.eq.ide-1) then
+               hx = (ht(i,j)-ht(i-1,j))/dx
+             endif
+             if ((j.ge.jds+1).and.(j.le.jde-2)) then
+               hy = (ht(i,j+1)-ht(i,j-1))/(2.*dy)
+             else if (j.eq.jds) then
+               hy = (ht(i,j+1)-ht(i,j))/dy
+             else if (j.eq.jde-1) then
+               hy = (ht(i,j)-ht(i,j-1))/dy
+             endif
 
-       slope = atan((hx**2+hy**2)**.5) 	
-         if (slope.lt.1.e-4) then
-           slope = 0.
-           slp_azi = 0.
-         else
-           slp_azi = atan2(hx,hy)+pi  
+             slope = atan((hx**2+hy**2)**.5) 	
+             if (slope.lt.1.e-4) then
+               slope = 0.
+               slp_azi = 0.
+             else
+               slp_azi = atan2(hx,hy)+pi  
 ! Rotate slope azimuth to lat-lon grid
-           if (cosalpha.ge.0) then
-             slp_azi = slp_azi - asin(sinalpha) 
-           else
-             slp_azi = slp_azi - (pi - asin(sinalpha))
-           endif
-         endif
+               if (cosalpha.ge.0) then
+                 slp_azi = slp_azi - asin(sinalpha) 
+               else
+                 slp_azi = slp_azi - (pi - asin(sinalpha))
+               endif
+             endif
 
-         if (topo_shading.eq.1) then
-           shadow = shadowmask(i,j)
-         else
-           shadow = 0
-         endif
-      ENDIF
+             shadow = shadowmask(i,j)
+           ENDIF
 
-         CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
-                     T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
-                     XTIME,GMT,RHO01D,DZ,                        &
-                     R,CP,G,DECLIN,SOLCON,                       &
-                     COSZ, OMG,                                  & !urban
-                     RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
-                     kts,kte,slope_rad,shadow,slp_azi,slope      )
+           CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
+                       T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
+                       XTIME,GMT,RHO01D,DZ,                        &
+                       R,CP,G,DECLIN,SOLCON,                       &
+                       COSZ, OMG,                                  & !urban
+                       RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
+                       kts,kte,slope_rad,shadow,slp_azi,slope      )
+         ELSE
+           CALL SWPARA(TTEN1D,GSW0,XLAT0,XLONG0,ALB0,              &
+                       T1D,QV1D,QC1D,QR1D,QI1D,QS1D,QG1D,P1D,      &
+                       XTIME,GMT,RHO01D,DZ,                        &
+                       R,CP,G,DECLIN,SOLCON,                       &
+                       COSZ, OMG,                                  & !urban
+                       RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
+                       kts,kte      )
+         ENDIF
 
        IF (PRESENT(COSZ_URB2D) .AND.  PRESENT(OMG_URB2D)) THEN   
          COSZ_URB2D(I,J)=COSZ !urban

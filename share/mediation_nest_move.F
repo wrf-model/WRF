@@ -685,6 +685,8 @@ write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, 
    ENDDO
 # endif
    RETURN
+#else
+   time_for_move2 = .FALSE.
 #endif
 END FUNCTION time_for_move2
 
@@ -850,6 +852,8 @@ USE module_timing
    ENDIF
 
    RETURN
+#else
+   time_for_move = .FALSE.
 #endif
 END FUNCTION time_for_move
 

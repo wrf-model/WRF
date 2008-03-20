@@ -10,8 +10,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 !  #undef DM_PARALLEL
 
 ! Driver layer modules
-   USE module_domain
-   USE module_configure
+   USE module_domain, ONLY : domain, get_ijk_from_grid
+   USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
    USE module_machine
    USE module_tiles
@@ -399,7 +399,6 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 END SUBROUTINE couple_or_uncouple_em
 
 LOGICAL FUNCTION cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, xstag, ystag )
-   USE module_configure
    IMPLICIT NONE
    INTEGER, INTENT(IN) :: pig, ips_save, ipe_save , pjg, jps_save, jpe_save
    LOGICAL, INTENT(IN) :: xstag, ystag

@@ -31,16 +31,20 @@ module_wrfsi_static.o:  module_wrfsi_static.F90
 			$(FC) -o $@ $(FFLAGS) -c module_wrfsi_static.f
 
 diffwrf:                diffwrf.F90
-			$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share diffwrf.F90 > diffwrf.f
-			$(FC) -c $(FFLAGS) diffwrf.f
-			@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
-			echo "diffwrf io_netcdf is being built now. "; \
-			  $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) $(LIBS) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) ;\
-                        else \
-			  echo "***************************************************************************** " ; \
-			  echo "*** Rerun compile to make diffwrf in external/io_netcdf directory         *** " ; \
-			  echo "***************************************************************************** " ; \
-                        fi
+	$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share diffwrf.F90 > diffwrf.f
+	$(FC) -c $(FFLAGS) diffwrf.f
+	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
+	  echo "diffwrf io_netcdf is being built now. " ; \
+          if [ -f $(NETCDFPATH)/lib/libnetcdff.a ] ; then \
+	    $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) $(LIBS) -lnetcdff ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) ;\
+          else \
+	    $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) $(LIBS) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) ;\
+          fi ; \
+        else \
+	   echo "***************************************************************************** " ; \
+	   echo "*** Rerun compile to make diffwrf in external/io_netcdf directory         *** " ; \
+	   echo "***************************************************************************** " ; \
+        fi
 
 field_routines.o:	field_routines.F90
 			$(CPP1) -I../ioapi_share field_routines.F90 > field_routines.f

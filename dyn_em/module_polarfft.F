@@ -70,8 +70,8 @@ SUBROUTINE pxft ( grid                          &
                  ,ips,ipe,jps,jpe,kps,kpe       &
                  ,imsx,imex,jmsx,jmex,kmsx,kmex &
                  ,ipsx,ipex,jpsx,jpex,kpsx,kpex )
-   USE module_domain
-   USE module_tiles
+   USE module_state_description
+   USE module_domain, ONLY : domain
    USE module_dm
    IMPLICIT NONE
    !  Input data.

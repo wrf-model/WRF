@@ -205,29 +205,36 @@ gen_get_nl_config ( char * dirname )
 {
   FILE * fp ;
   char  fname[NAMELEN] ;
-  char * fn = "get_nl_config.inc" ;
+  char * fn = "_nl_config.inc" ;
   char * gs, * intnt ;
   char  howset[NAMELEN] ;
   node_t *p ;
   int sw ;
+  int num_rconfigs = 0 ;
+  int i, half, j ;
 
+  for ( p = Domain.fields ; p != NULL ; p = p-> next ) { if ( p->node_kind & RCONFIG ) { num_rconfigs++ ; } }  /* howmany deez guys? */
+
+  for ( half = 0, j=0 ; half < num_rconfigs ; half += (num_rconfigs+1)/2, j++ ) {    /* break the files in half so we don't kill the compilers as much */
+  for ( sw = 0 ; sw < 2 ; sw++ ) {
+
+  if ( sw == 0 ) { gs = "get" ; intnt = "OUT" ; } else { gs = "set" ; intnt = "IN" ; }
 
   strcpy( fname, fn ) ;
-  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s",dirname,fn) ; }
+  if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s_%d%s",dirname,gs,j,fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
 
-  for ( sw = 0 ; sw < 2 ; sw++ ) 
+  for ( p = Domain.fields, i = -1 ; p != NULL ; p = p-> next )
   {
-  if ( sw == 0 ) { gs = "get" ; intnt = "OUT" ; } else { gs = "set" ; intnt = "IN" ; }
-  for ( p = Domain.fields ; p != NULL ; p = p-> next )
-  {
-    if ( p->node_kind & RCONFIG )
+    if ( p->node_kind & RCONFIG ) {
+       i++ ;
+    if ( (i >= half) && (i < half + (num_rconfigs+1)/2) )
     {
       strcpy(howset,p->howset) ;
       fprintf(fp,"SUBROUTINE nl_%s_%s ( id_id , %s )\n",gs,p->name, p->name) ;
       if ( sw_fort_kludge ) {
-        fprintf(fp,"  USE module_configure\n") ;
+        fprintf(fp,"  USE module_configure, ONLY : model_config_rec \n") ;
       }
       fprintf(fp,"  %s , INTENT(%s) :: %s\n",p->type->name,intnt,p->name) ;
       fprintf(fp,"  INTEGER id_id\n") ;
@@ -315,9 +322,11 @@ gen_get_nl_config ( char * dirname )
       fprintf(fp,"  RETURN\n") ;
       fprintf(fp,"END SUBROUTINE nl_%s_%s\n",gs,p->name ) ;
     }
-  }
+    }
   }
   close_the_file( fp ) ;
+  }
+  } /* halfs */
   return(0) ;
 }
 

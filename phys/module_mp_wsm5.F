@@ -279,6 +279,11 @@ CONTAINS
         praut, psaut, prevp, psdep, pracw, psaci, psacw,          &  
         pigen, pidep, pcond, xl, cpm, work2, psmlt, psevp, denfac, xni,&
         n0sfac
+#define WSM_NO_CONDITIONAL_IN_VECTOR
+#ifdef WSM_NO_CONDITIONAL_IN_VECTOR
+  REAL, DIMENSION(its:ite) :: xal, xbl
+#endif
+
 ! variables for optimization
   REAL, DIMENSION( its:ite )           :: tvec1
   INTEGER, DIMENSION( its:ite ) :: mstep, numdt
@@ -397,6 +402,33 @@ CONTAINS
       dldti=cvap-cice
       xai=-dldti/rv
       xbi=xai+hsub/(rv*ttp)
+
+! this is for compilers where the conditional inhibits vectorization
+#ifdef WSM_NO_CONDITIONAL_IN_VECTOR
+      do k = kts, kte
+        do i = its, ite
+          if(t(i,k).lt.ttp) then
+            xal(i) = xai
+            xbl(i) = xbi
+          else
+            xal(i) = xa
+            xbl(i) = xb
+          endif
+        enddo
+        do i = its, ite
+          tr=ttp/t(i,k)
+          logtr=log(tr)
+          qs(i,k,1)=psat*exp(logtr*(xa)+xb*(1.-tr))
+          qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
+          qs(i,k,1) = max(qs(i,k,1),qmin)
+          rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
+          qs(i,k,2)=psat*exp(logtr*(xal(i))+xbl(i)*(1.-tr))
+          qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
+          qs(i,k,2) = max(qs(i,k,2),qmin)
+          rh(i,k,2) = max(q(i,k) / qs(i,k,2),qmin)
+        enddo
+      enddo
+#else
       do k = kts, kte
         do i = its, ite
           tr=ttp/t(i,k)
@@ -415,6 +447,7 @@ CONTAINS
           rh(i,k,2) = max(q(i,k) / qs(i,k,2),qmin)
         enddo
       enddo
+#endif
 !
 !----------------------------------------------------------------
 !     initialize the variables for microphysical physics

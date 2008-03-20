@@ -194,7 +194,7 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
-      USE module_domain
+      USE module_domain, ONLY : domain, head_grid, find_grid_by_id
       USE module_machine
 
       IMPLICIT NONE
@@ -1204,7 +1204,7 @@ CONTAINS
 
 ! stub
    SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
-      USE module_domain
+      USE module_domain, ONLY : domain
       IMPLICIT NONE
       TYPE (domain), INTENT(INOUT) :: parent, nest
       INTEGER, INTENT(IN)          :: dx,dy
@@ -1529,7 +1529,7 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
                                       sp2y , ep2y , sm2y , em2y , &
                                       sp3y , ep3y , sm3y , em3y , &
                           bdx , bdy )
-   USE module_domain
+   USE module_domain, ONLY : domain, head_grid, find_grid_by_id
    USE module_dm
    IMPLICIT NONE
 
@@ -1705,7 +1705,7 @@ SUBROUTINE write_68( grid, v , s , &
                    ids, ide, jds, jde, kds, kde, &
                    ims, ime, jms, jme, kms, kme, &
                    its, ite, jts, jte, kts, kte )
-  USE module_domain
+  USE module_domain, ONLY : domain
   IMPLICIT NONE
   TYPE(domain) , INTENT (INOUT) :: grid 
   CHARACTER *(*) s
@@ -2677,8 +2677,9 @@ END
 #include "dummy_new_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -2732,8 +2733,9 @@ END
 #include "dummy_new_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       USE module_timing
       IMPLICIT NONE
@@ -2802,8 +2804,9 @@ END
 #include "dummy_new_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -2858,8 +2861,9 @@ END
 #include "dummy_new_args.inc"
 !
 )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -2894,8 +2898,9 @@ END
 #include "dummy_new_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
       USE module_dm
       IMPLICIT NONE
 !
@@ -2921,8 +2926,9 @@ END
 #include "dummy_new_args.inc"
 !
 )
-             USE module_domain
-             USE module_configure
+             USE module_state_description
+             USE module_domain, ONLY : domain
+             USE module_configure, ONLY : grid_config_rec_type
              USE module_dm
 !
              TYPE (grid_config_rec_type)            :: config_flags
@@ -2992,8 +2998,9 @@ END
 #include "dummy_new_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type, model_config_rec
       USE module_dm
       USE module_utility
       IMPLICIT NONE
@@ -3107,8 +3114,9 @@ END
 #include "dummy_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       USE module_timing
       IMPLICIT NONE
@@ -3182,8 +3190,9 @@ END
 #include "dummy_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -3251,8 +3260,9 @@ END
 #include "dummy_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       USE module_timing
 !
@@ -3300,8 +3310,9 @@ END
 #include "dummy_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -3379,8 +3390,9 @@ integer myproc
 #include "dummy_args.inc"
 !
 )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -3429,8 +3441,9 @@ integer myproc
 #include "dummy_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       IMPLICIT NONE
 !
@@ -3463,8 +3476,9 @@ integer myproc
 #include "dummy_args.inc"
 !
 )
-             USE module_domain
-             USE module_configure
+             USE module_state_description
+             USE module_domain, ONLY : domain
+             USE module_configure, ONLY : grid_config_rec_type
              USE module_dm
 !
              TYPE (grid_config_rec_type)            :: config_flags
@@ -3539,8 +3553,9 @@ integer myproc
 #include "dummy_args.inc"
 !
                  )
-      USE module_domain
-      USE module_configure
+      USE module_state_description
+      USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
       USE module_dm
       USE module_utility
       IMPLICIT NONE
@@ -3671,7 +3686,7 @@ integer myproc
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
-   USE module_dm
+   USE module_dm, ONLY : getrealmpitype
    IMPLICIT NONE
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
@@ -3702,7 +3717,7 @@ integer myproc
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
-   USE module_dm
+!   USE module_dm
    IMPLICIT NONE
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
@@ -3769,7 +3784,7 @@ integer myproc
                                 root                        , &    ! root
                                 communicator                , &    ! communicator
                                 ierr )
-   USE module_dm
+   USE module_dm, ONLY : getrealmpitype
    IMPLICIT NONE
    INTEGER field_ofst, glob_ofst
    INTEGER my_count, communicator, root, ierr
@@ -3864,7 +3879,7 @@ integer myproc
 ! end new stuff 20070124
 
 SUBROUTINE wrf_dm_define_comms ( grid )
-   USE module_domain
+   USE module_domain, ONLY : domain
    IMPLICIT NONE
    TYPE(domain) , INTENT (INOUT) :: grid
    RETURN

@@ -1560,7 +1560,7 @@ gen_nest_pack ( char * dirname )
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
-  char vname[NAMELEN] ; char tag[NAMELEN] ; ;
+  char vname[NAMELEN] ; char tag[NAMELEN] ;
   int d2, d3, sw ;
   char *info_name ;
 
@@ -1961,8 +1961,12 @@ fprintf(fp, "   write(0,*) AAA_AAA,BBB_BBB, '%s ', grid%%%s ( IDEBUG,JDEBUG)\n",
 int
 gen_comms ( char * dirname )
 {
+  FILE *fpsub ; 
   if ( sw_dm_parallel )
     fprintf(stderr,"ADVISORY: RSL_LITE version of gen_comms is linked in with registry program.\n") ;
+
+  /* truncate this file if it exists */
+  if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
 
   gen_halos( "inc" , NULL, Halos ) ;
   gen_shift( "inc" ) ;

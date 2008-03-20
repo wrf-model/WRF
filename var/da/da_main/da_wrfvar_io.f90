@@ -1,9 +1,6 @@
 module da_wrfvar_io
 
-   use module_configure, only : grid_config_rec_type,nl_set_gmt, nl_set_gmt, &
-      nl_set_julyr,nl_set_julday,nl_set_iswater,nl_set_cen_lat,nl_set_cen_lon,&
-      nl_set_truelat1,nl_set_truelat2,nl_set_moad_cen_lat,nl_set_stand_lon,&
-      nl_set_map_proj
+   use module_configure, only : grid_config_rec_type
    use module_date_time, only : geth_julgmt,current_date, start_date
    use module_domain, only : domain
    use module_io_domain, only : open_r_dataset,close_dataset, &

@@ -4,7 +4,7 @@ module da_test
    ! Purpose: Collection of routines associated with minimisation.
    !---------------------------------------------------------------------------
 
-   use module_configure, only : grid_config_rec_type,nl_set_dyn_opt
+   use module_configure, only : grid_config_rec_type
    use module_dm, only : wrf_dm_sum_real
 
 #ifdef DM_PARALLEL

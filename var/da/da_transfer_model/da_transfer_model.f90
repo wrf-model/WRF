@@ -4,9 +4,7 @@ module da_transfer_model
    ! Purpose: Transfer model states between different models
    !---------------------------------------------------------------------------
 
-   use module_configure, only : grid_config_rec_type,nl_set_dyn_opt, &
-      nl_get_stand_lon,nl_get_moad_cen_lat,nl_get_cen_lon,nl_get_cen_lat, &
-      nl_get_dx,nl_get_truelat2,nl_get_truelat1, nl_get_map_proj
+   use module_configure, only : grid_config_rec_type
    use module_domain, only : domain
    use module_state_description, only : dyn_em_ad, dyn_em, p_qv,dyn_em_tl, &
       p_qr, p_qi,p_qs,p_qg,p_qc,num_moist, p_a_qv, p_g_qv

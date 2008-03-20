@@ -6,7 +6,7 @@ module da_wrfvar_top
 
    use module_configure, only : grid_config_rec_type,model_config_rec, &
       model_to_grid_config_rec, get_config_as_buffer,set_config_as_buffer, &
-      initial_config,nl_get_debug_level
+      initial_config
    use module_domain, only : domain,alloc_and_configure_domain, head_grid, &
       program_name
    use module_driver_constants, only : max_comms

@@ -16,6 +16,8 @@ MODULES =                 		\
         module_init_utilities.o         \
 	module_damping_em.o		\
 	module_polarfft.o		\
+        module_first_rk_step_part1.o    \
+        module_first_rk_step_part2.o    \
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings
@@ -224,6 +226,8 @@ solve_em.o:     module_small_step_em.o \
                 module_bc_em.o         \
 		module_diffusion_em.o  \
 		module_big_step_utilities_em.o \
+                module_first_rk_step_part1.o \
+                module_first_rk_step_part2.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \
@@ -233,15 +237,27 @@ solve_em.o:     module_small_step_em.o \
 		../frame/module_dm.o \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
+		../phys/module_microphysics_driver.o \
+		../phys/module_microphysics_zero_out.o \
+		../phys/module_physics_addtendc.o
+
+module_first_rk_step_part1.o : \
 		../phys/module_radiation_driver.o \
 		../phys/module_surface_driver.o \
 		../phys/module_cumulus_driver.o \
-		../phys/module_microphysics_driver.o \
-		../phys/module_microphysics_zero_out.o \
 		../phys/module_pbl_driver.o \
-		../phys/module_fddagd_driver.o \
-		../phys/module_fddaobs_driver.o \
-		../phys/module_physics_addtendc.o
+		../phys/module_fddagd_driver.o
+
+module_first_rk_step_part2.o : \
+		module_diffusion_em.o  \
+                module_bc_em.o         \
+		../frame/module_domain.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o \
+		../share/module_bc.o \
+		../phys/module_fddaobs_driver.o
 
 adapt_timestep_em.o: \
 		../frame/module_domain.o \

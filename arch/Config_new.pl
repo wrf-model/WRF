@@ -25,6 +25,7 @@ $sw_ompparallel = "" ;
 $sw_stubmpi = "" ;
 $sw_usenetcdff = "" ;    # for 3.6.2 and greater, the fortran bindings might be in a separate lib file
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
+$sw_ifort_r8 = 0 ;
 
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
@@ -236,6 +237,9 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
+    if ( $sw_ifort_r8 ) {
+      $_ =~ s/^PROMOTION.*=/PROMOTION       =       -r8 /g ;
+    }
     if ( $sw_dmparallel ne "" && ($_ =~ /^DMPARALLEL[=\t ]/) ) {
        $_ =~ s/#// ;
     }
@@ -391,6 +395,13 @@ while ( <CONFIGURE_DEFAULTS> )
           $sw_fc = "\$(DM_FC)" ;
           $sw_cc = "\$(DM_CC)" ;
         }  # only one option in v3.0
+
+        $sw_ifort_r8 = 0 ;
+        if ( index ( $x, "ifort" ) > -1 || index ( $x, "intel compiler" ) ) {
+          if ( $sw_rwordsize == 8 ) {
+            $sw_ifort_r8 = 1 ;
+          }
+        }
       }
     }
   }

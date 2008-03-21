@@ -141,6 +141,13 @@ solve_em.o :
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(SOLVE_EM_SPECIAL) $*.f90
 
+module_sf_ruclsm.o : module_sf_ruclsm.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
+
 # compile without OMP
 input_wrf.o \
 module_io.o \

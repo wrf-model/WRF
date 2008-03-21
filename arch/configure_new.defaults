@@ -438,40 +438,6 @@ CC_TOOLS        =      cc
 #ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
 #
 DMPARALLEL      =       # 1
-OMPCPP          =       # -D_OPENMP
-OMP             =       # -openmp -fpp -auto
-SFC             =       ifort
-SCC             =       icc
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD              =       $(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -i4
-ARCH_LOCAL      =       -DMACOS -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM
-CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS
-LDFLAGS_LOCAL   =       -ip
-FCOPTIM         =       -O3
-FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
-FORMAT_FIXED    =       -FI
-FORMAT_FREE     =       -FR
-FCSUFFIX        =
-BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      cpp -C -P -xassembler-with-cpp
-AR              =      ar ru
-M4              =      m4 -B 14000
-RANLIB          =      ranlib
-CC_TOOLS        =      cc
-
-###########################################################
-#ARCH    Darwin (MACOS) g95 with gcc #serial dmpar
-#
-DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
 SFC             =       g95

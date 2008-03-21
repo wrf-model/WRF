@@ -31,6 +31,17 @@ if [ -n "$print_usage" ] ; then
   exit 
 fi
 
+if `pwd | grep ' ' > /dev/null ` ; then
+  echo '************************** W A R N I N G ************************************'
+  echo The current working directory has spaces in some components of its path name
+  echo and this may cause problems for your build.  This can occur, for example, on
+  echo Windows systems.  It is strongly recommended that you install WRF and other
+  echo related software such as NetCDF in directories whose path names contain no
+  echo white space.  On Win, for example, create and install in a directory under C:.
+  echo '*****************************************************************************'
+fi
+
+
 # lifted from the configure file for mpich; 00/03/10 jm
 #
 # Check for perl and perl version

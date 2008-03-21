@@ -355,20 +355,20 @@ CONTAINS
 !
 ! Modified for adaptive time step
 !
-  if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
-     if ( (itimestep .eq. 1) .or. (bldt .eq. 0) .or. &
-          ( CURR_SECS + dt >= ( int( CURR_SECS / ( bldt * 60 ) + 1 ) * bldt * 60) ) ) then
+  IF ( (itimestep .EQ. 1) .OR. (MOD(itimestep,STEPBL) .EQ. 0) ) THEN
+    run_param = .TRUE.
+  ELSE
+    run_param = .FALSE.
+  ENDIF
+  IF (PRESENT(adapt_step_flag)) THEN
+    IF ((adapt_step_flag)) THEN
+      IF ( (itimestep .EQ. 1) .OR. (bldt .EQ. 0) .OR. &
+           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( bldt * 60 ) + 1 ) * bldt * 60) ) ) THEN
         run_param = .TRUE.
-     else
+      ELSE
         run_param = .FALSE.
-     endif
-  else
-     if ( (itimestep .eq. 1) .or. (mod(itimestep,STEPBL) .eq. 0) ) then
-        run_param = .TRUE.
-     else
-        run_param = .FALSE.
-     endif
-  endif
+      ENDIF
+  ENDIF
 
  IF (run_param) THEN
   radiation = .false.

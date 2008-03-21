@@ -457,21 +457,23 @@ CONTAINS
 ! If CURR_SECS is passed in, we will calculate based upon that.  If it
 !   is not passed in, we'll do the old method of using the time STEP number
 !   
-  if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
-     if ( (itimestep .eq. 1) .or. (radt .eq. 0) .or. &
-          ( CURR_SECS + dt >= ( int( CURR_SECS / ( radt * 60 ) + 1 ) * radt * 60) ) ) then
-        run_param = .TRUE.
-     else
-        run_param = .FALSE.
-     endif
-  else
-     if ( (itimestep .eq. 1) .or. (mod(itimestep,STEPRA) .eq. 1 + ra_call_offset) .or. &
-          (STEPRA .eq. 1) ) then
-        run_param = .TRUE.
-     else
-        run_param = .FALSE.
-     endif
-  endif
+
+   IF ( (itimestep .EQ. 1) .OR. (MOD(itimestep,STEPRA) .EQ. 1 + ra_call_offset) .OR. &
+        (STEPRA .EQ. 1) ) THEN
+     run_param = .TRUE.
+   ELSE
+     run_param = .FALSE.
+   ENDIF
+   IF (PRESENT(adapt_step_flag)) THEN
+     IF ((adapt_step_flag)) THEN
+       IF ( (itimestep .EQ. 1) .OR. (radt .EQ. 0) .OR. &
+           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( radt * 60 ) + 1 ) * radt * 60) ) ) THEN
+         run_param = .TRUE.
+       ELSE
+         run_param = .FALSE.
+       ENDIF
+     ENDIF
+   ENDIF
 
    Radiation_step: IF ( run_param ) then
 

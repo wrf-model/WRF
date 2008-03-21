@@ -31,7 +31,7 @@ MAX_DOMAINS	=	21
 
 #### DM buffer length for the configuration flags.
 
-CONFIG_BUF_LEN	=	16384
+CONFIG_BUF_LEN	=	32768
 
 
 ##############################################################################

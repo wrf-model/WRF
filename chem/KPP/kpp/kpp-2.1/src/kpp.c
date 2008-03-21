@@ -459,7 +459,7 @@ for (i=0; i<SpcNr; i++)
 /*******************************************************************/                    
 int Postprocess( char * root )
 {
-char buf[ 200 ];
+char buf[ 1024 ];
 char cmd[500];
 char cmdexe[500];
 static char tmpfile[] = "kppfile.tmp";

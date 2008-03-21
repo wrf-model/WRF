@@ -39,7 +39,7 @@ include ../Makefile.defs
 
 #!cmsCFLAGS=`cat ../cflags` 
 #CFLAGS= -Aa
-CFLAGS=  
+CFLAGS= 
 CLFLAGS = -lm
 
 all: kpp
@@ -68,7 +68,7 @@ kpp:    $(OBJS)
 	@mv kpp ../bin
 
 clean:  
-	@rm -f *~ *.o cflags 
+	@rm -f *~ *.o cflags  lex.yy.c y.tab.c y.tab.h
 
 maintainer-clean: clean
 	@rm -f lex.yy.c y.tab.c y.tab.h

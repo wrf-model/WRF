@@ -43,6 +43,7 @@
   #include "scan.h" 
   #include "y.tab.h"
 
+  void*malloc() ;
   void Include ( char * filename );
   int EndInclude();
 
@@ -350,7 +351,7 @@ YY_BUFFER_STATE newb;
   
   crt_line_no = 1;  
 
-  crt_filename = malloc( 1 + strlen( name ) );
+  crt_filename = (char *) malloc( 1 + strlen( name ) );
   strcpy( crt_filename, name ); 
 
   f = fopen( name, "r" );

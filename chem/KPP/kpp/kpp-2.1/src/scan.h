@@ -97,6 +97,9 @@ void WriteSpecies();
 void WriteMatrices();
 void WriteOptions();
 
+void yyerror() ;
+void ParserErrorMessage() ;
+
 char * AppendString( char * s1, char * s2, int * len, int addlen );
 void AddInlineCode( char * context, char * code );
 

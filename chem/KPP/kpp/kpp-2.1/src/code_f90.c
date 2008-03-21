@@ -35,7 +35,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define MAX_LINE 120
+#define MAX_LINE 2048
 
 char *F90_types[] = { "",                   /* VOID */ 
                     "INTEGER",            /* INT */

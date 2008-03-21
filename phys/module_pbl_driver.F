@@ -368,6 +368,7 @@ CONTAINS
       ELSE
         run_param = .FALSE.
       ENDIF
+    ENDIF
   ENDIF
 
  IF (run_param) THEN

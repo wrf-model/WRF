@@ -397,7 +397,7 @@ while ( <CONFIGURE_DEFAULTS> )
         }  # only one option in v3.0
 
         $sw_ifort_r8 = 0 ;
-        if ( index ( $x, "ifort" ) > -1 || index ( $x, "intel compiler" ) ) {
+        if ( index ( $x, "ifort" ) > -1 || index ( $x, "intel compiler" ) > -1 ) {
           if ( $sw_rwordsize == 8 ) {
             $sw_ifort_r8 = 1 ;
           }

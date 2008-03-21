@@ -91,8 +91,11 @@ drop_comment( char * linei )
     if ( *p == '"' )  { if ( inquote == *p ) { inquote = '\0' ; } else { inquote = *p ; } }
     if ( !inquote && *p == '!' ) { 
        /* let us make sure this is not an OMP directive shall we? */
-       for ( q = p+1 ; *q ; q++ ) {
-         if ((*q == 'o' || *q == 'O') && (*(q+1) == 'm' || *(q+1) == 'M') && (*(q+2) == 'p' || *(q+2) == 'P') )  return(0) ;
+       for ( q = p ; *q ; q++ ) {
+         if ((*q == '$') && 
+            (*(q+1) == 'o' || *(q+1) == 'O') &&
+            (*(q+2) == 'm' || *(q+2) == 'M') &&
+            (*(q+3) == 'p' || *(q+3) == 'P') )  return(0) ;
        }
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }

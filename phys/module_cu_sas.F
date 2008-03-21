@@ -1,10 +1,6 @@
 !
 MODULE module_cu_sas
 
-#ifndef MOVE_NL_OUTSIDE_MODULE_CONFIGURE
-USE module_configure, ONLY: nl_get_start_year, nl_get_start_month, &
-                            nl_get_start_day, nl_get_start_hour
-#endif
 CONTAINS
 
 !-----------------------------------------------------------------

@@ -1380,6 +1380,9 @@ okay_to_w = .false.
       INTEGER i
       NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups
       INTEGER ntasks, mytask, ierr, io_status
+#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+      INTEGER thread_support_provided, thread_support_requested
+#endif
       INTEGER mpi_comm_here
       LOGICAL mpi_inited
       LOGICAL esmf_coupling
@@ -1403,7 +1406,15 @@ okay_to_w = .false.
 
       CALL MPI_INITIALIZED( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
+#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+        thread_support_requested = MPI_THREAD_FUNNELED
+        CALL mpi_init_thread ( thread_support_requested, thread_support_provided, ierr )
+        IF ( thread_support_provided .lt. thread_support_requested ) THEN
+           CALL WRF_ERROR_FATAL( "failed to initialize MPI thread support")
+        ENDIF
+#  else
         CALL mpi_init ( ierr )
+#  endif
         CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
         CALL wrf_termio_dup
       ENDIF

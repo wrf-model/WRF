@@ -447,6 +447,10 @@ em_core :
 mpi2_test :
 	@ cd tools ; /bin/rm -f mpi2_test ; $(CC) -c mpi2_test.c ; cd ..
 
+# rule used by configure to test if this will compile with MPI 2 calls MPI_Init_thread
+mpi2_thread_test :
+	@ cd tools ; /bin/rm -f mpi2_thread_test ; $(CC) -c mpi2_thread_test.c ; cd ..
+
 # rule used by configure to test if fseeko and fseeko64 are supported (for share/landread.c to work right)
 fseek_test :
 	@ cd tools ; /bin/rm -f fseeko_test ; $(SCC) -DTEST_FSEEKO -o fseeko_test fseek_test.c ; cd ..

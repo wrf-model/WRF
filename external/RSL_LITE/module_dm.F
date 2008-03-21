@@ -1132,6 +1132,9 @@ CONTAINS
       INCLUDE 'mpif.h'
       LOGICAL mpi_inited
       INTEGER mpi_comm_here, mpi_comm_local, comdup,  mytask, ntasks, ierr, io_status
+#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+      INTEGER thread_support_provided, thread_support_requested
+#endif
       INTEGER i, j
       INTEGER, ALLOCATABLE :: icolor(:)
       INTEGER tasks_per_split
@@ -1139,7 +1142,15 @@ CONTAINS
 
       CALL MPI_INITIALIZED( mpi_inited, ierr )
       IF ( .NOT. mpi_inited ) THEN
+#  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
+        thread_support_requested = MPI_THREAD_FUNNELED
+        CALL mpi_init_thread ( thread_support_requested, thread_support_provided, ierr )
+        IF ( thread_support_provided .lt. thread_support_requested ) THEN
+           CALL WRF_ERROR_FATAL( "failed to initialize MPI thread support")
+        ENDIF
+#  else
         CALL mpi_init ( ierr )
+#  endif
         CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
         CALL wrf_termio_dup
       ENDIF

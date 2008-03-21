@@ -82,13 +82,20 @@ next_line:
 int
 drop_comment( char * linei )
 {
-  char *p ;
+  char *p, *q ;
   char inquote = '\0' ;
+
   for ( p = linei ; *p ; p++ )
   {
     if ( *p == '\'' ) { if ( inquote == *p ) { inquote = '\0' ; } else { inquote = *p ; } }
     if ( *p == '"' )  { if ( inquote == *p ) { inquote = '\0' ; } else { inquote = *p ; } }
-    if ( !inquote && *p == '!' ) { *p = '\n' ; *(p+1) = '\0' ; return(0) ; }
+    if ( !inquote && *p == '!' ) { 
+       /* let us make sure this is not an OMP directive shall we? */
+       for ( q = p+1 ; *q ; q++ ) {
+         if ((*q == 'o' || *q == 'O') && (*(q+1) == 'm' || *(q+1) == 'M') && (*(q+2) == 'p' || *(q+2) == 'P') )  return(0) ;
+       }
+       *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
+    }
   }
 }
 

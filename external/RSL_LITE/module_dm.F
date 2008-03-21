@@ -3443,7 +3443,7 @@ integer myproc
                  )
       USE module_state_description
       USE module_domain, ONLY : domain, get_ijk_from_grid
-      USE module_configure, ONLY : grid_config_rec_type
+      USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
       USE module_dm
       IMPLICIT NONE
 !

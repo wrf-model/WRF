@@ -1241,7 +1241,7 @@ da_wrfvar.exe:	        wrfvar_lib da_wrfvar_main.f90
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_wrfvar_main.f90 > da_wrfvar_main.f
 	$(FC) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(ESMF_IO_INC) da_wrfvar_main.f \
             -L$(WRF_SRC_ROOT_DIR)/main -lwrflib \
-            -L$(BUFR) -lbufr -L$(FFTPACK) -lfftpack \
+            -L$(BUFR) -lbufr \
             -L$(LAPACK) -llapack -L$(BLAS) -lblas $(PROMOTION) $(LIB)
 
 da_advance_time.exe:    wrfvar_lib da_advance_time.f90

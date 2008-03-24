@@ -1,9 +1,5 @@
 module da_spectral
 
-#ifdef DM_PARALLEL
-   use mpi, only : mpi_sum
-#endif
-
    use da_control, only : trace_use, its,ite,jts,jte, &
       da_zero_complex, jds,jde,comm,ierr,test_transforms, stdout, pi, &
       gaussian_lats, earth_radius, alpha_corr_type, alpha_corr_scale, &
@@ -27,6 +23,10 @@ module da_spectral
    !-----------------------------------------------------------------------
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

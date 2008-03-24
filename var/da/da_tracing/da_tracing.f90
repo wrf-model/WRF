@@ -1,9 +1,5 @@
 module da_tracing
 
-#ifdef DM_PARALLEL
-   use mpi, only : mpi_character
-#endif
-
    use da_control, only : num_procs, documentation_url, use_html, ierr, &
       trace_pe, trace_memory, trace_unit, trace_csv_unit, &
       trace_csv, myproc, comm, rootproc, trace_max_depth, &
@@ -17,6 +13,10 @@ module da_tracing
          integer, intent(out) :: memory_used
       end subroutine da_memory
    end interface
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
    integer, parameter :: TraceIndentAmount      = 2   ! default indent
    integer, parameter :: MaxNoRoutines          = 440 ! maxium number of subroutines

@@ -14,7 +14,6 @@ module da_test
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
       halo_sfc_xa_sub, halo_ssmi_xa_sub
    use da_control, only : ips,ipe,jds,jde,jps,jpe,kds,kde,kps,kpe
-   use mpi, only : mpi_sum
 #endif
 
    use da_control, only : num_procs                                
@@ -75,6 +74,10 @@ module da_test
       da_transform_vtovv_global_adj, da_transform_vtovv_adj
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

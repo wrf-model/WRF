@@ -93,7 +93,7 @@
                               id, ktau, dtstep, config_flags,          &
                               gmt, julday,                             &
                               p_phy, t_phy, rho_phy, p8w, t8w,         &
-                              xlat, xlong, z, z_at_w,                  &
+                              xlat, xlong,    z_at_w,                  &
                               moist, chem,gd_cloud,gd_cloud2,          &
                               ph_no2,ph_o31d,ph_o33p,ph_hono,          &
                               ph_hno3,ph_hno4,ph_no3o2,ph_no3o,        &
@@ -125,7 +125,7 @@
       type(grid_config_rec_type),  intent(in   ) :: config_flags
 
       real, dimension( ims:ime, kms:kme, jms:jme ),                    &
-            intent(in   ) :: p_phy, t_phy, rho_phy, p8w, t8w, z, z_at_w
+            intent(in   ) :: p_phy, t_phy, rho_phy, p8w, t8w, z_at_w
 !
 ! these arrays are for cloudwater/ice coming from grell convection, optional
       real, dimension( ims:ime, kms:kme, jms:jme ),                    &
@@ -213,10 +213,11 @@
           wrk       = moist(i,k,j,p_qv)/qs
           rh(k+1)   = max( 0.0d0, min( 1.0d0, wrk) )              ! relative huminity
        
-          xlwc(k+1) = 0.0 ! 1.0e3*moist(i,k,j,p_qc)*rho_phy(i,k,j)  ! cloud water(g/m^3)
+          if(p_qc.gt.1)xlwc(k+1) = 1.0e3*moist(i,k,j,p_qc)*rho_phy(i,k,j)  ! cloud water(g/m^3)
           if( xlwc(k+1) < 1.0e-6 ) xlwc(k+1) = 0.0
        
-          zh(k+1) = z(i,k,j)*0.001 - z_at_w(i,1,j)*0.001      ! height(km)
+          zh(k+1) = .5*(z_at_w(i,k+1,j)+z_at_w(i,k,j))*0.001 - z_at_w(i,kts,j)*0.001      ! height(km)
+!         zh(k+1) = z(i,k,j)*0.001 - z_at_w(i,1,j)*0.001      ! height(km)
 
 !===============================================================================
 ! XUEXI 
@@ -291,27 +292,29 @@
                     prate )
 
         do k = kts, kte-1 
-          ph_no2(i,k,j)   = prate(k,pid_no2)
-          ph_o31d(i,k,j)  = prate(k,pid_o31d)
-          ph_o33p(i,k,j)  = prate(k,pid_o33p)
-          ph_hono(i,k,j)  = prate(k,pid_hono)
-          ph_hno3(i,k,j)  = prate(k,pid_hno3)
-          ph_hno4(i,k,j)  = prate(k,pid_hno4)
-          ph_no3o2(i,k,j) = prate(k,pid_no3o2)
-          ph_no3o(i,k,j)  = prate(k,pid_no3o)
-          ph_h2o2(i,k,j)  = prate(k,pid_h2o2)
-          ph_ch2om(i,k,j) = prate(k,pid_ch2om)
-          ph_ch2or(i,k,j) = prate(k,pid_ch2or)
-          ph_ald(i,k,j)   = prate(k,pid_ald)
-          ph_op1(i,k,j)   = prate(k,pid_op1)
-          ph_op2(i,k,j)   = prate(k,pid_op2)
-          ph_paa(i,k,j)   = prate(k,pid_paa)
-          ph_ket(i,k,j)   = prate(k,pid_ket)
-          ph_glya(i,k,j)  = prate(k,pid_glya)
-          ph_glyb(i,k,j)  = prate(k,pid_glyb)
-          ph_mgly(i,k,j)  = prate(k,pid_mgly)
-          ph_dcb(i,k,j)   = prate(k,pid_dcb)
-          ph_onit(i,k,j)  = prate(k,pid_onit)
+          ph_no2(i,k,j)   = prate(k,pid_no2)*60.
+          ph_o31d(i,k,j)  = prate(k,pid_o31d)*60.
+          ph_o33p(i,k,j)  = prate(k,pid_o33p)*60.
+          ph_hono(i,k,j)  = prate(k,pid_hono)*60.
+          ph_hno3(i,k,j)  = prate(k,pid_hno3)*60.
+          ph_hno4(i,k,j)  = prate(k,pid_hno4)*60.
+          ph_no3o2(i,k,j) = prate(k,pid_no3o2)*60.
+          ph_no3o(i,k,j)  = prate(k,pid_no3o)*60.
+          ph_h2o2(i,k,j)  = prate(k,pid_h2o2)*60.
+          ph_ch2om(i,k,j) = prate(k,pid_ch2om)*60.
+          ph_ch2or(i,k,j) = prate(k,pid_ch2or)*60.
+          ph_ald(i,k,j)   = prate(k,pid_ald)*60.
+          ph_op1(i,k,j)   = prate(k,pid_op1)*60.
+          ph_op2(i,k,j)   = prate(k,pid_op2)*60.
+          ph_paa(i,k,j)   = prate(k,pid_paa)*60.
+          ph_ket(i,k,j)   = prate(k,pid_ket)*60.
+          ph_glya(i,k,j)  = prate(k,pid_glya)*60.
+          ph_glyb(i,k,j)  = prate(k,pid_glyb)*60.
+          ph_mgly(i,k,j)  = prate(k,pid_mgly)*60.
+          ph_dcb(i,k,j)   = prate(k,pid_dcb)*60.
+          ph_onit(i,k,j)  = prate(k,pid_onit)*60.
+          ph_macr(i,k,j)  = prate(k,28) *60.  !
+          ph_ch3coc2h5(i,k,j)=prate(k,23)*60. !
         enddo
 
       enddo I_TILE_LOOP

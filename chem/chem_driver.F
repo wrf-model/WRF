@@ -1,3 +1,8 @@
+!
+!   WRF-chem V3.0 : Original version of chem_driver written by Georg Grell (ESRL/GSD)
+!                   Further developments, bugfixes and improvements  by
+!                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
+!
 #if ( NMM_CORE == 1 )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !NCEP_MESO:MEDIATION_LAYER:SOLVER
@@ -93,7 +98,7 @@
       REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: scalar_trans
 #endif
 #if ( EM_CORE == 1 )
-      real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old,vcso2_old
+      real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old,vcso2_old,vch2o2_old
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog) ::vdrog3
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::n2o5_het 
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::              &
@@ -177,8 +182,10 @@
                             ims, ime, jms, jme, kms, kme,    &
                             ips, ipe, jps, jpe, kps, kpe    )
   ktau = grid%itimestep
-  CALL domain_clock_get( grid, current_timestr=current_date_char ) !shc
-  read(current_date_char(6:7),FMT='(I2)') current_month            !shc
+! following two lines needed for MEGAN
+  CALL domain_clock_get( grid, current_timestr=current_date_char )
+  read(current_date_char(6:7),FMT='(I2)') current_month
+!
 !initialize
 !
 #if ( NMM_CORE == 1 )
@@ -188,7 +195,7 @@
       KTAU=GRID%NTSD
       IDF=IDE-1
       JDF=JDE-1
-      KDF=KDE-2 !wig: do not do chem at the top level to mimic what used to be done (also prevents a solver failure at kde-1 for MADE/SORGAM)
+      KDF=KDE-2 ! DO NOT do chem at the top level to mimic what used to be done (also prevents a solver failure at kde-1 for MADE/SORGAM)
       ITS=IPS
       ITE=MIN(IPE,IDF)
       JTS=JPS
@@ -197,15 +204,6 @@
       KTE=MIN(KPE,KDF)
 
 #endif
-  if(ktau.le.1)then
-    grid%gd_cloud_a=0.
-    grid%gd_cloud2_a=0.
-    grid%gd_cloud_b=0.
-    grid%gd_cloud2_b=0.
-    grid%raincv_a=0.
-    grid%raincv_b=0.
-  endif
-   
 
 
   num_3d_m        = num_moist
@@ -474,14 +472,10 @@
 !$OMP PARALLEL DO   &
 !$OMP PRIVATE ( ij, its, ite, jts, jte )
    chem_tile_loop_1: DO ij = 1 , grid%num_tiles
-!!$       its = max(grid%i_start(ij),ids+1) !beg: old way w/o domain edge ring
-!!$       ite = min(grid%i_end(ij),ide-2)
-!!$       jts = max(grid%j_start(ij),jds+1)
-!!$       jte = min(grid%j_end(ij),jde-2)   !end: old way
-       its = grid%i_start(ij) !beg, wig: new way to match physics subroutines
+       its = grid%i_start(ij) 
        ite = min(grid%i_end(ij),ide-1)
        jts = grid%j_start(ij)
-       jte = min(grid%j_end(ij),jde-1) !end, wig: new way
+       jte = min(grid%j_end(ij),jde-1) 
 
        kts=k_start
        kte=min(k_end,kde-1)
@@ -565,7 +559,6 @@
               grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,       &
               grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,       &
               grid%ebio_no,                                                                &
-         !shc stuff for MEGAN v2.04
 #if (NMM_CORE == 1)
               grid%T2,grid%RSWIN,                                                         &
 #endif
@@ -581,7 +574,6 @@
               grid%mebio_isop,grid%mebio_apin,grid%mebio_bpin, grid%mebio_bcar,            &
               grid%mebio_acet,grid%mebio_mbo,grid%mebio_no,                                &
               current_month,                                                               &
-         !shc end stuff for MEGAN v2.04
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
@@ -675,7 +667,6 @@
 
 !
 ! do vertical mixing with dry deposition
-! 28-jun-2005 rce - added vertmix_onoff to turn vertical mixing on/off
 !
       if (config_flags%vertmix_onoff>0) then
          if (ktau.gt.2) then
@@ -700,7 +691,6 @@
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
-!                k_start         , min(k_end,kde-ksubt)                               )
          end if
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
@@ -725,7 +715,6 @@
 !   convective transport/wet deposition
 !
 !
-!
      if( config_flags%cu_physics>0 .and. config_flags%chem_conv_tr>0)then
         call wrf_debug(15,'calling conv transport')
         call grelldrvct(grid%DT,ktau,grid%DX,grid%id,config_flags,                    &
@@ -739,12 +728,10 @@
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,                                                                  &
              grid%cu_co_ten,                                                          &
-             num_chem,                                                                &
+             numgas,config_flags%chem_opt,                                          &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
-!~wig:temporarily change to k_end to avoid rewriting k indexing inside routine:   its,ite,jts,jte,kts,kte)
-!            k_start    , min(k_end,kde-1)                                            )
      end if
 !
 !
@@ -760,19 +747,11 @@ n2o5_het=0.
 ! For the chemistry tracer mode, only emissions and vertical mixing are done.
 ! So, finish any remaining tiles and then skip to the end of chem_driver.
 !
-!      kts=k_start
-!      kte=k_end
 
       if((ktau.eq.1.or.mod(ktau,grid%stepchem).eq.0)                                  &
            .and. config_flags%chem_opt /= CHEM_TRACER) then
         dtstepc=grid%dt*float(grid%stepchem)
         ktauc=max(ktau/grid%stepchem,1)
-        !wig, 23-Jul-2007: Alter logic to reduce dtstepc on the 2nd call
-        !to the gas and aer drivers since they are already called once at
-        !the 1st time step. The original logic introduced an erroneous
-        !extra one timestep increment to the calls since they are forced
-        !to make a call at katu==1. This only matters when the met
-        !timestep does not equal the chem timestep.
         if(ktau.eq.1) then
            dtstepc=grid%dt
         else if( ktau==grid%stepchem .and. grid%stepchem>1 ) then
@@ -791,7 +770,7 @@ n2o5_het=0.
 #endif
               p_phy,chem,rho,dz8w,grid%dx,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &
-              vdrog3,vcsulf_old,vcso2_old,grid%ttday,grid%tcosz,                      &
+              vdrog3,vcsulf_old,vcso2_old,vch2o2_old,grid%ttday,grid%tcosz,                      &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &
               grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,            &
@@ -806,7 +785,6 @@ n2o5_het=0.
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte        )
-!cms++
 !
 
 #ifdef WRF_KPP
@@ -830,11 +808,11 @@ CALL kpp_mechanism_driver (chem,                                                
     if(config_flags%chem_opt == 301 ) then
        chem(its:ite,kts:kte,jts:jte,p_sulf)=vcsulf_old(its:ite,kts:kte,jts:jte)
        chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
+       chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
    endif
 
 
 
-!cms--
 !
 #endif
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
@@ -962,9 +940,6 @@ CALL kpp_mechanism_driver (chem,                                                
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite, jts,jte, kts,kte)                                              
-!              grid%i_start(ij), min(grid%i_end(ij),ide-1),                            &
-!              grid%j_start(ij), min(grid%j_end(ij),jde-1),                            &
-!              k_start         , min(k_end,kde-ksubt)                                  )
        
        endif
        
@@ -987,7 +962,6 @@ end if !Chemistry time step check
            its,ite, jts,jte, kts, kte                                                 )
 
 ! Fill top level to prevent spurious interpolation results (no extrapolation)
-! should this be done on halo too????
       do nv=1,num_chem
          do j=jts,jte
             do i=its,ite

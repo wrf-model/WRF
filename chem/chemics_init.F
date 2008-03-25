@@ -94,20 +94,6 @@ call wrf_message("**************************************************************
 
     numgas = get_last_gas(config_flags%chem_opt)
  
-if ( config_flags%chem_opt == 9 .or. config_flags%chem_opt == 10 ) then
-call wrf_message("*********************************************************************")
-call wrf_message("* WARNING: THE COMBINATION OF progn=1 AND chem_opt=9 or 10 IS       *")
-call wrf_message("*          CONSIDERED BETA CODE THAT IS STILL IN DEVELOPMENT. THE   *")
-call wrf_message("*          RESULTS APPEAR REASONABLE, BUT SMALL DIFFERENCES WILL    *")
-call wrf_message("*          ARRISE WHEN CHANGING THE NUMBER OF PROCESSORS. ALSO,     *")
-call wrf_message("*          OPTION ASSOCIATED WITH CLOUD-AEROSOL INTERACTIONS AND    *")
-call wrf_message("*          AQUEOUS CHEMISTRY USING MOSAIC HAVE NOT BEEN TESTED ON A *")
-call wrf_message("*          WIDE RANGE OF COMPUTER ARCHITECTURES. USERS THAT CHOOSE  *")
-call wrf_message("*          THSE OPTIONS ARE ASKED TO REPORT ANY BUGS THAT APPEAR TO *")
-call wrf_message("*          BE ASSOCIATED WITH CLOUD-AEROSOL INTERACTION MODULES TO  *")
-call wrf_message("*          jerome.fast@pnl.gov and wrfchemhelp.gsd@noaa.gov         *")
-call wrf_message("*********************************************************************")
-endif 
 #if ( NMM_CORE == 1 )
 call wrf_message("*********************************************************************")
 call wrf_message("* WARNING: THE USE OF THE NMM WITH CHEMISTRY IS                     *")
@@ -115,6 +101,61 @@ call wrf_message("*          CONSIDERED BETA CODE THAT IS STILL IN DEVELOPMENT. 
 call wrf_message("*          PLEASE REPORT ANY BUGS TO wrfchemhelp.gsd@noaa.gov       *")
 call wrf_message("*********************************************************************")
 #endif
+
+   chem_select: SELECT CASE(config_flags%chem_opt)
+     CASE (GOCART_SIMPLE)
+       CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
+       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance.")
+     CASE (GOCARTRACM_KPP)
+       CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
+       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (CBM4_KPP )
+       CALL wrf_debug(15,'calling CB4 from chem_driver')
+       call wrf_message("WARNING: CB4 chemistry option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (NMHC9_KPP )
+       CALL wrf_debug(15,'calling NMHC9 from chem_driver')
+       call wrf_message("WARNING: NMHC9 chemistry option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+   END SELECT chem_select
+
+   if ( config_flags%dust_opt == 1 ) then
+       call wrf_message("WARNING: dust option currently works only with the GOCART aerosol option.")
+       call wrf_message("WARNING: dust option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+   endif
+
+   if ( config_flags%seas_opt == 1 ) then
+       call wrf_message("WARNING: sea salt option currently works only with the GOCART aerosol option.")
+       call wrf_message("WARNING: sea salt option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+   endif
+
+   if ( config_flags%biomass_burn_opt == 1 ) then
+       call wrf_message("WARNING: biomass burning option works only when chem_opt is set to RACMPM_KPP.")
+       call wrf_message("WARNING: biomass burning option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+   endif
+
+   if ( config_flags%wetscav_onoff == 1 ) then
+      if ( config_flags%chem_opt >= 11 .OR. config_flags%chem_opt <= 8) then
+        call wrf_error_fatal("ERROR: wet scavaging option requires chem_opt = 9 or 10 to function.")
+      endif
+      if ( config_flags%mp_physics /= 2 ) then
+        call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 2 (Lin et al.) to function.")
+      endif
+   endif
+
+   if ( config_flags%cldchem_onoff == 1 ) then
+      if ( config_flags%chem_opt >= 11 .OR. config_flags%chem_opt <= 8) then
+        call wrf_error_fatal("ERROR:  cloud chemistry option requires chem_opt = 9 or 10 to function.")
+      endif
+      if ( config_flags%mp_physics /= 2 ) then
+        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) to function.")
+      endif
+   endif
 
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0

@@ -1021,7 +1021,6 @@ END MODULE module_mosaic_addemiss
          if(isltyp(i,j).eq.12) izob=3
          if(isltyp(i,j).ge.13) izob=0
          if(izob.eq.0) goto 1840
-         beta = 0.28
 !
 ! part3 - dustprod
 !

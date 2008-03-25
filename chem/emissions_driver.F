@@ -1,4 +1,9 @@
-!WRF:MODEL_LAYER:CHEMICS
+!
+!   WRF-chem V3.0 : Original version of emission_driver written by Georg Grell (ESRL/GSD)
+!                   Further developments, bugfixes and improvements  by
+!                   William Gustafson (PNNL), Serena Chung (WSU), 
+!                   Saulo Freitas (CPTEC), and Georg Grell
+!
 !
 MODULE module_emissions_driver
    IMPLICIT NONE
@@ -23,7 +28,7 @@ CONTAINS
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
-         !shc stuff for MEGAN v2.04                                                 
+         ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
          msebio_isop,                                                      &
@@ -34,7 +39,7 @@ CONTAINS
          mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,                   &
          mebio_acet, mebio_mbo, mebio_no,                                  &
          current_month,                                                    &
-         !shc end stuff for MEGAN v2.04
+         ! end stuff for MEGAN v2.04
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -145,7 +150,8 @@ CONTAINS
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no
 
-   !shc stuff for MEGAN v2.04
+   ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
+   !  as declared in registry.chem
 
    integer, intent(in   ) :: nmegan
    real, dimension (ims:ime, jms:jme , nmegan) ,                       &
@@ -177,7 +183,7 @@ CONTAINS
 
    integer, intent(in) :: current_month
 
-   !shc end stuff for MEGAN v2.04
+   ! end stuff for MEGAN v2.04
 
       REAL,      INTENT(IN   ) ::                                      &
                             dtstep, dx, gmt, g
@@ -242,10 +248,7 @@ CONTAINS
         CALL wrf_debug(15,'no dms emissions')
       END SELECT dms_select
 
-!!$    ksub=1
-!!$#if ( NMM_CORE == 1 )
     ksub=0
-!!$#endif
 !!! ***********   FIRE!!!! ****************************************
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
@@ -316,7 +319,7 @@ CONTAINS
                its,ite, jts,jte, kts,kte                               )
        endif
 
-     CASE (MEGAN2) !shc
+     CASE (MEGAN2) 
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then                        
          CALL wrf_debug(15,'biogenic emissions: calling megan v2.04')  
          call bio_emissions_megan2(id,config_flags,ktau,dtstep,        &
@@ -366,7 +369,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling add_biogenics')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
        call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
@@ -375,7 +378,7 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       end if !shc
+       end if 
 
        end if ! emiss_inpt_opt /= 3
 
@@ -393,7 +396,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
          call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
               rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
               ids,ide, jds,jde, kds,kde,                                 &
@@ -436,7 +439,7 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling add_biogenics')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then !shc 
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then
        call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
@@ -445,7 +448,7 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       end if !shc
+       end if 
 
        end if ! emiss_inpt_opt /= 3
 
@@ -509,10 +512,6 @@ CONTAINS
        call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
             emis_ant,                                                    &
-!           ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,       &
-!           ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,  &
-!           ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,    &
-!           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,                          &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )

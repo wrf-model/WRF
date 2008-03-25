@@ -1,3 +1,14 @@
+!
+!   WRF-chem V3.0 : Original version of dry_dep_driver written by Georg Grell (ESRL/GSD)
+!                   VERTMX was originally developed by Mariusz Pagowski. It is written to 
+!                   conserve, it needs concentration as input, it will not keep a
+!                   constant mixing ratio profile untouched. Further modifications 
+!                   by Richard C. Easter. In addition
+!                   modifications by Richard C. Easter (PNNL) are available to 
+!                   use mixing ratio as input and keep the mixing ratio constant.
+!
+!                    !!!!!!         Both versions are conserving.    !!!!!!!!!!
+!
 !WRF:MODEL_LAYER:CHEMICS
 !
 MODULE module_dry_dep_driver
@@ -107,7 +118,6 @@ CONTAINS
                  idrydep_onoff
 
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
-!     CHARACTER (4) :: luse_typ,mminlu_loc
 ! ..
 ! .. Local Arrays ..
       REAL :: p(kts:kte)
@@ -285,7 +295,7 @@ CONTAINS
       ekmfull(kte+1)=0.
 
 !!$! UNCOMMENT THIS AND FINE TUNE LEVELS TO YOUR DOMAIN IF YOU WANT TO
-!!$! FORCE MIXING TO A CERTAIN DEPTH:
+!!$! FORCE MIXING ESPECIALLY OVER URBAN AREAS TO A CERTAIN DEPTH:
 !!$!
 !!$! --- Mix the emissions up several layers
 !!$!     if e_co > 0., the grid cell should not be over water
@@ -308,7 +318,7 @@ CONTAINS
 !   do not need lho,lho2
 !   (03-may-2006 rce - calc dryrho_1d and pass it to vertmx)
 !
-      if(p_o3.gt.1)dep_vel_o3(i,j)=ddvel(i,j,p_o3)
+      if(p_sulf.gt.1)dep_vel_o3(i,j)=ddvel(i,j,p_sulf)
       do nv=2,num_chem-0
          do k=kts,kte
 !           pblst(k)=max(epsilc,chem(i,k,j,nv))

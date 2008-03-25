@@ -1,4 +1,8 @@
-!WRF:MODEL_LAYER:PHYSICS
+!
+!   WRF-chem V3.0 : Original version of aerosol_driver written by Georg Grell (ESRL/GSD)
+!                   Further developments, bugfixes and improvements  by
+!                   William Gustafson (PNNL),Rainer Schmitz (University of Chile)  and Georg Grell
+!
 !
       SUBROUTINE aerosols_driver (id,ktau,dtstep,ktauc,config_flags,       &
                dtstepc,dx,                                                 &
@@ -157,11 +161,6 @@
 
 !-----------------------------------------------------------------
 
-! These are unneeded, since the default behavior is to do nothing.
-! If the default changes, then lines need to be added for CBMZ and
-! CBMZ_BB.
-!   IF (config_flags%chem_opt .eq. 0) return
-!   IF (config_flags%chem_opt .eq. 1) return
 
 !
 ! select which aerosol scheme to take 
@@ -233,6 +232,10 @@
    END SUBROUTINE aerosols_driver
 
 !-----------------------------------------------------------------------
+!   WRF-chem V3.0 : Original version of sum_pm_driver written by William Gustafson (PNNL)
+!                   modified by G Grell for gocart inclusion
+!
+!
 
    SUBROUTINE sum_pm_driver ( config_flags,                            &
             alt, chem, h2oaj, h2oai,                                   &

@@ -90,10 +90,11 @@ CONTAINS
      call depvel_gocart(ii,imx,jmx,lmx,&
      airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
      ps, z0, dvel, drydf,g)
-  do nv=numgas+1,num_chem
+  do nv=p_p25,num_chem
       ddvel(i,j,nv)=dvel(1,1)
   enddo
       ddvel(i,j,p_sulf)=dvel(1,1)
+      ddvel(i,j,p_msa)=dvel(1,1)
   enddo
   enddo
 end subroutine gocart_drydep_driver

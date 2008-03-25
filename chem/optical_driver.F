@@ -1,3 +1,7 @@
+!
+!   WRF-chem V3.0 : Original version of optical_driver written by Jerome Fast (PNNL)
+!                   and James Barnard (PNNL)
+!
 !WRF:MODEL_LAYER:CHEMISTRY
 !
       SUBROUTINE optical_driver (id,ktau,dtstep,config_flags,haveaer,    &

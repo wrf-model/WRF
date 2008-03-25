@@ -84,7 +84,11 @@ CONTAINS
        chlso2_oh=0.
        chlso2_aq=0.
           cldf(1,1,1)=0.
+          if(p_qi.gt.1)then
           if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
+          elseif(p_qc.gt.1)then
+          if(moist(i,k,j,p_qc).gt.0.)cldf(1,1,1)=1.
+          endif
           tc(1,1,1,1)=chem(i,k,j,p_dms)*1.d-6
           tc(1,1,1,2)=chem(i,k,j,p_so2)*1.d-6
           tc(1,1,1,3)=chem(i,k,j,p_sulf)*1.d-6
@@ -143,7 +147,11 @@ CONTAINS
        chlso2_oh=0.
        chlso2_aq=0.
           cldf(1,1,1)=0.
+          if(p_qi.gt.1)then
           if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0.)cldf(1,1,1)=1.
+          elseif(p_qc.gt.1)then
+          if(moist(i,k,j,p_qc).gt.0.)cldf(1,1,1)=1.
+          endif
           tc(1,1,1,1)=chem(i,k,j,p_dms)*1.d-6
           tc(1,1,1,2)=chem(i,k,j,p_so2)*1.d-6
           tc(1,1,1,3)=chem(i,k,j,p_sulf)*1.d-6
@@ -168,6 +176,7 @@ CONTAINS
           chem(i,k,j,p_so2)=tc(1,1,1,2)*1.e6
           chem(i,k,j,p_sulf)=tc(1,1,1,3)*1.e6
           chem(i,k,j,p_msa)=tc(1,1,1,4)*1.e6
+          chem(i,k,j,p_h2o2)=h2o2(1,1,1)*1.e6
        enddo
        enddo
        enddo

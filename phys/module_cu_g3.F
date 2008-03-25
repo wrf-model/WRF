@@ -4613,14 +4613,15 @@ CONTAINS
           rthcutent,rqvcutent
    real, dimension (ips-2:ipe+2,jps-2:jpe+2) :: qmem
    real, dimension (ips-1:ipe+1,jps-1:jpe+1) :: smtt,smtq
-   real, dimension (kts:kte) :: conv_trasht,conv_trashq
+   real, dimension (kps:kpe) :: conv_trasht,conv_trashq
    REAL                           :: qmem1,qmem2,qmemf,thresh
       smoothh=1
       smoothv=1
       cugd_spread=cugd_avedx/2
 ! SET START AND END POINTS FOR TILES
       !$OMP PARALLEL DO   &
-      !$OMP PRIVATE ( ij ,ifs,ife,jfs,jfe,its,ite,jts,jte, i,j,k,ikk1,ikk2,ikk11,qmemf,qmem1,qmem2,qmem)
+      !$OMP PRIVATE ( ij ,ifs,ife,jfs,jfe,its,ite,jts,jte, i,j,k,kk,nn,ikk1,ikk2,ikk11) &
+      !$OMP PRIVATE ( ido,jdo,qmemf,qmem1,qmem2,qmem,thresh,conv_trasht,conv_trashq,smtt,smtq)
 
       DO ij = 1 , num_tiles
         its = i_start(ij)
@@ -4633,8 +4634,8 @@ CONTAINS
           qmem(i,j)=1.
         enddo
         enddo
-        do j=jps-1,jpe+1
-        do i=ips-1,ipe+1
+        do j=jts-1,jte+1
+        do i=its-1,ite+1
           smtt(i,j)=0.
           smtq(i,j)=0.
         enddo
@@ -4647,9 +4648,9 @@ CONTAINS
         enddo
         enddo
         enddo
-        do j=jps-2,jpe+2              
+        do j=jts-2,jte+2              
         do k=kts,kte              
-        do i=ips-2,ipe+2
+        do i=its-2,ite+2
           rthcutent(i,k,j)=0. 
           rqvcutent(i,k,j)=0.      
         enddo
@@ -4669,7 +4670,7 @@ CONTAINS
    ife=min(ite,ide-1)
    jfs=max(jts,jds)
    jfe=min(jte,jde-1)
-   if(cugd_spread.gt.0)then
+   if(cugd_spread.gt.0.or.smoothh.eq.1)then
       if(its.eq.ips)ifs=max(its-1,ids)
       if(ite.eq.ipe)ife=min(ite+1,ide-1)
       if(jts.eq.jps)jfs=max(jts-1,jds)

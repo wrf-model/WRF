@@ -52,6 +52,13 @@ MODULE module_dm
       RETURN
    END SUBROUTINE wrf_dm_maxval
 
+  SUBROUTINE wrf_dm_minval ( val, idex, jdex )
+     IMPLICIT NONE
+     REAL val
+     INTEGER idex, jdex
+     RETURN
+  END SUBROUTINE wrf_dm_minval
+
 ! stub
    SUBROUTINE wrf_dm_move_nest ( parent, nest, dx, dy )
       USE module_domain

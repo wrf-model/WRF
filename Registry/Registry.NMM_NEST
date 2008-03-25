@@ -346,7 +346,7 @@ state logical micro_start        -     dyn_nmm   -    -     -
 # module_SOIL.F
 #
 state integer islope    ij    dyn_nmm   1    -     i01rhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "ISLOPE"
-state  real   dzsoil    k     dyn_nmm   1    -     ir       "DZSOIL"    "Thickness of soil layers"         "m"
+state  real   dzsoil    k     dyn_nmm   1    -     irh      "DZSOIL"    "Thickness of soil layers"         "m"
 state  real   rtdpth    k     dyn_nmm   1    -     i01r
 state  real   sldpth    k     dyn_nmm   1    -     i01rh    "SLDPTH"    "Depths of centers of soil layers" "m"
 state  real   cmc       ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "CMC"       "Canopy moisture"                  "m"

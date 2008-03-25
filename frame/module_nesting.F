@@ -33,7 +33,7 @@ CONTAINS
       nests_to_open = .false.
       CALL nl_get_max_dom( 1, max_dom )
 #if (NMM_CORE == 1)
-# ifndef NMM_NEST
+# if (NMM_NEST == 0)
       IF ( max_dom > 1 ) THEN
         CALL wrf_error_fatal( 'WRF-NMM compiled without nesting; set max_dom to 1 in namelist.input' )
       END IF

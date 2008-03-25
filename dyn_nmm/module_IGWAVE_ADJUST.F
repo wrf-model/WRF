@@ -223,23 +223,40 @@
 !$omp parallel do
       DO J=JTS-5,JTE+5
       DO I=ITS-5,ITE+5
+        ADPDNE(I,J)=0.
+        ADPDSE(I,J)=0.
+        ADPDX(I,J)=0.
+        ADPDY(I,J)=0.
         APEL(I,J)=0.
         CNE (I,J)=0.
         CSE (I,J)=0.
         DFDZ(I,J)=0.
         DPDE(I,J)=0.
+        DPFEW(I,J)=0.
+        DPFNS(I,J)=0.
         FILO(I,J)=0.
         FIM (I,J)=0.
+        HM (I,J)=0.
+        PCEW(I,J)=0.
         PCNE(I,J)=0.
+        PCNS(I,J)=0.
         PCSE(I,J)=0.
+        PCXC(I,J)=0.
+        PEW (I,J)=0.
         PNE (I,J)=0.
+        PNS (I,J)=0.
         PPNE(I,J)=0.
         PPSE(I,J)=0.
         PSE (I,J)=0.
+        RDPD(I,J)=0.
+        RDPDX(I,J)=0.
+        RDPDY(I,J)=0.
         TEW (I,J)=0.
         TNE (I,J)=0.
         TNS (I,J)=0.
         TSE (I,J)=0.
+        UDY (I,J)=0.
+        VDX (I,J)=0.
       ENDDO
       ENDDO
 !

@@ -136,6 +136,7 @@
 !
       DO J=JTS-5,JTE+5
       DO I=ITS-5,ITE+5
+        DEF(I,J)=0.
         TNE(I,J)=0.
         QNE(I,J)=0.
         Q2NE(I,J)=0.

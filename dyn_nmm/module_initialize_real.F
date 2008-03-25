@@ -1830,7 +1830,7 @@ CONTAINS
    696  continue
         ENDIF ! wrf_dm_on_monitor/serial job
 
-      call NMM_SH2O(IMS,IME,JMS,JME,ITS,NNXP,JTS,NNYP,4,ISLTYP, &
+      call NMM_SH2O(IMS,IME,JMS,JME,ITS,NNXP,JTS,NNYP,grid%num_soil_layers,ISLTYP, &
                              SM,SICE,STC,SMC,SH2O)
 
 !! must be a better place to put this, but will eliminate "phantom"

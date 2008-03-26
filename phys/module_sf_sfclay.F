@@ -679,14 +679,16 @@ CONTAINS
         PSIQ2=ALOG(KARMAN*UST(I)*2./XKA+2./ZL)-PSIH2(I)                                   
 ! AHW: mods to compute ck, cd
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
-        IF ( PRESENT(ISFTCFLX) .AND. ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
-           Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
-!          Z0Q = 0.62*1.5E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.))**2
-           PSIQ=ALOG(ZA(I)/Z0Q)-PSIH(I)
-           PSIT=PSIQ
-           PSIQ2=ALOG(2./Z0Q)-PSIH2(I)
-           PSIQ10=ALOG(10./Z0Q)-PSIH10(I)
-           PSIT2=PSIQ2
+        IF ( PRESENT(ISFTCFLX) ) THEN
+           IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
+              Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
+!             Z0Q = 0.62*1.5E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.))**2
+              PSIQ=ALOG(ZA(I)/Z0Q)-PSIH(I)
+              PSIT=PSIQ
+              PSIQ2=ALOG(2./Z0Q)-PSIH2(I)
+              PSIQ10=ALOG(10./Z0Q)-PSIH10(I)
+              PSIT2=PSIQ2
+           ENDIF
         ENDIF
         IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN
            Ck(I)=(karman/psix10)*(karman/psiq10)
@@ -751,11 +753,13 @@ CONTAINS
         IF((XLAND(I)-1.5).GE.0)THEN                                            
           ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
-          IF ( PRESENT(ISFTCFLX) .AND. ISFTCFLX.EQ.1 ) THEN
-             ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
-             ZNT(I)=MIN(ZNT(I),2.85e-3)
-             ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
-!            ZNT(I)=MAX(ZNT(I),1.27e-7)
+          IF ( PRESENT(ISFTCFLX) ) THEN
+             IF ( ISFTCFLX.EQ.1 ) THEN
+                ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
+                ZNT(I)=MIN(ZNT(I),2.85e-3)
+                ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
+!               ZNT(I)=MAX(ZNT(I),1.27e-7)
+             ENDIF
           ENDIF
           ZL = ZNT(I)
         ELSE

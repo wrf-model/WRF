@@ -171,7 +171,10 @@ module_initialize_les.o : \
 		../share/module_bc.o \
 		module_init_utilities.o
 
-module_initialize_real.o :  ../frame/module_domain.o \
+module_initialize_real.o :  \
+		nest_init_utils.o	\
+		../share/module_llxy.o	\
+		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
 		../frame/module_timing.o \
@@ -260,6 +263,7 @@ module_first_rk_step_part2.o : \
 		../phys/module_fddaobs_driver.o
 
 adapt_timestep_em.o: \
+                module_bc_em.o         \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_dm.o

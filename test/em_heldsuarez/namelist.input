@@ -89,8 +89,7 @@
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
- polar_filter                        = 5,
- fft_filter_type                     = 1,
+ fft_filter_lat                      = 45
  /
 
  &bdy_control

@@ -12,13 +12,6 @@ unalias mv
 #       HOW TO RUN
 #       ----------
 
-#       DEC
-#       joshua1 or joshua3
-#       mkdir /data3/mp/$USER/`hostname`
-#       put all_reg.csh, regtest.csh, and wrf.tar in dir
-#       execute all_reg.csh
-#       takes about 24-30 h
-
 #       Linux
 #       joshua1 or joshua3
 #       mkdir /data3/mp/$USER/`hostname`
@@ -28,7 +21,7 @@ unalias mv
 #	flex lm errors show up as fails to compile
 
 #       AIX
-#       bluesky or bluevista
+#       bluevista or blueice
 #       put all_reg.csh, regtest.csh, and wrf.tar in ~
 #       execute all_reg.csh
 #       takes about 8-10 h
@@ -39,21 +32,32 @@ unalias mv
 #=======================================================================
 #=======================================================================
 
+#	The only really important thing.
+
+if ( ! -e wrf.tar ) then
+	echo " "
+	echo "Whoa there pardner, where is that wrf.tar file"
+	echo " "
+	exit ( 1 )
+endif
+
 #       What these tests do, must be a single string.
 
 set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  	1	\
+                 "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
                  "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	3	\
                  "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	4	\
-                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	5	\
-                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	6	\
-                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	7	\
-                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	8 	\
-                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	9 	\
-                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	10	\
-                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"      11	\
-                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"          12	\
+                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	5	\
+                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	6	\
+                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	7	\
+                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	8	\
+                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	9 	\
+                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	10	\
+                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	11	\
+                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  12    	\
+                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      13      \
+                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      14      \
                )
-#                "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
 
 #	Where are we located.
 
@@ -226,12 +230,13 @@ FINISHED_TEST_LIST:
 #	NCAR machines.
 
 if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
-	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if   ( `uname` == AIX ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
-	else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
-		set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`
+	else if ( ( `uname` == Darwin  ) && ( `hostname` == stink ) ) then
+		set SAVE_DIR = /stink/${user}/Regression_Tests/BASELINE/`uname`
 	else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
 		set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`
 	else
@@ -264,9 +269,9 @@ endif
 #	script is then processed.
 
 #	Any exceptions to where they can run?  NONE means no 
-#	exceptions, should run on all machines.  AIX/Linux/OSF1
+#	exceptions, should run on all machines.  AIX/Linux
 #	means it will NOT run on that single machine.  The 
-#	option ONLY_AIX/ONLY_Linux/ONLY_OSF1 means that the option
+#	option ONLY_AIX/ONLY_Linux means that the option
 #	ONLY works on that specific architecture.
 
 
@@ -312,12 +317,13 @@ FOUND_SELECTED_TEST:
 		#	save the data to/read the data from.
 
 		if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
-			if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+			if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+			                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else if   ( `uname` == AIX ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
-			else if ( ( `uname` == OSF1 ) && ( `hostname | cut -c 1-6` == joshua ) ) then
-				set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`/$tests[$count_test]
+			else if ( ( `uname` == Darwin ) && ( `hostname` == stink ) ) then
+				set SAVE_DIR = /stink/${USER}/Regression_Tests/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
 				set SAVE_DIR = /data3/mp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else
@@ -390,7 +396,7 @@ EOF
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm llsub.out llq.report
-		else if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bv ) ) then
+		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) ) then
 			bsub < reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! bsub.out
 			set ok = 0
 			set in_already = 0
@@ -405,7 +411,8 @@ EOF
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm bsub.out bjobs.report
-		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+		                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
 			set ok = 0
 			set in_already = 0
@@ -428,20 +435,17 @@ EOF
 		#	we get the process returning control, then we move on.
 
 		else
-			reg.foo.$TEST_NUM[$count_test].$tests[$count_test] -f wrf.tar # >&! output.$TEST_NUM[$count_test].$tests[$count_test]
-			mv wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
-#			if ( $NUM_TESTS != $#NAME ) then
-#				if ( -d regression_test ) rm -rf regression_test
-#			else
-				if ( -d regression_test ) then
-					mv regression_test regression_test.$TEST_NUM[$count_test].$tests[$count_test]
-				endif
-#			endif
+			reg.foo.$TEST_NUM[$count_test].$tests[$count_test] -f wrf.tar >&! output.$TEST_NUM[$count_test].$tests[$count_test]
+			mv wrf_regression/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
+			if ( -d wrf_regression ) then
+				mv wrf_regression wrf_regression.$TEST_NUM[$count_test].$tests[$count_test]
+			endif
 		endif
 	endif
 end
 
-if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && ( `hostname | cut -c 1-2` != bv ) ) ) then
+if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
+                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
 	echo no web page building, stopping
 	exit
 endif
@@ -451,7 +455,7 @@ PASSFAIL:
 #	Build the html page.  We only need the middle portion.  It's
 #	a table with 5 columns: Date of test, WRFV2 tag, Developer
 #	who conducted the test, machine the test was run on, and the
-#	pass/fail status of the all_reg.csh script when comapred
+#	pass/fail status of the all_reg.csh script when compared
 #	to the benchmark results (usually a released code).
 
 cat >! history_middle_OK.html << EOF

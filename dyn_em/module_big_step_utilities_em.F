@@ -1,4 +1,4 @@
-!WRF:MODEL_LAYER:DYNAMICS
+!wrf:MODEL_LAYER:DYNAMICS
 !
 
 #if (RWORDSIZE == 4)
@@ -2222,7 +2222,8 @@ END SUBROUTINE pg_buoy_w
 SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
                       u, v, ww, w, mut, rdnw,         &
                       rdx, rdy, msfux, msfuy,         &
-                      msfvx, msfvy, dt, w_damping,    &
+                      msfvx, msfvy, dt,               &
+                      config_flags,                   &
                       ids, ide, jds, jde, kds, kde,   &
                       ims, ime, jms, jme, kms, kme,   &
                       its, ite, jts, jte, kts, kte   )
@@ -2231,7 +2232,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 
    ! Input data
 
-   INTEGER ,          INTENT(IN   ) :: w_damping
+   TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
@@ -2264,6 +2265,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    CHARACTER (LEN=256) :: grid_str
 
    integer :: total
+   REAL :: msfuxt , msfvxt , msfxffl
    
 !<DESCRIPTION>
 !
@@ -2288,12 +2290,25 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    max_horiz_cfl = 0.
    total = 0
 
-   IF ( w_damping == 1 ) THEN
+   IF ( config_flags%w_damping == 1 ) THEN
+     if(config_flags%polar) then
+        msfxffl = 1.0/cos(config_flags%fft_filter_lat*degrad) 
+     endif
      DO j = jts,jtf
 
      DO k = 2, kde-1
      DO i = its,itf
 #if 1
+        if(config_flags%polar) then
+           msfuxt = min(msfux(i,j), msfxffl)
+           msfvxt = min(msfvx(i,j), msfxffl)
+           if ( ( j==jds ) .or. ( j==jde ) ) then
+              msfvxt = msfxffl
+           end if
+        else
+           msfuxt = msfux(i,j)
+           msfvxt = msfvx(i,j)
+        end if
         vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
 
         IF ( vert_cfl > max_vert_cfl ) THEN
@@ -2301,8 +2316,8 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
         
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfux(i,j)),                          &
-             abs(v(i,k,j) * rdy * msfvy(i,j)) )
+        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
+             abs(v(i,k,j) * rdy * msfvxt * dt) )
         if (horiz_cfl > max_horiz_cfl) then
            max_horiz_cfl = horiz_cfl
         endif
@@ -2342,8 +2357,8 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
         
-        horiz_cfl = max( abs(u(i,k,j) * rdx * msfux(i,j) * dt),                          &
-             abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
+        horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
+             abs(v(i,k,j) * rdy * msfvxt * dt) )
 
         if (horiz_cfl > max_horiz_cfl) then
            max_horiz_cfl = horiz_cfl

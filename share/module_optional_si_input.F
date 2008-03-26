@@ -1,6 +1,7 @@
 MODULE module_optional_si_input
 
-   INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp
+   INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp , &
+              flag_snow     , flag_snowh
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
               flag_qg       , flag_qni
@@ -419,6 +420,8 @@ USE module_io_domain
       flag_soilhgt  = 0 
       flag_toposoil = 0 
       flag_slp      = 0 
+      flag_snow     = 0 
+      flag_snowh    = 0 
 
       flag_name(1:8) = 'TOPOSOIL'
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -442,6 +445,18 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_slp      = itmp
+      END IF
+
+      flag_name(1:8) = 'SNOW    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_snow     = itmp
+      END IF
+    
+      flag_name(1:8) = 'SNOWH   '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_snowh    = itmp
       END IF
     
    END SUBROUTINE optional_lsm

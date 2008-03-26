@@ -2882,6 +2882,7 @@
 
       do j = 1, nbc
       do i = 1, nbr
+         Ef_rw = 0.0
          p = Dc(j)/Dr(i)
          if (Dr(i).lt.50.E-6 .or. Dc(j).lt.3.E-6) then
           t_Efrw(i,j) = 0.0

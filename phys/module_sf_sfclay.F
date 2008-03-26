@@ -679,7 +679,7 @@ CONTAINS
         PSIQ2=ALOG(KARMAN*UST(I)*2./XKA+2./ZL)-PSIH2(I)                                   
 ! AHW: mods to compute ck, cd
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
-        IF ( ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
+        IF ( PRESENT(ISFTCFLX) .AND. ISFTCFLX.EQ.1 .AND. (XLAND(I)-1.5).GE.0. ) THEN
            Z0Q = 1.e-4 + 1.e-3*(MAX(0.,UST(I)-1.))**2
 !          Z0Q = 0.62*1.5E-5/UST(I) + 1.E-3*(MAX(0.,UST(I)-1.))**2
            PSIQ=ALOG(ZA(I)/Z0Q)-PSIH(I)
@@ -698,7 +698,9 @@ CONTAINS
         UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
 ! TKE coupling: compute ust without vconv for use in tke scheme
         WSPDI(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))
+        IF ( PRESENT(USTM) ) THEN
         USTM(I)=0.5*USTM(I)+0.5*KARMAN*WSPDI(I)/PSIX
+        ENDIF
         U10(I)=UX(I)*PSIX10/PSIX                                    
         V10(I)=VX(I)*PSIX10/PSIX                                   
         TH2(I)=THGB(I)+DTG*PSIT2/PSIT                                
@@ -747,10 +749,9 @@ CONTAINS
                                                                                  
       DO 360 I=its,ite
         IF((XLAND(I)-1.5).GE.0)THEN                                            
-          IF ( ISFTCFLX.EQ.0 ) THEN
-             ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
+          ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
 ! AHW: change roughness length, and hence the drag coefficients Ck and Cd
-          ELSE IF ( ISFTCFLX.EQ.1 ) THEN
+          IF ( PRESENT(ISFTCFLX) .AND. ISFTCFLX.EQ.1 ) THEN
              ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
              ZNT(I)=MIN(ZNT(I),2.85e-3)
              ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)

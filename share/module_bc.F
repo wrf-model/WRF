@@ -1525,7 +1525,7 @@ CONTAINS
           b_dist = ibe - i
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
-              field(i,k,j) = field_bdy_xs(j, k, b_dist+1)
+              field(i,k,j) = field_bdy_xe(j, k, b_dist+1)
             ENDDO
           ENDDO
         ENDDO

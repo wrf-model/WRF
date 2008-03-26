@@ -17,6 +17,7 @@ MODULE module_initialize_real
    USE module_timing
    USE module_soil_pre
    USE module_date_time
+   USE module_llxy
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -162,10 +163,39 @@ integer::oops1,oops2
    
       CALL const_module_initialize ( p00 , t00 , a ) 
 
+      !  Fix the snow (water equivalent depth, kg/m^2) and the snowh (physical snow
+      !  depth, m) fields.
+
+      IF      ( ( flag_snow .EQ. 0 ) .AND. ( flag_snowh .EQ. 0 ) ) THEN
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               grid%snow(i,j)  = 0.
+               grid%snowh(i,j) = 0.
+            END DO
+         END DO
+
+      ELSE IF ( ( flag_snow .EQ. 0 ) .AND. ( flag_snowh .EQ. 1 ) ) THEN
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+!              ( m -> kg/m^2 )  & ( reduce to liquid, 5:1 ratio )
+               grid%snow(i,j)  = grid%snowh(i,j) * 1000. / 5.
+            END DO
+         END DO
+
+      ELSE IF ( ( flag_snow .EQ. 1 ) .AND. ( flag_snowh .EQ. 0 ) ) THEN
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+!              ( kg/m^2 -> m)  & ( liquid to snow depth, 5:1 ratio )
+               grid%snowh(i,j) = grid%snow(i,j) / 1000. * 5.
+            END DO
+         END DO
+
+      END IF
+
       !  For backward compatibility, we might need to assign the map factors from
       !  what they were, to what they are.
 
-      IF      ( ( config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      IF      ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=max(jds+1,jts),min(jde-1,jte)
             DO i=its,min(ide-1,ite)
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
@@ -183,7 +213,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
-      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,ite
                grid%msfvx(i,j) = grid%msfv(i,j)
@@ -199,7 +229,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
             CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
          END IF
@@ -208,7 +238,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
 
@@ -225,20 +255,40 @@ integer::oops1,oops2
               grid%tmn(i,j) = grid%tmn_gc(i,j)
               grid%xlat(i,j) = grid%xlat_gc(i,j)
               grid%xlong(i,j) = grid%xlong_gc(i,j)
-              grid%clat(i,j) = grid%xlat_gc(i,j)
-              grid%clong(i,j) = grid%xlong_gc(i,j)
               grid%ht(i,j) = grid%ht_gc(i,j)
            END DO
          END DO
 
-         !  Filter the input topography.  
+         !  A user could request that the most coarse grid has the
+         !  topography along the outer boundary smoothed.  This smoothing
+         !  is similar to the coarse/nest interface.  The outer rows and
+         !  cols come from the existing large scale topo, and then the
+         !  next several rows/cols are a linear ramp of the large scale
+         !  model and the hi-res topo from WPS.  We only do this for the
+         !  coarse grid since we are going to make the interface consistent
+         !  in the model betwixt the CG and FG domains.
 
-         IF ( config_flags%polar ) THEN
+         IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( grid%id .EQ. 1 ) .AND. &
+              ( flag_soilhgt .EQ. 1) ) THEN
+            CALL blend_terrain ( grid%toposoil  , grid%ht , &
+                                 ids , ide , jds , jde , 1   , 1   , &
+                                 ims , ime , jms , jme , 1   , 1   , &
+                                 ips , ipe , jps , jpe , 1   , 1   )
+
+         END IF
+
+         !  Filter the input topography if this is a polar projection.  
+
+         IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
 #ifdef DM_PARALLEL
 
             !  We stick the topo and map fac in an unused 3d array. The map scale 
             !  factor and computational latitude are passed along for the ride 
-            !  to determine "how many" values are used to compute the mean.
+            !  (part of the transpose process - we only do 3d arrays) to determine 
+            !  "how many" values are used to compute the mean.  We want a number
+            !  that is consistent with the original grid resolution.
+
 
             DO j = jts, MIN(jte,jde-1)
               DO k = kts, kte
@@ -570,61 +620,65 @@ integer::oops1,oops2
                            ims , ime , jms , jme , 1   , num_metgrid_levels , &
                            its , ite , jts , jte , 1   , num_metgrid_levels )
          
-         !  On the eta surfaces, compute the dry pressure = mu eta, stored in 
-         !  grid%pb, since it is a pressure, and we don't need another kms:kme 3d
-         !  array floating around.  The grid%pb array is re-computed as the base pressure
-         !  later after the vertical interpolations are complete.
+         IF ( flag_slp .EQ. 1 ) THEN
    
-         CALL p_dry ( grid%mu0 , grid%znw , grid%p_top , grid%pb , want_full_levels , &
-                      ids , ide , jds , jde , kds , kde , &
-                      ims , ime , jms , jme , kms , kme , &
-                      its , ite , jts , jte , kts , kte )
-
-         !  All of the vertical interpolations are done in dry-pressure space.  The
-         !  input data has had the moisture removed (grid%pd_gc).  The target levels (grid%pb)
-         !  had the vapor pressure removed from the surface pressure, then they were
-         !  scaled by the eta levels.
-
-         interp_type = 2
-         lagrange_order = grid%lagrange_order
-         lowest_lev_from_sfc = .FALSE.
-         use_levels_below_ground = .TRUE.
-         use_surface = .TRUE.
-         zap_close_levels = grid%zap_close_levels
-         force_sfc_in_vinterp = 0
-         t_extrap_type = grid%t_extrap_type
-         extrap_type = 1
-
-         !  For the height field, the lowest level pressure is the slp (approximately "dry").  The
-         !  lowest level of the input height field (to be associated with slp) then is an array
-         !  of zeros.
-         
-         DO j = jts, MIN(jte,jde-1)
-            DO i = its, MIN(ite,ide-1)
-               grid%psfc_gc(i,j) = grid%pd_gc(i,1,j)
-               grid%pd_gc(i,1,j) = grid%pslv_gc(i,j) - ( grid%p_gc(i,1,j) - grid%pd_gc(i,1,j) )
-               grid%ht_gc(i,j) = grid%ght_gc(i,1,j)
-               grid%ght_gc(i,1,j) = 0.
+            !  On the eta surfaces, compute the dry pressure = mu eta, stored in 
+            !  grid%pb, since it is a pressure, and we don't need another kms:kme 3d
+            !  array floating around.  The grid%pb array is re-computed as the base pressure
+            !  later after the vertical interpolations are complete.
+      
+            CALL p_dry ( grid%mu0 , grid%znw , grid%p_top , grid%pb , want_full_levels , &
+                         ids , ide , jds , jde , kds , kde , &
+                         ims , ime , jms , jme , kms , kme , &
+                         its , ite , jts , jte , kts , kte )
+   
+            !  All of the vertical interpolations are done in dry-pressure space.  The
+            !  input data has had the moisture removed (grid%pd_gc).  The target levels (grid%pb)
+            !  had the vapor pressure removed from the surface pressure, then they were
+            !  scaled by the eta levels.
+   
+            interp_type = 2
+            lagrange_order = grid%lagrange_order
+            lowest_lev_from_sfc = .FALSE.
+            use_levels_below_ground = .TRUE.
+            use_surface = .TRUE.
+            zap_close_levels = grid%zap_close_levels
+            force_sfc_in_vinterp = 0
+            t_extrap_type = grid%t_extrap_type
+            extrap_type = 1
+   
+            !  For the height field, the lowest level pressure is the slp (approximately "dry").  The
+            !  lowest level of the input height field (to be associated with slp) then is an array
+            !  of zeros.
+            
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%psfc_gc(i,j) = grid%pd_gc(i,1,j)
+                  grid%pd_gc(i,1,j) = grid%pslv_gc(i,j) - ( grid%p_gc(i,1,j) - grid%pd_gc(i,1,j) )
+                  grid%ht_gc(i,j) = grid%ght_gc(i,1,j)
+                  grid%ght_gc(i,1,j) = 0.
+               END DO
             END DO
-         END DO
-
-         CALL vert_interp ( grid%ght_gc , grid%pd_gc , grid%ph0 , grid%pb , &
-                            num_metgrid_levels , 'Z' , &
-                            interp_type , lagrange_order , extrap_type , &
-                            lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
-                            zap_close_levels , force_sfc_in_vinterp , &
-                            ids , ide , jds , jde , kds , kde , &
-                            ims , ime , jms , jme , kms , kme , &
-                            its , ite , jts , jte , kts , kte )
-
-         !  Put things back to normal.
-
-         DO j = jts, MIN(jte,jde-1)
-            DO i = its, MIN(ite,ide-1)
-               grid%pd_gc(i,1,j) = grid%psfc_gc(i,j)
-               grid%ght_gc(i,1,j) = grid%ht_gc(i,j)
+   
+            CALL vert_interp ( grid%ght_gc , grid%pd_gc , grid%ph0 , grid%pb , &
+                               num_metgrid_levels , 'Z' , &
+                               interp_type , lagrange_order , extrap_type , &
+                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               zap_close_levels , force_sfc_in_vinterp , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+   
+            !  Put things back to normal.
+   
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%pd_gc(i,1,j) = grid%psfc_gc(i,j)
+                  grid%ght_gc(i,1,j) = grid%ht_gc(i,j)
+               END DO
             END DO
-         END DO
+    
+         END IF
 
          !  Now the rest of the variables on half-levels to inteprolate.
 
@@ -789,6 +843,15 @@ integer::oops1,oops2
 
       END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
 
+      !  Save the grid%tsk field for later use in the sea ice surface temperature
+      !  for the Noah LSM scheme.
+
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+            grid%tsk_save(i,j) = grid%tsk(i,j)
+         END DO
+      END DO
+
       !  Protect against bad grid%tsk values over water by supplying grid%sst (if it is 
       !  available, and if the grid%sst is reasonable).
 
@@ -801,19 +864,10 @@ integer::oops1,oops2
          END DO
       END DO
 
-      !  Save the grid%tsk field for later use in the sea ice surface temperature
-      !  for the Noah LSM scheme.
-
-       DO j = jts, MIN(jte,jde-1)
-         DO i = its, MIN(ite,ide-1)
-            grid%tsk_save(i,j) = grid%tsk(i,j)
-         END DO
-      END DO
-
       !  Take the data from the input file and store it in the variables that
       !  use the WRF naming and ordering conventions.
 
-       DO j = jts, MIN(jte,jde-1)
+      DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
             IF ( grid%snow(i,j) .GE. 10. ) then
                grid%snowc(i,j) = 1.

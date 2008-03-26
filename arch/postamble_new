@@ -6,6 +6,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORD
                       CONFIGURE_DMPARALLEL \
                       CONFIGURE_STUBMPI \
                       CONFIGURE_NETCDF_FLAG \
+                      CONFIGURE_PNETCDF_FLAG \
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_NESTOPT \
                       -DGRIB1 \
@@ -41,16 +42,17 @@ LIB_BUNDLED     = \
                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
 
 LIB_EXTERNAL    = \
-                     CONFIGURE_NETCDF_LIB_PATH CONFIGURE_GRIB2_LIB
+                     CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB
 
-LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) 
+LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL)
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
 ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
 CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH
+PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
 bundled:  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int esmf_time fftpack
-external:  CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_GRIB2 CONFIGURE_COMMS_EXTERNAL
+external:  CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 CONFIGURE_COMMS_EXTERNAL
 
 ######################
 externals: bundled external
@@ -73,6 +75,11 @@ module_dm_rsllite :
 wrfio_nf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(SFC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" )
+
+wrfio_pnf : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
+          make NETCDFPATH=CONFIGURE_PNETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
           FC="$(SFC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" )
 
 wrfio_grib_share :

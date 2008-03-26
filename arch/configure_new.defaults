@@ -589,6 +589,46 @@ M4              =      m4 -B 14000
 RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
+
+###########################################################
+#ARCH    Linux ppc64 BG blxlf compiler with blxlc # dmpar
+#
+DMPARALLEL      =       # 1
+OMPCPP		=	# not supported
+OMP		=	# not supported
+BGL_SYS         =       /bgl/BlueLight/ppcfloor/bglsys
+MPI_INC         =       -I$(BGL_SYS)/include
+MPI_LIB         =       -L$(BGL_SYS)/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts
+SFC		=       blrts_xlf90
+SCC		=       blrts_xlc
+DM_FC		=	$(SFC)
+DM_CC		=       $(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD		=	$(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM -DLANDREAD_STUB
+CFLAGS_LOCAL    =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC)  -DLANDREAD_STUB
+LIB_LOCAL       =       $(MPI_LIB)
+LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
+FCOPTIM		=       -O2 -qarch=440
+FCNOOPT		=       -qnoopt
+FCDEBUG         =       # $(FCNOOPT) -qfullpath
+FORMAT_FIXED    =       -qfixed
+FORMAT_FREE     =       -qfree=f90
+FCSUFFIX        =       -qsuffix=f=f90
+BYTESWAPIO      =       
+FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=64000 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+MODULE_SRCH_FLAG =     
+TRADFLAG        =       
+# this might be different on different systems but we want the xlf version of cpp, not Linux's
+CPP             =       /opt/ibmcmp/xlf/9.1/exe/cpp -C -P
+AR		=       ar ru
+M4 		=       m4 -B 14000
+RANLIB 		=       ranlib
+CC_TOOLS        =       cc
+
 ###########################################################
 #ARCH  NULL
 

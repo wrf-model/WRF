@@ -93,17 +93,18 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
    INTEGER :: rk_order, iwmax, jwmax, kwmax
    REAL :: dt_rk, dts_rk, dts, dtm, wmax
-   REAL ,DIMENSION(16)  :: max_vert_cfl_tmp, max_horiz_cfl_tmp
+   REAL , ALLOCATABLE , DIMENSION(:)  :: max_vert_cfl_tmp, max_horiz_cfl_tmp
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
    REAL :: curr_secs
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
-   REAL    :: max_msft, max_msftx, max_msfty
+   REAL    :: max_msft
    REAL    :: spacing
 
    INTEGER :: ii, jj !kk is above after l,kte
    REAL    :: dclat
+   INTEGER :: debug_level
 
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
@@ -184,6 +185,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
 !  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
    CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
+!  Max values of CFL for adaptive time step scheme
+
+   ALLOCATE (max_vert_cfl_tmp(grid%num_tiles))
+   ALLOCATE (max_horiz_cfl_tmp(grid%num_tiles))
+
    grid%itimestep = grid%itimestep + 1
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
@@ -259,7 +265,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  3/5/07
-!   In this call, we do the time-step adaptation.
+!   In this call, we do the time-step adaptation and set time-dependent lateral
+!   boundary condition nudging weights.
 !
    IF (config_flags%use_adaptive_time_step) THEN
      CALL adapt_timestep(grid, config_flags)
@@ -270,48 +277,13 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
 
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !
-  ! Update the specified boundary arrays.  This was moved to this routine by 
-  !    T. Hutchinson, WSI, when implementing the adaptive time step.
-  !
-
-   IF (config_flags%specified) THEN
-     
-     ! Arrays for specified boundary conditions
-     !
-     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
-       grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-       grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-     ENDDO
-     
-   ELSE IF (config_flags%nested) THEN
-     
-     ! Arrays for specified boundary conditions
-     
-     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
-       grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-       grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-     ENDDO
-     
-   ENDIF
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-   IF (grid%time_step_sound == 0) THEN
+   IF ((grid%time_step_sound == 0) .AND. (config_flags%use_adaptive_time_step)) THEN
 ! auto-set option
 ! This function will give 4 for 6*dx and 6 for 10*dx and returns even numbers only
 !
 ! Added MAXVAL(msft) to the denominator to better calculate num_sound_steps (T. Hutchinson, WSI)
 !
-     max_msftx=MAXVAL(grid%msftx)
-     max_msfty=MAXVAL(grid%msfty)
-#ifdef DM_PARALLEL
-     CALL wrf_dm_maxval(max_msftx, idex, jdex)    
-     CALL wrf_dm_maxval(max_msfty, idex, jdex)    
-#endif
-     max_msft=MAX(max_msftx, max_msfty)
+     max_msft=MAX(grid%max_msftx, grid%max_msfty)
      spacing = min(grid%dx, grid%dy)
 
      num_sound_steps = max ( 2 * ( INT (300. * grid%dt / (spacing / max_msft) - 0.01 ) + 1 ), 4 )
@@ -321,19 +293,22 @@ SUBROUTINE solve_em ( grid , config_flags  &
      num_sound_steps = grid%time_step_sound
    ENDIF
 
-#ifdef DM_PARALLEL
-   CALL wrf_dm_maxval(grid%max_vert_cfl, idex, jdex)
-#endif
+   IF (config_flags%use_adaptive_time_step) THEN
   
-   IF (config_flags%time_step < 0) THEN
-     WRITE(wrf_err_message,*)'variable dt, max horiz cfl, max vert cfl: ',&
-          grid%dt, grid%max_horiz_cfl, grid%max_vert_cfl
-     CALL wrf_debug ( 50 , wrf_err_message )
-   ENDIF
+     CALL get_wrf_debug_level( debug_level )
+     IF ((config_flags%time_step < 0) .AND. (debug_level.GE.50)) THEN
+#ifdef DM_PARALLEL
+       CALL wrf_dm_maxval(grid%max_vert_cfl, idex, jdex)
+#endif
+       WRITE(wrf_err_message,*)'variable dt, max horiz cfl, max vert cfl: ',&
+            grid%dt, grid%max_horiz_cfl, grid%max_vert_cfl
+       CALL wrf_debug ( 0 , wrf_err_message )
+     ENDIF
 
-   grid%max_cfl_val = 0
-   grid%max_horiz_cfl = 0
-   grid%max_vert_cfl = 0
+     grid%max_cfl_val = 0
+     grid%max_horiz_cfl = 0
+     grid%max_vert_cfl = 0
+   ENDIF
 
    dts = grid%dt/float(num_sound_steps)
 
@@ -636,20 +611,22 @@ BENCH_START(rk_tend_tim)
      !$OMP END PARALLEL DO
 BENCH_END(rk_tend_tim)
 
-     DO ij = 1 , grid%num_tiles
-       IF (max_horiz_cfl_tmp(ij) .GT. grid%max_horiz_cfl) THEN
-         grid%max_horiz_cfl = max_horiz_cfl_tmp(ij)
+     IF (config_flags%use_adaptive_time_step) THEN
+       DO ij = 1 , grid%num_tiles
+         IF (max_horiz_cfl_tmp(ij) .GT. grid%max_horiz_cfl) THEN
+           grid%max_horiz_cfl = max_horiz_cfl_tmp(ij)
+         ENDIF
+         IF (max_vert_cfl_tmp(ij) .GT. grid%max_vert_cfl) THEN
+           grid%max_vert_cfl = max_vert_cfl_tmp(ij)
+         ENDIF
+       END DO
+     
+       IF (grid%max_horiz_cfl .GT. grid%max_cfl_val) THEN
+         grid%max_cfl_val = grid%max_horiz_cfl
        ENDIF
-       IF (max_vert_cfl_tmp(ij) .GT. grid%max_vert_cfl) THEN
-         grid%max_vert_cfl = max_vert_cfl_tmp(ij)
+       IF (grid%max_vert_cfl .GT. grid%max_cfl_val) THEN
+         grid%max_cfl_val = grid%max_vert_cfl
        ENDIF
-     END DO
-   
-     IF (grid%max_horiz_cfl .GT. grid%max_cfl_val) THEN
-       grid%max_cfl_val = grid%max_horiz_cfl
-     ENDIF
-     IF (grid%max_vert_cfl .GT. grid%max_cfl_val) THEN
-       grid%max_cfl_val = grid%max_vert_cfl
      ENDIF
 
 BENCH_START(relax_bdy_dry_tim)
@@ -3223,6 +3200,11 @@ BENCH_END(bc_2d_tim)
      ENDIF
    ENDIF
 #endif
+
+!  Max values of CFL for adaptive time step scheme
+
+   DEALLOCATE(max_vert_cfl_tmp)
+   DEALLOCATE(max_horiz_cfl_tmp)
 
    CALL wrf_debug ( 200 , ' call end of solve_em' )
 

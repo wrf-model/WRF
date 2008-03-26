@@ -1052,4 +1052,50 @@ CONTAINS
 
   END SUBROUTINE set_w_surface
 
+  SUBROUTINE lbc_fcx_gcx ( fcx , gcx , spec_bdy_width , &
+                           spec_zone , relax_zone , dt , spec_exp , &
+                           specified , nested )
+  
+     IMPLICIT NONE
+  
+     INTEGER , INTENT(IN) :: spec_bdy_width , spec_zone , relax_zone
+     REAL , INTENT(IN) :: dt , spec_exp
+     LOGICAL , INTENT(IN) :: specified , nested
+     REAL , DIMENSION(spec_bdy_width) :: fcx , gcx
+  
+     ! Local variables.
+  
+     INTEGER :: loop 
+     REAL :: spongeweight
+  
+     IF (specified) THEN
+       
+       ! Arrays for specified boundary conditions
+       
+       DO loop = spec_zone + 1, spec_zone + relax_zone
+         fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
+         gcx(loop) = 1.0 / dt / 50. * (spec_zone + relax_zone - loop) / (relax_zone - 1)
+         spongeweight=exp(-(loop-(spec_zone + 1))*spec_exp)
+         fcx(loop) = fcx(loop)*spongeweight
+         gcx(loop) = gcx(loop)*spongeweight
+       ENDDO   
+       
+     ELSE IF (nested) THEN
+       
+       ! Arrays for specified boundary conditions
+       
+       DO loop = spec_zone + 1, spec_zone + relax_zone
+         fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
+         gcx(loop) = 1.0 / dt / 50. * (spec_zone + relax_zone - loop) / (relax_zone - 1)
+!        spongeweight=EXP(-(loop-2)/3.)
+!        fcx(loop) = fcx(loop)*spongeweight
+!        gcx(loop) = gcx(loop)*spongeweight
+!        fcx(loop) = 0.
+!        gcx(loop) = 0.
+       ENDDO
+       
+     ENDIF
+  
+  END SUBROUTINE lbc_fcx_gcx
+  
 END MODULE module_bc_em

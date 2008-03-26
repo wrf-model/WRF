@@ -78,6 +78,8 @@
    TYPE(WRFU_TimeInterval) :: stepTime
    REAL, DIMENSION(:,:), ALLOCATABLE :: clat_glob
 
+   INTEGER :: idex, jdex
+
   CALL get_ijk_from_grid ( grid ,                               &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -149,38 +151,17 @@
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-   IF (config_flags%specified) THEN
-!
-! Arrays for specified boundary conditions
 ! wig: Add a combined exponential+linear weight on the mother boundaries
 !      following code changes by Ruby Leung. For the nested grid, there
 !      appears to be some problems when a sponge is used. The points where
 !      processors meet have problematic values.
 
-     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
-       grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-       grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-       spongeweight=exp(-(loop-(grid%spec_zone + 1))*config_flags%spec_exp)
-       grid%fcx(loop) = grid%fcx(loop)*spongeweight
-       grid%gcx(loop) = grid%gcx(loop)*spongeweight
-     ENDDO
+   CALL lbc_fcx_gcx ( grid%fcx , grid%gcx , grid%spec_bdy_width , &
+                      grid%spec_zone , grid%relax_zone , grid%dt , config_flags%spec_exp , &
+                      config_flags%specified , config_flags%nested )
 
-   ELSE IF (config_flags%nested) THEN
-!
-! Arrays for nested boundary conditions
-
-     DO loop = grid%spec_zone + 1, grid%spec_zone + grid%relax_zone
-       grid%fcx(loop) = 0.1 / grid%dt * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-       grid%gcx(loop) = 1.0 / grid%dt / 50. * (grid%spec_zone + grid%relax_zone - loop) / (grid%relax_zone - 1)
-!      spongeweight=exp(-(loop-2)/3.)
-!      grid%fcx(loop) = grid%fcx(loop)*spongeweight
-!      grid%gcx(loop) = grid%gcx(loop)*spongeweight
-!      grid%fcx(loop) = 0.
-!      grid%gcx(loop) = 0.
-     ENDDO
-
+   IF ( config_flags%nested ) THEN
      grid%dtbc = 0.
-
    ENDIF
 
    IF ( ( grid%id .NE. 1 ) .AND. ( .NOT. config_flags%input_from_file ) ) THEN
@@ -508,9 +489,13 @@
 
 !  Calculate any variables that were not set
 
-      grid%starting_time_step = NINT(6 * MIN(grid%dx,grid%dy) / 1000)
+      if (grid%starting_time_step == -1) then
+         grid%starting_time_step = NINT(6 * MIN(grid%dx,grid%dy) / 1000)
+      endif
       
-      grid%max_time_step = 3*grid%starting_time_step
+      if (grid%max_time_step == -1) then
+         grid%max_time_step = 3*grid%starting_time_step
+      endif
 
 !     Set a starting timestep.
 
@@ -520,6 +505,13 @@
 
       CALL nl_set_time_step_sound ( 1 , 0 ) 
       grid%time_step_sound = 0
+
+      grid%max_msftx=MAXVAL(grid%msftx)
+      grid%max_msfty=MAXVAL(grid%msfty)
+#ifdef DM_PARALLEL
+      CALL wrf_dm_maxval(grid%max_msftx, idex, jdex)
+      CALL wrf_dm_maxval(grid%max_msfty, idex, jdex)
+#endif
 
 !     This first call just initializes variables.
 

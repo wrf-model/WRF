@@ -18,6 +18,7 @@ SUBROUTINE adapt_timestep(grid, config_flags)
   USE module_domain
   USE module_configure
   USE module_dm
+  USE module_bc_em
 
   IMPLICIT NONE
 
@@ -174,8 +175,7 @@ SUBROUTINE adapt_timestep(grid, config_flags)
 
   ! Limit the minimum dtInterval based on user input.
 
-  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%min_time_step, &
-       Sd=grid%parent_time_step_ratio)
+  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%min_time_step, Sd=1)
   if (dtInterval .lt. tmpTimeInterval ) then
      dtInterval = tmpTimeInterval
   endif
@@ -306,6 +306,12 @@ SUBROUTINE adapt_timestep(grid, config_flags)
        timeStep=dtInterval, &
        rc=rc )
 
+  !
+  ! Lateral boundary weight recomputation based on time step.
+  !
+  CALL lbc_fcx_gcx ( grid%fcx , grid%gcx , grid%spec_bdy_width , &
+                     grid%spec_zone , grid%relax_zone , grid%dt , config_flags%spec_exp , &
+                     config_flags%specified , config_flags%nested )
 
 END SUBROUTINE adapt_timestep
 

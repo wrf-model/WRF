@@ -138,10 +138,9 @@ CONTAINS
                                                       DQSDT, &
                                                        DTDT
 
-   REAL    ::         TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp,RTHCUMAX
+   REAL    ::         TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp
 
    INTEGER :: i,j,k,NTST
-   REAL    :: next_cu_time
    REAL    :: lastdt = -1.0
    REAL    :: W0AVGfctr, W0fctr, W0den
    LOGICAL :: run_param
@@ -267,7 +266,7 @@ CONTAINS
                  XLV0,XLV1,XLS0,XLS1,CP,R,G,        &
                  EP2,SVP1,SVP2,SVP3,SVPT0,          &
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
-                 RAINCV,PRATEC,NCA,NTST,            &
+                 RAINCV,PRATEC,NCA,                 &
                  flag_QI,flag_QS,warm_rain,         &
                  CUTOP,CUBOT,CUDT,                  &
                  ids,ide, jds,jde, kds,kde,         &
@@ -276,7 +275,6 @@ CONTAINS
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
-!              RTHCUMAX=max(abs(RTHCUTEN(I,K,J)),RTHCUMAX)
                  RQVCUTEN(I,K,J)=DQDT(K)
               ENDDO
             ENDIF
@@ -316,9 +314,9 @@ CONTAINS
             ENDIF
 !
          ENDIF 
-       ENDDO
-     ENDDO
-   ENDIF
+       ENDDO     ! i-loop
+     ENDDO       ! j-loop
+   ENDIF         ! run_param
 !
    END SUBROUTINE KF_eta_CPS
 ! ****************************************************************************
@@ -329,7 +327,7 @@ CONTAINS
                       XLV0,XLV1,XLS0,XLS1,CP,R,G,          &
                       EP2,SVP1,SVP2,SVP3,SVPT0,            &
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
-                      RAINCV,PRATEC,NCA,NTST,              &
+                      RAINCV,PRATEC,NCA,                   &
                       F_QI,F_QS,warm_rain,                 &
                       CUTOP,CUBOT,CUDT,                    &
                       ids,ide, jds,jde, kds,kde,           &
@@ -344,7 +342,7 @@ CONTAINS
       INTEGER, INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
                                 ims,ime, jms,jme, kms,kme, &
                                 its,ite, jts,jte, kts,kte, &
-                                I,J,NTST
+                                I,J
           ! ,P_QI,P_QS,P_FIRST_SCALAR
 
       LOGICAL, INTENT(IN   ) :: F_QI, F_QS

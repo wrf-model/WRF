@@ -353,7 +353,13 @@ CONTAINS
    endif
 
    ! Initialize tmppratec to pratec
-   tmppratec(:,:) = pratec(:,:)
+
+   if ( PRESENT ( pratec ) ) then
+      tmppratec(:,:) = pratec(:,:)
+   else
+      tmppratec(:,:) = 0.
+   end if
+
 
    IF (cu_physics .eq. 0) return
 #if  ( EM_CORE == 1 )
@@ -411,7 +417,7 @@ CONTAINS
                ,U=u ,V=v ,TH=th ,T=t ,W=w                       &
                ,PCPS=p ,PI=pi                                   &
                ,XLV0=xlv0 ,XLV1=xlv1 ,XLS0=xls0 ,XLS1=xls1      &
-               ,RAINCV=raincv ,NCA=nca                          &
+               ,RAINCV=raincv, PRATEC=tmppratec, NCA=nca        &
                ,DZ8W=dz8w                                       &
                ,W0AVG=w0avg                                     &
                ,CP=cp ,R=r_d ,G=g ,EP1=ep_1 ,EP2=ep_2           &
@@ -470,7 +476,7 @@ CONTAINS
                ,SVP1=SVP1 ,SVP2=SVP2 ,SVP3=SVP3 ,SVPT0=SVPT0    &
                ,DT=dt ,KTAU=itimestep ,DX=dx                    &
                ,STEPCU=stepcu                                   &
-               ,CU_ACT_FLAG=cu_act_flag ,warm_rain=warm_rain    &
+               ,CU_ACT_FLAG=cu_act_flag ,WARM_RAIN=warm_rain    &
                ,QV=qv_curr                                      &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &

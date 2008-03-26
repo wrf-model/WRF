@@ -16,7 +16,7 @@ CONTAINS
               ,its,ite, jts,jte, kts,kte                     &
               ,DT,KTAU,DX,CUDT,CURR_SECS,ADAPT_STEP_FLAG     &
               ,rho                                           &
-              ,RAINCV,NCA                                    &
+              ,RAINCV,PRATEC,NCA                             &
               ,U,V,TH,T,W,QV,dz8w,Pcps,pi                    &
               ,W0AVG,XLV0,XLV1,XLS0,XLS1,CP,R,G,EP1          &
               ,EP2,SVP1,SVP2,SVP3,SVPT0                      &
@@ -64,6 +64,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
           INTENT(INOUT) ::                                   &
                                                      RAINCV  &
+                                                    ,PRATEC  &
                                                     ,   NCA
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),           &
@@ -124,13 +125,15 @@ CONTAINS
                                                       DQSDT, &
                                                        DTDT
 
-   REAL    ::         TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp,RTHCUMAX
+   REAL    ::         TST,tv,PRS,RHOE,W0,SCR1,DXSQ,tmp
 
    INTEGER :: i,j,k,NTST,ICLDCK
 
    LOGICAL :: qi_flag , qs_flag
+! adjustable time step changes
+   REAL    :: lastdt = -1.0
+   REAL    :: W0AVGfctr, W0fctr, W0den
    LOGICAL :: run_param
-   REAL    :: next_cu_time
 
 !----------------------------------------------------------------------
 
@@ -157,8 +160,29 @@ CONTAINS
 !  NTST=NINT(0.5*TST)                                                   
 !  NTST=MAX0(NTST,1)                                                   
 !----------------------
-   ICLDCK=MOD(KTAU,NTST)                                              
+!  ICLDCK=MOD(KTAU,NTST)                                              
 !----------------------
+!  write(0,*) 'DT = ',DT,'  KTAU = ',KTAU,' DX = ',DX
+!  write(0,*) 'CUDT = ',CUDT,'  CURR_SECS = ',CURR_SECS
+!  write(0,*) 'ADAPT_STEP_FLAG = ',ADAPT_STEP_FLAG,' IDS = ',IDS
+!  write(0,*) 'STEPCU = ',STEPCU,' warm_rain = ',warm_rain
+!  write(0,*) 'F_QV = ',F_QV,' F_QC = ',F_QV
+!  write(0,*) 'F_QI = ',F_QI,' F_QS = ',F_QS
+!  write(0,*) 'F_QR = ',F_QR
+!  stop
+   if (lastdt < 0) then
+      lastdt = dt
+   endif
+
+   if (ADAPT_STEP_FLAG) then
+      W0AVGfctr = 2 * CUDT * 60 - LASTDT
+      W0fctr = LASTDT
+      W0den = 2 * CUDT * 60
+   else
+      W0AVGfctr = (TST-1.)
+      W0fctr = 1.
+      W0den = TST
+   endif
 
    DO J = jts,jte  
       DO K=kts,kte
@@ -167,25 +191,33 @@ CONTAINS
             TV=T(I,K,J)*(1.+EP1*QV(I,K,J))
             RHOE=Pcps(I,K,J)/(R*TV)
             W0=-101.9368*SCR1/RHOE
-            W0AVG(I,K,J)=(W0AVG(I,K,J)*(TST-1.)+W0)/TST
+
+!           Old:
+!
+!           W0AVG(I,K,J)=(W0AVG(I,K,J)*(TST-1.)+W0)/TST
+!           New, to support adaptive time step:
+!
+            W0AVG(I,K,J) = ( W0AVG(I,K,J) * W0AVGfctr + W0 * W0fctr ) / W0den
+
          ENDDO
       ENDDO
    ENDDO
+   lastdt = dt
 !                                                                      
 !...CHECK FOR CONVECTIVE INITIATION EVERY 5 MINUTES (OR NTST/2)...      
 !                                                                     
-   RTHCUMAX=0.
 
 !
 ! Modified for adaptive time step
 !
-   if (adapt_step_flag) then
-   if ( (KTAU .eq. 1) .or. (cudt .eq. 0) .or. &
-        ( CURR_SECS + dt >= ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
-      run_param = .TRUE.
-   else
-      run_param = .FALSE.
-   endif
+   if (ADAPT_STEP_FLAG) then
+     if ( (KTAU .eq. 1) .or. (cudt .eq. 0) .or. &
+          ( CURR_SECS + dt >= &
+          ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
+        run_param = .TRUE.
+     else
+        run_param = .FALSE.
+     endif
 
    else
       if (MOD(KTAU,NTST) .EQ. 0 .or. KTAU .eq. 1) then
@@ -204,7 +236,12 @@ CONTAINS
 
      DO J = jts,jte  
         DO I=its,ite
-         IF ( NINT(NCA(I,J)) .gt. 0 ) then
+! if (i.eq. 110 .and. j .eq. 59 ) then
+!   write(0,*) 'nca = ',nca(i,j),' CU_ACT_FLAG = ',CU_ACT_FLAG(i,j)
+!   write(0,*) 'dt = ',dt,' ADAPT_STEP_FLAG = ',ADAPT_STEP_FLAG
+! endif
+!        IF ( NINT(NCA(I,J)) .gt. 0 ) then
+         IF ( NCA(I,J) .gt. 0.5*DT ) then
             CU_ACT_FLAG(i,j) = .false. 
          ELSE
 
@@ -217,6 +254,7 @@ CONTAINS
                DTDT(k)=0.
             ENDDO
             RAINCV(I,J)=0.
+	    PRATEC(I,J)=0.
 !
 ! assign vars from 3D to 1D
 
@@ -224,7 +262,7 @@ CONTAINS
                U1D(K) =U(I,K,J)
                V1D(K) =V(I,K,J)
                T1D(K) =T(I,K,J)
-             RHO1D(K) =rho(I,K,J)
+               RHO1D(K) =rho(I,K,J)
                QV1D(K)=QV(I,K,J)
                P1D(K) =Pcps(I,K,J)
                W0AVG1D(K) =W0AVG(I,K,J)
@@ -238,7 +276,7 @@ CONTAINS
                  XLV0,XLV1,XLS0,XLS1,CP,R,G,        &
                  EP2,SVP1,SVP2,SVP3,SVPT0,          &
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
-                 RAINCV,NCA,                        &
+                 RAINCV,PRATEC,NCA,                 &
                  warm_rain,qi_flag,qs_flag,         &
                  ids,ide, jds,jde, kds,kde,         &        
                  ims,ime, jms,jme, kms,kme,         &
@@ -296,7 +334,7 @@ CONTAINS
                       XLV0,XLV1,XLS0,XLS1,CP,R,G,          &
                       EP2,SVP1,SVP2,SVP3,SVPT0,            &
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
-                      RAINCV,NCA,                          &
+                      RAINCV,PRATEC,NCA,                   &
                       warm_rain,qi_flag,qs_flag,           &
                       ids,ide, jds,jde, kds,kde,           & 
                       ims,ime, jms,jme, kms,kme,           &
@@ -338,6 +376,7 @@ CONTAINS
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV, &
+                                                   PRATEC, &
                                                       NCA
 !
 !...DEFINE LOCAL VARIABLES...                                
@@ -1882,7 +1921,8 @@ CONTAINS
 !...TIMEC, ALLOW FEEDBACK TO OCCUR ONLY DURING TADVEC...                 
 !                                                                       
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)                  
-        NCA(I,J)=FLOAT(NIC)                                                  
+!       NCA(I,J)=FLOAT(NIC)                                                  
+        NCA(I,J)=TADVEC
         DO 320 K=1,KX                                                
 !         IF(IMOIST.NE.2)THEN
 !                                                                            
@@ -1950,8 +1990,8 @@ CONTAINS
 
 ! RAINCV is in the unit of mm
 
-        RAINCV(I,J)=DT*PPTFLX*(1.-FBFRC)/DXSQ                       
-!         RNC=0.1*TIMEC*PPTFLX/DXSQ                                       
+        PRATEC(I,J)=PPTFLX*(1.-FBFRC)/DXSQ                       
+        RAINCV(I,J)=DT*PRATEC(I,J)
         RNC=RAINCV(I,J)*NIC                                              
 !        WRITE(98,909)RNC                                               
  909     FORMAT(' CONVECTIVE RAINFALL =',F8.4,' CM')                   

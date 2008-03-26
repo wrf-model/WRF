@@ -2671,8 +2671,16 @@
               DO i = cims,cime
                 ni = (i-ipos) * nri + ( nri / 2 + 1 )    ! i point on nest
                 if ( ni .ge. nits-nioff-1 .and. ni .le. nite+nioff+1 .and. nj .ge. njts-njoff-1 .and. nj .le. njte+njoff+1 ) then
-                  if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
+!                 if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
+!                   icmask( i, j ) = .TRUE.
+!                 endif
+                  if ( imask(ni,nj) .eq. 1 ) then
                     icmask( i, j ) = .TRUE.
+                  endif
+                  if (ni .ge. nits-nioff .and. nj .ge. njts-njoff ) then
+                    if ( imask(ni-nioff,nj-njoff) .eq. 1) then
+                        icmask( i, j ) = .TRUE.
+                    endif
                   endif
                 endif
                 psca(i,j,nf) = cfld(i,k,j)

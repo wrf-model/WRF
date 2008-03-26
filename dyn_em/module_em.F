@@ -476,7 +476,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     max_horiz_cfl,                  &
                     u, v, ww, w, mut, rdnw,         &
                     rdx, rdy, msfux, msfuy, msfvx,  &
-                    msfvy, dt, config_flags%w_damping,&
+                    msfvy, dt, config_flags,        &
                     ids, ide, jds, jde, kds, kde,   &
                     ims, ime, jms, jme, kms, kme,   &
                     its, ite, jts, jte, kts, kte   )

@@ -2,10 +2,6 @@ MODULE module_sf_noahlsm
 
   USE module_model_constants
 
-!-------------------------------
-  USE module_sf_urban
-!-------------------------------
-
 !   REAL, PARAMETER    :: CP = 1004.5
   REAL, PARAMETER      :: RD = 287.04, SIGMA = 5.67E-8,                 &
                           CPH2O = 4.218E+3,CPICE = 2.106E+3,            &
@@ -2617,7 +2613,6 @@ CONTAINS
                   ET (K) = ET1 (K)*1000.
                END DO
                ETT = ETT1*1000.
-               ETNS = ETNS1*1000.
                ETNS = ETNS1*1000.
 ! ----------------------------------------------------------------------
 

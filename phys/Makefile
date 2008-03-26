@@ -136,10 +136,10 @@ module_sf_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o \
 		 module_progtm.o
 
-module_sf_noahdrv.o: module_sf_noahlsm.o module_data_gocart_dust.o 
-
-module_sf_noahlsm.o: ../share/module_model_constants.o  \
+module_sf_noahdrv.o: module_sf_noahlsm.o module_data_gocart_dust.o \
                      module_sf_urban.o
+
+module_sf_noahlsm.o: ../share/module_model_constants.o
 
 module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o 
 

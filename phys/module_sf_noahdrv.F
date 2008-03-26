@@ -2,6 +2,7 @@ MODULE module_sf_noahdrv
 
 !-------------------------------
   USE module_sf_noahlsm
+  USE module_sf_urban
 #ifdef WRF_CHEM
   USE module_data_gocart_dust
 #endif

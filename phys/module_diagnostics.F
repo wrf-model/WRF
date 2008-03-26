@@ -9,7 +9,7 @@ CONTAINS
                       ips,ipe, jps,jpe, kps,kpe,                      & ! patch  dims
                       i_start,i_end,j_start,j_end,kts,kte,num_tiles   &
                      ,dpsdt,dmudt                                     &
-                     ,p_phy,pk1m,mu_2,mu_2m                           &
+                     ,p8w,pk1m,mu_2,mu_2m                             &
                      ,u,v                                             &
                      ,raincv,rainncv,rainc,rainnc                     &
                      ,hfx,sfcevp,lh                                   &
@@ -29,7 +29,7 @@ CONTAINS
 !-- XTIME         forecast time
 !-- SBW           specified boundary width - used later
 !
-!-- P_PHY         3D pressure array
+!-- P8W           3D pressure array at full eta levels
 !-- MU            dry column hydrostatic pressure
 !-- RAINC         cumulus scheme precipitation since hour 0
 !-- RAINCV        cumulus scheme precipitation in one time step (mm)
@@ -82,7 +82,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                       u  &
                                                     ,         v  &
-                                                    ,     p_phy
+                                                    ,       p8w
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
                                                            MU_2  &
@@ -106,10 +106,13 @@ CONTAINS
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
+   INTEGER :: idp,jdp,irc,jrc,irnc,jrnc,isnh,jsnh
+   INTEGER :: prfreq
 
    REAL              :: no_points
    REAL              :: dpsdt_sum, dmudt_sum, dardt_sum, drcdt_sum, drndt_sum
    REAL              :: hfx_sum, lh_sum, sfcevp_sum, rainc_sum, rainnc_sum, raint_sum
+   REAL              :: dmumax, raincmax, rainncmax, snowhmax
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    CHARACTER*256     :: outstring
    CHARACTER*6       :: grid_str
@@ -118,7 +121,16 @@ CONTAINS
 
    if (diag_print .eq. 0 ) return
 
-   IF ( xtime .gt. 0. ) THEN
+   IF ( xtime .ne. 0. ) THEN
+
+    if(diag_print.eq.1) then
+       prfreq = dt
+!      prfreq = max(2,int(dt/60.))   ! in min
+    else
+       prfreq=10                   ! in min
+    endif
+   
+    IF (MOD(nint(dt),prfreq) == 0) THEN
 
 ! COMPUTE THE NUMBER OF MASS GRID POINTS
    no_points = float((ide-ids)*(jde-jds))
@@ -127,20 +139,31 @@ CONTAINS
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )
 
+   dmumax = 0.
    DO ij = 1 , num_tiles
 
 !     print *, i_start(ij),i_end(ij),j_start(ij),j_end(ij)
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
-         dpsdt(i,j)=(p_phy(i,kms,j)-pk1m(i,j))/dt
+         dpsdt(i,j)=(p8w(i,kms,j)-pk1m(i,j))/dt
          dmudt(i,j)=(mu_2(i,j)-mu_2m(i,j))/dt
+         if(abs(dmudt(i,j)*dt).gt.dmumax)then
+           dmumax=abs(dmudt(i,j)*dt)
+           idp=i
+           jdp=j
+         endif
       ENDDO      
       ENDDO
 
    ENDDO
 !  !$OMP END PARALLEL DO
 
-!  print *, 'p_phy(30,1,30),pk1m(30,30) : ', p_phy(30,1,30),pk1m(30,30)
+! convert DMUMAX from (PA) to (bars) per time step
+   dmumax = dmumax*1.e-5
+! compute global MAX
+   CALL wrf_dm_maxval ( dmumax,  idp, jdp )
+
+!  print *, 'p8w(30,1,30),pk1m(30,30) : ', p8w(30,1,30),pk1m(30,30)
 !  print *, 'mu_2(30,30),mu_2m(30,30) : ', mu_2(30,30),mu_2m(30,30)
    dpsdt_sum = 0.
    dmudt_sum = 0.
@@ -175,13 +198,29 @@ CONTAINS
        drndt_sum = drndt_sum + abs(rainncv(i,j))
        dardt_sum = dardt_sum + abs(raincv(i,j)) + abs(rainncv(i,j))
        rainc_sum = rainc_sum + abs(rainc(i,j))
+! MAX for accumulated conv precip
+       IF(rainc(i,j).gt.raincmax)then
+          raincmax=rainc(i,j)
+          irc=i
+          jrc=j
+       ENDIF
        rainnc_sum = rainnc_sum + abs(rainnc(i,j))
+! MAX for accumulated resolved precip
+       IF(rainnc(i,j).gt.rainncmax)then
+          rainncmax=rainnc(i,j)
+          irnc=i
+          jrnc=j
+       ENDIF
        raint_sum = raint_sum + abs(rainc(i,j)) + abs(rainnc(i,j))
        sfcevp_sum = sfcevp_sum + abs(sfcevp(i,j))
        hfx_sum = hfx_sum + abs(hfx(i,j))
        lh_sum = lh_sum + abs(lh(i,j))
      ENDDO
    ENDDO
+
+! compute global MAX
+   CALL wrf_dm_maxval ( raincmax, irc, jrc )
+   CALL wrf_dm_maxval ( rainncmax, irnc, jrnc )
 
 ! compute global sum
    drcdt_sum = wrf_dm_sum_real ( drcdt_sum )
@@ -203,10 +242,14 @@ CONTAINS
 #ifdef DM_PARALLEL
    IF ( wrf_dm_on_monitor() ) THEN
 #endif
-     WRITE(outstring,*) grid_str,'Domain average of dpsdt, dmudt (Pa/sec): ', xtime, &
-           dpsdt_sum/no_points, &
-           dmudt_sum/no_points
+     WRITE(outstring,*) grid_str,'Domain average of dpsdt, dmudt (mb/3h): ', xtime, &
+           dpsdt_sum/no_points*108., &
+           dmudt_sum/no_points*108.
      CALL wrf_message ( TRIM(outstring) )
+
+     WRITE(outstring,*) grid_str,'Max mu change time step: ', idp,jdp,dmumax
+     CALL wrf_message ( TRIM(outstring) )
+
      IF ( diag_print .eq. 2) THEN
      WRITE(outstring,*) grid_str,'Domain average of dardt, drcdt, drndt (mm/sec): ', xtime, &
            dardt_sum/dt/no_points, &
@@ -218,6 +261,12 @@ CONTAINS
            rainc_sum/no_points, &
            rainnc_sum/no_points
      CALL wrf_message ( TRIM(outstring) )
+     WRITE(outstring,*) grid_str,'Max Accum Resolved Precip,   I,J  (mm): '               ,&
+           rainncmax,irnc,jrnc
+     CALL wrf_message ( TRIM(outstring) )
+     WRITE(outstring,*) grid_str,'Max Accum Convective Precip,   I,J  (mm): '             ,&
+           raincmax,irc,jrc
+     CALL wrf_message ( TRIM(outstring) )
      WRITE(outstring,*) grid_str,'Domain average of sfcevp, hfx, lh: ', xtime, &
            sfcevp_sum/no_points, &
            hfx_sum/no_points, &
@@ -228,6 +277,7 @@ CONTAINS
    ENDIF
 #endif
 
+    ENDIF        ! print frequency
    ENDIF
 
 ! save values at this time step
@@ -237,7 +287,7 @@ CONTAINS
 
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
-         pk1m(i,j)=p_phy(i,kms,j)
+         pk1m(i,j)=p8w(i,kms,j)
          mu_2m(i,j)=mu_2(i,j)
       ENDDO
       ENDDO

@@ -3144,7 +3144,7 @@ BENCH_END(bc_2d_tim)
    
    CALL diagnostic_output_calc(                                            &
       &              DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                  &
-      &             ,P_PHY=p_phy   ,PK1M=grid%pk1m                         &
+      &             ,P8W=p8w   ,PK1M=grid%pk1m                             &
       &             ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                     &
       &             ,U=grid%u_2    ,V=grid%v_2                             &
       &             ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &

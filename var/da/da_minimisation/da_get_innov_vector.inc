@@ -99,10 +99,6 @@ subroutine da_get_innov_vector (it, ob, iv, grid, config_flags)
    !#endif
    end if
 
-   !----------------------------------------------------------
-   ! [6]  write out filtered radiance obs in binary format
-   !----------------------------------------------------------
-
    if (num_fgat_time > 1) then
       call da_med_initialdata_input( grid , config_flags, 'fg01')
       call da_setup_firstguess(xbx, grid)

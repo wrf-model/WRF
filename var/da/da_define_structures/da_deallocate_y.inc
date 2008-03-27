@@ -139,16 +139,6 @@ subroutine da_deallocate_y(y)
 
    if (y % nlocal(buoy)  > 0) deallocate (y % buoy)
 
-   !  radiance:
- 
-   if (y % num_inst > 0) then
-      do i = 1,  y % num_inst
-        if (y % instid(i) % num_rad < 1) cycle
-        ! deallocate (y % instid(i) % ichan)
-        deallocate ( y % instid(i) % tb )
-      end do
-      deallocate (y % instid)
-   end if
    if (y % nlocal(airsr) > 0) then
       do n = 1, y % nlocal(airsr)
          deallocate (y % airsr(n)%t)

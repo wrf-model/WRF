@@ -268,26 +268,26 @@ CONTAINS
 
     ! First, check for validity of mandatory variables in proj
     IF ( ABS(lat1) .GT. 90. ) THEN
-      PRINT '(A)', 'Latitude of origin corner required as follows:'
-      PRINT '(A)', '    -90N <= lat1 < = 90.N'
+      WRITE(0,'(A)') 'Latitude of origin corner required as follows:'
+      WRITE(0,'(A)') '    -90N <= lat1 < = 90.N'
       STOP 'MAP_INIT'
     ENDIF
     IF ( ABS(lon1) .GT. 180.) THEN
-      PRINT '(A)', 'Longitude of origin required as follows:'
-      PRINT '(A)', '   -180E <= lon1 <= 180W'
+      WRITE(0,'(A)') 'Longitude of origin required as follows:'
+      WRITE(0,'(A)') '   -180E <= lon1 <= 180W'
       STOP 'MAP_INIT'
     ENDIF
     IF ((dx .LE. 0.).AND.(proj_code .NE. PROJ_LATLON)) THEN
-      PRINT '(A)', 'Require grid spacing (dx) in meters be positive!'
+      WRITE(0,'(A)') 'Require grid spacing (dx) in meters be positive!'
       STOP 'MAP_INIT'
     ENDIF
     IF ((ABS(stdlon) .GT. 180.).AND.(proj_code .NE. PROJ_MERC)) THEN
-      PRINT '(A)', 'Need orientation longitude (stdlon) as: '
-      PRINT '(A)', '   -180E <= lon1 <= 180W' 
+      WRITE(0,'(A)') 'Need orientation longitude (stdlon) as: '
+      WRITE(0,'(A)') '   -180E <= lon1 <= 180W' 
       STOP 'MAP_INIT'
     ENDIF
     IF (ABS(truelat1).GT.90.) THEN
-      PRINT '(A)', 'Set true latitude 1 for all projections!'
+      WRITE(0,'(A)') 'Set true latitude 1 for all projections!'
       STOP 'MAP_INIT'
     ENDIF
    
@@ -313,29 +313,29 @@ CONTAINS
     pick_proj: SELECT CASE(proj%code)
 
       CASE(PROJ_PS)
-        PRINT '(A)', 'Setting up POLAR STEREOGRAPHIC map...'
+        WRITE(0,'(A)') 'Setting up POLAR STEREOGRAPHIC map...'
         CALL set_ps(proj)
 
       CASE(PROJ_LC)
-        PRINT '(A)', 'Setting up LAMBERT CONFORMAL map...'
+        WRITE(0,'(A)') 'Setting up LAMBERT CONFORMAL map...'
         IF (ABS(proj%truelat2) .GT. 90.) THEN
-          PRINT '(A)', 'Second true latitude not set, assuming a tangent'
-          PRINT '(A,F10.3)', 'projection at truelat1: ', proj%truelat1
+          WRITE(0,'(A)') 'Second true latitude not set, assuming a tangent'
+          WRITE(0,'(A,F10.3)') 'projection at truelat1: ', proj%truelat1
           proj%truelat2=proj%truelat1
         ENDIF
         CALL set_lc(proj)
    
       CASE (PROJ_MERC)
-        PRINT '(A)', 'Setting up MERCATOR map...'
+        WRITE(0,'(A)') 'Setting up MERCATOR map...'
         CALL set_merc(proj)
    
       CASE (PROJ_LATLON)
-        PRINT '(A)', 'Setting up CYLINDRICAL EQUIDISTANT LATLON map...'
+        WRITE(0,'(A)') 'Setting up CYLINDRICAL EQUIDISTANT LATLON map...'
         ! Convert lon1 to 0->360 notation
         IF (proj%lon1 .LT. 0.) proj%lon1 = proj%lon1 + 360.
    
       CASE DEFAULT
-        PRINT '(A,I2)', 'Unknown projection code: ', proj%code
+        WRITE(0,'(A,I2)') 'Unknown projection code: ', proj%code
         STOP 'MAP_INIT'
     
     END SELECT pick_proj
@@ -355,7 +355,7 @@ CONTAINS
     REAL, INTENT(OUT)                    :: j
 
     IF (.NOT.proj%init) THEN
-      PRINT '(A)', 'You have not called map_set for this projection!'
+      WRITE(0,'(A)') 'You have not called map_set for this projection!'
       STOP 'LATLON_TO_IJ'
     ENDIF
 
@@ -378,7 +378,7 @@ CONTAINS
         j = j + proj%knownj - 1.0
 
       CASE DEFAULT
-        PRINT '(A,I2)', 'Unrecognized map projection code: ', proj%code
+        WRITE(0,'(A,I2)') 'Unrecognized map projection code: ', proj%code
         STOP 'LATLON_TO_IJ'
  
     END SELECT
@@ -399,7 +399,7 @@ CONTAINS
     REAL         :: i, j
 
     IF (.NOT.proj%init) THEN
-      PRINT '(A)', 'You have not called map_set for this projection!'
+      WRITE(0,'(A)') 'You have not called map_set for this projection!'
       STOP 'IJ_TO_LATLON'
     ENDIF
 
@@ -426,7 +426,7 @@ CONTAINS
         CALL ijll_lc(i, j, proj, lat, lon)
 
       CASE DEFAULT
-        PRINT '(A,I2)', 'Unrecognized map projection code: ', proj%code
+        WRITE(0,'(A,I2)') 'Unrecognized map projection code: ', proj%code
         STOP 'IJ_TO_LATLON'
 
     END SELECT
@@ -463,7 +463,7 @@ CONTAINS
     alo1 = (proj%lon1 - reflon) * rad_per_deg
     proj%polei = proj%knowni - proj%rsw * COS(alo1)
     proj%polej = proj%knownj - proj%hemi * proj%rsw * SIN(alo1)
-    PRINT '(A,2F10.1)', 'Computed (I,J) of pole point: ',proj%polei,proj%polej
+    WRITE(0,'(A,2F10.1)')'Computed (I,J) of pole point: ',proj%polei,proj%polej
     RETURN
   END SUBROUTINE set_ps
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -586,7 +586,7 @@ CONTAINS
 
     ! Compute cone factor
     CALL lc_cone(proj%truelat1, proj%truelat2, proj%cone)
-    PRINT '(A,F8.6)', 'Computed cone factor: ', proj%cone
+    WRITE(0,'(A,F8.6)') 'Computed cone factor: ', proj%cone
     ! Compute longitude differences and ensure we stay out of the
     ! forbidden "cut zone"
     deltalon1 = proj%lon1 - proj%stdlon
@@ -606,7 +606,7 @@ CONTAINS
     arg = proj%cone*(deltalon1*rad_per_deg)
     proj%polei = 1. - proj%hemi * proj%rsw * SIN(arg)
     proj%polej = 1. + proj%rsw * COS(arg)  
-    PRINT '(A,2F10.3)', 'Computed pole i/j = ', proj%polei, proj%polej
+    WRITE(0,'(A,2F10.3)') 'Computed pole i/j = ', proj%polei, proj%polej
     RETURN
   END SUBROUTINE set_lc                             
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

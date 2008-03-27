@@ -1077,7 +1077,7 @@ da_test.o:		da_test.f90 \
 da_verif_anal_control.o: da_verif_anal_control.f90
 	$(RM) $@
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_verif_anal_control.f90 > da_verif_anal_control.f
-	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_verif_anal_control.f
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) -I$(NETCDFPATH)/include $(PROMOTION) da_verif_anal_control.f
 
 da_verif_obs_control.o: da_verif_obs_control.f90
 	$(RM) $@
@@ -1097,7 +1097,7 @@ da_module_couple_uv.o: da_module_couple_uv.f90
 da_update_bc.o: da_netcdf_interface.o da_module_couple_uv.o da_update_bc.f90
 	$(RM) $@
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc da_update_bc.f90 > da_update_bc.f
-	$(SFC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) da_update_bc.f
+	$(SFC) -c $(FCFLAGS) $(MODULE_DIRS) $(WRFVAR_INC) -I$(NETCDFPATH)/include $(PROMOTION) da_update_bc.f
 
 da_update_bc.exe : da_update_bc.o
 	$(SFC) -o da_update_bc.exe $(FCFLAGS) $(WRFVAR_INC) $(PROMOTION) da_update_bc.o \

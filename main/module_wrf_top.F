@@ -474,6 +474,18 @@ CONTAINS
       END IF
 #endif
 
+#if (DA_CORE == 1)
+      IF ( model_config_rec % dyn_opt .EQ. 2 ) THEN
+        DO i = 1, model_config_rec % max_dom
+           model_config_rec % mp_physics_4dvar(i) = -1
+        ENDDO
+      ELSE
+        DO i = 1, model_config_rec % max_dom
+           model_config_rec % mp_physics_4dvar(i) = model_config_rec % mp_physics(i)
+        ENDDO
+      END IF
+#endif
+
    END SUBROUTINE set_derived_rconfigs
 
 END MODULE module_wrf_top

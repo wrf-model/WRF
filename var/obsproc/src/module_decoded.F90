@@ -333,7 +333,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 ! To ignore the data type without WMO code:
 
          if (IO_error /= 0 ) then
-            print '("IO_ERROR=",i2,1x,i5,1x,a,2(f9.3,a),1x,a,1x,f11.3)', &
+           write(0,'("IO_ERROR=",i2,1x,i5,1x,a,2(f9.3,a),1x,a,1x,f11.3)') &
                              io_error, obs_num, obs(obs_num)%info % platform, &
                                           obs(obs_num)%location%latitude, 'N',&
                                           obs(obs_num)%location%longitude,'E ', &
@@ -379,13 +379,13 @@ time_window_min, time_window_max, map_projection , missing_flag)
       IF (IPROJ > 0) THEN
          if (truelat1 > 0.0) then
             if (obs(obs_num)%location%latitude == -90.0) then
-                print '(/i6,2x,"modified the original lat =",f8.2," to -89.5"/)', &
+              write(0,'(/i6,2x,"modified the original lat =",f8.2," to -89.5"/)') &
                      obs_num, obs(obs_num)%location%latitude  
                      obs(obs_num)%location%latitude = -89.5
             endif
          else if (truelat1 < 0.0) then
             if (obs(obs_num)%location%latitude == 90.0) then
-                print '(/i6,2x,"modified the original lat =",f8.2," to  89.5"/)', &
+              write(0,'(/i6,2x,"modified the original lat =",f8.2," to  89.5"/)') &
                      obs_num, obs(obs_num)%location%latitude  
                      obs(obs_num)%location%latitude =  89.5
                  endif
@@ -950,7 +950,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
               obs(obs_num)%location%longitude .gt. -75. ) ) then 
   ! set elevation to 0 for ships and buoys outside of the Great Lakes.
             obs(obs_num)%info % elevation = 0.
-!           print  '(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)',&
+!           write(0,'(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
 !            m_miss,'Set elev to zero (id,name,platform,lat,lon,date,elv:',  &
 !           obs(obs_num)%location%id   (1: 5),&
 !           obs(obs_num)%location%name (1:20),&
@@ -961,7 +961,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
 !           obs(obs_num)%info % elevation
           else if (fm < 39) then
             m_miss = m_miss + 1
-            print  '(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)',&
+            write(0,'(I5,1X,A,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3)')&
              m_miss,'Missing elevation(id,name,platform,lat,lon,date,elv:',  &
             obs(obs_num)%location%id   (1: 5),&
             obs(obs_num)%location%name (1:20),&
@@ -1527,6 +1527,21 @@ SUBROUTINE read_measurements (file_num, surface, location, info, bad_data, &
                   N_air_cut = N_air_cut + 1
              call Aircraft_pressure(current%meas%height, current%meas%pressure)
                endif
+
+! Y.-R. Guo, 03/20/2008: In RTOBS 2006091300 data:obs.2006091300.gz, there are
+!    two levels obs in FM-13 SHIP causing troubles in wrfvar.
+! SHIP and BUOY, if pressure < 85000.0 Pa, discarded.
+      ELSE IF ( fm == 13 .or. fm == 18 .or. fm == 19 ) THEN
+           if (current%meas%pressure%data < 85000.0 .and. &
+               current%meas%pressure%qc >= 0) then 
+               write(0,'(a,3x,a,2x,a,2x,2f13.5,2x,"Pressure=",f10.1,a,i8)') &
+                   'Discarded:', info%platform(1:12), trim(location%id), &
+                   location%latitude,   location%longitude, &
+                   current%meas%pressure%data, " < 85000.0 Pa, qc=", &
+                   current%meas%pressure%qc 
+              CYCLE read_meas
+           endif
+      
       ENDIF
 
       !  Some pressure and height is needed for vertically inserting data

@@ -156,37 +156,6 @@ subroutine da_setup_firstguess_wrf(xbx, grid)
    xxc = real(coarse_ix)/2.0
    yyc = real(coarse_jy)/2.0
 
-   ! Warn if grid centres differ by more than .1%
-   if (abs(grid%cen_lon-grid%stand_lon)/grid%cen_lon > 0.001 .or. &
-       abs(grid%cen_lat-grid%moad_cen_lat)/grid%cen_lat > 0.001) then
-
-      write(unit=message(1),fmt='(a,2e20.12)')'grid%cen_lon  , grid%cen_lat     :', &
-                           grid%cen_lon, grid%cen_lat
-      write(unit=message(2),fmt='(a,2e20.12)')'grid%stand_lon, grid%moad_cen_lat:', &
-                           grid%stand_lon, grid%moad_cen_lat
-      write(unit=message(3),fmt='(a)')  &
-         '## Compute the coarse_ix, coarse_jy, start_x, and start_y: ##'
-
-      call da_llxy_wrf(map_info, phic        , xlonc       , xxx, yyy)
-
-      i_grid = nint(xxx-xxc)
-      j_grid = nint(yyy-yyc)
-      m_expand = 16
-
-      coarse_ix = coarse_ix + 2*abs(i_grid) + m_expand
-      coarse_jy = coarse_jy + 2*abs(j_grid) + m_expand
-
-      start_x = m_expand/2 + 1
-      if (i_grid < 0) start_x = start_x - 2*i_grid
-      start_y = m_expand/2 + 1
-      if (j_grid < 0) start_y = start_y - 2*j_grid
-
-      write(unit=message(4),fmt='(a,2i5,2x,a,2f6.1)') &
-            'Dimension of MOAD: ix, jy:',coarse_ix, coarse_jy, &
-            'parent_x, parent_y:', start_x, start_y
-      call da_warning(__FILE__,__LINE__,message(1:4))
-   end if
-
    call da_set_map_para ! set up the map background parameters
 
    ! call da_llxy_default(PHIC,XLONC,X,Y)

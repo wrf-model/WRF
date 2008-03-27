@@ -26,7 +26,7 @@ module da_par_util
       kps, kpe, grid_stagger, grid_ordering, trace_use_dull, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      pseudo, radar, radiance, airsr, sonde_sfc, trace_use_frequent
+      pseudo, radar, airsr, sonde_sfc, trace_use_frequent
    use da_reporting, only : da_error
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_wrf_interfaces, only : &

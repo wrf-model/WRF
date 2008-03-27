@@ -50,6 +50,7 @@ subroutine da_setup_pseudo_obs(iv, ob)
 
       iv%info(pseudo)%i(:,n) = int(pseudo_x)
       iv%info(pseudo)%j(:,n) = int(pseudo_y)
+      iv%info(pseudo)%k(:,n) = int(pseudo_z)
 
       iv%info(pseudo)%dx(:,n) = pseudo_x-real(iv%info(pseudo)%i(:,n))
       iv%info(pseudo)%dy(:,n) = pseudo_y-real(iv%info(pseudo)%j(:,n))

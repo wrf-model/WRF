@@ -13,7 +13,7 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      pseudo, radar, radiance, airsr, sonde_sfc, trace_use_dull,comm
+      pseudo, radar, airsr, sonde_sfc, trace_use_dull,comm
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print

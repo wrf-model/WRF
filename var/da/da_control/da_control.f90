@@ -26,7 +26,7 @@ module da_control
    real, parameter    :: cp = 7.0*gas_constant/2.0 ! Value used in WRF.
    real, parameter    :: t_kelvin = 273.15
    real, parameter    :: t_triple = 273.16 ! triple point of water
-   ! The imported code for ssmi and radiance uses 273.0 in a way that suggests 
+   ! The imported code for ssmi uses 273.0 in a way that suggests 
    ! it may not be a lazy definition of the melting point of water, so keep the
    ! value separate for the moment
    real, parameter    :: t_roughem = 273.0
@@ -434,7 +434,7 @@ module da_control
 
    integer :: trace_start_points=0   ! Number of routines to initiate trace
 
-   integer, parameter :: num_ob_indexes = 24
+   integer, parameter :: num_ob_indexes = 23
 
    integer, parameter :: sound     = 1
    integer, parameter :: synop     = 2
@@ -457,9 +457,8 @@ module da_control
    integer, parameter :: bogus     = 19
    integer, parameter :: pseudo    = 20
    integer, parameter :: radar     = 21
-   integer, parameter :: radiance  = 22
-   integer, parameter :: airsr     = 23
-   integer, parameter :: sonde_sfc = 24
+   integer, parameter :: airsr     = 22
+   integer, parameter :: sonde_sfc = 23
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
       "sound         ", &
@@ -483,7 +482,6 @@ module da_control
       "bogus         ", &
       "pseudo        ", &
       "radar         ", &
-      "radiance      ", &
       "airs retrieval", &
       "sonde_sfc     "  &
    /)

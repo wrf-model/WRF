@@ -1605,6 +1605,7 @@ rconfig   integer map_proj                derived                  max_domains  
 rconfig   integer use_wps_input           derived                       1         0       -        "use_wps_input"        "0/1 flag, using wps input"      "0=no, 1=yes"
 rconfig   integer dfi_stage               derived                       1         3       -        "dfi_stage"            "current stage of DFI processing"      "0=DFI setup, 1=DFI backward integration, 2=DFI forward integration, 3=WRF forecast"
 rconfig   integer mp_physics_dfi          derived                  max_domains   -1       -        "mp_physics_dfi"       ""      "-1 = no DFI and so no need to allocate DFI moist and scalar variables, >0 = running with DFI, so allocate DFI moist and scalar variables appropriate for selected microphysics package"
+rconfig   integer mp_physics_4dvar        derived                  max_domains   -1       -        "mp_physics_4dvar"     ""      "-1 = no 4dvar and so no need to allocate a_ and g_ moist and scalar variables, >0 = running 4dvar, so allocate a_ and g_ moist and scalar variables appropriate for selected microphysics package"
 
 #
 # Single dummy declaration to define a nodyn dyn option
@@ -1627,15 +1628,15 @@ package   dyn_em_tst   dyn_opt==402                 -             -
 package   dyn_em_var   dyn_opt==502                 -             -
 
 package   passivec1     chem_opt==0                  -             
-package   passiveqv     mp_physics==0                -             moist:qv;a_moist:a_qv;g_moist:g_qv
-package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   etampnew      mp_physics==5                -             moist:qv,qc;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
-package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   passiveqv     mp_physics==0                -             moist:qv
+package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
+package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
+package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr
+package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
+package   etampnew      mp_physics==5                -             moist:qv,qc
+package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;a_moist:a_qv,a_qc;g_moist:g_qv,g_qc;scalar:qni
+package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
@@ -1649,6 +1650,16 @@ package   wsm6scheme_dfi    mp_physics_dfi==6            -             dfi_moist
 package   gsfcgcescheme_dfi mp_physics_dfi==7            -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompson_dfi       mp_physics_dfi==8           -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
 package   morr_two_moment_dfi  mp_physics_dfi==10        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
+
+package   no4dvarmoist        mp_physics_4dvar==-1       -             -
+package   passiveqv_4dvar     mp_physics_4dvar==0        -             a_moist:a_qv;g_moist:g_qv
+package   kesslerscheme_4dvar mp_physics_4dvar==1        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   linscheme_4dvar     mp_physics_4dvar==2        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   wsm3scheme_4dvar    mp_physics_4dvar==3        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   wsm5scheme_4dvar    mp_physics_4dvar==4        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   etampnew_4dvar      mp_physics_4dvar==5        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   wsm6scheme_4dvar    mp_physics_4dvar==6        -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
+package   thompson_4dvar       mp_physics_4dvar==8       -             a_moist:a_qv,a_qc;g_moist:g_qv,g_qc
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop

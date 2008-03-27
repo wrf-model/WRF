@@ -157,6 +157,8 @@ C
 C ====================================================================
       do nd = 1,maxnes
 
+      if ( nd < maxnes ) cycle
+
       mmi  = nestix(nd)
       mmj  = nestjx(nd)
       ioff = ioffst*nratio(nd)

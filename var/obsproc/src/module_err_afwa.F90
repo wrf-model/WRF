@@ -1270,6 +1270,9 @@ upper_level: DO WHILE (ASSOCIATED (current))
           current % meas % rh % error = intplog (pres, err % level, &
                                                  err % airs  % rh)
 
+      CASE  ('GPSPW')
+
+
 ! 4.13 Others, use ncep values
 !      -----------------------
 

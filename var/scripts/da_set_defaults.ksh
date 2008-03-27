@@ -104,7 +104,7 @@ export WRF_DIR=${WRF_DIR:-$REL_DIR/wrf}           # WRF directory.
 export WRFNL_DIR=${WRFNL_DIR:-$REL_DIR/wrfnl}
 export WRFPLUS_DIR=${WRFPLUS_DIR:-$REL_DIR/wrfplus} # WRF TL/ADJ directory.
 export DAT_DIR=${DAT_DIR:-$HOME/data}             # Top-level data directory.
-export MSS_GRIB_DIR=${MSS_GRIB_DIR:-mss:/DSS/DS083.2/data}
+export MSS_GRIB_DIR=${MSS_GRIB_DIR:-mss:/DSS/DS083.2/data/grib1}
 export GRIB_DIR=${GRIB_DIR:-$DAT_DIR/${FG_TYPE}}         # GRIB input data dir.
 export MSS_RTOBS_DIR=${MSS_RTOBS_DIR:-mss:/BRESCH/RT/DATA}
 export RTOBS_DIR=${RTOBS_DIR:-$DAT_DIR/rtobs}     # Real-time observation directory.
@@ -225,6 +225,7 @@ export PTOP_PA=${PTOP_PA:-5000.0}
 
 # WRF-Var (not covered above):
 export NL_ANALYSIS_TYPE=${NL_ANALYSIS_TYPE:-"3D-VAR"}  # Analysis type.
+export NL_MULTI_INC=${NL_MULTI_INC:-0}  # Analysis type.
 export NL_VAR4D=${NL_VAR4D:-false}
 export NL_GLOBAL=${NL_GLOBAL:-false}
 export BE_DIR=${BE_DIR:-$REG_DIR/be}                   # Background error covariance directory.
@@ -240,6 +241,8 @@ export NL_CHECK_RH=${NL_CHECK_RH:-2}     # RH bounds check.
 
 # From Update_BC:
 export PHASE=${PHASE:-false}     # Indicate which phase update_bc is.
+export NL_LOW_BDY_ONLY=${NL_LOW_BDY_ONLY:-false}
+export NL_UPDATE_LSM=${NL_UPDATE_LSM:-false}
 
 # Ensemble parameters:
 export NUM_JOBS=${NUM_JOBS:-0}                         # Number of parallel jobs to run.

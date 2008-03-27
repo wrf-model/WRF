@@ -68,7 +68,7 @@ begin
   plat = first_guess->XLAT(0,xlat-1,xlon-1)
 
   title="PSOT"+" - "+var
-  subtitle="Date="+date+",Lon="+plong+",Lat="+plat+",Eta = "+znu(kl-1)+",Val="+omb+varunit+",Err="+err+varunit
+  subtitle="Lon="+plong+",Lat="+plat+",Eta = "+znu(kl-1)+",Val="+omb+varunit+",Err="+err+varunit
 
 ;********************************************************
 ; Read W at Time=6, south_north=0, convert to cm/sec
@@ -158,14 +158,14 @@ begin
 ;************************************************
   resP                  = True                   ; modify the panel plot
   resP@gsnFrame         = False                  ; don't advance panel plot
-  resP@txString         = title+"~C~"+" " 
+  resP@txString         = title 
   resP@gsnMaximize      = True                   ; maximize panel area
   resP@gsnPanelRowSpec  = True                   ; specify 1 top, 2 lower level
   gsn_panel(wks,plts,(/2,2/),resP)               ; now draw as one plot
 
   txres               = True
   txres@txFontHeightF = 0.012
-  gsn_text_ndc(wks,subtitle,0.5,0.95,txres)
+  gsn_text_ndc(wks,subtitle,0.5,0.94,txres)
   frame(wks)
 
 end

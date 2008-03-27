@@ -26,11 +26,11 @@ subroutine da_transform_xtoy_pseudo(grid, iv, y)
    allocate (p(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
    allocate (t(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
 
-   call da_interp_lin_3d_adj(grid%xa%u, iv%info(pseudo), u)
-   call da_interp_lin_3d_adj(grid%xa%v, iv%info(pseudo), v)
-   call da_interp_lin_3d_adj(grid%xa%q, iv%info(pseudo), q)
-   call da_interp_lin_3d_adj(grid%xa%p, iv%info(pseudo), p)
-   call da_interp_lin_3d_adj(grid%xa%t, iv%info(pseudo), t)
+   call da_interp_lin_3d(grid%xa%u, iv%info(pseudo), u)
+   call da_interp_lin_3d(grid%xa%v, iv%info(pseudo), v)
+   call da_interp_lin_3d(grid%xa%q, iv%info(pseudo), q)
+   call da_interp_lin_3d(grid%xa%p, iv%info(pseudo), p)
+   call da_interp_lin_3d(grid%xa%t, iv%info(pseudo), t)
 
    do n=iv%info(pseudo)%n1,iv%info(pseudo)%n2
       y%pseudo(n)%u = u(1,n)

@@ -4879,33 +4879,6 @@ END SUBROUTINE phy_bc
       IF ( config_flags%periodic_x ) i_start = its
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
-    IF (isotropic .EQ. 0) THEN
-
-      DO j = j_start, j_end
-        DO i = i_start, i_end
-          sumtke(i)  = 0.0
-          sumtkez(i) = 0.0
-        END DO
-        DO k = kts, ktf
-        DO i = i_start, i_end
-          tketmp     = MAX( tke(i,k,j), 0.0 )
-          sumtke(i)  = sumtke(i) + SQRT(tketmp) / rdzw(i,k,j)
-          sumtkez(i) = sumtkez(i)+ sumtke(i) * z(i,k,j)
-          IF ( ABS( sumtke(i) ) .gt. 0.01 ) THEN
-            len_0 = 0.2 * sumtkez(i) / sumtke(i)
-          ELSE
-            len_0 = 80.0
-          ENDIF
-          len_0 = MIN( 80.0, len_0)
-          l_scale(i,k,j)  = KARMAN * z(i,k,j) /  &
-                            ( 1.0 + KARMAN * z(i,k,j) / len_0 )
-          tendency(i,k,j) = tendency(i,k,j) -                     &
-                            mu(i,j) * 2.0 * SQRT( 2.0 ) / 15.0 *  &
-                            tketmp**1.5 / l_scale(i,k,j)
-        END DO
-        END DO
-      END DO
-    ELSE
       CALL calc_l_scale( config_flags, tke, BN2, l_scale,      &
                          i_start, i_end, ktf, j_start, j_end,  &
                          dx, dy, rdzw, msftx, msfty,           &
@@ -4932,7 +4905,6 @@ END SUBROUTINE phy_bc
       END DO
       END DO
       END DO
-    ENDIF
 
     END SUBROUTINE tke_dissip
 

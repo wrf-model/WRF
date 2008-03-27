@@ -229,6 +229,41 @@ Namelist variables for controling the automatic moving nest:
                                                   -1: code will do automatic decomposition
                                                   >1: for both: will be used for decomposition
 
+ &dfi_control
+ dfi_opt                             = 0        ; which DFI option to use (3 is recommended)
+                                                ;   0 = no digital filter initialization
+                                                ;   1 = digital filter launch (DFL)
+                                                ;   2 = diabatic DFI (DDFI)
+                                                ;   3 = twice DFI (TDFI)
+ dfi_nfilter                         = 7        ; digital filter type to use (7 is recommended)
+                                                ;   0 = uniform
+                                                ;   1 = Lanczos
+                                                ;   2 = Hamming
+                                                ;   3 = Blackman
+                                                ;   4 = Kaiser
+                                                ;   5 = Potter
+                                                ;   6 = Dolph window
+                                                ;   7 = Dolph
+                                                ;   8 = recursive high-order
+ dfi_write_filtered_input            = .true.   ; whether to write wrfinput file with filtered 
+                                                ;   model state before beginning forecast
+ dfi_write_dfi_history               = .false.  ; whether to write wrfout files during filtering integration
+ dfi_cutoff_seconds                  = 3600     ; cutoff period, in seconds, for the filter
+ dfi_time_dim                        = 1000     ; maximum number of time steps for filtering period
+                                                ;   this value can be larger than necessary
+ dfi_bckstop_year                    = 2004     ; four-digit year of stop time for backward DFI integration
+ dfi_bckstop_month                   = 03       ; two-digit month of stop time for backward DFI integration
+ dfi_bckstop_day                     = 14       ; two-digit day of stop time for backward DFI integration
+ dfi_bckstop_hour                    = 12       ; two-digit hour of stop time for backward DFI integration
+ dfi_bckstop_minute                  = 00       ; two-digit minute of stop time for backward DFI integration
+ dfi_bckstop_second                  = 00       ; two-digit second of stop time for backward DFI integration
+ dfi_fwdstop_year                    = 2004     ; four-digit year of stop time for forward DFI integration
+ dfi_fwdstop_month                   = 03       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_day                     = 13       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_hour                    = 12       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_minute                  = 00       ; two-digit month of stop time for forward DFI integration
+ dfi_fwdstop_second                  = 00       ; two-digit month of stop time for forward DFI integration
+
  &physics
 
  Note: even the physics options can be different in different nest domains, 

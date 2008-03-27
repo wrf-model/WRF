@@ -1,14 +1,14 @@
 
 &record1
- obs_gts_filename = '/mmmtmp/guo/gpsref_r/gpsref_2006092603.r_GPSEP',
+ obs_gts_filename = '/ptmp/rizvi/WRFV3-testdata/ob/2007010200/ob.little_r'
  fg_format        = 'WRF',
  obs_err_filename = 'obserr.txt',
 /
 
 &record2
- time_window_min  = '2006-09-26_02:00:00',
- time_analysis    = '2006-09-26_03:00:00',
- time_window_max  = '2006-09-26_04:00:00',
+ time_window_min  = '2007-01-01_21:00:00',
+ time_analysis    = '2007-01-02_00:00:00',
+ time_window_max  = '2007-01-02_03:00:00',
 /
 
 &record3

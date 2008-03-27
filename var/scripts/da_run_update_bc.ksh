@@ -22,7 +22,27 @@ mkdir -p ${RUN_DIR}
 
 export DA_REAL_OUTPUT=${DA_REAL_OUTPUT:-$RC_DIR/$DATE/wrfinput_d01} # Input (needed only if cycling).
 export BDYIN=${BDYIN:-$RC_DIR/$DATE/wrfbdy_d01}       # Input bdy.
-export DA_ANALYSIS=${DA_ANALYSIS:-$FC_DIR/$DATE/analysis}  # Input analysis.
+if $NL_VAR4D ; then
+   if $CYCLING; then
+      if [[ $CYCLE_NUMBER -gt 0 ]]; then
+         if $PHASE; then
+            export YEAR=$(echo $DATE | cut -c1-4)
+            export MONTH=$(echo $DATE | cut -c5-6)
+            export DAY=$(echo $DATE | cut -c7-8)
+            export HOUR=$(echo $DATE | cut -c9-10)
+            export PREV_DATE=$($BUILD_DIR/da_advance_time.exe $DATE -$CYCLE_PERIOD 2>/dev/null)
+            export ANALYSIS_DATE=${YEAR}-${MONTH}-${DAY}_${HOUR}:00:00
+            export DA_ANALYSIS=${FC_DIR}/${PREV_DATE}/wrfinput_d01_${ANALYSIS_DATE}
+         else
+            export DA_ANALYSIS=${DA_ANALYSIS:-$FC_DIR/$DATE/analysis}  # Input analysis.
+         fi
+      else
+         export DA_ANALYSIS=${DA_ANALYSIS:-$FC_DIR/$DATE/analysis}  # Input analysis.
+      fi
+   fi
+else
+   export DA_ANALYSIS=${DA_ANALYSIS:-$FC_DIR/$DATE/analysis}  # Input analysis.
+fi
 export BDYOUT=${BDYOUT:-$FC_DIR/$DATE/wrfbdy_d01}     # Output bdy.
 
 rm -rf ${WORK_DIR}
@@ -40,7 +60,7 @@ echo 'WORK_DIR       <A HREF="'$WORK_DIR'">'$WORK_DIR'</a>'
 
 cp -f $DA_REAL_OUTPUT real_output 
 cp -f $BDYIN wrfbdy_d01
-cp -f $DA_ANALYSIS wrfvar_output
+ln -sf $DA_ANALYSIS wrfvar_output
 
 cat > parame.in << EOF
 &control_param
@@ -50,7 +70,8 @@ cat > parame.in << EOF
 
  cycling = .${CYCLING}.
  debug   = .true.
- low_bdy_only = .false. /
+ low_bdy_only = .${NL_LOW_BDY_ONLY}. 
+ update_lsm = .${NL_UPDATE_LSM}. /
 EOF
 
 if $DUMMY; then

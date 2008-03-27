@@ -377,7 +377,7 @@ MODULE MODULE_NAMELIST
    endif
 
    if (fg_format == 'WRF') then
-      print '(/a/)','=== 3DVAR_OBSPROC is used for WRF 3DVAR ===' 
+      write(0,'(/a/)') '=== 3DVAR_OBSPROC is used for WRF 3DVAR ===' 
 
 ! .. Set up the map_info using the central lat/lon:
 
@@ -400,9 +400,9 @@ MODULE MODULE_NAMELIST
         yyc = real(iix)/2.
         call map_set(imap_proj, cen_lat, cen_lon, xxc, yyc, dds, &
                      standard_lon, truelat1, truelat2, map_info)
-        print *,'map_info:', imap_proj, iproj
-        print *,'code,lat1,lon1,dx,dlat,dlon,stdlon,truelat1,truelat2,hemi,cone,polei,polej,rsw,rebydx,knowni,knownj,init'
-        print *, map_info
+        write(0,*)'map_info:', imap_proj, iproj
+        write(0,*)'code,lat1,lon1,dx,dlat,dlon,stdlon,truelat1,truelat2,hemi,cone,polei,polej,rsw,rebydx,knowni,knownj,init'
+        write(0,*) map_info
 
 ! .. Calculate the size for Mother Of All Domains and the low-left corner position
 !
@@ -419,21 +419,21 @@ MODULE MODULE_NAMELIST
         dis(2)    = dis(1)
         numc(2)   = 1
 
-        print '(/a,2e20.12)','   cen_lon  , cen_lat     :', &
+        write(0,'(/a,2e20.12)') '   cen_lon  , cen_lat     :', &
                                  cen_lon,   cen_lat
-        print '( a,2e20.12)','   xlonc, phic:', xlonc,     phic
-        print '(/3X,a)',  &
+        write(0,'( a,2e20.12)')'   xlonc, phic:', xlonc,     phic
+        write(0,'(/3X,a)')  &
        '## Compute the nestix(1), nestjx(1), nesti(2), and nstj(2): ##'
 
         xxc = real(jjx)/2.0
         yyc = real(iix)/2.0
         call latlon_to_ij(map_info, phic   , xlonc  , xxx, yyy)
-!        print '("latlon_to_ij: phic, xlonc, xxx, yyy :",4f15.5)',phic, xlonc, xxx, yyy
+!        write(0,'("latlon_to_ij: phic, xlonc, xxx, yyy :",4f15.5)') phic, xlonc, xxx, yyy
 
         i_grid = nint(xxx-xxc)
         j_grid = nint(yyy-yyc)
         m_expand = 16
-        print '("i_grid, j_grid,  m_expand:",3I8)', i_grid, j_grid,  m_expand
+        write(0,'("i_grid, j_grid,  m_expand:",3I8)') i_grid, j_grid,  m_expand
 
         nestjx(1) = jjx + 2*abs(i_grid) + m_expand
         nestix(1) = iix + 2*abs(j_grid) + m_expand
@@ -443,7 +443,7 @@ MODULE MODULE_NAMELIST
         nestj(2) = m_expand/2 + 1
         if (i_grid < 0) nestj(2) = nestj(2) - 2*i_grid
    
-        print '(a,2i5,2x,a,2i5/)', &
+        write(0,'(a,2i5,2x,a,2i5/)') &
            '  Dimension of MOAD: ix, jx:', nestix(1), nestjx(1), &
            '         nesti(2), nestj(2):', nesti(2), nestj(2)
       endif

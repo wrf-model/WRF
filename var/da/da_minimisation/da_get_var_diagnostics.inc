@@ -11,7 +11,6 @@ subroutine da_get_var_diagnostics( iv, j)
 
    integer                      :: num_stats_tot
    integer                      :: i,k
-   real                         :: jo_radiance
    real                         :: temp(63)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
@@ -152,14 +151,6 @@ subroutine da_get_var_diagnostics( iv, j)
    j % jo % airsr_t         = temp(62) 
    j % jo % airsr_q         = temp(63) 
 
-   if (use_rad) then
-      jo_radiance = 0.0
-      do i = 1, iv%num_inst                 ! loop for sensor
-         call da_proc_sum_ints(j % jo % rad(i)% num_ichan(:))
-         call da_proc_sum_real(j % jo % rad(i) % jo_ichan(:))
-         jo_radiance = jo_radiance + sum(j % jo % rad(i) % jo_ichan(:))
-      end do
-   end if
 
    !-----------------------------------------------------------------------------
    ! [2.0] Print out VAR diagnostics:
@@ -190,11 +181,6 @@ subroutine da_get_var_diagnostics( iv, j)
       write(unit=stdout,fmt='(a,f15.5)') '   Je factor used              = ', je_factor
       write(unit=stdout,fmt=*) ' '
 
-      if (use_rad) then
-         write(unit=stdout,fmt='(a,i8)')    '   Total number of radiances    = ', iv%nstats(radiance)
-         write(unit=stdout,fmt='(a,f15.5)') '   Cost function for radiances  = ', jo_radiance
-         write(unit=stdout,fmt=*) ' '
-      end if
 
       ! [4.2] Output components of Jo:
 
@@ -368,16 +354,6 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % airsr_q, iv % airsr_ef_q, &
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0
       end if
-      do i = 1, iv%num_inst                 ! loop for sensor
-         do k = 1, iv%instid(i)%nchan
-            if (j % jo % rad(i) % num_ichan(k) > 0) then
-               write(unit=jo_unit,fmt='(a30,a16,i5,i10,8f15.5)')'    radiance,  Jo(actual)  = ', &
-                  iv%instid(i)%rttovid_string, k , &
-                  j % jo % rad(i) % num_ichan(k), &
-                  j % jo % rad(i) % jo_ichan(k)
-            end if
-         end do
-      end do
    end if
 
    if (trace_use) call da_trace_exit("da_get_var_diagnostics")

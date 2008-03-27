@@ -4,7 +4,6 @@ subroutine da_add_noise_to_ob( iv, ob )
 !
 !  Additions:
 !             07/08/2003  -   Profiler and Buoy Obs         Syed RH Rizvi    
-!             03/08/2006      Add radiance part               Zhiquan Liu
 !             06/23/2006  -   MPI update                    Syed RH Rizvi    
 !             07/03/2006  -   update for AIRS retrievals    Syed RH Rizvi    
 !

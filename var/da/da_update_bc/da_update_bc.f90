@@ -3,6 +3,15 @@ program da_update_bc
    !-----------------------------------------------------------------------
    ! Purpose: update BC file from wrfvar output.
    ! current version reads only wrf-netcdf file format
+   !
+   ! Y.-R. Guo, 03/18/2008:
+   !   1) Fixed the bug for low_bdy_only;
+   !   2) Introducing another namelist variable: update_lsm
+   !      update_lsm = .true. --- The LSM predicted variables: 
+   !                         TSLB, SMOIS, SNOW, SH2O, RHOSN, CANWAT, SNOWH
+   !                              will be updated based on wrf_input file
+   !                 = .false. -- no updated, default.
+   !
    !-----------------------------------------------------------------------
 
    use da_netcdf_interface, only : da_get_var_3d_real_cdf, &
@@ -14,6 +23,8 @@ program da_update_bc
 
    implicit none
 
+   include 'netcdf.inc'
+
    integer, parameter :: max_3d_variables = 20, &
                          max_2d_variables = 20
  
@@ -24,7 +35,7 @@ program da_update_bc
    character(len=20) :: var_pref, var_name, vbt_name
 
    character(len=20) :: var3d(max_3d_variables), &
-                        var2d(max_2d_variables)
+                        varsf(max_2d_variables)
 
    character(len=10), dimension(4) :: bdyname, tenname
 
@@ -49,9 +60,9 @@ program da_update_bc
    character(len=80), allocatable, dimension(:) :: times, &
                                                    thisbdytime, nextbdytime
  
-   integer :: east_end, north_end, io_status
+   integer :: east_end, north_end, io_status, cdfid, varid
 
-   logical :: cycling, debug, low_bdy_only
+   logical :: cycling, debug, low_bdy_only, update_lsm
 
    real :: bdyfrq
 
@@ -62,7 +73,7 @@ program da_update_bc
    namelist /control_param/ wrfvar_output_file, &
                             wrf_bdy_file, &
                             wrf_input, &
-                            cycling, debug, low_bdy_only
+                            cycling, debug, low_bdy_only, update_lsm
 
    wrfvar_output_file = 'wrfvar_output'
    wrf_bdy_file       = 'wrfbdy_d01'
@@ -71,6 +82,7 @@ program da_update_bc
    cycling = .false.
    debug   = .false. 
    low_bdy_only = .false.
+   update_lsm = .false.
    !---------------------------------------------------------------------
    ! Read namelist
    !---------------------------------------------------------------------
@@ -113,17 +125,25 @@ program da_update_bc
    var3d(6)='QVAPOR'
 
    ! 2D need update
-   num2d=10
-   var2d(1)='MUB'
-   var2d(2)='MU'
-   var2d(3)='MAPFAC_U'
-   var2d(4)='MAPFAC_V'
-   var2d(5)='MAPFAC_M'
-   var2d(6)='TMN'
-   var2d(7)='SST'
-   var2d(8)='TSK'
-   var2d(9)='VEGFRA'
-   var2d(10)='ALBBCK'
+   num2d=18
+   varsf(1)='MUB'
+   varsf(2)='MU'
+   varsf(3)='MAPFAC_U'
+   varsf(4)='MAPFAC_V'
+   varsf(5)='MAPFAC_M'
+   varsf(6)='TMN'
+   varsf(7)='SST'
+   varsf(8)='TSK'
+   varsf(9)='VEGFRA'
+   varsf(10)='ALBBCK'
+   varsf(11)='TSLB'
+   varsf(12)='SMOIS'
+   varsf(13)='SNOW'
+   varsf(14)='XICE'
+   varsf(15)='SH2O'
+   varsf(16)='CANWAT'
+   varsf(17)='RHOSN'
+   varsf(18)='SNOWH'
 
    ! First, the boundary times
    call da_get_dims_cdf(wrf_bdy_file, 'Times', dims, ndims, debug)
@@ -165,21 +185,31 @@ program da_update_bc
    east_end=0
    north_end=0
 
+   cdfid = ncopn(wrfvar_output_file, NCNOWRIT, io_status )
+
    ! For 2D variables
    ! Get mu, mub, msfu, and msfv
 
    do n=1,num2d
-      call da_get_dims_cdf( wrfvar_output_file, trim(var2d(n)), dims, &
+
+      io_status = nf_inq_varid(cdfid, trim(varsf(n)), varid)
+      if (io_status /= 0 ) then
+         print '(/"N=",i2," io_status=",i5,5x,"VAR=",a,a)', &
+                   n, io_status, trim(varsf(n)), " not existed"
+         cycle
+      endif
+
+      call da_get_dims_cdf( wrfvar_output_file, trim(varsf(n)), dims, &
          ndims, debug)
 
-      select case(trim(var2d(n)))
+      select case(trim(varsf(n)))
       case ('MU') ;
          if (low_bdy_only) cycle
 
          allocate(mu(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( wrfvar_output_file, &
-            trim(var2d(n)), mu, dims(1), dims(2), 1, debug)
+            trim(varsf(n)), mu, dims(1), dims(2), 1, debug)
 
          east_end=dims(1)+1
          north_end=dims(2)+1
@@ -188,39 +218,39 @@ program da_update_bc
 
          allocate(mub(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), mub, &
+         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), mub, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_U') ;
          if (low_bdy_only) cycle
 
          allocate(msfu(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), msfu, &
+         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), msfu, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_V') ;
          if (low_bdy_only) cycle
 
          allocate(msfv(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), msfv, &
+         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), msfv, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_M') ;
          if (low_bdy_only) cycle
 
          allocate(msfm(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), msfm, &
+         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), msfm, &
                                    dims(1), dims(2), 1, debug)
       case ('TSK') ;
-         if (.not. cycling) cycle
+         if (.not. cycling .and. .not.low_bdy_only) cycle
 
          allocate(tsk(dims(1), dims(2)))
          allocate(tsk_wrfvar(dims(1), dims(2)))
          allocate(ivgtyp(dims(1), dims(2)))
 
-         call da_get_var_2d_real_cdf( wrf_input, trim(var2d(n)), tsk, &
+         call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), tsk, &
                                    dims(1), dims(2), 1, debug)
-         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), tsk_wrfvar, &
+         call da_get_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), tsk_wrfvar, &
                                    dims(1), dims(2), 1, debug)
          call da_get_var_2d_int_cdf( wrfvar_output_file, 'IVGTYP', ivgtyp, &
                                    dims(1), dims(2), 1, debug)
@@ -233,31 +263,59 @@ program da_update_bc
             end do
             end do
 
-            call da_put_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), tsk, &
+            call da_put_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), tsk, &
                                       dims(1), dims(2), 1, debug)
             deallocate(tsk)
             deallocate(ivgtyp)
             deallocate(tsk_wrfvar)
-         case ('TMN', 'SST', 'VEGFRA', 'ALBBCK') ;
-            if (.not. cycling) cycle
+
+         case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'XICE') ;
+            if (.not. cycling .and. .not.low_bdy_only) cycle
 
             allocate(full2d(dims(1), dims(2)))
 
-            call da_get_var_2d_real_cdf( wrf_input, trim(var2d(n)), full2d, &
+            call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), full2d, &
                                       dims(1), dims(2), 1, debug)
 
-            call da_put_var_2d_real_cdf( wrfvar_output_file, trim(var2d(n)), full2d, &
+            call da_put_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), full2d, &
                                       dims(1), dims(2), 1, debug)
             deallocate(full2d)
+
+         case ('SNOW', 'CANWAT', 'RHOSN', 'SNOWH') ;
+            if(.not. cycling .and. .not.low_bdy_only) cycle
+            if (update_lsm) then
+               allocate(full2d(dims(1), dims(2)))
+
+               call da_get_var_2d_real_cdf( wrf_input, trim(varsf(n)), full2d, &
+                                      dims(1), dims(2), 1, debug )
+!               print *,"sum(full2d^2)=", sum(full2d*full2d)
+
+               call da_put_var_2d_real_cdf( wrfvar_output_file, trim(varsf(n)), full2d, &
+                                      dims(1), dims(2), 1, debug )
+               deallocate(full2d)
+            endif
+
+         case ('TSLB', 'SMOIS', 'SH2O') ;
+            if(.not. cycling .and. .not.low_bdy_only) cycle
+            if (update_lsm) then
+               allocate(full3d(dims(1), dims(2), dims(3)))
+
+               call da_get_var_3d_real_cdf( wrf_input, trim(varsf(n)), full3d, &
+                                      dims(1), dims(2), dims(3), 1, debug )
+!               print *,"sum(full3d^2)=", sum(full3d*full3d)
+
+               call da_put_var_3d_real_cdf( wrfvar_output_file, trim(varsf(n)), full3d, &
+                                      dims(1), dims(2), dims(3), 1, debug )
+               deallocate(full3d)
+
+            endif
+
          case default ;
-            write(unit=stdout,fmt=*) 'It is impossible here. var2d(n)=', trim(var2d(n))
+            write(unit=stdout,fmt=*) 'It is impossible here. varsf(n)=', trim(varsf(n))
       end select
    end do
   
-   if (low_bdy_only) then
-      write(unit=stdout,fmt=*) 'only low boundary updated.'
-      stop 
-   end if
+   if (low_bdy_only) goto 9999
 
    if (east_end < 1 .or. north_end < 1) then
       write(unit=stdout, fmt='(a)') 'Wrong data for Boundary.'
@@ -678,21 +736,25 @@ program da_update_bc
    deallocate(u)
    deallocate(v)
 
-   if (io_status /= 0) then
-      write(unit=stdout,fmt=*) 'only lateral boundary updated.'
+ 9999  continue
+
+   print *,' '
+   print *,'=================================================================='
+   if(cycling) then
+     print *, &
+    'Both low boudary and lateral boundary updated.for cycling run with WRFvar'
+     if (update_lsm) print *,'  LSM variables updated from wrf_input file.' 
    else
-      if (low_bdy_only) then
-         if (cycling) then
-            write(unit=stdout,fmt=*) 'Both low boudary and lateral boundary updated.'
-         else
-            write(unit=stdout,fmt=*) 'only low boudary updated.'
-         end if
-      else
-         write(unit=stdout,fmt=*) 'only lateral boundary updated.'
-      end if
-   end if
+     if(low_bdy_only) then
+       print *, 'Only low boudary updated for long-term forecast.'
+       if (update_lsm) print *,'  LSM variables updated from wrf_input file.' 
+     else
+       print *, 'Only lateral boundary updated for Cold-start run with WRFVar.'
+     endif
+   endif
    
-   write (unit=stdout,fmt=*) "*** Update_bc completed successfully ***"
+   if (io_status == 0) &
+      write (unit=stdout,fmt=*) "*** Update_bc completed successfully ***"
 
 end program da_update_bc
 

@@ -37,7 +37,7 @@ module da_minimisation
       cv_size_domain_je,cv_size_domain_jb, num_pseudo, &
       sound, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
-      bogus, buoy, qscat,pseudo, radiance, monitor_on
+      bogus, buoy, qscat,pseudo, monitor_on
 
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_deallocate_y

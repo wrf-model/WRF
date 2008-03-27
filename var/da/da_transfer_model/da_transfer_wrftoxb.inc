@@ -344,9 +344,12 @@ subroutine da_transfer_wrftoxb(xbx, grid)
 
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
-
+! Syed RH Rizvi  MMM/NCAR   
+!   03/21/2008
+           if( num_pseudo == 0) then
             if (grid%xb%q(i,j,k) < 1.0e-6) &
                grid%xb%q(i,j,k) = 1.0e-6
+           end if
    
             ! Background qrn needed for radar radial velocity assmiilation:
 

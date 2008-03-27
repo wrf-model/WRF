@@ -22,7 +22,7 @@ module da_obs_io
       obs_names, num_ob_indexes, fm_index, ids,ide, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, pseudo, &
-      radar, radiance, airsr, sonde_sfc, trace_use_dull
+      radar, airsr, sonde_sfc, trace_use_dull
 
    use da_define_structures, only : iv_type, multi_level_type, &
       radar_multi_level_type, y_type, field_type, each_level_type, &

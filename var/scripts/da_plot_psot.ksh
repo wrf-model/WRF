@@ -68,7 +68,7 @@ done
 iv=1
 for var in ${PSEUDO_VAR[*]}; do
 
-   expt=${EXPT}_psot$iv
+   expt=psot$iv
    xlon=${PSEUDO_X[$iv]}
    xlat=${PSEUDO_Y[$iv]}
    kl=${PSEUDO_Z[$iv]}
@@ -82,8 +82,8 @@ for var in ${PSEUDO_VAR[*]}; do
 
    DATE=$INITIAL_DATE
 
-      export FIRST_GUESS=${EXP_DIR}/run/$DATE/wrfvar_psot${iv}/working/wrfinput_d${DOMAINS}
-      export ANALYSIS=${EXP_DIR}/fc/psot${iv}/$DATE/analysis
+      export FIRST_GUESS=${EXP_DIR}/$DATE/wrfvar/working/wrfinput_d${DOMAINS}
+      export ANALYSIS=${EXP_DIR}/fc/$DATE/wrfinput_d${DOMAINS}
 
 
       NCL_COMMAND_LINE="'works=\"${PLOT_WKS}\"' 'expt=\"$expt\"'  \
@@ -93,15 +93,15 @@ for var in ${PSEUDO_VAR[*]}; do
 
       rm -f run1 run2 run3
 
-      echo "ncl ${NCL_COMMAND_LINE} $WRFVAR_DIR/graphics/ncl/psot_xy_auto.ncl" > run1
+      echo "ncl ${NCL_COMMAND_LINE} $WRFVAR_DIR/var/graphics/ncl/psot_xy_auto.ncl" > run1
       chmod +x run1
       ./run1
 
-      echo "ncl ${NCL_COMMAND_LINE} $WRFVAR_DIR/graphics/ncl/psot_xz_auto.ncl" > run2
+      echo "ncl ${NCL_COMMAND_LINE} $WRFVAR_DIR/var/graphics/ncl/psot_xz_auto.ncl" > run2
       chmod +x run2
       ./run2
 
-      echo "ncl ${NCL_COMMAND_LINE} $WRFVAR_DIR/graphics/ncl/psot_yz_auto.ncl" > run3
+      echo "ncl ${NCL_COMMAND_LINE} $WRFVAR_DIR/var/graphics/ncl/psot_yz_auto.ncl" > run3
       chmod +x run3
       ./run3
 

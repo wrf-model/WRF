@@ -128,10 +128,10 @@ PROGRAM main_3dvar_obs
         lat =  map_info%lat1
         lon =  map_info%lon1
         call LLXY(lat, lon, xxi, yyj)
-        print '(/"         LLXY:lat, lon, (dot) xxi, yyj:",4f12.5 )', &
+        write(0,'(/"         LLXY:lat, lon, (dot) xxi, yyj:",4f12.5 )') &
                                                lat, lon, xxi, yyj
         call latlon_to_ij(map_info, lat, lon, xxi, yyj)
-        print '( "latlon_to_ij:lat, lon, (cross)xxi, yyj:",4f12.5/)', &
+        write(0,'( "latlon_to_ij:lat, lon, (cross)xxi, yyj:",4f12.5/)') &
                                                lat, lon, xxi, yyj
       endif
 

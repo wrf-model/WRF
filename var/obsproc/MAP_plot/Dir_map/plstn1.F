@@ -82,7 +82,7 @@ C  MAKE THE MAP
 c     ... turn of clipping                                                      
       CALL GSCLIP (0)                                                           
 c     ... use whole domain                                                      
-      CALL SET (0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,1)                              
+      CALL SET (0.05,0.95,0.05,0.95,0.0,1.0,0.0,1.0,1)                              
 c     ... errsev: <0 abort on warning, =0 abort on error, >0 no abort           
       errsev=1                                                                  
       print '(/a)',"CALL MAPDRV (PROJECT,TRUELAT1,TRUELAT2,PHIC,XLONC,                               

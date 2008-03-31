@@ -121,12 +121,13 @@ SUBROUTINE adapt_timestep(grid, config_flags)
         if (grid%max_cfl_val .gt. grid%target_cfl) then
            !
            ! If we are reducing the time step, we go below target cfl by half the
-           !   difference between max and target.
+           !   difference between max and target (or 75% of the last time step,
+           !   which ever is greater).
            !   This tends to keep the model more stable.
            !
            
-           factor = ( (grid%target_cfl - 0.5 * &
-                (grid%max_cfl_val - grid%target_cfl) ) / grid%max_cfl_val )
+           factor = MAX ( 0.75 , ( (grid%target_cfl - 0.5 * &
+                (grid%max_cfl_val - grid%target_cfl) ) / grid%max_cfl_val ) )
            num = INT(factor * precision + 0.5)
            den = precision
 

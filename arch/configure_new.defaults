@@ -551,15 +551,15 @@ RANLIB 		=       ranlib
 CC_TOOLS        =       cc
 
 ###########################################################
-#ARCH    Cray XT3/4 Catamount/Linux x86_64, PGI compiler with gcc # serial dmpar 
+#ARCH    Cray XT Catamount/Linux x86_64, PGI compiler with gcc # serial dmpar 
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # not supported
 OMP             =       # not supported
 SFC             =       ftn
 SCC             =       gcc
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
+DM_FC           =       ftn
+DM_CC           =       gcc -I$(MPICH_DIR)/include
 FC              =       CONFIGURE_FC
 CC              =       CONFIGURE_CC
 LD              =       $(FC)
@@ -568,11 +568,12 @@ PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DLANDREAD_STUB -DXT3_Catamount
 CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB -DXT3_Catamount
 LDFLAGS_LOCAL   =       
-# Peter, the commented line below is from the normal x86_64 compiles using PG fortran, as recommended by PGI.  
-# The uncommented line is from the older arch/configure.defaults settings in V2.  Do you want to consider 
-# including any of the generic x86_64 PG settings in the FCOPTIM for v3?
-#FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
-FCOPTIM         =       -O3 -fastsse #-Mipa=fast
+# Use this to add XT iobuf library after loading iobuf module, also requires
+# properly built netCDF library that includes iobuf (Catamount OS only)
+#LDFLAGS_LOCAL  =        $(IOBUF_POST_LINK_OPTS)
+# PGI recommended
+#FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed 
+FCOPTIM         =       -O3 -fastsse
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -581,14 +582,99 @@ FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
+MODULE_SRCH_FLAG =   
 TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -C -P
+CPP             =      /lib/cpp -C -P $(TRADFLAG)
 AR              =      ar ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
+###########################################################
+#ARCH    Cray XT CNL/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
+#
+# Recommended CNL/Linux memory allocation settings at run time:
+# export MALLOC_MMAP_MAX_=0
+# export MALLOC_TRIM_THRESHOLD_=536870912
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp=nonuma
+SFC             =       ftn
+SCC             =       gcc
+DM_FC           =       ftn
+DM_CC           =       gcc -I$(MPICH_DIR)/include
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DLANDREAD_STUB
+CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB 
+LDFLAGS_LOCAL   =
+# PGI recommended
+#FCOPTIM         =       -O3 -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed 
+FCOPTIM         =       -O3 -fastsse 
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O0
+OPTERON_TYPE    =
+# Use this for AMD Opteron quad-core
+#OPTERON_TYPE    =      -tp barcelona-64
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE)
+MODULE_SRCH_FLAG =    
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P $(TRADFLAG)
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC)
+
+###########################################################
+#ARCH    Cray XT CNL/Linux x86_64, Pathscale compiler with gcc # serial dmpar smpar dm+sm
+#
+# Recommended CNL/Linux memory allocation settings at run time:
+# export MALLOC_MMAP_MAX_=0
+# export MALLOC_TRIM_THRESHOLD_=536870912
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp
+SFC             =       ftn
+SCC             =       gcc
+DM_FC           =       ftn
+DM_CC           =       gcc -I$(MPICH_DIR)/include
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DLANDREAD_STUB
+CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB 
+LDFLAGS_LOCAL   =
+FCOPTIM         =       -O3 -OPT:Ofast
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O1
+OPTERON_TYPE    =
+# Use this for AMD Opteron quad-core
+#OPTERON_TYPE    =       -march=barcelona -mcpu=barcelona -mtune=barcelona -msse4a
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -fixedform
+FORMAT_FREE     =       -freeform
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE)
+MODULE_SRCH_FLAG =    
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P $(TRADFLAG)
+AR              =      ar ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC)
 
 ###########################################################
 #ARCH    Linux ppc64 BG blxlf compiler with blxlc # dmpar

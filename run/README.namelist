@@ -229,6 +229,26 @@ Namelist variables for controling the automatic moving nest:
                                                   -1: code will do automatic decomposition
                                                   >1: for both: will be used for decomposition
 
+Namelist variables for controlling the adaptive time step option:
+                   These options are only valid for the ARW core.  
+ use_adaptive_time_step              = .false.  ; T/F use adaptive time stepping, ARW only
+ step_to_output_time                 = .false.  ; if adaptive time stepping, T/F modify the
+                                                  time steps so that the exact history time is reached
+ target_cfl                          = 1.2      ; vertical and horizontal CFL <= to this value implies
+                                                  no reason to reduce the time step, and to increase it
+ max_step_increase_pct               = 5        ; percentage of previous time step to increase, if the
+                                                  max(vert cfl, horiz cfl) <= target_cfl, then the time
+                                                  will increase by max_step_increase_pct
+ starting_time_step                  = -1       ; flag = -1 implies use 6 * dx (defined in start_em), 
+                                                  starting_time_step = 100 means the starting time step
+                                                  for the coarse grid is 100 s
+ max_time_step                       = -1       ; flag = -1 implies max time step is 3 * starting_time_step,
+                                                  max_time_step = 100 means that the time step will not
+                                                  exceed 100 s
+ min_time_step                       = -1       ; flag = -1 implies max time step is 0.5 * starting_time_step,
+                                                  min_time_step = 100 means that the time step will not
+                                                  be less than 100 s
+
  &dfi_control
  dfi_opt                             = 0        ; which DFI option to use (3 is recommended)
                                                 ;   0 = no digital filter initialization

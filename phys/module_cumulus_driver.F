@@ -529,9 +529,12 @@ CONTAINS
                                                                 )
      CASE (SASSCHEME)
                                                                                                                                            
+          IF ( adapt_step_flag_pass ) THEN
+            WRITE( wrf_err_message , * ) 'The SAS cumulus option will not work properly with an adaptive time step'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF
           CALL wrf_debug(100,'in cu_sas')
-          CALL wrf_debug(0,'warn: sas cumulus will not work properly with an adaptive time step')
-            CALL CU_SAS(                                        &
+          CALL CU_SAS(                                          &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &

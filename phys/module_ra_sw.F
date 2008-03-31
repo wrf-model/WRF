@@ -108,7 +108,7 @@ CONTAINS
    REAL :: COSZ, OMG   !urban
 !
    INTEGER :: i,j,K,NK
-   LOGICAL :: predicate
+   LOGICAL :: predicate , do_topo_shading
    real :: aer_dry1(kts:kte),aer_water1(kts:kte)
 
   real :: sinalpha,cosalpha,hx,hy,slope,slp_azi,pi
@@ -234,8 +234,18 @@ pi = 4.*atan(1.)
          XLONG0=XLONG(I,J)
          ALB0=ALBEDO(I,J)
 
+         IF (PRESENT(topo_shading)) THEN
+           IF (topo_shading.eq.1) THEN
+             do_topo_shading = .TRUE.
+           ELSE
+             do_topo_shading = .FALSE.
+           END IF
+         ELSE
+           do_topo_shading = .FALSE.
+         END IF
+
          shadow = 0
-         IF (topo_shading.eq.1) THEN
+         IF (do_topo_shading) THEN
            IF(PRESENT(slope_rad) .AND. PRESENT(shadowmask))THEN
 ! Computations for slope-dependent radiation
 
@@ -293,10 +303,10 @@ pi = 4.*atan(1.)
                        kts,kte      )
          ENDIF
 
-       IF (PRESENT(COSZ_URB2D) .AND.  PRESENT(OMG_URB2D)) THEN   
-         COSZ_URB2D(I,J)=COSZ !urban
-         OMG_URB2D(I,J)=OMG !urban
-       ENDIF
+         IF (PRESENT(COSZ_URB2D) .AND.  PRESENT(OMG_URB2D)) THEN   
+           COSZ_URB2D(I,J)=COSZ !urban
+           OMG_URB2D(I,J)=OMG !urban
+         ENDIF
 
          GSW(I,J)=GSW0
          DO K=kts,kte          

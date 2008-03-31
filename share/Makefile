@@ -13,7 +13,7 @@ MODULES =                       \
 	module_io_domain.o	\
 	module_model_constants.o \
 	module_MPP.o \
-	module_optional_si_input.o	\
+	module_optional_input.o	\
 	module_compute_geop.o           \
 	module_soil_pre.o		\
 	module_llxy.o
@@ -173,7 +173,7 @@ dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		module_model_constants.o module_date_time.o module_io_domain.o \
 		$(ESMF_MOD_DEPENDENCE)
 
-module_optional_si_input.o: module_io_wrf.o module_io_domain.o \
+module_optional_input.o: module_io_wrf.o module_io_domain.o \
 		../frame/module_domain.o ../frame/module_configure.o
 
 mediation_wrfmain.o: ../frame/module_domain.o ../frame/module_configure.o \

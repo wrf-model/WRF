@@ -59,7 +59,7 @@ CONTAINS
 !
    )
 
-      USE module_optional_si_input
+      USE module_optional_input
       IMPLICIT NONE
 
       !  Input space and data.  No gridded meteorological data has been stored, though.
@@ -4094,7 +4094,7 @@ print *,'p sfc = ',psfc(i,j)
          !  Skamarock et al, NCAR TN 468.  Use full levels, so
          !  use twice the thickness.
 
-         DO k = 8, kte-1
+         DO k = 8, kte-1-2
             pb = znw(k) * (p_surf - p_top) + p_top
 !           temp = MAX ( 200., t00 + A*LOG(pb/p00) )
             temp =             t00 + A*LOG(pb/p00)
@@ -4102,7 +4102,7 @@ print *,'p sfc = ',psfc(i,j)
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
             znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
          END DO
-         znw(kte) = 0.000
+         znw(kte-2) = 0.000
 
          !  There is some iteration.  We want the top level, ztop, to be
          !  consistent with the delta z, and we want the half level values
@@ -4112,7 +4112,7 @@ print *,'p sfc = ',psfc(i,j)
 
          DO loop1 = 1 , 5
             DO loop = 1 , 10
-               DO k = 8, kte-1
+               DO k = 8, kte-1-2
                   pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
 !                 temp = MAX ( 200., t00 + A*LOG(pb/p00) )
                   temp =             t00 + A*LOG(pb/p00)
@@ -4121,14 +4121,14 @@ print *,'p sfc = ',psfc(i,j)
                   znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
                END DO
                IF ( ( loop1 .EQ. 5 ) .AND. ( loop .EQ. 10 ) ) THEN
-                  print *,'Converged znw(kte) should be 0.0 = ',znw(kte)
+                  print *,'Converged znw(kte) should be about 0.0 = ',znw(kte-2)
                END IF
-               znw(kte) = 0.000
+               znw(kte-2) = 0.000
             END DO
 
             !  Here is where we check the eta levels values we just computed.
 
-            DO k = 1, kde-1
+            DO k = 1, kde-1-2
                pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
 !              temp = MAX ( 200., t00 + A*LOG(pb/p00) )
                temp =             t00 + A*LOG(pb/p00)
@@ -4137,20 +4137,20 @@ print *,'p sfc = ',psfc(i,j)
             END DO
 
             phb(1) = 0.
-            DO k  = 2,kde
+            DO k  = 2,kde-2
                   phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
             END DO
 
             !  Reset the model top and the dz, and iterate.
 
-            ztop = phb(kde)/g
+            ztop = phb(kde-2)/g
             ztop_pbl = phb(8)/g
-            dz = ( ztop - ztop_pbl ) / REAL ( kde - 8 ) 
+            dz = ( ztop - ztop_pbl ) / REAL ( (kde-2) - 8 ) 
          END DO
 
          IF ( dz .GT. max_dz ) THEN
 print *,'z (m)            = ',phb(1)/g
-do k = 2 ,kte
+do k = 2 ,kte-2
 print *,'z (m) and dz (m) = ',phb(k)/g,(phb(k)-phb(k-1))/g
 end do
 print *,'dz (m) above fixed eta levels = ',dz
@@ -4163,6 +4163,22 @@ print *,'namelist p_top (Pa) = ',p_top
             CALL wrf_debug ( 0, 'All are namelist options')
             CALL wrf_error_fatal ( 'dz above fixed eta levels is too large')
          END IF
+
+         !  Add those 2 levels back into the middle, just above the 8 levels
+         !  that semi define a boundary layer.  After we open up the levels,
+         !  then we just linearly interpolate in znw.  So now levels 1-8 are
+         !  specified as the fixed boundary layer levels given in this routine.
+         !  The top levels, 12 through kte are those computed.  The middle
+         !  levels 9, 10, and 11 are equi-spaced in znw, and are each 1/2 the
+         !  the znw thickness of levels 11 through 12.
+
+         DO k = kte-2 , 9 , -1
+            znw(k+2) = znw(k)
+         END DO
+
+         znw( 9) = 0.75 * znw( 8) + 0.25 * znw(12)
+         znw(10) = 0.50 * znw( 8) + 0.50 * znw(12)
+         znw(11) = 0.25 * znw( 8) + 0.75 * znw(12)
 
       END IF
 

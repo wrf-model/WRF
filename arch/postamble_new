@@ -80,7 +80,7 @@ wrfio_nf :
 wrfio_pnf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
           make NETCDFPATH=CONFIGURE_PNETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" )
+          FC="$(FC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" )
 
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \

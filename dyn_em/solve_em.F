@@ -37,6 +37,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 #endif
    USE module_first_rk_step_part1
    USE module_first_rk_step_part2
+   USE module_llxy
 
    IMPLICIT NONE
 
@@ -277,17 +278,20 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
 
-   IF ((grid%time_step_sound == 0) .AND. (config_flags%use_adaptive_time_step)) THEN
-! auto-set option
+   IF ( grid%time_step_sound == 0 ) THEN
 ! This function will give 4 for 6*dx and 6 for 10*dx and returns even numbers only
-!
-! Added MAXVAL(msft) to the denominator to better calculate num_sound_steps (T. Hutchinson, WSI)
-!
-     max_msft=MAX(grid%max_msftx, grid%max_msfty)
      spacing = min(grid%dx, grid%dy)
-
-     num_sound_steps = max ( 2 * ( INT (300. * grid%dt / (spacing / max_msft) - 0.01 ) + 1 ), 4 )
-     WRITE(wrf_err_message,*)'min grid spacing, dt, time_step_sound=',spacing,grid%dt,num_sound_steps
+     IF ( ( config_flags%use_adaptive_time_step ) .AND. ( config_flags%map_proj == PROJ_CASSINI ) ) THEN
+       max_msft=MIN ( MAX(grid%max_msftx, grid%max_msfty) , &
+                      1.0/COS(config_flags%fft_filter_lat*degrad) )
+       num_sound_steps = max ( 2 * ( INT (300. * grid%dt / (spacing / max_msft) - 0.01 ) + 1 ), 4 )
+     ELSE IF  ( config_flags%use_adaptive_time_step ) THEN
+       max_msft= MAX(grid%max_msftx, grid%max_msfty)
+       num_sound_steps = max ( 2 * ( INT (300. * grid%dt / (spacing / max_msft) - 0.01 ) + 1 ), 4 )
+     ELSE
+       num_sound_steps = max ( 2 * ( INT (300. * grid%dt /  spacing             - 0.01 ) + 1 ), 4 )
+     END IF
+     WRITE(wrf_err_message,*)'grid spacing, dt, time_step_sound=',spacing,grid%dt,num_sound_steps
      CALL wrf_debug ( 50 , wrf_err_message )
    ELSE
      num_sound_steps = grid%time_step_sound

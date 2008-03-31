@@ -533,7 +533,7 @@ PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM
 CFLAGS_LOCAL    =       -DNOUNDERSCORE
 LDFLAGS_LOCAL   =       
-FCOPTIM		=       -O2 # -O3 -qhot
+FCOPTIM		=       -O3 -qhot
 FCREDUCEDOPT	=       -O2
 FCNOOPT		=       -qnoopt
 FCDEBUG         =       # -g $(FCNOOPT) -qfullpath

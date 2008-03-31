@@ -211,6 +211,9 @@ CONTAINS
            T1D(i) =T3D(i,1,j)
         ENDDO
 
+        !  Sending array starting locations of optional variables may cause
+        !  troubles, so we explicitly change the call.
+
         CALL SFCLAY1D(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,               &
                 CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j),&
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
@@ -225,10 +228,14 @@ CONTAINS
                 P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
-                its,ite, jts,jte, kts,kte,                         &
-                uratx(ims,j),vratx(ims,j),tratx(ims,j),            &
+                its,ite, jts,jte, kts,kte                          &
+#if ( EM_CORE == 1 )
+                ,uratx(ims,j),vratx(ims,j),tratx(ims,j),           &
                 isftcflx,                                          &
-                USTM(ims,j),CK(ims,j),CKA(ims,j),CD(ims,j),CDA(ims,j) )
+                USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
+                CD(ims,j),CDA(ims,j)                               &
+#endif
+                                                                   )
       ENDDO
 
 

@@ -166,6 +166,10 @@ CONTAINS
             qrs(i,k,3) = qg(i,k,j)
          ENDDO
          ENDDO
+
+         !  Sending array starting locations of optional variables may cause
+         !  troubles, so we explicitly change the call.
+
          CALL wsm62D(t, q(ims,kms,j), qci, qrs                     &
                     ,den(ims,kms,j)                                &
                     ,p(ims,kms,j), delz(ims,kms,j)                 &
@@ -179,9 +183,12 @@ CONTAINS
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
+#if ( EM_CORE == 1 )
                     ,snow(ims,j),snowncv(ims,j)                    &
                     ,graupel(ims,j),graupelncv(ims,j)              &
+#endif
                                                                    )
+
          DO K=kts,kte
          DO I=its,ite
             th(i,k,j)=t(i,k)/pii(i,k,j)

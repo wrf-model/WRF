@@ -2228,6 +2228,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
                       ims, ime, jms, jme, kms, kme,   &
                       its, ite, jts, jte, kts, kte   )
 
+   USE module_llxy
    IMPLICIT NONE
 
    ! Input data
@@ -2265,7 +2266,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    CHARACTER (LEN=256) :: grid_str
 
    integer :: total
-   REAL :: msfuxt , msfvxt , msfxffl
+   REAL :: msfuxt , msfxffl
    
 !<DESCRIPTION>
 !
@@ -2290,25 +2291,21 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    max_horiz_cfl = 0.
    total = 0
 
+   IF(config_flags%map_proj == PROJ_CASSINI ) then
+     msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad) 
+   END IF
+
    IF ( config_flags%w_damping == 1 ) THEN
-     if(config_flags%polar) then
-        msfxffl = 1.0/cos(config_flags%fft_filter_lat*degrad) 
-     endif
      DO j = jts,jtf
 
      DO k = 2, kde-1
      DO i = its,itf
 #if 1
-        if(config_flags%polar) then
-           msfuxt = min(msfux(i,j), msfxffl)
-           msfvxt = min(msfvx(i,j), msfxffl)
-           if ( ( j==jds ) .or. ( j==jde ) ) then
-              msfvxt = msfxffl
-           end if
-        else
+        IF(config_flags%map_proj == PROJ_CASSINI ) then
+           msfuxt = MIN(msfux(i,j), msfxffl)
+        ELSE
            msfuxt = msfux(i,j)
-           msfvxt = msfvx(i,j)
-        end if
+        END IF
         vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
 
         IF ( vert_cfl > max_vert_cfl ) THEN
@@ -2317,7 +2314,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         ENDIF
         
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
-             abs(v(i,k,j) * rdy * msfvxt * dt) )
+             abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
         if (horiz_cfl > max_horiz_cfl) then
            max_horiz_cfl = horiz_cfl
         endif
@@ -2350,6 +2347,11 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      DO i = its,itf
 
 #if 1
+        IF(config_flags%map_proj == PROJ_CASSINI ) then
+           msfuxt = MIN(msfux(i,j), msfxffl)
+        ELSE
+           msfuxt = msfux(i,j)
+        END IF
         vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
         
         IF ( vert_cfl > max_vert_cfl ) THEN
@@ -2358,7 +2360,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         ENDIF
         
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
-             abs(v(i,k,j) * rdy * msfvxt * dt) )
+             abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
 
         if (horiz_cfl > max_horiz_cfl) then
            max_horiz_cfl = horiz_cfl
@@ -4284,14 +4286,14 @@ SUBROUTINE zero_pole ( field,                        &
 
   IF (jts == jds) THEN
      DO k = kts, kte
-     DO i = its, ite
+     DO i = its-1, ite+1
         field(i,k,jts) = 0.
      END DO
      END DO
   END IF
   IF (jte == jde) THEN
      DO k = kts, kte
-     DO i = its, ite
+     DO i = its-1, ite+1
         field(i,k,jte) = 0.
      END DO
      END DO

@@ -213,10 +213,12 @@ CC_TOOLS        =      $(SCC)
 #             optimization (see examples at the end of this file),
 #             try the -no-ip compiler flag.
 #
-#        The default configuration is aimed at accuracy. To improve speed, at
+#        The default configuration is aimed at accuracy. To improve speed
 #        with only negligible effect on floating point accuracy,
-#        consider uncommenting the version of the FCBASEOPTS settings
-#        that uses -IPF-fp-relaxed option.
+#        consider removing "-fp-model precise" from FCBASEOPTS. If
+#        you are using ifort 9.1.x compiler or earlier, consider
+#        uncommenting the version of the FCBASEOPTS settings that uses
+#        the -IPF-fp-relaxed option.
 #
 #        If you can tolerate a longer build, change the setting of
 #        FCNOOPT to -O1, for slightly faster performance.

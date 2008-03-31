@@ -327,21 +327,21 @@ CONTAINS
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
           THETA1 = TH3D(i,1,j)			      ! potential temp at first layer
                    
-        IF(PXLSM_SOIL_NUDGE .EQ. 1)THEN
-          !-- 2 m Temp and RH for Nudging
-          T2_OLD = T2_NDG_OLD(I,J)
-          T2_NEW     = T2_NDG_NEW(I,J)
-          VAPPRS     = SVP1 * EXP(SVP2 * (T2_OLD - SVPT0) / ( T2_OLD - SVP3))
-          QSBT       = EP_2 * VAPPRS / (SFCPRS - VAPPRS)          
-          RH2_OLD    = Q2_NDG_OLD(I,J) / QSBT
-          VAPPRS     = SVP1 * EXP(SVP2 * (T2_NEW - SVPT0) / (T2_NEW - SVP3))
-          QSBT       = EP_2 * VAPPRS / (SFCPRS - VAPPRS)          
-          RH2_NEW    = Q2_NDG_NEW(I,J) / QSBT
-          RH2OBS     = CORB * RH2_OLD +  CORE * RH2_NEW  
-          T2OBS(I,J) = CORB * T2_OLD +  CORE * T2_NEW
-          Q2OBS(I,J) = CORB * Q2_NDG_OLD(I,J) +  CORE * Q2_NDG_NEW(I,J)
-          SNOBS = CORB * SN_NDG_OLD(I,J) +  CORE * SN_NDG_NEW(I,J)  
-        ENDIF
+          IF(PXLSM_SOIL_NUDGE .EQ. 1) THEN                   
+            !-- 2 m Temp and RH for Nudging
+            T2_OLD = T2_NDG_OLD(I,J)
+            T2_NEW     = T2_NDG_NEW(I,J)
+            VAPPRS     = SVP1 * EXP(SVP2 * (T2_OLD - SVPT0) / ( T2_OLD - SVP3))
+            QSBT       = EP_2 * VAPPRS / (SFCPRS - VAPPRS)          
+            RH2_OLD    = Q2_NDG_OLD(I,J) / QSBT
+            VAPPRS     = SVP1 * EXP(SVP2 * (T2_NEW - SVPT0) / (T2_NEW - SVP3))
+            QSBT       = EP_2 * VAPPRS / (SFCPRS - VAPPRS)          
+            RH2_NEW    = Q2_NDG_NEW(I,J) / QSBT
+            RH2OBS     = CORB * RH2_OLD +  CORE * RH2_NEW  
+            T2OBS(I,J) = CORB * T2_OLD +  CORE * T2_NEW
+            Q2OBS(I,J) = CORB * Q2_NDG_OLD(I,J) +  CORE * Q2_NDG_NEW(I,J)
+            SNOBS = CORB * SN_NDG_OLD(I,J) +  CORE * SN_NDG_NEW(I,J)  
+          ENDIF
           IF (IFLAND .GT. 1.5) THEN ! if over water                            
             ZNT(I,J) = CZO * UST(I,J) * UST(I,J) / G + OZO
           ENDIF                                                              
@@ -395,7 +395,7 @@ CONTAINS
 
         DO IT=1,NTSPS                                                     
           !... SATURATION VAPOR PRESSURE (MB) OVER WATER OR LAND
-          IF ( ISNOW .GT. 0.5 .AND. TSLB(I,1,J) .LE. SVPT0 ) THEN        ! with snow
+          IF ( TSLB(I,1,J) .LE. SVPT0 ) THEN        ! with snow
             ES = SVP1 * EXP(22.514 - 6.15E3 / TSLB(I,1,J))      ! cb
           ELSE
             ES = SVP1 * EXP(SVP2 * (TSLB(I,1,J) - SVPT0) /  (TSLB(I,1,J) - SVP3))
@@ -511,7 +511,7 @@ CONTAINS
 ! 13  EBFst  120.   40.  95.  85.  5.0  4.0  Evergreen Broadleaf Forest (Palm?)
 ! 14  ENFst  175.   50.  90.  80.  4.0  3.0  Evergreen Coniferous Forest
 ! 15  MxFst  200.   50.  95.  60.  5.0  2.0  Mixed forest
-! 16  Water 9999.  .001  00.  00.  0.0  0.0  Water
+! 16  Water 9999.   0.1  00.  00.  0.0  0.0  Water
 ! 17  HWtld  164.   15.  60.  40.  2.0  1.0  Herbaceous Wetland (none in east)
 ! 18  WWtld  200.   45.  90.  80.  5.0  3.0  Forested Wetlands (e.g. Everglades)
 ! 19  BarSp  100.    5.  10.  05.  0.5  0.2  Barren or Sparsely Vegetated
@@ -810,9 +810,11 @@ CONTAINS
       PARAMETER (GAMAH = 16. )   !11.6)
       PARAMETER (BETAH = 5.0 )   !8.21)
       PARAMETER (SIGF  = 0.5)      ! rain interception see LSM (can be 0-1)
-      PARAMETER (CT_SNOW  = 2.39E-6)      ! rain interception see LSM (can be 0-1)
+      !PARAMETER (CT_SNOW  = 5.54E-5)   
+! New value of CT_SNOW calibrated using multilayer soil model where csnow=6.9E5 J/(m3 K) 
+! from NCAR CSM                                         
+      PARAMETER (CT_SNOW  = 2.0E-5)  
       ALN10  = ALOG(10.0)
-      
         RADNET = SOLDN - (EMISSI *(STBOLT *TG **4 - LWDN))        ! NET RADIATION                             
       
         !--------------------------------------------------------------------
@@ -872,7 +874,8 @@ CONTAINS
         QST = -ET / (DENS1 * UST)
  
         LV = 2.83E6                         !-- LATENT HEAT OF SUBLIMATION AT 0C FROM STULL(1988)
-        IF (ISNOW .LT. 0.5)  LV = (2.501 - 0.00237 * (TG - 273.15)) * 1.E6  !-- FROM STULL(1988) in J/KG
+        IF (ISNOW .LT. 0.5.AND.TG.GT.273.15)                            &                                                                               
+                    LV = (2.501 - 0.00237 * (TG - 273.15)) * 1.E6  !-- FROM STULL(1988) in J/KG
         
         IF (IFLAND .LT. 1.5 )  QFX = ET     !-- Recaculate QFX over land to account for P-X LSM EG, ER and ETR
         LH = LV * QFX
@@ -900,8 +903,7 @@ CONTAINS
           CG   = CGSAT * 1.0E-6 * (WSAT/ W2CG) **    &  
                  (0.5 * B / ALN10)
           CT = 1./((1-VEGFRC)/CG + VEGFRC/CV)
-        ! Deardorff 78 indicates vol. heat capacity of snow is 0.10 cal m^-3 K-1, which = 2.39E-6 M^3 K J^-1
-          CT = (SNOW_FRA * CT_SNOW) + (1-SNOW_FRA)*CT
+          CT = 1./(SNOW_FRA/CT_SNOW + (1-SNOW_FRA)/CT)
           CAPG = 1.0/CT          
 
           SOILFLX = 2.0 * PI * TAUINV * (TG - T2)

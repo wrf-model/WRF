@@ -176,6 +176,7 @@ CONTAINS
 #if ( EM_CORE == 1 )
                     ,snow(ims,j),snowncv(ims,j)                    &
 #endif
+                                                                   )
 
          DO K=kts,kte
          DO I=its,ite

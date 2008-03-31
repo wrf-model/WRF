@@ -1241,7 +1241,7 @@ SUBROUTINE check_consistency2( ivgtyp , isltyp , landmask , &
                                iswater )
 
    USE module_configure
-   USE module_optional_si_input
+   USE module_optional_input
 
    INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &

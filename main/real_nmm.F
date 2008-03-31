@@ -184,7 +184,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    USE module_configure
    USE module_bc_time_utilities
    USE module_initialize_real
-   USE module_optional_si_input
+   USE module_optional_input
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
@@ -345,11 +345,11 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       !  Possible optional SI input.  This sets flags used by init_domain.
 
       IF ( loop .EQ. 1 ) THEN
-         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
-         CALL init_module_optional_si_input ( grid , config_flags )
-      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
+         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_input' )
+         CALL init_module_optional_input ( grid , config_flags )
+      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
 !
-      CALL optional_si_input ( grid , idsi )
+      CALL optional_input ( grid , idsi )
 	write(0,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
       END IF
 !
@@ -362,8 +362,8 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       !  Possible optional SI input.  This sets flags used by init_domain.
 
       IF ( loop .EQ. 1 ) THEN
-         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
-         CALL init_module_optional_si_input ( grid , config_flags )
+         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_input' )
+         CALL init_module_optional_input ( grid , config_flags )
       END IF
 
       IF (using_binary_wrfsi) THEN
@@ -406,12 +406,12 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       !  Possible optional SI input.  This sets flags used by init_domain.
  
 !      IF ( loop .EQ. 1 ) THEN
-!         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_si_input' )
-!         CALL init_module_optional_si_input ( grid , config_flags )
+!         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_input' )
+!         CALL init_module_optional_input ( grid , config_flags )
 !      END IF
-!      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
+!      CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
 !
-!      CALL optional_si_input ( grid , idsi )
+!      CALL optional_input ( grid , idsi )
 !        flag_metgrid=1
  
 !

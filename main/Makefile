@@ -41,7 +41,7 @@ convert_nmm : convert_nmm.o
 real_nmm : real_nmm.o
 	( cd ../dyn_nmm ;  $(MAKE) module_initialize_real.o )
 	$(RANLIB) $(LIBWRFLIB)
-	$(FC) -o real_nmm.exe $(LDFLAGS) real_nmm.o ../dyn_nmm/module_initialize_real.o ../share/module_optional_si_input.o ../share/input_wrf.o ../share/module_io_domain.o $(LIBWRFLIB) $(LIB)
+	$(FC) -o real_nmm.exe $(LDFLAGS) real_nmm.o ../dyn_nmm/module_initialize_real.o ../share/module_optional_input.o ../share/input_wrf.o ../share/module_io_domain.o $(LIBWRFLIB) $(LIB)
 
 module_initialize :
 	( cd ../dyn_$(SOLVER) ;  $(MAKE) module_initialize_$(IDEAL_CASE).o )
@@ -140,7 +140,7 @@ real_em.o: \
 	../dyn_em/module_big_step_utilities_em.o \
 	../share/module_io_domain.o \
 	../share/module_date_time.o \
-	../share/module_optional_si_input.o \
+	../share/module_optional_input.o \
 	../share/module_bc_time_utilities.o \
 	$(ESMF_MOD_DEPENDENCE)
 #	../chem/module_input_chem_data.o \

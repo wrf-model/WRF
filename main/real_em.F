@@ -265,7 +265,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    USE module_configure
    USE module_bc_time_utilities
    USE module_initialize_real
-   USE module_optional_si_input
+   USE module_optional_input
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
@@ -402,11 +402,11 @@ real::t1,t2,t3,t4
       CALL cpu_time ( t3 )
       IF ( loop .EQ. 1 ) THEN
          already_been_here = .FALSE.
-         CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_si_input' )
-         CALL init_module_optional_si_input ( grid , config_flags )
+         CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_input' )
+         CALL init_module_optional_input ( grid , config_flags )
       END IF
-      CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_si_input' )
-      CALL  optional_si_input ( grid , idsi )
+      CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
+      CALL  optional_input ( grid , idsi )
 
       !  Initialize the mother domain for this time period with input data.
 

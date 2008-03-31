@@ -31,6 +31,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          if ((i < its-1) .or. (i >  ite) .or. (j < jts-1) .or. (j >  jte)) outside = .true.
       end if
    else
+      iv%time = 1
       outside = .true.
    end if
    if (outside) then

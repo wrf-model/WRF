@@ -105,18 +105,30 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! - AUX INPUT INPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT1_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput1_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput1_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT1_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT2_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput2_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput2_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT2_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT3_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput3_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput3_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT3_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT4_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput4_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput4_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT4_ALARM ), rc=rc )
    ENDIF
 
@@ -149,8 +161,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT5_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput5_in ( grid , config_flags )
      WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-                                        TRIM(config_flags%auxinput5_inname) , &
-                                        " for domain ",grid%id
+        TRIM(config_flags%auxinput5_inname) , " for domain ",grid%id
      CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    ENDIF
@@ -159,18 +170,30 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT6_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput6_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput6_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT6_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput7_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput7_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT8_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput8_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput8_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT8_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT9_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput9_in ( grid , config_flags )
+     WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
+        TRIM(config_flags%auxinput9_inname) , " for domain ",grid%id
+     CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT9_ALARM ), rc=rc )
    ENDIF
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT10_ALARM ), rc=rc ) ) THEN

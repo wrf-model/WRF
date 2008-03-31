@@ -79,6 +79,7 @@ module_bc_em.o: ../share/module_bc.o ../frame/module_configure.o \
 		../frame/module_wrf_error.o
 
 module_big_step_utilities_em.o: \
+		../share/module_llxy.o	\
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_state_description.o \
@@ -183,7 +184,7 @@ module_initialize_real.o :  \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../share/module_soil_pre.o \
-		../share/module_optional_si_input.o
+		../share/module_optional_input.o
 
 module_initialize_squall2d_x.o : \
 		../frame/module_domain.o \
@@ -238,6 +239,7 @@ solve_em.o:     module_small_step_em.o \
 		../frame/module_machine.o \
 		../frame/module_tiles.o \
 		../frame/module_dm.o \
+		../share/module_llxy.o	\
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../phys/module_microphysics_driver.o \

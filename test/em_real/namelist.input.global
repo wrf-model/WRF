@@ -102,7 +102,6 @@
  pd_scalar                           = .false., .false., .false.,
  pd_chem                             = .false., .false., .false.,
  pd_tke                              = .false., .false., .false.,
- polar_filter                        = 1,
  fft_filter_lat                      = 45.,
  w_damping                           = 1,
  /

@@ -1,4 +1,4 @@
-MODULE module_optional_si_input
+MODULE module_optional_input
 
    INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp , &
               flag_snow     , flag_snowh
@@ -17,7 +17,7 @@ MODULE module_optional_si_input
               flag_soilm000 , flag_soilm005 , flag_soilm020 , flag_soilm040 , flag_soilm160 , flag_soilm300 , &
               flag_soilw000 , flag_soilw005 , flag_soilw020 , flag_soilw040 , flag_soilw160 , flag_soilw300
 
-   INTEGER :: flag_sst      , flag_toposoil , flag_snowh
+   INTEGER :: flag_sst      , flag_toposoil
 
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
    INTEGER                  :: num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
@@ -32,7 +32,7 @@ CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE init_module_optional_si_input ( grid , config_flags ) 
+   SUBROUTINE init_module_optional_input ( grid , config_flags ) 
 
       USE module_domain
       USE module_configure
@@ -91,12 +91,12 @@ CONTAINS
 
       already_been_here = .TRUE.
 
-   END SUBROUTINE init_module_optional_si_input
+   END SUBROUTINE init_module_optional_input
 
 #if (DA_CORE != 1)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE optional_si_input ( grid , fid )
+   SUBROUTINE optional_input ( grid , fid )
 
       USE module_configure      
       USE module_domain
@@ -180,7 +180,7 @@ CONTAINS
                                     its, ite, jts, jte, kts, kte  )
       END IF
      
-   END SUBROUTINE optional_si_input
+   END SUBROUTINE optional_input
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -390,6 +390,14 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_snowh    = itmp
       END IF
+
+      flag_snow     = 0 
+
+      flag_name(1:8) = 'SNOW    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_snow     = itmp
+      END IF
     
    END SUBROUTINE optional_snowh
 
@@ -420,8 +428,6 @@ USE module_io_domain
       flag_soilhgt  = 0 
       flag_toposoil = 0 
       flag_slp      = 0 
-      flag_snow     = 0 
-      flag_snowh    = 0 
 
       flag_name(1:8) = 'TOPOSOIL'
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -445,18 +451,6 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
          flag_slp      = itmp
-      END IF
-
-      flag_name(1:8) = 'SNOW    '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_snow     = itmp
-      END IF
-    
-      flag_name(1:8) = 'SNOWH   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_snowh    = itmp
       END IF
     
    END SUBROUTINE optional_lsm
@@ -1068,4 +1062,4 @@ USE module_io_domain
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #endif
-END MODULE module_optional_si_input
+END MODULE module_optional_input

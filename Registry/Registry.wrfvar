@@ -1338,7 +1338,7 @@ rconfig   integer max_time_step           namelist,domains      1             -1
 rconfig   real    target_cfl              namelist,domains      1            1.2      h    "target_cfl"
 rconfig   integer max_step_increase_pct   namelist,domains      1              5      h    "max_step_increase_pct"
 rconfig   integer starting_time_step      namelist,domains      1             -1      h    "starting_time_step"
-rconfig   logical step_to_output_time     namelist,domains      1         .false.     h    "step_to_output_time"
+rconfig   logical step_to_output_time     namelist,domains      1         .true.      h    "step_to_output_time"
 rconfig   logical use_adaptive_time_step  namelist,domains      1         .false.     h    "use_adaptive_time_step"
 
 rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""

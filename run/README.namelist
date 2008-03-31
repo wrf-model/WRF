@@ -232,7 +232,7 @@ Namelist variables for controling the automatic moving nest:
 Namelist variables for controlling the adaptive time step option:
                    These options are only valid for the ARW core.  
  use_adaptive_time_step              = .false.  ; T/F use adaptive time stepping, ARW only
- step_to_output_time                 = .false.  ; if adaptive time stepping, T/F modify the
+ step_to_output_time                 = .true.   ; if adaptive time stepping, T/F modify the
                                                   time steps so that the exact history time is reached
  target_cfl                          = 1.2      ; vertical and horizontal CFL <= to this value implies
                                                   no reason to reduce the time step, and to increase it

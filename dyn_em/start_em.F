@@ -496,6 +496,10 @@
       if (grid%max_time_step == -1) then
          grid%max_time_step = 3*grid%starting_time_step
       endif
+      
+      if (grid%min_time_step == -1) then
+         grid%min_time_step = 0.5*grid%starting_time_step
+      endif
 
 !     Set a starting timestep.
 

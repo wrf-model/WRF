@@ -1301,7 +1301,7 @@ if ( $ARCH[1] == AIX ) then
 	set COMPOPTS    = ( 1 2 3 )
 	set COMPOPTS_NO_NEST = 0
 	set COMPOPTS_NEST_STATIC = 1
-	set COMPOPTS_NEST_PRESCRIBED = 1
+	set COMPOPTS_NEST_PRESCRIBED = 2
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
         setenv MP_PROCS  $Num_Procs
@@ -1324,7 +1324,7 @@ if ( $ARCH[1] == AIX ) then
 # check compiler version, JM
         lslpp -i | grep xlf | grep ' xlfcmp ' | head -1
         set xlfvers=`lslpp -i | grep xlf | grep ' xlfcmp ' | head -1 | awk '{print $2}' | sed 's/\...*$//'`
-        if ( $xlfvers < 10 ) then
+        if ( ( $xlfvers > 9 ) && ( $NESTED == TRUE ) ) then
 		set ZAP_OPENMP		= TRUE
         endif
 # end of compiler check, JM
@@ -1348,7 +1348,7 @@ else if ( $ARCH[1] == Darwin ) then
 	set COMPOPTS    = ( 13 0 14 )
 	set COMPOPTS_NO_NEST = 0
 	set COMPOPTS_NEST_STATIC = 1
-	set COMPOPTS_NEST_PRESCRIBED = 1
+	set COMPOPTS_NEST_PRESCRIBED = 2
 	set Num_Procs		= 4
 	set OPENMP 		= $Num_Procs
 	cat >! `pwd`/machfile << EOF
@@ -1625,7 +1625,7 @@ banner 3
 #DAVE###################################################
 
 if ( $FDDA == TRUE ) then
-	if      ( $PHYSOPTS_FDDA == GRID ) then
+	if      ( ( $PHYSOPTS_FDDA == GRID ) && ( $ZAP_OPENMP == FALSE ) ) then
 		set ZAP_OPENMP = FALSE
 	else if ( $PHYSOPTS_FDDA == BOTH ) then
 		set ZAP_OPENMP = TRUE
@@ -1692,7 +1692,6 @@ endif
 
 ( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
 #( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
-#	INFRASTRUCTURE
 ( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; \
   sed '/dyn_opt/d' $thedatanmm/namelist.input.regtest >! ./namelist.input.regtest )
 #DAVE###################################################
@@ -2177,8 +2176,6 @@ EOF
 				#	The chem run has its own namelist, due to special input files (io_form not tested for chem)
 
 				else if ( $CHEM == TRUE ) then
-#					cp namelist.input.chem_test_${phys_option} namelist.input
-#	INFRASTRUCTURE
 					if ( ( $KPP == TRUE ) && ( $phys_option >= 3 ) ) then
 						sed -e '/dyn_opt/d' \
 						    -e 's/^ chem_opt *= [0-9]/ chem_opt = '${CHEM_OPT}'/' \
@@ -2921,8 +2918,6 @@ banner 29
 	                        else
 	                                set RIGHT_SIZE = FALSE
 	                        endif
-#	INFRASTRUCTURE
-set RIGHT_SIZE = TRUE
 	
 	                        #       1p vs Num_Procs MPI
 	
@@ -2981,8 +2976,6 @@ set RIGHT_SIZE = TRUE
 				else
 					set RIGHT_SIZE_OMP = FALSE
 				endif
-#	INFRASTRUCTURE
-set RIGHT_SIZE_OMP = TRUE
 	
 				BYPASS_OPENMP_SUMMARY1:
 	
@@ -3000,8 +2993,6 @@ set RIGHT_SIZE_OMP = TRUE
 				else
 					set RIGHT_SIZE_MPI = FALSE
 				endif
-#	INFRASTRUCTURE
-set RIGHT_SIZE_MPI = TRUE
 	
 				#	Are we skipping the OpenMP runs?
 	
@@ -3110,8 +3101,6 @@ set RIGHT_SIZE_MPI = TRUE
 								set fooc = ( ` \ls -ls ${cmpfile} `)
 								set sizeb = $foob[6]
 								set sizec = $fooc[6]
-#	INFRASTRUCTURE
-set sizeb = $sizec
 								if ( $sizeb == $sizec ) then
 									$DIFFWRF ${basefile} ${cmpfile} >& /dev/null
 									if ( -e fort.88 ) then
@@ -3199,8 +3188,6 @@ set sizeb = $sizec
 								set fooc = ( ` \ls -ls ${cmpfile} `)
 								set sizeb = $foob[6]
 								set sizec = $fooc[6]
-#	INFRASTRUCTURE
-set sizeb = $sizec
 								if ( $sizeb == $sizec ) then
 									$DIFFWRF ${basefile} ${cmpfile} >& /dev/null
 									if ( -e fort.88 ) then
@@ -3287,3 +3274,4 @@ rm -rf machfile >& /dev/null
 rm -rf fdda_real* >& /dev/null
 rm -rf time_real_* >& /dev/null
 rm -rf dyn_real_* >& /dev/null
+rm -rf damp_* >& /dev/null

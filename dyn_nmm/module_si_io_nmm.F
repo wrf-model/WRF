@@ -1,6 +1,6 @@
 MODULE module_si_io_nmm
 
-   USE module_optional_si_input
+   USE module_optional_input
 
    IMPLICIT NONE
 

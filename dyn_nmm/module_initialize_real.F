@@ -59,7 +59,7 @@ CONTAINS
 !
    )
 
-      USE module_optional_si_input
+      USE module_optional_input
       IMPLICIT NONE
 
       !  Input space and data.  No gridded meteorological data has been stored, though.

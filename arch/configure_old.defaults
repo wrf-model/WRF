@@ -2917,7 +2917,7 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F

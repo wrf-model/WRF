@@ -12,7 +12,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_driver_constants
    USE module_machine
    USE module_tiles, ONLY : set_tiles
-   USE module_dm ! , ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
+#else
+   USE module_dm
+#endif
    USE module_comm_dm
    USE module_utility
 ! Mediation layer modules
@@ -37,7 +41,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 #endif
    USE module_first_rk_step_part1
    USE module_first_rk_step_part2
-   USE module_llxy
+   USE module_llxy, ONLY : proj_cassini
 
    IMPLICIT NONE
 

@@ -195,7 +195,7 @@ integer::oops1,oops2
       !  For backward compatibility, we might need to assign the map factors from
       !  what they were, to what they are.
 
-      IF      ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      IF      ( ( config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=max(jds+1,jts),min(jde-1,jte)
             DO i=its,min(ide-1,ite)
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
@@ -213,6 +213,12 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
+      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+         DO j=jts,jte
+            DO i=its,min(ide-1,ite)
+               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
+            END DO
+         END DO
       ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,ite

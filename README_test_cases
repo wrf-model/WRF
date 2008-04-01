@@ -82,3 +82,18 @@ The available test cases are
    Test case is described in Straka et al,
    INT J NUMER METH FL 17 (1): 1-22 JUL 15 1993.
    See the README.grav2d_x file in the test directory.
+
+7) 3D large-eddy simulation (test/em_les)
+
+   A large-eddy simulation (LES) of a free convective boundary 
+   layer (CBL) with 0 environmental wind at the initial time, and
+   the turbulence of the free CBL driven/maintained by the 
+   specified surface heat flux,
+
+8) 2D full physics seabreeze (test/em_seabreeze2d_x)
+
+   A case is more set up now to demonstrate how to set all land
+   variables so that full physics options may be used. Tuning is
+   needed to produce real sea-breeze simulation at this point.
+
+9) 3D global case (test/em_heldsuarez)

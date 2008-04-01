@@ -293,10 +293,12 @@ CC_TOOLS        =      $(SCC)
 #        Please visit http://www.intel.com/support/performancetools/sb/cs-028607.htm 
 #        for latest info on how to build WRF with Intel compilers.
 #
-#        The default configuration is aimed at accuracy. To improve speed, at
+#        The default configuration is aimed at accuracy. To improve speed
 #        with only negligible effect on floating point accuracy,
-#        consider uncommenting the version of the FCBASEOPTS settings
-#        that uses -IPF-fp-relaxed option. To further improve performance,
+#        consider removing "-fp-model precise" from FCBASEOPTS.  If
+#        you are using an ifort 9.1.x compiler or earlier, consider
+#        uncommenting the version of the FCBASEOPTS settings that uses
+#        the -IPF-fp-relaxed option.  To further improve performance,
 #        add processor-specific options to FCOPTIM (see ifort manpage).
 #
 #        If you can tolerate a longer build, change the setting of

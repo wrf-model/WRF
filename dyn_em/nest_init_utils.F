@@ -4,7 +4,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    TYPE(domain)  :: parent , nest
 
    INTEGER iswater , map_proj, julyr, julday
-   REAL    cen_lat, cen_lon, truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon
+   REAL    truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon
    CHARACTER (LEN=4) :: char_junk
 
 ! single-value constants
@@ -50,8 +50,6 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%julday  = julday
    nest%julyr   = julyr
    nest%iswater = iswater
-   nest%cen_lat = cen_lat
-   nest%cen_lon = cen_lon
    nest%truelat1= truelat1
    nest%truelat2= truelat2
    nest%moad_cen_lat= moad_cen_lat

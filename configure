@@ -317,6 +317,9 @@ else
     else
       if [ "$os" = "OSF1" -o "$os" = "Linux" -o "$os" = "UNICOS/mp" -o "$os" = "UNIX_System_V" -o "$os" = "CYGWIN_NT-5.1" ] ; then
         mach=`uname -m`
+        if [ "$mach" = "ia64" -a -f /etc/sgi-release ] ; then
+          mach="Altix"
+        fi
       else
         os="ARCH"
         mach="ARCH"

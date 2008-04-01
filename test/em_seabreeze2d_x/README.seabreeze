@@ -1,0 +1,15 @@
+
+The purpose of this case is to demonstrate how one can set up all land variables
+in order to ues fullphysics option in an idealized case. 
+
+This test case is an attempt to produce a two dimensional sea breeze simulation.
+Configuration needs turning to produce desirable results. 
+
+The input sounding has a easterly wind of 11.4 m/sec at 125 m above sea level,
+and decreases to 0 at 2.6 km.
+
+The setup for a 2D case with 202 grid points in x. The land occupies 50 grid
+points in the middle of the domain. The width of the land can be changed
+by modifying variable lm (half width for land points) in 
+dyn_em/module_initialize_seabreeze2d_x.F.
+

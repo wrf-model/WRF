@@ -20,9 +20,6 @@ PROGRAM real_data
    USE module_input_chem_emissopt3
 #endif
    USE module_utility, ONLY : WRFU_finalize
-#ifdef DM_PARALLEL
-   USE module_dm
-#endif
 
    IMPLICIT NONE
 

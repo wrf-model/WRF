@@ -88,12 +88,20 @@ The available test cases are
    A large-eddy simulation (LES) of a free convective boundary 
    layer (CBL) with 0 environmental wind at the initial time, and
    the turbulence of the free CBL driven/maintained by the 
-   specified surface heat flux,
+   specified surface heat flux.
 
 8) 2D full physics seabreeze (test/em_seabreeze2d_x)
 
-   A case is more set up now to demonstrate how to set all land
+   The case is more set up now to demonstrate how to set all land
    variables so that full physics options may be used. Tuning is
    needed to produce real sea-breeze simulation at this point.
 
 9) 3D global case (test/em_heldsuarez)
+
+   A coarse-resolution global forecast case that is described in
+   "A proposal for the intercomparison of the dynamical cores of 
+   atmospheric general circulation models" by Held and Suarez 
+   (Bulletin of the American Meteorological Society; 1994, Vol 
+   75, 1825-1830).  This test of the global solver is dry, and
+   produces  midlatitude jets, breaking midlatitude baroclinic 
+   waves, etc.

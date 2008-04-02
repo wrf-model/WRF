@@ -299,7 +299,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, Ferrier (new Eta) microphysics
                                      = 6, WSM 6-class graupel scheme
                                      = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
-                                     = 8, Thompson et al. scheme
+                                     = 8, Thompson scheme
+                                     = 10, Morrison (2 moments)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critcal value to zero
@@ -449,6 +450,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
+                                                  = 2: Pleim-Xu landsurface model
  ucmcall(max_dom)                    = 0,       ; activate urban canopy model (in Noah LSM only) (0=no, 1=yes)
 
  pxlsm_smois_init(max_dom)           = 1        ;PXLSM Soil moisture initialization option 
@@ -466,7 +468,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
                                                 ; from 3 m to surface, and set smois and sh2o
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
-                                                ; puts SST, XICE and VEGFRA in wrflowinp_d01 file, and wrf updates these from it
+                                                ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates these from it
                                                 ; at same interval as boundary file. To read this, the time-control
                                                 ; namelist must include  auxinput4_interval,  auxinput4_end_h, and
                                                 ; auxinput4_inname = "wrflowinp_d<domain>"
@@ -613,24 +615,7 @@ The following are for observation nudging:
  do_coriolis (max_dom)               = .true.,	; whether to do Coriolis calculations (idealized)
  do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized)
  do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized)
- polar_filter                        = 2        ; where to do the Fourier filtering at the poles
-	                                          0 = never
-                                                  1 = before the small acoustic timesteps
-                                                  2 = after the small acoustic timesteps
-                                                  3 = before & after small acoustic timesteps
- fft_filter_type                     = 1        ; what type of filtering to use with the polar Fourier filtering
-                                                  1 = Cutoff filter (power at wavenumbers > maximum wavenumber
-                                                                     is set to 0)
-                                                      Maximum wavenumber derived from functional
-                                                      form based on cosine of latitude, filtering
-                                                      stops equatorward of 60 N/S
-                                                  2 = Gouge filter  (power at mid-wavenumbers is reduced)
-                                                  3 = Cutoff filter w(power at wavenumbers > maximum wavenumber
-                                                                     is set to 0)
-                                                      Maximum wavenumber is set by grid index number
- polar_filter_rk_once                = .false.  ; Whether to do the polar filtering only at the last Runga-Kutta
-                                                  integration step (TRUE), or during all Runga-Kutta steps (FALSE)
-
+ fft_filter_lat                      = 45.      ; the latitude above which the polar filter is turned on
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging

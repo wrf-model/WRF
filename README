@@ -1,4 +1,4 @@
-WRF Model Version 2.2 (December 2006)
+WRF Model Version 3 (April 2008)
 http://www.mmm.ucar.edu/wrf/users/
 
 ------------------------
@@ -24,39 +24,25 @@ infringement actions.
 
 
 ======================================
-This is the main directory for the WRF Version 2 source code release.
+This is the main directory for the WRF Version 3 source code release.
 ======================================
 
-V2.2 Release Notes:
+V3 Release Notes:
 ------------------
 
 - For directions on compiling WRF, see below or Users Web page.
-- For more information on WRF V2.2 release, visit WRF Users home page
+- For more information on WRF V3 release, visit WRF Users home page
   http://www.mmm.ucar.edu/wrf/users/
-- WRF V2.2 works with both WPS (new WRF Preprocessing System) and SI.
+- WRF V3 works with WPS, and SI is no longer supported. 
   Please see User' Guide for WPS.
-- WRF V2.2 executable works with wrfinput/wrfbdy produced by previous version,
-  but pre-V2.2 WRF will NOT work with V2.2 wrfinput/wrfbdy files.
-- WRF V2.2's namelist has new additions. Edit with caution.
+- WRF V3 executable does not work with wrfinput/wrfbdy produced by previous versions.
+- WRF V3 has removed one obsolete namelist variable, dyn_opt. Edit with caution.
 
 For questions, send mail to wrfhelp@ucar.edu
 
 ======================================
 
-V2.1 Release Notes:
-------------------
-
-- For directions on compiling WRF, see below or Users Web page.
-- For more information on WRF V2.1 release, visit WRF Users home page
-  http://www.mmm.ucar.edu/wrf/users/
-- Use WRFSI 2.0.3 or 2.1 (http://wrfsi.noaa.gov) for real-data preparation.
-- Must rerun real.exe to generate new wrfbdy_d01/wrfinput_d01 for wrf.exe.
-- WRF V2.1's namelist has some changes from 2.0.3.1. Edit with caution.
-- Need to have gribmap.txt in your run directory.
-
-======================================
-
-V2 update history:
+WRF update history:
 
 - V2.0.1: May 21, 2004
 - V2.0.2: June 3, 2004
@@ -66,57 +52,61 @@ V2 update history:
 - V2.1.1: Nov 8, 2005
 - V2.1.2: Jan 27, 2006
 - V2.2: Dec 21, 2006
+- V2.2.1: Nov 1, 2007
 
 ======================================
 
 How to compile and run?
 -----------------------
 
-- In WRFV2 directory, type 'configure' - this will create a configure.wrf
+- In WRFV3 directory, type 'configure' - this will create a configure.wrf
   file that has appropriate compile options for the supported computers.
 
   Note: WRF requires netCDF library. If your netCDF library is installed in
         some odd directory, set environment variable NETCDF before you type
         'configure'. For example, 
 
-        setenv NETCDF /usr/local/lib32/r4i4
+        setenv NETCDF /usr/local/netcdf-pgi
 
 - Type 'compile case_name' where you can find the case_names by simply typing
   compile. The following are available:
 
-        compile em_b_wave
-        compile em_hill2d_x
-        compile em_grav2d_x
-        compile em_quarter_ss
-        compile em_real
-        compile em_squall2d_x
-        compile em_squall2d_y
+      compile em_b_wave
+      compile em_grav2d_x
+      compile em_heldsuarez
+      compile em_hill2d_x
+      compile em_les
+      compile em_quarter_ss
+      compile em_real
+      compile em_seabreeze2d_x
+      compile em_squall2d_x
+      compile em_squall2d_y
 
-- If sucessfully, this will create either real.exe or ideal.exe and wrf.exe
+- If sucessful, this will create either real.exe or ideal.exe and wrf.exe
   in directory main/, and the appropriate executables will be linked into
   the test directoires under test/case_name, or run/.
 
-- cd to the appropriate test or run direcotry to run ideal/real/wrf.
+- cd to the appropriate test or run directory to run ideal/real/wrf.
 
 - If it is one of the idealized cases (b_wave, hill2d_x, grav2d_x, quarter_ss,
-  squall2d_x or squall2d_y), cd the the appropriate directory, type
+  squall2d_x, squall2d_y, em_les or em_heldsuarez), cd the the appropriate directory, type
 
-  ideal.exe 
+  ./ideal.exe 
 
   to produce wrfinput_d01 file for wrf model. Then type
 
-  wrf.exe 
+  ./wrf.exe 
 
   to run. 
 
-- If it is real-data case (real), place files from SI (wrf_real_input_em.*)
+- If it is real-data case (real), place files from WPS (met_em.*)
   in the appropriate directory, type
 
-  real.exe
+  ./real.exe
 
   to produce wrfbdy_d01 and wrfinput_d01. Then type
 
-  wrf.exe
+  ./wrf.exe
 
   to run.
 
@@ -130,7 +120,7 @@ How to compile and run?
 
 ======================================
 
-What is in WRF V2?
+What is in WRF V3?
 
 - Advanced Research WRF (ARW) solver: Eulerian mass, hydrostatic and non-hydrostatic
   * Arakawa C-grid staggering
@@ -142,37 +132,41 @@ What is in WRF V2?
   * divergence damping option and vertical time off-centering
   * external-mode filtering option for mass model
   * hydrostatic option via namelist option
-  * positive-definite advection for moisture, scalar, tke and chemical tracers (since 2.2)
+  * positive-definite advection for moisture, scalar, tke and chemical tracers
+  * global modeling capability on latitude-longitude grid
 
 - Two-way nesting:
   * multiple domains and multiple nest levels
   * supports integer nest grid ratio
-  * feedback option for both odd and even nest grid ratios (since 2.0.3)
+  * feedback option for both odd and even nest grid ratios 
   * smoothing options
 
-- One-way nesting (since 2.0.2)
+- One-way nesting 
 
-- Moving nest (since 2.1)
-  * Specified move.
-  * Automatic move using a mid-level vortex-following algorithm.
+- Moving nest 
+  * Specified move
+  * Automatic move using a mid-level vortex-following algorithm
 
 - Physics options:
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 class / Lin et al./
-    Eta Ferrier / Thompson [a new version in 2.2])
+    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / )
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
-    Betts-Miller-Janjic / Grell-Devenyi ensemble)
-  * planetary boundary layer (Yosei University (S. Korea) / Mellor-Yamada-Janjic)
+    Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell )
+  * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 )
   * surface layer (similarity theory MM5 / Eta)
-  * slab soil model (5-layer thermal diffusion / Noah land-surface model (4-level) /
-    RUC LSM (6-level) )
-  * Urban canopy model (works with Noah LSM) (since 2.2)
+  * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
+    RUC LSM (6 levels) / Pleim-Xu (2 levels)
+  * Urban canopy model (works with Noah LSM)
   * longwave radiation (RRTM, CAM)
   * shortwave radiation (simple MM5 scheme / Goddard / CAM)
   * sub-grid turbulence (constant K diffusion/ 2-D Smagorinsky/ predicted TKE /
     2-D, 6th order diffusion)
+  * Rayleigh damping for w at the upper boundary layer
   * land-use categories determine surface properties
-  * three-dimensional analysis nudging (since 2.2)
-  * observation nudging (since 2.2)
+
+- Nudging:
+  * three-dimensional analysis nudging 
+  * observation nudging 
 
 - Software
 
@@ -190,30 +184,30 @@ What is in WRF V2?
       Moving nests.
   * Enhanced I/O options:
       NetCDF and Parallel HDF5 formats
-      Five auxiliary history output streams separately controllable through the namelist
+      Nine auxiliary input and history output streams separately controllable through the namelist
+      Special input streams for analysis and observation nudging
       Output file names and time-stamps specifiable through namelist
       Special output stream for 3DVAR
   * Efficient execution on a range of computing platforms:
-      IBM SP systems, (e.g. NCAR "bluesky" Power4-based system)
-      HP/Compaq Alpha/OSF workstation, SMP, and MPP systems (e.g. Pittsburgh 
-         Supercomputing Center TCS)
+      IBM SP systems, (e.g. NCAR "bluevista","blueice","bluefire" Power5-based system)
+      IBM Blue Gene
       SGI Origin and Altix
       Linux/Intel
          IA64 MPP (HP Superdome, SGI Altix, NCSA Teragrid systems)
          IA64 SMP
-         Pentium 3/4 SMP and SMP clusters (NOAA/FSL iJet system)
-	 PGI and Intel compilers supported
-      Alpha Linux (NOAA/FSL Jet system)
+         x86_64 (e.g. TACC's "Ranger", NOAA/GSD "wJet" )
+	 PGI, Intel, Pathscale, gfortran, g95 compilers supported
       Sun Solaris (single threaded and SMP)
-      Cray X1, X1e (vector), X1D (Opteron)
-      Mac G5, xlf compiler (no DM-parallel yet)
+      Cray X1, X1e (vector), XT3/4 (Opteron)
+      Mac Intel/ppc, PGI/ifort/g95
+      NEC SX/8
       HP-UX
-      Other ports under development:
-         NEC SX/6
-         Fujitsu VPP 5000
-  * RSL_LITE: optional new communication layer, scalable to very
-    large domains, support nesting.
+      Fujitsu VPP 5000
+  * RSL_LITE: communication layer, scalable to very
+    large domains, supports nesting.
+  * I/O: NetCDF, parallel NetCDF (Argonne), HDF5, GRIB, raw binary, Quilting (asynchronous I/O), MCEL (coupling)
   * ESMF Time Management, including exact arithmetic for fractional
     time steps (no drift).
   * ESMF integration - WRF can be run as an ESMF component.
   * Improved documentation, both on-line (web based browsing tools) and in-line
+

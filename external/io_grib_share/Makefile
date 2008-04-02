@@ -25,6 +25,7 @@ LIB_DEST = .
 C_INCLUDES   = -I.
 CXX_INCLUDES = -I.
 F_INCLUDES   = -I.
+AR           = AR
 ARFLAGS      = cruv
 
 FORMAT = $(FREE)

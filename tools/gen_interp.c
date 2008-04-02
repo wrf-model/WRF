@@ -225,9 +225,9 @@ fprintf(fp,"IF ( SIZE( %s%s ) .GT. 1 ) THEN \n", grid, vname2 ) ;
 #endif
 	}
 
-fprintf(fp,"CALL %s (                                                               &         \n", fcn_name ) ;
+fprintf(fp,"CALL %s (  &         \n", fcn_name ) ;
 
-fprintf(fp,"                  %s%s,                                                           &         ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
+fprintf(fp,"                  %s%s,   &       ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
@@ -235,7 +235,7 @@ fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 pdim[0][0], pdim[0][1], pdim2[1][0], pdim2[1][1], pdim[2][0], pdim[2][1] ) ;
 if ( ! (down_path  & SMOOTH_UP)  ) {
-fprintf(fp,"                  ngrid%%%s,                                                        &   ! ND field\n", vname2) ;
+fprintf(fp,"                  ngrid%%%s,  &   ! ND field\n", vname2) ;
 }
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! ND dims\n",
                 nddim[0][0], nddim[0][1], nddim[1][0], nddim[1][1], nddim[2][0], nddim[2][1] ) ;

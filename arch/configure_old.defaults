@@ -1949,65 +1949,58 @@ solve_interface.o : solve_interface.F
 # -init : init stack and heap areas
 # -L fmtlist summary stdout: formatted list, transformation lists, summary list are output to stdout
 
-RUNTIME_SYSTEM	=	sx
-MPP_TARGET	=	$(RUNTIME_SYSTEM)
-FC		=	f90
-SFC		=	$(FC)
-CC		=	cc
-SCC		=	$(CC)
-LD		=	$(FC)
-NATIVE_RWORDSIZE =      8
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-ARCHFLAGS	= $(COREDEFS)	-DNETCDF -DGRIB1 CONFIGURE_GRIB2_FLAG -DINTIO -DWRF_RSL_IO -DIWORDSIZE=8 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=8 -DLIMIT_ARGS -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) $(DA_ARCHFLAGS)
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       sxmpif90
+LD              =       sxmpif90
+CC              =       sxmpic++ -DMPI2_SUPPORT
+SCC		=	sxmpic++
+SFC             =       sxmpif90
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION	=	
-CFLAGS		=	$(ARCHFLAGS)
-
-FCFLAGS		=	-w -Ep -C ssafe \
-			-sx6 -USX -ew -D$(RUNTIME_SYSTEM) -I$(LIBINCLUDE) -I$(WRF_SRC_ROOT_DIR)/inc -f4 
-		#	-Wf"-init stack=zero heap=zero" 
-		#         -Wf"-L transform fmtlist summary stdout" -g
-FCDEBUG         =       # -g
-FCBASEOPTS	=	$(FCFLAGS) -w
-
+CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
+                        -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
+                        -Xa -Kc99
+FCOPTIM		=	
+FCDEBUG		=	#-g
+#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCBASEOPTS      =       -ftrace -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i \
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
+			$(DA_ARCHFLAGS) \
+			-DLIMIT_ARGS
 # machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
 ESMF_LIB_FLAGS  =       
-ESMF_IO_LIB     =       ESMFIOLIB
-ESMF_IO_LIB_EXT =       ESMFIOEXTLIB
-INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int  \
-                        -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
+ESMF_IO_LIB     =       $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+ESMF_IO_LIB_EXT =       -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/main -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
+                        -I$(WRF_SRC_ROOT_DIR)/external -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
 PERL            =       perl
 REGISTRY        =       Registry
-LIB             =       -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L/usr/local/netcdf/current/lib -lnetcdf -L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
+LIB             =       $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a -L/pool/SX-6/netcdf/netcdf-3.6.2/lib -lnetcdf -L$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -lrsl_lite \
                         -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
                         -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
-                        CONFIGURE_GRIB2_LIB \
-                        -L$(WRF_SRC_ROOT_DIR)/external/io_grib_share -lio_grib_share \
-			-L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time \
-			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
+			-L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
+			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time -L$(SX_BASE_CPLUS)/lib -lcpp
+LDFLAGS         =       $(FCFLAGS) -Wl,-h nodefs 
+ENVCOMPDEFS	=	
+WRF_CHEM	=	0 
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -C -P `cat $(WRF_SRC_ROOT_DIR)/inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF) -DNEC
+AR_BASE         =       sxar
+AR              =       $(AR_BASE) ru
+M4              =       m4 -B 14000
+RANLIB          =       sxar rs
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
 
-#-lmpi for 4byte storage, -lmpiw for 8 byte storage 
-#LDOPTIONS	=	-lmpiw -ew 
-CPP		=	/lib/cpp 
-POUND_DEF	=	-DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(COREDEFS) $(ENVCOMPDEFS) $(POUND_DEF) $(ARCHFLAGS)
-
-MAX_PROC = 8
-MAKE = make -i -r
-AWK = awk
-SED = sed
-CAT = cat
-CUT = cut
-EXPAND = expand
-AR = ar ru
-M4 = m4 -B14000
-RANLIB = ar ru     
-NETCDFPATH = /usr/local/netcdf/current
-CC_TOOLS        =       $(CC)
-ARCH_OBJS = milliclock.o
-ASSUME_HOMOGENEOUS_ENVIRONMENT = 1
-FLIC_MACROS = LMvpp.m4 -B 14000
-VECTOR = 1
-
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Fortran compiler complains about long source lines.          ####
+SED_FTN = sed -f $(WRF_SRC_ROOT_DIR)/arch/no_file_line.sed
 
 externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int  esmf_time  module_dm.F fftpack
 
@@ -2042,7 +2035,7 @@ esmf_time :
 
 fftpack :
 	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
-          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR)" )
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -2873,13 +2866,9 @@ M4              =       m4 -B 14000
 RANLIB          =       sxar rs
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
+SED_FTN = $(WRF_SRC_ROOT_DIR)/tools/standard.exe
 
-#### Override default sed command and script for Fortran source files         ####
-#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
-#### because the Fortran compiler complains about long source lines.          ####
-SED_FTN = sed -f $(WRF_SRC_ROOT_DIR)/arch/no_file_line.sed
-
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
+externals : wrf_ioapi_includes wrfio_nf wrfio_grib1 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/gen_comms.c
 	( /bin/cp $(WRF_SRC_ROOT_DIR)/tools/gen_comms_warning $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c ; \
@@ -2890,7 +2879,7 @@ module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
 
 wrfio_nf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
-	  make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" )
+	  make NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" )
 
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
@@ -2902,7 +2891,7 @@ wrfio_grib1 :
 
 wrfio_grib2 :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib2 ; \
-          make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" archive)
+          make CC="$(SCC)" CFLAGS="$(CFLAGS) " RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" archive)
 
 wrfio_int : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
@@ -2914,10 +2903,11 @@ esmf_time :
 
 fftpack :
 	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
-          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR_BASE)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(FCFLAGS) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
+
 
 # compile these without high optimization to speed compile
 solve_interface.o : solve_interface.F
@@ -2954,16 +2944,6 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
-#	if [ ! -e $@ ] ; then \
-#	sleep 10 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 30 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
-#	fi
-#	if [ ! -e $@ ] ; then \
-#	sleep 300 ; $(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90 ; \
-#	fi
-
 
 ###########################################################
 #ARCH    CYGWIN_NT-5.1 Cygwin i486 i586 i686, g95 compiler  (Single-threaded, no nesting)

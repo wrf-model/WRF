@@ -564,8 +564,11 @@ pi = 4.*atan(1.)
 
 ! cosine of zenith angle over sloping topography
 
-        csza_slp = ((SIN(XXLAT)*COS(HRANG))*(-cos(slp_azi)*sin(slope))-SIN(HRANG)*(sin(slp_azi)*sin(slope))+(COS(XXLAT)*COS(HRANG))* &
-                    cos(slope))*COS(DECLIN)+(COS(XXLAT)*(cos(slp_azi)*sin(slope))+ SIN(XXLAT)*cos(slope))*SIN(DECLIN)
+        csza_slp = ((SIN(XXLAT)*COS(HRANG))*                                          &
+                    (-cos(slp_azi)*sin(slope))-SIN(HRANG)*(sin(slp_azi)*sin(slope))+  &
+                    (COS(XXLAT)*COS(HRANG))*cos(slope))*                              &
+                   COS(DECLIN)+(COS(XXLAT)*(cos(slp_azi)*sin(slope))+                 &
+                   SIN(XXLAT)*cos(slope))*SIN(DECLIN)
         IF(csza_slp.LE.1.E-4) csza_slp = 0
 
 ! Topographic shading

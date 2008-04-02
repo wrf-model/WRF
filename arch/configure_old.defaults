@@ -2832,11 +2832,11 @@ SFC             =       sxmpif90
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION	=	
 CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
+                        -Xa -Kc99
 FCOPTIM		=	
 FCDEBUG		=	#-g
-#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
-FCBASEOPTS      =       -f4 -Wf,-P i $(FCDEBUG)
+FCBASEOPTS      =       -ftrace -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i
 FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
@@ -2854,7 +2854,7 @@ LIB             =       CONFIGURE_NETCDF_LIB_PATH -L$(WRF_SRC_ROOT_DIR)/external
                         -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
                         -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
 			-L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
-			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time -L$(SX_BASE_CPLUS)/lib -lcpp
+			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time
 LDFLAGS         =       $(FCFLAGS) -Wl,-h nodefs CONFIGURE_LDFLAGS
 ENVCOMPDEFS	=	CONFIGURE_COMPILEFLAGS
 CPP             =       /lib/cpp -C -P -traditional
@@ -2944,6 +2944,7 @@ module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
 
 ###########################################################
 #ARCH    CYGWIN_NT-5.1 Cygwin i486 i586 i686, g95 compiler  (Single-threaded, no nesting)

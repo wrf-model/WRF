@@ -235,7 +235,7 @@ CC_TOOLS        =      $(SCC)
 #        following changes to settings below:
 #        DM_FC  = mpiifort
 #        DM_CC  = mpiicc
-#        and source bin64/mpivars.sh file from your Intel MPI installation
+#        and source bin/mpivars.sh file from your Intel MPI installation
 #        before the build.
 #
 

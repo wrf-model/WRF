@@ -100,11 +100,11 @@ include main.make
 include RSL_LITE.make
 
 libwrf.a : $(WRF_OBJS)
-	$(AR) libwrf.a $(WRF_OBJS)
+	$(AR) $(ARFLAGS) libwrf.a $(WRF_OBJS)
 	$(RANLIB) libwrf.a
         
 libwrfvar.a : $(WRFVAR_OBJS)
-	$(AR) libwrfvar.a $(WRFVAR_OBJS)
+	$(AR) $(ARFLAGS) libwrfvar.a $(WRFVAR_OBJS)
 	$(RANLIB) libwrfvar.a
 
 # Must not call target clean, as there is a script of that name here

@@ -44,7 +44,7 @@ OBJS    = 		          	\
 LIBTARGET    =  dyn_nmm
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS)
-		$(AR) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
+		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
 
 include ../configure.wrf
 

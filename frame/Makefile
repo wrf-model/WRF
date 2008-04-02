@@ -44,7 +44,7 @@ include ../configure.wrf
 LIBTARGET    =  framework
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL)
-		$(AR) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
+		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)
 		$(RANLIB) ../main/$(LIBWRFLIB)
 
 

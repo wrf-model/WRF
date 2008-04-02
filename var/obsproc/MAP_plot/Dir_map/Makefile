@@ -21,7 +21,7 @@ SRCF=  \
 #
 all:	$(OBJS); 
 	(cd Skewt  ;  $(MAKE)) ;
-	$(AR) $(LIBDIR)$(FDVARLIB) $(OBJS)
+	$(AR) $(ARFLAGS) $(LIBDIR)$(FDVARLIB) $(OBJS)
 	($(MAKE) Map.exe);
 	(mv Map.exe ../.);
 #

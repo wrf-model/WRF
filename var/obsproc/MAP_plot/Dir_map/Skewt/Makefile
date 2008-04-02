@@ -19,7 +19,7 @@ SRCF=	\
 # actual rules which make uses to build a.out.
 #
 all:	$(OBJS)
-	$(AR) $(LIBDIR)$(FDVARLIB) $(OBJS)
+	$(AR) $(ARFLAGS) $(LIBDIR)$(FDVARLIB) $(OBJS)
 
 source:	$(SRCF)
 

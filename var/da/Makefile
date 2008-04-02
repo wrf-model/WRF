@@ -77,7 +77,7 @@ da : da_wrfvar.exe \
              da_rad_diags.exe 
 
 wrfvar_lib : links $(OBJS_FOR_ALL)
-	$(AR) $(WRF_SRC_ROOT_DIR)/main/libwrflib.a $(OBJS_FOR_ALL)
+	$(AR) $(ARFLAGS) $(WRF_SRC_ROOT_DIR)/main/libwrflib.a $(OBJS_FOR_ALL)
 
 links :
 	@ $(LN) */*.inc .

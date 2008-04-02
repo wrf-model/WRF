@@ -75,47 +75,49 @@ module_dm_rsllite :
 wrfio_nf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
           make NETCDFPATH=CONFIGURE_NETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" )
+          FC="$(SFC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_pnf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
           make NETCDFPATH=CONFIGURE_PNETCDF_PATH RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(FC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" )
+          FC="$(FC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS)" TRADFLAG="$(TRADFLAG)" archive)
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive)
 
 wrfio_grib1 :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib1 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS)" TRADFLAG="$(TRADFLAG)" archive)
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive)
 
 wrfio_grib2 :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib2 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" \
           CPP="$(CPP)" \
-          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS)" TRADFLAG="-traditional" FIXED="$(FORMAT_FIXED)" archive)
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS)" TRADFLAG="-traditional" AR="$(AR)" ARFLAGS="$(ARFLAGS)" \
+          FIXED="$(FORMAT_FIXED)" archive)
 
 wrfio_int : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
           make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
           FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" \
-          TRADFLAG="$(TRADFLAG)" all )
+          TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" all )
 
 esmf_time : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 ; \
           make FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
-          CPP="$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc -I. $(ARCHFLAGS) $(TRADFLAG)" )
+          CPP="$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc -I. $(ARCHFLAGS) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 fftpack :
 	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
-          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" FC="$(FC) $(FCFLAGS) $(PROMOTION) $(BYTESWAPIO)" \
-          CPP="$(CPP) -I. $(ARCHFLAGS) $(TRADFLAG)" ;\
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" \
+          FC="$(FC) $(FCFLAGS) $(PROMOTION) $(BYTESWAPIO)" \
+          CPP="$(CPP) -I. $(ARCHFLAGS) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ;\
           $(RANLIB) $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a )
 
 ######################
@@ -130,11 +132,12 @@ RM	= 	rm -f
 
 wrf_ioapi_includes :
 	( cd $(WRF_SRC_ROOT_DIR)/external/ioapi_share ; \
-	$(MAKE) NATIVE_RWORDSIZE="$(NATIVE_RWORDSIZE)" RWORDSIZE="$(RWORDSIZE)" )
+          $(MAKE) NATIVE_RWORDSIZE="$(NATIVE_RWORDSIZE)" RWORDSIZE="$(RWORDSIZE)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_esmf :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_esmf ; \
-	make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " )
+          make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" \
+          RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 #	There is probably no reason to modify these rules
 

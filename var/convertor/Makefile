@@ -16,7 +16,7 @@ MODULES =	module_kma_wave2grid.o \
 LIBTARGET    =  convertor
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS)
-		$(AR) ../../main/libwrflib.a $(OBJS) $(MODULES)
+		$(AR) $(ARFLAGS) ../../main/libwrflib.a $(OBJS) $(MODULES)
 
 include ../configure.wrf
 

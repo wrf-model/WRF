@@ -250,9 +250,9 @@ PERTURB_REAL ( float * field, int ds[], int de[], int ms[], int me[], int ps[], 
    bcopy ( &x, a, 4 ) ;
    le = 0 ;
    if ( a[0] == 0x40 ) le = 3 ;
-   for ( k = ps[2]-1 ; k <= pe[2]-1 ; k++ )
-     for ( j = ps[1]-1 ; j <= pe[1]-1 ; j++ )
-       for ( i = ps[0]-1 ; i <= pe[0]-1 ; i++ )
+   for ( k = ps[2]-ms[2] ; k <= pe[2]-ms[2] ; k++ )
+     for ( j = ps[1]-ms[1] ; j <= pe[1]-ms[1] ; j++ )
+       for ( i = ps[0]-ms[0] ; i <= pe[0]-ms[0] ; i++ )
        {
           /* do not change zeros */
           if ( field[ INDEX_3(k,j,i) ] != 0.0 ) {

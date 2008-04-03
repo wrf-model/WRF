@@ -1452,11 +1452,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     IGRID=1
   ELSEIF(IVAR.eq.1) THEN
     GRIDY=0.5
-    GRIDX=0.5              ! yliu 20080222
+    GRIDX=0.0
     IGRID=1
   ELSEIF(IVAR.eq.2) THEN
     GRIDX=0.5
-    GRIDY=0.5              ! yliu 20080222
+    GRIDY=0.0
     IGRID=1
   ENDIF
 

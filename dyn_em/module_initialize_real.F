@@ -4835,7 +4835,7 @@ print *,'namelist p_top (Pa) = ',p_top
                DO ik = 1 , i_kicker
                   sum = sum + ht_in(i+ik,j)
                END DO
-               i1 = i - i_kicker + ide
+               i1 = i - i_kicker + ide -1
                i2 = ide-1
                i3 = ids 
                i4 = i-1
@@ -4883,7 +4883,7 @@ print *,'namelist p_top (Pa) = ',p_top
                DO ik = 1 , i_kicker
                   sum = sum + ht_in(i+ik,j)
                END DO
-               i1 = i - i_kicker + ide
+               i1 = i - i_kicker + ide -1
                i2 = ide-1
                i3 = ids 
                i4 = i-1

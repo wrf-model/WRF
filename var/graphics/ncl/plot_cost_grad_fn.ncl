@@ -44,7 +44,7 @@ begin
  filename_grad=dir+"/grad_fn"
 
  data_cost=asciiread(filename_cost,(/nrow,ncol/),"float")
- data_grad=asciiread(filename_grad,(/nrow,ncol/),"float")
+ data_grad=asciiread(filename_grad,(/nrow,ncol-1/),"float")
  do i=0,nrow-1
  x(0,i)    = data_cost(i,2)
  cost(0,i) = data_cost(i,3)

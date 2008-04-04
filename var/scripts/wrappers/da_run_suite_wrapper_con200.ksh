@@ -36,7 +36,6 @@ export REG_DIR=$DAT_DIR/$REGION
 export OB_DIR=${DAT_DIR}/ob
 export RC_DIR=${DAT_DIR}/rc
 export BE_DIR=${DAT_DIR}/be
-export DA_BACK_ERRORS=${BE_DIR}/be.cv_5
 
 export NL_E_WE=45
 export NL_E_SN=45

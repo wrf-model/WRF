@@ -130,12 +130,12 @@ wrf_tsin.o :
 	$(RM) $*.b
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
 
-solve_em.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
-	$(RM) $*.b
-	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $(SOLVE_EM_SPECIAL) $(OMP) $*.f90
+#solve_em.o :
+#	$(RM) $@
+#	$(SED_FTN) $*.F > $*.b 
+#	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
+#	$(RM) $*.b
+#	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $(SOLVE_EM_SPECIAL) $(OMP) $*.f90
 
 module_sf_ruclsm.o : module_sf_ruclsm.F
 	$(RM) $@

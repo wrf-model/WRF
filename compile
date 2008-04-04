@@ -45,6 +45,14 @@ foreach a ( $argv )
     if ( "$a" != "-d" ) then
       set arglist = ( $arglist $a )
     endif
+    if ( "$a" == "all_wrfvar" ) then
+      if ( ! -d var ) then
+        echo "  "
+        echo "You need to download and untar the Var code"
+        echo "  "
+        exit
+      endif
+    endif
   endif
 end
 
@@ -84,6 +92,22 @@ else
   endif
 
   if ( ! $?DA_ARCHFLAGS )     setenv DA_ARCHFLAGS ""
+
+  if ( ( $WRF_DA_CORE == 1 )  && ( ! -d var ) ) then
+    echo "  "
+    echo "You need to download and untar the Var code, or"
+    echo "unset the WRF_DA_CORE env variable."
+    echo "  "
+    exit
+  endif
+
+  if ( ( $WRF_CHEM == 1 )  && ( ! -d chem ) ) then
+    echo "  "
+    echo "You need to download and untar the chem code, or"
+    echo "unset the WRF_CHEM env variable."
+    echo "  "
+    exit
+  endif
 
   set overwrite=0
   if ($WRF_NMM_CORE == 1 && $WRF_CHEM == 1 ) then

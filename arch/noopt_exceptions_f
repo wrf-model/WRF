@@ -214,4 +214,4 @@ module_configure.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

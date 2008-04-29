@@ -163,16 +163,17 @@ CONTAINS
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
 
+
+      CALL optional_sfc        ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
       IF (  ( model_config_rec%sf_surface_physics(grid%id) .EQ. 1 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 2 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 3 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 7 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 99 ) ) THEN
-
-         CALL optional_lsm        ( grid , fid , &
-                                    ids, ide, jds, jde, kds, kde, &
-                                    ims, ime, jms, jme, kms, kme, &
-                                    its, ite, jts, jte, kts, kte  )
    
          CALL optional_lsm_levels ( grid , fid , &
                                     ids, ide, jds, jde, kds, kde, &
@@ -403,7 +404,7 @@ USE module_io_domain
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE optional_lsm ( grid , fid , &
+   SUBROUTINE optional_sfc ( grid , fid , &
                              ids, ide, jds, jde, kds, kde, &
                              ims, ime, jms, jme, kms, kme, &
                              its, ite, jts, jte, kts, kte  )
@@ -453,7 +454,7 @@ USE module_io_domain
          flag_slp      = itmp
       END IF
     
-   END SUBROUTINE optional_lsm
+   END SUBROUTINE optional_sfc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -1664,8 +1664,8 @@ if      ( $acquire_from == "cvs" ) then
 	#	Checkout the most recent version of WRF from the NCAR cvs repository,
 	#	and pick up the required input data from the anonymous ftp site.
 
-	cvs checkout -D $thedate WRFV2
-	find ./WRFV2 -exec touch \{\} \;
+	cvs checkout -D $thedate WRFV3
+	find ./WRFV3 -exec touch \{\} \;
 	ftp -n ftp.ucar.edu < ftp_script_data
 
 
@@ -1675,7 +1675,7 @@ else if ( $acquire_from == "filearg" ) then
 	#	the required input data files from the ftp site.
 
 	tar xvf $thefile
-	cd WRFV2
+	cd WRFV3
 	clean -a
 	cd ..
 	ftp -n ftp.ucar.edu < ftp_script_data
@@ -1688,15 +1688,15 @@ else if ( $acquire_from == "environment" ) then
 
 endif
 
-#	And we can stick the input data where we want, the WRFV2 directory has been created.
+#	And we can stick the input data where we want, the WRFV3 directory has been created.
 
-( cd WRFV2/test/em_real  ; ln -sf $thedataem/* . ) 
-#( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
-( cd WRFV2/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; \
+( cd WRFV3/test/em_real  ; ln -sf $thedataem/* . ) 
+#( cd WRFV3/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; cp $thedatanmm/namelist.input.regtest . )
+( cd WRFV3/test/nmm_real ; ln -s $thedatanmm/wrf_real* . ; \
   sed '/dyn_opt/d' $thedatanmm/namelist.input.regtest >! ./namelist.input.regtest )
 #DAVE###################################################
-( cd WRFV2/test/em_real ; ls -ls )
-( cd WRFV2/test/nmm_real ; ls -ls )
+( cd WRFV3/test/em_real ; ls -ls )
+( cd WRFV3/test/nmm_real ; ls -ls )
 banner 4
 #set ans = "$<"
 #DAVE###################################################
@@ -1704,7 +1704,7 @@ banner 4
 #	John-specific stuff for maple is the else; part of the "using service machines".
 
 if ( ! $clrm ) then
-	pushd WRFV2
+	pushd WRFV3
 else
 	if ( ! -d $TMPDIR ) then
 		echo something wrong 1
@@ -1714,8 +1714,8 @@ else
 		/bin/rm -fr $TMPDIR/RUN/*
 	endif
 	if ( -d $TMPDIR/RUN ) then
-		tar cf - ./WRFV2/test ./WRFV2/main | ( cd $TMPDIR/RUN ; tar xvf - )
-		pushd WRFV2
+		tar cf - ./WRFV3/test ./WRFV3/main | ( cd $TMPDIR/RUN ; tar xvf - )
+		pushd WRFV3
 	else
 		echo something wrong 2
 		exit
@@ -1726,7 +1726,7 @@ endif
 
 if ( -e ${DEF_DIR}/wrftest.output ) rm ${DEF_DIR}/wrftest.output
 echo "Architecture $ARCH[1]      machine: `hostname`" >>! ${DEF_DIR}/wrftest.output
-echo "WRFV2 source from: $acquire_from " >>! ${DEF_DIR}/wrftest.output
+echo "WRFV3 source from: $acquire_from " >>! ${DEF_DIR}/wrftest.output
 echo "Number of OpenMP processes to use: $OPENMP" >>! ${DEF_DIR}/wrftest.output
 echo "Number of MPI    processes to use: $Num_Procs" >>! ${DEF_DIR}/wrftest.output
 if ( $ARCH[1] == Darwin ) then
@@ -1902,22 +1902,22 @@ banner 6
 			if      ( ( $compopt == $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
                                   ( -e main/real_${core}.exe.1 ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			else if ( ( $compopt != $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			endif
 		else
 			if      ( ( $compopt == $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
                                   ( -e main/ideal_${core}.exe.1 ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			else if ( ( $compopt != $COMPOPTS[1] ) && \
                                   ( -e main/wrf_${core}.exe.$compopt ) && \
-                                  ( -e ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
+                                  ( -e ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf ) ) then
 				goto GOT_THIS_EXEC
 			endif
 		endif
@@ -1999,7 +1999,7 @@ banner 8
 		# It works around the annoying fact that in OSF1 $(PWD) does 
 		# not change during execution of regtest.csh, despite the "cd" 
 		# and "pushd" commands.  
-		setenv WRF_SRC_ROOT_DIR "${DEF_DIR}/regression_test/WRFV2"
+		setenv WRF_SRC_ROOT_DIR "${DEF_DIR}/regression_test/WRFV3"
 		#	Build this executable
 		
 		./compile $core >&! compile_${core}_build=${compopt}.log
@@ -2051,13 +2051,13 @@ banner 10
 		GOT_THIS_EXEC:
 
 		if ( $clrm ) then
-			cp main/*exe* $TMPDIR/RUN/WRFV2/main
+			cp main/*exe* $TMPDIR/RUN/WRFV3/main
 		endif
 	
 	end
 
 	if ( $clrm ) then
-		pushd $TMPDIR/RUN/WRFV2
+		pushd $TMPDIR/RUN/WRFV3
 	endif
 	
 	#	We have all of the executables built, now we run'em.  This is a loop
@@ -2901,8 +2901,8 @@ banner 29
 
 	                if ( $core == nmm_real ) then
 	
-				pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
-				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
+				pushd ${DEF_DIR}/regression_test/WRFV3/test/$core
+				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
 	
 	                        if ( ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_1p ) && \
 	                             ( -e $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.$COMPOPTS[3]_${Num_Procs}p ) ) then
@@ -2949,8 +2949,8 @@ banner 29
 				#	generated.  We now compare the WRF model output files to see
 				#	if they are S^2D^2.
 		
-				pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
-				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
+				pushd ${DEF_DIR}/regression_test/WRFV3/test/$core
+				set DIFFWRF = ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
 	
 				#	Are we skipping the OpenMP runs?
 	
@@ -3054,7 +3054,7 @@ banner 29
 						exit ( 10 ) 
 					else
 						# Archive serial output file to baseline
-						pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
+						pushd ${DEF_DIR}/regression_test/WRFV3/test/$core
 						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
 						set basefile = ${GENERATE_BASELINE}/${basefilenm}
 						set outfile = $TMPDIR/${basefilenm}.$COMPOPTS[1]
@@ -3087,8 +3087,8 @@ banner 29
 						# Compare against baseline output file
 						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
 						set basefile = ${COMPARE_BASELINE}/${basefilenm}
-						set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
-						set testdir = ${DEF_DIR}/regression_test/WRFV2/test/$core
+						set DIFFWRF = ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
+						set testdir = ${DEF_DIR}/regression_test/WRFV3/test/$core
 						pushd ${testdir}
 						foreach compopt ( $COMPOPTS )
 							set cmpfile = $TMPDIR/${basefilenm}.$compopt
@@ -3140,7 +3140,7 @@ banner 29
 						exit ( 10 ) 
 					else
 						# Archive serial output file to baseline
-						pushd ${DEF_DIR}/regression_test/WRFV2/test/$core
+						pushd ${DEF_DIR}/regression_test/WRFV3/test/$core
 						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
 						set basefile = ${GENERATE_BASELINE}/${basefilenm}
 						set outfile = $TMPDIR/${basefilenm}.$COMPOPTS[3]_1p
@@ -3173,8 +3173,8 @@ banner 29
 						# Compare against baseline output file
 						set basefilenm = wrfout_d01_${filetag}.${core}.${phys_option}
 						set basefile = ${COMPARE_BASELINE}/${basefilenm}
-						set DIFFWRF = ${DEF_DIR}/regression_test/WRFV2/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
-						set testdir = ${DEF_DIR}/regression_test/WRFV2/test/$core
+						set DIFFWRF = ${DEF_DIR}/regression_test/WRFV3/external/$IO_FORM_NAME[$IO_FORM]/diffwrf
+						set testdir = ${DEF_DIR}/regression_test/WRFV3/test/$core
 						pushd ${testdir}
 						set compopt = $COMPOPTS[3]
 						foreach proc ( 1p 4p )

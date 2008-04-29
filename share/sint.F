@@ -24,17 +24,14 @@
       INTEGER N2STAR, N2END, N1STAR, N1END
 !                                                                       
       DATA  EP/ 1.E-10/                                                 
-!                                                                       
-!      PARAMETER(NONOS=1)                                                
-!      PARAMETER(N1OS=N1*NONOS+1-NONOS,N2OS=N2*NONOS+1-NONOS)            
-!                                                                       
+
       REAL W(ims:ime,jms:jme),OV(ims:ime,jms:jme),UN(ims:ime,jms:jme)                     
       REAL MXM(ims:ime,jms:jme),MN(ims:ime,jms:jme)                                 
       REAL FL(ims:ime,jms:jme,0:1)                                            
-      REAL XIG(81), XJG(81)  ! won't use but nine of these fellers.
+      REAL XIG(NF*NF), XJG(NF*NF)  ! NF is parent to child grid refinement ratio
       INTEGER IFRST
       integer rr
-      COMMON /DEPAR2/ XIG,XJG,IFRST
+      COMMON /DEPAR2/ IFRST
       DATA IFRST /1/
 
       REAL rioff, rjoff
@@ -48,38 +45,23 @@
       REAL pp, pn, x
       PP(X)=AMAX1(0.,X)                                                 
       PN(X)=AMIN1(0.,X)                                                 
-!!      XIG(I) = 1./3.-FLOAT(I-1)*1./3
-!!      XJG(J) = 1./3.-FLOAT(J-1)*1./3
 
       rr = nint(sqrt(float(nf)))
 !!      write(6,*) ' nf, rr are ',nf,rr
-!!      IF ( IFRST .EQ. 1 ) THEN
 
-        rioff = 0
-        rjoff = 0
-        if(xstag .and. (mod(rr,2) .eq. 0)) rioff = 1.
-        if(ystag .and. (mod(rr,2) .eq. 0)) rjoff = 1.
+      rioff = 0
+      rjoff = 0
+      if(xstag .and. (mod(rr,2) .eq. 0)) rioff = 1.
+      if(ystag .and. (mod(rr,2) .eq. 0)) rjoff = 1.
 
-        DO I=1,rr
-          DO J=1,rr
-            XIG(J+(I-1)*rr)=(float(rr)-1.-rioff)/float(2*rr)-FLOAT(J-1)*1./float(rr)
-            XJG(J+(I-1)*rr)=(float(rr)-1.-rjoff)/float(2*rr)-FLOAT(I-1)*1./float(rr)   
-          ENDDO
+      DO I=1,rr
+        DO J=1,rr
+          XIG(J+(I-1)*rr)=(float(rr)-1.-rioff)/float(2*rr)-FLOAT(J-1)*1./float(rr)
+          XJG(J+(I-1)*rr)=(float(rr)-1.-rjoff)/float(2*rr)-FLOAT(I-1)*1./float(rr)   
         ENDDO
-        IFRST = 0
+      ENDDO
+      IFRST = 0
 
-!!      ENDIF
-
-!      IF ( IFRST .EQ. 1 ) THEN
-!        DO I=1,3   
-!          DO J=1,3 
-!            XIG(J+(I-1)*3)=1./3.-FLOAT(J-1)*1./3.   
-!            XJG(J+(I-1)*3)=1./3.-FLOAT(I-1)*1./3.   
-!          ENDDO
-!        ENDDO
-!        IFRST = 0
-!      ENDIF
-!
       N2STAR = jts
       N2END  = jte
       N1STAR = its
@@ -255,10 +237,10 @@
       REAL W(ims:ime,jms:jme),OV(ims:ime,jms:jme),UN(ims:ime,jms:jme)                     
       REAL MXM(ims:ime,jms:jme),MN(ims:ime,jms:jme)                                 
       REAL FL(ims:ime,jms:jme,0:1)                                            
-      REAL XIG(81), XJG(81)  ! won't use but nine of these fellers.
+      REAL XIG(NF*NF), XJG(NF*NF)  ! NF is the parent to child grid refinement ratio
       INTEGER IFRST
       integer rr
-      COMMON /DEPAR2B/ XIG,XJG,IFRST
+      COMMON /DEPAR2B/ IFRST
       DATA IFRST /1/
 
       REAL rioff, rjoff
@@ -275,31 +257,19 @@
 
       rr = nint(sqrt(float(nf)))
 
-        rioff = 0
-        rjoff = 0
-        if(xstag .and. (mod(rr,2) .eq. 0)) rioff = 1.
-        if(ystag .and. (mod(rr,2) .eq. 0)) rjoff = 1.
+      rioff = 0
+      rjoff = 0
+      if(xstag .and. (mod(rr,2) .eq. 0)) rioff = 1.
+      if(ystag .and. (mod(rr,2) .eq. 0)) rjoff = 1.
 
-        DO I=1,rr
-          DO J=1,rr
-            XIG(J+(I-1)*rr)=(float(rr)-1.-rioff)/float(2*rr)-FLOAT(J-1)*1./float(rr)
-            XJG(J+(I-1)*rr)=(float(rr)-1.-rjoff)/float(2*rr)-FLOAT(I-1)*1./float(rr)   
-          ENDDO
+      DO I=1,rr
+        DO J=1,rr
+          XIG(J+(I-1)*rr)=(float(rr)-1.-rioff)/float(2*rr)-FLOAT(J-1)*1./float(rr)
+          XJG(J+(I-1)*rr)=(float(rr)-1.-rjoff)/float(2*rr)-FLOAT(I-1)*1./float(rr)   
         ENDDO
-        IFRST = 0
+      ENDDO
+      IFRST = 0
 
-!!      ENDIF
-
-!      IF ( IFRST .EQ. 1 ) THEN
-!        DO I=1,3   
-!          DO J=1,3 
-!            XIG(J+(I-1)*3)=1./3.-FLOAT(J-1)*1./3.   
-!            XJG(J+(I-1)*3)=1./3.-FLOAT(I-1)*1./3.   
-!          ENDDO
-!        ENDDO
-!        IFRST = 0
-!      ENDIF
-!
       N2STAR = jts
       N2END  = jte
       N1STAR = its

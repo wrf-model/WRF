@@ -4018,7 +4018,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
       IF ( config_flags%periodic_x ) i_end = ite
 
 !  Polar boundary condition
-   IF (config_flags%map_proj == 6) THEN
+   IF ((config_flags%map_proj == 6) .OR. (config_flags%polar)) THEN
 
       DO j=jts,MIN(jde-1,jte)
       DO k=kts,ktf
@@ -4035,18 +4035,18 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
    ELSE  ! normal code
 
 
-   DO j=jts,MIN(jde-1,jte)
-   DO k=kts,ktf
-   DO i=i_start,i_end
+      DO j=jts,MIN(jde-1,jte)
+      DO k=kts,ktf
+      DO i=i_start,i_end
 
-      ru_tend(i,k,j)=ru_tend(i,k,j) + 0.5*(vxgm(i,k,j)+vxgm(i-1,k,j)) &
-              *0.25*(rv(i-1,k,j+1)+rv(i,k,j+1)+rv(i-1,k,j)+rv(i,k,j)) &
-               - u(i,k,j)*reradius &
-              *0.25*(rw(i-1,k+1,j)+rw(i-1,k,j)+rw(i,k+1,j)+rw(i,k,j))
+         ru_tend(i,k,j)=ru_tend(i,k,j) + 0.5*(vxgm(i,k,j)+vxgm(i-1,k,j)) &
+                 *0.25*(rv(i-1,k,j+1)+rv(i,k,j+1)+rv(i-1,k,j)+rv(i,k,j)) &
+                  - u(i,k,j)*reradius &
+                 *0.25*(rw(i-1,k+1,j)+rw(i-1,k,j)+rw(i,k+1,j)+rw(i,k,j))
 
-   ENDDO
-   ENDDO
-   ENDDO
+      ENDDO
+      ENDDO
+      ENDDO
 
    END IF
 
@@ -4071,7 +4071,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
    IF ( config_flags%open_ye .or. specified .or. &
         config_flags%nested .or. config_flags%polar) j_end   = MIN ( jde-1 , jte )
 
-   IF (config_flags%map_proj == 6) THEN
+   IF ((config_flags%map_proj == 6) .OR. (config_flags%polar)) THEN
 
       DO j=j_start,j_end
       DO k=kts,ktf
@@ -4088,18 +4088,18 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 
    ELSE  ! normal code
 
-   DO j=j_start,j_end
-   DO k=kts,ktf
-   DO i=its,MIN(ite,ide-1)
+      DO j=j_start,j_end
+      DO k=kts,ktf
+      DO i=its,MIN(ite,ide-1)
 
-      rv_tend(i,k,j)=rv_tend(i,k,j) - 0.5*(vxgm(i,k,j)+vxgm(i,k,j-1)) &
-              *0.25*(ru(i,k,j)+ru(i+1,k,j)+ru(i,k,j-1)+ru(i+1,k,j-1)) &
-                    - (msfvy(i,j)/msfvx(i,j))*v(i,k,j)*reradius       &
-              *0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+rw(i,k+1,j)+rw(i,k,j))
+         rv_tend(i,k,j)=rv_tend(i,k,j) - 0.5*(vxgm(i,k,j)+vxgm(i,k,j-1)) &
+                 *0.25*(ru(i,k,j)+ru(i+1,k,j)+ru(i,k,j-1)+ru(i+1,k,j-1)) &
+                       - (msfvy(i,j)/msfvx(i,j))*v(i,k,j)*reradius       &
+                 *0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+rw(i,k+1,j)+rw(i,k,j))
 
-   ENDDO
-   ENDDO
-   ENDDO
+      ENDDO
+      ENDDO
+      ENDDO
 
    END IF
 

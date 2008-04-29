@@ -525,6 +525,7 @@ CONTAINS
    CHARACTER*256 :: message
    REAL    :: next_bl_time
    LOGICAL :: run_param
+   LOGICAL :: do_adapt
 !
 !
 !------------------------------------------------------------------
@@ -653,13 +654,23 @@ CONTAINS
 ! Surface schemes need PBL time step for updates and accumulations
 ! Assume these schemes provide no tendencies
 
+    if (PRESENT(adapt_step_flag)) then
+       if (adapt_step_flag) then
+          do_adapt = .TRUE.
+       else
+          do_adapt = .FALSE.
+       endif
+    else
+       do_adapt = .FALSE.
+    endif
+
     if (PRESENT(BLDT)) then
        if (bldt .eq. 0) then
           DTBL = dt
        ELSE
-          if (PRESENT(adapt_step_flag) .and. (adapt_step_flag)) then
+          if (do_adapt) then
              call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
-                              "time-step should be 0 (i.e., equivalent to model time-step).  "// &
+                              " time-step should be 0 (i.e., equivalent to model time-step).  "// &
                               "In order to proceed, for boundary layer calculations, the "// &
                               "boundary layer time-step"// &
                               " will be rounded to the nearest minute, possibly resulting in"// &

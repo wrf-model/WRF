@@ -4804,7 +4804,7 @@
 !     /* moment calculations.                                   */
 !     /*--------------------------------------------------------*/
 
-      DIMENSION COSPHI(2*MXNANG-1), SCTPHS(2*MXNANG-1)
+      REAL*8 COSPHI(2*MXNANG-1), SCTPHS(2*MXNANG-1)
 
 
 !     /*--------------------------------------------------------*/
@@ -4981,7 +4981,7 @@
  
       COMPLEX*16  ACAP(MXNWORK)
  
-      DIMENSION  COSPHI(2*MXNANG-1), SCTPHS(2*MXNANG-1)
+      REAL*8  COSPHI(2*MXNANG-1), SCTPHS(2*MXNANG-1)
 
       INTEGER J, JJ, NINDEX, NSCATA
 

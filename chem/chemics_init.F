@@ -292,6 +292,8 @@ call wrf_message("**************************************************************
              call wrf_error_fatal("The number of chemistry species has changed between nests. Are you trying to mix chem_opt settings between nests? Shame on you!")
      end if
 
+   if( .NOT. config_flags%restart ) then
+
    kpp_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
         if(config_flags%chem_in_opt == 0 )then
@@ -312,19 +314,34 @@ call wrf_message("**************************************************************
              enddo
           enddo
         endif
+     CASE (RADM2_KPP,RADM2SORG_KPP)
+        if(config_flags%chem_in_opt == 0 )then
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_ch4)=1.7
+                enddo
+             enddo
+          enddo
+        endif
    END SELECT kpp_select
+   endif
+
    aer_select: SELECT CASE(config_flags%chem_opt)
      CASE (RACMPM_KPP)
         if(config_flags%chem_in_opt == 0 )then
-        do l=numgas+1,num_chem
-           do j=jts,jte
-              do k=kts,kte
-                 do i=its,ite
-                    chem(i,k,j,l)=1.
-                 enddo
-              enddo
-           enddo
-        enddo
+          if( .NOT. config_flags%restart ) then
+            do l=numgas+1,num_chem
+               do j=jts,jte
+                  do k=kts,kte
+                     do i=its,ite
+                        chem(i,k,j,l)=1.
+                     enddo
+                  enddo
+               enddo
+            enddo
+          endif
         endif
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')

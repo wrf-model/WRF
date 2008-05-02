@@ -457,12 +457,12 @@ state   real   nu0cw       ikjftb   chem        1         -   irhusdf=(bdy_inter
 state   real   ac0cw       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ac0cw"          "Accumulation mode number in cloud"         "#/kg-dryair"
 state   real   corncw      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "corncw"         "Coarse mode number in cloud"        "#/kg-dryair"
 #cms++ additional species from RACM-MIM (Geiger et al., Atmos. Env., 2003)
-state   real   hace        ikjftb   chem        1         -   irusdf=(bdy_interp:dt)        "hace"              "HACE concentration"      "ppm"
-state   real   ishp        ikjftb   chem        1         -   irusdf=(bdy_interp:dt)        "ishp"              "ISHP concentration"      "ppm"
-state   real   ison        ikjftb   chem        1         -   irusdf=(bdy_interp:dt)        "ison"              "ISON concentration"      "ppm"
-state   real   mahp        ikjftb   chem        1         -   irusdf=(bdy_interp:dt)        "mahp"              "MAHP concentration"      "ppm"
-state   real   mpan        ikjftb   chem        1         -   irusdf=(bdy_interp:dt)        "mpan"              "MPAN concentration"      "ppm"
-state   real   nald        ikjftb   chem        1         -   irusdf=(bdy_interp:dt)        "nald"              "NALD concentration"      "ppm"
+state   real   hace        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)        "hace"              "HACE concentration"      "ppm"
+state   real   ishp        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)        "ishp"              "ISHP concentration"      "ppm"
+state   real   ison        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)        "ison"              "ISON concentration"      "ppm"
+state   real   mahp        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)        "mahp"              "MAHP concentration"      "ppm"
+state   real   mpan        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)        "mpan"              "MPAN concentration"      "ppm"
+state   real   nald        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)        "nald"              "NALD concentration"      "ppm"
 #cms-- note: ison is probably quite soluble 
 #Additional MOSAIC aerosol variables inside the chem array...
 
@@ -824,7 +824,7 @@ package   chem_tracer   chem_opt==13                 -             chem:so2,no,a
 #cms++
 package   radm2_kpp        chem_opt==101                 -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2
 
-package   racm_mim_kpp      chem_opt==102                  -            chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,ho,ho2  
+package   racm_mim_kpp      chem_opt==102                  -            chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,ho,ho2  
 
 package   racm_kpp        chem_opt==103                -            chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2
 

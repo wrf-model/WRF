@@ -14,7 +14,7 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !-----------------------------------------------------------------------
@@ -32,7 +32,7 @@
 !***
 !***  LOCAL VARIABLES
 !***
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       REAL,ALLOCATABLE,DIMENSION(:) :: ARRAYX
 !
       INTEGER :: I,IEND,IPE,IRECV,IRTN,ISEND,ISTART,J,JEND,JSTART,KNT   &
@@ -45,7 +45,7 @@
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
 !
 !***  GET OUR TASK ID AND THE COMMUNICATOR
 !

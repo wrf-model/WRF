@@ -3887,8 +3887,8 @@ CONTAINS
      dold(4)=.040
      xold(5)=.68
      dold(5)=.030
-     xold(5)=.75
-     dold(5)=.017
+     xold(6)=.75
+     dold(6)=.017
      xold(7)=.85
      dold(7)=.012
                  

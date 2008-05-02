@@ -38,10 +38,6 @@
       IMPLICIT NONE
 !
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-      INCLUDE "mpif.h"
-#endif
-!-----------------------------------------------------------------------
 !
 !***  INPUT DATA
 !
@@ -1691,7 +1687,7 @@
       USE MODULE_EXT_INTERNAL
 !
       IMPLICIT NONE
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !----------------------------------------------------------------------
@@ -1707,7 +1703,7 @@
 !
 !*** LOCAL VARIABLES
 !
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
       INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
 #endif
@@ -1757,7 +1753,7 @@
       DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       IF(MYPE==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -1865,7 +1861,7 @@
       USE MODULE_EXT_INTERNAL
 !
       IMPLICIT NONE
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !----------------------------------------------------------------------
@@ -1881,7 +1877,7 @@
 !
 !*** LOCAL VARIABLES
 !
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
       INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
 #endif
@@ -1947,7 +1943,7 @@
       DO 500 K=KDE-1,KDS,-1   !Write LM layers top down for checking
 !----------------------------------------------------------------------
 !
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       IF(MYPE==0)THEN
         DO J=JTS,JTE
         DO I=ITS,ITE
@@ -2057,7 +2053,7 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !----------------------------------------------------------------------
@@ -2169,7 +2165,7 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !----------------------------------------------------------------------
@@ -2180,7 +2176,7 @@
 !
 !*** LOCAL VARIABLES
 !
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INTEGER,DIMENSION(MPI_STATUS_SIZE) :: JSTAT
       INTEGER,DIMENSION(MPI_STATUS_SIZE,4) :: STATUS_ARRAY
 #endif
@@ -2221,7 +2217,7 @@
 !
 !----------------------------------------------------------------------
 !
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       IF(MYPE==0)THEN
         ALLOCATE(TIME(1:NPES))
         ALLOCATE(SORT_TIME(1:NPES))
@@ -2439,7 +2435,7 @@
 !----------------------------------------------------------------------
       IMPLICIT NONE
 !----------------------------------------------------------------------
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !----------------------------------------------------------------------
@@ -2469,7 +2465,7 @@
                                                 ! IDE and JDE are each
                                                 ! one greater than the
                                                 ! true grid size.
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
 !
       layer_loop:  DO K=KTS,KTE
 !

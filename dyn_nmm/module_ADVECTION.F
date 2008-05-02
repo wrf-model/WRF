@@ -15,7 +15,7 @@
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_EXT_INTERNAL
 !----------------------------------------------------------------------
-#ifdef DM_PARALLEL
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
       INCLUDE "mpif.h"
 #endif
 !----------------------------------------------------------------------
@@ -1472,7 +1472,7 @@
       INTEGER :: DOMDESC
 #endif
 !
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
       LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,6) :: XSUMS_L
       REAL,DIMENSION(IDS:IDE,JDS:JDE,KDS:KDE,6) :: XSUMS_G
@@ -1672,7 +1672,7 @@
 !***  ANTI-FILTERING LIMITERS
 !
 !-----------------------------------------------------------------------
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
       DO N=1,6
 !
 !$omp parallel do                                                       &
@@ -1777,7 +1777,7 @@
           DESTIJ=DESTIJ*DVOLP
 !
 !-----------------------------------------------------------------------
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
 !-----------------------------------------------------------------------
           DO N=1,6
             XSUMS_L(I,J,K,N)=0.
@@ -1832,7 +1832,7 @@
       ENDDO vertical_2
 !
 !-----------------------------------------------------------------------
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
 !-----------------------------------------------------------------------
       DO N=1,6
         CALL WRF_PATCH_TO_GLOBAL_REAL(XSUMS_L(IMS,JMS,KMS,N)            &
@@ -1873,7 +1873,7 @@
 !***  GLOBAL REDUCTION
 !-----------------------------------------------------------------------
 !
-# ifdef DM_PARALLEL
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       CALL MPI_ALLREDUCE(XSUMS,GSUMS,6*(KTE-KTS+1)                      &
      &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &
@@ -2501,7 +2501,7 @@
       INTEGER :: DOMDESC
 #endif
 !
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
       LOGICAL,EXTERNAL :: WRF_DM_ON_MONITOR
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,2) :: XSUMS_L
       REAL,DIMENSION(IDS:IDE,JDS:JDE,KDS:KDE,2) :: XSUMS_G
@@ -2675,7 +2675,7 @@
 !***  ANTI-FILTERING LIMITERS
 !
 !-----------------------------------------------------------------------
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
       DO N=1,2
 !
 !$omp parallel do                                                       &
@@ -2744,7 +2744,7 @@
           DQSTIJ=DQSTIJ*DVOLP
 !
 !-----------------------------------------------------------------------
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
 !-----------------------------------------------------------------------
           DO N=1,2
             XSUMS_L(I,J,K,N)=0.
@@ -2777,7 +2777,7 @@
       ENDDO vertical_2
 !
 !-----------------------------------------------------------------------
-#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL)
+#if defined(BIT_FOR_BIT) && defined(DM_PARALLEL) && !defined(STUBMPI)
 !-----------------------------------------------------------------------
       DO N=1,2
         CALL WRF_PATCH_TO_GLOBAL_REAL(XSUMS_L(IMS,JMS,KMS,N)            &
@@ -2818,7 +2818,7 @@
 !***  GLOBAL REDUCTION
 !-----------------------------------------------------------------------
 !
-# ifdef DM_PARALLEL
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
       CALL WRF_GET_DM_COMMUNICATOR(MPI_COMM_COMP)
       CALL MPI_ALLREDUCE(XSUMS,GSUMS,2*(KTE-KTS+1)                      &
      &                  ,MPI_DOUBLE_PRECISION,MPI_SUM                   &

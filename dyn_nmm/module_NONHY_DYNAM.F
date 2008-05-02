@@ -70,11 +70,6 @@
 !
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-      INCLUDE "mpif.h"
-#endif
-!
-!-----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE 

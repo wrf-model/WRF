@@ -544,12 +544,12 @@ state    real   ts_clw          ?!       misc      -         -      r        "TS
 # dry code will will still link properly)                                               
 #                                               
 state   real    -              ijkft   moist       1         -     -    -                                       
-state   real    qv             ijkft   moist       1         -     r       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ijkft   moist       1         -     r       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ijkft   moist       1         -     r       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ijkft   moist       1         -     r       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ijkft   moist       1         -     r       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ijkft   moist       1         -     r       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qv             ijkft   moist       1         -     rh      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkft   moist       1         -     rh      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkft   moist       1         -     rh      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkft   moist       1         -     rh      "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkft   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkft   moist       1         -     rh      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -

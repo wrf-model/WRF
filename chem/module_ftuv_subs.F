@@ -15,8 +15,9 @@
 
 !     data for schu_inti, schu
       integer, private, parameter :: tdim = 501
-      real(8), private, parameter :: t_del = 5./dble(tdim-1)
-      real(8), private, parameter :: t_fac = dble(tdim-1)/5.
+      real(8), private, parameter :: tdim_m1 = tdim - 1.0D+0
+      real(8), private, parameter :: t_del = 5.0D+0/tdim_m1
+      real(8), private, parameter :: t_fac = tdim_m1/5.0D+0
       integer, private :: ii, jj
       real(8), private :: d_table(0:tdim,ngast-1)
       real(8), private :: x_table(0:tdim,ngast-1)

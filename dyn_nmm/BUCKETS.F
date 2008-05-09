@@ -74,7 +74,8 @@
 !
       USE MODULE_MODEL_CONSTANTS,ONLY: CP,CPV,R_D,R_V,RCP
       USE MODULE_MP_ETANEW,ONLY: C1XPVS,C1XPVS0,C2XPVS,C2XPVS0          &
-                                ,FPVS,FPVS0,NX,TBPVS,TBPVS0
+                                ,FPVS,FPVS0,NX,TBPVS,TBPVS0             &
+                                ,GPVS
 !
 !-----------------------------------------------------------------------
 !
@@ -152,6 +153,8 @@
         ONE_MINUS_EPSILON=1.-EPSILON
         R_FACTOR=1./EPSILON-1.
         CP_FACTOR=CPV/CP-1.
+! Make sure saturation vapor pressure lookup table is initialized
+        CALL GPVS 
       ENDIF
 !
 !-----------------------------------------------------------------------

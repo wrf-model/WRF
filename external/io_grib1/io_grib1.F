@@ -1313,7 +1313,7 @@ SUBROUTINE ext_gr1_read_field ( DataHandle , DateStr , VarName , Field , &
         endif
      endif
 
-     CALL Transpose(MemoryOrder, di, FieldType, Field, &
+     CALL Transpose_grib(MemoryOrder, di, FieldType, Field, &
           MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), &
           MemoryStart(3), MemoryEnd(3), &
           data(zidx,:), zidx, numrows, numcols)

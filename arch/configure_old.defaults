@@ -2824,6 +2824,7 @@ module_domain.o :
 #
 DMPARALLEL      =       1
 MAX_PROC        =       1024
+OMP             =       -Popenmp
 FC              =       sxmpif90
 LD              =       sxmpif90
 CC              =       sxmpic++
@@ -2836,8 +2837,8 @@ CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
                         -Xa -Kc99
 FCOPTIM		=	
 FCDEBUG		=	#-g
-FCBASEOPTS      =       -ftrace -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+FCBASEOPTS      =       -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS) $(OMP)
 ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
                         -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG \
 			$(DA_ARCHFLAGS) \

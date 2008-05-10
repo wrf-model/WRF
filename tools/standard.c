@@ -5,10 +5,18 @@ main( int argc , char *argv[] )
 {
   FILE *fp ;
   char linei[2048] ;
-  char lineo[2048] ;
-  char *p, *q ;
+  char lineo[8*2048] ;
+  char wrf_error_fatal_str[256] ;
+  char surface_driver_str[256] ;
+  char radiation_driver_str[256] ;
+  char cumulus_driver_str[256] ;
+  char pbl_driver_str[256] ;
+  char *p, *q, *r ;
   char firstp ;
   int state, ns, ns2 ;
+  int inparen ;
+  int inacall ;
+  int col ;
 
   if ( argc != 2 ) {
      fprintf(stderr,"usage: %s file\n",argv[0]) ;
@@ -20,31 +28,26 @@ main( int argc , char *argv[] )
   while ( fgets( linei, 2048, fp ) != NULL ) {
     lineo[0] = '\0' ;
     if ( linei[0] != '#' ) drop_comment( linei ) ;
+    inacall = 0 ;
     for ( p = linei, q = lineo , firstp = *p ; *p ; p++ ) {
-      if ( (*(p+0) == 'c' || *(p+0) == 'C' ) && 
+      if ( !inacall && (*(p+0) == 'c' || *(p+0) == 'C' ) && 
            (*(p+1) == 'a' || *(p+1) == 'A' ) &&
            (*(p+2) == 'l' || *(p+2) == 'L' ) &&
            (*(p+3) == 'l' || *(p+3) == 'L' ) && firstp != '#' )
       {
+        inacall = 1 ;
         strncpy(q,p,4) ; q+=4 ;
         ns = 1 ; while (  *(p+3+ns) && *(p+3+ns) != '\n' &&
                          (*(p+3+ns) == ' ' || 
                           *(p+3+ns) == '\t' )) { *q++ = *(p+3+ns) ; ns++ ; }
-        if ( (*(p+3+ns+0 ) == 'w' || *(p+3+ns+ 0)  == 'W' ) && 
-             (*(p+3+ns+1 ) == 'r' || *(p+3+ns+ 1)  == 'R' ) && 
-             (*(p+3+ns+2 ) == 'f' || *(p+3+ns+ 2)  == 'F' ) && 
-             (*(p+3+ns+3 ) == '_' || *(p+3+ns+ 3)  == '_' ) && 
-             (*(p+3+ns+4 ) == 'e' || *(p+3+ns+ 4)  == 'E' ) && 
-             (*(p+3+ns+5 ) == 'r' || *(p+3+ns+ 5)  == 'R' ) && 
-             (*(p+3+ns+6 ) == 'r' || *(p+3+ns+ 6)  == 'R' ) && 
-             (*(p+3+ns+7 ) == 'o' || *(p+3+ns+ 7)  == 'O' ) && 
-             (*(p+3+ns+8 ) == 'r' || *(p+3+ns+ 8)  == 'R' ) && 
-             (*(p+3+ns+9 ) == '_' || *(p+3+ns+ 9)  == '_' ) && 
-             (*(p+3+ns+10) == 'f' || *(p+3+ns+10)  == 'F' ) && 
-             (*(p+3+ns+11) == 'a' || *(p+3+ns+11)  == 'A' ) && 
-             (*(p+3+ns+12) == 't' || *(p+3+ns+12)  == 'T' ) && 
-             (*(p+3+ns+13) == 'a' || *(p+3+ns+13)  == 'A' ) && 
-             (*(p+3+ns+14) == 'l' || *(p+3+ns+14)  == 'L' ) && *(p+3+ns+15) != '3' )
+
+        strncpy(wrf_error_fatal_str,  p+3+ns,15+1) ; change_to_lower(wrf_error_fatal_str,15+1 ) ; /* 15, but add one to check for '3' */
+        strncpy(surface_driver_str,   p+3+ns,14)   ; change_to_lower(surface_driver_str,14) ;
+        strncpy(radiation_driver_str, p+3+ns,16)   ; change_to_lower(radiation_driver_str,16) ;
+        strncpy(cumulus_driver_str,   p+3+ns,14)   ; change_to_lower(cumulus_driver_str,14) ;
+        strncpy(pbl_driver_str,       p+3+ns,10)   ; change_to_lower(pbl_driver_str,10) ;
+
+        if ( !strncmp( wrf_error_fatal_str, "wrf_error_fatal", 15 ) && wrf_error_fatal_str[15] != '3' )
         {
           ns2 = 1 ; while ( *(p+3+ns+14+ns2) && *(p+3+ns+14+ns2) != '\n' &&
                            (*(p+3+ns+14+ns2) == ' ' ) ) ns2++ ;
@@ -63,6 +66,51 @@ main( int argc , char *argv[] )
              printf("%s",linei) ;
              goto next_line ;
           }
+        } else if ( !strncmp ( surface_driver_str,   "surface_driver", 14 )  ||
+                    !strncmp ( radiation_driver_str, "radiation_driver", 16) ||
+                    !strncmp ( cumulus_driver_str,   "cumulus_driver", 14)   ||
+                    !strncmp ( pbl_driver_str,       "pbl_driver", 10)
+                  ) {
+          strcpy(lineo,p+3+ns) ;
+          inparen = 1 ;
+          while ( fgets( linei, 2048, fp ) != NULL ) {
+            for ( q = linei ; *q ; q++ ) {
+              if (*q=='!') { *q = '\n' ; *(q+1) = '\0' ; break ; }
+            }
+            for ( q = linei ; *q ; q++ ) {
+              if      ( *q == '(' ) inparen++ ;
+              else if ( *q == ')' ) inparen-- ;
+            }
+            strcat(lineo,linei) ;
+            if ( inparen == 0 ) {
+              break ;
+            }
+          }
+          for(q=lineo,r=lineo;*q;q++) {
+            if (*q == '#' && *(q-1) == '\n') { /* CPP def. copy as is*/
+              *r++ = '&' ;
+              *r++ = '\n' ;
+              for (; *q; q++) {
+                 *r++ = *q; 
+                 if ( *q == '\n' ) break ;
+              }
+            }
+            if ( *q == ' ' || *q == '\n' || *q == '&' ) continue ;
+            *r++ = *q ;
+          }
+          *r = '\0' ;
+          printf("CALL ") ;
+          for(q=lineo,col=130-5;*q;q++) {
+            putchar(*q) ;
+            if ( *q == '\n' ) { if (*(q+1) != '#') { putchar('&') ; } ; col = 131 ; }
+            col-- ;
+            if ( col <= 0 ) {
+              col = 130 ;
+              putchar('&') ; putchar('\n') ; putchar('&') ;
+            }
+          }
+          putchar('\n') ;
+          goto next_line ;
         } else {
           p += 3+ns ;
           *q++ = *p ;
@@ -99,6 +147,16 @@ drop_comment( char * linei )
        }
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }
+  }
+}
+
+int 
+change_to_lower( char * s , int n ) 
+{
+  int i ;
+  for ( i = 0 ; i < n ; i++ )
+  {
+    if ( s[i] >= 'A' && s[i] <= 'Z' ) s[i] = s[i] - 'A' + 'a' ;
   }
 }
 

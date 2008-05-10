@@ -1177,7 +1177,7 @@ subroutine reorder (MemoryOrder,MemO)
   return
 end subroutine reorder
 
-subroutine Transpose(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
+subroutine Transpose_hdf5(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
      ,XField,x1,x2,y1,y2,z1,z2 &
      ,i1,i2,j1,j2,k1,k2 )
   character*(*)     ,intent(in)    :: IO
@@ -1362,7 +1362,7 @@ subroutine Transpose(IO,MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
 
   end select
   return
-end subroutine Transpose
+end subroutine Transpose_hdf5
 
 subroutine numtochar(TimeIndex,tname,Status)
 

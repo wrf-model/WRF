@@ -303,6 +303,7 @@ BENCH_START(surf_driver_tim)
       CALL nl_get_iswater(grid%id, iswater)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
+
       CALL surface_driver(                                                &
      &         ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &

@@ -350,6 +350,9 @@ while ( <CONFIGURE_DEFAULTS> )
         $sw_ompparallel = "" ;
         $sw_dmparallel = "" ;
         $validresponse = 0 ;
+        #only allow parallel netcdf if the user has chosen parallel option
+        if ( $paropt ne 'dmpar' && $paropt ne 'dm+sm' ) { $sw_pnetcdf_path = "" ; }
+        #
         until ( $validresponse ) {
           if ( $paropt eq 'serial' || $paropt eq 'smpar' ) {
             printf "Compile for nesting? (0=no nesting, 1=basic, 2=preset moves, 3=vortex following) [default 0]: " ;

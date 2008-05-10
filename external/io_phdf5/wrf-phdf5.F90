@@ -1202,7 +1202,7 @@ subroutine ext_phdf5_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
         return
      endif
 
-     call transpose('read',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
+     call transpose_hdf5('read',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
           ,XField,x1,x2,y1,y2,z1,z2 &
           ,i1,i2,j1,j2,k1,k2 )
 
@@ -1616,7 +1616,7 @@ subroutine ext_phdf5_write_field(DataHandle,DateStr,Var,Field,FieldType,&
      endif
 
      ! Transpose the real data for tools people
-     call Transpose('write',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
+     call Transpose_hdf5('write',MemoryOrder,di, Field,l1,l2,m1,m2,n1,n2 &
           ,XField,x1,x2,y1,y2,z1,z2 &
           ,i1,i2,j1,j2,k1,k2 )
 

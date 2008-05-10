@@ -1350,21 +1350,17 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
 
 
         if (ndims .eq. 1) then
-           CALL Transpose1D(MemoryOrder, di, FieldType, Field, &
+           CALL Transpose1D_grib(MemoryOrder, di, FieldType, Field, &
                 MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), &
                 MemoryStart(3), MemoryEnd(3), &
                 gfld%fld, zsize)
         else
-           CALL Transpose(MemoryOrder, di, FieldType, Field, &
+           CALL Transpose_grib(MemoryOrder, di, FieldType, Field, &
                 MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), &
                 MemoryStart(3), MemoryEnd(3), &
                 gfld%fld, dim3, ysize,xsize)
         endif
-!        CALL Transpose_new(MemoryOrder, di, FieldType, Field, &
-!             MemoryStart(1), MemoryEnd(1), MemoryStart(2), MemoryEnd(2), &
-!             MemoryStart(3), MemoryEnd(3), &
-!             gfld%fld, dim1size,dim2size,dim3)
-        
+
         call gf_free(gfld)
         
      enddo VERTDIM

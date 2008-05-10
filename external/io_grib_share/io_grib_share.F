@@ -502,7 +502,7 @@ end SUBROUTINE
 
 !*****************************************************************************
 
-SUBROUTINE Transpose(MemoryOrder, di, FieldType, Field, &
+SUBROUTINE Transpose_grib(MemoryOrder, di, FieldType, Field, &
      Start1, End1, Start2, End2, Start3, End3, data, zidx, numrows, numcols)
 
   IMPLICIT NONE
@@ -560,7 +560,7 @@ end SUBROUTINE
 
 !*****************************************************************************
 
-SUBROUTINE Transpose1D(MemoryOrder, di, FieldType, Field, &
+SUBROUTINE Transpose1D_grib(MemoryOrder, di, FieldType, Field, &
      Start1, End1, Start2, End2, Start3, End3, data, nelems)
 
   IMPLICIT NONE
@@ -605,7 +605,7 @@ SUBROUTINE Transpose1D(MemoryOrder, di, FieldType, Field, &
 !     enddo
   
   
-end SUBROUTINE Transpose1D
+end SUBROUTINE Transpose1D_grib
 
 !*****************************************************************************
 !

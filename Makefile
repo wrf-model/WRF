@@ -424,8 +424,8 @@ ext :
 framework :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) framework; \
-	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" diffwrf; \
-	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" diffwrf ; cd ../../frame )
+	cd ../external/io_netcdf ; make NETCDFPATH="$(NETCDFPATH)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" diffwrf; \
+	cd ../io_int ; $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" diffwrf ; cd ../../frame )
 
 shared :
 	@ echo '--------------------------------------'

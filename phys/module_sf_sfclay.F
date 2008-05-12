@@ -369,7 +369,7 @@ CONTAINS
       KL=kte
 
       DO i=its,ite
-! PSFC cmb
+! PSFC cb
          PSFC(I)=PSFCPA(I)/1000.
       ENDDO
 !                                                      
@@ -377,7 +377,7 @@ CONTAINS
 !                                                            
       DO 5 I=its,ite                                   
         TGDSA(I)=TSK(I)                                    
-! PSFC cmb
+! PSFC cb
 !        THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP                
         THGB(I)=TSK(I)*(P1000mb/PSFCPA(I))**ROVCP   
     5 CONTINUE                                               
@@ -403,7 +403,7 @@ CONTAINS
 !     SCR4(I,K) STORE VIRTUAL TEMPERATURE.                                       
                                                                                  
       DO 30 I=its,ite
-! PL cmb
+! PL cb
          PL=P1D(I)/1000.
          SCR3(I)=T1D(I)                                                   
 !         THCON=(100./PL)**ROVCP                                                 
@@ -435,7 +435,8 @@ CONTAINS
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       
-        QGH(I)=EP2*E1/(PSFC(I)-E1)                                                 
+        PL=P1D(I)/1000.
+        QGH(I)=EP2*E1/(PL-E1)                                                 
         CPM(I)=CP*(1.+0.8*QX(I))                                   
    60 CONTINUE                                                                   
    80 CONTINUE

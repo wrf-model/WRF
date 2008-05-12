@@ -578,7 +578,7 @@ CONTAINS
 ! snow on surface (use ice saturation properties)
             SFCTSNO=SFCTMP
             E2SAT=611.2*EXP(6174.*(1./273.15 - 1./SFCTSNO))
-            Q2SATI=0.622*E2SAT/(PSFC-E2SAT)
+            Q2SATI=0.622*E2SAT/(SFCPRS-E2SAT)
             Q2SATI=Q2SATI/(1.0+Q2SATI)    ! spec. hum.
             IF(T1 .GT. 273.15)THEN
 ! warm ground temps, weight the saturation between ice and water according to SNOWC

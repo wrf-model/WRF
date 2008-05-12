@@ -711,7 +711,7 @@ state    real    F_RIMEF_PHY     ijk    misc        1         -      rdu      "F
 state    real    qndropsource    ijk    misc        1         -      h        "qndropsource"         "Droplet number source"   "#/kg/s"
 
 # Other Misc State Variables                                            
-state   real    h_diabatic     ijk     misc         1         -      rdu      "h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         ""      
+state   real    h_diabatic     ijk     misc         1         -      rdu      "h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         "K s-1"      
 state   real    msft           ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_M"         "Map scale factor on mass grid" ""
 state   real    msfu           ij      misc         1         X     i012rhdu=(copy_fcnm)    "MAPFAC_U"         "Map scale factor on u-grid" ""
 state   real    msfv           ij      misc         1         Y     i012rhdu=(copy_fcnm)    "MAPFAC_V"         "Map scale factor on v-grid" ""
@@ -804,8 +804,8 @@ state    real  RQVFTEN          ijk     misc        1         -      r        "R
 state integer  STEPCU          -        misc        1         -      r        "STEPCU"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CONVECTION CALLS"  ""
                                                 
 state    real  RTHRATEN        ijk      misc        1         -      rd       "RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
-state    real  RTHRATENLW      ijk      misc        1         -      r        "RTHRATLW"              "COUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "Pa K s-1"
-state    real  RTHRATENSW      ijk      misc        1         -      r        "RTHRATSW"              "COUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "Pa K s-1"
+state    real  RTHRATENLW      ijk      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
+state    real  RTHRATENSW      ijk      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ijk      misc        1         -      r        "CLDFRA"                "CLOUD FRACTION"                                       ""
 
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      

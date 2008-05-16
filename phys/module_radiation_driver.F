@@ -485,6 +485,16 @@ CONTAINS
      ELSE
        doabsems = .false.
      ENDIF
+   IF (PRESENT(adapt_step_flag)) THEN
+     IF ((adapt_step_flag)) THEN
+       IF ( (itimestep .EQ. 1) .OR. (cam_abs_freq_s .EQ. 0) .OR. &
+           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( cam_abs_freq_s ) + 1 ) * cam_abs_freq_s) ) ) THEN
+         doabsems = .true.
+       ELSE
+         doabsems = .false.
+       ENDIF
+     ENDIF
+   ENDIF
 
    gfdl_lw = .false.
    gfdl_sw = .false.

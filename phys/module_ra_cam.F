@@ -505,20 +505,20 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
          swuptc(i,j)    = fsupc(ii,kk)
          swdnt(i,j)     = fsdn(ii,kk)
          swdntc(i,j)    = fsdnc(ii,kk)
-         lwupt(i,j)     = fsup(ii,kk)
-         lwuptc(i,j)    = fsupc(ii,kk)
-         lwdnt(i,j)     = fsdn(ii,kk)
-         lwdntc(i,j)    = fsdnc(ii,kk)
+         lwupt(i,j)     = flup(ii,kk)
+         lwuptc(i,j)    = flupc(ii,kk)
+         lwdnt(i,j)     = fldn(ii,kk)
+         lwdntc(i,j)    = fldnc(ii,kk)
        endif
        if(k.eq.kts)then
          swupb(i,j)     = fsup(ii,kk)
          swupbc(i,j)    = fsupc(ii,kk)
          swdnb(i,j)     = fsdn(ii,kk)
          swdnbc(i,j)    = fsdnc(ii,kk)
-         lwupb(i,j)     = fsup(ii,kk)
-         lwupbc(i,j)    = fsupc(ii,kk)
-         lwdnb(i,j)     = fsdn(ii,kk)
-         lwdnbc(i,j)    = fsdnc(ii,kk)
+         lwupb(i,j)     = flup(ii,kk)
+         lwupbc(i,j)    = flupc(ii,kk)
+         lwdnb(i,j)     = fldn(ii,kk)
+         lwdnbc(i,j)    = fldnc(ii,kk)
        endif
 !            if(i.eq.30.and.j.eq.30) then
 !            print 1234, 'short ', i,ii,k,kk,fsup(ii,kk),fsupc(ii,kk),fsdn(ii,kk),fsdnc(ii,kk)
@@ -678,7 +678,8 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
    CHARACTER(LEN=256) :: msgstr
 
    ! JULIAN starts from 0.0 at 0Z on 1 Jan.
-   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
+!   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
+   intJULIAN = JULIAN + (dt/(60.*60.*24.)) ! offset by one timestep
 ! jan 1st 00z is julian=1.0 here
    IJUL=INT(intJULIAN)
 !  Note that following will drift. 
@@ -800,7 +801,8 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
    CHARACTER(LEN=256) :: msgstr
 
    ! JULIAN starts from 0.0 at 0Z on 1 Jan.
-   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
+!   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
+   intJULIAN = JULIAN + (dt/(60.*60.*24.)) ! offset by one timestep
 ! jan 1st 00z is julian=1.0 here
    IJUL=INT(intJULIAN)
 !  Note that following will drift. 

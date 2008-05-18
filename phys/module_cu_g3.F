@@ -4855,7 +4855,8 @@ CONTAINS
         enddo
         enddo  ! end j
         enddo  ! end i
-      ENDDO  !$OMP END PARALLEL DO
+      ENDDO  
+!$OMP END PARALLEL DO
 
 
    END SUBROUTINE CONV_GRELL_SPREAD3D

@@ -33,6 +33,11 @@
 #		Intel  1.2 GHz (4-pe) :  3.0 hours (empty)
 #		IBM            P4     :  2.0 hours (empty)
 
+#	Do we keep running even when there are BAD failures?
+
+set KEEP_ON_RUNNING = FALSE
+set KEEP_ON_RUNNING = TRUE
+
 #	These need to be changed for your particular set of runs.  This is
 #	where email gets sent.
 
@@ -1325,7 +1330,7 @@ if ( $ARCH[1] == AIX ) then
         lslpp -i | grep xlf | grep ' xlfcmp ' | head -1
         set xlfvers=`lslpp -i | grep xlf | grep ' xlfcmp ' | head -1 | awk '{print $2}' | sed 's/\...*$//'`
         if ( ( $xlfvers > 9 ) && ( $NESTED == TRUE ) ) then
-		set ZAP_OPENMP		= TRUE
+#		set ZAP_OPENMP		= TRUE
         endif
 # end of compiler check, JM
 	echo "Compiler version info: " >! version_info
@@ -2264,7 +2269,8 @@ banner 15
 						else
 							echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
 							$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-							exit ( 4 )
+							if ( $KEEP_ON_RUNNING == FALSE ) exit ( 4 )
+							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						endif
 					else if ( $GLOBAL == TRUE ) then
 						if ( ( -e wrfinput_d01 ) && ( $success == 0 ) ) then
@@ -2272,8 +2278,9 @@ banner 15
 							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						else
 							echo "SUMMARY generate IC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 							$MAIL -s "WRF FAIL making IC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-							exit ( 41 )
+							if ( $KEEP_ON_RUNNING == FALSE ) exit ( 41 )
 						endif
 					endif
 #DAVE###################################################
@@ -2385,13 +2392,15 @@ banner 17
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						exit ( 5 )
+						if ( $KEEP_ON_RUNNING == FALSE ) exit ( 5 )
 					endif
 				else
 					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-					exit ( 6 )
+					if ( $KEEP_ON_RUNNING == FALSE ) exit ( 6 )
 				endif
 #DAVE###################################################
 echo success or failure of fcst
@@ -2487,8 +2496,9 @@ banner 19c
 				echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 			else
 				echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+				echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 				$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-				exit ( 4 )
+				if ( $KEEP_ON_RUNNING == FALSE ) exit ( 4 )
 			endif
 #DAVE###################################################
 echo IC BC must be OK
@@ -2593,13 +2603,15 @@ banner 22
 							set tries=2  # success, bail from loop
 						else
 							echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+							echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 							$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-							if ( $tries == 2 ) exit ( 5 )
+							if ( if ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) )exit ( 5 )
 						endif
 					else
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						if ( $tries == 2 ) exit ( 6 )
+						if ( if ( $KEEP_ON_RUNNING == FALSE ) && ( $tries == 2 ) ) exit ( 6 )
 					endif
 					mv wrfout_d01_${filetag} $TMPDIR/wrfout_d01_${filetag}.${core}.${phys_option}.${compopt}_${n}p
 #DAVE###################################################
@@ -2773,8 +2785,9 @@ banner 27
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
 						echo "SUMMARY generate IC/BC for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL making IC/BC $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						exit ( 7 )
+						if ( $KEEP_ON_RUNNING == FALSE ) exit ( 7 )
 					endif
 				endif
 		
@@ -2856,13 +2869,15 @@ banner 28
 						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					else
 						echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+						echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 						$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-						exit ( 8 )
+						if ( $KEEP_ON_RUNNING == FALSE ) exit ( 8 )
 					endif
 				else
 					echo "SUMMARY generate FCST  for $core physics $phys_option parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
+					echo "-------------------------------------------------------------" >> ${DEF_DIR}/wrftest.output
 					$MAIL -s "WRF FAIL FCST $ARCH[1] " $FAIL_MAIL < ${DEF_DIR}/wrftest.output
-					exit ( 9 )
+					if ( $KEEP_ON_RUNNING == FALSE ) exit ( 9 )
 				endif
 
 				#	We have to save this output file for our biggy comparison after all of the

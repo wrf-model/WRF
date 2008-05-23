@@ -365,7 +365,8 @@ CONTAINS
                                                                                                                                               
      num_metgrid_levels = grid%num_metgrid_levels
                                                                                                                                               
-        IF (ght_gc(its,jts,10) .lt. ght_gc(its,jts,11)) THEN
+	IF (ght_gc(its,jts,num_metgrid_levels/2) .lt. ght_gc(its,jts,num_metgrid_levels/2+1)) THEN
+
                                                                                                                                               
            write(message,*) 'normal ground up file order'
            hyb_coor=.false.

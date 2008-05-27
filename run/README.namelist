@@ -408,6 +408,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Devenyi ensemble scheme
                                      = 4, Simplified Arakawa-Schubert scheme (NMM only)
+                                     = 5, Grell 3D ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
  cudt                                = 0,       ; minutes between cumulus physics calls

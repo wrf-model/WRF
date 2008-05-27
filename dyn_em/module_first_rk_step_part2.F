@@ -18,7 +18,7 @@ CONTAINS
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , wspd , gz1oz0 , br , chklowq &
-                             , cu_act_flag , hol , regime , th_phy        &
+                             , cu_act_flag , hol , th_phy        &
                              , pi_phy , p_phy , t_phy , u_phy , v_phy     &
                              , dz8w , p8w , t8w , rho_phy , rho           &
                              , z_at_w , mu_3d                   &
@@ -68,7 +68,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: regime
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: th_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy

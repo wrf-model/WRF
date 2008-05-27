@@ -548,10 +548,12 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , br , chklowq &
-                             , cu_act_flag , hol , regime , th_phy        &
-                             , pi_phy , p_phy , t_phy , u_phy , v_phy     &
-                             , dz8w , p8w , t8w , rho_phy , rho           &
+                             , psim , psih , wspd , gz1oz0      &
+                             , br , chklowq                     &
+                             , cu_act_flag , hol , th_phy       &
+                             , pi_phy , p_phy , t_phy           &
+                             , u_phy , v_phy                    &
+                             , dz8w , p8w , t8w , rho_phy , rho &
                              , z_at_w , mu_3d                   &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
@@ -569,10 +571,12 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , br , chklowq &
-                             , cu_act_flag , hol , regime , th_phy        &
-                             , pi_phy , p_phy , t_phy , u_phy , v_phy     &
-                             , dz8w , p8w , t8w , rho_phy , rho           &
+                             , psim , psih , wspd , gz1oz0      &
+                             , br , chklowq                     &
+                             , cu_act_flag , hol , th_phy       &
+                             , pi_phy , p_phy , t_phy           &
+                             , u_phy , v_phy                    &
+                             , dz8w , p8w , t8w , rho_phy , rho &
                              , z_at_w , mu_3d                   &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &

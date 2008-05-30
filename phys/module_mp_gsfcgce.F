@@ -185,7 +185,7 @@ CONTAINS
   REAL    :: hour
   REAL    , PARAMETER :: cmin=1.e-20
   REAL    :: dth, dqv, dqrest, dqall, dqall1, rhotot, a1, a2 
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) ::                   &
+  REAL, DIMENSION( its:ite , kts:kte , jts:jte ) ::                   &
                          th1, qv1, ql1, qr1, qi1, qs1, qg1
  
   LOGICAL :: flag_qg
@@ -372,7 +372,7 @@ CONTAINS
 
 ! temperary vars
    
-  REAL,    DIMENSION( kms:kme )           :: sqrhoz
+  REAL,    DIMENSION( kts:kte )           :: sqrhoz
   REAL                                    :: tmp1, term0
   REAL                                :: pptrain, pptsnow,        &
                                          pptgraul, pptice
@@ -1303,9 +1303,9 @@ CONTAINS
 !                    rn332
 !JJS
 
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  fv
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  dpt, dqv
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  qcl, qrn,      &
+  real, dimension (its:ite,jts:jte,kts:kte) ::  fv
+  real, dimension (its:ite,jts:jte,kts:kte) ::  dpt, dqv
+  real, dimension (its:ite,jts:jte,kts:kte) ::  qcl, qrn,      &
                                                 qci, qcs, qcg
 !JJS 10/16/06    vvvv
 !      real dpt1(ims:ime,jms:jme,kms:kme)
@@ -1337,12 +1337,12 @@ CONTAINS
   real, dimension (ims:ime, kms:kme, jms:jme) ::  pi_mks
   real, dimension (ims:ime, kms:kme, jms:jme) ::  p0_mks
 !JJS
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  ww1
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  rsw
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  rlw
+!  real, dimension (its:ite,jts:jte,kts:kte) ::  ww1
+!  real, dimension (its:ite,jts:jte,kts:kte) ::  rsw
+!  real, dimension (its:ite,jts:jte,kts:kte) ::  rlw
 
 !JJS      COMMON /BADV/
-  real, dimension (ims:ime,jms:jme) ::        &
+  real, dimension (its:ite,jts:jte) ::        &
            vg,      zg,       &
            ps,      pg,       &
           prn,     psn,       &
@@ -1358,10 +1358,10 @@ CONTAINS
         qsacw,   praci,       &
         pmlts,   pmltg,       &
         asss,       y1,    y2
-!JJS       Y2(ims:ime,jms:jme),    DDE(NB)
+!JJS       Y2(its:ite,jts:jte),    DDE(NB)
 
 !JJS      COMMON/BSAT/
-  real, dimension (ims:ime,jms:jme) ::        &
+  real, dimension (its:ite,jts:jte) ::        &
         praut,   pracw,       &
          psfw,    psfi,       &
         dgacs,   dgacw,       &
@@ -1380,7 +1380,7 @@ CONTAINS
            y4,     ddb
 
 !JJS      COMMON/BSAT1/
-  real, dimension (ims:ime,jms:jme) ::        &
+  real, dimension (its:ite,jts:jte) ::        &
            pt,      qv,       &
            qc,      qr,       &
            qi,      qs,       &
@@ -1399,8 +1399,8 @@ CONTAINS
         pgsub,     dda
 
 !JJS      COMMON/B5/
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  rho
-  real, dimension (kms:kme) ::                 & 
+  real, dimension (its:ite,jts:jte,kts:kte) ::  rho
+  real, dimension (kts:kte) ::                 & 
            tb,      qb,    rho1,              &
            ta,      qa,     ta1,     qa1,     &
          coef,      z1,      z2,      z3,     &
@@ -1409,15 +1409,15 @@ CONTAINS
         rrho1,     wbx
 
 !JJS      COMMON/B6/
-  real, dimension (ims:ime,jms:jme,kms:kme) ::  p0, pi, f0
-  real, dimension (kms:kme) ::    & 
+  real, dimension (its:ite,jts:jte,kts:kte) ::  p0, pi, f0
+  real, dimension (kts:kte) ::    & 
            fd,      fe,        &
            st,      sv,        &
            sq,      sc,        &
            se,     sqa
 
 !JJS      COMMON/BRH1/
-  real, dimension (kms:kme) ::    & 
+  real, dimension (kts:kte) ::    & 
          srro,    qrro,    sqc,    sqr,    &
           sqi,     sqs,    sqg,   stqc,    &
          stqr,    stqi,   stqs,   stqg
@@ -1427,15 +1427,15 @@ CONTAINS
 !JJS     common/bls/ y0(nx,ny),ts0new(nx,ny),qss0new(nx,ny)
 
 !JJS      COMMON/BLS/
-  real, dimension (ims:ime,jms:jme) ::     &
+  real, dimension (its:ite,jts:jte) ::     &
            y0,     ts0,   qss0
 
-!JJS      COMMON/BI/ IT(ims:ime,jms:jme), ICS(ims:ime,jms:jme,4)
-  integer, dimension (ims:ime,jms:jme) ::        it  
-  integer, dimension (ims:ime,jms:jme, 4) ::    ics 
+!JJS      COMMON/BI/ IT(its:ite,jts:jte), ICS(its:ite,jts:jte,4)
+  integer, dimension (its:ite,jts:jte) ::        it  
+  integer, dimension (its:ite,jts:jte, 4) ::    ics 
 
 !JJS      COMMON/MICRO/
-  real, dimension (ims:ime,kms:kme,jms:jme)  ::     &
+  real, dimension (its:ite,kts:kte,jts:jte)  ::     &
           physc,   physe,   physd,   &
           physs,   physm,   physf
 

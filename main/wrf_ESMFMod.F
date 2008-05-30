@@ -53,9 +53,9 @@ CONTAINS
    ! model "time" meta-data.  
    SUBROUTINE AttachTimesToState( state, startTime, stopTime, couplingInterval )
      TYPE(ESMF_State),        INTENT(INOUT) :: state
-     TYPE(ESMF_Time),         INTENT(IN   ) :: startTime
-     TYPE(ESMF_Time),         INTENT(IN   ) :: stopTime
-     TYPE(ESMF_TimeInterval), INTENT(IN   ) :: couplingInterval
+     TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
+     TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
+     TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingInterval
      ! locals
      INTEGER :: rc
      INTEGER :: year, month, day, hour, minute, second
@@ -72,10 +72,9 @@ CONTAINS
      timevals(4) = hour
      timevals(5) = minute
      timevals(6) = second
-     CALL ESMF_StateSetAttribute(state, 'ComponentStartTime', &
-                                 SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentStartTime', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateSetAttribute(ComponentStartTime) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStartTime) failed' )
      ENDIF
      ! stop time
      CALL ESMF_TimeGet(stopTime, yy=year, mm=month, dd=day, &
@@ -89,10 +88,9 @@ CONTAINS
      timevals(4) = hour
      timevals(5) = minute
      timevals(6) = second
-     CALL ESMF_StateSetAttribute(state, 'ComponentStopTime', &
-                                 SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentStopTime', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateSetAttribute(ComponentStopTime) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStopTime) failed' )
      ENDIF
      ! coupling time step
      CALL ESMF_TimeIntervalGet(couplingInterval, yy=year, mm=month, d=day, &
@@ -106,10 +104,9 @@ CONTAINS
      timevals(4) = hour
      timevals(5) = minute
      timevals(6) = second
-     CALL ESMF_StateSetAttribute(state, 'ComponentCouplingInterval', &
-                                 SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentCouplingInterval', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateSetAttribute(ComponentCouplingInterval) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentCouplingInterval) failed' )
      ENDIF
    END SUBROUTINE AttachTimesToState
 
@@ -119,20 +116,20 @@ CONTAINS
    ! ESMF_State.  
    ! Update later to use some form of meta-data standards/conventions for 
    ! model "time" meta-data.  
-   SUBROUTINE GetTimesFromState( state, startTime, stopTime, couplingInterval )
+   SUBROUTINE GetTimesFromState( state, startTime, stopTime, couplingInterval, rc )
      TYPE(ESMF_State),        INTENT(IN   ) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
      TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
      TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingInterval
+     INTEGER, INTENT(INOUT) :: rc
      ! locals
-     INTEGER :: rc
      INTEGER :: year, month, day, hour, minute, second
      INTEGER(ESMF_KIND_I4) :: timevals(6)   ! big enough to hold the vars listed above
      ! start time
-     CALL ESMF_StateGetAttribute(state, 'ComponentStartTime', &
-                                 SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentStartTime', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateGetAttribute(ComponentStartTime) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStartTime) failed' )
+       !RETURN
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -146,10 +143,9 @@ CONTAINS
        CALL wrf_error_fatal ( 'ESMF_TimeSet(startTime) failed' )
      ENDIF
      ! stop time
-     CALL ESMF_StateGetAttribute(state, 'ComponentStopTime', &
-                                 SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentStopTime', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateGetAttribute(ComponentStopTime) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStopTime) failed' )
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -163,10 +159,9 @@ CONTAINS
        CALL wrf_error_fatal ( 'ESMF_TimeSet(stopTime) failed' )
      ENDIF
      ! coupling time step
-     CALL ESMF_StateGetAttribute(state, 'ComponentCouplingInterval', &
-                                 SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'ComponentCouplingInterval', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateGetAttribute(ComponentCouplingInterval) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentCouplingInterval) failed' )
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -188,6 +183,7 @@ CONTAINS
    ! ESMF_States into a single ESMF_State.  If times differ, an attempt 
    ! is made to reconcile them.  
    SUBROUTINE GetTimesFromStates( state, startTime, stopTime, couplingInterval )
+   USE ESMF_Mod
      TYPE(ESMF_State),        INTENT(IN   ) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
      TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
@@ -238,16 +234,19 @@ CONTAINS
        istate = 0
        DO i=1,numItems
          IF ( itemTypes(i) == ESMF_STATEITEM_STATE ) THEN
-           CALL ESMF_StateGetState( state, nestedStateName=TRIM(itemNames(i)), &
-                                    nestedState=tmpState, rc=rc )
+           CALL ESMF_StateGet( state, itemName=TRIM(itemNames(i)), &
+                               nestedState=tmpState, rc=rc )
            IF ( rc /= ESMF_SUCCESS) THEN
-             WRITE(str,*) 'ESMF_StateGetState(',TRIM(itemNames(i)),') failed'
+             WRITE(str,*) 'ESMF_StateGet(',TRIM(itemNames(i)),') failed'
              CALL wrf_error_fatal ( str )
            ENDIF
            istate = istate + 1
            CALL GetTimesFromState( tmpState, startTimes(istate),         &
                                              stopTimes(istate),          &
-                                             couplingIntervals(istate) )
+                                             couplingIntervals(istate), rc )
+           IF ( rc /= ESMF_SUCCESS ) THEN
+             istate = istate - 1
+           ENDIF
          ENDIF
        ENDDO
        CALL ReconcileTimes( startTimes, stopTimes, couplingIntervals, &
@@ -255,7 +254,7 @@ CONTAINS
      ELSE
        ! there are no nested ESMF_States so use parent state only
        CALL GetTimesFromState( state, startTime, stopTime, &
-                               couplingInterval )
+                               couplingInterval , rc )
      ENDIF
 
      ! deallocate locals
@@ -349,10 +348,9 @@ CONTAINS
          logvals(i) = ESMF_TRUE
        ENDIF
      ENDDO
-     CALL ESMF_StateSetAttribute(state, 'DecompositionLogicals', &
-                                 SIZE(logvals), logvals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'DecompositionLogicals', SIZE(logvals), logvals, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateSetAttribute(DecompositionLogicals) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionLogicals) failed' )
      ENDIF
      ! now the integers
      intvals(1) = ids
@@ -374,10 +372,9 @@ CONTAINS
      intvals(17) = kps
      intvals(18) = kpe
      intvals(19) = domdesc
-     CALL ESMF_StateSetAttribute(state, 'DecompositionIntegers', &
-                                 SIZE(intvals), intvals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'DecompositionIntegers', SIZE(intvals), intvals, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateSetAttribute(DecompositionIntegers) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionIntegers) failed' )
      ENDIF
    END SUBROUTINE AttachDecompToState
 
@@ -404,10 +401,9 @@ CONTAINS
      TYPE(ESMF_Logical) :: logvals(4)
 
      ! first the logicals
-     CALL ESMF_StateGetAttribute(state, 'DecompositionLogicals', &
-                                 SIZE(logvals), logvals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'DecompositionLogicals', SIZE(logvals), logvals, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateGetAttribute(DecompositionLogicals) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionLogicals) failed' )
      ENDIF
      ! Usually, when writing an API for a target language, it is considered 
      ! good practice to use native types of the target language in the 
@@ -419,10 +415,9 @@ CONTAINS
        ENDIF
      ENDDO
      ! now the integers
-     CALL ESMF_StateGetAttribute(state, 'DecompositionIntegers', &
-                                 SIZE(intvals), intvals, rc=rc)
+     CALL ESMF_AttributeSet(state, 'DecompositionIntegers', SIZE(intvals), intvals, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-       CALL wrf_error_fatal ( 'ESMF_StateGetAttribute(DecompositionIntegers) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionIntegers) failed' )
      ENDIF
      ids = intvals(1)
      ide = intvals(2)
@@ -458,8 +453,15 @@ MODULE module_wrf_component_top
 ! when WRF is run as an ESMF component.  
 !</DESCRIPTION>
 
-   USE module_wrf_top
    USE ESMF_Mod
+   USE module_wrf_top, ONLY : wrf_init, wrf_run, wrf_finalize
+   USE module_domain, ONLY : head_grid, auxhist4_alarm, auxhist5_alarm, auxhist3_alarm, auxhist1_alarm, &
+       auxhist2_alarm, auxhist6_alarm, auxhist10_alarm, auxhist11_alarm, auxhist9_alarm, &
+       auxhist7_alarm, auxhist8_alarm, auxinput11_alarm, auxinput3_alarm, auxinput4_alarm, &
+       auxinput2_alarm, io_esmf, auxinput1_alarm, auxinput5_alarm, auxinput9_alarm, &
+       auxinput10_alarm, auxinput8_alarm, auxinput6_alarm, auxinput7_alarm, &
+       get_ijk_from_grid
+
    USE module_esmf_extensions
    USE module_metadatautils, ONLY: AttachTimesToState, AttachDecompToState
 
@@ -1173,10 +1175,10 @@ CONTAINS
 
    SUBROUTINE wrf_state_populate( ierr )
      ! Driver layer
-     USE module_domain
+     USE module_domain, ONLY : domain
      USE module_io_domain
      ! Model layer
-     USE module_configure
+     USE module_configure, ONLY : grid_config_rec_type, model_to_grid_config_rec
      USE module_bc_time_utilities
 
      IMPLICIT NONE

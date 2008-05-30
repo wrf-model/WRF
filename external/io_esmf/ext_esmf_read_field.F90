@@ -38,8 +38,7 @@ SUBROUTINE ext_esmf_read_field ( DataHandle , DateStr , VarName , Field , FieldT
   TYPE(ESMF_Field) :: tmpField
   TYPE(ESMF_Array) :: tmpArray
   TYPE(ESMF_ArraySpec) :: arrayspec
-  TYPE(ESMF_DataKind) :: esmf_kind
-  TYPE(ESMF_DataType) :: esmf_type
+  INTEGER :: esmf_kind
   TYPE(ESMF_RelLoc) :: horzRelloc
   REAL(ESMF_KIND_R4), POINTER :: data_esmf_real_ptr(:,:)
   REAL(ESMF_KIND_R4), POINTER :: tmp_esmf_r4_ptr(:,:)
@@ -70,15 +69,12 @@ write(mess,*)'ext_esmf_read_field ',DataHandle, TRIM(DateStr), TRIM(VarName)
 call wrf_debug( 300, TRIM(mess) )
 
   IF      ( FieldType .EQ. WRF_REAL ) THEN
-    esmf_type = ESMF_DATA_REAL
-    esmf_kind = ESMF_R4
+    esmf_kind = ESMF_KIND_R4
   ELSE IF ( FieldType .EQ. WRF_DOUBLE ) THEN
-!    esmf_type = ESMF_DATA_REAL
-!    esmf_kind = ESMF_R8
+!    esmf_kind = ESMF_KIND_R8
     CALL wrf_error_fatal( 'ext_esmf_read_field, WRF_DOUBLE not yet supported')
   ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
-    esmf_type = ESMF_DATA_INTEGER
-    esmf_kind = ESMF_I4
+    esmf_kind = ESMF_KIND_I4
 !TODO:  implement this (below)
     CALL wrf_error_fatal( 'ext_esmf_read_field, WRF_INTEGER not yet implemented')
   ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
@@ -147,11 +143,7 @@ call wrf_debug( 300, TRIM(mess) )
     ! Build ESMF objects...  
     ! Build an ESMF_ArraySpec.  The use of ESMF_ArraySpec and ESMF_Array 
     ! objects allows some of the code that follows to be type-kind-independent.  
-!    CALL ESMF_ArraySpecSet(arrayspec, rank=esmf_rank, type=esmf_type, &
-!                                      kind=esmf_kind, rc=rc)
-!    IF ( rc /= ESMF_SUCCESS ) THEN
-!      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_ArraySpecSet failed" )
-!    ENDIF
+
     ! Build an ESMF_Array
     ! Implementation note:  since we do not yet have full control over how 
     ! ESMF chooses to lay out a "patch" within "memory", we must copy by 
@@ -214,7 +206,7 @@ call wrf_debug( 300, TRIM(mess) )
                  grid( DataHandle )%ptr, &
                  tmp_esmf_r4_ptr,        &
                  copyflag=ESMF_DATA_REF, &
-                 horzrelloc=horzrelloc,  &
+                 staggerloc=ESMF_STAGGERLOC_CENTER,    &
                  name=TRIM(VarName),     &
                  rc=rc )
     IF ( rc /= ESMF_SUCCESS ) THEN
@@ -229,7 +221,7 @@ call wrf_debug( 300, TRIM(mess) )
     ! Add the Field to the import state...  
 !TODO:  for now, just build ESMF_Fields and stuff them in
 !TODO:  later, use a single ESMF_Bundle
-    CALL ESMF_StateAddField( importstate, tmpField, rc=rc )
+    CALL ESMF_StateAdd( importstate, tmpField, rc=rc )
     IF ( rc /= ESMF_SUCCESS ) THEN
       CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateAddField failed" )
     ENDIF
@@ -249,10 +241,10 @@ call wrf_debug( 300, TRIM(mess) )
       CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_ImportStateGetCurrent failed" )
     ENDIF
     ! grab the Field
-    CALL ESMF_StateGetField( importstate, fieldName=TRIM(VarName), &
+    CALL ESMF_StateGet( importstate, itemName=TRIM(VarName), &
                              field=tmpfield, rc=rc )
     IF ( rc /= ESMF_SUCCESS ) THEN
-      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateGetField failed" )
+      CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateGet failed" )
     ENDIF
 
 CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  calling ESMF_FieldPrint( tmpField ) 1' )
@@ -263,8 +255,7 @@ CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  back from ESMF_
 
     ! grab a pointer to the import state data and copy data into Field
     IF      ( FieldType .EQ. WRF_REAL ) THEN
-      CALL ESMF_FieldGetDataPointer( tmpField, data_esmf_real_ptr, &
-                                     ESMF_DATA_REF, rc=rc )
+      CALL ESMF_FieldGet( tmpField, 0, data_esmf_real_ptr, rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
         CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldGetDataPointer(r4) failed" )
       ENDIF
@@ -295,8 +286,7 @@ CALL wrf_debug( 300, TRIM(mess) )
                                      ips, ipefull, jps, jpefull, kps, kpe, &
                                      ims, ime, jms, jme, kms, kme )
     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
-      CALL ESMF_FieldGetDataPointer( tmpField, data_esmf_int_ptr, &
-                                     ESMF_DATA_REF, rc=rc )
+      CALL ESMF_FieldGet( tmpField, 0, data_esmf_int_ptr, rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
         CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldGetDataPointer(i4) failed" )
       ENDIF

@@ -104,8 +104,8 @@
         USE ESMF_Mod, WRFU_LOG_SINGLE => ESMF_LOG_SINGLE
         USE ESMF_Mod, WRFU_LOG_WARNING => ESMF_LOG_WARNING
         USE ESMF_Mod, WRFU_MAXSTR => ESMF_MAXSTR
-        USE ESMF_Mod, WRFU_R4 => ESMF_R4
-        USE ESMF_Mod, WRFU_R8 => ESMF_R8
+        ! USE ESMF_Mod, WRFU_R4 => ESMF_R4
+        ! USE ESMF_Mod, WRFU_R8 => ESMF_R8
         USE ESMF_Mod, WRFU_SUCCESS => ESMF_SUCCESS
         USE ESMF_Mod, WRFU_TIME => ESMF_TIME
 ! See module_esmf_extensions for extensions to this interface.  Uncomment 

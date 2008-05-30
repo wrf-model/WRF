@@ -413,7 +413,7 @@ CONTAINS
                                     dayOfYear,  dayOfYear_r8, &
                                     dayOfYear_intvl, rc)
 
-      type(ESMF_Time),         intent(in)            :: time
+      type(ESMF_Time),         intent(inout)            :: time
       integer(ESMF_KIND_I4),   intent(out), optional :: yy
       integer(ESMF_KIND_I8),   intent(out), optional :: yy_i8
       integer,                 intent(out), optional :: mm

@@ -316,6 +316,8 @@ END MODULE module_ext_esmf
     INTEGER :: ips, ipe, jps, jpe, ids, ide, jds, jde
     TYPE(ESMF_VM) :: vm
     TYPE(ESMF_DELayout) :: taskLayout
+    REAL(ESMF_KIND_R8), DIMENSION(:), POINTER :: coordX2d, coordY2d
+    INTEGER, DIMENSION(3) :: ubnd, lbnd
     CHARACTER (32) :: gridname
     INTEGER, SAVE :: gridID = 0
 
@@ -510,7 +512,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
       gridID = gridID + 1
       WRITE ( gridname,'(a,i0)' ) 'WRF_grid_', gridID
 
-CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridCreateHorzXY()' )
+CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridCreate' )
 WRITE( msg,* ) 'DEBUG WRF:  SIZE(coordX) = ', SIZE(coordX)
 CALL wrf_debug ( 5 , TRIM(msg) )
 WRITE( msg,* ) 'DEBUG WRF:  SIZE(coordY) = ', SIZE(coordY)
@@ -523,25 +525,62 @@ DO j = 1, SIZE(coordY)
   WRITE( msg,* ) 'DEBUG WRF:  coord2(',j,') = ', coordY(j)
   CALL wrf_debug ( 5 , TRIM(msg) )
 ENDDO
-WRITE( msg,* ) 'DEBUG WRF:  horzstagger = ', ESMF_GRID_HORZ_STAGGER_C_SW
-CALL wrf_debug ( 5 , TRIM(msg) )
+!WRITE( msg,* ) 'DEBUG WRF:  horzstagger = ', ESMF_GRID_HORZ_STAGGER_C_SW
+!CALL wrf_debug ( 5 , TRIM(msg) )
 WRITE( msg,* ) 'DEBUG WRF:  name = ', TRIM(gridname)
 CALL wrf_debug ( 5 , TRIM(msg) )
 
+#if 0
       esmfgrid = ESMF_GridCreateHorzXY(                     &
                    coord1=coordX, coord2=coordY,            &
                    horzstagger=ESMF_GRID_HORZ_STAGGER_C_SW, &
 !TODO:  use this for 3D Grids once it is stable
 !                  coordorder=ESMF_COORD_ORDER_XZY,         &
                    name=TRIM(gridname), rc=rc )
+#else
+! based on example in 3.1 ref man sec 23.2.5, Creating an Irregularly 
+! Distributed Rectilinear Grid with a Non-Distributed Vertical Dimension
+      !esmfgrid = ESMF_GridCreateShapeTile(  &
+      esmfgrid = ESMF_GridCreateShapeTile(  &
+                 countsPerDEDim1=allXCount , &
+                 countsPerDEDim2=allYCount , &
+                 coordDep1=(/1/) , &
+                 coordDep2=(/2/) , &
+                 indexflag=ESMF_INDEX_GLOBAL, & ! use global indices
+                 name=TRIM(gridname), &
+                 rc = rc )
+      CALL ESMF_GridAddCoord(esmfgrid, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 rc=rc)
+      CALL ESMF_GridAddCoord(esmfgrid, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 rc=rc)
+      CALL ESMF_GridGetCoord(esmfgrid,coordDim=1,localDE=0, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 fptr=coordX2d, &
+                 rc=rc)
+      DO i=lbnd(1),ubnd(1)
+        coordX2d(i) = (i-1)*1.0
+      ENDDO
+      CALL ESMF_GridGetCoord(esmfgrid,coordDim=2,localDE=0, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 computationalLBound=lbnd,computationalUBound=ubnd, &
+                 fptr=coordY2d,                             &
+                 rc=rc)
+      DO i=lbnd(1),ubnd(1)
+        coordY2d(i) = (i-1)*1.0
+      ENDDO
+                 
+                 
+#endif
       IF ( rc /= ESMF_SUCCESS ) THEN
-        WRITE( msg,* ) 'Error in ESMF_GridCreateHorzXY', &
+        WRITE( msg,* ) 'Error in ESMF_GridCreate', &
                        __FILE__ ,                        &
                        ', line',                         &
                        __LINE__
         CALL wrf_error_fatal ( msg )
       ENDIF
-CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
+CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreate' )
       ! distribute the ESMF_Grid
       ! ignore repeated values
       is_min = MINVAL(allXStart)
@@ -559,7 +598,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
       DO pe = 0, numprocs-1
         IF (allXStart(pe) == is_min) THEN
           IF (j >= numprocsY) THEN
-            WRITE( msg,* ) 'ASSERTION FAILED in ESMF_GridCreateHorzXY', &
+            WRITE( msg,* ) 'ASSERTION FAILED in ESMF_GridCreate', &
                            __FILE__ ,                                   &
                            ', line',                                    &
                            __LINE__
@@ -572,7 +611,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
         ENDIF
         IF (allYStart(pe) == js_min) THEN
           IF (i >= numprocsX) THEN
-            WRITE( msg,* ) 'ASSERTION FAILED in ESMF_GridCreateHorzXY', &
+            WRITE( msg,* ) 'ASSERTION FAILED in ESMF_GridCreate', &
                            __FILE__ ,                                   &
                            ', line',                                    &
                            __LINE__
@@ -595,6 +634,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
       ENDIF
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutPrint 2' )
 
+#if 0
       CALL ESMF_GridDistribute( esmfgrid,                  &
                                 delayout=taskLayout,       &
                                 countsPerDEDim1=dimXCount, &
@@ -608,6 +648,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreateHorzXY()' )
                        ', error code = ',rc
         CALL wrf_error_fatal ( msg )
       ENDIF
+#endif
 CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridValidate()' )
       CALL ESMF_GridValidate( esmfgrid, rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
@@ -622,6 +663,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
       DEALLOCATE( allXStart, allXCount, allYStart, allYCount, &
                   dimXCount, dimYCount, coordX, coordY )
 
+#if 0
       ! Print out the ESMF decomposition info for debug comparison with WRF 
       ! decomposition info.  
       ALLOCATE( cellCounts(0:numprocs-1,2), globalStarts(0:numprocs-1,2) )
@@ -683,6 +725,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
       ENDIF
       CALL wrf_debug ( 100 , 'DEBUG ioesmf_create_grid_int:  print esmfgrid END' )
 
+#endif
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  returning...' )
 
   END SUBROUTINE ioesmf_create_grid_int
@@ -700,6 +743,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
     TYPE(ESMF_DELayout) :: taskLayout
     LOGICAL :: noneLeft
     IF ( grid( DataHandle )%in_use ) THEN
+#if 0
 WRITE( msg,* ) 'DEBUG:  ioesmf_destroy_grid( ',DataHandle,' ) begin...'
 CALL wrf_debug ( 5 , TRIM(msg) )
       CALL ESMF_GridGet( grid( DataHandle )%ptr, delayout=taskLayout, rc=rc )
@@ -719,6 +763,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
                        __LINE__
         CALL wrf_error_fatal ( msg )
       ENDIF
+#endif
       CALL ESMF_GridDestroy( grid( DataHandle )%ptr, rc=rc )
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_GridDestroy', &

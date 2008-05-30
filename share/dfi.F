@@ -314,7 +314,6 @@
       USE module_configure
       USE module_state_description
       USE module_model_constants
-      USE ESMF_Mod
 
       IMPLICIT NONE
 

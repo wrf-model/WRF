@@ -902,7 +902,7 @@ cat >! phys_real_6 << EOF
  sf_surface_physics                  = 1,     1,     1,
  bl_pbl_physics                      = 7,     7,     7,
  bldt                                = 0,     0,     0,
- cu_physics                          = 5,     5,     0,
+ cu_physics                          = 1,     1,     0,
  cudt                                = 5,     5,     5,
  omlcall                             = 1,
  oml_hml0                            = 50,

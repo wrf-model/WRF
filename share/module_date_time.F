@@ -867,7 +867,7 @@ END MODULE module_date_time
    ! ISO is "YYYY-MM-DDThh:mm:ss" while WRF is "YYYY-MM-DD_hh:mm:ss".  
    SUBROUTINE wrf_atotime ( str, time )
       USE module_utility
-      CHARACTER (LEN=*), INTENT( IN) :: str
+      CHARACTER (LEN=*), INTENT(INOUT) :: str
       TYPE(WRFU_Time),   INTENT(OUT) :: time
       INTEGER yr, mm, dd, h, m, s, ms
       INTEGER rc
@@ -916,7 +916,7 @@ END MODULE module_date_time
    ! ISO is "YYYY-MM-DDThh:mm:ss" while WRF is "YYYY-MM-DD_hh:mm:ss".  
    SUBROUTINE wrf_timetoa ( time, str )
       USE module_utility
-      TYPE(WRFU_Time),   INTENT( IN) :: time
+      TYPE(WRFU_Time),   INTENT(INOUT) :: time
       CHARACTER (LEN=*), INTENT(OUT) :: str
       INTEGER strlen, rc
       CHARACTER (LEN=256) :: mess, tmpstr
@@ -946,7 +946,7 @@ END MODULE module_date_time
    ! Converts an WRFU_TimeInterval object into a time-interval string.  
    SUBROUTINE wrf_timeinttoa ( timeinterval, str )
       USE module_utility
-      TYPE(WRFU_TimeInterval),   INTENT( IN) :: timeinterval
+      TYPE(WRFU_TimeInterval),   INTENT(INOUT) :: timeinterval
       CHARACTER (LEN=*), INTENT(OUT) :: str
       INTEGER rc
       CHARACTER (LEN=256) :: mess

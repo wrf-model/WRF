@@ -4691,11 +4691,11 @@ CONTAINS
         if(cugd_spread.gt.0)then
         do k=kts,kte
           do nn=-1,1,1
+            jdo=max(j+nn,jds)
+            jdo=min(jdo,jde-1)
             do kk=-1,1,1
              ido=max(i+kk,ids)
              ido=min(ido,ide-1)
-             jdo=max(j+kk,jds)
-             jdo=min(jdo,jde-1)
              rthcutent(i,k,j)=rthcutent(i,k,j)     &
                                   +qmem(ido,jdo)*cugd_ttens(ido,k,jdo)
              rqvcutent(i,k,j)=rqvcutent(i,k,j)     &

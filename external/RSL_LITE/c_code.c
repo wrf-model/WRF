@@ -34,7 +34,11 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
+#  ifdef VERY_LARGE_MAXPROC
+    sprintf(filename,"rsl.out.%08d",*me) ;
+#  else
     sprintf(filename,"rsl.out.%04d",*me) ;
+#  endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.out.nnnn") ;
@@ -50,7 +54,11 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
 
 /* redirect standard error */
+#  ifdef VERY_LARGE_MAXPROC
+    sprintf(filename,"rsl.error.%08d",*me) ;
+#  else
     sprintf(filename,"rsl.error.%04d",*me) ;
+#  endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.error.log") ;
@@ -135,7 +143,11 @@ RSL_LITE_ERROR_DUP1 ( int *me )
                                                                                                                                               
    /* Each tasks creates/opens its own output and error files */
                                                                                                                                               
+#  ifdef VERY_LARGE_MAXPROC
+   sprintf(filename, "%s/%08d/rsl.out.%08d","TASKOUTPUT",*me,*me) ;
+#  else
    sprintf(filename, "%s/%04d/rsl.out.%04d","TASKOUTPUT",*me,*me) ;
+#  endif
         
    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
    {
@@ -152,7 +164,11 @@ RSL_LITE_ERROR_DUP1 ( int *me )
         return ;
    }
         
+#  ifdef VERY_LARGE_MAXPROC
+   sprintf(filename, "%s/%08d/rsl.error.%08d","TASKOUTPUT",*me,*me) ;
+#  else
    sprintf(filename, "%s/%04d/rsl.error.%04d","TASKOUTPUT",*me,*me) ;
+#  endif
    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
    {
        perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.error.nnnn") ;

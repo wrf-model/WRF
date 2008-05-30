@@ -2683,6 +2683,7 @@ CONTAINS
      &                   SMCDRY,F1,QUARTZ,FXEXP,RTDIS,SLDPTH,ZSOIL,     &
      &                   NROOT,NSOIL,Z0,CZIL,LAI,CSOIL,PTU)
 
+      USE module_wrf_error
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
 ! SUBROUTINE REDPRM
@@ -3163,16 +3164,19 @@ CONTAINS
 !         WRITE(*,NML=SOIL_VEG)
          LFIRST = .FALSE.
          IF (DEFINED_SOIL .GT. MAX_SOILTYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_SOIL too large in namelist'
-            STOP 222
+            WRITE(wrf_err_message,*) 'Warning: DEFINED_SOIL too large in namelist'
+            CALL wrf_error_fatal( wrf_err_message )
+!            STOP 222
          ENDIF
          IF (DEFINED_VEG .GT. MAX_VEGTYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_VEG too large in namelist'
-            STOP 222
+            WRITE(wrf_err_message,*) 'Warning: DEFINED_VEG too large in namelist'
+            CALL wrf_error_fatal( wrf_err_message )
+!            STOP 222
          ENDIF
          IF (DEFINED_SLOPE .GT. MAX_SLOPETYP) THEN
-            WRITE(*,*) 'Warning: DEFINED_SLOPE too large in namelist'
-            STOP 222
+            WRITE(wrf_err_message,*) 'Warning: DEFINED_SLOPE too large in namelist'
+            CALL wrf_error_fatal( wrf_err_message )
+!            STOP 222
          ENDIF
          
          SMLOW = SMLOW_DATA
@@ -3200,16 +3204,17 @@ CONTAINS
       ENDIF
       
       IF (SOILTYP .GT. DEFINED_SOIL) THEN
-        WRITE(*,*) 'Warning: too many soil types'
-        STOP 333
+        WRITE(wrf_err_message,*) 'Warning: too many soil types'
+        CALL wrf_error_fatal( wrf_err_message )
+!        STOP 333
       ENDIF
       IF (VEGTYP .GT. DEFINED_VEG) THEN
-        WRITE(*,*) 'Warning: too many veg types'
-        STOP 333
+        WRITE(wrf_err_message,*) 'Warning: too many veg types'
+!        STOP 333
       ENDIF
       IF (SLOPETYP .GT. DEFINED_SLOPE) THEN
-        WRITE(*,*) 'Warning: too many slope types'
-        STOP 333
+        WRITE(wrf_err_message,*) 'Warning: too many slope types'
+!        STOP 333
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -3264,8 +3269,9 @@ CONTAINS
       IF (VEGTYP .EQ. BARE) SHDFAC = 0.0
 
       IF (NROOT .GT. NSOIL) THEN
-        WRITE(*,*) 'Warning: too many root layers'
-        STOP 333
+        WRITE(wrf_err_message,*) 'Warning: too many root layers'
+        CALL wrf_error_fatal(wrf_err_message)
+!        STOP 333
       ENDIF
 
 ! ----------------------------------------------------------------------

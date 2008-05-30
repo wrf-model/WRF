@@ -1164,6 +1164,7 @@ CONTAINS
         SUBROUTINE SOIL_VEG_GEN_PARM( MMINLU, MMINSL)
 !-----------------------------------------------------------------
 
+        USE module_wrf_error
         IMPLICIT NONE
 
         integer :: LUMATCH, IINDEX, LC, NUM_SLOPE
@@ -1224,8 +1225,21 @@ CONTAINS
           CALL wrf_message( mess )
           LUMATCH=1
         ENDIF
+! prevent possible array overwrite, Bill Bovermann, IBM, May 6, 2008
+        IF ( SIZE(ALBTBL)  < LUCATS .OR. &
+             SIZE(Z0TBL)   < LUCATS .OR. &
+             SIZE(SHDTBL)  < LUCATS .OR. &
+             SIZE(NROTBL)  < LUCATS .OR. &
+             SIZE(RSTBL)   < LUCATS .OR. &
+             SIZE(RGLTBL)  < LUCATS .OR. &
+             SIZE(HSTBL)   < LUCATS .OR. &
+             SIZE(SNUPTBL) < LUCATS .OR. &
+             SIZE(LAITBL)  < LUCATS .OR. &
+             SIZE(MAXALB)  < LUCATS  ) THEN
+           CALL wrf_error_fatal('Table sizes too small for value of LUCATS in module_sf_noahdrv.F')
+        ENDIF
 
-            IF(LUTYPE.EQ.MMINLU)THEN
+        IF(LUTYPE.EQ.MMINLU)THEN
           DO LC=1,LUCATS
               READ (19,*)IINDEX,ALBTBL(LC),Z0TBL(LC),SHDTBL(LC),   &
                         NROTBL(LC),RSTBL(LC),RGLTBL(LC),HSTBL(LC), &
@@ -1242,7 +1256,7 @@ CONTAINS
           READ (19,*)RSMAX_DATA
           READ (19,*)
           READ (19,*)BARE
-           ENDIF
+        ENDIF
 !
  2002   CONTINUE
 
@@ -1295,13 +1309,26 @@ CONTAINS
             CALL wrf_message ( mess )
           LUMATCH=1
         ENDIF
-            IF(SLTYPE.EQ.MMINSL)THEN
+! prevent possible array overwrite, Bill Bovermann, IBM, May 6, 2008
+        IF ( SIZE(BB    ) < SLCATS .OR. &
+             SIZE(DRYSMC) < SLCATS .OR. &
+             SIZE(F11   ) < SLCATS .OR. &
+             SIZE(MAXSMC) < SLCATS .OR. &
+             SIZE(REFSMC) < SLCATS .OR. &
+             SIZE(SATPSI) < SLCATS .OR. &
+             SIZE(SATDK ) < SLCATS .OR. &
+             SIZE(SATDW ) < SLCATS .OR. &
+             SIZE(WLTSMC) < SLCATS .OR. &
+             SIZE(QTZ   ) < SLCATS  ) THEN
+           CALL wrf_error_fatal('Table sizes too small for value of SLCATS in module_sf_noahdrv.F')
+        ENDIF
+        IF(SLTYPE.EQ.MMINSL)THEN
           DO LC=1,SLCATS
               READ (19,*) IINDEX,BB(LC),DRYSMC(LC),F11(LC),MAXSMC(LC),&
                         REFSMC(LC),SATPSI(LC),SATDK(LC), SATDW(LC),   &
                         WLTSMC(LC), QTZ(LC)
           ENDDO
-           ENDIF
+        ENDIF
 
  2003   CONTINUE
 
@@ -1346,6 +1373,10 @@ CONTAINS
         READ (19,*) NUM_SLOPE
 
           SLPCATS=NUM_SLOPE
+! prevent possible array overwrite, Bill Bovermann, IBM, May 6, 2008
+          IF ( SIZE(slope_data) < NUM_SLOPE ) THEN
+            CALL wrf_error_fatal('NUM_SLOPE too large for slope_data array in module_sf_noahdrv')
+          ENDIF
 
           DO LC=1,SLPCATS
               READ (19,*)SLOPE_DATA(LC)

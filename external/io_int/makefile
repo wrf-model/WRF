@@ -20,8 +20,8 @@ libwrfio_int.a:		$(OBJS)
 io_int.o:               io_int.F90 module_internal_header_util.o
 			$(CPP1)  -I../ioapi_share io_int.F90 | $(M4) - > io_int.f
 			$(FC) $(FFLAGS) -I. -I../ioapi_share -o $@ -c io_int.f
-			/bin/rm -f module_internal_header_util.o
 			/bin/rm -f intio_tags.h
+			cp ../../inc/intio_tags.h intio_tags.h
 
 # this is just so we can get the .mod file, it will be recompiled in frame again as part of WRF frmwk
 module_internal_header_util.o :

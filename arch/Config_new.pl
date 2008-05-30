@@ -154,6 +154,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    printf("  \$ESMFINC = %s\n",$ENV{ESMFINC});
    $sw_esmflib_path = $ENV{ESMFLIB};
    $sw_esmfinc_path = $ENV{ESMFINC};
+   $sw_esmf_ldflag = "yes" ;
    }
 
 # parse the configure.wrf file
@@ -308,9 +309,11 @@ while ( <CONFIGURE_DEFAULTS> )
       {
       $_ =~ s:ESMFIOLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
       $_ =~ s:ESMFIOEXTLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
+      $_ =~ s:ESMFLIBFLAG:\$\(ESMF_LDFLAG\):g ;
       }
     else
       {
+        $_ =~ s:ESMFLIBFLAG::g ;
         if ( $sw_os == Interix ) {
            $_ =~ s:ESMFIOLIB:\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90/libesmf_time.a:g ;
            $_ =~ s:ESMFIOEXTLIB:-L\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90/libesmf_time.a:g ;

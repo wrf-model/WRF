@@ -65,10 +65,10 @@ IO_GRIB_SHARE_DIR =
 ESMF_COUPLING       = ESMFCOUPLING
 # select dependences on module_utility.o
 ESMF_MOD_DEPENDENCE = ESMFMODDEPENDENCE
-# select -I options for separately installed ESMF library, if present
-ESMF_MOD_INC        = ESMFMODINC
 # select -I options for external/io_esmf vs. external/esmf_time_f90
 ESMF_IO_INC         = ESMFIOINC
+# select -I options for separately installed ESMF library, if present
+ESMF_MOD_INC        = ESMFMODINC $(ESMF_IO_INC)
 # select cpp token for external/io_esmf vs. external/esmf_time_f90
 ESMF_IO_DEFS        = ESMFIODEFS
 # select build target for external/io_esmf vs. external/esmf_time_f90

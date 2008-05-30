@@ -7259,7 +7259,7 @@ END SUBROUTINE vdvg
           chem(i,k,j,p_claj)  = 10.E-05
           chem(i,k,j,p_clai)  = 10.E-05
         elseif( aer_ic_opt == AER_IC_PNNL ) then
-           zz = (z_at_w(i,k,j)+z_at_w(i,k+1,j))*0.5
+           zz = (z_at_w(ii,k,jj)+z_at_w(ii,k+1,jj))*0.5
            call sorgam_init_aer_ic_pnnl(   &
                 chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
         else

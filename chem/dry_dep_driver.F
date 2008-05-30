@@ -376,7 +376,7 @@ CONTAINS
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
    CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
-       CALL wrf_debug(15,'call mixactive for mosaic aerosol')
+       CALL wrf_debug(15,'call mixactivate for mosaic aerosol')
       call mosaic_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &
 		dryrho_phy, t_phy, w, cldfra, cldfra_old, &

@@ -84,7 +84,7 @@
 #endif
 
 call wrf_message("*********************************************************************")
-call wrf_message("*             PROGRAM: WRF/CHEM VERSION 2.2                         *")
+call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.0                         *")
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
 call wrf_message("*                                                                   *")
@@ -441,7 +441,7 @@ call wrf_message("**************************************************************
         do l=numgas+1,num_chem
            do j=jts,jte
               do k=kts,kte
-                 kk = min(k,kte-1)
+                 kk = min(k,kde-1)
                  do i=its,ite
                     chem(i,k,j,l)=chem(i,kk,j,l)*alt(i,kk,j)
                  enddo
@@ -450,7 +450,7 @@ call wrf_message("**************************************************************
         enddo
         endif
         endif
-        chem=max(chem,epsilc)
+        chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 
 
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)

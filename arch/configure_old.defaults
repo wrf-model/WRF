@@ -1923,155 +1923,6 @@ solve_interface.o : solve_interface.F
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.F > $*.f90
 	$(FC) -c -O 0 $(PROMOTION) $(FCFLAGS) $*.f90
 
-
-###########################################################
-
-#ARCH NEC SUPER-UX SX-6 (serial)
-
-#***** some sx f90 compiler options***********
-# -V : version # of f90 command to stderr
-#-EP : activate cpp preprocessor to perform conditional compiling: output as i.[filename]
-#-Ep: activate cpp preprocessor to perfomr conditional compiling
-   #****However, cpp also activated by using .F or .F90 suffixes...
-# -Wf: specifies option string of the f90/sx detailed options
-#-g: debug info generated in object file for dbx symbolic debugging
-# -ew : all numbers size=8bytes
-#-eW: 4 bytes
-# -float0: default and only -float(number) option for sx6
-# -USX: unname the prev. defined reserved symbol SX of the preprocessor
-   # -U overrides -D, so '-USX  -D$(RUNTIMESYSTEM)'  might be redundant
-# -p: object file in execution format corresp. to 'prof' command be generated
-# -f4: input source program is described in F90 standard free format
-# -w: only syntax diagnostic messages at the fatal level are output
-# -C: specifies compile mode
-#   ssafe: only safe optimization in scalar mode (minimize side effects of 
-#          opt. no loop unrolling, etc
-# -init : init stack and heap areas
-# -L fmtlist summary stdout: formatted list, transformation lists, summary list are output to stdout
-
-DMPARALLEL      =       1
-MAX_PROC        =       1024
-FC              =       sxmpif90
-LD              =       sxmpif90
-CC              =       sxmpic++ -DMPI2_SUPPORT
-SCC		=	sxmpic++
-SFC             =       sxmpif90
-RWORDSIZE       =       $(NATIVE_RWORDSIZE)
-PROMOTION	=	
-CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
-                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
-                        -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
-                        -Xa -Kc99
-FCOPTIM		=	
-FCDEBUG		=	#-g
-#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
-FCBASEOPTS      =       -ftrace -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i \
-FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
-ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
-                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
-			$(DA_ARCHFLAGS) \
-			-DLIMIT_ARGS
-# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
-ESMF_LIB_FLAGS  =       
-ESMF_IO_LIB     =       $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
-ESMF_IO_LIB_EXT =       -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
-INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/main -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
-                        -I$(WRF_SRC_ROOT_DIR)/external -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
-PERL            =       perl
-REGISTRY        =       Registry
-LIB             =       $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a -L/pool/SX-6/netcdf/netcdf-3.6.2/lib -lnetcdf -L$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -lrsl_lite \
-                        -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
-                        -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
-			-L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
-			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time -L$(SX_BASE_CPLUS)/lib -lcpp
-LDFLAGS         =       $(FCFLAGS) -Wl,-h nodefs 
-ENVCOMPDEFS	=	
-WRF_CHEM	=	0 
-CPP             =       /lib/cpp -C -P -traditional
-POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
-CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -C -P `cat $(WRF_SRC_ROOT_DIR)/inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF) -DNEC
-AR_BASE         =       sxar
-AR              =       $(AR_BASE) ru
-M4              =       m4 -B 14000
-RANLIB          =       sxar rs
-NETCDFPATH	=	CONFIGURE_NETCDF_PATH
-CC_TOOLS        =       cc
-
-#### Override default sed command and script for Fortran source files         ####
-#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
-#### because the Fortran compiler complains about long source lines.          ####
-SED_FTN = sed -f $(WRF_SRC_ROOT_DIR)/arch/no_file_line.sed
-
-externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int  esmf_time  module_dm.F fftpack
-
-module_dm.F:
-	( /sbin/cp module_dm_warning module_dm.F ; \
-	  cat module_dm_stubs.F  >> module_dm.F )
-
-wrfio_nf :
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
-	  make NETCDFPATH=/usr/local/netcdf/current FC="$(FC) $(PROMOTION) $(FCFLAGS)"  )
-
-
-wrfio_int :
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
-	  make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" all )
-
-wrfio_grib_share :
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
-          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" archive)
-
-wrfio_grib1 :
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib1 ; \
-          make CC="$(CC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" archive)
-
-wrfio_grib2 :
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib2 ; \
-          make CC="$(CC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" archive)
-
-esmf_time :
-	( cd $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 ;\
- 	make FC="$(FC) $(PROMOTION) $(FCFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc " )
-
-fftpack :
-	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
-          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR)" )
-
-# compile these without high optimization to speed compile
-solve_interface.o : solve_interface.F
-shift_domain_em.o : shift_domain_em.F
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
-module_domain.o : module_domain.F
-module_start.o : module_start.F
-module_initialize.o : module_initialize.F
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
-module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-module_comm_dm.o : module_comm_dm.F
-start_domain.o : start_domain.F
-module_configure.o : module_configure.F
-   
-solve_interface.o                                              \
-shift_domain_em.o                                              \
-module_configure.o                                             \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_initialize_real.o module_dm.o module_comm_dm.o  start_domain.o :
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
-	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCFLAGS) $(MODULE_DIRS) $*.f90
-
-
 ###########################################################
 #ARCH   UNICOS/mp  machine crayx1 (RSL_LITE, MPI, MSP mode)
 #
@@ -2184,7 +2035,8 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" \
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; \
+          make CPP="$(CPP) $(CPPFLAGS)" CFLAGS="$(CFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" OPTS="$(FCBASEOPTS)" \
                                      MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST )
 
 # compile these without high optimization
@@ -2817,6 +2669,317 @@ module_domain.o :
 	$(FC) -c -g $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -qnoopt -qnohot $*.f90
 
 ###########################################################
+
+#ARCH NEC SUPER-UX SX-6 (serial)
+
+#***** some sx f90 compiler options***********
+# -V : version # of f90 command to stderr
+#-EP : activate cpp preprocessor to perform conditional compiling: output as i.[filename]
+#-Ep: activate cpp preprocessor to perfomr conditional compiling
+   #****However, cpp also activated by using .F or .F90 suffixes...
+# -Wf: specifies option string of the f90/sx detailed options
+#-g: debug info generated in object file for dbx symbolic debugging
+# -ew : all numbers size=8bytes
+#-eW: 4 bytes
+# -float0: default and only -float(number) option for sx6
+# -USX: unname the prev. defined reserved symbol SX of the preprocessor
+   # -U overrides -D, so '-USX  -D$(RUNTIMESYSTEM)'  might be redundant
+# -p: object file in execution format corresp. to 'prof' command be generated
+# -f4: input source program is described in F90 standard free format
+# -w: only syntax diagnostic messages at the fatal level are output
+# -C: specifies compile mode
+#   ssafe: only safe optimization in scalar mode (minimize side effects of 
+#          opt. no loop unrolling, etc
+# -init : init stack and heap areas
+# -L fmtlist summary stdout: formatted list, transformation lists, summary list are output to stdout
+
+DMPARALLEL      =       1
+MAX_PROC        =       1024
+FC              =       sxmpif90
+LD              =       sxmpif90
+CC              =       sxmpic++ -DMPI2_SUPPORT
+SCC		=	sxmpic++
+SFC             =       sxmpif90
+RWORDSIZE       =       $(NATIVE_RWORDSIZE)
+PROMOTION	=	
+CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
+                        -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) \
+                        -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
+                        -Xa -Kc99
+FCNOOPT         = -Cssafe
+FCOPTIM		=	
+FCDEBUG		=	#-g
+#FCBASEOPTS      =       -w -byteswapio -Ktrap=fp -Mfree $(FCDEBUG)
+FCBASEOPTS      =       -ftrace -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i \
+FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)
+ARCHFLAGS       =       $(COREDEFS) -DGRIB1 -DINTIO -DDM_PARALLEL \
+                        -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 -DNETCDF \
+			$(DA_ARCHFLAGS) \
+			-DLIMIT_ARGS
+# machine-specific flags needed to link in ESMF library (C++ run-time-library, etc.)
+ESMF_LIB_FLAGS  =       
+ESMF_IO_LIB     =       $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+ESMF_IO_LIB_EXT =       -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+INCLUDE_MODULES =       -I$(WRF_SRC_ROOT_DIR)/main -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf -I$(WRF_SRC_ROOT_DIR)/external/io_int -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
+                        -I$(WRF_SRC_ROOT_DIR)/external -I$(WRF_SRC_ROOT_DIR)/frame -I$(WRF_SRC_ROOT_DIR)/share -I$(WRF_SRC_ROOT_DIR)/phys -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
+PERL            =       perl
+REGISTRY        =       Registry
+LIB             =       $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a -L/pool/SX-6/netcdf/netcdf-3.6.2/lib -lnetcdf -L$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -lrsl_lite \
+                        -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
+                        -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
+                        -L$(WRF_SRC_ROOT_DIR)/external/io_grib_share -lio_grib_share \
+			-L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
+			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time -L$(SX_BASE_CPLUS)/lib -lcpp
+LDFLAGS         =       $(FCFLAGS) -Wl,-h nodefs 
+ENVCOMPDEFS	=	
+WRF_CHEM	=	0 
+CPP             =       /lib/cpp -C -P -traditional
+POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
+CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -C -P `cat $(WRF_SRC_ROOT_DIR)/inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF) -DNEC
+AR_BASE         =       sxar
+AR              =       $(AR_BASE) ru
+M4              =       m4 -B 14000
+RANLIB          =       sxar rs
+NETCDFPATH	=	CONFIGURE_NETCDF_PATH
+CC_TOOLS        =       cc
+
+#### Override default sed command and script for Fortran source files         ####
+#### This sed script does not pass __FILE__ and __LINE__ to wrf_error_fatal() ####
+#### because the Fortran compiler complains about long source lines.          ####
+SED_FTN = sed -f $(WRF_SRC_ROOT_DIR)/arch/no_file_line.sed
+
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib_share wrfio_grib1 CONFIGURE_WRFIO_GRIB2 wrfio_int  esmf_time  module_dm.F fftpack
+
+module_dm.F:
+	( /sbin/cp module_dm_warning module_dm.F ; \
+	  cat module_dm_stubs.F  >> module_dm.F )
+
+wrfio_grib_share :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" AR="$(AR_BASE)" archive)
+
+wrfio_grib1 :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib1 ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS)" AR="$(AR_BASE)" archive)
+
+wrfio_grib2 :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib2 ; \
+          make CC="$(CC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) $(FCFLAGS)" AR="$(AR_BASE)" archive)
+
+wrfio_nf : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
+	  make NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" )
+
+wrfio_int : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
+          make CC="$(CC)" RANLIB="$(RANLIB)" CPP="$(CPP)" SFC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" all )
+
+esmf_time : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 ; \
+	  make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc -I. $(POUND_DEF)" AR="$(AR_BASE)" )
+
+fftpack :
+	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
+          make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR_BASE)" )
+
+# compile these without high optimization to speed compile
+convert_nmm.o : convert_nmm.F
+init_modules_em.o : init_modules_em.F
+input_wrf.o : input_wrf.F
+module_io.o : module_io.F
+module_comm_dm.o : module_comm_dm.F
+module_configure.o : module_configure.F
+module_dm.o : module_dm.F
+module_domain.o : module_domain.F
+module_domain_type.o : module_domain_type.F
+module_alloc_space.o : module_alloc_space.F
+module_tiles.o : module_tiles.F
+module_fddaobs_rtfdda.o : module_fddaobs_rtfdda.F
+module_initialize.o : module_initialize.F
+module_physics_init.o : module_physics_init.F 
+module_initialize_b_wave.o : module_initialize_b_wave.F
+module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
+module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_real.o : module_initialize_real.F
+module_initialize_real.o: module_initialize_real.F
+module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
+module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
+module_integrate.o : module_integrate.F
+module_io_mm5.o : module_io_mm5.F
+module_io_wrf.o : module_io_wrf.F
+module_si_io.o : module_si_io.F
+module_state_description.o : module_state_description.F 
+output_wrf.o : output_wrf.F
+solve_interface.o : solve_interface.F
+start_domain.o : start_domain.F
+start_domain_nmm.o : start_domain_nmm.F
+start_em.o : start_em.F
+wrf_auxhist10in.o : wrf_auxhist10in.F
+wrf_auxhist10out.o : wrf_auxhist10out.F
+wrf_auxhist11in.o : wrf_auxhist11in.F
+wrf_auxhist11out.o : wrf_auxhist11out.F
+wrf_auxhist1in.o : wrf_auxhist1in.F
+wrf_auxhist1out.o : wrf_auxhist1out.F
+wrf_auxhist2in.o : wrf_auxhist2in.F
+wrf_auxhist2out.o : wrf_auxhist2out.F
+wrf_auxhist3in.o : wrf_auxhist3in.F
+wrf_auxhist3out.o : wrf_auxhist3out.F
+wrf_auxhist4in.o : wrf_auxhist4in.F
+wrf_auxhist4out.o : wrf_auxhist4out.F
+wrf_auxhist5in.o : wrf_auxhist5in.F
+wrf_auxhist5out.o : wrf_auxhist5out.F
+wrf_auxhist6in.o : wrf_auxhist6in.F
+wrf_auxhist6out.o : wrf_auxhist6out.F
+wrf_auxhist7in.o : wrf_auxhist7in.F
+wrf_auxhist7out.o : wrf_auxhist7out.F
+wrf_auxhist8in.o : wrf_auxhist8in.F
+wrf_auxhist8out.o : wrf_auxhist8out.F
+wrf_auxhist9in.o : wrf_auxhist9in.F
+wrf_auxhist9out.o : wrf_auxhist9out.F
+wrf_auxinput10in.o : wrf_auxinput10in.F
+wrf_auxinput10out.o : wrf_auxinput10out.F
+wrf_auxinput11in.o : wrf_auxinput11in.F
+wrf_auxinput11out.o : wrf_auxinput11out.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_auxinput2in.o : wrf_auxinput2in.F
+wrf_auxinput2out.o : wrf_auxinput2out.F
+wrf_auxinput3in.o : wrf_auxinput3in.F
+wrf_auxinput3out.o : wrf_auxinput3out.F
+wrf_auxinput4in.o : wrf_auxinput4in.F
+wrf_auxinput4out.o : wrf_auxinput4out.F
+wrf_auxinput5in.o : wrf_auxinput5in.F
+wrf_auxinput5out.o : wrf_auxinput5out.F
+wrf_auxinput6in.o : wrf_auxinput6in.F
+wrf_auxinput6out.o : wrf_auxinput6out.F
+wrf_auxinput7in.o : wrf_auxinput7in.F
+wrf_auxinput7out.o : wrf_auxinput7out.F
+wrf_auxinput8in.o : wrf_auxinput8in.F
+wrf_auxinput8out.o : wrf_auxinput8out.F
+wrf_auxinput9in.o : wrf_auxinput9in.F
+wrf_auxinput9out.o : wrf_auxinput9out.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_bdyout.o : wrf_bdyout.F
+wrf_ext_read_field.o : wrf_ext_read_field.F
+wrf_ext_write_field.o : wrf_ext_write_field.F
+wrf_fddaobs_in.o : wrf_fddaobs_in.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_tsin.o : wrf_tsin.F
+nl_get_0_routines.o : nl_get_0_routines.F
+nl_get_1_routines.o : nl_get_1_routines.F
+nl_set_0_routines.o : nl_set_0_routines.F
+nl_set_1_routines.o : nl_set_1_routines.F
+
+convert_nmm.o \
+init_modules_em.o \
+module_comm_dm.o \
+module_dm.o \
+module_alloc_space.o \
+module_fddaobs_rtfdda.o \
+module_initialize.o \
+module_initialize_b_wave.o \
+module_initialize_hill2d_x.o \
+module_initialize_quarter_ss.o \
+module_initialize_real.o \
+module_initialize_squall2d_x.o \
+module_initialize_squall2d_y.o \
+module_integrate.o \
+module_io_mm5.o \
+module_io_wrf.o \
+module_si_io.o \
+module_tiles.o \
+output_wrf.o \
+solve_interface.o \
+start_domain.o \
+start_domain_nmm.o \
+start_em.o \
+wrf_fddaobs_in.o \
+wrf_tsin.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
+
+# compile without OMP
+input_wrf.o \
+module_domain.o \
+module_domain_type.o \
+module_physics_init.o \
+module_io.o \
+wrf_auxhist10in.o \
+wrf_auxhist10out.o \
+wrf_auxhist11in.o \
+wrf_auxhist11out.o \
+wrf_auxhist1in.o \
+wrf_auxhist1out.o \
+wrf_auxhist2in.o \
+wrf_auxhist2out.o \
+wrf_auxhist3in.o \
+wrf_auxhist3out.o \
+wrf_auxhist4in.o \
+wrf_auxhist4out.o \
+wrf_auxhist5in.o \
+wrf_auxhist5out.o \
+wrf_auxhist6in.o \
+wrf_auxhist6out.o \
+wrf_auxhist7in.o \
+wrf_auxhist7out.o \
+wrf_auxhist8in.o \
+wrf_auxhist8out.o \
+wrf_auxhist9in.o \
+wrf_auxhist9out.o \
+wrf_auxinput10in.o \
+wrf_auxinput10out.o \
+wrf_auxinput11in.o \
+wrf_auxinput11out.o \
+wrf_auxinput1in.o \
+wrf_auxinput1out.o \
+wrf_auxinput2in.o \
+wrf_auxinput2out.o \
+wrf_auxinput3in.o \
+wrf_auxinput3out.o \
+wrf_auxinput4in.o \
+wrf_auxinput4out.o \
+wrf_auxinput5in.o \
+wrf_auxinput5out.o \
+wrf_auxinput6in.o \
+wrf_auxinput6out.o \
+wrf_auxinput7in.o \
+wrf_auxinput7out.o \
+wrf_auxinput8in.o \
+wrf_auxinput8out.o \
+wrf_auxinput9in.o \
+wrf_auxinput9out.o \
+wrf_bdyin.o \
+wrf_bdyout.o \
+wrf_ext_read_field.o \
+wrf_ext_write_field.o \
+wrf_histin.o \
+wrf_histout.o \
+wrf_inputin.o \
+wrf_inputout.o \
+wrf_restartin.o \
+wrf_restartout.o \
+module_state_description.o \
+nl_set_0_routines.o \
+nl_set_1_routines.o \
+nl_get_0_routines.o \
+nl_get_1_routines.o \
+module_configure.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
+
+###########################################################
 #ARCH    NEC SX-8, NEC SX cross compiler DM-Parallel (RSL_LITE, Allows nesting)
 #
 # Notes: for experimental implementation of moving nests, add -DMOVE_NESTS to ARCHFLAGS
@@ -2835,6 +2998,7 @@ PROMOTION	=
 CFLAGS          =       -DNCARIBM_NOC99 -DDM_PARALLEL \
                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE \
                         -Xa -Kc99
+FCNOOPT         = -Cssafe
 FCOPTIM		=	
 FCDEBUG		=	#-g
 FCBASEOPTS      =       -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i
@@ -2854,6 +3018,7 @@ REGISTRY        =       Registry
 LIB             =       CONFIGURE_NETCDF_LIB_PATH -L$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -lrsl_lite \
                         -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
                         -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
+                        -L$(WRF_SRC_ROOT_DIR)/external/io_grib_share -lio_grib_share \
 			-L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
 			$(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time
 LDFLAGS         =       $(FCFLAGS) -Wl,-h nodefs CONFIGURE_LDFLAGS
@@ -2862,14 +3027,15 @@ CPP             =       /lib/cpp -C -P -traditional
 POUND_DEF	=	-DNO_RRTM_PHYSICS  -traditional $(COREDEFS) -DNONSTANDARD_SYSTEM -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) -DMAX_DOMAINS_F=$(MAX_DOMAINS)
 CPPFLAGS        =       -I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -C -P `cat $(WRF_SRC_ROOT_DIR)/inc/dm_comm_cpp_flags` $(ENVCOMPDEFS) $(POUND_DEF) -DNEC
 AR_BASE         =       sxar
-AR              =       $(AR_BASE) ru
+# it may be necessary to uncomment out the ru if ARFLAGS is not automatically defined to ru or rv in your installation's version of make
+AR              =       $(AR_BASE) # ru
 M4              =       m4 -B 14000
 RANLIB          =       sxar rs
 NETCDFPATH	=	CONFIGURE_NETCDF_PATH
 CC_TOOLS        =       cc
 SED_FTN = $(WRF_SRC_ROOT_DIR)/tools/standard.exe
 
-externals : wrf_ioapi_includes wrfio_nf wrfio_grib1 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
+externals : wrf_ioapi_includes CONFIGURE_WRFIO_NF wrfio_grib1 wrfio_grib_share $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a wrfio_int gen_comms.c module_dm.F esmf_time fftpack
 
 gen_comms.c : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/gen_comms.c
 	( /bin/cp $(WRF_SRC_ROOT_DIR)/tools/gen_comms_warning $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c ; \
@@ -2877,10 +3043,6 @@ gen_comms.c : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/gen_comms.c
 
 module_dm.F : $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F
 	( /bin/cp module_dm_warning module_dm.F ; cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F )
-
-wrfio_nf : 
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
-	  make NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" )
 
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
@@ -2893,6 +3055,10 @@ wrfio_grib1 :
 wrfio_grib2 :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib2 ; \
           make CC="$(SCC)" CFLAGS="$(CFLAGS) " RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" archive)
+
+wrfio_nf : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
+	  make NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" FC="$(FC) $(PROMOTION) $(FCFLAGS) -w" TRADFLAG="-traditional" AR="$(AR_BASE)" )
 
 wrfio_int : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
@@ -2907,44 +3073,204 @@ fftpack :
           make FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR_BASE)" )
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
-	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
-
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CPP="$(CPP) $(CPPFLAGS)" CC="$(CC)" FC="$(FC) $(PROMOTION) $(FCBASEOPTS)" MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST AR="$(AR_BASE)" )
 
 # compile these without high optimization to speed compile
-solve_interface.o : solve_interface.F
-shift_domain_em.o : shift_domain_em.F
-module_io_mm5.o : module_io_mm5.F
-module_si_io.o : module_si_io.F
-module_io_wrf.o : module_io_wrf.F
+convert_nmm.o : convert_nmm.F
+init_modules_em.o : init_modules_em.F
+input_wrf.o : input_wrf.F
+module_io.o : module_io.F
+module_comm_dm.o : module_comm_dm.F
+module_configure.o : module_configure.F
+module_dm.o : module_dm.F
 module_domain.o : module_domain.F
-module_start.o : module_start.F
+module_domain_type.o : module_domain_type.F
+module_alloc_space.o : module_alloc_space.F
+module_tiles.o : module_tiles.F
+module_fddaobs_rtfdda.o : module_fddaobs_rtfdda.F
 module_initialize.o : module_initialize.F
+module_physics_init.o : module_physics_init.F 
 module_initialize_b_wave.o : module_initialize_b_wave.F
 module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
 module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
+module_initialize_real.o : module_initialize_real.F
+module_initialize_real.o: module_initialize_real.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
-module_initialize_real.o : module_initialize_real.F
-module_dm.o : module_dm.F
-module_comm_dm.o : module_comm_dm.F
+module_integrate.o : module_integrate.F
+module_io_mm5.o : module_io_mm5.F
+module_io_wrf.o : module_io_wrf.F
+module_si_io.o : module_si_io.F
+module_state_description.o : module_state_description.F 
+output_wrf.o : output_wrf.F
+solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
-mediation_integrate.o : mediation_integrate.F
-module_configure.o : module_configure.F
+start_domain_nmm.o : start_domain_nmm.F
+start_em.o : start_em.F
+wrf_auxhist10in.o : wrf_auxhist10in.F
+wrf_auxhist10out.o : wrf_auxhist10out.F
+wrf_auxhist11in.o : wrf_auxhist11in.F
+wrf_auxhist11out.o : wrf_auxhist11out.F
+wrf_auxhist1in.o : wrf_auxhist1in.F
+wrf_auxhist1out.o : wrf_auxhist1out.F
+wrf_auxhist2in.o : wrf_auxhist2in.F
+wrf_auxhist2out.o : wrf_auxhist2out.F
+wrf_auxhist3in.o : wrf_auxhist3in.F
+wrf_auxhist3out.o : wrf_auxhist3out.F
+wrf_auxhist4in.o : wrf_auxhist4in.F
+wrf_auxhist4out.o : wrf_auxhist4out.F
+wrf_auxhist5in.o : wrf_auxhist5in.F
+wrf_auxhist5out.o : wrf_auxhist5out.F
+wrf_auxhist6in.o : wrf_auxhist6in.F
+wrf_auxhist6out.o : wrf_auxhist6out.F
+wrf_auxhist7in.o : wrf_auxhist7in.F
+wrf_auxhist7out.o : wrf_auxhist7out.F
+wrf_auxhist8in.o : wrf_auxhist8in.F
+wrf_auxhist8out.o : wrf_auxhist8out.F
+wrf_auxhist9in.o : wrf_auxhist9in.F
+wrf_auxhist9out.o : wrf_auxhist9out.F
+wrf_auxinput10in.o : wrf_auxinput10in.F
+wrf_auxinput10out.o : wrf_auxinput10out.F
+wrf_auxinput11in.o : wrf_auxinput11in.F
+wrf_auxinput11out.o : wrf_auxinput11out.F
+wrf_auxinput1in.o : wrf_auxinput1in.F
+wrf_auxinput1out.o : wrf_auxinput1out.F
+wrf_auxinput2in.o : wrf_auxinput2in.F
+wrf_auxinput2out.o : wrf_auxinput2out.F
+wrf_auxinput3in.o : wrf_auxinput3in.F
+wrf_auxinput3out.o : wrf_auxinput3out.F
+wrf_auxinput4in.o : wrf_auxinput4in.F
+wrf_auxinput4out.o : wrf_auxinput4out.F
+wrf_auxinput5in.o : wrf_auxinput5in.F
+wrf_auxinput5out.o : wrf_auxinput5out.F
+wrf_auxinput6in.o : wrf_auxinput6in.F
+wrf_auxinput6out.o : wrf_auxinput6out.F
+wrf_auxinput7in.o : wrf_auxinput7in.F
+wrf_auxinput7out.o : wrf_auxinput7out.F
+wrf_auxinput8in.o : wrf_auxinput8in.F
+wrf_auxinput8out.o : wrf_auxinput8out.F
+wrf_auxinput9in.o : wrf_auxinput9in.F
+wrf_auxinput9out.o : wrf_auxinput9out.F
+wrf_bdyin.o : wrf_bdyin.F
+wrf_bdyout.o : wrf_bdyout.F
+wrf_ext_read_field.o : wrf_ext_read_field.F
+wrf_ext_write_field.o : wrf_ext_write_field.F
+wrf_fddaobs_in.o : wrf_fddaobs_in.F
+wrf_histin.o : wrf_histin.F
+wrf_histout.o : wrf_histout.F
+wrf_inputin.o : wrf_inputin.F
+wrf_inputout.o : wrf_inputout.F
+wrf_restartin.o : wrf_restartin.F
+wrf_restartout.o : wrf_restartout.F
+wrf_tsin.o : wrf_tsin.F
+nl_get_0_routines.o : nl_get_0_routines.F
+nl_get_1_routines.o : nl_get_1_routines.F
+nl_set_0_routines.o : nl_set_0_routines.F
+nl_set_1_routines.o : nl_set_1_routines.F
 
-solve_interface.o                                              \
-shift_domain_em.o                                              \
-module_io_mm5.o module_si_io.o module_io_wrf.o module_domain.o \
-module_start.o module_initialize.o module_initialize_b_wave.o  \
-module_initialize_hill2d_x.o module_initialize_quarter_ss.o    \
-module_initialize_squall2d_x.o module_initialize_squall2d_y.o  \
-module_configure.o                                             \
-mediation_integrate.o \
-module_initialize_real.o module_dm.o module_comm_dm.o start_domain.o :
+convert_nmm.o \
+init_modules_em.o \
+module_comm_dm.o \
+module_dm.o \
+module_alloc_space.o \
+module_fddaobs_rtfdda.o \
+module_initialize.o \
+module_initialize_b_wave.o \
+module_initialize_hill2d_x.o \
+module_initialize_quarter_ss.o \
+module_initialize_real.o \
+module_initialize_squall2d_x.o \
+module_initialize_squall2d_y.o \
+module_integrate.o \
+module_io_mm5.o \
+module_io_wrf.o \
+module_si_io.o \
+module_tiles.o \
+output_wrf.o \
+solve_interface.o \
+start_domain.o \
+start_domain_nmm.o \
+start_em.o \
+wrf_fddaobs_in.o \
+wrf_tsin.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	$(FC) -c $(PROMOTION) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $*.f90
+
+# compile without OMP
+input_wrf.o \
+module_domain.o \
+module_domain_type.o \
+module_physics_init.o \
+module_io.o \
+wrf_auxhist10in.o \
+wrf_auxhist10out.o \
+wrf_auxhist11in.o \
+wrf_auxhist11out.o \
+wrf_auxhist1in.o \
+wrf_auxhist1out.o \
+wrf_auxhist2in.o \
+wrf_auxhist2out.o \
+wrf_auxhist3in.o \
+wrf_auxhist3out.o \
+wrf_auxhist4in.o \
+wrf_auxhist4out.o \
+wrf_auxhist5in.o \
+wrf_auxhist5out.o \
+wrf_auxhist6in.o \
+wrf_auxhist6out.o \
+wrf_auxhist7in.o \
+wrf_auxhist7out.o \
+wrf_auxhist8in.o \
+wrf_auxhist8out.o \
+wrf_auxhist9in.o \
+wrf_auxhist9out.o \
+wrf_auxinput10in.o \
+wrf_auxinput10out.o \
+wrf_auxinput11in.o \
+wrf_auxinput11out.o \
+wrf_auxinput1in.o \
+wrf_auxinput1out.o \
+wrf_auxinput2in.o \
+wrf_auxinput2out.o \
+wrf_auxinput3in.o \
+wrf_auxinput3out.o \
+wrf_auxinput4in.o \
+wrf_auxinput4out.o \
+wrf_auxinput5in.o \
+wrf_auxinput5out.o \
+wrf_auxinput6in.o \
+wrf_auxinput6out.o \
+wrf_auxinput7in.o \
+wrf_auxinput7out.o \
+wrf_auxinput8in.o \
+wrf_auxinput8out.o \
+wrf_auxinput9in.o \
+wrf_auxinput9out.o \
+wrf_bdyin.o \
+wrf_bdyout.o \
+wrf_ext_read_field.o \
+wrf_ext_write_field.o \
+wrf_histin.o \
+wrf_histout.o \
+wrf_inputin.o \
+wrf_inputout.o \
+wrf_restartin.o \
+wrf_restartout.o \
+module_state_description.o \
+nl_set_0_routines.o \
+nl_set_1_routines.o \
+nl_get_0_routines.o \
+nl_get_1_routines.o \
+module_configure.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
 
 
 ###########################################################

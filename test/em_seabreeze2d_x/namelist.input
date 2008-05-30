@@ -1,6 +1,6 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 6,
+ run_hours                           = 12,
  run_minutes                         = 0,
  run_seconds                         = 0,
  start_year                          = 2007,
@@ -75,13 +75,13 @@
  smdiv                               = 0.1,
  emdiv                               = 0.01,
  epssm                               = 0.1,
- mix_full_fields                     = .true.,
- non_hydrostatic                     = .true.,
  time_step_sound                     = 6,
  h_mom_adv_order                     = 5,
  v_mom_adv_order                     = 3,
  h_sca_adv_order                     = 5,
  v_sca_adv_order                     = 3,
+ mix_full_fields                     = .true.,
+ non_hydrostatic                     = .true.,
  /
 
  &bdy_control

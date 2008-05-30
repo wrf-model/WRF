@@ -769,10 +769,9 @@ CONTAINS
           p_dry(k) = p_input(k)
           theta(k) = th_input(k)
           rho(k) = rho_input(k)
-	  u(k) = 0.0 
-          ! u(k) = u_input(k)
+          u(k) = u_input(k)
           v(k) = v_input(k)
-          qv(k) = qv_input(k) * 0
+          qv(k) = qv_input(k)
 
         enddo
 

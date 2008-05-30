@@ -195,8 +195,8 @@ module_physics_init.o : \
 		module_sf_lsm_nmm.o	
 
 module_microphysics_driver.o: \
-                module_mixactivate.o \
-                module_mp_kessler.o module_mp_lin.o \
+		module_mixactivate.o \
+		module_mp_kessler.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_thompson.o            \
@@ -266,6 +266,10 @@ module_surface_driver.o: \
 		module_sf_lsm_nmm.o
 
 module_diagnostics.o: ../frame/module_dm.o
+
+
+module_mixactivate.o: \
+		module_radiation_driver.o
 
 module_fddagd_driver.o: \
 		../frame/module_state_description.o \

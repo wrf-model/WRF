@@ -796,7 +796,7 @@ subroutine mixactivate(  msectional,            &
         ekk(k)=ekd(k)*p_at_w(i,k,j)/(r_d*t_at_w(i,k,j))
      enddo
      ekk(kte+1)=0.0
-     do k=kts,kte+1
+     do k=kts,kte
         ekkp(k)=zn(k)*ekk(k+1)*zs(k+1)
         ekkm(k)=zn(k)*ekk(k)*zs(k)
         tinv=ekkp(k)+ekkm(k)

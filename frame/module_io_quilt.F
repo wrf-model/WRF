@@ -401,7 +401,7 @@ MODULE module_wrf_quilt
       INTEGER, DIMENSION(3) :: DomainStart , DomainEnd , MemoryStart , MemoryEnd , PatchStart , PatchEnd
       INTEGER :: dummybuf(1)
       INTEGER :: num_noops, num_commit_messages, num_field_training_msgs, hdr_tag
-      CHARACTER (len=80) :: DateStr , Element, VarName, MemoryOrder , Stagger , DimNames(3), FileName, SysDepInfo, mess
+      CHARACTER (len=256) :: DateStr , Element, VarName, MemoryOrder , Stagger , DimNames(3), FileName, SysDepInfo, mess
       INTEGER, EXTERNAL :: use_package
       LOGICAL           :: stored_write_record, retval
       INTEGER iii, jjj, vid, CC, DD

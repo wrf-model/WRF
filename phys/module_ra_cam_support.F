@@ -3393,26 +3393,28 @@ subroutine aerosol_init(m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,paerlev,naer_c,sh
      DO j=jts,jtf
      DO i=its,itf
      DO k=1,paerlev
-      aerosolcp(i,k,j,idxSUL)=1.e-7
-      aerosolcn(i,k,j,idxSUL)=1.e-7
-      aerosolcp(i,k,j,idxSSLT)=1.e-22
-      aerosolcn(i,k,j,idxSSLT)=1.e-22
-      aerosolcp(i,k,j,idxDUSTfirst)=1.e-7
-      aerosolcn(i,k,j,idxDUSTfirst)=1.e-7
-      aerosolcp(i,k,j,idxDUSTfirst+1)=1.e-7
-      aerosolcn(i,k,j,idxDUSTfirst+1)=1.e-7
-      aerosolcp(i,k,j,idxDUSTfirst+2)=1.e-7
-      aerosolcn(i,k,j,idxDUSTfirst+2)=1.e-7
-      aerosolcp(i,k,j,idxDUSTfirst+3)=1.e-7
-      aerosolcn(i,k,j,idxDUSTfirst+3)=1.e-7
-      aerosolcp(i,k,j,idxOCPHO)=1.e-7
-      aerosolcn(i,k,j,idxOCPHO)=1.e-7
-      aerosolcp(i,k,j,idxBCPHO)=1.e-9
-      aerosolcn(i,k,j,idxBCPHO)=1.e-9
-      aerosolcp(i,k,j,idxOCPHI)=1.e-7
-      aerosolcn(i,k,j,idxOCPHI)=1.e-7
-      aerosolcp(i,k,j,idxBCPHI)=1.e-8
-      aerosolcn(i,k,j,idxBCPHI)=1.e-8
+! aerosolc arrays are upward cumulative (kg/m2) at each level
+! Here we assume uniform vertical distribution (aerosolc linear with hybi)
+      aerosolcp(i,k,j,idxSUL)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxSUL)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxSSLT)=1.e-22*(1.-hybi(k))
+      aerosolcn(i,k,j,idxSSLT)=1.e-22*(1.-hybi(k))
+      aerosolcp(i,k,j,idxDUSTfirst)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxDUSTfirst)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxDUSTfirst+1)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxDUSTfirst+1)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxDUSTfirst+2)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxDUSTfirst+2)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxDUSTfirst+3)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxDUSTfirst+3)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxOCPHO)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxOCPHO)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxBCPHO)=1.e-9*(1.-hybi(k))
+      aerosolcn(i,k,j,idxBCPHO)=1.e-9*(1.-hybi(k))
+      aerosolcp(i,k,j,idxOCPHI)=1.e-7*(1.-hybi(k))
+      aerosolcn(i,k,j,idxOCPHI)=1.e-7*(1.-hybi(k))
+      aerosolcp(i,k,j,idxBCPHI)=1.e-8*(1.-hybi(k))
+      aerosolcn(i,k,j,idxBCPHI)=1.e-8*(1.-hybi(k))
      ENDDO
      ENDDO
      ENDDO

@@ -314,11 +314,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       icefrac(ii) = XICE(I,J)
       enddo
 
-      do m=1,num_months
+      do m=1,num_months-1
       do k=1,levsiz
       do i = its,ite
       ii = i - its + 1
-      ozmixmj(ii,k,m) = ozmixm(i,k,j,m)
+      ozmixmj(ii,k,m) = ozmixm(i,k,j,m+1)
       enddo
       enddo
       enddo
@@ -487,6 +487,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       endif
 
       IF(PRESENT(SWUPT))THEN
+      if(dosw)then
 ! Added shortwave and longwave upward/downward total and clear sky fluxes
       do k = kts,kte+1
       kk = kte +1 - k + kts
@@ -496,37 +497,54 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !      swupclear(i,k,j) = fsupc(ii,kk)
 !      swdn(i,k,j)      = fsdn(ii,kk)
 !      swdnclear(i,k,j) = fsdnc(ii,kk)
-!      lwup(i,k,j)      = flup(ii,kk)
-!      lwupclear(i,k,j) = flupc(ii,kk)
-!      lwdn(i,k,j)      = fldn(ii,kk)
-!      lwdnclear(i,k,j) = fldnc(ii,kk)
        if(k.eq.kte+1)then
          swupt(i,j)     = fsup(ii,kk)
          swuptc(i,j)    = fsupc(ii,kk)
          swdnt(i,j)     = fsdn(ii,kk)
          swdntc(i,j)    = fsdnc(ii,kk)
-         lwupt(i,j)     = flup(ii,kk)
-         lwuptc(i,j)    = flupc(ii,kk)
-         lwdnt(i,j)     = fldn(ii,kk)
-         lwdntc(i,j)    = fldnc(ii,kk)
        endif
        if(k.eq.kts)then
          swupb(i,j)     = fsup(ii,kk)
          swupbc(i,j)    = fsupc(ii,kk)
          swdnb(i,j)     = fsdn(ii,kk)
          swdnbc(i,j)    = fsdnc(ii,kk)
+       endif
+!            if(i.eq.30.and.j.eq.30) then
+!            print 1234, 'short ', i,ii,k,kk,fsup(ii,kk),fsupc(ii,kk),fsdn(ii,kk),fsdnc(ii,kk)
+!            1234 format (a6,4i4,4f10.3)
+!            endif
+     enddo
+      enddo
+      endif
+      if(dolw)then
+! Added shortwave and longwave upward/downward total and clear sky fluxes
+      do k = kts,kte+1
+      kk = kte +1 - k + kts
+      do i = its,ite
+      ii = i - its + 1
+!      lwup(i,k,j)      = flup(ii,kk)
+!      lwupclear(i,k,j) = flupc(ii,kk)
+!      lwdn(i,k,j)      = fldn(ii,kk)
+!      lwdnclear(i,k,j) = fldnc(ii,kk)
+       if(k.eq.kte+1)then
+         lwupt(i,j)     = flup(ii,kk)
+         lwuptc(i,j)    = flupc(ii,kk)
+         lwdnt(i,j)     = fldn(ii,kk)
+         lwdntc(i,j)    = fldnc(ii,kk)
+       endif
+       if(k.eq.kts)then
          lwupb(i,j)     = flup(ii,kk)
          lwupbc(i,j)    = flupc(ii,kk)
          lwdnb(i,j)     = fldn(ii,kk)
          lwdnbc(i,j)    = fldnc(ii,kk)
        endif
 !            if(i.eq.30.and.j.eq.30) then
-!            print 1234, 'short ', i,ii,k,kk,fsup(ii,kk),fsupc(ii,kk),fsdn(ii,kk),fsdnc(ii,kk)
 !            print 1234, 'long  ', i,ii,k,kk,flup(ii,kk),flupc(ii,kk),fldn(ii,kk),fldnc(ii,kk)
 !            1234 format (a6,4i4,4f10.3)
 !            endif
       enddo
       enddo
+      endif
       ENDIF
 
       do i = its,ite
@@ -678,8 +696,7 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
    CHARACTER(LEN=256) :: msgstr
 
    ! JULIAN starts from 0.0 at 0Z on 1 Jan.
-!   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
-   intJULIAN = JULIAN + (dt/(60.*60.*24.)) ! offset by one timestep
+   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
 ! jan 1st 00z is julian=1.0 here
    IJUL=INT(intJULIAN)
 !  Note that following will drift. 
@@ -801,8 +818,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
    CHARACTER(LEN=256) :: msgstr
 
    ! JULIAN starts from 0.0 at 0Z on 1 Jan.
-!   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
-   intJULIAN = JULIAN + (dt/(60.*60.*24.)) ! offset by one timestep
+   intJULIAN = JULIAN + 1.0_r8    ! offset by one day
 ! jan 1st 00z is julian=1.0 here
    IJUL=INT(intJULIAN)
 !  Note that following will drift. 

@@ -37,7 +37,7 @@ CONTAINS
                                     tke_rhs
     USE module_em, ONLY : calculate_phy_tend
     USE module_fddaobs_driver, ONLY : fddaobs_driver
-    USE module_bc, ONLY : set_physical_bc3d
+    USE module_bc, ONLY : set_physical_bc3d, set_physical_bc2d
     USE module_physics_addtendc, ONLY : update_phy_ten
 
     IMPLICIT NONE
@@ -203,6 +203,12 @@ BENCH_START(tke_diff_bc_tim)
                                    grid%i_start(ij), grid%i_end(ij),   &
                                    grid%j_start(ij), grid%j_end(ij),   &
                                    k_start    , k_end                 )
+           CALL set_physical_bc2d( grid%ustm, 't', config_flags,            &
+                                   ids, ide, jds, jde,                 &
+                                   ims, ime, jms, jme,                 &
+                                   ips, ipe, jps, jpe,                 &
+                                   grid%i_start(ij), grid%i_end(ij),   &
+                                   grid%j_start(ij), grid%j_end(ij)   )
 
          ENDDO
          !$OMP END PARALLEL DO

@@ -3301,7 +3301,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            v_2(i  ,kts,j+1)+          &
                            v_2(i-1,kts,j  )+          &
                            v_2(i-1,kts,j+1))/4)**2))+epsilon
-       tao_xz=ust(i,j)*ust(i,j)*u_2(i,kts,j)/V0_u
+       ustar=0.5*(ust(i,j)+ust(i-1,j))
+       tao_xz=ustar*ustar*u_2(i,kts,j)/V0_u
        ru_tendf(i,kts,j)=ru_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i-1,j))*tao_xz*(rdzw(i,kts,j)+rdzw(i-1,kts,j))
     ENDDO
@@ -3316,7 +3317,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                            u_2(i  ,kts,j-1)+          &
                            u_2(i+1,kts,j  )+          &
                            u_2(i+1,kts,j-1))/4)**2))+epsilon
-       tao_yz=ust(i,j)*ust(i,j)*v_2(i,kts,j)/V0_v
+       ustar=0.5*(ust(i,j)+ust(i,j-1))
+       tao_yz=ustar*ustar*v_2(i,kts,j)/V0_v
        rv_tendf(i,kts,j)=rv_tendf(i,kts,j)            &
                          -0.25*(mu(i,j)+mu(i,j-1))*tao_yz*(rdzw(i,kts,j)+rdzw(i,kts,j-1))
     ENDDO

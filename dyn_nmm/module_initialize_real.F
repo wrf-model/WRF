@@ -1299,6 +1299,8 @@ CONTAINS
         endif
 
              TERM1=(STPH0*CTPH*COS(TLM)+CTPH0*STPH)
+             TERM1=MIN(TERM1,1.0D0)
+             TERM1=MAX(TERM1,-1.0D0)
              APH=ASIN(TERM1)
              TG_ALT(I,J)=TG0+TGA*COS(APH)-FIS(I,J)/3333.
            ENDDO

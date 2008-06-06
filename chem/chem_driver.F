@@ -76,6 +76,8 @@
 ! ..
 ! .. Local Scalars ..
       INTEGER :: stepave,i,j,k,l,numgas,nv,n, nr,ktauc, ktau,k_start,k_end,idf,jdf,kdf
+      REAL    :: convtrans_avglen_m
+
 
 ! ................................................................
 ! ..
@@ -111,6 +113,13 @@
                                         ,TOT,TSFC
      
 #endif
+! Variables for adaptive time steps...
+      TYPE(WRFU_TimeInterval) :: tmpTimeInterval
+!     REAL(KIND=8) :: curr_secs
+!     REAL(KIND=8) :: real_time_r8                                 !ext. function in adapt_timestep_em.F
+      REAL         :: curr_secs, real_time
+      LOGICAL :: adapt_step_flag   ! , do_chemstep, do_photstep
+
 
       REAL :: DAYI,DPL,FICE,FRAIN,HOUR,PLYR          &
      &       ,QI,QR,QW,RADT,TIMES,WC,TDUM,WMSK,RWMSK
@@ -173,15 +182,44 @@
 ! the model top.
 !  ksubt=0
 
+!
+! Setup the adaptive timestep for the chem routines. Most of this follows
+! what is in solve_em, except for the call to adjust time_step.
+!
+#if ( NMM_CORE == 1)
+  !NMM defaults to the old step counting methodology in physics so we
+  !will do the same here in chemistry. In theory, adapt_step_flag can
+  !probably be set to TRUE for NMM too using the curr_secs calculated
+  !with ktau, but I do not have input files to test NMM. (wig, 12-May-2008)
+  adapt_step_flag = .FALSE.
+  KTAU=GRID%NTSD
+  curr_secs = (ktau-1)*grid%dt
+#endif
+#if ( EM_CORE == 1 )
+  !The necesssary variables exist for the EM core and using the adaptive
+  !techniques will work even with a constant time step. In fact, they
+  !prevent issues with restarts and changed time steps. So, we will
+  !always use them with the EM core.
+  adapt_step_flag = .FALSE.
+  ktau = grid%itimestep
+  tmpTimeInterval = domain_get_time_since_sim_start(grid)
+  curr_secs = real_time(tmpTimeInterval)
+#endif
+
 ! ..
 
+!
+! Some stuff for convective transport...
+!
+  convtrans_avglen_m = 30.  !Averaging time for convective transport in min.
+  stepave=convtrans_avglen_m*60./grid%dt
+! stepave=1800./grid%dt
 
-  stepave=1800./grid%dt
   CALL get_ijk_from_grid (  grid ,                   &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
                             ips, ipe, jps, jpe, kps, kpe    )
-  ktau = grid%itimestep
+! ktau = grid%itimestep
 ! following two lines needed for MEGAN
   CALL domain_clock_get( grid, current_timestr=current_date_char )
   read(current_date_char(6:7),FMT='(I2)') current_month
@@ -192,7 +230,6 @@
 !***  IN NMM SET CONTROLS FOR TILES TO PATCHES
 !
 !-----------------------------------------------------------------------
-      KTAU=GRID%NTSD
       IDF=IDE-1
       JDF=JDE-1
       KDF=KDE-2 ! DO NOT do chem at the top level to mimic what used to be done (also prevents a solver failure at kde-1 for MADE/SORGAM)
@@ -487,13 +524,24 @@
        if( config_flags%chem_conv_tr>0)then
            call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
                grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
-               grid%gd_cloud2_a,grid%gd_cloud2_b,stepave,ktau,grid%dt,        &
+               grid%gd_cloud2_a,grid%gd_cloud2_b,convtrans_avglen_m,stepave,&
+               adapt_step_flag,curr_secs,grid%stepave_count,                &
+               ktau,grid%dt,                                                &
                config_flags%cu_rad_feedback,  config_flags%cu_physics,      &
                ids,ide, jds,jde, kds,kde,                                   &
                ims,ime, jms,jme, kms,kme,                                   &
                its,ite, jts,jte,kts,kte                                     )
-
        endif ! chem_conv_tr
+
+!       if( config_flags%chem_conv_tr>0)then
+!           call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
+!               grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
+!               grid%gd_cloud2_a,grid%gd_cloud2_b,stepave,ktau,grid%dt,        &
+!               config_flags%cu_rad_feedback,  config_flags%cu_physics,      &
+!               ids,ide, jds,jde, kds,kde,                                   &
+!               ims,ime, jms,jme, kms,kme,                                   &
+!               its,ite, jts,jte,kts,kte                                     )
+!       endif ! chem_conv_tr
 !
 !
 #if ( EM_CORE == 1 )

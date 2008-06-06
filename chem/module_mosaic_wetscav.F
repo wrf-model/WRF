@@ -190,7 +190,7 @@ CONTAINS
 ! scavenging cloud-phase aerosol assuming precip falls to surface
       do 100 j=jts,jte
       do k=kts,kte
-         pdel(:,k,j)=p8w(:,k,j)-p8w(:,k+1,j)
+         pdel(its:ite,k,j)=p8w(its:ite,k,j)-p8w(its:ite,k+1,j)
       end do
 !wig      pdel(:,kte,j)=pdel(:,kte-1,j)
       do 100 k=kts,kte

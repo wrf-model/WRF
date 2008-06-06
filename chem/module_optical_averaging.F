@@ -930,6 +930,10 @@
         mass_caj = 0.0
         mass_co3i = 0.0
         mass_co3j = 0.0
+        mass_nai = 0.0
+        mass_naj = 0.0
+        mass_cli = 0.0
+        mass_clj = 0.0
         mass_msai = 0.0
         mass_msaj = 0.0
         mass_h2oi = 0.0
@@ -978,6 +982,10 @@
         if (l .ge. p1st)  mass_paj= chem(i,k,j,l)*conv1a
         l=lptr_ec_aer(1,1,iphase)
         if (l .ge. p1st)  mass_bcj= chem(i,k,j,l)*conv1a
+        l=lptr_na_aer(1,1,iphase)
+        if (l .ge. p1st)  mass_naj= chem(i,k,j,l)*conv1a
+        l=lptr_cl_aer(1,1,iphase)
+        if (l .ge. p1st)  mass_clj= chem(i,k,j,l)*conv1a
         l=numptr_aer(1,1,iphase)
         if (l .ge. p1st)  num_aj= chem(i,k,j,l)*conv1b
         mass_h2oj= h2oaj(i,k,j) * 1.0e-12
@@ -1011,13 +1019,18 @@
         if (l .ge. p1st)  mass_ba4i= chem(i,k,j,l)*conv1a
         l=lptr_orgpa_aer(1,2,iphase)
         if (l .ge. p1st)  mass_pai= chem(i,k,j,l)*conv1a
-        l=lptr_ec_aer(1,2,iphase)
+        l=lptr_ec_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_bci= chem(i,k,j,l)*conv1a
-        l=numptr_aer(1,2,iphase)
+        l=lptr_na_aer(isize,itype,iphase)
+        if (l .ge. p1st)  mass_nai= chem(i,k,j,l)*conv1a
+        l=lptr_cl_aer(isize,itype,iphase)
+        if (l .ge. p1st)  mass_cli= chem(i,k,j,l)*conv1a
+        l=numptr_aer(isize,itype,iphase)
         if (l .ge. p1st)  num_ai= chem(i,k,j,l)*conv1b
         mass_h2oi= h2oai(i,k,j) * 1.0e-12
         mass_oci=mass_aro1i+mass_aro2i+mass_alk1i+mass_ole1i+ &
                  mass_ba1i+mass_ba2i+mass_ba3i+mass_ba4i+mass_pai
+
 
 ! Coarse mode...
         l=lptr_anth_aer(1,3,iphase)
@@ -1035,14 +1048,16 @@
                  (mass_ole1i/dens_oc)+(mass_ba1i/dens_oc)+  &
                  (mass_ba2i/dens_oc)+(mass_ba3i/dens_oc)+   &
                  (mass_ba4i/dens_oc)+(mass_pai/dens_oc)+    &
-                 (mass_aro2i/dens_oc)+(mass_bci/dens_bc)
+                 (mass_aro2i/dens_oc)+(mass_bci/dens_bc)+   &
+                 (mass_nai/dens_na)+(mass_cli/dens_cl)
         vol_aj = (mass_so4j/dens_so4)+(mass_no3j/dens_no3)+ &
                  (mass_nh4j/dens_nh4)+(mass_oinj/dens_oin)+ &
                  (mass_aro1j/dens_oc)+(mass_alk1j/dens_oc)+ &
                  (mass_ole1j/dens_oc)+(mass_ba1j/dens_oc)+  &
                  (mass_ba2j/dens_oc)+(mass_ba3j/dens_oc)+   &
                  (mass_ba4j/dens_oc)+(mass_paj/dens_oc)+    &
-                 (mass_aro2j/dens_oc)+(mass_bcj/dens_bc)
+                 (mass_aro2j/dens_oc)+(mass_bcj/dens_bc)+   &
+                 (mass_naj/dens_na)+(mass_clj/dens_cl)
         vol_ac = (mass_antha/dens_oin)+ &
                  (mass_seas*(22.9897/58.4428)/dens_na)+ &
                  (mass_seas*(35.4270/58.4428)/dens_cl)+ &
@@ -1086,8 +1101,10 @@
                     (mass_paj+mass_aro1j+mass_aro2j+mass_alk1j+mass_ole1j+ &
                      mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j)*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
-          mass_na = mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
-          mass_cl = mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+          mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
+                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+          mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
+                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4

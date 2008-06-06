@@ -119,6 +119,14 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling NMHC9 from chem_driver')
        call wrf_message("WARNING: NMHC9 chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (RADM2SORG_AQ )
+       CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQ chemistry from chem_driver')
+       call wrf_message("WARNING: RADM2SORG_AQ chemistry option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (racmsorg_aq )
+       CALL wrf_debug(15,'calling RACM/MADE/SORGAM from chem_driver')
+       call wrf_message("WARNING: RACMSORG_AQ chemistry option is highly experimental and not recommended for use.")
+       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    END SELECT chem_select
 
    if ( config_flags%dust_opt == 1 ) then

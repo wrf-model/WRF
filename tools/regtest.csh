@@ -353,22 +353,21 @@ unsetenv ESMFLIB
 unsetenv ESMFINC
 
 if ( $ESMF_LIB == TRUE ) then
-	if      ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bv ) ) then
+	if      ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for MPI tests"
 		setenv OBJECT_MODE 64
-		set ESMFLIBSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
-		set ESMFINCSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
-		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
-		echo "Using ESMFINC = ${ESMFINCSAVE}"
-	else if ( ( `uname` == AIX ) && ( `hostname | cut -c 1-2` == bl ) ) then
-		echo "A separately installed version of the latest ESMF library"
-		echo "(NOT the ESMF library included in the WRF tarfile) will"
-		echo "be used for MPI tests (taken from Tom's directory)"
-		setenv OBJECT_MODE 64
-		set ESMFLIBSAVE = /mmm/users/gill/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
-		set ESMFINCSAVE = /mmm/users/gill/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
+#	set ESMFLIBSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/lib/libO/AIX.default.64.mpi.default
+#	set ESMFINCSAVE = /home/bluevista/hender/esmf/esmf_2_2_2r/mod/modO/AIX.default.64.mpi.default
+		setenv ESMF_DIR /mmm/users/michalak/esmf
+		setenv ESMF_BOPT g
+		setenv ESMF_ABI 64
+		setenv ESMF_INSTALL_PREFIX $ESMF_DIR/../esmf_install
+		setenv ESMFLIB $ESMF_INSTALL_PREFIX/lib/libg/AIX.default.64.mpi.default
+		setenv ESMFINC $ESMF_INSTALL_PREFIX/mod/modg/AIX.default.64.mpi.default
+		set ESMFLIBSAVE = $ESMFLIB
+		set ESMFINCSAVE = $ESMFINC
 		echo "Using ESMFLIB = ${ESMFLIBSAVE}"
 		echo "Using ESMFINC = ${ESMFINCSAVE}"
 	else
@@ -854,7 +853,7 @@ cat >! phys_real_5 << EOF
  bl_pbl_physics                      = 7,     7,     7,
  bldt                                = 0,     0,     0,
  cu_physics                          = 99,    99,    0,
- cudt                                = 5,     5,     5,
+ cudt                                = 0,     0,     0,
  slope_rad                           = 1,     1,     1, 
  topo_shading                        = 0,     0,     0, 
  isfflx                              = 1,
@@ -903,7 +902,7 @@ cat >! phys_real_6 << EOF
  bl_pbl_physics                      = 7,     7,     7,
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     1,     0,
- cudt                                = 5,     5,     5,
+ cudt                                = 0,     0,     0,
  omlcall                             = 1,
  oml_hml0                            = 50,
  oml_gamma                           = 0.14
@@ -1156,6 +1155,9 @@ cat >! phys_quarter_ss_1d << EOF
  open_ys                             = .true., .false.,.false.,
  open_ye                             = .true., .false.,.false.,
 EOF
+cat >! phys_quarter_ss_1e << EOF
+ sf_sfclay_physics                   = 0,     0,     0,
+EOF
 
 cat >! phys_quarter_ss_2a << EOF
  diff_opt                            = 2,
@@ -1176,6 +1178,9 @@ cat >! phys_quarter_ss_2d << EOF
  open_ys                             = .false.,.false.,.false.,
  open_ye                             = .false.,.false.,.false.,
 EOF
+cat >! phys_quarter_ss_2e << EOF
+ sf_sfclay_physics                   = 1,     1,     1,
+EOF
 
 cat >! phys_quarter_ss_3a << EOF
  diff_opt                            = 2,
@@ -1195,6 +1200,9 @@ cat >! phys_quarter_ss_3d << EOF
  periodic_y                          = .true., .false.,.false.,
  open_ys                             = .false.,.false.,.false.,
  open_ye                             = .false.,.false.,.false.,
+EOF
+cat >! phys_quarter_ss_3e << EOF
+ sf_sfclay_physics                   = 1,     1,     1,
 EOF
 
 if      ( $IO_FORM_WHICH[$IO_FORM] == IO ) then
@@ -2324,9 +2332,9 @@ banner 16
 						setenv XLSMPOPTS "parthds=1"
 					endif
 					if ( $NESTED == TRUE ) then
-						$SERIALRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe
+						$SERIALRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}
 					else if ( $NESTED != TRUE ) then
-						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe
+						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}
 					endif
 				else if ( $compopt == $COMPOPTS[2] ) then
 					setenv OMP_NUM_THREADS $OPENMP
@@ -2334,9 +2342,9 @@ banner 16
 						setenv XLSMPOPTS "parthds=${OPENMP}"
 					endif
 					if ( $NESTED == TRUE ) then
-						$OMPRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe
+						$OMPRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}
 					else if ( $NESTED != TRUE ) then
-						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe
+						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}
 					endif
 				else if ( $compopt == $COMPOPTS[3] ) then
 					setenv OMP_NUM_THREADS 1
@@ -2344,7 +2352,7 @@ banner 16
 						setenv XLSMPOPTS "parthds=1"
 					endif
 					$MPIRUNCOMMAND ../../main/wrf_${core}.exe.$compopt $MPIRUNCOMMANDPOST
-					mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe
+					mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}
 				endif
 #DAVE###################################################
 echo ran wrf fcst compopt = $compopt
@@ -2352,7 +2360,7 @@ banner 17
 #set ans = "$<"
 #DAVE###################################################
 
-				grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe
+				grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}
 				set success = $status
 
 				#	Did making the forecast work, by that, we mean "is there an output file created", and "are there 2 times periods".
@@ -2569,8 +2577,8 @@ banner 22
 #DAVE###################################################
 					@ tries = $tries + 1
 					$RUNCOMMAND ../../main/wrf_${core}.exe.$compopt $MPIRUNCOMMANDPOST
-					mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
-					grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}.exe_${n}p
+					mv rsl.error.0000 print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}_${n}p
+					grep "SUCCESS COMPLETE" print.out.wrf_${core}_Phys=${phys_option}_Parallel=${compopt}_${n}p
 					set success = $status
 					set ok = $status
 					if ( ( -e wrfout_d01_${filetag} ) && ( $success == 0 ) ) then
@@ -2671,6 +2679,7 @@ banner 25
 					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}b phys_mp
 					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}c phys_nh
 					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}d phys_bc
+					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}e phys_sfclay
 				else if ( $core == em_b_wave     ) then
 					cp ${CUR_DIR}/phys_b_wave_${phys_option}a     phys_tke
 					cp ${CUR_DIR}/phys_b_wave_${phys_option}b     phys_mp
@@ -2688,6 +2697,7 @@ banner 25
 						    -e '/^ diff_opt/d' -e '/^ km_opt/d' -e '/^ damp_opt/d' -e '/^ rk_ord/r ./phys_tke' 		\
  		                                    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format'	\
 						    -e '/^ mp_physics/d' -e '/^ &physics/r ./phys_mp' 						\
+						    -e '/^ sf_sfclay_physics/d' -e '/^ radt/r ./phys_sfclay' 					\
 						    -e '/^ non_hydrostatic/d' -e '/^ pd_tke/r ./phys_nh' 					\
 						    -e '/^ periodic_x /,/^ open_ye/d'								\
 						    -e '/^ &bdy_control/r ./phys_bc' 								\
@@ -2714,6 +2724,7 @@ banner 25
 						    -e '/^ diff_opt/d' -e '/^ km_opt/d' -e '/^ damp_opt/d' -e '/^ rk_ord/r ./phys_tke' 		\
  		                                    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format'	\
 						    -e '/^ mp_physics/d' -e '/^ &physics/r ./phys_mp' 						\
+						    -e '/^ sf_sfclay_physics/d' -e '/^ radt/r ./phys_sfclay' 					\
 						    -e '/^ non_hydrostatic/d' -e '/^ pd_tke/r ./phys_nh' 					\
 						    -e '/^ periodic_x/d' -e '/^ open_xs/d' -e '/^ open_xe/d' 					\
 						    -e '/^ periodic_y/d' -e '/^ open_ys/d' -e '/^ open_ye/d' 					\
@@ -2801,9 +2812,9 @@ banner 27
 						setenv XLSMPOPTS "parthds=1"
 					endif
 					if ( $NESTED == TRUE ) then
-						$SERIALRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}.exe
+						$SERIALRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}
 					else if ( $NESTED != TRUE ) then
-						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}.exe
+						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}
 					endif
 				else if ( $compopt == $COMPOPTS[2] ) then
 					setenv OMP_NUM_THREADS $OPENMP
@@ -2811,9 +2822,9 @@ banner 27
 						setenv XLSMPOPTS "parthds=${OPENMP}"
 					endif
 					if ( $NESTED == TRUE ) then
-						$OMPRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}.exe
+						$OMPRUNCOMMAND ../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}
 					else if ( $NESTED != TRUE ) then
-						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}.exe
+						../../main/wrf_${core}.exe.$compopt >! print.out.wrf_${core}_Parallel=${compopt}
 					endif
 				else if ( $compopt == $COMPOPTS[3] ) then
 					setenv OMP_NUM_THREADS 1
@@ -2821,7 +2832,7 @@ banner 27
 						setenv XLSMPOPTS "parthds=1"
 					endif
 					$MPIRUNCOMMAND ../../main/wrf_${core}.exe.$compopt $MPIRUNCOMMANDPOST
-					mv rsl.error.0000 print.out.wrf_${core}_Parallel=${compopt}.exe
+					mv rsl.error.0000 print.out.wrf_${core}_Parallel=${compopt}
 				endif
 #DAVE###################################################
 echo ran ideal fcst
@@ -2829,7 +2840,7 @@ banner 28
 #set ans = "$<"
 #DAVE###################################################
 
-				grep "SUCCESS COMPLETE" print.out.wrf_${core}_Parallel=${compopt}.exe
+				grep "SUCCESS COMPLETE" print.out.wrf_${core}_Parallel=${compopt}
 				set success = $status
 
 				#	Did making the forecast work, by that, we mean "is there an output file created?"

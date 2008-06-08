@@ -641,7 +641,7 @@ CC_TOOLS        =      $(SCC)
 #
 DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
-OMP		=	# -qsmp=noauto:noopt
+OMP		=	# -qsmp=noauto
 SFC		=       xlf90_r
 SCC		=       cc_r
 DM_FC		=	mpxlf90_r

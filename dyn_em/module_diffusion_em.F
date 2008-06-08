@@ -3261,7 +3261,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 !
 !calcolo del modulo della velocita
     DO j = j_start, j_end
-    DO i = i_start, i_end+1
+    DO i = i_start, ite
        V0_u=0.
        tao_xz=0.
        V0_u=    sqrt((u_2(i,kts,j)**2) +         &
@@ -3276,7 +3276,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     ENDDO
  
 !
-    DO j = j_start, j_end+1
+    DO j = j_start, jte
     DO i = i_start, i_end
        V0_v=0.
        tao_yz=0.
@@ -3293,7 +3293,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
 
   CASE (1,2) ! ustar computed from surface routine
     DO j = j_start, j_end
-    DO i = i_start, i_end+1
+    DO i = i_start, ite
        V0_u=0.
        tao_xz=0.
        V0_u=    sqrt((u_2(i,kts,j)**2) +         &
@@ -3308,7 +3308,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     ENDDO
     ENDDO
  
-    DO j = j_start, j_end+1
+    DO j = j_start, jte
     DO i = i_start, i_end
        V0_v=0.
        tao_yz=0.

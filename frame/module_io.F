@@ -604,7 +604,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 
   Status = 0
   Hndl = -1
-  IF ( .NOT. use_output_servers() ) THEN
+!  IF ( .NOT. use_output_servers() ) THEN
     SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -700,9 +700,9 @@ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDM
         ENDIF
         Status = WRF_FILE_NOT_OPENED
     END SELECT
-  ELSE
-    Status = 0
-  ENDIF
+!  ELSE
+!    Status = 0
+!  ENDIF
   CALL add_new_handle( Hndl, io_form, .TRUE., DataHandle )
 END SUBROUTINE wrf_open_for_read_begin
 

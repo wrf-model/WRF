@@ -163,9 +163,9 @@ CONTAINS
    endif
    
    if (ADAPT_STEP_FLAG) then
-      W0AVGfctr = 2 * CUDT * 60 - LASTDT
-      W0fctr = LASTDT
-      W0den = 2 * CUDT * 60
+      W0AVGfctr = 2 * MAX(CUDT*60,dt) - dt
+      W0fctr = dt
+      W0den = 2 * MAX(CUDT*60,dt)
    else
       W0AVGfctr = (TST-1.)
       W0fctr = 1.

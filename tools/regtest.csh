@@ -1993,7 +1993,6 @@ banner 7
 $compopt
 $compopts_nest
 EOF
-cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 	
 		#	The configure.wrf file needs to be adjusted as to whether we are requesting real*4 or real*8
 		#	as the default floating precision.
@@ -2001,6 +2000,16 @@ cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 		if ( $REAL8 == TRUE ) then
 			sed -e '/^RWORDSIZE/s/\$(NATIVE_RWORDSIZE)/8/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
 		endif
+	
+		#	Fix the OpenMP default for IBM regression testing - noopt required for bit-wise comparison.
+
+		if ( ( $compopt == $COMPOPTS[2] ) && ( `uname` == AIX ) ) then
+			sed -e '/^OMP/s/-qsmp=noauto/-qsmp=noauto:noopt/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
+		endif
+
+		#	Save the configure file.
+
+		cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 
 #DAVE###################################################
 echo configure built with optim mods removed, ready to compile

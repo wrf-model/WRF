@@ -1760,6 +1760,9 @@ BENCH_END(small_step_finish_tim)
 
          moist_variable_loop: DO im = PARAM_FIRST_SCALAR, num_3d_m
 
+! adv_moist_cond is set in module_physics_init based on mp_physics choice
+!       true except for Ferrier scheme
+
            IF (grid%adv_moist_cond .or. im==p_qv ) THEN
 
              !$OMP PARALLEL DO   &

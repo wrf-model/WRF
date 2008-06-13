@@ -983,12 +983,12 @@ state   real  mu_2m            ij       misc        1         -     -         "m
 state   real    max_cfl         -       misc        1         -     -       "max_cfl"           "maximum CFL value in grid at a time" "-"
 
 # Ocean Mixed-Layer State Variables
-state   real    TML            ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "TML"    "OCEAN MIXED-LAYER TEMPERATURE"   "K"
-state   real    T0ML           ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "T0ML"   "INITIAL OCEAN MIXED-LAYER TEMPERATURE"   "K"
-state   real    HML            ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HML"    "OCEAN MIXED-LAYER DEPTH"   "m"
-state   real    H0ML           ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "H0ML"   "INITIAL OCEAN MIXED-LAYER DEPTH"   "m"
-state   real    HUML           ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HUML"   "OCEAN MIXED-LAYER DEPTH * U-CURRENT"  " m2s-1 "
-state   real    HVML           ij      misc         1         -     rdu=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HVML"   "OCEAN MIXED-LAYER DEPTH * V-CURRENT"  " m2s-1 "
+state   real    TML            ij      misc         1         -     rd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "TML"    "OCEAN MIXED-LAYER TEMPERATURE"   "K"
+state   real    T0ML           ij      misc         1         -     rd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "T0ML"   "INITIAL OCEAN MIXED-LAYER TEMPERATURE"   "K"
+state   real    HML            ij      misc         1         -     rd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HML"    "OCEAN MIXED-LAYER DEPTH"   "m"
+state   real    H0ML           ij      misc         1         -     rd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "H0ML"   "INITIAL OCEAN MIXED-LAYER DEPTH"   "m"
+state   real    HUML           ij      misc         1         -     rd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HUML"   "OCEAN MIXED-LAYER DEPTH * U-CURRENT"  " m2s-1 "
+state   real    HVML           ij      misc         1         -     rd=(interp_mask_water_field:lu_index)u=(copy_fcnm)    "HVML"   "OCEAN MIXED-LAYER DEPTH * V-CURRENT"  " m2s-1 "
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               

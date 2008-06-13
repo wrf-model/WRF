@@ -14,21 +14,55 @@
    JM
 */
 
-TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p, Py_p )
-  int_p i_p , j_p , Px_p , Py_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p ;
+static char tfpmess[1024] ;
+
+TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p, Py_p , minx_p, miny_p, ierr_p )
+  int_p i_p , j_p , Px_p , Py_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p, minx_p, miny_p, ierr_p ;
 {
-  int i , j , ids, ide, jds, jde, npx, npy ;  /* inputs */
-  int Px, Py ;                                /* output */
+  int i , j , ids, ide, jds, jde, npx, npy, minx, miny ;  /* inputs */
+  int Px, Py ;                                            /* output */
   int idim, jdim ;
   int rem, a, b ;
   i = *i_p - 1 ;
   j = *j_p - 1 ;
   npx = *npx_p ;
   npy = *npy_p ;
+  minx = *minx_p ;
+  miny = *miny_p ;
   ids = *ids_p - 1 ; ide = *ide_p - 1 ;
   jds = *jds_p - 1 ; jde = *jde_p - 1 ;
   idim = ide - ids + 1 ;
   jdim = jde - jds + 1 ;
+
+  *ierr_p = 0 ;
+
+  /* begin: jm for Peter Johnsen -- noticed problem with polar filters in gwrf
+     if the number of processors exceeds number of vertical levels */
+  if ( npx > idim ) { npx = idim ; }
+  if ( npy > jdim ) { npy = jdim ; }
+
+  /* begin: wig; 10-Mar-2008
+    Check that the number of processors is not so high that the halos begin to overlap.
+    If they do, then reduce the number of processors allowed for that dimension.
+  */
+  tfpmess[0] = '\0' ;
+  if ( idim / npx < minx ) {
+    npx = idim/minx ;
+    if (npx < 1) { npx = 1 ;}
+    if (npx != *npx_p) {
+      sprintf(tfpmess,"RSL_LITE: TASK_FOR_POINT LIMITING PROCESSOR COUNT IN X-DIRECTION TO %d %d\n", npx,*npx_p) ;
+      *ierr_p = 1 ;
+    }
+  }
+  if ( jdim / npy < miny ) {
+    npy = jdim/miny ;
+    if (npy < 1) { npy = 1 ;}
+    if (npy != *npy_p) {
+      sprintf(tfpmess,"RSL_LITE: TASK_FOR_POINT LIMITING PROCESSOR COUNT IN Y-DIRECTION TO %d %d\n", npy,*npy_p) ;
+      *ierr_p = 1 ;
+    }
+  }
+  /* end: wig */
 
   i = i >= ids ? i : ids ; i = i <= ide ? i : ide ;
   rem = idim % npx ;
@@ -64,6 +98,11 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   *Py_p = Py ;
 }
 
+TASK_FOR_POINT_MESSAGE()
+{
+  fprintf(stderr,"%s\n",tfpmess) ;
+}
+
 #if 0
 main()
 {
@@ -85,15 +124,14 @@ main()
   TASK_FOR_POINT ( &i , &j ,
                    &ids, &ide, &jds, &jde , &npx , &npy ,
                    &Px, &Py ) ;
-/*  printf("%3d",P) ; */
+  printf("(%3d %3d)   ",Px,Py) ;
 #if 1
   }
-/*  printf("\n") ; */
+  printf("\n") ;
   }
-for ( i = 0 ; i < npx*npy ; i++ ) {
-  fprintf(stderr,"%3d. ips %d ipe %d (%d) jps %d jpe %d (%d)\n", i, ips[i], ipe[i], ipe[i]-ips[i]+1, jps[i], jpe[i], jpe[i]-jps[i]+1 ) ;
-}
+/*  for ( i = 0 ; i < npx*npy ; i++ ) { */
+/*    fprintf(stderr,"%3d. ips %d ipe %d (%d) jps %d jpe %d (%d)\n", i, ips[i], ipe[i], ipe[i]-ips[i]+1, jps[i], jpe[i], jpe[i]-jps[i]+1 ) ; */
+/*  } */
 #endif
 }
 #endif
-

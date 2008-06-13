@@ -1243,8 +1243,11 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   endif
   DH%TimeIndex = 0
   DH%Times     = ZeroDate
-!  stat = NF_CREATE(FileName, OR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+  stat = NF_CREATE(FileName, OR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
+#else
   stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
+#endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ext_ncd_open_for_write_begin ',__FILE__,', line', __LINE__

@@ -35,6 +35,7 @@ RSL_LITE_INIT_SWAP (
                 int * n3dD0, int *n2dD0, int * typesizeD0 , 
                 int * n3dL0, int *n2dL0, int * typesizeL0 , 
                 int * me0, int * np0 , int * np_x0 , int * np_y0 ,
+                int * min_subdomain ,
                 int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
                 int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
 {
@@ -52,6 +53,7 @@ RSL_LITE_INIT_SWAP (
   int Px, Py, P, coords[2] ;
   int ips_swap, ipe_swap ;
   MPI_Comm *comm, dummy_comm ;
+  int ierr ;
 
   comm = &dummy_comm ;
   *comm = MPI_Comm_f2c( *Fcomm ) ;
@@ -91,11 +93,13 @@ RSL_LITE_INIT_SWAP (
   for ( i = UP_ODD( ps ) ; i <= MIN(pe,m) ; i+=2 ) {
     ii = abs(i+n) % m ;
     if ( xy == 1 ) {
-      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, 
+                       min_subdomain, min_subdomain, &ierr ) ;
       coords[1] = Px ; coords[0] = Py ;
       MPI_Cart_rank( *comm, coords, &P ) ;
     } else {
-      TASK_FOR_POINT ( &ips , &ii , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      TASK_FOR_POINT ( &ips , &ii , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, 
+                       min_subdomain, min_subdomain, &ierr ) ;
       coords[1] = Px ; coords[0] = Py ;
       MPI_Cart_rank( *comm, coords, &P ) ;
     }
@@ -117,6 +121,7 @@ RSL_LITE_INIT_SWAP (
 
 RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , int * xy0 , int * pu0 , char * memord , int * xstag0 ,
            int *me0, int * np0 , int * np_x0 , int * np_y0 , 
+           int * min_subdomain ,
            int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
            int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
            int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
@@ -178,7 +183,8 @@ RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , i
 
     for ( i = UP_ODD(ips) ; i <= MIN(ipe,m) ; i+=2 ) {
       ii = abs(i+n) % m ;
-      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      TASK_FOR_POINT ( &ii , &jps , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, 
+                       min_subdomain, min_subdomain, &ierr ) ;
       coords[1] = Px ; coords[0] = Py ;
       MPI_Cart_rank( *comm, coords, &P ) ;
       p = buffer_for_proc( P , 0 , da_buf ) ;
@@ -237,7 +243,8 @@ RSL_LITE_PACK_SWAP ( int * Fcomm , char * buf , int * odd0 , int * typesize0 , i
   } else if ( np_y > 1 && xy == 0 ) {
     for ( j = UP_ODD(jps) ; j <= MIN(jpe,m) ; j+=2 ) {
       jj = abs(j+n) % m ;
-      TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py ) ;
+      TASK_FOR_POINT ( &ips , &jj , &ids, &ide , &jds, &jde , &np_x , &np_y , &Px, &Py, 
+                       min_subdomain, min_subdomain, &ierr ) ;
       coords[1] = Px ; coords[0] = Py ;
       MPI_Cart_rank( *comm, coords, &P ) ;
       p = buffer_for_proc( P , 0 , da_buf ) ;

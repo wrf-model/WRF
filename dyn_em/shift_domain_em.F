@@ -72,6 +72,7 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
 
 ! shift the nest domain in x
    do ii = 1,abs(disp_x)
+#include <SHIFT_HALO_X_HALO.inc>
 #include <shift_halo_x.inc>
    enddo
 
@@ -125,6 +126,7 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
 
 ! shift the nest domain in y
    do ii = 1,abs(disp_y)
+#include <SHIFT_HALO_Y_HALO.inc>
 #include <shift_halo_y.inc>
    enddo
 

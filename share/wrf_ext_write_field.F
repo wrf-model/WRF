@@ -70,6 +70,7 @@
     CALL debug_io_wrf ( debug_message,DateStr,                          &
                         domain_start,domain_end,patch_start,patch_end,  &
                         memory_start,memory_end                          )
+#if 0
     Status = 1
     if ( de1 - ds1 < 0 ) return
     if ( de2 - ds2 < 0 ) return
@@ -80,6 +81,7 @@
     if ( me1 - ms1 < 0 ) return
     if ( me2 - ms2 < 0 ) return
     if ( me3 - ms3 < 0 ) return
+#endif
     Status = 0
 
 

@@ -31,6 +31,8 @@
       a) add -DTEST_ON_GPU_RK -DRUN_ON_GPU to ARCH_LOCAL
       b) add ../phys/wsm5.cu.o and ../phys/wsm5_gpu.cu.o to LIB_LOCAL 
          (define LIB_LOCAL it does not already exist)
+      c) add -L/usr/local/cuda/lib -lcuda -lcudart to LIB_LOCAL
+         (or wherever the cuda lib is on your system)
 
    3)  Compile wrf as usual.
 

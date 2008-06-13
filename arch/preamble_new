@@ -81,6 +81,6 @@ LIBWRFLIB = libwrflib.a
 
 #### Architecture specific settings ####
 
-# Notes: for moving nests, add -DMOVE_NESTS to ARCH_LOCAL
-#        for vortex tracking nests, add -DMOVE_NESTS -DVORTEX_CENTER to ARCH_LOCAL
+# To enable over-decompostion with dmpar and dm+sm compiles, 
+# add -DALLOW_OVERDECOMP to ARCH_LOCAL, below. (not recommended)
 

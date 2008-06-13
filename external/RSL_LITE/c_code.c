@@ -34,11 +34,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
-#  ifdef VERY_LARGE_MAXPROC
-    sprintf(filename,"rsl.out.%08d",*me) ;
-#  else
     sprintf(filename,"rsl.out.%04d",*me) ;
-#  endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.out.nnnn") ;
@@ -54,11 +50,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     }
 
 /* redirect standard error */
-#  ifdef VERY_LARGE_MAXPROC
-    sprintf(filename,"rsl.error.%08d",*me) ;
-#  else
     sprintf(filename,"rsl.error.%04d",*me) ;
-#  endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.error.log") ;
@@ -143,11 +135,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
                                                                                                                                               
    /* Each tasks creates/opens its own output and error files */
                                                                                                                                               
-#  ifdef VERY_LARGE_MAXPROC
-   sprintf(filename, "%s/%08d/rsl.out.%08d","TASKOUTPUT",*me,*me) ;
-#  else
    sprintf(filename, "%s/%04d/rsl.out.%04d","TASKOUTPUT",*me,*me) ;
-#  endif
         
    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
    {
@@ -164,11 +152,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
         return ;
    }
         
-#  ifdef VERY_LARGE_MAXPROC
-   sprintf(filename, "%s/%08d/rsl.error.%08d","TASKOUTPUT",*me,*me) ;
-#  else
    sprintf(filename, "%s/%04d/rsl.error.%04d","TASKOUTPUT",*me,*me) ;
-#  endif
    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
    {
        perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.error.nnnn") ;
@@ -341,9 +325,11 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 
   da_buf = ( pu == 0 ) ? RSL_SENDBUF : RSL_RECVBUF ;
 
+  if ( ips <= ipe && jps <= jpe ) {
+
   if ( np_y > 1 && xy == 0 ) {
     MPI_Cart_shift( *comm0 , 0, 1, &ym, &yp ) ;
-    if ( yp != MPI_PROC_NULL ) {
+    if ( yp != MPI_PROC_NULL && jpe <= jde  && jde != jpe ) {
       p = buffer_for_proc( yp , 0 , da_buf ) ;
       if ( pu == 0 ) {
         js = jpe-shw+1     ; je = jpe ;
@@ -393,7 +379,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 	}
       }
     }
-    if ( ym != MPI_PROC_NULL ) {
+    if ( ym != MPI_PROC_NULL && jps >= jds  && jps != jds ) {
       p = buffer_for_proc( ym , 0 , da_buf ) ;
       if ( pu == 0 ) {
         js = jps           ; je = jps+shw-1 ;
@@ -447,7 +433,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
 
   if ( np_x > 1 && xy == 1 ) {
     MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
-    if ( xp != MPI_PROC_NULL ) {
+    if ( xp != MPI_PROC_NULL  && ipe <= ide && ide != ipe ) {
       p = buffer_for_proc( xp , 0 , da_buf ) ;
       if ( pu == 0 ) {
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
@@ -497,7 +483,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
         }
       }
     }
-    if ( xm != MPI_PROC_NULL ) {
+    if ( xm != MPI_PROC_NULL  && ips >= ids && ids != ips ) {
       p = buffer_for_proc( xm , 0 , da_buf ) ;
       if ( pu == 0 ) {
         js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
@@ -548,6 +534,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 , int * typesize0 , int * 
       }
     }
   }
+  }
 #endif
 
 }
@@ -582,10 +569,10 @@ RSL_LITE_EXCH_Y ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
     if ( ym != MPI_PROC_NULL ) {
       ierr=MPI_Isend ( buffer_for_proc( ym, 0,       RSL_SENDBUF ), ym_curs, MPI_CHAR, ym, ym, comm, &ym_send ) ;
     }
-    if ( yp != MPI_PROC_NULL ) MPI_Wait( &yp_recv, &stat ) ; 
-    if ( ym != MPI_PROC_NULL ) MPI_Wait( &ym_recv, &stat ) ; 
-    if ( yp != MPI_PROC_NULL ) MPI_Wait( &yp_send, &stat ) ; 
-    if ( ym != MPI_PROC_NULL ) MPI_Wait( &ym_send, &stat ) ;
+    if ( yp != MPI_PROC_NULL ) {  MPI_Wait( &yp_recv, &stat ) ;  }
+    if ( ym != MPI_PROC_NULL ) {  MPI_Wait( &ym_recv, &stat ) ;  }
+    if ( yp != MPI_PROC_NULL ) {  MPI_Wait( &yp_send, &stat ) ;  }
+    if ( ym != MPI_PROC_NULL ) {  MPI_Wait( &ym_send, &stat ) ;  }
   }
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
 #endif
@@ -616,10 +603,10 @@ RSL_LITE_EXCH_X ( int * Fcomm0, int *me0, int * np0 , int * np_x0 , int * np_y0 
     if ( xm != MPI_PROC_NULL ) {
       MPI_Isend ( buffer_for_proc( xm, 0,       RSL_SENDBUF ), xm_curs, MPI_CHAR, xm, xm, comm, &xm_send ) ;
     }
-    if ( xp != MPI_PROC_NULL ) MPI_Wait( &xp_recv, &stat ) ; 
-    if ( xm != MPI_PROC_NULL ) MPI_Wait( &xm_recv, &stat ) ; 
-    if ( xp != MPI_PROC_NULL ) MPI_Wait( &xp_send, &stat ) ; 
-    if ( xm != MPI_PROC_NULL ) MPI_Wait( &xm_send, &stat ) ;
+    if ( xp != MPI_PROC_NULL ) {  MPI_Wait( &xp_recv, &stat ) ;  }
+    if ( xm != MPI_PROC_NULL ) {  MPI_Wait( &xm_recv, &stat ) ;  }
+    if ( xp != MPI_PROC_NULL ) {  MPI_Wait( &xp_send, &stat ) ;  }
+    if ( xm != MPI_PROC_NULL ) {  MPI_Wait( &xm_send, &stat ) ;  }
   }
   yp_curs = 0 ; ym_curs = 0 ; xp_curs = 0 ; xm_curs = 0 ;
 #endif

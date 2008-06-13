@@ -7718,6 +7718,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   DO i = i_start, i_end
 
      ! Un-"canceled" map scale factor, ADT Eq. 48
+     ! It is correct to use msftx (and not msfty), per W. Skamarock, 20080606
      tendency (i,k,j) = tendency(i,k,j)                           &
                - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
                                    +fqyl(i,k,j+1)-fqyl(i,k,j))   )

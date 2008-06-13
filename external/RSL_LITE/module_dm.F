@@ -11,7 +11,7 @@ MODULE module_dm
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
    INTEGER, PARAMETER :: max_halo_width = 6
 #else
-   INTEGER, PARAMETER :: max_halo_width = 5
+   INTEGER, PARAMETER :: max_halo_width = 6 ! 5
 #endif
 
    INTEGER :: ips_save, ipe_save, jps_save, jpe_save, itrace
@@ -234,10 +234,11 @@ CONTAINS
 
       INTEGER               :: parent_grid_ratio, i_parent_start, j_parent_start
       INTEGER               :: shw
-      INTEGER               :: idim_cd, jdim_cd
+      INTEGER               :: idim_cd, jdim_cd, ierr
 
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER  :: nest_grid
+      CHARACTER*256   :: mess
 
 
       SELECT CASE ( model_data_order )
@@ -407,54 +408,76 @@ CONTAINS
          ! we want the intermediate domain to be decomposed the
          ! the same as the underlying nest. So try this:
 
-! At such time as NMM nesting is able to use RSL_LITE (would require
-! a number of other mods to this file for that to happen), this should
-! be updated along the lines of what's done in compute_memory_dims_rsl_lite
-! below. See note dated 20051020.  JM
-
          c_ips = -1
          nj = ( c_jds - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
+         ierr = 0 
          DO i = c_ids, c_ide
             ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
+            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                                  max_halo_width+3, max_halo_width+3, ierr )
             IF ( Px .EQ. mytask_x ) THEN
                c_ipe = i
                IF ( c_ips .EQ. -1 ) c_ips = i
             ENDIF
          ENDDO
+         IF ( ierr .NE. 0 ) THEN
+            CALL tfp_message(__FILE__,__LINE__)
+         ENDIF
+         IF (c_ips .EQ. -1 ) THEN
+            c_ipe = -1
+            c_ips = 0
+         ENDIF
 
          c_jps = -1
          ni = ( c_ids - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
+         ierr = 0 
          DO j = c_jds, c_jde
             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
+            CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                                  max_halo_width+3, max_halo_width+3 )
+
+
             IF ( Py .EQ. mytask_y ) THEN
                c_jpe = j
                IF ( c_jps .EQ. -1 ) c_jps = j
             ENDIF
          ENDDO
+         IF ( ierr .NE. 0 ) THEN
+            CALL tfp_message(__FILE__,__LINE__)
+         ENDIF
+         IF (c_jps .EQ. -1 ) THEN
+            c_jpe = -1
+            c_jps = 0
+         ENDIF
 
+         IF ( c_jps < c_jpe .AND. c_ips < c_ipe ) THEN
 ! extend the patch dimensions out shw along edges of domain
-         IF ( mytask_x .EQ. 0 ) THEN
-           c_ips = c_ips - shw
-         ENDIF
-         IF ( mytask_x .EQ. ntasks_x-1 ) THEN
-           c_ipe = c_ipe + shw
-         ENDIF
-         c_ims = max( c_ips - max(shw,max_halo_width), c_ids - bdx ) - 1
-         c_ime = min( c_ipe + max(shw,max_halo_width), c_ide + bdx ) + 1
+           IF ( mytask_x .EQ. 0 ) THEN
+             c_ips = c_ips - shw
+           ENDIF
+           IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+             c_ipe = c_ipe + shw
+           ENDIF
+           c_ims = max( c_ips - max(shw,max_halo_width), c_ids - bdx ) - 1
+           c_ime = min( c_ipe + max(shw,max_halo_width), c_ide + bdx ) + 1
 
 ! handle j dims
 ! extend the patch dimensions out shw along edges of domain
-         IF ( mytask_y .EQ. 0 ) THEN
-            c_jps = c_jps - shw
-         ENDIF
-         IF ( mytask_y .EQ. ntasks_y-1 ) THEN
-            c_jpe = c_jpe + shw
-         ENDIF
-         c_jms = max( c_jps - max(shw,max_halo_width), c_jds - bdx ) - 1
-         c_jme = min( c_jpe + max(shw,max_halo_width), c_jde + bdx ) + 1
+           IF ( mytask_y .EQ. 0 ) THEN
+              c_jps = c_jps - shw
+           ENDIF
+           IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+              c_jpe = c_jpe + shw
+           ENDIF
+           c_jms = max( c_jps - max(shw,max_halo_width), c_jds - bdx ) - 1
+           c_jme = min( c_jpe + max(shw,max_halo_width), c_jde + bdx ) + 1
 ! handle k dims
+         ELSE
+           c_ims = 0
+           c_ime = 0
+           c_jms = 0
+           c_jme = 0
+         ENDIF
          c_kps = 1
          c_kpe = c_kde
          c_kms = 1
@@ -608,7 +631,7 @@ CONTAINS
     INTEGER, INTENT(OUT)    ::  ipsx, ipex, jpsx, jpex, kpsx, kpex
     INTEGER, INTENT(OUT)    ::  ipsy, ipey, jpsy, jpey, kpsy, kpey
 
-    INTEGER Px, Py, P, i, j, k
+    INTEGER Px, Py, P, i, j, k, ierr
 
 #if ( ! NMM_CORE == 1 )
 
@@ -616,13 +639,18 @@ CONTAINS
 
     ips = -1
     j = jds
+    ierr = 0
     DO i = ids, ide
-       CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                             max_halo_width+3, max_halo_width+3, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( ips .EQ. -1 ) ips = i
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF
     ! handle setting the memory dimensions where there are no X elements assigned to this proc
     IF (ips .EQ. -1 ) THEN
        ipe = -1
@@ -630,18 +658,35 @@ CONTAINS
     ENDIF
     jps = -1
     i = ids
+    ierr = 0
     DO j = jds, jde
-       CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                             max_halo_width+3, max_halo_width+3, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( jps .EQ. -1 ) jps = j
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF
     ! handle setting the memory dimensions where there are no Y elements assigned to this proc
     IF (jps .EQ. -1 ) THEN
        jpe = -1
        jps = 0
     ENDIF
+
+!begin: wig; 12-Mar-2008
+! This appears redundant with the conditionals above, but we get cases with only
+! one of the directions being set to "missing" when turning off extra processors.
+! This may break the handling of setting only one of nproc_x or nproc_y via the namelist.
+    IF (ipe .EQ. -1 .or. jpe .EQ. -1) THEN
+       ipe = -1
+       ips = 0
+       jpe = -1
+       jps = 0
+    ENDIF
+!end: wig; 12-Mar-2008
 
 ! 
 ! description of transpose decomposition strategy for RSL LITE. 20061231jm
@@ -684,13 +729,19 @@ CONTAINS
 
     kpsx = -1
     j = jds ;
+    ierr = 0
     DO k = kds, kde
-       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                             1, max_halo_width+3, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           kpex = k
           IF ( kpsx .EQ. -1 ) kpsx = k
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF 
+    
 ! handle case where no levels are assigned to this process
 ! no iterations.  Do same for I and J. Need to handle memory alloc below.
     IF (kpsx .EQ. -1 ) THEN
@@ -700,17 +751,34 @@ CONTAINS
 
     jpsx = -1
     k = kds ;
+    ierr = 0
     DO j = jds, jde
-       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py )
+       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+                             1, max_halo_width+3, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpex = j
           IF ( jpsx .EQ. -1 ) jpsx = j
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF 
     IF (jpsx .EQ. -1 ) THEN
        jpex = -1
        jpsx = 0
     ENDIF
+
+!begin: wig; 12-Mar-2008
+! This appears redundant with the conditionals above, but we get cases with only
+! one of the directions being set to "missing" when turning off extra processors.
+! This may break the handling of setting only one of nproc_x or nproc_y via the namelist.
+    IF (ipex .EQ. -1 .or. jpex .EQ. -1) THEN
+       ipex = -1
+       ipsx = 0
+       jpex = -1
+       jpsx = 0
+    ENDIF
+!end: wig; 12-Mar-2008
 
 ! XzYx decomposition  (note, x grid dim is decomposed over Y processor dim)
 
@@ -719,13 +787,18 @@ CONTAINS
 
     ipsy = -1
     k = kds ;
+    ierr = 0
     DO i = ids, ide
-       CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px ) ! x and y for proc mesh reversed
+       CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
+                             max_halo_width+3, 1, ierr ) ! x and y for proc mesh reversed
        IF ( Py .EQ. mytask_y ) THEN
           ipey = i
           IF ( ipsy .EQ. -1 ) ipsy = i
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF 
     IF (ipsy .EQ. -1 ) THEN
        ipey = -1
        ipsy = 0
@@ -737,44 +810,56 @@ CONTAINS
 ! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
 ! adjust decomposition to reflect.  20051020 JM
     ips = -1
-    j = jds ;
+    j = jds
+    ierr = 0
     DO i = ids, ide-1
-       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
+       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
+                             max_halo_width+3, max_halo_width+3, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
           IF ( ips .EQ. -1 ) ips = i
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF 
     jps = -1
     i = ids ;
+    ierr = 0
     DO j = jds, jde-1
-       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py )
+       CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
+                             max_halo_width+3, max_halo_width+3, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
           IF ( jps .EQ. -1 ) jps = j
        ENDIF
     ENDDO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message(__FILE__,__LINE__)
+    ENDIF 
 #endif
 
 ! extend the patch dimensions out shw along edges of domain
-    IF ( mytask_x .EQ. 0 ) THEN
-       ips = ips - shw
-       ipsy = ipsy - shw
-    ENDIF
-    IF ( mytask_x .EQ. ntasks_x-1 ) THEN
-       ipe = ipe + shw
-       ipey = ipey + shw
-    ENDIF
-    IF ( mytask_y .EQ. 0 ) THEN
-       jps = jps - shw
-       jpsx = jpsx - shw
-    ENDIF
-    IF ( mytask_y .EQ. ntasks_y-1 ) THEN
-       jpe = jpe + shw
-       jpex = jpex + shw
-    ENDIF
+    IF ( ips < ipe .and. jps < jpe ) THEN           !wig; 11-Mar-2008
+       IF ( mytask_x .EQ. 0 ) THEN
+          ips = ips - shw
+          ipsy = ipsy - shw
+       ENDIF
+       IF ( mytask_x .EQ. ntasks_x-1 ) THEN
+          ipe = ipe + shw
+          ipey = ipey + shw
+       ENDIF
+       IF ( mytask_y .EQ. 0 ) THEN
+          jps = jps - shw
+          jpsx = jpsx - shw
+       ENDIF
+       IF ( mytask_y .EQ. ntasks_y-1 ) THEN
+          jpe = jpe + shw
+          jpex = jpex + shw
+       ENDIF
+    ENDIF                                           !wig; 11-Mar-2008
 
     kps = 1
     kpe = kde-kds+1
@@ -785,6 +870,7 @@ CONTAINS
     kmex = kpex
     kmsy = kpsy
     kmey = kpey
+
     ! handle setting the memory dimensions where there are no levels assigned to this proc
     IF ( kpsx .EQ. 0 .AND. kpex .EQ. -1 ) THEN
       kmsx = 0
@@ -795,7 +881,7 @@ CONTAINS
       kmey = 0
     ENDIF
 
-    IF ( ips .EQ. 0 .AND. ipe .EQ. -1 ) THEN
+    IF ( (jps .EQ. 0 .AND. jpe .EQ. -1) .OR. (ips .EQ. 0 .AND. ipe .EQ. -1) ) THEN
       ims = 0
       ime = 0
     ELSE
@@ -815,7 +901,7 @@ CONTAINS
       imey = ipey
     ENDIF
 
-    IF ( jps .EQ. 0 .AND. jpe .EQ. -1 ) THEN
+    IF ( (jps .EQ. 0 .AND. jpe .EQ. -1) .OR. (ips .EQ. 0 .AND. ipe .EQ. -1) ) THEN
       jms = 0
       jme = 0
     ELSE
@@ -2430,7 +2516,6 @@ END
        CALL collect_on_comm0 (  local_communicator , IWORDSIZE ,  &
                                 Patch , 6 ,                       &
                                 GPatch , 6*ntasks                 )
-
        ndim = len(TRIM(ordering))
 
        IF ( wrf_dm_on_monitor() .AND. ndim .GE. 2 ) THEN
@@ -3895,6 +3980,21 @@ SUBROUTINE wrf_dm_define_comms ( grid )
    TYPE(domain) , INTENT (INOUT) :: grid
    RETURN
 END SUBROUTINE wrf_dm_define_comms
+
+SUBROUTINE tfp_message( fname, lno )
+   CHARACTER*(*) fname
+   INTEGER lno
+   CHARACTER*1024 mess
+#ifndef STUBMPI
+   WRITE(mess,*)'tfp_message: ',trim(fname),lno
+   CALL wrf_message(mess)
+# ifdef ALLOW_OVERDECOMP
+     CALL task_for_point_message  ! defined in RSL_LITE/task_for_point.c
+# else
+     CALL wrf_error_fatal(mess)
+# endif
+#endif 
+END SUBROUTINE tfp_message
 
    SUBROUTINE set_dm_debug 
     USE module_dm

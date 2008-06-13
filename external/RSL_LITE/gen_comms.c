@@ -26,6 +26,8 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
   char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
   int zdex ;
 
+    set_mark( 0, Domain.fields ) ;
+
     strcpy( tmp, p->comm_define ) ;
     strcpy( commuse, p->use ) ;
     t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
@@ -66,15 +68,19 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
                 /* acutal or dummy argument */
                 {
 /* explicit dummy or actual arguments for 4D arrays */
-/* TODO:  only print num_%s once */
-fprintf(fp,"  num_%s, &\n",q->name) ;
+if ( q->mark == 0 ) {
+  fprintf(fp,"  num_%s, &\n",q->name) ;
+  q->mark = 1 ;
+}
 fprintf(fp,"  %s, &\n",varref) ;
                 }
                 else
                 {
 /* declaration of dummy arguments for 4D arrays */
-/* TODO:  only print num_%s once */
-fprintf(fp,"  INTEGER, INTENT(IN) :: num_%s\n",q->name) ;
+if ( q->mark == 0 ) {
+  fprintf(fp,"  INTEGER, INTENT(IN) :: num_%s\n",q->name) ;
+  q->mark = 1 ;
+}
 fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33,num_%s)\n",
                      q->type->name , varref , q->name ) ;
                 }
@@ -464,7 +470,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
   char varname[NAMELEN] ;
   char * pos1 , * pos2 ;
   char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
-  int zdex ;
+  int xdex,ydex,zdex ;
 
     strcpy( tmp, p->comm_define ) ;
     strcpy( commuse, p->use ) ;
@@ -503,9 +509,16 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               {
                 set_mem_order( q->members, memord , NAMELEN) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
-fprintf(fp," CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n",
+                xdex = get_index_for_coord( q , COORD_X ) ;
+                ydex = get_index_for_coord( q , COORD_Y ) ;
+fprintf(fp," IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
+fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n",
                        packname, commname, varref , shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+if ( !strcmp( packname, "RSL_LITE_PACK_SWAP" ) ||
+     !strcmp( packname, "RSL_LITE_PACK_CYCLE" ) ) {
+  fprintf(fp,"max_halo_width+3,                         &\n") ;
+}
 if ( q->subgrid == 0 ) {
 fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
 fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
@@ -515,6 +528,7 @@ fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
 fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,kms,kme,&\n") ;
 fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
 }
+fprintf(fp," ENDIF\n") ;
 fprintf(fp,"ENDDO\n") ;
               }
               else
@@ -524,16 +538,14 @@ fprintf(fp,"ENDDO\n") ;
             }
             else
             {
-#if 0
-              fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",varname) ; 
-#else
-              fprintf(fp,"IF ( SIZE(%s) .GT. 1 ) THEN\n",varref ) ; 
-#endif
               set_mem_order( q, memord , NAMELEN) ;
               if       ( q->ndims == 3 ) {
 
                 dimd = get_dimnode_for_coord( q , COORD_Z ) ;
+                xdex = get_index_for_coord( q , COORD_X ) ;
+                ydex = get_index_for_coord( q , COORD_Y ) ;
                 zdex = get_index_for_coord( q , COORD_Z ) ;
+                fprintf(fp,"IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
                 if ( dimd != NULL )
                 {
                   char s[256], e[256] ;
@@ -587,7 +599,11 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                     }
                   }
                 }
+                fprintf(fp,"ENDIF\n") ;
               } else if ( q->ndims == 2 ) {
+                xdex = get_index_for_coord( q , COORD_X ) ;
+                ydex = get_index_for_coord( q , COORD_Y ) ;
+                fprintf(fp,"IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
                 fprintf(fp,"CALL %s ( %s,&\n %s, %d, %s, %d, %d, DATA_ORDER_%s, %d, &\n", packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                 if ( q->subgrid == 0 ) {
@@ -599,8 +615,8 @@ fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
 fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,1,1,&\n") ;
 fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,1,1)\n") ;
                 }
+                fprintf(fp,"ENDIF\n") ;
               }
-              fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
             }
           }
           
@@ -923,6 +939,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    fprintf(fp,"      max_halo_width+3, &\n" ) ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
@@ -1066,6 +1083,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    fprintf(fp,"      max_halo_width+3,               &\n") ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
@@ -1317,7 +1335,7 @@ gen_shift (  char * dirname )
   char fname[NAMELEN], vname[NAMELEN] ;
   char indices[NAMELEN], post[NAMELEN], tmp3[NAMELEN] ;
   char memord[NAMELEN] ;
-  int zdex ;
+  int xdex,ydex,zdex ;
   node_t Shift ;
 int said_it = 0 ;
 int said_it2 = 0 ;
@@ -1325,11 +1343,12 @@ int said_it2 = 0 ;
   for ( direction = directions ; *direction != NULL ; direction++ )
   {
     if ( dirname == NULL ) return(1) ;
-    sprintf(fname,"shift_halo_%s",*direction) ;
+    sprintf(fname,"shift_halo_%s_halo",*direction) ;
 
     Shift.next = NULL ;
     sprintf( Shift.use, "" ) ;
     strcpy( Shift.comm_define, "48:" ) ;
+    strcpy( Shift.name , fname ) ;
     for ( p = Domain.fields ; p != NULL ; p = p->next ) {
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array )
       {
@@ -1370,10 +1389,10 @@ if ( p->subgrid != 0 ) {  /* moving nests not implemented for subgrid variables 
     }
     if ( strlen(Shift.comm_define) > 0 )Shift.comm_define[strlen(Shift.comm_define)-1] = '\0' ;
 
-    gen_halos( dirname , fname, &Shift ) ;
+    gen_halos( dirname , NULL, &Shift ) ;
 
     sprintf(fname,"%s/shift_halo_%s.inc",dirname,*direction) ;
-    if ((fp = fopen( fname , "a" )) == NULL ) return(1) ;
+    if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
 
 /* now generate the shifts themselves */
     for ( p = Domain.fields ; p != NULL ; p = p->next )
@@ -1403,6 +1422,8 @@ if ( p->proc_orient == ALL_X_ON_PROC || p->proc_orient == ALL_Y_ON_PROC ) contin
             {
               node_t *member ;
 
+              xdex = get_index_for_coord( p , COORD_X ) ;
+              ydex = get_index_for_coord( p , COORD_Y ) ;
               zdex = get_index_for_coord( p , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
@@ -1413,21 +1434,37 @@ fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
                   char * stag = "" ;
                   stag = p->members->stag_x?"":"-1" ;
                   if        ( !strcmp( memord , "XYZ" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,:,itrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,:,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "YXZ" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe),:,itrace) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px,:,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "XZY" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),:,jms:jme,itrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,:,jms:jme,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "YZX" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (jms:jme,:,ips:min(ide%s,ipe),itrace) = grid%%%s (jms:jme,:,ips+px:min(ide%s,ipe)+px,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "ZXY" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (:,ips:min(ide%s,ipe),jms:jme,itrace) = grid%%%s (:,ips+px:min(ide%s,ipe)+px,jms:jme,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "ZYX" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (:,jms:jme,ips:min(ide%s,ipe),itrace) = grid%%%s (:,jms:jme,ips+px:min(ide%s,ipe)+px,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "XY" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,itrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "YX" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                     fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe),itrace) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   }
                 }
                 else
@@ -1435,21 +1472,37 @@ fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
                   char * stag = "" ;
                   stag = p->members->stag_y?"":"-1" ;
                   if        ( !strcmp( memord , "XYZ" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe),:,itrace) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py,:,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "YXZ" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime,:,itrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime,:,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "XZY" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (ims:ime,:,jps:min(jde%s,jpe),itrace) = grid%%%s (ims:ime,:,jps+py:min(jde%s,jpe)+py,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "YZX" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),:,ims:ime,itrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,:,ims:ime,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "ZXY" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (:,ims:ime,jps:min(jde%s,jpe),itrace) = grid%%%s (:,ims:ime,jps+py:min(jde%s,jpe)+py,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "ZYX" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (:,jps:min(jde%s,jpe),ims:ime,itrace) = grid%%%s (:,jps+py:min(jde%s,jpe)+py,ims:ime,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "XY" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe),itrace) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   } else if ( !strcmp( memord , "YX" ) ) {
+                    fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime,itrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"ENDIF\n") ;
                   }
                 }
 fprintf(fp, "  ENDDO\n" ) ;
@@ -1461,50 +1514,78 @@ fprintf(fp, "  ENDDO\n" ) ;
             }
             else
 	    {
+              xdex = get_index_for_coord( p , COORD_X ) ;
+              ydex = get_index_for_coord( p , COORD_Y ) ;
               set_mem_order( p, memord , NAMELEN) ;
-#if 0
-              fprintf(fp,"IF ( in_use_for_config(grid%%id,'%s') ) THEN\n",vname) ; 
-#else
-              fprintf(fp,"IF ( SIZE( grid%%%s ) .GT. 1 ) THEN\n",vname) ; 
-#endif
               if ( !strcmp( *direction, "x" ) ) {
                 if        ( !strcmp( memord , "XYZ" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,:) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,:)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "YXZ" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe),:) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px,:)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "XZY" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),:,jms:jme) = grid%%%s (ips+px:min(ide%s,ipe)+px,:,jms:jme)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "YZX" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (jms:jme,:,ips:min(ide%s,ipe)) = grid%%%s (jms:jme,:,ips+px:min(ide%s,ipe)+px)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "ZXY" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (:,ips:min(ide%s,ipe),jms:jme) = grid%%%s (:,ips+px:min(ide%s,ipe)+px,jms:jme)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "ZYX" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (:,jms:jme,ips:min(ide%s,ipe)) = grid%%%s (:,jms:jme,ips+px:min(ide%s,ipe)+px)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "XY" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "YX" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
                   fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe)) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px)\n", vname,  p->stag_x?"":"-1", vname, p->stag_x?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 }
               } else {
                 if        ( !strcmp( memord , "XYZ" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe),:) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py,:)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "YXZ" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime,:) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime,:)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "XZY" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (ims:ime,:,jps:min(jde%s,jpe)) = grid%%%s (ims:ime,:,jps+py:min(jde%s,jpe)+py)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "YZX" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),:,ims:ime) = grid%%%s (jps+py:min(jde%s,jpe)+py,:,ims:ime)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "ZXY" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (:,ims:ime,jps:min(jde%s,jpe)) = grid%%%s (:,ims:ime,jps+py:min(jde%s,jpe)+py)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "ZYX" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (:,jps:min(jde%s,jpe),ims:ime) = grid%%%s (:,jps+py:min(jde%s,jpe)+py,ims:ime)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "XY" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe)) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 } else if ( !strcmp( memord , "YX" ) ) {
+                  fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
 	          fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime)\n", vname, p->stag_y?"":"-1", vname, p->stag_y?"":"-1" ) ;
+                  fprintf(fp,"ENDIF\n") ;
                 }
               }
-              fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
             }
 	  }
 	}
@@ -1602,6 +1683,7 @@ if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
 if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
+        fprintf(fp,"                        ,max_halo_width+3                                  &\n") ;
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
         fprintf(fp,"                        ,pig,pjg,retval )\n") ;
@@ -1616,6 +1698,7 @@ if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
 if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
+        fprintf(fp,"                        ,max_halo_width+3                                  &\n") ;
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
         fprintf(fp,"                        ,pig,pjg,retval )\n") ;

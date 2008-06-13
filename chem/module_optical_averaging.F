@@ -1019,13 +1019,13 @@
         if (l .ge. p1st)  mass_ba4i= chem(i,k,j,l)*conv1a
         l=lptr_orgpa_aer(1,2,iphase)
         if (l .ge. p1st)  mass_pai= chem(i,k,j,l)*conv1a
-        l=lptr_ec_aer(isize,itype,iphase)
+        l=lptr_ec_aer(1,2,iphase)
         if (l .ge. p1st)  mass_bci= chem(i,k,j,l)*conv1a
-        l=lptr_na_aer(isize,itype,iphase)
+        l=lptr_na_aer(1,2,iphase)
         if (l .ge. p1st)  mass_nai= chem(i,k,j,l)*conv1a
-        l=lptr_cl_aer(isize,itype,iphase)
+        l=lptr_cl_aer(1,2,iphase)
         if (l .ge. p1st)  mass_cli= chem(i,k,j,l)*conv1a
-        l=numptr_aer(isize,itype,iphase)
+        l=numptr_aer(1,2,iphase)
         if (l .ge. p1st)  num_ai= chem(i,k,j,l)*conv1b
         mass_h2oi= h2oai(i,k,j) * 1.0e-12
         mass_oci=mass_aro1i+mass_aro2i+mass_alk1i+mass_ole1i+ &

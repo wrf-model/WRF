@@ -77,7 +77,7 @@ set_state_dims ( char * dims , node_t * node )
       if (( d = get_dim_entry ( *c )) == NULL ) { return(1) ; }
       d1 = new_node( DIM) ;  /* make a copy */
       *d1 = *d ;
-      if ( star ) { d1->subgrid = 1 ;  node->subgrid |= (1<<node->ndims) ; }  /* mark the node has having a subgrid dim */
+      if ( star ) { d1->subgrid = 1 ;  node->subgrid |= (1<<node->ndims) ; }  /* Mark the node has having a subgrid dim */
       node->dims[node->ndims++] = d1 ;
       star = 0 ;
     }

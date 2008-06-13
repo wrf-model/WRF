@@ -216,17 +216,23 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 
         if ( p->node_kind & FOURD )
 	{
-fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
+            fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
+            fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1 ) THEN \n", p->name,tag,xdex+1,p->name,tag,ydex+1 ) ;
         } else {
-#if 0
-fprintf(fp,"IF ( in_use_for_config( grid%%id , '%s' ) ) THEN \n", vname ) ;
-#else
-fprintf(fp,"IF ( SIZE( %s%s ) .GT. 1 ) THEN \n", grid, vname2 ) ;
-#endif
+          if ( !strcmp( fcn_name, "interp_mask_land_field" ) ||
+              !strcmp( fcn_name, "interp_mask_water_field" ) ) {
+            fprintf(fp,"IF ( .TRUE. ) THEN \n") ;
+          } else {
+            fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1 ) THEN \n", grid,vname2,xdex+1,grid,vname2,ydex+1 ) ;
+          }
 	}
 
 fprintf(fp,"CALL %s (  &         \n", fcn_name ) ;
 
+if ( !strcmp( fcn_name, "interp_mask_land_field" ) || !strcmp( fcn_name, "interp_mask_water_field" ) ) {
+fprintf(fp,"  ( SIZE( %s%s , %d )*SIZE( %s%s , %d ) .GT. 1 ), & ! special argument needed because %s has bcasts in it\n",
+                                                       grid,vname2,xdex+1,grid,vname2,ydex+1,fcn_name) ;
+}
 fprintf(fp,"                  %s%s,   &       ! CD field\n", grid, (p->node_kind & FOURD)?vname:vname2) ;
 fprintf(fp,"                 %s, %s, %s, %s, %s, %s,   &         ! CD dims\n",
                 ddim[0][0], ddim[0][1], ddim[1][0], ddim[1][1], ddim[2][0], ddim[2][1] ) ;
@@ -323,6 +329,7 @@ fprintf(fp,"                  ) \n") ;
 
         if ( p->node_kind & FOURD )
         {
+fprintf(fp,"ENDIF\n") ;
 fprintf(fp,"ENDDO\n") ;
         } else {
 fprintf(fp,"ENDIF\n") ; /* in_use_from_config */

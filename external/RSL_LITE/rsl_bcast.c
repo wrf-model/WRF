@@ -137,6 +137,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of CHILD DOMAIN */
                          pgr_p,  shw_p ,                 /* nest ratio and stencil half width */
                          ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
+                         min_subdomain ,                 /* minimum width allowed for a subdomain in a dim */
                          icoord_p, jcoord_p,
                          idim_cd_p, jdim_cd_p,
                          ig_p, jg_p,
@@ -149,6 +150,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
     ,nids_p, nide_p, njds_p, njde_p   /* (i) n.n. global dims */
     ,pgr_p                            /* nesting ratio */
     ,ntasks_x_p , ntasks_y_p          /* proc counts in x and y */
+    ,min_subdomain
     ,icoord_p       /* i coordinate of nest in cd */
     ,jcoord_p       /* j coordinate of nest in cd */
     ,shw_p          /* stencil half width */
@@ -166,6 +168,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
   int i, j, ni, nj ;
   int coords[2] ;
 #ifndef STUBMPI
+  int ierr ;
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
@@ -183,6 +186,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
        Sdisplacements[j] = 0 ;
        Ssizes[j] = 0 ;
     }
+    ierr = 0 ;
     for ( j = *cjps_p ; j <= *cjpe_p ; j++ )
     {
       for ( i = *cips_p ; i <= *cipe_p ; i++ )
@@ -192,7 +196,8 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
            nj = ( j - (*jcoord_p + *shw_p) ) * *pgr_p + 1 + 1 ;
 
 #ifndef STUBMPI
-	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
+	   TASK_FOR_POINT ( &ni, &nj, nids_p, nide_p, njds_p, njde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, 
+                            min_subdomain, min_subdomain, &ierr ) ;
            coords[1] = Px ; coords[0] = Py ;
            MPI_Cart_rank( *comm, coords, &P ) ;
 #else
@@ -206,6 +211,9 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
 	   Sendbufsize += *msize_p + 3 * sizeof( int ) ;  /* point data plus 3 ints for i, j, and size */
         }
       }
+    }
+    if ( ierr != 0 ) {
+      TASK_FOR_POINT_MESSAGE (__FILE__,__LINE__) ;
     }
     Sendbuf = RSL_MALLOC( char , Sendbufsize ) ;
     Sendbufcurs = 0 ;
@@ -257,6 +265,7 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
                           nips_p, nipe_p, njps_p, njpe_p, /* patch dims of SOURCE DOMAIN (CHILD) */
                           cids_p, cide_p, cjds_p, cjde_p, /* domain dims of TARGET DOMAIN (PARENT) */
                           ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
+                          min_subdomain ,
                           icoord_p, jcoord_p,
                           idim_cd_p, jdim_cd_p,
                           ig_p, jg_p,
@@ -266,6 +275,7 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
     ,nips_p, nipe_p, njps_p, njpe_p   /* (i) n.d. patch dims */
     ,cids_p, cide_p, cjds_p, cjde_p   /* (i) n.n. global dims */
     ,ntasks_x_p , ntasks_y_p          /* proc counts in x and y */
+    ,min_subdomain
     ,icoord_p       /* i coordinate of nest in cd */
     ,jcoord_p       /* j coordinate of nest in cd */
     ,idim_cd_p      /* i width of nest in cd */
@@ -281,6 +291,7 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
   int i, j ;
   int coords[2] ;
 #ifndef STUBMPI
+  int ierr ;
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
@@ -298,13 +309,15 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
        Sdisplacements[j] = 0 ;
        Ssizes[j] = 0 ;
     }
+    ierr = 0 ;
     for ( j = *njps_p ; j <= *njpe_p ; j++ )
     {
       for ( i = *nips_p ; i <= *nipe_p ; i++ )
       {
 	if ( ( *jcoord_p <= j && j <= *jcoord_p+*jdim_cd_p-1 ) && ( *icoord_p <= i && i <= *icoord_p+*idim_cd_p-1 ) ) {
 #ifndef STUBMPI
-	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py ) ;
+	  TASK_FOR_POINT ( &i, &j, cids_p, cide_p, cjds_p, cjde_p, &s_ntasks_x, &s_ntasks_y, &Px, &Py, 
+                           min_subdomain, min_subdomain, &ierr ) ;
           coords[1] = Px ; coords[0] = Py ;
           MPI_Cart_rank( *comm, coords, &P ) ;
 #else
@@ -318,6 +331,9 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
 	  Sendbufsize += *msize_p + 3 * sizeof( int ) ;  /* point data plus 3 ints for i, j, and size */
         }
       }
+    }
+    if ( ierr != 0 ) {
+      TASK_FOR_POINT_MESSAGE (__FILE__,__LINE__) ;
     }
     Sendbuf = RSL_MALLOC( char , Sendbufsize ) ;
     Sendbufcurs = 0 ;

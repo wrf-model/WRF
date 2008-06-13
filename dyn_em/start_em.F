@@ -468,7 +468,7 @@
 
    IF ( first_trip_for_this_domain ) THEN
 
-   CALL wrf_debug ( 100 , 'module_start: start_domain_rk: Before call to phy_init' )
+   CALL wrf_debug ( 100 , 'start_domain_em: Before call to phy_init' )
 
 ! namelist MPDT does not exist yet, so set it here
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
@@ -528,9 +528,18 @@
 
 
    CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
-
+!
+! Phy init can do reads and broadcasts when initializing physics -- landuse for example. However, if 
+! we're running on a reduced mesh (that is, some tasks don't have any work) we have to at least let them
+! pass through this code so the broadcasts don't hang on the other, active tasks.  Set the number of
+! tiles to a minimum of 1 and assume that the backwards patch ranges (ips=0, ipe=-1) will prevent
+! anything else from happening on the blank tasks.  JM 20080605
+!
+   if ( allowed_to_read ) grid%num_tiles = max(1,grid%num_tiles)
+!
 ! Phy_init is not necessarily thread-safe; do not multi-thread this loop.
 ! The tiling is to handle the fact that we may be masking off part of the computation.
+!
    DO ij = 1, grid%num_tiles
 
      CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
@@ -598,7 +607,7 @@
 
 
  
-   CALL wrf_debug ( 100 , 'module_start: start_domain_rk: After call to phy_init' )
+   CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
 
 #ifdef MCELIO
    LU_MASK = 0.
@@ -1023,7 +1032,7 @@
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
-     CALL wrf_debug ( 100 , 'module_start: start_domain_rk: Returning' )
+     CALL wrf_debug ( 100 , 'start_domain_em: Returning' )
 
      RETURN
 

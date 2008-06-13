@@ -19,6 +19,7 @@
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock
 #      define TASK_FOR_POINT task_for_point
+#      define TASK_FOR_POINT_MESSAGE task_for_point_message
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x
@@ -55,6 +56,7 @@
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock__
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock__
 #      define TASK_FOR_POINT task_for_point__
+#      define TASK_FOR_POINT_MESSAGE task_for_point_message__
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period__
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y__
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x__
@@ -90,6 +92,8 @@
 #      define RSL_INTERNAL_MILLICLOCK rsl_internal_milliclock_
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
 #      define TASK_FOR_POINT task_for_point_
+#      define TASK_FOR_POINT_MESSAGE task_for_point_message_
+#      define RSL_LITE_INIT_PERIOD rsl_lite_init_period__
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period_
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y_
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x_
@@ -112,11 +116,7 @@
 #define RSL_SENDBUF 0
 #define RSL_RECVBUF 1
 #define RSL_FREEBUF 3
-#ifdef VERY_LARGE_MAXPROC
-#  define RSL_MAXPROC VERY_LARGE_MAXPROC
-#else
-#  define RSL_MAXPROC 10000
-#endif
+#define RSL_MAXPROC 10000
 #define RSL_INVALID -1
 
 /* this must be the same as defined in frame/module_driver_constants.F */

@@ -56,7 +56,7 @@ pack_utils.o :
 
 module_internal_header_util.o :
 	$(CPP) $(CPPFLAGS) -I../inc module_internal_header_util.F > module_internal_header_util.f90
-	$(SFC) -c $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) module_internal_header_util.f90
+	$(SFC) -c $(PROMOTION) $(FCSUFFIX) $(FCDEBUG) $(FCBASEOPTS) module_internal_header_util.f90
 
 clean:
 	@ echo 'use the clean script'

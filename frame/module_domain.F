@@ -657,17 +657,6 @@ CONTAINS
 
       END SELECT data_ordering
 
-
-#ifdef RSL
-! Check domain size to be sure it is within RSLs limit
-      IF ( nx .GE. 1024 .OR. ny .GE. 1024 ) THEN
-        WRITE ( wrf_err_message , * ) &
-         'domain too large for RSL. Use RSL_LITE or other comm package.'
-        CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-      ENDIF
-
-#endif
-
       IF ( num_time_levels > 3 ) THEN
         WRITE ( wrf_err_message , * ) 'alloc_and_configure_domain: ', &
           'Incorrect value for num_time_levels ', num_time_levels

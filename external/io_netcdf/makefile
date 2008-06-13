@@ -23,7 +23,11 @@ libwrfio_nf.a:		$(OBJS) $(CODE)
 			$(RANLIB) $@
 
 wrf_io.o:               wrf_io.F90 $(CODE)
-			$(CPP1) -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f
+			if grep nf_format_64bit /usr/local/netcdf/include/netcdf.inc ; then \
+			   $(CPP1) -DWRFIO_NCD_LARGE_FILE_SUPPORT -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
+                        else \
+			   $(CPP1) -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
+                        fi
 			$(FC) -o $@ $(FFLAGS) -c wrf_io.f
 
 module_wrfsi_static.o:  module_wrfsi_static.F90

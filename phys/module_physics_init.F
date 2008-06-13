@@ -1542,11 +1542,11 @@ integer myproc
      CASE (KESSLERSCHEME)
           warm_rain = .true.
      CASE (WSM3SCHEME)
-          CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
+          CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM5SCHEME)
-          CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
+          CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM6SCHEME)
-          CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cv, allowed_to_read )
+          CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (ETAMPNEW)
          adv_moist_cond = .false.
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &

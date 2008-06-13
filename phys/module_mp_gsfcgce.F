@@ -44,7 +44,7 @@ MODULE module_mp_gsfcgce
    REAL,    PRIVATE, DIMENSION( 31 ) ::    rn12a, rn12b, rn13, rn25a
 
 !  common /rsnw1/
-   REAL,    PRIVATE ::         n10b, rn10c, rnn191, rnn192,  rn30,     &
+   REAL,    PRIVATE ::        rn10b, rn10c, rnn191, rnn192,  rn30,     &
                              rnn30a,  rn33,  rn331,  rn332
 
 !
@@ -81,7 +81,7 @@ CONTAINS
 !                       qrold, qiold,                               &
 !                       qsold,                                      &
                        rho, pii, p, dt_in, z,                      &
-                       ht, dz8w, grav, cp,                         &
+                       ht, dz8w, grav, cp_in,                      &
                        Rair, Rvapor,                               &
                        XLS, XLV, XLF, rhowater, rhosnow,           &
                        EP2,SVP1,SVP2,SVP3,SVPT0,                   &
@@ -151,7 +151,7 @@ CONTAINS
                                                             grav, &
                                                             Rair, &
                                                           Rvapor, &
-                                                              cp, &
+                                                           cp_in, &
                                                              XLS, &
                                                              XLV, &
                                                              XLF, &
@@ -1813,14 +1813,14 @@ CONTAINS
                qsi(i,j)=rp0*y2(i,j)
                esi(i,j)=c610*y2(i,j)
                ssi(i,j)=(qv(i,j)+qb0)/qsi(i,j)-1.
-               nci=min(1.e-6*exp(-.46*tairc(i,j)),1.)
-!              NCI=min(1.e-8*EXP(-.6*TAIRC(I,J)),1.) ! use Tao's
+               r_nci=min(1.e-6*exp(-.46*tairc(i,j)),1.)
+!              R_NCI=min(1.e-8*EXP(-.6*TAIRC(I,J)),1.) ! use Tao's
                dm(i,j)=max( (qv(i,j)+qb0-qsi(i,j)), 0.)
                rsub1(i,j)=cs580*qsi(i,j)*rtair(i,j)*rtair(i,j)
                y3(i,j)=1./tair(i,j)
           dd(i,j)=y3(i,j)*(rn30a*y3(i,j)-rn30b)+rn30c*tair(i,j)/esi(i,j)
                y1(i,j)=206.18*ssi(i,j)/dd(i,j)
-               pidep(i,j)=y1(i,j)*sqrt(nci*qi(i,j)/r00)
+               pidep(i,j)=y1(i,j)*sqrt(r_nci*qi(i,j)/r00)
                dep(i,j)=dm(i,j)/(1.+rsub1(i,j))/d2t
                if(dm(i,j).gt.cmin2) then
                   a2=1.

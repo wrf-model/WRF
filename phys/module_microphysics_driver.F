@@ -490,7 +490,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QI=qi_curr                                        &
                  ,QS=qs_curr                                        &
                  ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
-                 ,HT=ht, DZ8W=dz8w, GRAV=G,  CP=cp                  &
+                 ,HT=ht, DZ8W=dz8w, GRAV=G,  CP_IN=cp               &
                  ,RAIR=r_d, RVAPOR=R_v                              &
                  ,XLS=xls, XLV=xlv, XLF=xlf                         &
                  ,RHOWATER=rhowater, RHOSNOW=rhosnow                &

@@ -1215,8 +1215,8 @@ SUBROUTINE cal_dampkm( config_flags,xkmh,xkhh,xkmv,xkhv,                       &
 
          kmmvmax=dz*dz/dt
          tmp=min(deltaz(i)/zdamp,1.)
-         dampk(i,k,j)=cos(degrad90*tmp)*kmmax*dampcoef
-         dampkv(i,k,j)=cos(degrad90*tmp)*kmmvmax*dampcoef
+         dampk(i,k,j)=cos(degrad90*tmp)*cos(degrad90*tmp)*kmmax*dampcoef
+         dampkv(i,k,j)=cos(degrad90*tmp)*cos(degrad90*tmp)*kmmvmax*dampcoef
 ! set upper limit on vertical K (based on horizontal K)
          dampkv(i,k,j)=min(dampkv(i,k,j),dampk(i,k,j))
 
@@ -1241,8 +1241,8 @@ SUBROUTINE cal_dampkm( config_flags,xkmh,xkhh,xkmv,xkhv,                       &
 
          kmmvmax=dz*dz/dt
          tmp=min(deltaz(i)/zdamp,1.)
-         dampk(i,k,j)=cos(degrad90*tmp)*kmmax*dampcoef
-         dampkv(i,k,j)=cos(degrad90*tmp)*kmmvmax*dampcoef
+         dampk(i,k,j)=cos(degrad90*tmp)*cos(degrad90*tmp)*kmmax*dampcoef
+         dampkv(i,k,j)=cos(degrad90*tmp)*cos(degrad90*tmp)*kmmvmax*dampcoef
 ! set upper limit on vertical K (based on horizontal K)
          dampkv(i,k,j)=min(dampkv(i,k,j),dampk(i,k,j))
       ENDDO

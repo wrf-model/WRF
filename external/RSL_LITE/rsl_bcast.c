@@ -167,8 +167,8 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
   int *r ;
   int i, j, ni, nj ;
   int coords[2] ;
-#ifndef STUBMPI
   int ierr ;
+#ifndef STUBMPI
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;
@@ -290,8 +290,8 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
   int *r ;
   int i, j ;
   int coords[2] ;
-#ifndef STUBMPI
   int ierr ;
+#ifndef STUBMPI
   MPI_Comm *comm, dummy_comm ;
 
   comm = &dummy_comm ;

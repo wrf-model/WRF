@@ -485,7 +485,7 @@ state    real   ts_psfc         ?!       misc      -         -      r        "TS
 state    real   ts_glw          ?!       misc      -         -      r        "TS_GLW"         "Downward long wave flux at surface"
 state    real   ts_gsw          ?!       misc      -         -      r        "TS_GSW"         "Net short wave flux at surface"
 state    real   ts_hfx          ?!       misc      -         -      r        "TS_HFX"         "Upward heat flux at surface"
-state    real   ts_qfx          ?!       misc      -         -      r        "TS_QFX"         "Upward moisture flux at surface"
+state    real   ts_lh           ?!       misc      -         -      r        "TS_LH"          "Upward moisture flux at surface"
 state    real   ts_tsk          ?!       misc      -         -      r        "TS_TSK"         "Skin temperature"
 state    real   ts_tslb         ?!       misc      -         -      r        "TS_TSLB"        "Soil temperature"
 state    real   ts_clw          ?!       misc      -         -      r        "TS_CLW"         "Column integrated cloud water"

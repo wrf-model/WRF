@@ -142,6 +142,9 @@ solve_em.o :
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(SOLVE_EM_SPECIAL) $(FCSUFFIX) $*.f90
 
 module_sf_ruclsm.o : module_sf_ruclsm.F
+module_cu_kf.o : module_cu_kf.F
+
+module_sf_ruclsm.o module_cu_kf.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90

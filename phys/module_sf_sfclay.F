@@ -741,7 +741,7 @@ CONTAINS
           UST(I)=AMAX1(UST(I),0.1)
         ENDIF                                                                    
         MOL(I)=KARMAN*DTG/PSIT/PRT                              
-!       DENOMQ(I)=PSIQ
+        DENOMQ(I)=PSIQ
   330 CONTINUE                                                                   
 !                                                                                
   335 CONTINUE                                                                   
@@ -773,8 +773,9 @@ CONTAINS
         ELSE
           ZL = 0.01
         ENDIF                                                                    
-        FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
-                ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
+        FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/DENOMQ(I)
+!       FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
+!               ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
         DTTHX=ABS(THX(I)-THGB(I))                                            
         IF(DTTHX.GT.1.E-5)THEN                                                   
           FLHC(I)=CPM(I)*RHOX(I)*UST(I)*MOL(I)/(THX(I)-THGB(I))          

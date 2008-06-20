@@ -15,6 +15,7 @@
 
 #include "grib1_routines.h"
 #include "gridnav.h"
+#include "wrf_projection.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -805,11 +806,6 @@ int READ_GRIB(FileIndex *fileindex, int *fid, int *index, float *data)
   return status;
 }
 
-#define WRF_LATLON 0
-#define WRF_LAMBERT 1
-#define WRF_POLAR_STEREO 2
-#define WRF_MERCATOR 3
-
 #define LINESIZE 300
 
 #define SECS_IN_SEC 1
@@ -832,7 +828,6 @@ int READ_GRIB(FileIndex *fileindex, int *fid, int *index, float *data)
 #define MAX1B_FCST_HOURS MAX1B_FCST*MINS_IN_HOUR*SECS_IN_MIN
 #define MAX1B_FCST_DAYS MAX1B_FCST*HOURS_IN_DAY*MINS_IN_HOUR*SECS_IN_MIN
 
-#define PI 3.1415
 typedef struct {
   int time_range;
   int fcst_unit;
@@ -881,6 +876,7 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
   char errmsg[1000];
   int center, subcenter, parmtbl;
   int tablenum;
+  float dx, dy;
   FcstTimeStruct fcst_time;
 
   strcpy(varname2,grid_info->varname);
@@ -895,12 +891,27 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
 
   grid_projection = get_gridnav_projection(grid_info->projection);
 
+ /* Convert grid spacing to degrees for LATLON projection */
+  
+  if ( (grid_info->projection == WRF_LATLON) || 
+       (grid_info->projection == WRF_CASSINI) )
+  {
+      dx = grid_info->Di * KM_TO_DEGREES;
+      dy = grid_info->Dj * KM_TO_DEGREES;
+  }
+  else
+  {
+      dx = grid_info->Di;
+      dy = grid_info->Dj;
+  }
+
  /* Initialize grid structure */
+
   status = GRID_init(grid_info->center_lat, grid_info->central_lon, 
 		     grid_projection,
 		     grid_info->latin1, grid_info->latin2, 
-		     grid_info->xpoints, grid_info->ypoints, grid_info->Di, 
-		     grid_info->Dj,
+		     grid_info->xpoints, grid_info->ypoints,
+		     dx, dy,
 		     grid_info->center_lat, grid_info->center_lon, 
 		     x_center, y_center,
 		     &gridnav);
@@ -965,9 +976,10 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
   switch (grid_info->projection) 
     {
     case WRF_LATLON:
+    case WRF_CASSINI:
       strcpy(geom_in.prjn_name,"spherical");
-      geom_in.parm_1 = grid_info->Dj;
-      geom_in.parm_2 = grid_info->Di;
+      geom_in.parm_1 = dy;
+      geom_in.parm_2 = dx;
       geom_in.parm_3 = -1;
       geom_in.usRes_flag = 0;  /* 
 				* Set to 0 here, MEL grib library will reset
@@ -978,8 +990,8 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
     case WRF_MERCATOR:
       strcpy(geom_in.prjn_name,"mercator");
       geom_in.parm_1 = grid_info->latin1;
-      geom_in.parm_2 = grid_info->Di;
-      geom_in.parm_3 = grid_info->Dj;
+      geom_in.parm_2 = dx;
+      geom_in.parm_3 = dy;
       geom_in.usRes_flag = 128;
       break;
     case WRF_LAMBERT:
@@ -988,8 +1000,8 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
 				 * to 128.
 				 */
       geom_in.parm_3 = grid_info->central_lon;
-      geom_in.x_int_dis = grid_info->Di;
-      geom_in.y_int_dis = grid_info->Dj;
+      geom_in.x_int_dis = dx;
+      geom_in.y_int_dis = dy;
       geom_in.parm_1 = grid_info->latin1;
       geom_in.parm_2 = grid_info->latin2;
       break;
@@ -1000,9 +1012,9 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
 				 */
 
       geom_in.parm_3 = -1;
-      geom_in.x_int_dis = grid_info->Di*(1.+sin(60. * PI/180.))
+      geom_in.x_int_dis = dx*(1.+sin(60. * PI/180.))
 	/ (1.+sin(abs(grid_info->latin1) * PI/180.));
-      geom_in.y_int_dis = grid_info->Dj*(1.+sin(60. * PI/180.))
+      geom_in.y_int_dis = dy*(1.+sin(60. * PI/180.))
 	/ (1.+sin(abs(grid_info->latin1) * PI/180.));
       geom_in.parm_1 = -1;
       geom_in.parm_2 = grid_info->central_lon;

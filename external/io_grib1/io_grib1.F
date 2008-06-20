@@ -561,7 +561,7 @@ END SUBROUTINE ext_gr1_ioclose
 
 !*****************************************************************************
 
-SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
+SUBROUTINE ext_gr1_write_field( DataHandle , DateStrIn , VarName , &
      Field , FieldType , Comm , IOComm, &
      DomainDesc , MemoryOrder , Stagger , &
      DimNames , &
@@ -575,7 +575,8 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
 #include "wrf_status_codes.h"
 #include "wrf_io_flags.h"
   INTEGER ,       INTENT(IN)    :: DataHandle 
-  CHARACTER*(*) :: DateStr
+  CHARACTER*(*) :: DateStrIn
+  CHARACTER(DateStrLen) :: DateStr
   CHARACTER*(*) :: VarName
   CHARACTER*120 :: OutName
   CHARACTER(120) :: TmpVarName
@@ -624,12 +625,19 @@ SUBROUTINE ext_gr1_write_field( DataHandle , DateStr , VarName , &
   call wrf_debug ( DEBUG , 'Entering ext_gr1_write_field for parameter'//VarName)
 
   !
-  ! If DateStr is all 0's, we reset it to StartDate.  For some reason, 
+  ! If DateStr is all 0's, we reset it to StartDate (if StartDate exists).  
+  !   For some reason, 
   !   in idealized simulations, StartDate is 0001-01-01_00:00:00 while
   !   the first DateStr is 0000-00-00_00:00:00.  
   !
-  if (DateStr .eq. '0000-00-00_00:00:00') then
-     DateStr = TRIM(StartDate)
+  if (DateStrIn .eq. '0000-00-00_00:00:00') then
+     if (StartDate .ne. '') then
+        DateStr = TRIM(StartDate)
+     else
+        DateStr = '0001-01-01_00:00:00'
+     endif
+  else
+     DateStr = DateStrIn
   endif
 
   !
@@ -1346,6 +1354,8 @@ SUBROUTINE ext_gr1_get_next_var ( DataHandle, VarName, Status )
   INTEGER ,       INTENT(OUT) :: Status
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_get_next_var')
+
+  call wrf_message ( 'WARNING: ext_gr1_get_next_var is not supported.')
 
   Status = WRF_WARN_NOOP
 

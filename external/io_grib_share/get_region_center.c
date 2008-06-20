@@ -132,6 +132,7 @@ int get_gridnav_projection(int wrf_projection)
   switch (wrf_projection) 
     {
     case WRF_LATLON:
+    case WRF_CASSINI:
       gridnav_projection = GRID_LATLON;
       break;
     case WRF_MERCATOR:

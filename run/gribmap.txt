@@ -1,16 +1,16 @@
 -1:255:255:2
 0:var0:undefined::
-1:PRES:Pressure [Pa]:P,PSFC:2
+1:PRES:Pressure [Pa]:PRES,P,PSFC:2
 2:PRMSL:Pressure reduced to MSL [Pa]:PMSL:2
 3:PTEND:Pressure tendency [Pa/s]::
 4:PVORT:Pot. vorticity [km^2/kg/s]::
 5:ICAHT:ICAO Standard Atmosphere Reference Height [M]::
 6:GP:Geopotential [m^2/s^2]:PHP:3
-7:HGT:Geopotential height [gpm]:SOILHGT:2
+7:HGT:Geopotential height [gpm]:GHT,SOILHGT:2
 8:DIST:Geometric height [m]:HGT:4
 9:HSTDV:Std dev of height [m]::
 10:TOZNE:Total ozone [Dobson]::
-11:TMP:Temp. [K]:T2,TSK,SKINTEMP:2
+11:TMP:Temp. [K]:TT,T2,TSK,SKINTEMP:2
 12:VTMP:Virtual temp. [K]::
 13:POT:Potential temp. [K]:TH2,THZ0,T:4
 14:EPOT:Pseudo-adiabatic pot. temp. [K]::
@@ -32,8 +32,8 @@
 30:WVSP3:Wave spectra (3) [non-dim]::
 31:WDIR:Wind direction [deg]::
 32:WIND:Wind speed [m/s]::
-33:UGRD:u wind [m/s]:U,U10,UZ0:3
-34:VGRD:v wind [m/s]:V,V10,VZ0:3
+33:UGRD:u wind [m/s]:U,UU,U10,UZ0:3
+34:VGRD:v wind [m/s]:V,VV,V10,VZ0:3
 35:STRM:Stream function [m^2/s]::
 36:VPOT:Velocity potential [m^2/s]::
 37:MNTSF:Montgomery stream function [m^2/s^2]::
@@ -51,7 +51,7 @@
 49:UOGRD:u of current [m/s]::
 50:VOGRD:v of current [m/s]::
 51:SPFH:Specific humidity [kg/kg]:QSFC:5
-52:RH:Relative humidity [%]::
+52:RH:Relative humidity [%]:RH:
 53:MIXR:Humidity mixing ratio [kg/kg]:QVAPOR,Q2,QVG:6
 54:PWAT:Precipitable water [kg/m^2]::
 55:VAPP:Vapor pressure [Pa]::
@@ -80,17 +80,17 @@
 78:SNOC:Convective snow [kg/m^2]::
 79:SNOL:Large scale snow [kg/m^2]::
 80:WTMP:Water temp. [K]:SST:2
-81:LAND:Land cover (land=1;sea=0) [fraction]:LANDMASK:1
+81:LAND:Land cover (land=1;sea=0) [fraction]:LANDMASK,LANDSEA:1
 82:DSLM:Deviation of sea level from mean [m]::
 83:SFCR:Surface roughness [m]:ZNT:6
-84:ALBDO:Albedo [%]:ALBEDO:2
+84:ALBDO:Albedo [%]:ALBEDO12M,ALBEDO:2
 85:TSOIL:Soil temp. [K]:TSLB:2
 86:SOILM:Soil moisture content [kg/m^2]:SMSTOT:2
 87:VEG:Vegetation [%]:VEGFRA:2
 88:SALTY:Salinity [kg/kg]::
 89:DEN:Density [kg/m^3]::
 90:WATR:Water runoff [kg/m^2]::
-91:ICEC:Ice concentration (ice=1;no ice=0) [fraction]:XICE:1
+91:ICEC:Ice concentration (ice=1;no ice=0) [fraction]:XICE,SEAICE:1
 92:ICETK:Ice thickness [m]::
 93:DICED:Direction of ice drift [deg]::
 94:SICED:Speed of ice drift [m/s]::
@@ -175,8 +175,8 @@
 173:RDX:Inverse X Grid Length [1/km]:RDX:9
 174:RDY:Inverse Y Grid Length [1/km]:RDY:9
 175:MLYNO:Model layer number (from bottom up) [non-dim]:NEST_POS:
-176:NLAT:Latitude (-90 to +90) [deg]:XLAT,XLAT_U,XLAT_V:4
-177:ELON:East longitude (0-360) [deg]:XLONG,XLONG_U,XLONG_V:4
+176:NLAT:Latitude (-90 to +90) [deg]:XLAT:4
+177:ELON:East longitude (0-360) [deg]:XLONG:4
 178:ICMR:Ice mixing ratio [kg/kg]:QICE:5
 179:GRMR:Graupel mixing ratio:QGRAUP:5
 180:QNI:Ice Crystal Number Concentration:QNI:0
@@ -193,13 +193,13 @@
 191:MAPFAC_V:Map Scale Factor [dimensionless]:MAPFAC_V:7
 192:GRDFLX:Ground Heat Flux [W m-2]:GRDFLX:3
 193:RMOL:Reciprical of Monin-Ohukhov length:RMOL:4
-194:var194:undefined::
-195:var195:undefined::
-196:var196:undefined::
-197:var197:undefined::
-198:var198:undefined::
-199:var199:undefined::
-200:var200:undefined::
+194:MAPFAC_MY:Map Scale Factor [dimensionless]:MAPFAC_MY:7
+195:MAPFAC_UY:Map Scale Factor [dimensionless]:MAPFAC_UY:7
+196:MAPFAC_VY:Map Scale Factor [dimensionless]:MAPFAC_VY:7
+197:MAPFAC_MX:Map Scale Factor [dimensionless]:MAPFAC_MX:7
+198:MAPFAC_UX:Map Scale Factor [dimensionless]:MAPFAC_UX:7
+199:MAPFAC_VX:Map Scale Factor [dimensionless]:MAPFAC_VX:7
+200:MF_VX_INV:Inverse Map Scale Factor:MF_VX_INV:8
 201:var201:undefined::
 202:SNOWCU:Cumulative Snow [cm]:SNOWCU,ACSNOW:2
 203:ACSNOM:Accumulated Melted Snow [cm]:ACSNOM:2
@@ -212,8 +212,8 @@
 210:SOILCAT:Soil Category:SOILCAT:1
 211:VEGCAT:Vegetation Categore:VEGCAT:1
 212:TOPOSTDV:Standard Deviation of Topography:TOPOSTDV:3
-213:TOPOSLPX:Sub-gridscale mean topographic slope in x-direction:TOPOSLPX:6
-214:TOPOSLPY:Sub-gridscale mean topographic slope in y-direction:TOPOSLPY:6
+213:TOPOSLPX:Sub-gridscale mean topographic slope in x-direction:SLPX,TOPOSLPX:6
+214:TOPOSLPY:Sub-gridscale mean topographic slope in y-direction:SLPY,TOPOSLPY:6
 215:SLOPECAT:Topographical Categorical Slope:SLOPECAT:1
 216:LANDUSEF:Land use categorical fraction on mass grid:LANDUSEF:3
 217:SOILCTOP:Top layer soil type as a categorical fraction:SOILCTOP:3
@@ -434,21 +434,21 @@
 175:SNOWNC:Accumulated total grid scale snow and ice [mm]:SNOWNC:1
 176:GRAUPELNC:Accumulated total grid scale graupel [mm]:GRAUPELNC:1
 177:OLR:TOA Outgoing Long Wave [W/m^2]:OLR:1
-178:var178:undefined::
-179:var179:undefined::
-180:var180:undefined::
-181:var181:undefined::
-182:var182:undefined::
-183:var183:undefined::
-184:var184:undefined::
-185:var185:undefined::
-186:var186:undefined::
-187:var187:undefined::
-188:var188:undefined::
-189:var189:undefined::
-190:var190:undefined::
-191:var191:undefined::
-192:var192:undefined::
+178:GREENFRAC:Monthly green fraction:GREENFRAC:2
+179:SM:SM in metgrid [?]:SM:4
+180:ST:ST in metgrid [?]:ST:3
+181:SM010200:SM010200 in metgrid [?]:SM010200:4
+182:ST010200:ST010200 in metgrid [?]:ST010200:3
+183:SOILTEMP:Annual mean deep soil temperature for metgrid [K]:SOILTEMP:3
+184:HGT_V:Topography height for metgrid [m]:HGT_V:3
+185:HGT_U:Topography height for metgrid [m]:HGT_U:3
+186:HGT_M:Topography height for metgrid [m]:HGT_M:3
+187:XLONG_M:Longitude on U grid for metgrid:XLONG_M:3
+188:XLONG_U:Longitude on U grid for metgrid:XLONG_U:3
+189:XLONG_V:Longitude on U grid for metgrid:XLONG_V:3
+190:XLAT_M:Longitude on U grid for metgrid:XLAT_M:3
+191:XLAT_U:Longitude on U grid for metgrid:XLAT_U:3
+192:XLAT_V:Longitude on U grid for metgrid:XLAT_V:3
 193:var193:undefined::
 194:var194:undefined::
 195:var195:undefined::
@@ -954,26 +954,26 @@
 181:QNICE_BTXE::QNICE_BTXE:9
 182:QNICE_BTYS::QNICE_BTYS:9
 183:QNICE_BTYE::QNICE_BTYE:9
-184:var184:undefined::
-185:var185:undefined::
-186:var186:undefined::
-187:var187:undefined::
-188:var188:undefined::
-189:var189:undefined::
-190:var190:undefined::
-191:var191:undefined::
-192:var192:undefined::
-193:var193:undefined::
-194:var194:undefined::
-195:var195:undefined::
-196:var196:undefined::
-197:var197:undefined::
-198:var198:undefined::
-199:var199:undefined::
-200:var200:undefined::
-201:var201:undefined::
-202:var202:undefined::
-203:var203:undefined::
+184:TSHLTR::TSHLTR:2
+185:QSHLTR::QSHLTR:6
+186:PSHLTR::PSHLTR:0
+187:TH10:10-M Theta from MYJ:TH10:2
+188:Q10:10-M Specific Humidity from MYJ:Q10:6
+189:CLAT:Computational Grid Latitude:CLAT:5
+190:CLONG:Computational Grid Longitude:CLONG:5
+191:HT_SHAD_BXS:Bdy Height of Orographic Shadow:HT_SHAD_BXS:2
+192:HT_SHAD_BXE:Bdy Height of Orographic Shadow:HT_SHAD_BXE:2
+193:HT_SHAD_BYS:Bdy Height of Orographic Shadow:HT_SHAD_BYS:2
+194:HT_SHAD_BYE:Bdy Height of Orographic Shadow:HT_SHAD_BYE:2
+195:HT_SHAD_BTXS:Bdy Height of Orographic Shadow:HT_SHAD_BTXS:2
+196:HT_SHAD_BTXE:Bdy Height of Orographic Shadow:HT_SHAD_BTXE:2
+197:HT_SHAD_BTYS:Bdy Height of Orographic Shadow:HT_SHAD_BTYS:2
+198:HT_SHAD_BTYE:Bdy Height of Orographic Shadow:HT_SHAD_BTYE:2
+199:XICEM:Sea Ice Flag - previous step:XICEM:0
+200:HGT_SHAD:Height of Orographic Shadow:HGT_SHAD:2
+201:MAX_MSTFX:Max map factor in domain:MAX_MSTFX:7
+202:MAX_MSTFY:Max map factor in domain:MAX_MSTFY:7
+203:EDT_OUT:EDT from GD scheme:EDT_OUT:5
 204:var204:undefined::
 205:var205:undefined::
 206:var206:undefined::

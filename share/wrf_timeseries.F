@@ -323,7 +323,7 @@ SUBROUTINE calc_ts( grid )
          grid%ts_glw(n,i)  = grid%glw(ix,iy)
          grid%ts_gsw(n,i)  = grid%gsw(ix,iy)
          grid%ts_hfx(n,i)  = grid%hfx(ix,iy)
-         grid%ts_qfx(n,i)  = grid%qfx(ix,iy)
+         grid%ts_lh(n,i)   = grid%lh(ix,iy)
          grid%ts_clw(n,i)  = clw
          grid%ts_rainc(n,i)  = grid%rainc(ix,iy)
          grid%ts_rainnc(n,i) = grid%rainnc(ix,iy)
@@ -345,7 +345,7 @@ SUBROUTINE calc_ts( grid )
          grid%ts_glw(n,i)  = 1.E30
          grid%ts_gsw(n,i)  = 1.E30
          grid%ts_hfx(n,i)  = 1.E30
-         grid%ts_qfx(n,i)  = 1.E30
+         grid%ts_lh(n,i)   = 1.E30
          grid%ts_clw(n,i)  = 1.E30
          grid%ts_rainc(n,i)  = 1.E30
          grid%ts_rainnc(n,i) = 1.E30
@@ -419,8 +419,8 @@ SUBROUTINE write_ts( grid )
    ts_buf(:,:) = grid%ts_hfx(:,:)
    CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_hfx(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
-   ts_buf(:,:) = grid%ts_qfx(:,:)
-   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_qfx(:,:),grid%ts_buf_size*grid%max_ts_locs)
+   ts_buf(:,:) = grid%ts_lh(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_lh(:,:),grid%ts_buf_size*grid%max_ts_locs)
 
    ts_buf(:,:) = grid%ts_clw(:,:)
    CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_clw(:,:),grid%ts_buf_size*grid%max_ts_locs)
@@ -469,7 +469,7 @@ SUBROUTINE write_ts( grid )
                               grid%ts_glw(n,i),                  &
                               grid%ts_gsw(n,i),                  &
                               grid%ts_hfx(n,i),                  &
-                              grid%ts_qfx(n,i),                  &
+                              grid%ts_lh(n,i),                   &
                               grid%ts_tsk(n,i),                  &
                               grid%ts_tslb(n,i),                 &
                               grid%ts_rainc(n,i),                &

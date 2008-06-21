@@ -4,8 +4,6 @@
 !
 MODULE module_fdda_psufddagd
 
-  USE module_dm
-
 CONTAINS
 !
 !-------------------------------------------------------------------

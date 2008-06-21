@@ -13,16 +13,16 @@ AR      = ar
 
 all : libwrfio_nf.a 
 
-libwrfio_nf.a:		$(OBJS) $(CODE)
+libwrfio_nf.a:		$(OBJS) bitwise_operators.o $(CODE)
 			/bin/rm -f $@
 			if [ "$(AR)" != "lib.exe" ] ; then \
-                          $(AR) cr libwrfio_nf.a $(OBJSL) ; \
+                          $(AR) cr libwrfio_nf.a $(OBJSL) bitwise_operators.o ; \
                         else \
-                          $(AR) /out:libwrfio_nf.a $(OBJSL) ; \
+                          $(AR) /out:libwrfio_nf.a $(OBJSL) bitwise_operators.o ; \
                         fi
 			$(RANLIB) $@
 
-wrf_io.o:               wrf_io.F90 $(CODE)
+wrf_io.o:               wrf_io.F90 bitwise_operators.o $(CODE)
 			if grep nf_format_64bit /usr/local/netcdf/include/netcdf.inc ; then \
 			   $(CPP1) -DWRFIO_NCD_LARGE_FILE_SUPPORT -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
                         else \
@@ -33,6 +33,9 @@ wrf_io.o:               wrf_io.F90 $(CODE)
 module_wrfsi_static.o:  module_wrfsi_static.F90
 			$(CPP1) -I../ioapi_share module_wrfsi_static.F90 > module_wrfsi_static.f
 			$(FC) -o $@ $(FFLAGS) -c module_wrfsi_static.f
+
+bitwise_operators.o :
+	$(CC) -c $(CFLAGS) bitwise_operators.c
 
 diffwrf:                diffwrf.F90
 	$(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share diffwrf.F90 > diffwrf.f

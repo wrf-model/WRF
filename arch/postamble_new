@@ -77,6 +77,7 @@ module_dm_rsllite :
 wrfio_nf : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
           make NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          CC="$(SCC)" CFLAGS="$(CFLAGS)" \
           FC="$(SFC) $(PROMOTION) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_pnf : 

@@ -58,7 +58,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_thompson
    USE module_mp_gsfcgce
    USE module_mp_morr_two_moment 
-    
+
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 !----------------------------------------------------------------------
@@ -490,12 +490,8 @@ SUBROUTINE microphysics_driver(                                          &
                  ,QI=qi_curr                                        &
                  ,QS=qs_curr                                        &
                  ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
-                 ,HT=ht, DZ8W=dz8w, GRAV=G,  CP_IN=cp               &
-                 ,RAIR=r_d, RVAPOR=R_v                              &
-                 ,XLS=xls, XLV=xlv, XLF=xlf                         &
+                 ,HT=ht, DZ8W=dz8w, GRAV=G                          &
                  ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
-                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
-                 ,SVP3=svp3,SVPT0=svpt0                             &
                  ,ITIMESTEP=itimestep                               &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &

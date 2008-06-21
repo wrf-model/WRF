@@ -44,7 +44,7 @@ MODULE module_mp_gsfcgce
    REAL,    PRIVATE, DIMENSION( 31 ) ::    rn12a, rn12b, rn13, rn25a
 
 !  common /rsnw1/
-   REAL,    PRIVATE ::        rn10b, rn10c, rnn191, rnn192,  rn30,     &
+   REAL,    PRIVATE ::         rn10b, rn10c, rnn191, rnn192,  rn30,     &
                              rnn30a,  rn33,  rn331,  rn332
 
 !
@@ -81,10 +81,8 @@ CONTAINS
 !                       qrold, qiold,                               &
 !                       qsold,                                      &
                        rho, pii, p, dt_in, z,                      &
-                       ht, dz8w, grav, cp_in,                      &
-                       Rair, Rvapor,                               &
-                       XLS, XLV, XLF, rhowater, rhosnow,           &
-                       EP2,SVP1,SVP2,SVP3,SVPT0,                   &
+                       ht, dz8w, grav,                             &
+                       rhowater, rhosnow,                          &
                        itimestep,                                  &
                        ids,ide, jds,jde, kds,kde,                  & ! domain dims
                        ims,ime, jms,jme, kms,kme,                  & ! memory dims
@@ -142,23 +140,15 @@ CONTAINS
                                                        graupelnc, &
                                                        graupelncv
 
-                                               
+
 
 
   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
 
   REAL, INTENT(IN   ) ::                                   dt_in, &
                                                             grav, &
-                                                            Rair, &
-                                                          Rvapor, &
-                                                           cp_in, &
-                                                             XLS, &
-                                                             XLV, &
-                                                             XLF, &
                                                         rhowater, &
                                                          rhosnow
-
-  REAL, INTENT(IN   ) :: EP2, SVP1, SVP2, SVP3, SVPT0
 
   LOGICAL, INTENT(IN), OPTIONAL :: F_QG
 
@@ -169,12 +159,6 @@ CONTAINS
 
 !jjs  REAL, DIMENSION( its:ite , jts:jte )                            &
 !jjs                               ::        rain, snow, graupel,ice
-
-
-! for unit cinversion
-!jjs  REAL :: g_cgs, cp_cgs, rd_cgs, rv_cgs
-!jjs  REAL :: XLS_cgs, XLV_cgs, XLF_cgs
-!jjs  REAL :: rhowater_cgs, rhosnow_cgs
 
 !
 !  INTEGER :: IHAIL, itaobraun, ice2, istatmin, new_ice_sat, id
@@ -187,7 +171,7 @@ CONTAINS
   REAL    :: dth, dqv, dqrest, dqall, dqall1, rhotot, a1, a2 
   REAL, DIMENSION( its:ite , kts:kte , jts:jte ) ::                   &
                          th1, qv1, ql1, qr1, qi1, qs1, qg1
- 
+
   LOGICAL :: flag_qg
 
 !
@@ -250,7 +234,7 @@ CONTAINS
 !   IF (P_QI .lt. P_FIRST_SCALAR .or. P_QS .lt. P_FIRST_SCALAR) THEN
 !      CALL wrf_error_fatal3 ( "module_mp_lin.b" , 130 ,  'module_mp_lin: Improper use of Lin et al scheme; no ice phase. Please chose another one.')
 !   ENDIF
- 
+
 ! calculte fallflux and precipiation in MKS system
 
    call fall_flux(dt_in, qr, qi, qs, qg, p,                   &
@@ -264,27 +248,6 @@ CONTAINS
                       its,ite, jts,jte, kts,kte               ) ! tile   dims
 !-----------------------------------------------------------------------
 
-!c
-!c by JJ Roger Shi in 2005
-!c convert from MKS to CGS system
-!c
-!c  no change: dpt (deg K -> deg K)
-!c             dqv (kg/kg -> g/g) & all mixing ratio type variables
-!c             dt (sec -> sec)
-!c             pii (exner function, dimensionless) 
-!c             EP2, SVP1, SVP2, SVP3 SVPT0 
-
-!c   b_cgs=grav*100.
-!c   cp_cgs=cp*10000.
-!c   rd_cgs=Rair*10000.
-!c   rv_cgs=Rvapor*10000.
-!c   XLS_cgs=XLS*10000.
-!c   XLV_cgs=XLV*10000.
-!c   XLF_cgs=XLF*10000.
-!c   XLS_cgs=XLS*10000.
-!c   rhowater_cgs=rhowater*0.001
-!c   rhosnow_cgs=rhosnow*0.001
-   
 !c  set up constants used internally in GCE
 
    call consat_s (ihail, itaobraun)
@@ -294,7 +257,7 @@ CONTAINS
 
    iskip = 1
 !   i12h=int(86400./dt_in)
- 
+
    if (iskip.eq.0) then
       call negcor(qv,rho,dz8w,ims,ime,jms,jme,kms,kme, &
                            itimestep,1,             &
@@ -314,8 +277,9 @@ CONTAINS
       call negcor(qg,rho,dz8w,ims,ime,jms,jme,kms,kme, &
                            itimestep,6,             &
                            its,ite,jts,jte,kts,kte)
-   else if (mod(itimestep,i12h).eq.1) then
-      print *,'no neg correction in mp at timestep=',itimestep
+      if (mod(itimestep,i12h).eq.1) then
+         print *,'negative correction used in gsfcgce mp '
+      endif
    endif ! iskip
 
 !c microphysics in GCE
@@ -363,15 +327,15 @@ CONTAINS
                                           graupelnc, graupelncv
   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ),                  &
            INTENT(IN   )               :: rho, z, dz8w, p     
-  
+
   REAL,    INTENT(IN   )               :: dt, grav, rhowater, rhosnow
-  
-  
+
+
   REAL,    DIMENSION( ims:ime , jms:jme ),                            &
            INTENT(IN   )               :: topo   
 
 ! temperary vars
-   
+
   REAL,    DIMENSION( kts:kte )           :: sqrhoz
   REAL                                    :: tmp1, term0
   REAL                                :: pptrain, pptsnow,        &
@@ -380,12 +344,12 @@ CONTAINS
                                          zz, dzw, prez, rhoz,     &
                                          orhoz
 
-  
+
    INTEGER                    :: k, i, j
 !
-  
+
   REAL, DIMENSION( kts:kte )    :: vtr, vts, vtg, vti
-  
+
   REAL                          :: dtb, pi, consta, constc, gambp4,    &
                                    gamdp4, gam4pt5, gam4bbar
 
@@ -468,7 +432,7 @@ CONTAINS
       zz(k)=z(i,k,j)
       dzw(k)=dz8w(i,k,j)
    enddo !k
- 
+
       DO k = kts, kte
          qiz(k)=qi(i,k,j)
       ENDDO
@@ -487,7 +451,7 @@ CONTAINS
       ENDDO
    ENDIF
 
-    
+
 !
 !-- rain
 !
@@ -795,7 +759,7 @@ CONTAINS
       endif
 !
    ENDDO !notlast
-  
+
 !   prnc(i,j)=prnc(i,j)+pptrain
 !   psnowc(i,j)=psnowc(i,j)+pptsnow
 !   pgrauc(i,j)=pgrauc(i,j)+pptgraul
@@ -887,7 +851,7 @@ CONTAINS
         enddo
      enddo
   enddo
- 
+
 !  A1=0.0
 !  A2=0.0
 !  do k=kts,kte

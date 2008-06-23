@@ -23,7 +23,7 @@ libwrfio_nf.a:		$(OBJS) bitwise_operators.o $(CODE)
 			$(RANLIB) $@
 
 wrf_io.o:               wrf_io.F90 bitwise_operators.o $(CODE)
-			if grep nf_format_64bit /usr/local/netcdf/include/netcdf.inc ; then \
+			if grep nf_format_64bit $(NETCDFPATH)/include/netcdf.inc ; then \
 			   $(CPP1) -DWRFIO_NCD_LARGE_FILE_SUPPORT -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \
                         else \
 			   $(CPP1) -I../ioapi_share wrf_io.F90 | $(M4) - > wrf_io.f ; \

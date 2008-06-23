@@ -3423,7 +3423,6 @@ end subroutine ext_ncd_warning_str
 integer function bit_or ( Input1 , Input2 ) result ( BWOr ) 
    implicit none
    integer, intent(in) :: Input1 , Input2
-   integer , intent(out) ::  BWOr
    !  A C function is called.  We do not want to rely on a return value from C, so we
    !  wrap the bitwise_or function and hide a Fortran subr call.
    call bitwise_or ( Input1, Input2, BWOr )  

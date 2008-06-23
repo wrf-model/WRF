@@ -13,6 +13,7 @@ module da_physics
 #endif
    use da_define_structures, only : synop_type, residual_synop_type, infa_type, iv_type
    use da_control, only : gas_constant, gravity,kts,kte, svp3,svpt0, &
+      a_ew,  wdk1, wdk2, zdk1, zdk2, zdk3, radian, &
       gas_constant_v, svp1, to, xls, svp2,its,ite,jts,jte,kts,kte, &
       ims,ime,jms,jme,kms,kme,xlv1,cp,ids,ide,jds,jde,kds,kde, test_transforms, &
       trace_use, missing_r, maximum_rh, minimum_rh,cv_options_hum,coeff,l_over_rv, &
@@ -66,6 +67,9 @@ module da_physics
 #include "da_thickness_tl.inc"
 #include "da_tv_profile_tl.inc"
 
+#include "da_transform_xtoztd.inc"
+#include "da_transform_xtoztd_lin.inc"
+#include "da_transform_xtoztd_adj.inc"
 #include "da_transform_xtotpw.inc"
 #include "da_transform_xtotpw_adj.inc"
 #include "da_transform_xtogpsref.inc"

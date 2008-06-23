@@ -11,7 +11,8 @@ subroutine da_get_var_diagnostics( iv, j)
 
    integer                      :: num_stats_tot
    integer                      :: i,k
-   real                         :: temp(63)
+   real                         :: jo_radiance
+   real                         :: temp(67)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
 
@@ -84,6 +85,11 @@ subroutine da_get_var_diagnostics( iv, j)
    temp(61) = j % jo % buoy_q          
    temp(62) = j % jo % airsr_t         
    temp(63) = j % jo % airsr_q         
+   temp(64) = j % jo % mtgirs_t
+   temp(65) = j % jo % mtgirs_q
+   temp(66) = j % jo % mtgirs_u
+   temp(67) = j % jo % mtgirs_v
+
 
    call da_proc_sum_real(temp(:))
 
@@ -151,6 +157,19 @@ subroutine da_get_var_diagnostics( iv, j)
    j % jo % airsr_t         = temp(62) 
    j % jo % airsr_q         = temp(63) 
 
+   j % jo % mtgirs_t        = temp(64)
+   j % jo % mtgirs_q        = temp(65)
+   j % jo % mtgirs_u        = temp(66)
+   j % jo % mtgirs_v        = temp(67)
+
+   if (use_rad) then
+      jo_radiance = 0.0
+      do i = 1, iv%num_inst                 ! loop for sensor
+         call da_proc_sum_ints(j % jo % rad(i)% num_ichan(:))
+         call da_proc_sum_real(j % jo % rad(i) % jo_ichan(:))
+         jo_radiance = jo_radiance + sum(j % jo % rad(i) % jo_ichan(:))
+      end do
+   end if
 
    !-----------------------------------------------------------------------------
    ! [2.0] Print out VAR diagnostics:
@@ -169,6 +188,7 @@ subroutine da_get_var_diagnostics( iv, j)
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jb           = ', j % jb
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jc           = ', j % jc
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Je           = ', j % je
+      write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jp           = ', j % jp
       if (num_stats_tot > 0) &
          write(unit=stdout,fmt='(a,f15.5)') '   Final J / total num_obs     = ', j % total / &
                                                           real(num_stats_tot)
@@ -179,8 +199,14 @@ subroutine da_get_var_diagnostics( iv, j)
       write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used(5)           = ', var_scaling5
       write(unit=stdout,fmt='(a,f15.5)') '   Jb factor used              = ', jb_factor
       write(unit=stdout,fmt='(a,f15.5)') '   Je factor used              = ', je_factor
+      write(unit=stdout,fmt='(a,f15.5)') '   VarBC factor used           = ', varbc_factor
       write(unit=stdout,fmt=*) ' '
 
+      if (use_rad) then
+         write(unit=stdout,fmt='(a,i8)')    '   Total number of radiances    = ', iv%nstats(radiance)
+         write(unit=stdout,fmt='(a,f15.5)') '   Cost function for radiances  = ', jo_radiance
+         write(unit=stdout,fmt=*) ' '
+      end if
 
       ! [4.2] Output components of Jo:
 
@@ -264,6 +290,15 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % sonde_sfc_t, iv % synop_ef_t, &
                                j % jo % sonde_sfc_p, iv % synop_ef_p, &
                                j % jo % sonde_sfc_q, iv % synop_ef_q
+      end if
+
+      if (iv%info(mtgirs)%ntotal > 0) then
+         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'   mtgirs obs, Jo(actual)  = ', &
+                               iv%info(mtgirs)%ntotal, iv%nstats(mtgirs), &
+                               j % jo % mtgirs_u, iv % mtgirs_ef_u, &
+                               j % jo % mtgirs_v, iv % mtgirs_ef_v, &
+                               j % jo % mtgirs_t, iv % mtgirs_ef_t, &
+                               j % jo % mtgirs_q, iv % mtgirs_ef_q, 0.0, 1.0
       end if
 
       if (iv%info(airep)%ntotal > 0) then
@@ -354,6 +389,16 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % airsr_q, iv % airsr_ef_q, &
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0
       end if
+      do i = 1, iv%num_inst                 ! loop for sensor
+         do k = 1, iv%instid(i)%nchan
+            if (j % jo % rad(i) % num_ichan(k) > 0) then
+               write(unit=jo_unit,fmt='(a30,a16,i5,i10,8f15.5)')'    radiance,  Jo(actual)  = ', &
+                  iv%instid(i)%rttovid_string, iv%instid(i)%ichan(k) , &
+                  j % jo % rad(i) % num_ichan(k), &
+                  j % jo % rad(i) % jo_ichan(k)
+            end if
+         end do
+      end do
    end if
 
    if (trace_use) call da_trace_exit("da_get_var_diagnostics")

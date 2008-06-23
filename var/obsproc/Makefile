@@ -42,6 +42,8 @@ clean:
 	$(RM) HEIGHT.txt PRES.txt TEMP.txt RH.txt WIND.txt
 	$(RM) obs_ssmi*.3dvar obs_gts*.3dvar
 	($(CD) src ; $(MAKE) clean "RM = $(RM)" )
+	($(CD) lib/ncep ; $(MAKE) clean "RM = $(RM)" )
+	($(CD) lib/cwordsh ; $(MAKE) clean "RM = $(RM)" )
 
 Mac_g95	:
 	echo "CPP		=	/usr/bin/cpp"			>  compiler_macros	; \

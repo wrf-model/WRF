@@ -6,6 +6,6 @@ account of the generalizations for global domains. This convertor
 adds the required fields to wrfinput files that were created
 by versions of the code before the global changes were added.
 
-To compile: ${CC} -o update_msf.exe update_msf.c -L${NETCDF}/lib -lnetcdf -I${NETCDF}
+To compile: ${CC} -o update_msf.exe update_msf.c -L${NETCDF}/lib -lnetcdf -I${NETCDF}/include
 
 To run: update_msf.exe <wrfinput file>

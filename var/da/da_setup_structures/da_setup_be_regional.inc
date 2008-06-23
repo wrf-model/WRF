@@ -72,7 +72,7 @@ subroutine da_setup_be_regional(xb, be)
    be % v4 % name = 'q/qsg'
    be % v5 % name = 'psfc'            ! surface pressure
 !clq
-   if(use_radarobs .and. use_radar_rf) then
+   if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
    be % v4 % name = 'qt   '
    end if
 !clq end
@@ -348,7 +348,11 @@ subroutine da_setup_be_regional(xb, be)
       call da_get_vertical_truncation(max_vert_var3, be3_eval_glo(:), be % v3)
       call da_get_vertical_truncation(max_vert_var4, be4_eval_glo(:), be % v4)
 
-      be % v5 % mz = 1
+      if (max_vert_var5 == 0.0) then
+         be % v5 % mz = 0
+      else
+         be % v5 % mz = 1
+      end if
 
       write (unit=stdout,fmt=*) ' '
 

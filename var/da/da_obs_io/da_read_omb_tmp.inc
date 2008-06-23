@@ -32,7 +32,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
 
    open(unit=unit_in,file=trim(filename),form='formatted',status='old',iostat=ios)
    if (ios /= 0) then
-      call da_error(__FILE__,__LINE__, (/"Cannot open file"//trim(filename)/))
+      call da_error(__FILE__,__LINE__, (/"Cannot open file"//filename/))
    end if
 
    reports: do

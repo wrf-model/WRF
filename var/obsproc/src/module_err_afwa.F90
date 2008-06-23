@@ -442,7 +442,8 @@ record_valid: IF (obs(loop_index)%info%discard) THEN
       IF (obs (loop_index) % ground  % pw  % error .LE. 0.) THEN
         obs (loop_index) % ground  % pw  % error = 0.2   ! 2. mm for GPSPW
         IF (fm == 114) THEN
-          obs (loop_index) % ground  % pw  % error = 0.005 ! .5 cm for GP{SZTD
+! the unit of ZTD is also cm, so the default error is 0.5 cm (YRG, 05/09/2008):
+          obs (loop_index) % ground  % pw  % error = 0.5 ! .5 cm for GP{SZTD
         ENDIF
         if (eps_equal(obs(loop_index)%ground %pw %data,missing_r,1.)) THEN
           obs (loop_index) % ground  % pw  % qc = missing

@@ -43,16 +43,18 @@ subroutine da_get_innov_vector_gpspw (it, grid, ob, iv)
 
       use_gpspwobs = .true.
 
-      ! Allocate:
       iv%info(gpspw)%nlocal   = num_pseudo
       iv%info(gpspw)%plocal(1) = num_pseudo
+      iv%info(gpspw)%ntotal   = num_pseudo
       iv%info(pseudo)%nlocal  = 0
 
-      allocate(iv % gpspw(1:num_pseudo))
-      allocate(ob % gpspw(1:num_pseudo))
+      ! Allocate:
+      call da_allocate_observations (iv)
+      iv%info(gpspw)%n1 = 1
+      iv%info(gpspw)%n2 = 1
+      allocate (ob % gpspw (1:num_pseudo))
 
-      write(unit=stdout,fmt='(a,i2)') &
-        '==> GPS TPW pseudo OBS test: num_pseudo=',num_pseudo
+      print '(a,i2)','==> GPS TPW pseudo OBS test: num_pseudo=',num_pseudo
 
       iv%info(gpspw)%x(:,1)   = pseudo_x
       iv%info(gpspw)%y(:,1)   = pseudo_y
@@ -94,9 +96,9 @@ subroutine da_get_innov_vector_gpspw (it, grid, ob, iv)
          end if  
       end if 
 
-      write(unit=stdout,fmt='(a4,2f15.5)') pseudo_var, pseudo_val, pseudo_err
-      write(unit=stdout,fmt='(3f15.5)')    pseudo_x,  pseudo_y,  pseudo_z
-      write(unit=stdout,fmt='(a,f8.2)')    'iv%gpspw: elv=',iv%info(gpspw)%elv(1)
+      print '(a4,2f15.5)', pseudo_var, pseudo_val, pseudo_err
+      print '(3f15.5)',    pseudo_x,  pseudo_y,  pseudo_z
+      print '(a,f8.2)',    'iv%gpspw: elv=',iv%info(gpspw)%elv(1)
    end if 
 
    if (iv%info(gpspw)%nlocal > 0) then

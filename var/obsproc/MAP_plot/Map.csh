@@ -10,11 +10,11 @@
 #set echo
  unalias mv rm
 
- set TIME_WINDOW_MIN = '2002082823'
- set TIME_ANALYSIS   = '2002082900'
- set TIME_WINDOW_MAX = '2002082901'
+ set TIME_WINDOW_MIN = '2007010121'
+ set TIME_ANALYSIS   = '2007010200'
+ set TIME_WINDOW_MAX = '2007010203'
 
- set OBSDATA  = ../obs_gts.3dvar
+ set OBSDATA  = ../obs_gts_2007-01-02_00:00:00.3DVAR
 
  echo " "
 

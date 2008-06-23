@@ -143,8 +143,9 @@ C  GET BACK TO THE NEST DOMAIN COORDINATE
         if (xx.lt.1.0 .or. xx.gt.float(jx) .or.                         
      *      yy.lt.1.0 .or. yy.gt.float(ix)) then
             num_domain_out = num_domain_out + 1
-        print '("n_out=",i5,1x,"xx,yy:",2f10.2,1x,"lat,lon:",2f10.2)',
-     *          num_domain_out, xx,yy,YLAT(j),YLON(j) 
+        print 
+     * '("n_out=",i5,1x,"xx,yy:",2f10.2,1x,"lat,lon:",2f10.2,2x,2I4)',
+     *          num_domain_out, xx,yy,YLAT(j),YLON(j), jx, ix 
             go to 40
         endif
 c

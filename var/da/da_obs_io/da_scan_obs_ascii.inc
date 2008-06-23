@@ -124,10 +124,11 @@ subroutine da_scan_obs_ascii (iv, filename)
       ! read model location
       read (iunit, fmt = fmt_loc) platform%loc%slp, platform%loc%pw
 
-      ! levels < 1 and not GPSPW, go back to reports
+      ! levels < 1 and .not.GPSPW and .not.GPSZTD, go back to reports
 
       if ((platform%info%levels < 1) .AND.            &
-          (index(platform%info%platform, 'GPSPW') <= 0)) then
+         ( (index(platform%info%platform, 'GPSPW') <= 0) .and. &
+           (index(platform%info%platform, 'GPSZD') <= 0) )) then
          cycle reports
       end if
 
@@ -165,7 +166,7 @@ subroutine da_scan_obs_ascii (iv, filename)
       call da_llxy (platform%info, platform%loc, outside, outside_all)
 
       if (platform%info%levels < 1) then
-         if (fm /= 111) then
+         if (fm /= 111 .and. fm /= 114) then
             cycle reports
          end if
       end if
@@ -175,9 +176,7 @@ subroutine da_scan_obs_ascii (iv, filename)
       if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) ndup= 2
 
       if (test_transforms) ndup = 1
-
       obs_index = fm_index(fm)
-      
       do n = 1, ndup
          select case(fm)
 
@@ -212,7 +211,11 @@ subroutine da_scan_obs_ascii (iv, filename)
             if (outside) cycle reports
             iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
             iv%info(sonde_sfc)%nlocal = iv%info(sonde_sfc)%nlocal + 1
-
+         case (161) ;
+            if (.not.use_mtgirsobs .or. iv%info(mtgirs)%ntotal == max_mtgirs_input) cycle reports
+            if (n==1) iv%info(mtgirs)%ntotal     = iv%info(mtgirs)%ntotal + 1
+            if (outside) cycle reports
+            iv%info(mtgirs)%nlocal     = iv%info(mtgirs)%nlocal + 1
          case (86) ;
             if (.not.use_satemobs .or. iv%info(satem)%ntotal == max_satem_input) cycle reports
             ! Reject cloudy satem obs.
@@ -245,8 +248,11 @@ subroutine da_scan_obs_ascii (iv, filename)
             if (outside) cycle reports
             iv%info(airep)%nlocal = iv%info(airep)%nlocal + 1
 
-         case (111) ;       
-            if (.not.use_gpspwobs .or. iv%info(gpspw)%ntotal == max_gpspw_input) cycle reports
+         case (111, 114) ;       
+            if ( (.not.use_gpspwobs  .and. fm == 111) .or. &
+                  iv%info(gpspw)%ntotal == max_gpspw_input) cycle reports
+            if ( (.not.use_gpsztdobs  .and. fm == 114) .or. &
+                  iv%info(gpspw)%ntotal == max_gpspw_input) cycle reports
             if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
             if (outside) cycle reports
             iv%info(gpspw)%nlocal = iv%info(gpspw)%nlocal + 1

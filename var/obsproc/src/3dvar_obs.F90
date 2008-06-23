@@ -64,7 +64,7 @@ PROGRAM main_3dvar_obs
    CHARACTER (LEN = 80)                 :: nml_filename
    CHARACTER (LEN = 80)                 :: title, caption
    LOGICAL                              :: exist
-   INTEGER                              :: iunit, ii
+   INTEGER                              :: iunit, ii, fm_code, ntime
    INTEGER                              :: ins, jew
    INTEGER                              :: loop_index, number_of_obs
    INTEGER                              :: total_dups_loc, total_dups_time
@@ -72,12 +72,17 @@ PROGRAM main_3dvar_obs
    INTEGER                              :: map_projection
    REAL                                 :: missing_flag
 
-   TYPE (report),      DIMENSION (:), ALLOCATABLE :: obs
+   TYPE (report),      DIMENSION (:), ALLOCATABLE :: obs, obs_copy
    TYPE (measurement), POINTER                    :: next, current
    INTEGER,            DIMENSION (:), ALLOCATABLE :: index
 
    real  :: lat, lon, xjd, yid, xxi, yyj, xxi1, yyj1
 
+   CHARACTER (LEN = 19)      :: time_min
+   CHARACTER (LEN = 19)      :: time_fg
+   CHARACTER (LEN = 19)      :: time_max
+   CHARACTER (LEN = 31)      :: SLOT_TITLE
+   LOGICAL                   :: dis0, dis1, dis2
 !------------------------------------------------------------------------------!
 
 
@@ -244,6 +249,7 @@ PROGRAM main_3dvar_obs
 
       caption (7*icor+1:7*(icor+1)) = "TIMDUPL"
 
+      if (use_for /= '4DVAR' )  &
       CALL check_duplicate_time (obs ,index ,number_of_obs, total_dups_time, &
                                  time_analysis, print_duplicate_time)
 
@@ -340,8 +346,8 @@ PROGRAM main_3dvar_obs
 
       icor = icor+1
 
-! 7.  OUTPUT DIRECT OBSERVATIONS (U,V,T,QV) IN ASCII FILE
-! =======================================================
+! 7. Reduce the QC flags and thin the satellite data
+! ==================================================
 
 ! 7.1 Reduce QC from 8 to 3 digits
 !     ----------------------------
@@ -370,9 +376,142 @@ PROGRAM main_3dvar_obs
                    nestix(idd), nestjx(idd), missing_flag, &
                                         'Qscatcat', 281)
       
-! 7.3 Print report per platform type and count the # levels per stations
-!     ------------------------------------------------------------------
+! 8.  OUTPUT DIRECT OBSERVATIONS (U,V,T,QV) IN ASCII and PREBUFR FILE
+! ===================================================================
 
+! 8.1 Keep a copy of the obs
+!     ------------------------
+
+      allocate (obs_copy(1:max_number_of_obs))      
+      obs_copy = obs
+
+! 8.2 Loop over the time slots
+!     ------------------------
+
+      do ntime = 1, num_time_slots
+
+! 8.3 Set the time_min, time_fg, and time_max for the time slot: ntime
+!     ----------------------------------------------------------------
+
+        if ( num_time_slots > 1 ) then
+      
+! 8.3.1 the number of time slots greater than 1 for FGAT and 4DVAR
+!       ..........................................................
+
+          if ( ntime == 1 .or. ntime == num_time_slots ) then
+             idt = slot_len / 2 - 1
+          else
+             idt = slot_len - 1
+          endif
+
+          if (ntime == 1) then
+             time_min  = time_window_min
+             time_fg  = time_window_min
+          else 
+             call geth_newdate (time_min, time_max, 1)
+             if (ntime == num_time_slots ) then
+                 time_fg = time_window_max
+             else
+                 call geth_newdate (time_fg, time_min, slot_len/2)
+             endif           
+          endif
+          call geth_newdate (time_max, time_min, idt)
+        
+        else
+         
+! 8.3.2 the number of time slots equal to 1 for 3DVAR, FGAT and 4DVAR
+!       ..........................................................
+
+          time_min = time_window_min
+          call  geth_newdate (time_max, time_window_max, -1)
+          time_fg = time_analysis
+
+        endif
+
+! 8.3.3 Print the time slot information
+!       ...............................
+             
+        write(0,'(//a,i2,4(2x,a))') "slot=",ntime, & 
+            "time_min, time_fg, time_max:", time_min, time_fg, time_max
+
+! 8.4 Get the original total obs back
+!     -------------------------------
+
+        deallocate (obs)
+        allocate(obs(1:max_number_of_obs))
+
+        obs = obs_copy
+
+! 8.5 Loop over all the obs
+!     ---------------------
+
+        do ii = 1,number_of_obs
+
+! 8.6 determine the obs "discard" flag
+!     --------------------------------
+
+! 8.7.1 Initialize the "discard" switch" for a obs
+!       ...........................................
+
+        dis0 = obs(ii)%info%discard
+        dis1 = .false.
+        dis2 = .false.
+
+! 8.7.2 Kick out the specific type of obs based on namelist settings
+!       ............................................................
+
+        read(obs(ii)%info%platform(4:6),'(i3)') fm_code
+        if ( (.not.write_synop .and. (fm_code==12  .or. fm_code==14)) .or. &
+             (.not.write_ship  .and.  fm_code==13)                    .or. &
+             (.not.write_metar .and. (fm_code==15  .or. fm_code==16)) .or. &
+             (.not.write_buoy  .and. (fm_code==18  .or. fm_code==19)) .or. &
+             (.not.write_pilot .and. (fm_code>=32 .and. fm_code<=34)) .or. &
+             (.not.write_sound .and. (fm_code>=35 .and. fm_code<=38)) .or. &
+             (.not.write_amdar .and.  fm_code==42)                    .or. &
+             (.not.write_satem .and.  fm_code==86)                    .or. &
+             (.not.write_satob .and.  fm_code==88)                    .or. &
+             (.not.write_airep .and. (fm_code==96  .or. fm_code==97)) .or. &
+             (.not.write_gpspw .and.  fm_code==111)                   .or. &
+             (.not.write_gpsztd.and.  fm_code==114)                   .or. &
+             (.not.write_gpsref.and.  fm_code==116)                   .or. &
+             (.not.write_gpseph.and.  fm_code==118)                   .or. &
+             (.not.write_ssmt1 .and.  fm_code==121)                   .or. &
+             (.not.write_ssmt2 .and.  fm_code==122)                   .or. &
+             (.not.write_ssmi  .and. (fm_code==125 .or. fm_code==126)).or. &
+             (.not.write_tovs  .and.  fm_code==131)                   .or. &
+             (.not.write_qscat .and.  fm_code==281)                   .or. &
+             (.not.write_profl .and.  fm_code==132)                   .or. &
+             (.not.write_bogus .and.  fm_code==135)                   .or. &
+             (.not.write_airs  .and.  fm_code==133)                   )    &
+             dis1 = .true.
+! 8.7.3 Kick out the obs outside the time slot
+!       ......................................
+
+         CALL inside_window (obs(ii)%valid_time%date_char, &
+                              time_min, time_max, &
+                              dis2)
+
+! 8.7.4 Reset the obs "discard" flag
+!       ............................
+
+         obs(ii)%info%discard = dis0 .or. dis1 .or.dis2
+
+! 8.8 end of the loop over obs
+!     ------------------------
+
+      enddo
+
+! 8.9 Time duplicate check within a slot for 4DVAR
+!     --------------------------------------------
+
+      if (use_for == '4DVAR' )  &
+      CALL check_duplicate_time (obs ,index ,number_of_obs, total_dups_time, &
+                                 time_fg, print_duplicate_time)
+
+! 8.10 Print report per platform type and count the # levels per stations
+!      ------------------------------------------------------------------
+
+      write(SLOT_TITLE,'("OBSERVATIONS FOR OUTPUT SLOT ",I2.2)') ntime
       CALL sort_platform (max_number_of_obs, obs, number_of_obs, &
                           nsynops (icor), nshipss (icor), nmetars (icor), &
                           npilots (icor), nsounds (icor), nsatems (icor), &
@@ -382,15 +521,15 @@ PROGRAM main_3dvar_obs
                           ntovss  (icor), nothers (icor), namdars (icor), &
                           nqscats (icor), nprofls (icor), nbuoyss (icor), &
                           nboguss (icor), nairss (icor), &
-                          'OBSERVATIONS FOR OUTPUT:')
+                          SLOT_TITLE)
 
-! 7.4 Determine output type
-!     ----------------------------------------------
+! 8.11 Determine output type
+!      ----------------------------------------------
 
       IF (output_ob_format .eq. 1 .or. output_ob_format .eq. 3) THEN
 
-! 7.41 Output observations in PREPBUFR
-!     ----------------------------------------------
+! 8.11.1 Output observations in PREPBUFR
+!        -------------------------------
       CALL output_prep (max_number_of_obs, obs, number_of_obs, index, &
                           prepbufr_table_filename, &
                           prepbufr_output_filename, &
@@ -408,8 +547,8 @@ PROGRAM main_3dvar_obs
 
       IF (output_ob_format .eq. 2 .or. output_ob_format .eq. 3) THEN
 
-! 7.42 Output observations in 3D-VAR Version 3.1 gts format
-!     ----------------------------------------------
+! 8.11.2 Output observations in 3D-VAR Version 3.1 gts format
+!        ----------------------------------------------------
 
       CALL output_gts_31 (max_number_of_obs, obs, number_of_obs, index, &
                           nsynops (icor), nshipss (icor), nmetars (icor), &
@@ -419,15 +558,18 @@ PROGRAM main_3dvar_obs
                           nssmt1s (icor), nssmt2s (icor), nssmis  (icor), &
                           ntovss  (icor), nothers (icor), namdars (icor), &
                           nqscats (icor), nprofls (icor), nbuoyss (icor), &
-                          nboguss (icor), nairss (icor), missing_flag, time_analysis)
+                          nboguss (icor), nairss (icor), missing_flag, time_fg)
 
       CALL output_ssmi_31 (max_number_of_obs, obs, number_of_obs, index, &
                            nssmis  (icor), &
-                           missing_flag, time_analysis)
+                           missing_flag, time_fg)
 
       ENDIF
 
-! 8.  END
+
+      enddo
+
+! 9.  END
 ! =======
       ENDIF
       STOP "99999"

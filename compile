@@ -46,11 +46,23 @@ foreach a ( $argv )
       set arglist = ( $arglist $a )
     endif
     if ( "$a" == "all_wrfvar" ) then
+      grep "DA_CORE=1" configure.wrf > /dev/null
+      if ( ! $status ) then 
+         # If configuration file has DA_CORE=1 hardwired, ok to set WRF_DA_CORE to 1
+         if ( ! $?WRF_DA_CORE ) setenv WRF_DA_CORE 1
+      endif
       if ( ! -d var ) then
         echo "  "
-        echo "You need to download and untar the Var code"
+        echo "You need to download and untar the WRF DA code"
         echo "  "
         exit
+      endif
+    endif
+    if ( "$a" == "nmm_real" ) then
+      grep "NMM_CORE=1" configure.wrf > /dev/null
+      if ( ! $status ) then 
+         # If configuration file has NMM_CORE=1 hardwired, ok to set WRF_NMM_CORE to 1
+         if ( ! $?WRF_NMM_CORE ) setenv WRF_NMM_CORE 1
       endif
     endif
   endif

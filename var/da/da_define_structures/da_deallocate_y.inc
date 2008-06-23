@@ -37,6 +37,18 @@ subroutine da_deallocate_y(y)
 
       deallocate (y % sonde_sfc)
    end if
+      
+   if (y % nlocal(mtgirs) > 0) then
+      do n = 1, y % nlocal(mtgirs)
+         deallocate (y % mtgirs(n)%u)
+         deallocate (y % mtgirs(n)%v)
+         deallocate (y % mtgirs(n)%t)
+         deallocate (y % mtgirs(n)%q)
+      end do
+
+      deallocate (y % mtgirs)
+
+   end if
 
    if (y % nlocal(pilot) > 0) then
       do n = 1, y % nlocal(pilot)
@@ -139,6 +151,16 @@ subroutine da_deallocate_y(y)
 
    if (y % nlocal(buoy)  > 0) deallocate (y % buoy)
 
+   !  radiance:
+ 
+   if (y % num_inst > 0) then
+      do i = 1,  y % num_inst
+        if (y % instid(i) % num_rad < 1) cycle
+        ! deallocate (y % instid(i) % ichan)
+        deallocate ( y % instid(i) % tb )
+      end do
+      deallocate (y % instid)
+   end if
    if (y % nlocal(airsr) > 0) then
       do n = 1, y % nlocal(airsr)
          deallocate (y % airsr(n)%t)

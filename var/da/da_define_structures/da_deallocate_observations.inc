@@ -31,6 +31,22 @@ subroutine da_deallocate_observations (iv)
 
       deallocate (iv%sonde_sfc)
    end if
+      
+   if (iv%info(mtgirs)%nlocal > 0) then
+      do n = 1, iv%info(mtgirs)%nlocal
+         if (iv%info(mtgirs)%levels(n) > 0) then
+            deallocate (iv%mtgirs (n) % h)
+            deallocate (iv%mtgirs (n) % p)
+            deallocate (iv%mtgirs (n) % u)
+            deallocate (iv%mtgirs (n) % v)
+            deallocate (iv%mtgirs (n) % t)
+            deallocate (iv%mtgirs (n) % q)
+         end if
+      end do
+
+      deallocate (iv%mtgirs)
+
+   end if
 
    if (iv%info(synop)%nlocal > 0) deallocate (iv%synop)
 

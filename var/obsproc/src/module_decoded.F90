@@ -409,15 +409,17 @@ time_window_min, time_window_max, map_projection , missing_flag)
          !
          ! Note: the variable: pw used for either GPSPW or GPSZTD.
          !       We NEVER DO the assimilation of both GPSPW or GPSZTD.
-         !                                  Y.-R. Guo  08/13/2003 
+         !                                  Y.-R. Guo  08/13/2003
+         !
+         ! From GPSPW_decoder, GPSZTD is also in cm and its QC-error 
+         ! in the unit of 0.1mm
+         !                                  Y.-R. Guo   05/09/2008.
+         ! 
          !------------------------------------------------------------
 
-          IF (fm == 111 ) THEN    
+          IF (fm == 111 .or. fm == 114) THEN    
              obs(obs_num)%ground%pw%error =    &
-                         REAL(obs(obs_num)%ground%pw%qc)/100.   ! GPSPW
-          ELSEIF (fm == 114 ) THEN   
-             obs(obs_num)%ground%pw%error =    &
-                         REAL(obs(obs_num)%ground%pw%qc)/1000.  ! GPSZTD 
+                         REAL(obs(obs_num)%ground%pw%qc)/100. ! GPSPW, ZTD
           ELSE
              obs(obs_num)%ground%pw%error = missing_r
           ENDIF

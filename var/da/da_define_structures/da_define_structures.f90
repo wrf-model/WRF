@@ -13,7 +13,7 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      pseudo, radar, airsr, sonde_sfc, trace_use_dull,comm
+      mtgirs, pseudo, radar, radiance, airsr, sonde_sfc, trace_use_dull,comm
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -303,6 +303,16 @@ module da_define_structures
       type (field_type)     , pointer :: t        (:) ! temperature.
       type (field_type)     , pointer :: q        (:) ! q.
    end type sound_type
+     
+   type mtgirs_type
+      real                  , pointer :: h        (:) ! Height in m
+      real                  , pointer :: p        (:) ! pressure.
+
+      type (field_type)     , pointer :: u        (:) ! u-wind.
+      type (field_type)     , pointer :: v        (:) ! v-wind.
+      type (field_type)     , pointer :: t        (:) ! temperature.
+      type (field_type)     , pointer :: q        (:) ! q.
+   end type mtgirs_type
 
    type airsr_type
       real                  , pointer :: h        (:) ! Height in m
@@ -357,6 +367,29 @@ module da_define_structures
       type (field_type)       :: v              ! v-wind.
    end type qscat_type
 
+   type varbc_info_type
+      integer              :: platform_id, satellite_id, sensor_id
+      integer              :: npredmax
+      integer              :: gammapred
+      integer              :: nchanl
+      integer, pointer     :: nbgerr(:) 
+      real,    pointer     :: pred(:,:)
+      real,    pointer     :: pred_mean(:)
+      real,    pointer     :: pred_std(:)
+   end type varbc_info_type
+   
+   type varbc_type
+      integer              :: nobs
+      integer              :: npred 
+      integer              :: ichanl
+      integer, pointer     :: pred_use(:)
+      integer, pointer     :: ipred(:)
+      integer, pointer     :: index(:)
+      real,    pointer     :: param(:)
+      real,    pointer     :: bgerr(:) 
+      real,    pointer     :: vtox(:,:)
+   end type varbc_type
+   
    type instid_type
       ! Instrument triplet, follow the convension of RTTOV
       integer              :: platform_id, satellite_id, sensor_id
@@ -368,15 +401,18 @@ module da_define_structures
       integer              :: num_rad, nchan, nlevels
       integer              :: nchannels, nfrequencies,nbtout
       integer              :: num_rad_glo
-      integer, pointer     :: ssmis_subinst(:)
       integer, pointer     :: ichan(:)
       real,    pointer     :: tb_inv(:,:)
       integer, pointer     :: tb_qc(:,:)
       real,    pointer     :: tb_error(:,:)
       real,    pointer     :: tb_xb(:,:) 
+      real,    pointer     :: rad_xb(:,:)
+      real,    pointer     :: rad_obs(:,:)
+      real,    pointer     :: rad_ovc(:,:,:)
       integer, pointer     :: scanpos(:)
       integer, pointer     :: scanline(:)
       integer, pointer     :: cloud_flag(:,:)
+      integer, pointer     :: rain_flag(:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 
       real,    pointer     :: solzen(:) 
@@ -420,14 +456,32 @@ module da_define_structures
       real,    pointer     :: vegtyp(:)
       real,    pointer     :: vegfra(:)
       real,    pointer     :: clwp(:)
-      ! real,    pointer     :: ps_jacobian(:,:)
-      ! real,    pointer     :: t_jacobian(:,:,:)
-      ! real,    pointer     :: q_jacobian(:,:,:)
+      real,    pointer     :: ps_jacobian(:,:) ! only RTTOV
+      real,    pointer     :: ts_jacobian(:,:) ! only over water CRTM
+      real,    pointer     :: windspeed_jacobian(:,:) ! only MV and over water CRTM
+      real,    pointer     :: emiss_jacobian(:,:)
+      real,    pointer     :: gamma_jacobian(:,:)
+      real,    pointer     :: t_jacobian(:,:,:)
+      real,    pointer     :: q_jacobian(:,:,:)
+      real,    pointer     :: water_jacobian(:,:,:) ! water content jacobian
+      real,    pointer     :: ice_jacobian(:,:,:)
+      real,    pointer     :: rain_jacobian(:,:,:)
+      real,    pointer     :: snow_jacobian(:,:,:)
+      real,    pointer     :: graupel_jacobian(:,:,:)
+      real,    pointer     :: hail_jacobian(:,:,:)
+      real,    pointer     :: water_r_jacobian(:,:,:) ! effective radius jacobian
+      real,    pointer     :: ice_r_jacobian(:,:,:)
+      real,    pointer     :: rain_r_jacobian(:,:,:)
+      real,    pointer     :: snow_r_jacobian(:,:,:)
+      real,    pointer     :: graupel_r_jacobian(:,:,:)
+      real,    pointer     :: hail_r_jacobian(:,:,:)
       real,    pointer     :: water_coverage(:)
       real,    pointer     :: land_coverage(:)
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
 
+      type (varbc_info_type)      :: varbc_info
+      type (varbc_type),pointer   :: varbc(:)
       type (infa_type) :: info
    end type instid_type
 
@@ -445,6 +499,7 @@ module da_define_structures
       real    :: polaramv_ef_u, polaramv_ef_v
       real    :: gpspw_ef_tpw
       real    :: sound_ef_u, sound_ef_v, sound_ef_t, sound_ef_q
+      real    :: mtgirs_ef_u, mtgirs_ef_v, mtgirs_ef_t, mtgirs_ef_q
       real    :: airep_ef_u, airep_ef_v, airep_ef_t
       real    :: pilot_ef_u, pilot_ef_v
       real    :: ssmir_ef_speed, ssmir_ef_tpw
@@ -483,7 +538,7 @@ module da_define_structures
       type (bogus_type)    , pointer :: bogus(:)
       type (radar_type)    , pointer :: radar(:)
       type (instid_type)   , pointer :: instid(:)
-
+      type (mtgirs_type)   , pointer :: mtgirs(:)
       real :: missing
       real :: ptop
    end type iv_type
@@ -561,6 +616,13 @@ module da_define_structures
       real, pointer :: t(:)                     ! temperature.
       real, pointer :: q(:)                     ! specific humidity.
    end type residual_sound_type
+     
+   type residual_mtgirs_type
+      real, pointer :: u(:)                     ! u-wind.
+      real, pointer :: v(:)                     ! v-wind.
+      real, pointer :: t(:)                     ! temperature.
+      real, pointer :: q(:)                     ! specific humidity.
+   end type residual_mtgirs_type
 
    type residual_airsr_type
       real, pointer :: t(:)                     ! temperature.
@@ -654,6 +716,7 @@ module da_define_structures
       type (residual_gpspw_type),    pointer :: gpspw (:)
       type (residual_gpsref_type),   pointer :: gpsref(:)
       type (residual_sound_type),    pointer :: sound(:)
+      type (residual_mtgirs_type),   pointer :: mtgirs(:)
       type (residual_airsr_type),    pointer :: airsr(:)
       type (residual_bogus_type),    pointer :: bogus(:)
       type (residual_synop_type),    pointer :: sonde_sfc(:) ! Same as synop type
@@ -703,6 +766,7 @@ module da_define_structures
       real                :: sound_u, sound_v, sound_t, sound_q
       real                :: sonde_sfc_u, sonde_sfc_v, sonde_sfc_t, &
                              sonde_sfc_p, sonde_sfc_q
+      real                :: mtgirs_u, mtgirs_v, mtgirs_t, mtgirs_q
       real                :: airep_u, airep_v, airep_t
       real                :: pilot_u, pilot_v
       real                :: ssmir_speed, ssmir_tpw
@@ -724,6 +788,7 @@ module da_define_structures
       real             :: jb
       real             :: jc
       real             :: je
+      real             :: jp
       type (jo_type)   :: jo
    end type j_type
 
@@ -731,6 +796,7 @@ module da_define_structures
       integer :: size        ! Total size of control variable.
       integer :: size_jb     ! Size of CV array for Jb term.
       integer :: size_je     ! Size of CV array for Je term.
+      integer :: size_jp     ! Size of CV array for Jp term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.

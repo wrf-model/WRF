@@ -27,7 +27,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
 
-   if (use_radarobs .and. use_radar_rf) then
+   if ((use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
       ! Pseudo RH --> Total water mixing ratio:
       vp%v4(its:ite,jts:jte,kts:kte)  = vp%v4(its:ite,jts:jte,kts:kte) &
          + grid%xa%qt(its:ite,jts:jte,kts:kte) * grid%xb%qs(its:ite,jts:jte,kts:kte)

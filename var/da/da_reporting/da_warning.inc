@@ -56,7 +56,7 @@ subroutine da_warning(file_str, line, warnings)
                '  LINE:  '//trim(line_str))
          end if
       end if
-      call da_message2(warnings)
+      call da_message(warnings)
       call wrf_message2( &
          '---------------------------------------------------------------')
 #endif

@@ -83,6 +83,15 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
                   ! ob%buoy(n)%q = iv%buoy(n)%q%inv
                   ! ob%buoy(n)%u = iv%buoy(n)%u%inv
                   ! ob%buoy(n)%v = iv%buoy(n)%v%inv
+
+                  if ( max_ext_its == 1 ) then
+                     ob%buoy(n)%p = iv%buoy(n)%p%inv
+                     ob%buoy(n)%t = iv%buoy(n)%t%inv
+                     ob%buoy(n)%q = iv%buoy(n)%q%inv
+                     ob%buoy(n)%u = iv%buoy(n)%u%inv
+                     ob%buoy(n)%v = iv%buoy(n)%v%inv
+                  end if
+
                else
                   call da_to_zk(iv % buoy(n) % h, v_h, v_interp_h, iv%info(buoy)%zk(1,n))
                end if

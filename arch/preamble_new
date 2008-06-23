@@ -17,11 +17,11 @@ LIBINCLUDE      =       .
 #### Get core settings from environment (set in compile script)
 #### Note to add a core, this has to be added to.
 
-COREDEFS = -DEM_CORE=$(WRF_EM_CORE) \
-           -DNMM_CORE=$(WRF_NMM_CORE) -DNMM_MAX_DIM=2600 \
-	   -DCOAMPS_CORE=$(WRF_COAMPS_CORE) \
-	   -DDA_CORE=$(WRF_DA_CORE) \
-           -DEXP_CORE=$(WRF_EXP_CORE)
+COREDEFS = CONFIGURE_EM_CORE \
+           CONFIGURE_NMM_CORE -DNMM_MAX_DIM=2600 \
+	   CONFIGURE_COAMPS_CORE \
+	   CONFIGURE_DA_CORE \
+           CONFIGURE_EXP_CORE
 
 #### Single location for defining total number of domains.  You need
 #### at least 1 + 2*(number of total nests).  For example, 1 coarse

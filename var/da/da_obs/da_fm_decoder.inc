@@ -40,7 +40,7 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
                                             satob, airep, gpspw, &
                                             ssmi_retrieval, ssmi_tb,&
                                             ssmt1, ssmt2, qscat, &
-                                            profiler, buoy, gpsref, &
+                                            profiler, buoy, gpsref, mtgirs,&
                                             other
 
    if (trace_use_frequent) call da_trace_entry("da_fm_decoder")
@@ -112,6 +112,8 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
 
       !  Upper-level pressure, temperature, humidity and wind report 
       !  from a sea station
+      case (161) ; platform = 'MTGIRS'
+         if (present (mtgirs)) mtgirs = mtgirs + 1
 
       case (36) ; platform = 'TEMP SHIP'
          if (present (sound)) sound = sound + 1
@@ -361,6 +363,7 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
       case ('OTHER');                                     platform = "OTHER";
       case ('BUOY');                                      platform = "BUOY";
       case ('PROFI');                                     platform = "PROFI";
+      case ('MTGIRS');                                    platform = "MTGIRS";
       case default;                                       platform = "OTHER";
 
    end select

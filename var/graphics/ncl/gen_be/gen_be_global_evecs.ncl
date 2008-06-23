@@ -9,7 +9,7 @@ begin
    ; read in data
    ;************************************************
 
-   works = "pdf"
+   works = getenv("GRAPHIC_WORKS")
 
    region = getenv("REGION")
    dir    = getenv("BE_DIR")

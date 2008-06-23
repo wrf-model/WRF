@@ -8,7 +8,7 @@ module da_synop
       max_error_p,max_error_q, sfc_assi_options, &
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kts,kte,kms,kme,sfc_assi_options_1,sfc_assi_options_2 , &
-      trace_use_dull, synop
+      trace_use_dull, synop, max_ext_its
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
    use da_interpolation, only : da_to_zk, &

@@ -6,7 +6,8 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+. ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/wps}
 export WORK_DIR=$RUN_DIR/working
 
@@ -22,7 +23,7 @@ cd $WORK_DIR
 
 echo "<HTML><HEAD><TITLE>$EXPT wps</TITLE></HEAD><BODY><H1>$EXPT wps</H1><PRE>"
 
-. ${WRFVAR_DIR}/var/scripts/da_get_date_range.ksh
+. $SCRIPTS_DIR/da_get_date_range.ksh
 
 date
 
@@ -34,7 +35,7 @@ echo 'WPS_OUTPUT_DIR <A HREF="file:'$WPS_OUTPUT_DIR'"</a>'$WPS_OUTPUT_DIR'</a>'
 echo 'RUN_DIR        <A HREF="file:'$RUN_DIR'"</a>'$RUN_DIR'</a>'
 echo 'WORK_DIR       <A HREF="file:'$WORK_DIR'"</a>'$WORK_DIR'</a>'
 
-${WRFVAR_DIR}/var/scripts/da_create_wps_namelist.ksh
+$SCRIPTS_DIR/da_create_wps_namelist.ksh
 
 cp $WORK_DIR/namelist.wps $RUN_DIR
 
@@ -78,7 +79,7 @@ else
    fi
 
    # Run ungrib:
-   ln -fs $VTABLE_DIR/Vtable.$FG_TYPE Vtable
+   ln -fs $VTABLE_DIR/Vtable.${VTABLE_TYPE} Vtable
    LOCAL_DATE=$DATE
    FILES=''
    while [[ $LOCAL_DATE -le $END_DATE ]]; do

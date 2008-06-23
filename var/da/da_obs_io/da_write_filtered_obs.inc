@@ -1308,6 +1308,72 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
          end do 
       end do     
    end if
+   !--------------------------------------------------------------------------
+   ! Write mtgirs
+   !--------------------------------------------------------------------------
+
+   if (iv%info(mtgirs)%nlocal > 0) then
+      if (print_detail_f_obs) then
+         write(unit=stdout,fmt='(A,I5)') &
+            ' writing filtered obs for airep  ',iv%info(mtgirs)%nlocal
+      end if
+
+      do n = 1, iv%info(mtgirs)%nlocal
+         if (.not. iv%info(mtgirs)%proc_domain(1,n)) cycle
+
+         write(ounit, fmt = fmt_info, iostat = iost) &
+            iv%info(mtgirs)%platform(n),    &
+            iv%info(mtgirs)%date_char(n),   &
+            iv%info(mtgirs)%name(n),        &
+            iv%info(mtgirs)%levels(n),      &
+            iv%info(mtgirs)%lat(1,n),         &
+            iv%info(mtgirs)%lon(1,n),         &
+            iv%info(mtgirs)%elv(n),         &
+            iv%info(mtgirs)%id(n)
+         write(ounit, fmt = fmt_srfc) iv%info(mtgirs)%slp(n), iv%info(mtgirs)%pw(n)
+
+         do k = 1, iv%info(mtgirs)%levels(n)
+
+            ! get speed and direction
+            if (iv%mtgirs(n)%u(k)%qc >= obs_qc_pointer .and. &
+                iv%mtgirs(n)%v(k)%qc >= obs_qc_pointer) then
+               uu = ob%mtgirs(n)%u(k)
+               vv = ob%mtgirs(n)%v(k)
+               call da_ffdduv(speed, dir, uu, vv, iv%info(mtgirs)%lon(k,n), convert_uv2fd)
+               speed_qc  = iv%mtgirs(n)%u(k)%qc
+               dir_qc    = speed_qc
+               speed_err = iv%mtgirs(n)%u(k)%error
+            else
+               speed     = missing_r
+               speed_qc    = missing_data
+               dir       = missing_r
+               dir_qc    = missing_data
+               speed_err = xmiss
+            end if
+
+!q from kg/kg to g/kg, for error is to 10e-2g/kg
+               if (iv%mtgirs(n)%q(k)%qc >= obs_qc_pointer) then
+                  rh = ob%mtgirs(n)%q(k) * 1000.
+                  rh_qc = iv%mtgirs(n)%q(k)%qc
+                  rh_error=iv%mtgirs(n)%q(k)%error * 1000.*100.
+               else
+                  rh    = missing_r
+                  rh_qc = missing_data
+                  rh_error=xmiss
+               end if
+
+            write(ounit, fmt = trim (fmt_each))       &
+               iv%mtgirs(n)%p(k),zero , pr_error,      &
+               speed, speed_qc, speed_err,            &
+               dir  , dir_qc, dir_error,              &
+               iv%mtgirs(n)%h(k), zero, elv_error,         &
+                   t,  t_qc, t_err,                           &
+               missing_r, missing_data, xmiss,        &
+                  rh, rh_qc,  rh_error
+         end do
+      end do    
+   end if
+
 
    if (iv%info(ssmi_tb)%nlocal > 0) then
       call da_warning(__FILE__,__LINE__, &     

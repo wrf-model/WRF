@@ -1,4 +1,4 @@
-subroutine da_setup_firstguess_wrf(xbx, grid)
+subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
 
    !---------------------------------------------------------------------------
    ! Purpose: Define/allocate components of WRF model state.
@@ -9,6 +9,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid)
    type (xbx_type), intent(out)         :: xbx    ! Header & non-gridded vars.
 
    type (domain), intent(inout)         :: grid
+   type(grid_config_rec_type), intent(in) :: config_flags
 
    integer           :: map_util_project
    real              :: x, y, xxc, yyc, xxx, yyy, lat_cen, lon_cen
@@ -24,23 +25,25 @@ subroutine da_setup_firstguess_wrf(xbx, grid)
    ! [0.0] check the xb_date for 3DVAR
    !-----------------------------------------------------------------------
 
-   write(unit=xb_date,fmt='(i4.4,2("-",i2.2),"_",i2.2,2(":",i2.2),".0000")')  &
-        grid%start_year, grid%start_month, grid%start_day, &
-        grid%start_hour, grid%start_minute,grid%start_second
+   if ( num_fgat_time == 1 ) then
+      write(unit=xb_date,fmt='(i4.4,2("-",i2.2),"_",i2.2,2(":",i2.2),".0000")')  &
+           grid%start_year, grid%start_month, grid%start_day, &
+           grid%start_hour, grid%start_minute,grid%start_second
 
-   len = len_trim(ANALYSIS_DATE)
+      len = len_trim(ANALYSIS_DATE)
 
-   write(unit=an_date(1:len), fmt='(a)') trim(ANALYSIS_DATE)
+      write(unit=an_date(1:len), fmt='(a)') trim(ANALYSIS_DATE)
 
-   seconds = int(da_diff_seconds(an_date, xb_date))
+      seconds = int(da_diff_seconds(an_date, xb_date))
 
-   if (seconds > ANALYSIS_ACCU) then
-      write(unit=message(1),fmt='(A,A,A,A)') &
-         "xb_date=",xb_date," an_date=", an_date
-      write(unit=message(2),fmt='(A,I6,A,I6)') &
-         "diff=",seconds,"   ANALYSIS_ACCU=",ANALYSIS_ACCU
-      message(3)="=======> Wrong xb time found???"
-      call da_warning(__FILE__,__LINE__,message(1:3))
+      if (seconds > ANALYSIS_ACCU) then
+         write(unit=message(1),fmt='(A,A,A,A)') &
+            "xb_date=",xb_date," an_date=", an_date
+         write(unit=message(2),fmt='(A,I6,A,I6)') &
+            "diff=",seconds,"   ANALYSIS_ACCU=",ANALYSIS_ACCU
+         message(3)="=======> Wrong xb time found???"
+         call da_warning(__FILE__,__LINE__,message(1:3))
+      end if
    end if
 
    !------------------------------------------------------------------------
@@ -176,7 +179,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid)
    mjy = grid%xb % mjy
    mkz = grid%xb % mkz
    
-   call da_transfer_wrftoxb(xbx, grid)
+   call da_transfer_wrftoxb(xbx, grid, config_flags)
 
    if (trace_use) call da_trace_exit("da_setup_firstguess_wrf")
 

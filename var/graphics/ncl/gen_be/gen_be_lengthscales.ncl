@@ -9,34 +9,30 @@ begin
    ; read in data
    ;************************************************
 
-   works = "pdf"
+   works = getenv("GRAPHIC_WORKS")
 
-   region = "t46_45km"
-   nrow = 41
+   region = getenv("REGION")
+   dir    = getenv("BE_DIR")
+   nrow   = stringtointeger(getenv("BE_NROW"))
    resolution = 45.0
 
-   ; region = "con200"
-   ; nrow = 27
-   ; resolution = 200.0
-
-   dir =  "/smoke/dmbarker/data/"+region+"/noda/fc/gen_be/"
    ncol = 2
 
    var1="psi"
    filename1 = "fort.194"
-   data1=asciiread(dir+filename1,(/nrow,ncol/),"float")
+   data1=asciiread(dir+"/"+filename1,(/nrow,ncol/),"float")
 
    var2="chi_u"
    filename2 = "fort.195"
-   data2=asciiread(dir+filename2,(/nrow,ncol/),"float")
+   data2=asciiread(dir+"/"+filename2,(/nrow,ncol/),"float")
 
    var3="t_u"
    filename3 = "fort.196"
-   data3=asciiread(dir+filename3,(/nrow,ncol/),"float")
+   data3=asciiread(dir+"/"+filename3,(/nrow,ncol/),"float")
 
    var4="rh"
    filename4 = "fort.197"
-   data4=asciiread(dir+filename4,(/nrow,ncol/),"float")
+   data4=asciiread(dir+"/"+filename4,(/nrow,ncol/),"float")
 
    y1 = new((/nrow/),float)
    y2 = new((/nrow/),float)

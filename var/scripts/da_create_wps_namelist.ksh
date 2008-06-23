@@ -10,7 +10,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 
 #-----------------------------------------------------------------------
@@ -70,7 +70,7 @@ cat >>namelist.wps <<EOF
 /
 
 &ungrib
- out_format = 'SI'
+ out_format = 'WPS'
 /
 
 &metgrid

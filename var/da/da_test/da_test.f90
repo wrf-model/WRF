@@ -14,6 +14,7 @@ module da_test
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
       halo_sfc_xa_sub, halo_ssmi_xa_sub
    use da_control, only : ips,ipe,jds,jde,jps,jpe,kds,kde,kps,kpe
+   use mpi, only : mpi_sum
 #endif
 
    use da_control, only : num_procs                                
@@ -35,10 +36,11 @@ module da_test
       inv_typ_vp4_sumsq,typical_rho_rms,balance_geo,balance_cyc,balance_type, &
       balance_geocyc, var4d, num_fgat_time,cv_options_hum_specific_humidity, &
       cv_options_hum_relative_humidity, ids, ide, jds, jde, kds, kde, &
-      sound, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
+      sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
-      bogus, buoy, qscat,pseudo, use_radarobs, use_ssmiretrievalobs, &
-      use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs
+      bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs, &
+      use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
+      use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type
    use da_dynamics, only : da_uv_to_divergence,da_uv_to_vorticity, &
@@ -53,7 +55,7 @@ module da_test
    use da_physics, only : da_transform_xtopsfc,da_transform_xtopsfc_adj, &
       da_pt_to_rho_lin,da_transform_xtotpw,da_transform_xtogpsref_lin, &
       da_transform_xtowtq, da_transform_xtowtq_adj,da_pt_to_rho_adj, &
-      da_transform_xtotpw_adj
+      da_transform_xtotpw_adj, da_transform_xtoztd_lin, da_transform_xtoztd_adj
    use da_reporting, only : da_error, message, da_message
    use da_spectral, only : da_test_spectral
    use da_ssmi, only : da_transform_xtoseasfcwind_lin, &
@@ -71,13 +73,10 @@ module da_test
       da_transform_xtotb_adj, da_vertical_transform, da_transform_vptox, &
       da_transform_xtogpsref_adj,da_transform_vptox_adj,da_transform_vtox, &
       da_transform_vtox_adj,da_transform_vtovv,da_transform_vtovv_global, &
-      da_transform_vtovv_global_adj, da_transform_vtovv_adj
+      da_transform_vtovv_global_adj, da_transform_vtovv_adj, da_transform_xtoxa, &
+      da_transform_xtoxa_adj
 
    implicit none
-
-#ifdef DM_PARALLEL
-   include 'mpif.h'
-#endif
 
 contains
 
@@ -104,6 +103,7 @@ contains
 #include "da_check_xtoy_adjoint_bogus.inc"
 #include "da_check_xtoy_adjoint_sound.inc"
 #include "da_check_xtoy_adjoint_sonde_sfc.inc"
+#include "da_check_xtoy_adjoint_mtgirs.inc"
 #include "da_check_xtoy_adjoint_synop.inc"
 #include "da_check_xtoy_adjoint_rad.inc"
 #include "da_transform_xtovp.inc"

@@ -125,6 +125,10 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             if (.not.use_soundobs) cycle reports
             nlocal(sound) = nlocal(sound) + 1
 
+         case (161) ;
+            if (.not.use_mtgirsobs) cycle reports
+            nlocal(mtgirs) = nlocal(mtgirs) + 1
+
          case (86) ;
 
             if (.not.use_satemobs) cycle reports
@@ -221,7 +225,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       nlocal(buoy) + nlocal(sound) + nlocal(airep) + nlocal(pilot) + &
       nlocal(geoamv) + nlocal(polaramv) + nlocal(gpspw) + nlocal(gpsref) + &
       nlocal(profiler) + nlocal(qscat) + nlocal(ssmt1) + nlocal(ssmt2) +  &
-      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + num_others
+      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + num_others
 
    write  (unit = filtered_obs_unit, fmt = '(A,I7,A,F8.0,A)')    &
       "TOTAL =",total_obs, ", MISS. =",missing_r,","  
@@ -247,6 +251,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       "SATEM =",nlocal(satem), ", ", &
       "BOGUS =",nlocal(bogus),", ", &
       "AIRSR =",nlocal(airsr),", ", &
+      "MTGIRS=",nlocal(mtgirs),", ", &
       "OTHER =",num_others,", "
 
    ! write reference state info

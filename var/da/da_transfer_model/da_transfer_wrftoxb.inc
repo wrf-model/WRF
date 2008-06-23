@@ -1,4 +1,4 @@
-subroutine da_transfer_wrftoxb(xbx, grid)
+subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    !---------------------------------------------------------------------------
    ! Purpose: Transfers fields from WRF to first guess structure.
@@ -9,6 +9,7 @@ subroutine da_transfer_wrftoxb(xbx, grid)
    type (xbx_type), intent(inout)     :: xbx        ! Header & non-gridded vars.
 
    type(domain), intent(inout)        :: grid
+   type(grid_config_rec_type), intent(in) :: config_flags
 
    integer :: i, j, k
 
@@ -344,12 +345,8 @@ subroutine da_transfer_wrftoxb(xbx, grid)
 
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
-! Syed RH Rizvi  MMM/NCAR   
-!   03/21/2008
-           if( num_pseudo == 0) then
             if (grid%xb%q(i,j,k) < 1.0e-6) &
                grid%xb%q(i,j,k) = 1.0e-6
-           end if
    
             ! Background qrn needed for radar radial velocity assmiilation:
 
@@ -368,6 +365,16 @@ subroutine da_transfer_wrftoxb(xbx, grid)
             if (size(grid%moist,dim=4) >= 7) then
                grid%xb%qgr(i,j,k) = grid%moist(i,j,k,p_qg)
             end if
+
+            if ( config_flags%mp_physics == 3 ) then   ! WSM3-class scheme
+               if ( grid%xb%t(i,j,k) <= t_kelvin ) then
+                  grid%xb%qci(i,j,k) = grid%xb%qcw(i,j,k)
+                  grid%xb%qcw(i,j,k) = 0.0
+                  grid%xb%qsn(i,j,k) = grid%xb%qrn(i,j,k)
+                  grid%xb%qrn(i,j,k) = 0.0
+               end if
+            end if
+
          end do
       end do
 
@@ -584,8 +591,16 @@ subroutine da_transfer_wrftoxb(xbx, grid)
    ! Ground-based GPS ZTD must follow the GPS Refractivity calculation.
    !---------------------------------------------------------------------------
 
-   ! WHY?
-   ! if (use_gpsztdobs) call da_transform_xtoztd(grid%xb)
+   ! WHY? For certain computation method, not current one.
+   if (use_gpsztdobs) then
+      call da_transform_xtoztd(grid)
+      if (print_detail_xb) then
+        i=its; j=jts
+        write(unit=stdout, fmt=*) 'grid%xb % tpw(i,j)=', grid%xb % tpw(i,j)
+        write(unit=stdout, fmt=*) 'grid%xb % ztd(i,j)=', grid%xb % ztd(i,j)
+        write(unit=stdout, fmt=*) ' '
+      end if
+   end if
 
    !---------------------------------------------------------------------------
    ! Calculate means for later use in setting up background errors.

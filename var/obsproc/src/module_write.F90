@@ -114,7 +114,8 @@ counts: &
 !     ----------------------------------------------------
 
       if (ssmi_125 > 0) then
-        filename1 = 'obs_ssmi_retrieval.3dvar'
+!        filename1 = 'obs_ssmi_retrieval.3dvar'
+        write(filename1,'("obs_ssmi_retrieval_",a,".",a)') time_analysis, use_for
 
         WRITE (0,'(A,A)') &
         "Write 3DVAR SSMI Retrieval obs in files: ", TRIM (filename1)
@@ -196,7 +197,8 @@ counts: &
 !     --------------------------------------------
 
       if (ssmi_126 > 0) then
-        filename2 = 'obs_ssmi_Tb.3dvar'
+!        filename2 = 'obs_ssmi_Tb.3dvar'
+        write(filename2,'("obs_ssmi_Tb_",a,".",a)') time_analysis, use_for
 
         WRITE (0,'(A,A)') &
         "Write 3DVAR SSMI TB obs in files: ", TRIM (filename2)
@@ -532,12 +534,6 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                  nbuoyss + nothers + ngpsztd + &
                  ngpsref + ngpseph + nboguss + nairss
 
-      if (ntotal == 0) then
-         WRITE(0,'(A,I6,A)') "Ntotal=",ntotal, &
-                            " No observations other than SSMI is written out."
-         RETURN
-      endif
-
 !------------------------------------------------------------------------------!
 !     B. PRINT OBS USING THE NEW STRUCTURE
 !------------------------------------------------------------------------------!
@@ -560,10 +556,12 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
 ! 1.1 Name of output file
 !     -------------------
 
-      filename = 'obs_gts.3dvar'
+      write(filename,'("obs_gts_",a,".",a)') time_analysis, use_for
 
-      WRITE (0,'(3A)') 'Write 3DVAR GTS observations in file ',&
-                        TRIM (filename),' (version 3.1)'
+!      filename = 'obs_gts.'//use_for
+
+      WRITE (0,'(5A)') 'Write 3DVAR ',use_for,' GTS observations in file ',&
+                        TRIM (filename),' (wrfvar version 3.0)'
 
 
 ! 1.2 OPEN FILE AT VERSION 3.1 FORMAT
@@ -580,6 +578,13 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
       ENDIF
 
       REWIND ( UNIT = 99)
+
+      if (ntotal == 0) then
+         WRITE(0,'(A,I6,A)') "Ntotal=",ntotal, &
+                            " No observations other than SSMI is written out."
+         CLOSE (UNIT = 99) 
+         RETURN
+      endif
 
 ! 1.3 FILE HEADER FOR NEW FORMAT
 !     --------------------------

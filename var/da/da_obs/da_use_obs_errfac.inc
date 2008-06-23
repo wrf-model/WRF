@@ -332,6 +332,28 @@ subroutine da_use_obs_errfac(iv)
       end do
    end if
 
+   ! Transfer mtgirs obs:
+
+   if (iv%info(mtgirs)%nlocal > 0) then
+      call da_read_errfac('mtgirs', iv % mtgirs_ef_u, iv % mtgirs_ef_v, &
+                           iv % mtgirs_ef_t, iv % mtgirs_ef_q, d1)
+
+      do n = 1, iv%info(mtgirs)%nlocal
+         do k = 1, iv%info(mtgirs)%levels(n)
+            iv % mtgirs(n) % u(k) % error = iv % mtgirs(n) % u(k) % error * &
+                                           iv % mtgirs_ef_u
+            iv % mtgirs(n) % v(k) % error = iv % mtgirs(n) % v(k) % error * &
+                                           iv % mtgirs_ef_v
+            iv % mtgirs(n) % t(k) % error = iv % mtgirs(n) % t(k) % error * &
+                                           iv % mtgirs_ef_t
+            iv % mtgirs(n) % q(k) % error = iv % mtgirs(n) % q(k) % error * &
+                                           iv % mtgirs_ef_q
+
+         end do
+
+      end do
+   end if
+
    if (trace_use) call da_trace_exit("da_use_obs_errfac")
 
 end subroutine da_use_obs_errfac

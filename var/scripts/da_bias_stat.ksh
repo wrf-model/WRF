@@ -3,25 +3,27 @@
 #  Bias correction off-line statistics script
 #  Author: Zhiquan Liu NCAR/MMM 02/2007
 ###############################################
+export USER=liuz
+export WRFVAR_DIR=/ptmp/liuz/wrfvar
+export DATA_DIR=/ptmp/${USER}/t8/biasprep/run
+export BUILD_DIR=${WRFVAR_DIR}/build
+export WORKDIR=/ptmp/${USER}/t8/biasstat
 
-export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
-export RUN_DIR=${RUN_DIR:-$EXP_DIR/bias_stat}
-export WORK_DIR=$RUN_DIR/working
+export START_DATE=2007081500
+export END_DATE=2007091418
+export CYCLE_PERIOD=6
 
-export PLATFORM=noaa
-export PLATFORM_ID=1
-export SENSOR=$1     # amsua,amsub
-export SATELLITE=$2  # 15,16,17,18
-export SENSOR_ID=$3   # 3 , 4
-export NSCAN=$4      # 30, 90
+export PLATFORM=noaa # eos  #noaa
+export PLATFORM_ID=1  #9 #1  RTTOV instrument triplet
+export SENSOR=amsua     # amsua,amsub,mhs
+export SATELLITE=16  # 15,16,17,18
+export SENSOR_ID=3   # 3 , 4, 15
+export NSCAN=30      # 30, 90
 
+ echo 'WORKING directory is $WORKDIR'
 
- echo 'WORKING directory is $WORK_DIR'
-
- mkdir $WORK_DIR; cd $WORK_DIR
- cp $WRFVAR_DIR/run/mask_asc $WORK_DIR
+ mkdir $WORKDIR; cd $WORKDIR
+ cp $WRFVAR_DIR/run/mask_asc $WORKDIR
 
  CDATE=$START_DATE
 
@@ -32,8 +34,8 @@ export NSCAN=$4      # 30, 90
 #------------------------------------
  while [[ $CDATE -le $END_DATE ]]; do
    echo $CDATE
-   cat ${WORK_DIR}/${CDATE}/wrfvar/working/biasprep_${PLATFORM}-${SATELLITE}-${SENSOR}.* >> biasprep_${sensor}
-   CDATE=$($BUILD_DIR/da_advance_time.exe ${CDATE} ${CYCLE_PERIOD})
+   cat ${DATA_DIR}/${CDATE}/wrfvar/working/biasprep_${PLATFORM}-${SATELLITE}-${SENSOR}.* >> biasprep_${sensor}
+   CDATE=$(${BUILD_DIR}/da_advance_time.exe ${CDATE} ${CYCLE_PERIOD})
  done
 
 #--------------------------------------------------
@@ -47,7 +49,7 @@ cat > nml_sele << EOF
   satellite_id = ${SATELLITE},
   sensor_id    = ${SENSOR_ID},
   nscan  = ${NSCAN},
-  isurf = 2
+  isurf = 1
  /
 EOF
  
@@ -62,6 +64,8 @@ echo '  End da_bias_sele'
 #--------------------------------------------------------------------------------
 # 3.0 Compute scan bias 
 #--------------------------------------------------------------------------------
+# fac: QC used, rejected if |omb| > fac*sigma
+# global: =.false. (recommended), will generate a domain averaged scan-bias, 
 echo 'Start da_bias_scan'
 cat > nml_scan << EOF
  &INPUTS

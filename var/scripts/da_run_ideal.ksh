@@ -12,7 +12,8 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+. ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/ideal}
 export WORK_DIR=$RUN_DIR/working
 
@@ -26,7 +27,7 @@ mkdir -p $RUN_DIR $WORK_DIR
 cd $WORK_DIR
 
 #Get extra namelist variables:
-. ${WRFVAR_DIR}/var/scripts/da_get_date_range.ksh
+. $SCRIPTS_DIR/da_get_date_range.ksh
 
 echo "<HTML><HEAD><TITLE>$EXPT ideal</TITLE></HEAD><BODY>"
 echo "<H1>$EXPT ideal</H1><PRE>"

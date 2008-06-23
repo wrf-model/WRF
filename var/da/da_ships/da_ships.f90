@@ -8,7 +8,7 @@ module da_ships
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv,  &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv,anal_type_verify, ships, &
-      kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2
+      kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, max_ext_its
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
    use da_interpolation, only : da_to_zk, &

@@ -1,3 +1,69 @@
+Updated by Y.-R. Guo, 7 May 2008
+
+1, To correct the "0 obs" ascii output file writing
+
+   Modified:
+       src/module_write.F90
+
+Updated by Y.-R. Guo, 28 March 2008
+
+1, Improve the printing, change "print *," to be "write(0,"
+
+   Modified:
+       src/module_map_utils.F90
+       src/module_decoded.F90
+       src/module_err_afwa.F90
+
+2, Plot only one set of the obs distribution maps
+
+   Modified
+       MAP_plot/Dir_map/Map.F
+       MAP_plot/Dir_map/plstn1.F
+
+3, Added the function to write out the obs files for use of 
+   3DVAR, FGAT, and 4DVAR
+
+   For 3DVAR, the obs within slot [time_window_min, time_window_max)
+              are outputted. no time duplicate obs;
+.
+   For FGAT,  the obs files for multiple time slots are outputted.
+              each of the time slots has the closed low bound and 
+              opened upper bound. Within the whole time window, no time-
+              duplicate obs allowed;
+
+   For 4DVAR, same as FGAT but there may be time-duplicate obs within 
+              the whole time window. Within each of time slots,however,
+              no time-duplicate obs allowed. 
+
+   * The opened upper-bound is important for the cycling run to avoid the
+     duplicated usage of the observations in the different cycles.
+
+   * The number of time-slots before and after analysis time could be 
+     different (i.e.asymetric). However, the number of the time-slots
+     before the analysis time MUST BE >= 1 for FGAT or 4DVAR.
+
+   * Currently the lengths for all of the time-slots are considered to be 
+     same. 
+
+   * Note: the current MAX_OB_RANGE in scripts is ONLY allowed to be integer 
+     (hours), and the entir time window = 2 * MAX_OB_RANGE, must be the even 
+     numbers (hours). So for 6-h cycling run (MAX_OB_RANGE=3), the time window 
+     for obsproc is correct, but for a 3-h cycling run, the time window for 
+     obsproc will not be correct. 
+
+   Modified
+       src/3dvar_obs.F90
+       src/module_namelist.F90
+       src/module_write.F90
+       src/module_duplicate.F90
+
+4, Introduced the switches to control the specific types of obs in
+   the obs_gts (ASCII) files. This is mostly for testing purpose.
+
+   Modified
+       src/3dvar_obs.F90
+       src/module_namelist.F90
+   
 Updated by Y.-R. Guo, 31 January 2008
 
 1) Bug fix in module_recoverh.F90 -->
@@ -42,7 +108,7 @@ Updated by Y.-R. Guo, 10 May 2007
 3) Note: In most cases, pis0, tis0 or base_start_temp, base_tropo_pres.
    do not need to set in namelist file. The default values are OK.
 
-4) MOdified subroutines
+4) Modified subroutines
 
      src/module_mm5.F90
      src/module_namelist.F90

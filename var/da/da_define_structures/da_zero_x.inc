@@ -35,6 +35,7 @@ subroutine da_zero_x ( x )
    x % t2(:,:) = 0.0
    x % q2(:,:) = 0.0
 
+   x % ztd(:,:) = 0.0
    x % tpw(:,:) = 0.0
    x % speed(:,:) = 0.0
    x % tb19v(:,:) = 0.0

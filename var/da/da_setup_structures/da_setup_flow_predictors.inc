@@ -105,7 +105,7 @@ subroutine da_setup_flow_predictors(ix, jy, kz, ne, ep)
       filename = 'ep/'//trim(var(5))//'/'//trim(var(5))//'.e'//trim(ce)
       open(unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
       read(unit=ep_unit) ni, nj, nkdum
-      read(unit=ep_unit) ldum1, ldum2
+      !      read(unit=ep_unit) ldum1, ldum2
       read(unit=ep_unit) temp2d(1:ix,1:jy)
       ep % v5(1:ix,1:jy,1,e) = ens_scaling_inv * temp2d(1:ix,1:jy)
       close(unit=ep_unit)

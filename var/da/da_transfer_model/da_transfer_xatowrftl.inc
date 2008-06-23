@@ -17,12 +17,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    real    :: sdmd, s1md
    real    :: rho_cgrid
 
-   real :: g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
-      grid%xp%kms:grid%xp%kme)
-   real :: utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
-      grid%xp%kms:grid%xp%kme)
-   real :: vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
-      grid%xp%kms:grid%xp%kme)
+   real, allocatable, dimension(:,:,:) :: utmp, vtmp, g_press
 
    integer ndynopt
 
@@ -34,6 +29,8 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    je=grid%xp%jte
    ks=grid%xp%kts
    ke=grid%xp%kte
+
+   allocate (g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
 
    !---------------------------------------------------------------------------
    ! [1.0] Get the mixing ratio of moisture first, as it is easy.
@@ -110,14 +107,22 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
       end do
    end do
 
+   deallocate (g_press)
+
    !---------------------------------------------------------------------------
    ! [5.0] convert from a-grid to c-grid
    !---------------------------------------------------------------------------
 
 #ifdef DM_PARALLEL
 
+#include "HALO_PSICHI_UV_ADJ.inc"
+
+   allocate ( utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
+   allocate ( vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
+
    utmp = grid%xa%u
    vtmp = grid%xa%v
+
    ! The southern boundary (fill A-GRID boundaries)
    ! To keep the gradient, A(0) = 2A(1)-A(2)
    if (js == grid%xp%jds) then
@@ -158,6 +163,8 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    end do
 
 
+   deallocate (utmp)
+   deallocate (vtmp)
 #else
 
    do k=ks,ke

@@ -150,7 +150,7 @@ subroutine da_esmf_init( gcomp, importState, exportState, clock, rc )
 
    if ((config_flags%real_data_init_type == 1) .OR. &
        (config_flags%real_data_init_type == 3)) then
-      call da_med_initialdata_input( head_grid , config_flags,'fg01' )
+      call da_med_initialdata_input( head_grid , config_flags,'fg' )
    end if
 
    !<DESCRIPTION>

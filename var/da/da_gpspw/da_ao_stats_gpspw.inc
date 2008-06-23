@@ -34,7 +34,8 @@ subroutine da_ao_stats_gpspw (stats_unit, iv, re)
             stats%minimum%tpw,  stats%maximum%tpw, &
             stats%average%tpw,  stats%rms_err%tpw)
 
-         if (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) then
+         if ((pseudo_var(1:3) == 'tpw' .or.pseudo_var(1:3) == 'ztd' ) &
+                        .and. num_pseudo > 0) then
             o_minus_b = iv%GPSpw(n)%tpw%inv
             o_minus_a = re%gpspw(n)%tpw
             sigma_o   = iv%gpspw(n)%tpw%error
@@ -48,14 +49,14 @@ subroutine da_ao_stats_gpspw (stats_unit, iv, re)
             o_minus_a_0 = wrf_dm_sum_real (o_minus_a)
             sigma_o_0 = wrf_dm_sum_real (sigma_o)
             sigma_b_0 = wrf_dm_sum_real (sigma_b)
-            write(unit=stdout,fmt='(A,F10.2)') &
-               'TEST_COVERAGE_da_ao_stats_gpspw:  o_minus_b_0 = ', o_minus_b_0
-            write(unit=stdout,fmt='(A,F10.2)') &
-               'TEST_COVERAGE_da_ao_stats_gpspw:  o_minus_a_0 = ', o_minus_a_0
-            write(unit=stdout,fmt='(A,F10.2)') &
-               'TEST_COVERAGE_da_ao_stats_gpspw:  sigma_o_0 = ', sigma_o_0
-            write(unit=stdout,fmt='(A,F10.2)') &
-               'TEST_COVERAGE_da_ao_stats_gpspw:  sigma_b_0 = ', sigma_b_0
+!           write(unit=stdout,fmt='(A,F10.2)') &
+!              'TEST_COVERAGE_da_ao_stats_gpspw:  o_minus_b_0 = ', o_minus_b_0
+!           write(unit=stdout,fmt='(A,F10.2)') &
+!              'TEST_COVERAGE_da_ao_stats_gpspw:  o_minus_a_0 = ', o_minus_a_0
+!           write(unit=stdout,fmt='(A,F10.2)') &
+!              'TEST_COVERAGE_da_ao_stats_gpspw:  sigma_o_0 = ', sigma_o_0
+!           write(unit=stdout,fmt='(A,F10.2)') &
+!              'TEST_COVERAGE_da_ao_stats_gpspw:  sigma_b_0 = ', sigma_b_0
             if (rootproc) then  
                write(stats_unit,'(/A,A3,A,f12.3)')  &  
                  ' Pseudo ', pseudo_var, ' O-B: ', o_minus_b_0  
@@ -81,7 +82,12 @@ subroutine da_ao_stats_gpspw (stats_unit, iv, re)
 
    if (rootproc) then
       if (ntpw /= 0) then
-         write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for gpspw'
+         if (use_gpspwObs) then
+           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for Gpspw'
+         else if (use_gpsztdObs) then
+           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for Gpsztd'
+         endif
+
          call da_print_stats_gpspw(stats_unit, ntpw, stats)
        end if
    end if

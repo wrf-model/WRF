@@ -13,19 +13,22 @@ subroutine da_analysis_stats  (grid, stats_unit)
    integer :: ij_g, ijk_g   ! ij, ijk for global domain. 
    integer :: kdim  ! k range 
 
-   real    :: um, vm, tm, pm, qm ! On local domain.
+   real    :: um, vm, tm, pm, qm , qcwm, qrnm ! On local domain.
    real    :: rij_g, rijk_g      ! On global domain.
 
    type (maxmin_field_type) :: max_u(kts:kte), max_v(kts:kte), &
                                max_t(kts:kte), max_p(kts:kte), &
                                max_q(kts:kte), &
+                               max_qcw(kts:kte),max_qrn(kts:kte),&
                                min_u(kts:kte), min_v(kts:kte), &
                                min_t(kts:kte), min_p(kts:kte), &
-                               min_q(kts:kte)
+                               min_q(kts:kte),&
+                               min_qcw(kts:kte),min_qrn(kts:kte)
  
    real                        uv(kts:kte), vv(kts:kte), &
                                tv(kts:kte), pv(kts:kte), &
-                               qv(kts:kte)
+                               qv(kts:kte),&
+                               qcwv(kts:kte),qrnv(kts:kte)
 
    call da_trace_entry("da_analysis_stats")
 
@@ -40,7 +43,17 @@ subroutine da_analysis_stats  (grid, stats_unit)
    if (rootproc) then
       write(unit=stats_unit, fmt='(/a/)') &
          ' Minimum of gridded analysis increments'
-
+   if (crtm_cloud .or. use_radar_rf) then
+      write(unit=stats_unit, fmt='(8a/)') &
+         ' Lvl         ', &
+         'u     i    j          ', &
+         'v     i    j          ', &
+         't     i    j          ', &
+         'p     i    j          ', &
+         'q     i    j          ',&
+         'qcw     i    j          ',&
+         'qrn     i    j          '
+   else
       write(unit=stats_unit, fmt='(6a/)') &
          ' Lvl         ', &
          'u     i    j          ', &
@@ -48,6 +61,7 @@ subroutine da_analysis_stats  (grid, stats_unit)
          't     i    j          ', &
          'p     i    j          ', &
          'q     i    j          '
+   end if
    end if
 
    call da_maxmin_in_field(grid%xa%u(its:ite,jts:jte,kts:kte), max_u, min_u)
@@ -61,16 +75,35 @@ subroutine da_analysis_stats  (grid, stats_unit)
    call da_maxmin_in_field(grid%xa%q(its:ite,jts:jte,kts:kte), max_q, min_q)
    call da_proc_maxmin_combine(kdim, max_q, min_q)
 
+   if (crtm_cloud .or. use_radar_rf) then
+      call da_maxmin_in_field(grid%xa%qcw(its:ite,jts:jte,kts:kte), max_qcw, min_qcw)
+      call da_proc_maxmin_combine(kdim, max_qcw, min_qcw)
+      call da_maxmin_in_field(grid%xa%qrn(its:ite,jts:jte,kts:kte), max_qrn, min_qrn)
+      call da_proc_maxmin_combine(kdim, max_qrn, min_qrn)
+   end if
+
+        
+
    um = 999999.0
    vm = 999999.0
    tm = 999999.0
    pm = 999999.0
    qm = 999999.0
 
+   if (crtm_cloud .or. use_radar_rf) then
+      qcwm = 999999.0
+      qrnm = 999999.0
+   end if
+
    do k = kts, kte   
       if (rootproc) then
-         write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),e12.4,2i5)') k, &
-            min_u(k), min_v(k), min_t(k), min_p(k), min_q(k)
+         if (crtm_cloud .or. use_radar_rf) then
+            write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),3(e12.4,2i5))') k, &
+              min_u(k), min_v(k), min_t(k), min_p(k), min_q(k),min_qcw(k),min_qrn(k)
+         else
+             write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),e12.4,2i5)') k, &
+              min_u(k), min_v(k), min_t(k), min_p(k), min_q(k)
+         end if
       end if
 
       um=minval(min_u(:)%value)
@@ -78,29 +111,58 @@ subroutine da_analysis_stats  (grid, stats_unit)
       tm=minval(min_t(:)%value)
       pm=minval(min_p(:)%value)
       qm=minval(min_q(:)%value)
+
+      if (crtm_cloud .or. use_radar_rf) then
+         qcwm=minval(min_qcw(:)%value)
+         qrnm=minval(min_qrn(:)%value)
+      end if
+
    end do
 
    if (rootproc) then
-      write(unit=stats_unit, fmt='(a,4(f12.4,10x),e12.4)') ' ALL', &
-         um, vm, tm, pm, qm
+
+     if (crtm_cloud .or. use_radar_rf) then
+        write(unit=stats_unit, fmt='(a,4(f12.4,10x),3(e12.4))') ' ALL', &
+          um, vm, tm, pm, qm, qcwm, qrnm
+     else
+        write(unit=stats_unit, fmt='(a,4(f12.4,10x),e12.4)') ' ALL', &
+          um, vm, tm, pm, qm
+     end if
    
   
       write(unit=stats_unit, fmt='(/a/)') &
          ' Maximum of gridded analysis increments'
 
-      write(unit=stats_unit, fmt='(6a/)') &
-         ' Lvl         ', &
-         'u     i    j          ', &
-         'v     i    j          ', &
-         't     i    j          ', &
-         'p     i    j          ', &
-         'q     i    j          '
+     if (crtm_cloud .or. use_radar_rf) then
+        write(unit=stats_unit, fmt='(8a/)') &
+           ' Lvl         ', &
+           'u     i    j          ', &
+           'v     i    j          ', &
+           't     i    j          ', &
+           'p     i    j          ', &
+           'q     i    j          ',&
+           'qcw   i    j        ',&
+           'qrn   i    j        '
+     else
+        write(unit=stats_unit, fmt='(6a/)') &
+           ' Lvl         ', &
+           'u     i    j          ', &
+           'v     i    j          ', &
+           't     i    j          ', &
+           'p     i    j          ', &
+           'q     i    j          '
+     end if
    end if
 
    do k = kts, kte
       if (rootproc) then
-         write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),e12.4,2i5)') k, &
-            max_u(k), max_v(k), max_t(k), max_p(k), max_q(k)
+        if (crtm_cloud .or. use_radar_rf) then
+           write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),3(e12.4,2i5))') k, &
+             max_u(k), max_v(k), max_t(k), max_p(k), max_q(k),max_qcw(k),max_qrn(k) 
+        else
+           write(unit=stats_unit, fmt='(i4,4(f12.4,2i5),e12.4,2i5)') k, &
+             max_u(k), max_v(k), max_t(k), max_p(k), max_q(k)
+        end if
       end if
 
       um=maxval(max_u(:)%value)
@@ -108,16 +170,32 @@ subroutine da_analysis_stats  (grid, stats_unit)
       tm=maxval(max_t(:)%value)
       pm=maxval(max_p(:)%value)
       qm=maxval(max_q(:)%value)
+      if (crtm_cloud .or. use_radar_rf) then
+         qcwm=maxval(max_qcw(:)%value)
+         qrnm=maxval(max_qrn(:)%value)
+      end if
+
    end do
 
    if (rootproc) then
-      write(unit=stats_unit, fmt='(a,4(f12.4,10x),e12.4)') ' ALL', &
-         um, vm, tm, pm, qm
+     if (crtm_cloud .or. use_radar_rf) then
+        write(unit=stats_unit, fmt='(a,4(f12.4,10x),e12.4)') ' ALL', &
+           um, vm, tm, pm, qm, qcwm, qrnm
+     else
+        write(unit=stats_unit, fmt='(a,4(f12.4,10x),e12.4)') ' ALL', &
+           um, vm, tm, pm, qm
+     end if
    
       write(unit=stats_unit, fmt='(/a/)') ' Mean of gridded analysis increments'
+      
 
-      write(unit=stats_unit, fmt='(a/)') &
-         ' Lvl        u           v           t           p           q'
+     if (crtm_cloud .or. use_radar_rf) then
+        write(unit=stats_unit, fmt='(a/)') &
+          ' Lvl        u           v           t           p           q           qcw           qrn'
+     else
+        write(unit=stats_unit, fmt='(a/)') &
+          ' Lvl        u           v           t           p           q'
+     end if
    end if
 
    um = 0.0
@@ -126,6 +204,7 @@ subroutine da_analysis_stats  (grid, stats_unit)
    pm = 0.0
    qm = 0.0
 
+
    do k = kts, kte
       uv(k) = sum(grid%xa%u(its:ite,jts:jte,k))
       vv(k) = sum(grid%xa%v(its:ite,jts:jte,k))
@@ -133,6 +212,16 @@ subroutine da_analysis_stats  (grid, stats_unit)
       pv(k) = sum(grid%xa%p(its:ite,jts:jte,k))
       qv(k) = sum(grid%xa%q(its:ite,jts:jte,k))
    end do
+   if (crtm_cloud .or. use_radar_rf) then
+      qcwm = 0.0
+      qrnm = 0.0
+       do k = kts, kte
+          qcwv(k) = sum(grid%xa%qcw(its:ite,jts:jte,k))
+          qrnv(k) = sum(grid%xa%qrn(its:ite,jts:jte,k))
+       end do
+      call da_proc_sum_real  (qcwv)
+      call da_proc_sum_real  (qrnv)
+   end if
 
    call da_proc_sum_real  (uv)
    call da_proc_sum_real  (vv)

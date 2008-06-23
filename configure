@@ -8,6 +8,7 @@ FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
 print_usage=""
 chemistry=""
+wrf_core=""
 while [ $# -ge 1 ]; do
     case $1 in
       -d) opt_level="-d" ;;
@@ -20,6 +21,11 @@ while [ $# -ge 1 ]; do
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
+      wrfda) wrf_core=DA_CORE  ;;
+      arw) wrf_core=EM_CORE  ;;
+      nmm) wrf_core=NMM_CORE  ;;
+      coamps) wrf_core=COAMPS_CORE  ;;
+      exp) wrf_core=EXP_CORE  ;;
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
       venus) WRF_VENUS=1 ; break ;;
@@ -386,7 +392,8 @@ if test -n "$PERL" ; then
    if [ -n "$srch" ] ; then
      $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
-          -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -time=$FORTRAN_COMPILER_TIMER
+          -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -time=$FORTRAN_COMPILER_TIMER \
+          -wrf_core=$wrf_core
      if test ! -f configure.wrf ; then
        exit 1
      fi

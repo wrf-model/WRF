@@ -1,3 +1,4 @@
+
 subroutine da_oi_stats_gpspw (stats_unit, iv)
 
    !-----------------------------------------------------------------------
@@ -22,7 +23,6 @@ subroutine da_oi_stats_gpspw (stats_unit, iv)
 
    stats%average = residual_gpspw1_type(0.0)
    stats%rms_err = stats%average
-
    do n=1, iv%info(gpspw)%nlocal
       if (iv%info(gpspw)%proc_domain(1,n)) then
          call da_stats_calculate(iv%info(gpspw)%obs_global_index(n), &
@@ -45,7 +45,12 @@ subroutine da_oi_stats_gpspw (stats_unit, iv)
 
    if (rootproc) then
       if (ntpw /= 0) then
-         write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for gpspw'
+        if (use_gpspwObs) then
+          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for gpspw'
+        else if (use_gpsztdObs) then
+          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for Gpsztd'
+        endif
+
          call da_print_stats_gpspw(stats_unit, ntpw, stats)
       end if
    end if

@@ -19,9 +19,9 @@ begin
 
 ;============================================================
 ; Input file directory
- dir = "/ptmp/rizvi/data/con200/run_cpu16/2007010200/wrfvar"
+ dir = "/karri/users/xinzhang/support/con200/run_cpu1/2007010200/wrfvar"
 ; Number of inner iterations WRF-Var took to stop the minimization
- iter = 60
+ iter = 22
  domain_name="con200"          
 
 ;============================================================
@@ -31,7 +31,7 @@ begin
 ; read in data
 ;************************************************
  nrow = iter+1
- ncol = 8
+ ncol = 9
  Fill_ValueF = -999.
  x    = new((/2,nrow/),float)
  cost = new((/2,nrow/),float)

@@ -112,6 +112,18 @@ subroutine da_zero_y( iv, y )
          y % sonde_sfc(n) % q = 0.0
       end do
    end if
+      
+   if ( y % nlocal(mtgirs) > 0 ) then
+      do n = 1, y % nlocal(mtgirs)
+         nlevels = iv%info(mtgirs)%levels(n)
+
+         y % mtgirs(n) % u(1:nlevels) = 0.0
+         y % mtgirs(n) % v(1:nlevels) = 0.0
+         y % mtgirs(n) % t(1:nlevels) = 0.0
+         y % mtgirs(n) % q(1:nlevels) = 0.0
+
+      end do
+   end if
 
    if ( y % nlocal(bogus) > 0 ) then
       do n = 1, y % nlocal(bogus)

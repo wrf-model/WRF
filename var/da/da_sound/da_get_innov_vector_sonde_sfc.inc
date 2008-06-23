@@ -81,6 +81,15 @@ subroutine da_get_innov_vector_sonde_sfc( it, grid, ob, iv)
                   ! ob%sonde_sfc(n)%q = iv%sonde_sfc(n)%q%inv
                   ! ob%sonde_sfc(n)%u = iv%sonde_sfc(n)%u%inv
                   ! ob%sonde_sfc(n)%v = iv%sonde_sfc(n)%v%inv
+
+                  if ( max_ext_its == 1 ) then
+                     ob%sonde_sfc(n)%p = iv%sonde_sfc(n)%p%inv
+                     ob%sonde_sfc(n)%t = iv%sonde_sfc(n)%t%inv
+                     ob%sonde_sfc(n)%q = iv%sonde_sfc(n)%q%inv
+                     ob%sonde_sfc(n)%u = iv%sonde_sfc(n)%u%inv
+                     ob%sonde_sfc(n)%v = iv%sonde_sfc(n)%v%inv
+                  end if
+
                else
                   call da_to_zk(iv % sonde_sfc(n) % h, v_h, v_interp_h, iv%info(sonde_sfc)%zk(1,n))
                end if

@@ -16,13 +16,8 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    integer :: is, ie, js, je, ks, ke
 
    real :: sdmd, s1md
-   real :: g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
-      grid%xp%kms:grid%xp%kme)
-   real :: utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
-      grid%xp%kms:grid%xp%kme)
-   real :: vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
-      grid%xp%kms:grid%xp%kme)
-   real :: ptmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme)
+   real, allocatable, dimension(:,:,:) :: g_press, utmp, vtmp
+   real, allocatable, dimension(:,:) :: ptmp
 
    integer ndynopt
 
@@ -38,6 +33,8 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    je=grid%xp%jte
    ks=grid%xp%kts
    ke=grid%xp%kte
+
+   allocate (g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
 
    ndynopt      = grid%dyn_opt
    grid%dyn_opt = DYN_EM_TL
@@ -107,6 +104,8 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
       end do
    end do
 
+   deallocate (g_press)
+
    ! FIX? In the inverse, g_ph information is lost. This should be investigated 
    ! later.
 
@@ -114,20 +113,28 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam )
    ! [5.0] convert from c-grid to a-grid
    !-------------------------------------------------------------------------
 
+#ifdef DM_PARALLEL
+   allocate (utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
+   allocate (vtmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
+   allocate (ptmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme))
+
    ! fill the halo region for g_u and g_v.
    utmp=grid%xa%u
    vtmp=grid%xa%v
    ptmp=grid%xa%psfc
    grid%xa%u=grid%g_u_2
    grid%xa%v=grid%g_v_2
-#ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV_ADJ.inc"
-#endif
    grid%g_u_2=grid%xa%u
    grid%g_v_2=grid%xa%v
    grid%xa%u=utmp
    grid%xa%v=vtmp
    grid%xa%psfc=ptmp
+
+   deallocate (utmp)
+   deallocate (vtmp)
+   deallocate (ptmp)
+#endif
 
    do k=ks,ke
       do j=js,je

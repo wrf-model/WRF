@@ -14,6 +14,7 @@ subroutine da_allocate_observations (iv)
 
    if (iv%info(sound)%nlocal     > 0) allocate(iv%sound    (1:iv%info(sound)%nlocal))
    if (iv%info(sonde_sfc)%nlocal > 0) allocate(iv%sonde_sfc(1:iv%info(sonde_sfc)%nlocal))
+   if (iv%info(mtgirs)%nlocal    > 0) allocate(iv%mtgirs   (1:iv%info(mtgirs)%nlocal))
    if (iv%info(synop)%nlocal     > 0) allocate(iv%synop    (1:iv%info(synop)%nlocal))
    if (iv%info(airep)%nlocal     > 0) allocate(iv%airep    (1:iv%info(airep)%nlocal))
    if (iv%info(geoamv)%nlocal    > 0) allocate(iv%geoamv   (1:iv%info(geoamv)%nlocal))

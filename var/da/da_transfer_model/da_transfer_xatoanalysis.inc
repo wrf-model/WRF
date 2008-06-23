@@ -21,12 +21,19 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    !---------------------------------------------------------------------------      
 
    if (fg_format == fg_format_wrf) then
+      if (write_increments .and. var4d) then
+         write(unit=filnam,fmt='(a3,i1)') 'inc',it
+         call da_transfer_xatowrftl(grid, config_flags, filnam)
+      end if
 
       call da_transfer_xatowrf(grid)
 
       if (it < max_ext_its) then
+         if (var4d) then
+            call da_med_initialdata_output(grid , config_flags)
+         end if
 
-         call da_transfer_wrftoxb(xbx, grid)
+         call da_transfer_wrftoxb(xbx, grid, config_flags)
       end if
    else if (fg_format == fg_format_kma_global) then
       call da_transfer_xatokma(grid)

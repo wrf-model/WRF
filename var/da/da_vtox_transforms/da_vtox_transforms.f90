@@ -19,9 +19,9 @@ module da_vtox_transforms
    use da_control, only : trace_use, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
       its,ite,jts,jte,kts,kte, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
       vertical_ip,alphacv_method,use_radarobs,use_radar_rf,use_ssmitbobs, &
-      use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, &
+      use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
       use_gpsrefobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
-      fg_format_kma_global, fg_format_wrf, ids,ide, stdout, vert_corr_2, &
+      fg_format_kma_global, fg_format_wrf, ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, &
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x
    use da_dynamics, only : da_psichi_to_uv,da_psichi_to_uv_adj
@@ -29,7 +29,8 @@ module da_vtox_transforms
       da_pt_to_rho_adj, da_pt_to_rho_lin,da_moist_phys_lin, &
       da_moist_phys_adj, da_transform_xtogpsref_lin, da_transform_xtotpw, &
       da_transform_xtowtq, da_transform_xtotpw_adj, &
-      da_transform_xtogpsref_adj, da_transform_xtowtq_adj
+      da_transform_xtogpsref_adj, da_transform_xtowtq_adj, &
+      da_transform_xtoztd_lin, da_transform_xtoztd_adj
    use da_par_util, only : da_vv_to_cv,da_cv_to_vv
    use da_recursive_filter, only : da_transform_through_rf, &
       da_transform_through_rf_adj
@@ -54,7 +55,9 @@ module da_vtox_transforms
 #include "da_transform_vtovv.inc"
 #include "da_transform_vtovv_adj.inc"
 #include "da_transform_vtox.inc"
+#include "da_transform_xtoxa.inc"
 #include "da_transform_vtox_adj.inc"
+#include "da_transform_xtoxa_adj.inc"
 #include "da_transform_vptox.inc"
 #include "da_transform_vptox_adj.inc"
 #include "da_transform_vvtovp.inc"

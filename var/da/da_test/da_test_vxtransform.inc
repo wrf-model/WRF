@@ -71,6 +71,7 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    write(unit=stdout, fmt='(/a/)') &
          ' Inverse tests follows:'
    call da_transform_vtox( grid, xbx, be, cv, vv, vp)
+   call da_transform_xtoxa( grid )
 
    ! Store grid%xa, Vv & Vp for inverse test
 

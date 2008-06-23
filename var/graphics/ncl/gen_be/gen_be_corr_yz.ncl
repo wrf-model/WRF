@@ -9,15 +9,19 @@ begin
    ; open file and read in data
    ;=================================================;
 
-   works = "x11"
-   dir = "/smoke/dmbarker/data/con200/noobs/gen_be/"
-   be_method = "NMC"
-   ni = 44
-   nj = 44
-   nk = 27
+   works = getenv("GRAPHIC_WORKS")
+
+   region = getenv("REGION")
+   dir    = getenv("BE_DIR")
+   nk   = stringtointeger(getenv("NUM_LEVELS"))
+   ni   = stringtointeger(getenv("NUM_WE"))
+   nj   = stringtointeger(getenv("NUM_SN"))
+
+
+   be_method = "dat"
 
    filename1 = "chi_u.chi." + be_method
-   data1=asciiread(dir+filename1,(/nk,nj,ni/),"float")
+   data1=asciiread(dir+"/"+filename1,(/nk,nj,ni/),"float")
    f1 = dim_sum(data1) / ni
    f1 = 1.0 - f1
 
@@ -27,13 +31,13 @@ begin
    xcoord = "latitude"
    ;Regional: 
    f1&x = ispan(1,nj,1)
-   xcoord = "j"
+   xcoord = "Grid j"
 
    f1&y = ispan(1,nk,1)
 
    f2 = f1
    filename2 = "t_u.t." + be_method
-   data2=asciiread(dir+filename2,(/nk,nj,ni/),"float")
+   data2=asciiread(dir+"/"+filename2,(/nk,nj,ni/),"float")
    f2 = dim_sum(data2) / ni
    f2 = 1.0 - f2
 
@@ -73,6 +77,7 @@ begin
    res@cnMinLevelValF =  0.0                 ; set mimimum contour level
    res@cnMaxLevelValF =  0.9                  ; set maximum contour level
    res@cnLevelSpacingF =  0.1                  ; set maximum contour level
+   res@tiMainString    = " Chi_b.Chi correlation"     ; Main title
    plts(0) = gsn_csm_contour(wks,f1,res)       ; contour the variable
 
    res@trXMinF  =  f2&x(0)                   ; min value on x-axis
@@ -83,6 +88,7 @@ begin
    res@cnMaxLevelValF =  0.9                  ; set maximum contour level
    res@cnLevelSpacingF =  0.05                 ; set maximum contour level
    res@tiYAxisOn = False
+   res@tiMainString    = " t_b.t correlation"     ; Main title
    plts(1) = gsn_csm_contour(wks,f2,res)       ; contour the variable
 
    ;************************************************

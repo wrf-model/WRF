@@ -58,8 +58,8 @@ LDFLAGS =
 LIBDIR   = ${DEVTOP}/
 FDVARLIB = libfdvar.a 
 LIBS = -L$(NCARG_ROOT)/lib -lncarg -lcgm -lncarg_gks -lncarg_c      \
-       -L/usr/X11R6/lib -lX11 -L$(PGI)/linux86/lib -lpgftnrtl -lpgc \
-       -L/usr/lib -lf2c
+       -L/usr/X11R6/lib -lX11 -L$(PGI)/linux86/lib -lpgftnrtl -lpgc
+#      -L/usr/lib -lf2c
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 # General commands

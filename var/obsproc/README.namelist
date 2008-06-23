@@ -177,4 +177,36 @@
   output_ob_format=3 ; output 1, prebufr OBS file only;
                      ;        2, ASCII OBS file only;
                      ;        3, Both prebufr and ASCII OBS files.
+;    Select the obs_gts (ASCII) files used for 3DVAR, FGAT, and 4DVAR:
+ use_for          = '3DVAR',  ; '3DVAR' obs file, same as before, default 
+                              ; 'FGAT ' obs files for FGAT
+                              ; '4DVAR' obs files for 4DVAR
+;     num_slots_past and num_slots_ahead are used ONLY for FGAT and 4DVAR: 
+ num_slots_past   = 3, ; the number of time slots before time_analysis
+ num_slots_ahead  = 3, ; the number of time slots after time_analysis
+;     Select the specific type of obs in obs_gts (ASCII) files. 
+;     .true. is default
+;     .false. to remove that type of obs in obs_gts (ASCII) files. 
+ write_synop = .true., 
+ write_ship  = .true.,
+ write_metar = .true.,
+ write_buoy  = .true., 
+ write_pilot = .true.,
+ write_sound = .true.,
+ write_amdar = .true.,
+ write_satem = .true.,
+ write_satob = .true.,
+ write_airep = .true.,
+ write_gpspw = .true.,
+ write_gpsztd= .true.,
+ write_gpsref= .true.,
+ write_gpseph= .true.,
+ write_ssmt1 = .true.,
+ write_ssmt2 = .true.,
+ write_ssmi  = .true.,
+ write_tovs  = .true.,
+ write_qscat = .true.,
+ write_profl = .true.,
+ write_bogus = .true.,
+ write_airs  = .true.,
 /

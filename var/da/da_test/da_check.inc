@@ -82,7 +82,7 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
 
    ! call da_transform_vtox(grid, cv_size, xbx, be, ep, cvtest, vv, vp)
 
-   call da_check_xtoy_adjoint(grid, config_flags, iv, y)
+   call da_check_xtoy_adjoint(cv_size, cvtest, grid, config_flags, iv, y)
 
    call da_deallocate_y(y)
 

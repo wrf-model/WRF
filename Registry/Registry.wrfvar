@@ -1062,14 +1062,16 @@ rconfig   logical   use_synopobs            namelist,wrfvar4  1  .true.   - "use
 rconfig   logical   use_shipsobs            namelist,wrfvar4  1  .true.   - "use_shipsobs"             ""  ""
 rconfig   logical   use_metarobs            namelist,wrfvar4  1  .true.   - "use_metarobs"             ""  ""
 rconfig   logical   use_soundobs            namelist,wrfvar4  1  .true.   - "use_soundobs"             ""  ""
+rconfig   logical   use_mtgirsobs           namelist,wrfvar4  1  .true.   - "use_mtgirsobs"            ""  ""
 rconfig   logical   use_pilotobs            namelist,wrfvar4  1  .true.   - "use_pilotobs"             ""  ""
 rconfig   logical   use_airepobs            namelist,wrfvar4  1  .true.   - "use_airepobs"             ""  ""
 rconfig   logical   use_geoamvobs           namelist,wrfvar4  1  .true.   - "use_geoamvobs"            ""  ""
 rconfig   logical   use_polaramvobs         namelist,wrfvar4  1  .true.   - "use_polaramvobs"          ""  ""
-rconfig   logical   use_bogusobs            namelist,wrfvar4  1  .false.  - "use_bogusobs"             ""  ""
+rconfig   logical   use_bogusobs            namelist,wrfvar4  1  .true.   - "use_bogusobs"             ""  ""
 rconfig   logical   use_buoyobs             namelist,wrfvar4  1  .true.   - "use_buoyobs"              ""  ""
 rconfig   logical   use_profilerobs         namelist,wrfvar4  1  .true.   - "use_profilerobs"          ""  ""
 rconfig   logical   use_satemobs            namelist,wrfvar4  1  .true.   - "use_satemobs"             ""  ""
+rconfig   logical   use_gpsztdobs           namelist,wrfvar4  1  .false.  - "use_gpsztdobs"            ""  ""
 rconfig   logical   use_gpspwobs            namelist,wrfvar4  1  .true.   - "use_gpspwobs"             ""  ""
 rconfig   logical   use_gpsrefobs           namelist,wrfvar4  1  .true.   - "use_gpsrefobs"            ""  ""
 rconfig   logical   use_ssmiretrievalobs    namelist,wrfvar4  1  .false.  - "use_ssmiretrievalobs"     ""  ""
@@ -1104,6 +1106,7 @@ rconfig   logical   omb_add_noise           namelist,wrfvar5  1  .false.  - "omb
 rconfig   logical   position_lev_dependant  namelist,wrfvar5  1  .false.  - "position_lev_dependant"   ""  ""
 rconfig   integer   obs_qc_pointer          namelist,wrfvar5  1  0        - "obs_qc_pointer"           ""  ""
 rconfig   integer   max_sound_input         namelist,wrfvar5  1  5000     - "max_sound_input"          ""  ""
+rconfig   integer   max_mtgirs_input        namelist,wrfvar5  1  50000    - "max_mtgirs_input"         ""  ""
 rconfig   integer   max_synop_input         namelist,wrfvar5  1  50000    - "max_synop_input"          ""  ""
 rconfig   integer   max_geoamv_input        namelist,wrfvar5  1  300000   - "max_geoamv_input"         ""  ""
 rconfig   integer   max_polaramv_input      namelist,wrfvar5  1  300000   - "max_polaramv_input"       ""  ""
@@ -1136,6 +1139,8 @@ rconfig   integer   ntmax                   namelist,wrfvar6  1  200      - "ntm
 rconfig   integer   nsave                   namelist,wrfvar6  1  4        - "nsave"                    ""  ""
 rconfig   integer   write_interval          namelist,wrfvar6  1  5        - "write_interval"           ""  ""
 rconfig   real      eps                     namelist,wrfvar6  max_outer_iterations 0.01     - "eps"                      ""  ""
+rconfig   logical   precondition_cg         namelist,wrfvar6  1  .false.  -  "precondition_cg"         ""  ""
+rconfig   real      precondition_factor     namelist,wrfvar6  1  1.0      -  "precondition_factor"     ""  ""
 
 rconfig   integer   rf_passes               namelist,wrfvar7  1  6        - "rf_passes"                ""  ""
 rconfig   real      var_scaling1            namelist,wrfvar7  1  1.0      - "var_scaling1"             ""  ""
@@ -1186,7 +1191,7 @@ rconfig   integer   seed_array1             namelist,wrfvar11  1  0        - "se
 rconfig   integer   seed_array2             namelist,wrfvar11  1  0        - "seed_array2"             ""  ""  
 rconfig   integer   sfc_assi_options        namelist,wrfvar11  1  1        - "sfc_assi_options"        ""  ""  
 rconfig   logical   calculate_cg_cost_fn    namelist,wrfvar11  1  .false.  - "calculate_cg_cost_fn"    ""  ""  
-rconfig   logical   lat_stats_option        namelist,wrfvar11  1  .true.   - "lat_stats_option"        ""  ""  
+rconfig   logical   lat_stats_option        namelist,wrfvar11  1  .false.  - "lat_stats_option"        ""  ""  
 
 rconfig   integer   balance_type            namelist,wrfvar12  1  1        - "balance_type"            ""  ""  
                                                                                           
@@ -1212,6 +1217,7 @@ rconfig   logical   biascorr                namelist,wrfvar14  1  .false.  - "bi
 rconfig   logical   biasprep                namelist,wrfvar14  1  .false.  - "biasprep"                ""  ""   
 rconfig   logical   rttov_scatt             namelist,wrfvar14  1  .false.  - "rttov_scatt"             ""  ""   
 rconfig   logical   write_profile           namelist,wrfvar14  1  .false.  - "write_profile"           ""  ""   
+rconfig   logical   write_jacobian          namelist,wrfvar14  1  .false.  - "write_jacobian"          ""  ""
 rconfig   logical   qc_rad                  namelist,wrfvar14  1  .true.   - "qc_rad"                  ""  ""   
 rconfig   logical   write_iv_rad_ascii      namelist,wrfvar14  1  .false.  - "write_iv_rad_ascii"      ""  ""   
 rconfig   logical   write_oa_rad_ascii      namelist,wrfvar14  1  .false.  - "write_oa_rad_ascii"      ""  ""   
@@ -1225,11 +1231,28 @@ rconfig   integer   rtm_option              namelist,wrfvar14  1  1        - "rt
 rconfig   logical   use_crtm_kmatrix        namelist,wrfvar14  1  .false.  - "use_crtm_kmatrix"        ""  ""
 rconfig   logical   use_crtm_kmatrix_fast   namelist,wrfvar14  1  .false.  - "use_crtm_kmatrix_fast"   ""  ""
 rconfig   logical   crtm_cloud              namelist,wrfvar14  1  .false.  - "crtm_cloud"              ""  ""
+rconfig   logical   only_sea_rad            namelist,wrfvar14  1  .false.  - "only_sea_rad"            ""  ""
+rconfig   logical   use_simulated_rad       namelist,wrfvar14  1  .false.  - "use_simulated_rad"       ""  ""
+rconfig   logical   use_pseudo_rad          namelist,wrfvar14  1  .false.  - "use_pseudo_rad"          ""  ""
+rconfig   integer   pseudo_rad_platid       namelist,wrfvar14  1  1        - "pseudo_rad_platid"       ""  ""
+rconfig   integer   pseudo_rad_satid        namelist,wrfvar14  1 16        - "pseudo_rad_satid"        ""  ""
+rconfig   integer   pseudo_rad_senid        namelist,wrfvar14  1  3        - "pseudo_rad_senid"        ""  ""
+rconfig   integer   pseudo_rad_ichan        namelist,wrfvar14  1  6        - "pseudo_rad_ichan"        ""  ""
+rconfig   real      pseudo_rad_lat          namelist,wrfvar14  1  35.0     - "pseudo_rad_lat"          ""  ""
+rconfig   real      pseudo_rad_lon          namelist,wrfvar14  1 130.0     - "pseudo_rad_lon"          ""  ""
+rconfig   real      pseudo_rad_tb           namelist,wrfvar14  1 258.0     - "pseudo_rad_tb"           ""  ""
+rconfig   real      pseudo_rad_err          namelist,wrfvar14  1 1.0       - "pseudo_rad_err"          ""  ""
 rconfig   character spccoeff_file           namelist,wrfvar14  1  "CRTM_SpcCoeff.bin"      -  "spccoeff_file"      ""  ""
 rconfig   character taucoeff_file           namelist,wrfvar14  1  "CRTM_TauCoeff.bin"      -  "taucoeff_file"      ""  ""
 rconfig   character aerosolcoeff_file       namelist,wrfvar14  1  "CRTM_AerosolCoeff.bin"  -  "aerosolcoeff_file"  ""  ""
 rconfig   character cloudcoeff_file         namelist,wrfvar14  1  "CRTM_CldCoeff.bin"      -  "cloudcoeff_file"    ""  ""
 rconfig   character emiscoeff_file          namelist,wrfvar14  1  "CRTM_EmisCoeff.bin"     -  "emiscoeff_file"     ""  ""
+rconfig   logical   use_varbc               namelist,wrfvar14  1  .false.  - "use_varbc"               ""  ""
+rconfig   logical   freeze_varbc            namelist,wrfvar14  1  .false.  - "freeze_varbc"            ""  ""
+rconfig   real      varbc_factor            namelist,wrfvar14  1  1.0      - "varbc_factor"            ""  ""
+rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "use_airs_mmr"            ""  ""
+rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
+rconfig   integer   crtm_atmosphere         namelist,wrfvar14  1  0        - "crtm_atmosphere"         ""  ""
 
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   
 rconfig   real      pseudo_x                namelist,wrfvar15  1  1.0      - "pseudo_x"                ""  ""   
@@ -1258,6 +1281,7 @@ rconfig   character time_window_min         namelist,wrfvar21  1  "2002-08-02_21
 rconfig   character time_window_max         namelist,wrfvar22  1  "2002-08-03_03:00:00.0000" -  "time_window_max"    ""  ""
 
 rconfig   logical jcdfi_use                 namelist,wrfvar23     1              .false. rh   "jcdfi_use"   "JcDFI on/off"      ""
+rconfig   logical jcdfi_io                  namelist,wrfvar23     1              .false. rh   "jcdfi_io"   "JcDFI output on/off"      ""
 rconfig   real    jcdfi_tauc                namelist,wrfvar23     1              10800.  rh   "jcdfi_tauc"   "JcDFI cut-off"      ""
 rconfig   real    jcdfi_gama                namelist,wrfvar23     1              1.      rh   "jcdfi_gama"    "Weighting for JcDFI"      ""
 rconfig   real    jcdfi_error_wind          namelist,wrfvar23     1              3.      rh   "jcdfi_error_wind"    "Wind Error for JcDFI"      "m/s"
@@ -1853,14 +1877,14 @@ period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tk
 #### WRFVAR Portion
 ##                                                
 
-halo      HALO_INIT          dyn_em 24:xb%map_factor,xb%psac,xb%rough,xb%xland,xb%landmask,xb%tgrn,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qrn,xb%qcw,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%terr,xb%psfc,xb%regime,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%delt,xb%slp,xb%coefx,xb%coefy,xb%coefz,xb%tsk,xb%smois,xb%tslb,xb%xice,xb%ivgtyp,xb%isltyp,xb%vegfra,xb%snowh,xb%snow
+halo      HALO_INIT          dyn_em 24:xb%map_factor,xb%psac,xb%rough,xb%xland,xb%landmask,xb%tgrn,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qrn,xb%qcw,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%terr,xb%psfc,xb%regime,xb%ztd,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%delt,xb%slp,xb%coefx,xb%coefy,xb%coefz,xb%tsk,xb%smois,xb%tslb,xb%xice,xb%ivgtyp,xb%isltyp,xb%vegfra,xb%snowh,xb%snow
 halo      HALO_PSICHI_UV     dyn_em 24:vp%v1,vp%v2,xb%cori,xb%rho,xa%u,xa%v,xa%psfc
 halo      HALO_BAL_EQN_ADJ   dyn_em 24:xp%v1z
 halo      HALO_PSICHI_UV_ADJ dyn_em 24:xa%u,xa%v,xa%psfc
 halo      HALO_XA            dyn_em 24:xa%u,xa%v,xa%q,xa%p,xa%t,xa%rho,xa%rh,xa%psfc,xa%qcw,xa%qrn,xa%qt
 halo      HALO_XA_CLOUD      dyn_em 24:xa%q,xa%t,xa%qcw,xa%qrn
 halo      HALO_SFC_XA        dyn_em 24:xa%u10,xa%v10,xa%t2,xa%q2
-halo      HALO_SSMI_XA       dyn_em 24:xa%tpw,xa%speed,xa%tb19v,xa%tb19h,xa%tb22v,xa%tb37v,xa%tb37h,xa%tb85v,xa%tb85h,xa%ref
+halo      HALO_SSMI_XA       dyn_em 24:xa%ztd,xa%tpw,xa%speed,xa%tb19v,xa%tb19h,xa%tb22v,xa%tb37v,xa%tb37h,xa%tb85v,xa%tb85h,xa%ref
 halo      HALO_2D_WORK       dyn_em 24:xp%vxy
 halo      HALO_RADAR_XA_W    dyn_em 24:xa%w,xa%wh
 
@@ -1948,6 +1972,7 @@ typedef xb_type real    vertical_inner_product ijk      -         1        -    
 typedef xb_type real    ref                    ijk      -         1        -       -
 
 typedef xb_type real    rough                  ij       -         1        -       -
+typedef xb_type real    ztd                    ij       -         1        -       -
 typedef xb_type real    tpw                    ij       -         1        -       -
 typedef xb_type real    slp                    ij       -         1        -       -
 typedef xb_type real    speed                  ij       -         1        -       -
@@ -2030,6 +2055,7 @@ typedef x_type real    q2                     ij       -         1        -     
 
 typedef x_type real    ref                    ijk      -         1        -       -
 
+typedef x_type real    ztd                    ij       -         1        -       -
 typedef x_type real    tpw                    ij       -         1        -       -
 typedef x_type real    speed                  ij       -         1        -       -
 typedef x_type real    tb19v                  ij       -         1        -       -

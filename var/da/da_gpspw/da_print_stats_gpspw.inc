@@ -13,7 +13,11 @@ subroutine da_print_stats_gpspw(stats_unit, ntpw, Gpspw)
    if (trace_use_dull) call da_trace_entry("da_residual_gpspw")
 
    if (ntpw > 0) then
-      write(unit=stats_unit, fmt='(a/)') '   var           tpw(cm)     n'
+      if (use_gpspwObs) then
+        write(unit=stats_unit, fmt='(a/)') '   var           tpw(cm)     n'
+      else if (use_gpsztdObs) then
+        write(unit=stats_unit, fmt='(a/)') '   var           ztd(cm)     n'
+      endif
  
       write(unit=stats_unit, fmt='(a,i14)') '  Number: ', ntpw
 

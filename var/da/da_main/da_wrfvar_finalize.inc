@@ -36,6 +36,17 @@ subroutine da_wrfvar_finalize
 
    deallocate (grid)
 
+#if defined(RTTOV) || defined(CRTM)
+   if (allocated(num_tovs_before)) deallocate (num_tovs_before)
+   if (allocated(num_tovs_after))  deallocate (num_tovs_after)
+   if (allocated(tovs_copy_count)) deallocate (tovs_copy_count)
+   if (allocated(tovs_send_pe))    deallocate (tovs_send_pe)
+   if (allocated(tovs_recv_pe))    deallocate (tovs_recv_pe)
+   if (allocated(tovs_send_start)) deallocate (tovs_send_start)
+   if (allocated(tovs_send_count)) deallocate (tovs_send_count)
+   if (allocated(tovs_recv_start)) deallocate (tovs_recv_start)
+#endif
+
    if (rootproc) then
       close (cost_unit)
       close (grad_unit)
@@ -48,6 +59,13 @@ subroutine da_wrfvar_finalize
       call da_free_unit (jo_unit)
       call da_free_unit (check_max_iv_unit)
    end if
+
+#ifdef CRTM
+   if (use_rad .and. rtm_option == rtm_option_crtm) then
+      ierr = CRTM_Destroy(ChannelInfo)
+      deallocate(Sensor_Descriptor)
+   end if
+#endif
 
    do i=unit_start,unit_end
       if (unit_used(i)) then

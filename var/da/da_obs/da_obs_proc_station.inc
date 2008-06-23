@@ -1,4 +1,4 @@
-subroutine da_obs_proc_station(obs)
+subroutine da_obs_proc_station(obs,fm)
 
    !-----------------------------------------------------------------------
    ! Purpose: Processing obs data read in at a station: 
@@ -13,7 +13,7 @@ subroutine da_obs_proc_station(obs)
    type (multi_level_type), intent(inout) :: obs
 
    real    :: po, to, rho, es, qs, qvo
-   integer :: i
+   integer :: i,fm
 
    if (trace_use_dull) call da_trace_entry("da_obs_proc_station")
 
@@ -34,7 +34,8 @@ subroutine da_obs_proc_station(obs)
          obs%each(i)%rh%inv = missing_r
          obs%each(i)%rh%qc  = missing
       end if
-
+     
+     if(fm.ne.161)then
       po   = obs % each(i) % p  % inv
       to   = obs % each(i) % t  % inv
       rho  = obs % each(i) % rh  % inv
@@ -58,8 +59,13 @@ subroutine da_obs_proc_station(obs)
          obs % each(i) % q  % qc = obs % each(i) % rh % qc
          obs % each(i) % q  % error = obs % each(i) % rh % error
       end if
+    else
+         obs % each(i) % q  % inv = obs % each(i) % rh  % inv
+         obs % each(i) % q  % qc = obs % each(i) % rh % qc
+         obs % each(i) % q  % error = obs % each(i) % rh % error
+!    print*,obs % each(i) % q  % inv,obs % each(i) % q  % qc,obs % each(i) % q  % error
+    end if
    end do
-
    if (trace_use_dull) call da_trace_exit("da_obs_proc_station")
 
 end subroutine da_obs_proc_station

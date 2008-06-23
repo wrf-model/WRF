@@ -37,7 +37,7 @@ subroutine da_set_randomcv(cv_size, rcv)
    rms_cv = sqrt(sum_cv2 / real(cv_size))
    std_dev_cv = sqrt(rms_cv * rms_cv - mean_cv * mean_cv)
 
-   write(unit=stdout)
+   write(unit=stdout,fmt=*)
    write(unit=stdout,fmt='(a)')' Gaussian (Normal) noise statistics:'
    write(unit=stdout,fmt='(a,f15.5)')' Mean = ',mean_cv
    write(unit=stdout,fmt='(a,f15.5)')' RMS = ', rms_cv

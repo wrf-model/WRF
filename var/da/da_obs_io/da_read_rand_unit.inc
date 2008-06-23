@@ -24,7 +24,7 @@ subroutine da_read_rand_unit(filename, unit_in,num,obs_type_in, nc)
    open(unit=unit_in,   file=trim(filename), status='old',iostat=ios)
    if (ios /= 0) then
       call da_error(__FILE__,__LINE__, &
-         (/"Cannot open file"//trim(filename)/))
+         (/"Cannot open file"//filename/))
    end if
 1  continue
   
@@ -34,6 +34,15 @@ subroutine da_read_rand_unit(filename, unit_in,num,obs_type_in, nc)
    if_write = .false.
    if (index(iv_type,OBS_type_in(1:nc)) > 0) if_write = .true.
 
+   ! If radiance data treat differently
+   if ( (index(iv_type,'noaa') > 0)  .or. (index(iv_type,'eos') > 0) .or.  &
+        (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) ) then
+      do n = 1, num_obs
+         if (if_write) num = num + 1
+         read(unit_in,'(2i8,f10.3,e15.7)')n1, n2, fld1_rad,fld2_rad
+         if (if_write)write(rand_unit,'(2i8,f10.3,e15.7)')num,n2, fld1_rad,fld2_rad
+      end do
+   else
       do n = 1, num_obs        
          if (if_write) num = num + 1
          if (index(iv_type,'bogus')     > 0)  then
@@ -49,6 +58,7 @@ subroutine da_read_rand_unit(filename, unit_in,num,obs_type_in, nc)
             if (if_write) write(rand_unit,'(2i8,10e15.7)') num, k, fld
          end do
       end do
+   end if
 
    if (if_write)  goto 999
    goto 1

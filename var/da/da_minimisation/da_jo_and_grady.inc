@@ -19,7 +19,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
               jo_ssmi_tb, jo_ssmi_rv, jo_ssmt1, jo_ssmt2, &
               jo_pseudo, jo_qscat, jo_buoy, &
               jo_profiler, jo_radar, jo_gpsref, jo_bogus, &
-              jo_airsr
+              jo_radiance, jo_airsr, jo_mtgirs
    integer :: i,k
 
    if (trace_use) call da_trace_entry("da_jo_and_grady")
@@ -66,6 +66,23 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo % sonde_sfc_q = 0.0
       jo_sound     = 0.0
       jo_sonde_sfc = 0.0
+   end if
+
+   if (iv%info(mtgirs)%nlocal > 0) then
+      call da_jo_and_grady_mtgirs(iv, re, jo, jo_grad_y)
+      jo_mtgirs = jo%mtgirs_u + jo%mtgirs_v + jo%mtgirs_t + jo%mtgirs_q
+
+      if (print_detail_grad) then
+         write(unit=stdout, fmt='(a, e24.12)') &
+            '   jo_mtgirs             ', jo_mtgirs, &
+            '   jo%mtgirs_u      ', jo%mtgirs_u, &
+            '   jo%mtgirs_v      ', jo%mtgirs_v, &
+            '   jo%mtgirs_t      ', jo%mtgirs_t, &
+            '   jo%mtgirs_q      ', jo%mtgirs_q
+      end if
+
+   else
+      jo_mtgirs     = 0.0
    end if
 
    if (iv%info(synop)%nlocal > 0) then
@@ -291,6 +308,30 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_buoy = 0.0
    end if
 
+#if defined(CRTM) || defined(RTTOV)
+   if (iv%num_inst > 0) then
+      call da_jo_and_grady_rad (iv, re, jo, jo_grad_y)
+
+      jo_radiance = 0.0 
+      if (use_rad) then
+         do i=1,iv%num_inst
+            do k=1,iv%instid(i)%nchan
+               jo_radiance = jo_radiance + jo%rad(i)%jo_ichan(k)
+            end do
+         end do
+      end if
+      if (print_detail_grad) then
+         write(unit=stdout, fmt='(a, e24.12)') &
+            '   jo_radiance     ', jo_radiance
+         do i = 1, iv%num_inst
+            write(unit=stdout, fmt='(a, e24.12)') &
+               trim('   jo_'//iv%instid(i)%rttovid_string), sum(jo%rad(i)%jo_ichan(:))
+         end do
+      end if
+   else
+      jo_radiance = 0.0
+   end if
+#endif
 
    if (iv%info(airsr)%nlocal > 0) then
       call da_jo_and_grady_airsr(iv, re, jo, jo_grad_y)
@@ -303,6 +344,8 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
             '   jo%airsr_q      ', jo%airsr_q
       end if
    else
+      jo%airsr_t = 0.0
+      jo%airsr_q = 0.0
       jo_airsr = 0.0
    end if
 
@@ -314,7 +357,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_pilot + jo_airep + jo_metar + jo_ships + &
       jo_gpspw + jo_ssmi_tb + jo_ssmi_rv + jo_ssmt1 + jo_ssmt2 + &
       jo_pseudo + jo_qscat + jo_profiler + jo_buoy + &
-      jo_radar + jo_gpsref + jo_bogus + jo_airsr
+      jo_radar + jo_gpsref + jo_bogus + jo_radiance + jo_airsr + jo_mtgirs
 
    jot = jo%total
 
@@ -345,7 +388,9 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
          '   jo_radar        ', jo_radar, &
          '   jo_gpsref       ', jo_gpsref, &
          '   jo_bogus        ', jo_bogus,  &
-         '   jo_airsr        ', jo_airsr
+         '   jo_radiance     ', jo_radiance, &
+         '   jo_airsr        ', jo_airsr,&
+         '   jo_mtgirs       ', jo_mtgirs
 
    end if
 

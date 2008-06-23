@@ -97,7 +97,7 @@ export RUN_CMD=${RUN_CMD:-$RUN_CMD_DEFAULT}
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/code/$RELEASE}    # Directory containing codes.
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}  # WRF-Var code directory.
-export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da} # WRF-Var executable location.
+export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da}     # WRF-Var executable location.
 export WPS_DIR=${WPS_DIR:-$REL_DIR/wps}           # WPS directory.
 export WPB_DIR=${WPB_DIR:-$REL_DIR/wpb}           # Perturbed LBC dir.
 export WRF_DIR=${WRF_DIR:-$REL_DIR/wrf}           # WRF directory.
@@ -185,7 +185,7 @@ export NL_ETA_LEVELS=${NL_ETA_LEVELS:-" 1.000, 0.990, 0.978, 0.964, 0.946, "\
 export NL_E_VERT=${NL_E_VERT:-28}                   #
 export NL_SMOOTH_OPTION=${NL_SMOOTH_OPTION:-1}           # ?
 export NL_MP_PHYSICS=${NL_MP_PHYSICS:-3}           #
-export NL_RADT=${NL_RADT:-30}                #
+export NL_RADT=$(( NL_DX/1000 )) # 1 minute per km of dx
 export NL_SF_SFCLAY_PHYSICS=${NL_SF_SFCLAY_PHYSICS:-1}
 export NL_SF_SURFACE_PHYSICS=${NL_SF_SURFACE_PHYSICS:-1} #(1=Thermal diffusion, 2=Noah LSM).
 export NL_NUM_SOIL_LAYERS=${NL_NUM_SOIL_LAYERS:-5}
@@ -221,7 +221,10 @@ export THINING_QSCAT=${THINING_QSCAT:-false}
 export PS0=${PS0:-100000.0}
 export TS0=${TS0:-300.0}
 export TLP=${TLP:-50.0}
-export PTOP_PA=${PTOP_PA:-5000.0}
+export P_TOP_REQUESTED=${P_TOP_REQUESTED:-1000.0}
+export NL_USE_FOR=${NL_USE_FOR:-3DVAR}
+export NL_NUM_SLOTS_PAST=${NL_NUM_SLOTS_PAST:-3}
+export NL_NUM_SLOTS_AHEAD=${NL_NUM_SLOTS_AHEAD:-3}
 
 # WRF-Var (not covered above):
 export NL_ANALYSIS_TYPE=${NL_ANALYSIS_TYPE:-"3D-VAR"}  # Analysis type.
@@ -238,6 +241,8 @@ export NL_CV_OPTIONS_HUM=${NL_CV_OPTIONS_HUM:-1} # Humidity control variable.
 export NL_CHECK_MAX_IV=${NL_CHECK_MAX_IV:-true} # QC on O-B differences.
 export NL_NTMAX=${NL_NTMAX:-100}         # Maximum number of inner loop iterations.
 export NL_CHECK_RH=${NL_CHECK_RH:-2}     # RH bounds check.
+export NL_JCDFI_USE=${NL_JCDFI_USE:-false} # Turn off JcDF option
+export NL_JCDFI_IO=${NL_JCDFI_IO:-false} # Turn off JcDF IO
 
 # From Update_BC:
 export PHASE=${PHASE:-false}     # Indicate which phase update_bc is.

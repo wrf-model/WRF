@@ -33,19 +33,29 @@
 #---------------------------------------------------------------------
 # user-defined options
 #---------------------------------------------------------------------
-
-export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-
-. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
-
+#
+export START_DATE=2008010100
+export END_DATE=2008010212
+export CYCLE_PERIOD=12
+#
+export REGION=amps60
+export EXPT=test1
+export NUM_PROCS=1
+export WRFVAR_DIR=/sausage/hclin/code/WRFVAR/trunk
+export BUILD_DIR=${WRFVAR_DIR}/build
+export EXP_DIR=/sausage/hclin/exps/$REGION/$EXPT
 export VAR_RUN_DIR1=$EXP_DIR/run
 export VAR_RUN_DIR2=wrfvar/working
+if [[ $VAR_RUN_DIR2 == none ]]; then
+   export FGFILE=$VAR_RUN_DIR1/$START_DATE/fg
+else
+   export FGFILE=$VAR_RUN_DIR1/$START_DATE/$VAR_RUN_DIR2/fg   # for retrieving mapping info
+fi
 #
 export DIAG_RUN_DIR=$EXP_DIR/diag
 export FILE_PREFIX=inv    # or oma
 
-set -A INSTIDS noaa-17-amsub noaa-18-amsua noaa-18-mhs
+set -A INSTIDS noaa-15-amsua noaa-15-amsub noaa-16-amsua noaa-16-amsub
 #set -A INSTIDS eos-2-airs noaa-15-amsua noaa-15-amsub noaa-16-amsua noaa-16-amsub noaa-16-hirs noaa-17-amsub noaa-18-amsua  noaa-18-hirs noaa-18-mhs
 #
 export LINK_DATA=true   # link inv* or oma* files in wrfvar/working directory to be in $DIAG_RUN_DIR/$DATE
@@ -58,10 +68,10 @@ export OUT_TYPE=ncgm            # ncgm, pdf (pdf will be much slower than ncgm a
                                 #            generate huge output if plots are not splitted)
                                 # pdf will generated plots in higher resolution
 export PLOT_STATS_ONLY=false
-export PLOT_OPT=all             # all, sea_only, land_only
-export PLOT_QCED=false          # true, false.
+export PLOT_OPT=sea_only        # all, sea_only, land_only
+export PLOT_QCED=true           # true, false.
 export PLOT_SPLIT=false         # true, false. Set true to plot one frame in one file.
-export PLOT_CLOUDY=true         # true, false. If plotting cloudy points.
+export PLOT_CLOUDY=false        # true, false. If plotting cloudy points.
                                 # cloudy points are defined by the following 
                                 # PLOT_CLOUDY_OPT, CLWP_VALUE, SI_VALUE settings.
 if $PLOT_CLOUDY; then           # setup cloudy criteria
@@ -84,7 +94,6 @@ export PLOTDIR=$DIAG_RUN_DIR/   # the tailing / is necessary
 
 export MAPINFO_FROM_FILE=true   # true, false
 export SUBDOMAIN=false          # true, false
-export FGFILE=$VAR_RUN_DIR1/$START_DATE/$VAR_RUN_DIR2/fg01
 
 if ! $MAPINFO_FROM_FILE; then   # MAPINFO_FROM_FILE=false
 #
@@ -92,6 +101,11 @@ if ! $MAPINFO_FROM_FILE; then   # MAPINFO_FROM_FILE=false
 #
    if ! $SUBDOMAIN; then  # SUBDOMAIN=false, the map is bounded by corner points
       export MAP_PROJ=3     # for now, only 1 (lambert) or 3 (mercator)
+      if [[ $MAP_PROJ == 1 ]]; then
+         export TRUELAT1=30.
+         export TRUELAT2=60.
+         export STAND_LON=-98.
+      fi
       export LAT_LL=0.1810659   # Lower-Left corner latitude
       export LON_LL=60.26209    # Lower-Left corner longitude
       export LAT_UR=37.62015    # Upper-Right corner latitude
@@ -131,8 +145,12 @@ if $LINK_DATA; then
          mkdir -p $DIAG_RUN_DIR/$DATE
       fi
       cd $DIAG_RUN_DIR/$DATE
-      ln -sf $VAR_RUN_DIR1/$DATE/$VAR_RUN_DIR2/$FILE_PREFIX* .
-      DATE=$($BUILD_DIR/da_advance_time.exe $DATE $CYCLE_PERIOD)
+      if [[ $VAR_RUN_DIR2 == none ]]; then
+         ln -sf $VAR_RUN_DIR1/$DATE/$FILE_PREFIX* .
+      else
+         ln -sf $VAR_RUN_DIR1/$DATE/$VAR_RUN_DIR2/$FILE_PREFIX* .
+      fi
+      DATE=$($WRFVAR_DIR/build/da_advance_time.exe $DATE $CYCLE_PERIOD)
    done
 fi
 
@@ -143,8 +161,7 @@ cd $DIAG_RUN_DIR
 #---------------------------------------------------------------------
 #
 if $PROC_DATA; then
-   ln -sf $BUILD_DIR/da_rad_diags.exe ./da_rad_diags.exe
-
+   ln -sf $WRFVAR_DIR/build/da_rad_diags.exe ./da_rad_diags.exe
 #
 # create namelist
 #
@@ -188,6 +205,8 @@ if $PROC_PLOT; then
       export TRUELAT1=$(ncdump -h $FGFILE | grep "TRUELAT1 =" | awk '{print $3}')
       export TRUELAT2=$(ncdump -h $FGFILE | grep "TRUELAT2 =" | awk '{print $3}')
       export STAND_LON=$(ncdump -h $FGFILE | grep "STAND_LON =" | awk '{print $3}')
+      export CEN_LON=$(ncdump -h $FGFILE | grep "CEN_LON =" | awk '{print $3}')
+      export CEN_LAT=$(ncdump -h $FGFILE | grep "CEN_LAT =" | awk '{print $3}')
    fi
    for instID in ${INSTIDS[*]}; do    # loop for instruments
       export INSTRUMENT=$instID

@@ -10,7 +10,7 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
    type (xpose_type), intent(in) :: xp          ! Dimensions and xpose buffers.
    integer,        intent(in)    :: mzs(:) ! Background error structure levels.
    integer,        intent(in)    :: cv_size     ! Length of CV array.
-   real,           intent(out)   :: rcv(1:cv_size) ! Control variables v.
+   real,           intent(inout) :: rcv(1:cv_size) ! Control variables v.
 
    integer   :: is,ie       ! Local grid range in y coordinate.
    integer   :: js,je       ! Local grid range in x coordinate.

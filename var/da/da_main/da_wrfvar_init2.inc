@@ -29,6 +29,10 @@ subroutine da_wrfvar_init2
       anal_type_qcobs=.false.
    end if
 
+   if (use_gpspwObs .and. use_gpsztdObs ) then
+      call da_error(__FILE__,__LINE__, (/'can not assimilate gpspw and gpsztd simultaneously'/))
+   end if
+
    !<DESCRIPTION>
    ! Among the configuration variables read from the namelist is
    ! debug_level. This is retrieved using nl_get_debug_level (Registry
@@ -110,11 +114,11 @@ subroutine da_wrfvar_init2
    ! 
    !</DESCRIPTION>
 
-   ! call med_initialdata_input(head_grid , config_flags,'fg01')
+   ! call med_initialdata_input(head_grid , config_flags,'fg')
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
-      call da_med_initialdata_input (head_grid, config_flags, 'fg01')
+      call da_med_initialdata_input (head_grid, config_flags, 'fg')
    end if
 
    ! FIX?

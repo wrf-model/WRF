@@ -7,7 +7,7 @@ export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 
 . ${SCRIPTS_DIR}/gen_be/gen_be_set_defaults.ksh
 
-cd $RUN_DIR
+cd $RUN_DIR/working
 
 ln -sf ${BUILD_DIR}/gen_be_cov3d.exe .
 

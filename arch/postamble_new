@@ -8,6 +8,8 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORD
                       CONFIGURE_NETCDF_FLAG \
                       CONFIGURE_PNETCDF_FLAG \
                       CONFIGURE_GRIB2_FLAG \
+                      CONFIGURE_RTTOV_FLAG \
+                      CONFIGURE_CRTM_FLAG \
                       CONFIGURE_NESTOPT \
                       -DGRIB1 \
                       -DINTIO \
@@ -29,7 +31,9 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       -I$(WRF_SRC_ROOT_DIR)/frame \
                       -I$(WRF_SRC_ROOT_DIR)/share \
                       -I$(WRF_SRC_ROOT_DIR)/phys \
-                      -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc
+                      -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc \
+                      CONFIGURE_CRTM_INC \
+                      CONFIGURE_RTTOV_INC
 REGISTRY        =    Registry
 
 LIB_BUNDLED     = \

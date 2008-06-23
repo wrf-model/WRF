@@ -25,8 +25,8 @@ begin
 
    works = "pdf"
 
-   first_guess = addfile("/ptmp/rizvi/WRFV3-testdata/rc/2007010200/wrfinput_d01"+".nc", "r")
-   analysis = addfile("/ptmp/rizvi/data/con200/run_cpu16/fc/2007010200/wrfinput_d01"+".nc", "r")
+   first_guess = addfile("/karri/users/xinzhang/support/con200/run_cpu1/2007010200/wrfvar/working/wrfinput_d01"+".nc", "r")
+   analysis = addfile("/karri/users/xinzhang/support/con200/run_cpu1/2007010200/wrfvar/working/wrfvar_output"+".nc", "r")
 
    ;************************************************
    ; Read vertical coordinate for plot labels

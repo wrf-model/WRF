@@ -219,7 +219,7 @@ OBJS	=	addate.o		\
 
 lib_bufr:	$(OBJS) $(COBJS) 
 		/bin/rm -f lib_bufr.a
-		$(AR) $(ARFLAGS) lib_bufr.a $(OBJS) $(COBJS)
+		$(AR) lib_bufr.a $(OBJS) $(COBJS)
 		$(RANLIB) lib_bufr.a
 
 clean:

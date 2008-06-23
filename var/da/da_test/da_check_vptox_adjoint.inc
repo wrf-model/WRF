@@ -138,6 +138,17 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
          typical_rh_rms**2 + adj_par_lhs
    end if
 
+!
+   if (use_radar_rf .or. crtm_cloud) then
+      adj_par_lhs = sum(grid%xa % qcw(its:ite,jts:jte,kts:kte)**2) / &
+         typical_qcw_rms**2 + adj_par_lhs
+      adj_par_lhs = sum(grid%xa % qrn(its:ite,jts:jte,kts:kte)**2) / &
+         typical_qrn_rms**2 + adj_par_lhs
+      adj_par_lhs = sum(grid%xa % qt (its:ite,jts:jte,kts:kte)**2) / &
+         typical_q_rms**2 + adj_par_lhs
+   end if
+
+
    !-------------------------------------------------------------------------
    ! [4.0] Rescale input to adjoint routine:
    !-------------------------------------------------------------------------
@@ -161,6 +172,14 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
    if (cv_options_hum == cv_options_hum_relative_humidity) then
       grid%xa % rh(:,:,:) = grid%xa % rh(:,:,:) / typical_rh_rms**2
    end if
+
+!
+   if (use_radar_rf .or. crtm_cloud) then
+      grid%xa % qcw(:,:,:) = grid%xa % qcw(:,:,:) / typical_qcw_rms**2
+      grid%xa % qrn(:,:,:) = grid%xa % qrn(:,:,:) / typical_qrn_rms**2
+      grid%xa % qt (:,:,:) = grid%xa % qt (:,:,:) / typical_q_rms**2
+   end if
+
    
    !-------------------------------------------------------------------------
    ! [5.0] Perform adjoint operation:

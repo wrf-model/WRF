@@ -426,7 +426,8 @@ subroutine da_final_write_y(iv)
             call da_proc_sum_int(num_obs)
             if (rootproc .and. num_obs > 0) then
                write(ob_name,'(a,a,i4.4)') &
-                  trim(iv%instid(i)%rttovid_string),'-',k
+                  trim(iv%instid(i)%rttovid_string),'-', &
+		  iv%instid(i)%ichan(k)
                write(ounit,'(a20,i8)')  ob_name,num_obs
                num_obs = 0
                do kk = 0,num_procs-1

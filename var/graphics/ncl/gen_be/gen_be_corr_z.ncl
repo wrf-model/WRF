@@ -9,19 +9,14 @@ begin
    ; open file and read in data
    ;=================================================;
 
-   works = "pdf"
+   works = getenv("GRAPHIC_WORKS")
 
-   region = "t46_45km"
-   ni = 53
-   nj = 70
-   nk = 41
+   region = getenv("REGION")
+   dir    = getenv("BE_DIR")
+   nk   = stringtointeger(getenv("NUM_LEVELS"))
+   ni   = stringtointeger(getenv("NUM_WE"))
+   nj   = stringtointeger(getenv("NUM_SN"))
 
-   ; region = "con200"
-   ; ni = 44
-   ; nj = 44
-   ; nk = 27
-
-   dir =  "/smoke/dmbarker/data/"+region+"/noda/fc/gen_be/"
    nij = ni * nj
    var1 = "chi"
    var2 = "t"
@@ -29,8 +24,8 @@ begin
    filename1 = var1+"_u."+var1+".dat"
    filename2 = var2+"_u."+var2+".dat"
 
-   data1=asciiread(dir+filename1,(/nk,nij/),"float")
-   data2=asciiread(dir+filename2,(/nk,nij/),"float")
+   data1=asciiread(dir+"/"+filename1,(/nk,nij/),"float")
+   data2=asciiread(dir+"/"+filename2,(/nk,nij/),"float")
 
    avg1 = dim_sum(data1) / nij
    avg2 = dim_sum(data2) / nij

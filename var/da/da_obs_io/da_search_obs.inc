@@ -151,6 +151,34 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
       endif
    enddo
    found_flag = .false.
+   CASE ('mtgirs')
+
+   do n = 1, num_obs
+      read(unit_in,'(2i8,a5,2E22.13)') n_dummy, levels, stn_id, lat, lon
+      if ( iv%info(mtgirs)%id(nth)  == stn_id .and.  &
+           iv%info(mtgirs)%lat(1,nth) == lat    .and.  &
+           iv%info(mtgirs)%lon(1,nth) == lon ) then
+
+         do k = 1, levels
+           read(unit_in,'(2E22.13,4(E22.13,i8,E22.13))')&
+                 iv % mtgirs(nth) % h(k), &
+                 iv % mtgirs(nth) % p(k), &             ! Obs Pressure
+                 iv%mtgirs(nth)%u(k), &! O-B u
+                 iv%mtgirs(nth)%v(k), &! O-B v
+                 iv%mtgirs(nth)%t(k), &! O-B t
+                 iv%mtgirs(nth)%q(k)   ! O-B q
+         enddo
+         found_flag = .true.
+         rewind (unit_in)
+         read(unit_in,*)
+         return
+      else
+         do k = 1, levels
+           read(unit_in,*)
+         enddo
+      endif
+   enddo
+   found_flag = .false.
 
    CASE ('buoy')
 

@@ -11,6 +11,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    type (iv_type),    intent(out)   :: iv  ! O-B structure.
 
    integer :: i,j
+   character (len=14)   :: ob_name
 
    if (trace_use) call da_trace_entry("da_setup_obs_structures")
 
@@ -19,10 +20,10 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    ! Adjust obs switches
 
    if (use_synopobs .OR. use_shipsobs .OR. use_metarobs .OR. use_pilotobs .OR. &
-      use_profilerobs .OR. use_buoyobs .OR. use_soundobs .OR. use_bogusobs .OR. &
+      use_profilerobs .OR. use_buoyobs .OR. use_soundobs .OR. use_mtgirsobs .OR. use_bogusobs .OR. &
       use_radarobs .OR. use_radar_rv .OR. use_radar_rf .OR. use_satemobs .OR. &
       use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. &
-      use_gpspwobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
+      use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .or. &
       use_airsretobs ) then
  
@@ -34,7 +35,8 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    if (use_hirs2obs .OR. use_hirs3obs .OR. use_msuobs .OR. use_amsuaobs .OR. &
       use_amsubobs .OR. use_airsobs .OR. use_eos_amsuaobs .OR. &
       use_eos_radobs .OR. use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .or. &
-      use_ssmisobs .or. use_hirs4obs .or. use_mhsobs) then
+      use_ssmisobs .or. use_hirs4obs .or. use_mhsobs .or. use_pseudo_rad .or. &
+      use_simulated_rad ) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -64,6 +66,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_profilerobs      = .false.
       use_satemobs         = .false.
       use_gpspwobs         = .false.
+      use_gpsztdobs        = .false.
       use_gpsrefobs        = .false.
       use_ssmiretrievalobs = .false.
       use_ssmitbobs        = .false.
@@ -86,12 +89,13 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_airsretobs       = .false.
    end if
     
-   if (num_pseudo > 0) then
+   if (use_pseudo_rad .or. num_pseudo > 0) then
       call da_message((/"Single OBS Test:: Turn off all the OBS switches ***"/))
       use_synopobs         = .false.
       use_shipsobs         = .false.
       use_metarobs         = .false.
       use_soundobs         = .false.
+      use_mtgirsobs        = .false.
       use_bogusobs         = .false.
       use_pilotobs         = .false.
       use_airepobs         = .false.
@@ -101,6 +105,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_profilerobs      = .false.
       use_satemobs         = .false.
       use_gpspwobs         = .false.
+      use_gpsztdobs        = .false.
       use_gpsrefobs        = .false.
       use_ssmiretrievalobs = .false.
       use_ssmitbobs        = .false.
@@ -121,6 +126,16 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_obsgts           = .true.
       use_rad              = .false.
       use_airsretobs       = .false.
+   end if
+
+   if ( use_pseudo_rad ) then
+      use_rad = .true.
+      thinning         = .false.
+      qc_rad           = .false.
+      rtminit_nsensor  = 1
+      rtminit_platform = pseudo_rad_platid
+      rtminit_satid    = pseudo_rad_satid
+      rtminit_sensor   = pseudo_rad_senid
    end if
 
    if (sfc_assi_options < 1 .OR. sfc_assi_options > 2) then
@@ -151,7 +166,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    ob%ntotal(:) = 0
    ob%num_inst  = 0
 
-   iv%info(:)%max_lev = 0
+   iv%info(:)%max_lev = 1
 
    if (use_obsgts) then
       ! Conventional obs can be in BUFR or ascii format
@@ -164,14 +179,28 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       end if
    end if
 
+#if defined(CRTM) || defined(RTTOV)
+   ! Radiance files can only be in BUFR
+
+   if (use_rad) then
+      call da_message((/'Using NCEP BUFR radiance 1b input'/))
+      call da_setup_radiance_structures(grid, ob, iv)
+   end if
+#endif
+
    ! Summarize observations 
 
    write(unit=stdout, fmt='(a)')  'Observation summary'
    do i=1,num_fgat_time
       write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
       do j=1,num_ob_indexes
+         if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
+            ob_name = 'gpsztd        '
+         else
+            ob_name = obs_names(j)
+         endif
          write(unit=stdout, fmt='(6x,a,i6,a,i6,a)') &
-            obs_names(j), iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
+            ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
             iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
       end do
    end do

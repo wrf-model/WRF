@@ -5,7 +5,7 @@ program da_rad_diags
 ! program to read multiple-time of radiance innovation files and write out in
 ! netcdf format for ncl time-series plotting
 !
-! input files: (1)  namelist.rw_rad_diags
+! input files: (1)  namelist.da_rad_diags
 !                   &record1
 !                    nproc = 16   (the proc numbers used when inv files were written out)
 !                    instid = 'dmsp-16-ssmis'   (inst names, can be more than one instid)
@@ -22,6 +22,7 @@ program da_rad_diags
 !
 ! namelist variables
 !
+   namelist /record1/ nproc, instid, file_prefix, start_date, end_date, cycle_period
            ! nproc: number of processsors used when writing out inv files
            ! instid, eg dmsp-16-ssmis
            ! file_prefix, inv or oma
@@ -30,44 +31,46 @@ program da_rad_diags
    integer, parameter                     :: maxnum = 20, maxlvl = 100
    integer                                :: nml_unit = 87
    integer                                :: nproc, nlev, ilev, ich
-   integer                                :: cycle_period
+   integer                                :: cycle_period, nlev_rtm, nlev_mdl
    character(len=20), dimension(maxnum)   :: instid
    character(len=3)                       :: file_prefix
    character(len=10)                      :: start_date, end_date
-   namelist /record1/ nproc, instid, file_prefix, start_date, end_date, cycle_period
 !
 ! netcdf variables
 !
-   character(len=80)                      :: ncname
+   character(len=200)                     :: ncname
    integer                                :: ncid, dimid, varid
    integer, dimension(3)                  :: ishape, istart, icount
 !
    logical                                :: isfile, prf_found, jac_found
    integer, parameter                     :: datelen1 = 10
    integer, parameter                     :: datelen2 = 19
-   real, parameter                        :: missing_r = -888888.00
+   real*4, parameter                      :: missing_r = -888888.00
+   character(len=20)                      :: rtm_option    ! CRTM or RTTOV
    character(len=250)                     :: buf, inst
    character(len=7)                       :: numbuf
    character(len=datelen1)                :: valid_date
    integer                                :: ninst, iinst, iproc, ipixel, ifirst
-   integer                                :: ios, i, n, ips, ipe, nerr, itime
+   integer                                :: ios, i, n, ips, ipe, nerr, itime, itmp
    integer                                :: ntime, nchan, total_npixel
    integer, dimension(:), allocatable     :: ichan, npixel, iunit, scanpos, isflg
    integer, dimension(:), allocatable     :: landsea_mask, soiltyp, vegtyp
-   real,    dimension(:), allocatable     :: lat, lon, elv, elev
-   real,    dimension(:), allocatable     :: satzen, satazi, t2m, mr2m, u10, v10, ps, ts
-   real,    dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
+   real*4,  dimension(:), allocatable     :: lat, lon, elv, elev
+   real*4,  dimension(:), allocatable     :: satzen, satazi, t2m, mr2m, u10, v10, ps, ts
+   real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
    integer, dimension(:,:), allocatable   :: tb_qc
-   real,    dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
-   real,    dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
-   real,    dimension(:,:), allocatable   :: prf_ice, prf_rain, prf_snow, prf_grau, prf_hail
-   real,    dimension(:,:), allocatable   :: prf_water_reff, prf_ice_reff, prf_rain_reff
-   real,    dimension(:,:), allocatable   :: prf_snow_reff, prf_grau_reff, prf_hail_reff
-   real,    dimension(:,:,:), allocatable :: prf_t_jac, prf_q_jac, prf_water_jac, prf_ice_jac
-   real,    dimension(:,:,:), allocatable :: prf_rain_jac, prf_snow_jac, prf_grau_jac, prf_hail_jac
-   real,    dimension(:,:,:), allocatable :: prf_water_reff_jac, prf_ice_reff_jac, prf_rain_reff_jac
-   real,    dimension(:,:,:), allocatable :: prf_snow_reff_jac, prf_grau_reff_jac, prf_hail_reff_jac
-   character(len=80), dimension(:), allocatable      :: inpname
+   real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
+   real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
+   real*4,  dimension(:,:), allocatable   :: prf_ice, prf_rain, prf_snow, prf_grau, prf_hail
+   real*4,  dimension(:,:), allocatable   :: prf_water_reff, prf_ice_reff, prf_rain_reff
+   real*4,  dimension(:,:), allocatable   :: prf_snow_reff, prf_grau_reff, prf_hail_reff
+   real*4,  dimension(:,:), allocatable   :: rtm_prf_p, rtm_prf_t, rtm_prf_q
+   real*4,  dimension(:,:), allocatable   :: mdl_prf_p, mdl_prf_t, mdl_prf_q, mdl_prf_qcw, mdl_prf_qrn
+   real*4,  dimension(:,:,:), allocatable :: prf_t_jac, prf_q_jac, prf_water_jac, prf_ice_jac
+   real*4,  dimension(:,:,:), allocatable :: prf_rain_jac, prf_snow_jac, prf_grau_jac, prf_hail_jac
+   real*4,  dimension(:,:,:), allocatable :: prf_water_reff_jac, prf_ice_reff_jac, prf_rain_reff_jac
+   real*4,  dimension(:,:,:), allocatable :: prf_snow_reff_jac, prf_grau_reff_jac, prf_hail_reff_jac
+   character(len=200), dimension(:), allocatable      :: inpname
    character(len=datelen1), dimension(:), allocatable :: datestr1          ! date string
    character(len=datelen2), dimension(:), allocatable :: datestr2          ! date string
 !
@@ -78,8 +81,11 @@ program da_rad_diags
    file_prefix = 'inv'
    ilev = 0
    nlev = 0
+   nlev_rtm = 0
+   nlev_mdl = 0
    prf_found = .false.
    jac_found = .false.
+   rtm_option = 'unknown'
 !
 ! read namelist
 !
@@ -136,13 +142,8 @@ ntime_loop: do itime = 1, ntime
 
       nproc_loop_1: do iproc = 0, nproc - 1   ! loop for first getting number of pixels from each proc
 
-         if ( nproc > 1 ) then
-            write(unit=inpname(iproc), fmt='(a,i2.2)')  &
-               trim(datestr1(itime))//'/'//file_prefix//'_'//trim(instid(iinst))//'.', iproc
-         else
-            write(unit=inpname(iproc), fmt='(a,i2.2)')  &
-               trim(datestr1(itime))//'/'//file_prefix//'_'//trim(instid(iinst))
-         end if
+         write(unit=inpname(iproc), fmt='(a,i2.2)')  &
+            trim(datestr1(itime))//'/'//file_prefix//'_'//trim(instid(iinst))//'.', iproc
          iunit(iproc) = 101 + iproc
          inquire(file=trim(inpname(iproc)), exist=isfile)
          if ( .not. isfile ) Then
@@ -159,7 +160,7 @@ ntime_loop: do itime = 1, ntime
          end if
  
          open(unit=iunit(iproc),file=trim(inpname(iproc)),form='formatted',iostat=ios)
-         read(unit=iunit(iproc),fmt='(a)') buf   ! first read in one line
+         read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf   ! first read in one line
  
          inst = buf(1:(index(buf,'number-of-pixels')-2))   ! retrieve inst name
          !
@@ -169,6 +170,27 @@ ntime_loop: do itime = 1, ntime
          read(numbuf,'(i7)') npixel(iproc)
 
          total_npixel = total_npixel + npixel(iproc)
+
+         itmp = 0
+         do while ( itmp < 2 )
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf
+            if ( index(buf,'INFO :') > 0 ) then
+               itmp = itmp + 1
+            else
+               if ( index(buf,'EMS_JACOBIAN') > 0 ) then
+                  jac_found = .true.
+               end if
+               if ( index(buf,'level fullp(mb)') > 0 ) then
+                  prf_found = .true.
+                  rtm_option = 'CRTM'
+               end if
+               if ( index(buf,'RTM_level pres(mb)') > 0 ) then
+                  prf_found = .true.
+                  rtm_option = 'RTTOV'
+               end if
+            end if
+            if ( rtm_option /= 'unknown' ) exit
+         end do
 
       end do nproc_loop_1
 
@@ -225,37 +247,62 @@ ntime_loop: do itime = 1, ntime
             allocate ( tb_err(1:nchan,1:total_npixel) )
             allocate (  tb_qc(1:nchan,1:total_npixel) )
             allocate (    ems(1:nchan,1:total_npixel) )
-            allocate ( ems_jac(1:nchan,1:total_npixel) )
-            allocate ( prf_pfull(1:maxlvl,1:total_npixel) )
-            allocate ( prf_phalf(1:maxlvl,1:total_npixel) )
-            allocate ( prf_t(1:maxlvl,1:total_npixel) )
-            allocate ( prf_q(1:maxlvl,1:total_npixel) )
-            allocate ( prf_water(1:maxlvl,1:total_npixel) )
-            allocate ( prf_ice(1:maxlvl,1:total_npixel) )
-            allocate ( prf_rain(1:maxlvl,1:total_npixel) )
-            allocate ( prf_snow(1:maxlvl,1:total_npixel) )
-            allocate ( prf_grau(1:maxlvl,1:total_npixel) )
-            allocate ( prf_hail(1:maxlvl,1:total_npixel) )
-            allocate ( prf_water_reff(1:maxlvl,1:total_npixel) )
-            allocate ( prf_ice_reff(1:maxlvl,1:total_npixel) )
-            allocate ( prf_rain_reff(1:maxlvl,1:total_npixel) )
-            allocate ( prf_snow_reff(1:maxlvl,1:total_npixel) )
-            allocate ( prf_grau_reff(1:maxlvl,1:total_npixel) )
-            allocate ( prf_hail_reff(1:maxlvl,1:total_npixel) )
-            allocate ( prf_t_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_q_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_water_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_ice_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_rain_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_snow_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_grau_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_hail_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_water_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_ice_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_rain_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_snow_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_grau_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
-            allocate ( prf_hail_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+            if ( jac_found ) then
+               allocate ( ems_jac(1:nchan,1:total_npixel) )
+            end if
+            if ( prf_found .and. (rtm_option == 'CRTM') ) then
+               allocate ( prf_pfull(1:maxlvl,1:total_npixel) )
+               allocate ( prf_phalf(1:maxlvl,1:total_npixel) )
+               allocate ( prf_t(1:maxlvl,1:total_npixel) )
+               allocate ( prf_q(1:maxlvl,1:total_npixel) )
+               allocate ( prf_water(1:maxlvl,1:total_npixel) )
+               allocate ( prf_ice(1:maxlvl,1:total_npixel) )
+               allocate ( prf_rain(1:maxlvl,1:total_npixel) )
+               allocate ( prf_snow(1:maxlvl,1:total_npixel) )
+               allocate ( prf_grau(1:maxlvl,1:total_npixel) )
+               allocate ( prf_hail(1:maxlvl,1:total_npixel) )
+               allocate ( prf_water_reff(1:maxlvl,1:total_npixel) )
+               allocate ( prf_ice_reff(1:maxlvl,1:total_npixel) )
+               allocate ( prf_rain_reff(1:maxlvl,1:total_npixel) )
+               allocate ( prf_snow_reff(1:maxlvl,1:total_npixel) )
+               allocate ( prf_grau_reff(1:maxlvl,1:total_npixel) )
+               allocate ( prf_hail_reff(1:maxlvl,1:total_npixel) )
+               if ( jac_found ) then
+                  allocate ( prf_t_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_q_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_water_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_ice_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_rain_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_snow_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_grau_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_hail_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_water_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_ice_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_rain_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_snow_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_grau_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_hail_reff_jac(1:maxlvl,1:nchan,1:total_npixel) )
+               end if
+            end if
+            if ( prf_found .and. (rtm_option == 'RTTOV') ) then
+               allocate ( rtm_prf_p(1:maxlvl,1:total_npixel) )
+               allocate ( rtm_prf_t(1:maxlvl,1:total_npixel) )
+               allocate ( rtm_prf_q(1:maxlvl,1:total_npixel) )  ! in ppmv
+               allocate ( mdl_prf_p(1:maxlvl,1:total_npixel) )
+               allocate ( mdl_prf_t(1:maxlvl,1:total_npixel) )
+               allocate ( mdl_prf_q(1:maxlvl,1:total_npixel) )  ! in g/kg
+               allocate ( mdl_prf_qcw(1:maxlvl,1:total_npixel) )
+               allocate ( mdl_prf_qrn(1:maxlvl,1:total_npixel) )
+               ! initialize
+               rtm_prf_p = missing_r
+               rtm_prf_t = missing_r
+               rtm_prf_q = missing_r
+               mdl_prf_p = missing_r
+               mdl_prf_t = missing_r
+               mdl_prf_q = missing_r
+               mdl_prf_qcw = missing_r
+               mdl_prf_qrn = missing_r
+            end if
             ! initialize
             tb_obs = missing_r
             tb_bak = missing_r
@@ -263,9 +310,9 @@ ntime_loop: do itime = 1, ntime
             tb_oma = missing_r
             tb_err = missing_r
             ncname = 'diags_'//trim(instid(iinst))//"_"//datestr1(itime)//'.nc'
-            ios = NF_CREATE(ncname, NF_CLOBBER, ncid)  ! NF_CLOBBER specifies the default behavior of
-                                                       ! overwritting any existing dataset with the 
-                                                       ! same file name
+            ios = NF_CREATE(trim(ncname), NF_CLOBBER, ncid)  ! NF_CLOBBER specifies the default behavior of
+                                                             ! overwritting any existing dataset with the 
+                                                             ! same file name
             if ( ios /= 0 ) then
                write(0,*) 'Error creating netcdf file: ', ncname
                stop
@@ -310,7 +357,6 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) ems(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! EMS_JACOBIAN or ERR
             if ( buf(1:12) == "EMS_JACOBIAN" ) then
-               jac_found = .true.
                read(unit=iunit(iproc),fmt='(10f10.3)',iostat=ios) ems_jac(:,ipixel)
                read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! OMA or EMS
             end if
@@ -322,8 +368,7 @@ ntime_loop: do itime = 1, ntime
                backspace(iunit(iproc))
                cycle npixel_loop
             else
-               if ( buf(1:6) == " level" ) then    ! profiles are available
-                  prf_found = .true.
+               if ( buf(1:6) == " level" ) then    ! CRTM profiles are available
                   ilev = 0
                   do while ( ios == 0 )
                      ilev = ilev + 1
@@ -338,7 +383,29 @@ ntime_loop: do itime = 1, ntime
                   end do
                   nlev = ilev - 1
                   ! backspace(iunit(iproc))
+               else if ( index(buf, 'RTM_level') > 0 ) then  ! RTTOV profiles are available
+                  ! first, RTTOV levels
+                  ilev = 0
+                  do while ( ios == 0 )
+                     ilev = ilev + 1
+                     read(unit=iunit(iproc),fmt='(3x,f10.2,f8.2,e11.4)',iostat=ios)        &
+                        rtm_prf_p(ilev,ipixel), rtm_prf_t(ilev,ipixel),                    &
+                        rtm_prf_q(ilev,ipixel)  ! q in ppmv
+                  end do
+                  nlev_rtm = ilev - 1
+                  ! second, Model levels
+                  ios  = 0
+                  ilev = 0
+                  do while ( ios == 0 )
+                     ilev = ilev + 1
+                     read(unit=iunit(iproc),fmt='(3x,f10.2,f8.2,3e11.4)',iostat=ios)        &
+                        mdl_prf_p(ilev,ipixel), mdl_prf_t(ilev,ipixel),                     &
+                        mdl_prf_q(ilev,ipixel), mdl_prf_qcw(ilev,ipixel),                   &
+                        mdl_prf_qrn(ilev,ipixel)
+                  end do
+                  nlev_mdl = ilev - 1
                end if
+    
                if ( jac_found ) then
                   ios = 0
                   do while ( ios == 0 )
@@ -371,8 +438,22 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_DIM(ncid, 'npixel', total_npixel, dimid)
       ios = NF_DEF_DIM(ncid, 'DateStrLen', datelen2, dimid)
       if ( prf_found .or. jac_found ) then
+         if ( rtm_option == 'RTTOV' ) then
+            nlev = max(nlev_rtm,nlev_mdl)
+         end if
          ios = NF_DEF_DIM(ncid, 'nlev', nlev, dimid)
       end if
+      !
+      ! output global attributes
+      !
+      if ( trim(rtm_option) == 'unknown' ) then
+         if ( maxval(mr2m) < -8000.0 ) then
+            rtm_option = 'CRTM'
+         else
+            rtm_option = 'RTTOV'
+         end if
+      end if
+      ios = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'rtm_option', 20, rtm_option)
       !
       ! define variables
       !
@@ -412,22 +493,33 @@ ntime_loop: do itime = 1, ntime
          ishape(1) = dimid
          ios = NF_INQ_DIMID(ncid, 'npixel', dimid)
          ishape(2) = dimid
-         ios = NF_DEF_VAR(ncid, 'prf_pfull', NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_phalf', NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_t',     NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_q',     NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_water', NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_ice',   NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_rain',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_snow',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_grau',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_hail',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_water_reff', NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_ice_reff',   NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_rain_reff',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_snow_reff',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_grau_reff',  NF_FLOAT, 2, ishape(1:2), varid)
-         ios = NF_DEF_VAR(ncid, 'prf_hail_reff',  NF_FLOAT, 2, ishape(1:2), varid)
+         if ( rtm_option == 'CRTM' ) then
+            ios = NF_DEF_VAR(ncid, 'prf_pfull', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_phalf', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_t',     NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_q',     NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_water', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_ice',   NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_rain',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_snow',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_grau',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_hail',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_water_reff', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_ice_reff',   NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_rain_reff',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_snow_reff',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_grau_reff',  NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'prf_hail_reff',  NF_FLOAT, 2, ishape(1:2), varid)
+         else if ( rtm_option == 'RTTOV' ) then
+            ios = NF_DEF_VAR(ncid, 'rtm_prf_p', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'rtm_prf_t', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'rtm_prf_q', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'mdl_prf_p', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'mdl_prf_t', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'mdl_prf_q', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'mdl_prf_qcw', NF_FLOAT, 2, ishape(1:2), varid)
+            ios = NF_DEF_VAR(ncid, 'mdl_prf_qrn', NF_FLOAT, 2, ishape(1:2), varid)
+         end if
       end if
       !
       ! define 3-D array with dimensions nlev * nchan * total_npixel
@@ -529,38 +621,57 @@ ntime_loop: do itime = 1, ntime
          istart(2) = 1
          icount(1) = nlev
          icount(2) = total_npixel
-         ios = NF_INQ_VARID (ncid, 'prf_pfull', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_pfull(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_phalf', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_phalf(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_t', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_t(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_q', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_q(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_water', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_water(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_ice', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_ice(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_rain', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_rain(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_snow', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_snow(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_grau', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_grau(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_hail', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_hail(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_water_reff', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_water_reff(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_ice_reff', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_ice_reff(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_rain_reff', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_rain_reff(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_snow_reff', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_snow_reff(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_grau_reff', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_grau_reff(1:nlev,:))
-         ios = NF_INQ_VARID (ncid, 'prf_hail_reff', varid)
-         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_hail_reff(1:nlev,:))
+         if ( rtm_option == 'CRTM' ) then
+            ios = NF_INQ_VARID (ncid, 'prf_pfull', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_pfull(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_phalf', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_phalf(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_t', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_t(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_q', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_q(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_water', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_water(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_ice', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_ice(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_rain', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_rain(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_snow', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_snow(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_grau', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_grau(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_hail', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_hail(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_water_reff', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_water_reff(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_ice_reff', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_ice_reff(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_rain_reff', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_rain_reff(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_snow_reff', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_snow_reff(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_grau_reff', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_grau_reff(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'prf_hail_reff', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), prf_hail_reff(1:nlev,:))
+         else if ( rtm_option == 'RTTOV' ) then
+            ios = NF_INQ_VARID (ncid, 'rtm_prf_p', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), rtm_prf_p(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'rtm_prf_t', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), rtm_prf_t(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'rtm_prf_q', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), rtm_prf_q(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'mdl_prf_p', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), mdl_prf_p(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'mdl_prf_t', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), mdl_prf_t(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'mdl_prf_q', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), mdl_prf_q(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'mdl_prf_qcw', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), mdl_prf_qcw(1:nlev,:))
+            ios = NF_INQ_VARID (ncid, 'mdl_prf_qrn', varid)
+            ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), mdl_prf_qrn(1:nlev,:))
+         end if
       end if
       !
       ! output 3-D array with dimensions nlev * nchan * total_npixel
@@ -693,39 +804,53 @@ ntime_loop: do itime = 1, ntime
       deallocate ( tb_inv )
       deallocate ( tb_oma )
       deallocate ( ems )
-      deallocate ( ems_jac )
+      if ( jac_found ) deallocate ( ems_jac )
       deallocate ( tb_err )
       deallocate ( tb_qc )
-      deallocate ( prf_pfull )
-      deallocate ( prf_phalf )
-      deallocate ( prf_t )
-      deallocate ( prf_q )
-      deallocate ( prf_water )
-      deallocate ( prf_ice )
-      deallocate ( prf_rain )
-      deallocate ( prf_snow )
-      deallocate ( prf_grau )
-      deallocate ( prf_hail )
-      deallocate ( prf_water_reff )
-      deallocate ( prf_ice_reff )
-      deallocate ( prf_rain_reff )
-      deallocate ( prf_snow_reff )
-      deallocate ( prf_grau_reff )
-      deallocate ( prf_hail_reff )
-      deallocate ( prf_t_jac )
-      deallocate ( prf_q_jac )
-      deallocate ( prf_water_jac )
-      deallocate ( prf_ice_jac )
-      deallocate ( prf_rain_jac )
-      deallocate ( prf_snow_jac )
-      deallocate ( prf_grau_jac )
-      deallocate ( prf_hail_jac )
-      deallocate ( prf_water_reff_jac )
-      deallocate ( prf_ice_reff_jac )
-      deallocate ( prf_rain_reff_jac )
-      deallocate ( prf_snow_reff_jac )
-      deallocate ( prf_grau_reff_jac )
-      deallocate ( prf_hail_reff_jac )
+      if ( prf_found .and. (rtm_option == 'CRTM') ) then
+         deallocate ( prf_pfull )
+         deallocate ( prf_phalf )
+         deallocate ( prf_t )
+         deallocate ( prf_q )
+         deallocate ( prf_water )
+         deallocate ( prf_ice )
+         deallocate ( prf_rain )
+         deallocate ( prf_snow )
+         deallocate ( prf_grau )
+         deallocate ( prf_hail )
+         deallocate ( prf_water_reff )
+         deallocate ( prf_ice_reff )
+         deallocate ( prf_rain_reff )
+         deallocate ( prf_snow_reff )
+         deallocate ( prf_grau_reff )
+         deallocate ( prf_hail_reff )
+         if ( jac_found ) then
+            deallocate ( prf_t_jac )
+            deallocate ( prf_q_jac )
+            deallocate ( prf_water_jac )
+            deallocate ( prf_ice_jac )
+            deallocate ( prf_rain_jac )
+            deallocate ( prf_snow_jac )
+            deallocate ( prf_grau_jac )
+            deallocate ( prf_hail_jac )
+            deallocate ( prf_water_reff_jac )
+            deallocate ( prf_ice_reff_jac )
+            deallocate ( prf_rain_reff_jac )
+            deallocate ( prf_snow_reff_jac )
+            deallocate ( prf_grau_reff_jac )
+            deallocate ( prf_hail_reff_jac )
+         end if
+      end if
+      if ( prf_found .and. (rtm_option == 'RTTOV') ) then
+         deallocate ( rtm_prf_p )
+         deallocate ( rtm_prf_t )
+         deallocate ( rtm_prf_q )
+         deallocate ( mdl_prf_p )
+         deallocate ( mdl_prf_t )
+         deallocate ( mdl_prf_q )
+         deallocate ( mdl_prf_qcw )
+         deallocate ( mdl_prf_qrn )
+      end if
       do i = 0, nproc-1
          close(iunit(i))
       end do

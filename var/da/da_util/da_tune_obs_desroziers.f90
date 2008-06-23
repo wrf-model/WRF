@@ -348,7 +348,7 @@ subroutine da_count_obs( y_unit, ob )
    type (iv_type), intent(inout)     :: ob
 
    character*20         :: ob_name, dummy
-   integer              :: times, num_obs, k, num_levs
+   integer              :: times, num_obs, k, num_levs, iost
 
    ! [1] Initialize ob numbers:
 
@@ -378,10 +378,17 @@ subroutine da_count_obs( y_unit, ob )
    call read_namelist_radiance
 
    times = 0 
+   open ( unit   = y_unit, &
+          status = 'old' , access = 'sequential', &
+          form   = 'formatted', action = 'read', &
+          iostat = iost )
+   if ( iost /= 0 ) stop ' error in opening namelist file '
+
    !  [2] Loop through input file to count number of obs:
 
    do   
-      read(y_unit,'(a20,i8)', end = 1000)ob_name, num_obs
+      read(y_unit,*, end = 1000)ob_name, num_obs
+!      read(y_unit,'(a20,i8)', end = 1000)ob_name, num_obs
       if( num_obs > 0) times = times + 1 
       if ( index( ob_name,'synop') > 0 ) then
          ob % num_synop = ob % num_synop + num_obs
@@ -446,10 +453,30 @@ subroutine da_count_obs( y_unit, ob )
                exit
             end if
          end do
-
          ! WHY 
          ! read(y_unit,'(i8)')num_levs
          ! read(y_unit,'(a20)')dummy    
+
+      else if ( index( ob_name,'eos') > 0 ) then
+         platform_id = 9
+         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
+            platform, str1,satellite_id,str2,sensor,str3,ichan
+         if ( sensor == 'airs' ) then
+            sensor_id = 11
+         else
+            print*,' Unrecognized Sensor ',sensor
+            stop
+         end if
+         do n = 1, rtminit_nsensor
+            if (    platform_id  == rtminit_platform(n) &
+             .and. satellite_id == rtminit_satid(n)    &
+             .and. sensor_id    == rtminit_sensor(n)    ) then
+                ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan) + &
+                   num_obs
+               exit
+            end if
+         end do
+
       elseif ( index( ob_name,'*****') > 0 ) then 
          print*,' scaned for time ', times
          exit
@@ -461,6 +488,10 @@ subroutine da_count_obs( y_unit, ob )
          do k = 1, num_obs
             read(y_unit,'(a20)')dummy              
          end do
+      else if ( index( ob_name,'eos') > 0 ) then
+         do k = 1, num_obs
+            read(y_unit,'(a20)')dummy              
+         end do 
       else
          do n = 1, num_obs
             read(y_unit,'(i8)')num_levs
@@ -906,6 +937,29 @@ subroutine da_read_y( y_unit, ob )
            end if
          end do
 
+      else if ( index( ob_name,'eos') > 0 ) then
+         platform_id = 9
+         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
+            platform, str1,satellite_id,str2,sensor,str3,ichan
+         if ( sensor == 'airs' ) then
+            sensor_id = 11
+         else
+            print*,' Unrecognized Sensor ',sensor
+            stop
+         end if
+         do n = 1, rtminit_nsensor
+           if (    platform_id  == rtminit_platform(n) &
+             .and. satellite_id == rtminit_satid(n)    &
+             .and. sensor_id    == rtminit_sensor(n)    ) then
+                do k = 1,num_obs
+                  ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan) + 1
+                  read(y_unit,'(2i8,e15.7)') ipixel,kdum,  &
+                        ob%rad(n)%tb(ichan)%pixel(ob%rad(n)%num_rad_tot(ichan))%y
+                end do
+                exit
+           end if
+         end do
+
       elseif ( index( ob_name,'*****') > 0 ) then 
          exit
       else
@@ -1191,6 +1245,30 @@ subroutine da_read_yp( yp_unit, ob )
                 exit
            end if
          end do
+
+      else if ( index( ob_name,'eos') > 0 ) then
+         platform_id = 9
+         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
+            platform, str1,satellite_id,str2,sensor,str3,ichan
+         if ( sensor == 'airs' ) then
+            sensor_id = 11
+         else
+            print*,' Unrecognized Sensor ',sensor
+            stop
+         end if
+         do n = 1, rtminit_nsensor
+           if (    platform_id  == rtminit_platform(n) &
+             .and. satellite_id == rtminit_satid(n)    &
+             .and. sensor_id    == rtminit_sensor(n)    ) then
+                do k = 1,num_obs
+                  ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan)+1
+                  read(yp_unit,'(2i8,e15.7)') ipixel, kdum, &
+                     ob%rad(n)%tb(ichan)%pixel(ob%rad(n)%num_rad_tot(ichan))%yp
+                end do
+                exit
+           end if
+         end do
+
       elseif ( index( ob_name,'*****') > 0 ) then 
          exit
       else
@@ -1536,6 +1614,33 @@ subroutine da_read_obs_rand( rand_unit, ob )
                exit
             end if
          end do
+
+      else if ( index( ob_name,'eos') > 0 ) then
+         platform_id = 9
+         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
+            platform, str1,satellite_id,str2,sensor,str3,ichan
+         if ( sensor == 'airs' ) then
+            sensor_id = 11
+         else
+            print*,' Unrecognized Sensor ',sensor
+            stop
+         end if
+         do n = 1, rtminit_nsensor
+            if (    platform_id  == rtminit_platform(n) &
+               .and. satellite_id == rtminit_satid(n)    &
+               .and. sensor_id    == rtminit_sensor(n)    ) then
+               do k = 1,num_obs
+                  ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan) + 1
+                  read(rand_unit,'(2i8,f10.3,e15.7)') ipixel, kdum,     &
+                     ob%rad(n)%tb(ichan)%pixel( &
+                     ob%rad(n)%num_rad_tot(ichan))%error, &
+                     ob%rad(n)%tb(ichan)%pixel( &
+                     ob%rad(n)%num_rad_tot(ichan))%pert
+               end do
+               exit
+            end if
+         end do
+
       elseif ( index( ob_name,'*****') > 0 ) then 
          exit
       else
@@ -2332,19 +2437,33 @@ subroutine da_read_jo_actual( ob )
                                   ob % joa_gpsref_ref, &
                                   dum1, dum2, dum3, dum4 )
       else if ( ob_name == 'radia' .and. index(str,'actual') > 0 ) then
-         platform_id = 1
-         read (str,'(30x,a4,1x,i2,1x,a5)')platform, satellite_id,sensor
-         read (str1,'(i5,i10)')ichan, num_obs                     
-         read (str2,'(f15.5)')jo                                 
+         if ( index( str,'noaa') > 0 ) then
+            platform_id = 1
+            read (str,'(30x,a4,1x,i2,1x,a5)')platform, satellite_id,sensor
+            read (str1,'(i5,i10)')ichan, num_obs                     
+            read (str2,'(f15.5)')jo                                 
 
-         if ( sensor == 'amsua' ) then
-            sensor_id = 3
-         else if ( sensor == 'amsub' )  then
-            sensor_id = 4
-         else
-            write(6,*) ' Unrecognized Sensor '
-         end if
-         do n = 1, rtminit_nsensor
+            if ( sensor == 'amsua' ) then
+               sensor_id = 3
+            else if ( sensor == 'amsub' )  then
+               sensor_id = 4
+            else
+               write(6,*) ' Unrecognized Sensor '
+            end if
+	 else if ( index( str,'eos') > 0 ) then
+	    platform_id = 9
+            read (str,'(30x,a3,1x,i1,1x,a4)')platform, satellite_id,sensor
+            read (str1,'(i5,i10)')ichan, num_obs                     
+            read (str2,'(f15.5)')jo                                 
+
+            if ( sensor == 'airs' ) then
+               sensor_id = 11
+            else
+               print*,' Unrecognized Sensor ',sensor
+               stop
+            end if
+         end if 
+	 do n = 1, rtminit_nsensor
             if (    platform_id  == rtminit_platform(n) &
                 .and. satellite_id == rtminit_satid(n)    &
                 .and. sensor_id    == rtminit_sensor(n)    ) then
@@ -2354,6 +2473,7 @@ subroutine da_read_jo_actual( ob )
                exit
             end if
          end do
+
       else if ( str(1:5) == '*****' ) then
          exit
       end if
@@ -2555,7 +2675,7 @@ subroutine da_calc_new_factors( ob )
             if ( ob % rad(n) % num_rad_tot(ichan) > 0 ) then
                ob % rad(n) % factor_rad(ichan) = &
                   sqrt( ob % rad(n) % joa_rad(ichan) / ob % rad(n) % jo_rad(ichan) )
-               write(6,'(a15,i3,i8,3f15.5,f8.3)')   &
+               write(6,'(a15,i4,i8,3f15.5,f8.3)')   &
                   trim(ob%rad(n)%rttovid_string), &
                   ichan,                        &
                   ob%rad(n)%num_rad_tot(ichan), &
@@ -2724,10 +2844,17 @@ subroutine read_namelist_radiance
          allocate ( ob % rad(n) % trace_rad(ob % rad(n) % nchan) )
          allocate ( ob % rad(n) % tb(ob % rad(n) % nchan) )
          ob % rad(n) % num_rad_tot(:) = 0
-         write(ob%rad(n)%rttovid_string, '(a,i2.2,a)')  &
-            trim( platform_name(rtminit_platform(n)) )//'-',  &
-            rtminit_satid(n),     &
-            '-'//trim( inst_name(rtminit_sensor(n)) )
+	 if (rtminit_satid(n) < 10) then	 
+            write(ob%rad(n)%rttovid_string, '(a,i1,a)')  &
+              trim( platform_name(rtminit_platform(n)) )//'-',  &
+               rtminit_satid(n),     &
+               '-'//trim( inst_name(rtminit_sensor(n)) )
+	 else
+            write(ob%rad(n)%rttovid_string, '(a,i2.2,a)')  &
+              trim( platform_name(rtminit_platform(n)) )//'-',  &
+               rtminit_satid(n),     &
+               '-'//trim( inst_name(rtminit_sensor(n)) )
+	 end if   
          write(6,*) 'Tuning radiance error for ', trim(ob%rad(n)%rttovid_string)
       end do
    end if

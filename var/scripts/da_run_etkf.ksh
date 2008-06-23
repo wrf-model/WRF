@@ -25,8 +25,8 @@
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
 export NUM_PROCS=1 # will not run parallel
-
-. $WRFVAR_DIR/var/scripts/da_set_defaults.ksh
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+. ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/etkf}
 export WORK_DIR=$RUN_DIR/working
 
@@ -74,7 +74,7 @@ while [[ $MEM -le $NUM_MEMBERS ]]; do
    mkdir -p $RUN_DIR
    cd $RUN_DIR
    echo '   <A HREF="working/wrfvar.'$CMEM'">wrfvar run '$CMEM'</a>'
-   $WRFVAR_DIR/var/scripts/da_run_wrfvar.ksh > index.html 2>&1
+   $SCRIPTS_DIR/da_run_wrfvar.ksh > index.html 2>&1
    cd $WORK_DIR
    let MEM=$MEM+1
    let JOB=$JOB+1

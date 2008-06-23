@@ -25,7 +25,7 @@ subroutine da_print_stats_airsr(stats_unit, nt, nq, airsr)
    write(unit=stats_unit, fmt='((a,2(f12.4,2i5)))') &
       ' Minimum(n,k): ', airsr%minimum%t, airsr%minimum%q, &
       ' Maximum(n,k): ', airsr%maximum%t, airsr%maximum%q
-   write(unit=stats_unit, fmt='((a,2(f12.4,10x)))')  &
+   write(unit=stats_unit, fmt='((a,f12.4,10x,e12.4,10x))')  &
       ' Average     : ', airsr%average%t/real(nt), airsr%average%q/real(nq),      &
       '    RMSE     : ', sqrt(airsr%rms_err%t/real(nt)), sqrt(airsr%rms_err%q/real(nq))
 

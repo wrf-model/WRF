@@ -119,6 +119,21 @@ subroutine da_allocate_y (iv, y)
       y % sonde_sfc(1:y % nlocal(sonde_sfc)) % p = 0.0
       y % sonde_sfc(1:y % nlocal(sonde_sfc)) % q = 0.0
    end if
+     
+   if (y % nlocal(mtgirs) > 0) then
+      allocate (y % mtgirs(1:y % nlocal(mtgirs)))
+      do n = 1, y % nlocal(mtgirs)
+         nlevels = max(1,iv%info(mtgirs)%levels(n))
+         allocate (y % mtgirs(n)%u(1:nlevels))
+         allocate (y % mtgirs(n)%v(1:nlevels))
+         allocate (y % mtgirs(n)%t(1:nlevels))
+         allocate (y % mtgirs(n)%q(1:nlevels))
+         y % mtgirs(n) % u(1:nlevels) = 0.0
+         y % mtgirs(n) % v(1:nlevels) = 0.0
+         y % mtgirs(n) % t(1:nlevels) = 0.0
+         y % mtgirs(n) % q(1:nlevels) = 0.0
+      end do
+   end if
 
    if (y % nlocal(pilot) > 0) then
       allocate (y % pilot(1:y % nlocal(pilot)))

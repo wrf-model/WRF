@@ -7,7 +7,8 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-. ${WRFVAR_DIR}/var/scripts/da_set_defaults.ksh
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+. ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/obsproc}
 export WORK_DIR=$RUN_DIR/working
 
@@ -48,13 +49,13 @@ fi
 
 export FCST_RANGE_SAVE=$FCST_RANGE
 export FCST_RANGE=-$MAX_OB_RANGE
-. $WRFVAR_DIR/var/scripts/da_get_date_range.ksh
+. $SCRIPTS_DIR/da_get_date_range.ksh
 export TIME_WINDOW_MIN=${END_YEAR}-${END_MONTH}-${END_DAY}_${END_HOUR}:00:00
 export FCST_RANGE=$MAX_OB_RANGE
-. $WRFVAR_DIR/var/scripts/da_get_date_range.ksh
+. $SCRIPTS_DIR/da_get_date_range.ksh
 export TIME_WINDOW_MAX=${END_YEAR}-${END_MONTH}-${END_DAY}_${END_HOUR}:00:00
 export FCST_RANGE=0
-. $WRFVAR_DIR/var/scripts/da_get_date_range.ksh
+. $SCRIPTS_DIR/da_get_date_range.ksh
 export TIME_ANALYSIS=${START_YEAR}-${START_MONTH}-${START_DAY}_${START_HOUR}:00:00
 export FCST_RANGE=$FCST_RANGE_SAVE
 
@@ -100,9 +101,9 @@ cat > namelist.3dvar_obs << EOF
  qc_test_above_lid        = .TRUE.,
  remove_above_lid         = .TRUE.,
  domain_check_h           = .true.,
- Thining_SATOB            = .FALSE.,
- Thining_SSMI             = .FALSE.,
- Thining_QSCAT            = .FALSE.,
+ Thining_SATOB            = ${THINING_SATOB},
+ Thining_SSMI             = ${THINING_SSMI},
+ Thining_QSCAT            = ${THINING_QSCAT},
 /
 
 &record5
@@ -119,7 +120,7 @@ cat > namelist.3dvar_obs << EOF
 /
 
 &record6
- ptop =  ${PTOP_PA},
+ ptop =  ${P_TOP_REQUESTED},
  base_pres       = ${NL_BASE_PRES},
  base_temp       = ${NL_BASE_TEMP},
  base_lapse      = ${NL_BASE_LAPSE},
@@ -152,6 +153,31 @@ cat > namelist.3dvar_obs << EOF
  PREPBUFR_OUTPUT_FILENAME = 'prepbufr_output_filename',
  PREPBUFR_TABLE_FILENAME = 'prepbufr_table_filename',
  OUTPUT_OB_FORMAT = 2
+ use_for          = '${NL_USE_FOR}',
+ num_slots_past   = ${NL_NUM_SLOTS_PAST},
+ num_slots_ahead  = ${NL_NUM_SLOTS_AHEAD},
+ write_synop = .true., 
+ write_ship  = .true.,
+ write_metar = .true.,
+ write_buoy  = .true., 
+ write_pilot = .true.,
+ write_sound = .true.,
+ write_amdar = .true.,
+ write_satem = .true.,
+ write_satob = .true.,
+ write_airep = .true.,
+ write_gpspw = .true.,
+ write_gpsztd= .true.,
+ write_gpsref= .true.,
+ write_gpseph= .true.,
+ write_ssmt1 = .true.,
+ write_ssmt2 = .true.,
+ write_ssmi  = .true.,
+ write_tovs  = .true.,
+ write_qscat = .true.,
+ write_profl = .true.,
+ write_bogus = .true.,
+ write_airs  = .true.,
  /
 
 EOF
@@ -171,7 +197,33 @@ else
    RC=$?
    echo "Ended %$RC"
 fi
-mv obs_gts.3dvar $OB_DIR/$DATE/ob.ascii
+
+if [[ $NL_USE_FOR = 3DVAR ]]; then
+   mv obs_gts_${TIME_ANALYSIS}.${NL_USE_FOR} $OB_DIR/$DATE/ob.ascii
+   echo mv obs_gts_${TIME_ANALYSIS}.${NL_USE_FOR} $OB_DIR/$DATE/ob.ascii
+else 
+   I=0
+   set -A ff `ls obs_gts*.${NL_USE_FOR}`
+   NUM_SLOTS=${#ff[*]}
+   let NUM_SLOTS=$NUM_SLOTS-1
+   echo NUM_SLOTS= 0 to ${NUM_SLOTS}
+   while [[ $I -le $NUM_SLOTS ]]; do
+     fg_time=`echo ${ff[$I]} | cut -c 9-27`
+     fg_time=`$BUILD_DIR/da_advance_time.exe $fg_time 0`
+     mkdir -p $OB_DIR/$fg_time
+     if [[ $I -eq 0 ]]; then
+       mv ${ff[$I]}  $OB_DIR/$fg_time/ob.ascii+
+       echo $I  mv ${ff[$I]}  $OB_DIR/$fg_time/ob.ascii+
+     elif [[ $I -eq $NUM_SLOTS ]]; then
+       mv ${ff[$I]}  $OB_DIR/$fg_time/ob.ascii-
+       echo $I  mv ${ff[$I]}  $OB_DIR/$fg_time/ob.ascii-
+     else
+       mv ${ff[$I]}  $OB_DIR/$fg_time/ob.ascii
+       echo $I  mv ${ff[$I]}  $OB_DIR/$fg_time/ob.ascii
+     fi
+     let I=$I+1
+   done   
+fi
 
 date
 

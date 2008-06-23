@@ -60,7 +60,7 @@ subroutine da_openfile (kunit, cdfile, cdaccess, cdstatus, cdform)
  
 2000 continue
    call da_error(__FILE__,__LINE__, &
-      (/"Cannot open file"//trim(CDFILE)/))
+      (/"Cannot open file"//CDFILE/))
 
 end subroutine da_openfile
 

@@ -1,4 +1,4 @@
-subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
+subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    
    !--------------------------------------------------------------------------
    ! Purpose: Test observation operator transform and adjoint for compatibility.
@@ -8,6 +8,8 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
    
    implicit none
    
+   integer, intent(in)                       :: cv_size ! Size of cv array.
+   real, intent(inout)                       :: cv(1:cv_size)   ! control variables.
    type (domain),              intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    type (iv_type),             intent(inout) :: iv    ! ob. increment vector.
@@ -67,7 +69,38 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
    xa2_qcw(ims:ime, jms:jme, kms:kme) = grid%xa%qcw(ims:ime, jms:jme, kms:kme)
    xa2_qrn(ims:ime, jms:jme, kms:kme) = grid%xa%qrn(ims:ime, jms:jme, kms:kme)
 
+   if (var4d) then
+      call da_transfer_xatowrftl(grid, config_flags, 'tl01')
+
+#ifdef DM_PARALLEL
+      call da_system("da_run_wrfplus_tl.ksh pre")
+      if (rootproc) then
+         call da_system("rm -rf wrf_done")
+         call da_system("touch wrf_go_ahead")
+         call da_get_unit(wrf_done_unit)
+         do while (.true.)
+            open(wrf_done_unit,file="wrf_done",status="old",err=303)
+            close(wrf_done_unit)
+            exit
+303         continue
+            call da_system("sleep 1")
+         end do
+         call da_free_unit(wrf_done_unit)
+      end if
+      call wrf_get_dm_communicator ( comm )
+      call mpi_barrier(comm, ierr)
+      call da_system("da_run_wrfplus_tl.ksh post")
+#else
+      call da_system("da_run_wrfplus_tl.ksh")
+#endif
+   end if
+
    do nobwin=1, num_fgat_time
+
+      if (var4d) then
+         write(filnam,'(a2,i2.2)') 'tl',nobwin
+         call da_transfer_wrftltoxa(grid, config_flags, filnam)
+       end if
 
       call da_pt_to_rho_lin(grid)
 
@@ -79,15 +112,16 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
       end if
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
-          use_gpsrefobs .or.                                    &
+          use_gpsztdobs .or. use_gpsrefobs .or.                 &
           use_ssmitbobs .or. use_ssmiretrievalobs) then
 
          ! Now do something for PW
          call da_transform_xtotpw(grid)
 
          ! GPS Refractivity:
-         if (use_gpsrefobs) then
+         if (use_gpsrefobs .or. use_gpsztdobs) then
             call da_transform_xtogpsref_lin(grid)
+            if (use_gpsztdobs) call da_transform_xtoztd_lin(grid)
          end if
 
          if (use_ssmt1obs .or. use_ssmt2obs .or. &
@@ -110,7 +144,7 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
       ! [2.0] Perform y = Hx transform:
       !----------------------------------------------------------------------
    
-      call da_transform_xtoy (grid, iv, y)
+      call da_transform_xtoy (cv_size, cv, grid, iv, y)
 
       !----------------------------------------------------------------------
       ! [3.0] Calculate LHS of adjoint test equation and
@@ -121,7 +155,7 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
          call da_check_xtoy_adjoint_sound     (iv, y, partial_lhs, pertile_lhs)
          call da_check_xtoy_adjoint_sonde_sfc (iv, y, partial_lhs, pertile_lhs)
       end if
-
+      if (iv%info(mtgirs)%nlocal   > 0) call da_check_xtoy_adjoint_mtgirs   (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(synop)%nlocal    > 0) call da_check_xtoy_adjoint_synop    (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(geoamv)%nlocal   > 0) call da_check_xtoy_adjoint_geoamv   (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(polaramv)%nlocal > 0) call da_check_xtoy_adjoint_polaramv (iv, y, partial_lhs, pertile_lhs)
@@ -149,11 +183,11 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
 
       call da_zero_x (grid%xa)
 
-      call da_transform_xtoy_adj (grid, iv, y, grid%xa)
+      call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
 
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
-          use_gpsrefobs .or.                                    &
+          use_gpsztdobs .or. use_gpsrefobs .or.                 &
           use_ssmitbobs .or. use_ssmiretrievalobs) then
 
          if (use_ssmitbobs) call da_transform_xtotb_adj (grid)
@@ -162,7 +196,10 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
          call da_transform_xtotpw_adj (grid)
 
          ! GPS Refractivity:
-         if (use_gpsrefobs) call da_transform_xtogpsref_adj (grid)
+         if (use_gpsrefobs .or. use_gpsztdobs) then
+            if (use_gpsztdobs) call da_transform_xtoztd_adj(grid)
+            call da_transform_xtogpsref_adj (grid)
+         end if
 
          if (use_ssmt1obs .or. use_ssmt2obs .or. &
              use_ssmitbobs .or. use_ssmiretrievalobs) then
@@ -181,7 +218,127 @@ subroutine da_check_xtoy_adjoint(grid, config_flags, iv, y)
 
       call da_pt_to_rho_adj (grid)
 
+      if (var4d) then
+
+         grid%g_u_2 = 0.0
+         grid%g_v_2 = 0.0
+         grid%g_w_2 = 0.0
+         grid%g_t_2 = 0.0
+         grid%g_ph_2 = 0.0
+         grid%g_mu_2 = 0.0
+         grid%g_moist = 0.0
+
+         write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
+
+         call da_transfer_wrftltoxa_adj(grid, config_flags, filnam)
+
+!!!!!! exclude TL&AD integration!!!!!!!
+#ifdef MYOK
+         ndynopt      = grid%dyn_opt
+         grid%dyn_opt = DYN_EM_TL
+         call nl_set_dyn_opt (1 , DYN_EM_TL)
+         call da_med_initialdata_input(grid , config_flags, filnam)
+         grid%a_u_2 =   grid%g_u_2
+         grid%a_v_2 =   grid%g_v_2
+         grid%a_w_2 =   grid%g_w_2
+         grid%a_t_2 =   grid%g_t_2
+         grid%a_ph_2 =   grid%g_ph_2
+         grid%a_mu_2 =   grid%g_mu_2
+         grid%a_moist =   grid%g_moist
+
+         grid%dyn_opt = DYN_EM_AD
+         call nl_set_dyn_opt (1 , DYN_EM_AD)
+         call da_med_initialdata_output(grid , config_flags, 'gr01')               
+
+         grid%dyn_opt = ndynopt
+         call nl_set_dyn_opt (1 , DYN_EM)
+         grid%g_u_2 = 0.0
+         grid%g_v_2 = 0.0
+         grid%g_w_2 = 0.0
+         grid%g_t_2 = 0.0
+         grid%g_ph_2 = 0.0
+         grid%g_mu_2 = 0.0
+         grid%g_moist = 0.0
+         grid%a_u_2 = 0.0
+         grid%a_v_2 = 0.0
+         grid%a_w_2 = 0.0
+         grid%a_t_2 = 0.0
+         grid%a_ph_2 = 0.0
+         grid%a_mu_2 = 0.0
+         grid%a_moist = 0.0
+#endif
+         !!!!!!
+      end if
    end do
+
+   if (var4d) then
+
+#ifndef TLDF
+      ndynopt      = grid%dyn_opt
+      grid%dyn_opt = DYN_EM_TL
+      call nl_set_dyn_opt (1 , DYN_EM_TL)
+
+      call da_med_initialdata_input(grid , config_flags, 'tldf')
+      grid%g_u_2 = 0.0
+      grid%g_v_2 = 0.0
+      grid%g_w_2 = 0.0
+      grid%g_t_2 = 0.0
+      grid%g_ph_2 = 0.0
+      grid%g_mu_2 = 0.0
+      grid%g_moist = 0.0
+
+      call med_hist_out(grid , 3 , config_flags)
+
+      grid%dyn_opt = ndynopt
+      call nl_set_dyn_opt (1 , DYN_EM)
+#endif
+
+#ifdef DM_PARALLEL
+      call da_system("da_run_wrfplus_ad.ksh pre")
+      if (rootproc) then
+         call da_system("rm -rf wrf_done")
+         call da_system("touch wrf_go_ahead")
+         call da_get_unit(wrf_done_unit)
+         do while (.true.)
+            open(wrf_done_unit,file="wrf_done",status="old",err=304)
+            close(wrf_done_unit)
+            exit
+304         continue
+            call da_system("sleep 1")
+         end do
+         call da_free_unit(wrf_done_unit)
+      end if
+      call wrf_get_dm_communicator ( comm )
+      call mpi_barrier(comm, ierr)
+      call da_system("da_run_wrfplus_ad.ksh post")
+#else 
+      call da_system("da_run_wrfplus_ad.ksh")
+#endif
+
+      grid%xa%u(its:ite,    jts:jte, kts:kte) = 0.0
+      grid%xa%v(its:ite,    jts:jte, kts:kte) = 0.0
+      grid%xa%w(its:ite,    jts:jte, kts:kte+1) = 0.0
+      grid%xa%q(its:ite,    jts:jte, kts:kte) = 0.0
+      grid%xa%t(its:ite,    jts:jte, kts:kte) = 0.0
+      grid%xa%psfc(its:ite, jts:jte) = 0.0
+
+      call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+      grid%a_u_2 =   grid%xa%u
+      grid%a_v_2 =   grid%xa%v
+      grid%a_w_2 =   grid%xa%w
+      grid%a_t_2 =   grid%xa%t
+      grid%a_ph_2 =   grid%xa%p
+      grid%a_mu_2 =   grid%xa%psfc
+      grid%a_moist(:,:,:,p_a_qv) =   grid%xa%q(:,:,:)
+
+      grid%dyn_opt = DYN_EM_AD
+      call nl_set_dyn_opt (1 , DYN_EM_AD)
+      call da_med_initialdata_output(grid , config_flags, 'gr01')
+
+      grid%dyn_opt = ndynopt
+      call nl_set_dyn_opt (1 , DYN_EM)
+
+   end if
 
    pertile_rhs = sum (grid%xa%u(ims:ime, jms:jme, kms:kme) * xa2_u(ims:ime, jms:jme, kms:kme)) &
       + sum (grid%xa%v(ims:ime, jms:jme, kms:kme) * xa2_v(ims:ime, jms:jme, kms:kme)) &

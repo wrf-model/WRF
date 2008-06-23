@@ -25,6 +25,7 @@ subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
       call da_oi_stats_sound     (stats_unit, iv)
       call da_oi_stats_sonde_sfc (stats_unit, iv)
    end if
+   if (iv%info(mtgirs)%ntotal   > 0) call da_oi_stats_mtgirs   (stats_unit, iv)
    if (iv%info(synop)%ntotal    > 0) call da_oi_stats_synop    (stats_unit, iv)
    if (iv%info(geoamv)%ntotal   > 0) call da_oi_stats_geoamv   (stats_unit, iv)
    if (iv%info(polaramv)%ntotal > 0) call da_oi_stats_polaramv (stats_unit, iv)
@@ -46,6 +47,10 @@ subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
    if (iv%info(bogus)%ntotal    > 0) call da_oi_stats_bogus    (stats_unit, iv)
    if (iv%info(airsr)%ntotal    > 0) call da_oi_stats_airsr    (stats_unit, iv)
 
+#if defined(RTTOV) || defined(CRTM)
+   if (iv%num_inst > 0) call da_oi_stats_rad (stats_unit, iv)
+#endif
+
    if (num_pseudo > 0) call da_oi_stats_pseudo (stats_unit, iv)
 
    !---- ----------------------------------------------------------------------
@@ -56,6 +61,7 @@ subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
       call da_ao_stats_sound (stats_unit, iv, re)
       call da_ao_stats_sonde_sfc (stats_unit, iv, re)
    end if
+   if (iv%info(mtgirs)%ntotal   > 0) call da_ao_stats_mtgirs   (stats_unit, iv, re)
    if (iv%info(synop)%ntotal    > 0) call da_ao_stats_synop    (stats_unit, iv, re)
    if (iv%info(geoamv)%ntotal   > 0) call da_ao_stats_geoamv   (stats_unit, iv, re)
    if (iv%info(polaramv)%ntotal > 0) call da_ao_stats_polaramv (stats_unit, iv, re)
@@ -76,6 +82,10 @@ subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
    if (iv%info(radar)%ntotal    > 0) call da_ao_stats_radar    (stats_unit, iv, re)
    if (iv%info(bogus)%ntotal    > 0) call da_ao_stats_bogus    (stats_unit, iv, re)
    if (iv%info(airsr)%ntotal    > 0) call da_ao_stats_airsr    (stats_unit, iv, re)
+
+#if defined(CRTM) || defined(RTTOV)
+   if (iv%num_inst > 0) call da_ao_stats_rad (stats_unit, iv, re)
+#endif
 
    if (num_pseudo > 0) call da_ao_stats_pseudo (stats_unit, iv, re)
 

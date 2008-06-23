@@ -401,7 +401,7 @@ SUBROUTINE check_duplicate_time (obs, index, num_obs, total_dups, time_analysis,
 
       IF (print_duplicate) THEN
 
-      filename = 'obs_duplicate_time.diag'
+      filename = 'obs_duplicate_time.diag_'//time_analysis
       iunit    = 999
 
       INQUIRE ( UNIT = iunit, OPENED = connected )
@@ -472,16 +472,18 @@ time_difference: &
 
          WRITE (UNIT = iunit, FMT = '(/,A)') 'Found duplicated stations:'
 
-         WRITE (UNIT = iunit , FMT = '(A,A5,A,A23,2F9.3,A,L10)') &
+         WRITE (UNIT = iunit , FMT = '(A,2x,A,A5,A,A23,2F9.3,A,L10)') &
         'Station 1 name and ID = ' , &
+         TRIM (obs(first)%info%platform),       &
          TRIM (obs(first)%location%id ) , ' ' , &
          TRIM (obs(first)%location%name ) ,     &
                obs(first)%location%latitude ,   &
                obs(first)%location%longitude, ' ',&
                obs (first)%info%is_sound
 
-         WRITE (UNIT = iunit , FMT = '(A,A5,A,A23,2F9.3,A,L10)') &
+         WRITE (UNIT = iunit , FMT = '(A,2x,A,A5,A,A23,2F9.3,A,L10)') &
         'Station 2 name and ID = ' , &
+         TRIM (obs(second)%info%platform),       &
          TRIM (obs(second)%location%id ) , ' ' , &
          TRIM (obs(second)%location%name ) ,     &
                obs(second)%location%latitude ,   &

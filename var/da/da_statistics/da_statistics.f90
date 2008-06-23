@@ -6,7 +6,8 @@ module da_statistics
    
    use module_domain, only : domain
    use da_control, only : obs_qc_pointer,stdout, missing_r, &
-      rootproc, mjy, mix, mkz, jts,jte,its,ite,kts,kte, trace_use_dull, trace_use
+      rootproc, mjy, mix, mkz, jts,jte,its,ite,kts,kte, trace_use_dull, trace_use,&
+      crtm_cloud,use_radar_rf
    use da_define_structures, only : maxmin_type, x_type, maxmin_field_type
    use da_par_util1, only : da_proc_sum_real
    use da_par_util, only : da_proc_maxmin_combine

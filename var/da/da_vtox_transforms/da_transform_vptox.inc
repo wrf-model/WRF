@@ -66,7 +66,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    call da_psichi_to_uv(vp % v1, vp % v2, grid%xb % coefx, &
       grid%xb % coefy , grid%xa % u, grid%xa % v)
 
-   if (use_radarobs .and. use_radar_rf) then
+   if ((use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud)) then
       ! Pseudo RH --> Total water mixing ratio:
       grid%xa % qt(its:ite,jts:jte,kts:kte) = vp%v4(its:ite,jts:jte,kts:kte) * &
          grid%xb%qs(its:ite,jts:jte,kts:kte)

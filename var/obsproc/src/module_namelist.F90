@@ -22,7 +22,7 @@ MODULE MODULE_NAMELIST
    CHARACTER (LEN = 80)      :: prepbufr_table_filename
 
    CHARACTER (LEN = 3) :: fg_format 
-   integer             :: iix, jjx, imap_proj, i_grid, j_grid,m_expand  
+   integer             :: iix, jjx, imap_proj, i_grid, j_grid,m_expand
    real                :: standard_lon, moad_cen_lat, cen_lat, cen_lon,&
                           dds, xxx, yyy, xxc, yyc, xlatt, xlonn
    type (proj_info)    :: map_info
@@ -33,11 +33,15 @@ MODULE MODULE_NAMELIST
 
    CHARACTER (LEN = 19)      :: time_window_min
    CHARACTER (LEN = 19)      :: time_analysis
-   CHARACTER (LEN = 19)      :: time_window_max
+   CHARACTER (LEN = 19)      :: time_window_max, time_ahead
+   CHARACTER (LEN =  5)      :: USE_FOR
 
-   INTEGER                   :: max_number_of_obs,                 &
-                                output_ob_format         = 2
-   LOGICAL                   :: fatal_if_exceed_max_obs  = .TRUE.
+   INTEGER                   :: max_number_of_obs, idt, num_time_slots,&
+                                num_slots_past, num_slots_ahead, &
+                                output_ob_format         = 2,      &
+                                slot_len                 = 0
+                                
+   LOGICAL                   :: fatal_if_exceed_max_obs  = .TRUE. 
   
    LOGICAL                   :: qc_test_vert_consistency = .TRUE., &
                                 qc_test_convective_adj   = .TRUE., &
@@ -57,6 +61,14 @@ MODULE MODULE_NAMELIST
                                 print_qc_conv            = .TRUE., &
                                 print_qc_lid             = .TRUE., &
                                 print_uncomplete         = .TRUE.
+
+   LOGICAL         :: write_synop, write_ship , write_metar, write_buoy , &
+                      write_pilot, write_sound, write_amdar, write_satem, &
+                      write_satob, write_airep, write_gpspw, write_gpsztd,&
+                      write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
+                      write_ssmi , write_tovs , write_qscat, write_profl, &
+                      write_bogus, write_airs 
+
 #ifdef BKG
    INTEGER                   :: time_earlier, time_later
 
@@ -66,6 +78,7 @@ MODULE MODULE_NAMELIST
 #else
    NAMELIST /RECORD1/ obs_gts_filename, obs_err_filename, fg_format
    NAMELIST /RECORD2/ time_window_min,time_analysis,time_window_max
+
 #endif
    NAMELIST /RECORD3/ max_number_of_obs, fatal_if_exceed_max_obs
    NAMELIST /RECORD4/ qc_test_vert_consistency, qc_test_convective_adj,  &
@@ -95,8 +108,15 @@ MODULE MODULE_NAMELIST
 #endif
 
    NAMELIST /RECORD9/ prepbufr_output_filename, &
-                      prepbufr_table_filename, output_ob_format
-
+                      prepbufr_table_filename, output_ob_format, &
+                      USE_FOR, num_slots_past, num_slots_ahead, &
+                      write_synop, write_ship , write_metar, write_buoy , &
+                      write_pilot, write_sound, write_amdar, write_satem, &
+                      write_satob, write_airep, write_gpspw, write_gpsztd,&
+                      write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
+                      write_ssmi , write_tovs , write_qscat, write_profl, &
+                      write_bogus, write_airs 
+   
    CONTAINS
 
    SUBROUTINE GET_NAMELIST  (nml_filename, iunit)
@@ -147,6 +167,7 @@ MODULE MODULE_NAMELIST
    ! default:
    fg_format         = 'MM5'
    obs_err_filename  = 'obserr.txt'
+   use_for           = '3DVAR'
 
 ! . Initialize the new defined namelist variables (YRG 05/10/2007):
    base_pres  = missing_r
@@ -154,6 +175,29 @@ MODULE MODULE_NAMELIST
    base_lapse = missing_r
    base_strat_temp = missing_r
    base_tropo_pres = missing_r
+
+   write_synop = .true. 
+   write_ship  = .true.
+   write_metar = .true.
+   write_buoy  = .true. 
+   write_pilot = .true.
+   write_sound = .true.
+   write_amdar = .true.
+   write_satem = .true.
+   write_satob = .true.
+   write_airep = .true.
+   write_gpspw = .true.
+   write_gpsztd= .true.
+   write_gpsref= .true.
+   write_gpseph= .true.
+   write_ssmt1 = .true.
+   write_ssmt2 = .true.
+   write_ssmi  = .true.
+   write_tovs  = .true.
+   write_qscat = .true.
+   write_profl = .true.
+   write_bogus = .true.
+   write_airs  = .true.
 
    READ  ( UNIT = iunit , NML = record1 , IOSTAT = nml_read_errors(1) )
    WRITE ( UNIT = 0 ,     NML = record1 )
@@ -365,7 +409,41 @@ MODULE MODULE_NAMELIST
         fatal = .TRUE.
         CALL error_handler (proc_file, error_message, time_analysis, fatal)
    END IF
+   
+   IF ( use_for == '3DVAR' ) THEN
+        num_slots_past  = 0
+        num_slots_ahead =  0
+        slot_len = itb -ita
+   ELSE IF ( use_for == 'FGAT ' .or. use_for == '4DVAR' ) THEN
 
+        if (num_slots_past <= 0) then
+           write(0,'("===> For FGAT or 4DVAR,",a,i2,a)') &
+               "the num_slots_past (=", num_slots_past, ") MUST be > 0 ???"
+           stop
+        endif
+
+        slot_len = itb / num_slots_past
+        idt = slot_len * num_slots_ahead
+
+        if ( idt /= -ita ) then
+          call geth_newdate (time_ahead, time_analysis, idt)
+          write(0,'(3a,i2/a,1x,a)') 'time_window_max =', time_window_max,&
+          ' in namelist is NOT consistent with num_slots_ahead=',&
+          num_slots_ahead,' Reset the time_window_max to be ', time_ahead
+          time_window_max = time_ahead
+        endif
+
+   ELSE
+        error_message = &
+       "Error: obsproc only used for 3DVAR, FGAT, and 4DVAR," // &
+               " check the variable: use_for "
+        fatal = .TRUE.
+        CALL error_handler (proc_file, error_message, use_for, fatal)
+        stop
+   ENDIF
+   num_time_slots = num_slots_past + num_slots_ahead + 1
+   if (num_time_slots <= 2) num_time_slots = 1
+        
    if (iproj <0 .or.iproj > 3) then
       write (0,'(/a)') '*** Please check the iproj setting??? '
       write (0,'(5x,a)') 'iproj = 0 ===> PROJ_LATLON for Global domain.' 
@@ -377,7 +455,10 @@ MODULE MODULE_NAMELIST
    endif
 
    if (fg_format == 'WRF') then
-      write(0,'(/a/)') '=== 3DVAR_OBSPROC is used for WRF 3DVAR ===' 
+      write(0,'(/15x,a,a,a)') '=== 3DVAR_OBSPROC is used for WRF ', &
+                            use_for,' ==='
+      write(0,'(10x,a,i2,a,i5,a/)') '{number of slots =', num_time_slots, &
+                         ',  length of the full-slot =', slot_len, ' sec.}' 
 
 ! .. Set up the map_info using the central lat/lon:
 

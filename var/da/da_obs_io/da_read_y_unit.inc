@@ -26,7 +26,7 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
    open(unit=unit_in,file=trim(filename),form='formatted',iostat=ios,status='old')
    if (ios /= 0) then
       call da_error(__FILE__,__LINE__, &
-         (/"Cannot open random observation error file"//trim(filename)/))
+         (/"Cannot open random observation error file"//filename/))
    end if
 
    reports: do
@@ -35,6 +35,15 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
    if_write = .false.
    if (index(iv_type,OBS_type_in(1:nc)) > 0) if_write = .true.
 
+   ! If radiance data treat differently
+   if ( (index(iv_type,'noaa') > 0) .or. (index(iv_type,'eos') > 0) .or.   &
+        (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) ) then             
+      do n = 1, num_obs        
+         if (if_write) num = num + 1
+         read(unit_in,'(2i8,e15.7)')n1, n2, fld_rad                              
+         if (if_write)write(unit_out,'(2i8,e15.7)')num,n2, fld_rad                              
+      end do
+   else    
       do n = 1, num_obs        
          if (if_write) num = num + 1
          if (index(iv_type,'bogus') > 0) then
@@ -50,6 +59,7 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
             if (if_write) write(unit_out,'(2i8,7e15.7)') num, k, fld
          end do
       end do
+   end if
    if (if_write) exit reports
    cycle reports
 1000  continue 

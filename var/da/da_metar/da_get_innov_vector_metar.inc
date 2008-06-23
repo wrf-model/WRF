@@ -85,6 +85,15 @@ subroutine da_get_innov_vector_metar(it, grid, ob, iv)
                   ! ob%metar(n)%q = iv%metar(n)%q%inv
                   ! ob%metar(n)%u = iv%metar(n)%u%inv
                   ! ob%metar(n)%v = iv%metar(n)%v%inv
+
+                  if ( max_ext_its == 1 ) then
+                     ob%metar(n)%p = iv%metar(n)%p%inv
+                     ob%metar(n)%t = iv%metar(n)%t%inv
+                     ob%metar(n)%q = iv%metar(n)%q%inv
+                     ob%metar(n)%u = iv%metar(n)%u%inv
+                     ob%metar(n)%v = iv%metar(n)%v%inv
+                  end if
+
                else
                   call da_to_zk(iv % metar(n) % h, v_h, v_interp_h, iv%info(metar)%zk(1,n))
                end if

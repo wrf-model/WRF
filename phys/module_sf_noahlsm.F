@@ -110,6 +110,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 !   LWDN       LW DOWNWARD RADIATION (W M-2; POSITIVE, NOT NET LONGWAVE)
 !   SOLDN      SOLAR DOWNWARD RADIATION (W M-2; POSITIVE, NOT NET SOLAR)
+!   SOLNET     NET DOWNWARD SOLAR RADIATION ((W M-2; POSITIVE)
 !   SFCPRS     PRESSURE AT HEIGHT ZLVL ABOVE GROUND (PASCALS)
 !   PRCP       PRECIP RATE (KG M-2 S-1) (NOTE, THIS IS A RATE)
 !   SFCTMP     AIR TEMPERATURE (K) AT HEIGHT ZLVL ABOVE GROUND
@@ -118,6 +119,7 @@ CONTAINS
 !   COSZ       Solar zenith angle (not used for now)
 !   PRCPRAIN   Liquid-precipitation rate (KG M-2 S-1) (not used)
 ! SOLARDIRECT  Direct component of downward solar radiation (W M-2) (not used)
+!   FFROZP     FRACTION OF FROZEN PRECIPITATION
 ! ----------------------------------------------------------------------
 ! 4. OTHER FORCING (INPUT) DATA (I):
 ! ----------------------------------------------------------------------
@@ -3639,7 +3641,7 @@ CONTAINS
       REAL     ETP1
       REAL     ETP1A
 !.....REAL PART(NSOIL)
-      REAL     GX (7)
+      REAL     GX (NROOT)
       REAL     PC
       REAL     Q2
       REAL     RTDIS (NSOIL)

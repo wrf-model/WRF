@@ -1453,7 +1453,6 @@ typedef fdob_type integer SN_MAXCG     # coarse domain grid dimension in south-n
 typedef fdob_type integer WE_MAXCG     # coarse domain grid dimension in west-east coordinate
 typedef fdob_type integer SN_END       # ending north-south grid index
 typedef fdob_type integer LEVIDN(max_domains)   # level of nest
-typedef fdob_type real    DS_CG        # coarse domain grid size 
 typedef fdob_type real    WINDOW       # time window half-period for nudging (in minutes) 
 typedef fdob_type real    RTLAST       # time in hours of last obs used in current model step
 typedef fdob_type real    DATEND       # time in minutes after which data are asuumed to have ended
@@ -1463,7 +1462,8 @@ typedef fdob_type real    PFREE        # pressure level (cb) where terrain effec
 typedef fdob_type real    DCON         # 1/DPSMX
 typedef fdob_type real    DPSMX        # max pres change (cb) allowed within infl range of surf obs 
 typedef fdob_type real    TFACI        # scale factor used for ramp-down in dynamic initialization
-typedef fdob_type real    XN           # cone factor for Lambert projection
+typedef fdob_type real    KNOWN_LAT    # Latitude  of origin point (i,j)=(1,1)
+typedef fdob_type real    KNOWN_LON    # Longitude of origin point (i,j)=(1,1)
 
 # table entries are of the form
 #      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>

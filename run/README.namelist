@@ -171,6 +171,8 @@ Namelist variables specifically for the WPS input for real:
                                                 ; through this many eta levels
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
+ smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
+                                                ; the input data
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
  ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
                                                 ;           the terrain following portion of the hybrid vertical
@@ -234,18 +236,19 @@ Namelist variables for controlling the adaptive time step option:
  use_adaptive_time_step              = .false.  ; T/F use adaptive time stepping, ARW only
  step_to_output_time                 = .true.   ; if adaptive time stepping, T/F modify the
                                                   time steps so that the exact history time is reached
- target_cfl                          = 1.2      ; vertical and horizontal CFL <= to this value implies
+ target_cfl(max_dom)                 = 1.2,1.2  ; vertical and horizontal CFL <= to this value implies
                                                   no reason to reduce the time step, and to increase it
- max_step_increase_pct               = 5        ; percentage of previous time step to increase, if the
+ max_step_increase_pct(max_dom)      = 5,51     ; percentage of previous time step to increase, if the
                                                   max(vert cfl, horiz cfl) <= target_cfl, then the time
-                                                  will increase by max_step_increase_pct
- starting_time_step                  = -1       ; flag = -1 implies use 6 * dx (defined in start_em), 
+                                                  will increase by max_step_increase_pct. Use something 
+                                                  large for nests (51% suggested)
+ starting_time_step(max_dom)         = -1,-1    ; flag = -1 implies use 6 * dx (defined in start_em), 
                                                   starting_time_step = 100 means the starting time step
                                                   for the coarse grid is 100 s
- max_time_step                       = -1       ; flag = -1 implies max time step is 3 * starting_time_step,
+ max_time_step(max_dom)              = -1,-1    ; flag = -1 implies max time step is 3 * starting_time_step,
                                                   max_time_step = 100 means that the time step will not
                                                   exceed 100 s
- min_time_step                       = -1       ; flag = -1 implies max time step is 0.5 * starting_time_step,
+ min_time_step(max_dom)              = -1,-1    ; flag = -1 implies max time step is 0.5 * starting_time_step,
                                                   min_time_step = 100 means that the time step will not
                                                   be less than 100 s
 

@@ -39,9 +39,11 @@ CONTAINS
 
 !------------------------------------------------------------------------------
   SUBROUTINE fddaobs_init(obs_nudge_opt, maxdom, inest, parid,         &
-                          dx_coarse, restart, obs_twindo_cg,           &
-                          obs_twindo, itimestep,                       &
+                          restart,                                     &
+                          obs_twindo_cg, obs_twindo, itimestep,        &
+                          cen_lat, cen_lon, stand_lon,                 &
                           true_lat1, true_lat2, map_proj,              &
+                          xlat, xlong,                                 &
                           e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,    &
 #if ( EM_CORE == 1 )
                           fdob,                                        &
@@ -55,6 +57,7 @@ CONTAINS
 !
 !-----------------------------------------------------------------------
   USE module_domain
+  USE module_dm                 ! for wrf_dm_min_real
 !-----------------------------------------------------------------------
   IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -69,14 +72,18 @@ CONTAINS
                           its,ite, jts,jte, kts,kte
   INTEGER, intent(in)  :: inest
   INTEGER, intent(in)  :: parid(maxdom)
-  REAL    ,intent(in)  :: dx_coarse    ! coarse-domain grid cell-size (km)
   LOGICAL, intent(in)  :: restart
   REAL, intent(in)     :: obs_twindo_cg  ! time window on coarse grid
   REAL, intent(in)     :: obs_twindo
   INTEGER, intent(in)  :: itimestep
-  REAL,    intent(in)  :: true_lat1    ! truelat1 for map projection
-  REAL,    intent(in)  :: true_lat2    ! truelat2 for map projection
+  REAL    , INTENT(IN) :: cen_lat      ! domain center latitude (for map proj)
+  REAL    , INTENT(IN) :: cen_lon      ! domain center longitude (for map proj)
+  REAL    , INTENT(IN) :: stand_lon    ! domain standard longitude (for map proj)
+  REAL,    intent(in)  :: true_lat1    ! domain truelat1 (for map proj)
+  REAL,    intent(in)  :: true_lat2    ! domain truelat2 (for map proj)
   INTEGER, intent(in)  :: map_proj     ! map projection index    
+  REAL, DIMENSION( ims:ime, jms:jme ),                            &
+        INTENT(IN)     :: xlat, xlong  ! lat/long locations on mass point grid
   INTEGER, intent(in)  :: e_sn         ! ending   south-north grid index
   INTEGER, intent(in)  :: s_sn_cg      ! starting south-north coarse-grid index
   INTEGER, intent(in)  :: e_sn_cg      ! ending   south-north coarse-grid index
@@ -97,6 +104,8 @@ CONTAINS
   real               :: tl1             ! Lambert standard parallel 1
   real               :: tl2             ! Lambert standard parallel 2
   real               :: xn1
+  real               :: known_lat       ! Latitude of domain point (i,j)=(1,1)
+  real               :: known_lon       ! Longitude of domain point (i,j)=(1,1) 
 
 #if ( EM_CORE == 1 ) 
 
@@ -140,33 +149,19 @@ CONTAINS
   fdob%rinfmx = 2.0
   fdob%dpsmx = 7.5
   fdob%dcon = 1.0/fdob%dpsmx
-  fdob%xn = 0.0
 
-! Compute cone factor if Lambert map projection
-  if(map_proj .eq. 1) then
-!   conv = 57.29578
-    conv = 3.1415926/180.
-    if(abs(true_lat1) .gt. 90. .or. abs(true_lat2) .gt. 90.) then
-       CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert std parallels are out of range' )
-    elseif (true_lat1*true_lat2 .lt. 0) then
-       CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert std parallels in N&S hemispheres' )
-!   elseif (abs(true_lat2) .gt. abs(true_lat1)) then
-!      CALL wrf_error_fatal ( 'module_fddaobs_rtfdda: Lambert proj: lat2 gt lat1' )
-    else
-      tl1 = abs(true_lat1)
-      tl2 = abs(true_lat2)
+! Get known lat and lon and store these on all processors in fdob structure, for
+! later use in projection x-formation to map (lat,lon) to (x,y) for each obs.
+      IF (its .eq. 1 .AND. jts .eq. 1) then
+         known_lat = xlat(1,1)
+         known_lon = xlong(1,1)
+      ELSE
+         known_lat = 9999.
+         known_lon = 9999.
+      END IF
+      fdob%known_lat = wrf_dm_min_real(known_lat)
+      fdob%known_lon = wrf_dm_min_real(known_lon)
 
-      if(ABS(tl1-tl2) .GT. 0.1) then
-        xn1 = LOG(COS(tl1*conv)) - LOG(COS(tl2*conv))
-        fdob%xn = xn1 /(LOG(TAN((45.0 - tl1/2.0) * conv)) - &
-                        LOG(TAN((45.0 - tl2/2.0) * conv)))
-      else
-        fdob%xn = SIN(tl1*conv)
-      endif
-    endif
-  endif
-
-  fdob%ds_cg = dx_coarse / 1000.          ! coarse gridsize (km)
   fdob%sn_maxcg = e_sn_cg - s_sn_cg + 1   ! coarse domain grid dimension in N-S 
   fdob%we_maxcg = e_we_cg - s_we_cg + 1   ! coarse domain grid dimension in W-E
   fdob%sn_end = e_sn - 1                  ! ending S-N grid coordinate
@@ -297,8 +292,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL,   INTENT(IN) :: uratx( ims:ime, jms:jme ) ! U to U10 ratio on mass points.
   REAL,   INTENT(IN) :: vratx( ims:ime, jms:jme ) ! V to V10 ratio on mass points.
   REAL,   INTENT(IN) :: tratx( ims:ime, jms:jme ) ! T to TH2 ratio on mass points.
-  REAL,   INTENT(IN) :: rio(niobf)                ! West-east coordinate.
-  REAL,   INTENT(IN) :: rjo(niobf)                ! South-north coordinate.
+  REAL,   INTENT(IN) :: rio(niobf)                ! Obs west-east coordinate (non-stag grid).
+  REAL,   INTENT(IN) :: rjo(niobf)                ! Obs south-north coordinate (non-stag grid).
   REAL,   INTENT(INOUT) :: rko(niobf)
   REAL,   INTENT(INOUT) :: varobs(nndgv, niobf)
   REAL,   INTENT(INOUT) :: errf(nerrf, niobf)
@@ -506,53 +501,19 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
     ELSE       ! FINE MESH CASE
 
-!     CONVERT (I,J,K) OF OBSERVATIONS TO THE EQUIVALENT FINE MESH VALUES.
+!**********************************************************************
+!ajb_07012008: Conversion of obs coordinates to the fine mesh here
+!ajb   is no longer necessary, since implementation of the WRF map pro-
+!ajb   jections (to each nest directly) is implemented in sub in4dob. 
+!**********************************************************************
+!ajb
+!ajb  GET (I,J,K) OF OBSERVATIONS ON FINE MESH VALUES.
       DO N=1,NSTA
 
-!       COMPUTE THE OBS LOCATION WITH RESPECT TO THIS MESH (INEST)...
-        NML=INEST
-        MM(LEVIDN(INEST)+1)=INEST
-!       WORKING TOWARD COARSER MESHES, DETERMINE THE HIERARCHY OF MOTHER
-!       MESHES WITH RESPECT TO EACH MOTHER MESH STARTING AT MESH "IN"...
-!       THAT IS, DETERMINE ITS MOTHER, GRANDMOTHER, GREAT-GRANDMOTHER, ETC.
-!       OUT TO THE COARSE GRID MESH (INEST=1).
-!       LEVIDN HOLDS THE NEST LEVEL AND PARID HOLDS THE MOTHER MESH FOR EACH
-!       GRID (E.G., FOR 3 MESHES AND 2 NEST LEVELS, IN=1 IS THE COARSE GRID
-!       MESH, IN=2 HAS LEVIDN(2)=1 AND PARID(2)=1, AND IN=3 HAS LEVIDN(3)=2
-!       AND PARID(3)=2...)
+!        write(6,*) 'UPDATE: ra(n) = ',ra(n),' rb(n) = ',rb(n)
 
-        DO NNL=LEVIDN(INEST),1,-1
-          MM(NNL)=PARID(NML)
-          NML=MM(NNL)
-        ENDDO
-
-!       NOTE: MM(1) MUST BE THE COARSE GRID MESH (INEST=0)
-        IF(MM(1).NE.1) then 
-            if(iprt) write(6,*) 'stopping in errob: inest = ',inest
-            STOP 21
-        ENDIF
-
-        RA(N)=RIO(N)
-        RB(N)=RJO(N)
-
-        DO NNL=1,LEVIDN(INEST)
-          GRFACX=0.
-          GRFACY=0.
-!         COMPUTE THE OBS LOCATION WITH RESPECT TO THE INNER GRID IN NON-
-!         STAGGERED SPACE (GRID=0.).  WHEN WE REACH MESH INEST, THEN
-!         APPLY THE APPRPRIATE STAGGER, DEPENDING ON THE VARIABLE...
-          IF(NNL.EQ.LEVIDN(INEST)) THEN
-            GRFACX=GRIDX
-            GRFACY=GRIDY
-          ENDIF
-  
-          RA(N)=(RA(N)-FLOAT(i_parent_start(MM(NNL+1))))*  &
-                       FLOAT(IRATIO)+1.-GRFACX
-          RB(N)=(RB(N)-FLOAT(j_parent_start(MM(NNL+1))))*  &
-                       FLOAT(IRATIO)+1.-GRFACY
-
-!         write(6,*) 'UPDATE: ra(n) = ',ra(n),' rb(n) = ',rb(n)
-
+          RA(N)=RIO(N)-GRIDX           ! ajb added 07012008
+          RB(N)=RJO(N)-GRIDY           ! ajb added 07012008
           IA(N)=RA(N)
           IB(N)=RB(N)
           IOB=MAX0(1,IA(N))
@@ -589,8 +550,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !                   '  iob_ms= ',iob_ms,'  job_ms= ',job_ms,            &
 !                   '  dxob_ms= ',dxob_ms,'  dyob_ms= ',dyob_ms
 !endif
-
-        ENDDO    ! end do nnl=1,levidn(inest)
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 !       Set mask for obs to be handled by this processor
@@ -661,7 +620,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
           write(6,*) '  OBS#    I       J       K'
         endif
         do n=1,ips
-          write(6,'(2x,i4,3f8.2)') n,ra(n),rb(n),rc(n)
+          write(6,'(2x,i4,3f8.3)') n,ra(n),rb(n),rc(n)
         enddo
       endif
     endif
@@ -907,6 +866,19 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                       *VB(IOB,KOBP,JOB)+DxOB*VB(IOB+1,KOBP,JOB))+      &
                       DyOB*((1.-DxOB)*VB(IOB,KOBP,JOB+1)+DxOB*         &
                       VB(IOB+1,KOBP,JOB+1))))
+
+!      if(n.le.10) then
+!        write(6,*) 
+!        write(6,'(a,i3,i3,i3,a,i3,a,i2)') 'ERRF2 at ',iob,job,kob,   &
+!                                     ' N = ',n,' inest = ',inest
+!        write(6,*) 'VAROBS(2,N) = ',varobs(2,n)
+!        write(6,*) 'VAROBS(5,N) = ',varobs(5,n)
+!        write(6,*) 'VB(IOB,KOB,JOB) = ',VB(IOB,KOB,JOB)
+!        write(6,*) 'ERRF(2,N) = ',errf(2,n)
+!        write(6,*) 'vratiob = ',vratiob
+!        write(6,*)
+!      endif
+
   
 !           Store model surface pressure (not the error!) at V point.
             ERRF(8,N)=.001*( (1.-DYOB)*PVG1 + DYOB*PVG2 )
@@ -1349,9 +1321,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   INTEGER, INTENT(IN)  :: iratio                     ! Nest to parent gridsize ratio.
   REAL, INTENT(IN)     :: dx                         ! This domain grid cell-size (m)
   REAL, INTENT(IN)     :: dtmin
-  REAL, INTENT(IN)     :: rio(niobf)
-  REAL, INTENT(IN)     :: rjo(niobf)
-  REAL, INTENT(INOUT)  :: rko(niobf)
+  REAL, INTENT(IN)     :: rio(niobf)                 ! Obs west-east coordinate (non-stag grid).
+  REAL, INTENT(IN)     :: rjo(niobf)                 ! Obs south-north coordinate (non-stag grid).
+  REAL, INTENT(INOUT)  :: rko(niobf)                 ! Obs vertical coordinate.
   REAL, INTENT(IN)     :: timeob(niobf)
   REAL, INTENT(IN)     :: varobs(nndgv,niobf)
   REAL, INTENT(IN)     :: errf(nerrf, niobf)
@@ -1496,66 +1468,17 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
             'IVAR,IPL: ',I2,1X,I2,1X,I5,1X,F8.2,1X,I2,1X,I2,       &
             ' rindx=',f4.1)
 
+!********************************************************************
+!ajb_07012008  Setting ra and rb for the fine mesh her is now simple.
+!              Values are no longer calculated here based on the
+!              coarse mesh, since direct use of WRF map projections
+!              on each nest was implemented in subroutine in4dob.
+!********************************************************************
 ! SET RA AND RB
-  IF(INEST.EQ.1) THEN
-
-! SET RA AND RB FOR THE COARSE MESH...
-    DO N=1,NSTAT
-      RA(N)=RIO(N)-GRIDX
-      RB(N)=RJO(N)-GRIDY
-    ENDDO
-
-  ELSE
-
-! SET RA AND RB FOR THE FINE MESH CASE...
-    DO N=1,NSTAT
-
-! COMPUTE THE OBS LOCATION WITH RESPECT TO THIS MESH (INEST)...
-      NML=INEST
-      MM(LEVIDN(INEST)+1)=INEST
-! WORKING TOWARD COARSER MESHES, DETERMINE THE HIERARCHY OF MOTHER
-! MESHES WITH RESPECT TO EACH MOTHER MESH STARTING AT MESH "INEST"...
-! THAT IS, DETERMINE ITS MOTHER, GRANDMOTHER, GREAT-GRANDMOTHER, ETC.
-! OUT TO THE COARSE GRID MESH (INEST=1).
-! LEVIDN HOLDS THE NEST LEVEL AND PARID HOLDS THE MOTHER MESH FOR EACH
-! GRID (E.G., FOR 3 MESHES AND 2 NEST LEVELS, INEST=1 IS THE COARSE GRID
-! MESH, INEST=2 HAS LEVIDN(2)=1 AND PARID(2)=1, AND INEST=3 HAS LEVIDN(3)=2
-! AND PARID(3)=2...)
-      DO NNL=LEVIDN(INEST),1,-1
-        MM(NNL)=PARID(NML)
-        NML=MM(NNL)
-      ENDDO
-
-! MM(1) MUST BE THE COARSE GRID MESH (INEST=0)
-
-      IF(MM(1).NE.1) then
-        IF (iprt) write(6,*) 'stop 21 in nudob: inest = ',inest
-        STOP 21
-      ENDIF
-      RA(N)=RIO(N)
-      RB(N)=RJO(N)
-      DO NNL=1,LEVIDN(INEST)
-        GRFACX=0.
-        GRFACY=0.
-! COMPUTE THE OBS LOCATION WITH RESPECT TO THE INNER GRID IN DOT-POINT
-! SPACE (GRID=0.).  WHEN WE REACH MESH IN, THEN USE "GRID" TO GO TO
-! CROSS OR DOT DEPENDING ON THE VARIABLE...
-        IF(NNL.EQ.LEVIDN(INEST)) THEN
-          GRFACX=GRIDX
-          GRFACY=GRIDY
-        ENDIF
-
-        RA(N)=(RA(N)-FLOAT(i_parent_start(MM(NNL+1))))*       &
-                     FLOAT(IRATIO)+1.-GRFACX
-        RB(N)=(RB(N)-FLOAT(j_parent_start(MM(NNL+1))))*       &
-                     FLOAT(IRATIO)+1.-GRFACY
-
-      ENDDO
-
-    ENDDO    ! END LOOP OVER OBS STATIONS FOR FINE MESH CASE
-
-  ENDIF    ! END SECTION FOR SETTING RA AND RB
-
+  DO N=1,NSTAT
+    RA(N)=RIO(N)-GRIDX
+    RB(N)=RJO(N)-GRIDY
+  ENDDO
 
 ! OUTPUT OBS PER GRID EVERY HOUR
   if ( mod(xtime,60.).gt.56. .and. ivar.eq.3 .and. j.eq.10) then

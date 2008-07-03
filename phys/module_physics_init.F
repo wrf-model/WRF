@@ -498,13 +498,17 @@ integer myproc
                   model_config_rec%max_dom,                     &
                   id,                                           &
                   model_config_rec%parent_id,                   &
-                  model_config_rec%dx(1),                       &
                   config_flags%restart,                         &
                   obs_twindo_cg, obs_twindo,                    &
                   itimestep,                                    &
+                  config_flags%cen_lat,                         &
+                  config_flags%cen_lon,                         &
+                  config_flags%stand_lon,                       &
                   config_flags%truelat1,                        &
                   config_flags%truelat2,                        &
                   config_flags%map_proj,                        &
+                  xlat,                                         & 
+                  xlong,                                        & 
                   model_config_rec%s_sn(1),                     &
                   model_config_rec%e_sn(1),                     &
                   model_config_rec%s_we(1),                     &
@@ -1641,19 +1645,21 @@ integer myproc
 
 !-------------------------------------------------------------------
    SUBROUTINE fdob_init(obs_nudge_opt, maxdom, inest, parid,       &
-                        dx_coarse, restart, obs_twindo_cg,         &
-                        obs_twindo, itimestep,                     &
+                        restart,                                   &
+                        obs_twindo_cg, obs_twindo, itimestep,      &
+                        cen_lat, cen_lon, stand_lon,               &
                         true_lat1, true_lat2, map_proj,            &
+                        xlat, xlong,                               &
                         s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,        &
                         fdob, ipf_init,                            &
                         ids, ide, jds, jde, kds, kde,              &
                         ims, ime, jms, jme, kms, kme,              &
                         its, ite, jts, jte, kts, kte               )
 
-
 !--------------------------------------------------------------------
    USE module_domain
    USE module_fddaobs_rtfdda
+   USE module_llxy
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
@@ -1664,14 +1670,18 @@ integer myproc
                               its,ite, jts,jte, kts,kte
    INTEGER , INTENT(IN)    :: inest
    INTEGER , INTENT(IN)    :: parid(maxdom)
-   REAL    , INTENT(IN)    :: dx_coarse
    LOGICAL , INTENT(IN)    :: restart
    REAL    , INTENT(IN)    :: obs_twindo_cg   ! twindo on course grid
    REAL    , INTENT(IN)    :: obs_twindo
    INTEGER , INTENT(IN)    :: itimestep
-   REAL    , INTENT(IN)    :: true_lat1
-   REAL    , INTENT(IN)    :: true_lat2
-   INTEGER , INTENT(IN)    :: map_proj
+   REAL    , INTENT(IN)    :: cen_lat      ! domain center latitude
+   REAL    , INTENT(IN)    :: cen_lon      ! domain center longitude
+   REAL    , INTENT(IN)    :: stand_lon    ! domain longitude
+   REAL    , INTENT(IN)    :: true_lat1    ! domain standard parallel 
+   REAL    , INTENT(IN)    :: true_lat2    ! domain second standard parallel
+   INTEGER , INTENT(IN)    :: map_proj     ! map projection
+   REAL, DIMENSION( ims:ime, jms:jme ),                            &
+         INTENT(IN )       :: xlat, xlong  ! lat/long locations on mass point grid
    INTEGER, intent(in)     :: s_sn_cg      ! starting north-south coarse-grid index
    INTEGER, intent(in)     :: e_sn_cg      ! ending   north-south coarse-grid index
    INTEGER, intent(in)     :: s_we_cg      ! starting west-east   coarse-grid index
@@ -1688,9 +1698,12 @@ integer myproc
 
       e_sn = jde
       CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
-                        dx_coarse, restart, obs_twindo_cg,         &
+                        restart,                                   &
+                        obs_twindo_cg,                             &
                         obs_twindo, itimestep,                     &
+                        cen_lat, cen_lon, stand_lon,               &
                         true_lat1, true_lat2, map_proj,            &
+                        xlat, xlong,                               &
                         e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
                         fdob, ipf_init,                            &
                         ids,ide, jds,jde, kds,kde,                 &  

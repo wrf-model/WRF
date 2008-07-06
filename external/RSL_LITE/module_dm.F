@@ -1683,7 +1683,7 @@ SUBROUTINE wrf_termio_dup
 END SUBROUTINE wrf_termio_dup
 
 SUBROUTINE wrf_get_myproc( myproc )
-  USE module_dm
+  USE module_dm , ONLY : mytask
   IMPLICIT NONE
   INTEGER myproc
   myproc = mytask
@@ -1691,7 +1691,7 @@ SUBROUTINE wrf_get_myproc( myproc )
 END SUBROUTINE wrf_get_myproc
 
 SUBROUTINE wrf_get_nproc( nproc )
-  USE module_dm
+  USE module_dm , ONLY : ntasks
   IMPLICIT NONE
   INTEGER nproc
   nproc = ntasks
@@ -1699,7 +1699,7 @@ SUBROUTINE wrf_get_nproc( nproc )
 END SUBROUTINE wrf_get_nproc
 
 SUBROUTINE wrf_get_nprocx( nprocx )
-  USE module_dm
+  USE module_dm , ONLY : ntasks_x
   IMPLICIT NONE
   INTEGER nprocx
   nprocx = ntasks_x
@@ -1707,7 +1707,7 @@ SUBROUTINE wrf_get_nprocx( nprocx )
 END SUBROUTINE wrf_get_nprocx
 
 SUBROUTINE wrf_get_nprocy( nprocy )
-  USE module_dm
+  USE module_dm , ONLY : ntasks_y
   IMPLICIT NONE
   INTEGER nprocy
   nprocy = ntasks_y
@@ -1715,7 +1715,7 @@ SUBROUTINE wrf_get_nprocy( nprocy )
 END SUBROUTINE wrf_get_nprocy
 
 SUBROUTINE wrf_dm_bcast_bytes ( buf , size )
-   USE module_dm
+   USE module_dm , ONLY : local_communicator
    IMPLICIT NONE
 #ifndef STUBMPI
    INCLUDE 'mpif.h'
@@ -1868,7 +1868,7 @@ END
    END SUBROUTINE wrf_dm_shutdown
 
    LOGICAL FUNCTION wrf_dm_on_monitor()
-      USE module_dm
+!     USE module_dm
       IMPLICIT NONE
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
@@ -1883,14 +1883,14 @@ END
    END FUNCTION wrf_dm_on_monitor
 
    INTEGER FUNCTION wrf_dm_monitor_rank()
-      USE module_dm
+!     USE module_dm
       IMPLICIT NONE
       wrf_dm_monitor_rank = 0
       RETURN
    END FUNCTION wrf_dm_monitor_rank
 
    SUBROUTINE wrf_get_dm_communicator ( communicator )
-      USE module_dm
+      USE module_dm , ONLY : local_communicator
       IMPLICIT NONE
       INTEGER , INTENT(OUT) :: communicator
       communicator = local_communicator
@@ -1898,7 +1898,7 @@ END
    END SUBROUTINE wrf_get_dm_communicator
 
    SUBROUTINE wrf_get_dm_iocommunicator ( iocommunicator )
-      USE module_dm
+      USE module_dm , ONLY : local_iocommunicator
       IMPLICIT NONE
       INTEGER , INTENT(OUT) :: iocommunicator
       iocommunicator = local_iocommunicator
@@ -1906,7 +1906,7 @@ END
    END SUBROUTINE wrf_get_dm_iocommunicator
 
    SUBROUTINE wrf_set_dm_communicator ( communicator )
-      USE module_dm
+      USE module_dm , ONLY : local_communicator
       IMPLICIT NONE
       INTEGER , INTENT(IN) :: communicator
       local_communicator = communicator
@@ -1914,7 +1914,7 @@ END
    END SUBROUTINE wrf_set_dm_communicator
 
    SUBROUTINE wrf_set_dm_iocommunicator ( iocommunicator )
-      USE module_dm
+      USE module_dm , ONLY : local_iocommunicator
       IMPLICIT NONE
       INTEGER , INTENT(IN) :: iocommunicator
       local_iocommunicator = iocommunicator
@@ -3025,7 +3025,6 @@ END
              USE module_state_description
              USE module_domain, ONLY : domain
              USE module_configure, ONLY : grid_config_rec_type
-             USE module_dm
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid
@@ -3575,7 +3574,6 @@ integer myproc
              USE module_state_description
              USE module_domain, ONLY : domain
              USE module_configure, ONLY : grid_config_rec_type
-             USE module_dm
 !
              TYPE (grid_config_rec_type)            :: config_flags
              TYPE(domain), TARGET                   :: grid

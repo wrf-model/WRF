@@ -8,7 +8,6 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
    USE module_timing
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
    USE module_dm
-   USE module_timing
    IMPLICIT NONE
   ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move
@@ -29,16 +28,11 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
 !
                            )
           USE module_state_description
-          USE module_domain, ONLY : domain, get_ijk_from_grid
-          USE module_timing
-          USE module_configure, ONLY : grid_config_rec_type
-          USE module_dm
-          USE module_timing
+          USE module_domain, ONLY : domain
           IMPLICIT NONE
          ! Arguments
           INTEGER disp_x, disp_y       ! number of parent domain points to move
           TYPE(domain) , POINTER                     :: grid
-          TYPE (grid_config_rec_type)  :: config_flags
 
           !  Definitions of dummy arguments to solve
 #include <dummy_new_decl.inc>
@@ -96,7 +90,6 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
    USE module_timing
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
    USE module_dm
-   USE module_timing
    IMPLICIT NONE
   ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move

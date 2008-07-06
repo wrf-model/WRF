@@ -3,19 +3,12 @@
 ! create an initial data set for the WRF model based on an ideal condition
 PROGRAM ideal
 
-   USE module_machine
-   USE module_domain
+   USE module_domain , ONLY : domain
    USE module_initialize_ideal
-   USE module_driver_constants
-   USE module_configure
+   USE module_configure , ONLY : grid_config_rec_type
 
    USE module_timing
    USE module_wrf_error
-   USE module_utility
-#ifdef DM_PARALLEL
-   USE module_dm
-#endif
-   USE module_date_time
 
    IMPLICIT NONE
 
@@ -37,8 +30,8 @@ PROGRAM ideal
 
    INTERFACE
      SUBROUTINE med_initialdata_output ( grid , config_flags )
-       USE module_domain
-       USE module_configure
+       USE module_domain , ONLY : domain
+       USE module_configure , ONLY : grid_config_rec_type
        TYPE (domain) , POINTER :: grid
        TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
      END SUBROUTINE med_initialdata_output 

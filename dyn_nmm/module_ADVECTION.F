@@ -1837,10 +1837,10 @@
       DO N=1,6
         CALL WRF_PATCH_TO_GLOBAL_REAL(XSUMS_L(IMS,JMS,KMS,N)            &
      &,                               XSUMS_G(1,1,1,N),DOMDESC          & 
-     &,                              'xyz','xzy'                        &
-     &,                               IDS,IDE,KDS,KDE,JDS,JDE           &    
-     &,                               IMS,IME,KMS,KME,JMS,JME           &
-     &,                               ITS,ITE,KTS,KTE,JTS,JTE)
+     &,                              'xyz','xyz'                        &
+     &,                               IDS,IDE,JDS,JDE,KDS,KDE           &    
+     &,                               IMS,IME,JMS,JME,KMS,KME           &
+     &,                               ITS,ITE,JTS,JTE,KTS,KTE)
       ENDDO
 !
       DO K=KTS,KTE
@@ -1853,7 +1853,7 @@
         DO N=1,6
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-          DO K=KDS,KDE
+          DO K=KTS,KTE
           DO J=JDS,JDE
           DO I=IDS,IDE
             GSUMS(N,K)=GSUMS(N,K)+XSUMS_G(I,J,K,N)
@@ -1863,7 +1863,7 @@
         ENDDO
       ENDIF
 
-      CALL WRF_DM_BCAST_BYTES(GSUMS,2*RWORDSIZE*6*(KDE-KDS+1) )
+      CALL WRF_DM_BCAST_BYTES(GSUMS,2*RWORDSIZE*6*(KTE-KTS+1) )
 
 !-----------------------------------------------------------------------
 #else

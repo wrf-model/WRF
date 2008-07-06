@@ -42,7 +42,7 @@ set KEEP_ON_RUNNING = TRUE
 #	where email gets sent.
 
 if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 	set FAIL_MAIL = ( ${user}@noaa.gov )
 	set GOOD_MAIL = ( ${user}@noaa.gov )
 
@@ -83,7 +83,7 @@ if      ( ( `uname` == AIX ) || ( `hostname` == tempest ) || ( `hostname | cut -
 	set argv = ( -env )
 	set WRFREGFILE = /mmm/users/gill/wrf.tar
 	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 		set argv = ( -f /nbns/meso/wx22tb/regression_tests/wrf.tar )
 	else
 		set argv = ( -f wrf.tar )
@@ -109,12 +109,12 @@ else if ( (`hostname | cut -c 1-6` == joshua ) || \
 	set WRFREGDATAEM = /users/gill/WRF-data-EM
 	set WRFREGDATANMM = /users/gill/WRF-data-NMM
 else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `hostname | cut -c 1-2` == ln ) || \
-          ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) then
+          ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATAEM = /mmm/users/gill/WRF_regression_data/processed
 	set WRFREGDATANMM = /mmm/users/gill/WRF-data-NMM
 else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 	set WRFREGDATAEM = /nbns/meso/wx22tb/regression_tests/WRF-data-EM
 	set WRFREGDATANMM = /nbns/meso/wx22tb/regression_tests/WRF-data-NMM
 else
@@ -353,7 +353,7 @@ unsetenv ESMFLIB
 unsetenv ESMFINC
 
 if ( $ESMF_LIB == TRUE ) then
-	if      ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) ) then
+	if      ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) ) then
 		echo "A separately installed version of the latest ESMF library"
 		echo "(NOT the ESMF library included in the WRF tarfile) will"
 		echo "be used for MPI tests"
@@ -1281,7 +1281,7 @@ if ( $ARCH[1] == AIX ) then
 			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
 		endif
 		set CUR_DIR = ${LOADL_STEP_INITDIR}
-	else if   ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) then
+	else if   ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) then
 		set job_id              = $LSB_JOBID
 		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
 		set TMPDIR              = $DEF_DIR
@@ -1292,11 +1292,11 @@ if ( $ARCH[1] == AIX ) then
 			mkdir -p $DEF_DIR
 			echo "See ${DEF_DIR}/wrftest.output and other files in ${DEF_DIR} for test results"
 		endif
-	else if ( ( ( `hostname | cut -c 1-2` != bl ) && ( `hostname | cut -c 1-2` != bv ) ) && ( ! $?LOADL_JOB_NAME ) ) then
+	else if ( ( ( `hostname | cut -c 1-2` != be ) && ( `hostname | cut -c 1-2` != bv ) ) && ( ! $?LOADL_JOB_NAME ) ) then
 		echo "${0}: ERROR::  This batch script must be submitted via"
 		echo "${0}:          LoadLeveler on an AIX machine\!"
 		exit
-	else if   ( ( `hostname | cut -c 1-2` != bl ) && ( `hostname | cut -c 1-2` != bv ) ) then
+	else if   ( ( `hostname | cut -c 1-2` != be ) && ( `hostname | cut -c 1-2` != bv ) ) then
 		set job_id              = `echo ${LOADL_JOB_NAME} | cut -f2 -d'.'`
 		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
 		set TMPDIR              = $DEF_DIR
@@ -1323,10 +1323,10 @@ if ( $ARCH[1] == AIX ) then
 		set MPIRUNCOMMAND       =  poe 
 	else if ( `hostname | cut -c 1-2` == bv ) then
 		set MPIRUNCOMMAND       =  mpirun.lsf
-	else if ( `hostname | cut -c 1-2` == bl ) then
+	else if ( `hostname | cut -c 1-2` == be ) then
 		set MPIRUNCOMMAND       =  mpirun.lsf
 	else if ( ( `hostname | cut -c 1-2` != bs ) && \
-	          ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) then
+	          ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) then
 		set MPIRUNCOMMAND       =  poe
 	endif
 	if ( $CHEM == TRUE ) then

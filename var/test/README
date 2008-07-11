@@ -7,6 +7,7 @@ ln -sf $DAT_DIR/rc/2007010200/wrfinput_d01 ./fg (link first guess file as fg)
 ln -sf WRFDA/var/obsproc/obs_gts_2007-01-02_00:00:00.3DVAR ./ob.ascii (link OBSPROC processed observation file as ob.ascii)
 ln -sf $DAT_DIR/be/be.dat ./be.dat (link background error statistics as be.dat)
 ln -sf WRFDA/var/da/da_wrfvar.exe ./da_wrfvar.exe (link executable)
+mkdir trace
 
 vi namelist.input (a very basic namelist.input for running the tutorial test case is shown below. Only time and domain settings need to be specified for a certain case if using default settings provided in WRFDA/Registry/Registry.wrfvar)
 &wrfvar1

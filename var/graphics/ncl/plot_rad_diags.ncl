@@ -23,8 +23,8 @@ begin
    ;   plot_opt = "land_only"
    ;   plot_opt = "sea_only"
 
-   plot_cloudy = True
-   ;   plot_cloudy = False
+   plot_cloudy = False
+   ;   plot_cloudy = True
 
    plot_cloudy_opt = "clwp"
    ;   plot_cloudy_opt = "si"
@@ -47,8 +47,10 @@ begin
    datdir = "./"
    plotdir = "./"
 
-   date         = getenv("DATE")
-   rc_dir       = getenv("RC_DIR")
+   start_date   = "2005082712"
+   end_date     = "2005082712"
+   cycle_period = 12
+   rc_dir       = "/ptmp/hclin/exps/t46/rc"
 
    ;   colormap = "rainbow"
    colormap = "gui_default"
@@ -57,7 +59,7 @@ begin
    subdomain = False
    mapinfo_from_file = True
 
-   fname = rc_dir+"/"+date+"/"+"/wrfinput_d01"
+   fname = rc_dir+"/"+start_date+"/"+"/wrfinput_d01"
    if ( mapinfo_from_file .and. isfilepresent(fname) ) then
       wrf_file=addfile(fname+".nc","r")
       if ( wrf_file@MAP_PROJ .eq. 1 ) then
@@ -65,10 +67,16 @@ begin
          truelat1 = wrf_file@TRUELAT1
          truelat2 = wrf_file@TRUELAT2
          clon     = wrf_file@STAND_LON
-      else
-         if ( wrf_file@MAP_PROJ .eq. 3 ) then
-            mapproj = "Mercator"
-         end if
+      end if
+      if ( wrf_file@MAP_PROJ .eq. 2 ) then
+         mapproj = "Stereographic"
+         truelat1 = wrf_file@TRUELAT1
+         truelat2 = wrf_file@TRUELAT2
+         clon     = wrf_file@CEN_LON
+         clat     = wrf_file@CEN_LAT
+      end if
+      if ( wrf_file@MAP_PROJ .eq. 3 ) then
+         mapproj = "Mercator"
       end if
       dsizes = getfiledimsizes(wrf_file)
       nx = dsizes(2)
@@ -159,6 +167,13 @@ begin
             truelat1    = stringtofloat(getenv("TRUELAT1"))
             truelat2    = stringtofloat(getenv("TRUELAT2"))
             clon        = stringtofloat(getenv("STAND_LON"))
+         end if
+         if ( mproj .eq. 2 ) then
+            mapproj = "Stereographic"
+            truelat1    = stringtofloat(getenv("TRUELAT1"))
+            truelat2    = stringtofloat(getenv("TRUELAT2"))
+            clon        = stringtofloat(getenv("CEN_LON"))
+            clat        = stringtofloat(getenv("CEN_LAT"))
          end if
          if ( mproj .eq. 3 ) then
             mapproj = "Mercator"
@@ -276,15 +291,20 @@ begin
       valid_date = advance_cymdh(valid_date,cycle_period)
    end do
    date = new(ntime,string)
+   mmddhh = new(ntime,string)
    date(0) = start_date
+   cdate = stringtochar(date(0))
+   mmddhh(0) = chartostring(cdate(4:9))
    do i = 1, ntime-1
       date(i) = advance_cymdh(date(i-1),cycle_period)
+      cdate = stringtochar(date(i))
+      mmddhh(i) = chartostring(cdate(4:9))
    end do
    print(date)
    xc = ispan(1,ntime,1)   ; set the x-axis values for statistics time-series plot
 
    ; begin the big ntime loop
- 
+
    doneit = False   ; to check if the variables for statistics are already defined
 
    do itime = 0, ntime-1   ; this is ntime_loop
@@ -381,21 +401,26 @@ begin
          ;
          ; declare the arrays for OMB and OMA number, mean and rms
          ;
-         xnum  = new((/2,nchan,ntime/),integer)    ; for omb and oma
+         xnum  = new((/3,nchan,ntime/),integer)    ; for omb_nb, omb_wb, and oma
          xnum!1 = "channel"                        ; name the dimension
          xnum!2 = "date"
          xnum&channel = (/ plot_ch /)              ; define coordinate variable
          xnum&date = (/ stringtointeger(date) /)
-         xmean = new((/2,nchan,ntime/),float)
+         xmean = new((/3,nchan,ntime/),float)
          xmean!1 = "channel"
          xmean!2 = "date"
          xmean&channel = (/ plot_ch /)
          xmean&date = (/ stringtointeger(date) /)
          xrms = xmean
+         xstd = xmean
          ;
          ; declare the arrays for number of points before qc/selection and after qc/selection
          ;
          npts = new((/nchan,ntime/),integer)
+         npts!0 = "channel"                        ; name the dimension
+         npts!1 = "date"
+         npts&channel = (/ plot_ch /)              ; define coordinate variable
+         npts&date = (/ stringtointeger(date) /)
          npts_sele = npts
          npts_qc = npts
          npts_land = npts
@@ -520,8 +545,9 @@ begin
                      xnum(0,ich,itime) = (/ npts_sele(ich,itime) /)
                      xmean(0,ich,itime) = sum(data)/tofloat(npts_sele(ich,itime))
                      xrms(0,ich,itime) = sqrt(sum(data*data)/tofloat(npts_sele(ich,itime)))
+                     xstd(0,ich,itime) = sqrt(sum((data-xmean(0,ich,itime))*(data-xmean(0,ich,itime)))/tofloat(npts_sele(ich,itime)))
                      stats_info = "mean: "+sprintf("%8.2f",xmean(0,ich,itime))+ \
-                                  "  rms: "+sprintf("%8.2f",xrms(0,ich,itime))
+                                  "   stdv: "+sprintf("%8.2f",xstd(0,ich,itime))
                   else
                      stats_info = " "
                   end if
@@ -529,11 +555,12 @@ begin
                if ( ip .eq. 4 ) then
                   title = info + "  OMB with BC " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   if ( npts_sele(ich,itime) .gt. 0 ) then
-                     xnum(0,ich,itime) = (/ npts_sele(ich,itime) /)
-                     xmean(0,ich,itime) = sum(data)/tofloat(npts_sele(ich,itime))
-                     xrms(0,ich,itime) = sqrt(sum(data*data)/tofloat(npts_sele(ich,itime)))
-                     stats_info = "mean: "+sprintf("%8.2f",xmean(0,ich,itime))+ \
-                                  "  rms: "+sprintf("%8.2f",xrms(0,ich,itime))
+                     xnum(1,ich,itime) = (/ npts_sele(ich,itime) /)
+                     xmean(1,ich,itime) = sum(data)/tofloat(npts_sele(ich,itime))
+                     xrms(1,ich,itime) = sqrt(sum(data*data)/tofloat(npts_sele(ich,itime)))
+                     xstd(1,ich,itime) = sqrt(sum((data-xmean(1,ich,itime))*(data-xmean(1,ich,itime)))/tofloat(npts_sele(ich,itime)))
+                     stats_info = "mean: "+sprintf("%8.2f",xmean(1,ich,itime))+ \
+                                  "   stdv: "+sprintf("%8.2f",xstd(1,ich,itime))
                   else
                      stats_info = " "
                   end if
@@ -541,11 +568,12 @@ begin
                if ( ip .eq. 5 ) then
                   title = info + "  OMA with BC " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   if ( npts_sele(ich,itime) .gt. 0 ) then
-                     xnum(1,ich,itime) = (/ npts_sele(ich,itime) /)
-                     xmean(1,ich,itime) = sum(data)/tofloat(npts_sele(ich,itime))
-                     xrms(1,ich,itime) = sqrt(sum(data*data)/tofloat(npts_sele(ich,itime)))
-                     stats_info = "mean: "+sprintf("%8.2f",xmean(1,ich,itime))+ \
-                                  "  rms: "+sprintf("%8.2f",xrms(1,ich,itime))
+                     xnum(2,ich,itime) = (/ npts_sele(ich,itime) /)
+                     xmean(2,ich,itime) = sum(data)/tofloat(npts_sele(ich,itime))
+                     xrms(2,ich,itime) = sqrt(sum(data*data)/tofloat(npts_sele(ich,itime)))
+                     xstd(2,ich,itime) = sqrt(sum((data-xmean(2,ich,itime))*(data-xmean(2,ich,itime)))/tofloat(npts_sele(ich,itime)))
+                     stats_info = "mean: "+sprintf("%8.2f",xmean(2,ich,itime))+ \
+                                  "   stdv: "+sprintf("%8.2f",xstd(2,ich,itime))
                   else
                      stats_info = " "
                   end if
@@ -651,6 +679,10 @@ if ( .not. plot_stats_only ) then
                      mpres@mpLambertParallel1F     = truelat1      ; two parallels
                      mpres@mpLambertParallel2F     = truelat2
                      mpres@mpLambertMeridianF      = clon          ; central meridian
+                  end if
+                  if ( mapproj .eq. "Stereographic" ) then
+                     mpres@mpCenterLatF         = clat
+                     mpres@mpCenterLonF         = clon
                   end if
                   mpres@mpLimitMode             = "Corners"
                   mpres@mpLeftCornerLatF        = lat_ll
@@ -793,14 +825,15 @@ end if
                      data2 = mask(data2, qc(pixel|:, {chan|plot_ch(ich)}), 1)
                   end if
 
-                  title = info + "  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                  title = info + "    " + npts_sele(ich,itime)
 
                   minXY   = min( (/ min(data1), min(data2) /) )
                   maxXY   = max( (/ max(data1), max(data2) /) )
                   xy = (/ minXY, maxXY /)
 
                   res_scat                     = True
-                  res_scat@gsnMaximize         = True
+                  res_scat@gsnMaximize         = False
+                  res_scat@gsnRightString      = date(itime)
                   res_scat@tmYROn              = False 
                   res_scat@tmXTOn              = False
                   res_scat@tmYRBorderOn        = False
@@ -853,17 +886,17 @@ end if
                do ih = 1, nh
                   if ( ih .eq. 1 ) then
                      xlabel = "OMB Bins (K)"
-                     title = info + " no BC  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                     title = info + " no BC  " + npts_sele(ich,itime) + "   " + date(itime)
                      data3 = omb_nobc(pixel|:, {chan|plot_ch(ich)})
                   end if
                   if ( ih .eq. 2 ) then
                      xlabel = "OMB Bins (K)"
-                     title = info + " with BC  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                     title = info + " with BC  " + npts_sele(ich,itime) + "   " + date(itime)
                      data3 = omb_bc(pixel|:, {chan|plot_ch(ich)})
                   end if
                   if ( ih .eq. 3 ) then
                      xlabel = "OMA Bins (K)"
-                     title = info + " with BC  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                     title = info + " with BC  " + npts_sele(ich,itime) + "   " + date(itime)
                      data3 = oma(pixel|:, {chan|plot_ch(ich)})
                   end if
 
@@ -903,7 +936,7 @@ end if
                   end if
 
                   res_hist                                 = True
-                  res_hist@gsnMaximize                     = True
+                  res_hist@gsnMaximize                     = False
                   res_hist@tmYLMinorOn                     = False
                   res_hist@tmXBMinorOn                     = False
                   res_hist@tmLabelAutoStride               = True                 ; nice tick mark labels
@@ -1034,7 +1067,8 @@ end if
             end if
             plot = new(3,graphic)
             res_stats                        = True
-            res_stats@gsnMaximize            = True                ; Maximize plot in frame.
+            res_stats@gsnPaperOrientation    = "portrait"
+            res_stats@gsnMaximize            = False               ; Maximize plot in frame.
             res_stats@gsnFrame               = False               ; Don't advance the frame
             res_stats@gsnDraw                = False
             res_stats@vpHeightF              = 0.25                ; change aspect ratio of plot
@@ -1046,11 +1080,12 @@ end if
             res_stats@tmYLMajorThicknessF    = 1.0                 ; default 2.0
             res_stats@tmXBMajorThicknessF    = 1.0                 ; default 2.0
             res_stats@xyMarkLineMode         = "MarkLines"
-            ;  res_stats@xyMarkers              = 14
-            res_stats@xyMarkerColors         = (/ "red", "blue" /)
-            res_stats@xyMarkerSizes          = (/ 0.02, 0.02 /)    ; default 0.01
-            res_stats@xyLineThicknesses      = (/ 2.0, 2.0 /)      ; default 1.0
-            res_stats@xyLineColors           = (/ "red", "blue" /) ; change line color
+            res_stats@xyMarkers              = (/ 1, 3, 2 /)
+            res_stats@xyMarkerColors         = (/ "magenta", "red", "blue" /)
+            res_stats@xyMarkerSizes          = (/ 0.03, 0.02, 0.02 /)   ; default 0.01
+            res_stats@xyDashPatterns         = (/ 1, 0, 0 /)
+            res_stats@xyLineThicknesses      = (/ 2.0, 2.0, 2.0 /)      ; default 1.0
+            res_stats@xyLineColors           = (/ "magenta", "red", "blue" /)
             res_stats@gsnYRefLine            = 0.0
             if ( dimsizes(plot_ch) .le. 255 ) then
                res_stats@tmXBMode               = "Explicit"
@@ -1062,18 +1097,18 @@ end if
             res_stats@tmLabelAutoStride      = True                ; Auto stride
             res_stats@pmLegendDisplayMode    = "Always"            ; turn on legend
             res_stats@pmLegendSide           = "Right"             ; Change location of
-            res_stats@pmLegendWidthF         = 0.15                ; Change width and default 0.55
+            res_stats@pmLegendWidthF         = 0.1                 ; Change width and default 0.55
             res_stats@pmLegendHeightF        = 0.1                 ; height of legend. default 0.18
             res_stats@lgLabelFontHeightF     = .015                ; change font height default 0.02
-            res_stats@xyExplicitLegendLabels = (/"OMB","OMA"/)     ; explicit labels
+            res_stats@xyExplicitLegendLabels = (/"OMB_nb", "OMB_wb", "OMA"/)    ; explicit labels
 
             res_stats@tiYAxisString = "Number"
             plot(0)  = gsn_csm_xy (wks,xnum&channel,xnum(:,:,itime),res_stats)
             res_stats@tiYAxisString = "Mean (K)"
             plot(1)  = gsn_csm_xy (wks,xmean&channel,xmean(:,:,itime),res_stats)
-            res_stats@tiYAxisString = "RMS (K)"
+            res_stats@tiYAxisString = "Stdv (K)"
             res_stats@tiXAxisString = "Channel Number"
-            plot(2)  = gsn_csm_xy (wks,xrms&channel,xrms(:,:,itime),res_stats)
+            plot(2)  = gsn_csm_xy (wks,xstd&channel,xstd(:,:,itime),res_stats)
             pres                = True              ; mod panel plot
             pres@gsnPanelBottom = 0.03              ; add some space at bottom 
             pres@txString = instrument + "   OMB/OMA   " + date(itime)
@@ -1115,7 +1150,8 @@ end if
 
             plot = new(3,graphic)
             res_stats                        = True
-            res_stats@gsnMaximize            = True                ; Maximize plot in frame.
+            res_stats@gsnPaperOrientation    = "portrait"
+            res_stats@gsnMaximize            = False               ; Maximize plot in frame.
             res_stats@gsnFrame               = False               ; Don't advance the frame
             res_stats@gsnDraw                = False
             res_stats@vpHeightF              = 0.25                ; change aspect ratio of plot
@@ -1127,37 +1163,39 @@ end if
             res_stats@tmYLMajorThicknessF    = 1.0                 ; default 2.0
             res_stats@tmXBMajorThicknessF    = 1.0                 ; default 2.0
             res_stats@xyMarkLineMode         = "MarkLines"
-            ; res_stats@xyMarkers              = 14
-            res_stats@xyMarkerColors         = (/ "red", "blue" /)
-            res_stats@xyMarkerSizes          = (/ 0.02, 0.02 /)    ; default 0.01
-            res_stats@xyLineThicknesses      = (/ 2.0, 2.0 /)      ; default 1.0
-            res_stats@xyLineColors           = (/ "red", "blue" /) ; change line color
+            res_stats@xyMarkers              = (/ 1, 3, 2 /)
+            res_stats@xyMarkerColors         = (/ "magenta", "red", "blue" /)
+            res_stats@xyMarkerSizes          = (/ 0.03, 0.02, 0.02 /)   ; default 0.01
+            res_stats@xyDashPatterns         = (/ 1, 0, 0 /)
+            res_stats@xyLineThicknesses      = (/ 2.0, 2.0, 2.0 /)      ; default 1.0
+            res_stats@xyLineColors           = (/ "magenta", "red", "blue" /)
             res_stats@gsnYRefLine            = 0.0
             res_stats@tmXBMode               = "Explicit"
-            res_stats@tmXBLabels             = date
+            res_stats@tmXBLabels             = mmddhh
             res_stats@tmXBValues             = xc
             res_stats@tmLabelAutoStride      = True                ; Auto stride
             res_stats@tmXBLabelAngleF        = 15.
             res_stats@pmLegendDisplayMode    = "Always"            ; turn on legend
             res_stats@pmLegendSide           = "Right"             ; Change location of
-            res_stats@pmLegendWidthF         = 0.15                ; Change width and default 0.55
+            res_stats@pmLegendWidthF         = 0.1                 ; Change width and default 0.55
             res_stats@pmLegendHeightF        = 0.1                 ; height of legend. default 0.18
             res_stats@lgLabelFontHeightF     = .015                ; change font height default 0.02
-            res_stats@xyExplicitLegendLabels = (/"OMB","OMA"/)     ; explicit labels
+            res_stats@xyExplicitLegendLabels = (/"OMB_nb", "OMB_wb","OMA"/)    ; explicit labels
 
             res_stats@tiYAxisString = "Number"
             plot(0)  = gsn_csm_xy (wks,xc,xnum(:,ich,:),res_stats)
             res_stats@tiYAxisString = "Mean (K)"
             plot(1)  = gsn_csm_xy (wks,xc,xmean(:,ich,:),res_stats)
-            res_stats@tiYAxisString = "RMS (K)"
+            res_stats@tiYAxisString = "Stdv (K)"
             res_stats@tiXAxisString = "DATE"
-            plot(2)  = gsn_csm_xy (wks,xc,xrms(:,ich,:),res_stats)
+            plot(2)  = gsn_csm_xy (wks,xc,xstd(:,ich,:),res_stats)
             pres                = True              ; mod panel plot
             pres@gsnPanelBottom = 0.03              ; add some space at bottom 
-            pres@txString = instrument + "_ch" + sprinti("%0.4i",plot_ch(ich)) + "   OMB/OMA"
+            pres@txString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich))+"   "+date(0)+" -- "+date(ntime-1)
             gsn_panel(wks,plot,(/3,1/),pres)
 
             delete(plot)
+            delete(pres)
             delete(res_stats)
 
          end if    ; end of if xmean(ich,:) check
@@ -1166,7 +1204,7 @@ end if
       destroy(wks)
 
    end if   ; end of if ntime and xmean check
-
+   ;
    ; numbers
    ;
    if ( ntime .gt. 1 .and. num(.not.ismissing(npts)) .gt. 0 ) then
@@ -1186,17 +1224,18 @@ end if
          "wkBackgroundColor" : (/1.,1.,1./)
       end setvalues
 
-      do ich = 0, nchan-1, 4  ; this is nchan_loop3
+      do ich = 0, nchan-1, 3  ; this is nchan_loop3
 
          if ( num(.not.ismissing(npts(ich,:))) .gt. 0 ) then
 
-            plot = new(4,graphic)
+            plot = new(3,graphic)
             res_stats                        = True
+            res_stats@gsnPaperOrientation    = "portrait"
             res_stats@gsnMaximize            = True                ; Maximize plot in frame.
             res_stats@gsnFrame               = False               ; Don't advance the frame
             res_stats@gsnDraw                = False
-            res_stats@vpHeightF              = 0.15                ; change aspect ratio of plot
-            res_stats@vpWidthF               = 0.95
+            res_stats@vpHeightF              = 0.25                ; change aspect ratio of plot
+            res_stats@vpWidthF               = 0.90
             res_stats@tmYROn                 = False
             res_stats@tmXTOn                 = False
             res_stats@tmYLMinorOn            = False
@@ -1204,13 +1243,13 @@ end if
             res_stats@tmYLMajorThicknessF    = 1.0                 ; default 2.0
             res_stats@tmXBMajorThicknessF    = 1.0                 ; default 2.0
             res_stats@xyMarkLineMode         = "MarkLines"
-;            res_stats@xyMarkers              = 14
+;            res_stats@xyMarkers              = (/ 4, 5, 6, 7 /)
             res_stats@xyMarkerColors         = (/ "black", "green", "blue", "red" /)
-            res_stats@xyMarkerSizes          = (/ 0.02, 0.02, 0.02, 0.02 /)              ; default 0.01
+            res_stats@xyMarkerSizes          = (/ 0.015, 0.015, 0.015, 0.015 /)              ; default 0.01
 ;            res_stats@xyLineThicknesses      = (/ l.0, 1.0, 1.0, 1.0 /)                 ; default 1.0
             res_stats@xyLineColors           = (/ "black", "green", "blue", "red" /)     ; change line color
             res_stats@tmXBMode               = "Explicit"
-            res_stats@tmXBLabels             = date
+            res_stats@tmXBLabels             = mmddhh
             res_stats@tmXBValues             = xc
             res_stats@tmLabelAutoStride      = True                ; Auto stride
             res_stats@tmXBLabelAngleF        = 15.
@@ -1222,24 +1261,25 @@ end if
             res_stats@xyExplicitLegendLabels = (/"before QC","land","sea","after QC"/)     ; explicit labels
 
             res_stats@tiYAxisString = "Number"
-            res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich))
+            res_stats@tiMainFontHeightF = 0.025
+            res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich))+"   "+date(0)+" -- "+date(ntime-1)
             plot(0) = gsn_csm_xy (wks,xc,data(:,ich,:),res_stats)
             if ( ich+1 .le. nchan-1 ) then
-               res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich+1))
+               res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich+1))+"   "+date(0)+" -- "+date(ntime-1)
                plot(1) = gsn_csm_xy (wks,xc,data(:,ich+1,:),res_stats)
             end if
             if ( ich+2 .le. nchan-1 ) then
-               res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich+2))
+               res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich+2))+"   "+date(0)+" -- "+date(ntime-1)
                plot(2) = gsn_csm_xy (wks,xc,data(:,ich+2,:),res_stats)
             end if
-            if ( ich+3 .le. nchan-1 ) then
-               res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich+3))
-               plot(3) = gsn_csm_xy (wks,xc,data(:,ich+3,:),res_stats)
-            end if
+;            if ( ich+3 .le. nchan-1 ) then
+;               res_stats@tiMainString = instrument+"_ch"+sprinti("%0.4i",plot_ch(ich+3))+"   "+date(0)+" -- "+date(ntime-1)
+;               plot(3) = gsn_csm_xy (wks,xc,data(:,ich+3,:),res_stats)
+;            end if
             pres                = True              ; mod panel plot
-            pres@gsnPanelBottom = 0.03              ; add some space at bottom 
+;            pres@gsnPanelBottom = 0.03              ; add some space at bottom 
             pres@txString = " "
-            gsn_panel(wks,plot,(/4,1/),pres)
+            gsn_panel(wks,plot,(/3,1/),pres)
 
             delete(plot)
 

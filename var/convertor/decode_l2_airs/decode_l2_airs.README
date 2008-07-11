@@ -1,3 +1,30 @@
+Updated Feb 6, 2008
+
+(1) bug fix for V4 data decoding
+
+(2) Added V5 data decoding capability
+
+(3) The default of the decoder is to choose data quality=GOOD.
+    By adding qual_threshold.nl with the following content in the run directory,
+    &quality
+    qual_threshold = 0
+    /
+    Data quality=BEST will be used.
+
+    When qual_threshold.nl does not exist in the run directory, or 
+    qual_threshold = 1 in qual_threshold.nl, then data quality=GOOD
+    will be used.
+
+(4) For V5 data, when data are at latitudes higher than 50 degree,
+    the data will be used only when DayNightFlag of the whole
+    6-minute granule is Night.
+
+References:
+   http://disc.sci.gsfc.nasa.gov/AIRS/documentation/v5_docs/v5_docs_list.shtml
+     V5_CalVal_Status_Summary.pdf
+     V5_L2_Standard_Product_QuickStart.pdf
+     V5_L2_Quality_Control_and_Error_Estimation.pdf
+
 
 Installing the decoder
 ________________________________________________________________________________

@@ -48,13 +48,16 @@ program decode_airs
    character (len=256) :: arg        ! buffer for argument
    character (len=256) :: file_name  ! name of AIRS Level 2 file to read
    character (len=11) :: ref_time
+   character (len=2)  :: version
 
    character (len=14) :: min_time, max_time
    namelist /time_window/ min_time, max_time
+   integer :: qual_threshold
+   namelist /quality/ qual_threshold
 
    integer :: delta_time
    integer :: istatus
-   integer :: nvalid
+   integer :: nvalid, nvalid_temp, nvalid_h2o, npolarday_temp, npolarday_h2o
    integer :: fn
    integer :: cmp_min, cmp_max
    integer :: mm, ss
@@ -62,6 +65,7 @@ program decode_airs
    integer :: i, j                ! indices 1..3 for 3x3 of IR FOVs per retrieval
    real :: temp                   ! temperature or -9999 if not good enough
    real :: h2o                    ! H2O MMR or -9999 if not good enough
+   logical :: polarday            ! true if |lat|>50 and DayNightFlag is not Night
 
    nargs = iargc()
 
@@ -74,12 +78,22 @@ program decode_airs
      stop
    end if
 
+
    min_time = '00000000000000'
    max_time = '99999999999999'
 
    open(11,file='time_window.nl',status='old',iostat=istatus)
    if (istatus == 0) then
       read(11,time_window)
+      close(11)
+   end if
+
+   qual_threshold = 1   ! 0: best, 1:good, 2:not use
+
+   open(12,file='qual_threshold.nl',status='old',iostat=istatus)
+   if (istatus == 0) then
+      read(12,quality)
+      close(12)
    end if
 
    ! The time for each FOV is given as the number of seconds
@@ -87,17 +101,27 @@ program decode_airs
    ref_time = '1993010100 '
 
    open(10, file='soundings.little_r', form='formatted', status='replace')
+   open(20, file='soundings_polarday.little_r', form='formatted', status='replace')
 
    do fn = 1, nargs
       call getarg (fn, file_name)
    
       ! Read all retrievals from file_name and place them in ret
-      call airs_ret_rdr(file_name, ret)
+      call airs_ret_rdr(file_name, ret, version)
 
       if (granule_out_of_timewin(ret%Time, min_time, max_time)) cycle      
    
+      nvalid_temp = 0
+      nvalid_h2o  = 0
+      npolarday_temp = 0
+      npolarday_h2o  = 0
+
+      write(6,'(a,a)') 'DayNightFlag for this granule: ', trim(ret%DayNightFlag)
+
       do track = 1, AIRS_RET_GEOTRACK
       do xtrack = 1, AIRS_RET_GEOXTRACK
+
+         polarday = .false.
          nvalid = 0
       
          delta_time = nint(ret%Time(xtrack,track))/3600
@@ -121,50 +145,65 @@ program decode_airs
                                             ret%Latitude(xtrack,track),'lat, ',    &
                                             ret%Longitude(xtrack,track),'lon'
             write(6,'(a)') 'Time: '//date_char(7:20)
-            write(6,'(a,i9)') 'RetQAFlag: ', ret%RetQAFlag(xtrack,track)
+            ! write(6,'(a,i9)') 'RetQAFlag: ', ret%RetQAFlag(xtrack,track)
             write(6,*) ' '
          
             !
             ! First loop through all levels and find out how many valid obs there are
             !
-            do layer=AIRS_RET_STDPRESSURELAY,1,-1
+            if ( version == 'V4' ) then
+               do layer=AIRS_RET_STDPRESSURELAY,1,-1
          
-               ! Which Qual flag to check depends on layer
-               if (ret%PressStd(layer) < ret%Press_mid_top_bndry(xtrack,track) ) then
-                  qual = ret%Qual_Temp_Profile_Top(xtrack,track)
+                  ! Which Qual flag to check depends on layer
+                  if (ret%PressStd(layer) < ret%Press_mid_top_bndry(xtrack,track) ) then
+                     qual = ret%Qual_Temp_Profile_Top(xtrack,track)
       
-               else if (ret%PressStd(layer) < ret%Press_bot_mid_bndry(xtrack,track) ) then
-                  qual = ret%Qual_Temp_Profile_Mid(xtrack,track)
+                  else if (ret%PressStd(layer) < ret%Press_bot_mid_bndry(xtrack,track) ) then
+                     qual = ret%Qual_Temp_Profile_Mid(xtrack,track)
       
-               else 
-                  qual = ret%Qual_Temp_Profile_Bot(xtrack,track)
+                  else 
+                     qual = ret%Qual_Temp_Profile_Bot(xtrack,track)
       
-               endif
+                  endif
                
-               ! Temperature. If quality is bad (2) then put out flag value of -9999.0
-               if (qual < 2 .and. layer > ret%nSurfStd(xtrack,track)) then
-                  temp = ret%TAirStd(layer,xtrack,track)
-                  h2o = ret%H2OMMRStd(layer,xtrack,track)
+                  ! Temperature. If quality is bad (2) then put out flag value of -9999.0
+                  if (qual <= qual_threshold .and. layer > ret%nSurfStd(xtrack,track)) then
+                     temp = ret%TAirStd(layer,xtrack,track)
+                     h2o = ret%H2OMMRStd(layer,xtrack,track)
 
-! See p.3 of Level 2 Product Levels and Layers
-!               else if (qual < 2 .and. abs(ret%PressStd(layer) - ret%PSurfStd(xtrack,track)) < 5.) then
-!                  temp = ret%TAirStd(layer,xtrack,track)
-!                  h2o = ret%H2OMMRStd(layer,xtrack,track)
+                  ! See p.3 of Level 2 Product Levels and Layers
+                  ! else if (qual <= qual_threshold .and. abs(ret%PressStd(layer) - ret%PSurfStd(xtrack,track)) < 5.) then
+!                 ! temp = ret%TAirStd(layer,xtrack,track)
+!                 ! h2o = ret%H2OMMRStd(layer,xtrack,track)
 
-               else
-                  temp = -9999.0
-                  h2o = -9999.0
+                  else
+                     temp = -9999.0
+                     h2o = -9999.0
       
-               end if
+                  end if
           
-               if (temp /= -9999.) then
-                  nvalid = nvalid + 1
-                  if (h2o /= -9999.) nvalid = nvalid + 1
+                  if (temp /= -9999.) then
+                     nvalid = nvalid + 1
+                     if (h2o /= -9999.) nvalid = nvalid + 1
+                  end if
+      
+               end do
+            end if  ! end of V4 quality selection
+
+            if ( version == 'V5' ) then
+               if ( qual_threshold == 0 ) then       ! Best
+                  nvalid = AIRS_RET_STDPRESSURELAY - ret%nBestStd(xtrack,track) + 1
+               else if ( qual_threshold == 1 ) then  ! Good and Best
+                  if ( ret%nGoodStd(xtrack,track) == 29 ) then
+                     nvalid = AIRS_RET_STDPRESSURELAY - ret%nBestStd(xtrack,track) + 1
+                  else
+                     nvalid = AIRS_RET_STDPRESSURELAY - ret%nGoodStd(xtrack,track) + 1
+                  end if
                end if
-      
-            end do
-         
-      
+               if ( (abs(ret%Latitude(xtrack,track)) > 50.0) .and. (trim(ret%DayNightFlag) /= 'Night') ) then
+                  polarday = .true.
+               end if
+            end if  ! end of V5 quality selection
             !
             ! If there are valid obs to be reported, write them out to little_r format
             !
@@ -172,7 +211,11 @@ program decode_airs
          
                latitude = ret%Latitude(xtrack,track)
                longitude = ret%Longitude(xtrack,track)
-               id       = 'AIRS L2 Std Retrieval                   '
+               if ( version == 'V5' ) then
+                  id       = 'AIRS L2 Std Retrieval '//version//'                '
+               else
+                  id       = 'AIRS L2 Std Retrieval                   '
+               end if
                name     = 'AIRSRET                                 '
                platform = 'FM-133                                  '
                source   = 'GES DAAC                                '
@@ -214,40 +257,105 @@ program decode_airs
                x8 = -888888.
                ix8 = -88 
          
-               write(10, fmt=rpt_format) latitude, longitude, id, name, platform, &
-                  source, elevation, n_valid, n_err, n_warning, iseq, n_dups,     &
-                  is_sound, is_bogus, is_discard, isut, julian, date_char,        &
-                  slp, islp, refp, irefp, grndt, igrndt, sst, isst, psfc, ipsfc,  &
-                  x1, ix1, x2, ix2, x3, ix3, x4, ix4, x5, ix5, x6, ix6, x7, ix7,  &
-                  x8, ix8
+               if ( .not. polarday ) then
+                  write(10, fmt=rpt_format) latitude, longitude, id, name, platform, &
+                     source, elevation, n_valid, n_err, n_warning, iseq, n_dups,     &
+                     is_sound, is_bogus, is_discard, isut, julian, date_char,        &
+                     slp, islp, refp, irefp, grndt, igrndt, sst, isst, psfc, ipsfc,  &
+                     x1, ix1, x2, ix2, x3, ix3, x4, ix4, x5, ix5, x6, ix6, x7, ix7,  &
+                     x8, ix8
+               else
+                  write(20, fmt=rpt_format) latitude, longitude, id, name, platform, &
+                     source, elevation, n_valid, n_err, n_warning, iseq, n_dups,     &
+                     is_sound, is_bogus, is_discard, isut, julian, date_char,        &
+                     slp, islp, refp, irefp, grndt, igrndt, sst, isst, psfc, ipsfc,  &
+                     x1, ix1, x2, ix2, x3, ix3, x4, ix4, x5, ix5, x6, ix6, x7, ix7,  &
+                     x8, ix8
+               end if
          
                do layer=AIRS_RET_STDPRESSURELAY,1,-1
-         
-                  ! Which Qual flag to check depends on layer
-                  if (ret%PressStd(layer) < ret%Press_mid_top_bndry(xtrack,track) ) then
-                     qual = ret%Qual_Temp_Profile_Top(xtrack,track)
+
+                  if ( version == 'V4' ) then
+                     ! Which Qual flag to check depends on layer
+                     if (ret%PressStd(layer) < ret%Press_mid_top_bndry(xtrack,track) ) then
+                        qual = ret%Qual_Temp_Profile_Top(xtrack,track)
       
-                  else if (ret%PressStd(layer) < ret%Press_bot_mid_bndry(xtrack,track) ) then
-                     qual = ret%Qual_Temp_Profile_Mid(xtrack,track)
+                     else if (ret%PressStd(layer) < ret%Press_bot_mid_bndry(xtrack,track) ) then
+                        qual = ret%Qual_Temp_Profile_Mid(xtrack,track)
       
-                  else 
-                     qual = ret%Qual_Temp_Profile_Bot(xtrack,track)
+                     else 
+                        qual = ret%Qual_Temp_Profile_Bot(xtrack,track)
       
-                  endif
+                     endif
                   
-                  ! Temperature. If quality is bad (2) then put out flag value of -888888.0
-                  if (qual < 2 .and. layer > ret%nSurfStd(xtrack,track)) then
-                     temp = ret%TAirStd(layer,xtrack,track)
-                     if (temp == -9999.) temp = -888888.
-                     h2o = ret%H2OMMRStd(layer,xtrack,track)
-                     if (h2o == -9999.) h2o = -888888.
+                     ! Temperature. If quality is bad (2) then put out flag value of -888888.0
+                     if (qual <= qual_threshold .and. layer > ret%nSurfStd(xtrack,track)) then
+                        temp = ret%TAirStd(layer,xtrack,track)
+                        if (temp == -9999.) temp = -888888.
+                        h2o = ret%H2OMMRStd(layer,xtrack,track)
+                        if (h2o == -9999.) h2o = -888888.
       
-                  else
+                     else
+                        temp = -888888.0
+                        h2o = -888888.0
+      
+                     end if
+                  end if    ! end if V4 check
+
+                  if ( version == 'V5' ) then
+
+                     ! for temperature
+
                      temp = -888888.0
+                     if ( qual_threshold == 0 ) then
+                        if ( layer >= ret%nBestStd(xtrack,track) ) then
+                           temp = ret%TAirStd(layer,xtrack,track)
+                        end if
+                     else if ( qual_threshold == 1 ) then
+                        if ( layer >= ret%nGoodStd(xtrack,track) .or. layer >= ret%nBestStd(xtrack,track) ) then
+                           temp = ret%TAirStd(layer,xtrack,track)
+                        end if
+                     else
+                        temp = -888888.0
+                     end if
+                     if (temp == -9999.) temp = -888888.
+
+                     ! for moisture
+
                      h2o = -888888.0
-      
+                     if ( qual_threshold == 0 ) then
+                        if ( (layer <= AIRS_RET_H2OPRESSURELAY) .and.                &
+                             (ret%Qual_H2O(xtrack,track) <= 1 ) .and.    &
+                             (ret%pressH2O(layer) <= ret%PBest(xtrack,track)) ) then
+                           h2o = ret%H2OMMRStd(layer,xtrack,track)
+                        end if
+                     else if ( qual_threshold == 1 ) then
+                        if ( ret%Qual_H2O(xtrack,track) <= qual_threshold ) then
+                           h2o = ret%H2OMMRStd(layer,xtrack,track)
+                        end if
+                     end if
+                     if ( (ret%H2OMMRStdErr(layer,xtrack,track) < 0.0) .or.   &
+                          (ret%H2OMMRStdErr(layer,xtrack,track) > 0.5*h2o)  ) then
+                        h2o = -9999.0
+                     end if
+                     if (h2o == -9999.) h2o = -888888.
+
+                  end if    ! end if V5 check
+
+                  if ( temp > 0.0 ) nvalid_temp = nvalid_temp + 1
+                  if ( h2o  > 0.0 ) nvalid_h2o  = nvalid_h2o  + 1
+
+                  if ( polarday ) then
+                     if ( temp > 0.0 ) then
+                        nvalid_temp    = nvalid_temp - 1
+                        npolarday_temp = npolarday_temp + 1
+                     end if
+                     if ( h2o  > 0.0 ) then
+                        nvalid_h2o     = nvalid_h2o  - 1
+                        npolarday_h2o  = npolarday_h2o  + 1
+                     end if
                   end if
-             
+
                   if (temp /= -888888.) then
              
                      p = ret%pressStd(layer)*100.
@@ -275,8 +383,13 @@ program decode_airs
                      irh = 0
                      thk = -888888.
                      ithk = 0
-                     write(10, fmt=meas_format) p, ip, z, iz, t, it, dewpt, idewpt, &
-                           spd, ispd, dir, idir, u, iu, v, iv, rh, irh, thk, ithk
+                     if ( .not. polarday ) then
+                        write(10, fmt=meas_format) p, ip, z, iz, t, it, dewpt, idewpt, &
+                              spd, ispd, dir, idir, u, iu, v, iv, rh, irh, thk, ithk
+                     else
+                        write(20, fmt=meas_format) p, ip, z, iz, t, it, dewpt, idewpt, &
+                              spd, ispd, dir, idir, u, iu, v, iv, rh, irh, thk, ithk
+                     end if
                   end if
                end do
             
@@ -301,15 +414,24 @@ program decode_airs
                thk = -888888.
                ithk = 0
       
-               write(10, fmt=meas_format) p, ip, z, iz, t, it, dewpt, idewpt, &
-                     spd, ispd, dir, idir, u, iu, v, iv, rh, irh, thk, ithk
+               if ( .not. polarday ) then
+                  write(10, fmt=meas_format) p, ip, z, iz, t, it, dewpt, idewpt, &
+                        spd, ispd, dir, idir, u, iu, v, iv, rh, irh, thk, ithk
+               else
+                  write(20, fmt=meas_format) p, ip, z, iz, t, it, dewpt, idewpt, &
+                        spd, ispd, dir, idir, u, iu, v, iv, rh, irh, thk, ithk
+               end if
       
                num_valid = nvalid
                num_err = 0
                num_warn = 0
-               write(10, fmt=end_format) num_valid, num_err, num_warn
+               if ( .not. polarday ) then
+                  write(10, fmt=end_format) num_valid, num_err, num_warn
+               else
+                  write(20, fmt=end_format) num_valid, num_err, num_warn
+               end if
          
-            end if
+            end if  ! end if nvalid > 0
          
             ! Need to output quality info so users can tell if we have a good
             ! retrieval with no clouds or a bad retrieval.  Both cases will put
@@ -328,9 +450,13 @@ program decode_airs
       end do
       end do
 
+      write(6,*) 'nvalid_temp, nvalid_h2o ', nvalid_temp, nvalid_h2o
+      write(6,*) 'npolarday_temp, npolarday_h2o ', npolarday_temp, npolarday_h2o
+
    end do ! Loop over filenames
 
    close(10)
+   close(20)
 
    stop
     

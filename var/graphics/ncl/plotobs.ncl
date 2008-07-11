@@ -14,28 +14,25 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
 ;==============================================================================
 ;
 plot_gts      = True
-plot_radar    = False ; does not work at the moment
+plot_radar    = False
 
-out_type     = "pdf" ; or "ncgm"
-plotdir      = getenv("EXP_DIR")+"/plotobs/"
-exp_dir      = getenv("EXP_DIR")+"/"
-run_dir      = getenv("RUN_DIR")+"/"
-rc_dir       = getenv("RC_DIR")+"/"
-datdir2      = "/wrfvar/working/"     ; the path after DATE
-filename_gts = "gts_omb_oma"
-prefix_radar = "oma_radar"
-start_date   = getenv("START_DATE")
-end_date     = getenv("END_DATE")
-cycle_period = stringtointeger(getenv("CYCLE_PERIOD"))
-
-system("mkdir -p "+plotdir)
+out_type     = "pdf"    ; or ncgm
+plotdir      = "/sausage/hclin/exps/amps60/test/plotobs/"
+datdir1      = "/sausage/hclin/exps/amps60/test/"          ; the path before DATE
+datdir2      = "/wrfvar/working/"                          ; the path after DATE
+filename_gts   = "gts_omb_oma"
+prefix_radar   = "oma_radar"
+start_date   = "2008012912"
+end_date     = "2008012912"
+cycle_period = 06
+fname = "/sausage/hclin/exps/amps60/test/008012912/fg01"  ; for retrieving mapping info
 ;
 ; set pressure levels for plotting AIREP, GEOAMV, POLARAMV, PILOT, PROFILER, SOUND, BOGUS, AIRSR
 ; method 1: set a 2-D array of bounded pressure levels in hPa
-plevs  = (/ (/1005.,995./),(/930.,920./),(/855.,845/),(/705.,695./),(/505.,495./),(/405.,395./),\
-            (/305.,295./),(/255.,245./),(/205.,195./),(/155.,145./),(/105.,95./),(/75.,65./), \
-            (/55.,45./), (/45.,0./)  /)
-; plevs    = (/ (/1050.,0./),(/-999.,-999./) /)   ; a (/-999.,-999./) pair is required if only
+; plevs  = (/ (/1005.,995./),(/930.,920./),(/855.,845/),(/705.,695./),(/505.,495./),(/405.,395./),\
+;             (/305.,295./),(/255.,245./),(/205.,195./),(/155.,145./),(/105.,95./),(/75.,65./), \
+;             (/55.,45./), (/45.,0./)  /)
+ plevs    = (/ (/1050.,0./),(/-999.,-999./) /)   ; a (/-999.,-999./) pair is required if only
                                                   ; one bounded pair is desired
 ;
 ; method 2: set a 1-D array of fixed pressure levels in hPa
@@ -43,18 +40,23 @@ plevs  = (/ (/1005.,995./),(/930.,920./),(/855.,845/),(/705.,695./),(/505.,495./
 ;
 ; set height levels for plotting RADAR and GPSREF
 ; method 1: set a 2-D array of bounded height levels in meters. Recommended for GPSREF
-hlevs  = (/ (/2000., 5000./), (/5000., 8500./) /)
-;hlevs  = (/ (/0., 25000./), (/-999., -999./) /)  ; (/-999.,-999./) pair is required if only
+;hlevs  = (/ (/2000., 5000./), (/5000., 8500./) /)
+hlevs  = (/ (/0., 25000./), (/-999., -999./) /)  ; (/-999.,-999./) pair is required if only
                                                   ; one bounded pair is desired
 ;
 ; method 2: set a 1-D array of fixed height levels in meters
 ; hlevs  = (/ 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 10000. /)
 
 ; mapinfo_from_file = False
-mapinfo_from_file = True
+  mapinfo_from_file = True
+if ( mapinfo_from_file .and. .not.isfilepresent(fname) ) then
+   print("file: "+fname+" does not exist")
+   print("Can not extract mapping info. Stop.")
+   exit
+end if
 
 ; subdomain = True
-subdomain = False
+  subdomain = False
 if ( subdomain ) then   ; subdomain needs to be a lat-lon box
    maxlat = 35.
    minlat = 25.
@@ -76,6 +78,8 @@ if ( (.not.mapinfo_from_file) .and. (.not.subdomain) ) then
    lon_ur = 100.7379
 end if
 
+system("mkdir -p "+plotdir)
+
 markertype1 = 0         ; for scatter plot
 markertype2 = 16        ; for distribution plot
 markercolor1 = "blue"   ; BAK vs OBS before QC
@@ -84,23 +88,34 @@ markercolor3 = "purple" ; ANA vs OBS
 markersize1  = 0.008    ; MarkerSizeF efault 0.007
 markersize2  = 0.006
 markersize3  = 0.007
+markersize4  = 0.003
 linesize     = 1.5
 linecolor    = "gray"
 
 ;==============================================================================
 ; end of plot options
 ;==============================================================================
+if ( .not. ismissing(getenv("INITIAL_DATE")) ) then
+   ; probably running from a script
+   ; replace some selected variables with those from environment variables
+   delete(plotdir)
+   delete(datdir1)
+   delete(start_date)
+   delete(end_date)
+   delete(cycle_period)
+   delete(fname)
+   plotdir = getenv("RUN_DIR")+"/"
+   datdir1 = getenv("RUN_DIR")+"/"  ; datdir1 is the path before date
+                                    ; Here I assume wrfvar is running under
+                                    ; $RUN_DIR/$DATE/wrfvar/working
+   start_date = getenv("INITIAL_DATE")
+   end_date   = getenv("FINAL_DATE")
+   cycle_period = stringtointeger(getenv("CYCLE_PERIOD"))
+   fname = getenv("DA_FIRST_GUESS")
+end if
 
 plotwnd = False
 colormap = "rainbow+gray"
-
-fname=rc_dir+start_date+"/wrfinput_d01"
-
-if ( mapinfo_from_file .and. .not.isfilepresent(fname) ) then
-   print("file: "+fname+" does not exist")
-   print("Can not extract mapping info. Stop.")
-   exit
-end if
 
 if ( mapinfo_from_file .and. isfilepresent(fname) ) then
    wrf_file=addfile(fname+".nc","r")
@@ -109,10 +124,16 @@ if ( mapinfo_from_file .and. isfilepresent(fname) ) then
       truelat1 = wrf_file@TRUELAT1
       truelat2 = wrf_file@TRUELAT2
       clon     = wrf_file@STAND_LON
-   else
-      if ( wrf_file@MAP_PROJ .eq. 3 ) then
-         mapproj = "Mercator"
-      end if
+   end if
+   if ( wrf_file@MAP_PROJ .eq. 2 ) then
+      mapproj = "Stereographic"
+      truelat1 = wrf_file@TRUELAT1
+      truelat2 = wrf_file@TRUELAT2
+      clon     = wrf_file@CEN_LON
+      clat     = wrf_file@CEN_LAT
+   end if
+   if ( wrf_file@MAP_PROJ .eq. 3 ) then
+      mapproj = "Mercator"
    end if
    dsizes = getfiledimsizes(wrf_file)
    nx = dsizes(2)
@@ -207,6 +228,10 @@ begin
          mpres@mpLambertParallel1F     = truelat1      ; two parallels
          mpres@mpLambertParallel2F     = truelat2
          mpres@mpLambertMeridianF      = clon          ; central meridian
+      end if
+      if ( mapproj .eq. "Stereographic" ) then
+         mpres@mpCenterLatF         = clat
+         mpres@mpCenterLonF         = clon
       end if
       mpres@mpLimitMode             = "Corners"
       mpres@mpLeftCornerLatF        = lat_ll
@@ -350,13 +375,13 @@ end
 
 undef("plot_sfc")
 procedure plot_sfc(otype:string, wks:graphic,nobs, date, lat:float, lon:float, \
-                   u:float, v:float, t:float, p:float, q:float, tpw:float)
+                   u:float, v:float, t:float, p:float, q:float, tpw:float, spd:float)
 local plot, dummy, title, info, mpres, gsres, plon, plat, pnres, data1, data2, \
       minXY, maxXY, scres, markres, xy
 begin  ; begin of procedure plot_sfc
 
    print("Processing "+otype+"  "+nobs)
-   if ( otype .ne. "GPSPW" ) then
+   if ( otype .ne. "GPSPW" .and. otype .ne. "SSMIR" ) then
       if ( subdomain ) then
          do k = 0, 4   ; obs, inv, qc
             u(:,k) = mask(u(:,k),lon(:).ge.minlon.and.lon(:).le.maxlon.and.  \
@@ -811,7 +836,9 @@ begin  ; begin of procedure plot_sfc
 
       end if   ; end of if num_qc > 0
 
-   else   ; for GPSPW
+    end if
+;   else   ; for GPSPW
+    if ( otype .eq. "GPSPW" ) then   ; for GPSPW
 
       if ( subdomain ) then
          tpw(:,0) = mask(tpw(:,0),lon(:).ge.minlon.and.lon(:).le.maxlon.and. \
@@ -895,6 +922,47 @@ begin  ; begin of procedure plot_sfc
       end if   ; end of if num_qc > 0
 
    end if  ; end of GPSPW check
+
+   if ( otype .eq. "SSMIR" ) then   ; for SSMIR SSM/I Retrieval
+
+      if ( subdomain ) then
+         spd(:,0) = mask(spd(:,0),lon(:).ge.minlon.and.lon(:).le.maxlon.and. \
+                                  lat(:).ge.minlat.and.lat(:).le.maxlat,True)
+      end if
+      num_spd_all = num(.not.ismissing(spd(:,0)))
+      num_spd_qc  = num(.not.ismissing(mask(spd(:,0),spd(:,2).ge.0,True)))
+      num_qc = num_spd_qc
+
+      if ( num_qc .gt. 0 ) then
+         ;
+         ; title = date+"  "+otype+"  "+nobs+"/"+num_qc
+         title = "SSM/I Retrieval"
+         str1  = date
+         str2  = nobs+"/"+num_qc
+         mpres = setmpres(title,str1,str2)
+         mpres@gsnMaximize = True
+         if ( subdomain ) then
+            map = gsn_csm_map_ce(wks,mpres)
+         else
+            map = gsn_csm_map(wks,mpres)
+         end if
+         gsres               = True
+         gsres@gsMarkerIndex = 16                    ; Use filled dots for markers.
+         gsres@gsMarkerColor  = "navy"
+         gsres@gsMarkerSizeF  = markersize4          ; default 0.007
+         plon = mask(lon(:),.not.ismissing(spd(:,0)),True)
+         plat = mask(lat(:),.not.ismissing(spd(:,0)),True)
+         dummy = gsn_add_polymarker(wks,map,plon(:),plat(:),gsres)
+         draw(map)
+         frame(wks)
+         delete(plon)
+         delete(plat)
+         delete(map)
+         delete(dummy)
+         ;
+      end if
+
+   end if  ; end of SSMIR check
 
 end  ; end of procedure plot_sfc
 
@@ -2129,14 +2197,14 @@ begin;  begin of the main script
          ; and collect all oma_radar.nnn into one file
          ;
          nradar = 0
-         radar_files = systemfunc("cd "+run_dir+date+datdir2+";"+"\ls "+prefix_radar+".*")
+         radar_files = systemfunc("cd "+datdir1+date+datdir2+";"+"\ls "+prefix_radar+".*")
          if ( num(.not.ismissing(radar_files)) .eq. 0 ) then
             print("Can not find "+prefix_radar+".* files  Will skip them")
          else
             system("\rm -f "+plotdir+"tmp.oma_radar")
             print("Collecting oma_radar files, this may take a while...")
             do i = 0, dimsizes(radar_files)-1
-               fullname = run_dir+date+datdir2+radar_files(i)
+               fullname = datdir1+date+datdir2+radar_files(i)
                if ( stringtointeger(systemfunc("wc -l "+fullname)) .gt. 0 ) then
                   system("touch "+plotdir+"tmp.oma_radar")
                   nradar = nradar + stringtointeger(systemfunc("head -1 "+fullname+" | cut -c21-28"))
@@ -2201,7 +2269,7 @@ begin;  begin of the main script
       end if   ; end of if plot_radar
 
       if ( plot_gts ) then
-         fullname = run_dir+date+datdir2+filename_gts
+         fullname = datdir1+date+datdir2+filename_gts
          if ( .not. isfilepresent(fullname) ) then
             print("Can not find the file "+fullname+"  Will skip it")
          else
@@ -2231,6 +2299,7 @@ begin;  begin of the main script
                nbogus = 0
                nairsr = 0
                ngpsref = 0
+               nssmir = 0
                do n = 0, nline-1    ; loop of parsing the file line by line
                   if ( cdata(n,0:19) .eq. "               synop" ) then
                      nsynop = stringtointeger(charactertostring(cdata(n,20:27))) ; number of obs
@@ -2466,7 +2535,7 @@ begin;  begin of the main script
                   synop_q   = read_data(nsynop, isynop, cdata, nlevel_synop, ilevel_synop, "synop", "q")
                   wks = gsn_open_wks(out_type,plotdir+"synop_"+date)
                   dum = synop_u
-                  plot_sfc("SYNOP",wks,nsynop,date,synop_lat,synop_lon,synop_u,synop_v,synop_t,synop_p,synop_q,dum)
+                  plot_sfc("SYNOP",wks,nsynop,date,synop_lat,synop_lon,synop_u,synop_v,synop_t,synop_p,synop_q,dum,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_synop)
@@ -2481,7 +2550,7 @@ begin;  begin of the main script
                   delete(synop_p)
                   delete(synop_q)
                end if  ; end of nsynop check
-
+;
                if ( nmetar .gt. 0 ) then
                   metar_id  = read_info(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "id")
                   metar_lat = read_info(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "lat")
@@ -2494,7 +2563,7 @@ begin;  begin of the main script
                   metar_q   = read_data(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "metar", "q")
                   wks = gsn_open_wks(out_type,plotdir+"metar_"+date)
                   dum = metar_u
-                  plot_sfc("METAR",wks,nmetar,date,metar_lat,metar_lon,metar_u,metar_v,metar_t,metar_p,metar_q,dum)
+                  plot_sfc("METAR",wks,nmetar,date,metar_lat,metar_lon,metar_u,metar_v,metar_t,metar_p,metar_q,dum,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_metar)
@@ -2522,7 +2591,7 @@ begin;  begin of the main script
                   ships_q   = read_data(nships, iships, cdata, nlevel_ships, ilevel_ships, "ships", "q")
                   wks = gsn_open_wks(out_type,plotdir+"ships_"+date)
                   dum = ships_u
-                  plot_sfc("SHIPS",wks,nships,date,ships_lat,ships_lon,ships_u,ships_v,ships_t,ships_p,ships_q,dum)
+                  plot_sfc("SHIPS",wks,nships,date,ships_lat,ships_lon,ships_u,ships_v,ships_t,ships_p,ships_q,dum,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_ships)
@@ -2550,7 +2619,7 @@ begin;  begin of the main script
                   buoy_q   = read_data(nbuoy, ibuoy, cdata, nlevel_buoy, ilevel_buoy, "buoy", "q")
                   wks = gsn_open_wks(out_type,plotdir+"buoy_"+date)
                   dum = buoy_u
-                  plot_sfc("BUOY",wks,nbuoy,date,buoy_lat,buoy_lon,buoy_u,buoy_v,buoy_t,buoy_p,buoy_q,dum)
+                  plot_sfc("BUOY",wks,nbuoy,date,buoy_lat,buoy_lon,buoy_u,buoy_v,buoy_t,buoy_p,buoy_q,dum,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_buoy)
@@ -2579,7 +2648,7 @@ begin;  begin of the main script
                   wks = gsn_open_wks(out_type,plotdir+"sonde_sfc_"+date)
                   dum = sonde_sfc_u
                   plot_sfc("SONDE_SFC",wks,nsonde_sfc,date,sonde_sfc_lat,sonde_sfc_lon,\
-                                       sonde_sfc_u,sonde_sfc_v,sonde_sfc_t,sonde_sfc_p,sonde_sfc_q,dum)
+                                       sonde_sfc_u,sonde_sfc_v,sonde_sfc_t,sonde_sfc_p,sonde_sfc_q,dum,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_sonde_sfc)
@@ -2675,7 +2744,7 @@ begin;  begin of the main script
                   ngpspw_qc      = ngpspw_tpw_qc
                   wks = gsn_open_wks(out_type,plotdir+"gpspw_"+date)
                   dum = gpspw_tpw
-                  plot_sfc("GPSPW",wks,ngpspw,date,gpspw_lat,gpspw_lon,dum,dum,dum,dum,dum,gpspw_tpw)
+                  plot_sfc("GPSPW",wks,ngpspw,date,gpspw_lat,gpspw_lon,dum,dum,dum,dum,dum,gpspw_tpw,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_gpspw)
@@ -2840,6 +2909,11 @@ begin;  begin of the main script
                   nssmir_spd_all = num(.not.ismissing(ssmir_spd(:,0)))
                   nssmir_spd_qc  = num(.not.ismissing(mask(ssmir_spd(:,0),ssmir_spd(:,2).ge.0,True)))
                   nssmir_qc      = nssmir_spd_qc
+                  wks = gsn_open_wks(out_type,plotdir+"ssmir_"+date)
+                  dum = ssmir_spd
+                  plot_sfc("SSMIR",wks,nssmir,date,ssmir_lat,ssmir_lon,dum,dum,dum,dum,dum,dum,ssmir_spd)
+                  delete(dum)
+                  destroy(wks)
                   delete(ilevel_ssmir)
                   delete(nlevel_ssmir)
                   delete(ssmir_id)
@@ -2857,7 +2931,7 @@ begin;  begin of the main script
                   qscat_v   = read_data(nqscat, iqscat, cdata, nlevel_qscat, ilevel_qscat, "qscat", "v")
                   wks = gsn_open_wks(out_type,plotdir+"qscat_"+date)
                   dum = qscat_u
-                  plot_sfc("QSCAT",wks,nqscat,date,qscat_lat,qscat_lon,qscat_u,qscat_v,dum,dum,dum,dum)
+                  plot_sfc("QSCAT",wks,nqscat,date,qscat_lat,qscat_lon,qscat_u,qscat_v,dum,dum,dum,dum,dum)
                   delete(dum)
                   destroy(wks)
                   delete(ilevel_qscat)
@@ -2941,7 +3015,7 @@ begin;  begin of the main script
                   delete(airsr_t)
                   delete(airsr_q)
                end if   ; end of nairsr check
-;
+
                if ( ngpsref .gt. 0 ) then
                   gpsref_id  = read_info(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "id")
                   gpsref_lat = read_info(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "lat")

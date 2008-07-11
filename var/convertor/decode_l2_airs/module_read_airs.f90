@@ -7,6 +7,8 @@ module read_airs
    integer, parameter :: AIRS_RET_GEOTRACK       =  45
    integer, parameter :: AIRS_RET_STDPRESSURELEV =  28
    integer, parameter :: AIRS_RET_STDPRESSURELAY =  28
+   integer, parameter :: AIRS_RET_H2OPRESSURELEV =  15  ! new in V5
+   integer, parameter :: AIRS_RET_H2OPRESSURELAY =  14  ! new in V5
    integer, parameter :: AIRS_RET_AIRSXTRACK     =   3
    integer, parameter :: AIRS_RET_AIRSTRACK      =   3
    integer, parameter :: AIRS_RET_CLOUD          =   2
@@ -33,24 +35,30 @@ module read_airs
       double precision, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Longitude
       double precision, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Time
 
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nStd_mid_top_bndry
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nStd_bot_mid_bndry
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: RetQAFlag
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Temp_Profile_Top
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Temp_Profile_Mid
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Temp_Profile_Bot
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Cloud_OLR
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_H2O
-      integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Surf
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nStd_mid_top_bndry
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nStd_bot_mid_bndry
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: RetQAFlag
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Temp_Profile_Top
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Temp_Profile_Mid
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Temp_Profile_Bot
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Cloud_OLR
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_H2O
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: Qual_Surf
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nBestStd ! new in V5
+      integer*2, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nGoodStd ! new in V5
+      real,    dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: PBest      ! new in V5
+      real,    dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: PGood      ! new in V5
 
       integer, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: nSurfStd
       real, dimension(AIRS_RET_STDPRESSURELEV)                 :: pressStd
+      real, dimension(AIRS_RET_H2OPRESSURELEV)                 :: pressH2O   ! new in V5
       real, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK)    :: TSurfStd
       real, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK)    :: TSurfAir
       real, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK)    :: PSurfStd
       real, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK)    :: Press_bot_mid_bndry
       real, dimension(AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK)    :: Press_mid_top_bndry
       real, dimension(AIRS_RET_STDPRESSURELAY,AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: H2OMMRStd
+      real, dimension(AIRS_RET_STDPRESSURELAY,AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: H2OMMRStdErr
       real, dimension(AIRS_RET_STDPRESSURELEV,AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: TAirStd
       real, dimension(AIRS_RET_STDPRESSURELEV,AIRS_RET_GEOXTRACK,AIRS_RET_GEOTRACK) :: GP_Height
 
@@ -75,13 +83,14 @@ module read_airs
    contains
 
 
-   subroutine airs_ret_rdr(file_name, airs_ret_gran)
+   subroutine airs_ret_rdr(file_name, airs_ret_gran, version)
 
       implicit none
 
       ! Arguments
-      character (len=*) :: file_name
-      type (airs_ret_gran_t) :: airs_ret_gran
+      character (len=*),      intent(in)    :: file_name
+      type (airs_ret_gran_t), intent(inout) :: airs_ret_gran
+      character (len=2),      intent(out)   :: version       ! V4 or V5
    
       ! Local variables
       integer :: statn           ! HDF-EOS status. 0 for success
@@ -89,14 +98,15 @@ module read_airs
       integer :: swid            ! HDF-EOS swath ID
       integer :: nchar           ! Number of characters
       integer :: nswath          ! Number of swaths
-      character (len=256) :: swathname   ! Name of swath
+      character (len=256) :: swathname ! Name of swath
+      character (len=256) :: dimnames  ! Name of dimensions
       integer, dimension(10) :: start  ! start of each dimensions for Swath I/O
                                        ! 0 => start with first element
       integer, dimension(10) :: stride ! stride of each dimensions for Swath I/O
                                        ! 1 => use every element
       integer, dimension(10) :: edge   ! size of each dimension for swath I/O
                                        ! will be set for each individual read
-      integer :: swopen, swinqswath, swattach
+      integer :: swopen, swinqswath, swattach, swinqdims
       integer :: swrdfld, swrdattr
       integer :: swdetach, swclose
 
@@ -140,6 +150,17 @@ module read_airs
       end if
    
       !
+      ! Read dimension names
+      !
+      statn = swinqdims(swid, dimnames, nchar) 
+      if ( index(dimnames,'H2OPressureLev') > 0 ) then
+         version = 'V5'
+      else
+         version = 'V4'
+      end if
+      write(6,*) 'Processing version ', version, ' file'
+
+      !
       ! Read attributes
       !
       statn = swrdattr(swid, 'processing_level', airs_ret_gran%processing_level)
@@ -150,6 +171,7 @@ module read_airs
    
       statn = swrdattr(swid, 'DayNightFlag', airs_ret_gran%DayNightFlag)
       if (statn /= 0) write(6,*) 'Error ', statn, ' reading attribute DayNightFlag'
+      airs_ret_gran%DayNightFlag = airs_ret_gran%DayNightFlag(1:index(airs_ret_gran%DayNightFlag,char(0))-1)
    
       statn = swrdattr(swid, 'AutomaticQAFlag', airs_ret_gran%AutomaticQAFlag)
       if (statn /= 0) write(6,*) 'Error ', statn, ' reading attribute AutomaticQAFlag'
@@ -214,7 +236,9 @@ module read_airs
       statn = swrdattr(swid, 'end_Time', airs_ret_gran%end_Time)
       if (statn /= 0) write(6,*) 'Error ', statn, ' reading attribute end_Time'
    
-
+      start = 0
+      stride = 1
+   
       !
       ! Read geolocation fields
       !
@@ -229,6 +253,8 @@ module read_airs
       statn = swrdfld(swid, 'Time', start, stride, edge, airs_ret_gran%Time)
       if (statn /= 0) write(6,*) 'Error ', statn, ' reading field Time'
    
+      start = 0
+      stride = 1
    
       !
       ! Read data Fields
@@ -247,6 +273,33 @@ module read_airs
       edge(1) = 30
       statn = swrdfld(swid, 'Press_bot_mid_bndry', start, stride, edge, airs_ret_gran%Press_bot_mid_bndry)
       if (statn /= 0) write(6,*) 'Error ', statn, ' reading field Press_bot_mid_bndry'
+
+      if ( version == 'V5' ) then
+         edge(2) = 45
+         edge(1) = 30
+         statn = swrdfld(swid, 'PBest', start, stride, edge, airs_ret_gran%PBest)
+         if (statn /= 0) write(6,*) 'Error ', statn, ' reading field PBest'
+
+         edge(2) = 45
+         edge(1) = 30
+         statn = swrdfld(swid, 'PGood', start, stride, edge, airs_ret_gran%PGood)
+         if (statn /= 0) write(6,*) 'Error ', statn, ' reading field PGood'
+
+         edge(2) = 45
+         edge(1) = 30
+         statn = swrdfld(swid, 'nBestStd', start, stride, edge, airs_ret_gran%nBestStd)
+         if (statn /= 0) write(6,*) 'Error ', statn, ' reading field nBestStd'
+
+         edge(2) = 45
+         edge(1) = 30
+         statn = swrdfld(swid, 'nGoodStd', start, stride, edge, airs_ret_gran%nGoodStd)
+         if (statn /= 0) write(6,*) 'Error ', statn, ' reading field nGoodStd'
+
+         edge(1) = AIRS_RET_H2OPRESSURELEV
+         statn = swrdfld(swid, 'pressH2O', start, stride, edge, airs_ret_gran%pressH2O)
+         if (statn /= 0) write(6,*) 'Error ', statn, ' reading field pressH2O'
+   
+      end if
 
       edge(2) = 45
       edge(1) = 30
@@ -326,18 +379,33 @@ module read_airs
    
       edge(3) = 45
       edge(2) = 30
-      edge(1) = 28
+      if ( version == 'V5' ) then
+         edge(1) = AIRS_RET_H2OPRESSURELAY
+      else
+         edge(1) = AIRS_RET_STDPRESSURELAY
+      end if
+      airs_ret_gran%H2OMMRStd = -9999.0   ! initialize
       statn = swrdfld(swid, 'H2OMMRStd', start, stride, edge, airs_ret_gran%H2OMMRStd)
       if (statn /= 0) write(6,*) 'Error ', statn, ' reading field H2OMMRStd'
    
+      edge(3) = 45
+      edge(2) = 30
+      if ( version == 'V5' ) then
+         edge(1) = AIRS_RET_H2OPRESSURELAY
+      else
+         edge(1) = AIRS_RET_STDPRESSURELAY
+      end if
+      airs_ret_gran%H2OMMRStdErr = -9999.0   ! initialize
+      statn = swrdfld(swid, 'H2OMMRStdErr', start, stride, edge, airs_ret_gran%H2OMMRStdErr)
+      if (statn /= 0) write(6,*) 'Error ', statn, ' reading field H2OMMRStdErr'
       !
       ! Final clean-up
       !
       statn = swdetach(swid)
-      if (statn /= 0) write(6,*) 'Error detaching from input file ', file_name
+      ! if (statn /= 0) write(6,*) 'Error detaching from input file ', file_name
 
       statn = swclose(fid)
-      if (statn /= 0) write(6,*) 'Error closing input file ', file_name
+      ! if (statn /= 0) write(6,*) 'Error closing input file ', file_name
    
    end subroutine airs_ret_rdr
    

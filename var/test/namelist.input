@@ -3,6 +3,7 @@
 &wrfvar2
 /
 &wrfvar3
+ob_format=1
 /
 &wrfvar4
 /

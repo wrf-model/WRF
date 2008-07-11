@@ -920,6 +920,7 @@ CONTAINS
               psaci(i,k) = pi*qci(i,k,2)*eacrs*n0s*n0sfac(i,k)         &
                            *abs(vt2s-vt2i)*acrfac/4.
             endif
+          endif
 !-------------------------------------------------------------
 ! psacw: Accretion of cloud water by snow  [HL A7] [LFO 24]
 !        (T<T0: C->S, and T>=T0: C->R)
@@ -930,6 +931,7 @@ CONTAINS
 !                          ,qci(i,k,1)/dtcld)
                            ,qci(i,k,1)*rdtcld)
             endif
+        if(supcol .gt. 0) then
 !-------------------------------------------------------------
 ! pidep: Deposition/Sublimation rate of ice [HDC 9]
 !       (T<T0: V->I or I->V)
@@ -949,7 +951,6 @@ CONTAINS
                 pidep(i,k) = min(min(pidep(i,k),satdt*.5),supice)
               endif
               if(abs(prevp(i,k)+pidep(i,k)).ge.abs(satdt)) ifsat = 1
-            endif
           endif
 !-------------------------------------------------------------
 ! psdep: deposition/sublimation rate of snow [HDC 14]
@@ -977,7 +978,6 @@ CONTAINS
 ! pigen: generation(nucleation) of ice from vapor [HL A50] [HDC 7-8]
 !       (T<T0: V->I)
 !-------------------------------------------------------------
-          if(supcol.gt.0) then
             if(supsat.gt.0.and.ifsat.ne.1) then
               supice = satdt-prevp(i,k)-pidep(i,k)-psdep(i,k)
               xni0 = 1.e3*exp(0.1*supcol)
@@ -1043,6 +1043,30 @@ CONTAINS
               pidep(i,k) = pidep(i,k)*factor
             endif
 !
+!     rain
+!
+!
+            value = max(qmin,qrs(i,k,1))
+            source = (-praut(i,k)-pracw(i,k)-prevp(i,k))*dtcld
+            if (source.gt.value) then
+              factor = value/source
+              praut(i,k) = praut(i,k)*factor
+              pracw(i,k) = pracw(i,k)*factor
+              prevp(i,k) = prevp(i,k)*factor
+            endif
+!
+!    snow
+!
+            value = max(qmin,qrs(i,k,2))
+            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld  
+            if (source.gt.value) then
+              factor = value/source
+              psdep(i,k) = psdep(i,k)*factor
+              psaut(i,k) = psaut(i,k)*factor
+              psaci(i,k) = psaci(i,k)*factor
+              psacw(i,k) = psacw(i,k)*factor
+            endif
+!
             work2(i,k)=-(prevp(i,k)+psdep(i,k)+pigen(i,k)+pidep(i,k))
 !     update
             q(i,k) = q(i,k)+work2(i,k)*dtcld
@@ -1070,6 +1094,18 @@ CONTAINS
               pracw(i,k) = pracw(i,k)*factor
               psacw(i,k) = psacw(i,k)*factor
             endif
+!
+!     rain
+!
+            value = max(qmin,qrs(i,k,1))
+            source = (-praut(i,k)-pracw(i,k)-prevp(i,k)-psacw(i,k))*dtcld
+            if (source.gt.value) then
+              factor = value/source
+              praut(i,k) = praut(i,k)*factor
+              pracw(i,k) = pracw(i,k)*factor
+              prevp(i,k) = prevp(i,k)*factor
+              psacw(i,k) = psacw(i,k)*factor
+            endif  
 !
 !     snow
 !

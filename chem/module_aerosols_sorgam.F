@@ -233,11 +233,16 @@ CONTAINS
                soilrat_in = 0.
                nitrate_in =max(epsilc,chem(i,k,j,p_hno3)*convfac*mwhno3)
                nh3_in = max(epsilc,chem(i,k,j,p_nh3)*convfac*mwnh3)
-               hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
+!              hcl_in = max(epsilc,chem(i,k,j,p_hcl)*convfac*mwhcl)
+               hcl_in = 0.
                vsulf_in = max(epsilc,chem(i,k,j,p_sulf)*convfac*mwso4)
-      if(i.eq.20.and.j.eq.20.and.k.eq.19)then
-        print *,'vsulfin = ',vsulf_in,chem(i,k,j,p_sulf),convfac,mwso4
-      endif
+!     if(i.eq.28.and.j.eq.25.and.k.eq.1)then
+!       print *,'vsulfin = ',vsulf_in,chem(i,k,j,p_sulf),convfac,mwso4
+!       print *,'nitratein = ',nitrate_in,chem(i,k,j,p_hno3)
+!       print *,'nh3in = ',nh3_in,chem(i,k,j,p_nh3)
+!       print *,'hclin = ',hcl_in,chem(i,k,j,p_hcl)
+!       print *,'pso4ai = ',chem(i,k,j,p_so4aj),chem(i,k,j,p_no3aj),chem(i,k,j,p_nh4aj),chem(i,k,j,p_naaj)
+!     endif
                
 !rs
 !rs * organic aerosol precursors
@@ -335,8 +340,10 @@ CONTAINS
          cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
          cblk(1,VNAAJ   )  = chem(i,k,j,p_naaj)
          cblk(1,VNAAI   )  = chem(i,k,j,p_naai)
-         cblk(1,VCLAJ   )  = chem(i,k,j,p_claj)
-         cblk(1,VCLAI   )  = chem(i,k,j,p_clai)
+!        cblk(1,VCLAJ   )  = chem(i,k,j,p_claj)
+!        cblk(1,VCLAI   )  = chem(i,k,j,p_clai)
+         cblk(1,VCLAJ   )  = 0.
+         cblk(1,VCLAI   )  = 0.
 !
 ! Set emissions to zero when above level kemit.
 !
@@ -402,8 +409,8 @@ CONTAINS
       chem(i,k,j,p_no3ai) = cblk(1,VNO3AI   )
       chem(i,k,j,p_naaj) = cblk(1,VNAAJ   )
       chem(i,k,j,p_naai) = cblk(1,VNAAI   )
-      chem(i,k,j,p_claj) = cblk(1,VCLAJ   )
-      chem(i,k,j,p_clai) = cblk(1,VCLAI   )
+!     chem(i,k,j,p_claj) = cblk(1,VCLAJ   )
+!     chem(i,k,j,p_clai) = cblk(1,VCLAI   )
       chem(i,k,j,p_orgaro1j) = cblk(1,VORGARO1J)
       chem(i,k,j,p_orgaro1i) = cblk(1,VORGARO1I)
       chem(i,k,j,p_orgaro2j) = cblk(1,VORGARO2J)
@@ -449,7 +456,15 @@ CONTAINS
       chem(i,k,j,p_sulf)=max(epsilc,cblk(1,vsulf)/CONVFAC/MWSO4)
       chem(i,k,j,p_hno3)=max(epsilc,cblk(1,vhno3)/CONVFAC/MWHNO3)
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
-      chem(i,k,j,p_hcl)=max(epsilc,cblk(1,vhcl)/CONVFAC/MWHCL)
+!     chem(i,k,j,p_hcl)=max(epsilc,cblk(1,vhcl)/CONVFAC/MWHCL)
+!     if(i.eq.28.and.j.eq.25.and.k.eq.1)then
+!       print *,vhcl
+!       print *,'vsulfout = ',chem(i,k,j,p_sulf)
+!       print *,'nitrateout = ',chem(i,k,j,p_hno3)
+!       print *,'nh3out = ',chem(i,k,j,p_nh3)
+!       print *,'hclout = ',cblk(1,vhcl)/CONVFAC/MWHCL
+!       print *,'pso4ai = ',chem(i,k,j,p_so4aj),chem(i,k,j,p_no3aj),chem(i,k,j,p_nh4aj),chem(i,k,j,p_naaj)
+!     endif
       enddo         ! k-loop
  100  continue      ! i,j-loop
 
@@ -1426,7 +1441,8 @@ END SUBROUTINE sorgam_depdriver
 
       INTEGER unit
       PARAMETER (unit=20)
-      integer igrid,jgrid,kgrid
+      integer igrid,jgrid,kgrid,isorop
+      isorop=0
 
 
 
@@ -1435,8 +1451,10 @@ END SUBROUTINE sorgam_depdriver
 !     for now, don't call if temp is below -40C (humidity
 !     for this wrf version is already limited to 10 percent)
 
-        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1)then
-           CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
+        if(blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.1)then
+           CALL eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh,igrid,jgrid,kgrid)
+        else if (blkta(1).ge.233.15.and.blkrh(1).ge.0.1 .and. isorop.eq.0)then
+           CALL eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
         endif
 
 ! *** get size distribution information:
@@ -2743,7 +2761,7 @@ END SUBROUTINE sorgam_depdriver
 !    Calculate the aerosol chemical speciation and water content.
 
 ! cubic                                                     
-    SUBROUTINE eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh)
+    SUBROUTINE eql3(blksize,nspcsda,numcells,cblk,blkta,blkrh,igrid,jgrid,kgrid)
 !***********************************************************************
 !**    DESCRIPTION:
 !	Calculates the distribution of ammonia/ammonium, nitric acid/nitrate,
@@ -2767,7 +2785,7 @@ END SUBROUTINE sorgam_depdriver
 ! actual number of cells in arrays
       INTEGER numcells
 ! nmber of species in CBLK        
-      INTEGER nspcsda
+      INTEGER nspcsda,igrid,jgrid,kgrid
       REAL cblk(blksize,nspcsda) 
 ! *** Meteorological information in blocked arays:
 
@@ -2838,6 +2856,10 @@ END SUBROUTINE sorgam_depdriver
         wt_save(3) = wi(3) ! ammoinum
         wt_save(4) = wi(4) ! nitrate
         wt_save(5) = wi(5) ! chloride
+        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
+         print *,vhcl,vclai
+         print *,wi(1),wi(2),wi(3),wi(4),wi(5)
+        endif
 
         call isoropia(wi,rhi,tempi,cntrl,wt,gas,aerliq,aersld,scasi,other)
 
@@ -2852,6 +2874,10 @@ END SUBROUTINE sorgam_depdriver
         cblk(lcell,vnh3)  = gas(1)*1.e6*17.
         cblk(lcell,vhno3) = gas(2)*1.e6*63.
         cblk(lcell,vhcl) = gas(3)*1.e6*36.
+        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
+         print *,vhcl,vnh3,vhno3
+         print *,cblk(lcell,vnh3),cblk(lcell,vhno3),cblk(lcell,vhcl)
+        endif
 
 ! *** get modal fraction
         fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
@@ -2872,6 +2898,10 @@ END SUBROUTINE sorgam_depdriver
         cblk(lcell,vno3aj) = fracj*(wt_save(4) - gas(2))
         cblk(lcell,vclaj)  = fracj*(wt_save(5) - gas(3))
         cblk(lcell,vnaaj)  = fracj*wi(1)
+        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
+         print *,vh2oaj,vnh4aj,vno3aj,vclaj,vnaaj
+         print *,cblk(lcell,vnh4aj),cblk(lcell,vno3aj),cblk(lcell,vclaj),aerliq(8)
+        endif
 
 
 
@@ -2883,6 +2913,125 @@ END SUBROUTINE sorgam_depdriver
 !bs ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS *!
     END SUBROUTINE eql3
 ! eql3                                                    
+!    Calculate the aerosol chemical speciation and water content.
+
+! cubic                                                     
+    SUBROUTINE eql4(blksize,nspcsda,numcells,cblk,blkta,blkrh)
+!***********************************************************************
+!**    DESCRIPTION:
+!       Calculates the distribution of ammonia/ammonium, nitric acid/nitrate,
+!       and water between the gas and aerosol phases as the total sulfate,
+!       ammonia, and nitrate concentrations, relative humidity and
+!       temperature change.  The evolution of the aerosol mass concentration
+!       due to the change in aerosol chemical composition is calculated.
+!**    REVISION HISTORY:
+!       prototype 1/95 by Uma and Carlie
+!       Revised   8/95 by US to calculate air density in stmt func
+!                 and collect met variable stmt funcs in one include fil
+!       Revised 7/26/96 by FSB to use block concept.
+!       Revise 12/1896 to do do i-mode calculation.
+!**********************************************************************
+
+!     IMPLICIT NONE
+
+
+! dimension of arrays             
+      INTEGER blksize
+! actual number of cells in arrays
+      INTEGER numcells
+! nmber of species in CBLK        
+      INTEGER nspcsda
+      REAL cblk(blksize,nspcsda) 
+! *** Meteorological information in blocked arays:
+
+! main array of variables         
+      REAL blkta(blksize) ! Air temperature [ K ]                   
+      REAL blkrh(blksize) 
+
+! Fractional relative humidity            
+
+      INTEGER lcell
+! loop counter                                   
+! air temperature                             
+      REAL temp
+!iamodels3
+      REAL rh
+! relative humidity                           
+      REAL so4, no3, nh3, nh4, hno3
+      REAL aso4, ano3, ah2o, anh4, gnh3, gno3
+! Fraction of dry sulfate mass in i-mode         
+      REAL fraci
+!.......................................................................
+      REAL fracj
+! Fraction of dry sulfate mass in j-mode         
+      DO lcell = 1, &
+          numcells
+! *** Fetch temperature, fractional relative humidity, and
+!     air density
+
+!  loop on cells                    
+        temp = blkta(lcell)
+        rh = blkrh(lcell)
+
+! *** the following is an interim procedure. Assume the i-mode has the
+!     same relative mass concentrations as the total mass. Use SO4 as
+!     the surrogate. The results of this should be the same as those
+!     from the original RPM.
+
+! *** do total aerosol
+        so4 = cblk(lcell,vso4aj) + cblk(lcell,vso4ai)
+
+!iamodels3
+        no3 = cblk(lcell,vno3aj) + cblk(lcell,vno3ai)
+!    &                        + CBLK(LCELL, VHNO3)
+      
+        hno3 = cblk(lcell,vhno3)
+
+!iamodels3
+
+        nh3 = cblk(lcell,vnh3)
+        
+        nh4 = cblk(lcell,vnh4aj) + cblk(lcell,vnh4ai)
+!    &                        + CBLK(LCELL, VNH3)
+
+!bs           CALL rpmares(SO4,HNO3,NO3,NH3,NH4,RH,TEMP,
+!bs     &             ASO4,ANO3,AH2O,ANH4,GNH3,GNO3)
+!bs
+!bs * call old version of rpmares
+!bs
+        CALL rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
+          gnh3,gno3)
+!bs
+
+! *** get modal fraction
+        fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
+        fracj = 1.0 - fraci
+
+! *** update do i-mode
+
+        cblk(lcell,vh2oai) = fraci*ah2o
+        cblk(lcell,vnh4ai) = fraci*anh4
+        cblk(lcell,vno3ai) = fraci*ano3
+
+! *** update accumulation mode:
+
+        cblk(lcell,vh2oaj) = fracj*ah2o
+        cblk(lcell,vnh4aj) = fracj*anh4
+        cblk(lcell,vno3aj) = fracj*ano3
+
+
+! *** update gas / vapor phase
+        cblk(lcell,vnh3) = gnh3
+        cblk(lcell,vhno3) = gno3
+
+      END DO
+!  end loop on cells                     
+      RETURN
+
+!bs ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS *!
+    END SUBROUTINE eql4
+! eql4                                                    
+
     SUBROUTINE fdjac(n,x,fjac,ct,cs,imw)
 !bs ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS ** ** BS ** BS *!
 !bs                                                                    !

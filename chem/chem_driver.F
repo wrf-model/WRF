@@ -340,7 +340,7 @@
      CASE (CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'calling cbmz_mosaic_8bin_aq aerosols driver from chem_driver')
        haveaer = .true.
-    CASE (CHEM_TRACER)
+    CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
      CASE DEFAULT
        CALL wrf_debug(15,'calling chem_opt=? from chem_driver')
@@ -591,7 +591,8 @@
               grid%ebu_hc8,grid%ebu_ete,grid%ebu_olt,grid%ebu_oli,grid%ebu_pm25,           &
               grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
               grid%ebu_tol,grid%ebu_xyl,grid%ebu_csl,grid%ebu_hcho,grid%ebu_ald,           &
-              grid%ebu_ket,grid%ebu_macr,grid%ebu_ora1,grid%ebu_ora2,grid%mean_fct_agtf,   &
+              grid%ebu_ket,grid%ebu_macr,grid%ebu_ora1,grid%ebu_ora2,grid%ebu_bc,          &
+              grid%ebu_oc,grid%ebu_so2,grid%ebu_dms,grid%ebu_sulf,grid%mean_fct_agtf,      &
               grid%mean_fct_agef,grid%mean_fct_agsv,grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &
@@ -644,8 +645,9 @@
 !
 ! calculate aerosol optical properities
 !
-      if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)                                &
-           .and. config_flags%chem_opt /= CHEM_TRACER) then
+      if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)      &
+           .and. config_flags%chem_opt /= CHEM_TRACER       &
+           .and. config_flags%chem_opt /= CHEM_TRACE2) then
          call wrf_debug(15,'calling optical driver')
          call optical_driver (grid%id,ktau,grid%dt,config_flags,haveaer,              &
               chem,dz8w,rri,                                                          &
@@ -662,7 +664,8 @@
 
 !
 ! calculate photolysis rates
-      if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)                                &
+      if((ktau.eq.1 .or. mod(ktau,grid%stepphot).eq.0)   &
+           .and. config_flags%chem_opt /= CHEM_TRACE2    &
            .and. config_flags%chem_opt /= CHEM_TRACER) then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,ktau,grid%dt,config_flags,haveaer,           &
@@ -796,8 +799,9 @@ n2o5_het=0.
 ! So, finish any remaining tiles and then skip to the end of chem_driver.
 !
 
-      if((ktau.eq.1.or.mod(ktau,grid%stepchem).eq.0)                                  &
-           .and. config_flags%chem_opt /= CHEM_TRACER) then
+      if((ktau.eq.1.or.mod(ktau,grid%stepchem).eq.0)        &
+           .and. config_flags%chem_opt /= CHEM_TRACER       &
+           .and. config_flags%chem_opt /= CHEM_TRACE2) then
         dtstepc=grid%dt*float(grid%stepchem)
         ktauc=max(ktau/grid%stepchem,1)
         if(ktau.eq.1) then

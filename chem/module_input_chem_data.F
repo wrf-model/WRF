@@ -333,7 +333,7 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   select case(chem_opt)
   case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,GOCARTRACM_KPP, &
         RACMPM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ, &
-        CHEM_TRACER)
+        CHEM_TRACER,CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
   case (CBMZ,CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
@@ -1169,6 +1169,8 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas) = 0.0001
 !     si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 0.0001
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_co ) = 0.08
+   ELSE IF ( si_grid%chem_opt == CHEM_TRACE2 ) THEN
+      si_grid%chem(ims:ime,kms:kme,jms:jme,p_TRACER_1 ) = 0.08
    ELSE IF ( si_grid%chem_opt == GOCART_SIMPLE ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:num_chem) = 1.e-12
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_so2) = 1.e-6
@@ -1568,6 +1570,9 @@ SUBROUTINE input_chem_profile (si_grid)
     else
        chem = conmin
     end if
+    if( nch .eq. p_tracer_1  ) then
+       chem = 0.08
+    endif
 
   END SUBROUTINE bdy_chem_value_tracer
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1861,6 +1866,8 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 4
       else if (config_flags%chem_opt == CHEM_TRACER) then
           i_bdy_method = 5
+      else if (config_flags%chem_opt == CHEM_TRACE2) then
+          i_bdy_method = 5
       else if (config_flags%chem_opt == GOCART_SIMPLE) then
           i_bdy_method = 7
       end if
@@ -1878,6 +1885,7 @@ SUBROUTINE input_chem_profile (si_grid)
 !          print 90010, '_bdy_mosaic for ic=', ic, i_bdy_method
 !      else if (i_bdy_method .eq. 5) then
 !          print 90010, '_bdy_tracer for ic=', ic, i_bdy_method
+!          print *,numgas,num_chem
 !      else 
 !          print 90010, '_bdy_NONE** for ic=', ic, i_bdy_method
 !      end if
@@ -2176,6 +2184,8 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 4
       else if (config_flags%chem_opt == CHEM_TRACER) then
           i_bdy_method = 5
+      else if (config_flags%chem_opt == CHEM_TRACE2) then
+          i_bdy_method = 5
       end if
       if (have_bcs_chem) i_bdy_method =6
       if (ic .lt. param_first_scalar) i_bdy_method = 0
@@ -2464,6 +2474,9 @@ SUBROUTINE input_chem_profile (si_grid)
 
      case (CHEM_TRACER)
         get_last_gas = p_co
+
+     case (CHEM_TRACE2)
+        get_last_gas = p_tracer_1
 
      case (GOCART_SIMPLE)
         get_last_gas = p_msa

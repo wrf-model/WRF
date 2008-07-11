@@ -1,7 +1,17 @@
-! This is a program that converts emissions data into WRF input data.
+! This program that converts the following emissions data into 
+!    into WRF input data data files. The potential fields are:
+!       1) anthropogenic emissions data
+!       2) biogenic emissions data
+!       3) GOCART dust errosion factor
+!       4) GOCART sea salt emissions factor
+!       5) GOCART dimethyl sulfide emissions
+!       6) Wild fire biomass burn location obtained from GOES-ABBA data 
+!
+!    The WRF namelist.input file is used to decide which data 
+!    is to be converted when this program is executed.
 !
 
-PROGRAM convert_emiss
+PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    USE module_machine
@@ -9,20 +19,34 @@ PROGRAM convert_emiss
    USE module_io
    USE module_wrf_error
    USE module_io_wrf
-   USE module_initialize_real
-   USE module_integrate
+   USE module_integrate 
    USE module_driver_constants
    USE module_state_description
    USE module_configure
    USE module_timing
    USE module_utility
-   USE module_input_chem_data
+   USE module_input_gocart_background
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!new for bc
+   USE module_bc
+   USE module_big_step_utilities_em
+   USE module_get_file_names
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    IMPLICIT NONE
+
+   INTERFACE
+     SUBROUTINE init_domain_constants_em_ptr ( parent , nest )
+       USE module_domain
+       USE module_configure
+       TYPE(domain), POINTER  :: parent , nest
+     END SUBROUTINE init_domain_constants_em_ptr
+
+   END INTERFACE
+
 
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
@@ -42,7 +66,7 @@ PROGRAM convert_emiss
 
    INTEGER :: max_dom, domain_id
    INTEGER :: id1 , id , fid, ierr
-   INTEGER :: idum1, idum2 , ihour
+   INTEGER :: idum1, idum2 , ihour, icnt
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
    INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
@@ -52,12 +76,23 @@ PROGRAM convert_emiss
 
    REAL    :: dt_from_file, tstart_from_file, tend_from_file
    INTEGER :: ids , ide , jds , jde , kds , kde
+   INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: i , j , k , idts, ntsd, emi_frame, nemi_frames
+   integer     ::  kw, kg
+   real        ::  top, bot,fac
    INTEGER :: debug_level = 0
+   INTEGER, PARAMETER  :: iklev=55
+   real,dimension(iklev) :: p_g,p_wrf,ilev
+   REAL        :: p00, t00, a, p_surf, pd_surf,p_top
+   integer :: kbot,ktop
+   REAL, ALLOCATABLE, DIMENSION(:) :: gocart_lev
+   REAL, ALLOCATABLE, DIMENSION(:,:) :: tmp2
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: tmp_oh,tmp_no3,tmp_h2o2,tmp3,interpolate
+   REAL, ALLOCATABLE :: dumc0(:,:,:),dumc4(:,:,:)
+   REAL, ALLOCATABLE :: dumc1(:,:)
+   real mmax
 
-   INTEGER ibuf(1)
-   REAL rbuf(1)
 
    CHARACTER (LEN=80)     :: message
 
@@ -72,10 +107,16 @@ PROGRAM convert_emiss
 
    REAL :: cen_lat, cen_lon, moad_cen_lat, truelat1, truelat2, gmt, stand_lon, dum1
    INTEGER :: map_proj, julyr, julday, iswater, isice, isurban, isoilwater
+   INTEGER :: iswaterr,itime,nv,itest
+
+   REAL :: dx,dy
+
    CHARACTER(LEN= 8) :: chlanduse
 
 
    CHARACTER (LEN=80) :: inpname , eminame, dum_str, wrfinname
+   CHARACTER (LEN=80)                     :: bdyname
+   CHARACTER (LEN=20)       :: dname
 
 ! these are needed on some compilers, eg compaq/alpha, to
 ! permit pass by reference through the registry generated
@@ -84,11 +125,13 @@ PROGRAM convert_emiss
    INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
 #endif
 
+#include "version_decl"
+
    !  Get the NAMELIST data for input.
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "WRF V2.1.2 EMISSIONS PREPROCESSOR "
+   program_name = "WRF V3 EMISSIONS PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -99,6 +142,7 @@ PROGRAM convert_emiss
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
    CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
+
 
 #ifdef DM_PARALLEL
    IF ( wrf_dm_on_monitor() ) THEN
@@ -112,25 +156,50 @@ PROGRAM convert_emiss
    CALL initial_config
 #endif
 
+
+   !  And here is an instance of using the information in the NAMELIST.  
+
    CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
+   
+   !  Allocated and configure the mother domain.  Since we are in the nesting down
+   !  mode, we know a) we got a nest, and b) we only got 1 nest.
 
-   CALL  wrf_message ( program_name )
-
-   CALL init_wrfio
-
-!     !  Get the grid info from the wrfinput file
-
-   write(message,FMT='(A)') ' allocate for wrfinput_d01 '
-   CALL  wrf_debug ( 100, message )
    NULLIFY( null_domain )
+   
+   CALL  wrf_message ( program_name )
+   write(message,FMT='(A)') ' allocate for wrfinput_d01 '
    CALL alloc_and_configure_domain ( domain_id  = 1           , &
                                      grid       = head_grid   , &
                                      parent     = null_domain , &
                                      kid        = -1            )
-   write(message,FMT='(A)') ' pointer for wrfinput_d01 '
-   CALL  wrf_debug ( 100, message )
    grid => head_grid
+
+   !  Set up time initializations.
+
+   CALL Setup_Timekeeping ( grid )
+
+   CALL domain_clock_set( head_grid, &
+                          time_step_seconds=model_config_rec%interval_seconds )
+   CALL       wrf_debug ( 100 , 'convert_gocart: calling model_to_grid_config_rec ' )
+   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+   CALL       wrf_debug ( 100 , 'convert_gocart: calling set_scalar_indices_from_config ' )
+   CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
+
+   !  Initialize the I/O for WRF.
+
+   CALL       wrf_debug ( 100 , 'convert_gocart: calling init_wrfio' )
+   CALL init_wrfio
+
+#ifdef DM_PARALLEL
+   CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
+   CALL wrf_dm_bcast_bytes( configbuf, nbytes )
+   CALL set_config_as_buffer( configbuf, configbuflen )
+#endif
+
+!     !  Get the grid info from the wrfinput file
+
+   CALL  wrf_debug ( 100, message )
    write(message,FMT='(A)') ' set scalars for wrfinput_d01 '
    CALL  wrf_debug ( 100, message )
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
@@ -139,13 +208,14 @@ PROGRAM convert_emiss
    CALL  wrf_debug ( 100, message )
    CALL construct_filename1( wrfinname , 'wrfinput' , grid%id , 2 )
 
-   write(message,FMT='(A,A)')' open file ',TRIM(wrfinname)
-   CALL  wrf_debug ( 100, message )
-   CALL open_r_dataset ( fid, TRIM(wrfinname) , grid , config_flags , "DATASET=INPUT", ierr )
+   write(message,FMT='(A,A)') ' open file ',TRIM(wrfinname)
+   CALL  wrf_message ( message )
+   CALL open_r_dataset ( fid, TRIM(wrfinname) , head_grid , config_flags , "DATASET=INPUT", ierr )
 
-   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
-
+! read wrfinput
+!
+   CALL med_initialdata_input( head_grid , config_flags )
+!
    write(message,FMT='(A)') ' wrfinput open error check '
    CALL  wrf_debug ( 100, message )
    IF ( ierr .NE. 0 ) THEN
@@ -154,55 +224,24 @@ PROGRAM convert_emiss
       CALL WRF_ERROR_FATAL ( wrf_err_message )
    ENDIF
    write(message,FMT='(A)') ' past opening wrfinput_d01 '
-   CALL  wrf_debug ( 100, message )
+   CALL  wrf_debug ( 00, message )
 
-      CALL wrf_get_dom_ti_integer ( fid , 'MAP_PROJ' ,  map_proj , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'CEN_LAT' , cen_lat , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'CEN_LON' , cen_lon , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'STAND_LON' , stand_lon , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'TRUELAT1' , truelat1 , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'TRUELAT2' , truelat2 , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_real    ( fid , 'GMT' , gmt , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'JULYR' , julyr , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'JULDAY' , julday , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' , iswater , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISICE  ' , isice   , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISURBAN' , isurban , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_integer ( fid , 'ISOILWATER' , isoilwater , 1 , idum1 , ierr )
-      CALL wrf_get_dom_ti_char    ( fid , 'MMINLU'  , chlanduse , ierr )
- 
+
       CALL close_dataset      ( fid , config_flags , "DATASET=INPUT" )
 
 
    !  An available simple timer from the timing module.
 
-!  NULLIFY( null_domain )
-!  CALL alloc_and_configure_domain ( domain_id  = 1           , &
-!                                    grid       = head_grid   , &
-!                                    parent     = null_domain , &
-!                                    kid        = -1            )
-
-!  grid => head_grid
    CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
-
    CALL Setup_Timekeeping ( grid )
-   CALL domain_clockprint ( 150, grid, &
-          'DEBUG emissions_convert:  clock after Setup_Timekeeping,' )
    CALL domain_clock_set( grid, &
                           time_step_seconds=model_config_rec%interval_seconds )
-   CALL domain_clockprint ( 150, grid, &
-          'DEBUG emissions_convert:  clock after timeStep set,' )
+   CALL domain_clock_get ( grid, current_timestr=message )
+   write(message,FMT='(A,A)') ' current_time ',Trim(message)
+   CALL  wrf_debug ( 100, message )
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
-!  print *,'start date=',model_config_rec%start_year(grid%id),model_config_rec%start_month(grid%id),&
-!  model_config_rec%start_day(grid%id),model_config_rec%start_hour(grid%id)
-!  print *,'end   date=',model_config_rec%end_year(grid%id),model_config_rec%end_month(grid%id),&
-!  model_config_rec%end_day(grid%id),model_config_rec%end_hour(grid%id)
-!  print *,'interval  =',model_config_rec%interval_seconds
-!  print *,'init_typ  =',model_config_rec%real_data_init_type
 
    !  Figure out the starting and ending dates in a character format.
 
@@ -227,8 +266,389 @@ PROGRAM convert_emiss
            start_year,start_month,start_day,start_hour,start_minute,start_second
    WRITE (   end_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
              end_year,  end_month,  end_day,  end_hour,  end_minute,  end_second
+   print *,start_date_char
+   print *,end_date_char
+
+! these are needed on some compilers, eg compaq/alpha, to
+! permit pass by reference through the registry generated
+! interface to med_read_emissions, below
+#ifdef DEREF_KLUDGE
+   sm31             = grid%sm31
+   em31             = grid%em31
+   sm32             = grid%sm32
+   em32             = grid%em32
+   sm33             = grid%sm33
+   em33             = grid%em33
+#endif
+       CALL get_ijk_from_grid (  grid ,                        &
+                                 ids, ide, jds, jde, kds, kde,    &
+                                 ims, ime, jms, jme, kms, kme,    &
+                                 ips, ipe, jps, jpe, kps, kpe    )
+     ALLOCATE( tmp_oh(ids:ide,jds:jde,iklev) )
+     ALLOCATE( tmp_h2o2(ids:ide,jds:jde,iklev) )
+     ALLOCATE( tmp_no3(ids:ide,jds:jde,iklev) )
+     ALLOCATE( tmp2(ids:ide,jds:jde) )
+     ALLOCATE( tmp3(ids:ide,jds:jde,3) )
+     ALLOCATE( interpolate(ids:ide,kds:kde,jds:jde) )
+     ALLOCATE( gocart_lev(iklev))
 
 
+   ihour = start_hour
+!!!!!!!!!!!!!!!!!!!!!
+!
+!   read reference fields that some of the GOCART modules require (can be run with other modules too?)
+!
+   if(config_flags%chem_opt == GOCART_SIMPLE               &
+      .or.    config_flags%dmsemis_opt == DMSGOCART        &
+      .or.    config_flags%dust_opt  ==   DUSTGOCART       &
+                                                           ) then
+   write(message,FMT='(A)') ' READ GOCART BACKGROUND DATA '
+   CALL  wrf_debug ( 00, message )
+! 
+#ifdef DM_PARALLEL
+   IF (wrf_dm_on_monitor()) THEN
+     OPEN(19,FILE='wrf_gocart_backg',FORM='UNFORMATTED')
+   endif
+#else
+     OPEN(19,FILE='wrf_gocart_backg',FORM='UNFORMATTED')
+#endif     
+     READ(19) tmp2
+      grid%dms_0(ids:ide,jds:jde) = tmp2
+     READ(19) tmp3
+      do i=1,3 
+       grid%erod(ids:ide,jds:jde,i)=tmp3(ids:ide,jds:jde,i)
+      enddo
+     reaD(19) gocart_lev
+     READ(19) tmp_h2o2
+     READ(19) tmp_oh
+     READ(19) tmp_no3
+     CLOSE(19)
+!  CALL input_ext_chem_gocart_bg ( grid ) 
+   write(message,FMT='(A)') ' PAST  GOCART BACKGROUND DATA'
+   CALL  wrf_debug ( 00, message )
+
+   grid%input_from_file = .false.
+
+   write(message,FMT='(A)') ' OPEN  GOCART BACKGROUND DATA WRF file'
+   CALL  wrf_debug ( 00, message )
+
+   CALL construct_filename1( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input9 , "DATASET=AUXINPUT9", ierr )
+   write(message,FMT='(A,A)') '  GOCART BACKGROUND DATA file name: ',TRIM(inpname)
+   CALL  wrf_message ( message )
+   
+   IF ( ierr .NE. 0 ) THEN
+     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+   ENDIF
+
+   write(message,FMT='(A)') ' PAST OPEN  GOCART BACKGROUND DATA WRF file '
+   CALL  wrf_debug ( 100, message )
+
+   CALL calc_current_date ( grid%id , 0. )
+   CALL geth_newdate ( current_date_char, current_date, 3600 )
+   current_date = current_date_char // '.0000'
+
+!     if( stand_lon  == 0. ) then
+!        stand_lon = cen_lon
+!     endif
+ 
+!     if( moad_cen_lat  == 0. ) then
+!        moad_cen_lat = cen_lat
+!     endif
+
+
+    idum1 = 1
+     if(config_flags%chem_opt == GOCART_SIMPLE) then
+! interpolate 3d fields to WRF in vertical
+!
+   do k=1,iklev
+        p_g(k) = log10( gocart_lev(k) * 1023.) 
+   enddo
+      CALL nl_get_base_pres  ( 1 , p00 )
+      CALL nl_get_base_temp  ( 1 , t00 )
+      CALL nl_get_base_lapse ( 1 , a   )
+      call nl_get_p_top_requested (1,p_top)
+   t00=290.
+   a=50.
+   p00=100000.
+   do j=jds,jde-1
+   do i=ids,ide-1
+      p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+      do k=kds,kde
+         grid%pb(i,k,j) = grid%znu(k)*(p_surf - p_top) + p_top
+      enddo
+      do kw=kde-1,kds,-1
+       do kg=iklev-1,1,-1
+            if( p_g(kg) <= log10(.01*grid%pb(i,kw,j)) ) then
+               kbot = max(1,kg-1)
+               ktop = min(kg,iklev-1)
+            endif
+       enddo
+      fac= (tmp_no3(i  ,j  ,ktop)-tmp_no3(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+      grid%backg_no3(i, kw, j) = tmp_no3(i  ,j  ,ktop)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(ktop))
+
+!             grid%backg_no3(i, kw, j) = bot + bot - top * fac
+! OH
+      fac= (tmp_oh(i  ,j  ,ktop)-tmp_oh(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+      grid%backg_oh(i, kw, j) = tmp_oh(i  ,j  ,ktop)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(ktop))
+
+!             grid%backg_oh(i, kw, j) = bot + bot - top * fac
+! H2O2
+
+      fac= (tmp_h2o2(i  ,j  ,ktop)-tmp_h2o2(i  ,j  ,kbot))/(p_g(ktop) - p_g(kbot))
+      grid%backg_h2o2(i, kw, j) = tmp_h2o2(i  ,j  ,ktop)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(ktop))
+
+      enddo
+   enddo
+   enddo
+
+   CALL output_aux_model_input9 ( id1 , grid , config_flags , ierr )
+
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT9" )
+   ENDIF ! chem_opt gocart_simple
+   ENDIF ! chem_opt gocart_simple,dmsgocart,dustgocart
+      DEALLOCATE( tmp_oh )
+      DEALLOCATE( tmp_h2o2 )
+      DEALLOCATE( tmp_no3 )
+      DEALLOCATE( tmp2)
+      DEALLOCATE( tmp3)
+      DEALLOCATE( interpolate )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! now do fire and/or global emissions
+!
+   ALLOCATE (dumc0(ids:ide,kds:grid%kemit,jds:jde))
+!  ALLOCATE (dumc4(ids:ide-1,kds:grid%kemit,jds:jde-1))
+   ALLOCATE (dumc1(ids:ide,jds:jde))
+     if(config_flags%emiss_opt == ecptec .or. config_flags%emiss_opt == gocart_ecptec ) then
+     write(message, FMT='(A,4I6)') ' I am reading global anthropogenic emissions, dims: =',ids, ide-1, jds, jde-1
+     call wrf_message( TRIM( message ) )
+
+     CALL construct_filename1 ( bdyname , 'emissopt3' , grid%id , 2 )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        open (92,file=bdyname,form='unformatted')
+     ENDIf
+#else
+     OPEN(92,FILE=bdyname,FORM='UNFORMATTED')
+#endif
+   write(message, FMT='(A,A)') ' OPENED FILE: ',TRIM(bdyname)
+   call wrf_message( TRIM( message ) )
+
+         itest=0
+         if(config_flags%emiss_opt == ecptec)itest=1
+         if(config_flags%emiss_opt == gocart_ecptec)then
+           itest=0
+           write(message, FMT='(A)') ' I am reading emissions for gocart only (aerosols)'
+           call wrf_message( TRIM( message ) )
+         endif
+     read(92)nv
+     print *,nv
+     read(92)dname
+     print *,dname
+     read(92)itime
+     print *,itime
+   
+         read(92)dumc1
+     print *,'  1'
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_so2)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  2'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_no)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  3'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ald)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  4'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hcho)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  5'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ora2)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  6'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_nh3)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  7'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc3)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  8'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc5)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,'  9'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc8)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 10'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_eth)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 11'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_co)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 12'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ol2)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 13'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_olt)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 13'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_oli)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 14'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_tol)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 15'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_xyl)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 16'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ket)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 17'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_csl)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 18'
+         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_iso)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 19'
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_pm_25)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 21'
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_pm_10)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 22'
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_oc)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 23'
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_bc)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 24'
+!        grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_dms)=dumc1(ids:ide-1,jds:jde-1)
+         read(92)dumc1
+     print *,' 25'
+         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_sulf)=dumc1(ids:ide-1,jds:jde-1)
+!
+! simple file dump here....
+!
+         write(message,FMT='(A)') ' OPEN EMISSIONS WRF files for emissions coming from global data set'
+         call wrf_message( TRIM( message ) )
+         write(message, FMT='(A)') ' NO TIME DEPENDENCE IN THIS DATASET'
+
+!
+! emissions from retro/edgar/gocart
+!
+         CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
+
+         CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
+
+         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+     endif  ! emiss_opt
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+     if(config_flags%biomass_burn_opt == biomassb ) then
+        CALL construct_filename1 ( bdyname , 'emissfire' , grid%id , 2 )
+        write(message, FMT='(A,A)') ' TRY TO OPEN FILE: ',TRIM(bdyname)
+        call wrf_message( TRIM( message ) )
+        CALL wrf_debug( 00 , 'calling fire emissions' )
+#ifdef DM_PARALLEL
+        IF (wrf_dm_on_monitor()) THEN
+           open (93,file=bdyname,form='unformatted')
+        ENDIf
+#else
+        OPEN(93,FILE=bdyname,FORM='UNFORMATTED')
+#endif
+         write(message, FMT='(A,A)') ' OPENED FILE: ',TRIM(bdyname)
+         call wrf_message( TRIM( message ) )
+            read(93)nv
+            print *,nv
+            read(93)dname
+            print *,dname
+            read(93)itime
+            print *,itime
+
+            read(93)dumc1
+            grid%ebu_so2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_no(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_ald(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_hcho(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_ora2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+   !        grid%ebu_nh3(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_hc3(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_hc5(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_hc8(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_eth(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_co(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+   !        grid%ebu_ol2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_olt(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_oli(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_tol(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_xyl(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_ket(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_csl(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_iso(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_pm25(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_pm10(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_oc(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_bc(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_dms(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%ebu_sulf(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%mean_fct_agtf(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%mean_fct_agef(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%mean_fct_agsv(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%mean_fct_aggr(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%firesize_agtf(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%firesize_agef(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%firesize_agsv(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+            read(93)dumc1
+            grid%firesize_aggr(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+!
+! fire stuff
+!
+         CALL construct_filename1( inpname , 'wrffirechemi' , grid%id , 2 )
+         write(message, FMT='(A,A)') ' NOW OPEN FILE FOR WRITE: ',TRIM(inpname)
+         call wrf_message( TRIM( message ) )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input7 , "DATASET=AUXINPUT7", ierr )
+ 
+
+         CALL output_aux_model_input7 ( id1 , grid , config_flags , ierr )
+ 
+         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT7" )
+     endif ! biomassburn
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!    NOW DO BIG TIMEDEPENDENT EMISSIONS FILE
+!
+    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG) then
    !  Figure out our loop count for the processing times.
 
    time_loop = 1
@@ -238,12 +658,12 @@ PROGRAM convert_emiss
    loop_count : DO
       CALL geth_newdate ( next_date_char , current_date_char , interval_seconds )
       IF      ( next_date_char .LT. end_date_char ) THEN
-         time_loop = time_loop + 1 
+         time_loop = time_loop + 1
          write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',next_date_char
          CALL  wrf_message ( message )
          current_date_char = next_date_char
       ELSE IF ( next_date_char .EQ. end_date_char ) THEN
-         time_loop = time_loop + 1 
+         time_loop = time_loop + 1
          write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',next_date_char
          CALL  wrf_message ( message )
          write(message,FMT='(A,I4)') 'Total analysis times to input = ',time_loop
@@ -253,6 +673,7 @@ PROGRAM convert_emiss
       ELSE IF ( next_date_char .GT. end_date_char ) THEN
          write(message,FMT='(A,I4)') 'Total analysis times to input = ',time_loop
          CALL  wrf_message ( message )
+         time_loop_max = time_loop
          time_loop_max = time_loop
          EXIT loop_count
       END IF
@@ -266,82 +687,127 @@ PROGRAM convert_emiss
    start_date = start_date_char // '.0000'
    current_date = start_date
 
-! these are needed on some compilers, eg compaq/alpha, to
-! permit pass by reference through the registry generated
-! interface to med_read_emissions, below
-#ifdef DEREF_KLUDGE
-   sm31             = grid%sm31
-   em31             = grid%em31
-   sm32             = grid%sm32
-   em32             = grid%em32
-   sm33             = grid%sm33
-   em33             = grid%em33
-#endif
-
    ihour = start_hour
    write(message,FMT='(A)') ' READ EMISSIONS 1'
    CALL  wrf_debug ( 100, message )
-   CALL med_read_bin_chem_emiss ( grid , config_flags, ihour, time_loop )
+! do the ugly stuff
+!
+     if(start_hour.eq.0)CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
+     if(start_hour.eq.12)CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        open (91,file=bdyname,form='unformatted')
+     ENDIf
+#else
+!  write(message, FMT='(A,A)') ' OPEN FILE: ',bdyname
+!  call wrf_message( TRIM( message ) )
+        open (91,file=bdyname,form='unformatted')
+#endif
+    DEALLOCATE ( dumc0 )
+   ALLOCATE (dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1))
+
+!  write(message, FMT='(A,A)') ' OPENED FILE: ',bdyname
+!  call wrf_message( TRIM( message ) )
+     read(91)nv
+     read(91)dname 
+     write(message, FMT='(A,I10)') ' Number of emissions: ',nv
+     call wrf_message( TRIM( message ) )
+       read(91)itime
+     write(message, '(A,I8,A,I8)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
+     call wrf_message( TRIM( message ) )
+         read(91)dumc0 
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so2)=dumc0
+         read(91)dumc0 
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ald)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hcho)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ora2)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_nh3)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc3)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc5)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc8)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eth)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_co)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ol2)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_olt)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_oli)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_tol)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_xyl)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ket)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_csl)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_iso)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25i)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25j)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4i)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4j)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3i)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3j)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgi)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgj)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eci)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ecj)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm_10)=dumc0
+
+
+
+
    write(message,FMT='(A)') ' PAST READ EMISSIONS 1'
    CALL  wrf_debug ( 100, message )
+!  grid%input_from_file = .false.
 
-   grid%input_from_file = .false.
+         CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
 
-   write(message,FMT='(A)') ' OPEN EMISSIONS WRF file '
-   CALL  wrf_debug ( 100, message )
-
-   CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
    CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
-   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-   write(message,FMT='(A,A)') ' EMISSIONS file name: ',TRIM(inpname)
+   write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    IF ( ierr .NE. 0 ) THEN
      CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
    ENDIF
 
-   write(message,FMT='(A)') ' PAST OPEN EMISSIONS WRF file '
-   CALL  wrf_debug ( 100, message )
-
    CALL calc_current_date ( grid%id , 0. )
    CALL geth_newdate ( current_date_char, current_date, 3600 )
    current_date = current_date_char // '.0000'
-
-      if( stand_lon  == 0. ) then
+         if( stand_lon  == 0. ) then
          stand_lon = cen_lon
       endif
- 
+   
       if( moad_cen_lat  == 0. ) then
          moad_cen_lat = cen_lat
       endif
-
-!  CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
-
-   ! write global atributes into wrf emissions file
-
-! grid%map_proj = map_proj
-! grid%cen_lat = cen_lat
-! grid%cen_lon = cen_lon
-  config_flags%map_proj = map_proj
-  config_flags%cen_lat = cen_lat
-  config_flags%cen_lon = cen_lon
-  config_flags%stand_lon = stand_lon
-  config_flags%truelat1 = truelat1
-  config_flags%truelat2 = truelat2
-  config_flags%gmt = gmt
-  config_flags%julyr = julyr
-  config_flags%julday = julday
-  config_flags%iswater = iswater
-  config_flags%isice = isice
-  config_flags%isurban = isurban
-  config_flags%isoilwater = isoilwater
-  config_flags%moad_cen_lat = moad_cen_lat
-! config_flags%mminlu = TRIM(chlanduse) 
-
   CALL output_aux_model_input5 ( id1 , grid , config_flags, ierr )
-
+  
     current_date_char = start_date_char
     current_date = current_date_char
-
+  
    nemi_frames = time_loop
    if( debug_level >= -100) print *,'NEMI_FRAMES ', nemi_frames,time_loop
 
@@ -358,57 +824,129 @@ PROGRAM convert_emiss
 
      write(message,FMT='(A,A)') ' Date &  time ',Trim(current_date)
      CALL  wrf_message ( message )
-
      CALL domain_clockadvance( grid )
 
      write(message,FMT='(A,I4)') ' Read emissions ',emi_frame
      CALL  wrf_debug ( 100, message )
      ihour = mod(ihour + 1,24)
-     CALL med_read_bin_chem_emiss ( grid , config_flags, ihour, nemi_frames-1 )
+     if(ihour.eq.0)then
+         close(91)
+         CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
+     endif
+     if(ihour.eq.12) then 
+         close(91)
+         CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
+     endif
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        open (91,file=bdyname,form='unformatted')
+     ENDIf
+#else
+        open (91,file=bdyname,form='unformatted')
+#endif
+!  write(message, '(A,A)') ' OPENED FILE: ',bdyname
+!  call wrf_message( TRIM( message ) )
+     if(ihour.eq.0.or.ihour.eq.12)then
+
+     read(91)nv
+     print *,'nv = ',nv
+     read(91)dname
+     endif
+       read(91)itime
+     print *,'itime = ',itime
+         read(91)dumc0 
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so2)=dumc0
+         read(91)dumc0 
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ald)=dumc0
+         read(91)dumc0 
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hcho)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ora2)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_nh3)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc3)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc5)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc8)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eth)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_co)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ol2)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_olt)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_oli)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_tol)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_xyl)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ket)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_csl)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_iso)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25i)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25j)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4i)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4j)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3i)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3j)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgi)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgj)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eci)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ecj)=dumc0
+         read(91)dumc0
+         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm_10)=dumc0
+
+
 
    ! write global atributes into wrf emissions file
 
      write(message,FMT='(A)') ' Output emissions '
-     CALL  wrf_debug ( 100, message )
+     CALL  wrf_debug ( 100, message ) 
      CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
 
 !   idum1 = 1
-!    CALL wrf_put_dom_ti_char    ( id1 , 'START_DATE' ,TRIM(start_date_char) , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'MAP_PROJ'        , map_proj    , 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'MOAD_CEN_LAT'    , moad_cen_lat, 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'CEN_LAT'         , cen_lat     , 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'CEN_LON'         , cen_lon     , 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'STAND_LON'       , stand_lon   , 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'TRUELAT1'        , truelat1    , 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'TRUELAT2'        , truelat2    , 1 , ierr )
-!    CALL wrf_put_dom_ti_real    ( id1 , 'GMT'             , gmt         , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'MAP_PROJ'        , map_proj    , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'JULYR'           , julyr       , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'JULDAY'          , julday      , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISWATER'         , iswater     , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISICE  '         , isice       , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISURBAN'         , isurban     , 1 , ierr )
-!    CALL wrf_put_dom_ti_integer ( id1 , 'ISOILWATER'      , isoilwater  , 1 , ierr )
-!    CALL wrf_put_dom_ti_char    ( id1 , 'MMINLU'          , TRIM(chlanduse)   , ierr )
-
-
-! print *,' map_proj ', config_flags%map_proj, map_proj
-! print *,' cen_lat  ', config_flags%cen_lat , cen_lat
-! print *,' cen_lon  ', config_flags%cen_lon , cen_lon
-
-   END DO
+   END DO 
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+     write(message,FMT='(A)') ' DONE WRITING TIME DEPENDENT EMISSIONS FILE'
+     CALL  wrf_message ( message )
 
-    write(message,FMT='(A)') 'CONVERT EMISSIONS: end of program '
-    CALL  wrf_message ( message )
+    endif  !    ERADM .or.ERADMSORG
+
+    DEALLOCATE ( dumc0 )
+    DEALLOCATE ( dumc1 )
+
+
+   write(message,FMT='(A)') '  EMISSIONS CONVERSION : end of program '
+   CALL  wrf_message ( message )
 
     CALL wrf_shutdown
     CALL WRFU_Finalize( rc=rc )
 
-!#ifdef DM_PARALLEL
-!   CALL wrf_dm_shutdown
-!#endif
+#ifdef DM_PARALLEL
+   CALL wrf_dm_shutdown
+#endif
+
    STOP
 
-END PROGRAM convert_emiss
+END PROGRAM  convert_emissions
+

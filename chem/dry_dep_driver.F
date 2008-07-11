@@ -164,6 +164,7 @@ CONTAINS
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES WITH WESELY METHOD')
 
        IF( config_flags%chem_opt /= CHEM_TRACER  .and.                   &
+           config_flags%chem_opt /= CHEM_TRACE2  .and.                   &
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                                 &
@@ -301,13 +302,12 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-!       if (e_co(i,kts,j) .gt. 0) then
-!          ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-!       endif
-!       if (e_co(i,kts,j) .gt. 200) then
-!          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
-!       endif
-!
+        if (e_co(i,kts,j) .gt. 0) then
+           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+        endif
+        if (e_co(i,kts,j) .gt. 200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+        endif
 !
       do k=kts,kte
          zz(k)=z(i,k,j)-z_at_w(i,kts,j)

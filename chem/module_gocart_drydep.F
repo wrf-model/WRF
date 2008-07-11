@@ -69,8 +69,8 @@ CONTAINS
   imx=1
   jmx=1
   lmx=1
-  do j=jts,jte
-  do i=its,ite
+  do j=max(jds+1,jts),min(jde-1,jte)
+  do i=max(ids+1,its),min(ide-1,ite)
      dvel(1,1)=0.
      ilwi(1,1)=0
      if(xland(i,j).gt.1.5)ilwi=1
@@ -80,7 +80,7 @@ CONTAINS
      ireg(1,1)=1
      airden(1,1)=rho_phy(i,kts,j)
      delz_sfc(1,1)=dz8w(i,kts,j)
-     ustar(1,1)=ust(i,j)
+     ustar(1,1)=max(1.e-1,ust(i,j))
      hflux(1,1)=hfx(i,j)
      pblz(1,1)=pbl(i,j)
      ps(1,1)=p8w(i,kts,j)*.01
@@ -183,7 +183,7 @@ SUBROUTINE depvel_gocart(      &
 ! *    vK = 0.4            = von Karman's constant                           *
 ! ****************************************************************************
 
-        IF (hflux(i,j) == 0.0) THEN
+        IF (abs(hflux(i,j)) <= 1.e-5) THEN
            obk = 1.0E5
         ELSE
            ! MINVAL(hflux), MINVAL(airden), MINVAL(ustar) =??

@@ -429,11 +429,13 @@ real::t1,t2,t3,t4
               CALL  wrf_message ( message )
 
               CALL input_ext_chem_file( grid )
-!             IF(grid%emiss_inpt_opt == 3 ) THEN
-!                message = 'READING EMISSIONS DATA OPT 3'
-!                CALL  wrf_message ( message )
+              IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
+                                         .or. grid%biomass_burn_opt == BIOMASSB) THEN
+                 message = 'READING EMISSIONS DATA OPT 3'
+                 CALL  wrf_message ( message )
 !                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
-!             END IF
+                 CALL med_read_wrf_chem_emissopt3 ( grid , config_flags)
+              END IF
 
               IF(grid%bio_emiss_opt == 2 ) THEN
                  message = 'READING BEIS3.11 EMISSIONS DATA'
@@ -445,19 +447,8 @@ real::t1,t2,t3,t4
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
 
-              IF(grid%dust_opt >= 1 ) THEN !shc
-                 message = 'READING DUST EMISSIONS DATA'
-                 CALL  wrf_message ( message )
-                 CALL med_read_wrf_chem_dust_emiss ( grid , config_flags)
-              END IF
-              IF(grid%dmsemis_opt >= 1 ) THEN !shc
-                 message = 'READING DMS REFERENCE FIELDS'
-                 CALL  wrf_message ( message )
-                 CALL med_read_wrf_chem_dms_emiss ( grid , config_flags)
-              END IF
-
-              IF(grid%chem_opt == 300 ) THEN !shc
-                 message = 'READING GOCART BACKGROUND DATA'
+              IF(grid%dust_opt == 1 .or. grid%dmsemis_opt == 1 .or. grid%chem_opt == 300) THEN !shc
+                 message = 'READING GOCART BG AND/OR DUST and DMS REF FIELDS'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_gocart_bg ( grid , config_flags)
               END IF
@@ -478,24 +469,16 @@ real::t1,t2,t3,t4
                  CALL  wrf_message ( message ) 
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               END IF
-!             IF(grid%emiss_inpt_opt == 3 ) THEN
-!                message = 'READING EMISSIONS DATA OPT 3'
-!                CALL  wrf_message ( message )
+              IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
+                                         .or. grid%biomass_burn_opt == BIOMASSB) THEN
+                 message = 'READING EMISSIONS DATA OPT 3'
+                 CALL  wrf_message ( message )
 !                CALL med_read_bin_chem_emissopt3 ( grid , config_flags)
-!             END IF
+                 CALL med_read_wrf_chem_emissopt3 ( grid , config_flags)
+              END IF
 
-              IF(grid%dust_opt >= 1 ) THEN !shc
-                 message = 'READING DUST EMISSIONS DATA'
-                 CALL  wrf_message ( message )
-                 CALL med_read_wrf_chem_dust_emiss ( grid , config_flags)
-              END IF
-              IF(grid%dmsemis_opt >= 1 ) THEN !shc
-                 message = 'READING DMS REFERENCE FIELDS'
-                 CALL  wrf_message ( message )
-                 CALL med_read_wrf_chem_dms_emiss ( grid , config_flags)
-              END IF
-              IF(grid%chem_opt == 300 ) THEN !shc
-                 message = 'READING GOCART BACKGROUND DATA'
+              IF(grid%dust_opt == 1 .or. grid%dmsemis_opt == 1 .or. grid%chem_opt == 300) THEN !shc
+                 message = 'READING GOCART BG AND/OR DUST and DMS REF FIELDS'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_gocart_bg ( grid , config_flags)
               END IF

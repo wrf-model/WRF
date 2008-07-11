@@ -34,7 +34,8 @@
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    IMPLICIT NONE
 
-   real  , intent(in) :: bioemdt,photdt,chemdt,plumerisefire_frq,dt,gmt
+   real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
+   INTEGER,      INTENT(IN   ) :: plumerisefire_frq
    INTEGER,      INTENT(IN   ) :: chem_in_opt
    INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
                                   ids,ide, jds,jde, kds,kde,         &
@@ -106,15 +107,15 @@ call wrf_message("**************************************************************
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
        call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance.")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance.")
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
        call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (CBM4_KPP )
        CALL wrf_debug(15,'calling CB4 from chem_driver')
        call wrf_message("WARNING: CB4 chemistry option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (NMHC9_KPP )
        CALL wrf_debug(15,'calling NMHC9 from chem_driver')
        call wrf_message("WARNING: NMHC9 chemistry option is highly experimental and not recommended for use.")
@@ -132,19 +133,19 @@ call wrf_message("**************************************************************
    if ( config_flags%dust_opt == 1 ) then
        call wrf_message("WARNING: dust option currently works only with the GOCART aerosol option.")
        call wrf_message("WARNING: dust option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    endif
 
    if ( config_flags%seas_opt == 1 ) then
        call wrf_message("WARNING: sea salt option currently works only with the GOCART aerosol option.")
        call wrf_message("WARNING: sea salt option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    endif
 
    if ( config_flags%biomass_burn_opt == 1 ) then
        call wrf_message("WARNING: biomass burning option works only when chem_opt is set to RACMPM_KPP.")
        call wrf_message("WARNING: biomass burning option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
@@ -248,7 +249,7 @@ call wrf_message("**************************************************************
     stepbioe=nint(bioemdt*60./dt)
     stepphot=nint(photdt*60./dt)
     stepchem=nint(chemdt*60./dt)
-    stepfirepl=nint(plumerisefire_frq*60./dt)
+    stepfirepl=plumerisefire_frq*60/nint(dt)
     stepbioe=max(stepbioe,1)
     stepphot=max(stepphot,1)
     stepchem=max(stepchem,1)
@@ -301,7 +302,6 @@ call wrf_message("**************************************************************
      end if
 
    if( .NOT. config_flags%restart ) then
-
    kpp_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP)
         if(config_flags%chem_in_opt == 0 )then
@@ -335,7 +335,6 @@ call wrf_message("**************************************************************
         endif
    END SELECT kpp_select
    endif
-
    aer_select: SELECT CASE(config_flags%chem_opt)
      CASE (RACMPM_KPP)
         if(config_flags%chem_in_opt == 0 )then
@@ -445,7 +444,7 @@ call wrf_message("**************************************************************
                its,ite, jts,jte, kts,kte                             )
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then
-        if(config_flags%chem_in_opt == 0 )then
+        if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
         do l=numgas+1,num_chem
            do j=jts,jte
               do k=kts,kte

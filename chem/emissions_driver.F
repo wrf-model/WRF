@@ -16,7 +16,8 @@ CONTAINS
          ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
          ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
          ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
-         ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef,   &
+         ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,         &
+         ebu_dms,ebu_sulf,mean_fct_agtf,mean_fct_agef,                     &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
@@ -100,7 +101,8 @@ CONTAINS
            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
-           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2
+           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
+            ebu_dms,ebu_sulf
 
    REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
          OPTIONAL,                                                         &
@@ -260,7 +262,8 @@ CONTAINS
            ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
-           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,mean_fct_agtf,mean_fct_agef, &
+           ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
+           ebu_dms,ebu_sulf,mean_fct_agtf,mean_fct_agef,                   &
            mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,        &
            firesize_agsv,firesize_aggr,                                    &
            config_flags, t_phy,moist,                                      &
@@ -272,12 +275,13 @@ CONTAINS
 
        endif
        CALL wrf_debug(15,'fire emissions: adding biomassb emissions')
-       call add_emis_burn(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
+       call add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,&
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
             ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,       &
             ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,  &
             ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,    &
-            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,                          &
+            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,    &
+            ebu_dms,ebu_sulf,config_flags%chem_opt,                      &
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
@@ -476,6 +480,8 @@ CONTAINS
 !
 ! simple fix for now
 !
+!
+       if(config_flags%emiss_opt <=  5  ) then
        do j=jts,jte  
           do i=its,ite  
              do k=kts,min(config_flags%kemit,kte-ksub)
@@ -496,6 +502,33 @@ CONTAINS
              end do
           end do
        end do
+       endif
+!
+! next for global gocart emissions
+!
+       if(config_flags%emiss_opt == 6  ) then
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
+                     +(emis_ant(i,k,j,p_e_bc))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
+                     +(emis_ant(i,k,j,p_e_oc))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
+                     +(emis_ant(i,k,j,p_e_pm_25))   &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p10)  = chem(i,k,j,p_p10)                     &
+                     +(emis_ant(i,k,j,p_e_pm_10))   &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
+                     +emis_ant(i,k,j,p_e_sulf)*conv
+             end do
+          end do
+       end do
+       endif
 ! do this here for now, quick and dirty
 
     CASE DEFAULT

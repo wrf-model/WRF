@@ -127,7 +127,8 @@ end subroutine gocart_aerosols_driver
                   pm10(i,k,j) = pm10(i,k,j)+chem(ii,k,jj,n)        
                enddo
                pm10(i,k,j) = pm10(i,k,j) + sulfate                 &
-                            +chem(ii,k,jj,p_dust_4)*d_10
+                            +chem(ii,k,jj,p_dust_4)*d_10           &
+                            +chem(ii,k,jj,p_p10)
                pm10(i,k,j) = pm10(i,k,j)/ alt(ii,k,jj)
             enddo
          enddo

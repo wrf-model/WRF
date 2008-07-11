@@ -1,6 +1,6 @@
 #makefile to build io_mcel that does binary i/o
 
-OBJSL   = io_mcel.o ext_mcel_open_for_read.o ext_mcel_open_for_write.o ext_mcel_read_field.o ext_mcel_write_field.o
+OBJSL   = io_mcel.o ext_mcel_open_for_read.o ext_mcel_open_for_write.o ext_mcel_read_field.o ext_mcel_write_field.o timeconvert.o
 OBJS    = $(OBJSL)
 OPTS    =
 FFLAGS  =  $(OPTS) -w -g
@@ -19,9 +19,12 @@ libwrfio_mcel.a:		$(OBJS)
 			$(AR) cr libwrfio_mcel.a $(OBJSL)
 			$(RANLIB) libwrfio_mcel.a
 
+timeconvert.o : timeconvert.c
+			$(CC) -c timeconvert.c
+
 .F90.o:
-			$(CPP) $*.F90 | $(M4) - > $*.f
-			$(FC) $(FFLAGS) -I../ioapi_share -c $*.f
+			$(CPP) $(TRADFLAG) $(INCL) $*.F90 | $(M4) - > $*.f
+			$(FC) $(FFLAGS) $(INCL) -I../ioapi_share -c $*.f
 
 superclean:
 			/bin/rm -f *.f *.o libwrfio_mcel.a

@@ -610,8 +610,8 @@
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
 
 #ifdef MCELIO
-   LU_MASK = 0.
-   WHERE ( grid%lu_index .EQ. 16 ) LU_MASK = 1.
+   grid%LU_MASK = 0.
+   WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
 #endif
 
    END IF

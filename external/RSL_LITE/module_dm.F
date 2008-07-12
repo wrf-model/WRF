@@ -235,6 +235,7 @@ CONTAINS
       INTEGER               :: parent_grid_ratio, i_parent_start, j_parent_start
       INTEGER               :: shw
       INTEGER               :: idim_cd, jdim_cd, ierr
+      INTEGER               :: max_dom
 
       TYPE(domain), POINTER :: intermediate_grid
       TYPE(domain), POINTER  :: nest_grid
@@ -261,7 +262,9 @@ CONTAINS
             kds = sd3 ; kde = ed3 
       END SELECT
 
-      CALL compute_memory_dims_rsl_lite ( 0 , bdx, bdy,   &
+      CALL nl_get_max_dom( 1 , max_dom )
+
+      CALL compute_memory_dims_rsl_lite ( id, max_dom, 0 , bdx, bdy,   &
                    ids,  ide,  jds,  jde,  kds,  kde, &
                    ims,  ime,  jms,  jme,  kms,  kme, &
                    imsx, imex, jmsx, jmex, kmsx, kmex, &
@@ -434,7 +437,7 @@ CONTAINS
          DO j = c_jds, c_jde
             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  max_halo_width+3, max_halo_width+3 )
+                                  max_halo_width+3, max_halo_width+3, ierr )
 
 
             IF ( Py .EQ. mytask_y ) THEN
@@ -611,6 +614,7 @@ CONTAINS
   END SUBROUTINE patch_domain_rsl_lite
 
   SUBROUTINE compute_memory_dims_rsl_lite  (      &
+                   id , max_dom ,                 &
                    shw , bdx,  bdy ,              &
                    ids,  ide,  jds,  jde,  kds,  kde, &
                    ims,  ime,  jms,  jme,  kms,  kme, &
@@ -622,6 +626,7 @@ CONTAINS
 
     USE module_machine
     IMPLICIT NONE
+    INTEGER, INTENT(IN)               ::  id , max_dom
     INTEGER, INTENT(IN)               ::  shw, bdx, bdy
     INTEGER, INTENT(IN)     ::  ids, ide, jds, jde, kds, kde
     INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
@@ -632,6 +637,17 @@ CONTAINS
     INTEGER, INTENT(OUT)    ::  ipsy, ipey, jpsy, jpey, kpsy, kpey
 
     INTEGER Px, Py, P, i, j, k, ierr
+    INTEGER maxhalowidth
+
+
+    IF ( max_dom .EQ. 1 ) THEN
+       maxhalowidth = max_halo_width
+    ELSE
+       ! if we're doing nesting then we have to maintain a wider halo so that
+       ! the interpolation in SINT and associated HALO exchanges can work 
+       ! correctly with RSL_LITE
+       maxhalowidth = max_halo_width + 3
+    ENDIF
 
 #if ( ! NMM_CORE == 1 )
 
@@ -642,7 +658,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             max_halo_width+3, max_halo_width+3, ierr )
+                             maxhalowidth, maxhalowidth, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( ips .EQ. -1 ) ips = i
@@ -661,7 +677,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             max_halo_width+3, max_halo_width+3, ierr )
+                             maxhalowidth, maxhalowidth, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( jps .EQ. -1 ) jps = j
@@ -732,7 +748,7 @@ CONTAINS
     ierr = 0
     DO k = kds, kde
        CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, max_halo_width+3, ierr )
+                             1, maxhalowidth, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           kpex = k
           IF ( kpsx .EQ. -1 ) kpsx = k
@@ -754,7 +770,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde
        CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, max_halo_width+3, ierr )
+                             1, maxhalowidth, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpex = j
           IF ( jpsx .EQ. -1 ) jpsx = j
@@ -790,7 +806,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
        CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
-                             max_halo_width+3, 1, ierr ) ! x and y for proc mesh reversed
+                             maxhalowidth, 1, ierr ) ! x and y for proc mesh reversed
        IF ( Py .EQ. mytask_y ) THEN
           ipey = i
           IF ( ipsy .EQ. -1 ) ipsy = i
@@ -814,7 +830,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             max_halo_width+3, max_halo_width+3, ierr )
+                             maxhalowidth, maxhalowidth, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
@@ -829,7 +845,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             max_halo_width+3, max_halo_width+3, ierr )
+                             maxhalowidth, maxhalowidth, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1

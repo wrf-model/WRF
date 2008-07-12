@@ -152,7 +152,7 @@ call wrf_get_myproc(myproc)
      IF ( piggyback_mu ) THEN
        grid%u_2(ips:ipe,kde,jps:jpe) = grid%mu_2(ips:ipe,jps:jpe) 
      ENDIF
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_V_z2x.inc"
      CALL polar_filter_3d( grid%v_xxx, grid%clat_xxx, .false.,     &
                                 fft_filter_lat, dclat,                 &
@@ -196,7 +196,7 @@ call wrf_get_myproc(myproc)
      IF ( piggyback_mu ) THEN
        grid%t_2(ips:ipe,kde,jps:jpe) = grid%mu_2(ips:ipe,jps:jpe)
      ENDIF
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_T_z2x.inc"
      k_end = MIN(kde-1,kpex)
      IF ( piggyback_mu ) k_end = MIN(kde,kpex)
@@ -225,7 +225,7 @@ call wrf_get_myproc(myproc)
 ! W and PH
    IF ( flag_wph .EQ. 1 ) THEN
       ! W AND PH USE ALL LEVELS SO NEVER PIGGYBACK, MU IS OUT OF LUCK HERE
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_W_z2x.inc"
       CALL polar_filter_3d( grid%w_xxx, grid%clat_xxx, .false.,     &
                                  fft_filter_lat, 0.,                &
@@ -258,7 +258,7 @@ call wrf_get_myproc(myproc)
 ! WW
    IF ( flag_ww .EQ. 1 ) THEN
       ! WW USES ALL LEVELS SO NEVER PIGGYBACK, MU IS OUT OF LUCK HERE
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_WW_z2x.inc"
       CALL polar_filter_3d( grid%ww_xxx, grid%clat_xxx, .false.,     &
                                  fft_filter_lat, 0.,                &
@@ -281,7 +281,7 @@ call wrf_get_myproc(myproc)
      IF ( piggyback_mut ) THEN
        grid%ru_m(ips:ipe,kde,jps:jpe) = grid%mut(ips:ipe,jps:jpe)
      ENDIF
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_RV_z2x.inc"
      CALL polar_filter_3d( grid%rv_xxx, grid%clat_xxx, .false.,     &
                                 fft_filter_lat, dclat,             &
@@ -322,7 +322,7 @@ call wrf_get_myproc(myproc)
 ! MOIST
    IF ( flag_moist .GE. PARAM_FIRST_SCALAR ) THEN
      itrace = flag_moist
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_MOIST_z2x.inc"
      CALL polar_filter_3d( grid%fourd_xxx, grid%clat_xxx, .false. ,     &
                            fft_filter_lat, 0.,                &
@@ -345,7 +345,7 @@ call wrf_get_myproc(myproc)
 ! CHEM
    IF ( flag_chem .GE. PARAM_FIRST_SCALAR ) THEN
      itrace = flag_chem
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_CHEM_z2x.inc"
      CALL polar_filter_3d( grid%fourd_xxx, grid%clat_xxx, .false. ,     &
                            fft_filter_lat, 0.,                &
@@ -368,7 +368,7 @@ call wrf_get_myproc(myproc)
 ! SCALAR
    IF ( flag_chem .GE. PARAM_FIRST_SCALAR ) THEN
      itrace = flag_scalar
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_SCALAR_z2x.inc"
      CALL polar_filter_3d( grid%fourd_xxx , grid%clat_xxx, .false. ,     &
                            fft_filter_lat, 0.,                &

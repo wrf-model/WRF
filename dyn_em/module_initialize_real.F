@@ -287,7 +287,7 @@ integer::oops1,oops2
          !  Filter the input topography if this is a polar projection.  
 
          IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 
             !  We stick the topo and map fac in an unused 3d array. The map scale 
             !  factor and computational latitude are passed along for the ride 
@@ -437,7 +437,7 @@ integer::oops1,oops2
                               ims , ime , jms , jme , 1   , num_metgrid_levels , &
                               its , ite , jts , jte , 1   , num_metgrid_levels )
 
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
             grid%p_top = wrf_dm_max_real ( grid%p_top )
 #endif
 
@@ -467,7 +467,7 @@ integer::oops1,oops2
                               ims , ime , jms , jme , 1   , num_metgrid_levels , &
                               its , ite , jts , jte , 1   , num_metgrid_levels )
 
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
             grid%p_top = wrf_dm_max_real ( grid%p_top )
 #endif
             IF ( grid%p_top .GT. p_top_save ) THEN

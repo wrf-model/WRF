@@ -256,31 +256,11 @@ set REAL8 = FALSE
 set REG_TYPE = OPTIMIZED
 set REG_TYPE = BIT4BIT
 
-#	For a Linux machine, we can use PGI or Intel compilers.
+#	For a Mac/Intel, we can run either g95 or PGI.
 
-if ( `uname` == Linux ) then
-	set LINUX_COMP = INTEL
+if ( `uname` == Darwin ) then
+	set LINUX_COMP = G95
 	set LINUX_COMP = PGI
-endif
-
-#	Intel requires /usr/local/intel-8.0/lib in LD_LIBRARY_PATH
-#	and it has to be in the .cshrc file for the rsh for mpirun
-#	intel 8.0 Apr 2005
-
-if ( `uname` == Linux ) then
-	if ( $LINUX_COMP == INTEL ) then
-	
-		grep LD_LIBRARY_PATH ~/.cshrc >& /dev/null
-		set ok1 = $status
-		echo $LD_LIBRARY_PATH | grep intel >& /dev/null
-		set ok2 = $status
-		if ( ( $ok1 != 0 ) || ( $ok2 != 0 ) ) then
-			echo You need to stick the following line in your .cshrc file
-			echo setenv LD_LIBRARY_PATH /usr/lib:/usr/local/lib:/usr/local/intel-8.0/lib
-			echo Otherwise mpirun cannot find libcxa.so.5 
-			exit ( 1 )
-		endif
-	endif
 endif
 
 #	We can choose to do a global test
@@ -1358,12 +1338,18 @@ else if ( $ARCH[1] == Darwin ) then
 	endif
 	set TMPDIR              = .
 	set MAIL		= /usr/bin/mailx
-	set COMPOPTS    = ( 13 0 14 )
+	if      ( $LINUX_COMP == PGI ) then
+		set COMPOPTS	= (  1 2  3 )
+		set ZAP_OPENMP	= FALSE
+	else if ( $LINUX_COMP == G95 ) then
+		set COMPOPTS	= ( 13 0 14 )
+		set ZAP_OPENMP	= TRUE
+	endif
 	set COMPOPTS_NO_NEST = 0
 	set COMPOPTS_NEST_STATIC = 1
 	set COMPOPTS_NEST_PRESCRIBED = 2
 	set Num_Procs		= 4
-	set OPENMP 		= $Num_Procs
+	set OPENMP 		= 2
 	cat >! `pwd`/machfile << EOF
 `hostname`
 `hostname`
@@ -1373,10 +1359,14 @@ EOF
         set Mach = `pwd`/machfile
 	set SERIALRUNCOMMAND	= 
 	set OMPRUNCOMMAND	= 
-	set MPIRUNCOMMAND 	= ( /stink/gill/local/bin/mpirun -np $Num_Procs )
-	set ZAP_OPENMP		= TRUE
 	echo "Compiler version info: " >! version_info
-	g95 -v |& grep gcc >>&! version_info
+	if      ( $LINUX_COMP == PGI ) then
+		set MPIRUNCOMMAND 	= ( /usr/local/mpich2-1.0.6p1-pgi/bin/mpirun -np $Num_Procs )
+		pgf90 -V | head -2 | tail -1 >>&! version_info
+	else if ( $LINUX_COMP == G95 ) then
+		set MPIRUNCOMMAND 	= ( /stink/gill/local/bin/mpirun -np $Num_Procs )
+		g95 -v |& grep gcc >>&! version_info
+	endif
 	echo " " >>! version_info
 	echo "OS version info: " >>! version_info
 	uname -a >>&! version_info
@@ -1993,6 +1983,7 @@ banner 7
 $compopt
 $compopts_nest
 EOF
+cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 	
 		#	The configure.wrf file needs to be adjusted as to whether we are requesting real*4 or real*8
 		#	as the default floating precision.

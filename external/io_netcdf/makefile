@@ -43,9 +43,9 @@ diffwrf:                diffwrf.F90
 	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
 	  echo "diffwrf io_netcdf is being built now. " ; \
           if [ -f $(NETCDFPATH)/lib/libnetcdff.a ] ; then \
-	    $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) $(LIBS) -lnetcdff ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) ;\
+	    $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) bitwise_operators.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) -lnetcdff ;\
           else \
-	    $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) $(LIBS) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) ;\
+	    $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) bitwise_operators.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
           fi ; \
         else \
 	   echo "***************************************************************************** " ; \

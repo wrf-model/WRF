@@ -2576,7 +2576,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
         DO N=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)

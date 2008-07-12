@@ -104,6 +104,7 @@ thisdir_linked_lib: $(OBJS)
 
 thisdir_archive: $(OBJS) .FORCE 
 	$(AR) $(ARFLAGS) $(LIB_DEST)/lib$(LIB_NAME).a $(OBJS)
+	$(RANLIB) $(LIB_DEST)/lib$(LIB_NAME).a $(OBJS)
 
 #
 #  RULE for building unit test programs. 

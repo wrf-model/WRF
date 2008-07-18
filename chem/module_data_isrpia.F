@@ -87,7 +87,7 @@ module module_data_isrpia
 !
 ! *** ERROR SYSTEM *****************************************************
 !
-      CHARACTER ERRMSG*40(NERRMX)
+      CHARACTER *40 ERRMSG(NERRMX)
       INTEGER   ERRSTK(NERRMX), NOFER   
       LOGICAL   STKOFL   
 !

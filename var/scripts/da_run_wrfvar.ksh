@@ -227,7 +227,7 @@ ln -fs $WRFVAR_DIR/run/CAM_ABS_DATA .
 ln -fs $WRFVAR_DIR/run/CAM_AEROPT_DATA .
 ln -fs $WRFVAR_DIR/run/gmao_airs_bufr.tbl .
 ln -fs $BUILD_DIR/da_wrfvar.exe .
-export PATH=$WRFVAR_DIR/scripts:$PATH
+export PATH=$WRFVAR_DIR/var/scripts:$PATH
 
 if $NL_VAR4D; then
    ln -fs $DA_BOUNDARIES wrfbdy_d01

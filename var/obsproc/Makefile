@@ -171,8 +171,8 @@ make_rules:
 		echo "CPPFLAGS		=	-I. -C -P -DLINUX -DUNDERSCORE -traditional -Dlinux "	>> compiler_macros	; \
 		echo "FC		=	pgf90"				>> compiler_macros	; \
 		echo "FCFLAGS		=	-Mfreeform -pc 32 "		>> compiler_macros	; \
-		echo "FFLAGS		=	-Mfixed -pc 32 "		>> compiler_macros	; \
-		echo "CWFLAGS		=	-byteswapio "		>> compiler_macros	; \
+		echo "FFLAGS		=	"		>> compiler_macros	; \
+		echo "CWFLAGS		=	"		>> compiler_macros	; \
 		echo "LDFLAGS		=	" 				>> compiler_macros	; \
 		echo "CCFLAGS		=	-DLINUX -DUNDERSCORE -I."	>> compiler_macros	; \
 		echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a"		>> compiler_macros	; \

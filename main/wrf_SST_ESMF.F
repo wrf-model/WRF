@@ -288,9 +288,14 @@ CONTAINS
               'XY'                , &  ! MemoryOrder
               ''                  , &  ! Stagger
               TRIM(debugmsg)      , &  ! Debug message
-              ids , (ide-1) , jds , (jde-1) , 1 , 1 , &
+!              ids , (ide-1) , jds , (jde-1) , 1 , 1 , &
+!              ims , ime , jms , jme , 1 , 1         , &
+!              ips , MIN( (ide-1), ipe ) , jps , MIN( (jde-1), jpe ) , 1 , 1 , &
+!jm the dimensions have already been reduced to the non-staggered WRF grid when
+!   they were stored in this module..  Just use as is.
+              ids , ide , jds , jde , 1 , 1 , &
               ims , ime , jms , jme , 1 , 1         , &
-              ips , MIN( (ide-1), ipe ) , jps , MIN( (jde-1), jpe ) , 1 , 1 , &
+              ips , ipe , jps , jpe , 1 , 1 , &
               ierr )
        IF (ierr /= 0) THEN
          CALL wrf_error_fatal ( TRIM(errormsg) )
@@ -324,8 +329,8 @@ CONTAINS
          'could not find land_binary_mask data in land_binary_mask field' )
      ENDIF
      ! staggered starts/ends
-     DO j= jps , MIN( (jde-1), jpe )
-       DO i= ips , MIN( (ide-1), ipe )
+     DO j= jps , jpe
+       DO i= ips , ipe
          out_sst_ptr(i,j) = file_sst_data(i,j)
          out_landmask_ptr(i,j) = file_landmask_data(i,j)
        ENDDO

@@ -299,6 +299,7 @@ PROGRAM convert_emissions
 !   read reference fields that some of the GOCART modules require (can be run with other modules too?)
 !
    if(config_flags%chem_opt == GOCART_SIMPLE               &
+      .or.    config_flags%chem_opt == GOCARTRACM_KPP      &
       .or.    config_flags%dmsemis_opt == DMSGOCART        &
       .or.    config_flags%dust_opt  ==   DUSTGOCART       &
                                                            ) then
@@ -358,7 +359,8 @@ PROGRAM convert_emissions
 
 
     idum1 = 1
-     if(config_flags%chem_opt == GOCART_SIMPLE) then
+     if( (config_flags%chem_opt == GOCART_SIMPLE) .OR. &
+          config_flags%chem_opt == GOCARTRACM_KPP) ) then
 ! interpolate 3d fields to WRF in vertical
 !
    do k=1,iklev
@@ -401,11 +403,11 @@ PROGRAM convert_emissions
       enddo
    enddo
    enddo
+   ENDIF ! chem_opt gocart_simple
 
    CALL output_aux_model_input9 ( id1 , grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT9" )
-   ENDIF ! chem_opt gocart_simple
    ENDIF ! chem_opt gocart_simple,dmsgocart,dustgocart
       DEALLOCATE( tmp_oh )
       DEALLOCATE( tmp_h2o2 )

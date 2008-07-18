@@ -1754,9 +1754,9 @@ CONTAINS
 
       IF ( ETP <= 0.0 ) THEN
          BETA = 0.0
+         ETA = ETP
          IF ( ETP < 0.0 ) THEN
             BETA = 1.0
-            ETA = ETP
          END IF
       ELSE
          BETA = ETA / ETP

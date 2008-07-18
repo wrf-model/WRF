@@ -382,6 +382,7 @@ while ( <CONFIGURE_DEFAULTS> )
       }
     else
       {
+        $_ =~ s:CONFIGURE_ESMF_FLAG::g ;
         $_ =~ s:ESMFLIBFLAG::g ;
         if ( $sw_os == Interix ) {
            $_ =~ s:ESMFIOLIB:\$\(WRF_SRC_ROOT_DIR\)/external/esmf_time_f90/libesmf_time.a:g ;

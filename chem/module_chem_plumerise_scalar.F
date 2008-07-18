@@ -7,8 +7,8 @@ Module module_chem_plumerise_scalar
   real,parameter :: p00=p1000mb
 !  real, external:: esat_pr
 CONTAINS
-subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
-                     nspecies,eburn_in,eburn_out      &
+subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
+                    ,nspecies,eburn_in,eburn_out      &
                     ,up,vp,wp,theta,pp,dn0,rv,zt_rams,zm_rams)
 ! use module_zero_plumegen_coms, only : ucon,vcon,wcon,thtcon,rvcon,picon,tmpcon&
 !                          ,dncon,prcon,zcon,zzcon,scon
@@ -68,14 +68,19 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
   !
   !24-n1 =>  sem uso
   !----------------------------------------------------------------------
+! print *,' Plumerise_scalar 1',ncall
   if (ncall == 0) then
     ncall = 1
     call zero_plumegen_coms
   endif
+! print *,' Plumerise_scalar 1',ncall
   
     
-  do j = ja,jz
-    do i = ia,iz
+! print *,' Plumerise_scalar 2',m1
+  j=1
+  i=1
+! do j = ja,jz           ! loop em j
+!   do i = ia,iz         ! loop em i
      
      !- if the max value of flaming is close to zero => there is not emission with
      !- plume rise => cycle
@@ -92,7 +97,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
  	   rvcon (k)=rv(k,i,j)  	      ! water vapor mixing ratio
  	   zcon  (k)=zt_rams(k)               ! termod-point height
  	   zzcon (k)=zm_rams(k)               ! W-point height
- 	   !if(i==43 .and. j==42)print*,'PL:',k,zcon(k),prcon (k),tmpcon(k)-273.,1000.*rvcon (k)
+!	   print*,'PL:',k,zcon(k),picon (k),thtcon(k),1000.*rvcon (k)
  	 enddo
          do ispc=1,nspecies
 	      eburn_out(1,ispc) = eburn_in(ispc)
@@ -103,13 +108,14 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
  	    
          !- loop nos 4 biomas agregados com possivel queimada 
  	 do iveg_ag=1,nveg_agreg
+!         print *,'iveg_ag = ',iveg_ag,mean_fct(iveg_ag)
   
 
          !- verifica a existencia de emissao flaming para um bioma especifico
     	 !orig: if( plume( k_CO_smold + iveg_ag ,i,j) < 1.e-6 ) cycle
            if(mean_fct(iveg_ag) < 1.e-6 ) cycle
  
-	   ! burnt area and standard desviation
+	   ! burnt area and standard deviation
 	   burnt_area    = firesize(iveg_ag)
 	      
 	   !not em use
@@ -121,7 +127,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
 	   
 !--------------------
                 !ixx=iveg_ag*10 + imm
-                !print*,'i j veg=',i, j, iveg_ag,imm
+!               print*,'i j veg=',i, j, iveg_ag,imm
 !--------------------             
 	      
 	     !- get fire properties (burned area, plume radius, heating rates ...)
@@ -134,6 +140,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
 	     if(iveg_ag == 4         .and. imm == 2) then 
  	        ztopmax(2)=ztopmax(1)
 		ztopmax(1)=zzcon(1)
+!               print *,'cycle',ztopmax(1),ztopmax(2)
                 cycle
 	     endif
 	     
@@ -148,6 +155,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
 	   dz_flam=zzcon(k2)-zzcon(k1-1)
 	   
 	   !- distribui a emissao flaming entre os niveis k1 e k2	 
+!          print *,'distribui, k1,k2,dz_flam',k1,k2,dz_flam
 	   do k=k1,k2
 	      !use this in case the emission src is already in mixing ratio
 	      !rhodzi= 1./(dn0(k,i,j) * dz_flam)
@@ -173,6 +181,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
 	        					 q_smold_kgm2 * &
 							 dzi    !use this in case the emission src is tracer density
 							!rhodzi !use this in case the emission src is already in mixing ratio
+!             if(ispc.eq. 1) print *,' Plume: ',k,eburn_out(k,ispc),mean_fct(iveg_ag),q_smold_kgm2,dzi
 							 
 							 
 
@@ -188,8 +197,8 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,   &
  	 !stop 333
  	 !endif  	
      !-----
-       enddo  ! loop em i
-  enddo   ! loop em j
+!      enddo  ! loop em i
+! enddo   ! loop em j
 !stop 4544
 end subroutine plumerise
 !-------------------------------------------------------------------------
@@ -558,6 +567,8 @@ endif
 ! ******************* model evolution ******************************
 rmaxtime = float(maxtime)
 !
+!print * ,' TIME=',time,' RMAXTIME=',rmaxtime
+!print*,'======================================================='
  DO WHILE (TIME.LE.RMAXTIME)  !beginning of time loop
 
 !   do itime=1,120

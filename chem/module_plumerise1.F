@@ -40,8 +40,12 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
   USE module_state_description
   USE module_zero_plumegen_coms
   USE module_chem_plumerise_scalar
-! integer, parameter :: nveg_agreg      = 4
   IMPLICIT NONE
+! integer, parameter :: nveg_agreg      = 4
+! integer, parameter :: nveg_agreg      = 4
+! integer, parameter :: tropical_forest = 1
+! integer, parameter :: boreal_forest   = 2
+! integer, parameter :: savannah        = 3
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -91,9 +95,11 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
       real, dimension (kte) :: u_in ,v_in ,w_in ,theta_in ,pi_in  &
                               ,rho_phyin ,qv_in ,zmid    &
                               ,z_lev
-      real :: sum
+! real, dimension(nveg_agreg) :: firesize,mean_fct
+      real :: sum, ffirs
 !     real,save,dimension(its:ite,jts:jte) :: ffirs
-!     ffirs=0.
+      ffirs=0.
+!     write(0,*)'plumerise'
 
        do j=jts,jte
           do i=its,ite
@@ -136,6 +142,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
             sum=mean_fct_agtf(i,j)+mean_fct_agef(i,j)+mean_fct_agsv(i,j)    &
                     +mean_fct_aggr(i,j)
             if(sum.lt.1.e-6)Cycle
+!           write(0,*)'before',i,j,ebu_co(i,1,j),sum
 !           ffirs=ffirs+1
             eburn_out=0.
             mean_fct(1)=mean_fct_agtf(i,j)
@@ -203,10 +210,10 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 !           do k=kts,kte
 !               write(0,*)k,z_lev(k),zmid(k),rho_phyin(k),theta_in(k)
 !           enddo
-!               write(0,*)'eburn',eburn_in(1),mean_fct,firesize
+!               !rite(0,*)'eburn',eburn_in(1),mean_fct,firesize
 !             endif
 
-            call plumerise(kte,1,1,1,1,1,1  &
+            call plumerise(kte,1,1,1,1,1,1,firesize,mean_fct  &
                     ,nspecies,eburn_in,eburn_out &
                     ,u_in ,v_in ,w_in ,theta_in ,pi_in  &
                     ,rho_phyin ,qv_in ,zmid    &
@@ -216,38 +223,38 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 !               write(0,*)'eburn_out ',k,i,j,eburn_out(k,1)
 !           enddo
 !             endif
-            do k=kts,kte
-            ebu_no(i,k,j)=eburn_out(k,1)
-            ebu_co(i,k,j)=eburn_out(k,2)
-            if(i.eq.56.and.j.eq.132)write(0,*)i,j,k,ebu_no(i,k,j),ebu_co(i,k,j)
-            ebu_co2(i,k,j)=eburn_out(k,3)
-            ebu_eth(i,k,j)=eburn_out(k,4)
-            ebu_hc3(i,k,j)=eburn_out(k,5)
-            ebu_hc5(i,k,j)=eburn_out(k,6)
-            ebu_hc8(i,k,j)=eburn_out(k,7)
-            ebu_ete(i,k,j)=eburn_out(k,8)
-            ebu_olt(i,k,j)=eburn_out(k,9)
-            ebu_oli(i,k,j)=eburn_out(k,10)
-            ebu_pm25(i,k,j)=eburn_out(k,11)
-            ebu_pm10(i,k,j)=eburn_out(k,12)
-            ebu_dien(i,k,j)=eburn_out(k,13)
-            ebu_iso(i,k,j)=eburn_out(k,14)
-            ebu_api(i,k,j)=eburn_out(k,15)
-            ebu_lim(i,k,j)=eburn_out(k,16)
-            ebu_tol(i,k,j)=eburn_out(k,17)
-            ebu_xyl(i,k,j)=eburn_out(k,18)
-            ebu_csl(i,k,j)=eburn_out(k,19)
-            ebu_hcho(i,k,j)=eburn_out(k,20)
-            ebu_ald(i,k,j)=eburn_out(k,21)
-            ebu_ket(i,k,j)=eburn_out(k,22)
-            ebu_macr(i,k,j)=eburn_out(k,23)
-            ebu_ora1(i,k,j)=eburn_out(k,24)
-            ebu_ora2(i,k,j)=eburn_out(k,25)
-            ebu_sulf(i,k,j)=eburn_out(k,26)
-            ebu_oc(i,k,j)=eburn_out(k,27)
-            ebu_bc(i,k,j)=eburn_out(k,28)
-            ebu_so2(i,k,j)=eburn_out(k,29)
-            ebu_dms(i,k,j)=eburn_out(k,30)
+            do k=kts+1,kte
+            ebu_no(i,k,j)=eburn_out(k,1)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_co(i,k,j)=eburn_out(k,2)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+!           write(0,*)'after',k,ebu_co(i,k,j)
+            ebu_co2(i,k,j)=eburn_out(k,3)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_eth(i,k,j)=eburn_out(k,4)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_hc3(i,k,j)=eburn_out(k,5)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_hc5(i,k,j)=eburn_out(k,6)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_hc8(i,k,j)=eburn_out(k,7)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_ete(i,k,j)=eburn_out(k,8)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_olt(i,k,j)=eburn_out(k,9)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_oli(i,k,j)=eburn_out(k,10)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_pm25(i,k,j)=eburn_out(k,11)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_pm10(i,k,j)=eburn_out(k,12)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_dien(i,k,j)=eburn_out(k,13)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_iso(i,k,j)=eburn_out(k,14)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_api(i,k,j)=eburn_out(k,15)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_lim(i,k,j)=eburn_out(k,16)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_tol(i,k,j)=eburn_out(k,17)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_xyl(i,k,j)=eburn_out(k,18)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_csl(i,k,j)=eburn_out(k,19)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_hcho(i,k,j)=eburn_out(k,20)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_ald(i,k,j)=eburn_out(k,21)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_ket(i,k,j)=eburn_out(k,22)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_macr(i,k,j)=eburn_out(k,23)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_ora1(i,k,j)=eburn_out(k,24)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_ora2(i,k,j)=eburn_out(k,25)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_sulf(i,k,j)=eburn_out(k,26)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_oc(i,k,j)=eburn_out(k,27)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_bc(i,k,j)=eburn_out(k,28)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_so2(i,k,j)=eburn_out(k,29)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
+            ebu_dms(i,k,j)=eburn_out(k,30)*(z_at_w(i,k+1,j)-z_at_w(i,k,j))
             enddo
 
           enddo

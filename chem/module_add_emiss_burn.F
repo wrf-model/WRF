@@ -94,7 +94,6 @@ CONTAINS
            do k=kts+1,kte
 !       conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60.
         conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
-            if(i.eq.56.and.j.eq.132)write(0,*)k,ebu_co(i,k,j),conv_rho,r_q,dtstep
         chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2)                        &
                          +ebu_so2(i,k,j)*conv_rho
         chem(i,k,j,p_sulf)  =  chem(i,k,j,p_sulf)                        &
@@ -223,17 +222,17 @@ CONTAINS
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &
                          +ebu_ket(i,k,j)*conv_rho
         chem(i,k,j,p_orgpai)  =  chem(i,k,j,p_orgpai)                        &
-                         +.75*r_q*ebu_oc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_orgpaj)  =  chem(i,k,j,p_orgpaj)                        &
                          +.25*r_q*ebu_oc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_orgpaj)  =  chem(i,k,j,p_orgpaj)                        &
+                         +.75*r_q*ebu_oc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_eci)  =  chem(i,k,j,p_eci)                        &
-                         +.75*r_q*ebu_bc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_ecj)  =  chem(i,k,j,p_ecj)                        &
                          +.25*r_q*ebu_bc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_ecj)  =  chem(i,k,j,p_ecj)                        &
+                         +.75*r_q*ebu_bc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_p25i)  =  chem(i,k,j,p_p25i)                        &
-                         +.75*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_p25j)  =  chem(i,k,j,p_p25j)                        &
                          +.25*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_p25j)  =  chem(i,k,j,p_p25j)                        &
+                         +.75*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_pm_10)  =  chem(i,k,j,p_pm_10)                        &
                          +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
@@ -276,17 +275,17 @@ CONTAINS
         chem(i,k,j,p_ket)  =  chem(i,k,j,p_ket)                        &
                          +ebu_ket(i,k,j)*conv_rho
         chem(i,k,j,p_orgpai)  =  chem(i,k,j,p_orgpai)                        &
-                         +.75*r_q*ebu_oc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_orgpaj)  =  chem(i,k,j,p_orgpaj)                        &
                          +.25*r_q*ebu_oc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_orgpaj)  =  chem(i,k,j,p_orgpaj)                        &
+                         +.75*r_q*ebu_oc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_eci)  =  chem(i,k,j,p_eci)                        &
-                         +.75*r_q*ebu_bc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_ecj)  =  chem(i,k,j,p_ecj)                        &
                          +.25*r_q*ebu_bc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_ecj)  =  chem(i,k,j,p_ecj)                        &
+                         +.75*r_q*ebu_bc(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_p25i)  =  chem(i,k,j,p_p25i)                        &
-                         +.75*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_p25j)  =  chem(i,k,j,p_p25j)                        &
                          +.25*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        chem(i,k,j,p_p25j)  =  chem(i,k,j,p_p25j)                        &
+                         +.75*r_q*ebu_pm25(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_pm_10)  =  chem(i,k,j,p_pm_10)                        &
                          +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)/dz8w(i,k,j)*dtstep/dz8w(i,k,j)
         enddo

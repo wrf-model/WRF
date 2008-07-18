@@ -7,6 +7,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORD
                       CONFIGURE_STUBMPI \
                       CONFIGURE_NETCDF_FLAG \
                       CONFIGURE_PNETCDF_FLAG \
+                      CONFIGURE_ESMF_FLAG \
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_RTTOV_FLAG \
                       CONFIGURE_CRTM_FLAG \
@@ -27,7 +28,6 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       -I$(WRF_SRC_ROOT_DIR)/main \
                       -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf \
                       -I$(WRF_SRC_ROOT_DIR)/external/io_int \
-                      -I$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 \
                       -I$(WRF_SRC_ROOT_DIR)/frame \
                       -I$(WRF_SRC_ROOT_DIR)/share \
                       -I$(WRF_SRC_ROOT_DIR)/phys \
@@ -41,7 +41,7 @@ LIB_BUNDLED     = \
                      -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
                      -L$(WRF_SRC_ROOT_DIR)/external/io_grib_share -lio_grib_share \
                      -L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
-                     -L$(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 -lesmf_time \
+                     $(ESMF_IO_LIB) \
                      $(ESMF_IO_LIB) \
                      CONFIGURE_COMMS_LIB \
                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \

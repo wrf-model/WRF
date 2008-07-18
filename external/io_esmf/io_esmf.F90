@@ -246,7 +246,8 @@ END MODULE module_ext_esmf
         CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid:  Calling ioesmf_create_grid_int()' )
         CALL ioesmf_create_grid_int( grid( DataHandle )%ptr,     &
                               numdims,                    &
-                              DomainStart, DomainEndFull, &
+!                              DomainStart, DomainEndFull, &
+                              DomainStart, DomainEnd, &
                               MemoryStart, MemoryEnd,     &
                               PatchStart, PatchEndFull )
         CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid:  back from ioesmf_create_grid_int()' )
@@ -421,50 +422,27 @@ CALL wrf_debug ( 5 , TRIM(msg) )
       ENDIF
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  back from ESMF_DELayoutPrint 1' )
 
-      ! Compute indices for staggered grids because ESMF does not yet support addition of 
-      ! extra data points for staggered dimensions as is common in regional models.  
-!TODO:  Remove this hack once ESMF can handle it.  
+! Compute the dimensions for the ESMF grid, using WRF's non-staggered dimensions
+! This is as of ESMF v3, JM 20080715
+
       ! the [ij][dp][se] bits are for convenience...  
       ids = DomainStart(1); ide = DomainEnd(1); 
       jds = DomainStart(2); jde = DomainEnd(2); 
       ips = PatchStart(1);  ipe = PatchEnd(1); 
       jps = PatchStart(2);  jpe = PatchEnd(2); 
-      globalXcount = ide - ids + 1
-      globalYcount = jde - jds + 1
+write(0,*)__FILE__,__LINE__,'DomainStart ',DomainStart(1:2)
+write(0,*)__FILE__,__LINE__,'DomainEnd   ',DomainEnd(1:2)
+write(0,*)__FILE__,__LINE__,'PatchStart ',PatchStart(1:2)
+write(0,*)__FILE__,__LINE__,'PatchEnd   ',PatchEnd(1:2)
+      globalXcount = ide - ids  ! in other words, the number of points from ids to ide-1 inclusive
+      globalYcount = jde - jds  ! in other words, the number of points from jds to jde-1 inclusive
       ! task-local numbers of points in patch for staggered arrays
       myXstart = ips
       myYstart = jps
-      ! staggered-only for now
-      myXend = ipe
-      myYend = jpe
-!      myXend = min(ipe, ide-1)
-!      myYend = min(jpe, jde-1)
+      myXend = MIN(ipe,ide-1)
+      myYend = MIN(jpe,jde-1)
       myXcount = myXend - myXstart + 1
       myYcount = myYend - myYstart + 1
-!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     ips = ', ips
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     ipe = ', min(ipe, ide-1)
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered i count = ', myXCount
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     jps = ', jps
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered     jpe = ', min(jpe, jde-1)
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-!      WRITE( msg,* ) 'DEBUG:  WRF non-staggered j count = ', myYCount
-!      CALL wrf_debug ( 5 , TRIM(msg) )
-      WRITE( msg,* ) 'DEBUG:  WRF     staggered     ips = ', ips
-      CALL wrf_debug ( 5 , TRIM(msg) )
-      WRITE( msg,* ) 'DEBUG:  WRF     staggered     ipe = ', ipe
-      CALL wrf_debug ( 5 , TRIM(msg) )
-      WRITE( msg,* ) 'DEBUG:  WRF     staggered i count = ', ipe-ips+1
-      CALL wrf_debug ( 5 , TRIM(msg) )
-      WRITE( msg,* ) 'DEBUG:  WRF     staggered     jps = ', jps
-      CALL wrf_debug ( 5 , TRIM(msg) )
-      WRITE( msg,* ) 'DEBUG:  WRF     staggered     jpe = ', jpe
-      CALL wrf_debug ( 5 , TRIM(msg) )
-      WRITE( msg,* ) 'DEBUG:  WRF     staggered j count = ', jpe-jps+1
-      CALL wrf_debug ( 5 , TRIM(msg) )
       ! gather task-local information on all tasks since 
       ! ESMF_GridDistribute[Block] interface require global knowledge to set up 
       ! decompositions
@@ -541,6 +519,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
 ! based on example in 3.1 ref man sec 23.2.5, Creating an Irregularly 
 ! Distributed Rectilinear Grid with a Non-Distributed Vertical Dimension
       !esmfgrid = ESMF_GridCreateShapeTile(  &
+write(0,*)'calling ESMF_GridCreateShapeTile ',allXCount,allYCount
       esmfgrid = ESMF_GridCreateShapeTile(  &
                  countsPerDEDim1=allXCount , &
                  countsPerDEDim2=allYCount , &
@@ -549,26 +528,36 @@ CALL wrf_debug ( 5 , TRIM(msg) )
                  indexflag=ESMF_INDEX_GLOBAL, & ! use global indices
                  name=TRIM(gridname), &
                  rc = rc )
+write(0,*)'calling ESMF_GridAddCoord 1 ', rc
+! Note that we are putting the values on CENTER points for now
+!TODO: update for WRF velocities, which go on faces of Ara. C grid
       CALL ESMF_GridAddCoord(esmfgrid, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
                  rc=rc)
+write(0,*)'calling ESMF_GridAddCoord 2 ', rc
       CALL ESMF_GridAddCoord(esmfgrid, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
                  rc=rc)
+write(0,*)'calling ESMF_GridGetCoord x', rc
       CALL ESMF_GridGetCoord(esmfgrid,coordDim=1,localDE=0, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
+                 computationalLBound=lbnd,computationalUBound=ubnd, &
                  fptr=coordX2d, &
                  rc=rc)
+write(0,*)'back from ESMF_GridGetCoord x', rc
       DO i=lbnd(1),ubnd(1)
         coordX2d(i) = (i-1)*1.0
+write(0,*)'coordX2d ',i,coordX2d(i)
       ENDDO
       CALL ESMF_GridGetCoord(esmfgrid,coordDim=2,localDE=0, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER_VCENTER, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
                  computationalLBound=lbnd,computationalUBound=ubnd, &
                  fptr=coordY2d,                             &
                  rc=rc)
+write(0,*)'back from ESMF_GridGetCoord ', rc
       DO i=lbnd(1),ubnd(1)
         coordY2d(i) = (i-1)*1.0
+write(0,*)'coordY2d ',i,coordY2d(i)
       ENDDO
                  
                  

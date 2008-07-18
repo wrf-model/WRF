@@ -36,6 +36,9 @@ END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )
   USE module_wrf_error
+#ifdef ESMFIO
+  USE ESMF_Mod
+#endif
   IMPLICIT NONE
   CHARACTER*(*) file_str
   INTEGER , INTENT (IN) :: line  ! only print file and line if line > 0
@@ -59,6 +62,9 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   ENDIF
   CALL wrf_message2( str )
   CALL wrf_message2( '-------------------------------------------' )
+#endif
+#ifdef ESMFIO
+  CALL esmf_finalize(terminationflag=ESMF_ABORT)
 #endif
   CALL wrf_abort
 END SUBROUTINE wrf_error_fatal3

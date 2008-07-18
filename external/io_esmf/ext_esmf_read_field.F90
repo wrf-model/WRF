@@ -127,6 +127,10 @@ call wrf_debug( 300, TRIM(mess) )
 
     ! First, build the ESMF_Grid for this DataHandle, if it does not 
     ! already exist
+write(0,*)__FILE__,__LINE__,'ext_esmf_read_field Stagger',TRIM(Stagger)
+write(0,*)__FILE__,__LINE__,'ext_esmf_read_field VarName',TRIM(VarName)
+write(0,*)__FILE__,__LINE__,'ext_esmf_read_field DomainEnd ', DomainEnd(1:esmf_rank)
+write(0,*)__FILE__,__LINE__,'ext_esmf_read_field PatchEnd  ', PatchEnd(1:esmf_rank)
     CALL ioesmf_create_grid( DataHandle, esmf_rank, MemoryOrder, Stagger,      &
                              DomainStart(1:esmf_rank), DomainEnd(1:esmf_rank), &
                              MemoryStart(1:esmf_rank), MemoryEnd(1:esmf_rank), &
@@ -200,7 +204,8 @@ call wrf_debug( 300, TRIM(mess) )
 !TODO:  Compute horzrelloc from Stagger as above once ESMF supports staggering
     horzrelloc=ESMF_CELL_CENTER
 !TODO:  Add code for other data types here...  
-    ALLOCATE( tmp_esmf_r4_ptr(ips:ipefull,jps:jpefull) )
+!    ALLOCATE( tmp_esmf_r4_ptr(ips:ipefull,jps:jpefull) )
+    ALLOCATE( tmp_esmf_r4_ptr(ips:ipe,jps:jpe) )
     CALL wrf_debug ( 100, 'ext_esmf_read_field: calling ESMF_FieldCreate' )
     tmpField = ESMF_FieldCreate(         &
                  grid( DataHandle )%ptr, &
@@ -260,15 +265,15 @@ CALL wrf_debug ( 100, 'ext_esmf_read_field '//TRIM(VarName)//':  back from ESMF_
         CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldGetDataPointer(r4) failed" )
       ENDIF
       IF ( ( PatchStart(1)   /= LBOUND(data_esmf_real_ptr,1) ) .OR. &
-           ( PatchEndFull(1) /= UBOUND(data_esmf_real_ptr,1) ) .OR. &
+           ( PatchEnd(1) /= UBOUND(data_esmf_real_ptr,1) ) .OR. &
            ( PatchStart(2)   /= LBOUND(data_esmf_real_ptr,2) ) .OR. &
-           ( PatchEndFull(2) /= UBOUND(data_esmf_real_ptr,2) ) ) THEN
+           ( PatchEnd(2) /= UBOUND(data_esmf_real_ptr,2) ) ) THEN
         WRITE( mess,* ) 'ESMF_FieldGetDataPointer bounds mismatch',          &
           __FILE__ ,                                                         &
           ', line ',                                                         &
           __LINE__ ,                                                         &
-          ', ips:ipe,jps:jpe = ',PatchStart(1),':',PatchEndFull(1),',',      &
-                                 PatchStart(2),':',PatchEndFull(2),          &
+          ', ips:ipe,jps:jpe = ',PatchStart(1),':',PatchEnd(1),',',      &
+                                 PatchStart(2),':',PatchEnd(2),          &
           ', data_esmf_real_ptr(BOUNDS) = ',                                 &
           LBOUND(data_esmf_real_ptr,1),':',UBOUND(data_esmf_real_ptr,1),',', &
           LBOUND(data_esmf_real_ptr,2),':',UBOUND(data_esmf_real_ptr,2)
@@ -283,7 +288,7 @@ WRITE( mess,* ) 'DEBUG:  ext_esmf_read_field:  ips:ipe,jps:jpe = ',  &
 CALL wrf_debug( 300, TRIM(mess) )
 
       CALL ioesmf_extract_data_real( data_esmf_real_ptr, Field,            &
-                                     ips, ipefull, jps, jpefull, kps, kpe, &
+                                     ips, ipe, jps, jpe, kps, kpe, &
                                      ims, ime, jms, jme, kms, kme )
     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
       CALL ESMF_FieldGet( tmpField, 0, data_esmf_int_ptr, rc=rc )
@@ -291,22 +296,22 @@ CALL wrf_debug( 300, TRIM(mess) )
         CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_FieldGetDataPointer(i4) failed" )
       ENDIF
       IF ( ( PatchStart(1)   /= LBOUND(data_esmf_int_ptr,1) ) .OR. &
-           ( PatchEndFull(1) /= UBOUND(data_esmf_int_ptr,1) ) .OR. &
+           ( PatchEnd(1) /= UBOUND(data_esmf_int_ptr,1) ) .OR. &
            ( PatchStart(2)   /= LBOUND(data_esmf_int_ptr,2) ) .OR. &
-           ( PatchEndFull(2) /= UBOUND(data_esmf_int_ptr,2) ) ) THEN
+           ( PatchEnd(2) /= UBOUND(data_esmf_int_ptr,2) ) ) THEN
         WRITE( mess,* ) 'ESMF_FieldGetDataPointer bounds mismatch',        &
           __FILE__ ,                                                       &
           ', line ',                                                       &
           __LINE__ ,                                                       &
-          ', ips:ipe,jps:jpe = ',PatchStart(1),':',PatchEndFull(1),',',    &
-                                 PatchStart(2),':',PatchEndFull(2),        &
+          ', ips:ipe,jps:jpe = ',PatchStart(1),':',PatchEnd(1),',',    &
+                                 PatchStart(2),':',PatchEnd(2),        &
           ', data_esmf_int_ptr(BOUNDS) = ',                                &
           LBOUND(data_esmf_int_ptr,1),':',UBOUND(data_esmf_int_ptr,1),',', &
           LBOUND(data_esmf_int_ptr,2),':',UBOUND(data_esmf_int_ptr,2)
         CALL wrf_error_fatal ( TRIM(mess) )
       ENDIF
       CALL ioesmf_extract_data_int( data_esmf_int_ptr, Field,             &
-                                    ips, ipefull, jps, jpefull, kps, kpe, &
+                                    ips, ipe, jps, jpe, kps, kpe, &
                                     ims, ime, jms, jme, kms, kme )
     ENDIF
 write(mess,*) ' ext_esmf_read_field: END ACTUAL READ:  DataHandle = ', DataHandle

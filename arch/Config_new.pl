@@ -375,6 +375,7 @@ while ( <CONFIGURE_DEFAULTS> )
     # ESMF substitutions in configure.defaults
     if ( $sw_esmflib_path && $sw_esmfinc_path )
       {
+      $_ =~ s:CONFIGURE_ESMF_FLAG:-DESMFIO:g ;
       $_ =~ s:ESMFIOLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
       $_ =~ s:ESMFIOEXTLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
       $_ =~ s:ESMFLIBFLAG:\$\(ESMF_LDFLAG\):g ;

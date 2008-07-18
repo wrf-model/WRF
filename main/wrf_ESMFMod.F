@@ -126,7 +126,7 @@ CONTAINS
      INTEGER :: year, month, day, hour, minute, second
      INTEGER(ESMF_KIND_I4) :: timevals(6)   ! big enough to hold the vars listed above
      ! start time
-     CALL ESMF_AttributeSet(state, 'ComponentStartTime', SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeGet(state, 'ComponentStartTime', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStartTime) failed' )
        !RETURN
@@ -137,15 +137,21 @@ CONTAINS
      hour   = timevals(4)
      minute = timevals(5)
      second = timevals(6)
+write(0,*) ' year ',year,__LINE__
+write(0,*) ' month ',month,__LINE__
+write(0,*) ' day ',day,__LINE__
+write(0,*) ' hour ',hour,__LINE__
+write(0,*) ' minute ',minute,__LINE__
+write(0,*) ' second ',second,__LINE__
      CALL ESMF_TimeSet(startTime, yy=year, mm=month, dd=day, &
                        h=hour, m=minute, s=second, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_TimeSet(startTime) failed' )
      ENDIF
      ! stop time
-     CALL ESMF_AttributeSet(state, 'ComponentStopTime', SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeGet(state, 'ComponentStopTime', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentStopTime) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeGet(ComponentStopTime) failed' )
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -153,15 +159,21 @@ CONTAINS
      hour   = timevals(4)
      minute = timevals(5)
      second = timevals(6)
+write(0,*) ' year ',year,__LINE__
+write(0,*) ' month ',month,__LINE__
+write(0,*) ' day ',day,__LINE__
+write(0,*) ' hour ',hour,__LINE__
+write(0,*) ' minute ',minute,__LINE__
+write(0,*) ' second ',second,__LINE__
      CALL ESMF_TimeSet(stopTime, yy=year, mm=month, dd=day, &
                        h=hour, m=minute, s=second, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_TimeSet(stopTime) failed' )
      ENDIF
      ! coupling time step
-     CALL ESMF_AttributeSet(state, 'ComponentCouplingInterval', SIZE(timevals), timevals, rc=rc)
+     CALL ESMF_AttributeGet(state, 'ComponentCouplingInterval', SIZE(timevals), timevals, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeSet(ComponentCouplingInterval) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeGet(ComponentCouplingInterval) failed' )
      ENDIF
      year   = timevals(1)
      month  = timevals(2)
@@ -169,6 +181,12 @@ CONTAINS
      hour   = timevals(4)
      minute = timevals(5)
      second = timevals(6)
+write(0,*) ' year ',year,__LINE__
+write(0,*) ' month ',month,__LINE__
+write(0,*) ' day ',day,__LINE__
+write(0,*) ' hour ',hour,__LINE__
+write(0,*) ' minute ',minute,__LINE__
+write(0,*) ' second ',second,__LINE__
      CALL ESMF_TimeIntervalSet(couplingInterval, yy=year, mm=month, d=day, &
                                h=hour, m=minute, s=second, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
@@ -270,14 +288,16 @@ CONTAINS
    ! couplingInterval.  Abort if reconciliation is not possible.  
    SUBROUTINE ReconcileTimes( startTimes, stopTimes, couplingIntervals, &
                               startTime,  stopTime,  couplingInterval )
-     TYPE(ESMF_Time),         INTENT(IN   ) :: startTimes(:)
-     TYPE(ESMF_Time),         INTENT(IN   ) :: stopTimes(:)
-     TYPE(ESMF_TimeInterval), INTENT(IN   ) :: couplingIntervals(:)
+     TYPE(ESMF_Time),         INTENT(INOUT) :: startTimes(:)
+     TYPE(ESMF_Time),         INTENT(INOUT) :: stopTimes(:)
+     TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingIntervals(:)
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
      TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
      TYPE(ESMF_TimeInterval), INTENT(INOUT) :: couplingInterval
      ! locals
      INTEGER :: numTimes, numTimesTmp, i
+character*256 buttwhump
+integer rc
 
      ! how many sets of time info?
      numTimes = SIZE(startTimes)
@@ -296,6 +316,15 @@ CONTAINS
      ! reconcile
 !TODO:  For now this is very simple.  Fancy it up later.  
      DO i = 1, numTimes
+call esmf_timeget(starttimes(i),timestring=buttwhump,rc=rc) 
+write(*,*)__LINE__,'startimes',i,trim(buttwhump)
+write(0,*)__LINE__,'startimes',i,trim(buttwhump)
+call esmf_timeget(stoptimes(i),timestring=buttwhump,rc=rc) 
+write(*,*)__LINE__,'stoptimes',i,trim(buttwhump)
+write(0,*)__LINE__,'stopimes',i,trim(buttwhump)
+call esmf_timeintervalget(couplingintervals(i),timestring=buttwhump,rc=rc) 
+write(*,*)__LINE__,'coupling intervals',i,trim(buttwhump)
+write(0,*)__LINE__,'coupling intervals',i,trim(buttwhump)
        IF ( i == 1 ) THEN
          startTime = startTimes(i)
          stopTime = stopTimes(i)
@@ -401,9 +430,9 @@ CONTAINS
      TYPE(ESMF_Logical) :: logvals(4)
 
      ! first the logicals
-     CALL ESMF_AttributeSet(state, 'DecompositionLogicals', SIZE(logvals), logvals, rc=rc)
+     CALL ESMF_AttributeGet(state, 'DecompositionLogicals', SIZE(logvals), logvals, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionLogicals) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeGet(DecompositionLogicals) failed' )
      ENDIF
      ! Usually, when writing an API for a target language, it is considered 
      ! good practice to use native types of the target language in the 
@@ -415,9 +444,9 @@ CONTAINS
        ENDIF
      ENDDO
      ! now the integers
-     CALL ESMF_AttributeSet(state, 'DecompositionIntegers', SIZE(intvals), intvals, rc=rc)
+     CALL ESMF_AttributeGet(state, 'DecompositionIntegers', SIZE(intvals), intvals, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
-       CALL wrf_error_fatal ( 'ESMF_AttributeSet(DecompositionIntegers) failed' )
+       CALL wrf_error_fatal ( 'ESMF_AttributeGet(DecompositionIntegers) failed' )
      ENDIF
      ids = intvals(1)
      ide = intvals(2)
@@ -1168,6 +1197,17 @@ CONTAINS
                              ids, ide, jds, jde, kds, kde, &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, kpe  )
+! JM
+! with version 3 of ESMF's staggering concepts, WRF's non-staggered grid is equivalent to 
+! esmf's 'exclusive' region -- that is the set of points that are owned by the 'DE' (eyeroll)
+! WRF, on the other hand, is returning the 'staggered' dimensions here.  So convert to the
+! unstaggered dims before returning.
+! Don't bother with vertical dimension for the time being, since we're only doing 2D coupling.
+!
+
+     ide = ide-1 ; ipe = MIN(ide,ipe)
+     jde = jde-1 ; jpe = MIN(jde,jpe)
+
      domdesc = head_grid%domdesc
      bdy_mask = head_grid%bdy_mask
    END SUBROUTINE wrf_getDecompInfo

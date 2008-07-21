@@ -482,5 +482,16 @@ echo "Settings listed above are written to configure.wrf."
 echo "If you wish to change settings, please edit that file."
 echo "If you wish to change the default options, edit the file:"
 echo "     arch/configure_new.defaults"
-echo " "
+
+if test -n $NETCDF ; then
+  grep nf_format_64bit $NETCDF/include/netcdf.inc > /dev/null
+  configure_aaaa=$? ; export configure_aaaa
+  if [ $configure_aaaa -a -z "$WRFIO_NCD_LARGE_FILE_SUPPORT" ] ; then
+    echo "NetCDF users note:"
+    echo " This installation of NetCDF supports large file support.  To enable large file" 
+    echo " support in NetCDF, set the environment variable WRFIO_NCD_LARGE_FILE_SUPPORT"
+    echo " to 1 and run configure again. Set to any other value to avoid this message."
+  fi
+fi
+echo "  "
 

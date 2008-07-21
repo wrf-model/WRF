@@ -925,13 +925,13 @@ CONTAINS
 ! psacw: Accretion of cloud water by snow  [HL A7] [LFO 24]
 !        (T<T0: C->S, and T>=T0: C->R)
 !-------------------------------------------------------------
-            if(qrs(i,k,2).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
-              psacw(i,k) = min(pacrc*n0sfac(i,k)*rslope3(i,k,2)        &
+          if(qrs(i,k,2).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
+            psacw(i,k) = min(pacrc*n0sfac(i,k)*rslope3(i,k,2)        &
                            *rslopeb(i,k,2)*qci(i,k,1)*denfac(i,k)       &
 !                          ,qci(i,k,1)/dtcld)
                            ,qci(i,k,1)*rdtcld)
-            endif
-        if(supcol .gt. 0) then
+          endif
+          if(supcol .gt. 0) then
 !-------------------------------------------------------------
 ! pidep: Deposition/Sublimation rate of ice [HDC 9]
 !       (T<T0: V->I or I->V)
@@ -951,29 +951,29 @@ CONTAINS
                 pidep(i,k) = min(min(pidep(i,k),satdt*.5),supice)
               endif
               if(abs(prevp(i,k)+pidep(i,k)).ge.abs(satdt)) ifsat = 1
-          endif
+            endif
 !-------------------------------------------------------------
 ! psdep: deposition/sublimation rate of snow [HDC 14]
 !        (V->S or S->V)
 !-------------------------------------------------------------
-          if(qrs(i,k,2).gt.0..and.ifsat.ne.1) then
-            coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
-            psdep(i,k) = (rh(i,k,2)-1.)*n0sfac(i,k)                    &
-                         *(precs1*rslope2(i,k,2)+precs2                 &
-                         *work2(i,k)*coeres)/work1(i,k,2)
-            supice = satdt-prevp(i,k)-pidep(i,k)
-            if(psdep(i,k).lt.0.) then
-!             psdep(i,k) = max(psdep(i,k),-qrs(i,k,2)/dtcld)
-!             psdep(i,k) = max(max(psdep(i,k),satdt/2),supice)
-              psdep(i,k) = max(psdep(i,k),-qrs(i,k,2)*rdtcld)
-              psdep(i,k) = max(max(psdep(i,k),satdt*.5),supice)
-            else
+            if(qrs(i,k,2).gt.0..and.ifsat.ne.1) then
+              coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
+              psdep(i,k) = (rh(i,k,2)-1.)*n0sfac(i,k)                    &
+                           *(precs1*rslope2(i,k,2)+precs2                 &
+                           *work2(i,k)*coeres)/work1(i,k,2)
+              supice = satdt-prevp(i,k)-pidep(i,k)
+              if(psdep(i,k).lt.0.) then
+!               psdep(i,k) = max(psdep(i,k),-qrs(i,k,2)/dtcld)
+!               psdep(i,k) = max(max(psdep(i,k),satdt/2),supice)
+                psdep(i,k) = max(psdep(i,k),-qrs(i,k,2)*rdtcld)
+                psdep(i,k) = max(max(psdep(i,k),satdt*.5),supice)
+              else
 !             psdep(i,k) = min(min(psdep(i,k),satdt/2),supice)
-              psdep(i,k) = min(min(psdep(i,k),satdt*.5),supice)
+                psdep(i,k) = min(min(psdep(i,k),satdt*.5),supice)
+              endif
+              if(abs(prevp(i,k)+pidep(i,k)+psdep(i,k)).ge.abs(satdt))    &
+                ifsat = 1
             endif
-            if(abs(prevp(i,k)+pidep(i,k)+psdep(i,k)).ge.abs(satdt))    &
-              ifsat = 1
-          endif
 !-------------------------------------------------------------
 ! pigen: generation(nucleation) of ice from vapor [HL A50] [HDC 7-8]
 !       (T<T0: V->I)

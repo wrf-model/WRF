@@ -1,21 +1,21 @@
-/* 
+/*
 
    This WSM5 microphysics accelerated for the NVIDIA GPU.  It is experimental and
    is not supported as part of WRF.  There is additional information available
    at http://www.mmm.ucar.edu/people/michalakes.  Requests for assistance will be
    considered only on a case by case basis, favoring active collaborators.
 
-   Required: a Linux x86 or x86_64 system with a CUDA-enabled NVIDIA GPU installed 
+   Required: a Linux x86 or x86_64 system with a CUDA-enabled NVIDIA GPU installed
    as a co-processor as well as the CUDA libraries on a directory in your system,
    for example:
 
-      /usr/local/cuda/lib/libcublas.so 
+      /usr/local/cuda/lib/libcublas.so
 
    included in the CUDA SDK 1.1 from NVIDIA (see nvidia.com).
 
    To use with WRF:
 
-   1)  Compile this file and companion file as: 
+   1)  Compile this file and companion file as:
 
          gcc -c wsm5.cu.c
          gcc -c wsm5_gpu.cu.c
@@ -29,21 +29,24 @@
    3)  Modify configure.wrf:
 
       a) add -DTEST_ON_GPU_RK -DRUN_ON_GPU to ARCH_LOCAL
-      b) add ../phys/wsm5.cu.o and ../phys/wsm5_gpu.cu.o to LIB_LOCAL 
+      b) add ../phys/wsm5.cu.o and ../phys/wsm5_gpu.cu.o to LIB_LOCAL
          (define LIB_LOCAL it does not already exist)
       c) add -L/usr/local/cuda/lib -lcuda -lcudart to LIB_LOCAL
          (or wherever the cuda lib is on your system)
 
    3)  Compile wrf as usual.
 
-   20080403, JM  (michalak@ucar.edu)
+   Note: The GPU code is compiled for a maximum number of 41 vertical levels
+   If you need a larger number, contact below.
+
+   20080721, JM  (michalak@ucar.edu)
 
 */
 
-# 1 "/tmp/tmpxft_0000171d_00000000-0.c"
+# 1 "/tmp/tmpxft_00001ecc_00000000-0.c"
 # 1 "<built-in>"
 # 1 "<command line>"
-# 1 "/tmp/tmpxft_0000171d_00000000-0.c"
+# 1 "/tmp/tmpxft_00001ecc_00000000-0.c"
 # 1 "y.cu"
 # 115 "/usr/local/cuda/bin/../include/texture_types.h"
 struct _Z7textureIcLi1EL19cudaTextureReadMode0EE;
@@ -1525,12 +1528,12 @@ extern int gethostname(char *, size_t);
 extern int wsm5_gpu_init_(int *, int *, int *);
 # 199 "y.cu"
 extern int wsm5_host_(float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *, int *);
-# 478 "y.cu"
+# 470 "y.cu"
 extern int get_wsm5_gpu_levels_(int *);
-extern void __sti___29_tmpxft_0000171d_00000000_2_ii_91788a12(void) __attribute__((__constructor__));
+extern void __sti___29_tmpxft_00001ecc_00000000_2_ii_91788a12(void) __attribute__((__constructor__));
 # 144 "/usr/include/stdio.h" 3
 extern struct _IO_FILE *stderr;
-# 1 "/tmp/tmpxft_0000171d_00000000-0.stub.h" 1 3
+# 1 "/tmp/tmpxft_00001ecc_00000000-0.stub.h" 1 3
 
 
 
@@ -1668,7 +1671,10 @@ auto float *retvals_d;
 auto int remx;
 # 266 "y.cu"
 auto int remy;
-# 278 "y.cu"
+
+
+
+
 auto dim3 dimBlock;
 
 auto dim3 dimGrid;
@@ -1707,17 +1713,22 @@ cudaMalloc(((void **)(&snowncv_d)), (((unsigned long)d2) * 4UL)); cudaMemcpy(((v
 for (k = 0; (k < ((((*kme)) - ((*kms))) + 1)); k++) { (((float *)retvals)[k]) = (0.0F); }
 }
 cudaMalloc(((void **)(&retvals_d)), (((unsigned long)((((*kme)) - ((*kms))) + 1)) * 4UL)); cudaMemcpy(((void *)retvals_d), ((const void *)((float *)retvals)), (((unsigned long)((((*kme)) - ((*kms))) + 1)) * 4UL), cudaMemcpyHostToDevice);
-# 275 "y.cu"
-remx = ((((((*ipe)) - ((*ips))) + 1) % 8) ? 1 : 0);
-remy = ((((((*jpe)) - ((*jps))) + 1) % 4) ? 1 : 0);
 
-{ (dimBlock.x) = 8U; (dimBlock.y) = 4U; (dimBlock.z) = 1U; }
 
-{ __T20 = ((unsigned)((((((*ipe)) - ((*ips))) + 1) / 8) + remx)); __T21 = ((unsigned)((((((*jpe)) - ((*jps))) + 1) / 4) + remy)); { (dimGrid.x) = __T20; (dimGrid.y) = __T21; (dimGrid.z) = 1U; } }
-# 292 "y.cu"
+
+remx = ((((((*ipe)) - ((*ips))) + 1) % 16) ? 1 : 0);
+remy = ((((((*jpe)) - ((*jps))) + 1) % 8) ? 1 : 0);
+
+{ (dimBlock.x) = 16U; (dimBlock.y) = 8U; (dimBlock.z) = 1U; }
+
+{ __T20 = ((unsigned)((((((*ipe)) - ((*ips))) + 1) / 16) + remx)); __T21 = ((unsigned)((((((*jpe)) - ((*jps))) + 1) / 8) + remy)); { (dimGrid.x) = __T20; (dimGrid.y) = __T21; (dimGrid.z) = 1U; } }
+
+fprintf(stderr, "Call to wsm5_gpu: block dims %d %d\n", ((dimBlock.x)), ((dimBlock.y)));
+fprintf(stderr, "Call to wsm5_gpu: grid  dims %d %d\n", ((dimGrid.x)), ((dimGrid.y)));
+# 284 "y.cu"
 s2 = (rsl_internal_microclock_());
 ((int)(cudaConfigureCall(dimGrid, dimBlock, 0UL, 0))) ? ((void)0) : (__device_stub__Z8wsm5_gpuPfS_S_S_S_S_S_S_S_S_S_S_S_S_S_fS_iiiiiiiiiiiiiiiiii(th_d, pii_d, q_d, qc_d, qi_d, qr_d, qs_d, den_d, p_d, delz_d, rain_d, rainncv_d, sr_d, snow_d, snowncv_d, ((*delt)), retvals_d, (dips + 1), ((((*ipe)) - ((*ips))) + 1), (djps + 1), ((((*jpe)) - ((*jps))) + 1), (dkps + 1), ((((*kpe)) - ((*kps))) + 1), (dips + 1), dipe, (djps + 1), djpe, (dkps + 1), dkpe, (dips + 1), dipe, (djps + 1), djpe, (dkps + 1), dkpe));
-# 307 "y.cu"
+# 299 "y.cu"
 cudaThreadSynchronize();
 e2 = (rsl_internal_microclock_());
 fprintf(stderr, "Call to wsm5_gpu (not including data xfer): %d microseconds\n", (e2 - s2));
@@ -1770,17 +1781,17 @@ cudaFree(((void *)retvals_d));
 
 return 0;
 }
-# 478 "y.cu"
+# 470 "y.cu"
 int get_wsm5_gpu_levels_( int *retval)
 {
-(*retval) = 35;
+(*retval) = 41;
 }
-void __sti___29_tmpxft_0000171d_00000000_2_ii_91788a12(void) { }
-# 1 "/tmp/tmpxft_0000171d_00000000-0.stub.c" 1
+void __sti___29_tmpxft_00001ecc_00000000_2_ii_91788a12(void) { }
+# 1 "/tmp/tmpxft_00001ecc_00000000-0.stub.c" 1
 
 
 
-# 1 "/tmp/tmpxft_0000171d_00000000-1.c" 1
+# 1 "/tmp/tmpxft_00001ecc_00000000-1.c" 1
 # 1 "/usr/local/cuda/bin/../include/__cudaFatFormat.h" 1
 # 97 "/usr/local/cuda/bin/../include/__cudaFatFormat.h"
 typedef struct {
@@ -1819,7 +1830,7 @@ typedef struct {
 } __cudaFatCudaBinary;
 # 189 "/usr/local/cuda/bin/../include/__cudaFatFormat.h"
 void fatGetCubinForGpu( __cudaFatCudaBinary *binary, char* gpuName, char* *cubin, char* *dbgInfoFile );
-# 2 "/tmp/tmpxft_0000171d_00000000-1.c" 2
+# 2 "/tmp/tmpxft_00001ecc_00000000-1.c" 2
 
 
 
@@ -1849,7 +1860,7 @@ static __cudaFatCubinEntry __cubinEntries[] = {{"sm_10",(char*)__deviceText},{0,
 static __cudaFatDebugEntry __debugEntries[] = {{0,0}};
 
 static __cudaFatCudaBinary __fatDeviceText __attribute__ ((section (".nvFatBinSegment")))= {0x1ee55a01,0x00000002,0x840b5bca,"81bb892378501d16","y.cu"," ",__ptxEntries,__cubinEntries,__debugEntries,0,0};
-# 5 "/tmp/tmpxft_0000171d_00000000-0.stub.c" 2
+# 5 "/tmp/tmpxft_00001ecc_00000000-0.stub.c" 2
 # 1 "/usr/local/cuda/bin/../include/crt/host_runtime.h" 1
 # 65 "/usr/local/cuda/bin/../include/crt/host_runtime.h"
 # 1 "/usr/local/cuda/bin/../include/host_defines.h" 1
@@ -5596,7 +5607,7 @@ extern __attribute__((weak)) double __cuda_fma(double a, double b, double c); do
 # 4168 "/usr/local/cuda/bin/../include/math_functions.h" 2 3
 # 89 "/usr/local/cuda/bin/../include/common_functions.h" 2
 # 196 "/usr/local/cuda/bin/../include/crt/host_runtime.h" 2
-# 6 "/tmp/tmpxft_0000171d_00000000-0.stub.c" 2
-extern void __sti____cudaRegisterAll_29_tmpxft_0000171d_00000000_2_ii_91788a12(void) __attribute__((__constructor__));
-void __sti____cudaRegisterAll_29_tmpxft_0000171d_00000000_2_ii_91788a12(void){__cudaFatCubinHandle = __cudaRegisterFatBinary((void*)(&__fatDeviceText));}
-# 483 "y.cu" 2
+# 6 "/tmp/tmpxft_00001ecc_00000000-0.stub.c" 2
+extern void __sti____cudaRegisterAll_29_tmpxft_00001ecc_00000000_2_ii_91788a12(void) __attribute__((__constructor__));
+void __sti____cudaRegisterAll_29_tmpxft_00001ecc_00000000_2_ii_91788a12(void){__cudaFatCubinHandle = __cudaRegisterFatBinary((void*)(&__fatDeviceText));}
+# 475 "y.cu" 2

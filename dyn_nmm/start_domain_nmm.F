@@ -1297,18 +1297,18 @@
 !        ENDIF
 !
         IF(.NOT.RESTRT.OR.NEST)THEN
+!
+          IF ( (THLM-THS(I,J))>2.0) THEN  ! weight differently in different scenarios
+            FAC1=0.3
+            FAC2=0.7
+          ELSE
+            FAC1=0.8
+            FAC2=0.2
+          ENDIF
 
-	IF ( (THLM-THS(I,J))>2.0) THEN  ! weight differently in different scenarios
-          FAC1=0.3
-          FAC2=0.7
-        ELSE
-          FAC1=0.8
-          FAC2=0.2
-        ENDIF
-
-        TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
+          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
 !          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
-        QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
+          QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
 !          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
         ENDIF
 !***
@@ -1599,17 +1599,19 @@
 !
 !***  Always define the quantity Z0BASE
                                                                                                                                               
-      DO J=MYJS,MYJE
-      DO I=MYIS,MYIE
-                                                                                                                                              
-        IF(SM(I,J)==0)then
-          Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0LAND
-        ELSE
-          Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
-        ENDIF
+      IF(.NOT.RESTRT)THEN
+        DO J=MYJS,MYJE
+        DO I=MYIS,MYIE
 !
-      ENDDO
-      ENDDO
+          IF(SM(I,J)==0)then
+            Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0LAND
+          ELSE
+            Z0BASE(I,J)=VZ0TBL_24(IVGTYP(I,J))+Z0SEA
+          ENDIF
+!
+        ENDDO
+        ENDDO
+      ENDIF
 !
 ! when allocating CAM radiation 4d arrays (ozmixm, aerosolc) these are not needed
       num_ozmixm=1
@@ -1695,7 +1697,7 @@
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 
-	IF (.NOT. RESTRT) THEN
+      IF (.NOT. RESTRT) THEN
 ! Added by Greg Thompson, NCAR-RAL, for initializing water vapor
 ! mixing ratio (from NMM's specific humidity var) into moist array.
 
@@ -1737,32 +1739,33 @@
      &               ( (i_m.eq.p_qi).or.(i_m.eq.p_qs).or.(i_m.eq.p_qg) ) ) THEN
                  F_ICE(I,K,J) = F_ICE(I,K,J) + moist(I,J,K,i_m)
               ENDIF
-        if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
-            if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
-               moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
-               moist(I,J,K,i_m) =0.
-            endif
-        endif
+              if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
+                if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
+                  moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
+                  moist(I,J,K,i_m) =0.
+                endif
+              endif
             enddo
             enddo
             enddo
             enddo
             write(0,*) '  computing F_RAIN'
+!
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-          IF(F_ICE(i,k,j)<=EPSQ)THEN
-              F_ICE(I,K,J)=0.
-          ELSE
-              F_ICE(I,K,J) = F_ICE(I,K,J)/CWM(I,J,K)
-          ENDIF
+              IF(F_ICE(i,k,j)<=EPSQ)THEN
+                F_ICE(I,K,J)=0.
+              ELSE
+                F_ICE(I,K,J) = F_ICE(I,K,J)/CWM(I,J,K)
+              ENDIF
               IF ( (moist(I,J,K,p_qr)+moist(I,J,K,p_qc)).gt.EPSQ) THEN
-           IF(moist(i,j,k,p_qr)<=EPSQ)THEN
-              F_RAIN(I,K,J)=0.
-           ELSE
-              F_RAIN(I,K,J) = moist(i,j,k,p_qr) &
+                IF(moist(i,j,k,p_qr)<=EPSQ)THEN
+                  F_RAIN(I,K,J)=0.
+                ELSE
+                  F_RAIN(I,K,J) = moist(i,j,k,p_qr) &
      &                    / (moist(i,j,k,p_qr)+moist(i,j,k,p_qc))
-           ENDIF
+                ENDIF
               ENDIF
             enddo
             enddo
@@ -1794,35 +1797,36 @@
         ENDIF
 
         IF (maxval(F_RIMEF) .gt. 0.) THEN
-        write(0,*) 'F_RIMEF > 0'
-         do J=JMS,JME
-         do K=KMS,KME
-         do I=IMS,IME
-          F_RIMEF_PHY(I,K,J)=F_RIMEF(I,K,J)
-         enddo
-         enddo
-         enddo
+          write(0,*) 'F_RIMEF > 0'
+          do J=JMS,JME
+          do K=KMS,KME
+          do I=IMS,IME
+            F_RIMEF_PHY(I,K,J)=F_RIMEF(I,K,J)
+          enddo
+          enddo
+          enddo
         ENDIF
-	ENDIF
-
-!mp
-        IF (.NOT. RESTRT) THEN
+      ENDIF
+!
+      IF (.NOT. RESTRT) THEN
   !-- Replace albedos if original albedos are nonzero
-      IF(MAXVAL(ALBEDO_DUM)>0.)THEN
+        IF(MAXVAL(ALBEDO_DUM)>0.)THEN
+          DO J=JMS,JME
+          DO I=IMS,IME
+            ALBEDO(I,J)=ALBEDO_DUM(I,J)
+          ENDDO
+          ENDDO
+        ENDIF
+      ENDIF
+
+      IF(.NOT.RESTRT)THEN
         DO J=JMS,JME
         DO I=IMS,IME
-          ALBEDO(I,J)=ALBEDO_DUM(I,J)
+          APREC(I,J)=RAINNC(I,J)*1.E-3
+          CUPREC(I,J)=RAINCV(I,J)*1.E-3
         ENDDO
         ENDDO
       ENDIF
-        ENDIF
-
-      DO J=JMS,JME
-      DO I=IMS,IME
-        APREC(I,J)=RAINNC(I,J)*1.E-3
-        CUPREC(I,J)=RAINCV(I,J)*1.E-3
-      ENDDO
-      ENDDO
 !following will need mods Sep06
 !
 #ifdef WRF_CHEM
@@ -1838,13 +1842,13 @@
       ENDDO
       
       DO J=JMS,JME
-         DO K=KMS,KME
-             DO I=IMS,IME
-             PINT_TRANS(I,K,J)=PINT(I,J,K)
-             T_TRANS(I,K,J)=T(I,J,K)
-             ENDDO
+        DO K=KMS,KME
+          DO I=IMS,IME
+            PINT_TRANS(I,K,J)=PINT(I,J,K)
+            T_TRANS(I,K,J)=T(I,J,K)
           ENDDO
-       ENDDO 
+        ENDDO
+      ENDDO 
        CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
                STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,GRID%PLUMERISEFIRE_FRQ,      &
                ZINT,G,AERWRF,CONFIG_FLAGS,                     &

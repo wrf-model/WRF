@@ -23,18 +23,9 @@
 !***********************************************************************
       SUBROUTINE BOCOH(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    & 
      &                ,LB,ETA1,ETA2,PDTOP,PT,RES                        &
-     &                ,PD_BXS, PD_BXE, PD_BYS, PD_BYE                   &
-     &                ,T_BXS, T_BXE, T_BYS, T_BYE                       &
-     &                ,Q_BXS, Q_BXE, Q_BYS, Q_BYE                       &
-     &                ,U_BXS, U_BXE, U_BYS, U_BYE                       &
-     &                ,V_BXS, V_BXE, V_BYS, V_BYE                       &
-     &                ,Q2_BXS, Q2_BXE, Q2_BYS, Q2_BYE                   &
-     &                ,CWM_BXS, CWM_BXE, CWM_BYS, CWM_BYE               &
      &                ,PD_BTXS, PD_BTXE, PD_BTYS, PD_BTYE               &
      &                ,T_BTXS, T_BTXE, T_BTYS, T_BTYE                   &
      &                ,Q_BTXS, Q_BTXE, Q_BTYS, Q_BTYE                   &
-     &                ,U_BTXS, U_BTXE, U_BTYS, U_BTYE                   &
-     &                ,V_BTXS, V_BTXE, V_BTYS, V_BTYE                   &
      &                ,Q2_BTXS, Q2_BTXE, Q2_BTYS, Q2_BTYE               &
      &                ,CWM_BTXS, CWM_BTXE, CWM_BTYS, CWM_BTYE           &
      &                ,PD,T,Q,Q2,CWM,PINT                               &
@@ -130,40 +121,22 @@
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: ETA1,ETA2
 !
       REAL,DIMENSION(IMS:IME,1,SPEC_BDY_WIDTH)                          &
-     &                           ,INTENT(INOUT) :: PD_BYS, PD_BYE       &
-     &                                            ,PD_BTYS,PD_BTYE
+     &                           ,INTENT(INOUT) :: PD_BTYS,PD_BTYE
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH)                   &
-     &                           ,INTENT(INOUT) :: T_BYS, T_BYE        &
-     &                                            ,U_BYS, U_BYE        &
-     &                                            ,V_BYS, V_BYE        &
-     &                                            ,Q_BYS, Q_BYE        &
-     &                                            ,Q2_BYS, Q2_BYE      &
-     &                                            ,CWM_BYS, CWM_BYE    &
-     &                                            ,T_BTYS, T_BTYE      &
-     &                                            ,U_BTYS, U_BTYE      &
-     &                                            ,V_BTYS, V_BTYE      &
-     &                                            ,Q_BTYS, Q_BTYE      &
-     &                                            ,Q2_BTYS, Q2_BTYE    &
-     &                                            ,CWM_BTYS, CWM_BTYE  
+      REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH)                    &
+     &                           ,INTENT(IN) :: T_BTYS, T_BTYE          &
+     &                                         ,Q_BTYS, Q_BTYE          &
+     &                                         ,Q2_BTYS, Q2_BTYE        &
+     &                                         ,CWM_BTYS, CWM_BTYE  
 
-      REAL,DIMENSION(JMS:JME,1,SPEC_BDY_WIDTH)                         &
-     &                           ,INTENT(INOUT) :: PD_BXS, PD_BXE      &
-     &                                            ,PD_BTXS,PD_BTXE
+      REAL,DIMENSION(JMS:JME,1,SPEC_BDY_WIDTH)                          &
+     &                           ,INTENT(IN) :: PD_BTXS,PD_BTXE
 
-      REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH)                   &
-     &                           ,INTENT(INOUT) :: T_BXS, T_BXE        &
-     &                                            ,U_BXS, U_BXE        &
-     &                                            ,V_BXS, V_BXE        &
-     &                                            ,Q_BXS, Q_BXE        &
-     &                                            ,Q2_BXS, Q2_BXE      &
-     &                                            ,CWM_BXS, CWM_BXE    &
-     &                                            ,T_BTXS, T_BTXE      &
-     &                                            ,U_BTXS, U_BTXE      &
-     &                                            ,V_BTXS, V_BTXE      &
-     &                                            ,Q_BTXS, Q_BTXE      &
-     &                                            ,Q2_BTXS, Q2_BTXE    &
-     &                                            ,CWM_BTXS, CWM_BTXE  
+      REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH)                    &
+     &                           ,INTENT(IN) :: T_BTXS, T_BTXE          &
+     &                                         ,Q_BTXS, Q_BTXE          &
+     &                                         ,Q2_BTXS, Q2_BTXE        &
+     &                                         ,CWM_BTXS, CWM_BTXE  
                                                
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: RES
@@ -251,23 +224,17 @@
             JJ=1         ! Which cell in the domain
 
           DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-            PD_BYS(I,1,JB)=PD_BYS(I,1,JB)+PD_BTYS(I,1,JB)*DT
-            PD(I,JJ)=PD_BYS(I,1,JB)
+            PD(I,JJ)=PD(I,JJ)+PD_BTYS(I,1,JB)*DT
           ENDDO
 
 !$omp parallel do                                                       &
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              T_BYS(I,K,JB)=T_BYS(I,K,JB)+T_BTYS(I,K,JB)*DT
-              Q_BYS(I,K,JB)=Q_BYS(I,K,JB)+Q_BTYS(I,K,JB)*DT
-              Q2_BYS(I,K,JB)=Q2_BYS(I,K,JB)+Q2_BTYS(I,K,JB)*DT
-              CWM_BYS(I,K,JB)=CWM_BYS(I,K,JB)+CWM_BTYS(I,K,JB)*DT
-!
-              T(I,JJ,K)=T_BYS(I,K,JB)
-              Q(I,JJ,K)=Q_BYS(I,K,JB)
-              Q2(I,JJ,K)=Q2_BYS(I,K,JB)
-              CWM(I,JJ,K)=CWM_BYS(I,K,JB)
+              T(I,JJ,K)=T(I,JJ,K)+T_BTYS(I,K,JB)*DT
+              Q(I,JJ,K)=Q(I,JJ,K)+Q_BTYS(I,K,JB)*DT
+              Q2(I,JJ,K)=Q2(I,JJ,K)+Q2_BTYS(I,K,JB)*DT
+              CWM(I,JJ,K)=CWM(I,JJ,K)+CWM_BTYS(I,K,JB)*DT
               PINT(I,JJ,K)=ETA1(K)*PDTOP                                &
      &                    +ETA2(K)*PD(I,JJ)*RES(I,JJ)+PT
             ENDDO
@@ -279,23 +246,17 @@
 
 !
           DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-            PD_BYE(I,1,JB)=PD_BYE(I,1,JB)+PD_BTYE(I,1,JB)*DT
-            PD(I,JJ)=PD_BYE(I,1,JB)
+            PD(I,JJ)=PD(I,JJ)+PD_BTYE(I,1,JB)*DT
           ENDDO
 !
 !$omp parallel do                                                       &
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              T_BYE(I,K,JB)=T_BYE(I,K,JB)+T_BTYE(I,K,JB)*DT
-              Q_BYE(I,K,JB)=Q_BYE(I,K,JB)+Q_BTYE(I,K,JB)*DT
-              Q2_BYE(I,K,JB)=Q2_BYE(I,K,JB)+Q2_BTYE(I,K,JB)*DT
-              CWM_BYE(I,K,JB)=CWM_BYE(I,K,JB)+CWM_BTYE(I,K,JB)*DT
-!
-              T(I,JJ,K)=T_BYE(I,K,JB)
-              Q(I,JJ,K)=Q_BYE(I,K,JB)
-              Q2(I,JJ,K)=Q2_BYE(I,K,JB)
-              CWM(I,JJ,K)=CWM_BYE(I,K,JB)
+              T(I,JJ,K)=T(I,JJ,K)+T_BTYE(I,K,JB)*DT
+              Q(I,JJ,K)=Q(I,JJ,K)+Q_BTYE(I,K,JB)*DT
+              Q2(I,JJ,K)=Q2(I,JJ,K)+Q2_BTYE(I,K,JB)*DT
+              CWM(I,JJ,K)=CWM(I,JJ,K)+CWM_BTYE(I,K,JB)*DT
               PINT(I,JJ,K)=ETA1(K)*PDTOP                                &
      &                    +ETA2(K)*PD(I,JJ)*RES(I,JJ)+PT
             ENDDO
@@ -376,8 +337,7 @@
 !
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
             IF(MOD(J,2)==1)THEN
-              PD_BXS(J,1,IB)=PD_BXS(J,1,IB)+PD_BTXS(J,1,IB)*DT
-              PD(II,J)=PD_BXS(J,1,IB)
+              PD(II,J)=PD(II,J)+PD_BTXS(J,1,IB)*DT
             ENDIF
           ENDDO
 !
@@ -387,15 +347,10 @@
             DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
 !
               IF(MOD(J,2)==1)THEN
-                T_BXS(J,K,IB)=T_BXS(J,K,IB)+T_BTXS(J,K,IB)*DT
-                Q_BXS(J,K,IB)=Q_BXS(J,K,IB)+Q_BTXS(J,K,IB)*DT
-                Q2_BXS(J,K,IB)=Q2_BXS(J,K,IB)+Q2_BTXS(J,K,IB)*DT
-                CWM_BXS(J,K,IB)=CWM_BXS(J,K,IB)+CWM_BTXS(J,K,IB)*DT
-!
-                T(II,J,K)=T_BXS(J,K,IB)
-                Q(II,J,K)=Q_BXS(J,K,IB)
-                Q2(II,J,K)=Q2_BXS(J,K,IB)
-                CWM(II,J,K)=CWM_BXS(J,K,IB)
+                T(II,J,K)=T(II,J,K)+T_BTXS(J,K,IB)*DT
+                Q(II,J,K)=Q(II,J,K)+Q_BTXS(J,K,IB)*DT
+                Q2(II,J,K)=Q2(II,J,K)+Q2_BTXS(J,K,IB)*DT
+                CWM(II,J,K)=CWM(II,J,K)+CWM_BTXS(J,K,IB)*DT
                 PINT(II,J,K)=ETA1(K)*PDTOP                              &
      &                      +ETA2(K)*PD(II,J)*RES(II,J)+PT
               ENDIF
@@ -409,8 +364,7 @@
 
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
             IF(MOD(J,2)==1)THEN
-              PD_BXE(J,1,IB)=PD_BXE(J,1,IB)+PD_BTXE(J,1,IB)*DT
-              PD(II,J)=PD_BXE(J,1,IB)
+              PD(II,J)=PD(II,J)+PD_BTXE(J,1,IB)*DT
             ENDIF
           ENDDO
 !
@@ -420,15 +374,10 @@
             DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
 !
               IF(MOD(J,2)==1)THEN
-                T_BXE(J,K,IB)=T_BXE(J,K,IB)+T_BTXE(J,K,IB)*DT
-                Q_BXE(J,K,IB)=Q_BXE(J,K,IB)+Q_BTXE(J,K,IB)*DT
-                Q2_BXE(J,K,IB)=Q2_BXE(J,K,IB)+Q2_BTXE(J,K,IB)*DT
-                CWM_BXE(J,K,IB)=CWM_BXE(J,K,IB)+CWM_BTXE(J,K,IB)*DT
-!
-                T(II,J,K)=T_BXE(J,K,IB)
-                Q(II,J,K)=Q_BXE(J,K,IB)
-                Q2(II,J,K)=Q2_BXE(J,K,IB)
-                CWM(II,J,K)=CWM_BXE(J,K,IB)
+                T(II,J,K)=T(II,J,K)+T_BTXE(J,K,IB)*DT
+                Q(II,J,K)=Q(II,J,K)+Q_BTXE(J,K,IB)*DT
+                Q2(II,J,K)=Q2(II,J,K)+Q2_BTXE(J,K,IB)*DT
+                CWM(II,J,K)=CWM(II,J,K)+CWM_BTXE(J,K,IB)*DT
                 PINT(II,J,K)=ETA1(K)*PDTOP                              &
      &                      +ETA2(K)*PD(II,J)*RES(II,J)+PT
               ENDIF
@@ -775,10 +724,8 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       SUBROUTINE BOCOV(GRIDID,NTSD,DT,LB                                &
-     &                ,U_BXS,U_BXE,U_BYS,U_BYE                         &  
-     &                ,V_BXS,V_BXE,V_BYS,V_BYE                         &  
-     &                ,U_BTXS,U_BTXE,U_BTYS,U_BTYE                     &  
-     &                ,V_BTXS,V_BTXE,V_BTYS,V_BTYE                     &  
+     &                ,U_BTXS,U_BTXE,U_BTYS,U_BTYE                      &  
+     &                ,V_BTXS,V_BTXE,V_BTYS,V_BTYE                      &  
      &                ,U,V                                              &
      &                ,SPEC_BDY_WIDTH                                   &  
      &                ,IHE,IHW,IVE,IVW                                  &
@@ -848,14 +795,12 @@
 !
       REAL,INTENT(IN) :: DT
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH),INTENT(INOUT) ::     &
-     &                                          U_BYS,U_BYE,V_BYS,V_BYE &
-     &                                         ,U_BTYS,U_BTYE           &
+      REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH),INTENT(IN) ::      &
+     &                                          U_BTYS,U_BTYE           &
      &                                         ,V_BTYS,V_BTYE           
 
-      REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH),INTENT(INOUT) ::     &
-     &                                          U_BXS,U_BXE,V_BXS,V_BXE &
-     &                                         ,U_BTXS,U_BTXE           &
+      REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH),INTENT(IN) ::      &
+     &                                          U_BTXS,U_BTXE           &
      &                                         ,V_BTXS,V_BTXE 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: U,V
@@ -910,23 +855,19 @@
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
         IF(S_BDY.AND.IBDY==1) THEN
-!
             JB=1         ! Which cell in from Boundary 
             JJ=1         ! Which cell in the Domain
-!
+
 !$omp parallel do                                                       &
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              U_BYS(I,K,JB)=U_BYS(I,K,JB)+U_BTYS(I,K,JB)*DT
-              V_BYS(I,K,JB)=V_BYS(I,K,JB)+V_BTYS(I,K,JB)*DT
-              U(I,JJ,K)=U_BYS(I,K,JB)
-              V(I,JJ,K)=V_BYS(I,K,JB)
+              U(I,JJ,K)=U(I,JJ,K)+U_BTYS(I,K,JB)*DT
+              V(I,JJ,K)=V(I,JJ,K)+V_BTYS(I,K,JB)*DT
             ENDDO
           ENDDO
-!
 
-          ELSEIF(N_BDY.AND.IBDY==2) THEN
+        ELSEIF(N_BDY.AND.IBDY==2) THEN
             JB=1         ! Which cell in from Boundary
             JJ=JJM       ! Which cell in the Domain
 
@@ -934,15 +875,12 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              U_BYE(I,K,JB)=U_BYE(I,K,JB)+U_BTYE(I,K,JB)*DT
-              V_BYE(I,K,JB)=V_BYE(I,K,JB)+V_BTYE(I,K,JB)*DT
-              U(I,JJ,K)=U_BYE(I,K,JB)
-              V(I,JJ,K)=V_BYE(I,K,JB)
+              U(I,JJ,K)=U(I,JJ,K)+U_BTYE(I,K,JB)*DT
+              V(I,JJ,K)=V(I,JJ,K)+V_BTYE(I,K,JB)*DT
             ENDDO
           ENDDO
 
-
-          ENDIF
+        ENDIF
       ENDDO
 
 !
@@ -958,16 +896,14 @@
         IF(W_BDY.AND.IBDY==1) THEN
             IB=1         ! Which cell in from boundary
             II=1         ! Which cell in the domain
-!
+
 !$omp parallel do                                                       &
 !$omp& private(j,k)
           DO K=KTS,KTE
             DO J=MAX(JTS-1,JDS+2-1),MIN(JTE+1,JDE-1)
               IF(MOD(J,2)==0)THEN
-                U_BXS(J,K,IB)=U_BXS(J,K,IB)+U_BTXS(J,K,IB)*DT
-                V_BXS(J,K,IB)=V_BXS(J,K,IB)+V_BTXS(J,K,IB)*DT
-                U(II,J,K)=U_BXS(J,K,IB)
-                V(II,J,K)=V_BXS(J,K,IB)
+                U(II,J,K)=U(II,J,K)+U_BTXS(J,K,IB)*DT
+                V(II,J,K)=V(II,J,K)+V_BTXS(J,K,IB)*DT
               ENDIF
             ENDDO
           ENDDO
@@ -981,21 +917,14 @@
           DO K=KTS,KTE
             DO J=MAX(JTS-1,JDS+2-1),MIN(JTE+1,JDE-1)
               IF(MOD(J,2)==0)THEN
-                U_BXE(J,K,IB)=U_BXE(J,K,IB)+U_BTXE(J,K,IB)*DT
-                V_BXE(J,K,IB)=V_BXE(J,K,IB)+V_BTXE(J,K,IB)*DT
-                U(II,J,K)=U_BXE(J,K,IB)
-                V(II,J,K)=V_BXE(J,K,IB)
+                U(II,J,K)=U(II,J,K)+U_BTXE(J,K,IB)*DT
+                V(II,J,K)=V(II,J,K)+V_BTXE(J,K,IB)*DT
               ENDIF
             ENDDO
           ENDDO
 
-!
         ENDIF
-
-
-
       ENDDO
-
 !
 !-----------------------------------------------------------------------
 !***  EXTRAPOLATION OF TANGENTIAL VELOCITY AT OUTFLOW POINTS

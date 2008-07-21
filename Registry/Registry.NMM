@@ -307,23 +307,23 @@ state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distanc
 #
 # module_ACCUM.F
 #
-state  real   acfrcv    ij    dyn_nmm     1    -    h     "ACFRCV"    "Accum convective cloud fraction"   ""
-state  real   acfrst    ij    dyn_nmm     1    -    h     "ACFRST"    "Accum stratiform cloud fraction"   ""
-state  real   ssroff    ij    dyn_nmm     1    -    h     "SSROFF"    "Surface runoff"                    "mm"                  
-state  real   bgroff    ij    dyn_nmm     1    -    h     "BGROFF"    "Subsurface runoff"                 "mm"
+state  real   acfrcv    ij    dyn_nmm     1    -    rh    "ACFRCV"    "Accum convective cloud fraction"   ""
+state  real   acfrst    ij    dyn_nmm     1    -    rh    "ACFRST"    "Accum stratiform cloud fraction"   ""
+state  real   ssroff    ij    dyn_nmm     1    -    rh    "SSROFF"    "Surface runoff"                    "mm"
+state  real   bgroff    ij    dyn_nmm     1    -    rh    "BGROFF"    "Subsurface runoff"                 "mm"
 state  real   rlwin     ij    dyn_nmm     1    -    rh    "RLWIN"     "Downward longwave at surface"      "W m-2"
 state  real   rlwout    ij    dyn_nmm     1    -    -
 state  real   rlwtoa    ij    dyn_nmm     1    -    rh    "RLWTOA"    "Outgoing LW flux at top of atmos"  "W m-2"
-state  real   alwin     ij    dyn_nmm     1    -    h     "ALWIN"     "Accum LW down at surface"          "W m-2"
-state  real   alwout    ij    dyn_nmm     1    -    h     "ALWOUT"    "Accum RADOT (see above)"           "W m-2"
-state  real   alwtoa    ij    dyn_nmm     1    -    h     "ALWTOA"    "Accum RLWTOA"                      "W m-2"
+state  real   alwin     ij    dyn_nmm     1    -    rh    "ALWIN"     "Accum LW down at surface"          "W m-2"
+state  real   alwout    ij    dyn_nmm     1    -    rh    "ALWOUT"    "Accum RADOT (see above)"           "W m-2"
+state  real   alwtoa    ij    dyn_nmm     1    -    rh    "ALWTOA"    "Accum RLWTOA"                      "W m-2"
 state  real   rswin     ij    dyn_nmm     1    -    rh    "RSWIN"     "Downward shortwave at surface"     "W m-2"
 state  real   rswinc    ij    dyn_nmm     1    -    rh    "RSWINC"    "Clear-sky equivalent of RSWIN"     "W m-2"
 state  real   rswout    ij    dyn_nmm     1    -    rh    "RSWOUT"    "Upward shortwave at surface"       "W m-2"
 state  real   rswtoa    ij    dyn_nmm     1    -    -     "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
-state  real   aswin     ij    dyn_nmm     1    -    h     "ASWIN"     "Accum SW down at surface"          "W m-2"
-state  real   aswout    ij    dyn_nmm     1    -    h     "ASWOUT"    "Accum RSWOUT"                      "W m-2"
-state  real   aswtoa    ij    dyn_nmm     1    -    h     "ASWTOA"    "Accum RSWTOA"                      "W m-2"
+state  real   aswin     ij    dyn_nmm     1    -    rh    "ASWIN"     "Accum SW down at surface"          "W m-2"
+state  real   aswout    ij    dyn_nmm     1    -    rh    "ASWOUT"    "Accum RSWOUT"                      "W m-2"
+state  real   aswtoa    ij    dyn_nmm     1    -    rh    "ASWTOA"    "Accum RSWTOA"                      "W m-2"
 state  real   sfcshx    ij    dyn_nmm     1    -    rh    "SFCSHX"    "Accum sfc sensible heat flux"      "W m-2"
 state  real   sfclhx    ij    dyn_nmm     1    -    rh    "SFCLHX"    "Accum sfc latent heat flux"        "W m-2"
 state  real   subshx    ij    dyn_nmm     1    -    rh    "SUBSHX"    "Accum deep soil heat flux"         "W m-2"
@@ -331,12 +331,12 @@ state  real   snopcx    ij    dyn_nmm     1    -    rh    "SNOPCX"    "Snow phas
 state  real   sfcuvx    ij    dyn_nmm     1    -    rh
 state  real   potevp    ij    dyn_nmm     1    -    rh    "POTEVP"    "Accum potential evaporation"       "m"
 state  real   potflx    ij    dyn_nmm     1    -    rh    "POTFLX"    "Energy equivalent of POTEVP"       "W m-2"
-state  real   tlmin     ij    dyn_nmm     1    -    h
-state  real   tlmax     ij    dyn_nmm     1    -    h
-state  real   t02_min   ij    dyn_nmm     1    -    h     "T02_MIN"  "Hourly Min Shelter Temperature"    "K"
-state  real   t02_max   ij    dyn_nmm     1    -    h     "T02_MAX"  "Hourly Max Shelter Temperature"    "K"
-state  real   rh02_min  ij    dyn_nmm     1    -    h     "RH02_MIN" "Hourly Min Relative Humidity"    ""
-state  real   rh02_max  ij    dyn_nmm     1    -    h     "RH02_MAX" "Hourly Max Relative Humidity"    ""
+state  real   tlmin     ij    dyn_nmm     1    -    rh
+state  real   tlmax     ij    dyn_nmm     1    -    rh
+state  real   t02_min   ij    dyn_nmm     1    -    rh    "T02_MIN"  "Hourly Min Shelter Temperature"    "K"
+state  real   t02_max   ij    dyn_nmm     1    -    rh    "T02_MAX"  "Hourly Max Shelter Temperature"    "K"
+state  real   rh02_min  ij    dyn_nmm     1    -    rh    "RH02_MIN" "Hourly Min Relative Humidity"    ""
+state  real   rh02_max  ij    dyn_nmm     1    -    rh    "RH02_MAX" "Hourly Max Relative Humidity"    ""
 state  real   rlwtt     ijk   dyn_nmm     1    -    r     "RLWTT"     "Longwave temperature tendency"     "K s-1"
 state  real   rswtt     ijk   dyn_nmm     1    -    r     "RSWTT"     "Shortwave temperature tendency"    "K s-1"
 state  real   tcucn     ijk   dyn_nmm     1    -    -     "TCUCN"     "Accum convec temperature tendency" "K s-1"

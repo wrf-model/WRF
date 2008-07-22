@@ -23,7 +23,7 @@ CONTAINS
 #endif
 
    SUBROUTINE unix_ls ( root , id )
-      USE module_dm
+!     USE module_dm
 
       IMPLICIT NONE
      

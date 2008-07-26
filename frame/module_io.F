@@ -533,6 +533,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
   CHARACTER*128               :: DataSet
   INTEGER                     :: io_form
   INTEGER                     :: Hndl
+  LOGICAL                     :: also_for_out
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files, use_output_servers
 
@@ -604,6 +605,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 
   Status = 0
   Hndl = -1
+  also_for_out = .FALSE.
 !  IF ( .NOT. use_output_servers() ) THEN
     SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
@@ -640,6 +642,7 @@ SUBROUTINE wrf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDepInfo
 #endif
 #ifdef MCELIO
       CASE ( IO_MCEL )
+        also_for_out = .TRUE.
         IF ( wrf_dm_on_monitor() ) THEN
           
         WRITE(fhand,'(a,i0)')"filter_",filtno
@@ -653,6 +656,7 @@ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDM
 #endif
 #ifdef ESMFIO
       CASE ( IO_ESMF )
+        also_for_out = .TRUE.
         CALL ext_esmf_open_for_read_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                             Hndl , Status )
 #endif
@@ -703,7 +707,7 @@ tstr = TRIM(SysDepInfo) // ',' // 'READ_MODE=UPDATE,LAT_R=XLAT,LON_R=XLONG,LANDM
 !  ELSE
 !    Status = 0
 !  ENDIF
-  CALL add_new_handle( Hndl, io_form, .TRUE., DataHandle )
+  CALL add_new_handle( Hndl, io_form, also_for_out, DataHandle )
 END SUBROUTINE wrf_open_for_read_begin
 
 !--- open_for_read_commit

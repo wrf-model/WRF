@@ -34,7 +34,7 @@
 !*
 !*----------------------------------------------------------------------------
 
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
 #  include "pnetcdf.inc"

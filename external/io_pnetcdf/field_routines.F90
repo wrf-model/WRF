@@ -34,7 +34,7 @@
 !*
 !*----------------------------------------------------------------------------
 subroutine ext_pnc_RealFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -66,7 +66,7 @@ subroutine ext_pnc_RealFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
 end subroutine ext_pnc_RealFieldIO
 
 subroutine ext_pnc_DoubleFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -98,7 +98,7 @@ subroutine ext_pnc_DoubleFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
 end subroutine ext_pnc_DoubleFieldIO
 
 subroutine ext_pnc_IntFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -130,7 +130,7 @@ subroutine ext_pnc_IntFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
 end subroutine ext_pnc_IntFieldIO
 
 subroutine ext_pnc_LogicalFieldIO(IO,NCID,VarID,VStart,VCount,Data,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'

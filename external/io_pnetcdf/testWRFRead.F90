@@ -1,5 +1,5 @@
 program testread_john
-  use wrf_data
+  use wrf_data_pnc
   implicit none
   include 'wrf_status_codes.h'
   include 'netcdf.inc'

@@ -1,4 +1,4 @@
-!*------------------------------------------------------------------------------
+!/*------------------------------------------------------------------------------
 !*  Standard Disclaimer
 !*
 !*  Forecast Systems Laboratory
@@ -33,15 +33,16 @@
 !*  Date:    October 6, 2000
 !*
 !*----------------------------------------------------------------------------
+!*/
 
-module wrf_data
+module wrf_data_pnc
 
   integer                , parameter      :: FATAL            = 1
   integer                , parameter      :: WARN             = 1
   integer                , parameter      :: WrfDataHandleMax = 99
   integer                , parameter      :: MaxDims          = 2000 ! = NF_MAX_VARS
   integer                , parameter      :: MaxVars          = 2000
-  integer                , parameter      :: MaxTimes         = 9000
+  integer                , parameter      :: MaxTimes         = 9000000
   integer                , parameter      :: DateStrLen       = 19
   integer                , parameter      :: VarNameLen       = 31
   integer                , parameter      :: NO_DIM           = 0
@@ -50,7 +51,7 @@ module wrf_data
   character (8)          , parameter      :: NO_NAME          = 'NULL'
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
 
-# include "wrf_io_flags.h"
+#include "wrf_io_flags.h"
 
   character (256)                         :: msg
   logical                                 :: WrfIOnotInitialized = .true.
@@ -89,7 +90,7 @@ module wrf_data
     logical                               :: first_operation
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
-end module wrf_data
+end module wrf_data_pnc
 
 module ext_pnc_support_routines
 
@@ -105,7 +106,7 @@ integer(KIND=MPI_OFFSET_KIND) function i2offset(i)
 end function i2offset
 
 subroutine allocHandle(DataHandle,DH,Comm,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   integer              ,intent(out) :: DataHandle
   type(wrf_data_handle),pointer     :: DH
@@ -207,7 +208,7 @@ subroutine allocHandle(DataHandle,DH,Comm,Status)
 end subroutine allocHandle
 
 subroutine deallocHandle(DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   integer              ,intent(in) :: DataHandle
   integer              ,intent(out) :: Status
@@ -295,7 +296,7 @@ subroutine deallocHandle(DataHandle, Status)
 end subroutine deallocHandle
 
 subroutine GetDH(DataHandle,DH,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   integer               ,intent(in)     :: DataHandle
   type(wrf_data_handle) ,pointer        :: DH
@@ -315,7 +316,7 @@ subroutine GetDH(DataHandle,DH,Status)
 end subroutine GetDH
 
 subroutine DateCheck(Date,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   character*(*) ,intent(in)      :: Date
   integer       ,intent(out)     :: Status
@@ -329,7 +330,7 @@ subroutine DateCheck(Date,Status)
 end subroutine DateCheck
 
 subroutine GetName(Element,Var,Name,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   character*(*) ,intent(in)     :: Element
   character*(*) ,intent(in)     :: Var
@@ -352,7 +353,7 @@ subroutine GetName(Element,Var,Name,Status)
 end subroutine GetName
 
 subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
   character (*)         ,intent(in)     :: IO
@@ -471,7 +472,7 @@ subroutine GetIndices(NDim,Start,End,i1,i2,j1,j2,k1,k2)
 end subroutine GetIndices
 
 subroutine ExtOrder(MemoryOrder,Vector,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   character*(*)              ,intent(in)    :: MemoryOrder
   integer,dimension(*)       ,intent(inout) :: Vector
@@ -518,7 +519,7 @@ subroutine ExtOrder(MemoryOrder,Vector,Status)
 end subroutine ExtOrder
 
 subroutine ExtOrderStr(MemoryOrder,Vector,ROVector,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
   character*(*)                    ,intent(in)    :: MemoryOrder
   character*(*),dimension(*)       ,intent(in)    :: Vector
@@ -600,7 +601,7 @@ subroutine UpperCase(MemoryOrder,MemOrd)
 end subroutine UpperCase
 
 subroutine netcdf_err(err,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
   integer  ,intent(in)  :: err
@@ -621,7 +622,7 @@ end subroutine netcdf_err
 
 subroutine FieldIO(IO,DataHandle,DateStr,Starts,Length,MemoryOrder &
                      ,FieldType,NCID,VarID,XField,Status)
-  use wrf_data
+  use wrf_data_pnc
   include 'wrf_status_codes.h'
 #  include "pnetcdf.inc"
   character (*)              ,intent(in)    :: IO
@@ -773,7 +774,7 @@ end subroutine reorder
 ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
 ! returned.  
 LOGICAL FUNCTION ncd_ok_to_put_dom_ti( DataHandle )
-    USE wrf_data
+    USE wrf_data_pnc
     include 'wrf_status_codes.h'
     INTEGER, INTENT(IN) :: DataHandle 
     CHARACTER*80 :: fname
@@ -800,7 +801,7 @@ END FUNCTION ncd_ok_to_put_dom_ti
 ! file referenced by DataHandle.  If DataHandle is invalid, .FALSE. is 
 ! returned.  
 LOGICAL FUNCTION ncd_ok_to_get_dom_ti( DataHandle )
-    USE wrf_data
+    USE wrf_data_pnc
     include 'wrf_status_codes.h'
     INTEGER, INTENT(IN) :: DataHandle 
     CHARACTER*80 :: fname
@@ -824,7 +825,7 @@ END FUNCTION ncd_ok_to_get_dom_ti
 ! Returns .TRUE. iff nothing has been read from or written to the file 
 ! referenced by DataHandle.  If DataHandle is invalid, .FALSE. is returned.  
 LOGICAL FUNCTION ncd_is_first_operation( DataHandle )
-    USE wrf_data
+    USE wrf_data_pnc
     INCLUDE 'wrf_status_codes.h'
     INTEGER, INTENT(IN) :: DataHandle 
     TYPE(wrf_data_handle) ,POINTER :: DH
@@ -846,7 +847,7 @@ END FUNCTION ncd_is_first_operation
 end module ext_pnc_support_routines
 
 subroutine ext_pnc_open_for_read(DatasetName, Comm1, Comm2, SysDepInfo, DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -867,7 +868,7 @@ end subroutine ext_pnc_open_for_read
 !ends training phase; switches internal flag to enable input
 !must be paired with call to ext_pnc_open_for_read_begin
 subroutine ext_pnc_open_for_read_commit(DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -895,7 +896,7 @@ subroutine ext_pnc_open_for_read_commit(DataHandle, Status)
 end subroutine ext_pnc_open_for_read_commit
 
 subroutine ext_pnc_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1028,7 +1029,7 @@ subroutine ext_pnc_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
 end subroutine ext_pnc_open_for_read_begin
 
 subroutine ext_pnc_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1162,7 +1163,7 @@ end subroutine ext_pnc_open_for_update
 
 
 SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHandle,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1243,7 +1244,7 @@ end subroutine ext_pnc_open_for_write_begin
 !no training phase for this version of the open stmt.
 subroutine ext_pnc_open_for_write (DatasetName, Comm1, Comm2, &
                                    SysDepInfo, DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1259,7 +1260,7 @@ subroutine ext_pnc_open_for_write (DatasetName, Comm1, Comm2, &
 end subroutine ext_pnc_open_for_write
 
 SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1295,7 +1296,7 @@ SUBROUTINE ext_pnc_open_for_write_commit(DataHandle, Status)
 end subroutine ext_pnc_open_for_write_commit
 
 subroutine ext_pnc_ioclose(DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1345,7 +1346,7 @@ subroutine ext_pnc_ioclose(DataHandle, Status)
 end subroutine ext_pnc_ioclose
 
 subroutine ext_pnc_iosync( DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1392,7 +1393,7 @@ end subroutine ext_pnc_iosync
 
 
 subroutine ext_pnc_redef( DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1440,7 +1441,7 @@ subroutine ext_pnc_redef( DataHandle, Status)
 end subroutine ext_pnc_redef
 
 subroutine ext_pnc_enddef( DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -1488,7 +1489,7 @@ subroutine ext_pnc_enddef( DataHandle, Status)
 end subroutine ext_pnc_enddef
 
 subroutine ext_pnc_ioinit(SysDepInfo, Status)
-  use wrf_data
+  use wrf_data_pnc
   implicit none
   include 'wrf_status_codes.h'
   CHARACTER*(*), INTENT(IN) :: SysDepInfo
@@ -1505,7 +1506,7 @@ end subroutine ext_pnc_ioinit
 
 
 subroutine ext_pnc_inquiry (Inquiry, Result, Status)
-  use wrf_data
+  use wrf_data_pnc
   implicit none
   include 'wrf_status_codes.h'
   character *(*), INTENT(IN)    :: Inquiry
@@ -1533,7 +1534,7 @@ end subroutine ext_pnc_inquiry
 
 
 subroutine ext_pnc_ioexit(Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2222,7 +2223,7 @@ end subroutine ext_pnc_get_dom_td_char
 subroutine ext_pnc_write_field(DataHandle,DateStr,Var,Field,FieldType,Comm, &
   IOComm, DomainDesc, MemoryOrdIn, Stagger,  DimNames,                      &
   DomainStart,DomainEnd,MemoryStart,MemoryEnd,PatchStart,PatchEnd,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2509,7 +2510,7 @@ end subroutine ext_pnc_write_field
 subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
   IOComm, DomainDesc, MemoryOrdIn, Stagger, DimNames,                       &
   DomainStart,DomainEnd,MemoryStart,MemoryEnd,PatchStart,PatchEnd,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2767,7 +2768,7 @@ subroutine ext_pnc_read_field(DataHandle,DateStr,Var,Field,FieldType,Comm,  &
 end subroutine ext_pnc_read_field
 
 subroutine ext_pnc_inquire_opened( DataHandle, FileName , FileStatus, Status )
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2792,7 +2793,7 @@ subroutine ext_pnc_inquire_opened( DataHandle, FileName , FileStatus, Status )
 end subroutine ext_pnc_inquire_opened
 
 subroutine ext_pnc_inquire_filename( Datahandle, FileName,  FileStatus, Status )
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2815,7 +2816,7 @@ subroutine ext_pnc_inquire_filename( Datahandle, FileName,  FileStatus, Status )
 end subroutine ext_pnc_inquire_filename
 
 subroutine ext_pnc_set_time(DataHandle, DateStr, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2871,7 +2872,7 @@ subroutine ext_pnc_set_time(DataHandle, DateStr, Status)
 end subroutine ext_pnc_set_time
 
 subroutine ext_pnc_get_next_time(DataHandle, DateStr, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2918,7 +2919,7 @@ subroutine ext_pnc_get_next_time(DataHandle, DateStr, Status)
 end subroutine ext_pnc_get_next_time
 
 subroutine ext_pnc_get_previous_time(DataHandle, DateStr, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -2961,7 +2962,7 @@ subroutine ext_pnc_get_previous_time(DataHandle, DateStr, Status)
 end subroutine ext_pnc_get_previous_time
 
 subroutine ext_pnc_get_next_var(DataHandle, VarName, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
   include 'wrf_status_codes.h'
@@ -3009,7 +3010,7 @@ subroutine ext_pnc_get_next_var(DataHandle, VarName, Status)
 end subroutine ext_pnc_get_next_var
 
 subroutine ext_pnc_end_of_frame(DataHandle, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
 #  include "pnetcdf.inc"
@@ -3025,7 +3026,7 @@ end subroutine ext_pnc_end_of_frame
 ! NOTE:  For scalar variables NDim is set to zero and DomainStart and 
 ! NOTE:  DomainEnd are left unmodified.  
 subroutine ext_pnc_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,DomainStart,DomainEnd,WrfType,Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
 #  include "pnetcdf.inc"
@@ -3171,7 +3172,7 @@ subroutine ext_pnc_get_var_info(DataHandle,Name,NDim,MemoryOrder,Stagger,DomainS
 end subroutine ext_pnc_get_var_info
 
 subroutine ext_pnc_warning_str( Code, ReturnString, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
 #  include "pnetcdf.inc"
@@ -3367,7 +3368,7 @@ end subroutine ext_pnc_warning_str
 !returns message string for all WRF and netCDF warning/error status codes
 !Other i/o packages must  provide their own routines to return their own status messages
 subroutine ext_pnc_error_str( Code, ReturnString, Status)
-  use wrf_data
+  use wrf_data_pnc
   use ext_pnc_support_routines
   implicit none
 #  include "pnetcdf.inc"

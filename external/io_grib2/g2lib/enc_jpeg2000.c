@@ -11,6 +11,18 @@
   typedef long g2int;
 #endif
 
+#ifndef CRAY
+# ifdef NOUNDERSCORE
+#      define ENC_JPEG2000 enc_jpeg2000
+# else
+#   ifdef F2CSTYLE
+#      define ENC_JPEG2000 enc_jpeg2000__
+#   else
+#      define ENC_JPEG2000 enc_jpeg2000_
+#   endif
+# endif
+#endif
+
 int ENC_JPEG2000(unsigned char *cin,g2int *pwidth,g2int *pheight,g2int *pnbits,
                  g2int *ltype, g2int *ratio, g2int *retry, char *outjpc, 
                  g2int *jpclen)
@@ -88,26 +100,26 @@ int ENC_JPEG2000(unsigned char *cin,g2int *pwidth,g2int *pheight,g2int *pnbits,
     printf(" enc_jpeg2000:nbits %ld\n",nbits);
     printf(" enc_jpeg2000:jpclen %ld\n",*jpclen);
 */
-//    jas_init();
+/*    jas_init(); */
 
-//
-//    Set lossy compression options, if requested.
-//
+/* 
+      Set lossy compression options, if requested.
+*/
     if ( *ltype != 1 ) {
        opts[0]=(char)0;
     }
     else {
        snprintf(opts,MAXOPTSSIZE,"mode=real\nrate=%f",1.0/(float)*ratio);
     }
-    if ( *retry == 1 ) {             // option to increase number of guard bits
+    if ( *retry == 1 ) {             /* option to increase number of guard bits */
        strcat(opts,"\nnumgbits=4");
     }
-    //printf("SAGopts: %s\n",opts);
+    /*printf("SAGopts: %s\n",opts); */
     
-//
-//     Initialize the JasPer image structure describing the grayscale
-//     image to encode into the JPEG2000 code stream.
-//
+/*
+       Initialize the JasPer image structure describing the grayscale
+       image to encode into the JPEG2000 code stream.
+*/
     image.tlx_=0;
     image.tly_=0;
 #ifdef JAS_1_500_4 
@@ -149,35 +161,35 @@ int ENC_JPEG2000(unsigned char *cin,g2int *pwidth,g2int *pheight,g2int *pnbits,
     pcmpt=&cmpt;
     image.cmpts_=&pcmpt;
 
-//
-//    Open a JasPer stream containing the input grayscale values
-//
+/*
+      Open a JasPer stream containing the input grayscale values
+*/
     istream=jas_stream_memopen((char *)cin,height*width*cmpt.cps_);
     cmpt.stream_=istream;
 
-//
-//    Open an output stream that will contain the encoded jpeg2000
-//    code stream.
-//
+/*
+      Open an output stream that will contain the encoded jpeg2000
+      code stream.
+*/
     jpcstream=jas_stream_memopen(outjpc,(int)(*jpclen));
 
-//
-//     Encode image.
-//
+/*
+       Encode image.
+*/
     ier=jpc_encode(&image,jpcstream,opts);
     if ( ier != 0 ) {
        printf(" jpc_encode return = %d \n",ier);
        return -3;
     }
-//
-//     Clean up JasPer work structures.
-//    
+/*
+       Clean up JasPer work structures.
+*/    
     rwcnt=jpcstream->rwcnt_;
     ier=jas_stream_close(istream);
     ier=jas_stream_close(jpcstream);
-//
-//      Return size of jpeg2000 code stream
-//
+/*
+        Return size of jpeg2000 code stream
+*/
     return (rwcnt);
 
 }

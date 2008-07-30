@@ -11,6 +11,18 @@
   typedef long g2int;
 #endif
 
+#ifndef CRAY
+# ifdef NOUNDERSCORE
+#      define DEC_JPEG2000 dec_jpeg2000
+# else
+#   ifdef F2CSTYLE
+#      define DEC_JPEG2000 dec_jpeg2000__
+#   else
+#      define DEC_JPEG2000 dec_jpeg2000_
+#   endif
+# endif
+#endif
+
    int DEC_JPEG2000(char *injpc,g2int *bufsize,g2int *outfld)
 /*$$$  SUBPROGRAM DOCUMENTATION BLOCK
 *                .      .    .                                       .
@@ -60,17 +72,17 @@
     char *opts=0;
     jas_matrix_t *data;
 
-//    jas_init();
+/*    jas_init(); */
 
-//   
-//     Create jas_stream_t containing input JPEG200 codestream in memory.
-//       
+     
+       Create jas_stream_t containing input JPEG200 codestream in memory.
+*/       
 
     jpcstream=jas_stream_memopen(injpc,*bufsize);
 
-//   
-//     Decode JPEG200 codestream into jas_image_t structure.
-//       
+/*   
+       Decode JPEG200 codestream into jas_image_t structure.
+*/       
     image=jpc_decode(jpcstream,opts);
     if ( image == 0 ) {
        printf(" jpc_decode return = %d \n",ier);
@@ -108,31 +120,31 @@
 #endif
 */
 
-//   Expecting jpeg2000 image to be grayscale only.
-//   No color components.
-//
+/*   Expecting jpeg2000 image to be grayscale only.
+     No color components.
+*/
     if (image->numcmpts_ != 1 ) {
        printf("dec_jpeg2000: Found color image.  Grayscale expected.\n");
        return (-5);
     }
 
-// 
-//    Create a data matrix of grayscale image values decoded from
-//    the jpeg2000 codestream.
-//
+/* 
+      Create a data matrix of grayscale image values decoded from
+      the jpeg2000 codestream.
+*/
     data=jas_matrix_create(jas_image_height(image), jas_image_width(image));
     jas_image_readcmpt(image,0,0,0,jas_image_width(image),
                        jas_image_height(image),data);
-//
-//    Copy data matrix to output integer array.
-//
+/*
+      Copy data matrix to output integer array.
+*/
     k=0;
     for (i=0;i<pcmpt->height_;i++) 
       for (j=0;j<pcmpt->width_;j++) 
         outfld[k++]=data->rows_[i][j];
-//
-//     Clean up JasPer work structures.
-//
+/*
+       Clean up JasPer work structures.
+*/
     jas_matrix_destroy(data);
     ier=jas_stream_close(jpcstream);
     jas_image_destroy(image);

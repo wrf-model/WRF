@@ -1,6 +1,7 @@
 MODULE module_sf_pxlsm
  
   USE module_model_constants
+  USE module_wrf_error
 
   INTEGER, PARAMETER   :: NSOLD=20
   REAL, PARAMETER      :: RD     = 287.04,   CPD   = 1004.67,             &
@@ -551,8 +552,12 @@ CONTAINS
       INTEGER :: KWAT
       DATA KWAT / 16/
       
+! This routine expects 24 landuse categories. Stop if NLCAT is different.
+      IF(NLCAT .NE. 24)CALL wrf_error_fatal('in PXLSM - num_land_cat must be 24 for this option ')
+
       !--------------------------------------------------------------------
       !-- Initialize 2 and 3-D veg parameters to be cacluated
+
       DO K=1,NLCAT                                                               
         LAIMX(K) = LAI0(K)                                                       
         LAIMN(K) = LAIMN0(K)                                                   

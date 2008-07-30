@@ -168,7 +168,7 @@ MODULE module_sf_urban
 !  Z0G [m]                : roughness length for momentum of road (only for CH_SCHEME = 1)
 !  Z0HR [m]               : roughness length for heat of roof
 !  Z0HB [m]               : roughness length for heat of building wall (only for CH_SCHEME = 1)
-!  Z0HG [m]               : roughness length for heat of roof
+!  Z0HG [m]               : roughness length for heat of road
 !  num_roof_layers        : number of layers within roof
 !  num_wall_layers        : number of layers within building walls
 !  num_road_layers        : number of layers within below road surface
@@ -181,7 +181,7 @@ MODULE module_sf_urban
 !  BOUNDG [integer 1 or 2] : Boundary Condition for Road Layer Temp [1: Zero-Flux, 2: T = Constant]
 !  TRLEND [K]             : lower boundary condition of roof temperature
 !  TBLEND [K]             : lower boundary condition of building temperature
-!  TGLEND [K]             : lower boundary condition of gound temperature
+!  TGLEND [K]             : lower boundary condition of ground temperature
 !  CH_SCHEME [integer 1 or 2] : Sfc exchange scheme used for building wall and road
 !                         [1: M-O Similarity Theory,  2: Empirical Form (recommend)]
 !  TS_SCHEME [integer 1 or 2] : Scheme for computing surface temperature (for roof, wall, and road)

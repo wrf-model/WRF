@@ -65,7 +65,7 @@
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 1,     1,     1,
  bldt                                = 1,     0,     0,
- cu_physics                          = 3,     3,     0,
+ cu_physics                          = 5,     5,     0,
  cudt                                = 1,     1,     1,
  isfflx                              = 1,
  ifsnow                              = 1,
@@ -78,7 +78,7 @@
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
- cu_rad_feedback                     = .false.,
+ cu_rad_feedback                     = .true.,
  /
 
  &fdda
@@ -115,15 +115,15 @@
 
  &chem
  kemit                               = 19,
- chem_opt                            = 2,      2,
+ chem_opt                            = 2,        2,
  bioemdt                             = 30,       30,
  photdt                              = 30,       30,
- chemdt                              = 2.0,    0.667,
+ chemdt                              = 2.,       2.,
  frames_per_emissfile                = 36,
  io_style_emissions                  = 1,
  emiss_inpt_opt                      = 1,        1,
  emiss_opt                           = 3,        3,
- chem_in_opt                         = 1,        0,
+ chem_in_opt                         = 0,        0,
  phot_opt                            = 1,        1,
  drydep_opt                          = 1,        1,
  bio_emiss_opt                       = 1,        1,

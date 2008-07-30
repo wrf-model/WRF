@@ -87,15 +87,15 @@
  smdiv                               = 0.1,    0.1,    0.1,
  emdiv                               = 0.01,   0.01,   0.01,
  epssm                               = 0.1,    0.1,    0.1
- mix_full_fields                     = .true., .true., .true.,
- non_hydrostatic                     = .true., .true., .true.,
- pert_coriolis                       = .true., .true., .true.,
- tke_heat_flux                       = 0.24,    0.24,  0.24,
+ tke_heat_flux                       = 0.24,   0.24,   0.24,
  time_step_sound                     = 6,      6,      6,
  h_mom_adv_order                     = 5,      5,      5,
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
+ mix_full_fields                     = .true., .true., .true.,
+ non_hydrostatic                     = .true., .true., .true.,
+ pert_coriolis                       = .true., .true., .true.,
  /
 
  &bdy_control

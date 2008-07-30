@@ -16,7 +16,7 @@
  end_minute                          = 00,   00,   00,
  end_second                          = 00,   00,   00,
  interval_seconds                    = 21600
- input_from_file                     = .true.,.false.,.false.,
+ input_from_file                     = .true.,.true.,.true.,
  history_interval                    = 180,  60,   60,
  frames_per_outfile                  = 1000, 1000, 1000,
  restart                             = .false.,
@@ -40,8 +40,8 @@
  s_vert                              = 1,     1,     1,
  e_vert                              = 28,    28,    28,
  num_metgrid_levels                  = 27
- dx                                  = 30000, 10000,  3333,
- dy                                  = 30000, 10000,  3333,
+ dx                                  = 30000, 10000,  3333.33,
+ dy                                  = 30000, 10000,  3333.33,
  grid_id                             = 1,     2,     3,
  parent_id                           = 0,     1,     2,
  i_parent_start                      = 1,     31,    30,
@@ -58,7 +58,7 @@
  ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 1,     1,     1,
- sf_surface_physics                  = 1,     1,     1,
+ sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 1,     1,     1,
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     1,     0,
@@ -67,16 +67,13 @@
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 5,
+ num_soil_layers                     = 4,
  ucmcall                             = 0,
- mp_zero_out                         = 0,
  maxiens                             = 1,
  maxens                              = 3,
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
- slope_rad                           = 0,
- topo_shading                        = 0,
  /
 
  &fdda
@@ -91,7 +88,7 @@
  base_temp                           = 290.
  damp_opt                            = 0,
  zdamp                               = 5000.,  5000.,  5000.,
- dampcoef                            = 0.01,   0.01,   0.01
+ dampcoef                            = 0.2,    0.2,    0.2
  khdif                               = 0,      0,      0,
  kvdif                               = 0,      0,      0,
  non_hydrostatic                     = .true., .true., .true.,

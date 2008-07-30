@@ -83,13 +83,13 @@
  smdiv                               = 0.1,    0.1,    0.1,
  emdiv                               = 0.01,   0.01,   0.01,
  epssm                               = 0.1,    0.1,    0.1
- non_hydrostatic                     = .false.,.true., .true.,
  time_step_sound                     = 4,      4,      4,
  h_mom_adv_order                     = 5,      5,      5,
  v_mom_adv_order                     = 3,      3,      3,
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
  fft_filter_lat                      = 45
+ non_hydrostatic                     = .false.,.true., .true.,
  /
 
  &bdy_control

@@ -1,0 +1,181 @@
+Note, this is not a namelist.input file. Find what interest you, and cut and paste them 
+      to your own namelist.input file.
+
+1. More options for real in namelist record &domains:
+
+ p_top_requested                     = 5000
+ interp_type                         = 2
+ extrap_type                         = 2
+ t_extrap_type                       = 2
+ lowest_lev_from_sfc                 = .false.
+ use_levels_below_ground             = .true.
+ use_surface                         = .true.
+ lagrange_order                      = 1
+ force_sfc_in_vinterp                = 1
+ zap_close_levels                    = 500
+ sfcp_to_sfcp                        = .false.
+ adjust_heights                      = .false.
+ eta_levels                          = 1.000, 0.990, 0.978, 0.964, 0.946,
+                                       0.922, 0.894, 0.860, 0.817, 0.766,
+                                       0.707, 0.644, 0.576, 0.507, 0.444,
+                                       0.380, 0.324, 0.273, 0.228, 0.188,
+                                       0.152, 0.121, 0.093, 0.069, 0.048,
+                                       0.029, 0.014, 0.000,
+
+2. Using sst_update option (add these to namelist records &time_control and
+   &physics respectively):
+
+ &time_control
+ auxinput4_inname                    = "wrflowinp_d<domain>"
+ auxinput4_interval                  = 360, 360, 360, 
+
+ &physics
+ sst_update                          = 1,
+
+3. Using DFI options (note this is a separate namelist record):
+
+ &dfi_control
+ dfi_opt                             = 3,
+ dfi_nfilter                         = 7,
+ dfi_cutoff_seconds                  = 3600,
+ dfi_write_filtered_input            = .true.
+ dfi_write_dfi_history               = .false.
+ dfi_bckstop_year                    = 2000,
+ dfi_bckstop_month                   = 01,
+ dfi_bckstop_day                     = 24,
+ dfi_bckstop_hour                    = 10,
+ dfi_bckstop_minute                  = 00,
+ dfi_bckstop_second                  = 00,
+ dfi_fwdstop_year                    = 2000,
+ dfi_fwdstop_month                   = 01,
+ dfi_fwdstop_day                     = 24,
+ dfi_fwdstop_hour                    = 13,
+ dfi_fwdstop_minute                  = 00,
+ dfi_fwdstop_second                  = 00,
+ /
+
+4. Using gridded nudging option (note this is a separate namelist record):
+
+ &fdda
+ grid_fdda                           = 1,     1,     1,
+ gfdda_inname                        = "wrffdda_d<domain>",
+ gfdda_end_h                         = 24,    24,    24,
+ gfdda_interval_m                    = 360,   360,   360,
+ fgdt                                = 0,     0,     0,
+ if_no_pbl_nudging_uv                = 0,     0,     1,
+ if_no_pbl_nudging_t                 = 0,     0,     1,
+ if_no_pbl_nudging_q                 = 0,     0,     1,
+ if_zfac_uv                          = 0,     0,     1,
+  k_zfac_uv                          = 10,   10,     1,
+ if_zfac_t                           = 0,     0,     1,
+  k_zfac_t                           = 10,   10,     1,
+ if_zfac_q                           = 0,     0,     1,
+  k_zfac_q                           = 10,   10,     1,
+ guv                                 = 0.0003,     0.0003,     0.0003,
+ gt                                  = 0.0003,     0.0003,     0.0003,
+ gq                                  = 0.0003,     0.0003,     0.0003,
+ if_ramping                          = 1,
+ dtramp_min                          = 60.0,
+ io_form_gfdda                       = 2,
+ /
+
+5. Using observation nudging option (note &fdda is a separate namelist record):
+
+ &time_control
+ auxinput11_interval_s               = 180 , 180 , 180
+ auxinput11_end_h                    = 6   , 6   , 6
+
+ &fdda
+ obs_nudge_opt                       = 1,1,1,
+ max_obs                             = 150000,
+ fdda_start                          = 0.,  0.,  0.,
+ fdda_end                            = 720.,720.,720.,
+ obs_nudge_wind                      = 1,1,1,
+ obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,
+ obs_nudge_temp                      = 1,1,1,
+ obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,
+ obs_nudge_mois                      = 1,1,1,
+ obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,
+ obs_rinxy                           = 240.,240.,180.,
+ obs_rinsig                          = 0.1,
+ obs_twindo                          = 0.6666667,0.6666667,0.6666667,
+ obs_npfi                            = 10,
+ obs_ionf                            = 2, 2, 2,
+ obs_idynin                          = 0,
+ obs_dtramp                          = 40.,
+ obs_nobs_prt                        = 10, 10, 10,
+ obs_ipf_errob                       = .true.
+ obs_ipf_nudob                       = .true.
+ obs_ipf_in4dob                      = .true
+ /
+
+6. Using adaptive time step option (add these in namelist record &domains):
+
+ use_adaptive_time_step              = .false.,
+ step_to_output_time                 = .true.,
+ target_cfl                          = 1.2, 1.2, 1.2,
+ max_step_increase_pct               = 5,   51,  51,
+ starting_time_step                  = -1,  -1,  -1,
+ max_time_step                       = 360, 120, 40,
+ min_time_step                       =  90,  30, 10,
+
+7. Using automatic vortex-following option (tropical storm tracking only;
+   add these in namelist record &domains):
+
+ vortex_interval                     = 15, 15, 15,
+ max_vortex_speed                    = 40, 40, 40,
+ corral_dist                         =  8, 15, 15,
+ track_level                         = 50000,
+
+8. Using different flux formulation for tropical storm simulations 
+   (more effective when grid sizes are smaller than 2 km), and simple 
+   1-D ocean mixed layer (add these in namelist record &physics):
+
+ isftcflx                            = 1,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
+
+9. Miscellaneous physics options for namelist record &physics:
+
+Topographic shading (only effective when grid sizes are a few kilometers)
+
+ slope_rad                           = 0,
+ topo_shading                        = 0,
+ shadlen                             = 25000,
+
+Setting threashold value for defining seaice if seaice is not in the input file:
+
+ seaice_threshold                    = 271,
+
+Switching off latent heating from a microphysics scheme (must also set cu_physics = 0):
+
+ no_mp_heating                       = 0,
+
+10. Using implicit gravity-wave damping option (add these in namelist record &dynamics):
+
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.2,    0.2,    0.2
+
+11. Using expanded boundary zone and exponential decay option (add or modify these in
+    namelist record &bdy_control):
+
+ spec_bdy_width                      = 10,
+ spec_zone                           = 1,
+ relax_zone                          = 9,
+ specified                           = .true., .false.,.false.,
+ spec_exp                            = 0.33
+
+For a tropical channel configuration, set the following:
+
+ specified                           = .true., .false.,.false.,
+ periodic_x                          = .true., .false.,.false.,
+
+12. using io quilting option to improve output efficiency for large domain runs
+    (note that this is a separate namelist record):
+
+ &namelist_quilt
+ nio_tasks_per_group = 2,
+ nio_groups = 1,
+ /

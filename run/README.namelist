@@ -203,10 +203,10 @@ Namelist variables for controling the specified moving nest:
                    to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
                    but can be modified in source code file frame/module_driver_constants.F.
  num_moves                           = 4        ; total number of moves
- move_id                             = 2,2,2,2, ; a list of nest domain id's, one per move
- move_interval                       = 60,120,150,180,   ; time in minutes since the start of this domain
- move_cd_x                           = 1,1,0,-1,; the number of parent domain grid cells to move in i direction
- move_cd_y                           = 1,0,-1,1,; the number of parent domain grid cells to move in j direction
+ move_id(max_moves)                  = 2,2,2,2, ; a list of nest domain id's, one per move
+ move_interval(max_moves)            = 60,120,150,180,   ; time in minutes since the start of this domain
+ move_cd_x(max_moves)                = 1,1,0,-1,; the number of parent domain grid cells to move in i direction
+ move_cd_y(max_moves)                = 1,0,-1,1,; the number of parent domain grid cells to move in j direction
                                                   positive is to move in increasing i and j direction, and 
                                                   negative is to move in decreasing i and j direction.
                                                   0 means no move. The limitation now is to move only 1 grid cell
@@ -216,9 +216,9 @@ Namelist variables for controling the automatic moving nest:
                    Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
                    and -DVORTEX_CENTER to the ARCHFLAGS. This option uses an mid-level vortex following algorthm to
                    determine the nest move. This option is experimental.
- vortex_interval                     = 15       ; how often the new vortex position is computed
- max_vortex_speed                    = 40       ; used to compute the search radius for the new vortex position
- corral_dist                         = 8        ; how many coarse grid cells the moving nest is allowed to get
+ vortex_interval(max_dom)            = 15       ; how often the new vortex position is computed
+ max_vortex_speed(max_dom)           = 40       ; used to compute the search radius for the new vortex position
+ corral_dist(max_dom)                = 8        ; how many coarse grid cells the moving nest is allowed to get
                                                   near the mother domain boundary
  track_level                         = 50000    ; pressure value in Pa where the vortex is tracked
 
@@ -447,18 +447,20 @@ Namelist variables for controlling the adaptive time step option:
                                                   0 = without cloud effect
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
  surface_input_source                = 1,	; where landuse and soil category data come from:
-                                                  1 = SI/gridgen
+                                                  1 = WPS/geogrid
                                                   2 = GRIB data from another model (only possible
-                                                      (VEGCAT/SOILCAT are in wrf_real_input_em files from SI)
+                                                      (VEGCAT/SOILCAT are in met_em files from WPS)
  num_soil_layers                     = 5,	; number of soil layers in land surface model
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
                                                   = 2: Pleim-Xu landsurface model
  ucmcall(max_dom)                    = 0,       ; activate urban canopy model (in Noah LSM only) (0=no, 1=yes)
+ num_land_cat                        = 24,      ; number of land categories in input data
+ num_soil_cat                        = 16,      ; number of soil categories in input data
 
- pxlsm_smois_init(max_dom)           = 1        ;PXLSM Soil moisture initialization option 
-                                                   0-From analysis 1-From MAVAIL
+ pxlsm_smois_init(max_dom)           = 1        ; PXLSM Soil moisture initialization option 
+                                                   0 - From analysis, 1 - From MAVAIL
 
  maxiens                             = 1,       ; Grell-Devenyi only
  maxens                              = 3,       ; G-D only
@@ -472,8 +474,8 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
                                                 ; from 3 m to surface, and set smois and sh2o
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
-                                                ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates these from it
-                                                ; at same interval as boundary file. To read this, the time-control
+                                                ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates 
+                                                ; these from it at same interval as boundary file. To read this, the time-control
                                                 ; namelist must include  auxinput4_interval,  auxinput4_end_h, and
                                                 ; auxinput4_inname = "wrflowinp_d<domain>"
  usemonalb                           = .true.   ; use monthly albedo map instead of LANDUSE.TBL value
@@ -576,7 +578,7 @@ The following are for observation nudging:
                                                       for real-data cases)
  diff_6th_opt                        = 0,       ; 6th-order numerical diffusion
                                                   0 = no 6th-order diffusion (default)
-                                                  1 = 6th-order numerical diffusion
+                                                  1 = 6th-order numerical diffusion (not recommended)
                                                   2 = 6th-order numerical diffusion but prohibit up-gradient diffusion
  diff_6th_factor                     = 0.12,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
                                                       corresponds to complete removal of 2dx wave in one timestep)
@@ -616,9 +618,9 @@ The following are for observation nudging:
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also
                                                   best to use even numbers)
- do_coriolis (max_dom)               = .true.,	; whether to do Coriolis calculations (idealized)
- do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized)
- do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized)
+ do_coriolis (max_dom)               = .true.,	; whether to do Coriolis calculations (idealized) (inactive)
+ do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized) (inactive)
+ do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized) (inactive)
  fft_filter_lat                      = 45.      ; the latitude above which the polar filter is turned on
 
  &bdy_control

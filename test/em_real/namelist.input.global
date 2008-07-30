@@ -3,13 +3,13 @@
  run_hours                           = 1,
  run_minutes                         = 0,
  run_seconds                         = 0,
- start_year                          = 2008, 0001, 0001,
+ start_year                          = 2008, 2008, 2008,
  start_month                         = 01,   01,   01,
  start_day                           = 02,   01,   01,
  start_hour                          = 12,   00,   00,
  start_minute                        = 00,   00,   00,
  start_second                        = 00,   00,   00,
- end_year                            = 2008, 0010, 0010,
+ end_year                            = 2008, 2008, 2008,
  end_month                           = 01,   01,   01,
  end_day                             = 02,   01,   01,
  end_hour                            = 12,   00,   00,
@@ -24,7 +24,6 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = 0
- auxinput1_inname                    = "met_em.d<domain>.<date>"
  /
 
  &domains

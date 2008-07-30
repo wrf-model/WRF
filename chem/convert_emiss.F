@@ -360,7 +360,7 @@ PROGRAM convert_emissions
 
     idum1 = 1
      if( (config_flags%chem_opt == GOCART_SIMPLE) .OR. &
-          config_flags%chem_opt == GOCARTRACM_KPP) ) then
+         (config_flags%chem_opt == GOCARTRACM_KPP) ) then
 ! interpolate 3d fields to WRF in vertical
 !
    do k=1,iklev

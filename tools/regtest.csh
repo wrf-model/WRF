@@ -10,7 +10,7 @@
 #BSUB -e reg.err                        # error filename
 #BSUB -J regtest                        # job name
 #BSUB -q share                          # queue
-#BSUB -W 3:00                           # wallclock time
+#BSUB -W 6:00                           # wallclock time
 #BSUB -P 64000400
 
 # QSUB -q ded_4             # submit to 4 proc
@@ -684,6 +684,10 @@ cat >! time_real_1  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! nest_real_1  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
 cat >! damp_real_1  << EOF
  damp_opt                            = 0,
  zdamp                               = 5000.,  5000.,  5000.,
@@ -731,6 +735,10 @@ cat >! time_real_2  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! nest_real_2  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
 cat >! damp_real_2  << EOF
  damp_opt                            = 0,
  zdamp                               = 5000.,  5000.,  5000.,
@@ -775,6 +783,10 @@ cat >! time_real_3  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! nest_real_3  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
 cat >! damp_real_3  << EOF
  damp_opt                            = 1,
  zdamp                               = 5000.,  5000.,  5000.,
@@ -815,6 +827,10 @@ EOF
 
 cat >! time_real_4  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! nest_real_4  << EOF
+ input_from_file                     = .true.,.false.,.false.
 EOF
 
 cat >! damp_real_4  << EOF
@@ -864,6 +880,10 @@ EOF
 
 cat >! time_real_5  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! nest_real_5  << EOF
+ input_from_file                     = .true.,.false.,.false.
 EOF
 
 cat >! damp_real_5  << EOF
@@ -916,6 +936,10 @@ cat >! time_real_6  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
 EOF
 
+cat >! nest_real_6  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+
 cat >! damp_real_6  << EOF
  damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
@@ -966,6 +990,10 @@ EOF
 
 cat >! time_real_7  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! nest_real_7  << EOF
+ input_from_file                     = .true.,.false.,.false.
 EOF
 
 cat >! damp_real_7  << EOF
@@ -1087,6 +1115,9 @@ EOF
 cat >! phys_b_wave_1c << EOF
  non_hydrostatic                     = .true., .true., .true.,
 EOF
+cat >! phys_b_wave_1d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
 
 cat >! phys_b_wave_2a << EOF
  diff_opt                            = 1,
@@ -1099,6 +1130,9 @@ EOF
 cat >! phys_b_wave_2c << EOF
  non_hydrostatic                     = .false., .false., .false.,
 EOF
+cat >! phys_b_wave_2d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
 
 cat >! phys_b_wave_3a << EOF
  diff_opt                            = 1,
@@ -1110,6 +1144,9 @@ cat >! phys_b_wave_3b << EOF
 EOF
 cat >! phys_b_wave_3c << EOF
  non_hydrostatic                     = .false., .false., .false.,
+EOF
+cat >! phys_b_wave_3d  << EOF
+ input_from_file                     = .true.,.false.,.false.
 EOF
 
 #	Tested options for ideal case em_quarter_ss.  Modifying these
@@ -1127,7 +1164,10 @@ EOF
 cat >! phys_quarter_ss_1c << EOF
  non_hydrostatic                     = .true., .true., .true.,
 EOF
-cat >! phys_quarter_ss_1d << EOF
+cat >! phys_quarter_ss_1d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_1e << EOF
  periodic_x                          = .false.,.false.,.false.,
  open_xs                             = .true., .false.,.false.,
  open_xe                             = .true., .false.,.false.,
@@ -1135,7 +1175,7 @@ cat >! phys_quarter_ss_1d << EOF
  open_ys                             = .true., .false.,.false.,
  open_ye                             = .true., .false.,.false.,
 EOF
-cat >! phys_quarter_ss_1e << EOF
+cat >! phys_quarter_ss_1f << EOF
  sf_sfclay_physics                   = 0,     0,     0,
 EOF
 
@@ -1150,7 +1190,10 @@ EOF
 cat >! phys_quarter_ss_2c << EOF
  non_hydrostatic                     = .true., .true., .true.,
 EOF
-cat >! phys_quarter_ss_2d << EOF
+cat >! phys_quarter_ss_2d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_2e << EOF
  periodic_x                          = .true., .false.,.false.,
  open_xs                             = .false.,.false.,.false.,
  open_xe                             = .false.,.false.,.false.,
@@ -1158,7 +1201,7 @@ cat >! phys_quarter_ss_2d << EOF
  open_ys                             = .false.,.false.,.false.,
  open_ye                             = .false.,.false.,.false.,
 EOF
-cat >! phys_quarter_ss_2e << EOF
+cat >! phys_quarter_ss_2f << EOF
  sf_sfclay_physics                   = 1,     1,     1,
 EOF
 
@@ -1173,7 +1216,10 @@ EOF
 cat >! phys_quarter_ss_3c << EOF
  non_hydrostatic                     = .false., .false., .false.,
 EOF
-cat >! phys_quarter_ss_3d << EOF
+cat >! phys_quarter_ss_3d  << EOF
+ input_from_file                     = .true.,.false.,.false.
+EOF
+cat >! phys_quarter_ss_3e << EOF
  periodic_x                          = .true., .false.,.false.,
  open_xs                             = .false.,.false.,.false.,
  open_xe                             = .false.,.false.,.false.,
@@ -1181,7 +1227,7 @@ cat >! phys_quarter_ss_3d << EOF
  open_ys                             = .false.,.false.,.false.,
  open_ye                             = .false.,.false.,.false.,
 EOF
-cat >! phys_quarter_ss_3e << EOF
+cat >! phys_quarter_ss_3f << EOF
  sf_sfclay_physics                   = 1,     1,     1,
 EOF
 
@@ -1304,7 +1350,7 @@ if ( $ARCH[1] == AIX ) then
 	else if ( `hostname | cut -c 1-2` == bv ) then
 		set MPIRUNCOMMAND       =  mpirun.lsf
 	else if ( `hostname | cut -c 1-2` == be ) then
-		set MPIRUNCOMMAND       =  mpirun.lsf
+		set MPIRUNCOMMAND       =  /contrib/mpiruns/be/mpirun.lsf
 	else if ( ( `hostname | cut -c 1-2` != bs ) && \
 	          ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) then
 		set MPIRUNCOMMAND       =  poe
@@ -2138,6 +2184,7 @@ banner 12
 					endif
 					cp ${CUR_DIR}/time_real_${phys_option} time_opt
 					cp ${CUR_DIR}/dom_real dom_real
+					cp ${CUR_DIR}/nest_real_${phys_option} nest_input_opt
 					cp ${CUR_DIR}/damp_real_${phys_option} damp_real
 					if ( -e fdda_opt ) rm fdda_opt
 					cat " grid_fdda=0" > fdda_opt
@@ -2172,8 +2219,9 @@ EOF
 	
 					cp ${CUR_DIR}/io_format io_format
 					sed -e '/^ mp_physics/,/ensdim/d' -e '/^ &physics/r ./phys_opt' \
-					    -e '/^ pd_moist/,/pd_tke/d' -e '/^ v_sca_adv_order/r ./dyn_opt' \
+					    -e '/^ pd_moist/,/pd_scalar/d' -e '/^ non_hydrostatic/r ./dyn_opt' \
 					    -e '/^ auxinput1_inname/d' -e '/^ debug_level/r ./time_opt' \
+					    -e '/^ input_from_file/d' -e '/^ interval_seconds/r ./nest_input_opt' \
 					    -e '/^ time_step /,/^ smooth_option/d' -e '/^ &domains/r ./dom_real' \
 					    -e '/^ damp_opt /,/^ dampcoef/d' -e '/^ base_temp/r ./damp_real' \
 					    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format' \
@@ -2678,12 +2726,14 @@ banner 25
 					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}a phys_tke
 					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}b phys_mp
 					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}c phys_nh
-					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}d phys_bc
-					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}e phys_sfclay
+					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}d phys_nest
+					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}e phys_bc
+					cp ${CUR_DIR}/phys_quarter_ss_${phys_option}f phys_sfclay
 				else if ( $core == em_b_wave     ) then
 					cp ${CUR_DIR}/phys_b_wave_${phys_option}a     phys_tke
 					cp ${CUR_DIR}/phys_b_wave_${phys_option}b     phys_mp
 					cp ${CUR_DIR}/phys_b_wave_${phys_option}c     phys_nh
+					cp ${CUR_DIR}/phys_b_wave_${phys_option}d     phys_nest
 				endif
 
 				cp ${CUR_DIR}/io_format io_format
@@ -2711,7 +2761,7 @@ banner 25
 						    -e '/^ diff_opt/d' -e '/^ km_opt/d' -e '/^ damp_opt/d' -e '/^ rk_ord/r ./phys_tke' 		\
  		                                    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format'	\
 						    -e '/^ mp_physics/d' -e '/^ &physics/r ./phys_mp' 						\
-						    -e '/^ non_hydrostatic/d' -e '/^ v_sca_adv_order/r ./phys_nh' 					\
+						    -e '/^ non_hydrostatic/d' -e '/^ v_sca_adv_order/r ./phys_nh' 				\
 						    -e '/^ max_dom/d' -e '/^ time_step_fract_den/r ./dom_ideal'					\
 						./namelist.input.template >! namelist.input
 					endif

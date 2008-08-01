@@ -152,13 +152,22 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
 
  no_mp_heating                       = 0,
 
-10. Using implicit gravity-wave damping option (add these in namelist record &dynamics):
+10. Using CAM long and short wave radiation schemes:
+
+ cam_abs_freq_s                      = 21600
+ levsiz                              = 59
+ paerlev                             = 29
+ cam_abs_dim1                        = 4
+ cam_abs_dim2                        = 28
+ (cam_abs_dim2 should be the same as e_vert)
+
+11. Using implicit gravity-wave damping option (add these in namelist record &dynamics):
 
  damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.2,    0.2,    0.2
 
-11. Using expanded boundary zone and exponential decay option (add or modify these in
+12. Using expanded boundary zone and exponential decay option (add or modify these in
     namelist record &bdy_control):
 
  spec_bdy_width                      = 10,
@@ -172,7 +181,7 @@ For a tropical channel configuration, set the following:
  specified                           = .true., .false.,.false.,
  periodic_x                          = .true., .false.,.false.,
 
-12. using io quilting option to improve output efficiency for large domain runs
+13. using io quilting option to improve output efficiency for large domain runs
     (note that this is a separate namelist record):
 
  &namelist_quilt

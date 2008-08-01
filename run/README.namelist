@@ -171,6 +171,8 @@ Namelist variables specifically for the WPS input for real:
                                                 ; through this many eta levels
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
+ sfcp_to_sfcp                        = .false.  ; Optional method to compute model's surface pressure when incoming
+                                                ; data only has surface pressure and terrain, but not SLP
  smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
                                                 ; the input data
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model

@@ -440,7 +440,6 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
      END IF
 
-     IF(non_hydrostatic)                             &
      CALL rhs_ph( ph_tend, u, v, ww, ph, ph, phb, w, &
                   mut, muu, muv,                     &
                   fnm, fnp,                          &

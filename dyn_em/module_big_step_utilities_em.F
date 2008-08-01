@@ -1293,7 +1293,6 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mu, dt,  &
 !                        -partial d/dz(phi mu w/my)
 !  then phi eqn is: partial d/dt(mu phi/my) = ph_tend + mu g w/my
 !    => w = [my/(mu*g)]*[partial d/dt(mu phi/my) - ph_tend]
-!  THE FOLLOWING SEEMS TO IMPLY THAT ph_new, old ARE ALREADY divided by mu ???
 
      DO k = 2, kte
      DO i = its, itf

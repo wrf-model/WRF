@@ -13,14 +13,14 @@
 !
      &           )
 !-----------------------------------------------------------------------
-      USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID
-      USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
+      USE MODULE_DOMAIN
+      USE MODULE_CONFIGURE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
       USE MODULE_CTLBLK
-!#ifdef DM_PARALLEL
-!      USE MODULE_DM
-!#endif
+#ifdef DM_PARALLEL
+      USE MODULE_DM
+#endif
       USE MODULE_IGWAVE_ADJUST,         ONLY: PDTE,PFDHT,DDAMP,VTOA
       USE MODULE_ADVECTION,             ONLY: ADVE,VAD2,HAD2,VAD2_SCAL,HAD2_SCAL
       USE MODULE_NONHY_DYNAM,           ONLY: EPS,VADZ,HADZ
@@ -1428,12 +1428,14 @@
 !
       CALL BOCOH(GRID%ID,NTSD,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
      &          ,LB,ETA1,ETA2,PDTOP,PT,RES                              &
-     &          ,PD_BTXS,PD_BTXE,PD_BTYS,PD_BTYE                        &
-     &          ,T_BTXS,T_BTXE,T_BTYS,T_BTYE                            &
-     &          ,Q_BTXS,Q_BTXE,Q_BTYS,Q_BTYE                            &
-     &          ,Q2_BTXS,Q2_BTXE,Q2_BTYS,Q2_BTYE                        &
-     &          ,CWM_BTXS,CWM_BTXE,CWM_BTYS,CWM_BTYE                    &
-     &          ,PD,T,Q,Q2,CWM,PINT                                     &
+     &          ,PD_BXS,PD_BXE,PD_BYS,PD_BYE,T_BXS,T_BXE,T_BYS,T_BYE    &
+     &          ,Q_BXS,Q_BXE,Q_BYS,Q_BYE,U_BXS,U_BXE,U_BYS,U_BYE,V_BXS  &
+     &          ,V_BXE,V_BYS,V_BYE,Q2_BXS,Q2_BXE,Q2_BYS,Q2_BYE,CWM_BXS  &
+     &          ,CWM_BXE,CWM_BYS,CWM_BYE,PD_BTXS,PD_BTXE,PD_BTYS        &
+     &          ,PD_BTYE,T_BTXS,T_BTXE,T_BTYS,T_BTYE,Q_BTXS,Q_BTXE      &
+     &          ,Q_BTYS,Q_BTYE,U_BTXS,U_BTXE,U_BTYS,U_BTYE,V_BTXS       &
+     &          ,V_BTXE,V_BTYS,V_BTYE,Q2_BTXS,Q2_BTXE,Q2_BTYS,Q2_BTYE   &
+     &          ,CWM_BTXS,CWM_BTXE,CWM_BTYS,CWM_BTYE,PD,T,Q,Q2,CWM,PINT &
      &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
 #ifdef WRF_CHEM
      &          ,CHEM,NUMGAS,CONFIG_FLAGS                               &
@@ -1574,10 +1576,9 @@
 !
       btimx=timef()
 !
-      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB                               &
-     &          ,U_BTXS,U_BTXE,U_BTYS,U_BTYE                           &
-     &          ,V_BTXS,V_BTXE,V_BTYS,V_BTYE                           &
-     &          ,U,V                                                   &
+      CALL BOCOV(GRID%ID,NTSD,GRID%DT,LB,U_BXS,U_BXE,U_BYS,U_BYE,V_BXS &
+     &          ,V_BXE,V_BYS,V_BYE,U_BTXS,U_BTXE,U_BTYS,U_BTYE,V_BTXS  &
+     &          ,V_BTXE,V_BTYS,V_BTYE,U,V                              &
      &          ,GRID%SPEC_BDY_WIDTH                                   &
      &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &

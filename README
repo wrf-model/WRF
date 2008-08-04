@@ -1,4 +1,4 @@
-WRF Model Version 3 (April 2008)
+WRF Model Version 3.0.1 (August 5, 2008)
 http://www.mmm.ucar.edu/wrf/users/
 
 ------------------------
@@ -27,7 +27,19 @@ infringement actions.
 This is the main directory for the WRF Version 3 source code release.
 ======================================
 
-V3 Release Notes:
+V3.0.1 Release Notes:
+------------------
+
+This is a bug fix release. The detailed updates for WRF-ARW can be found at
+http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.html, and
+for WRF-NMM at
+http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
+
+Online User's Guides have also been updated.
+
+======================================
+
+V3.0 Release Notes:
 ------------------
 
 - For directions on compiling WRF, see below or Users Web page.
@@ -37,8 +49,6 @@ V3 Release Notes:
   Please see User' Guide for WPS.
 - WRF V3 executable does not work with wrfinput/wrfbdy produced by previous versions.
 - WRF V3 has removed one obsolete namelist variable, dyn_opt. Edit with caution.
-
-For questions, send mail to wrfhelp@ucar.edu
 
 ======================================
 

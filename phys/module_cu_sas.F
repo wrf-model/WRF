@@ -274,8 +274,8 @@ CONTAINS
       NCLOUD=1
 
 
-   DO J=jms,jme
-     DO I=ims,ime
+   DO J=jts,jte
+     DO I=its,ite
        PSFC(i,j)=P8w(i,kms,j)
      ENDDO
    ENDDO

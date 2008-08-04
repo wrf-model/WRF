@@ -911,12 +911,12 @@ CONTAINS
 
         ENDIF
 
-        write(message,*) 'revised sea ice on patch'
-        CALL wrf_debug(100,message)
-        DO J=JTE,JTS,-(((JTE-JTS)/25)+1)
-          write(message,637) (SICE(I,J),I=ITS,ITE,ITE/20)
-          CALL wrf_debug(100,message)
-        END DO
+!        write(message,*) 'revised sea ice on patch'
+!        CALL wrf_debug(100,message)
+!        DO J=JTE,JTS,-(((JTE-JTS)/25)+1)
+!          write(message,637) (SICE(I,J),I=ITS,ITE,ITE/20)
+!          CALL wrf_debug(100,message)
+!        END DO
 
 #else
 ! serial sea ice reprocessing
@@ -1238,14 +1238,14 @@ CONTAINS
                                   size(st_input,dim=2),size(st_input,dim=3)
         CALL wrf_debug(100,message)
  
-        write(message,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
-          CALL wrf_message(message)
-        write(message,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
-          CALL wrf_message(message)
-        write(message,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
-          CALL wrf_message(message)
-        write(message,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
-          CALL wrf_message(message)
+!        write(message,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
+!          CALL wrf_message(message)
+!        write(message,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
+!          CALL wrf_message(message)
+!        write(message,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
+!          CALL wrf_message(message)
+!        write(message,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
+!          CALL wrf_message(message)
                                                                                                                                               
 ! =============================================================
 

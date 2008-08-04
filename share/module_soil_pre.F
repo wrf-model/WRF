@@ -2838,14 +2838,14 @@ cycle
 #if ( NMM_CORE == 1 )
 !new
 !       write(0,*) 'st_input(1) in init_soil_2_real'
-	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
+!	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
 !       write(0,616) (st_input(I,1,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
-	ENDDO
+!	ENDDO
 
 !       write(0,*) 'st_input(2) in init_soil_2_real'
-	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
+!	DO J=MIN(jde-1,jte),JTS, -MIN(jde-1,jte)/15
 !       write(0,616) (st_input(I,2,J),I=its , MIN(ide-1,ite),MIN(ide-1,ite)/10)
-	ENDDO
+!	ENDDO
 
   616	format(20(f4.0,1x))
 #endif

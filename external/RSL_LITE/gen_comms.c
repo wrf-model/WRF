@@ -517,7 +517,7 @@ fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace), %d,
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 if ( !strcmp( packname, "RSL_LITE_PACK_SWAP" ) ||
      !strcmp( packname, "RSL_LITE_PACK_CYCLE" ) ) {
-  fprintf(fp,"max_halo_width+3,                         &\n") ;
+  fprintf(fp,"thisdomain_max_halo_width,                         &\n") ;
 }
 if ( q->subgrid == 0 ) {
 fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
@@ -939,7 +939,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
-    fprintf(fp,"      max_halo_width+3, &\n" ) ;
+    fprintf(fp,"      thisdomain_max_halo_width, &\n" ) ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
@@ -1083,7 +1083,7 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
     fprintf(fp,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
     fprintf(fp,"      0,  0, LWORDSIZE, &\n" ) ;
     fprintf(fp,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
-    fprintf(fp,"      max_halo_width+3,               &\n") ;
+    fprintf(fp,"      thisdomain_max_halo_width,               &\n") ;
     fprintf(fp,"      ids, ide, jds, jde, kds, kde,   &\n") ;
     fprintf(fp,"      ips, ipe, jps, jpe, kps, kpe    )\n") ;
 /* generate packs prior to stencil exchange  */
@@ -1683,7 +1683,7 @@ if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
 if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
-        fprintf(fp,"                        ,max_halo_width+3                                  &\n") ;
+        fprintf(fp,"                        ,thisdomain_max_halo_width                                  &\n") ;
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
         fprintf(fp,"                        ,pig,pjg,retval )\n") ;
@@ -1698,7 +1698,7 @@ if (sw) fprintf(fp,"                        ,iids,iide,ijds,ijde                
         fprintf(fp,"                        ,nids,nide,njds,njde                               &\n") ;
 if (sw) fprintf(fp,"                        ,pgr , sw                                          &\n") ;
         fprintf(fp,"                        ,ntasks_x,ntasks_y                                 &\n") ; 
-        fprintf(fp,"                        ,max_halo_width+3                                  &\n") ;
+        fprintf(fp,"                        ,thisdomain_max_halo_width                                  &\n") ;
         fprintf(fp,"                        ,icoord,jcoord                                     &\n") ;
         fprintf(fp,"                        ,idim_cd,jdim_cd                                   &\n") ;
         fprintf(fp,"                        ,pig,pjg,retval )\n") ;

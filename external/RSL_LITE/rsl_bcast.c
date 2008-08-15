@@ -137,7 +137,7 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
                          nids_p, nide_p, njds_p, njde_p, /* domain dims of CHILD DOMAIN */
                          pgr_p,  shw_p ,                 /* nest ratio and stencil half width */
                          ntasks_x_p , ntasks_y_p ,       /* proc counts in x and y */
-                         min_subdomain ,                 /* minimum width allowed for a subdomain in a dim */
+                         min_subdomain ,                 /* minimum width allowed for a subdomain in a dim ON PARENT */
                          icoord_p, jcoord_p,
                          idim_cd_p, jdim_cd_p,
                          ig_p, jg_p,
@@ -213,7 +213,8 @@ RSL_LITE_TO_CHILD_INFO ( Fcomm, msize_p,
       }
     }
     if ( ierr != 0 ) {
-      TASK_FOR_POINT_MESSAGE (__FILE__,__LINE__) ;
+      fprintf(stderr,"rsl_to_child_info: ") ;
+      TASK_FOR_POINT_MESSAGE () ;
     }
     Sendbuf = RSL_MALLOC( char , Sendbufsize ) ;
     Sendbufcurs = 0 ;
@@ -333,7 +334,8 @@ RSL_LITE_TO_PARENT_INFO ( Fcomm, msize_p,
       }
     }
     if ( ierr != 0 ) {
-      TASK_FOR_POINT_MESSAGE (__FILE__,__LINE__) ;
+      fprintf(stderr,"rsl_to_parent_info: ") ;
+      TASK_FOR_POINT_MESSAGE () ;
     }
     Sendbuf = RSL_MALLOC( char , Sendbufsize ) ;
     Sendbufcurs = 0 ;

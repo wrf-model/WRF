@@ -656,7 +656,9 @@ CFLAGS_LOCAL    =       -DNOUNDERSCORE
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM		=       -O3 -qhot
+# -qhot commented out in 3.0.1.1 release because of reported problems with 
+# model results under certain configurations. Use at your own risk.
+FCOPTIM		=       -O3 # -qhot
 FCREDUCEDOPT	=       -O2
 FCNOOPT		=       -qnoopt
 FCDEBUG         =       # -g $(FCNOOPT) -qfullpath

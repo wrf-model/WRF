@@ -182,6 +182,18 @@ CONTAINS
       RETURN
    END SUBROUTINE wrf_dm_initialize
 
+   SUBROUTINE get_dm_max_halo_width( id, width )
+     IMPLICIT NONE
+     INTEGER, INTENT(IN) :: id
+     INTEGER, INTENT(OUT) :: width
+     IF ( id .EQ. 1 ) THEN   ! this is coarse domain
+       width = max_halo_width
+     ELSE
+       width = max_halo_width + 3
+     ENDIF
+     RETURN
+   END SUBROUTINE get_dm_max_halo_width
+
    SUBROUTINE patch_domain_rsl_lite( id  , parent, parent_id, &
                                 sd1 , ed1 , sp1 , ep1 , sm1 , em1 ,        &
                                 sd2 , ed2 , sp2 , ep2 , sm2 , em2 ,        &
@@ -241,6 +253,8 @@ CONTAINS
       TYPE(domain), POINTER  :: nest_grid
       CHARACTER*256   :: mess
 
+      INTEGER parent_max_halo_width
+      INTEGER thisdomain_max_halo_width
 
       SELECT CASE ( model_data_order )
          ! need to finish other cases
@@ -264,7 +278,12 @@ CONTAINS
 
       CALL nl_get_max_dom( 1 , max_dom )
 
-      CALL compute_memory_dims_rsl_lite ( id, max_dom, 0 , bdx, bdy,   &
+      CALL get_dm_max_halo_width( id , thisdomain_max_halo_width )
+      IF ( id .GT. 1 ) THEN
+        CALL get_dm_max_halo_width( parent%id , parent_max_halo_width )
+      ENDIF
+
+      CALL compute_memory_dims_rsl_lite ( id, thisdomain_max_halo_width, 0 , bdx, bdy,   &
                    ids,  ide,  jds,  jde,  kds,  kde, &
                    ims,  ime,  jms,  jme,  kms,  kme, &
                    imsx, imex, jmsx, jmex, kmsx, kmex, &
@@ -417,7 +436,7 @@ CONTAINS
          DO i = c_ids, c_ide
             ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  max_halo_width+3, max_halo_width+3, ierr )
+                                  thisdomain_max_halo_width, thisdomain_max_halo_width, ierr )
             IF ( Px .EQ. mytask_x ) THEN
                c_ipe = i
                IF ( c_ips .EQ. -1 ) c_ips = i
@@ -437,7 +456,7 @@ CONTAINS
          DO j = c_jds, c_jde
             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  max_halo_width+3, max_halo_width+3, ierr )
+                                  thisdomain_max_halo_width, thisdomain_max_halo_width, ierr )
 
 
             IF ( Py .EQ. mytask_y ) THEN
@@ -461,8 +480,8 @@ CONTAINS
            IF ( mytask_x .EQ. ntasks_x-1 ) THEN
              c_ipe = c_ipe + shw
            ENDIF
-           c_ims = max( c_ips - max(shw,max_halo_width), c_ids - bdx ) - 1
-           c_ime = min( c_ipe + max(shw,max_halo_width), c_ide + bdx ) + 1
+           c_ims = max( c_ips - max(shw,thisdomain_max_halo_width), c_ids - bdx ) - 1
+           c_ime = min( c_ipe + max(shw,thisdomain_max_halo_width), c_ide + bdx ) + 1
 
 ! handle j dims
 ! extend the patch dimensions out shw along edges of domain
@@ -472,8 +491,8 @@ CONTAINS
            IF ( mytask_y .EQ. ntasks_y-1 ) THEN
               c_jpe = c_jpe + shw
            ENDIF
-           c_jms = max( c_jps - max(shw,max_halo_width), c_jds - bdx ) - 1
-           c_jme = min( c_jpe + max(shw,max_halo_width), c_jde + bdx ) + 1
+           c_jms = max( c_jps - max(shw,thisdomain_max_halo_width), c_jds - bdx ) - 1
+           c_jme = min( c_jpe + max(shw,thisdomain_max_halo_width), c_jde + bdx ) + 1
 ! handle k dims
          ELSE
            c_ims = 0
@@ -614,7 +633,7 @@ CONTAINS
   END SUBROUTINE patch_domain_rsl_lite
 
   SUBROUTINE compute_memory_dims_rsl_lite  (      &
-                   id , max_dom ,                 &
+                   id , maxhalowidth ,            &
                    shw , bdx,  bdy ,              &
                    ids,  ide,  jds,  jde,  kds,  kde, &
                    ims,  ime,  jms,  jme,  kms,  kme, &
@@ -626,7 +645,7 @@ CONTAINS
 
     USE module_machine
     IMPLICIT NONE
-    INTEGER, INTENT(IN)               ::  id , max_dom
+    INTEGER, INTENT(IN)               ::  id , maxhalowidth
     INTEGER, INTENT(IN)               ::  shw, bdx, bdy
     INTEGER, INTENT(IN)     ::  ids, ide, jds, jde, kds, kde
     INTEGER, INTENT(OUT)    ::  ims, ime, jms, jme, kms, kme
@@ -637,17 +656,6 @@ CONTAINS
     INTEGER, INTENT(OUT)    ::  ipsy, ipey, jpsy, jpey, kpsy, kpey
 
     INTEGER Px, Py, P, i, j, k, ierr
-    INTEGER maxhalowidth
-
-
-    IF ( max_dom .EQ. 1 ) THEN
-       maxhalowidth = max_halo_width
-    ELSE
-       ! if we're doing nesting then we have to maintain a wider halo so that
-       ! the interpolation in SINT and associated HALO exchanges can work 
-       ! correctly with RSL_LITE
-       maxhalowidth = max_halo_width + 3
-    ENDIF
 
 #if ( ! NMM_CORE == 1 )
 
@@ -830,7 +838,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth, maxhalowidth, ierr )
+                             maxhalowidth, maxhalowidth , ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
@@ -845,7 +853,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth, maxhalowidth, ierr )
+                             maxhalowidth , maxhalowidth , ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
@@ -901,8 +909,8 @@ CONTAINS
       ims = 0
       ime = 0
     ELSE
-      ims = max( ips - max(shw,max_halo_width), ids - bdx ) - 1
-      ime = min( ipe + max(shw,max_halo_width), ide + bdx ) + 1
+      ims = max( ips - max(shw,maxhalowidth), ids - bdx ) - 1
+      ime = min( ipe + max(shw,maxhalowidth), ide + bdx ) + 1
     ENDIF
     imsx = ids
     imex = ide
@@ -921,8 +929,8 @@ CONTAINS
       jms = 0
       jme = 0
     ELSE
-      jms = max( jps - max(shw,max_halo_width), jds - bdy ) - 1
-      jme = min( jpe + max(shw,max_halo_width), jde + bdy ) + 1
+      jms = max( jps - max(shw,maxhalowidth), jds - bdy ) - 1
+      jme = min( jpe + max(shw,maxhalowidth), jde + bdy ) + 1
     ENDIF
     jmsx = jpsx
     jmex = jpex
@@ -2877,7 +2885,8 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
 
-      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
+      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr 
+      INTEGER thisdomain_max_halo_width
       INTEGER local_comm, myproc, nproc
 
       CALL wrf_get_dm_communicator ( local_comm )
@@ -2907,6 +2916,9 @@ END
       jdim_cd = ijde - ijds + 1
 
       nlev  = ckde - ckds + 1
+
+      ! get max_halo_width for parent. It may be smaller if it is moad
+      CALL get_dm_max_halo_width ( grid%id , thisdomain_max_halo_width )
 
 #include "nest_interpdown_pack.inc"
 
@@ -2946,6 +2958,7 @@ END
                                 ips, ipe, jps, jpe, kps, kpe
       INTEGER myproc
       INTEGER ierr
+      INTEGER thisdomain_max_halo_width
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -2957,6 +2970,8 @@ END
                                 nips, nipe, njps, njpe, nkps, nkpe    )
 
       nlev  = ckde - ckds + 1 
+
+      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
 
 #include "nest_interpdown_unpack.inc"
 
@@ -3037,6 +3052,7 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
       INTEGER local_comm, myproc, nproc, idum1, idum2
+      INTEGER thisdomain_max_halo_width
 
       INTERFACE
           SUBROUTINE feedback_nest_prep ( grid, config_flags    &
@@ -3143,7 +3159,7 @@ END
                                 ips, ipe, jps, jpe, kps, kpe
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
-      INTEGER iparstrt, jparstrt, sw
+      INTEGER iparstrt, jparstrt, sw, thisdomain_max_halo_width
       REAL    nest_influence
 
       character*256 :: timestr
@@ -3186,6 +3202,8 @@ END
       jdim_cd = cjde - cjds + 1
 
       nlev  = ckde - ckds + 1
+
+      CALL get_dm_max_halo_width ( grid%id , thisdomain_max_halo_width )
 
 #include "nest_feedbackup_pack.inc"
 
@@ -3259,6 +3277,7 @@ END
 
       INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
       INTEGER local_comm, myproc, nproc
+      INTEGER thisdomain_max_halo_width
 
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
@@ -3291,6 +3310,7 @@ END
 
       nlev  = ckde - ckds + 1
 
+      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
 #include "nest_interpdown_pack.inc"
 
       CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
@@ -3698,6 +3718,7 @@ integer myproc
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw
+      INTEGER thisdomain_max_halo_width
 
       character*256 :: timestr
       integer ierr
@@ -3751,6 +3772,7 @@ integer myproc
 
       nlev  = ckde - ckds + 1
 
+      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
 #include "nest_feedbackup_pack.inc"
 
       CALL wrf_get_dm_communicator ( local_comm )

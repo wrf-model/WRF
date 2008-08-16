@@ -32,6 +32,9 @@ CONTAINS
 
       CHARACTER (LEN=132) :: command
       INTEGER :: ierr , loop , loslen , strlen
+#ifdef NONSTANDARD_SYSTEM_FUNC
+      INTEGER , EXTERNAL :: SYSTEM
+#endif
       LOGICAL :: unix_access_ok
       LOGICAL, EXTERNAL :: wrf_dm_on_monitor
       CHARACTER*256 message
@@ -53,11 +56,17 @@ CONTAINS
          !  number of the those file (i.e. how many there are) in ".foo1".  Also, if we
          !  do get inside one of these CPP ifdefs, then we set our access flag to true.
 
-#ifdef NONSTANDARD_SYSTEM 
+#ifdef NONSTANDARD_SYSTEM_SUBR
          CALL SYSTEM ( TRIM ( command ) ) 
          CALL SYSTEM ( '( cat .foo | wc -l > .foo1 )' )
          unix_access_ok = .TRUE.
 #endif
+#ifdef NONSTANDARD_SYSTEM_FUNC
+         ierr = SYSTEM ( TRIM ( command ) ) 
+         ierr =  SYSTEM ( '( cat .foo | wc -l > .foo1 )' )
+         unix_access_ok = .TRUE.
+#endif
+
          !  Test to be sure that we did indeed hit one of the ifdefs.
 
          IF ( .NOT. unix_access_ok ) THEN
@@ -128,9 +137,13 @@ print *,TRIM(eligible_file_name(loop))
 
          !   We clean up our own messes.
 
-#ifdef NONSTANDARD_SYSTEM 
+#ifdef NONSTANDARD_SYSTEM_SUBR
          CALL SYSTEM ( '/bin/rm -f .foo'  )
          CALL SYSTEM ( '/bin/rm -f .foo1' )
+#endif
+#ifdef NONSTANDARD_SYSTEM_FUNC
+         ierr = SYSTEM ( '/bin/rm -f .foo'  )
+         ierr = SYSTEM ( '/bin/rm -f .foo1' )
 #endif
 
       ENDIF monitor_only_code2

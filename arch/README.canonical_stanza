@@ -66,7 +66,7 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR # but for ifort compiler, it is -DNONSTANDARD_SYSTEM_FUNC
 CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =      
 FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all

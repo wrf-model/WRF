@@ -209,6 +209,7 @@ CONTAINS
          grid%msfuy(i,j)    = 1.
          grid%msfvx(i,j)    = 1.
          grid%msfvy(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
          grid%sina(i,j)     = 0.
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.

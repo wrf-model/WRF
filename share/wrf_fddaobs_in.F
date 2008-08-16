@@ -1032,10 +1032,9 @@
         goto 100
       endif
 
-! check if ob is in coarse mesh domain  (061404 switched sn/we)
-      if( (ri.lt.2.).or.(ri.gt.real(we_maxcg-1)).or.(rj.lt.2.).or.         &
-          (rj.gt.real(sn_maxcg-1)) ) then
-
+! check if ob is in the domain
+    if( (ri.lt.2.).or.(ri.gt.real(e_we-1)).or.(rj.lt.2.).or. &
+        (rj.gt.real(e_sn-1)) ) then
 !         if (iprt) write(6,*) 'Obs out of coarse mesh domain'
 !         write(6,*) 'we_maxcg-1 = ',real(we_maxcg-1)
 !         write(6,*) 'sn_maxcg-1 = ',real(sn_maxcg-1)

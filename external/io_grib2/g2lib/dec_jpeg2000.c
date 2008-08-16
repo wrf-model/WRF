@@ -74,7 +74,7 @@
 
 /*    jas_init(); */
 
-     
+/*   
        Create jas_stream_t containing input JPEG200 codestream in memory.
 */       
 

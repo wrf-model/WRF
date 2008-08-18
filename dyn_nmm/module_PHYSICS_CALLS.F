@@ -1958,14 +1958,34 @@
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
           DO J=MYJS2,MYJE2
-          DO K=KTS,KTE
+          DO K=KTS,KTE+1   ! zero for all interfaces
           DO I=MYIS1,MYIE1
             WINT(I,K,J)=0.
           ENDDO
           ENDDO
           ENDDO
+
+	ELSE  ! not NTSD=0
+
+         DO J=MYJS2,MYJE2
+           DO I=MYIS1,MYIE1
+             WINT(I,KTS,J)=0.
+             WINT(I,KTE+1,J)=0.
+           ENDDO
+         ENDDO
+
+         DO J=MYJS2,MYJE2
+          DO K=KTS+1,KTE
+           DO I=MYIS1,MYIE1
+             WINT(I,K,J)=0.5*(W(I,J,K)+W(I,J,K-1))
+           ENDDO
+          ENDDO
+         ENDDO
+
         ENDIF
-      ELSE
+	
+      ELSE   ! hydrostatic
+
         DO J=MYJS2,MYJE2
         DO I=MYIS1,MYIE1
           WINT(I,KTS,J)=0.

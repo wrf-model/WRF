@@ -656,131 +656,6 @@
       NRDSW  = INT(grid%TRDSW *TSPH+0.5)
       NRDLW  = INT(grid%TRDLW *TSPH+0.5)
       NSRFC  = INT(grid%TSRFC *TSPH+0.5)
-
-      IF(RESTRT)THEN
-!
-!***
-!***    AVERAGE CLOUD AMOUNT ARRAY
-!***
-        IF(MOD(NTSD,NCLOD)<GRID%NPHS)THEN
-          CALL wrf_message('  ZERO AVG CLD AMT ARRAY')
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ACFRCV(I,J)=0.
-            NCFRCV(I,J)=0
-            ACFRST(I,J)=0.
-            NCFRST(I,J)=0
-          ENDDO
-          ENDDO
-        ENDIF
-!***  
-!***     GRID-SCALE AND CONVECTIVE LATENT HEATING ARRAYS.
-!***  
-        IF(MOD(NTSD,NHEAT)<GRID%NCNVC)THEN
-          CALL wrf_message('  ZERO ACCUM LATENT HEATING ARRAYS')
-!
-          AVRAIN=0.
-          AVCNVC=0.
-          DO K=KPS,KPE
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            TRAIN(I,J,K)=0.
-            TCUCN(I,J,K)=0.
-          ENDDO
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  IF THIS IS NOT A NESTED RUN, INITIALIZE TKE
-!***
-!       IF(.NOT.NEST)THEN
-!         DO K=1,LM
-!           DO J=JFS,JFE
-!           DO I=IFS,IFE
-!             Q2(I,J,K)=AMAX1(Q2(I,J,K)*HBM2(I,J),EPSQ2)
-!           ENDDO
-!           ENDDO
-!         ENDDO
-!       ENDIF
-!***
-!***  CLOUD EFFICIENCY
-!***
-!       DO J=JFS,JFE
-!       DO I=IFS,IFE
-!!!       CLDEFI(I,J)=AVGEFI*SM(I,J)+STEFI*(1.-SM(I,J))
-!         CLDEFI(I,J)=1.
-!       ENDDO
-!       ENDDO
-!***
-!***  TOTAL AND CONVECTIVE PRECIPITATION ARRAYS.
-!***  TOTAL SNOW AND SNOW MELT ARRAYS.
-!***  STORM SURFACE AND BASE GROUND RUN OFF ARRAYS.
-!     
-        IF(MOD(NTSD,NPREC)<GRID%NPHS)THEN
-          CALL wrf_message('  ZERO ACCUM PRECIP ARRAYS')
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ACPREC(I,J)=0.
-            CUPREC(I,J)=0.
-            ACSNOW(I,J)=0.
-            ACSNOM(I,J)=0.
-            SSROFF(I,J)=0.
-            BGROFF(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***  
-!***  LONG WAVE RADIATION ARRAYS.
-!***  
-        IF(MOD(NTSD,NRDLW)<GRID%NPHS)THEN
-          CALL wrf_message('  ZERO ACCUM LW RADTN ARRAYS')
-          ARDLW=0.
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ALWIN(I,J) =0.
-            ALWOUT(I,J)=0.
-            ALWTOA(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***  
-!***  SHORT WAVE RADIATION ARRAYS.
-!***  
-        IF(MOD(NTSD,NRDSW)<GRID%NPHS)THEN
-          CALL wrf_message('  ZERO ACCUM SW RADTN ARRAYS')
-          ARDSW=0.
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            ASWIN(I,J) =0.
-            ASWOUT(I,J)=0.
-            ASWTOA(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***  
-!***  SURFACE SENSIBLE AND LATENT HEAT FLUX ARRAYS.
-!***  
-        IF(MOD(NTSD,NSRFC)<GRID%NPHS)THEN
-          CALL wrf_message('  ZERO ACCUM SFC FLUX ARRAYS')
-          ASRFC=0.
-          DO J=JFS,JFE
-          DO I=IFS,IFE
-            SFCSHX(I,J)=0.
-            SFCLHX(I,J)=0.
-            SUBSHX(I,J)=0.
-            SNOPCX(I,J)=0.
-            SFCUVX(I,J)=0.
-            SFCEVP(I,J)=0.
-            POTEVP(I,J)=0.
-            POTFLX(I,J)=0.
-          ENDDO
-          ENDDO
-        ENDIF
-!***
-!***  ENDIF FOR RESTART FILE ACCUMULATION ZERO BLOCK.
-!***
-        CALL wrf_message('INIT:  INITIALIZED ARRAYS FOR RESTART START')
-      ENDIF
 !
 !----------------------------------------------------------------------
 !
@@ -1679,19 +1554,22 @@
 !-----------------------------------------------------------------------
 !
       IF(NSTART==0)THEN
+
         DO J=JMS,JME
         DO I=IMS,IME
           Z0(I,J)=Z0BASE(I,J)
         ENDDO
         ENDDO
+
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
+          CLDFRA(I,J,K)=CLDFRA_TRANS(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+
       ENDIF
-      DO K=KMS,KME
-      DO J=JMS,JME
-      DO I=IMS,IME
-        CLDFRA(I,J,K)=CLDFRA_TRANS(I,K,J)
-      ENDDO
-      ENDDO
-      ENDDO
 
 !
 !

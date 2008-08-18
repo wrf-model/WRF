@@ -245,7 +245,7 @@ CONTAINS
       REAL, DIMENSION(its:ite, kms:kme, jts:jte)::P8WFLIP,PHYD
       REAL, DIMENSION(its:ite, kts:kte, jts:jte)::TENDS,TENDL
       REAL, DIMENSION(ims:ime, jms:jme):: CUTOP,CUBOT
-      INTEGER :: IDAT(3),Jmonth,Jday
+      INTEGER :: IDAT(3),IHOUR,Jmonth,Jday
       INTEGER :: I,J,K,KFLIP,IHRST
 
 !-------------------------------------------------
@@ -329,6 +329,9 @@ CONTAINS
       IDAT(3)=JULYR
       IHRST  =NINT(GMT)
 
+      IHOUR  =MOD((IHRST+NINT(XTIME/60.0)),24)
+!     write(0,*)' before SOLARD in ETARA ', IHOUR,JDAY,JMONTH,JULYR
+      CALL SOLARD(IHOUR,JDAY,JMONTH,JULYR)
 !-----------------------------------------------------------------------
       CALL RADTN (DT,TFLIP,QFLIP,QWFLIP,QIFLIP,                         &
      &            PFLIP,P8WFLIP,XLAND,TSK2D,                            &

@@ -13,14 +13,14 @@
 !
      &           )
 !-----------------------------------------------------------------------
-      USE MODULE_DOMAIN
-      USE MODULE_CONFIGURE
+      USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID
+      USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
       USE MODULE_CTLBLK
-#ifdef DM_PARALLEL
-      USE MODULE_DM
-#endif
+!#ifdef DM_PARALLEL
+!      USE MODULE_DM
+!#endif
       USE MODULE_IGWAVE_ADJUST,         ONLY: PDTE,PFDHT,DDAMP,VTOA
       USE MODULE_ADVECTION,             ONLY: ADVE,VAD2,HAD2,VAD2_SCAL,HAD2_SCAL
       USE MODULE_NONHY_DYNAM,           ONLY: EPS,VADZ,HADZ

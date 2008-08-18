@@ -277,7 +277,7 @@
 !***  FIRST THE TEMPERATURE
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
-!$omp& private(cft,cfu,cfv,cmt,cmu,cmv,crt,cru,crv,i,k,lmhk,lmvk        &
+!$omp& private(cft,cfu,cfv,cmt,cmu,cmv,crt,cru,crv,i,k                  &
 !$omp&        ,pdop,pdopu,pdopv,pvvlo,pvvlou,pvvlov,pvvup,pvvupu,pvvupv &
 !$omp&        ,rcmt,rcmu,rcmv,rdp,rdpu,rdpv,rstt,rstu,rstv,t_k,tn       &
 !$omp&        ,u_k,un,v_k,vn,vvlo,vvlou,vvlov,vvup,vvupu,vvupv)
@@ -2438,7 +2438,7 @@
 !
 ! PROGRAM HISTORY LOG:
 !   96-07-19  JANJIC           - ORIGINATOR
-!   05-01-03  GRELL,PECKKHAM   - MODIFIED FOR SCALAR
+!   05-01-03  GRELL,PECKHAM    - MODIFIED FOR SCALAR
 !
 ! USAGE: CALL HAD2_SCAL FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
@@ -2850,7 +2850,7 @@
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
 !$omp& private(destij,dqstij,dwstij,i,j,k,rface,rfacq,rfacw             &
-!$omp&        ,rfeij,rfqij,rfwij,sumne,sumnq,sumnw,sumpe,sumpq,sumpw)
+!$omp&        ,rfeij,rfqij,rfwij,sumnq,sumpq)
 !-----------------------------------------------------------------------
 !
       vertical_3: DO K=KTS,KTE

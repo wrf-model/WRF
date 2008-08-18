@@ -2139,8 +2139,8 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
         enddo
 
         do j=4,jm-3,2
-            avc_nest(im,j)=0.25*(avc_nest(im-1,j-1)+avc_nest(im,j-1)+ &
-           &                     avc_nest(im-1,j+1)+avc_nest(im,j+1))
+            avc_nest(im-1,j)=0.25*(avc_nest(im-1,j-1)+avc_nest(im,j-1)+ &
+           &                       avc_nest(im-1,j+1)+avc_nest(im,j+1))
         enddo
 
         DO J = 1,NNYP

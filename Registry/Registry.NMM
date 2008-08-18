@@ -237,8 +237,8 @@ state  real   t_adj     ijk   dyn_nmm   1    -     r        "T_ADJ"    "T change
 state  real   t_old     ijk   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
 state  real   zero_3d   ijk   dyn_nmm   1    -     r
 state  real   W0AVG     ikj   dyn_nmm   1    -     r        "W0AVG" "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"  "m s-1"
-state  real   AKHS_OUT  ij    dyn_nmm   1    -     h        "AKHS_OUT"  "Output sfc exch coeff for heat"               "m2 s-1"
-state  real   AKMS_OUT  ij    dyn_nmm   1    -     h        "AKMS_OUT"  "Output sfc exch coeff for momentum"           "m2 s-1"    
+state  real   AKHS_OUT  ij    dyn_nmm   1    -     rh       "AKHS_OUT"  "Output sfc exch coeff for heat"               "m2 s-1"
+state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh       "AKMS_OUT"  "Output sfc exch coeff for momentum"           "m2 s-1"    
 #
 # module_PHYS
 #

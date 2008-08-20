@@ -39,7 +39,7 @@ CONTAINS
 
 !------------------------------------------------------------------------------
   SUBROUTINE fddaobs_init(obs_nudge_opt, maxdom, inest, parid,         &
-                          restart,                                     &
+                          idynin, dtramp, fdaend, restart,             &
                           obs_twindo_cg, obs_twindo, itimestep,        &
                           cen_lat, cen_lon, stand_lon,                 &
                           true_lat1, true_lat2, map_proj,              &
@@ -72,6 +72,9 @@ CONTAINS
                           its,ite, jts,jte, kts,kte
   INTEGER, intent(in)  :: inest
   INTEGER, intent(in)  :: parid(maxdom)
+  INTEGER, intent(in)  :: idynin         ! flag for dynamic initialization
+  REAL,    intent(in)  :: dtramp         ! time period for idynin ramping (min)
+  REAL,    intent(in)  :: fdaend(maxdom) ! nudging end time for domain (min)
   LOGICAL, intent(in)  :: restart
   REAL, intent(in)     :: obs_twindo_cg  ! time window on coarse grid
   REAL, intent(in)     :: obs_twindo
@@ -112,8 +115,30 @@ CONTAINS
 ! Set flag for nudging on pressure (not sigma) surfaces.
   fdob%iwtsig = 0
 
+!**************************************************************************
+! *** Initialize datend for dynamic initialization (ajb added 08132008) ***
+!**************************************************************************
 ! Set ending nudging date (used with dynamic ramp-down) to zero.
   fdob%datend = 0.
+  fdob%ieodi = 0
+
+! Check for dynamic initialization flag
+  if(idynin.eq.1)then
+!    Set datend to time in minutes after which data are assumed to have ended.
+     if(dtramp.gt.0.)then
+        fdob%datend = fdaend(inest) - dtramp
+     else
+        fdob%datend = fdaend(inest)
+     endif
+     if(iprt) then
+        print*,' '
+        print*,' *** DYNAMIC-INITIALIZATION OPTION FOR INEST = ',inest, ' ***'
+        print*,' FDAEND,DATEND,DTRAMP: ',fdaend(inest),fdob%datend,dtramp
+        print*,' '
+     endif
+  endif
+! *** end dynamic initialization section ***
+!**************************************************************************
 
 ! Set time window.
   fdob%window = obs_twindo

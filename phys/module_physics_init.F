@@ -498,6 +498,9 @@ integer myproc
                   model_config_rec%max_dom,                     &
                   id,                                           &
                   model_config_rec%parent_id,                   &
+                  model_config_rec%obs_idynin,                  &
+                  model_config_rec%obs_dtramp,                  &
+                  model_config_rec%fdda_end,                    &
                   config_flags%restart,                         &
                   obs_twindo_cg, obs_twindo,                    &
                   itimestep,                                    &
@@ -1645,7 +1648,7 @@ integer myproc
 
 !-------------------------------------------------------------------
    SUBROUTINE fdob_init(obs_nudge_opt, maxdom, inest, parid,       &
-                        restart,                                   &
+                        idynin, dtramp, fdaend, restart,           &
                         obs_twindo_cg, obs_twindo, itimestep,      &
                         cen_lat, cen_lon, stand_lon,               &
                         true_lat1, true_lat2, map_proj,            &
@@ -1670,6 +1673,9 @@ integer myproc
                               its,ite, jts,jte, kts,kte
    INTEGER , INTENT(IN)    :: inest
    INTEGER , INTENT(IN)    :: parid(maxdom)
+   INTEGER , INTENT(IN)    :: idynin          ! flag for dynamic initialization
+   REAL    , INTENT(IN)    :: dtramp          ! time period for ramping (idynin)
+   REAL    , INTENT(IN)    :: fdaend(maxdom)  ! nudging end time for domain (min)
    LOGICAL , INTENT(IN)    :: restart
    REAL    , INTENT(IN)    :: obs_twindo_cg   ! twindo on course grid
    REAL    , INTENT(IN)    :: obs_twindo
@@ -1698,7 +1704,7 @@ integer myproc
 
       e_sn = jde
       CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
-                        restart,                                   &
+                        idynin, dtramp, fdaend, restart,           &
                         obs_twindo_cg,                             &
                         obs_twindo, itimestep,                     &
                         cen_lat, cen_lon, stand_lon,               &

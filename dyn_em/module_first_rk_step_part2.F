@@ -158,6 +158,7 @@ BENCH_START(comp_diff_metrics_tim)
 BENCH_END(comp_diff_metrics_tim)
 
 #ifdef DM_PARALLEL
+#  include "HALO_EM_TKE_C.inc"
 #  include "PERIOD_BDY_EM_A1.inc"
 #endif
 
@@ -213,10 +214,6 @@ BENCH_START(tke_diff_bc_tim)
          ENDDO
          !$OMP END PARALLEL DO
 BENCH_END(tke_diff_bc_tim)
-
-#ifdef DM_PARALLEL
-#     include "HALO_EM_TKE_C.inc"
-#endif
 
 BENCH_START(deform_div_tim)
 

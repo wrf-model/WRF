@@ -27,6 +27,35 @@ infringement actions.
 This is the main directory for the WRF Version 3 source code release.
 ======================================
 
+V3.0.1.1 Release Notes:
+-----------------------
+
+Version 3.0.1.1 has only limited bug fixes compared to version 3.0.1.
+The detailed updates for WRF-ARW can be found at
+http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.1.html, and
+for WRF-NMM at http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
+Users only need to get the new version if they are involved with one of more of the following:
+
+ARW or NMM:
+
+1) Over decomposing domains
+2) Using AIX/xlf with the "old" Kain-Fritsch cumulus scheme
+3) Grib edition 2 output
+
+ARW Only:
+
+1) ndown (offline 1-way nesting) with the ifort compiler
+2) 3d sea breeze case (existing sea breeze case is 2d by default)
+3) Multiple time period initialization for a global domain
+4) Observation nudging using either fine grids or with dynamic initialization
+
+NMM Only:
+
+1) Restart capability for single domain forecasts
+2) Noise reduction on eastern boundary in areas of complex topography
+3) Kain-Fritsch cumulus
+
+
 V3.0.1 Release Notes:
 ------------------
 

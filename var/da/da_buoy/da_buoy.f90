@@ -5,10 +5,12 @@ module da_buoy
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
       check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
-      buoy, max_error_p,max_error_q, trace_use_dull, &
+      buoy, max_error_p,max_error_q, trace_use_dull,fails_error_max, &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv,sfc_assi_options, anal_type_verify, &
-      kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, max_ext_its
+      kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, max_ext_its,&
+      qcstat_conv_unit,ob_vars
+
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
    use da_interpolation, only : da_to_zk, &

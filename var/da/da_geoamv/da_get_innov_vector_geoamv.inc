@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_geoamv( it, grid, ob, iv)
+subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
 
    !-------------------------------------------------------------------------
    ! Purpose: Calculates innovation vector does QC for geoamv
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_geoamv( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid    ! first guess state.
    type(y_type),     intent(in)    :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n              ! Loop counter.
    integer :: k              ! Index dimension.
@@ -29,11 +30,6 @@ subroutine da_get_innov_vector_geoamv( it, grid, ob, iv)
    integer :: itu,ituf,itvv,itvvf
 
    if (trace_use_dull) call da_trace_entry ("da_get_innov_vector_geoamv")
-
-   itu   = 0
-   itvv  = 0
-   ituf  = 0
-   itvvf = 0
 
    allocate (model_u(iv%info(geoamv)%max_lev,iv%info(geoamv)%n1:iv%info(geoamv)%n2))
    allocate (model_v(iv%info(geoamv)%max_lev,iv%info(geoamv)%n1:iv%info(geoamv)%n2))
@@ -111,29 +107,16 @@ subroutine da_get_innov_vector_geoamv( it, grid, ob, iv)
       end do
    end do
 
-   deallocate (model_u)
-   deallocate (model_v)
-   
    !------------------------------------------------------------------------
    ! Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) then
-      call da_check_max_iv_geoamv (iv,it,itu,ituf,itvv,itvvf)
-   end if
+   if (check_max_iv) &    
+      call da_check_max_iv_geoamv(iv,it,num_qcstat_conv)     
 
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total Rejections for Geo. AMVs follows:'
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed u-wind observations:     ',ituf, ' on ',itu,   &
-         'Number of failed v-wind observations:     ',itvvf,' on ',itvv,   &
-         'Finally Total Geo. AMVs rejections ',ituf+itvvf,' on ',itu+itvv
-   end if
+   deallocate (model_u)
+   deallocate (model_v)
 
-   
    if (trace_use_dull) call da_trace_exit ("da_get_innov_vector_geoamv")
    
 end subroutine da_get_innov_vector_geoamv
-
-

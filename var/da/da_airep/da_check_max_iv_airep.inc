@@ -1,4 +1,4 @@
-subroutine da_check_max_iv_airep(iv, it, itu,ituf,itv,itvf,itt,ittf)
+subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)            
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -8,48 +8,63 @@ subroutine da_check_max_iv_airep(iv, it, itu,ituf,itv,itvf,itt,ittf)
 
    type(iv_type), intent(inout) :: iv
    integer,       intent(in)    :: it      ! Outer iteration
-   integer,       intent(inout) :: itu,ituf,itv,itvf,itt,ittf
+   integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
 
-   integer :: k,n
+   integer :: k,n, ipr
    logical :: failed
    
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_airep")
 
    !---------------------------------------------------------------------------
-   ! [1.0] Open diagnostic file:
+   ! [1.0] Perform maximum innovation vector check:
    !---------------------------------------------------------------------------
-
-   if (rootproc .and. check_max_iv_print) then
-      write (check_max_iv_unit,'(A)')  &
-         '----------------------------------------------------------------'
-      write (unit = check_max_iv_unit, fmt = '(A,/)') 'MAX ERROR TEST QC:'
-
-      write (unit = check_max_iv_unit, fmt = '(/,9(A,F3.0,/))')  &
-         'Error max test ratio for Airep_U   = ',max_error_uv, &
-         'Error max test ratio for Airep_V   = ',max_error_uv, &
-         'Error max test ratio for Airep_T   = ',max_error_t
-   end if
-
-   !---------------------------------------------------------------------------
-   ! [2.0] Perform maximum innovation vector check:
-   !---------------------------------------------------------------------------
-
-   failed = .false.
-
 
    do n = iv%info(airep)%n1,iv%info(airep)%n2
       do k = 1, iv%info(airep)%levels(n)
-         call da_max_error_qc (it, iv%info(airep), n, iv%airep(n)%u(k), max_error_uv, itu, ituf, &
-            check_max_iv_unit, 'U    ', failed, check_max_iv_print)
-         call da_max_error_qc (it, iv%info(airep), n, iv%airep(n)%v(k), max_error_uv, itv, itvf, &
-            check_max_iv_unit, 'V    ', failed, check_max_iv_print)                           
-         call da_max_error_qc (it, iv%info(airep), n, iv%airep(n)%t(k), max_error_t,  itt, ittf, &
-            check_max_iv_unit, 'TEMP ', failed, check_max_iv_print)                          
+         call da_get_print_lvl(iv%airep(n)%p(k),ipr)
+
+        if( iv%airep(n)%u(k)%qc == fails_error_max )iv%airep(n)%u(k)%qc =0
+        if( iv%airep(n)%u(k)%qc >= obs_qc_pointer ) then
+         call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%u(k), max_error_uv,failed)
+        if( iv%info(airep)%proc_domain(k,n) ) then
+                    num_qcstat_conv(1,airep,1,ipr) = num_qcstat_conv(1,airep,1,ipr) + 1
+         if(failed) then
+          num_qcstat_conv(2,airep,1,ipr) = num_qcstat_conv(2,airep,1,ipr) + 1
+           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'airep',ob_vars(1),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+         end if
+         end if
+         end if
+
+        if( iv%airep(n)%v(k)%qc == fails_error_max )iv%airep(n)%v(k)%qc =0
+        if( iv%airep(n)%v(k)%qc >= obs_qc_pointer ) then
+         call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%v(k), max_error_uv,failed)
+        if( iv%info(airep)%proc_domain(k,n) ) then
+                    num_qcstat_conv(1,airep,2,ipr) = num_qcstat_conv(1,airep,2,ipr) + 1
+         if(failed)then
+           num_qcstat_conv(2,airep,2,ipr) = num_qcstat_conv(2,airep,2,ipr) + 1
+           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'airep',ob_vars(2),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+         end if
+         end if
+         end if
+
+        if( iv%airep(n)%t(k)%qc == fails_error_max )iv%airep(n)%t(k)%qc =0
+        if( iv%airep(n)%t(k)%qc >= obs_qc_pointer ) then
+         call da_max_error_qc (it,iv%info(airep), n, iv%airep(n)%t(k), max_error_t,failed)
+        if( iv%info(airep)%proc_domain(k,n) ) then
+                    num_qcstat_conv(1,airep,3,ipr) = num_qcstat_conv(1,airep,3,ipr) + 1
+         if(failed) then
+          num_qcstat_conv(2,airep,3,ipr) = num_qcstat_conv(2,airep,3,ipr) + 1
+           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'airep',ob_vars(3),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+         end if
+         end if
+         end if
+
       end do
    end do
    
    if (trace_use_dull) call da_trace_exit("da_check_max_iv_airep")
 
 end subroutine da_check_max_iv_airep
-
-

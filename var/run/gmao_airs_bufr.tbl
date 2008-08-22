@@ -1,0 +1,199 @@
+.------------------------------------------------------------------------------.
+| ------------   USER DEFINITIONS FOR TABLE-A TABLE-B TABLE D   -------------- |
+|------------------------------------------------------------------------------|
+| MNEMONIC | NUMBER | DESCRIPTION                                              |
+|----------|--------|----------------------------------------------------------|
+|          |        |                                                          |
+| NC021250 | A10050 | MESSAGE TYPE 021-250  AIRS/AMSU-A/HSB 1C DATA            |
+| NC021251 | A10009 | MESSAGE TYPE 021-251  AIRS  AMSU-A 1C DATA               |
+| NC021252 | A10010 | MESSAGE TYPE 021-252  AIRS  AMSU-B 1C DATA               |
+| NC021253 | A10055 | MESSAGE TYPE 021-253  AIRS  PRINTCIPAL COMPONENTS        |
+|          |        |                                                          |
+| ATFOV    | 310011 | ATOVS FIELD OF VIEW VARIABLES                            |
+| ATCHV    | 310012 | ATOVS CHANNEL VARIABLES                                  |
+| AQUASPOT | 350199 | AQUA SPOT SEQUENCE                                       |
+| AIRSSPOT | 350200 | AIRS SPOT SEQUENCE                                       |
+| AIRSCHAN | 350201 | AIRS CHANNEL SEQUENCE                                    |
+| AMSUSPOT | 350202 | AMSU-A SPOT SEQUENCE                                     |
+| AMSUCHAN | 350203 | AMSU-A CHANNEL SEQUENCE                                  |
+| HSBSPOT  | 350204 | HSB SPOT SEQUENCE                                        |
+| HSBCHAN  | 350205 | HSB CHANNEL SEQUENCE                                     |
+| AIRSVISB | 350206 | AIRS VISIBLE CHANNEL SEQUENCE                            |
+| INTMS    | 350207 | SATELLITE INSTRUMENT TEMPERATURES                        |
+| AIRSPC   | 350208 | AIRS PRINCIPAL COMPONENT SEQUENCE                        |
+| AIRSCORE | 350209 | AIRS PRINCIPAL COMPONENT FITS TO DATA                    |
+|          |        |                                                          |
+| SAID     | 001007 | Satellite identifier                                     |
+| OGCE     | 001033 | Identification of originating/generating center          |
+| GSES     | 001034 | Identification of originating/generating sub-cente       |
+| SIID     | 002019 | Satellite instruments                                    |
+| SIDU     | 002021 | Satellite instrument data used in processing             |
+| SSIN     | 002048 | Satellite sensor indicator                               |
+| INCN     | 002150 | TOVS/ATOVS/AVHRR instrumentation channel number          |
+| RAID     | 002151 | Radiometer identifier                                    |
+| YEAR     | 004001 | Year                                                     |
+| MNTH     | 004002 | Month                                                    |
+| DAYS     | 004003 | Day                                                      |
+| HOUR     | 004004 | Hour                                                     |
+| MINU     | 004005 | Minute                                                   |
+| SECO     | 004006 | Second                                                   |
+| CLATH    | 005001 | Latitude (high accuracy)                                 |
+| BEARAZ   | 005021 | Bearing or azimuth                                       |
+| SOLAZI   | 005022 | Solar azimuth                                            |
+| ORBN     | 005040 | Orbit number                                             |
+| SLNM     | 005041 | Scan line number                                         |
+| CHNM     | 005042 | Channel number                                           |
+| FOVN     | 005043 | Field of view number                                     |
+| CLONH    | 006001 | Longitude (high accuracy)                                |
+| SELV     | 007001 | Height of station                                        |
+| SAZA     | 007024 | Satellite zenith angle                                   |
+| SOZA     | 007025 | Solar zenith angle                                       |
+| LSQL     | 008012 | Land/sea qualifier                                       |
+| FOST     | 008023 | First order statistics                                   |
+| TAPQ     | 008070 | TOVS/ATOVS product identifier                            |
+| TMBRST   | 012063 | Brightness temperature                                   |
+| TMINST   | 012064 | Instrument temperature                                   |
+| TMBR     | 012163 | Brightness temperature                                   |
+| ALBD     | 014027 | Albedo                                                   |
+| CHRAD    | 014045 | Channel radiance                                         |
+| TOCC     | 020010 | Cloud cover (total)                                      |
+| APCOMP   | 025050 | Satellite principal components of radiance               |
+| APCFIT   | 025052 | Log of principal components normalized fit to data       |
+| MJFC     | 025070 | Major frame count                                        |
+| SACV     | 025075 | Satellite antenna corrections version number             |
+| LOGRCW   | 025076 | Log-10 of (Temperature-radiance central wavenumber       |
+| BWCC1    | 025077 | Bandwidth correction coefficient 1 for ATOVS             |
+| BWCC2    | 025078 | Bandwidth correction coefficient 2 for ATOVS             |
+| SLSF     | 033030 | Scan line status flags for ATOVS                         |
+| SLQF     | 033031 | Scan line quality flags for ATOVS                        |
+| ACQF     | 033032 | Channel quality flags for ATOVS                          |
+| FOVQ     | 033033 | Field of view quality flags for ATOVS                    |
+|          |        |                                                          |
+|------------------------------------------------------------------------------|
+| MNEMONIC | SEQUENCE                                                          |
+|----------|-------------------------------------------------------------------|
+|          |                                                                   |
+*          |                                                                   |
+* AIRS/AMSUA/HSB CO-LOCATED REPORTS                                            |
+*          |                                                                   |
+| NC021250 | AQUASPOT AIRSSPOT (AIRSCHAN)  "AIRSVISB"4 TOCC                    |
+| NC021250 |          AMSUSPOT "AMSUCHAN"15                                    |
+| NC021250 |          HSBSPOT  "HSBCHAN"5                                      |
+*          |                                                                   |
+* A HEADER FOR THE AQUA/AIRS DATA                                              |
+*          |                                                                   |
+| AQUASPOT | SAID     ORBN     201133   SLNM     201000                        |
+| AQUASPOT | 201132   MJFC     201000   202126   SELV    202000   SOZA         |
+| AQUASPOT | SOLAZI   RAID     TMINST   RAID     TMINST  RAID     TMINST       |
+| AQUASPOT | RAID     TMINST   RAID     TMINST   RAID    TMINST   RAID         |
+| AQUASPOT | TMINST   RAID     TMINST   RAID    TMINST                         |
+*          |                                                                   |
+* AIRS SPOT AND CHANNELS                                                       |
+*          |                                                                   |
+| AIRSSPOT | SIID     YEAR     MNTH     DAYS     HOUR     MINU                 |
+| AIRSSPOT | 202131   201138   SECO     201000   202000                        |
+| AIRSSPOT | CLATH    CLONH    SAZA     BEARAZ   FOVN                          |
+|          |                                                                   |
+| AIRSCHAN | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+|          |                                                                   |
+| AIRSVISB | 201134 CHNM 201000 LOGRCW ACQF                                    |
+| AIRSVISB | 201131 202129 FOST ALBD FOST ALBD FOST 202000 201000              |
+*          |                                                                   |
+* AMSU-A SPOT AND CHANNELS                                                     |
+*          |                                                                   |
+| AMSUSPOT | SIID     YEAR     MNTH     DAYS     HOUR     MINU                 |
+| AMSUSPOT | 202131   201138   SECO     201000   202000                        |
+| AMSUSPOT | CLATH    CLONH    SAZA     BEARAZ   FOVN                          |
+| AMSUCHAN | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+*          |                                                                   |
+* HSB SPOT AND CHANNELS                                                        |
+*          |                                                                   |
+| HSBSPOT  | SIID     YEAR     MNTH     DAYS     HOUR     MINU                 |
+| HSBSPOT  | 202131   201138   SECO     201000   202000                        |
+| HSBSPOT  | CLATH    CLONH    SAZA     BEARAZ   FOVN                          |
+| HSBCHAN  | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+*          |                                                                   |
+* INSTRUMENT TEMPERATURES                                                      |
+*          |                                                                   |
+| INTMS    | RAID     TMINST                                                   |
+|          |                                                                   |
+*          |                                                                   |
+* AMSU-A AND HSB (LIKE AMSU-B) USING SEQUENCES 310011 AND 310012               |
+*          |                                                                   |
+|          |                                                                   |
+| NC021251 | ATFOV    "ATCHV"15                                                |
+|          |                                                                   |
+| NC021252 | ATFOV    "ATCHV"5                                                 |
+|          |                                                                   |
+| ATFOV    | TAPQ     OGCE     GSES     TAPQ     OGCE     GSES                 |
+| ATFOV    | SAID     SSIN     ORBN     SACV     201133   SLNM     201000      |
+| ATFOV    | FOVN     MJFC     SLSF     SLQF     YEAR     MNTH     DAYS        |
+| ATFOV    | HOUR     MINU     202131   201138   SECO     201000   202000      |
+| ATFOV    | CLATH    CLONH    202126   SELV     202000   SAZA     BEARAZ      |
+| ATFOV    | SOZA     SOLAZI   FOVQ     RAID     TMINST   RAID     TMINST      |
+| ATFOV    | RAID     TMINST   RAID     TMINST                                 |
+|          |                                                                   |
+| ATCHV    | INCN     LOGRCW   BWCC1    BWCC2    ACQF                          |
+| ATCHV    | 201132   202129   TMBRST   202000   201000                        |
+|          |                                                                   |
+*          |                                                                   |
+* AIRS PRINCIPAL COMPONENTS                                                    |
+*          |                                                                   |
+|          |                                                                   |
+| NC021253 | AQUASPOT AIRSSPOT "AIRSCORE"20 (AIRSPC)                           |
+|          |                                                                   |
+| AIRSCORE | LOGRCW APCFIT                                                     |
+| AIRSPC   | APCOMP                                                            |
+|          |                                                                   |
+|          |                                                                   |
+|------------------------------------------------------------------------------|
+| MNEMONIC | SCAL | REFERENCE   | BIT | UNITS                    |-------------|
+|----------|------|-------------|-----|--------------------------|-------------|
+|          |      |             |     |                          |-------------|
+| SAID     |    0 |           0 |  10 | Code table               |-------------|
+| OGCE     |    0 |           0 |   8 | Code table               |-------------|
+| GSES     |    0 |           0 |   8 | Code table               |-------------|
+| SIID     |    0 |           0 |  11 | Code table               |-------------|
+| SIDU     |    0 |           0 |   9 | Flag table               |-------------|
+| SSIN     |    0 |           0 |   4 | Code table               |-------------|
+| INCN     |    0 |           0 |   6 | Code table               |-------------|
+| RAID     |    0 |           0 |  11 | Code table               |-------------|
+| YEAR     |    0 |           0 |  12 | Year                     |-------------|
+| MNTH     |    0 |           0 |   4 | Month                    |-------------|
+| DAYS     |    0 |           0 |   6 | Day                      |-------------|
+| HOUR     |    0 |           0 |   5 | Hour                     |-------------|
+| MINU     |    0 |           0 |   6 | Minute                   |-------------|
+| SECO     |    0 |           0 |   6 | Second                   |-------------|
+| CLATH    |    5 |    -9000000 |  25 | Degree                   |-------------|
+| BEARAZ   |    2 |           0 |  16 | Degree true              |-------------|
+| SOLAZI   |    2 |           0 |  16 | Degree true              |-------------|
+| ORBN     |    0 |           0 |  24 | Numeric                  |-------------|
+| SLNM     |    0 |           0 |   8 | Numeric                  |-------------|
+| CHNM     |    0 |           0 |   6 | Numeric                  |-------------|
+| FOVN     |    0 |           0 |   8 | Numeric                  |-------------|
+| CLONH    |    5 |   -18000000 |  26 | Degree                   |-------------|
+| SELV     |    0 |        -400 |  15 | m                        |-------------|
+| SAZA     |    2 |       -9000 |  15 | Degree                   |-------------|
+| SOZA     |    2 |       -9000 |  15 | Degree                   |-------------|
+| LSQL     |    0 |           0 |   2 | Code table               |-------------|
+| FOST     |    0 |           0 |   6 | Code table               |-------------|
+| TAPQ     |    0 |           0 |   4 | Code table               |-------------|
+| TMBRST   |    1 |           0 |  12 | K                        |-------------|
+| TMINST   |    1 |           0 |  12 | K                        |-------------|
+| TMBR     |    2 |           0 |  16 | K                        |-------------|
+| ALBD     |    0 |           0 |   7 | %                        |-------------|
+| CHRAD    |    0 |           0 |  11 | W m**-2 sr**-1 cm**-1    |-------------|
+| TOCC     |    0 |           0 |   7 | %                        |-------------|
+| APCOMP   |    4 |     -131072 |  18 | Numeric                  |-------------|
+| APCFIT   |    4 |           0 |  15 | Numeric                  |-------------|
+| MJFC     |    0 |           0 |   4 | Numeric                  |-------------|
+| SACV     |    0 |           0 |   5 | Numeric                  |-------------|
+| LOGRCW   |    8 |           0 |  30 | Log/m                    |-------------|
+| BWCC1    |    5 |     -100000 |  18 | Numeric                  |-------------|
+| BWCC2    |    5 |           0 |  17 | Numeric                  |-------------|
+| SLSF     |    0 |           0 |  24 | Flag table               |-------------|
+| SLQF     |    0 |           0 |  24 | Flag table               |-------------|
+| ACQF     |    0 |           0 |  24 | Flag table               |-------------|
+| FOVQ     |    0 |           0 |  24 | Flag table               |-------------|
+|          |      |             |     |                          |-------------|
+`------------------------------------------------------------------------------'

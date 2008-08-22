@@ -1,4 +1,4 @@
-subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
+subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
 
    !---------------------------------------------------------------------------
    ! Purpose: Output data assmiilation diagnostics
@@ -6,7 +6,9 @@ subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
 
    implicit none
 
+   integer,        intent(in)    :: it
    type (domain),  intent(in)    :: grid
+   integer,        intent(inout) :: num_qcstat_conv(:,:,:,:)
    type (y_type),  intent(in)    :: ob      ! Observation structure.
    type (iv_type), intent(inout) :: iv      ! innovation vector.
    type (y_type),  intent(inout) :: re      ! residual vector.
@@ -99,24 +101,26 @@ subroutine da_write_diagnostics(grid, ob, iv, re, y, j)
    ! [4.0] Write VAR diagnostic :
    !------------------------------------------------------------------------------
 
-   call da_get_var_diagnostics (iv, j)
+   call da_get_var_diagnostics ( iv, j)
 
    !---- -------------------------------------------------------------------------
    !  [5.0] Write observation data (O, O-B, O-A, y=hx'):
    !------------------------------------------------------------------------------
 
-   call da_write_obs(ob, iv, re)
+   call da_write_obs(it, ob, iv, re)
 
    ! Write ETKF observation files if required (note - 1PE only at present):
    if (anal_type_verify) then
       call da_write_obs_etkf(ob, iv, re)
    end if
 
-   call da_final_write_obs(iv)
+   call da_final_write_obs(it, iv)
 
    call da_write_y(iv, y)
 
    call da_final_write_y(iv)
+   call da_print_qcstat(it, iv, num_qcstat_conv)
+
 
    if (trace_use) call da_trace_exit("da_write_diagnostics")
 

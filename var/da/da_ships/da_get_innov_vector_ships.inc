@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_ships( it, grid, ob, iv)
+subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD     
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_ships( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid    ! first guess state.
    type(y_type),     intent(inout) :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -27,7 +28,6 @@ subroutine da_get_innov_vector_ships( it, grid, ob, iv)
 
    real    :: hd, psfcm
    real    :: ho, to, qo
-   integer :: itu,ituf,itvv,itvvf,itp,itpf,itt,ittf,itqv,itqvf
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_ships")
 
@@ -38,8 +38,6 @@ subroutine da_get_innov_vector_ships( it, grid, ob, iv)
    allocate (model_q(1,iv%info(ships)%n1:iv%info(ships)%n2))
    allocate (model_hsm(1,iv%info(ships)%n1:iv%info(ships)%n2))
 
-   itu   = 0; itvv    = 0; itp  = 0; itt  = 0; itqv  = 0;
-   ituf  = 0; itvvf   = 0; itpf = 0; ittf = 0; itqvf = 0;
 
    if (sfc_assi_options == sfc_assi_options_1) then
       do n=iv%info(ships)%n1,iv%info(ships)%n2
@@ -83,7 +81,7 @@ subroutine da_get_innov_vector_ships( it, grid, ob, iv)
                   ! ob%ships(n)%u = iv%ships(n)%u%inv
                   ! ob%ships(n)%v = iv%ships(n)%v%inv
 
-                  if ( max_ext_its == 1 ) then
+                  if ( it == 1 ) then
                      ob%ships(n)%p = iv%ships(n)%p%inv
                      ob%ships(n)%t = iv%ships(n)%t%inv
                      ob%ships(n)%q = iv%ships(n)%q%inv
@@ -213,24 +211,9 @@ subroutine da_get_innov_vector_ships( it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !---------------------------------------------------------------------
 
-   if (check_max_iv) then
-      call da_check_max_iv_ships(iv, it, itu,ituf,itvv,itvvf,itp,itpf,itt,ittf,itqv,itqvf)
-   end if
+   if (check_max_iv) &    
+      call da_check_max_iv_ships(iv,ob, it, num_qcstat_conv)
    
-   if (rootproc .and. check_max_iv_print) then
-      write(unit= check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total Rejections for Ships follows:'
-
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed u-wind observations:     ',ituf, ' on ',itu,   &
-         'Number of failed v-wind observations:     ',itvvf,' on ',itvv,   &
-         'Number of failed pressure observations:   ',itpf, ' on ',itp,   &
-         'Number of failed temperature observations:',ittf, ' on ',itt,   &
-         'Number of failed mixing ratio observations:',itqvf,' on ',itqv, &
-         'Finally Total Ships rejections ',ituf+itvvf+itpf+ittf+itqvf,' on ',&
-                                           itu +itvv +itp +itt +itqv
-   end if
-
    deallocate (model_u)
    deallocate (model_v)
    deallocate (model_t)

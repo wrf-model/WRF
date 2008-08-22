@@ -13,6 +13,9 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
    !  HISTORY: 2006/01/03 - Creation            Zhiquan Liu
    !           2008/03/01 - VISNIR Cloud Cover  Tom Auligne
    !           2008/04/01 - Warmest FoV         Tom Auligne
+   !           2008/07/15 - BUFR format change  Hui-Chuan Lin
+   !            NCEP msg type NC021250 (center FOV data) discontinued after Aug 2007
+   !            replaced by NC021249 (every FOV data)
    !
    !------------------------------------------------------------------------------
 
@@ -30,9 +33,11 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind),parameter :: N_HSBCHAN  =   4
   integer(i_kind),parameter :: N_MAXCHAN  = 350
   integer(i_kind),parameter :: maxinfo    =  12
+  character(8),   parameter :: msgtype_airsc = 'NC021250' ! msg type of center FOV
+  character(8),   parameter :: msgtype_airse = 'NC021249' ! msg type of every FOV
 
 
-! BUFR format for AQUASPOT 
+! BUFR format for AQUASPOT (SPITSEQN)
   integer(i_kind),parameter :: N_AQUASPOT_LIST = 25
   type aquaspot_list
      sequence
@@ -47,7 +52,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   end type aquaspot_list
 
 
-! BUFR format for AIRSSPOT 
+! BUFR format for AIRSSPOT (SITPSEQN)
   integer(i_kind),parameter :: N_AIRSSPOT_LIST = 12
   type airsspot_list
      sequence
@@ -66,7 +71,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   end type airsspot_list
 
 
-! BUFR format for AIRSCHAN 
+! BUFR format for AIRSCHAN (SCBTSEQN)
   integer(i_kind),parameter :: N_AIRSCHAN_LIST = 4
   type airschan_list
      sequence
@@ -267,17 +272,37 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
         cycle loop_obspoints
      end if
   
-!   3.2 Read AQUASPOT
+!   3.2 Read AQUASPOT (SPITSEQN)
 !------------------------
-     call ufbseq(lnbufr,aquaspot,N_AQUASPOT_LIST,1,iret,'AQUASPOT')
+     if ( subset == msgtype_airsc ) then
+        call ufbseq(lnbufr,aquaspot,N_AQUASPOT_LIST,1,iret,'AQUASPOT')
+     else if ( subset == msgtype_airse ) then
+        call ufbseq(lnbufr,aquaspot,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
+     end if
 
 !   3.3 Read AIRSSPOT or AMSUSPOT or HSBSPOT
 !-------------------------------------------------
-     call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,spotname)
+     if ( trim(senname) == 'AIRS' ) then
+        if ( subset == msgtype_airsc ) then
+           call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,'AIRSSPOT')
+        else if ( subset == msgtype_airse ) then
+           call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
+        end if
+     else
+        call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,spotname)
+     end if
 
 !   3.4 Read AIRSCHAN or AMSUCHAN or HSBCHAN
 !-------------------------------------------
-     call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
+     if ( trim(senname) == 'AIRS' ) then
+        if ( subset == msgtype_airsc ) then
+           call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'AIRSCHAN')
+        else if ( subset == msgtype_airse ) then
+           call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
+        end if
+     else
+        call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
+     end if
 
      if (iret /= nchanr) then
         write(unit=message(1),fmt=*) &

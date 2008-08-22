@@ -23,30 +23,7 @@ subroutine da_get_innov_vector_ssmi_tb (it, grid, ob, iv)
    real    :: model_tb85h ! Model value tb85h at oblocation.
    real    :: model_tb85v ! Model value tb85v at oblocation.
 
-   integer :: itb19v, itb19vf, &
-              itb19h, itb19hf, &
-              itb22v, itb22vf, &
-              itb37v, itb37vf, &
-              itb37h, itb37hf, &
-              itb85v, itb85vf, &
-              itb85h, itb85hf
-   
    if (trace_use) call da_trace_entry("da_get_innov_vector_ssmi_tb")
-
-   itb19v  = 0
-   itb19vf = 0
-   itb19h  = 0
-   itb19hf = 0
-   itb22v  = 0
-   itb22vf = 0
-   itb37v  = 0
-   itb37vf = 0
-   itb37h  = 0
-   itb37hf = 0
-   itb85v  = 0
-   itb85vf = 0
-   itb85h  = 0
-   itb85hf = 0
 
    do n=iv%info(ssmi_tb)%n1,iv%info(ssmi_tb)%n2
       ! compute innovation vector
@@ -145,26 +122,7 @@ subroutine da_get_innov_vector_ssmi_tb (it, grid, ob, iv)
    !     Perform optional maximum error check:
    !----------------------------------------------------------------
 
-   if (check_max_iv) then
-      call da_check_max_iv_ssmi_tb(iv, it, &
-         itb19v, itb19vf, itb19h, itb19hf, &
-         itb22v, itb22vf,                  &
-         itb37v, itb37vf, itb37h, itb37hf, &
-         itb85v, itb85vf, itb85h, itb85hf )
-   end if
-
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ', &
-         it,'Total Rejections for SSMI(Tbs) follows:'
-      write(unit = check_max_iv_unit, fmt = '(2(A,I6))') &
-         'Number of failed ssmi tb19v observations: ',itb19v, ' on ',itb19v, &
-         'Number of failed ssmi tb19h observations: ',itb19h, ' on ',itb19h, &
-         'Number of failed ssmi tb22v observations: ',itb22v, ' on ',itb22v, &
-         'Number of failed ssmi tb37v observations: ',itb37v, ' on ',itb37v, &
-         'Number of failed ssmi tb37h observations: ',itb37h, ' on ',itb37h, &
-         'Number of failed ssmi tb85v observations: ',itb85v, ' on ',itb85v, &
-         'Number of failed ssmi tb85h observations: ',itb85h, ' on ',itb85h
-   end if
+   if (check_max_iv) call da_check_max_iv_ssmi_tb(iv, it)  
    
    if (trace_use) call da_trace_exit("da_get_innov_vector_ssmi_tb")
 

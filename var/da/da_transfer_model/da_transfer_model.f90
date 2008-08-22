@@ -13,7 +13,8 @@ module da_transfer_model
    use module_dm, only : local_communicator, &
       ntasks_x, ntasks_y, data_order_xyz, mytask, &
       ntasks, data_order_xy
-   use module_comm_dm, only : halo_xa_sub, halo_init_sub, halo_psichi_uv_adj_sub
+   use module_comm_dm, only : halo_xa_sub, halo_init_sub, halo_psichi_uv_adj_sub, &
+                              halo_xb_sub
       
    use da_control, only : ips,ipe,jps,jpe,kps,kpe
 #endif

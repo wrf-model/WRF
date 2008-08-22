@@ -39,7 +39,8 @@ module da_minimisation
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
       precondition_cg, precondition_factor, cv_size_domain_jp, use_varbc, varbc_factor, &
-      num_procs, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo
+      num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
+      num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_deallocate_y
    use da_obs, only : da_transform_xtoy_adj,da_transform_xtoy, &
@@ -91,7 +92,7 @@ module da_minimisation
    use da_radar, only :  da_calculate_grady_radar, da_ao_stats_radar, &
       da_oi_stats_radar, da_get_innov_vector_radar, da_residual_radar, &
       da_jo_and_grady_radar
-   use da_reporting, only : da_message, da_warning
+   use da_reporting, only : da_message, da_warning, da_error
    use da_satem, only : da_calculate_grady_satem, da_ao_stats_satem, &
       da_oi_stats_satem, da_get_innov_vector_satem, da_residual_satem, &
       da_jo_and_grady_satem
@@ -115,7 +116,7 @@ module da_minimisation
    use da_synop, only : da_calculate_grady_synop, da_ao_stats_synop, &
       da_oi_stats_synop, da_get_innov_vector_synop, da_residual_synop, &
       da_jo_and_grady_synop
-   use da_statistics, only : da_analysis_stats
+   use da_statistics, only : da_analysis_stats, da_print_qcstat
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit,da_trace
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &

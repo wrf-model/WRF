@@ -32,6 +32,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
             ndomain = ndomain + 1
          end if
       end do
+      if (ndomain < 1) cycle
 
       write(unit=filename, fmt='(a,i2.2)') 'oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 

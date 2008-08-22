@@ -345,7 +345,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
-            if (grid%xb%q(i,j,k) < 1.0e-6) &
+            if (num_pseudo == 0 .and. grid%xb%q(i,j,k) < 1.0e-6) &
                grid%xb%q(i,j,k) = 1.0e-6
    
             ! Background qrn needed for radar radial velocity assmiilation:
@@ -387,6 +387,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             0.0065*(grid%xb%h(i,j,kts)-grid%xb%hf(i,j,kts))
       end do
    end do
+
 
    grid%xb%ztop = grid%xb%hf(its,jts,kte+1)
 
@@ -663,6 +664,14 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       ! write(unit=stdout, fmt=*) 'loc_latc_mean  =', loc_latc_mean(jts)
       write(unit=stdout, fmt=*) 'xbx % latc_mean=', xbx % latc_mean(jts)
    end if
+
+
+   ! Fill the halo region for xb        
+
+#ifdef DM_PARALLEL
+#include "HALO_XB.inc"
+#endif
+#endif
 
    ! Calculate time step from one dimensional cloud model parameterization
 

@@ -1,4 +1,4 @@
-SUBROUTINE da_get_innov_vector_gpsztd ( it, grid, ob, iv )
+SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 !----------------------------------------------------------------
 ! Innovation for Ground-based ZTD.
 !
@@ -18,6 +18,7 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, grid, ob, iv )
    type(domain),  intent(in)    :: grid    ! first guess state
    type(y_type),  intent(inout) :: ob      ! Observation structure.
    type(iv_type), intent(inout) :: iv      ! O-B structure.
+   integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    INTEGER                      :: n        ! Loop counter.
    INTEGER                      :: i, j     ! Index dimension.
@@ -209,7 +210,7 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, grid, ob, iv )
 !        [5.0] Perform optional maximum error check:
 !------------------------------------------------------------------------
       if (  check_max_iv ) then
-         call da_check_max_iv_gpspw(iv, it, ittpw,ittpwf )
+         call da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
       end if
 
       if (rootproc .and. check_max_iv_print) then

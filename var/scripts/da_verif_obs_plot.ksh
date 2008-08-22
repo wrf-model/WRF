@@ -9,7 +9,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 
 export NUM_EXPT=${NUM_EXPT:-2}
@@ -36,7 +36,7 @@ export EXP_LINES_COLORS=${EXP_LINES_COLORS:-'(/"blue","green", "orange"/)'}
 export PLOT_WKS=${PLOT_WKS:-x11}
 export CLEAN=${CLEAN:-false}
 export GET_OMBOMA_PLOTS=${GET_OMBOMA_PLOTS:-false}
-export FILE_PATH_STRING=${FILE_PATH_STRING:-'wrfvar/working/gts_omb_oma'}
+export FILE_PATH_STRING=${FILE_PATH_STRING:-'wrfvar/working/gts_omb_oma_${OUTER_ITER}'}
 
 #=========================================================
 #=========================================================

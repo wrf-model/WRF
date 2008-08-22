@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_ssmi_rv (it, grid, ob, iv)
+subroutine da_get_innov_vector_ssmi_rv (it,num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_ssmi_rv (it, grid, ob, iv)
    type(domain),  intent(in)    :: grid       ! first guess state.
    type(y_type),  intent(in)    :: ob         ! Observation structure.
    type(iv_type), intent(inout) :: iv         ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n           ! Loop counter.
    integer :: i, j        ! Index dimension.
@@ -21,7 +22,6 @@ subroutine da_get_innov_vector_ssmi_rv (it, grid, ob, iv)
    
    if (trace_use) call da_trace_entry("da_get_innov_vector_ssmi_rv")
 
-   itpw = 0 ; itpwf = 0 ; ispeed = 0 ; ispeedf = 0 
    do n=iv%info(ssmi_rv)%n1,iv%info(ssmi_rv)%n2
 
       ! compute innovation vector
@@ -60,17 +60,8 @@ subroutine da_get_innov_vector_ssmi_rv (it, grid, ob, iv)
    ! Perform optional maximum error check:
    !------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_ssmi_rv(iv, it, itpw,itpwf, ispeed,ispeedf)
+   if (check_max_iv) call da_check_max_iv_ssmi_rv(iv, it, num_qcstat_conv)           
 
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)') &
-         'For outer iteration ',it,&
-         ' Total Rejections for SSMI(TPW and SPEED) follows:'
-      write(unit = check_max_iv_unit, fmt = '(/,4(2(A,I6),/))') &
-         'Number of failed ssmi tpw   observations:  ',itpwf,  ' on ',itpw,   &
-         'Number of failed ssmi speed observations:  ',ispeedf,' on ',ispeed
-   end if
-   
    if (trace_use) call da_trace_exit("da_get_innov_vector_ssmi_rv")
 
 end subroutine da_get_innov_vector_ssmi_rv

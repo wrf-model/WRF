@@ -7,7 +7,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/hollingsworth}
 export WORK_DIR=$RUN_DIR/working
@@ -27,7 +27,7 @@ echo "END_DATE      = $END_DATE"
 export DATE=$START_DATE
 
 while [[ $DATE -le $END_DATE ]]; do
-   cat ${EXP_DIR}/run/${DATE}/wrfvar/working/gts_omb_oma >> hollingsworth1.in
+   cat ${EXP_DIR}/run/${DATE}/wrfvar/working/gts_omb_oma_${OUTER_ITER} >> hollingsworth1.in
    export DATE=$($BUILD_DIR/da_advance_time.exe $DATE $CYCLE_PERIOD)
 done
 

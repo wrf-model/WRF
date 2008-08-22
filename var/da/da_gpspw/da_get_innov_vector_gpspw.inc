@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_gpspw (it, grid, ob, iv)
+subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
 
    !----------------------------------------------------------------
    ! Purpose: TBD
@@ -10,13 +10,14 @@ subroutine da_get_innov_vector_gpspw (it, grid, ob, iv)
    type(domain),     intent(in)    :: grid    ! first guess state.
    type(y_type),     intent(inout) :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
+
 
    integer :: n        ! Loop counter.
    integer :: i, j     ! Index dimension.
    real    :: dx, dxm  ! Interpolation weights.
    real    :: dy, dym  ! Interpolation weights.
    real    :: model_tpw! Model value u at oblocation.
-   integer :: ittpw,ittpwf
 
    !--------------------------------------------------------------------------
    integer :: k            ! Index dimension
@@ -103,13 +104,6 @@ subroutine da_get_innov_vector_gpspw (it, grid, ob, iv)
 
    if (iv%info(gpspw)%nlocal > 0) then
 
-      ittpw   = 0
-      ittpwf  = 0
-
-      ! write(unit=unit_gps,fmt='(3x,a3,10a10)') ' n ','     lat  ',  &
-      !   '     lon  ', '  obs ght ', '  mdl ght ',  &
-      !   ' obsh-mdlh', '   obs pw ', '  model pw',  &
-      !   '   O-B pw ', '    Dpw   ', '  O-B+Dpw '
 
       do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
 
@@ -176,19 +170,8 @@ subroutine da_get_innov_vector_gpspw (it, grid, ob, iv)
          !------------------------------------------------------------------------
 
       end do
-      if ( check_max_iv) then
-         call da_check_max_iv_gpspw(iv, it, ittpw,ittpwf)
-      end if
-
-      if (rootproc .and. check_max_iv_print) then
-         write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-            ', Total Rejections for Gpspw follows:'
-         write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-            'Number of failed TPW-observations:     ',ittpwf, ' on ',ittpw, &
-            'Finally all Gpspw rejections ',ittpwf,' on ',ittpw
-      end if
+      if ( check_max_iv) call da_check_max_iv_gpspw(iv, it, num_qcstat_conv) 
    end if
-
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpspw")
 
 end subroutine da_get_innov_vector_gpspw

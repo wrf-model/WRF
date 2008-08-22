@@ -89,7 +89,7 @@ subroutine da_biasprep(inst,ob,iv)
 
          radbias%nchan        = nchan 
          radbias%tb(1:nchan)  = ob%instid(inst)%tb(1:nchan,n)
-         radbias%omb(1:nchan) = iv%instid(inst)%tb_inv(1:nchan,n)
+         radbias%omb(1:nchan) = ob%instid(inst)%tb(1:nchan,n)-iv%instid(inst)%tb_xb(1:nchan,n)
          radbias%bias(1:nchan) = 0.0
 
          radbias%npred         = npred

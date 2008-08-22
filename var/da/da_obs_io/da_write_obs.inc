@@ -1,4 +1,4 @@
-subroutine da_write_obs(ob, iv, re)
+subroutine da_write_obs(it,ob, iv, re)
 
    !-------------------------------------------------------------------------
    ! Purpose: Writes out components of iv=O-B structure.
@@ -6,6 +6,7 @@ subroutine da_write_obs(ob, iv, re)
 
    implicit none
 
+   integer,        intent(in)    :: it
    type (y_type),  intent(in)    :: ob      ! Observation structure.
    type (iv_type), intent(in)    :: iv      ! O-B structure.
    type (y_type),  intent(inout) :: re      ! residual vector.
@@ -23,9 +24,9 @@ subroutine da_write_obs(ob, iv, re)
    call da_get_unit(ounit)
 
 #ifdef DM_PARALLEL
-    write(unit=filename, fmt='(a,i3.3)') 'gts_omb_oma.', myproc
+    write(unit=filename, fmt='(a,i2.2,a,i3.3)') 'gts_omb_oma_',it,'.', myproc
 #else
-    write(unit=filename, fmt='(a)') 'gts_omb_oma.000'
+    write(unit=filename, fmt='(a,i2.2,a)') 'gts_omb_oma_',it,'.000'
 #endif
 
    open (unit=ounit,file=trim(filename),form='formatted',status='replace', &

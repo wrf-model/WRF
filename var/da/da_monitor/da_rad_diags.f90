@@ -172,7 +172,7 @@ ntime_loop: do itime = 1, ntime
          total_npixel = total_npixel + npixel(iproc)
 
          itmp = 0
-         do while ( itmp < 2 )
+         do while ( ios == 0 .and. itmp < 2 )
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf
             if ( index(buf,'INFO :') > 0 ) then
                itmp = itmp + 1

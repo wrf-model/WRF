@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_metar(it, grid, ob, iv)
+subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
 
    !-------------------------------------------------------------------------
    ! Purpose: TBD   
@@ -10,7 +10,7 @@ subroutine da_get_innov_vector_metar(it, grid, ob, iv)
    type(domain),     intent(in)    :: grid    ! first guess state.
    type(y_type),     intent(inout) :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
-
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -30,12 +30,7 @@ subroutine da_get_innov_vector_metar(it, grid, ob, iv)
 
    real    :: ho, to, qo
 
-   integer :: itu,ituf,itvv,itvvf,itp,itpf,itt,ittf,itqv,itqvf
-
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_metar")
-
-   itu   = 0; itvv    = 0; itp  = 0; itt  = 0; itqv  = 0;
-   ituf  = 0; itvvf   = 0; itpf = 0; ittf = 0; itqvf = 0;
 
    allocate (model_u  (1,iv%info(metar)%n1:iv%info(metar)%n2))
    allocate (model_v  (1,iv%info(metar)%n1:iv%info(metar)%n2))
@@ -86,7 +81,7 @@ subroutine da_get_innov_vector_metar(it, grid, ob, iv)
                   ! ob%metar(n)%u = iv%metar(n)%u%inv
                   ! ob%metar(n)%v = iv%metar(n)%v%inv
 
-                  if ( max_ext_its == 1 ) then
+                  if ( it == 1 ) then
                      ob%metar(n)%p = iv%metar(n)%p%inv
                      ob%metar(n)%t = iv%metar(n)%t%inv
                      ob%metar(n)%q = iv%metar(n)%q%inv
@@ -221,23 +216,7 @@ subroutine da_get_innov_vector_metar(it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !-----------------------------------------------------------------------
 
-   if (check_max_iv) then
-      call da_check_max_iv_metar(iv, it, itu,ituf,itvv,itvvf,itp,itpf,itt,ittf,itqv,itqvf)
-   end if
-
-   if (rootproc .and. check_max_iv_print) then
-      write(unit= check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total Rejections for Metar follows:'
-
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed u-wind observations:     ',ituf, ' on ',itu,   &
-         'Number of failed v-wind observations:     ',itvvf,' on ',itvv,   &
-         'Number of failed pressure observations:   ',itpf, ' on ',itp,   &
-         'Number of failed temperature observations:',ittf, ' on ',itt,   &
-         'Number of failed mixing ratio observations:',itqvf,' on ',itqv, &
-         'Finally Total Metar rejections ',ituf+itvvf+itpf+ittf+itqvf,' on ',&
-                                         itu +itvv +itp +itt +itqv
-   end if
+   if (check_max_iv)call da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
 
    deallocate (model_u)
    deallocate (model_v)

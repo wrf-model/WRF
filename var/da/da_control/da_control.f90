@@ -66,7 +66,7 @@ module da_control
    ! Planetary boundary physics constants
    real, parameter         :: k_kar = 0.4    ! Von Karman constant
 
-   ! Zineth Total Delay: 
+   ! Zenith Total Delay: 
    !  Hydrostatic delay: 
    real, parameter    :: zdk1 = 2.2768e-5 
    real, parameter    :: zdk2 = 2.66e-3 
@@ -246,7 +246,7 @@ module da_control
 
    integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit
    integer :: check_max_iv_unit, rand_unit, omb_unit, filtered_obs_unit
-   integer :: biasprep_unit
+   integer :: biasprep_unit, qcstat_conv_unit
 
    integer,parameter :: filename_len = 200
 
@@ -447,12 +447,14 @@ module da_control
 
    integer, parameter            :: maxsensor = 30
 
+   integer, parameter :: num_ob_indexes = 25
+   integer, parameter :: npres_print = 12
+
+
    ! Tracing
 
    integer :: trace_start_points=0   ! Number of routines to initiate trace
 
-!   integer, parameter :: num_ob_indexes = 24
-   integer, parameter :: num_ob_indexes = 25
    integer, parameter :: sound     = 1
    integer, parameter :: synop     = 2
    integer, parameter :: pilot     = 3
@@ -483,13 +485,13 @@ module da_control
       "synop         ", &
       "pilot         ", &
       "satem         ", &
-      "geo amv       ", &
-      "polar amv     ", &
+      "geoamv        ", &
+      "polaramv      ", &
       "airep         ", &
       "gpspw         ", &
       "gpsrf         ", &
       "metar         ", &
-      "ship          ", &
+      "ships         ", &
       "ssmi_rv       ", &
       "ssmi_tb       ", &
       "ssmt1         ", &
@@ -588,5 +590,16 @@ module da_control
    integer :: ips,ipe,jps,jpe,kps,kpe
    integer :: itsy,itey,jtsy,jtey,ktsy,ktey
    integer :: itsx,itex,jtsx,jtex,ktsx,ktex
+
+   integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print)
+   character*4, parameter :: ob_vars(num_ob_vars) = (/'U   ','V   ','T   ',&
+                                                      'Q   ','Ps  ','Spd ',&
+                                                      'Tpw ','GpsR','Thic'/)
+   real, parameter :: pptop(1:npres_print) = (/ 1000.0, 900.0, 800.0, 600.0, 400.0, 300.0,  &
+                      250.0,  200.0, 150.0, 100.0, 50.0, 0./)
+
+   real, parameter :: ppbot(npres_print) = (/ 1200.0, 999.9, 899.9, 799.0, 599.9, 399.9,  &
+                      299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
+
 
 end module da_control

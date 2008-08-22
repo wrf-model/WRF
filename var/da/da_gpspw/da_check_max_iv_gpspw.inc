@@ -1,4 +1,4 @@
-subroutine da_check_max_iv_gpspw(iv, it, ittpw,ittpwf)
+subroutine da_check_max_iv_gpspw(iv, it, num_qcstat_conv) 
 
    !-------------------------------------------------------------------------
    ! Purpose: TBD
@@ -9,32 +9,29 @@ subroutine da_check_max_iv_gpspw(iv, it, ittpw,ittpwf)
 
    type(iv_type), intent(inout) :: iv
    integer,       intent(in)    :: it      ! Outer iteration
-   integer,       intent(inout) :: ittpw,ittpwf
+   integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    logical :: failed 
    integer :: n
 
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_gpspw")
 
-   if (rootproc .and. check_max_iv_print) then
-      write (check_max_iv_unit,'(A)')  &
-         '----------------------------------------------------------------'
-      write (unit = check_max_iv_unit, fmt = '(A,/)') 'MAX ERROR TEST QC:'
-      write (unit = check_max_iv_unit, fmt = '(/,9(A,F3.0,/))')  &
-         'Error max test ratio for gps_tpw = ',max_error_pw
-   end if
-
-   !---------------------------------------------------------------------------
-   ! [2.0] Perform maximum innovation vector check:
-   !---------------------------------------------------------------------------
-
-   failed = .false.
-
    ! TPW:
 
    do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
-      call da_max_error_qc(it, iv%info(gpspw), n, iv%gpspw(n)%tpw, max_error_pw, ittpw, &
-        ittpwf, check_max_iv_unit, 'TPW  ', failed, check_max_iv_print)
+
+      if( iv%gpspw(n)%tpw%qc == fails_error_max )iv%gpspw(n)%tpw%qc =0                         
+      if( iv%gpspw(n)%tpw%qc >= obs_qc_pointer ) then
+      call da_max_error_qc(it, iv%info(gpspw), n, iv%gpspw(n)%tpw, max_error_pw,failed)
+      if( iv%info(gpspw)%proc_domain(1,n) ) then
+       num_qcstat_conv(1,gpspw,7,1) = num_qcstat_conv(1,gpspw,7,1) + 1
+      if(failed) then
+       num_qcstat_conv(2,gpspw,7,1) = num_qcstat_conv(2,gpspw,7,1) + 1
+       write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
+       'gpspw',ob_vars(7),iv%info(gpspw)%lat(1,n),iv%info(gpspw)%lon(1,n),'1013.25'                     
+      end if
+      end if
+      end if
    end do
 
    if (trace_use_dull) call da_trace_exit("da_check_max_iv_gpspw")

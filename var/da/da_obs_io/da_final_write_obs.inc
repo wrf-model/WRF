@@ -1,17 +1,18 @@
-subroutine da_final_write_obs(iv)
+subroutine da_final_write_obs(it,iv)
 
    !-------------------------------------------------------------------------
    ! Purpose: Writes full diagnostics for O, (O-B) & OMA togather
    !-------------------------------------------------------------------------   
 
    implicit none
-
-   type (iv_type), intent(in)    :: iv      ! O-B structure.
  
+   integer,        intent(in)    :: it
+   type (iv_type), intent(in)    :: iv      ! O-B structure.
    integer                       :: n, k, iunit
    integer                       :: ios  ! Error code from MPI routines.
    integer                       :: num_obs, num_sound_obs
    character(len=filename_len), allocatable     :: filename(:)
+   character(len=filename_len)                  :: file
 
    if (trace_use) call da_trace_entry("da_final_write_obs")
 
@@ -24,13 +25,13 @@ subroutine da_final_write_obs(iv)
       call da_get_unit(iunit)
       allocate (filename(0:num_procs-1))
       do k = 0,num_procs-1
-         write(unit=filename(k),fmt ='(a,i3.3)')'gts_omb_oma.',k
+         write(unit=filename(k),fmt ='(a,i2.2,a,i3.3)')'gts_omb_oma_',it,'.',k
       end do 
       call da_get_unit(omb_unit)
-      open(unit=omb_unit,file='gts_omb_oma',form='formatted', &
-         status='replace', iostat=ios) 
+       write(unit=file,fmt ='(a,i2.2)')'gts_omb_oma_',it
+      open(unit=omb_unit,file=trim(file),form='formatted', status='replace', iostat=ios) 
       if (ios /= 0) call da_error(__FILE__,__LINE__, &
-         (/"Cannot open file gts_omb_oma"/))
+         (/"Cannot open file "//trim(file)/))
    end if
 
    num_obs = 0

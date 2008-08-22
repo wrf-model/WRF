@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
+subroutine da_get_innov_vector_buoy( it,num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD    
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid      ! first guess state.
    type(y_type),     intent(inout) :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -29,8 +30,6 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
 
    real    :: ho, to, qo
 
-   integer :: itu,ituf,itvv,itvvf,itp,itpf,itt,ittf,itqv,itqvf
-   
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_buoy")
 
    allocate (model_u(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
@@ -39,9 +38,6 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
    allocate (model_p(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
    allocate (model_q(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
    allocate (model_hsm(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
-
-   itu   = 0; itvv    = 0; itp  = 0; itt  = 0; itqv  = 0;
-   ituf  = 0; itvvf   = 0; itpf = 0; ittf = 0; itqvf = 0;
 
    if (sfc_assi_options == sfc_assi_options_1) then
       do n=iv%info(buoy)%n1,iv%info(buoy)%n2
@@ -69,7 +65,6 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
             end do
 
             hd = v_h(kts) - iv % buoy(n) % h
-
             if (abs(hd) <= Max_StHeight_Diff .or. anal_type_verify) then
                if (iv % buoy(n) % h < v_h(kts)) then
                   iv%info(buoy)%zk(:,n) = 1.0+1.0e-6
@@ -84,7 +79,7 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
                   ! ob%buoy(n)%u = iv%buoy(n)%u%inv
                   ! ob%buoy(n)%v = iv%buoy(n)%v%inv
 
-                  if ( max_ext_its == 1 ) then
+                  if ( it == 1 ) then
                      ob%buoy(n)%p = iv%buoy(n)%p%inv
                      ob%buoy(n)%t = iv%buoy(n)%t%inv
                      ob%buoy(n)%q = iv%buoy(n)%q%inv
@@ -178,7 +173,6 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
       !-----------------------------------------------------------------------
       ! [3.0] Fast interpolation: 
       !-----------------------------------------------------------------------
-
       if (ob % buoy(n) % u > missing_r .AND. iv % buoy(n) % u % qc >= obs_qc_pointer) then
          iv % buoy(n) % u % inv = iv%buoy(n)%u%inv - model_u(1,n)
       else
@@ -214,21 +208,7 @@ subroutine da_get_innov_vector_buoy( it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !-----------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_buoy(iv, it, itu,ituf,itvv,itvvf,itp,itpf,itt,ittf,itqv,itqvf)
-
-   if (rootproc .and. check_max_iv_print) then
-      write(unit= check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total Rejections for Buoy follows:'
-
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed u-wind observations:     ',ituf, ' on ',itu,   &
-         'Number of failed v-wind observations:     ',itvvf,' on ',itvv,   &
-         'Number of failed pressure observations:   ',itpf, ' on ',itp,   &
-         'Number of failed temperature observations:',ittf, ' on ',itt,   &
-         'Number of failed mixing ratio observations:',itqvf,' on ',itqv, &
-         'Finally Total Buoy rejections ',ituf+itvvf+itpf+ittf+itqvf,' on ',&
-                                            itu +itvv +itp +itt +itqv
-   end if
+   if (check_max_iv) call da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
 
    deallocate (model_u)
    deallocate (model_v)

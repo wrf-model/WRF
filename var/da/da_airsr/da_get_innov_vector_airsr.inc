@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_airsr( it, grid, ob, iv)
+subroutine da_get_innov_vector_airsr( it,num_qcstat_conv, grid, ob, iv)
 
    !----------------------------------------------------------------------
    ! Purpose:   a) Rcomputes innovation vecrot at
@@ -13,6 +13,8 @@ subroutine da_get_innov_vector_airsr( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid       ! first guess state.
    type(y_type),     intent(inout) :: ob       ! Observation structure.
    type(iv_type),    intent(inout) :: iv       ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
+
 
    integer :: n  ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -28,12 +30,7 @@ subroutine da_get_innov_vector_airsr( it, grid, ob, iv)
    real, allocatable :: model_q(:,:)  ! Model value q at ob location.
    real, allocatable :: model_t(:,:)  ! Model value t at ob location.
 
-   integer :: itt,ittf,itqv,itqvf
-   
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_airsr")
-
-   itt  = 0; itqv  = 0;
-   ittf = 0; itqvf = 0;
 
    allocate (model_t(iv%info(airsr)%max_lev,iv%info(airsr)%n1:iv%info(airsr)%n2))
    allocate (model_q(iv%info(airsr)%max_lev,iv%info(airsr)%n1:iv%info(airsr)%n2))
@@ -107,18 +104,8 @@ subroutine da_get_innov_vector_airsr( it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_airsr(iv, it, itt,ittf,itqv,itqvf)
+   if (check_max_iv) call da_check_max_iv_airsr(iv, it, num_qcstat_conv)     
  
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total rejections for airsr follows:'
-
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed temperature observations:',ittf, ' on ',itt,   &
-         'Number of failed mixing ratio observations:',itqvf,' on ',itqv, &
-         'Final total airsr rejections: ',ittf+itqvf,' on ',itt +itqv
-   end if
-
    deallocate (model_t)
    deallocate (model_q)
    

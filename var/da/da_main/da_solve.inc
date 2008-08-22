@@ -1,4 +1,4 @@
-subroutine da_solve ( grid , config_flags)
+  subroutine da_solve ( grid , config_flags)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -135,12 +135,13 @@ subroutine da_solve ( grid , config_flags)
       call da_zero_vp_type (grid%vp)
 
    else
-
-      call da_get_innov_vector (it, ob, iv, grid , config_flags)
+      it = 1
+      num_qcstat_conv=0
+      call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
       call da_allocate_y (iv, re)
-      call da_write_obs(ob, iv, re)
+      call da_write_obs(it, ob, iv, re)
       call da_write_obs_etkf(ob, iv, re)
-      call da_final_write_obs(iv)
+      call da_final_write_obs(it, iv)
       call da_deallocate_y(re)
       call da_deallocate_observations (iv)
       return
@@ -192,7 +193,8 @@ subroutine da_solve ( grid , config_flags)
 
       ! [8.2] Calculate innovation vector (O-B):
 
-      call da_get_innov_vector (it, ob, iv, grid , config_flags)
+      num_qcstat_conv=0
+      call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
 
       if (test_transforms) then
          call da_check (grid, config_flags, cv_size, xbx, be, grid%ep, iv, &
@@ -237,7 +239,7 @@ subroutine da_solve ( grid , config_flags)
 
       ! [8.7] Write out diagnostics
 
-      call da_write_diagnostics (grid, ob, iv, re, y, j)
+      call da_write_diagnostics (it, grid, num_qcstat_conv, ob, iv, re, y, j)
 
       ! Write "clean" QCed observations if requested:
       if (anal_type_qcobs) then

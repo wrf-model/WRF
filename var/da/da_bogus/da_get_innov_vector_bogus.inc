@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_bogus( it, grid, ob, iv)
+subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
 
    !------------------------------------------------------------------------------
    ! Purpose: calculate the innovations for the bogus data.
@@ -10,6 +10,8 @@ subroutine da_get_innov_vector_bogus( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid     ! first guess state.
    type(y_type),     intent(in)    :: ob       ! Observation structure.
    type(iv_type),    intent(inout) :: iv       ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
+
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -26,13 +28,8 @@ subroutine da_get_innov_vector_bogus( it, grid, ob, iv)
    real, allocatable :: model_q(:,:)  ! Model value t at ob location.
    real    :: model_slp                  ! Model value slp at ob location.
 
-   integer :: itu,ituf,itvv,itvvf,itt,ittf,itqv,itqvf,itslp,itslpf
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_bogus")
-
-   itu   = 0; itvv    = 0; itt  = 0; itqv  = 0; itslp  = 0;
-   ituf  = 0; itvvf   = 0; ittf = 0; itqvf = 0; itslpf = 0;
-
 
    allocate (model_u(iv%info(bogus)%max_lev,iv%info(bogus)%n1:iv%info(bogus)%n2))
    allocate (model_v(iv%info(bogus)%max_lev,iv%info(bogus)%n1:iv%info(bogus)%n2))
@@ -155,22 +152,8 @@ subroutine da_get_innov_vector_bogus( it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_bogus(iv, it, itu,ituf,itvv,itvvf,itt,ittf,itqv,itqvf,itslp,itslpf)
+   if (check_max_iv) call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
 
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total Rejections for Bogus follows:'
-
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-        'Number of failed u-wind       observations:     ',ituf,  ' on ',itu,   &
-        'Number of failed v-wind       observations:     ',itvvf, ' on ',itvv,   &
-        'Number of failed temperature  observations:     ',ittf,  ' on ',itt,   &
-        'Number of failed mixing ratio observations:     ',itqvf, ' on ',itqv,   &
-        'Number of failed slp          observations:     ',itslpf,' on ',itslp,   &
-        'Finally Total Bogus rejections ',ituf+itvvf+ittf+itqvf+itslpf,' on ', &
-                                         itu +itvv +itt +itqv +itslp
-   end if
-   
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_bogus")
 
 end subroutine da_get_innov_vector_bogus

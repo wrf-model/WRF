@@ -1,4 +1,4 @@
-subroutine da_check_max_iv_satem(iv, it, ith,ithf)
+subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -8,42 +8,38 @@ subroutine da_check_max_iv_satem(iv, it, ith,ithf)
 
    type(iv_type), intent(inout) :: iv
    integer,       intent(in)    :: it       ! External iteration.
-   integer,       intent(inout) :: ith,ithf
+   integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
 
-   integer  :: k,n
+   integer  :: k,n, ipr
    logical  :: failed
 
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_satem")
 
    !---------------------------------------------------------------------------
-   ! [1.0] Open diagnostic file:
+   ! [1.0] Perform maximum innovation vector check:
    !---------------------------------------------------------------------------
 
-   if (rootproc .and. check_max_iv_print) then
-      write (check_max_iv_unit,'(A)')  &
-         '----------------------------------------------------------------'
-      write (unit = check_max_iv_unit, fmt = '(A,/)') 'MAX ERROR TEST QC:'
-
-      write (unit = check_max_iv_unit, fmt = '(/,9(A,F3.0,/))')  &
-         'Error max test ratio for Satem_thickness   = ',max_error_thickness
-   end if
-
-   !---------------------------------------------------------------------------
-   ! [2.0] Perform maximum innovation vector check:
-   !---------------------------------------------------------------------------
-
-   failed = .false.
    do n = iv%info(satem)%n1,iv%info(satem)%n2
       do k = 1, iv%info(satem)%levels(n)
+         call da_get_print_lvl(iv%satem(n)%p(k),ipr)
+
+         if ( iv%satem(n)%thickness(k)%qc == fails_error_max ) iv%satem(n)%thickness(k)%qc =0
+         if ( iv%satem(n)%thickness(k)%qc >= obs_qc_pointer ) then
          ! Thickness
-         call da_max_error_qc(it, iv%info(satem), n, iv%satem(n)%thickness(k), &
-            max_error_thickness, ith, ithf, check_max_iv_unit, &
-            'Thickness    ', failed, check_max_iv_print)
+            call da_max_error_qc(it, iv%info(satem), n, iv%satem(n)%thickness(k),& 
+                                 max_error_thickness, failed)
+            if( iv%info(satem)%proc_domain(k,n) ) then
+            num_qcstat_conv(1,satem,9,ipr-1) = num_qcstat_conv(1,satem,9,ipr-1) + 1
+            if (failed) then
+               num_qcstat_conv(2,satem,9,ipr-1) = num_qcstat_conv(2,satem,9,ipr-1) + 1
+               write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                     'satem',ob_vars(9),iv%info(satem)%lat(k,n),iv%info(satem)%lon(k,n),0.01*iv%satem(n)%p(k)
+            end if
+            end if
+         end if
       end do
    end do
 
    if (trace_use_dull) call da_trace_exit("da_check_max_iv_satem")
 
 end subroutine da_check_max_iv_satem
-
-

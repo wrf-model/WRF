@@ -243,6 +243,7 @@ export NL_NTMAX=${NL_NTMAX:-100}         # Maximum number of inner loop iteratio
 export NL_CHECK_RH=${NL_CHECK_RH:-2}     # RH bounds check.
 export NL_JCDFI_USE=${NL_JCDFI_USE:-false} # Turn off JcDF option
 export NL_JCDFI_IO=${NL_JCDFI_IO:-false} # Turn off JcDF IO
+export OUTER_LOOP=${OUTER_ITER:-1}       # OUter loop number
 
 # From Update_BC:
 export PHASE=${PHASE:-false}     # Indicate which phase update_bc is.

@@ -698,6 +698,21 @@ else
       cp statistics $RUN_DIR
    fi
 
+   for INDEX in 01 02 03 04 05 06 07 08 09 10; do
+      if [[ -f rej_obs_conv_$INDEX.000 ]]; then
+         cat rej_obs_conv_$INDEX.* > rej_obs_conv_$INDEX
+      fi
+     cp rej_obs_conv_$INDEX $RUN_DIR
+
+     if [[ -f qcstat_conv_$INDEX ]]; then
+     cp qcstat_conv_$INDEX $RUN_DIR
+     fi
+
+     if [[ -f gts_omb_oma_$INDEX ]]; then
+     cp gts_omb_oma_$INDEX $RUN_DIR
+     fi
+   done 
+
    if [[ -f cost_fn ]]; then 
       cp cost_fn $RUN_DIR
    fi

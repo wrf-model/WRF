@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_satem(grid, it, ob, iv)
+subroutine da_get_innov_vector_satem(it, num_qcstat_conv,grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -15,6 +15,8 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
    integer,       intent(in)    :: it       ! External iteration.
    type(y_type),  intent(in)    :: ob       ! Observation structure.
    type(iv_type), intent(inout) :: iv       ! O-B structure.
+   integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
+
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -22,7 +24,6 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
    real    :: dx, dxm  ! Interpolation weights.
    real    :: dy, dym  ! Interpolation weights.
    real    :: model_thickness(1:max_ob_levels) !Model thickness at ob loc
-   integer :: ithickness,ithicknessf
 
    real    :: pre_ma(kts-1:kte+1)
    real    :: tv_ma(kts-1:kte+1)
@@ -30,8 +31,6 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
    real    :: tv1,tv2,pres2
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_satem")
-
-   ithickness = 0 ; ithicknessf = 0
 
    do n=iv%info(satem)%n1,iv%info(satem)%n2
       num_levs = iv%info(satem)%levels(n)
@@ -104,9 +103,7 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) then
-      call da_check_max_iv_satem(iv, it, ithickness,ithicknessf)
-   end if
+   if (check_max_iv) call da_check_max_iv_satem(iv, it, num_qcstat_conv)        
 
    !------------------------------------------------------------------------
    ! [6.0] Perform land/ocean check
@@ -118,18 +115,9 @@ subroutine da_get_innov_vector_satem(grid, it, ob, iv)
       if (grid%xb%landmask(i,j ) /= 0.0 .or. grid%xb%landmask(i+1,j ) /= 0. .or.  &
           grid%xb%landmask(i,j+1) /= 0.0 .or. grid%xb%landmask(i+1,j+1) /= 0.0) then
          iv % satem(n) % thickness(1) % inv = 0.0
-         ithicknessf = ithicknessf + 1
       end if
    end do
 
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-         ', Total Rejections for Satem follows:'
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed thicknesses observations:     ',&
-         ithicknessf, ' on ',ithickness
-   end if
-   
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_satem")
 
 end subroutine da_get_innov_vector_satem

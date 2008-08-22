@@ -14,8 +14,8 @@ module da_ssmi
       max_error_rh,max_error_tb, max_error_pw, trace_use_dull, &
       test_transforms,stdout, use_ssmiretrievalobs, use_ssmitbobs, &
       global, print_detail_obs, max_ssmi_rv_input, max_ssmi_tb_input, &
-      its,ite,jts,jte,kts,kte,kms,kme,ids,ide,jds,jde, &
-      ssmi_tb, ssmi_rv, num_ob_indexes, ssmt1, ssmt2
+      its,ite,jts,jte,kts,kte,kms,kme,ids,ide,jds,jde,fails_error_max, &
+      ssmi_tb, ssmi_rv, num_ob_indexes, ssmt1, ssmt2, ob_vars,qcstat_conv_unit
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       maxmin_type,residual_ssmi_rv_type, &
@@ -27,7 +27,7 @@ module da_ssmi
    use da_par_util1, only : da_proc_sum_int
    use da_reporting, only : da_warning, message, da_error
    use da_statistics, only : da_stats_calculate
-   use da_tools, only : da_max_error_qc, da_residual, da_llxy, da_convert_zk
+   use da_tools, only : da_max_error_qc, da_residual, da_llxy, da_convert_zk,da_get_print_lvl
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit
 

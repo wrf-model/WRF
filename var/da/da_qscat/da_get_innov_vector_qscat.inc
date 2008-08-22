@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_qscat (it, grid, ob, iv)
+subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_qscat (it, grid, ob, iv)
    type(domain),     intent(in)    :: grid    ! first guess state.
    type(y_type),     intent(inout) :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -21,11 +22,7 @@ subroutine da_get_innov_vector_qscat (it, grid, ob, iv)
 
    real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
 
-   integer  :: itu, itvv, ituf, itvvf
-   
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_qscat")
-
-   itu = 0 ; itvv = 0 ;  ituf = 0 ; itvvf = 0
 
    allocate (model_u(iv%info(qscat)%max_lev,iv%info(qscat)%n1:iv%info(qscat)%n2))
    allocate (model_v(iv%info(qscat)%max_lev,iv%info(qscat)%n1:iv%info(qscat)%n2))
@@ -92,16 +89,8 @@ subroutine da_get_innov_vector_qscat (it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_qscat(iv, it, itu, itvv, ituf,itvvf)
+   if (check_max_iv) call da_check_max_iv_qscat(iv, it, num_qcstat_conv)       
 
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it,&
-         ', Total Rejections for qscat follows:'
-      write(unit = check_max_iv_unit, fmt = '(/,4(2(A,I6),/))') &
-         'Number of failed u-wind observations:     ',ituf, ' on ',itu,   &
-         'Number of failed v-wind observations:     ',itvvf,' on ',itvv
-   end if 
-   
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_qscat")
 
 end subroutine da_get_innov_vector_qscat

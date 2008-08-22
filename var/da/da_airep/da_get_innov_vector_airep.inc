@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_airep( it, grid, ob, iv)
+subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD   
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_airep( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid     ! first guess state.
    type(y_type),     intent(inout) :: ob       ! Observation structure.
    type(iv_type),    intent(inout) :: iv       ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
 
    integer :: n                         ! Loop counter.
    integer :: i  (kms:kme)
@@ -27,12 +28,7 @@ subroutine da_get_innov_vector_airep( it, grid, ob, iv)
    real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
 
-   integer :: itu,ituf,itvv,itvvf,itt,ittf
-
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_airep")
-
-   itu   = 0; itvv    = 0; itt  = 0;
-   ituf  = 0; itvvf   = 0; ittf = 0;
 
    allocate (model_u(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (model_v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
@@ -134,20 +130,8 @@ subroutine da_get_innov_vector_airep( it, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !-------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_airep (iv, it,itu,ituf,itvv,itvvf,itt,ittf)
+   if (check_max_iv) call da_check_max_iv_airep (iv, it,num_qcstat_conv)
    
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)') &
-         'For outer iteration ',it, &
-         ', Total Rejections for Airep follows:'
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed u-wind observations:     ',ituf, ' on ',itu,   &
-         'Number of failed v-wind observations:     ',itvvf,' on ',itvv,   &
-         'Number of failed temperature observations:',ittf, ' on ',itt,   &
-         'Finally Total Airep rejections ',ituf+itvvf+ittf,' on ', &
-         itu +itvv +itt
-   end if
-
    deallocate (model_u)
    deallocate (model_v)
    deallocate (model_t)

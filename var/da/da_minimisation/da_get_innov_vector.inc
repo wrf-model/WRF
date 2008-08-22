@@ -1,4 +1,5 @@
-subroutine da_get_innov_vector (it, ob, iv, grid, config_flags)
+subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
+
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -7,6 +8,7 @@ subroutine da_get_innov_vector (it, ob, iv, grid, config_flags)
    implicit none
 
    integer,                    intent(in)    :: it
+   integer,                    intent(inout) :: num_qcstat_conv(:,:,:,:)
    type(y_type),               intent(inout) :: ob ! Observations.
    type(iv_type),              intent(inout) :: iv ! Innovation vector(O-B).
    type(domain),               intent(inout) :: grid
@@ -16,11 +18,26 @@ subroutine da_get_innov_vector (it, ob, iv, grid, config_flags)
 
    character(len=120) :: filename
 
-   integer            :: n
+   integer            :: n, ios
 
    if (trace_use) call da_trace_entry("da_get_innov_vector") 
 
    call da_message((/"Calculate innovation vector(iv)"/))
+   call da_get_unit(qcstat_conv_unit)
+
+#ifdef DM_PARALLEL
+    write(unit=filename, fmt='(a,i2.2,a,i3.3)') 'rej_obs_conv_',it,'.', myproc
+#else
+    write(unit=filename, fmt='(a,i2.2,a)') 'rej_obs_conv_',it,'.000'
+#endif
+
+   open (unit=qcstat_conv_unit,file=trim(filename),form='formatted',status='replace', &
+      iostat=ios)
+   if (ios /= 0) then
+      call da_error(__FILE__,__LINE__, &
+         (/"Cannot open qc observation file"//trim(filename)/))
+   end if
+
 
    iv%ptop = grid%xb%ptop
 
@@ -40,40 +57,61 @@ subroutine da_get_innov_vector (it, ob, iv, grid, config_flags)
 
       ! Radiosonde:
       if (iv%info(sound)%nlocal > 0) then
-         call da_get_innov_vector_sound     (it, grid, ob, iv)
-         call da_get_innov_vector_sonde_sfc (it, grid, ob, iv)
+         call da_get_innov_vector_sound     (it, num_qcstat_conv, grid, ob, iv)
+         call da_get_innov_vector_sonde_sfc (it, num_qcstat_conv, grid, ob, iv)
       end if
-      if (iv%info(mtgirs)%nlocal         > 0) call da_get_innov_vector_mtgirs   (it, grid, ob, iv)
-      if (iv%info(synop)%nlocal          > 0) call da_get_innov_vector_synop    (it, grid, ob, iv)
-      if (iv%info(geoamv)%nlocal         > 0) call da_get_innov_vector_geoamv   (it, grid, ob, iv)
-      if (iv%info(polaramv)%nlocal       > 0) call da_get_innov_vector_polaramv (it, grid, ob, iv)
-      if (iv%info(airep)%nlocal          > 0) call da_get_innov_vector_airep    (it, grid, ob, iv)
-      if (iv%info(pilot)%nlocal          > 0) call da_get_innov_vector_pilot    (it, grid, ob, iv)
-      if (iv%info(bogus)%nlocal          > 0) call da_get_innov_vector_bogus    (it, grid, ob, iv)
-      if (iv%info(metar)%nlocal          > 0) call da_get_innov_vector_metar    (it, grid, ob, iv)
-      if (iv%info(ships)%nlocal          > 0) call da_get_innov_vector_ships    (it, grid, ob, iv)
-      if ((use_gpspwObs .and. iv%info(gpspw)%nlocal > 0) .or. &
+      if (iv%info(mtgirs)%nlocal    > 0) &
+         call da_get_innov_vector_mtgirs    (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(synop)%nlocal     > 0) &
+         call da_get_innov_vector_synop     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(geoamv)%nlocal    > 0) &
+         call da_get_innov_vector_geoamv    (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(polaramv)%nlocal  > 0) &
+         call da_get_innov_vector_polaramv  (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(airep)%nlocal     > 0) &
+         call da_get_innov_vector_airep     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(pilot)%nlocal> 0) &
+         call da_get_innov_vector_pilot     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(bogus)%nlocal > 0) &
+         call da_get_innov_vector_bogus     (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(metar)%nlocal > 0) &
+         call da_get_innov_vector_metar     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(ships)%nlocal     > 0) &
+         call da_get_innov_vector_ships     (it, num_qcstat_conv,grid, ob, iv)
+      if ( (use_gpspwObs .and. iv%info(gpspw)%nlocal > 0) .or. &
            (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) ) then
-            call da_get_innov_vector_gpspw    (it, grid, ob, iv)
-      else if ((use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0) .or. &
+         call da_get_innov_vector_gpspw     (it, num_qcstat_conv,grid, ob, iv)
+      else if ( (use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0) .or. &
                (pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) ) then
-               call da_get_innov_vector_gpsztd( it, grid, ob, iv )
-      endif
-      if (iv%info(gpsref)%nlocal         > 0) call da_get_innov_vector_gpsref   (it, grid, ob, iv)
-      if (iv%info(ssmi_tb)%nlocal        > 0) call da_get_innov_vector_ssmi_tb  (it, grid, ob, iv) 
-      if (iv%info(ssmi_rv)%nlocal        > 0) call da_get_innov_vector_ssmi_rv  (it, grid, ob, iv)
-      if (iv%info(ssmt2)%nlocal          > 0) call da_get_innov_vector_ssmt1    (it, grid, ob, iv)
-      if (iv%info(ssmt2)%nlocal          > 0) call da_get_innov_vector_ssmt2    (it, grid, ob, iv)
-      if (iv%info(satem)%nlocal          > 0) call da_get_innov_vector_satem    (grid, it, ob, iv)
-      if (iv%info(radar)%nlocal          > 0) call da_get_innov_vector_radar    (it, grid, ob, iv)
-      if (iv%info(qscat)%nlocal          > 0) call da_get_innov_vector_qscat    (it, grid, ob, iv)
-      if (iv%info(profiler)%nlocal       > 0) call da_get_innov_vector_profiler (it, grid, ob, iv)
-      if (iv%info(buoy)%nlocal           > 0) call da_get_innov_vector_buoy     (it, grid, ob, iv)
+         call da_get_innov_vector_gpsztd    ( it, num_qcstat_conv, grid, ob, iv )
+      end if
+      if (iv%info(gpsref)%nlocal    > 0) &
+         call da_get_innov_vector_gpsref    (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(ssmi_tb)%nlocal   > 0) &
+         call da_get_innov_vector_ssmi_tb   (it, grid, ob, iv)
+      if (iv%info(ssmi_rv)%nlocal   > 0) &
+         call da_get_innov_vector_ssmi_rv   (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(ssmt1)%nlocal     > 0) &
+         call da_get_innov_vector_ssmt1     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(ssmt2)%nlocal     > 0) &
+         call da_get_innov_vector_ssmt2     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(satem)%nlocal     > 0) &
+         call da_get_innov_vector_satem     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(radar)%nlocal     > 0) &
+         call da_get_innov_vector_radar     (it, grid, ob, iv)
+      if (iv%info(qscat)%nlocal     > 0) &
+         call da_get_innov_vector_qscat     (it, num_qcstat_conv,grid, ob, iv)
+      if (iv%info(profiler)%nlocal  > 0) &
+         call da_get_innov_vector_profiler  (it,num_qcstat_conv, grid, ob, iv)
+      if (iv%info(buoy)%nlocal      > 0) &
+         call da_get_innov_vector_buoy      (it,num_qcstat_conv, grid, ob, iv)
+
 #if defined(CRTM) || defined(RTTOV)
       if (use_rad                           ) call da_get_innov_vector_radiance (it, grid, ob, iv)
 #endif
       if (iv%info(pseudo)%nlocal         > 0) call da_get_innov_vector_pseudo   (grid, ob, iv)
-      if (iv%info(airsr)%nlocal          > 0) call da_get_innov_vector_airsr    (it, grid, ob, iv)
+      if (iv%info(airsr)%nlocal     > 0) &
+      call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
 
    !----------------------------------------------
    ! [5]  write out iv in ascii format

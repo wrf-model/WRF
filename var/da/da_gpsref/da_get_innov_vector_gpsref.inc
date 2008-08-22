@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_gpsref( it, grid, ob, iv)
+subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -10,6 +10,7 @@ subroutine da_get_innov_vector_gpsref( it, grid, ob, iv)
    type(domain),     intent(in)    :: grid     ! first guess state.
    type(y_type),     intent(inout) :: ob       ! Observation structure.
    type(iv_type),    intent(inout) :: iv       ! O-B structure.
+   integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)       
 
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
@@ -18,8 +19,6 @@ subroutine da_get_innov_vector_gpsref( it, grid, ob, iv)
    real,allocatable :: model_ref(:,:) !Model gpsref at ob loc
    real    :: v_h(kms:kme)     ! Model value h at ob
                                                ! hor. location.
-   integer :: pref, fref
-
    ! For quality control
 
    real   , parameter :: h_1 = 7000.0, h_2 = 25000.0
@@ -105,7 +104,6 @@ subroutine da_get_innov_vector_gpsref( it, grid, ob, iv)
    if (iv%info(gpsref)%nlocal < 1) return
 
    ntotal = 0
-   pref = 0 ; fref = 0
 
    allocate (model_ref(iv%info(gpsref)%max_lev,iv%info(gpsref)%n1:iv%info(gpsref)%n2))
 
@@ -161,9 +159,6 @@ subroutine da_get_innov_vector_gpsref( it, grid, ob, iv)
       end if
    end do
 
-   ! Quality check 1: Gross error(departure from the background) check 
-
-   if (check_max_iv) call da_check_max_iv_gpsref(iv, it, pref, fref)
 
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
       ! Quality check 2: Error percentage check.
@@ -246,19 +241,12 @@ subroutine da_get_innov_vector_gpsref( it, grid, ob, iv)
       end if
    end if  ! end of if verify check
 
-   if (rootproc .and. check_max_iv_print) then
-      write(unit = check_max_iv_unit, fmt ='(A,i5,A)') &
-         'For outer iteration ',it, &
-        ', Total Rejections for GPSRef follows:'
-      write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-         'Number of failed GPSRef observations:', &
-         fref, ' on ',pref
-   end if
+!   ! Quality check 1: Gross error(departure from the background) check 
+
+   if (check_max_iv) call da_check_max_iv_gpsref(iv, it, num_qcstat_conv)
 
    deallocate (model_ref)
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsref")
 
 end subroutine da_get_innov_vector_gpsref
-
-

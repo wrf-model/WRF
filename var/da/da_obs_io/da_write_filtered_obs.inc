@@ -1008,6 +1008,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
             call da_ffdduv(speed, dir, uu, vv, iv%info(qscat)%lon(1,n), &
                convert_uv2fd)                        
             speed_error = iv%qscat(n)%u%error
+            speed_qc  = iv%qscat(n)%u%qc
+            dir_qc    = speed_qc
          else
             speed = missing_r
             dir   = missing_r
@@ -1018,8 +1020,8 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
 
          write(ounit, fmt = trim (fmt_each))          &
             iv%qscat(n)%h,iv%qscat(n)%u%qc,slp_error, &  
-            speed,iv%qscat(n)%u%qc,speed_error,       &
-            dir  ,iv%qscat(n)%u%qc,dir_error,         &
+            speed,speed_qc,        speed_error,       &
+            dir  ,dir_qc          ,dir_error,         &
             iv%info(qscat)%elv(n), zero, elv_error,    &
             missing_r, missing_data, xmiss,           & 
             missing_r, missing_data, xmiss,           & 

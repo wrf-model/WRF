@@ -24,20 +24,33 @@ infringement actions.
 This is the main directory for the WRF-Var Version 3 source code release.
 ======================================
 
+V3.0.1.1 Release Notes:
+-----------------------
+
+Version 3.0.1.1 has only limited bug fixes compared to version 3.0.1.
+
+- Improve compiling mechanism
+- Bug fix for analysis_type="VERIFY"
+- Bug fix for pseudo obs (spurious moisture increments)
+- Bug fix for incorrect sonde_sfc number in diagnostic output file jo.
+
 V3 Release Notes:
 ------------------
 
-- For directions on compiling WRF-Var, see below or Users Web page.
-- For more information on WRF-Var  release, visit WRF-Var Users home page
-  http://www.wrf-model.org/development/group/WG4
+- For directions on compiling WRF-Var, see below or Users Guide Web page.
+  http://www.mmm.ucar.edu/wrf/users/docs/user_guide_V3/users_guide_chap6.htm
+
+- For more information on WRF-Var  release, visit WRF Users home page
+  http://www.mmm.ucar.edu/wrf/users
 
 For questions, send mail to wrfhelp@ucar.edu
 
 ======================================
 
-WRF update history:
+WRF-Var update history:
 
-- V3.0: Apr 4, 2008
+- V3.0:   Apr 4, 2008
+- V3.0.1: Aug 6, 2008
 
 ======================================
 
@@ -47,10 +60,9 @@ How to compile and run?
 - In WRFDA directory, type 'configure wrfda - this will create a configure.wrf
   file that has appropriate compile options for the supported computers.
 
-  Note: WRF-Var requires netCDF, BLAS, LAPACK, BUFR libraries. If your WRF-Var package include 
-        radiance assimilation capability, the CRTM and RTTOV are needed. 
-        If your netCDF library is installed in some odd directory
-        , set environment variable NETCDF before you type
+  Note: WRF-Var requires netCDF, BLAS, LAPACK, BUFR libraries.
+        If your netCDF library is installed in some odd directory, 
+        set environment variable NETCDF before you type
         'configure wrfda'. For example, 
 
         setenv NETCDF /usr/local/netcdf-pgi
@@ -58,14 +70,36 @@ How to compile and run?
         setenv LAPACK /usr/local/lapack
         setenv BUFR /usr/local/bufr
 
-        setenv CRTM /usr/local/lapack
-        setenv RTTOV /usr/local/bufr
-
 - Type 'compile all_wrfvar' when your ae ready:
 
 - If sucessful, this will create da_wrfvar.exe and a set of utilities
-  in directory var/da/. 
+  in directory WRFDA/var/da/. 
 
+- cd to the appropriate test or run directory to run WRF-Var.
+  See WRFDA/var/test/README for basic instructions on running da_wrfvar.exe
 
 ======================================
+
+What is new in WRFDA V3.0?
+
+- Major software engineering reorganization.
+- Unified WRF/WRF-Var code repository.
+- Unified WRF/WRF-Var namelist
+- Remove obsolete features (e.g. MM5/GFS-based background errors).
+
+======================================
+
+What is new in WRFDA V3.0 but NOT supported due to current resource limit?
+
+- Verification package
+- Utilization of observations packed in NCEP PREPBUFR format   
+- Inclusion of various scripts and NCL based graphics
+
+======================================
+
+What is NOT in WRFDA V3.0?
+
+- satellite radiance data assimilation (hopefully available in the next release)
+- ensemble and hybrid data assimilation
+- 4D-VAR
 

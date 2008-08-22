@@ -308,7 +308,8 @@ subroutine da_transfer_xatowrf(grid)
             grid%w_2(i,j,k) = grid%w_2(i,j,k) + grid%xa%w(i,j,k)
             grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
             ! makte sure qv its positive.
-            if (grid%moist(i,j,k,P_QV) < 1.0e-6) grid%moist(i,j,k,P_QV) = 1.0e-6
+            if (num_pseudo == 0 .and. grid%moist(i,j,k,P_QV) < 1.0e-6) &
+                grid%moist(i,j,k,P_QV) = 1.0e-6
 
             if (size(grid%moist,dim=4) >= 4) then
                grid%moist(i,j,k,p_qc) = grid%moist(i,j,k,p_qc) + grid%xa%qcw(i,j,k)

@@ -126,6 +126,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_obsgts           = .true.
       use_rad              = .false.
       use_airsretobs       = .false.
+      ob_format = 2
    end if
 
    if ( use_pseudo_rad ) then

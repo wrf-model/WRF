@@ -30,7 +30,7 @@ module da_transfer_model
       use_gpsztdobs, use_ssmitbobs, dt_cloud_model, cp, use_ssmiretrievalobs,ids,ide, &
       jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
-      t_kelvin, num_fgat_time
+      t_kelvin, num_fgat_time, num_pseudo
    use da_define_structures, only : xbx_type
    use da_grid_definitions, only : da_set_map_para
    use da_par_util, only : da_patch_to_global

@@ -66,7 +66,7 @@ subroutine da_ao_stats_sonde_sfc (stats_unit, iv, re)
    call da_proc_sum_int (nt)
    call da_proc_sum_int (np)
    call da_proc_sum_int (nq)
-   iv%nstats(sound) = iv%nstats(sound) + nu + nv + nt + np + nq
+   iv%nstats(sonde_sfc) = nu + nv + nt + np + nq
 
    call da_proc_stats_combine(stats%average%u, stats%rms_err%u, &
       stats%minimum%u%value, stats%maximum%u%value, &

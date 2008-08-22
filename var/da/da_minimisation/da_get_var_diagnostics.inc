@@ -284,7 +284,7 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % sound_t, iv % sound_ef_t, &
                                j % jo % sound_q, iv % sound_ef_q, 0.0, 1.0 
          write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'    sonde obs, Jo(actual)  = ', &
-                               iv%info(sound)%ntotal, iv%nstats(sound), &
+                               iv%info(sonde_sfc)%ntotal, iv%nstats(sonde_sfc), &
                                j % jo % sonde_sfc_u, iv % synop_ef_u, &
                                j % jo % sonde_sfc_v, iv % synop_ef_v, &
                                j % jo % sonde_sfc_t, iv % synop_ef_t, &

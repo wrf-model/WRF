@@ -225,6 +225,13 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
+if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
+{
+  @platforms = qw ( serial dmpar ) ;
+} else {
+  @platforms = qw ( serial smpar dmpar dm+sm ) ;
+}
+
 # Display the choices to the user and get selection
 until ( $validresponse ) {
   printf "------------------------------------------------------------------------\n" ;
@@ -235,7 +242,7 @@ until ( $validresponse ) {
       or die "Cannot open ./arch/configure_new.defaults for reading" ;
   while ( <CONFIGURE_DEFAULTS> )
   {
-    for $paropt ( 'serial','smpar','dmpar','dm+sm' )
+    for $paropt ( @platforms )
     {
       if ( substr( $_, 0, 5 ) eq "#ARCH"
           && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
@@ -406,7 +413,7 @@ while ( <CONFIGURE_DEFAULTS> )
 # 2 = nesting with prescribed moves  (add -DMOVE_NESTS to ARCHFLAGS)
 # 3 = nesting with prescribed moves  (add -DMOVE_NESTS and -DVORTEX_CENTER to ARCHFLAGS) 
 
-  for $paropt ( 'serial','smpar','dmpar','dm+sm' )
+  for $paropt ( @platforms )
   {
     if ( substr( $_, 0, 5 ) eq "#ARCH" && $latchon == 0 
           && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
@@ -432,7 +439,11 @@ while ( <CONFIGURE_DEFAULTS> )
           } else {
             printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
           }
-          $response = <STDIN> ;
+          if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" ) {
+             $response = 1 ;
+          } else {
+             $response = <STDIN> ;
+          } 
           printf "\n" ;
           lc $response ;
           chop $response ;

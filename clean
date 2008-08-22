@@ -23,6 +23,7 @@ endif
 if ( "$1" == '-a' ) then
   if ( -d var ) then
     ( cd var ; make superclean )
+    ( cd var/da ; make superclean )
   endif
   if ( -f configure.wrf ) then
     /bin/cp configure.wrf configure.wrf.backup

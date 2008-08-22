@@ -29,13 +29,22 @@ gen_be : 	gen_be_ensrf.exe	\
 
 MODULE_DIRS = $(INCLUDE_MODULES)
 
+LIB     = \
+                     -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
+                     -L$(WRF_SRC_ROOT_DIR)/external/io_grib1 -lio_grib1 \
+                     -L$(WRF_SRC_ROOT_DIR)/external/io_grib_share -lio_grib_share \
+                     -L$(WRF_SRC_ROOT_DIR)/external/io_int -lwrfio_int \
+                     $(ESMF_IO_LIB) \
+                     $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a \
+                     $(LIB_EXTERNAL) $(LIB_LOCAL)
+
 GEN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
 GEN_BE_LIB = $(LIB) -L$(LAPACK) -llapack -L$(BLAS) -lblas 
 
 
 GEN_BE_OBJS = $(DA)/da_etkf.o $(DA)/da_gen_be.o $(DA)/da_control.o $(DA)/da_be_spectral.o \
-  $(WRF_SRC_ROOT_DIR)/frame/module_wrf_error.o $(DA)/da_reporting.o $(DA)/module_ffts.o \
-  $(WRF_SRC_ROOT_DIR)/frame/module_driver_constants.o $(DA)/da_memory.o $(DA)/da_tools_serial.o
+  $(DA)/module_wrf_error.o $(DA)/da_reporting.o $(DA)/module_ffts.o \
+  $(DA)/module_driver_constants.o $(DA)/da_memory.o $(DA)/da_tools_serial.o
 
 gen_be_stage0_wrf.exe : gen_be_stage0_wrf.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_stage0_wrf.f90 > gen_be_stage0_wrf.f

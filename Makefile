@@ -68,26 +68,10 @@ wrf : framework_only
 # The "da" target is a subset of the "be" target, so all_wrfvar need only build "be"
 all_wrfvar : be
 
-da :
-	/bin/rm -f main/libwrflib.a
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" REGISTRY="Registry" framework
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" shared
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" physics
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" em_core
-	( cd var/da; make -r da )
-
 be : 
-	/bin/rm -f main/libwrflib.a
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" REGISTRY="Registry" framework
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" shared
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" physics
-	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" em_core
-	( cd var/da; $(MAKE) da )
-	( cd var/gen_be; $(MAKE) gen_be )
+	( cd var/da; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
 
 ### 3.a.  rules to build the framework and then the experimental core
 

@@ -32,7 +32,7 @@ SUBROUTINE kma2netcdf_interface ( grid, config_flags)
 
    call kma2netcdf_solver( grid, config_flags  &
 
-#include "em_actual_args.inc"
+#include "actual_args.inc"
 
                )
 
@@ -40,7 +40,7 @@ end SUBROUTINE kma2netcdf_interface
 
 
 SUBROUTINE kma2netcdf_solver( grid, config_flags &
-#include "em_dummy_args.inc"
+#include "dummy_args.inc"
                  )
 
 !  IMPLICIT NONE   !shc-wei
@@ -50,7 +50,7 @@ SUBROUTINE kma2netcdf_solver( grid, config_flags &
    TYPE(domain), TARGET               :: grid
 !  Definitions of dummy arguments to solve
 
-#include "em_dummy_decl.inc"
+#include "dummy_decl.inc"
 !    INCLUDE 'mpif.h'
     real, allocatable      :: q(:,:,:) 
     Integer                :: my_proc_id, ierr 

@@ -1,0 +1,6 @@
+#!/bin/ksh
+export CC=cc
+./configure
+make clean
+make
+rm *.o

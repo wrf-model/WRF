@@ -671,7 +671,6 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 #ifdef DM_PARALLEL
 #include "HALO_XB.inc"
 #endif
-#endif
 
    ! Calculate time step from one dimensional cloud model parameterization
 

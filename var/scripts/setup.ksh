@@ -84,9 +84,6 @@ fi
 if test -d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}; then
    export BUFR=${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
 fi
-if test -d ${EXT_DIR}/makedepf90/makedepf90-2.8.8/${COMPILER}_${PROCESSOR}; then
-   export MAKEDEPF90=${EXT_DIR}/makedepf90/makedepf90-2.8.8/${COMPILER}_${PROCESSOR}
-fi
 if test -d ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}; then
    export ZLIB=${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}
 fi
@@ -129,7 +126,6 @@ if test $MACHINE = "lightning"; then
 fi
 
 export LINUX_MPIHOME=$MPIHOME
-export PATH=$MPIHOME/bin:$MAKEDEPF90:$PATH
 export MANPATH=$MPIHOME/man:$MANPATH
 
 echo "PROCESSOR       " $PROCESSOR
@@ -142,7 +138,6 @@ echo "BLAS            " $BLAS
 echo "LAPACK          " $LAPACK
 echo "FFTPACK         " $FFTPACK
 echo "BUFR            " $BUFR
-echo "MAKEDEPF90      " $MAKEDEPF90
 echo "ZLIB            " $ZLIB        
 echo "JPEG            " $JPEG        
 echo "HDF4            " $HDF4        

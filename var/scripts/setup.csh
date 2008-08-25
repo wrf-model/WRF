@@ -107,9 +107,6 @@ endif
 if (-d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}) then
    setenv BUFR ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
 endif
-if (-d ${EXT_DIR}/makedepf90/makedepf90-2.8.8/${COMPILER}_${PROCESSOR}) then
-   setenv MAKEDEPF90 ${EXT_DIR}/makedepf90/makedepf90-2.8.8/${COMPILER}_${PROCESSOR}
-endif
 if (-d ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}) then
    setenv ZLIB ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}
 endif
@@ -154,9 +151,6 @@ endif
 setenv LINUX_MPIHOME $MPIHOME
 setenv PATH $MPIHOME/bin:$PATH
 
-if ($?MAKEDEPF90) then
-   setenv PATH $MPIHOME/bin\:$MAKEDEPF90\:$PATH
-endif
 
 echo
 if ($?PROCESSOR) then
@@ -188,9 +182,6 @@ if ($?FFTPACK) then
 endif
 if ($?BUFR) then
    echo "BUFR            " $BUFR
-endif
-if ($?MAKEDEPF90) then
-   echo "MAKEDEPF90      " $MAKEDEPF90
 endif
 if ($?ZLIB) then
    echo "ZLIB            " $ZLIB

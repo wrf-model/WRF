@@ -214,7 +214,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
 !             AT THE GRID POINT
 
 ! NOTE: ONLY USED FOR PREDICTED DROPLET CONCENTRATION (INUM = 0)
-
+ 
       IBASE = 2
 
 ! INCLUDE SUB-GRID VERTICAL VELOCITY (standard deviation of w) IN DROPLET ACTIVATION
@@ -942,7 +942,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       REAL FALTNDC,FALTNDNC
       REAL, DIMENSION(KTS:KTE) ::   FNC,DUMFNR,FALOUTNR
       REAL FALTNDNR
-      REAL, DIMENSION(KTS:KTE) ::   FNR(KMS:KME)
+      REAL, DIMENSION(KTS:KTE) ::   FNR
 
 ! FALL-SPEED PARAMETER 'A' WITH AIR DENSITY CORRECTION
 
@@ -1567,7 +1567,8 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                     F2S*(ASN(K)*RHO(K)/MU(K))**0.5*                      &
                     SC(K)**(1./3.)*CONS10/                   &
                (LAMS(K)**CONS35))
-        EVPMS(K) = 2.*PI*N0S(K)*(QV3D(K)-QVS(K))*EPSS/AB(K)    
+! hm fix 8/4/08
+        EVPMS(K) = (QV3D(K)-QVS(K))*EPSS/AB(K)    
         EVPMS(K) = MAX(EVPMS(K),PSMLT(K))
         PSMLT(K) = PSMLT(K)-EVPMS(K)
       END IF
@@ -1595,7 +1596,8 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                     F2S*(AGN(K)*RHO(K)/MU(K))**0.5*                      &
                     SC(K)**(1./3.)*CONS11/                   &
                (LAMG(K)**CONS36))
-        EVPMG(K) = 2.*PI*N0G(K)*(QV3D(K)-QVS(K))*EPSG/AB(K)
+! hm fix 8/4/08
+        EVPMG(K) = (QV3D(K)-QVS(K))*EPSG/AB(K)
         EVPMG(K) = MAX(EVPMG(K),PGMLT(K))
         PGMLT(K) = PGMLT(K)-EVPMG(K)
       END IF
@@ -2242,7 +2244,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! TO LIMIT RIME-SPLINTERING IN STRATIFORM CLOUDS
 ! THESE THRESHOLDS CORRESPOND WITH GRAUPEL THRESHOLDS IN RH 1984
 
-         IF (QNI3D(K).GE.0.1E-3.AND.QC3D(K).GE.0.5E-3) THEN
+!v1.4
+         IF (QNI3D(K).GE.0.1E-3) THEN
+         IF (QC3D(K).GE.0.5E-3.OR.QR3D(K).GE.0.1E-3) THEN
          IF (PSACWS(K).GT.0..OR.PRACS(K).GT.0.) THEN
             IF (T3D(K).LT.270.16 .AND. T3D(K).GT.265.16) THEN
 
@@ -2290,6 +2294,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             END IF
          END IF
          END IF
+         END IF
 
 !.......................................................................
 ! RIME-SPLINTERING - GRAUPEL 
@@ -2303,6 +2308,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! ONLY CALCULATE FOR GRAUPEL NOT HAIL
          IF (IHAIL.EQ.0) THEN
+! v1.4
+         IF (QG3D(K).GE.0.1E-3) THEN
+         IF (QC3D(K).GE.0.5E-3.OR.QR3D(K).GE.0.1E-3) THEN
          IF (PSACWG(K).GT.0..OR.PRACG(K).GT.0.) THEN
             IF (T3D(K).LT.270.16 .AND. T3D(K).GT.265.16) THEN
 
@@ -2345,7 +2353,8 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                    PRACG(K) = PRACG(K)-QMULTRG(K)
 
                END IF
-
+               END IF
+               END IF
             END IF
             END IF
          END IF

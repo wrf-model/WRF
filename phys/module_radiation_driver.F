@@ -1626,7 +1626,7 @@ CONTAINS
      ENDDO
    ELSE
      do j=jts,jte
-     do i=its,ide
+     do i=its,ite
        ht_shad(i,j) = ht_loc(i,j)-0.001
      ENDDO
      ENDDO

@@ -675,7 +675,7 @@ state  real   m_hybi    d     misc      1    -   -     "m_hybi"         "MATCH h
 state    real    F_ICE_PHY       ikj    misc        1         -      rdu      "F_ICE_PHY"            "FRACTION OF ICE"         ""
 state    real    F_RAIN_PHY      ikj    misc        1         -      rdu      "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
 state    real    F_RIMEF_PHY     ikj    misc        1         -      rdu      "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
-state    real    qndropsource    ikj    misc        1         -      h        "qndropsource"         "Droplet number source"   "#/kg/s"
+state    real    qndropsource    ikj    misc        1         -      -        "qndropsource"         "Droplet number source"   "#/kg/s"
 
 # Other Misc State Variables                                            
 state   real    h_diabatic     ikj     misc         1         -      rdu      "h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         "K s-1"      

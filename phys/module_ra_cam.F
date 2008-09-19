@@ -707,7 +707,8 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
    intJULIAN=intJULIAN+IJUL
    np1=1
    finddate=.false.
-   do m=1,num_months
+!   do m=1,num_months
+   do m=1,12
    if(date_oz(m).gt.intjulian.and..not.finddate) then
      np1=m
      finddate=.true.

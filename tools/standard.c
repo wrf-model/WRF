@@ -144,6 +144,11 @@ drop_comment( char * linei )
             (*(q+1) == 'o' || *(q+1) == 'O') &&
             (*(q+2) == 'm' || *(q+2) == 'M') &&
             (*(q+3) == 'p' || *(q+3) == 'P') )  return(0) ;
+       /* nor an intel compiler directive, what? */
+         if ((*(q+3) == '$') &&
+            (*(q)   == 'd' || *(q)   == 'D') &&
+            (*(q+1) == 'e' || *(q+1) == 'E') &&
+            (*(q+2) == 'c' || *(q+2) == 'C') )  return(0) ;
        }
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }

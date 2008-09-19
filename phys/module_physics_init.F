@@ -1564,7 +1564,7 @@ integer myproc
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
      CASE (THOMPSON)
-         CALL thompson_init
+         IF(start_of_simulation.or.restart)CALL thompson_init
      CASE (MORR_TWO_MOMENT)          
          CALL morr_two_moment_init  
 

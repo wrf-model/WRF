@@ -611,11 +611,11 @@ state   real   QSFC             ij     misc        1         -      r        "QS
 state   real   AKHS             ij     misc        1         -      r        "AKHS"                  "SFC EXCH COEFF FOR HEAT"                      "m s-1"    
 state   real   AKMS             ij     misc        1         -      r        "AKMS"                  "SFC EXCH COEFF FOR MOMENTUM"                  "m s-1"    
 state   integer KPBL            ij     misc        1         -     r         "KPBL"                  "LEVEL OF PBL TOP"                             ""
-state   real   TSHLTR           ij     misc        1         -     ir        "TSHLTR"                "SHELTER THETA FROM MYJ"                       "K"
-state   real   QSHLTR           ij     misc        1         -     ir        "QSHLTR"                "SHELTER SPECIFIC HUMIDITY FROM MYJ"           "kg kg-1"
-state   real   PSHLTR           ij     misc        1         -     ir        "PSHLTR"                "SHELTER PRESSURE FROM MYJ"           "Pa"
-state   real   TH10             ij     misc        1         -     ir        "TH10"                  "10-M THETA FROM MYJ"                          "K"
-state   real   Q10              ij     misc        1         -     ir        "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
+state   real   TSHLTR           ij     misc        1         -      r        "TSHLTR"                "SHELTER THETA FROM MYJ"                       "K"
+state   real   QSHLTR           ij     misc        1         -      r        "QSHLTR"                "SHELTER SPECIFIC HUMIDITY FROM MYJ"           "kg kg-1"
+state   real   PSHLTR           ij     misc        1         -      r        "PSHLTR"                "SHELTER PRESSURE FROM MYJ"           "Pa"
+state   real   TH10             ij     misc        1         -      r        "TH10"                  "10-M THETA FROM MYJ"                          "K"
+state   real   Q10              ij     misc        1         -      r        "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
 
 # gfdl (eta) radiation State Variables

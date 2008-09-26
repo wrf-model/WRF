@@ -428,9 +428,9 @@ if $NL_VAR4D; then
    export NL_W_DAMPING_SAVE=$NL_W_DAMPING
    export NL_W_DAMPING=0
    export NL_DIFF_OPT_SAVE=$NL_DIFF_OPT
-   export NL_DIFF_OPT=0
+   export NL_DIFF_OPT=1
    export NL_DAMPCOEF_SAVE=$NL_DAMPCOEF
-   export NL_DAMPCOEF=0.01
+   export NL_DAMPCOEF=0.2
    . $WRFPLUS_DIR/inc/namelist_script.inc
    mv namelist.input tl
    ln -fs $WORK_DIR/*.TBL tl
@@ -606,6 +606,11 @@ else
             export NUM_PROCS_VAR=1
             export NUM_PROCS_WRF=`expr $NUM_PROCS - 1`
             export NUM_PROCS_WRFPLUS=0
+         fi
+         if [[ $NUM_PROCS -eq 3 ]]; then
+            export NUM_PROCS_VAR=1
+            export NUM_PROCS_WRF=1
+            export NUM_PROCS_WRFPLUS=1
          fi
          echo "NUM_PROCS_VAR                $NUM_PROCS_VAR"
          echo "NUM_PROCS_WRF                $NUM_PROCS_WRF"

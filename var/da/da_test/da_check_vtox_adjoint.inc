@@ -128,11 +128,20 @@ subroutine da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cv1, vv, vp)
    ! [7.0] Print output:
    !-------------------------------------------------------------------------
 
-   adj_sum_lhs = wrf_dm_sum_real(adj_par_lhs)
+   if (.not. global ) then
+    if( num_procs == 1) then
       write(unit=stdout, fmt='(/)')
       write(unit=stdout, fmt='(a,1pe22.14)') &
          'Single Domain: < x, x >     = ', adj_par_lhs, &
          'Single Domain: < v_adj, v > = ', adj_par_rhs
+    else
+      write(unit=stdout, fmt='(/a/,a/)')&
+        'It is Multi Processor Run: ',&
+        'For Single Domain: da_check_vtox_adjoint Test: Not Performed'
+    endif
+   end if
+
+   adj_sum_lhs = wrf_dm_sum_real(adj_par_lhs)
 
    if (global) then
       adj_sum_rhs = adj_par_rhs

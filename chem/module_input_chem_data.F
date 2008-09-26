@@ -1689,6 +1689,18 @@ SUBROUTINE input_chem_profile (si_grid)
 
 ! Check the number of species
 !     if((nch-1).gt.logg)return
+! for radmkpp there is co2 and ch4 in the variable list
+!
+     if(p_co2.gt.1)then
+     if (nch.eq.p_co2)then
+       chem=370.
+       return
+     endif
+     if (nch.eq.p_ch4)then
+       chem=1.7
+       return
+     endif
+     endif
 
 !     if( nch .GT. numgas) then
 !       message = ' Input_chem_profile: wrong number of chemical species'
@@ -3047,8 +3059,8 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      print*,"e_ald:",emis_ant(i,k,j,p_e_ald)*convg
      print*,"e_ket:",emis_ant(i,k,j,p_e_ket)*convg
      print*,"e_ora2:",emis_ant(i,k,j,p_e_ora2)*convg
-     print*,"e_pm25:",emis_ant(i,k,j,p_e_pm25)*conva
-     print*,"e_pm10:",emis_ant(i,k,j,p_e_pm10)*conva
+     print*,"e_pm25:",emis_ant(i,k,j,p_e_pm_25)*conva
+     print*,"e_pm10:",emis_ant(i,k,j,p_e_pm_10)*conva
      print*,"e_nh3:",emis_ant(i,k,j,p_e_nh3)*convg
      print*,"e_no2:",emis_ant(i,k,j,p_e_no2)*convg
      print*,"e_ch3oh:",emis_ant(i,k,j,p_e_ch3oh)*convg

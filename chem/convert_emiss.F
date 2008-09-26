@@ -26,6 +26,7 @@ PROGRAM convert_emissions
    USE module_timing
    USE module_utility
    USE module_input_gocart_background
+   USE module_initialize_real
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -55,6 +56,7 @@ PROGRAM convert_emissions
      END SUBROUTINE Setup_Timekeeping
    END INTERFACE
 
+   INTEGER, PARAMETER  :: rnum8=4
    REAL    :: time 
 
    INTEGER :: loop , levels_to_process
@@ -65,7 +67,7 @@ PROGRAM convert_emissions
    INTEGER                     :: number_at_same_level
 
    INTEGER :: max_dom, domain_id
-   INTEGER :: id1 , id , fid, ierr
+   INTEGER :: id1, id , fid, ierr
    INTEGER :: idum1, idum2 , ihour, icnt
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
@@ -83,7 +85,7 @@ PROGRAM convert_emissions
    real        ::  top, bot,fac
    INTEGER :: debug_level = 0
    INTEGER, PARAMETER  :: iklev=55
-   real,dimension(iklev) :: p_g,p_wrf,ilev
+   real,dimension(iklev) :: p_g,p_wrf
    REAL        :: p00, t00, a, p_surf, pd_surf,p_top
    integer :: kbot,ktop
    REAL, ALLOCATABLE, DIMENSION(:) :: gocart_lev
@@ -107,7 +109,12 @@ PROGRAM convert_emissions
 
    REAL :: cen_lat, cen_lon, moad_cen_lat, truelat1, truelat2, gmt, stand_lon, dum1
    INTEGER :: map_proj, julyr, julday, iswater, isice, isurban, isoilwater
-   INTEGER :: iswaterr,itime,nv,itest
+   INTEGER :: iswaterr,itest
+   INTEGER :: itime = 0
+   INTEGER :: nv = 0
+   INTEGER :: nv_f = 0
+   INTEGER :: nv_g = 0
+   INTEGER :: itime_f = 0
 
    REAL :: dx,dy
 
@@ -115,7 +122,7 @@ PROGRAM convert_emissions
 
 
    CHARACTER (LEN=80) :: inpname , eminame, dum_str, wrfinname
-   CHARACTER (LEN=80)                     :: bdyname
+   CHARACTER (LEN=80)       :: bdyname, bdyname2
    CHARACTER (LEN=20)       :: dname
 
 ! these are needed on some compilers, eg compaq/alpha, to
@@ -126,6 +133,8 @@ PROGRAM convert_emissions
 #endif
 
 #include "version_decl"
+
+#define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes ( A , size ( A ) * rnum8 )
 
    !  Get the NAMELIST data for input.
 
@@ -147,15 +156,14 @@ PROGRAM convert_emissions
 #ifdef DM_PARALLEL
    IF ( wrf_dm_on_monitor() ) THEN
      CALL initial_config
-     CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
-     CALL wrf_dm_bcast_bytes( configbuf, nbytes )
-     CALL set_config_as_buffer( configbuf, configbuflen )
    ENDIF
+   CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
+   CALL wrf_dm_bcast_bytes( configbuf, nbytes )
+   CALL set_config_as_buffer( configbuf, configbuflen )
    CALL wrf_dm_initialize
 #else
    CALL initial_config
 #endif
-
 
    !  And here is an instance of using the information in the NAMELIST.  
 
@@ -259,15 +267,16 @@ PROGRAM convert_emissions
    end_minute = model_config_rec%  end_minute(grid%id)
    end_second = model_config_rec%  end_second(grid%id)
 
-   interval_seconds    = 3600
+   interval_seconds    = config_flags%interval_seconds
+
    real_data_init_type = model_config_rec%real_data_init_type
 
    WRITE ( start_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
            start_year,start_month,start_day,start_hour,start_minute,start_second
    WRITE (   end_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
              end_year,  end_month,  end_day,  end_hour,  end_minute,  end_second
-   print *,start_date_char
-   print *,end_date_char
+   print *,'START DATE ',start_date_char
+   print *,'END DATE ',end_date_char
 
 ! these are needed on some compilers, eg compaq/alpha, to
 ! permit pass by reference through the registry generated
@@ -284,6 +293,14 @@ PROGRAM convert_emissions
                                  ids, ide, jds, jde, kds, kde,    &
                                  ims, ime, jms, jme, kms, kme,    &
                                  ips, ipe, jps, jpe, kps, kpe    )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! Allocate scratch arrays
+!
+     ALLOCATE (dumc0(ids:ide,kds:grid%kemit,jds:jde))
+!    ALLOCATE (dumc4(ids:ide-1,kds:grid%kemit,jds:jde-1))
+     ALLOCATE (dumc1(ids:ide,jds:jde))
+
      ALLOCATE( tmp_oh(ids:ide,jds:jde,iklev) )
      ALLOCATE( tmp_h2o2(ids:ide,jds:jde,iklev) )
      ALLOCATE( tmp_no3(ids:ide,jds:jde,iklev) )
@@ -294,7 +311,8 @@ PROGRAM convert_emissions
 
 
    ihour = start_hour
-!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !   read reference fields that some of the GOCART modules require (can be run with other modules too?)
 !
@@ -313,17 +331,69 @@ PROGRAM convert_emissions
 #else
      OPEN(19,FILE='wrf_gocart_backg',FORM='UNFORMATTED')
 #endif     
-     READ(19) tmp2
-      grid%dms_0(ids:ide,jds:jde) = tmp2
-     READ(19) tmp3
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(19)tmp2(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(tmp2)
+#else
+       read(19)tmp2(ids:ide  ,jds:jde  )
+#endif
+      grid%dms_0(ips:ipe,jps:jpe) = tmp2(ips:ipe,jps:jpe)
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(19)tmp3(ids:ide  ,jds:jde  ,1:3)
+       ENDIF
+       DM_BCAST_MACRO(tmp3)
+#else
+       read(19)tmp3(ids:ide  ,jds:jde  ,1:3)
+#endif
       do i=1,3 
-       grid%erod(ids:ide,jds:jde,i)=tmp3(ids:ide,jds:jde,i)
+       grid%erod(ips:ipe,jps:jpe,i)=tmp3(ips:ipe,jps:jpe,i)
       enddo
-     reaD(19) gocart_lev
-     READ(19) tmp_h2o2
-     READ(19) tmp_oh
-     READ(19) tmp_no3
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(19)gocart_lev(1:iklev)
+       ENDIF
+       DM_BCAST_MACRO(gocart_lev)
+#else
+       read(19)gocart_lev(1:iklev)
+#endif
+
+       write(*,*) 'GOCART_LEV: ',gocart_lev(:)
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(19)tmp_h2o2(ids:ide,jds:jde,1:iklev)
+       ENDIF
+       DM_BCAST_MACRO(tmp_h2o2)
+#else
+       read(19)tmp_h2o2(ids:ide,jds:jde,1:iklev)
+#endif
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(19)tmp_oh(ids:ide,jds:jde,1:iklev)
+       ENDIF
+       DM_BCAST_MACRO(tmp_oh)
+#else
+       read(19)tmp_oh(ids:ide,jds:jde,1:iklev)
+#endif
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(19)tmp_no3(ids:ide,jds:jde,1:iklev)
+       ENDIF
+       DM_BCAST_MACRO(tmp_no3)
+#else
+       read(19)tmp_no3(ids:ide,jds:jde,1:iklev)
+#endif
+
      CLOSE(19)
+
 !  CALL input_ext_chem_gocart_bg ( grid ) 
    write(message,FMT='(A)') ' PAST  GOCART BACKGROUND DATA'
    CALL  wrf_debug ( 00, message )
@@ -359,69 +429,68 @@ PROGRAM convert_emissions
 
 
     idum1 = 1
-     if( (config_flags%chem_opt == GOCART_SIMPLE) .OR. &
-         (config_flags%chem_opt == GOCARTRACM_KPP) ) then
+    IF( (config_flags%chem_opt == GOCART_SIMPLE) .OR. &
+        (config_flags%chem_opt == GOCARTRACM_KPP) ) then
 ! interpolate 3d fields to WRF in vertical
 !
-   do k=1,iklev
+     do k=1,iklev
         p_g(k) = log10( gocart_lev(k) * 1023.) 
-   enddo
+     enddo
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
       call nl_get_p_top_requested (1,p_top)
-   t00=290.
-   a=50.
-   p00=100000.
-   do j=jds,jde-1
-   do i=ids,ide-1
-      p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
-      do k=kds,kde
-         grid%pb(i,k,j) = grid%znu(k)*(p_surf - p_top) + p_top
-      enddo
-      do kw=kde-1,kds,-1
-       do kg=iklev-1,1,-1
+     t00=290.
+     a=50.
+!    p00=100000.
+!    p_top=5000.
+     do j=jps,jpe
+     do i=ips,ipe
+        p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+        do k=kps,kpe
+           grid%pb(i,k,j) = grid%znu(k)*(p_surf - p_top) + p_top
+        enddo
+        do kw=kpe-1,kps,-1
+         do kg=iklev-1,1,-1
             if( p_g(kg) <= log10(.01*grid%pb(i,kw,j)) ) then
                kbot = max(1,kg-1)
-               ktop = min(kg,iklev-1)
+               ktop = max(min(kg,iklev-1),2)
             endif
-       enddo
-      fac= (tmp_no3(i  ,j  ,ktop)-tmp_no3(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
-      grid%backg_no3(i, kw, j) = tmp_no3(i  ,j  ,ktop)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(ktop))
+         enddo ! kg loop
 
-!             grid%backg_no3(i, kw, j) = bot + bot - top * fac
+         fac= (tmp_no3(i  ,j  ,ktop)-tmp_no3(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+         grid%backg_no3(i, kw, j) = tmp_no3(i  ,j  ,kbot)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(kbot))
+
 ! OH
-      fac= (tmp_oh(i  ,j  ,ktop)-tmp_oh(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
-      grid%backg_oh(i, kw, j) = tmp_oh(i  ,j  ,ktop)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(ktop))
+         fac= (tmp_oh(i  ,j  ,ktop)-tmp_oh(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+         grid%backg_oh(i, kw, j) = tmp_oh(i  ,j  ,kbot)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(kbot))
 
-!             grid%backg_oh(i, kw, j) = bot + bot - top * fac
 ! H2O2
+         fac= (tmp_h2o2(i  ,j  ,ktop)-tmp_h2o2(i  ,j  ,kbot) )/(p_g(ktop) - p_g(kbot))
+         grid%backg_h2o2(i, kw, j) = tmp_h2o2(i  ,j  ,kbot)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(kbot))
 
-      fac= (tmp_h2o2(i  ,j  ,ktop)-tmp_h2o2(i  ,j  ,kbot))/(p_g(ktop) - p_g(kbot))
-      grid%backg_h2o2(i, kw, j) = tmp_h2o2(i  ,j  ,ktop)+fac*(log10(.01*grid%pb(i,kw,j))-p_g(ktop))
+        enddo  ! kw loop
 
-      enddo
-   enddo
-   enddo
-   ENDIF ! chem_opt gocart_simple
+     enddo
+     enddo
+   ENDIF ! chem_opt gocart_simple or gocartracm
 
    CALL output_aux_model_input9 ( id1 , grid , config_flags , ierr )
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT9" )
+
    ENDIF ! chem_opt gocart_simple,dmsgocart,dustgocart
-      DEALLOCATE( tmp_oh )
-      DEALLOCATE( tmp_h2o2 )
-      DEALLOCATE( tmp_no3 )
-      DEALLOCATE( tmp2)
-      DEALLOCATE( tmp3)
-      DEALLOCATE( interpolate )
+
+   DEALLOCATE( tmp_oh )
+   DEALLOCATE( tmp_h2o2 )
+   DEALLOCATE( tmp_no3 )
+   DEALLOCATE( tmp2)
+   DEALLOCATE( tmp3)
+   DEALLOCATE( interpolate )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 ! now do fire and/or global emissions
 !
-   ALLOCATE (dumc0(ids:ide,kds:grid%kemit,jds:jde))
-!  ALLOCATE (dumc4(ids:ide-1,kds:grid%kemit,jds:jde-1))
-   ALLOCATE (dumc1(ids:ide,jds:jde))
      if(config_flags%emiss_opt == ecptec .or. config_flags%emiss_opt == gocart_ecptec ) then
      write(message, FMT='(A,4I6)') ' I am reading global anthropogenic emissions, dims: =',ids, ide-1, jds, jde-1
      call wrf_message( TRIM( message ) )
@@ -444,88 +513,272 @@ PROGRAM convert_emissions
            write(message, FMT='(A)') ' I am reading emissions for gocart only (aerosols)'
            call wrf_message( TRIM( message ) )
          endif
-     read(92)nv
-     print *,nv
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+       read(92)nv_g
+       read(92)dname
+       read(92)itime
+     ENDIF
+     CALL wrf_dm_bcast_bytes ( nv_g , rnum8 )
+     CALL wrf_dm_bcast_bytes ( dname , rnum8 )
+     CALL wrf_dm_bcast_bytes ( itime , rnum8 )
+#else
+     read(92)nv_g
      read(92)dname
-     print *,dname
      read(92)itime
-     print *,itime
+#endif
    
-         read(92)dumc1
-     print *,'  1'
-         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_so2)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  2'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_no)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  3'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ald)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  4'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hcho)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  5'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ora2)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  6'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_nh3)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  7'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc3)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  8'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc5)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,'  9'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_hc8)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 10'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_eth)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 11'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_co)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 12'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ol2)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 13'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_olt)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 13'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_oli)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 14'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_tol)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 15'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_xyl)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 16'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_ket)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 17'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_csl)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 18'
-         if(itest.eq.1)grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_iso)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 19'
-         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_pm_25)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 21'
-         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_pm_10)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 22'
-         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_oc)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 23'
-         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_bc)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 24'
-!        grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_dms)=dumc1(ids:ide-1,jds:jde-1)
-         read(92)dumc1
-     print *,' 25'
-         grid%emis_ant(ids:ide-1,kds,jds:jde-1,p_e_sulf)=dumc1(ids:ide-1,jds:jde-1)
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_so2)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_no)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ald)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_hcho)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ora2)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_nh3)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_hc3)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_hc5)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_hc8)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_eth)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_co)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ol2)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_olt)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_oli)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_tol)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_xyl)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ket)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_csl)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_iso)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_pm_25)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_pm_10)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_oc)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_bc)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+!        grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_dms)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+         grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_sulf)=dumc1(ips:ipe  ,jps:jpe  )
+
+     CLOSE(92)
 !
 ! simple file dump here....
 !
@@ -542,109 +795,394 @@ PROGRAM convert_emissions
          CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
 
          CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
-     endif  ! emiss_opt
+
+     endif  ! emiss_opt = ecptec or gocart_ecptec
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
      if(config_flags%biomass_burn_opt == biomassb ) then
-        CALL construct_filename1 ( bdyname , 'emissfire' , grid%id , 2 )
-        write(message, FMT='(A,A)') ' TRY TO OPEN FILE: ',TRIM(bdyname)
+
+        CALL construct_filename1 ( bdyname2 , 'emissfire' , grid%id , 2 )
+        write(message, FMT='(A,A)') ' TRY TO OPEN FILE: ',TRIM(bdyname2)
         call wrf_message( TRIM( message ) )
         CALL wrf_debug( 00 , 'calling fire emissions' )
+
 #ifdef DM_PARALLEL
         IF (wrf_dm_on_monitor()) THEN
-           open (93,file=bdyname,form='unformatted')
+           open (93,file=bdyname2,form='unformatted',status='old')
         ENDIf
 #else
-        OPEN(93,FILE=bdyname,FORM='UNFORMATTED')
+        OPEN(93,FILE=bdyname2,FORM='UNFORMATTED',status='old')
 #endif
-         write(message, FMT='(A,A)') ' OPENED FILE: ',TRIM(bdyname)
-         call wrf_message( TRIM( message ) )
-            read(93)nv
-            print *,nv
-            read(93)dname
-            print *,dname
-            read(93)itime
-            print *,itime
 
-            read(93)dumc1
-            grid%ebu_so2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_no(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_ald(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_hcho(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_ora2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-   !        grid%ebu_nh3(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_hc3(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_hc5(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_hc8(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_eth(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_co(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-   !        grid%ebu_ol2(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_olt(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_oli(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_tol(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_xyl(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_ket(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_csl(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_iso(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_pm25(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_pm10(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_oc(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_bc(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_dms(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%ebu_sulf(ids:ide-1,kds,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%mean_fct_agtf(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%mean_fct_agef(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%mean_fct_agsv(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%mean_fct_aggr(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%firesize_agtf(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%firesize_agef(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%firesize_agsv(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
-            read(93)dumc1
-            grid%firesize_aggr(ids:ide-1,jds:jde-1)=dumc1(ids:ide-1,jds:jde-1)
+#ifdef DM_PARALLEL
+        IF (wrf_dm_on_monitor()) THEN
+           read(93)nv_f
+           read(93)dname 
+           read(93)itime_f
+        ENDIF
+        CALL wrf_dm_bcast_bytes ( nv_f , rnum8 )
+        CALL wrf_dm_bcast_bytes ( dname , rnum8 )
+        CALL wrf_dm_bcast_bytes ( itime_f , rnum8 )
+#else
+        read(93)nv_f
+        read(93)dname 
+        read(93)itime_f
+#endif
+     write(message, FMT='(A,I10)') ' Number of fire emissions: ',nv_f
+     call wrf_message( TRIM( message ) )
+     write(message, '(A,I8,A,I8)') ' FIRE EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime_f-1,' TO ',itime_f
+     call wrf_message( TRIM( message ) )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+
+!    write(*,*) 'MAXVAL2 ',MAXVAL(dumc1(:,:))
+!    write(*,*) 'MINVAL2 ',MINVAL(dumc1(:,:))
+
+     write(message, FMT='(A)') ' put dumc1 into ebu_so2'
+     call wrf_debug(100, TRIM( message ) )
+     grid%ebu_so2(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_no(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_ald(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_hcho(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_ora2(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+   !   grid%ebu_nh3(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_hc3(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_hc5(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_hc8(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_eth(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_co(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+   !   grid%ebu_ol2(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_olt(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_oli(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_tol(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_xyl(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_ket(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_csl(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_iso(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_pm25(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_pm10(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_oc(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_bc(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_dms(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%ebu_sulf(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%mean_fct_agtf(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%mean_fct_agef(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%mean_fct_agsv(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%mean_fct_aggr(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%firesize_agtf(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%firesize_agef(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%firesize_agsv(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+       grid%firesize_aggr(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+!
+         CLOSE(93)
 !
 ! fire stuff
 !
          CALL construct_filename1( inpname , 'wrffirechemi' , grid%id , 2 )
          write(message, FMT='(A,A)') ' NOW OPEN FILE FOR WRITE: ',TRIM(inpname)
          call wrf_message( TRIM( message ) )
+
          CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input7 , "DATASET=AUXINPUT7", ierr )
- 
+         write(message,FMT='(A,A)') ' FIRE EMISSIONS OUTPUT file name: ',TRIM(inpname)
+         CALL  wrf_message ( message )
+         IF ( ierr .NE. 0 ) THEN
+            write(message, FMT='(A,I10)') ' convert_emiss: error opening wrfchem fire emissions file for writing',ierr
+            CALL wrf_error_fatal( TRIM( message ) )
+         ENDIF
 
          CALL output_aux_model_input7 ( id1 , grid , config_flags , ierr )
  
          CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT7" )
+
      endif ! biomassburn
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -652,6 +1190,9 @@ PROGRAM convert_emissions
 !
     if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG) then
    !  Figure out our loop count for the processing times.
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+#endif
 
    time_loop = 1
    write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',start_date_char
@@ -682,12 +1223,21 @@ PROGRAM convert_emissions
    END DO loop_count
    write(message,FMT='(A,I4,A,I4)') 'Total number of times to input = ',time_loop,' ',time_loop_max
    CALL  wrf_message ( message )
+#ifdef DM_PARALLEL
+     ENDIF 
+   CALL wrf_dm_bcast_bytes ( time_loop , rnum8 )
+   CALL wrf_dm_bcast_bytes ( time_loop_max , rnum8 )
+#endif
 
    !  Here we define the initial time to process, for later use by the code.
 
    current_date_char = start_date_char
    start_date = start_date_char // '.0000'
    current_date = start_date
+
+#ifdef DM_PARALLEL
+   CALL wrf_dm_bcast_bytes ( start_hour , rnum8 )
+#endif
 
    ihour = start_hour
    write(message,FMT='(A)') ' READ EMISSIONS 1'
@@ -699,95 +1249,336 @@ PROGRAM convert_emissions
 
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
-        open (91,file=bdyname,form='unformatted')
+        open (91,file=bdyname,form='unformatted',status='old')
+
+        write(*,*) TRIM( bdyname )
      ENDIf
 #else
 !  write(message, FMT='(A,A)') ' OPEN FILE: ',bdyname
 !  call wrf_message( TRIM( message ) )
-        open (91,file=bdyname,form='unformatted')
+        open (91,file=bdyname,form='unformatted',status='old')
 #endif
-    DEALLOCATE ( dumc0 )
-   ALLOCATE (dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1))
 
 !  write(message, FMT='(A,A)') ' OPENED FILE: ',bdyname
 !  call wrf_message( TRIM( message ) )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+       read(91)nv
+       read(91)dname 
+       read(91)itime
+     ENDIF
+     CALL wrf_dm_bcast_bytes ( nv , rnum8 )
+     CALL wrf_dm_bcast_bytes ( dname , rnum8 )
+     CALL wrf_dm_bcast_bytes ( itime , rnum8 )
+#else
      read(91)nv
      read(91)dname 
+     read(91)itime
+#endif
      write(message, FMT='(A,I10)') ' Number of emissions: ',nv
      call wrf_message( TRIM( message ) )
-       read(91)itime
      write(message, '(A,I8,A,I8)') ' EMISSIONS INPUT FILE TIME PERIOD (GMT): ',itime-1,' TO ',itime
      call wrf_message( TRIM( message ) )
-         read(91)dumc0 
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so2)=dumc0
-         read(91)dumc0 
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ald)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hcho)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ora2)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_nh3)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc3)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc5)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc8)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eth)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_co)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ol2)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_olt)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_oli)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_tol)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_xyl)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ket)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_csl)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_iso)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25i)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25j)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4i)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4j)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3i)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3j)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgi)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgj)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eci)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ecj)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm_10)=dumc0
 
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+     write(message, FMT='(A)') ' read dumc0 '
+     call wrf_debug(100, TRIM( message ) )
+        read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+     write(message, FMT='(A)') ' write dumc0 to emiss_ant'
+     call wrf_debug(100, TRIM( message ) )
+     write(message, FMT='(A,3I10)') ' dims:',ips  ,kps,jps
+     call wrf_message( TRIM( message ) )
+     write(message, FMT='(A,4I10)') ' dims:',ipe-1,kpe,jpe-1,grid%kemit
+     call wrf_message( TRIM( message ) )
+     write(message, FMT='(A,3I10)') ' dims:',ids  ,kds,jds
+     call wrf_message( TRIM( message ) )
+     write(message, FMT='(A,4I10)') ' dims:',ide-1,kde,jde-1
+     call wrf_message( TRIM( message ) )
+     write(message, FMT='(A,5I10)') ' dims:',size(grid%emis_ant,1),size(grid%emis_ant,2),size(grid%emis_ant,3),size(grid%emis_ant,4),p_e_so2
+     call wrf_message( TRIM( message ) )
+     write(message, FMT='(A,5I10)') ' dims:',size(dumc0,1),size(dumc0,2),size(dumc0,3)
+     call wrf_message( TRIM( message ) )
+!    write(*,*) dumc0(ids:ide-1,1,7)
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!    write(*,*) grid%emis_ant(ips:ipe-1,1,7,p_e_so2)
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
 
-
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ald)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hcho)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ora2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_nh3)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hc3)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hc5)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hc8)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_eth)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_co)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ol2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_olt)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_oli)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_tol)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_xyl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ket)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_csl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_iso)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm25i)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm25j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so4i)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so4j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3i)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_orgi)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_orgj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_eci)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ecj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm_10)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 
    write(message,FMT='(A)') ' PAST READ EMISSIONS 1'
-   CALL  wrf_debug ( 100, message )
+   CALL  wrf_message ( message )
+
 !  grid%input_from_file = .false.
 
-         CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
+   CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
 
+   write(message,FMT='(A,A,I10)') ' OPEN FILE ',TRIM(inpname),config_flags%io_form_auxinput5
+   CALL  wrf_debug ( 100, message )
    CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input5 , "DATASET=AUXINPUT5", ierr )
    write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
@@ -805,15 +1596,26 @@ PROGRAM convert_emissions
       if( moad_cen_lat  == 0. ) then
          moad_cen_lat = cen_lat
       endif
-  CALL output_aux_model_input5 ( id1 , grid , config_flags, ierr )
+
+   write(message,FMT='(A)') ' WRITE EMISSIONS 1'
+   CALL  wrf_message ( message )
+    CALL output_aux_model_input5 ( id1 , grid , config_flags, ierr )
+
+   CALL wrf_dm_bcast_bytes ( time_loop , rnum8 )
+   nemi_frames = time_loop
   
+    write(message,FMT='(A,4I10)') 'FRAMES: ',int(nemi_frames),time_loop
+   CALL  wrf_message ( message )
     current_date_char = start_date_char
     current_date = current_date_char
-  
-   nemi_frames = time_loop
-   if( debug_level >= -100) print *,'NEMI_FRAMES ', nemi_frames,time_loop
+!  if( debug_level >= -100) print *,'NEMI_FRAMES ', nemi_frames,time_loop
 
+!  DO emi_frame = 2,1
    DO emi_frame = 2,nemi_frames
+    write(message,FMT='(A,4I10)') 'LOOP: ',emi_frame,nemi_frames
+   CALL  wrf_message ( message )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
      write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
      CALL  wrf_debug ( 100, message )
      CALL domain_clock_get ( grid, current_timestr=message )
@@ -830,94 +1632,359 @@ PROGRAM convert_emissions
 
      write(message,FMT='(A,I4)') ' Read emissions ',emi_frame
      CALL  wrf_debug ( 100, message )
+     write(message,FMT='(A,I4)') ' Hour ',ihour
+     CALL  wrf_message ( message )
      ihour = mod(ihour + 1,24)
      if(ihour.eq.0)then
          close(91)
          CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
+         open (91,file=bdyname,form='unformatted')
      endif
      if(ihour.eq.12) then 
          close(91)
          CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
+         open (91,file=bdyname,form='unformatted')
      endif
+
+
+     ENDIF
+     CALL wrf_dm_bcast_bytes ( ihour , rnum8 )
+!    CALL wrf_dm_bcast_bytes ( bdyname , rnum8 )
+#else
+     write(message,FMT='(A,I4)') 'emi_frame: ',emi_frame
+     CALL  wrf_debug ( 100, message )
+     CALL domain_clock_get ( grid, current_timestr=message )
+     write(message,FMT='(A,A)') ' Current time ',Trim(message)
+     CALL  wrf_debug ( 100, message )
+
+     current_date_char = current_date(1:19)
+     CALL geth_newdate ( next_date_char, current_date_char, int(interval_seconds) )
+     current_date = next_date_char // '.0000'
+
+     write(message,FMT='(A,A)') ' Date &  time ',Trim(current_date)
+     CALL  wrf_message ( message )
+     CALL domain_clockadvance( grid ) 
+     write(message,FMT='(A,I4)') ' Read emissions ',emi_frame
+     CALL  wrf_debug ( 100, message )
+     ihour = mod(ihour + 1,24)
+     if(ihour.eq.0)then
+         close(91)
+         CALL construct_filename1 ( bdyname , 'wrfem_00to12z' , grid%id , 2 )
+         open (91,file=bdyname,form='unformatted')
+     endif
+     if(ihour.eq.12) then 
+         close(91)
+         CALL construct_filename1 ( bdyname , 'wrfem_12to24z' , grid%id , 2 )
+         open (91,file=bdyname,form='unformatted')
+     endif
+#endif
+
+     write(message, '(A,A,I10)') ' USING FILE: ',TRIM(bdyname),ihour
+     call wrf_message( TRIM( message ) )
+
+     if(ihour.eq.0.or.ihour.eq.12)then
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
-        open (91,file=bdyname,form='unformatted')
-     ENDIf
+       read(91)nv
+       read(91)dname 
+     ENDIF
+     CALL wrf_dm_bcast_bytes ( nv , rnum8 )
+     CALL wrf_dm_bcast_bytes ( dname , rnum8 )
 #else
-        open (91,file=bdyname,form='unformatted')
-#endif
-!  write(message, '(A,A)') ' OPENED FILE: ',bdyname
-!  call wrf_message( TRIM( message ) )
-     if(ihour.eq.0.or.ihour.eq.12)then
-
      read(91)nv
-     print *,'nv = ',nv
-     read(91)dname
+     read(91)dname 
+#endif
+     write(message, '(A,I10)') ' Reading FILE header: ',nv
+     call wrf_message( TRIM( message ) )
+
      endif
-       read(91)itime
-     print *,'itime = ',itime
-         read(91)dumc0 
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so2)=dumc0
-         read(91)dumc0 
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ald)=dumc0
-         read(91)dumc0 
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hcho)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ora2)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_nh3)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc3)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc5)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_hc8)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eth)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_co)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ol2)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_olt)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_oli)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_tol)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_xyl)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ket)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_csl)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_iso)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25i)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm25j)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4i)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_so4j)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3i)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_no3j)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgi)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_orgj)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_eci)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_ecj)=dumc0
-         read(91)dumc0
-         grid%emis_ant(ids:ide-1,kds:grid%kemit,jds:jde-1,p_e_pm_10)=dumc0
 
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        read(91)itime
+     ENDIF
+     CALL wrf_dm_bcast_bytes ( itime , rnum8 )
+#else
+     read(91)itime
+#endif
 
+     write(message, '(A,I10)') ' Reading data from file: ',itime
+     call wrf_message( TRIM( message ) )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+        read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ald)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hcho)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ora2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_nh3)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hc3)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hc5)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_hc8)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_eth)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_co)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ol2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_olt)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_oli)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_tol)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_xyl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ket)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_csl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_iso)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm25i)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm25j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so4i)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_so4j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3i)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_orgi)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_orgj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_eci)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ecj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm_10)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+     write(message,FMT='(A)') ' Past reading emissions '
+     CALL  wrf_debug ( 100, message ) 
 
    ! write global atributes into wrf emissions file
 
@@ -926,9 +1993,12 @@ PROGRAM convert_emissions
      CALL output_aux_model_input5 ( id1 , grid , config_flags , ierr )
 
 !   idum1 = 1
-   END DO 
+   END DO   ! NEMI_FRAMES loop
 
+!
+   CLOSE(91)
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+
      write(message,FMT='(A)') ' DONE WRITING TIME DEPENDENT EMISSIONS FILE'
      CALL  wrf_message ( message )
 
@@ -937,18 +2007,12 @@ PROGRAM convert_emissions
     DEALLOCATE ( dumc0 )
     DEALLOCATE ( dumc1 )
 
+   CALL med_shutdown_io ( grid , config_flags )
 
-   write(message,FMT='(A)') '  EMISSIONS CONVERSION : end of program '
-   CALL  wrf_message ( message )
+   CALL wrf_debug ( 0 , ' EMISSIONS CONVERSION : end of program ')
 
-    CALL wrf_shutdown
-    CALL WRFU_Finalize( rc=rc )
+   CALL wrf_shutdown
 
-#ifdef DM_PARALLEL
-   CALL wrf_dm_shutdown
-#endif
-
-   STOP
+   CALL WRFU_Finalize( rc=rc )
 
 END PROGRAM  convert_emissions
-

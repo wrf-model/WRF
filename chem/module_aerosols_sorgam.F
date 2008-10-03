@@ -780,12 +780,12 @@ CONTAINS
                vsulf_in = chem(i,k,j,p_sulf)*convfac*mwso4   
                
 !rs. nitrate, nh3, sulf
-        BLKPRS(BLKSIZE)   = P(K)                ! pressure in hPa
-        BLKTA(BLKSIZE)   = T(K)         ! temperature in K
-        BLKDENS(BLKSIZE)=BLKPRS(BLKSIZE)/(RDGAS * BLKTA(BLKSIZE))
-        USTAR(BLKSIZE) = max(1.e-8,UST(i,j))
-        WSTAR(BLKSIZE) = 0.
+      BLKPRS(BLKSIZE)   = 1.e3*P(K)                ! pressure in Pa
+      BLKTA(BLKSIZE)   = T(K)         ! temperature in K
+      USTAR(BLKSIZE) = max(1.e-1,UST(i,j))
+      WSTAR(BLKSIZE) = 0.
       convfac2=1./alt(i,k,j)
+      BLKDENS(BLKSIZE)=convfac2
       cblk(1,vsulf) = max(epsilc,vsulf_in)
       cblk(1,vhno3) = max(epsilc,nitrate_in)
       cblk(1,vnh3) = max(epsilc,nh3_in)

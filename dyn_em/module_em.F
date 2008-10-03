@@ -1018,8 +1018,10 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce),                &
          INTENT(INOUT)                                  :: scalar_1,    &
-                                                           scalar_2,  &
-                                                           sc_tend
+                                                           scalar_2
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce),                &
+         INTENT(IN)                                     :: sc_tend
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme ),                &
          INTENT(IN)                                  :: advect_tend

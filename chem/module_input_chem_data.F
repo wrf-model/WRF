@@ -47,20 +47,10 @@
 
 MODULE module_input_chem_data
 
-    USE module_io_domain
-    USE module_domain
-    USE module_driver_constants
-    USE module_state_description
-    USE module_configure
-    USE module_date_time
-    USE module_wrf_error
-    USE module_timing
-    USE module_data_radm2
-    USE module_aerosols_sorgam
-    USE module_data_sorgam
-    USE module_utility
-    USE module_get_file_names
-
+   USE module_io_domain
+   USE module_domain
+   USE module_data_sorgam, ONLY : conmin, rgasuniv, epsilc, grav
+   USE module_get_file_names, ONLY : eligible_file_name, number_of_eligible_files, unix_ls
 
    IMPLICIT NONE
 
@@ -1328,7 +1318,7 @@ SUBROUTINE input_chem_profile (si_grid)
   SUBROUTINE bdy_chem_value_sorgam (chem, z, nch, config_flags, &
                                       alt,convfac,g)
   USE module_data_sorgam
-  USE module_aerosols_sorgam
+
     IMPLICIT NONE
 
     REAL,    intent(OUT)  :: chem
@@ -2520,7 +2510,8 @@ SUBROUTINE input_chem_profile (si_grid)
 !                                                               *
 !****************************************************************
     SUBROUTINE sorgam_set_aer_bc_pnnl( chem, z, nch )
-      USE module_data_sorgam
+      USE module_data_sorgam, ONLY : dginia, dginin, dginic, esn36, esc36, esa36, seasfac, no3fac, nh4fac, so4fac, soilfac, anthfac, orgfac
+
       implicit none
 
       INTEGER,INTENT(IN   ) :: nch
@@ -3119,9 +3110,9 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
 !  USE module_timing
   ! Model layer
 !  USE module_configure
-   USE module_bc_time_utilities
+!  USE module_bc_time_utilities
 #ifdef DM_PARALLEL
-   USE module_dm
+!  USE module_dm
 #endif
 !  USE module_date_time
 !  USE module_utility
@@ -3267,9 +3258,9 @@ SUBROUTINE med_read_bin_chem_emiss ( grid , config_flags ,intime, itime_max)
 END SUBROUTINE med_read_bin_chem_emiss
 
 SUBROUTINE med_read_bin_chem_fireemiss ( grid , config_flags ,intime, itime_max)
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
 #ifdef DM_PARALLEL
-   USE module_dm
+!   USE module_dm
 #endif
 
 

@@ -4488,12 +4488,6 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                 ips, ipe, jps, jpe, kps, kpe,             &
                                 its, ite, jts, jte, kts, kte              )
 
-   CALL set_physical_bc3d( tke     , 't', config_flags,                   &
-                                ids, ide, jds, jde, kds, kde,             &
-                                ims, ime, jms, jme, kms, kme,             &
-                                ips, ipe, jps, jpe, kps, kpe,             &
-                                its, ite, jts, jte, kts, kte              )
-
    CALL set_physical_bc3d( div     , 't', config_flags,                   &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &

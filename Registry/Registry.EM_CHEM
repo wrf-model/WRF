@@ -1535,6 +1535,7 @@ period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,
 period    PERIOD_BDY_EM_MOIST dyn_em 3:moist
 period    PERIOD_BDY_EM_CHEM dyn_em 3:chem
 period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
+period    PERIOD_BDY_EM_TKE dyn_em 3:tke_2
 period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist
 period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem
 period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar

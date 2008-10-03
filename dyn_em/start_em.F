@@ -694,6 +694,8 @@
 #  include "HALO_EM_INIT_5.inc"
 #  include "PERIOD_BDY_EM_INIT.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
+#  include "PERIOD_BDY_EM_TKE.inc"
+#  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
@@ -841,6 +843,11 @@
                          its , ite , jts , jte , kts , kte ,        &
                          its , ite , jts , jte , kts , kte )
    CALL set_physical_bc3d(grid%t_init, 't' , config_flags ,                 &
+                         ids , ide , jds , jde , kds , kde ,        &
+                         ims , ime , jms , jme , kms , kme ,        &
+                         its , ite , jts , jte , kts , kte ,        &
+                         its , ite , jts , jte , kts , kte )
+   CALL set_physical_bc3d(grid%tke_2, 't' , config_flags ,                 &
                          ids , ide , jds , jde , kds , kde ,        &
                          ims , ime , jms , jme , kms , kme ,        &
                          its , ite , jts , jte , kts , kte ,        &
@@ -1029,6 +1036,8 @@
 #   include "HALO_EM_INIT_5.inc"
 #  include "PERIOD_BDY_EM_INIT.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
+#  include "PERIOD_BDY_EM_TKE.inc"
+#  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 

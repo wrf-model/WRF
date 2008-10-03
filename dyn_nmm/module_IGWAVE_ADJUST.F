@@ -285,12 +285,12 @@
 !***  MAIN VERTICAL INTEGRATION LOOP
 !
 !-----------------------------------------------------------------------
-!$omp parallel do
-!$omp& private(adpdne,adpdse,adpdx,adpdy,
-!$omp&         apel,cne,cse,dcnek,dcsek,dfdz,dpde,dpfew,dpfnek,
-!$omp&         dpfns,dpfsek,dpnek,ediv,few,fne,fns,fse,hm,
-!$omp&         pcew,pcne,pcns,pcse,pcxc,pew,pne,pns,ppne,ppse,
-!$omp&         pse,pvnek,pvsek,rdpd,rdpdx,rdpdy,tew,tne,tns,tse,
+!$omp parallel do                                                       &
+!$omp& private(adpdne,adpdse,adpdx,adpdy,                               &
+!$omp&         apel,cne,cse,dcnek,dcsek,dfdz,dpde,dpfew,dpfnek,         &
+!$omp&         dpfns,dpfsek,dpnek,ediv,few,fne,fns,fse,hm,              &
+!$omp&         pcew,pcne,pcns,pcse,pcxc,pew,pne,pns,ppne,ppse,          &
+!$omp&         pse,pvnek,pvsek,rdpd,rdpdx,rdpdy,tew,tne,tns,tse,        &
 !$omp&         udy,vdx,vm)
 !-----------------------------------------------------------------------
 !

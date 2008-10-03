@@ -318,9 +318,9 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(b1_ik,b2_ik,b3_ik,c0_ik,chi_ik,coff_ik,cwm_ik,           &
-!$omp&        ,delp,dppl,dpstr,dptl,dptu_i,dwdt_ik,fct,i,j,k            &
-!$omp&        ,pint_ik,pnp1_i,pp1,pstr_ik,pstrdn,pstrup_i,q_ik          &
-!$omp&        ,rdpdn,rdpup,rtop_ik,t_ik,tfc,tmp,ttfc,w_ik)
+!$omp&        delp,dppl,dpstr,dptl,dptu_i,dwdt_ik,fct,i,j,k,            &
+!$omp&        pint_ik,pnp1_i,pp1,pstr_ik,pstrdn,pstrup_i,q_ik,          &
+!$omp&        rdpdn,rdpup,rtop_ik,t_ik,tfc,tmp,ttfc,w_ik)
 !
       final_update:  DO J=MYJS3,MYJE3
 !

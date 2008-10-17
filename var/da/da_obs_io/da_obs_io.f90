@@ -38,8 +38,8 @@ module da_obs_io
 
 #ifdef BUFR
    use da_grid_definitions, only : da_earth_2_model_wind
-   use da_reporting, only : da_message
 #endif
+   use da_reporting, only : message, da_message
 
    implicit none
 

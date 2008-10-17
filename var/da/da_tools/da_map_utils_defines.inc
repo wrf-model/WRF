@@ -194,7 +194,7 @@
       real             :: lat1     ! SW latitude (1,1) in degrees (-90->90N)
       real             :: lon1     ! SW longitude (1,1) in degrees (-180->180E)
       real             :: dx       ! Grid spacing in meters at truelats, used
-                                 ! only for ps, lc, and merc projections
+                                   ! only for ps, lc, and merc projections
       real             :: dlat     ! Lat increment for lat/lon grids
       real             :: dlon     ! Lon increment for lat/lon grids
       real             :: stdlon   ! Longitude parallel to y-axis (-180->180E)
@@ -208,6 +208,8 @@
       real             :: rebydx   ! Earth radius divided by dx
       real             :: knowni   ! X-location of known lat/lon
       real             :: knownj   ! Y-location of known lat/lon
+      real             :: latinc   ! Latitude increments in degrees 
+      real             :: loninc   ! Longitude increments in degrees 
       logical          :: init     ! Flag to indicate if this struct is 
                                  ! ready for use
    end type proj_info

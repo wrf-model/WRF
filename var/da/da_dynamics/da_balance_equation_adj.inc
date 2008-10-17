@@ -41,9 +41,15 @@ subroutine da_balance_equation_adj(grid, xbx, phi_b, u, v)
    if (fg_format == fg_format_kma_global) then
       coefx(is:ie,js:je) = grid%xb%coefx(is:ie,js:je)
       coefy(is:ie,js:je) = grid%xb%coefy(is:ie,js:je)
-   else if (fg_format == fg_format_wrf) then
+   else if (fg_format == fg_format_wrf_arw_global) then
+      write (unit=message(1),fmt='(A,I3)') ' needs work for fg_format  = ',fg_format
+      call da_error(__FILE__,__LINE__,message(1:1))
+   else if (fg_format == fg_format_wrf_arw_regional) then
       coefx(is:ie,js:je) = grid%xb%coefz(is:ie,js:je)
       coefy(is:ie,js:je) = coefx(is:ie,js:je)
+   else if (fg_format == fg_format_wrf_nmm_regional) then
+      write (unit=message(1),fmt='(A,I3)') ' needs work for fg_format  = ',fg_format
+      call da_error(__FILE__,__LINE__,message(1:1))
    else
       write (unit=message(1),fmt='(A,I3)') ' Wrong FG_FORMAT = ',fg_format
       call da_error(__FILE__,__LINE__,message(1:1))

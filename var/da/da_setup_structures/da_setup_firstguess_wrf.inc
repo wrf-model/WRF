@@ -19,6 +19,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
    character(len=24) :: xb_date, an_date
    integer           :: len, seconds, i_grid,  j_grid, m_expand
 
+
    if (trace_use) call da_trace_entry("da_setup_firstguess_wrf")
 
    !-----------------------------------------------------------------------
@@ -115,7 +116,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
 
    call da_map_set(map_util_project,grid%cen_lat,grid%cen_lon,   &
                 real(grid%xp%ide-grid%xp%ids+2)/2.0, real(grid%xp%jde-grid%xp%jds+2)/2.0, &
-                grid%dx,grid%stand_lon,grid%truelat1,grid%truelat2,map_info)
+                grid%dx,grid%stand_lon,grid%truelat1,grid%truelat2,grid%truelat1,grid%stand_lon,map_info)
 
    ! Need to set map projection in WRF world.
    map_projection = grid%map_proj

@@ -83,7 +83,9 @@ else
    LOCAL_DATE=$DATE
    FILES=''
    while [[ $LOCAL_DATE -le $END_DATE ]]; do
-      FILES="$FILES $WPS_INPUT_DIR/$LOCAL_DATE/*"
+      if [[ -e $WPS_INPUT_DIR/$LOCAL_DATE ]]; then
+         FILES="$FILES $WPS_INPUT_DIR/$LOCAL_DATE/*"
+      endif
       LOCAL_DATE=$($BUILD_DIR/da_advance_time.exe ${LOCAL_DATE} ${LBC_FREQ} 3>/dev/null)
    done
    $WPS_DIR/link_grib.csh $FILES

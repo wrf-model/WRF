@@ -23,6 +23,8 @@ subroutine da_map_init(proj)
    proj%rsw      = -999.9
    proj%knowni   = -999.9
    proj%knownj   = -999.9
+   proj%latinc   = -999.9
+   proj%loninc   = -999.9
    proj%init     = .false.
 
    if (trace_use_dull) call da_trace_exit("da_map_init")

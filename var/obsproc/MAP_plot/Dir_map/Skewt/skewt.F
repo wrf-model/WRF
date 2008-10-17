@@ -28,6 +28,7 @@ C
       CHARACTER LAB*120, ISTAT*40
 C
       CHARACTER *80    TITLINE
+      CHARACTER *2     ISPOPT
       INTEGER          ITSTRT,
      *                 ITITLEN,
      *                 LCNTR

@@ -1,4 +1,4 @@
-subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truelat2,proj)
+subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truelat2,latinc,loninc,proj)
    ! Given a partially filled proj_info structure, this routine computes
    ! polei, polej, rsw, and cone (if LC projection) to complete the 
    ! structure.  This allows us to eliminate redundant calculations when
@@ -19,6 +19,7 @@ subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truel
    real,            intent(in)  :: truelat1
    real,            intent(in)  :: truelat2
    real,            intent(in)  :: knowni , knownj
+   real,            intent(in)  :: latinc, loninc 
    type(proj_info), intent(out) :: proj
 
    if (trace_use_dull) call da_trace_entry("da_map_set")
@@ -40,7 +41,7 @@ subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truel
       call da_error(__FILE__,__LINE__, &
          (/"Need orientation longitude (stdlon) as: -180E <= lon1 <= 180W"/)) 
    end if
-   if (ABS(truelat1)>90.0) then
+   if (proj%code .NE. PROJ_LATLON .and. ABS(truelat1)>90.0) then
       call da_error(__FILE__,__LINE__, &
          (/"Set true latitude 1 for all projections!"/))
    end if
@@ -55,6 +56,8 @@ subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truel
    proj%stdlon = stdlon
    proj%truelat1 = truelat1
    proj%truelat2 = truelat2
+   proj%latinc   = latinc  
+   proj%loninc   = loninc  
    if (proj%code .NE. PROJ_LATLON) then
       proj%dx = dx
       if (truelat1 < 0.0) then
@@ -98,6 +101,7 @@ subroutine da_map_set(proj_code,lat1,lon1,knowni,knownj,dx,stdlon,truelat1,truel
          ! Convert lon1 to 0->360 notation
          if (proj%lon1 < 0.0) proj%lon1 = proj%lon1 + 360.0
    
+         proj%cone = 1.0                                  
       case default
          write(unit=message(1),fmt='(A,I2)') 'Unknown projection code: ', proj%code
          call da_error(__FILE__,__LINE__,message(1:1))

@@ -21,7 +21,8 @@ module da_vtox_transforms
       vertical_ip,alphacv_method,use_radarobs,use_radar_rf,use_ssmitbobs, &
       use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
       use_gpsrefobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
-      fg_format_kma_global, fg_format_wrf, ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, &
+      fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
+      ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x
    use da_dynamics, only : da_psichi_to_uv,da_psichi_to_uv_adj
@@ -34,7 +35,7 @@ module da_vtox_transforms
    use da_par_util, only : da_vv_to_cv,da_cv_to_vv
    use da_recursive_filter, only : da_transform_through_rf, &
       da_transform_through_rf_adj
-   use da_reporting, only : da_error
+   use da_reporting, only : da_error, message, da_warning, da_message
    use da_spectral, only : da_vtovv_spectral,da_vtovv_spectral_adj
    use da_ssmi, only : da_transform_xtoseasfcwind_lin,da_transform_xtotb_adj, &
       da_transform_xtoseasfcwind_adj, da_transform_xtotb_lin

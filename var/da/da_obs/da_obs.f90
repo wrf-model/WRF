@@ -14,8 +14,8 @@ module da_obs
       use_bogusobs,use_buoyobs, use_airsretobs, trace_use, num_procs, &
       missing_r, missing, use_airepobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs, &
       use_ssmt1obs,filtered_obs_unit,fmt_each,fmt_info,fmt_srfc, ide, jde, &
-      pseudo_x, fg_format, fg_format_kma_global, fg_format_wrf, missing_data, &
-      pseudo_var, pseudo_val,stdout, num_pseudo, pseudo_y, pseudo_z, &
+      pseudo_x, fg_format, fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
+      missing_data, pseudo_var, pseudo_val,stdout, num_pseudo, pseudo_y, pseudo_z, &
       pseudo_err,obs_qc_pointer,myproc,rtm_option,rtm_option_rttov, &
       rtm_option_crtm,use_rad, base_temp, base_lapse, base_pres, &
       ob_format,ob_format_ascii,filename_len, trace_use_dull, &

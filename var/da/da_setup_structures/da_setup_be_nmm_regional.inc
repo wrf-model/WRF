@@ -1,4 +1,4 @@
-subroutine da_setup_be_regional(xb, be)
+subroutine da_setup_be_nmm_regional(xb, be)
 
    !---------------------------------------------------------------------------
    ! Purpose: Define and allocate components of background errors
@@ -61,21 +61,18 @@ subroutine da_setup_be_regional(xb, be)
    real                        :: avg,avg2,avg3
    integer                     :: be_unit
 
-   if (trace_use) call da_trace_entry("da_setup_be_regional")
-
-   write (unit=message(1),fmt='(A)') &
-      'Set up background errors for regional application'
+   if (trace_use) call da_trace_entry("da_setup_be_nmm_regional")
 
    be % v1 % name = 'psi  '           ! Streamfunction
    be % v2 % name = 'chi_u'           ! Uncorrelated velocity potential.
    be % v3 % name = 't_u'             ! Unbalanced temperature.
    be % v4 % name = 'q/qsg'
    be % v5 % name = 'psfc'            ! surface pressure
-!
-   if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
+!clq
+   if(use_radarobs .and. use_radar_rf) then
    be % v4 % name = 'qt   '
    end if
-!
+!clq end
 
    write (unit=message(2),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
@@ -84,10 +81,12 @@ subroutine da_setup_be_regional(xb, be)
    write (unit=message(3),fmt='(3x,A,A)') &
       'Humidity control variable is ', trim(be % v4 % name)
 
+   write (unit=message(3),fmt='(3x,A,A)') &
+      'Humidity control variable is ', trim(be % v4 % name)
+
    ix = xb % mix
    jy = xb % mjy
    kz = xb % mkz
-
    call da_get_unit(be_unit)
    open(unit=be_unit,file="be.dat", status="old",form="unformatted")
 
@@ -106,6 +105,7 @@ subroutine da_setup_be_regional(xb, be)
 
    ! 1.1 Read in regression coefficients
 
+
    allocate (regcoeff1(1:num_bins))
    allocate (regcoeff2(1:nk,1:num_bins2d))
    allocate (regcoeff3(1:nk,1:nk,1:num_bins2d))
@@ -115,28 +115,29 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit) regcoeff3  
 
    ! 1.2 Fill regression coeff. array
-   allocate (be%reg_chi(1:jy,1:nk))
-   allocate (be%reg_ps (1:jy,1:nk))
-   allocate (be%reg_t  (1:jy,1:nk,1:nk))
 
-   do k=1,nk
+!                                47 25 50
+   allocate (be%reg_chi(1:jy,1:kz))
+   allocate (be%reg_ps (1:jy,1:kz))
+   allocate (be%reg_t  (1:jy,1:kz,1:kz))
+
+   do k=1,kz
       do j =1, jy
-         b = bin(1,j,k)
+         b = bin(1,1,k)
          be%reg_chi(j,k) = regcoeff1(b)
       end do
    end do
-
    do j=1,jy
-      b = bin2d(1,j)
-      do k=1,nk
+      b = bin2d(1,1)
+      do k=1,kz
          be%reg_ps(j,k) = regcoeff2(k,b)
       end do
    end do
 
    do j=1,jy
-      b = bin2d(1,j)
-      do i=1,nk
-         do k=1,nk
+      b = bin2d(1,1)
+      do i=1,kz
+         do k=1,kz
             be%reg_t(j,i,k) = regcoeff3(i,k,b)
          end do
       end do
@@ -145,6 +146,7 @@ subroutine da_setup_be_regional(xb, be)
    deallocate (regcoeff1)
    deallocate (regcoeff2)
    deallocate (regcoeff3)
+
 
    ! 1.3 Domain_averaged regression coefficients
 
@@ -156,8 +158,8 @@ subroutine da_setup_be_regional(xb, be)
          avg= 0.0
          avg2=0.0
          do j=1,num_bins2d
-            avg= avg + be%reg_ps (j,k)/float(num_bins2d) 
-            avg2= avg2 + be%reg_chi (j,k)/float(num_bins2d) 
+            avg= avg + be%reg_ps (j,k)/float(num_bins2d)
+            avg2= avg2 + be%reg_chi (j,k)/float(num_bins2d)
          end do
 
          do j=1,num_bins2d
@@ -185,33 +187,32 @@ subroutine da_setup_be_regional(xb, be)
    end if
 
    call da_message(message(1:4))
-    
-   ! 2.0 Load the eigenvector and eigenvalue
 
-   allocate (be1_eval_loc (1:jy,1:kz))
-   allocate (be2_eval_loc (1:jy,1:kz))
-   allocate (be3_eval_loc (1:jy,1:kz))
-   allocate (be4_eval_loc (1:jy,1:kz))
+   ! 2.0 Load the eigenvector and eigenvalue
+   allocate (be1_eval_loc (1:jy,1:nk))
+   allocate (be2_eval_loc (1:jy,1:nk))
+   allocate (be3_eval_loc (1:jy,1:nk))
+   allocate (be4_eval_loc (1:jy,1:nk))
    allocate (be5_eval_loc (1:jy,1:1))
 
    if (vert_corr == vert_corr_2) then
 
-      allocate (be1_eval_glo(1:kz))
-      allocate (be2_eval_glo(1:kz))
-      allocate (be3_eval_glo(1:kz))
-      allocate (be4_eval_glo(1:kz))
+      allocate (be1_eval_glo(1:nk))
+      allocate (be2_eval_glo(1:nk))
+      allocate (be3_eval_glo(1:nk))
+      allocate (be4_eval_glo(1:nk))
       allocate (be5_eval_glo(1:1))
 
-      allocate (be1_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be2_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be3_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be4_evec_loc(1:jy,1:kz,1:kz))
+      allocate (be1_evec_loc(1:jy,1:nk,1:nk))
+      allocate (be2_evec_loc(1:jy,1:nk,1:nk))
+      allocate (be3_evec_loc(1:jy,1:nk,1:nk))
+      allocate (be4_evec_loc(1:jy,1:nk,1:nk))
       allocate (be5_evec_loc(1:jy,1: 1,1: 1))
 
-      allocate (be1_evec_glo(1:kz,1:kz))
-      allocate (be2_evec_glo(1:kz,1:kz))
-      allocate (be3_evec_glo(1:kz,1:kz))
-      allocate (be4_evec_glo(1:kz,1:kz))
+      allocate (be1_evec_glo(1:nk,1:nk))
+      allocate (be2_evec_glo(1:nk,1:nk))
+      allocate (be3_evec_glo(1:nk,1:nk))
+      allocate (be4_evec_glo(1:nk,1:nk))
       allocate (be5_evec_glo(1:1,1:1))
    end if
 
@@ -234,9 +235,9 @@ subroutine da_setup_be_regional(xb, be)
    end if
    be % v1 % name = variable
    do j=1,jy
-      b = bin2d(1,j)
-      be1_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be1_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+      b = bin2d(1,1)
+      be1_evec_loc(j,1:kz,1:kz) = evec_loc(1:kz,1:kz,b)
+      be1_eval_loc(j,1:kz  ) = eval_loc(1:kz,b)
    end do
 
    ! 2.2.2 Control variable 2 (chi_u)
@@ -254,9 +255,9 @@ subroutine da_setup_be_regional(xb, be)
    end if
    be % v2 % name = variable
    do j=1,jy
-      b = bin2d(1,j)
-      be2_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be2_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+      b = bin2d(1,1)
+      be2_evec_loc(j,1:kz,1:kz) = evec_loc(1:kz,1:kz,b)
+      be2_eval_loc(j,1:kz  ) = eval_loc(1:kz,b)
    end do
 
    ! 2.2.3 Control variable 3 (t_u)
@@ -273,9 +274,9 @@ subroutine da_setup_be_regional(xb, be)
    end if
    be % v3 % name = variable
    do j=1,jy
-      b = bin2d(1,j)
-      be3_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be3_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+      b = bin2d(1,1)
+      be3_evec_loc(j,1:kz,1:kz) = evec_loc(1:kz,1:kz,b)
+      be3_eval_loc(j,1:kz  ) = eval_loc(1:kz,b)
    end do
 
    ! 2.2.4 Control variable 4 (q/qsg)
@@ -293,9 +294,9 @@ subroutine da_setup_be_regional(xb, be)
    end if
    be % v4 % name = variable
    do j=1,jy
-      b = bin2d(1,j)
-      be4_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-      be4_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+      b = bin2d(1,1)
+      be4_evec_loc(j,1:kz,1:kz) = evec_loc(1:kz,1:kz,b)
+      be4_eval_loc(j,1:kz  ) = eval_loc(1:kz,b)
    end do
 
    deallocate (evec_loc)
@@ -318,7 +319,7 @@ subroutine da_setup_be_regional(xb, be)
    end if
    be % v5 % name = variable
    do j=1,jy
-      b = bin2d(1,j)
+      b = bin2d(1,1)
       be5_evec_loc(j,1:1,1:1) = evec_loc(1:1,1:1,b)
       be5_eval_loc(j,1:1 ) = eval_loc(1:1,b)
    end do
@@ -347,11 +348,7 @@ subroutine da_setup_be_regional(xb, be)
       call da_get_vertical_truncation(max_vert_var3, be3_eval_glo(:), be % v3)
       call da_get_vertical_truncation(max_vert_var4, be4_eval_glo(:), be % v4)
 
-      if (max_vert_var5 == 0.0) then
-         be % v5 % mz = 0
-      else
-         be % v5 % mz = 1
-      end if
+      be % v5 % mz = 1
 
       write (unit=stdout,fmt=*) ' '
 
@@ -385,7 +382,6 @@ subroutine da_setup_be_regional(xb, be)
                                        be3_evec_loc, be % v3)
    call da_allocate_background_errors(jy, kz, be4_eval_glo, be4_evec_glo, be4_eval_loc, &
                                        be4_evec_loc, be % v4)
-
    ! 4.2.1 transfer the ps_u variance to be % v5:
 
    call da_allocate_background_errors(jy,  1, be5_eval_glo, be5_evec_glo, be5_eval_loc, &
@@ -526,8 +522,8 @@ subroutine da_setup_be_regional(xb, be)
       be % alpha % mz = 0
    end if
 
-   if (trace_use) call da_trace_exit("da_setup_be_regional")
+   if (trace_use) call da_trace_exit("da_setup_be_nmm_regional")
 
-end subroutine da_setup_be_regional
+end subroutine da_setup_be_nmm_regional
 
 

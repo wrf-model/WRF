@@ -24,8 +24,9 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
    !----------------------------------------------------------------------
 
    if (global) then
-      call da_transform_vtovv_global(cv_size, xbx, be, cv, vv) 
-   else
+      call da_transform_vtovv_global(cv_size, xbx, be, cv, vv)
+   else if (fg_format == fg_format_wrf_arw_regional .or. &
+            fg_format == fg_format_wrf_nmm_regional) then
       call da_transform_vtovv(grid, cv_size, be, cv, vv)
    end if
    
@@ -57,5 +58,4 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
    if (trace_use) call da_trace_exit("da_transform_vtox")
 
 end subroutine da_transform_vtox
-
 

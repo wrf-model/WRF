@@ -20,10 +20,14 @@ subroutine da_llxy_new (info, outside, outside_all)
    
    ! get the (x, y) coordinates
 
-   if (fg_format == fg_format_wrf) then
+   if (fg_format == fg_format_wrf_arw_regional) then
       call da_llxy_wrf_new(map_info, info)
-   else if (fg_format == fg_format_kma_global) then
-      call da_llxy_kma_global_new (info)
+   else if (fg_format == fg_format_wrf_nmm_regional) then
+      write(unit=message(1),fmt='(A,I5)') &
+         "Needs to be developed for fg_format_nmm_regional = ",fg_format
+      call da_error(__FILE__,__LINE__,message(1:1))
+   else if (global) then
+      call da_llxy_global_new (info)
    else
       call da_llxy_default_new (info)
    end if

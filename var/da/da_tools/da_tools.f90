@@ -13,19 +13,21 @@ module da_tools
       trace_use_dull, trace_use, fg_format_kma_global, coarse_ds, coarse_ix, &
       coarse_jy, fg_format, c2, cone_factor, earth_radius, dsm, &
       map_projection, psi1, pole, start_x, phic, start_y, xlonc, ycntr, &
-      obs_qc_pointer, anal_type_verify, &
+      obs_qc_pointer, anal_type_verify, fg_format_wrf_arw_regional, &
+      fg_format_wrf_nmm_regional, fg_format_wrf_arw_global, fg_format_kma_global, &
       set_omb_rand_fac, fails_error_max, missing_r,x_start_sub_domain, global, &
-      fg_format_wrf, x_end_sub_domain, y_end_sub_domain, def_sub_domain, &
+      x_end_sub_domain, y_end_sub_domain, def_sub_domain, &
       y_start_sub_domain, start_lat, delt_lat, delt_lon, start_lon, cp, &
       missing, surface_correction,print_detail_map, use_rad, stderr, &
-      t_kelvin, trace_use_frequent, jds, jde, pptop,ppbot,npres_print
+      t_kelvin, trace_use_frequent, jds, jde, pptop,ppbot,npres_print, &
+      rad_to_deg, deg_to_rad
 
    use da_define_structures, only : info_type, field_type, x_type,  &
       model_loc_type, synop_type, bad_info_type, da_gauss_noise, &
       iv_type, y_type, da_random_seed, infa_type
    use da_tools_serial, only : da_array_print
    use da_tracing, only : da_trace_entry, da_trace_exit
-   use da_reporting, only : da_error, message, da_warning
+   use da_reporting, only : da_error, message, da_warning, da_message
    
    implicit none
    
@@ -40,6 +42,9 @@ contains
 #include "da_llxy_default_new.inc"
 #include "da_llxy_kma_global.inc"
 #include "da_llxy_kma_global_new.inc"
+#include "da_llxy_global.inc"
+#include "da_llxy_global_new.inc"
+#include "da_llxy_rotated_latlon.inc"
 #include "da_llxy_latlon.inc"
 #include "da_llxy_latlon_new.inc"
 #include "da_llxy_lc.inc"

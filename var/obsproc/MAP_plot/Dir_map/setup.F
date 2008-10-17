@@ -37,8 +37,9 @@ c .. Namelist DOMAINS available:
 c .. Namelist DOMAINS unavailable:
  66      rewind (15)
 
- 67      PRINT MAPBG
-         PRINT DOMAINS
+ 67      CONTINUE
+C        PRINT *, MAPBG
+C        PRINT *, DOMAINS
 
       if (iproj.eq.'CYLEQU') then
          PROJECT='CE'

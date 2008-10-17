@@ -110,7 +110,7 @@ C ==================================================================
       CALL SETUP
 C
       READ(15,TIME_WINDOW)
-      PRINT TIME_WINDOW
+C     PRINT*, TIME_WINDOW
 
       IF (LEN_TRIM (time_window_min) .LE. 10) THEN
       WRITE (time_work,'(A4,"-",A2,"-",A2,"_",A2,":",A2,":",A2)')
@@ -152,7 +152,7 @@ C
       ENDIF
 
       READ(15,SKEW_PLOTS)
-      PRINT SKEW_PLOTS
+C     PRINT*, SKEW_PLOTS
 C
 C ====================================================================
       do nd = 1,maxnes

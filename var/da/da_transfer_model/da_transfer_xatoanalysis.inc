@@ -20,7 +20,7 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    ! Write out analysis in differing formats:
    !---------------------------------------------------------------------------      
 
-   if (fg_format == fg_format_wrf) then
+   if (fg_format == fg_format_wrf_arw_regional) then
       if (write_increments .and. var4d) then
          write(unit=filnam,fmt='(a3,i1)') 'inc',it
          call da_transfer_xatowrftl(grid, config_flags, filnam)
@@ -34,6 +34,26 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
          end if
 
          call da_transfer_wrftoxb(xbx, grid, config_flags)
+      end if
+   else if (fg_format == fg_format_wrf_arw_global) then
+      if( var4d) then
+      write(unit=message(1),fmt='(A,I5)') &
+         "var4d is not possible with Global WRF fg_format = ",fg_format
+      call da_error(__FILE__,__LINE__,message(1:1))
+      else
+       call da_transfer_xatowrf(grid)
+       if (it < max_ext_its)call da_transfer_wrftoxb(xbx, grid, config_flags)
+      end if
+   else if (fg_format == fg_format_wrf_nmm_regional) then
+      call da_transfer_xatowrf_nmm_regional(grid)
+      if (it < max_ext_its) then
+         if (var4d) then
+      write(unit=message(1),fmt='(A,I5)') &
+         "var4d is not possible for fg_format = ",fg_format
+      call da_error(__FILE__,__LINE__,message(1:1))
+         end if
+
+         call da_transfer_wrf_nmm_regional_toxb(xbx, grid)
       end if
    else if (fg_format == fg_format_kma_global) then
       call da_transfer_xatokma(grid)

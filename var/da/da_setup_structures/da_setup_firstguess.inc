@@ -13,7 +13,6 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
 
    integer :: is, ie, js, je
    real    :: ddx , ddy    
-
    if (trace_use) call da_trace_entry("da_setup_firstguess")
 
    is = grid%xp % its
@@ -48,11 +47,14 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
    ! [1.0] Setup and read in fields from first guess:
    !---------------------------------------------------------------------------      
 
-   if (fg_format == fg_format_wrf) then
+   if (fg_format == fg_format_wrf_arw_regional .or. &
+       fg_format == fg_format_wrf_arw_global) then
 
       ! First guess is a WRF C-grid format file:
 
       call da_setup_firstguess_wrf(xbx, grid, config_flags)
+   else if (fg_format == fg_format_wrf_nmm_regional ) then
+      call da_setup_firstguess_wrf_nmm_regional(xbx, grid)
    else if (fg_format == fg_format_kma_global) then
       ! First guess is an KMA format file:
       call da_setup_firstguess_kma(xbx, grid)
@@ -62,11 +64,17 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
    ! Exchange halo region for XB arrays.
    !---------------------------------------------------------------------------
 
-   if (fg_format == fg_format_wrf) then
+   if (fg_format == fg_format_wrf_arw_regional) then
       ! Calculate multiplicative constants for PsiChi_TO_UV 
       grid%xb%coefx(is:ie,js:je) = 0.5 * grid%xb%map_factor(is:ie,js:je)/grid%xb%ds
       grid%xb%coefy(is:ie,js:je) = grid%xb%coefx(is:ie,js:je)
-      grid%xb%coefz(is:ie,js:je) = 0.5 / (grid%xb%map_factor(is:ie,js:je)*grid%xb%ds)
+   else if (fg_format == fg_format_wrf_arw_global) then
+      ! Calculate multiplicative constants for PsiChi_TO_UV 
+      grid%xb%coefx(is:ie,js:je) = 0.5 * grid%rdx * grid%msftx(is:ie,js:je)
+      grid%xb%coefy(is:ie,js:je) = 0.5 * grid%rdy * grid%msfty(is:ie,js:je)
+   else if (fg_format == fg_format_wrf_nmm_regional) then
+      grid%xb%coefx(is:ie,js:je) = 0.5/grid%mu0(is:ie,js:je)
+      grid%xb%coefy(is:ie,js:je) = 0.5/grid%xb%ds            
    else if (fg_format == fg_format_kma_global) then
       ! Calculate multiplicative constants for PsiChi_TO_UV 
       ddx =  earth_radius*1000 * 2.0 * pi / (grid%xb%ide-grid%xb%ids+1)
@@ -74,8 +82,7 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
       grid%xb% coefx(is:ie,js:je) = 0.5 / (ddx * cos(grid%xlat(is:ie,js:je)*pi/180.))
       grid%xb% coefy(is:ie,js:je) = 0.5 /  ddy
    else
-      write(unit=message(1),fmt='(A,I5)') &
-         "Wrong choice for fg_format = ",fg_format
+      write (unit=message(1),fmt='(A,I3)') ' Wrong Choice of fg_format  = ',fg_format
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
@@ -94,11 +101,8 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
    !---------------------------------------------------------------------------
 
    ! [2.1] Set up fast Fourier & Legendre transform constants:
-
    call da_setup_runconstants(grid, xbx)
 
    if (trace_use) call da_trace_exit("da_setup_firstguess")
 
 end subroutine da_setup_firstguess
-
-

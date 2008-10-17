@@ -69,7 +69,12 @@ if $DUMMY; then
    done
    echo Dummy real > wrfbdy_d01
 else
-   ln -fs $REAL_INPUT_DIR/$DATE/met_em.d* .
+   if [[ -e $REAL_INPUT_DIR/$DATE ]]; then
+      ln -fs $REAL_INPUT_DIR/$DATE/met_em.d* .
+   else
+      LOCAL_DATE=$($BUILD_DIR/da_advance_time.exe ${DATE} -3 2>/dev/null)
+      ln -fs $REAL_INPUT_DIR/$LOCAL_DATE/met_em.d* .
+   fi
    ln -fs ${WRF_DIR}/main/real.exe .
    $RUN_CMD ./real.exe
    RC=$?

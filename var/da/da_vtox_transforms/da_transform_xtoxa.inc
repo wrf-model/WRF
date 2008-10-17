@@ -23,7 +23,7 @@ subroutine da_transform_xtoxa(grid)
 
    do j=jts,jte
       do i=its,ite
-         if (fg_format == fg_format_wrf) then
+         if (fg_format == fg_format_wrf_arw_regional) then
             sdmd=0.0
             s1md=0.0
             do k=kts,kte

@@ -72,16 +72,18 @@ subroutine da_get_innov_vector_satem(it, num_qcstat_conv,grid, ob, iv)
          if (ABS(ob % satem(n) % thickness(k) - missing_r) > 1.0 .and. &
               iv % satem(n) % thickness(k)%qc /= missing_data) then
             iv % satem(n) % thickness(k) % inv = ob % satem(n) % thickness(k) - model_thickness(k)
-!                  mm = mm + 1
-!                  write(101,'(A,3I6,2x,A, 2F10.3,F10.0,A,F5.0,2(A,F10.3),A,I8)') &
-!                    "num, n,k:", mm, n, k, &
-!                    "observed, model_thickness, layer = ", &
-!                     ob%satem(n)%thickness(k), &
-!                     model_thickness(k), 0.01*pres2, " -", &
-!                     iv%satem(n)%p(k)*0.01,'hPa  ob_error:',  &
-!                     iv%Satem(n)%thickness(k)%error, " inv=", &
-!                     iv%Satem(n)%thickness(k)%inv,   " qc =", &
-!                     iv%Satem(n)%thickness(k)%qc
+!-------------------------
+                  mm = mm + 1
+                  write(101,'(A,3I6,2x,A, 2F10.3,F10.0,A,F5.0,2(A,F10.3),A,I8)') &
+                    "num, n,k:", mm, n, k, &
+                    "observed, model_thickness, layer = ", &
+                     ob%satem(n)%thickness(k), &
+                     model_thickness(k), 0.01*pres2, " -", &
+                     iv%satem(n)%p(k)*0.01,'hPa  ob_error:',  &
+                     iv%Satem(n)%thickness(k)%error, " inv=", &
+                     iv%Satem(n)%thickness(k)%inv,   " qc =", &
+                     iv%Satem(n)%thickness(k)%qc
+!-------------------------
          end if
 
          pres2 = iv%satem(n)%p(k)

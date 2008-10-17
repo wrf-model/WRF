@@ -27,8 +27,8 @@ module da_test
       its,ite,jts,jte,kts,kte,sfc_assi_options,typical_qrn_rms, &
       typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, &
       typical_q_rms,typical_qcw_rms,print_detail_testing,typical_rh_rms, &
-      fg_format, fg_format_wrf,typical_rf_rms,typical_rv_rms, &
-      typical_thickness_rms, typical_tb19v_rms,typical_tb37h_rms, &
+      fg_format, fg_format_wrf_arw_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
+      typical_rf_rms,typical_rv_rms, typical_thickness_rms, typical_tb19v_rms,typical_tb37h_rms, &
       typical_tb85h_rms,typical_tb37v_rms,typical_tb85v_rms,typical_tb22v_rms, &
       typical_tb19h_rms,typical_speed_rms,typical_tpw_rms,typical_ref_rms, &
       cv_options_hum,inv_typ_vp5_sumsq,inv_typ_vp1_sumsq, &

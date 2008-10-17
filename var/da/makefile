@@ -57,6 +57,7 @@ include convertor.make
 include decode_l2_airs.make
 
 libwrfvar.a : $(WRFVAR_OBJS)
+	rm -f libwrfvar.a
 	$(AR) $(ARFLAGS) libwrfvar.a $(WRFVAR_OBJS)
 	$(RANLIB) libwrfvar.a
 

@@ -6,7 +6,7 @@
 #-----------------------------------------------------------------------
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}
 export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/obsproc}
@@ -191,9 +191,9 @@ if $DUMMY; then
    echo "Dummy obsproc"
    echo "Dummy obsproc" > obs_gts.3dvar
 else
-   ln -fs $WRFVAR_DIR/obsproc/obserr.txt .
-   ln -fs $WRFVAR_DIR/obsproc/prepbufr_table_filename .
-   $WRFVAR_DIR/obsproc/3dvar_obs.exe
+   ln -fs $WRFVAR_DIR/var/obsproc/obserr.txt .
+   ln -fs $WRFVAR_DIR/var/obsproc/prepbufr_table_filename .
+   $WRFVAR_DIR/var/obsproc/3dvar_obs.exe
    RC=$?
    echo "Ended %$RC"
 fi

@@ -38,13 +38,17 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    ! Convert vorticity to Del**2 psi:
    if (.not. global) then               
-      if (fg_format == fg_format_wrf) then
+      if (fg_format == fg_format_wrf_arw_regional) then
          one_over_m2(its:ite,jts:jte) = 1.0 / (xb % map_factor(its:ite,jts:jte) * &
                                         xb % map_factor(its:ite,jts:jte))
          do k = kts, kte
             vor(its:ite,jts:jte,k) = &
               one_over_m2(its:ite,jts:jte)*vor(its:ite,jts:jte,k)
          end do
+      else if (fg_format == fg_format_wrf_nmm_regional) then
+         write(unit=message(1),fmt='(A,I5)') &
+         "Needs to be developed for fg_format_nmm_regional = ",fg_format
+         call da_error(__FILE__,__LINE__,message(1:1))
       else
          write(unit=message(1),fmt='(A,I5,A,L10)') &
             ' Wrong choice of fg_format= ',fg_format,' with global = ',global
@@ -63,11 +67,15 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    ! Convert divergence to Del**2 chi:
    if (.not. global)  then              
-      if (fg_format == fg_format_wrf) then
+      if (fg_format == fg_format_wrf_arw_regional) then
          do k = kts, kte
             div(its:ite,jts:jte,k) = &
                one_over_m2(its:ite,jts:jte) * div(its:ite,jts:jte,k)
          end do
+      else if (fg_format == fg_format_wrf_nmm_regional) then
+         write(unit=message(1),fmt='(A,I5)') &
+         "Needs to be developed for fg_format_nmm_regional = ",fg_format
+         call da_error(__FILE__,__LINE__,message(1:1))
       else
          write(unit=message(1),fmt='(A,I5,A,L10)') &
             ' Wrong choice of fg_format= ',fg_format,' with global = ',global

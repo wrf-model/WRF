@@ -21,9 +21,12 @@ subroutine da_setup_background_errors(xb, be)
    be % v5 % mz = 0
 
    if (global) then
-      call da_setup_be_global (be)
-   else
-      call da_setup_be_regional (xb, be)
+      call da_setup_be_global(be)
+   else if(fg_format == fg_format_wrf_arw_regional) then    
+            call da_setup_be_regional (xb, be)
+   else if(fg_format == fg_format_wrf_nmm_regional ) then
+!rizvi TBD            call da_setup_be_regional (xb, be)
+            call da_setup_be_nmm_regional (xb, be)
    end if
 
    call da_setup_cv (be)

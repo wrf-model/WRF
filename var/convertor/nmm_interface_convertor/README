@@ -1,0 +1,52 @@
+I. Files included!!
+********************
+1) convert_e2c.F -> main program used for the grid conversion utility.
+2) kinds.F
+3) gridmod.F
+4) constants.F
+5) add_increments_for_wrf_nmm.f
+6) Makefile
+7) compiler_macros
+8) run_convert_e2c.ksh
+
+II) How to compile the convertor program?
+******************************************
+1) Check the path for "NetCDF" in "compiler_macros".
+2) Check all the compiler option in "compiler_macros".
+3) "make"
+
+It will create "convert_e2c.exe" in the same directory.
+
+III) There is a script named "run_convert_e2c.ksh" in same directory,
+which can be used to read WRF_NNMM real output E-grid file (i.e. "wrfinput_d01" from 
+WRF_NMM ) and convert the needed WRF_Var input variable and write an new C-grid file like "wrfoutput_d01".
+
+IV) How to use the "run_convert_e2c.ksh" script?
+************************************************
+1) Give the "INITIAL_DATE", "FINAL_DATE" and "CYCLE_PERIOD"
+2) Following path should be mentioned in the script!!
+
+export SRC_DIR=/ptmp/sujata/convertor
+export DAT_DIR=/ptmp/sujata/data
+export REGION=india_27km_nmm
+export EXPT=run_india_27km_nmm
+export WRF_NMM_RC_DIR=${WRF_NMM_RC_DIR:-$DAT_DIR/$REGION/$EXPT/rc}
+export BUILD_DIR=/ptmp/sujata/WRFDA_3_0_1/var/da
+
+export ARW_RC_DIR=${ARW_RC_DIR:-$DAT_DIR/$REGION/rc}
+export RUN_DIR=${RUN_DIR:-$DAT_DIR/$REGION
+
+V) Backward conversion (C2E)!!
+*******************************
+There is a fortran file "add_increments_for_wrf_nmm.f" is present. This can be used for adding the 
+"analysis increment" file generated through "WRF_Var" process with the initial field "wrfinput_d01" 
+from WRF_NMM.
+
+1) Give the path for your "analysis increment" file.
+
+2) It can be compiled as follows.
+
+xlf90 -o add_increments_for_wrf_nmm.exe add_increments_for_wrf_nmm.f -I/usr/local/netcdf/include -L/usr/local/netcdf/lib -lnetcdf
+
+It will generate "add_increments_for_wrf_nmm.exe" executable which can be used for backward conversion purpose. 
+This information is also there in "add_increments_for_wrf_nmm.f" file.

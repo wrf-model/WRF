@@ -3746,12 +3746,14 @@ CONTAINS
 !     Set molecular weight ratios                                                    
 
       real :: amdw,  &  ! Molecular weight of dry air / water vapor      
+              amdo,  &  ! Molecular weight of ozone / water vapor
               amdc,  &  ! Molecular weight of dry air / methane          
               amdn,  &  ! Molecular weight of dry air / nitrous oxide    
               amdc1, &  ! Molecular weight of dry air / CFC11            
               amdc2     ! Molecular weight of dry air / CFC12            
 
       data amdw /  1.607758 /                                                    
+      data amdo /  0.603461 /                                                    
       data amdc /  1.805423 /                                                    
       data amdn /  0.658090 /                                                    
       data amdc1/  0.210852 /                                                    
@@ -3861,7 +3863,9 @@ CONTAINS
          TZ(L) = Tw(kte+1-L)                                                    
          WKL(1,L) = qv(kte+1-L)*amdw                                             
          WKL(2,L) = co2vmr                                                       
-         WKL(3,L) = o3(kte+1-L)                                                  
+!         WKL(3,L) = o3(kte+1-L)                                                  
+! ozone is already bottom to top array but convert mmr to vmr
+         WKL(3,L) = o3(L)*amdo                                                  
          WKL(4,L) = n2o(kte+1-L)*amdn                                            
          WKL(6,L) = ch4(kte+1-L)*amdc                                            
          amm = (1-WKL(1,L))*amd + WKL(1,L)*amw                                   

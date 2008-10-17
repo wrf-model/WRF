@@ -431,7 +431,8 @@ CONTAINS
 !                                                                                
       DO 60 I=its,ite
         E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
-        QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+! for land points QSFC can come from previous time step
+        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       
@@ -475,7 +476,7 @@ CONTAINS
         ENDIF                                                                    
         WSPD(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))                        
 
-        TSKV=THGB(I)*(1.+EP1*QSFC(I)*MAVAIL(I))                     
+        TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
         DTHVDZ=(THVX(I)-TSKV)                                                 
 !  Convective velocity scale Vc and subgrid-scale velocity Vsg
 !  following Beljaars (1995, QJRMS) and Mahrt and Sun (1995, MWR)

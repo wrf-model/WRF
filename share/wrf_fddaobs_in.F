@@ -240,7 +240,7 @@
   character*14 date_char
   character*40 platform,source,id,namef
   character*2 fonc
-  real latitude,longitude
+  real latitude,longitude,lastlat,lastlon
   real lat_prt(100),lon_prt(100)
   logical is_sound,bogus
   LOGICAL OPENED,exist
@@ -456,12 +456,14 @@
         rtimob=timeob(n)
       ENDIF
       read(nvol,102)latitude,longitude
-! save lat and long for printout
-      if(n.le.100) then
-         lat_prt(n) = latitude
-         lon_prt(n) = longitude
-      endif
  102  FORMAT(2x,2(f7.2,3x))
+
+! save lat and long for printout
+      if(n.eq.1) nlast=0          ! Requires N=1 on firstpass
+      if(nlast.le.100) then
+         call save_lat_lon(n,latitude,longitude,nlast,                  &
+                           lat_prt,lon_prt,lastlat,lastlon)
+      endif
 
 !     if(ifon.eq.4)print *,'ifon=4',latitude,longitude
 ! this works only for lc projection
@@ -1202,7 +1204,7 @@
     ips = min(nstaw,nobs_prt,100)
     if(ips.gt.0) then
       write(6,'(/a,i4,a,i2)') 'MASS-PT LOCATIONS FOR FIRST',ips,  &
-                              ' OBSERVATIONS FOR NEST ',inest
+                              ' ACCEPTED OBSERVATIONS FOR NEST ',inest
       write(6,*) '  OBS#    I       J      LAT     LON    TIME(hrs)'
     endif
 ! Note: rio and rjo are referenced to non-staggered grid (not mass-point!)
@@ -1585,6 +1587,58 @@ END SUBROUTINE rh2rb
 
   RETURN
   END FUNCTION nvals_le_limit
+
+  SUBROUTINE save_lat_lon(n,latitude,longitude,nlast,                     &
+                          lat_prt,lon_prt,lastlat,lastlon)
+!*************************************************************************
+! Purpose: Save the latitude and longitude values for printing observation
+!          diagnostics. This is tricky because (1) This call occurs
+!          within the loop for reading the observation, (2) observations
+!          can be rejected, and (3) soundings may contain multiple obs
+!          levels (i.e., n jumps by the number of levels in the sounding.
+!          Here, "last" means the last iteration of the read obs loop.
+!          NOTE: The lat/lon info for an obs is not actually stored until 
+!                the read of the subsequent obs, because the number of
+!                levels in the obs, or even whether or not the obs has
+!                been accepted, is not known until the subsequent read.
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  INTEGER, intent(in)    :: n               ! Observation index
+  REAL,    intent(in)    :: latitude        ! Latitude of obs
+  REAL,    intent(in)    :: longitude       ! Latitude of obs
+  INTEGER, intent(inout) :: nlast           ! Last observation index
+  REAL,    intent(out)   :: lat_prt(100)    ! Saved latitudes  for printout
+  REAL,    intent(out)   :: lon_prt(100)    ! Saved longitudes for printout
+  REAL,    intent(inout) :: lastlat         ! Stored value of last latitude 
+  REAL,    intent(inout) :: lastlon         ! Stored value of last longitude
+
+! Local variables
+  integer ndum   ! Loop counter
+
+! Store the lat/lon information for all the levels in the last obs that
+! was processed.
+  if(nlast.ge.1) then
+    do ndum = nlast, min(n-1,100)
+        lat_prt(ndum) = lastlat 
+        lon_prt(ndum) = lastlon 
+   enddo
+
+! Go ahead and fill up the rest of the print arrays, in case this is
+! the last iteration through the obs read loop.
+   do ndum = min(n-1,100)+1, 100
+     lat_prt(ndum) = latitude
+     lon_prt(ndum) = longitude
+   enddo
+  endif
+
+! Keep knowledge of last iteration.
+  nlast = n
+  lastlat=latitude
+  lastlon=longitude
+
+  END SUBROUTINE save_lat_lon
 
 #endif
 !-----------------------------------------------------------------------

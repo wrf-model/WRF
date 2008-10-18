@@ -1587,7 +1587,7 @@ BENCH_END(small_step_finish_tim)
          !$OMP PRIVATE ( ij )
 
          DO ij = 1 , grid%num_tiles
-           IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
+           IF (num_3d_s >= PARAM_FIRST_SCALAR) THEN
              DO im = PARAM_FIRST_SCALAR , num_3d_s
                CALL set_physical_bc3d(  scalar_old(ims,kms,jms,im), 'p', config_flags, &
                                         ids, ide, jds, jde, kds, kde,                    &
@@ -1648,7 +1648,7 @@ BENCH_END(small_step_finish_tim)
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
-           IF (num_3d_m >= PARAM_FIRST_SCALAR) THEN
+           IF (num_3d_c >= PARAM_FIRST_SCALAR) THEN
              DO im = PARAM_FIRST_SCALAR , num_3d_c
                CALL set_physical_bc3d(  chem_old(ims,kms,jms,im), 'p', config_flags,     &
                                         ids, ide, jds, jde, kds, kde,                    &

@@ -2001,7 +2001,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
   ! Local data
    LOGICAL, EXTERNAL                      :: wrf_dm_on_monitor
 
-   INTEGER                                :: ierr, efid
+   INTEGER                                :: ierr, efid, ifile_time
    REAL                                   :: time, tupdate
    real, allocatable :: dumc0(:,:,:)
    CHARACTER (LEN=256)                    :: message, current_date_char, date_string
@@ -2045,7 +2045,10 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 !        write(message,FMT='(A,F10.1,A)') ' EMISSIONS UPDATE TIME ',time,TRIM(current_date_char(12:13))
 !        CALL wrf_message( TRIM(message) )
 
-         IF ( tupdate .EQ. 0. .AND.  current_date_char(12:13) .EQ. '00' ) THEN
+         IF ( tupdate .EQ. 0. ) THEN
+          read( current_date_char(12:13),'(i2)') ifile_time
+          IF ( ifile_time .LT. 12  .AND. ifile_time .GE. 0 ) THEN
+
             CALL construct_filename1 ( inpname , 'wrfchemi_00z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
@@ -2060,7 +2063,9 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
                WRITE( message , * ) 'med_read_wrf_chem_emissions: error opening ', TRIM( inpname )
                CALL wrf_error_fatal( TRIM( message ) )
             ENDIF
-         ELSE IF ( tupdate .EQ. 0. .AND. current_date_char(12:13) .EQ. '12' ) THEN
+
+          ELSE IF ( ifile_time .LT. 24  .AND. ifile_time .GE. 12 ) THEN
+
             CALL construct_filename1 ( inpname , 'wrfchemi_12z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
@@ -2075,6 +2080,10 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
                WRITE( message , * ) 'med_read_wrf_chem_emissions: error opening ', TRIM( inpname )
                CALL wrf_error_fatal( TRIM( message ) )
             ENDIF
+          ELSE 
+             WRITE( message , '(A,I10)' ) 'med_read_wrf_chem_emissions: error in emissions file time ', ifile_time
+             CALL wrf_error_fatal( TRIM( message ) )
+          ENDIF
          ENDIF
 
          WRITE( message, '(A,2F10.1)' ) ' HOURLY EMISSIONS UPDATE TIME ',time,mod(time,3600.)

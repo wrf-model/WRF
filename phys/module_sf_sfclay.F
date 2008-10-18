@@ -431,7 +431,7 @@ CONTAINS
 !                                                                                
       DO 60 I=its,ite
         E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
-! for land points QSFC can come from previous time step
+!  for land points QSFC can come from previous time step
         if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM

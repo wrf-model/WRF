@@ -107,7 +107,9 @@ fi
 
 for DOMAIN in $DOMAINS; do
    if [[ -f $WORK_DIR/wrfinput_d${DOMAIN} ]]; then
-      mv $WORK_DIR/wrfinput_d${DOMAIN} $REAL_OUTPUT_DIR/$DATE
+      mv $WORK_DIR/wrfinput_d${DOMAIN}* $REAL_OUTPUT_DIR/$DATE
+      this_date_wrf=$($BUILD_DIR/da_advance_time.exe $DATE 0 -W 2>/dev/null)
+      (cd $REAL_OUTPUT_DIR/$DATE; ln -sf wrfinput_d${DOMAIN} wrfinput_d${DOMAIN}.$this_date_wrf)
    fi
 done
 mv $WORK_DIR/wrfbdy_d01 $REAL_OUTPUT_DIR/$DATE

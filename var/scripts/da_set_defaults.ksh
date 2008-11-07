@@ -17,6 +17,7 @@
 
 # Decide which stages to run (run if true):
 
+export RUN_ENS_EP=${RUN_ENS_EP:-false}
 export RUN_ENSMEAN=${RUN_ENSMEAN:-false}
 export RUN_ETKF=${RUN_ETKF:-false}
 export RUN_IDEAL=${RUN_IDEAL:-false}
@@ -124,8 +125,8 @@ export INITIAL_DATE=${INITIAL_DATE:-2003010100}   # Start date of test period
 export FINAL_DATE=${FINAL_DATE:-2003012800}       # Final date of test period.
 export NL_NUM_FGAT_TIME=${NL_NUM_FGAT_TIME:-1}
 export LBC_FREQ=${LBC_FREQ:-06}
-let LBC_FREQ_SS=$LBC_FREQ*3600
-let NL_INTERVAL_SECONDS=$LBC_FREQ*3600
+export LBC_FREQ_SS=`echo $LBC_FREQ \* 3600 |bc -l`
+export NL_INTERVAL_SECONDS=$LBC_FREQ_SS
 export CYCLE_PERIOD=${CYCLE_PERIOD:-12}                # Assimilation frequency.
 export FCST_RANGE=${FCST_RANGE:-$CYCLE_PERIOD}
 export NL_RUN_HOURS=${NL_RUN_HOURS:-$FCST_RANGE}
@@ -244,6 +245,9 @@ export NL_CHECK_RH=${NL_CHECK_RH:-2}     # RH bounds check.
 export NL_JCDFI_USE=${NL_JCDFI_USE:-false} # Turn off JcDF option
 export NL_JCDFI_IO=${NL_JCDFI_IO:-false} # Turn off JcDF IO
 export OUTER_LOOP=${OUTER_ITER:-1}       # OUter loop number
+export NL_PUT_RAND_SEED=${NL_PUT_RAND_SEED:-false} # Set to true if want to specify seeds explicitly.
+export NL_SEED_ARRAY1=${NL_SEED_ARRAY1:-$DATE} # Random seed.
+export NL_SEED_ARRAY2=${NL_SEED_ARRAY2:-$DATE} # Random seed.
 
 # From Update_BC:
 export PHASE=${PHASE:-false}     # Indicate which phase update_bc is.
@@ -251,8 +255,8 @@ export NL_LOW_BDY_ONLY=${NL_LOW_BDY_ONLY:-false}
 export NL_UPDATE_LSM=${NL_UPDATE_LSM:-false}
 
 # Ensemble parameters:
-export NUM_JOBS=${NUM_JOBS:-0}                         # Number of parallel jobs to run.
 export NUM_MEMBERS=${NUM_MEMBERS:-0}                   # Number of ensemble members.
+export NUM_JOBS=${NUM_JOBS:-0}                         # Number of parallel jobs to run.
 export MEM=${MEM:-1}                                   # Ensemble member.
 export FILE_TYPE=${FILE_TYPE:-wrfinput}                # ETKF input file-type.
 export NV=${NV:-15}                                    # Number of ETKF variables.
@@ -288,3 +292,12 @@ export PSEUDO_Z_LIST=${PSEUDO_Z_LIST:-"7 19  7 13  7"}
                                                        # Level 19: eta=0.273
                                                        # Level 13: eta=0.507
 
+#Alpha control variable parameters:
+export NL_ENSDIM_ALPHA=${NL_ENSDIM_ALPHA:-$NUM_MEMBERS} # Number of ensemble members for alpha.
+export NL_ALPHACV_METHOD=${NL_ALPHACV_METHOD:-2}       # 1=vp space, 2=xa' space perts.
+export NL_ALPHA_TRUNCATION=${NL_ALPHA_TRUNCATION:-0}   # Spectral truncation (global only).
+export NL_ALPHA_CORR_TYPE=${NL_ALPHA_CORR_TYPE:-3}     # 1=Exponential, 2=SOAR, 3=Gaussian.
+export NL_ALPHA_CORR_SCALE=${NL_ALPHA_CORR_SCALE:-1500} # Localization lengthscale (km)
+export NL_ALPHA_STD_DEV=${NL_ALPHA_STD_DEV:-1.0}       # Alpha standard deviation.
+export NL_JB_FACTOR=${NL_JB_FACTOR:-1.0}               # Cost function multiplicative factor.
+export NL_JE_FACTOR=${NL_JE_FACTOR:-1.0}               # Cost function multiplicative factor.

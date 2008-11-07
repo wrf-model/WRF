@@ -23,9 +23,9 @@ module da_setup_structures
       use_kma1dvar,use_pilotobs, use_polaramvobs, use_rad, crtm_cloud, use_soundobs,use_mtgirsobs, &
       use_ssmt1obs,use_ssmt2obs, use_shipsobs, use_satemobs, use_synopobs, &
       use_radar_rv,use_profilerobs, use_obsgts, use_geoamvobs, use_buoyobs, &
-      alphacv_method,its,ite,jts,jte,cv_size_domain_jb, &
+      jb_factor, je_factor, alphacv_method,its,ite,jts,jte,cv_size_domain_jb, &
       cv_size_domain_je, cv_size_domain,ids,ide,jds,jde,kde,ensdim_alpha, &
-      lat_stats_option,alpha_std_dev,alpha_corr_scale,len_scaling1, &
+      lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale,len_scaling1, &
       len_scaling2,len_scaling3,len_scaling4,len_scaling5,max_vert_var1, &
       max_vert_var2,max_vert_var3,max_vert_var4,print_detail_be, &
       test_statistics, var_scaling1,var_scaling2,var_scaling3,var_scaling4, &

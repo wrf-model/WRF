@@ -24,7 +24,8 @@ program gen_be_ensmean
    integer, parameter    :: max_num_vars = 50         ! Maximum number of variables.
    integer, parameter    :: unit = 100                ! Unit number.
 
-   character (len=filename_len)   :: filestub                  ! General filename stub.
+   character (len=filename_len)   :: directory                 ! General filename stub.
+   character (len=filename_len)   :: filename                  ! General filename stub.
    character (len=filename_len)   :: input_file                ! Input file. 
    character (len=10)    :: var                       ! Variable to search for.
    character (len=3)     :: ce                        ! Member index -> character.
@@ -53,7 +54,7 @@ program gen_be_ensmean
    real (kind=4), allocatable     :: data_r_mean(:,:,:)        ! Data array mean.
    real (kind=4), allocatable     :: data_r_vari(:,:,:)        ! Data array variance.
  
-   namelist / gen_be_ensmean_nl / filestub, num_members, nv, cv
+   namelist / gen_be_ensmean_nl / directory, filename, num_members, nv, cv
 
    stderr = 0
    stdout = 6
@@ -62,7 +63,8 @@ program gen_be_ensmean
    write(6,'(/a)')' [1] Initialize information.'
 !---------------------------------------------------------------------------------------------
 
-   filestub = 'test'
+   directory = './'
+   filename = 'test'
    num_members = 56
    nv = 1
    cv = "U"
@@ -72,22 +74,24 @@ program gen_be_ensmean
    read(unit, gen_be_ensmean_nl)
    close(unit)
 
-   write(6,'(a,a)')'   Filestub = ', trim(filestub)
+   write(6,'(a,a)')'   Directory = ', trim(directory)
+   write(6,'(a,a)')'   filename = ', trim(filename)
    write(6,'(a,i4)')'   Number of ensemble members = ', num_members
    write(6,'(a,i4)')'   Number of variables to average = ', nv
    write(6,'(50a)')'   List of variables to average = ', cv(1:nv)
 
 !  Open template ensemble mean with write access:
-   length = len_trim(filestub)
-   rcode = nf_open(filestub(1:length), NF_WRITE, cdfid_mean )
+   input_file = trim(directory)//'/'//trim(filename)
+   length = len_trim(input_file)
+   rcode = nf_open(input_file(1:length), NF_WRITE, cdfid_mean )
    if ( rcode /= 0) then
       write(UNIT=message(1),FMT='(A,A)') &
-         ' Error opening netcdf file ', filestub(1:length)
+         ' Error opening netcdf file ', input_file(1:length)
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
 !  Open template ensemble variance with write access:
-   input_file = trim(filestub)//'.vari'
+   input_file = trim(directory)//'/'//trim(filename)//'.vari'
    length = len_trim(input_file)
    rcode = nf_open(input_file(1:length), NF_WRITE, cdfid_vari )
    if ( rcode /= 0) then
@@ -108,7 +112,7 @@ program gen_be_ensmean
          write(UNIT=ce,FMT='(i3.3)')member
 
 !        Open file:
-         input_file = trim(filestub)//'.e'//ce  
+         input_file = trim(directory)//'.e'//trim(ce)//'/'//trim(filename)
          length = len_trim(input_file)
          rcode = nf_open( input_file(1:length), NF_NOWRITE, cdfid )
 
@@ -148,7 +152,8 @@ program gen_be_ensmean
                    var, ' variable is not real type'
                 call da_error(__FILE__,__LINE__,message(1:1))
              end if
-
+print *, var, ivtype, id_var
+print *, istart, iend(1), iend(2), iend(3)
          end if
 
 !        Calculate accumulating mean and variance:

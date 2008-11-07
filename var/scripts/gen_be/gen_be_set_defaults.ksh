@@ -66,6 +66,7 @@ export ID1=${ID1:-${BE_METHOD}.bin_type${BIN_TYPE}}
 export VARIABLE1=${VARIABLE1:-chi_u}              # For cov3d
 export VARIABLE2=${VARIABLE2:-chi}                # For cov3d
 export CLEAN=false
+export FILE_TYPE=${FILE_TYPE:-wrfout}
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/trunk}            # Directory containing codes.

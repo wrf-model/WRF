@@ -1153,7 +1153,6 @@ rconfig   real      len_scaling2            namelist,wrfvar7  1  1.0      - "len
 rconfig   real      len_scaling3            namelist,wrfvar7  1  1.0      - "len_scaling3"             ""  ""
 rconfig   real      len_scaling4            namelist,wrfvar7  1  1.0      - "len_scaling4"             ""  ""
 rconfig   real      len_scaling5            namelist,wrfvar7  1  1.0      - "len_scaling5"             ""  ""
-rconfig   real      jb_factor               namelist,wrfvar7  1  1.0      - "jb_factor"                ""  ""
 rconfig   real      je_factor               namelist,wrfvar7  1  1.0      - "je_factor"                ""  ""
 rconfig   real      power_truncation        namelist,wrfvar7  1  1.0      - "power_truncation"         ""  ""
 
@@ -1262,7 +1261,7 @@ rconfig   real      pseudo_z                namelist,wrfvar15  1  1.0      - "ps
 rconfig   real      pseudo_val              namelist,wrfvar15  1  1.0      - "pseudo_val"              ""  ""   
 rconfig   real      pseudo_err              namelist,wrfvar15  1  1.0      - "pseudo_err"              ""  ""   
 
-rconfig   integer   alphacv_method          namelist,wrfvar16  1  1        - "alphacv_method"          ""  ""   
+rconfig   integer   alphacv_method          namelist,wrfvar16  1  2        - "alphacv_method"          ""  ""   
 rconfig   integer   ensdim_alpha            namelist,wrfvar16  1  0        - "ensdim_alpha"            ""  ""   
 rconfig   integer   alpha_truncation        namelist,wrfvar16  1  0        - "alpha_truncation"        ""  ""   
 rconfig   integer   alpha_corr_type         namelist,wrfvar16  1  3        - "alpha_corr_type"         ""  ""   

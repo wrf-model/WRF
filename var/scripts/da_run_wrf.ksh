@@ -20,13 +20,12 @@ export WORK_DIR=$RUN_DIR/working
 export NL_RUN_HOURS=$FCST_RANGE
 
 # allow for ensemble members identified by CMEM
+export FC_DIR_DATE=$FC_DIR/$DATE
 if [[ ! -z $CMEM ]]; then
-   export WRF_INPUT_DIR=${WRF_INPUT_DIR:-$RC_DIR/$DATE}.$CMEM
-else
-   export WRF_INPUT_DIR=${WRF_INPUT_DIR:-$RC_DIR/$DATE}
+   export FC_DIR_DATE=$FC_DIR/${DATE}.$CMEM
 fi
 
-if [[ ! -d $FC_DIR/$DATE ]]; then mkdir -p $FC_DIR/$DATE; fi
+if [[ ! -d $FC_DIR_DATE ]]; then mkdir -p $FC_DIR_DATE; fi
 rm -rf $WORK_DIR
 mkdir -p $RUN_DIR $WORK_DIR
 cd $WORK_DIR
@@ -44,7 +43,7 @@ echo 'WRF_DIR        <A HREF="file:'$WRF_DIR'">'$WRF_DIR'</a>' $WRF_VN
 echo 'RUN_DIR        <A HREF="file:'$RUN_DIR'">'$RUN_DIR'</a>'         
 echo 'WORK_DIR       <A HREF="file:'$WORK_DIR'">'$WORK_DIR'</a>'       
 echo 'RC_DIR         <A HREF="file:'$RC_DIR'">'$RC_DIR'</a>'           
-echo 'FC_DIR         <A HREF="file:'$FC_DIR'">'$FC_DIR'</a>'              
+echo 'FC_DIR_DATE    <A HREF="file:'$FC_DIR_DATE'">'$FC_DIR_DATE'</a>'              
 echo 'WRF_INPUT_DIR  <A HREF="file:'$WRF_INPUT_DIR'">'$WRF_INPUT_DIR'</a>'         
 echo "DATE           $DATE"                                            
 echo "END_DATE       $END_DATE"                                        
@@ -143,8 +142,8 @@ else
    echo $(date +'%D %T') "Ended $RC"
 fi
 
-mv $WORK_DIR/wrfinput_* $FC_DIR/$DATE
-mv $WORK_DIR/wrfout_* $FC_DIR/$DATE
+mv $WORK_DIR/wrfinput_* $FC_DIR_DATE
+mv $WORK_DIR/wrfout_* $FC_DIR_DATE
 
 if $CLEAN; then
    rm -rf $WORK_DIR

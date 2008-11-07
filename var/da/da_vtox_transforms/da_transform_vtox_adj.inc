@@ -30,12 +30,6 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    call da_zero_vp_type (vv)
 
-   ! Uv for alpha is a null transform:
-   ! if (be % ne > 0) then
-   !    vv % alpha(its:ite,jts:jte,1:be%ne) = &
-   !    vp % alpha(its:ite,jts:jte,1:be%ne) 
-   ! end if
-
    if (vert_corr == 2) then      
       call da_vertical_transform('u_adj', be, &
          grid%xb % vertical_inner_product, vv, vp)
@@ -45,6 +39,12 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
       vv % v3(its:ite,jts:jte,kts:kte) = vp % v3(its:ite,jts:jte,kts:kte)
       vv % v4(its:ite,jts:jte,kts:kte) = vp % v4(its:ite,jts:jte,kts:kte)
       vv % v5(its:ite,jts:jte,kts:kte) = vp % v5(its:ite,jts:jte,kts:kte)
+
+   !  Uv for alpha is a null transform:
+      if (be % ne > 0) then
+         vv % alpha(its:ite,jts:jte,1:be%ne) = &
+         vp % alpha(its:ite,jts:jte,1:be%ne) 
+      end if
    end if
 
    !-------------------------------------------------------------------------

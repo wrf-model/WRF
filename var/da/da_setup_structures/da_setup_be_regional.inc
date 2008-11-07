@@ -512,7 +512,7 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be % alpha % evec(1:jy,1:kz,1:be % ne))
       allocate (be % alpha % rf_alpha(1:be % ne))
 
-      be % alpha % val(1:jy,1:be % ne) = alpha_std_dev
+      be % alpha % val(1:jy,1:be % ne) = sigma_alpha
       be % alpha % evec(1:jy,1:kz,1:be % ne) = 1.0
       be % alpha % rf_alpha(1:be % ne) = 1.0 
 

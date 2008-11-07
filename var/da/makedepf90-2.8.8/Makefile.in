@@ -50,10 +50,8 @@ INSTALL_DATA=@INSTALL_DATA@
 
 SRC_H = errormesg.h finddep.h global.h list.h macro.h modfile_name.h utils.h \
 	xmalloc.h
-SRC_C = errormesg.c list.c macro.c main.c modfile_name.c utils.c xmalloc.c 
-SRC_Y = find_dep.y
-SRC_L = lexer.l
-SRC = $(SRC_H) $(SRC_C) $(SRC_Y) $(SRC_L)
+SRC_C = errormesg.c list.c macro.c main.c modfile_name.c utils.c xmalloc.c find_dep.c lexer.c 
+SRC = $(SRC_H) $(SRC_C)
 
 EXTRA_SRC = strcasecmp.c
 
@@ -61,28 +59,14 @@ DISTFILES = $(SRC) lexer.c find_dep.h find_dep.c Makefile.in configure.in \
             configure makedepf90.1 COPYING NEWS README Makefile.def .depend \
 	    $(EXTRA_SRC) install-sh config.h.in config.h
 
-OBJ = ${SRC_C:.c=.o} $(SRC_Y:.y=.o) $(SRC_L:.l=.o)
+OBJ = ${SRC_C:.c=.o}
 LIBOBJS = @LIBOBJS@
 
 .SUFFIXES:
-.SUFFIXES: .c .o .l .y .h
+.SUFFIXES: .c .o
 
 .c.o:
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $<
-
-.l.c:
-	$(LEX) $(LFLAGS) -t $< > $@
-
-.y.c:
-	$(YACC) -d $(YFLAGS) $<
-	mv y.tab.c $@
-	mv y.tab.h $*.h
-
-.y.h: 
-	$(YACC) -d $(YFLAGS) $<
-	mv y.tab.h $@
-	mv y.tab.c $*.c
-
 
 $(PROG): $(OBJ)
 	$(CC) -o $@ $(CPPFLAGS) $(CFLAGS) $(OBJ) $(LIBOBJS) $(LIBS)
@@ -94,7 +78,7 @@ clean:
 	find . -name 'core' -exec rm {} \;
 
 realclean: clean
-	rm -f lexer.c find_dep.[ch] .depend configure tags config.cache config.log config.status 
+	rm -f .depend configure tags config.cache config.log config.status 
 
 install: $(PROG)  makedepf90.1
 	$(INSTALL) -d $(bindir)

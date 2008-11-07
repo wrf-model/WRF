@@ -48,7 +48,7 @@
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$SCRIPTS_DIR}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/ens}
 export WORK_DIR=$RUN_DIR/working
@@ -158,8 +158,8 @@ while test $DATE -le $FINAL_DATE; do
       export RUN_DIR=$EXP_DIR/run/$DATE/wpb
       mkdir -p $RUN_DIR
 
-#      $SCRIPTS_DIR/da_trace.ksh da_run_wpb $RUN_DIR
-      $SCRIPTS_DIR/da_run_wpb.ksh #> $RUN_DIR/index.html 2>&1
+#      $SCRIPTS_DIR/da_trace.ksh da_run_wpb_simple $RUN_DIR
+      $SCRIPTS_DIR/da_run_wpb_simple.ksh #> $RUN_DIR/index.html 2>&1
       RC=$?
       if test $? != 0; then
          echo `date` "${ERR}Failed with error $RC$END"
@@ -203,6 +203,24 @@ while test $DATE -le $FINAL_DATE; do
          fi 
        fi
       fi
+   fi
+
+   if $RUN_ENS_EP; then
+      export RUN_DIR=$EXP_DIR/run/$DATE/ep
+      mkdir -p $RUN_DIR
+      export FCST_RANGE_SAVE=$FCST_RANGE
+      export FCST_RANGE=$CYCLE_PERIOD
+
+      $SCRIPTS_DIR/da_trace.ksh run_ens_ep $RUN_DIR
+      $SCRIPTS_DIR/da_run_ens_ep.ksh > $RUN_DIR/index.html 2>&1
+      RC=$?
+      if [[ $? != 0 ]]; then
+         echo $(date) "${ERR}run_ens_ep failed with error $RC$END"
+         echo etkf > FAIL
+         break
+      fi
+      
+      export FCST_RANGE=$FCST_RANGE_SAVE
    fi
 
    if $RUN_WRFVAR; then

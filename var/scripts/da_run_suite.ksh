@@ -210,17 +210,36 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
       fi
    fi
 
+   if $RUN_ENS_EP; then
+      export RUN_DIR=$SUITE_DIR/$DATE/ep
+      mkdir -p $RUN_DIR
+      export FCST_RANGE_SAVE=$FCST_RANGE
+      export FCST_RANGE=$CYCLE_PERIOD
+
+      $SCRIPTS_DIR/da_trace.ksh run_ens_ep $RUN_DIR
+      $SCRIPTS_DIR/da_run_ens_ep.ksh > $RUN_DIR/index.html 2>&1
+      RC=$?
+      if [[ $? != 0 ]]; then
+         echo $(date) "${ERR}run_ens_ep failed with error $RC$END"
+         echo etkf > FAIL
+         break
+      fi
+      
+      export FCST_RANGE=$FCST_RANGE_SAVE
+   fi
+
    if $RUN_WRFVAR; then
       export RUN_DIR=$SUITE_DIR/$DATE/wrfvar
       mkdir -p $RUN_DIR
 
-      export DA_FIRST_GUESS=${RC_DIR}/$DATE/wrfinput_d01
+      export DA_FIRST_GUESS=${RC_DIR}/$DATE/${FILE_TYPE}_d01
       if $CYCLING; then
          if [[ $CYCLE_NUMBER -gt 0 ]]; then
-            export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/wrfinput_d01_${ANALYSIS_DATE}
+            export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/${FILE_TYPE}_d01_${ANALYSIS_DATE}
          fi
       fi
-      export DA_ANALYSIS=$FC_DIR/$DATE/wrfinput_d01
+      export EP_DIR=$FC_DIR/$DATE/ep
+      export DA_ANALYSIS=$FC_DIR/$DATE/${FILE_TYPE}_d01
       
       if [[ ${DA_VARBC_IN:+1} = 1 ]]; then
          if [[ -f $DA_VARBC_IN ]]; then
@@ -291,7 +310,7 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
    else     
       if $CYCLING; then
          if [[ $CYCLE_NUMBER -gt 0 ]]; then
-            export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/wrfinput_d01_${ANALYSIS_DATE}
+            export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/${FILE_TYPE}_d01_${ANALYSIS_DATE}
          fi
       fi
    fi
@@ -325,9 +344,9 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
             mkdir -p $RUN_DIR
 
             export DA_REAL_OUTPUT=$RC_DIR/$DATE/wrfinput_d01
-            export BDYIN=$RC_DIR/$DATE/wrfbdy_d01.${CMEM}
-            export DA_ANALYSIS=$FC_DIR/$DATE/wrfinput_d01.${CMEM}
-            export BDYOUT=$FC_DIR/$DATE/wrfbdy_d01}.${CMEM}
+            export BDYIN=$RC_DIR/${DATE}.${CMEM}/wrfbdy_d01.wpb
+            export DA_ANALYSIS=$FC_DIR/${DATE}.${CMEM}/${FILE_TYPE}_d01
+            export BDYOUT=$FC_DIR/${DATE}.${CMEM}/wrfbdy_d01
 
             $SCRIPTS_DIR/da_trace.ksh da_run_update_bc $RUN_DIR
             $SCRIPTS_DIR/da_run_update_bc.ksh > $RUN_DIR/index.html 2>&1 &
@@ -354,7 +373,7 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
 
          export DA_REAL_OUTPUT=$RC_DIR/$DATE/wrfinput_d01
          export BDYIN=$RC_DIR/$DATE/wrfbdy_d01
-         export DA_ANALYSIS=$FC_DIR/$DATE/wrfinput_d01
+         export DA_ANALYSIS=$FC_DIR/$DATE/${FILE_TYPE}_d01
          export BDYOUT=$FC_DIR/$DATE/wrfbdy_d01
 
          $SCRIPTS_DIR/da_trace.ksh da_run_update_bc $RUN_DIR
@@ -409,13 +428,13 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
             export RUN_DIR=$EXP_DIR/run/$DATE/wrf.${CMEM}
             mkdir -p $RUN_DIR
 
-            export WRF_INPUT_DIR=$RC_DIR/$DATE
+            export WRF_INPUT_DIR=$RC_DIR/${DATE}.$CMEM
             if [[ $CYCLE_NUMBER -gt 0 ]] && $CYCLING; then
-               export WRF_INPUT_DIR=$FC_DIR/$DATE
+               export WRF_INPUT_DIR=$FC_DIR/$DATE.$CMEM
             fi
-            if [[ -f $FC_DIR/$DATE/wrfinput_d01 ]]; then
-               export WRF_INPUT_DIR=$FC_DIR/$DATE
-            fi
+#            if [[ -f $FC_DIR/$DATE/${FILE_TYPE}_d01 ]]; then
+#               export WRF_INPUT_DIR=$FC_DIR/$DATE
+#            fi
 
             $SCRIPTS_DIR/da_trace.ksh da_run_wrf $RUN_DIR
             $SCRIPTS_DIR/da_run_wrf.ksh > $RUN_DIR/index.html 2>&1 &
@@ -443,7 +462,7 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
          if [[ $CYCLE_NUMBER -gt 0 ]] && $CYCLING; then
             export WRF_INPUT_DIR=$FC_DIR/$DATE
          fi
-         if [[ -f $FC_DIR/$DATE/wrfinput_d01 ]]; then
+         if [[ -f $FC_DIR/$DATE/${FILE_TYPE}_d01 ]]; then
             export WRF_INPUT_DIR=$FC_DIR/$DATE
          fi
 
@@ -461,6 +480,7 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
    if $RUN_ENSMEAN; then
       export RUN_DIR=$EXP_DIR/run/$DATE/ensmean
       mkdir -p $RUN_DIR
+      export FCST_RANGE=$CYCLE_PERIOD
 
       $SCRIPTS_DIR/da_trace.ksh gen_be_ensmean $RUN_DIR
       $SCRIPTS_DIR/da_run_ensmean.ksh > $RUN_DIR/index.html 2>&1

@@ -26,6 +26,7 @@ export ANALYSIS_DATE=${YEAR}-${MONTH}-${DAY}_${HOUR}:00:00
 export NL_ANALYSIS_DATE=${ANALYSIS_DATE}.0000
 
 export DA_FIRST_GUESS=${DA_FIRST_GUESS:-${RC_DIR}/$DATE/wrfinput_d01}
+export EP_DIR=${EP_DIR:-$FC_DIR/$DATE/ep}
 
 if $NL_VAR4D; then
    export DA_BOUNDARIES=${DA_BOUNDARIES:-$RC_DIR/$DATE/wrfbdy_d01}
@@ -36,7 +37,11 @@ if $CYCLING; then
       if $NL_VAR4D; then
          export DA_BOUNDARIES=$FC_DIR/$DATE/wrfbdy_d01    # wrfvar boundaries input.
       fi
-      export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/wrfinput_d01_${ANALYSIS_DATE}
+#cys: exclude WPB case in which DA_FIRST_GUESS is specified outside
+#     export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/${FILE_TYPE}_d01_${ANALYSIS_DATE}
+      if ! $RUN_WPB; then
+         export DA_FIRST_GUESS=${FC_DIR}/${PREV_DATE}/${FILE_TYPE}_d01_${ANALYSIS_DATE}
+      fi
    fi
 fi
 if [[ $NL_MULTI_INC == 2 ]]; then
@@ -54,8 +59,8 @@ export DA_CRTM_COEFFS=${DA_CRTM_COEFFS:- }
 # Error tuning namelist parameters
 # Assign random seeds
 
-export NL_SEED_ARRAY1=$DATE
-export NL_SEED_ARRAY2=$DATE
+export NL_SEED_ARRAY1=${NL_SEED_ARRAY1:-$DATE}
+export NL_SEED_ARRAY2=${NL_SEED_ARRAY2:-$DATE}
 
 # Change defaults from Registry.wrfvar which is required to be
 # consistent with WRF's Registry.EM
@@ -112,6 +117,7 @@ fi
 echo 'OB_DIR                <A HREF="file:'$OB_DIR'">'$OB_DIR'</a>'
 echo 'RC_DIR                <A HREF="file:'$RC_DIR'">'$RC_DIR'</a>'
 echo 'FC_DIR                <A HREF="file:'$FC_DIR'">'$FC_DIR'</a>'
+echo 'EP_DIR                <A HREF="file:'$EP_DIR'">'$EP_DIR'</a>'
 echo 'RUN_DIR               <A HREF="file:'.'">'$RUN_DIR'</a>'
 echo 'WORK_DIR              <A HREF="file:'${WORK_DIR##$RUN_DIR/}'">'$WORK_DIR'</a>'
 echo "DA_ANALYSIS           $DA_ANALYSIS"
@@ -234,7 +240,7 @@ if $NL_VAR4D; then
    ln -fs $DA_FIRST_GUESS fg01
 fi
 ln -fs $DA_FIRST_GUESS fg 
-ln -fs $DA_FIRST_GUESS wrfinput_d01
+ln -fs $DA_FIRST_GUESS ${FILE_TYPE}_d01
 if [[ $NL_ANALYSIS_TYPE != "VERIFY" ]] ; then
   ln -fs $DA_BACK_ERRORS be.dat
 fi

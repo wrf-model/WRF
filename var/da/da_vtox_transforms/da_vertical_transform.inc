@@ -14,6 +14,8 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
 
    integer                         :: j, m        ! Loop counters.
    real                            :: alpha_stddev_inv ! 1/ sigma_alpha
+   real                            :: size_inv    ! 1 / size.
+   real                            :: alpha_me, alpha_ms, alpha_sd ! Alpha statistics.
 
    if (trace_use) call da_trace_entry("da_vertical_transform")
 
@@ -64,12 +66,20 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
          vp % v5(its:ite,jts:jte,kts:kts) = 0.0
       end if
 
+      size_inv = 1.0 / ( (ite-its+1) * ( jte-jts+1) * be % ne )
       if (be % ne > 0) then
          do m = 1, be % ne
             do j = jts, jte
                vp % alpha(its:ite,j,m) = vv % alpha(its:ite,j,m) * be % alpha % val(j,m)
             end do
          end do
+
+!        Calculate alpha standard deviation diagnostic:
+         alpha_me = sum(vp % alpha(its:ite,jts:jte,:)) * size_inv
+         alpha_ms = sum(vp % alpha(its:ite,jts:jte,:) * vp % alpha(its:ite,jts:jte,:)) * &
+                    size_inv
+         alpha_sd = sqrt( alpha_ms - alpha_me * alpha_me )
+         write(6,'(a,f15.5)')' Alpha std. dev = ', alpha_sd
       end if
 
    case ('u_inv');

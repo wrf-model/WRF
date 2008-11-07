@@ -20,7 +20,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    !  [1] Add flow-dependent increments in control variable space (vp):
    !---------------------------------------------------------------------------
 
-   if (be % ne > 0 .and. alphacv_method == 1) then
+   if (be % ne > 0 .and. alphacv_method == alphacv_method_vp) then
       call da_add_flow_dependence_vp(be % ne, ep, vp, its,ite, jts,jte, kts,kte)
    end if
 

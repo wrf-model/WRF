@@ -20,7 +20,8 @@ program gen_be_ep2
 
    implicit none
 
-   character (len=filename_len)   :: filestub                  ! General filename stub.
+   character (len=filename_len)   :: directory                 ! General filename stub.
+   character (len=filename_len)   :: filename                  ! General filename stub.
    character (len=filename_len)   :: input_file                ! Input file. 
    character (len=filename_len)   :: output_file               ! Output file. 
    character (len=10)    :: date                      ! Character date.
@@ -77,21 +78,23 @@ program gen_be_ep2
    remove_mean = .true.
 
    numarg = iargc()
-   if ( numarg /= 3 )then
+   if ( numarg /= 4 )then
       write(UNIT=6,FMT='(a)') &
-        "Usage: gen_be_ep2 date ne <wrf_file_stub> Stop"
+        "Usage: gen_be_ep2 date ne <directory> <filename> Stop"
       stop
    end if
 
    ! Initialse to stop Cray compiler complaining
    date=""
    cne=""
-   filestub=""
+   directory=""
+   filename=""
 
    call getarg( 1, date )
    call getarg( 2, cne )
    read(cne,'(i3)')ne
-   call getarg( 3, filestub )
+   call getarg( 3, directory )
+   call getarg( 4, filename )
 
    if ( remove_mean ) then
       write(6,'(a,a)')' Computing gen_be ensemble perturbation files for date ', date
@@ -100,7 +103,8 @@ program gen_be_ep2
    end if
    write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, ps)'
    write(6,'(a,i4)')' Ensemble Size = ', ne
-   write(6,'(a,a)')' Input filestub = ', trim(filestub)
+   write(6,'(a,a)')' Directory = ', trim(directory)
+   write(6,'(a,a)')' Filename = ', trim(filename)
 
 !---------------------------------------------------------------------------------------------
    write(6,'(/a)')' [2] Set up data dimensions and allocate arrays:' 
@@ -108,7 +112,7 @@ program gen_be_ep2
 
 !  Get grid dimensions from first T field:
    var = "T"
-   input_file = trim(filestub)//'.e001'
+   input_file = trim(directory)//'.e001/'//trim(filename)
    call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds )
    dim1s = dim1+1 ! u i dimension is 1 larger.
    dim2s = dim2+1 ! v j dimension is 1 larger.
@@ -153,7 +157,7 @@ program gen_be_ep2
    do member = 1, ne
 
       write(UNIT=ce,FMT='(i3.3)')member
-      input_file = trim(filestub)//'.e'//ce  
+      input_file = trim(directory)//'.e'//trim(ce)//'/'//trim(filename)
 
       do k = 1, dim3
 
@@ -251,34 +255,33 @@ program gen_be_ep2
 
 !     Write out perturbations for this member:
 
-      output_file = 'u/'//date(1:10)//'.u.e'//trim(ce) ! Output u.
+      output_file = 'u.e'//trim(ce) ! Output u.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
       write(gen_be_ounit)u
       close(gen_be_ounit)
 
-      output_file = 'v/'//date(1:10)//'.v.e'//trim(ce) ! Output v.
+      output_file = 'v.e'//trim(ce) ! Output v.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
       write(gen_be_ounit)v
       close(gen_be_ounit)
 
-      output_file = 't/'//date(1:10)//'.t.e'//trim(ce) ! Output t.
+      output_file = 't.e'//trim(ce) ! Output t.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
       write(gen_be_ounit)temp
       close(gen_be_ounit)
 
-      output_file = 'q/'//date(1:10)//'.q.e'//trim(ce) ! Output q.
+      output_file = 'q.e'//trim(ce) ! Output q.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
       write(gen_be_ounit)q
       close(gen_be_ounit)
 
-      output_file = 'ps/'//date(1:10)//'.ps.e'//trim(ce) ! Output ps.
+      output_file = 'ps.e'//trim(ce) ! Output ps.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit).false., .false.
       write(gen_be_ounit)psfc
       close(gen_be_ounit)
 
@@ -291,61 +294,61 @@ program gen_be_ep2
    q_mnsq = sqrt( q_mnsq - q_mean * q_mean )
    psfc_mnsq = sqrt( psfc_mnsq - psfc_mean * psfc_mean )
 
-   output_file = 'u/'//date(1:10)//'.u.mean' ! Output u.
+   output_file = 'u.mean' ! Output u.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)u_mean
    close(gen_be_ounit)
 
-   output_file = 'u/'//date(1:10)//'.u.stdv' ! Output u.
+   output_file = 'u.stdv' ! Output u.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)u_mnsq
    close(gen_be_ounit)
 
-   output_file = 'v/'//date(1:10)//'.v.mean' ! Output v.
+   output_file = 'v.mean' ! Output v.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)v_mean
    close(gen_be_ounit)
 
-   output_file = 'v/'//date(1:10)//'.v.stdv' ! Output v.
+   output_file = 'v.stdv' ! Output v.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)v_mnsq
    close(gen_be_ounit)
 
-   output_file = 't/'//date(1:10)//'.t.mean' ! Output t.
+   output_file = 't.mean' ! Output t.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)temp_mean
    close(gen_be_ounit)
 
-   output_file = 't/'//date(1:10)//'.t.stdv' ! Output t.
+   output_file = 't.stdv' ! Output t.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)temp_mnsq
    close(gen_be_ounit)
 
-   output_file = 'q/'//date(1:10)//'.q.mean' ! Output q.
+   output_file = 'q.mean' ! Output q.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)q_mean
    close(gen_be_ounit)
 
-   output_file = 'q/'//date(1:10)//'.q.stdv' ! Output q.
+   output_file = 'q.stdv' ! Output q.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)q_mnsq
    close(gen_be_ounit)
 
-   output_file = 'ps/'//date(1:10)//'.ps.mean' ! Output ps.
+   output_file = 'ps.mean' ! Output ps.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)psfc_mean
    close(gen_be_ounit)
 
-   output_file = 'ps/'//date(1:10)//'.ps.stdv' ! Output ps.
+   output_file = 'ps.stdv' ! Output ps.
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)psfc_mnsq

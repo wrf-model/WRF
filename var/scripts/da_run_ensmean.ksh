@@ -32,15 +32,18 @@ export MM=$(echo $NEXT_DATE | cut -c5-6)
 export DD=$(echo $NEXT_DATE | cut -c7-8)
 export HH=$(echo $NEXT_DATE | cut -c9-10)
 export FILE_DATE=${YYYY}-${MM}-${DD}_${HH}:00:00
-export DA_FILE=${FC_DIR}/${DATE}/${FILE_TYPE}_d01_${FILE_DATE}
+
+export DIRECTORY=${FC_DIR}/${DATE}
+export FILENAME=${FILE_TYPE}_d01_${FILE_DATE}
 
 #Copy first member as template for mean:
-cp ${DA_FILE}.e001 ${DA_FILE}
-cp ${DA_FILE}.e001 ${DA_FILE}.vari
+cp ${DIRECTORY}.e001/${FILENAME} ${DIRECTORY}/${FILENAME}
+cp ${DIRECTORY}.e001/${FILENAME} ${DIRECTORY}/${FILENAME}.vari
 
 cat > gen_be_ensmean_nl.nl << EOF
   &gen_be_ensmean_nl
-    filestub = '${DA_FILE}'
+    directory = '${DIRECTORY}'
+    filename = '${FILENAME}'
     num_members = ${NUM_MEMBERS},
     nv = ${NV},
     cv = ${CV} /

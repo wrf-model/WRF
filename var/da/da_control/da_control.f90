@@ -339,7 +339,9 @@ module da_control
    integer       :: cv_size_domain_jp    ! Total jp cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
-
+   ! Hybrid:
+   real          :: sigma_alpha          ! Alpha standard deviation.
+   real          :: jb_factor            ! Weighting for Background Error Cov.
 
    ! Namelist variables in future?:
    real, parameter :: maximum_rh = 100.0

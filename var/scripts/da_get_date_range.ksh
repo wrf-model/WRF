@@ -14,6 +14,7 @@ export DATE=${DATE:-2003010100}
 export FCST_RANGE=${FCST_RANGE:-6}
 export REL_DIR=${REL_DIR:-$HOME/trunk}
 export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
+export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da}
 
 #-----------------------------------------------------------------------
 # [2] Calculate environment variables:
@@ -33,7 +34,8 @@ export NL_START_HOUR="11*$(echo $DATE | cut -c9-10)"
 export NL_START_MINUTE=${NL_START_MINUTE:-11*0}
 export NL_START_SECOND=${NL_START_SECOND:-11*0}
 
-export END_DATE=$($BUILD_DIR/da_advance_time.exe $DATE $FCST_RANGE 2>/dev/null)
+#export END_DATE=$($BUILD_DIR/da_advance_time.exe $DATE $FCST_RANGE 2>/dev/null)
+export END_DATE=$($BUILD_DIR/da_advance_time.exe $DATE $FCST_RANGE)
 
 export END_YEAR="$(echo $END_DATE | cut -c1-4)"
 export END_MONTH="$(echo $END_DATE | cut -c5-6)"

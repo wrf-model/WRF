@@ -70,6 +70,30 @@ module da_wrfvar_top
    use da_control, only : rtm_option, use_rad
 #endif
 
+   use da_airep, only : da_oi_stats_airep
+   use da_airsr , only : da_oi_stats_airsr
+   use da_bogus, only : da_oi_stats_bogus
+   use da_buoy , only : da_oi_stats_buoy
+   use da_geoamv, only : da_oi_stats_geoamv
+   use da_gpspw, only : da_oi_stats_gpspw
+   use da_gpsref, only : da_oi_stats_gpsref
+   use da_metar, only : da_oi_stats_metar
+   use da_pilot, only : da_oi_stats_pilot
+   use da_polaramv, only : da_oi_stats_polaramv
+   use da_profiler, only : da_oi_stats_profiler
+   use da_qscat, only : da_oi_stats_qscat
+   use da_mtgirs, only : da_oi_stats_mtgirs
+   use da_radar, only : da_oi_stats_radar
+   use da_satem, only : da_oi_stats_satem
+   use da_ships, only : da_oi_stats_ships
+   use da_sound, only : da_oi_stats_sound, da_oi_stats_sonde_sfc
+   use da_ssmi, only : da_oi_stats_ssmt1, da_oi_stats_ssmt2, da_oi_stats_ssmi_tb, da_oi_stats_ssmi_rv
+   use da_synop, only : da_oi_stats_synop
+#if defined(RTTOV) || defined(CRTM)
+   use da_radiance1, only : da_oi_stats_rad
+#endif
+   
+
    use da_wrf_interfaces
 
    implicit none

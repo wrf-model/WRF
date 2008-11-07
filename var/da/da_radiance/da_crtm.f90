@@ -19,14 +19,16 @@ module da_crtm
       crtm_allocate_surface,crtm_destroy_surface,crtm_assign_atmosphere, &
       crtm_assign_surface,crtm_zero_surface,CRTM_Zero_Atmosphere, satinfo, &
       time_slots,crtm_platform_name, crtm_init, &
-      rttov_inst_name,rttov_platform_name, climatology_model_name
+      rttov_inst_name,rttov_platform_name, climatology_model_name, &
+      crtm_options_type, crtm_allocate_options, crtm_destroy_options
 
    use da_control, only : trace_use, crtm_cloud, gravity,stdout, biascorr, &
       biasprep, qc_rad,missing_r,rtminit_sensor,rtminit_nsensor, filename_len, &
       use_error_factor_rad,read_biascoef, analysis_date,time_window_max, &
       time_window_min,num_fgat_time,rtminit_platform, &
       rtminit_satid, global,kms,kme,ims,ime,jms,jme,kts,kte,use_airs_mmr, &
-      crtm_atmosphere,use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad
+      crtm_atmosphere,use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
+      use_antcorr
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
    use da_radiance1, only : da_biasprep,da_detsurtyp,da_biascorr, &

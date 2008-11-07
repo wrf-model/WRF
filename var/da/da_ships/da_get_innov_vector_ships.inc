@@ -81,14 +81,6 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
                   ! ob%ships(n)%u = iv%ships(n)%u%inv
                   ! ob%ships(n)%v = iv%ships(n)%v%inv
 
-                  if ( it == 1 ) then
-                     ob%ships(n)%p = iv%ships(n)%p%inv
-                     ob%ships(n)%t = iv%ships(n)%t%inv
-                     ob%ships(n)%q = iv%ships(n)%q%inv
-                     ob%ships(n)%u = iv%ships(n)%u%inv
-                     ob%ships(n)%v = iv%ships(n)%v%inv
-                  end if
-
                else
                   call da_to_zk(iv % ships(n) % h, v_h, v_interp_h, iv%info(ships)%zk(1,n))
                end if

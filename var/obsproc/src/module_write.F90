@@ -753,9 +753,9 @@ stations_valid: &
         sid = obs (loop_index) % location % id
         kx = index(obs (loop_index) % location % id,'GOES')
         if (kx .eq. 0) then
-          kx = index(obs (loop_index) % location % id,'MET-')
+          kx = index(obs (loop_index) % location % id,'MET')
           if (kx .ne. 0) then
-            sid = 'MET' // sid(kx+4:40)
+            sid = 'MET' // sid(kx+3:40)
           else
             kx = index(obs (loop_index) % location % id,'MODIS')
             if (kx .ne. 0) sid = 'MODIS'
@@ -1183,7 +1183,7 @@ SUBSET: &
          SELECT CASE (cfm(fm))
          CASE ('SATWND', 'SATEMP','GOESND')
            kx = index(obs (loop_index) % location % id,'GOES')
-           if (kx .eq. 0) kx = index(obs (loop_index) % location % id,'MET-')
+           if (kx .eq. 0) kx = index(obs (loop_index) % location % id,'MET')
            sid = obs (loop_index) % location % id
            sid = sid(kx:40)
          CASE ('QKSWND')
@@ -1349,8 +1349,9 @@ SUBSET: &
          r8arr(5,1) = bufrlib_missing              ! TDO
 
 !           QBACKG : QOE and QFC
-!  NCEP uses 2.0 so we will use that here.
-         r8arr(6,1) = 2.0
+!  NCEP uses 2.0, while WRF-Var/obsproc uses 1.0
+         ! r8arr(6,1) = 2.0
+         r8arr(6,1) = 1.0
          r8arr(7:8,1) = bufrlib_missing
 
 !           QPOSTP
@@ -1439,7 +1440,7 @@ SUBSET: &
          endif
 
          SELECT CASE (cfm(fm))
-         CASE ('ADPSFC', 'ADPUPA', 'AIRCAR', 'AIRCFT', 'SFCSHP')
+         CASE ('ADPSFC', 'ADPUPA', 'AIRCAR', 'AIRCFT', 'SFCSHP', 'SATWND')
 !           WBACKG 
             if (vld) then
             r8arr(1,1) = obs (loop_index) % surface % meas % speed % error     ! WOE
@@ -1561,7 +1562,7 @@ levels1:&
       r8arr(1,nlevels) = 1           ! assign cat 1 (mandatory level) for all levels
       call assignv(current % meas % pressure % data, r8arr(2,nlevels))
       if ( r8arr(2,nlevels) /= bufrlib_missing ) r8arr(2,nlevels) = r8arr(2,nlevels) * .01
-      r8arr(4,nlevels) = qz (current % meas % pressure % qc)
+      r8arr(3,nlevels) = qz (current % meas % pressure % qc)
       r8arr(4,nlevels) = 1
       r8arr(5,nlevels) = 100
       r8arr(6,nlevels) = current % meas % pressure % error * 0.01
@@ -1594,7 +1595,7 @@ levels1:&
       r8arr(9,nlevels) = 1
       r8arr(10,nlevels) = 100
 ! convert error to percent divided by 10
-      r8arr(11,nlevels) = current % meas % qv % error * 0.1
+      r8arr(11,nlevels) = current % meas % rh % error * 0.1
       r8arr(13,nlevels) = qz (current % meas % temperature % qc)
       r8arr(14,nlevels) = 1
       r8arr(15,nlevels) = 100

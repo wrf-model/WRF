@@ -228,7 +228,7 @@ subroutine da_radiance_init(iv,ob)
 
     read(unit_factor_rad, *)
     do
-      read(unit_factor_rad,fmt='(a15,i3,i8,3f15.5,f8.3)',iostat=iost)   &
+      read(unit_factor_rad,fmt='(a15,i8,i8,3f15.5,f8.3)',iostat=iost)   &
           rttovid_string, ichan, num_tot, joa,jo,trace,factor
       if ( iost == 0 ) then
         do n=1, rtminit_nsensor

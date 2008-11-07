@@ -1224,6 +1224,7 @@ rconfig   logical   write_oa_rad_ascii      namelist,wrfvar14  1  .false.  - "wr
 rconfig   logical   write_filtered_rad      namelist,wrfvar14  1  .false.  - "write_filtered_rad"      ""  ""   
 rconfig   logical   use_error_factor_rad    namelist,wrfvar14  1  .false.  - "use_error_factor_rad"    ""  ""   
 rconfig   logical   use_landem              namelist,wrfvar14  1  .false.  - "use_landem"              ""  ""   
+rconfig   logical   use_antcorr             namelist,wrfvar14  max_instruments .false.  - "use_antcorr"           ""  ""
 rconfig   integer   mw_emis_sea             namelist,wrfvar14  1  1        - "mw_emis_sea"             ""  ""   
 rconfig   integer   tovs_min_transfer       namelist,wrfvar14  1  10       - "tovs_min_transfer"       ""  ""     
 rconfig   logical   tovs_batch              namelist,wrfvar14  1  .false.  - "tovs_batch"              ""  "" 

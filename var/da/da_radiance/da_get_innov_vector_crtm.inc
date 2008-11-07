@@ -59,6 +59,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    type (CRTM_Atmosphere_type)   :: Atmosphere(1)
    type (CRTM_Surface_type)      :: Surface(1)
    type (CRTM_GeometryInfo_type) :: GeometryInfo(1)
+   type (CRTM_Options_type)      :: Options(1)
    type (CRTM_RTSolution_type), allocatable :: RTSolution_K(:,:)
    type (CRTM_Atmosphere_type), allocatable :: Atmosphere_K(:,:)
    type (CRTM_Surface_type),    allocatable :: Surface_K(:,:)
@@ -159,6 +160,18 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          call da_error(__FILE__,__LINE__, &
             (/"Error in allocating CRTM Surface Structure Structure"/))
       end if
+
+      ! CRTM Options structure
+      Options(1)%n_channels = nchanl
+      if ( use_antcorr(inst) ) Options(1)%Antenna_Correction = 1   ! SET = 1 in CRTM_Parameters.f90
+     
+      Error_Status = CRTM_Allocate_Options( nchanl,    &  ! Input
+                                            Options)      ! InOut
+      if ( Error_Status /= 0 ) then
+        call da_error(__FILE__,__LINE__, &
+          (/"Error in allocatting CRTM Options Structure"/))
+      endif
+
       ! do n= 1, iv%instid(inst)%num_rad           ! loop for pixel
 
       n1 = iv%instid(inst)%info%n1
@@ -356,6 +369,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          ! CRTM GeometryInfo Structure
          GeometryInfo(1)%Sensor_Zenith_Angle=iv%instid(inst)%satzen(n)
          GeometryInfo(1)%Source_Zenith_Angle=iv%instid(inst)%solzen(n)
+         GeometryInfo(1)%iFOV=iv%instid(inst)%scanpos(n)
          ! GeometryInfo(1)%Satellite_Height=830.0
          ! GeometryInfo(1)%Sensor_Scan_Angle=
          ! GeometryInfo(1)%Sensor_Zenith_Angle=
@@ -480,8 +494,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                ChannelInfo(inst),  &
                                Atmosphere_K,&
                                Surface_K,   &
-                               RTSolution) !,   &
-                               !Options = Options)
+                               RTSolution,  &
+                               Options)
          else
 	 
             ! [1.3] Call RTM foreward model
@@ -489,7 +503,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                Surface,      &
                GeometryInfo, &
                ChannelInfo(inst:inst),  &
-               RTSolution)
+               RTSolution,              &
+               Options)
 	    
 	 end if
 
@@ -647,6 +662,11 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             call da_error(__FILE__,__LINE__, &
                (/"Error in deallocating RTSolution_K"/))
       end if	 
+
+      Error_Status = CRTM_Destroy_Options(Options)
+      if (Error_Status /= 0) &
+         call da_error(__FILE__,__LINE__, &
+            (/"Error in deallocating CRTM Options Structure"/))
 
       Error_Status = CRTM_Destroy_Surface(Surface)
       if (Error_Status /= 0) &

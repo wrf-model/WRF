@@ -51,7 +51,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    type (CRTM_Atmosphere_type )   :: Atmosphere(1), Atmosphere_AD(1)
    type (CRTM_Surface_type )      :: Surface(1), Surface_AD(1)
    type (CRTM_GeometryInfo_type ) :: GeometryInfo(1)
-   !type(CRTM_Options_type )      :: Options
+   type (CRTM_Options_type )      :: Options(1)
 
 !---------------------------------------------------------
 
@@ -150,13 +150,14 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       end if
  
   ! CRTM Options structure
-      !Options%n_channels = nchanl
-      !Error_Status = CRTM_Allocate_Options( nchanl,     &  ! Input
-      !                             Options)  ! Output
-      !if ( Error_Status /= 0 ) then
-      !  call da_error(__FILE__,__LINE__, &
-      !    (/"Error in allocatting CRTM Options Structure"/))
-      !endif
+      Options(1)%n_channels = nchanl
+      if ( use_antcorr(inst) ) Options(1)%Antenna_Correction = 1   ! SET = 1 in CRTM_Parameters.f90
+      Error_Status = CRTM_Allocate_Options( nchanl,    &  ! Input
+                                            Options)      ! Output
+      if ( Error_Status /= 0 ) then
+        call da_error(__FILE__,__LINE__, &
+          (/"Error in allocatting CRTM Options Structure"/))
+      endif
 
      if ( use_varbc .or. freeze_varbc ) then
         ! Gamma correction from VarBC
@@ -269,6 +270,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       ! [1.2] CRTM GeometryInfo Structure
         GeometryInfo(1)%Sensor_Zenith_Angle=iv%instid(inst)%satzen(n)
         GeometryInfo(1)%Source_Zenith_Angle=iv%instid(inst)%solzen(n)
+        GeometryInfo(1)%iFOV=iv%instid(inst)%scanpos(n)
    !     GeometryInfo(1)%Satellite_Height=830.0
    !     GeometryInfo(1)%Sensor_Scan_Angle=
    !     GeometryInfo(1)%Sensor_Zenith_Angle=
@@ -293,8 +295,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
                             ChannelInfo(inst:inst),  &
                             Atmosphere_AD,&
                             Surface_AD,   &
-                            RTSolution) !,   &
-                            !Options = Options)
+                            RTSolution,   &
+                            Options)
 
          !Error_Status = CRTM_Adjoint(Atmosphere,   &
          !                   Surface,      &
@@ -425,7 +427,13 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             call da_error(__FILE__,__LINE__, &
               (/"Error in deallocatting RTSolution"/))
          END IF
-                                                                                                                          
+
+         Error_Status = CRTM_Destroy_Options(Options)
+         if ( Error_Status /= 0 ) then
+            call da_error(__FILE__,__LINE__, &
+               (/"Error in deallocatting CRTM Options Structure"/))
+         end if
+
          Error_Status = CRTM_Destroy_Surface(Surface)
          if ( Error_Status /= 0 ) then
             call da_error(__FILE__,__LINE__, &

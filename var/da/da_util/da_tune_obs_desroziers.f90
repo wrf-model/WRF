@@ -46,7 +46,7 @@ program da_tune_obs_desroziers
                                     rtminit_nchan
    ! radiance relevant variables
    character*1          :: str1,str2,str3
-   character*4          :: platform
+   character*5          :: platform
    character*5          :: sensor
    integer              :: platform_id,satellite_id,sensor_id,ichan
    
@@ -432,41 +432,9 @@ subroutine da_count_obs( y_unit, ob )
          ob % num_gpsref = ob % num_gpsref + num_obs
          ! Radiance obs: consistent with RTTOV triplet and WRF-VAR
          !--------------------------------------------------------------------
-      else if ( index( ob_name,'noaa') > 0 ) then
-         platform_id = 1
-         read (ob_name,'(a4,a1,i2,a1,a5,a1,i4)') &
-            platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'amsua' ) then
-            sensor_id = 3
-         else if ( sensor == 'amsub' )  then
-            sensor_id = 4
-         else
-            print*,' Unrecognized Sensor ',sensor
-            stop
-         end if
-         do n = 1, rtminit_nsensor
-            if (    platform_id  == rtminit_platform(n) &
-             .and. satellite_id == rtminit_satid(n)    &
-             .and. sensor_id    == rtminit_sensor(n)    ) then
-                ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan) + &
-                   num_obs
-               exit
-            end if
-         end do
-         ! WHY 
-         ! read(y_unit,'(i8)')num_levs
-         ! read(y_unit,'(a20)')dummy    
-
-      else if ( index( ob_name,'eos') > 0 ) then
-         platform_id = 9
-         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
-            platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'airs' ) then
-            sensor_id = 11
-         else
-            print*,' Unrecognized Sensor ',sensor
-            stop
-         end if
+      else if ( index( ob_name,'noaa') > 0 .or. index( ob_name,'eos') > 0 .or. &
+                index( ob_name,'dmsp') > 0 .or. index( ob_name,'metop') > 0 ) then
+         call get_sat_info(adjustl(ob_name),platform_id,satellite_id,sensor_id,ichan)
          do n = 1, rtminit_nsensor
             if (    platform_id  == rtminit_platform(n) &
              .and. satellite_id == rtminit_satid(n)    &
@@ -484,14 +452,11 @@ subroutine da_count_obs( y_unit, ob )
          print*,' unknown obs type: ',trim(ob_name),' found on unit ',y_unit
       end if
 
-      if ( index( ob_name,'noaa') > 0 ) then
+      if ( index( ob_name,'noaa') > 0 .or. index( ob_name,'eos') > 0 .or. &
+           index( ob_name,'dmsp') > 0 .or. index( ob_name,'metop') > 0 ) then
          do k = 1, num_obs
             read(y_unit,'(a20)')dummy              
          end do
-      else if ( index( ob_name,'eos') > 0 ) then
-         do k = 1, num_obs
-            read(y_unit,'(a20)')dummy              
-         end do 
       else
          do n = 1, num_obs
             read(y_unit,'(i8)')num_levs
@@ -913,40 +878,9 @@ subroutine da_read_y( y_unit, ob )
          end do
          ! Radiance obs: consistent with RTTOV triplet and WRF-VAR
          !--------------------------------------------------------------------
-      else if ( index( ob_name,'noaa') > 0 ) then
-         platform_id = 1
-         read (ob_name,'(a4,a1,i2,a1,a5,a1,i4)') &
-               platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'amsua' ) then
-              sensor_id = 3
-         else if ( sensor == 'amsub' )  then
-              sensor_id = 4
-         else
-              write(6,*) ' Unrecognized Sensor '
-         end if
-         do n = 1, rtminit_nsensor
-           if (    platform_id  == rtminit_platform(n) &
-             .and. satellite_id == rtminit_satid(n)    &
-             .and. sensor_id    == rtminit_sensor(n)    ) then
-                do k = 1,num_obs
-                  ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan) + 1
-                  read(y_unit,'(2i8,e15.7)') ipixel,kdum,  &
-                        ob%rad(n)%tb(ichan)%pixel(ob%rad(n)%num_rad_tot(ichan))%y
-                end do
-                exit
-           end if
-         end do
-
-      else if ( index( ob_name,'eos') > 0 ) then
-         platform_id = 9
-         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
-            platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'airs' ) then
-            sensor_id = 11
-         else
-            print*,' Unrecognized Sensor ',sensor
-            stop
-         end if
+      else if ( index( ob_name,'noaa') > 0 .or. index( ob_name,'eos') > 0 .or. &
+                index( ob_name,'dmsp') > 0 .or. index( ob_name,'metop') > 0 ) then
+         call get_sat_info(adjustl(ob_name),platform_id,satellite_id,sensor_id,ichan)
          do n = 1, rtminit_nsensor
            if (    platform_id  == rtminit_platform(n) &
              .and. satellite_id == rtminit_satid(n)    &
@@ -1222,40 +1156,9 @@ subroutine da_read_yp( yp_unit, ob )
          end do
          ! Radiance obs: consistent with RTTOV triplet and WRF-VAR
          !--------------------------------------------------------------------
-      elseif ( index( ob_name,'noaa') > 0 ) then
-         platform_id = 1
-         read (ob_name,'(a4,a1,i2,a1,a5,a1,i4)') &
-               platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'amsua' ) then
-              sensor_id = 3
-         else if ( sensor == 'amsub' )  then
-              sensor_id = 4
-         else
-              write(6,*) ' Unrecognized Sensor '
-         end if
-         do n = 1, rtminit_nsensor
-           if (    platform_id  == rtminit_platform(n) &
-             .and. satellite_id == rtminit_satid(n)    &
-             .and. sensor_id    == rtminit_sensor(n)    ) then
-                do k = 1,num_obs
-                  ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan)+1
-                  read(yp_unit,'(2i8,e15.7)') ipixel, kdum, &
-                     ob%rad(n)%tb(ichan)%pixel(ob%rad(n)%num_rad_tot(ichan))%yp
-                end do
-                exit
-           end if
-         end do
-
-      else if ( index( ob_name,'eos') > 0 ) then
-         platform_id = 9
-         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
-            platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'airs' ) then
-            sensor_id = 11
-         else
-            print*,' Unrecognized Sensor ',sensor
-            stop
-         end if
+      else if ( index( ob_name,'noaa') > 0 .or. index( ob_name,'eos') > 0 .or. &
+                index( ob_name,'dmsp') > 0 .or. index( ob_name,'metop') > 0 ) then
+         call get_sat_info(adjustl(ob_name),platform_id,satellite_id,sensor_id,ichan)
          do n = 1, rtminit_nsensor
            if (    platform_id  == rtminit_platform(n) &
              .and. satellite_id == rtminit_satid(n)    &
@@ -1588,43 +1491,9 @@ subroutine da_read_obs_rand( rand_unit, ob )
 
          ! Radiance obs: consistent with RTTOV triplet and WRF-VAR
          !--------------------------------------------------------------------
-      elseif ( index( ob_name,'noaa') > 0 ) then
-         platform_id = 1
-         read (ob_name,'(a4,a1,i2,a1,a5,a1,i4)') &
-            platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'amsua' ) then
-            sensor_id = 3
-         else if ( sensor == 'amsub' )  then
-            sensor_id = 4
-         else
-            write(6,*) ' Unrecognized Sensor '
-         end if
-         do n = 1, rtminit_nsensor
-            if (    platform_id  == rtminit_platform(n) &
-               .and. satellite_id == rtminit_satid(n)    &
-               .and. sensor_id    == rtminit_sensor(n)    ) then
-               do k = 1,num_obs
-                  ob%rad(n)%num_rad_tot(ichan) = ob%rad(n)%num_rad_tot(ichan) + 1
-                  read(rand_unit,'(2i8,f10.3,e15.7)') ipixel, kdum,     &
-                     ob%rad(n)%tb(ichan)%pixel( &
-                     ob%rad(n)%num_rad_tot(ichan))%error, &
-                     ob%rad(n)%tb(ichan)%pixel( &
-                     ob%rad(n)%num_rad_tot(ichan))%pert
-               end do
-               exit
-            end if
-         end do
-
-      else if ( index( ob_name,'eos') > 0 ) then
-         platform_id = 9
-         read (ob_name,'(a3,a1,i1,a1,a4,a1,i4)') &
-            platform, str1,satellite_id,str2,sensor,str3,ichan
-         if ( sensor == 'airs' ) then
-            sensor_id = 11
-         else
-            print*,' Unrecognized Sensor ',sensor
-            stop
-         end if
+      else if ( index( ob_name,'noaa') > 0 .or. index( ob_name,'eos') > 0 .or. &
+                index( ob_name,'dmsp') > 0 .or. index( ob_name,'metop') > 0 ) then
+         call get_sat_info(adjustl(ob_name),platform_id,satellite_id,sensor_id,ichan)
          do n = 1, rtminit_nsensor
             if (    platform_id  == rtminit_platform(n) &
                .and. satellite_id == rtminit_satid(n)    &
@@ -2437,32 +2306,9 @@ subroutine da_read_jo_actual( ob )
                                   ob % joa_gpsref_ref, &
                                   dum1, dum2, dum3, dum4 )
       else if ( ob_name == 'radia' .and. index(str,'actual') > 0 ) then
-         if ( index( str,'noaa') > 0 ) then
-            platform_id = 1
-            read (str,'(30x,a4,1x,i2,1x,a5)')platform, satellite_id,sensor
-            read (str1,'(i5,i10)')ichan, num_obs                     
-            read (str2,'(f15.5)')jo                                 
-
-            if ( sensor == 'amsua' ) then
-               sensor_id = 3
-            else if ( sensor == 'amsub' )  then
-               sensor_id = 4
-            else
-               write(6,*) ' Unrecognized Sensor '
-            end if
-	 else if ( index( str,'eos') > 0 ) then
-	    platform_id = 9
-            read (str,'(30x,a3,1x,i1,1x,a4)')platform, satellite_id,sensor
-            read (str1,'(i5,i10)')ichan, num_obs                     
-            read (str2,'(f15.5)')jo                                 
-
-            if ( sensor == 'airs' ) then
-               sensor_id = 11
-            else
-               print*,' Unrecognized Sensor ',sensor
-               stop
-            end if
-         end if 
+         call get_sat_info(str(31:),platform_id,satellite_id,sensor_id)
+         read (str1,'(i5,i10)')ichan, num_obs                     
+         read (str2,'(f15.5)')jo                                 
 	 do n = 1, rtminit_nsensor
             if (    platform_id  == rtminit_platform(n) &
                 .and. satellite_id == rtminit_satid(n)    &
@@ -2669,13 +2515,13 @@ subroutine da_calc_new_factors( ob )
   
    if ( rtminit_nsensor > 0 ) then 
       write(6,*) &
-         '     sensor    chan   num       Jo_mini         Jo_exp       trace(HK)  factor'
+         '     sensor        chan   num       Jo_mini         Jo_exp       trace(HK)  factor'
       do n = 1, rtminit_nsensor
          do ichan = 1, ob % rad(n) % nchan
             if ( ob % rad(n) % num_rad_tot(ichan) > 0 ) then
                ob % rad(n) % factor_rad(ichan) = &
                   sqrt( ob % rad(n) % joa_rad(ichan) / ob % rad(n) % jo_rad(ichan) )
-               write(6,'(a15,i4,i8,3f15.5,f8.3)')   &
+               write(6,'(a15,i8,i8,3f15.5,f8.3)')   &
                   trim(ob%rad(n)%rttovid_string), &
                   ichan,                        &
                   ob%rad(n)%num_rad_tot(ichan), &
@@ -2861,6 +2707,68 @@ subroutine read_namelist_radiance
 
 end subroutine read_namelist_radiance
 
-end program da_tune_obs_desroziers
+subroutine get_sat_info(ob_name,platform_id,satellite_id,sensor_id,ichan)
 
+   implicit none
+
+   character(len=*),  intent(in)  :: ob_name
+   integer,           intent(out) :: platform_id, satellite_id, sensor_id
+   integer, optional, intent(out) :: ichan
+   character(len=5)               :: platform, sensor
+   integer                        :: strlen, dashloc1, dashloc2, dashloc3
+
+   strlen = len_trim(ob_name)
+
+   ! retrieve platform name
+   dashloc1 = index(ob_name,"-")
+   platform = ob_name(1:dashloc1-1)
+   select case (platform)
+   case ('noaa')
+      platform_id = 1
+   case ('eos')
+      platform_id = 9
+   case ('dmsp')
+      platform_id = 2
+   case ('metop')
+      platform_id = 10
+   case default
+      write(0,*)' Unrecognized platform ',platform
+      stop
+   end select
+
+   ! retrieve satellite id
+   dashloc2 = index(ob_name(dashloc1+1:strlen),"-")
+   read(ob_name(dashloc1+1:dashloc1+dashloc2-1),'(i3)') satellite_id
+
+   ! retrieve sensor name
+   if ( present(ichan) ) then
+      dashloc3 = index(ob_name,"-",.true.)
+      sensor = ob_name(dashloc1+dashloc2+1:dashloc3-1)
+   else
+      sensor = ob_name(dashloc1+dashloc2+1:)
+   end if
+   select case (sensor)
+   case ('amsua')
+      sensor_id = 3
+   case ('amsub')
+      sensor_id = 4
+   case ('mhs')
+      sensor_id = 15
+   case ('airs')
+      sensor_id = 11
+   case ('ssmis')
+      sensor_id = 10
+   case default
+      write(0,*)' Unrecognized sensor ',sensor
+      stop
+   end select
+
+   if ( present(ichan) ) then
+      ! retrieve channel index
+      read(ob_name(dashloc3+1:),'(i4)') ichan
+   end if
+
+end subroutine get_sat_info
+
+end program da_tune_obs_desroziers
 

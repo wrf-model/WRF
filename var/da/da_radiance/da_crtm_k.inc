@@ -7,7 +7,8 @@ subroutine da_crtm_k(  nsensor, nchan, nprof, &
                             ChannelInfo,  &
                             Atmosphere_K,   &
                             Surface_K,   &
-                            RTSolution)
+                            RTSolution,   &
+                            Options)
 
    integer, intent(in)            :: nsensor, nchan, nprof
    type (CRTM_RTSolution_type ),  intent(inout)  :: RTSolution(nchan,nprof)
@@ -18,6 +19,7 @@ subroutine da_crtm_k(  nsensor, nchan, nprof, &
    type( CRTM_Surface_type ),     intent(in)     :: Surface(nprof)
    type( CRTM_Surface_type ),     intent(inout)  :: Surface_K(nchan,nprof)
    type( CRTM_GeometryInfo_type ),intent(inout)  :: GeometryInfo(nprof)
+   type (CRTM_Options_type),      intent(in)     :: Options(nprof)
 
    integer :: Error_Status
 
@@ -30,8 +32,8 @@ subroutine da_crtm_k(  nsensor, nchan, nprof, &
                             ChannelInfo,  &
                             Atmosphere_K,&
                             Surface_K,   &
-                            RTSolution) !,   &
-                            !Options = Options)
+                            RTSolution,   &
+                            Options)
          if ( Error_Status /= 0 ) then
               call da_error(__FILE__,__LINE__, &
                  (/"Error in calling CRTM_K_Matrix"/))

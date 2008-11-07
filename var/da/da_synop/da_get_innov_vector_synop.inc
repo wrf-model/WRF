@@ -80,14 +80,6 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
                   ! ob%synop(n)%u = iv%synop(n)%u%inv
                   ! ob%synop(n)%v = iv%synop(n)%v%inv
 
-                  if ( it == 1 ) then
-                     ob%synop(n)%p = iv%synop(n)%p%inv
-                     ob%synop(n)%t = iv%synop(n)%t%inv
-                     ob%synop(n)%q = iv%synop(n)%q%inv
-                     ob%synop(n)%u = iv%synop(n)%u%inv
-                     ob%synop(n)%v = iv%synop(n)%v%inv
-                  end if
-
                else
                   call da_to_zk(iv % synop(n) % h, v_h, v_interp_h, iv%info(synop)%zk(1,n))
                end if

@@ -134,11 +134,46 @@
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
 
-   else
+   else      ! anal_type_verify
       it = 1
       num_qcstat_conv=0
+#if defined(RTTOV) || defined(CRTM)
+      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
+#endif
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
       call da_allocate_y (iv, re)
+ 
+      ! write out O-B statistics
+      iv%nstats(:) = 0
+      if (iv%info(sound)%ntotal > 0) then
+         call da_oi_stats_sound     (stats_unit, iv)
+         call da_oi_stats_sonde_sfc (stats_unit, iv)
+      end if
+      if (iv%info(mtgirs)%ntotal   > 0) call da_oi_stats_mtgirs   (stats_unit, iv)
+      if (iv%info(synop)%ntotal    > 0) call da_oi_stats_synop    (stats_unit, iv)
+      if (iv%info(geoamv)%ntotal   > 0) call da_oi_stats_geoamv   (stats_unit, iv)
+      if (iv%info(polaramv)%ntotal > 0) call da_oi_stats_polaramv (stats_unit, iv)
+      if (iv%info(airep)%ntotal    > 0) call da_oi_stats_airep    (stats_unit, iv)
+      if (iv%info(pilot)%ntotal    > 0) call da_oi_stats_pilot    (stats_unit, iv)
+      if (iv%info(metar)%ntotal    > 0) call da_oi_stats_metar    (stats_unit, iv)
+      if (iv%info(ships)%ntotal    > 0) call da_oi_stats_ships    (stats_unit, iv)
+      if (iv%info(gpspw)%ntotal    > 0) call da_oi_stats_gpspw    (stats_unit, iv)
+      if (iv%info(gpsref)%ntotal   > 0) call da_oi_stats_gpsref   (stats_unit, iv)
+      if (iv%info(ssmi_tb)%ntotal  > 0) call da_oi_stats_ssmi_tb  (stats_unit, iv)
+      if (iv%info(ssmi_rv)%ntotal  > 0) call da_oi_stats_ssmi_rv  (stats_unit, iv)
+      if (iv%info(satem)%ntotal    > 0) call da_oi_stats_satem    (stats_unit, iv)
+      if (iv%info(ssmt1)%ntotal    > 0) call da_oi_stats_ssmt1    (stats_unit, iv)
+      if (iv%info(ssmt2)%ntotal    > 0) call da_oi_stats_ssmt2    (stats_unit, iv)
+      if (iv%info(qscat)%ntotal    > 0) call da_oi_stats_qscat    (stats_unit, iv)
+      if (iv%info(profiler)%ntotal > 0) call da_oi_stats_profiler (stats_unit, iv)
+      if (iv%info(buoy)%ntotal     > 0) call da_oi_stats_buoy     (stats_unit, iv)
+      if (iv%info(radar)%ntotal    > 0) call da_oi_stats_radar    (stats_unit, iv)
+      if (iv%info(bogus)%ntotal    > 0) call da_oi_stats_bogus    (stats_unit, iv)
+      if (iv%info(airsr)%ntotal    > 0) call da_oi_stats_airsr    (stats_unit, iv)
+#if defined(RTTOV) || defined(CRTM)
+      if (iv%num_inst > 0) call da_oi_stats_rad (stats_unit, iv)
+#endif
+
       call da_write_obs(it, ob, iv, re)
       call da_write_obs_etkf(ob, iv, re)
       call da_final_write_obs(it, iv)

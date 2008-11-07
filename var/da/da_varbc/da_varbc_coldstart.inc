@@ -11,6 +11,8 @@
    !  Called from da_get_innov_vector_radiance
    !
    !  HISTORY: 10/26/2007 - Creation                     Tom Auligne
+   !           11/03/2008 - Bug-fix: exclude HALO data for
+   !                        computation of predictor statistics    Tom/Hui-Chuan  
    !---------------------------------------------------------------------------
 
    implicit none
@@ -18,7 +20,7 @@
    type (iv_type), intent (inout)   :: iv             ! Innovation
 
    integer                          :: inst, k, n, i
-   integer                          :: npredmax, npred, num_rad, num_rad_tot
+   integer                          :: npredmax, npred, num_rad, num_rad_domain, num_rad_tot
 
    integer, parameter               :: nbins   = 200                       ! Number of Hist bins.
    real,    parameter               :: maxhist = 10.                       ! Maximum bin value.
@@ -37,9 +39,10 @@
 
    do inst = 1, iv%num_inst                                            !! loop for sensors
 
-      npredmax    = iv%instid(inst)%varbc_info%npredmax
-      num_rad     = iv%instid(inst)%num_rad
-      num_rad_tot = wrf_dm_sum_integer(num_rad)
+      npredmax       = iv%instid(inst)%varbc_info%npredmax
+      num_rad        = iv%instid(inst)%num_rad
+      num_rad_domain = COUNT(iv%instid(inst)%info%proc_domain(1,1:num_rad)) ! do not count HALO
+      num_rad_tot    = wrf_dm_sum_integer(num_rad_domain)
       
       if (npredmax <= 0) cycle                                         !! VarBC instr only
       
@@ -115,8 +118,10 @@
         ! Accumulate statistics for predictor mean/std
         ! ---------------------------------------------
          do i = 1, npredmax
-            mean(i) = SUM(iv%instid(inst)%varbc_info%pred(i,1:num_rad))    
-            rms(i)  = SUM(iv%instid(inst)%varbc_info%pred(i,1:num_rad)**2)
+            mean(i) = SUM(iv%instid(inst)%varbc_info%pred(i,1:num_rad),    &
+                          MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))  ! do not count HALO  
+            rms(i)  = SUM(iv%instid(inst)%varbc_info%pred(i,1:num_rad)**2, &
+                          MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))  ! do not count HALO 
          end do
   
         ! Do inter-processor communication to gather statistics

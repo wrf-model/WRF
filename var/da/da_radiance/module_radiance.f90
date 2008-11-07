@@ -35,7 +35,8 @@ module module_radiance
       o3_id, water_cloud, crtm_rtsolution_type, crtm_channelinfo_type, &
       crtm_atmosphere_type, crtm_surface_type, crtm_geometryinfo_type, &
       crtm_zero_surface, crtm_zero_atmosphere, crtm_destroy, &
-      crtm_destroy_channelinfo, climatology_model_name
+      crtm_destroy_channelinfo, climatology_model_name, &
+      crtm_options_type, crtm_allocate_options, crtm_destroy_options
 
    USE CRTM_SensorInfo
 #endif

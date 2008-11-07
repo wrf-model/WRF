@@ -6,7 +6,8 @@ subroutine da_crtm_tl(  nsensor, nchan, nprof, Atmosphere,   &
                             GeometryInfo, &
                             ChannelInfo,  &
                             RTSolution,   &
-                            RTSolution_TL)
+                            RTSolution_TL,&
+                            Options)
 
    integer, intent(in)            :: nsensor, nchan, nprof
    type (CRTM_RTSolution_type ),  intent(inout)  :: RTSolution(nchan,nprof),RTSolution_TL(nchan,nprof)
@@ -14,6 +15,7 @@ subroutine da_crtm_tl(  nsensor, nchan, nprof, Atmosphere,   &
    type( CRTM_Atmosphere_type ),  intent(in)  :: Atmosphere(nprof), Atmosphere_TL(nprof)
    type( CRTM_Surface_type ),     intent(in)  :: Surface(nprof),Surface_TL(nprof)
    type( CRTM_GeometryInfo_type ),intent(inout)  :: GeometryInfo(nprof)
+   type (CRTM_Options_type),      intent(in)     :: Options(nprof)
 
    integer :: Error_Status
 
@@ -26,7 +28,8 @@ subroutine da_crtm_tl(  nsensor, nchan, nprof, Atmosphere,   &
                             GeometryInfo, &
                             ChannelInfo,  &
                             RTSolution,   &
-                            RTSolution_TL) 
+                            RTSolution_TL,&
+                            Options) 
 
          if ( Error_Status /= 0 ) then
               call da_error(__FILE__,__LINE__, &

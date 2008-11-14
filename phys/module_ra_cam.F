@@ -22,7 +22,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      m_psp,m_psn,aerosolcp,aerosolcn,m_hybi0,       &
                      cam_abs_dim1, cam_abs_dim2,                    &
                      paerlev,naer_c,                                &
-                     GMT,JULDAY,JULIAN,DT,XTIME,DECLIN,SOLCON,         &
+                     GMT,JULDAY,JULIAN,YR,DT,XTIME,DECLIN,SOLCON,         &
                      RADT,DEGRAD,n_cldadv,                                  &
                      abstot_3d, absnxt_3d, emstot_3d,              &
                      doabsems,                                     &
@@ -46,6 +46,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    INTEGER,    INTENT(IN  )  ::        n_cldadv
    INTEGER,    INTENT(IN  )  ::        JULDAY
    REAL,       INTENT(IN  )  ::        JULIAN
+   INTEGER,    INTENT(IN  )  ::        YR
    REAL,       INTENT(IN  )  ::        DT
    INTEGER,      INTENT(IN   )    ::   levsiz, num_months
    INTEGER,      INTENT(IN   )    ::   paerlev, naer_c
@@ -152,6 +153,8 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    INTEGER :: lchnk, ncol, pcols, pver, pverp, pverr, pverrp
    INTEGER :: pcnst, pnats, ppcnst, i, j, k, ii, kk, kk1, m, n
    integer :: begchunk, endchunk
+   integer :: nyrm, nyrp
+   real(r8) doymodel, doydatam, doydatap, deltat, fact1, fact2
 
    REAL :: XT24, TLOCTM, HRANG, XXLAT, oldXT24
  
@@ -237,6 +240,25 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
              WRITE( wrf_err_message , * ) 'naer_c-1 ne naer_all ', naer_c, naer_all
              CALL wrf_error_fatal ( wrf_err_message )
    endif 
+
+! update CO2 volume mixing ratio (co2vmr)
+  
+! determine time interpolation factors, check sanity
+! of interpolation factors to within 32-bit roundoff
+! assume that day of year is 1 for all input data
+!
+   nyrm     = yr - yrdata(1) + 1
+   nyrp     = nyrm + 1
+   doymodel = yr*365.    + julian
+   doydatam = yrdata(nyrm)*365. + 1.
+   doydatap = yrdata(nyrp)*365. + 1.
+   deltat   = doydatap - doydatam
+   fact1    = (doydatap - doymodel)/deltat
+   fact2    = (doymodel - doydatam)/deltat
+   co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
+!  print *, 'check ', nyrm,nyrp,doymodel,doydatam,doydatap,co2(nyrm),co2(nyrp),co2vmr,julday,julian,yr,xtime
+   print *, 'check ', julday,julian,yr,xtime,radt,co2vmr,nyrm,nyrp,doymodel,doydatam,doydatap
+
 !
 !===================================================
 ! Radiation computations

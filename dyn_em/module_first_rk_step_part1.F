@@ -29,7 +29,7 @@ CONTAINS
                             )
     USE module_state_description
     USE module_model_constants
-    USE module_domain, ONLY : domain
+    USE module_domain, ONLY : domain, domain_clock_get
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
     USE module_radiation_driver, ONLY : pre_radiation_driver, radiation_driver
     USE module_surface_driver, ONLY : surface_driver
@@ -39,10 +39,12 @@ CONTAINS
     USE module_em, ONLY : init_zero_tendency
     USE module_big_step_utilities_em, ONLY : phy_prep
     USE module_dm
+    USE module_utility
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
     TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
+    TYPE(WRFU_Time)                :: currentTime
 
     INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
@@ -103,6 +105,8 @@ CONTAINS
     INTEGER  num_road_layers
     INTEGER  iswater
     INTEGER  rk_step 
+    INTEGER                         :: yr, month, day, hr, minute, sec, rc
+    CHARACTER*80                    :: message
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
@@ -168,6 +172,13 @@ BENCH_END(init_zero_tend_tim)
 BENCH_END(phy_prep_tim)
 
 ! radiation
+     CALL domain_clock_get( grid, current_time=currentTime, &
+                            current_timestr=message )
+     CALL WRFU_TimeGet( currentTime, YY=yr, dayOfYear=day, H=hr, M=minute, S=sec, rc=rc)
+!         print *, 'current year', yr, day, rc
+         IF( rc/= WRFU_SUCCESS)THEN
+         CALL wrf_error_fatal('WRFU_TimeGet failed')
+         ENDIF
 
 ! this driver is only needed to handle non-local shadowing effects
       CALL pre_radiation_driver ( grid, config_flags                        & 
@@ -216,7 +227,7 @@ BENCH_START(rad_driver_tim)
      &        ,T8W=t8w                 ,T=t_phy                 ,TAUCLDC=grid%taucldc &
      &        ,TAUCLDI=grid%taucldi    ,TSK=grid%tsk            ,VEGFRA=grid%vegfra  &
      &        ,WARM_RAIN=grid%warm_rain ,XICE=grid%xice         ,XLAND=grid%xland    &
-     &        ,XLAT=grid%xlat          ,XLONG=grid%xlong        &
+     &        ,XLAT=grid%xlat          ,XLONG=grid%xlong        ,YR=yr               &
 !Optional urban
      &        ,DECLIN_URB=grid%declin_urb        ,COSZ_URB2D=grid%cosz_urb2d   &
      &        ,OMG_URB2D=grid%omg_urb2d                                        &
@@ -247,24 +258,22 @@ BENCH_START(rad_driver_tim)
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
      &        , QNDROP=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP    &
-#ifdef ACFLUX
-     &        ,ACSWUPT=acswupt    ,ACSWUPTC=acswuptc                      &
-     &        ,ACSWDNT=acswdnt    ,ACSWDNTC=acswdntc                      &
-     &        ,ACSWUPB=acswupb    ,ACSWUPBC=acswupbc                      &
-     &        ,ACSWDNB=acswdnb    ,ACSWDNBC=acswdnbc                      &
-     &        ,ACLWUPT=aclwupt    ,ACLWUPTC=aclwuptc                      &
-     &        ,ACLWDNT=aclwdnt    ,ACLWDNTC=aclwdntc                      &
-     &        ,ACLWUPB=aclwupb    ,ACLWUPBC=aclwupbc                      &
-     &        ,ACLWDNB=aclwdnb    ,ACLWDNBC=aclwdnbc                      &
-     &        ,SWUPT=swupt    ,SWUPTC=swuptc                              &
-     &        ,SWDNT=swdnt    ,SWDNTC=swdntc                              &
-     &        ,SWUPB=swupb    ,SWUPBC=swupbc                              &
-     &        ,SWDNB=swdnb    ,SWDNBC=swdnbc                              &
-     &        ,LWUPT=lwupt    ,LWUPTC=lwuptc                              &
-     &        ,LWDNT=lwdnt    ,LWDNTC=lwdntc                              &
-     &        ,LWUPB=lwupb    ,LWUPBC=lwupbc                              &
-     &        ,LWDNB=lwdnb    ,LWDNBC=lwdnbc                              &
-#endif
+     &        ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc            &
+     &        ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc            &
+     &        ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc            &
+     &        ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc            &
+     &        ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc            &
+     &        ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc            &
+     &        ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc            &
+     &        ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc            &
+     &        ,SWUPT=grid%swupt    ,SWUPTC=grid%swuptc                    &
+     &        ,SWDNT=grid%swdnt    ,SWDNTC=grid%swdntc                    &
+     &        ,SWUPB=grid%swupb    ,SWUPBC=grid%swupbc                    &
+     &        ,SWDNB=grid%swdnb    ,SWDNBC=grid%swdnbc                    &
+     &        ,LWUPT=grid%lwupt    ,LWUPTC=grid%lwuptc                    &
+     &        ,LWDNT=grid%lwdnt    ,LWDNTC=grid%lwdntc                    &
+     &        ,LWUPB=grid%lwupb    ,LWUPBC=grid%lwupbc                    &
+     &        ,LWDNB=grid%lwdnb    ,LWDNBC=grid%lwdnbc                    &
      &        ,LWCF=grid%lwcf                                                  &
      &        ,SWCF=grid%swcf                                                  &
      &        ,OLR=grid%olr                                                    &
@@ -304,7 +313,8 @@ BENCH_START(surf_driver_tim)
       CALL wrf_debug ( 200 , ' call surface_driver' )
 
       CALL surface_driver(                                                &
-     &         ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
+     &         ACGRDFLX=grid%acgrdflx  ,ACHFX=grid%achfx        ,ACLHF=grid%aclhf        &
+     &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
      &        ,EMBCK=grid%embck                                                          &
      &        ,BR=br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
@@ -313,7 +323,7 @@ BENCH_START(surf_driver_tim)
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
      &        ,GSW=grid%gsw    ,SWDOWN=grid%swdown        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx              &
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
-     &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep                    &
+     &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
      &        ,P8W=p8w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
@@ -331,9 +341,13 @@ BENCH_START(surf_driver_tim)
      &        ,SMSTAV=grid%smstav      ,SMSTOT=grid%smstot      ,SNOALB=grid%snoalb      &
      &        ,SNOW=grid%snow          ,SNOWC=grid%snowc        ,SNOWH=grid%snowh        &
      &        ,SST=grid%sst            ,SST_UPDATE=grid%sst_update                  &
+     &        ,SSTSK=grid%sstsk        ,DTW=grid%dtw            ,SST_SKIN=grid%sst_skin  &
      &        ,STEPBL=grid%stepbl      ,TH10=grid%th10          ,TH2=grid%th2            &
      &        ,THZ0=grid%thz0          ,TH_PHY=th_phy      ,TKE_MYJ=grid%tke_myj    &
      &        ,TMN=grid%tmn            ,TSHLTR=grid%tshltr      ,TSK=grid%tsk            &
+     &        ,TYR=grid%tyr            ,TYRA=grid%tyra          ,TDLY=grid%tdly          &
+     &        ,TLAG=grid%tlag          ,LAGDAY=config_flags%lagday      ,NYEAR=grid%nyear        &
+     &        ,NDAY=grid%nday          ,TMN_UPDATE=grid%tmn_update             &
      &        ,TSLB=grid%tslb          ,T_PHY=t_phy        ,U10=grid%u10            &
      &        ,URATX=grid%uratx        ,VRATX=grid%vratx   ,TRATX=grid%tratx        &
      &        ,UDRUNOFF=grid%udrunoff  ,UST=grid%ust       ,UZ0=grid%uz0            &

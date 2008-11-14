@@ -3141,11 +3141,30 @@ BENCH_END(bc_2d_tim)
       &             ,U=grid%u_2    ,V=grid%v_2                             &
       &             ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
       &             ,RAINC=grid%rainc    ,RAINNC=grid%rainnc               &
+      &             ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
       &             ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
       &             ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
       &             ,XTIME=grid%xtime                                      &
+      &        ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc            &
+      &        ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc            &
+      &        ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc            &
+      &        ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc            &
+      &        ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc            &
+      &        ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc            &
+      &        ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc            &
+      &        ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc            &
+      &      ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc        &
+      &      ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc        &
+      &      ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc        &
+      &      ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc        &
+      &      ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc        &
+      &      ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc        &
+      &      ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc        &
+      &      ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc        &
                   ! Selection flag
       &             ,DIAG_PRINT=config_flags%diag_print                    &
+      &             ,BUCKET_MM=config_flags%bucket_mm                      &
+      &             ,BUCKET_J =config_flags%bucket_J                       &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

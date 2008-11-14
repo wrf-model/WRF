@@ -3746,7 +3746,7 @@ CONTAINS
 !     Set molecular weight ratios                                                    
 
       real :: amdw,  &  ! Molecular weight of dry air / water vapor      
-              amdo,  &  ! Molecular weight of ozone / water vapor
+              amdo,  &  ! Molecular weight of dry air / ozone
               amdc,  &  ! Molecular weight of dry air / methane          
               amdn,  &  ! Molecular weight of dry air / nitrous oxide    
               amdc1, &  ! Molecular weight of dry air / CFC11            

@@ -805,6 +805,9 @@ CONTAINS
       INTEGER :: year
       INTEGER :: num_days
    
+#ifdef NO_LEAP_CALENDAR
+      num_days = 28 ! By default, February has 28 days ...
+#else
       num_days = 28 ! By default, February has 28 days ...
       IF (MOD(year,4).eq.0) THEN  
          num_days = 29  ! But every four years, it has 29 days ...
@@ -815,6 +818,7 @@ CONTAINS
             END IF
          END IF
       END IF
+#endif
    
    END FUNCTION nfeb
 

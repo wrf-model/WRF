@@ -12,9 +12,19 @@ CONTAINS
                      ,p8w,pk1m,mu_2,mu_2m                             &
                      ,u,v                                             &
                      ,raincv,rainncv,rainc,rainnc                     &
+                     ,i_rainc,i_rainnc                                &
                      ,hfx,sfcevp,lh                                   &
+                     ,ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC               & ! Optional
+                     ,ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC               & ! Optional
+                     ,ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC               & ! Optional
+                     ,ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC               & ! Optional
+                     ,I_ACSWUPT,I_ACSWUPTC,I_ACSWDNT,I_ACSWDNTC       & ! Optional
+                     ,I_ACSWUPB,I_ACSWUPBC,I_ACSWDNB,I_ACSWDNBC       & ! Optional
+                     ,I_ACLWUPT,I_ACLWUPTC,I_ACLWDNT,I_ACLWDNTC       & ! Optional
+                     ,I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC       & ! Optional
                      ,dt,xtime,sbw                                    &
                      ,diag_print                                      &
+                     ,bucket_mm, bucket_J                             &
                                                                       )
 !----------------------------------------------------------------------
 
@@ -78,6 +88,7 @@ CONTAINS
      &           i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::   diag_print
+   REAL,      INTENT(IN   )    ::   bucket_mm, bucket_J
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                       u  &
@@ -86,10 +97,8 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
                                                            MU_2  &
-                                                    ,     RAINC  &
-                                                    ,    RAINNC  &
-                                                    ,    RAINCV  &
                                                     ,   RAINNCV  &
+                                                    ,    RAINCV  &
                                                     ,       HFX  &
                                                     ,    SFCEVP  &  
                                                     ,        LH  
@@ -97,11 +106,26 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                DPSDT  &
                                                     ,     DMUDT  &
+                                                    ,    RAINNC  &
+                                                    ,     RAINC  &
                                                     ,     MU_2M  &
                                                     ,      PK1M
  
    REAL,  INTENT(IN   ) :: DT, XTIME
    INTEGER,  INTENT(IN   ) :: SBW
+   INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::     &
+                                                       I_RAINC,  &
+                                                       I_RAINNC
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
+                      ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,          &
+                      ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,          &
+                      ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,          &
+                      ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC
+   INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
+                      I_ACSWUPT,I_ACSWUPTC,I_ACSWDNT,I_ACSWDNTC,  &
+                      I_ACSWUPB,I_ACSWUPBC,I_ACSWDNB,I_ACSWDNBC,  &
+                      I_ACLWUPT,I_ACLWUPTC,I_ACLWDNT,I_ACLWDNTC,  &
+                      I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC
 
 ! LOCAL  VAR
 
@@ -118,7 +142,129 @@ CONTAINS
    CHARACTER*6       :: grid_str
 
 !-----------------------------------------------------------------
+! Handle accumulations with buckets to prevent round-off truncation in long runs
+! This is done every 360 minutes assuming time step fits exactly into 360 minutes
+   IF(bucket_mm .gt. 0. .AND. MOD(NINT(XTIME),360) .EQ. 0)THEN
+! SET START AND END POINTS FOR TILES
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
 
+   DO ij = 1 , num_tiles
+
+      IF (xtime .eq. 0.0)THEN
+        DO j=j_start(ij),j_end(ij)
+        DO i=i_start(ij),i_end(ij)
+          i_rainnc(i,j) = 0
+          i_rainc(i,j) = 0
+        ENDDO      
+        ENDDO
+      ENDIF
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+        IF(rainnc(i,j) .gt. bucket_mm)THEN
+          rainnc(i,j) = rainnc(i,j) - bucket_mm
+          i_rainnc(i,j) =  i_rainnc(i,j) + 1
+        ENDIF
+        IF(rainc(i,j) .gt. bucket_mm)THEN
+          rainc(i,j) = rainc(i,j) - bucket_mm
+          i_rainc(i,j) =  i_rainc(i,j) + 1
+        ENDIF
+      ENDDO      
+      ENDDO
+
+      IF (xtime .eq. 0.0 .and. PRESENT(ACSWUPT))THEN
+        DO j=j_start(ij),j_end(ij)
+        DO i=i_start(ij),i_end(ij)
+          i_acswupt(i,j) = 0
+          i_acswuptc(i,j) = 0
+          i_acswdnt(i,j) = 0
+          i_acswdntc(i,j) = 0
+          i_acswupb(i,j) = 0
+          i_acswupbc(i,j) = 0
+          i_acswdnb(i,j) = 0
+          i_acswdnbc(i,j) = 0
+          i_aclwupt(i,j) = 0
+          i_aclwuptc(i,j) = 0
+          i_aclwdnt(i,j) = 0
+          i_aclwdntc(i,j) = 0
+          i_aclwupb(i,j) = 0
+          i_aclwupbc(i,j) = 0
+          i_aclwdnb(i,j) = 0
+          i_aclwdnbc(i,j) = 0
+        ENDDO      
+        ENDDO
+      ENDIF
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+        IF(acswupt(i,j) .gt. bucket_J)THEN
+          acswupt(i,j) = acswupt(i,j) - bucket_J
+          i_acswupt(i,j) =  i_acswupt(i,j) + 1
+        ENDIF
+        IF(acswuptc(i,j) .gt. bucket_J)THEN
+          acswuptc(i,j) = acswuptc(i,j) - bucket_J
+          i_acswuptc(i,j) =  i_acswuptc(i,j) + 1
+        ENDIF
+        IF(acswdnt(i,j) .gt. bucket_J)THEN
+          acswdnt(i,j) = acswdnt(i,j) - bucket_J
+          i_acswdnt(i,j) =  i_acswdnt(i,j) + 1
+        ENDIF
+        IF(acswdntc(i,j) .gt. bucket_J)THEN
+          acswdntc(i,j) = acswdntc(i,j) - bucket_J
+          i_acswdntc(i,j) =  i_acswdntc(i,j) + 1
+        ENDIF
+        IF(acswupb(i,j) .gt. bucket_J)THEN
+          acswupb(i,j) = acswupb(i,j) - bucket_J
+          i_acswupb(i,j) =  i_acswupb(i,j) + 1
+        ENDIF
+        IF(acswupbc(i,j) .gt. bucket_J)THEN
+          acswupbc(i,j) = acswupbc(i,j) - bucket_J
+          i_acswupbc(i,j) =  i_acswupbc(i,j) + 1
+        ENDIF
+        IF(acswdnb(i,j) .gt. bucket_J)THEN
+          acswdnb(i,j) = acswdnb(i,j) - bucket_J
+          i_acswdnb(i,j) =  i_acswdnb(i,j) + 1
+        ENDIF
+        IF(acswdnbc(i,j) .gt. bucket_J)THEN
+          acswdnbc(i,j) = acswdnbc(i,j) - bucket_J
+          i_acswdnbc(i,j) =  i_acswdnbc(i,j) + 1
+        ENDIF
+        IF(aclwupt(i,j) .gt. bucket_J)THEN
+          aclwupt(i,j) = aclwupt(i,j) - bucket_J
+          i_aclwupt(i,j) =  i_aclwupt(i,j) + 1
+        ENDIF
+        IF(aclwuptc(i,j) .gt. bucket_J)THEN
+          aclwuptc(i,j) = aclwuptc(i,j) - bucket_J
+          i_aclwuptc(i,j) =  i_aclwuptc(i,j) + 1
+        ENDIF
+        IF(aclwdnt(i,j) .gt. bucket_J)THEN
+          aclwdnt(i,j) = aclwdnt(i,j) - bucket_J
+          i_aclwdnt(i,j) =  i_aclwdnt(i,j) + 1
+        ENDIF
+        IF(aclwdntc(i,j) .gt. bucket_J)THEN
+          aclwdntc(i,j) = aclwdntc(i,j) - bucket_J
+          i_aclwdntc(i,j) =  i_aclwdntc(i,j) + 1
+        ENDIF
+        IF(aclwupb(i,j) .gt. bucket_J)THEN
+          aclwupb(i,j) = aclwupb(i,j) - bucket_J
+          i_aclwupb(i,j) =  i_aclwupb(i,j) + 1
+        ENDIF
+        IF(aclwupbc(i,j) .gt. bucket_J)THEN
+          aclwupbc(i,j) = aclwupbc(i,j) - bucket_J
+          i_aclwupbc(i,j) =  i_aclwupbc(i,j) + 1
+        ENDIF
+        IF(aclwdnb(i,j) .gt. bucket_J)THEN
+          aclwdnb(i,j) = aclwdnb(i,j) - bucket_J
+          i_aclwdnb(i,j) =  i_aclwdnb(i,j) + 1
+        ENDIF
+        IF(aclwdnbc(i,j) .gt. bucket_J)THEN
+          aclwdnbc(i,j) = aclwdnbc(i,j) - bucket_J
+          i_aclwdnbc(i,j) =  i_aclwdnbc(i,j) + 1
+        ENDIF
+      ENDDO      
+      ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+   ENDIF
    if (diag_print .eq. 0 ) return
 
    IF ( xtime .ne. 0. ) THEN

@@ -1,10 +1,22 @@
-
-state   integer emissframes    -         -          -        -        -      "emissframes"           ""         ""
-state   real     -            i+jf    emis_ant      -        -        -         -                    "Anthropogenic Emissions"         ""
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Chemistry Variables  (all shared at this point)
-# emissions first
-state    real  e_iso          i+jf     emis_ant     1         Z      i5h      "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"         "mol km^-2 hr^-1"
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#
+# Timing variables for chemistry
+#
+state   integer ktauc                    -  misc    -         -      r       "ktauc"                 "Number of chemistry time steps"               ""
+state   integer last_chem_time_year      -  misc    -         -      r       "last_chem_time_year"   "last call to chem mechanism through restarts" "4-digit year"
+state   integer last_chem_time_month     -  misc    -         -      r       "last_chem_time_month"  "last call to chem mechanism through restarts" "2-digit month"
+state   integer last_chem_time_day       -  misc    -         -      r       "last_chem_time_day"    "last call to chem mechanism through restarts" "2-digit day"
+state   integer last_chem_time_hour      -  misc    -         -      r       "last_chem_time_hour"   "last call to chem mechanism through restarts" "2-digit hour"
+state   integer last_chem_time_minute    -  misc    -         -      r       "last_chem_time_minute" "last call to chem mechanism through restarts" "2-digit minute"
+state   integer last_chem_time_second    -  misc    -         -      r       "last_chem_time_second" "last call to chem mechanism through restarts" "2-digit second"
+#
+# Emissions variables
+#
+state   integer emissframes   -          -          -         -      -       "emissframes"           ""         ""
+state   real     -            i+jf     emis_ant     -         -      -       -                     "Anthropogenic Emissions"         ""
+state    real  e_iso          i+jf     emis_ant     1         Z      i5h     "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"  "mol km^-2 hr^-1"
 state    real  e_so2          i+jf     emis_ant     1         Z      i5h     "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_no           i+jf     emis_ant     1         Z      i5      "E_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_co           i+jf     emis_ant     1         Z      i5h     "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
@@ -173,10 +185,10 @@ state    real  cu_co_ten      ikj     misc        1         -      -        "CU_
 # aerosol stuff
 state    real  aerwrf         ikj     misc        1         -      r        "AERWRF"                "STANDARD AEROSOL PROFILE"            "?"
 
-state    real  pm2_5_dry      ikj     misc        1         -      rh       "PM2_5_DRY"             "pm2.5 aerosol dry mass"              "ug m^-3"
-state    real  pm2_5_dry_ec   ikj     misc        1         -      rh       "PM2_5_EC_DRY"          "dry ec aerosol mass"                 "ug m^-3"
-state    real  pm2_5_water    ikj     misc        1         -      rh       "PM2_5_WATER"           "pm2.5 aerosol liquid water content"  "ug m^-3"
-state    real  pm10           ikj     misc        1         -      h        "pm10 "                 "pm10 dry mass"                       "ug m^-3"
+state    real  pm2_5_dry      ikj     misc        1         -      r        "PM2_5_DRY"             "pm2.5 aerosol dry mass"              "ug m^-3"
+state    real  pm2_5_dry_ec   ikj     misc        1         -      r        "PM2_5_EC_DRY"          "dry ec aerosol mass"                 "ug m^-3"
+state    real  pm2_5_water    ikj     misc        1         -      r        "PM2_5_WATER"           "pm2.5 aerosol liquid water content"  "ug m^-3"
+state    real  pm10           ikj     misc        1         -      -        "pm10 "                 "pm10 dry mass"                       "ug m^-3"
 state    real  uvrad          ij      misc        1         -      -        "uv_rad "               "uvb net-radiation"                   "W m^-2"
 state    real  tcosz          ij      misc        1         -      -        "TCOSZ "               "daily average cossza"                   "?"
 state    real  ttday          ij      misc        1         -      -        "TTDAY "               ""                   "?"
@@ -216,18 +228,18 @@ state    real  extaer1         ikj     misc        1         -      h        "EX
 state    real  extaer2         ikj     misc        1         -      h        "EXTAER2"               "bin 2 layer extinction coef" "1/km"
 state    real  extaer3         ikj     misc        1         -      h        "EXTAER3"               "bin 3 layer extinction coef" "1/km"
 state    real  extaer4         ikj     misc        1         -      h        "EXTAER4"               "bin 4 layer extinction coef" "1/km"
-state    real  tauaer1         ikj     misc        1         -      hr        "TAUAER1"               "bin 1 layer optical thickness" "?"
-state    real  tauaer2         ikj     misc        1         -      hr        "TAUAER2"               "bin 2 layer optical thickness" "?"
-state    real  tauaer3         ikj     misc        1         -      hr        "TAUAER3"               "bin 3 layer optical thickness" "?"
-state    real  tauaer4         ikj     misc        1         -      hr        "TAUAER4"               "bin 4 layer optical thickness" "?"
-state    real  gaer1           ikj     misc        1         -      hr        "GAER1"                 "bin 1 layer assymetry parameter" "?"
-state    real  gaer2           ikj     misc        1         -      hr        "GAER2"                 "bin 2 layer assymetry parameter" "?"
-state    real  gaer3           ikj     misc        1         -      hr        "GAER3"                 "bin 3 layer assymetry parameter" "?"
-state    real  gaer4           ikj     misc        1         -      hr        "GAER4"                 "bin 4 layer assymetry parameter" "?"
-state    real  waer1           ikj     misc        1         -      hr        "WAER1"                 "bin 1 layer single-scattering albedo" "?"
-state    real  waer2           ikj     misc        1         -      hr        "WAER2"                 "bin 2 layer single-scattering albedo" "?"
-state    real  waer3           ikj     misc        1         -      hr        "WAER3"                 "bin 3 layer single-scattering albedo" "?"
-state    real  waer4           ikj     misc        1         -      hr        "WAER4"                 "bin 4 layer single-scattering albedo" "?"
+state    real  tauaer1         ikj     misc        1         -      hr       "TAUAER1"               "bin 1 layer optical thickness" "?"
+state    real  tauaer2         ikj     misc        1         -      hr       "TAUAER2"               "bin 2 layer optical thickness" "?"
+state    real  tauaer3         ikj     misc        1         -      hr       "TAUAER3"               "bin 3 layer optical thickness" "?"
+state    real  tauaer4         ikj     misc        1         -      hr       "TAUAER4"               "bin 4 layer optical thickness" "?"
+state    real  gaer1           ikj     misc        1         -      hr       "GAER1"                 "bin 1 layer assymetry parameter" "?"
+state    real  gaer2           ikj     misc        1         -      hr       "GAER2"                 "bin 2 layer assymetry parameter" "?"
+state    real  gaer3           ikj     misc        1         -      hr       "GAER3"                 "bin 3 layer assymetry parameter" "?"
+state    real  gaer4           ikj     misc        1         -      hr       "GAER4"                 "bin 4 layer assymetry parameter" "?"
+state    real  waer1           ikj     misc        1         -      hr       "WAER1"                 "bin 1 layer single-scattering albedo" "?"
+state    real  waer2           ikj     misc        1         -      hr       "WAER2"                 "bin 2 layer single-scattering albedo" "?"
+state    real  waer3           ikj     misc        1         -      hr       "WAER3"                 "bin 3 layer single-scattering albedo" "?"
+state    real  waer4           ikj     misc        1         -      hr       "WAER4"                 "bin 4 layer single-scattering albedo" "?"
 state    real  bscoef1         ikj     misc        1         -      rh       "BSCOEF1"               "bin 1 layer backscatter" "?"
 state    real  bscoef2         ikj     misc        1         -      rh       "BSCOEF2"               "bin 2 layer backscatter" "?"
 state    real  bscoef3         ikj     misc        1         -      rh       "BSCOEF3"               "bin 3 layer backscatter" "?"
@@ -850,6 +862,7 @@ package   racmsorg      chem_opt==4                  -             chem:so2,sulf
 package   cbmz          chem_opt==5                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf
 package   cbmz_bb       chem_opt==6                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 package   cbmz_mosaic_4bin chem_opt==7               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
+#Normal cbmz_mosaic_8bin package
 package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08
 #Alternative cbmz_mosaic_8bin with dust chemistry (ca & co aerosol)
 #package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,ca_a01,ca_a02,ca_a03,ca_a04,ca_a05,ca_a06,ca_a07,ca_a08,co3_a01,co3_a02,co3_a03,co3_a04,co3_a05,co3_a06,co3_a07,co3_a08

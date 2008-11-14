@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see chem/module_mosaic_driver.F for references and terms of use
 !**********************************************************************************
 
 MODULE module_mixactivate
@@ -81,14 +81,17 @@ CONTAINS
         real dlo_sect( maxd_asize, maxd_atype ),   & ! minimum size of section (cm)
              dhi_sect( maxd_asize, maxd_atype ),   & ! maximum size of section (cm)
 	     sigmag_aer(maxd_asize, maxd_atype),   & ! geometric standard deviation of aerosol size dist
-	     dgnum_aer(maxd_asize, maxd_atype),    & ! mean diameter (cm) of mode
+	     dgnum_aer(maxd_asize, maxd_atype),    & ! median diameter (cm) of number distrib of mode
 	     dens_aer( maxd_acomp, maxd_atype),    & ! density (g/cm3) of material
-	     mw_aer( maxd_acomp, maxd_atype)         ! molecular weight (g/mole)
-      real, dimension(ims:ime,kms:kme,jms:jme) :: &
+	     mw_aer( maxd_acomp, maxd_atype),      & ! molecular weight (g/mole)
+	     dpvolmean_aer(maxd_asize, maxd_atype)   ! mean-volume diameter (cm) of mode
+! terminology:  (pi/6) * (mean-volume diameter)**3 ==
+!       (volume mixing ratio of section/mode)/(number mixing ratio)
+	real, dimension(ims:ime,kms:kme,jms:jme) :: &
 	     ccn1,ccn2,ccn3,ccn4,ccn5,ccn6  ! number conc of aerosols activated at supersat
-	     integer idrydep_onoff
-      real, dimension(ims:ime,kms:kme,jms:jme) :: t_phy
-      integer msectional
+	integer idrydep_onoff
+	real, dimension(ims:ime,kms:kme,jms:jme) :: t_phy
+	integer msectional
 
 
 	  integer ptr
@@ -117,7 +120,8 @@ CONTAINS
           dlo_sect( m,n )=0.01e-4    ! minimum size of section (cm)
           dhi_sect( m,n )=0.5e-4    ! maximum size of section (cm)
 	  sigmag_aer(m,n)=2.      ! geometric standard deviation of aerosol size dist
-	  dgnum_aer(m,n)=0.1e-4       ! mean diameter (cm) of mode
+	  dgnum_aer(m,n)=0.1e-4       ! median diameter (cm) of number distrib of mode
+	  dpvolmean_aer(m,n) = dgnum_aer(m,n) * exp( 1.5 * (log(sigmag_aer(m,n)))**2 )
 	  end do
 	  do l=1,ncomp_aer(n)
 	     dens_aer( l, n)=1.0   ! density (g/cm3) of material
@@ -181,7 +185,7 @@ CONTAINS
             t_phy, w, ddvel, idrydep_onoff,  &
             maxd_acomp, maxd_asize, maxd_atype, maxd_aphase,   &
             ncomp_aer, nsize_aer, ntype_aer, nphase_aer,  &
-            numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dgnum_aer,  &
+            numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dpvolmean_aer,  &
             dens_aer, mw_aer,           &
             waterptr_aer, hygro,  ai_phase, cw_phase,                &
             ids,ide, jds,jde, kds,kde,                            &
@@ -207,7 +211,7 @@ subroutine mixactivate(  msectional,            &
            temp, w, ddvel, idrydep_onoff,  &
            maxd_acomp, maxd_asize, maxd_atype, maxd_aphase,   &
            ncomp_aer, nsize_aer, ntype_aer, nphase_aer,  &
-           numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dgnum_aer,  &
+           numptr_aer, massptr_aer, dlo_sect, dhi_sect, sigmag_aer, dpvolmean_aer,  &
            dens_aer, mw_aer,               &
            waterptr_aer, hygro, ai_phase, cw_phase,              &
            ids,ide, jds,jde, kds,kde,                            &
@@ -247,13 +251,15 @@ subroutine mixactivate(  msectional,            &
        ai_phase, cw_phase
   integer, intent(in) :: msectional ! 1 for sectional, 0 for modal
   integer, intent(in) :: idrydep_onoff
-  real, intent(in)  ::             &
+  real, intent(in)  ::                       &
        dlo_sect( maxd_asize, maxd_atype ),   & ! minimum size of section (cm)
        dhi_sect( maxd_asize, maxd_atype ),   & ! maximum size of section (cm)
        sigmag_aer(maxd_asize, maxd_atype),   & ! geometric standard deviation of aerosol size dist
-       dgnum_aer(maxd_asize, maxd_atype),    & ! mean diameter (cm) of mode
        dens_aer( maxd_acomp, maxd_atype),    & ! density (g/cm3) of material
-       mw_aer( maxd_acomp, maxd_atype)         ! molecular weight (g/mole)
+       mw_aer( maxd_acomp, maxd_atype),      & ! molecular weight (g/mole)
+       dpvolmean_aer(maxd_asize, maxd_atype)   ! mean-volume diameter (cm) of mode
+! terminology:  (pi/6) * (mean-volume diameter)**3 ==
+!       (volume mixing ratio of section/mode)/(number mixing ratio)
 
 
   REAL, intent(inout), DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ) :: &
@@ -288,26 +294,29 @@ subroutine mixactivate(  msectional,            &
 
 !--------------------Local storage-------------------------------------
 !
-  real :: qndrop(kms:kme) ! cloud droplet number mixing ratio (#/kg)
-  real :: lcldfra(kms:kme) ! liquid cloud fraction
+  real :: dgnum_aer(maxd_asize, maxd_atype) ! median diameter (cm) of number distrib of mode
+  real :: qndrop(kms:kme)      ! cloud droplet number mixing ratio (#/kg)
+  real :: lcldfra(kms:kme)     ! liquid cloud fraction
   real :: lcldfra_old(kms:kme) ! liquid cloud fraction for previous timestep
-  real :: wtke(kms:kme) ! turbulent vertical velocity at base of layer k (m2/s)
-  real zn(kms:kme) ! g/pdel (m2/g) for layer
-  real zs(kms:kme) ! inverse of distance between levels (m)
+  real :: wtke(kms:kme)        ! turbulent vertical velocity at base of layer k (m2/s)
+  real zn(kms:kme)             ! g/pdel (m2/g) for layer
+  real zs(kms:kme)             ! inverse of distance between levels (m)
   real zkmin,zkmax
   data zkmin/0.01/,zkmax/100./
   save zkmin,zkmax
-  real cs(kms:kme) ! air density (kg/m3)
-  real dz(kms:kme) ! geometric thickness of layers (m)
+  real cs(kms:kme)             ! air density (kg/m3) at layer center
+  real csbot(kms:kme)          ! air density (kg/m3) at layer bottom
+  real csbot_cscen(kms:kme)    ! csbot(k)/cs(k)
+  real dz(kms:kme)             ! geometric thickness of layers (m)
 
-  real wdiab           ! diabatic vertical velocity
+  real wdiab                   ! diabatic vertical velocity
 !      real, parameter :: wmixmin = 0.1 ! minimum turbulence vertical velocity (m/s)
   real, parameter :: wmixmin = 0.2 ! minimum turbulence vertical velocity (m/s)
 !      real, parameter :: wmixmin = 1.0 ! minimum turbulence vertical velocity (m/s)
-  real :: qndrop_new(kms:kme)     ! droplet number nucleated on cloud boundaries
-  real :: ekd(kms:kme)       ! diffusivity for droplets (m2/s)
-  real :: ekk(kms:kme)       ! density*diffusivity for droplets (kg/m3 m2/s)
-  real :: srcn(kms:kme) ! droplet source rate (/s)
+  real :: qndrop_new(kms:kme)  ! droplet number nucleated on cloud boundaries
+  real :: ekd(kms:kme)         ! diffusivity for droplets (m2/s)
+  real :: ekk(kms:kme)         ! density*diffusivity for droplets (kg/m3 m2/s)
+  real :: srcn(kms:kme)        ! droplet source rate (/s)
   real, save :: sq2pi
   data sq2pi/2.5066282746/
   real dtinv
@@ -319,14 +328,17 @@ subroutine mixactivate(  msectional,            &
   real wbar,wmix,wmin,wmax
   real, save :: cmincld
   data cmincld/1.e-12/
-  real dum,dumc
+  real dum
+  real tmpa, tmpb, tmpc, tmpc1, tmpc2, tmpd, tmpe, tmpf
+  real tmpcourno
   real dact
   real fluxntot         ! (#/cm2/s)
   real fac_srflx
-  real depvel_drop
+  real depvel_drop, depvel_tmp
+  real, parameter :: depvel_uplimit = 1.0 ! upper limit for dep vels (m/s)
   real :: surfrate(num_chem) ! surface exchange rate (/s)
   real surfratemax      ! max surfrate for all species treated here
-  real surfrate_drop ! surfade exchange rate for droplelts
+  real surfrate_drop    ! surfade exchange rate for droplelts
   real dtmin,tinv,dtt
   integer nsubmix,nsubmix_bnd
   integer i,j,k,m,n,nsub
@@ -361,9 +373,10 @@ subroutine mixactivate(  msectional,            &
   real ::   fluxn(maxd_asize, maxd_atype)      ! number  activation fraction flux (m/s)
   real ::   fluxs(maxd_asize, maxd_atype)      ! sfcarea activation fraction flux (m/s)
   real ::   fluxm(maxd_asize, maxd_atype)      ! mass    activation fraction flux (m/s)
+  real ::   flux_fullact(kms:kme)              ! 100%    activation fraction flux (m/s)
 !     note:  activation fraction fluxes are defined as
-!     fluxn = [flux of activated aero. number into cloud (#/cm2/s)]
-!           / [aero. number conc. in updraft, just below cloudbase (#/cm3)]
+!     fluxn = [flux of activated aero. number into cloud (#/m2/s)]
+!           / [aero. number conc. in updraft, just below cloudbase (#/m3)]
 
   real :: nact(kms:kme,maxd_asize, maxd_atype)  ! fractional aero. number  activation rate (/s)
   real :: mact(kms:kme,maxd_asize, maxd_atype)  ! fractional aero. mass    activation rate (/s)
@@ -400,6 +413,7 @@ subroutine mixactivate(  msectional,            &
 
   character*8, parameter :: ccn_name(psat)=(/'CCN1','CCN2','CCN3','CCN4','CCN5','CCN6'/)
 
+
   arg = 1.0
   if (abs(0.8427-ERF_ALT(arg))/0.8427>0.001) then
      write (6,*) 'erf_alt(1.0) = ',ERF_ALT(arg)
@@ -418,13 +432,15 @@ subroutine mixactivate(  msectional,            &
 
   depvel_drop =  0.1 ! prescribed here rather than getting it from dry_dep_driver
   if (idrydep_onoff .le. 0) depvel_drop =  0.0
+  depvel_drop =  min(depvel_drop,depvel_uplimit)
 
   do n=1,ntype_aer
      do m=1,nsize_aer(n)
         ncomp(n)=ncomp_aer(n)
-!	    print *,'sigmag_aer,dgnum_aer=',sigmag_aer(m,n),dgnum_aer(m,n)
         alogsig(m,n)=alog(sigmag_aer(m,n))
-        ! used only if number is diagnosed from volume
+        dgnum_aer(m,n) = dpvolmean_aer(m,n) * exp( -1.5*alogsig(m,n)*alogsig(m,n) )
+!    print *,'sigmag_aer,dgnum_aer=',sigmag_aer(m,n),dgnum_aer(m,n)
+        ! npv is used only if number is diagnosed from volume
         npv(m,n)=6./(pi*(0.01*dgnum_aer(m,n))**3*exp(4.5*alogsig(m,n)*alogsig(m,n)))
      end do
   end do
@@ -450,8 +466,8 @@ subroutine mixactivate(  msectional,            &
 
 !     start loop over columns
 
-  do 120 j=jts,jte
-  do 100 i=its,ite
+OVERALL_MAIN_J_LOOP: do j=jts,jte
+OVERALL_MAIN_I_LOOP: do i=its,ite
 
 !        load number nucleated into qndrop on cloud boundaries
 
@@ -516,6 +532,17 @@ subroutine mixactivate(  msectional,            &
      qndrop(kte+1)      = 0.
      zn(kte+1)          = 0.
 
+     do k = kts+1, kte
+        tmpa = dz(k-1) ; tmpb = dz(k)
+        tmpc = tmpa/(tmpa + tmpb)
+        csbot(k) = cs(k-1)*(1.0-tmpc) + cs(k)*tmpc
+        csbot_cscen(k) = csbot(k)/cs(k)
+     end do
+     csbot(kts) = cs(kts)
+     csbot_cscen(kts) = 1.0
+     csbot(kte+1) = cs(kte)
+     csbot_cscen(kte+1) = 1.0
+
     !  calculate surface rate and mass mixing ratio for aerosol
 
      surfratemax = 0.0
@@ -528,7 +555,8 @@ subroutine mixactivate(  msectional,            &
            lnum=numptr_aer(m,n,ai_phase)
            lnumcw=numptr_aer(m,n,cw_phase)
            if(lnum>0)then
-              surfrate(lnum)=ddvel(i,j,lnum)/dz(kts)
+              depvel_tmp = max( 0.0, min( ddvel(i,j,lnum), depvel_uplimit ) )
+              surfrate(lnum)=depvel_tmp/dz(kts)
               surfrate(lnumcw)=surfrate_drop
               surfratemax = max( surfratemax, surfrate(lnum) )
 !             scale = 1000./mwdry ! moles/kg
@@ -541,7 +569,8 @@ subroutine mixactivate(  msectional,            &
               lmasscw=massptr_aer(l,m,n,cw_phase)
 !             scale = mw_aer(l,n)/mwdry
               scale = 1.e-9 ! kg/ug
-              surfrate(lmass)=ddvel(i,j,lmass)/dz(kts)
+              depvel_tmp = max( 0.0, min( ddvel(i,j,lmass), depvel_uplimit ) )
+              surfrate(lmass)=depvel_tmp/dz(kts)
               surfrate(lmasscw)=surfrate_drop
               surfratemax = max( surfratemax, surfrate(lmass) )
               raercol(kts:kte,lmasscw,nsav)=chem(i,kts:kte,j,lmasscw)*scale ! kg/kg
@@ -549,7 +578,8 @@ subroutine mixactivate(  msectional,            &
            enddo
            lwater=waterptr_aer(m,n)
            if(lwater>0)then
-              surfrate(lwater)=ddvel(i,j,lwater)/dz(kts)
+              depvel_tmp = max( 0.0, min( ddvel(i,j,lwater), depvel_uplimit ) )
+              surfrate(lwater)=depvel_tmp/dz(kts)
               surfratemax = max( surfratemax, surfrate(lwater) )
               raercol(kts:kte,lwater,nsav)=chem(i,kts:kte,j,lwater) ! don't bother to convert units,
              ! because it doesn't contribute to aerosol mass
@@ -561,15 +591,32 @@ subroutine mixactivate(  msectional,            &
 !        droplet nucleation/aerosol activation
 
 ! k-loop for growing/shrinking cloud calcs .............................
-
-     do k=kts,kte
+GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
         km1=max0(k-1,1)
         kp1=min0(k+1,kde-1)
 
-        if(lcldfra(k)-lcldfra_old(k).gt.0.01)then
+
+!       if(lcldfra(k)-lcldfra_old(k).gt.0.01)then   ! this line is the "old" criterion
 !       go to 10
 
-!                growing cloud
+!       growing cloud PLUS
+!       upwards vertical advection when lcldfra(k-1) < lcldfra(k)
+!
+! tmpc1 = cloud fraction increase from previous time step
+        tmpc1 = max( (lcldfra(k)-lcldfra_old(k)), 0.0 )
+        if (k > kts) then
+! tmpc2 = fraction of layer for which vertical advection from below
+!             (over dtstep) displaces cloudy air with clear air
+!       = (courant number using upwards w at layer bottom)*(difference in cloud fraction)
+           tmpcourno = dtstep*max(w(i,k,j),0.0)/dz(k)
+           tmpc2 = max( (lcldfra(k)-lcldfra(km1)), 0.0 ) * tmpcourno
+           tmpc2 = min( tmpc2, 1.0 )
+!          tmpc2 = 0.0   ! this turns off the vertical advect part
+        else
+           tmpc2 = 0.0
+        endif
+
+        if ((tmpc1 > 0.001) .or. (tmpc2 > 0.001)) then
 
 !                wmix=wtke(k)
            wbar=w(i,k,j)+wtke(k)
@@ -603,58 +650,70 @@ subroutine mixactivate(  msectional,            &
                 msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
                 naerosol, vaerosol,  &
                 dlo_sect,dhi_sect,sigmag_aer,hygro_aer,              &
-                fn,fs,fm,fluxn,fluxs,fluxm, grid_id, ktau, i, j, k )
+                fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
 
-           dumc=(lcldfra(k)-lcldfra_old(k))
-           do n=1,ntype_aer
-              do m=1,nsize_aer(n)
-                 lnum=numptr_aer(m,n,ai_phase)
-                 lnumcw=numptr_aer(m,n,cw_phase)
-                 dact=dumc*fn(m,n)*(raercol(k,lnum,nsav)) ! interstitial only
-                 qndrop(k)=qndrop(k)+dact
-                 nsource(i,k,j)=nsource(i,k,j)+dact*dtinv
-                 if(lnum.gt.0)then
-                    raercol(k,lnumcw,nsav) = raercol(k,lnumcw,nsav)+dact
-                    raercol(k,lnum,nsav) = raercol(k,lnum,nsav)-dact
+           do n = 1,ntype_aer
+              do m = 1,nsize_aer(n)
+                 lnum   = numptr_aer(m,n,ai_phase)
+                 lnumcw = numptr_aer(m,n,cw_phase)
+                 if (tmpc1 > 0.0) then
+                    dact = tmpc1*fn(m,n)*raercol(k,lnum,nsav) ! interstitial only
+                 else
+                    dact = 0.0
                  endif
-                 do l=1,ncomp(n)
-                    lmass=massptr_aer(l,m,n,ai_phase)
-                    lmasscw=massptr_aer(l,m,n,cw_phase)
-! rce 07-jul-2005 - changed dact for mass to mimic that used for number
-!         dact=dum*(raercol(k,lmass,nsav)) ! interstitial only
-                    dact=dumc*fm(m,n)*(raercol(k,lmass,nsav)) ! interstitial only
-                    raercol(k,lmasscw,nsav) = raercol(k,lmasscw,nsav)+dact
-                    raercol(k,lmass,nsav) = raercol(k,lmass,nsav)-dact
+                 if (tmpc2 > 0.0) then
+                    dact = dact + tmpc2*fn(m,n)*raercol(km1,lnum,nsav) ! interstitial only
+                 endif
+                 dact = min( dact, 0.99*raercol(k,lnum,nsav) )
+                 raercol(k,lnumcw,nsav) = raercol(k,lnumcw,nsav)+dact
+                 raercol(k,lnum,  nsav) = raercol(k,lnum,  nsav)-dact
+                 qndrop(k) = qndrop(k)+dact
+                 nsource(i,k,j) = nsource(i,k,j)+dact*dtinv
+                 do l = 1,ncomp(n)
+                    lmass   = massptr_aer(l,m,n,ai_phase)
+                    lmasscw = massptr_aer(l,m,n,cw_phase)
+                    if (tmpc1 > 0.0) then
+                       dact = tmpc1*fm(m,n)*raercol(k,lmass,nsav) ! interstitial only
+                    else
+                       dact = 0.0
+                    endif
+                    if (tmpc2 > 0.0) then
+                       dact = dact + tmpc2*fm(m,n)*raercol(km1,lmass,nsav) ! interstitial only
+                    endif
+                    dact = min( dact, 0.99*raercol(k,lmass,nsav) )
+                    raercol(k,lmasscw,nsav)  =  raercol(k,lmasscw,nsav)+dact
+                    raercol(k,lmass,  nsav)  =  raercol(k,lmass,  nsav)-dact
                  enddo
               enddo
            enddo
 !   10 continue
-        endif
+        endif   ! ((tmpc1 > 0.001) .or. (tmpc2 > 0.001))
 
-        if(lcldfra(k) < lcldfra_old(k) .and. lcldfra_old(k) > 1.e-20)then
+
+        if(lcldfra(k) < lcldfra_old(k) .and. lcldfra_old(k) > 1.e-20)then   ! this line is the "old" criterion
 !         go to 20
 
-!                shrinking cloud ......................................................
+!       shrinking cloud ......................................................
 
 !                droplet loss in decaying cloud
            nsource(i,k,j)=nsource(i,k,j)+qndrop(k)*(lcldfra(k)-lcldfra_old(k))*dtinv
            qndrop(k)=qndrop(k)*(1.+lcldfra(k)-lcldfra_old(k))
 !                 convert activated aerosol to interstitial in decaying cloud
 
-           dumc=(lcldfra(k)-lcldfra_old(k))/lcldfra_old(k)
+           tmpc = (lcldfra_old(k)-lcldfra(k))/lcldfra_old(k)
            do n=1,ntype_aer
               do m=1,nsize_aer(n)
                  lnum=numptr_aer(m,n,ai_phase)
                  lnumcw=numptr_aer(m,n,cw_phase)
                  if(lnum.gt.0)then
-                    dact=raercol(k,lnumcw,nsav)*dumc
+                    dact=raercol(k,lnumcw,nsav)*tmpc
                     raercol(k,lnumcw,nsav)=raercol(k,lnumcw,nsav)+dact
                     raercol(k,lnum,nsav)=raercol(k,lnum,nsav)-dact
                  endif
                  do l=1,ncomp(n)
                     lmass=massptr_aer(l,m,n,ai_phase)
                     lmasscw=massptr_aer(l,m,n,cw_phase)
-                    dact=raercol(k,lmasscw,nsav)*dumc
+                    dact=raercol(k,lmasscw,nsav)*tmpc
                     raercol(k,lmasscw,nsav)=raercol(k,lmasscw,nsav)+dact
                     raercol(k,lmass,nsav)=raercol(k,lmass,nsav)-dact
                  enddo
@@ -663,27 +722,29 @@ subroutine mixactivate(  msectional,            &
 !             20 continue
         endif
 
-     enddo !k loop
-
+     enddo GROW_SHRINK_MAIN_K_LOOP
 ! end of k-loop for growing/shrinking cloud calcs ......................
 
 
-! ......................................................................
-! start of k-loop for calc of old cloud activation tendencies ..........
 
-     do k=kts,kte
+! ......................................................................
+! start of main k-loop for calc of old cloud activation tendencies ..........
+! this loop does "set up" for the nsubmix loop
+!
+! rce-comment
+!    changed this part of code to use current cloud fraction (lcldfra) exclusively
+
+OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
         km1=max0(k-1,kts)
         kp1=min0(k+1,kde-1)
+        flux_fullact(k) = 0.0
         if(lcldfra(k).gt.0.01)then
-           if(lcldfra_old(k).gt.0.01)then
 !          go to 30
 
 !               old cloud
-
-              if(lcldfra_old(k)-lcldfra_old(km1).gt.0.01.or.k.eq.kts)then
+              if(lcldfra(k)-lcldfra(km1).gt.0.01.or.k.eq.kts)then
 
 !                   interior cloud
-
 !                   cloud base
 
                  wdiab=0
@@ -695,7 +756,7 @@ subroutine mixactivate(  msectional,            &
                  wmax=50.
                  top=.false.
                  ekd(k)=wtke(k)*dz(k)/sq2pi
-                 alogarg=max(1.e-20,1/lcldfra_old(k)-1.)
+                 alogarg=max(1.e-20,1/lcldfra(k)-1.)
                  wmin=wbar+wmix*0.25*sq2pi*alog(alogarg)
 
                  do n=1,ntype_aer
@@ -722,33 +783,65 @@ subroutine mixactivate(  msectional,            &
                       msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
                       naerosol, vaerosol,  &
                       dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
-                      fn,fs,fm,fluxn,fluxs,fluxm, grid_id, ktau, i, j, k )
+                      fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
                  
-                 if(k.gt.kts)then
-                    dumc = lcldfra_old(k)-lcldfra_old(km1)
-                 else
-                    dumc=lcldfra_old(k)
+! rce-comment
+!    the activation-fraction fluxes (fluxn, fluxm) from subr activate assume that
+!       wbar << wmix, which is valid for global-model scale but not mesoscale
+!    for wrf-chem application, divide these by flux_fullact to get a 
+!       "flux-weighted-average" activation fraction, then multiply by (ekd(k)*zs(k)) 
+!       which is the local "turbulent vertical-mixing velocity"
+                 if (k > kts) then
+                    if (flux_fullact(k) > 1.0e-20) then
+                       tmpa = ekd(k)*zs(k)
+                       tmpf = flux_fullact(k)
+                       do n=1,ntype_aer
+                       do m=1,nsize_aer(n)
+                          tmpb = max( fluxn(m,n), 0.0 ) / max( fluxn(m,n), tmpf )
+                          fluxn(m,n) = tmpa*tmpb
+                          tmpb = max( fluxm(m,n), 0.0 ) / max( fluxm(m,n), tmpf )
+                          fluxm(m,n) = tmpa*tmpb
+                       enddo
+                       enddo
+                    else
+                       fluxn(:,:) = 0.0
+                       fluxm(:,:) = 0.0
+                    endif
                  endif
-                 dum=1./(dz(k))
+
+                 if(k.gt.kts)then
+                    tmpc = lcldfra(k)-lcldfra(km1)
+                 else
+                    tmpc=lcldfra(k)
+                 endif
+! rce-comment
+!    flux of activated mass into layer k (in kg/m2/s)
+!       = "actmassflux" = dumc*fluxm*raercol(kp1,lmass)*csbot(k)
+!    source of activated mass (in kg/kg/s) = flux divergence
+!       = actmassflux/(cs(i,k)*dz(i,k))
+!    so need factor of csbot_cscen = csbot(k)/cs(i,k)
+!                tmpe=1./(dz(k))
+                 tmpe = csbot_cscen(k)/(dz(k))
                  fluxntot=0.
                  do n=1,ntype_aer
-                    do m=1,nsize_aer(n)
-                       fluxn(m,n)=fluxn(m,n)*dumc
-!                       fluxs(m,n)=fluxs(m,n)*dumc
-                       fluxm(m,n)=fluxm(m,n)*dumc
-                       lnum=numptr_aer(m,n,ai_phase)
-                       fluxntot=fluxntot+fluxn(m,n)*raercol(km1,lnum,nsav)
+                 do m=1,nsize_aer(n)
+                    fluxn(m,n)=fluxn(m,n)*tmpc
+!                   fluxs(m,n)=fluxs(m,n)*tmpc
+                    fluxm(m,n)=fluxm(m,n)*tmpc
+                    lnum=numptr_aer(m,n,ai_phase)
+                    fluxntot=fluxntot+fluxn(m,n)*raercol(km1,lnum,nsav)
 !             print *,'fn=',fn(m,n),' for m,n=',m,n
-!             print *,'old cloud dumc=',dumc,' fn=',fn(m,n),' for m,n=',m,n
-                       nact(k,m,n)=nact(k,m,n)+fluxn(m,n)*dum
-                       mact(k,m,n)=mact(k,m,n)+fluxm(m,n)*dum
-                    enddo
+!             print *,'old cloud tmpc=',tmpc,' fn=',fn(m,n),' for m,n=',m,n
+                    nact(k,m,n)=nact(k,m,n)+fluxn(m,n)*tmpe
+                    mact(k,m,n)=mact(k,m,n)+fluxm(m,n)*tmpe
                  enddo
+                 enddo
+                 flux_fullact(k) = flux_fullact(k)*tmpe
                  nsource(i,k,j)=nsource(i,k,j)+fluxntot*zs(k)
                  fluxntot=fluxntot*cs(k)
               endif
 !       30 continue
-           endif
+
         else
 !       go to 40
 !              no cloud
@@ -777,23 +870,26 @@ subroutine mixactivate(  msectional,            &
            enddo
 !      40 continue
         endif
-     enddo
-!    50 continue
 
-!    go to 100
+     enddo OLD_CLOUD_MAIN_K_LOOP
 
-!        switch nsav, nnew so that nnew is the updated aerosol
+!    cycle OVERALL_MAIN_I_LOOP
+
+
+!    switch nsav, nnew so that nnew is the updated aerosol
 
      ntemp=nsav
      nsav=nnew
      nnew=ntemp
 
-!        load new droplets in layers above, below clouds
+!    load new droplets in layers above, below clouds
 
      dtmin=dtstep
      ekk(kts)=0.0
+! rce-comment -- ekd(k) is eddy-diffusivity at k/k-1 interface
+!   want ekk(k) = ekd(k) * (density at k/k-1 interface)
      do k=kts+1,kte
-        ekk(k)=ekd(k)*p_at_w(i,k,j)/(r_d*t_at_w(i,k,j))
+        ekk(k)=ekd(k)*csbot(k)
      enddo
      ekk(kte+1)=0.0
      do k=kts,kte
@@ -831,7 +927,12 @@ subroutine mixactivate(  msectional,            &
            overlapm(k)=1.
         endif
      enddo
-     do nsub=1,nsubmix
+
+
+
+! ......................................................................
+! start of nsubmix-loop for calc of old cloud activation tendencies ....
+OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
         qndrop_new(kts:kte)=qndrop(kts:kte)
 !           switch nsav, nnew so that nsav is the updated aerosol
         ntemp=nsav
@@ -842,7 +943,11 @@ subroutine mixactivate(  msectional,            &
            do m=1,nsize_aer(n)
               lnum=numptr_aer(m,n,ai_phase)
 !              update droplet source
-              srcn(kts:kte)=srcn(kts:kte)+nact(kts:kte,m,n)*(raercol(kts:kte,lnum,nsav))
+! rce-comment - activation source in layer k involves particles from k-1
+!             srcn(kts  :kte)=srcn(kts  :kte)+nact(kts  :kte,m,n)*(raercol(kts:kte  ,lnum,nsav))
+              srcn(kts+1:kte)=srcn(kts+1:kte)+nact(kts+1:kte,m,n)*(raercol(kts:kte-1,lnum,nsav))
+! rce-comment - new formulation for k=kts should be implemented
+              srcn(kts      )=srcn(kts      )+nact(kts      ,m,n)*(raercol(kts      ,lnum,nsav))
            enddo
         enddo
         call explmix(qndrop,srcn,ekkp,ekkm,overlapp,overlapm,   &
@@ -852,7 +957,11 @@ subroutine mixactivate(  msectional,            &
               lnum=numptr_aer(m,n,ai_phase)
               lnumcw=numptr_aer(m,n,cw_phase)
               if(lnum>0)then
-                 source(kts:kte)= nact(kts:kte,m,n)*(raercol(kts:kte,lnum,nsav))
+! rce-comment - activation source in layer k involves particles from k-1
+!                source(kts  :kte)= nact(kts  :kte,m,n)*(raercol(kts:kte  ,lnum,nsav))
+                 source(kts+1:kte)= nact(kts+1:kte,m,n)*(raercol(kts:kte-1,lnum,nsav))
+! rce-comment - new formulation for k=kts should be implemented
+                 source(kts      )= nact(kts      ,m,n)*(raercol(kts      ,lnum,nsav))
                  call explmix(raercol(1,lnumcw,nnew),source,ekkp,ekkm,overlapp,overlapm, &
                       raercol(1,lnumcw,nsav),surfrate(lnumcw),kms,kme,kts,kte,dtmix,&
                       .false.)
@@ -867,7 +976,11 @@ subroutine mixactivate(  msectional,            &
               do l=1,ncomp(n)
                  lmass=massptr_aer(l,m,n,ai_phase)
                  lmasscw=massptr_aer(l,m,n,cw_phase)
-                 source(kts:kte)= mact(kts:kte,m,n)*(raercol(kts:kte,lmass,nsav))
+! rce-comment - activation source in layer k involves particles from k-1
+!                source(kts  :kte)= mact(kts  :kte,m,n)*(raercol(kts:kte  ,lmass,nsav))
+                 source(kts+1:kte)= mact(kts+1:kte,m,n)*(raercol(kts:kte-1,lmass,nsav))
+! rce-comment - new formulation for k=kts should be implemented
+                 source(kts      )= mact(kts      ,m,n)*(raercol(kts      ,lmass,nsav))
                  call explmix(raercol(1,lmasscw,nnew),source,ekkp,ekkm,overlapp,overlapm, &
                       raercol(1,lmasscw,nsav),surfrate(lmasscw),kms,kme,kts,kte,dtmix,  &
                       .false.)
@@ -889,9 +1002,9 @@ subroutine mixactivate(  msectional,            &
            enddo ! size
         enddo ! type
 
-     enddo !nsub
+     enddo OLD_CLOUD_NSUBMIX_LOOP
 
-!    go to 100
+!    cycle OVERALL_MAIN_I_LOOP
 
 !        evaporate particles again if no cloud
 
@@ -921,7 +1034,8 @@ subroutine mixactivate(  msectional,            &
         endif
      enddo
 
-!         go to 100
+!         cycle OVERALL_MAIN_I_LOOP
+
 !        droplet number
 
      do k=kts,kte
@@ -955,9 +1069,8 @@ subroutine mixactivate(  msectional,            &
 !       if(k.gt.6.and.k.lt.11)cldfra_old(i,k,j)=1.
      enddo
 
+!    cycle OVERALL_MAIN_I_LOOP
 
-
-!    go to 100
 !        update chem and convert back to mole/mole
 
      ccn(:,:) = 0.
@@ -1011,8 +1124,8 @@ subroutine mixactivate(  msectional,            &
         if(l.eq.6)ccn6(i,kts:kte,j)=ccn(:,l)
      end do
 
-100  continue ! end of main loop over i
-120  continue ! end of main loop over j
+     enddo OVERALL_MAIN_I_LOOP ! end of main loop over i
+     enddo OVERALL_MAIN_J_LOOP ! end of main loop over j
 
 
      return
@@ -1060,30 +1173,31 @@ subroutine mixactivate(  msectional,            &
                            qactold(kp1)*(1.0-overlapp(k)))               &
                                   + ekkm(k)*(qold(km1) - qold(k) +     &
                            qactold(km1)*(1.0-overlapm(k))) )
-!          if(q(k)<-1.e-30)then ! force to non-negative
-!             print *,'q=',q(k),' in explmix'
+!         if(q(k)<-1.e-30)then ! force to non-negative
+!            print *,'q=',q(k),' in explmix'
              q(k)=max(q(k),0.)
-!          endif
+!         endif
       end do
+
    else
       do k=kts,kte
          kp1=min(k+1,kte)
          km1=max(k-1,kts)
          q(k) = qold(k) + dt*(src(k) + ekkp(k)*(overlapp(k)*qold(kp1)-qold(k)) +  &
                                     ekkm(k)*(overlapm(k)*qold(km1)-qold(k)) )
-!         if(q(k)<-1.e-30)then ! force to non-negative
-!            print *,'q=',q(k),' in explmix'
+!        if(q(k)<-1.e-30)then ! force to non-negative
+!           print *,'q=',q(k),' in explmix'
             q(k)=max(q(k),0.)
-!         endif
+!        endif
       end do
    end if
-!     diffusion loss at base of lowest layer
-      q(kts)=q(kts)-surfrate*qold(kts)*dt
 
-!          if(q(kts)<-1.e-30)then ! force to non-negative
-!             print *,'q=',q(kts),' in explmix'
-             q(kts)=max(q(kts),0.)
-!          endif
+!  dry deposition loss at base of lowest layer
+   q(kts)=q(kts)-surfrate*qold(kts)*dt
+!  if(q(kts)<-1.e-30)then ! force to non-negative
+!     print *,'q=',q(kts),' in explmix'
+      q(kts)=max(q(kts),0.)
+!  endif
 
    return
    end subroutine explmix
@@ -1094,7 +1208,7 @@ subroutine mixactivate(  msectional,            &
       subroutine activate(wbar, sigw, wdiab, wminf, wmaxf, tair, rhoair,  &
                       msectional, maxd_atype, ntype_aer, maxd_asize, nsize_aer,    &
                       na, volc, dlo_sect,dhi_sect,sigman, hygro, &
-                      fn, fs, fm, fluxn, fluxs, fluxm, &
+                      fn, fs, fm, fluxn, fluxs, fluxm, flux_fullact, &
                       grid_id, ktau, ii, jj, kk )
 
 !      calculates number, surface, and mass fraction of aerosols activated as CCN
@@ -1146,6 +1260,7 @@ subroutine mixactivate(  msectional,            &
       real,intent(inout) :: fluxn(maxd_asize,maxd_atype) ! flux of activated aerosol number fraction into cloud (m/s)
       real,intent(inout) :: fluxs(maxd_asize,maxd_atype) ! flux of activated aerosol surface fraction (m/s)
       real,intent(inout) :: fluxm(maxd_asize,maxd_atype) ! flux of activated aerosol mass fraction into cloud (m/s)
+      real,intent(inout) :: flux_fullact                 ! flux when activation fraction = 100% (m/s)
 
 !      local
 
@@ -1200,6 +1315,7 @@ subroutine mixactivate(  msectional,            &
       real sumflxn(maxd_asize,maxd_atype)
       real sumflxs(maxd_asize,maxd_atype)
       real sumflxm(maxd_asize,maxd_atype)
+      real sumflx_fullact
       real sumfn(maxd_asize,maxd_atype)
       real sumfs(maxd_asize,maxd_atype)
       real sumfm(maxd_asize,maxd_atype)
@@ -1296,6 +1412,7 @@ subroutine mixactivate(  msectional,            &
          fluxn(1,1)=0.
          fluxs(1,1)=0.
          fluxm(1,1)=0.
+         flux_fullact=0.
          return
         endif
       enddo
@@ -1388,6 +1505,7 @@ subroutine mixactivate(  msectional,            &
                fm(m,n)=0.
             end do
             end do
+            flux_fullact=0.
             return
          endif
 
@@ -1605,6 +1723,7 @@ subroutine mixactivate(  msectional,            &
                fm(m,n)=0.
             end do
             end do
+            flux_fullact=0.
             return
          endif
          do n=1,ntype_aer
@@ -1620,6 +1739,7 @@ subroutine mixactivate(  msectional,            &
             fmold(m,n)=0.
          enddo
          enddo
+         sumflx_fullact=0.
 
          fold=0
          gold=0
@@ -1869,6 +1989,9 @@ subroutine mixactivate(  msectional,            &
 44000       continue      ! m=1,nsize_aer(n)
 44002       continue      ! n=1,ntype_aer
 
+!           same form as sumflxm(m,n) but replace the fm/fmold(m,n) with 1.0
+            sumflx_fullact = sumflx_fullact &
+                           + sixth*(wb*(gaus+gold) + (gaus*w + gold*wold))*dw
 !            sumg=sumg+0.5*(gaus+gold)*dw
             gold=gaus
             wold=w
@@ -1944,6 +2067,8 @@ subroutine mixactivate(  msectional,            &
                sumfm(m,n)=sumfm(m,n)+fm(m,n)*integ
             end do
             end do
+!           same form as sumflxm(m,n) but replace the fm(m,n) with 1.0
+            sumflx_fullact = sumflx_fullact + integf
 !            sumg=sumg+integ
          endif
 
@@ -1991,6 +2116,8 @@ subroutine mixactivate(  msectional,            &
 
          end do
          end do
+!        same form as fluxm(m,n)
+         flux_fullact = sumflx_fullact/(sq2*sqpi*sigw)
 
       goto 60000
 !.......................................................................
@@ -2023,6 +2150,7 @@ subroutine mixactivate(  msectional,            &
                fluxm(m,n)=0
             end do
             end do
+            flux_fullact=0.
             return
          endif
 
@@ -2198,6 +2326,12 @@ subroutine mixactivate(  msectional,            &
 
 55000       continue      ! m=1,nsize_aer(n)
 55002       continue      ! n=1,ntype_aer
+
+            if((top.and.wbar.lt.0.).or.(.not.top.and.wbar.gt.0.))then
+               flux_fullact = w
+            else
+               flux_fullact = 0.0
+            endif
 
 ! 04-nov-2005 rce - moved the code for "wnuc.le.0" from here 
 ! to near the start the uniform undraft section
@@ -2419,6 +2553,7 @@ subroutine mixactivate(  msectional,            &
              num_at_dhi = vaerosol*npv_at_dhi
              num_at_dlo = vaerosol*npv_at_dlo
              naerosol = max( num_at_dhi, min( num_at_dlo, naerosol ) )
+
 !            write(6,'(a,5e10.1)')'naerosol,num_at_dhi,num_at_dlo,dhi_sect,dlo_sect', &
 !                          naerosol,num_at_dhi,num_at_dlo,dhi_sect,dlo_sect
              num_at_dhi = vaerosolcw*npv_at_dhi

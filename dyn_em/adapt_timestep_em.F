@@ -346,3 +346,36 @@ FUNCTION real_time( timeinterval ) RESULT ( out_time )
          out_time = dt_whole + dt_num / REAL(dt_den)
       endif
 END FUNCTION 
+
+
+FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
+
+  USE module_domain
+
+  IMPLICIT NONE 
+
+! This function returns a double precision floating point time from an input time interval
+!  
+! Unfortunately, the ESMF did not provide this functionality.
+!
+! Be careful with the output because, due to rounding, the time is only
+!   approximate.
+!
+! Todd Hutchinson, WSI 4/17/2007
+! Converted to r8, William.Gustafson@pnl.gov; 8-May-2008
+
+! !RETURN VALUE:
+      REAL(KIND=8) :: out_time
+      INTEGER(KIND=8) :: dt_whole
+      INTEGER :: dt_num, dt_den
+
+! !ARGUMENTS:
+      TYPE(WRFU_TimeInterval), intent(in) :: timeinterval
+
+      CALL WRFU_TimeIntervalGet(timeinterval,Sn=dt_num,Sd=dt_den,S_i8=dt_whole)
+      if (ABS(dt_den) < 1) then
+         out_time = dt_whole
+      else
+         out_time = dt_whole + REAL(dt_num/dt_den,8)
+      endif
+END FUNCTION real_time_r8

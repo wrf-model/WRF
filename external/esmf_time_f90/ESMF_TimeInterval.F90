@@ -296,13 +296,14 @@
 ! !IROUTINE: ESMF_TimeIntervalGet - Get value in user-specified units
 
 ! !INTERFACE:
-      subroutine ESMF_TimeIntervalGet(timeinterval, D, d_r8, S, Sn, Sd, &
+      subroutine ESMF_TimeIntervalGet(timeinterval, D, d_r8, S, S_i8, Sn, Sd, &
                                       TimeString, rc )
 
 ! !ARGUMENTS:
       type(ESMF_TimeInterval), intent(in) :: timeinterval
       integer, intent(out), optional :: D
-      real(ESMF_KIND_R8),      intent(out), optional :: d_r8
+      real(ESMF_KIND_R8),     intent(out), optional :: d_r8
+      integer(ESMF_KIND_I8),  intent(out), optional :: S_i8
       integer, intent(out), optional :: S
       integer, intent(out), optional :: Sn
       integer, intent(out), optional :: Sd
@@ -375,6 +376,10 @@
 !
 ! !REQUIREMENTS:
 !     TMG1.1
+!
+! Added argument to output double precision seconds, S_i8
+! William.Gustafson@pnl.gov; 9-May-2008
+!
 !EOP
       INTEGER(ESMF_KIND_I8) :: seconds
       INTEGER :: ierr
@@ -384,14 +389,17 @@
       ! note that S is overwritten below (if present) if other args are also 
       ! present
       IF ( PRESENT(S) ) S = seconds
+      IF ( PRESENT(S_i8) ) S_i8 = seconds
       IF ( PRESENT( D ) ) THEN
         D = seconds / SECONDS_PER_DAY
-        IF ( PRESENT(S) ) S = MOD( seconds, SECONDS_PER_DAY )
+        IF ( PRESENT(S) )    S    = MOD( seconds, SECONDS_PER_DAY )
+        IF ( PRESENT(S_i8) ) S_i8 = MOD( seconds, SECONDS_PER_DAY )
       ENDIF
       IF ( PRESENT( d_r8 ) ) THEN
         D_r8 = REAL( seconds, ESMF_KIND_R8 ) / &
                REAL( SECONDS_PER_DAY, ESMF_KIND_R8 )
-        IF ( PRESENT(S) ) S = MOD( seconds, SECONDS_PER_DAY )
+        IF ( PRESENT(S) )    S    = MOD( seconds, SECONDS_PER_DAY )
+        IF ( PRESENT(S_i8) ) S_i8 = MOD( seconds, SECONDS_PER_DAY )
       ENDIF
       IF ( PRESENT(Sn) ) THEN
         Sn = timeinterval%basetime%Sn

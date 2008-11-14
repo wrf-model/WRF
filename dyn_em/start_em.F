@@ -867,7 +867,6 @@
 
    ENDIF
 
-!wig 17-Oct-2006, begin: I think the following should be here...
    IF (num_scalar > 0) THEN
 
 ! use of (:,:,:,loop) not efficient on DEC, but (ims,kms,jms,loop) not portable to SGI/Cray
@@ -881,7 +880,6 @@
       END DO loop_3d_s
 
    ENDIF
-!wig end.
 
 
 #ifdef WRF_CHEM
@@ -904,7 +902,7 @@
                          grid%chemdt,                                       &
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
                          grid%plumerisefire_frq,z_at_w,grid%xlat,grid%xlong,g,           &
-                         grid%aerwrf,config_flags,            &
+                         grid%aerwrf,config_flags,grid,            &
                          grid%alt,grid%t_1,grid%p,convfac,grid%ttday,grid%tcosz,         &
                          grid%julday,grid%gmt,&
                          grid%gd_cloud, grid%gd_cloud2,grid%raincv_a,grid%raincv_b,     &
@@ -913,8 +911,11 @@
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &
-               grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,                  &
+                         grid%l2aer,grid%l3aer,grid%l4aer,grid%l5aer,grid%l6aer,grid%l7aer,     &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
+                         grid%last_chem_time_year,grid%last_chem_time_month,               &
+                         grid%last_chem_time_day,grid%last_chem_time_hour,                 &
+                         grid%last_chem_time_minute,grid%last_chem_time_second,            &
                          grid%chem_in_opt,grid%kemit,                       &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
@@ -931,7 +932,7 @@
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-        case (RADM2SORG, RACMSORG)
+        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
            call sum_pm_sorgam (                                             &
                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &

@@ -57,6 +57,13 @@ MODULE module_input_chem_data
 !  REAL :: grav = 9.8104
    REAL, PARAMETER :: mwso4 = 96.0576
 
+! Variables for adaptive time steps...
+#if ( EM_CORE == 1 )
+      TYPE(WRFU_Time), DIMENSION(max_domains) :: last_chem_time
+#endif
+#if ( NMM_CORE == 1)
+      TYPE(WRFU_Time), DIMENSION(1) :: last_chem_time
+#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initial atmospheric chemistry profile data
@@ -321,13 +328,13 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   integer, intent(in) :: chem_opt, numgas
 
   select case(chem_opt)
-  case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,RACM_KPP,GOCARTRACM_KPP, &
-        RACMPM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ, &
-        CHEM_TRACER,CHEM_TRACE2)
+  case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+        RACM, RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP, &
+        GOCARTRACM_KPP, CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
-  case (CBMZ,CBMZ_BB,CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
-        CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ)
+  case (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
+        CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
      call setup_gasprofile_map_cbmz(numgas)
 
   case (CBM4_KPP)
@@ -602,7 +609,7 @@ SUBROUTINE input_ext_chem_file (si_grid)
 !     CALL ext_ncd_get_next_time ( fid, date_string, status_next_var )
       CALL wrf_get_next_time ( fid, date_string, status_next_var )
 
-      write(message,'(6A)') 'Subroutine input_chem: file date/time = ',date_string,'     status = ', status_next_var
+      write(message,'(19A)') 'Subroutine input_chem: file date/time = ',date_string
       CALL  wrf_message ( TRIM(message) )
 
       IF ( status_next_var == 0 ) THEN
@@ -1150,7 +1157,7 @@ SUBROUTINE input_chem_profile (si_grid)
 
    ! An alternative ozone profile option for initialization
    if( si_grid%gas_ic_opt == GAS_IC_PNNL ) &
-        call gasprofile_init_pnnl
+        call gasprofile_init_pnnl( si_grid%chem_opt )
 
    ! Interpolate the chemistry data to the SI grid. These values should typically
    ! be set to match the values in bdy_chem_value_tracer so that the boundaries
@@ -1353,7 +1360,7 @@ SUBROUTINE input_chem_profile (si_grid)
 ! method for bc calculation is determined by aer_bc_opt
 !
        if (config_flags%aer_bc_opt == AER_BC_PNNL) then
-           call sorgam_set_aer_bc_pnnl( chem, z, nch )
+           call sorgam_set_aer_bc_pnnl( chem, z, nch, config_flags )
            return
        else if (config_flags%aer_bc_opt == AER_BC_DEFAULT) then
            continue
@@ -2465,7 +2472,10 @@ SUBROUTINE input_chem_profile (si_grid)
      select case (chem_opt)
      case (0)
         get_last_gas = 0
-     case (RADM2,RADM2_KPP,RADM2SORG,RADM2SORG_KPP,RACM,RACMSORG,GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP, RADM2SORG_AQ,RACMSORG_AQ)
+
+     case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+           RACM, RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP, &
+	       GOCARTRACM_KPP)
         get_last_gas = p_ho2
 
      case (CBMZ)
@@ -2509,7 +2519,7 @@ SUBROUTINE input_chem_profile (si_grid)
 !   CALLED BY:                        bdy_chem_value_sorgam     *
 !                                                               *
 !****************************************************************
-    SUBROUTINE sorgam_set_aer_bc_pnnl( chem, z, nch )
+    SUBROUTINE sorgam_set_aer_bc_pnnl( chem, z, nch, config_flags )
       USE module_data_sorgam, ONLY : dginia, dginin, dginic, esn36, esc36, esa36, seasfac, no3fac, nh4fac, so4fac, soilfac, anthfac, orgfac
 
       implicit none
@@ -2517,6 +2527,7 @@ SUBROUTINE input_chem_profile (si_grid)
       INTEGER,INTENT(IN   ) :: nch
       real,intent(in      ) :: z
       REAL,INTENT(INOUT   ) :: chem
+      TYPE (grid_config_rec_type) , INTENT (in) :: config_flags
 
       REAL :: mult,                       &
               m3acc, m3cor, m3nuc,        &
@@ -2701,9 +2712,11 @@ SUBROUTINE input_chem_profile (si_grid)
 !                                     input_chem_profile        *
 !                                                               *
 !****************************************************************
-    SUBROUTINE gasprofile_init_pnnl
+    SUBROUTINE gasprofile_init_pnnl( chem_opt )
       use module_data_sorgam,only:  conmin
       implicit none
+      INTEGER, INTENT (in) :: chem_opt
+
       integer :: k
 
       call wrf_debug ( 500 , 'wrfchem:gasprofile_init_pnnl' )
@@ -2721,18 +2734,24 @@ SUBROUTINE input_chem_profile (si_grid)
 !         2430.,  1720.,  1195., 781.5,  494., 298.5, 148.5,  42.5
  
 #if (CASENAME != 4)
-      if( p_o3 > 1 ) then
+ 
 #if (CASENAME == 0)
+      if( p_o3 > 1 ) then
                                           !Rounded to closest level:
          xl(iref(p_o3-1),11:16) = 4.00e-8 !40 ppbv below 1 km
          xl(iref(p_o3-1),3:10)  = 6.50e-8 !65 ppbv > 2 km and < stratosphere
                                           !  Changed from 70 ppbv 1-Apr-2005
+      end if
 #endif
+
 #if (CASENAME == 1)
+      if( p_o3 > 1 ) then
          xl(iref(p_o3-1),11:16) = 3.50e-8 !35 ppbv below 1 km
          xl(iref(p_o3-1),3:10)  = 6.00e-8 !60 ppbv > 2 km and < stratosphere
+      end if
 #endif
 #if (CASENAME == 2)
+      if( p_o3 > 1 ) then
          xl(iref(p_o3-1),12:16) = 2.50e-8
          xl(iref(p_o3-1),11:11) = 3.10e-8
          xl(iref(p_o3-1),10:10) = 3.20e-8
@@ -2745,6 +2764,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_o3-1),3:3)   = 5.80e-8
          xl(iref(p_o3-1),2:2)   = 1.04e-7
          xl(iref(p_o3-1),1:1)   = 2.00e-7
+      end if
+      if( p_co > 1 ) then
          xl(iref(p_co-1),12:16) = 1.00e-7
          xl(iref(p_co-1),11:11) = 1.00e-7
          xl(iref(p_co-1),10:10) = 9.80e-8
@@ -2757,6 +2778,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_co-1),3:3)   = 8.20e-8
          xl(iref(p_co-1),2:2)   = 6.50e-8
          xl(iref(p_co-1),1:1)   = 6.10e-8
+      end if
+      if( p_so2 > 1 ) then
          xl(iref(p_so2-1),12:16) = 6.00e-11
          xl(iref(p_so2-1),11:11) = 1.00e-11
          xl(iref(p_so2-1),10:10) = 4.00e-12
@@ -2769,6 +2792,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_so2-1),3:3)   = 1.00e-11
          xl(iref(p_so2-1),2:2)   = 2.00e-12
          xl(iref(p_so2-1),1:1)   = 5.00e-13
+      end if
+      if( p_no2 > 1 ) then
          xl(iref(p_no2-1),12:16) = 1.00e-11
          xl(iref(p_no2-1),11:11) = 1.50e-11
          xl(iref(p_no2-1),10:10) = 1.80e-11
@@ -2781,6 +2806,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_no2-1),3:3)   = 4.30e-11
          xl(iref(p_no2-1),2:2)   = 2.50e-10
          xl(iref(p_no2-1),1:1)   = 2.80e-10
+      end if
+      if( p_h2o2 > 1 ) then
          xl(iref(p_h2o2-1),12:16) = 0.18e-8
          xl(iref(p_h2o2-1),11:11) = 0.13e-8
          xl(iref(p_h2o2-1),10:10) = 0.30e-9
@@ -2793,6 +2820,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_h2o2-1),3:3)   = 0.36e-9
          xl(iref(p_h2o2-1),2:2)   = 0.15e-10
          xl(iref(p_h2o2-1),1:1)   = 0.17e-10
+      end if
+      if( p_hno3 > 1 ) then
          xl(iref(p_hno3-1),12:16) = 0.98e-11
          xl(iref(p_hno3-1),11:11) = 0.58e-11
          xl(iref(p_hno3-1),10:10) = 0.53e-11
@@ -2805,6 +2834,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_hno3-1),3:3)   = 0.57e-10
          xl(iref(p_hno3-1),2:2)   = 0.17e-9
          xl(iref(p_hno3-1),1:1)   = 0.12e-9
+      end if
+      if( p_no3 > 1 ) then
          xl(iref(p_no3-1),12:16) = 0.98e-11
          xl(iref(p_no3-1),11:11) = 0.58e-11
          xl(iref(p_no3-1),10:10) = 0.53e-11
@@ -2817,6 +2848,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_no3-1),3:3)   = 0.57e-10
          xl(iref(p_no3-1),2:2)   = 0.17e-9
          xl(iref(p_no3-1),1:1)   = 0.12e-9
+      end if
+      if( p_n2o5 > 1 ) then
          xl(iref(p_n2o5-1),12:16) = 0.12e-14
          xl(iref(p_n2o5-1),11:11) = 0.11e-12
          xl(iref(p_n2o5-1),10:10) = 0.20e-12
@@ -2829,6 +2862,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_n2o5-1),3:3)   = 0.94e-12
          xl(iref(p_n2o5-1),2:2)   = 0.16e-11
          xl(iref(p_n2o5-1),1:1)   = 0.11e-11
+      end if
+      if( p_nh3 > 1 ) then
          xl(iref(p_nh3-1),12:16) = 0.14e-9
          xl(iref(p_nh3-1),11:11) = 0.60e-10
          xl(iref(p_nh3-1),10:10) = 0.30e-10
@@ -2841,6 +2876,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_nh3-1),3:3)   = 0.35e-10
          xl(iref(p_nh3-1),2:2)   = 0.86e-11
          xl(iref(p_nh3-1),1:1)   = 0.84e-11
+      end if
+      if( p_hcho > 1 ) then
          xl(iref(p_hcho-1),12:16) = 4.00e-10
          xl(iref(p_hcho-1),11:11) = 4.20e-10
          xl(iref(p_hcho-1),10:10) = 3.60e-10
@@ -2853,6 +2890,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_hcho-1),3:3)   = 8.80e-11
          xl(iref(p_hcho-1),2:2)   = 1.30e-11
          xl(iref(p_hcho-1),1:1)   = 1.40e-11
+      end if
+      if( p_ket > 1 ) then
          xl(iref(p_ket-1),12:16) = 0.19e-9
          xl(iref(p_ket-1),11:11) = 0.15e-9
          xl(iref(p_ket-1),10:10) = 0.13e-9
@@ -2865,6 +2904,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_ket-1),3:3)   = 0.63e-10
          xl(iref(p_ket-1),2:2)   = 0.91e-11
          xl(iref(p_ket-1),1:1)   = 0.55e-11
+      end if
+      if( p_par > 1 ) then
          xl(iref(p_par-1),12:16) = 0.75e-10+0.68e-10
          xl(iref(p_par-1),11:11) = 0.50e-10+0.21e-10
          xl(iref(p_par-1),10:10) = 0.41e-10+0.11e-10
@@ -2877,6 +2918,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_par-1),3:3)   = 0.29e-10+0.43e-11
          xl(iref(p_par-1),2:2)   = 0.16e-10+0.18e-12
          xl(iref(p_par-1),1:1)   = 0.17e-10+0.26e-12
+      end if
+      if( p_olt > 1 ) then
          xl(iref(p_olt-1),12:16) = 0.54e-13
          xl(iref(p_olt-1),11:11) = 0.52e-13
          xl(iref(p_olt-1),10:10) = 0.33e-13
@@ -2889,6 +2932,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_olt-1),3:3)   = 0.15e-14
          xl(iref(p_olt-1),2:2)   = 0.33e-17
          xl(iref(p_olt-1),1:1)   = 0.27e-15
+      end if
+      if( p_ol2 > 1 ) then
          xl(iref(p_ol2-1),12:16) = 0.87e-12
          xl(iref(p_ol2-1),11:11) = 0.10e-11
          xl(iref(p_ol2-1),10:10) = 0.68e-12
@@ -2901,6 +2946,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_ol2-1),3:3)   = 0.66e-13
          xl(iref(p_ol2-1),2:2)   = 0.14e-14
          xl(iref(p_ol2-1),1:1)   = 0.51e-13
+      end if
+      if( p_ald > 1 ) then
          xl(iref(p_ald-1),12:16) = 0.30e-10
          xl(iref(p_ald-1),11:11) = 0.28e-10
          xl(iref(p_ald-1),10:10) = 0.22e-10
@@ -2913,6 +2960,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_ald-1),3:3)   = 0.10e-10
          xl(iref(p_ald-1),2:2)   = 0.93e-12
          xl(iref(p_ald-1),1:1)   = 0.64e-12
+      end if
+      if( p_tol > 1 ) then
          xl(iref(p_tol-1),12:16) = 0.29e-11/2.0
          xl(iref(p_tol-1),11:11) = 0.16e-11/2.0
          xl(iref(p_tol-1),10:10) = 0.12e-11/2.0
@@ -2925,6 +2974,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_tol-1),3:3)   = 0.12e-12/2.0
          xl(iref(p_tol-1),2:2)   = 0.39e-15/2.0
          xl(iref(p_tol-1),1:1)   = 0.11e-14/2.0
+      end if
+      if( p_xyl > 1 ) then
          xl(iref(p_xyl-1),12:16) = 0.29e-11/2.0
          xl(iref(p_xyl-1),11:11) = 0.16e-11/2.0
          xl(iref(p_xyl-1),10:10) = 0.12e-11/2.0
@@ -2937,6 +2988,8 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_xyl-1),3:3)   = 0.12e-12/2.0
          xl(iref(p_xyl-1),2:2)   = 0.39e-15/2.0
          xl(iref(p_xyl-1),1:1)   = 0.11e-14/2.0
+      end if
+      if( p_eth > 1 ) then
          xl(iref(p_eth-1),12:16) = 0.60e-9
          xl(iref(p_eth-1),11:11) = 0.63e-9
          xl(iref(p_eth-1),10:10) = 0.49e-9
@@ -2949,8 +3002,9 @@ SUBROUTINE input_chem_profile (si_grid)
          xl(iref(p_eth-1),3:3)   = 0.47e-9
          xl(iref(p_eth-1),2:2)   = 0.38e-9
          xl(iref(p_eth-1),1:1)   = 0.36e-9
-#endif
       end if
+#endif
+
 #endif
 
 #if (CASENAME == 1)
@@ -2980,7 +3034,7 @@ SUBROUTINE input_chem_profile (si_grid)
 !-----------------------------------------------------------------------
 subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      dz8w,t_phy,p_phy,rho_phy,chem,                                   &
-     emis_ant,                                           &
+     emis_ant,                                                        &
      ids,ide, jds,jde, kds,kde,                                       &
      ims,ime, jms,jme, kms,kme,                                       &
      its,ite, jts,jte, kts,kte,                                       &

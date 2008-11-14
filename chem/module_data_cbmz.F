@@ -4,9 +4,9 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! CBMZ module: see module_cbmz.F for information and terms of use
+! CBMZ module: see module_cbmz.F for references and terms of use
 !**********************************************************************************  
-!   file module_data_cbmf.f - new on 17-nov-2003
+!   file module_data_cbmf.f
 !-----------------------------------------------------------------------------
 
       module module_data_cbmz

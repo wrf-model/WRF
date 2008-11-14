@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 
 MODULE module_wetscav_driver
@@ -34,7 +34,7 @@ CONTAINS
 !
 !  This driver calls subroutines for wet scavenging.
 !
-!  1. MADE-SORGAM (Not yet implemented.)
+!  1. MADE-SORGAM
 !  2. MOSAIC
 !
 !----------------------------------------------------------------------
@@ -42,7 +42,8 @@ CONTAINS
    USE module_configure
    USE module_state_description
    USE module_model_constants
-   USE module_mosaic_wetscav
+   USE module_mosaic_wetscav, only:  wetscav_cbmz_mosaic
+   USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
 
    IMPLICIT NONE
 
@@ -162,8 +163,9 @@ CONTAINS
 !
 
 ! LOCAL  VAR
-     integer :: ii,jj,kk
-   REAL, DIMENSION( ims:ime, jms:jme, num_chem )  ::  qsrflx ! column change due to scavening
+   integer :: ii,jj,kk
+   REAL, DIMENSION( ims:ime, jms:jme, num_chem ) :: qsrflx ! column change due to scavening
+   REAL ::  tmp_minval = 1.0e7
 
 
 !-----------------------------------------------------------------
@@ -179,33 +181,33 @@ CONTAINS
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (RADM2SORG)
-       CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver')
+   CASE ( RADM2SORG_AQ, RACMSORG_AQ )
+       CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
+       call wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
+               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
+               qlsink,precr,preci,precs,precg, qsrflx,                     &
+               gas_aqfrac, numgas_aqfrac,                                  &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+! not clear if the following is necessary or appropriate
+       tmp_minval = 1.0e7
+       do jj=jts,jte
+       do kk=kts,kte
        do ii=its,ite
-          do kk=kts,kte
-             do jj=jts,jte
-                if(chem(ii,kk,jj,p_nu0).lt.1.e07)then
-                   chem(ii,kk,jj,p_nu0)=1.e7
-                endif
-             enddo
-          enddo
+          if (chem(ii,kk,jj,p_nu0) .lt. tmp_minval) then
+             chem(ii,kk,jj,p_nu0) = tmp_minval
+          endif
+       enddo
+       enddo
        enddo
 
-   CASE (RACMSORG)
-       CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver')
-       do ii=its,ite
-          do kk=kts,kte
-             do jj=jts,jte
-                if(chem(ii,kk,jj,p_nu0).lt.1.e07)then
-                   chem(ii,kk,jj,p_nu0)=1.e7
-                endif
-             enddo
-          enddo
-       enddo
+   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN)
+       CALL wrf_error_fatal('Wet scavenging is currently not possible with MOSAIC unless aqueous aerosols are turned on.')
 
-   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+   CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'wetscav_driver calling mosaic_wetscav_driver')
-             call wetscav_cbmz_mosaic (id,ktau,dtstep,ktauc,config_flags,  &
+       call wetscav_cbmz_mosaic (id,ktau,dtstep,ktauc,config_flags,        &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
                qlsink,precr,preci,precs,precg, qsrflx,                     &
                gas_aqfrac, numgas_aqfrac,                                  &

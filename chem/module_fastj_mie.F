@@ -42,11 +42,14 @@
 !   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
 !   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
 !   coupled meteorology-chemistry-aerosol model, Submitted to J. Geophys. Res.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
+!   Closure on the single scattering albedo in the WRF-Chem framework using
+!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
 !
 ! Contact Jerome Fast for updates on the status of manuscripts under review.  
 !
 ! Additional information:
-! *  www.pnl.gov/atmos_sciences/Jdf/wrfchem.html
+! *  www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support:
 ! Funding for adapting Fast-J was provided by the U.S. Department of Energy

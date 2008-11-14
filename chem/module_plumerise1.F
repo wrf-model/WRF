@@ -210,7 +210,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 !           do k=kts,kte
 !               write(0,*)k,z_lev(k),zmid(k),rho_phyin(k),theta_in(k)
 !           enddo
-!               !rite(0,*)'eburn',eburn_in(1),mean_fct,firesize
+!               write(0,*)'eburn',eburn_in(1),mean_fct,firesize
 !             endif
 
             call plumerise(kte,1,1,1,1,1,1,firesize,mean_fct  &

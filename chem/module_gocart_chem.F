@@ -2,7 +2,8 @@ MODULE MODULE_GOCART_CHEM
 
 CONTAINS
 
-  subroutine gocart_chem_driver(ktau,dt,config_flags,gmt,julday,t_phy,moist,  &
+  subroutine gocart_chem_driver(curr_secs,dt,config_flags,            &
+         gmt,julday,t_phy,moist,                                      &
          chem,rho_phy,dz8w,p8w,backg_oh,backg_h2o2,backg_no3,         &
          dx,g,xlat,xlong,ttday,tcosz, &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -14,7 +15,7 @@ CONTAINS
   IMPLICIT NONE
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
-   INTEGER,      INTENT(IN   ) :: julday, ktau,                     &
+   INTEGER,      INTENT(IN   ) :: julday,                                  &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
@@ -29,7 +30,7 @@ CONTAINS
           INTENT(IN   ) ::                     t_phy,               &
                               backg_oh,backg_h2o2,backg_no3,dz8w,p8w,      &
                                               rho_phy
-
+  REAL(KIND=8), INTENT(IN) :: curr_secs
   REAL, INTENT(IN   ) :: dt,dx,g,gmt
   integer :: nmx,i,j,k,imx,jmx,lmx
   real*8, DIMENSION (1,1,1) :: tmp,airden,airmas,oh,xno3,h2o2,chldms_oh,    &
@@ -40,22 +41,25 @@ CONTAINS
   real, DIMENSION (1,1) :: sza,cosszax
   real*8, DIMENSION (1,1,1,4) :: tc,bems
   real*8, dimension (1) :: dxy
+  real(kind=8) :: xtime,xhour
   real:: rlat,xlonn
-      real :: xtime,zenith,zenita,azimuth,xhour,xmin,xtimin,gmtp
-      INTEGER :: ixhour
-       imx=1
-       jmx=1
-       lmx=1
-       nmx=4
-       tdry=0.d0
-      xtime=ktau*dt/60.
-      ixhour=ifix(gmt+.01)+ifix(xtime/60.)
-      xhour=float(ixhour)
-      xmin=60.*gmt+(xtime-xhour*60.)
-      gmtp=mod(xhour,24.)
-      gmtp=gmtp+xmin/60.
+  real :: zenith,zenita,azimuth,xmin,xtimin,gmtp
+  integer(kind=8) :: ixhour
+
+  imx=1
+  jmx=1
+  lmx=1
+  nmx=4
+  tdry=0.d0
+
+  xtime=curr_secs/60._8
+  ixhour=int(gmt+.01,8)+int(xtime/60._8,8)
+  xhour=real(ixhour,8)
+  xmin=60.*gmt+real(xtime-xhour*60._8,8)
+  gmtp=mod(xhour,24._8)
+  gmtp=gmtp+xmin/60.
  
-       dxy(1)=dx*dx
+  dxy(1)=dx*dx
 !
 ! following arrays for busget stuff only
 !

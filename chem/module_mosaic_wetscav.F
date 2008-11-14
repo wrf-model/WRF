@@ -18,9 +18,9 @@ CONTAINS
 !  scavenging of gas-phase gases by mass transfer and reaction
 
 !----------------------------------------------------------------------
-   USE module_configure
+   USE module_configure, only: grid_config_rec_type
    USE module_state_description
-   use module_data_mosaic_asect
+   USE module_data_mosaic_asect
 
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -32,7 +32,7 @@ CONTAINS
                                       ims,ime, jms,jme, kms,kme,    &
                                       its,ite, jts,jte, kts,kte,    &
                                       id, ktau, ktauc, numgas_aqfrac
-      REAL,      INTENT(IN   ) :: dtstep,dtstepc
+   REAL, INTENT(IN   ) :: dtstep,dtstepc
 !
 ! all advected chemical species
 !
@@ -47,7 +47,7 @@ CONTAINS
 !
 ! input from meteorology
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
-          INTENT(IN   ) ::                                          &
+         INTENT(IN   ) ::                                           &
                                                         alt,        &
                                                       t_phy,        &
                                                       p_phy,        &
@@ -57,17 +57,19 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme, num_chem ),          &
          INTENT(OUT ) ::                                qsrflx ! column change due to scavening
 
-   call wetscav (id,ktau,dtstep,ktauc,config_flags,                        &
-               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
-	       qlsink,precr,preci,precs,precg,qsrflx,                      &
-	       gas_aqfrac, numgas_aqfrac,                                  &
-               ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer,  &
-	       maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, cw_phase,  &
-	       waterptr_aer, dens_water_aer,                               &
-	       scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow,  &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+   call wetscav (id,ktau,dtstep,ktauc,config_flags,                      &
+        dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,             &
+        qlsink,precr,preci,precs,precg,qsrflx,                           &
+        gas_aqfrac, numgas_aqfrac,                                       &
+        ntype_aer, nsize_aer, ncomp_aer,                                 &
+        massptr_aer, dens_aer, numptr_aer,                               &
+        maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, cw_phase, &
+        volumcen_sect, volumlo_sect, volumhi_sect,                       &
+        waterptr_aer, dens_water_aer,                                    &
+        scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow, &
+        ids,ide, jds,jde, kds,kde,                                       &
+        ims,ime, jms,jme, kms,kme,                                       &
+        its,ite, jts,jte, kts,kte                                        )
 
    end subroutine wetscav_cbmz_mosaic
 
@@ -75,17 +77,19 @@ CONTAINS
 
 !===========================================================================
 !===========================================================================
-   subroutine wetscav (id,ktau,dtstep,ktauc,config_flags,                  &
-               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
-	       qlsink,precr,preci,precs,precg,qsrflx,                      &
-	       gas_aqfrac, numgas_aqfrac,                                  &
-               ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer,  &
-	       maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, cw_phase,  &
-	       waterptr_aer, dens_water_aer,                               &
-	       scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow,  &
-               ids,ide, jds,jde, kds,kde,                                  &
-               ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+   subroutine wetscav (id,ktau,dtstep,ktauc,config_flags,                &
+        dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,             &
+        qlsink,precr,preci,precs,precg,qsrflx,                           &
+        gas_aqfrac, numgas_aqfrac,                                       &
+        ntype_aer, nsize_aer, ncomp_aer,                                 &
+        massptr_aer, dens_aer, numptr_aer,                               &
+        maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, cw_phase, &
+        volumcen_sect, volumlo_sect, volumhi_sect,                       &
+        waterptr_aer, dens_water_aer,                                    &
+        scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow, &
+        ids,ide, jds,jde, kds,kde,                                       &
+        ims,ime, jms,jme, kms,kme,                                       &
+        its,ite, jts,jte, kts,kte                                        )
 
 !  wet removal by grid-resolved precipitation
 !  scavenging of cloud-phase aerosols and gases by collection, freezing, ...
@@ -93,10 +97,9 @@ CONTAINS
 !  scavenging of gas-phase gases by mass transfer and reaction
 
 !----------------------------------------------------------------------
-   USE module_configure
+   USE module_configure, only: grid_config_rec_type
    USE module_state_description
-!  USE module_model_constants
-   USE module_model_constants, only: g,rhowater, mwdry
+   USE module_model_constants, only: g, rhowater, mwdry
    USE module_dep_simple, only: is_aerosol
 
    IMPLICIT NONE
@@ -129,22 +132,22 @@ CONTAINS
                                                         alt,        &
                                                       t_phy,        &
                                                       p_phy,        &
-                                                   t8w,p8w,         &
-	                            qlsink,precr,preci,precs,precg, &
-                                                    rho_phy,cldfra
-   integer, intent(in)  :: maxd_atype
-   integer, intent(in)  :: maxd_asize
-   integer, intent(in)  :: maxd_acomp
-   integer, intent(in)  :: maxd_aphase
+                                                    t8w,p8w,        &
+                             qlsink,precr,preci,precs,precg,        &
+                                             rho_phy,cldfra
+   integer, intent(in) :: maxd_atype, maxd_asize, maxd_acomp, maxd_aphase
    integer, intent(in) :: ai_phase, cw_phase
    integer, intent(in) :: ntype_aer
-   integer, intent(in) ::  nsize_aer( maxd_atype ),   & ! number of size bins
+   integer, intent(in) :: nsize_aer( maxd_atype ),   & ! number of size bins
       	  ncomp_aer( maxd_atype ),   & ! number of chemical components
       	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase), & ! index for mixing ratio
       	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
       	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ) ! index for the number mixing ratio
    real, intent(in) :: dens_aer( maxd_acomp, maxd_atype ),   & ! material density (g/cm3)
 	  dens_water_aer ! water density (g/m3)
+   real, intent(in) :: volumcen_sect( maxd_asize, maxd_atype ),   & ! single-particle volumes (cm3)
+                        volumlo_sect( maxd_asize, maxd_atype ),   & ! at section center, lower boundary,
+                        volumhi_sect( maxd_asize, maxd_atype )      ! upper boundary
 
    real, intent(in) :: dlndg_nimptblgrow
    integer, intent(in) :: nimptblgrow_mind, nimptblgrow_maxd
@@ -190,9 +193,11 @@ CONTAINS
 ! scavenging cloud-phase aerosol assuming precip falls to surface
       do 100 j=jts,jte
       do k=kts,kte
-         pdel(its:ite,k,j)=p8w(its:ite,k,j)-p8w(its:ite,k+1,j)
+         do i=its,ite
+            pdel(i,k,j)=p8w(i,k,j)-p8w(i,k+1,j)
+         end do
       end do
-!wig      pdel(:,kte,j)=pdel(:,kte-1,j)
+
       do 100 k=kts,kte
       do 100 i=its,ite
          scale=max((1.-dtstepc*qlsink(i,k,j)),0.)
@@ -206,10 +211,12 @@ CONTAINS
                do m=1,nsize_aer(n)
                   do l=1,ncomp_aer(n)
                      lmasscw=massptr_aer(l,m,n,cw_phase)
+                     if (lmasscw < param_first_scalar) cycle
                      qsrflx(i,j,lmasscw)=qsrflx(i,j,lmasscw)+chem(i,k,j,lmasscw)*(scale-1.)*pdel_fac
                      chem(i,k,j,lmasscw)=chem(i,k,j,lmasscw)*scale
                   end do ! comp
                   lnumcw=numptr_aer(m,n,cw_phase)
+                  if (lnumcw < param_first_scalar) cycle
                   qsrflx(i,j,lnumcw)=qsrflx(i,j,lnumcw)+chem(i,k,j,lnumcw)*(scale-1.)*pdel_fac
                   chem(i,k,j,lnumcw)=chem(i,k,j,lnumcw)*scale
                end do ! size
@@ -361,17 +368,19 @@ CONTAINS
 
 
       call aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte, num_chem,       &
-                      ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer,  &
+              ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer,  &
 		      maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase,          &
+		      volumcen_sect, volumlo_sect, volumhi_sect, &
 		      waterptr_aer, dens_water_aer,                &
 		      scavimptblvol, scavimptblnum,      &
 		      nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow,     &
-                      dtstepc,     t_phy,        p_phy,       pdel,  chem,          &
-                      isprx,      fapx,       pfx,        pfx_inrain,           &
-                      dqdt,       dotend,     qsrflx      )
+              dtstepc, t_phy, p_phy, pdel, chem,          &
+              isprx, fapx, pfx, pfx_inrain,           &
+              dqdt, dotend, qsrflx      )
 
       call gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte, num_chem,     &
-                      dtstepc,     t_phy,          p_phy,       pdel,  chem,      &
+                      config_flags,      &
+                      dtstepc,    t_phy,      p_phy,      pdel,  chem,      &
                       isprx,      fapx,       pfx,        pfx_inrain, &
                       dqdt,       dotend,     qsrflx      )
 
@@ -394,13 +403,14 @@ CONTAINS
 !===========================================================================
 !===========================================================================
 subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem,  &
-                      ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer,           &
-		      maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, &
-		      waterptr_aer, dens_water_aer, &
-		      scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow, &
-                      deltat,     t,          pmid,       pdel, chem,                  &
-                      isprx,      fapx,       pfx,        pfx_inrain, &
-                      dqdt,       dotend,     qsrflx      )
+     ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer, &
+     maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase,           &
+     volumcen_sect, volumlo_sect, volumhi_sect,                          &
+     waterptr_aer, dens_water_aer,                                       &
+     scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow, &
+     deltat,     t,          pmid,       pdel, chem,                     &
+     isprx,      fapx,       pfx,        pfx_inrain,                     &
+     dqdt,       dotend,     qsrflx                                      )
 
 
 !-----------------------------------------------------------------------
@@ -417,6 +427,7 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 !
 !-----------------------------------------------------------------------
   USE module_model_constants, only: g,rhowater, mwdry
+  USE module_state_description, only: param_first_scalar
 
    implicit none
 
@@ -451,10 +462,7 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
    real, intent(inout) :: dqdt(ims:ime,kms:kme,jms:jme,num_chem) ! TMR tendency array
    logical,  intent(inout) :: dotend(num_chem)     ! flag for doing scav
    real, intent(inout) :: qsrflx(ims:ime,jms:jme,num_chem) ! column tracer tendencies
-   integer, intent(in)  :: maxd_atype
-   integer, intent(in)  :: maxd_asize
-   integer, intent(in)  :: maxd_acomp
-   integer, intent(in)  :: maxd_aphase
+   integer, intent(in)  :: maxd_atype, maxd_asize, maxd_acomp, maxd_aphase
    integer, intent(in) :: ai_phase
    integer, intent(in) :: ntype_aer
    integer, intent(in) ::  nsize_aer( maxd_atype ),   & ! number of size bins
@@ -462,8 +470,11 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
       	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase), & ! index for mixing ratio
       	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
       	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ) ! index for the number mixing ratio
+   real, intent(in) :: volumcen_sect( maxd_asize, maxd_atype ),   & ! single-particle volumes (cm3)
+                        volumlo_sect( maxd_asize, maxd_atype ),   & ! at section center, lower boundary,
+                        volumhi_sect( maxd_asize, maxd_atype )      ! upper boundary
    real, intent(in) :: dens_aer( maxd_acomp, maxd_atype ),   & ! material density (g/cm3)
-	  dens_water_aer ! water density (g/m3)
+                       dens_water_aer ! water density (g/m3)
 
    real, intent(in) :: dlndg_nimptblgrow
    integer, intent(in) :: nimptblgrow_mind, nimptblgrow_maxd
@@ -479,21 +490,22 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 
    logical :: ispr_anywhere
 
+   real :: dry_mass, dry_volu, dry_volu_1p
+   real :: duma
    real :: dumfhi, dumflo
    real :: dumimpactamt0, dumimpactamt3, dumimpactamtsum
    real :: dumimpactratea0, dumimpactratea3
    real :: dumimpactrateb0, dumimpactrateb3
    real :: dumdgratio, dumrate, dumwetdens
    real :: dumlogdens, dumlogptot, dumlogtemp
+   real :: dumnumb
    real :: dumscavratenum, dumscavratevol
    real :: pdel_fac
    real :: pf_to_prmmh
    real :: scavimptbl1, scavimptbl2, scavimptbl3, scavimptbl4
    real :: xgrow
-   real third
-   data third/0.333333/
-    real vaerosol, vaerosol_wet
-    real dry_mass
+   real :: wet_mass, wet_volu
+   real, save :: third = 0.33333333
 
 !-----------------------------------------------------------------------
 !
@@ -525,31 +537,56 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 !   compute removal amounts for each aerosol mode
        do 3900 n=1,ntype_aer
        do 3900 m=1,nsize_aer(n)
-          vaerosol=0.
-          dry_mass=0
-          do l=1,ncomp_aer(n)
-             dry_mass=dry_mass+chem(i,k,j,massptr_aer(l,m,n,ai_phase))
-             vaerosol=vaerosol+chem(i,k,j,massptr_aer(l,m,n,ai_phase))/dens_aer(l,n)
+          dry_volu = 0.
+          dry_mass = 0
+          do ll = 1, ncomp_aer(n)
+             l = massptr_aer(ll,m,n,ai_phase)
+             if (l < param_first_scalar) cycle
+             duma = max( chem(i,k,j,l)*1.0e-6, 0.0 )
+             dry_mass = dry_mass + duma                 ! g-AP/kg-air
+             dry_volu = dry_volu + duma/dens_aer(ll,n)  ! cm3-AP/kg-air
           end do
-!   The vaerosol units here (cm3/Gg-air)  are unusual.  vaerosol & vaerosol_wet
-!   are temporary variables used only  to compute density, so it's no  problem.
+!   If no aerosol is present at this size and type, there is nothing
+!   to scavenge so go onto the next size bin. wig, 25-Oct-2005
+          if( dry_volu < 1.0e-26 ) goto 3900
 
-!         If no aerosol is present at this size and type, there is nothing
-!         to scavenge so go onto the next size bin. wig, 25-Oct-2005
-          if( vaerosol < 1e-20 ) goto 3900
+!   wet volume
+          l = waterptr_aer(m,n)
+          if (l >= param_first_scalar) then
+             duma = max( chem(i,k,j,l)*1.0e-6, 0.0 )
+          else
+             duma = 0.0
+          end if
+          wet_mass = dry_mass + duma
+          wet_volu = dry_volu + duma/dens_water_aer
 
-!         wet volume
-          vaerosol_wet=vaerosol+chem(i,k,j,waterptr_aer(m,n))/dens_water_aer
-!         dumwetdens = wet aerosol density in g/cm3
-	  dumwetdens = (dry_mass+chem(i,k,j,waterptr_aer(m,n)))/vaerosol_wet
+!   calc dry volume of 1 particle
+          dumnumb = chem(i,k,j,numptr_aer(m,n,ai_phase))
+          if (dry_volu > volumhi_sect(m,n)*dumnumb) then
+             dry_volu_1p = volumhi_sect(m,n)
+          else if (dry_volu < volumlo_sect(m,n)*dumnumb) then
+             dry_volu_1p = volumlo_sect(m,n)
+          else
+             dry_volu_1p = dry_volu/dumnumb
+          end if
+!   interpolate table values using 
+!      dumdgratio = [(actual-wet-diam)/(base-dry-diam)]
+!                 = [(actual-wet-volu)/(base-dry-volu)]**1/3
+          if (wet_volu <= 1.0e9*dry_volu) then
+             duma = wet_volu/dry_volu
+          else
+             duma = 1.0e9
+          end if
+          dumdgratio = ((dry_volu_1p/volumcen_sect(m,n))*duma)**third
+
+!   dumwetdens = wet aerosol density in g/cm3
+	  dumwetdens = wet_mass/wet_volu
 	  dumlogdens = log( dumwetdens )
 	  dumimpactamt3 = 0
 	  dumimpactamt0 = 0
 !
 !         compute impaction scavenging removal amount for volume
 !
-!         interpolate table values using log of (actual-wet-size)/(base-dry-size)
-	  dumdgratio = (vaerosol_wet/vaerosol)**third
 
 	  if ((dumdgratio .ge. 0.99) .and. (dumdgratio .le. 1.01)) then
 	    scavimptbl1 = scavimptblvol(1,0,m,n)
@@ -629,7 +666,7 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 !
 !   compute impaction scavenging removal amount to number
 !
-	if (numptr_aer(m,n,ai_phase) .le. 0) then
+	if (numptr_aer(m,n,ai_phase) < param_first_scalar) then
 	    dumimpactamt0 = dumimpactamt3
 	    goto 3700
 	end if
@@ -683,17 +720,18 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 	dumrate = -dumimpactamt3/(deltat*(1.0 + 1.0e-8))
 	do ll = 1, ncomp_aer(n)
 	    l = massptr_aer(ll,m,n,ai_phase)
+	    if (l < param_first_scalar) cycle
 	    dqdt(i,k,j,l) = chem(i,k,j,l)*dumrate
 	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_fac
 	end do
 	l = waterptr_aer(m,n)
-	if (l > 0) then
+	if (l >= param_first_scalar) then 
 	    dqdt(i,k,j,l) = chem(i,k,j,l)*dumrate
 	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_fac
 	end if
-	if (numptr_aer(m,n,ai_phase) .gt. 0) then
+	l = numptr_aer(m,n,ai_phase)
+	if (l >= param_first_scalar) then 
 	    dumrate = -dumimpactamt0/(deltat*(1.0 + 1.0e-8))
-	    l = numptr_aer(m,n,ai_phase)
 	    dqdt(i,k,j,l) = chem(i,k,j,l)*dumrate
 	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_fac
 	end if
@@ -712,10 +750,13 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
       do n=1,ntype_aer
       do m=1,nsize_aer(n)
          do ll = 1, ncomp_aer(n)
-            dotend(massptr_aer(ll,m,n,ai_phase)) = .true.
+            if (massptr_aer(ll,m,n,ai_phase) >= param_first_scalar) &
+               dotend(massptr_aer(ll,m,n,ai_phase)) = .true.
          end do
-	 if (waterptr_aer(m,n) > 0) dotend(waterptr_aer(m,n)) = .true.
-         if (numptr_aer(m,n,ai_phase) > 0) dotend(numptr_aer(m,n,ai_phase)) = .true.
+         if (waterptr_aer(m,n) >= param_first_scalar) &
+            dotend(waterptr_aer(m,n)) = .true.
+         if (numptr_aer(m,n,ai_phase) >= param_first_scalar) &
+            dotend(numptr_aer(m,n,ai_phase)) = .true.
       end do
       end do
    end if
@@ -728,10 +769,11 @@ end subroutine aerimpactscav
 
 !===========================================================================
 !===========================================================================
-  subroutine initwet(ntype_aer, nsize_aer, ncomp_aer, massptr_aer, dens_aer, numptr_aer,           &
-		      maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, dcen_sect, sigmag_aer, &
-		      waterptr_aer, dens_water_aer, &
-		      scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow)
+  subroutine initwet( ntype_aer, nsize_aer, ncomp_aer, massptr_aer,      &
+       dens_aer, numptr_aer, maxd_acomp, maxd_asize,maxd_atype,          &
+       maxd_aphase, dcen_sect, sigmag_aer, waterptr_aer, dens_water_aer, &
+       scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, &
+       dlndg_nimptblgrow)
 !-----------------------------------------------------------------------
 !
 ! Purpose:
@@ -742,11 +784,8 @@ end subroutine aerimpactscav
 !-----------------------------------------------------------------------
   implicit none
 
-   integer, intent(in)  :: maxd_atype
-   integer, intent(in)  :: maxd_asize
-   integer, intent(in)  :: maxd_acomp
-   integer, intent(in)  :: maxd_aphase
-   integer, intent(in)  :: ntype_aer
+   integer, intent(in) :: maxd_atype, maxd_asize, maxd_acomp, maxd_aphase
+   integer, intent(in) :: ntype_aer
    integer, intent(in) ::  nsize_aer( maxd_atype ) ! number of size bins
    integer, intent(in) :: ncomp_aer( maxd_atype ) ! number of chemical components
    integer, intent(in) :: massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase) ! index for mixing ratio
@@ -754,8 +793,13 @@ end subroutine aerimpactscav
    integer, intent(in) :: numptr_aer( maxd_asize, maxd_atype, maxd_aphase ) ! index for the number mixing ratio
    real, intent(in) :: dens_aer( maxd_acomp, maxd_atype ) ! material density (g/cm3)
    real, intent(in) :: dens_water_aer ! water density (g/m3)
-   real, intent(in) :: dcen_sect( maxd_asize, maxd_atype ) ! mean particle diameter (cm)
    real, intent(in) :: sigmag_aer(maxd_asize, maxd_atype)
+   real, intent(in) :: dcen_sect( maxd_asize, maxd_atype ) 
+       ! "base" volume-mean diameter (cm) == section center diameter
+       ! scav rates for aerosol number and volume are pre-calculated for a range of volume-mean diameters
+       !    as well as aerosol densities and air pressure and temperature
+       ! for specific time/location/aerosol properties, these rates are interpolated, and
+       !    the size interpolation uses [(actual volume-mean diameter)/(base volume-mean diameter)]
 
    real, intent(out) :: dlndg_nimptblgrow
    integer, intent(in) :: nimptblgrow_mind, nimptblgrow_maxd
@@ -769,7 +813,7 @@ end subroutine aerimpactscav
 	integer i, j, m, n, jgrow, jdens, jpress, jtemp, ll, mode, nnfit
         integer lunerr
 
-	real dg0, press, rhodryaero, rhowetaero, rmserr, &
+	real dg0, dg0_base, press, rhodryaero, rhowetaero, rmserr, &
      	scavratenum, scavratevol, sigmag,                &
      	temp, wetdiaratio, wetvolratio
 	real aafitnum(4), xxfitnum(4,nnfit_maxd), yyfitnum(nnfit_maxd)
@@ -783,13 +827,16 @@ end subroutine aerimpactscav
         do 7900 m=1,nsize_aer(n)
 
 	sigmag = sigmag_aer(m,n)
+	dg0_base = dcen_sect(m,n)*exp( -1.5*((log(sigmag))**2) )
 
-	rhodryaero = dens_aer(m,n)
+!   for setting up the lookup table, use the dry density of the first 
+!   chemical component of the aerosol type (which currently will be so4)
+	rhodryaero = dens_aer(1,n)
 
 	do 7800 jgrow = nimptblgrow_mind, nimptblgrow_maxd
 
 	wetdiaratio = exp( jgrow*dlndg_nimptblgrow )
-	dg0 = dcen_sect(m,n)*wetdiaratio
+	dg0 = dg0_base*wetdiaratio
 
 	wetvolratio = exp( jgrow*dlndg_nimptblgrow*3. )
 	rhowetaero = 1.0 + (rhodryaero-1.0)/wetvolratio
@@ -1102,7 +1149,8 @@ end subroutine aerimpactscav
 !===========================================================================
 !===========================================================================
 subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem,  &
-                       deltat,     t,          pmid,       pdel,       &
+                      config_flags,   &
+                      deltat,     t,          pmid,       pdel,       &
                       chem,                                  &
                       isprx,      fapx,       pfx,        pfx_inrain, &
                       dqdt,       dotend,     qsrflx      )
@@ -1122,8 +1170,10 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
 !
 !-----------------------------------------------------------------------
   USE module_model_constants, only: g,rhowater, mwdry
-	use module_configure, only:  p_so2, p_h2o2, p_sulf, p_msa,   &
-		p_hno3, p_hcl, p_nh3, param_first_scalar
+  use module_configure, only:  grid_config_rec_type,   &
+		param_first_scalar,   &
+		p_so2, p_h2o2, p_sulf, p_msa,   &
+		p_hno3, p_hcl, p_nh3
 
    implicit none
 
@@ -1144,6 +1194,8 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
    integer, intent(in)  :: its,ite            ! column identifier
    integer, intent(in)  :: kts,kte            ! level identifier
    integer, intent(in)  :: jts,jte            ! column identifier
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
    real, intent(in) :: deltat           ! model timestep
 
    real, intent(in) :: t(ims:ime,kms:kme,jms:jme)    ! temperature

@@ -24,8 +24,8 @@ MODULE module_bioemi_beis313
 !23456789 123456789 123456789 123456789 123456789 123456789 123456789 12
 
     CONTAINS
-      SUBROUTINE bio_emissions_beis313(id,config_flags,ktau,dtstep,    &
-               julday,gmt,xlat,xlong,t_phy,p_phy,gsw,                  &
+      SUBROUTINE bio_emissions_beis313(id,config_flags,ktau,curr_secs, &
+               dtstep,julday,gmt,xlat,xlong,t_phy,p_phy,gsw,           &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
                sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
@@ -46,12 +46,15 @@ MODULE module_bioemi_beis313
       TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
 ! .. Indices ..
-      INTEGER,   INTENT(IN   ) :: id,ktau,                             &
+      INTEGER,   INTENT(IN   ) :: id,                                  &
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
 ! .. Passed variables ..
-      INTEGER, INTENT (IN)  ::    julday                                 ! current simulation julian day
+      INTEGER, INTENT (IN)  ::    ktau,                                & ! time step number
+                                  julday                                 ! current simulation julian day
+
+      REAL(KIND=8), INTENT(IN) :: curr_secs                              ! seconds into the simulation
 
       REAL, INTENT (IN)   ::      gmt,dtstep
 
@@ -141,7 +144,9 @@ MODULE module_bioemi_beis313
 !   begin body of subroutine bio_emissions_beis313
                          
 ! hour into integration
-      gmtp=float(ktau)*dtstep/3600.
+!The old gmtp method will break for runs longer than about 12 days with r4
+!      gmtp=float(ktau)*dtstep/3600.
+      gmtp = curr_secs/3600._8
 !     
       gmtp=mod(gmt+gmtp,24.)
       write(mesg,*) 'calculate beis313 emissions at gmtp = ',gmtp

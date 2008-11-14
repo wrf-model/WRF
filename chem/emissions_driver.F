@@ -9,8 +9,11 @@ MODULE module_emissions_driver
    IMPLICIT NONE
 CONTAINS
 
-    subroutine emissions_driver(id,ktau,dtstep,DX,stepfirepl,              &
-         config_flags, stepbioe,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
+    subroutine emissions_driver(id,ktau,dtstep,DX,                         &
+         adapt_step_flag,curr_secs,                                        &
+         plumerisefire_frq,stepfirepl,                                     &
+         bioemdt,stepbioe,                                                 &
+         config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
          tsk,erod,g,emis_seas,emis_dust,                                   &
          ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
@@ -88,7 +91,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme,3),&
          INTENT(IN ) ::                                                 &
          erod
-   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTional, &
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),OPTIONAL, &
          INTENT(INOUT ) ::                                                 &
          emis_dust
    REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_seas),                    &
@@ -187,14 +190,24 @@ CONTAINS
 
    ! end stuff for MEGAN v2.04
 
-      REAL,      INTENT(IN   ) ::                                      &
-                            dtstep, dx, gmt, g
+      REAL(KIND=8), INTENT(IN   ) ::                                   &
+           curr_secs
+
+      REAL, INTENT(IN   ) ::                                           &
+           bioemdt, dtstep, dx, gmt, g
+
+      INTEGER, INTENT(IN   ) ::                                        &
+           plumerisefire_frq
+
+      LOGICAL, INTENT(IN   ) ::                                        &
+           adapt_step_flag
 !
 ! Local variables...
 !
       INTEGER :: i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
       REAL :: conv
-      CHARACTER (LEN=80) :: message 
+      CHARACTER (LEN=80) :: message
+      LOGICAL :: do_bioemiss, do_plumerisefire
 
 ! ..
 ! ..
@@ -204,11 +217,44 @@ CONTAINS
 
 ! Flags for turning on or off sea salt and/or dust emissions...
 !    >0 = sea salt/dust emissions turned on
-! As of Nov. 2007 these only are used for MOSAIC
+! As of May 2008 these only are used for MOSAIC and SORGAM
 ! the gocart dust and seasalt modules are namelist defined
 !
-      dust_emiss_active    = 0
+      dust_emiss_active    = 1
       seasalt_emiss_active = 1
+!
+! Setup the timing flags...
+! (methodology is adapated from module_radiation_driver.F)
+!
+      do_plumerisefire = .false.
+      IF ( ktau==1 ) then
+         do_plumerisefire = .true.
+      ELSE IF ( adapt_step_flag ) THEN
+         IF ( (plumerisefire_frq<=0) .or. &
+              ( curr_secs+real(dtstep,8)+0.01 >= &
+              ( INT( curr_secs/real(plumerisefire_frq*60.,8)+1,8 )*real(plumerisefire_frq*60.,8) ) ) &
+              ) then
+            do_plumerisefire = .true.
+         ENDIF
+      ELSE IF ( (MOD(ktau,stepfirepl)==0) .or. (stepfirepl==1) ) THEN
+         do_plumerisefire = .true.
+      ENDIF
+
+      do_bioemiss = .false.
+      IF ( ktau==1 ) then
+         do_bioemiss = .true.
+      ELSE IF ( adapt_step_flag ) THEN
+         IF ( (bioemdt<=0) .or. &
+              ( curr_secs+real(dtstep,8)+0.01 >= &
+              ( INT( curr_secs/real(bioemdt*60.,8)+1,8 )*real(bioemdt*60.,8) ) ) &
+              ) then
+            do_bioemiss = .true.
+         ENDIF
+      ELSE IF ( (MOD(ktau,stepbioe)==0) .or. (stepbioe==1) ) THEN
+         do_bioemiss = .true.
+      ENDIF
+!
+! Gocart emissions...
 !
       seasalt_select:  SELECT CASE(config_flags%seas_opt)
       CASE (SEASGOCART)
@@ -221,9 +267,13 @@ CONTAINS
          its,ite, jts,jte, kts,kte                                         )
 
       CASE DEFAULT 
-        CALL wrf_debug(15,'no sea salt emissions')
-        if(seasalt_emiss_active.eq.1)CALL wrf_debug(15,'MOSAIC dust emissions')
+        if(seasalt_emiss_active.eq.1) then 
+           CALL wrf_debug(15,'MOSAIC or SORGAM sea salt emissions')
+        else
+           CALL wrf_debug(15,'no sea salt emissions')
+        end if
       END SELECT seasalt_select
+
       dust_select:  SELECT CASE(config_flags%dust_opt)
       CASE (DUSTGOCART)
         CALL wrf_debug(15,'Gocart dust emissions')
@@ -234,9 +284,13 @@ CONTAINS
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
       CASE DEFAULT 
-        if(dust_emiss_active.eq.1)CALL wrf_debug(15,'MOSAIC dust emissions')
-        CALL wrf_debug(15,'no dust emissions')
+        if(dust_emiss_active.eq.1) then
+            CALL wrf_debug(15,'MOSAIC or SORGAM dust emissions')
+        else
+             CALL wrf_debug(15,'no dust emissions')
+        end if
       END SELECT dust_select
+
       dms_select:  SELECT CASE(config_flags%dmsemis_opt)
       CASE (DMSGOCART)
         CALL wrf_debug(15,'Gocart dms emissions')
@@ -255,7 +309,7 @@ CONTAINS
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
      CASE (BIOMASSB)
-       if(ktau.eq.1.or.mod(ktau,stepfirepl).eq.0)then
+       if( do_plumerisefire )then
           CALL wrf_debug(15,'fire emissions: calling biomassb')
           write(0,*)ktau,stepfirepl
          call plumerise_driver (id,ktau,dtstep,                            &
@@ -292,9 +346,9 @@ CONTAINS
 !
     bioem_select: SELECT CASE(config_flags%bio_emiss_opt)
      CASE (GUNTHER1)
-     CALL wrf_debug(15,'biogenic emissions: calling Gunther1')
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then
-         call bio_emissions(id,ktau,dtstep,DX,config_flags,                &
+          CALL wrf_debug(15,'biogenic emissions: calling Gunther1')
+          call bio_emissions(id,ktau,dtstep,DX,config_flags,               &
                gmt,julday,t_phy,moist,p8w,t8w,                             &
                e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                      &
                ivgtyp,gsw,vegfra,rmol,ust,znt,xlat,xlong,z_at_w,           &
@@ -303,14 +357,20 @@ CONTAINS
                its,ite, jts,jte, kts,kte                                   )
        endif
      CASE (BEIS313)
-       if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then
-         if(config_flags%chem_opt > RACMSORG .AND. config_flags%chem_opt < 100  ) then !<100: kpp mechs, e.g. RACMSORG_KPP
-             CALL wrf_error_fatal( &
-              "emissions_driver: beis3.1.3 biogenic emis. not currently implemented for CBMZ")
-         endif
+       if( do_bioemiss ) then
+!        if (config_flags%chem_opt > RACMSORG .AND. config_flags%chem_opt < 100  ) then !<100: kpp mechs, e.g. RACMSORG_KPP
+!        the above test is unsafe
+         beis313_check_mechanism_ok: SELECT CASE(config_flags%chem_opt)
+            CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+                  RACM, RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP, &
+                  CBM4_KPP, NMHC9_KPP, GOCART_SIMPLE, GOCARTRACM_KPP)
+            CASE DEFAULT 
+               CALL wrf_error_fatal( &
+                  "emissions_driver: beis3.1.3 biogenic emis. implemented for RADM2 & RACM only")
+         END SELECT beis313_check_mechanism_ok
          CALL wrf_debug(15,'biogenic emissions: calling beis3.1.3')
-         call bio_emissions_beis313(id,config_flags,ktau,dtstep,       &
-               julday,gmt,xlat,xlong,t_phy,p_phy,gsw,                  &
+         call bio_emissions_beis313(id,config_flags,ktau,curr_secs,    &
+               dtstep,julday,gmt,xlat,xlong,t_phy,p_phy,gsw,           &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
                sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
@@ -327,7 +387,7 @@ CONTAINS
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then                        
          CALL wrf_debug(15,'biogenic emissions: calling megan v2.04')  
          call bio_emissions_megan2(id,config_flags,ktau,dtstep,        &
-               julday,gmt,xlat,xlong,p_phy,rho_phy,dz8w,               &
+               curr_secs,julday,gmt,xlat,xlong,p_phy,rho_phy,dz8w,     &
                chem,ne_area,                                           &
                current_month,                                          &
                T2,swdown,                                              &
@@ -348,7 +408,7 @@ CONTAINS
        endif
 
      CASE DEFAULT 
-       if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0) &
+       if( do_bioemiss ) &
             e_bio(its:ite,jts:jte,1:ne_area) = 0.
 !wig: May need to zero out all ebio_xxx arrays too if they are incorporated
 !     into CBMZ/MOSAIC.
@@ -358,7 +418,8 @@ CONTAINS
 !!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
 !
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RACM, RACMSORG,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RADM2SORG_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+          RACM, RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -388,8 +449,8 @@ CONTAINS
 
     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        IF(config_flags%kemit .GT. kte-ksub) THEN
-         message = ' EMISSIONS_DRIVER: KEMIT > KME '
-         CALL WRF_ERROR_FATAL (message)
+          message = ' EMISSIONS_DRIVER: KEMIT > KME '
+          CALL WRF_ERROR_FATAL (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_anthro')
        call cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,        &
@@ -428,6 +489,7 @@ CONTAINS
              end do
           end do
        end do
+
     CASE (GOCARTRACM_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
@@ -444,7 +506,7 @@ CONTAINS
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
        if ( config_flags%bio_emiss_opt .ne. megan2 ) then
-       call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
+       call add_biogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,     &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
             ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
@@ -476,6 +538,7 @@ CONTAINS
              end do
           end do
        end do
+
     CASE (GOCART_SIMPLE)
 !
 ! simple fix for now
@@ -557,9 +620,11 @@ CONTAINS
     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
           RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
-       call sorgam_addemiss( dtstep, u10, v10, alt, dz8w, xland, chem,  &
-            emis_ant,                                                   &
+       call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            slai,ust,smois,ivgtyp,isltyp,                               &
+            emis_ant,dust_emiss_active,                                 &
             seasalt_emiss_active,config_flags%kemit,                    &
+            config_flags%num_soil_layers,                               &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )

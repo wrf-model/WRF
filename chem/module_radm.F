@@ -5,7 +5,7 @@
     parameter (numchem=numchem_radm)
 ! ..
     CONTAINS
-      subroutine radm_driver(id,ktau,dtstep,config_flags,              &
+      subroutine radm_driver(id,curr_secs,dtstep,config_flags,         &
                gmt,julday,t_phy,moist,p8w,t8w,                         &
                p_phy,chem,rho_phy,dz8w,z,z_at_w,vdrog3,         &
                ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
@@ -24,10 +24,8 @@
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) ::                                      &
-                                  ktau
-      REAL,      INTENT(IN   ) ::                                      &
-                             dtstep,gmt
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
+   REAL,         INTENT(IN   ) :: dtstep,gmt
 !
 ! advected moisture variables
 !
@@ -68,7 +66,7 @@
 
 ! ..
 ! .. Local Scalars ..
-      REAL ::  clwchem,  dt60, dtcmax, dtcmin, xtime
+      REAL ::  clwchem,  dt60, dtcmax, dtcmin
       INTEGER :: i,j,k,iprt, jce, jcs, n, nr, ipr,jpr,nvr
 ! ..
 ! .. Local Arrays ..
@@ -77,13 +75,15 @@
       real :: vdrog1(kts:kte,ldrog)
 
 !
+      integer(kind=8) :: ixhour
+      INTEGER :: iaerosol_sorgam
+      real(kind=8) :: xhour, xtime, xtimin
+      real :: xmin
+      xtime=curr_secs/60._8
+      ixhour=int(gmt+.01,8)+int(xtime/60._8,8)
+      xhour=real(ixhour,8)
+      xmin=60.*gmt+real(xtime-xhour*60._8,8)
 
-      INTEGER :: ixhour,iaerosol_sorgam
-      real :: xhour,xmin,xtimin
-      xtime=ktau*dtstep/60.
-      ixhour=ifix(gmt+.01)+ifix(xtime/60.)
-      xhour=float(ixhour)
-      xmin=60.*gmt+(xtime-xhour*60.)
       ipr=-10
       jpr=-10
       nvr=5
@@ -172,10 +172,11 @@
          wlc(k) = 0.
       END DO
       dt60 = dtstep/60.
-      xtimin = max(0.,xtime-dt60)
-      dtcmin = min(.05,xtime-xtimin)
+      xtimin = max(0._8,xtime-real(dt60,8))
+      dtcmin = min(.05_8,xtime-xtimin)
+      dtcmin = max(dtcmin,0.5/60.)
       dtcmax = min(5.,dt60)
-      dtcmax = min(dtcmax,xtime-xtimin)
+      dtcmax = min(real(dtcmax,8),xtime-xtimin)
 !
 ! radm here is called with a vertical stack
 !
@@ -292,7 +293,8 @@ END SUBROUTINE radm_driver
         REAL, PARAMETER :: c302 = 5417.4, c303 = 19.83
 ! ..
 ! .. Scalar Arguments ..
-        REAL,INTENT(IN) :: dt60, dtcmax, dtcmin, timemx, tstart
+        REAL(KIND=8),INTENT(IN) :: timemx, tstart
+        REAL,INTENT(IN) :: dt60, dtcmax, dtcmin
         INTEGER, INTENT(IN) :: iprt, jce, jcs 
 !
 !

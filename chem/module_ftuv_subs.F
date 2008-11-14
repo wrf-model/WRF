@@ -4,9 +4,9 @@
       implicit none
 
 !     data for inter2, inter3 and interi
-      integer, private :: nintervals
-      integer, private, allocatable :: xi(:), xcnt(:)
-      real(8), private, allocatable :: xfrac(:,:)
+      integer, private, save :: nintervals
+      integer, private, allocatable, save :: xi(:), xcnt(:)
+      real(8), private, allocatable, save :: xfrac(:,:)
 
 
 !     data for lyman
@@ -19,10 +19,10 @@
       real(8), private, parameter :: t_del = 5.0D+0/tdim_m1
       real(8), private, parameter :: t_fac = tdim_m1/5.0D+0
       integer, private :: ii, jj
-      real(8), private :: d_table(0:tdim,ngast-1)
-      real(8), private :: x_table(0:tdim,ngast-1)
-      real(8), private :: o2_table(tdim)
-      real(8), private, dimension(12,ngast-1) :: a_schu, b_schu
+      real(8), private, save :: d_table(0:tdim,ngast-1)
+      real(8), private, save :: x_table(0:tdim,ngast-1)
+      real(8), private, save :: o2_table(tdim)
+      real(8), private, dimension(12,ngast-1), save :: a_schu, b_schu
 !-----------------------------------------------------------------------------
 ! a_schu(16,12) coefficients for rj(m) (table 1 in kockarts 1994)
 ! b_schu(16,12) rj(o2)(table 2 in kockarts 1994)
@@ -131,10 +131,10 @@
 !     data for set_o2_xsect      
       integer, public,  parameter :: nwint = 105
 
-      real(8), public  :: wlint(nwint)
-      real(8), private :: xso2int(nwint)
-      real(8), private :: wlla(nla)
-      real(8), private :: wlgast(ngast)
+      real(8), public, save  :: wlint(nwint)
+      real(8), private, save :: xso2int(nwint)
+      real(8), private, save :: wlla(nla)
+      real(8), private, save :: wlgast(ngast)
 
 ! o2 parameters
       data (wlint(ii),ii=1,105)/  &

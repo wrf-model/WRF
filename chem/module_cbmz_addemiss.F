@@ -1,10 +1,10 @@
-!**************************************************************************  
+!**************************************************************************
 ! This computer software was prepared by Battelle Memorial Institute, hereinafter
 ! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! CBMZ module: see module_cbmz.F for information and terms of use
+! CBMZ module: see module_cbmz.F for references and terms of use
 !**********************************************************************************  
 
 MODULE module_cbmz_addemiss

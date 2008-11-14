@@ -50,7 +50,7 @@ subroutine convtrans_prep(gd_cloud,gd_cloud2,gd_cloud_a,         &
        INTENT(INOUT ) :: raincv_a,raincv_b
   INTEGER, INTENT(IN) :: ktau,cu_phys
   INTEGER, INTENT(INOUT) :: stepave, stepave_count
-  REAL, INTENT(IN) :: curr_secs
+  REAL(KIND=8), INTENT(IN) :: curr_secs
   REAL, INTENT(IN) :: convtrans_avglen_m, dt
   LOGICAL, INTENT(IN) :: adapt_step_flag, cu_rad_feedback
 
@@ -62,11 +62,11 @@ subroutine convtrans_prep(gd_cloud,gd_cloud2,gd_cloud_a,         &
   first_period_flag = .false. !Nor at the beginning
   if( adapt_step_flag ) then
      !If end of period...
-     if( real(curr_secs,8)+real(dt,8) >= &
-          ( int( real(curr_secs,8)/real(convtrans_avglen_m*60.,8) + 1_8, 8) &
+     if( curr_secs+real(dt,8)+0.01 >= &
+          ( int( curr_secs/real(convtrans_avglen_m*60.,8) + 1_8, 8) &
             *real(convtrans_avglen_m*60.,8) ) ) &
           avg_end_flag = .true.
-     if( real(curr_secs,8) <= real(convtrans_avglen_m*60.,8) ) first_period_flag = .true.
+     if( curr_secs <= real(convtrans_avglen_m*60.,8) ) first_period_flag = .true.
   else
      if( mod(ktau,stepave)==0 ) avg_end_flag = .true.
      if( ktau <= stepave ) first_period_flag = .true.

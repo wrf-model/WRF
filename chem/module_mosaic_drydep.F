@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 	module module_mosaic_drydep
 
@@ -21,14 +21,14 @@
 
 !-----------------------------------------------------------------------
 	subroutine mosaic_drydep_driver(                                   &
-		id, ktau, dtstep, config_flags,                            &
-		gmt, julday,                                               &
-		t_phy, rho_phy, p_phy,                                     &
-		ust, aer_res,                                              &
-		moist, chem, ddvel,                                        &
-		ids,ide, jds,jde, kds,kde,                                 &
-		ims,ime, jms,jme, kms,kme,                                 &
-		its,ite, jts,jte, kts,kte                                  )
+		id, curr_secs, ktau, dtstep, config_flags,                     &
+		gmt, julday,                                                   &
+		t_phy, rho_phy, p_phy,                                         &
+		ust, aer_res,                                                  &
+		moist, chem, ddvel,                                            &
+		ids,ide, jds,jde, kds,kde,                                     &
+		ims,ime, jms,jme, kms,kme,                                     &
+		its,ite, jts,jte, kts,kte                                      )
 
 	use module_configure, only:  grid_config_rec_type, num_moist, num_chem
 	use module_state_description, only:  param_first_scalar
@@ -48,6 +48,8 @@
 		ids, ide, jds, jde, kds, kde,   &
 		ims, ime, jms, jme, kms, kme,   &
 		its, ite, jts, jte, kts, kte
+
+    real(kind=8), intent(in) :: curr_secs
 
 	real, intent(in) :: dtstep, gmt
 
@@ -135,11 +137,9 @@
 
 	iymdcur = 20030822
 	ihmscur = 0
-	dum = gmt*3600.0 + dtstep*(ktau-1)
-        dum = mod( dum, 86400.0 )
-	ihmscur = nint( dum )
+	ihmscur = nint( mod( real(gmt*3600.,8)+curr_secs, 86400.0_8 ) )
 
-	t = dtstep*(ktau-1)
+	t = curr_secs
 	ncorecnt = ktau - 1
 
 !   reset some variables to "box test" values

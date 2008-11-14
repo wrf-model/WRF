@@ -1,4 +1,21 @@
-
+! FTUV has been updated to conform with the v3 vertical indexing
+! method with kte=kde-1. "Saves" were also added to the module level
+! variables that are needed between calls since they could in theory be
+! lost between calls to FTUV without them. In reality, I do not think
+! this was happening due to the "use" statements, but better safe then
+! sorry. Finally, a critical bug was fixed where the aerosol arrays were
+! not set to 0 with non-SORGAM aerosol settings leading to junk J rates.
+!
+!!!! NOTE TO FTUV DEVELOPERS:
+!         The initialization routine needs to be changed to work using
+!         variable terrain height since the model top is not constant
+!         in time. It also is not constant in space, which is a bigger
+!         issue for most cases. At the very least, one needs to consider
+!         if the model top has been set at 50 vs. 100 mb, or something
+!         else entirely.
+!
+! William.Gustafson@pnl.gov; 18-Sep-2008
+!
       module module_ftuv_driver
 
       use module_wave_data, only : nw
@@ -7,24 +24,24 @@
 
 !     private variables
       integer, private, parameter :: nref = 51
-      integer, private :: nz, kcon
-      integer, private :: curjulday = 0
-      real(8), private :: esfact = 1.0
+      integer, private, save :: nz, kcon
+      integer, private, save :: curjulday = 0
+      real(8), private, save :: esfact = 1.0
 
-      real(8), private :: o3top = 2.97450e+16
-      real(8), private :: o2top = 3.60906e+21
+      real(8), private, save :: o3top = 2.97450e+16
+      real(8), private, save :: o2top = 3.60906e+21
 
-      real(8), private :: zref(nref), tref(nref), airref(nref), o3ref(nref)
-      real(8), private :: albedo(nw-1,2)
+      real(8), private, save :: zref(nref), tref(nref), airref(nref), o3ref(nref)
+      real(8), private, save :: albedo(nw-1,2)
 
-      real(8), private, allocatable :: z_ph(:), tlev_ph(:), tlay_ph(:), airlev_ph(:)
-      real(8), private, allocatable :: rh_ph(:), xlwc_ph(:)
-      real(8), private, allocatable :: o3_ph(:)
-      real(8), private, allocatable :: acb1_ph(:), acb2_ph(:)
-      real(8), private, allocatable :: aoc1_ph(:), aoc2_ph(:)
-      real(8), private, allocatable :: aant_ph(:), aso4_ph(:), asal_ph(:)
+      real(8), private, allocatable, save :: z_ph(:), tlev_ph(:), tlay_ph(:), airlev_ph(:)
+      real(8), private, allocatable, save :: rh_ph(:), xlwc_ph(:)
+      real(8), private, allocatable, save :: o3_ph(:)
+      real(8), private, allocatable, save :: acb1_ph(:), acb2_ph(:)
+      real(8), private, allocatable, save :: aoc1_ph(:), aoc2_ph(:)
+      real(8), private, allocatable, save :: aant_ph(:), aso4_ph(:), asal_ph(:)
 
-      real(8), private, allocatable :: ftuv(:,:)
+      real(8), private, allocatable, save :: ftuv(:,:)
 
 
       data zref/ 00.0, 01.0, 02.0, 03.0, 04.0, 05.0, 06.0, 07.0, 08.0, 09.0,   &
@@ -90,7 +107,7 @@
 
       contains
       subroutine ftuv_radm2_driver(                                    &
-                              id, ktau, dtstep, config_flags,          &
+                              id, curr_secs, dtstep, config_flags,     &
                               gmt, julday,                             &
                               p_phy, t_phy, rho_phy, p8w, t8w,         &
                               xlat, xlong,    z_at_w,                  &
@@ -114,11 +131,12 @@
       implicit none
 
 !     input arguments
-      integer, intent(in   ) :: id, ktau, julday,                      &
+      integer, intent(in   ) :: id, julday,                            &
                                 ids,ide, jds,jde, kds,kde,             &
                                 ims,ime, jms,jme, kms,kme,             &
                                 its,ite, jts,jte, kts,kte
                                
+      real(kind=8), intent(in) :: curr_secs
 
       real,    intent(in   ) :: dtstep, gmt
 
@@ -188,9 +206,9 @@
              CALL wrf_debug(15,'no aerosols initialization yet')
    END SELECT aer_select
 
-      xtime = float(ktau)*dtstep/60.0
-      xhour = float( int(gmt+0.01) + int(xtime/60.0) )
-      xmin  = 60.0*gmt + ( xtime - xhour*60.0 )
+      xtime = curr_secs/60._8
+      xhour = real( int(gmt+0.01,8) + int(xtime/60._8,8),8 )
+      xmin  = 60.0*gmt + ( xtime - xhour*60._8 )
       gmtp  = mod( xhour, 24.0d0 )
       gmtp  = gmtp + xmin/60.0
 
@@ -243,6 +261,18 @@
           aant(k+1) = chem(i,k,j,p_no3aj) + chem(i,k,j,p_nh4aj)
           aso4(k+1) = chem(i,k,j,p_so4aj)
           asal(k+1) = chem(i,k,j,p_seas)
+
+          else !Cannot do aerosol effect for non-SORGAM aerosol modules
+               !This is a temporary hack; William.Gustafson@pnl.gov, 17-Sep-2008
+
+          acb1(k+1) = 0.0
+          acb2(k+1) = 0.0
+          aoc1(k+1) = 0.0
+          aoc2(k+1) = 0.0
+          aant(k+1) = 0.0
+          aso4(k+1) = 0.0
+          asal(k+1) = 0.0
+
           endif
 
 !==================================================================================

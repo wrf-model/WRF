@@ -1,6 +1,7 @@
 !WRF:MODEL_LAYER:CHEMISTRY
 !
-      SUBROUTINE photolysis_driver (id,ktau,dtstep, config_flags,haveaer,&
+      SUBROUTINE photolysis_driver (id,curr_secs,ktau,dtstep,            &
+               config_flags,haveaer,                                     &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,              &
                chem,rho_phy,dz8w,xlat,xlong,z_at_w,gd_cloud,gd_cloud2,   &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
@@ -30,10 +31,9 @@
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) ::                                      &
-                                  ktau
-      REAL,      INTENT(IN   ) ::                                      &
-                             dtstep,gmt
+   INTEGER,      INTENT(IN   ) :: ktau
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
+   REAL,         INTENT(IN   ) :: dtstep,gmt
 !
 ! advected moisture variables
 !
@@ -110,7 +110,7 @@
 
      CASE (PHOTMAD)
        CALL wrf_debug(15,'calling madronich1_driver')
-       call madronich1_driver(id,ktau,dtstep,config_flags,haveaer,     & 
+       call madronich1_driver(id,curr_secs,ktau,config_flags,haveaer,  &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,            &
                chem,rho_phy,dz8w,xlat,xlong,z_at_w,gd_cloud,gd_cloud2, &
                ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
@@ -123,7 +123,7 @@
                its,ite, jts,jte, kts,kte                               )
      CASE (PHOTFASTJ)
        call wrf_debug(15,'calling fastj_driver')
-       call fastj_driver(id,ktau,dtstep,config_flags,                  & 
+       call fastj_driver(id,curr_secs,dtstep,config_flags,             &
                gmt,julday,t_phy,moist,p8w,p_phy,                       &
                chem,rho_phy,dz8w,xlat,xlong,z_at_w,                    &
                ph_o2,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
@@ -142,7 +142,7 @@
      CASE (FTUV)
        call wrf_debug(15,'calling ftuv_driver')
        call ftuv_radm2_driver(                                         &
-                              id, ktau, dtstep, config_flags,          &
+                              id, curr_secs, dtstep, config_flags,     &
                               gmt, julday,                             &
                               p_phy, t_phy, rho_phy, p8w, t8w,         &
                               xlat, xlong,    z_at_w,                  &

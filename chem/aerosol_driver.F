@@ -4,8 +4,8 @@
 !                   William Gustafson (PNNL),Rainer Schmitz (University of Chile)  and Georg Grell
 !
 !
-      SUBROUTINE aerosols_driver (id,ktau,dtstep,ktauc,config_flags,       &
-               dtstepc,dx,                                                 &
+      SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
+               config_flags,dtstepc,dx,                                    &
                alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,     &
                z,z_at_w,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
@@ -107,7 +107,8 @@
                                       ims,ime, jms,jme, kms,kme,    &
                                       its,ite, jts,jte, kts,kte,    &
                                       id,ktau,ktauc
-      REAL,      INTENT(IN   ) :: dtstep,dtstepc,dx
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
+   REAL,         INTENT(IN   ) :: dtstep,dtstepc,dx
 !
 ! moisture variables
 !
@@ -173,7 +174,7 @@
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (RADM2SORG,RADM2SORG_KPP)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP)
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -194,7 +195,8 @@
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-   CASE (RACMSORG,RACMSORG_KPP)
+   CASE (RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
+! ???? are separate cases needed here for radm2sorg and racmsorg packages ????
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -218,7 +220,7 @@
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
        CALL mosaic_aerchem_driver(                                      &
-            id, ktau, dtstep, ktauc, dtstepc, config_flags,             &
+            id, curr_secs, ktau, dtstep, ktauc, dtstepc, config_flags,  &
             t_phy, rho_phy, p_phy,                                      &
             moist, chem,                                                &
             ids,ide, jds,jde, kds,kde,                                  &
@@ -283,7 +285,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (RADM2SORG, RACMSORG,RADM2SORG_KPP,RACMSORG_KPP)
+   CASE (RADM2SORG,RADM2SORG_AQ,RACMSORG,RACMSORG_AQ,RADM2SORG_KPP,RACMSORG_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &

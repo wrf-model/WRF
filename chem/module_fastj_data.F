@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! Fast-J module: see module_phot_fastj.F for information and terms of use
+! Fast-J module: see module_phot_fastj.F for references and terms of use
 !**********************************************************************************  
 !   file module_fastj_jvcmn.f
 !   based on fastj include file jv_cmn.h

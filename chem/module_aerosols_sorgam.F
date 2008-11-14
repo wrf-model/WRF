@@ -188,7 +188,6 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    INTEGER :: i,j,k,l,debug_level
-
 !
 ! convert advected aerosol variables to ug/m3 from mixing ratio
 ! they will be converted back at the end of this driver
@@ -3935,6 +3934,16 @@ END SUBROUTINE sorgam_depdriver
         dgcor(lcell) = max(dgmin,(cblk(lcell,vcor3)/(cblk(lcell,vcorn)*esc36)) &
           **one3)
 
+! when running with cloudborne aerosol, apply some very mild bounding
+! to avoid unrealistic dg values
+      if (cw_phase > 0) then
+        dgnuc(lcell) = max( dgnuc(lcell), dginin*0.2  )  !  > 0.002 um
+        dgnuc(lcell) = min( dgnuc(lcell), dginin*10.0 )  !  < 0.10  um
+        dgacc(lcell) = max( dgacc(lcell), dginia*0.2  )  !  > 0.014 um
+        dgacc(lcell) = min( dgacc(lcell), dginia*10.0 )  !  < 0.7 um
+        dgcor(lcell) = max( dgcor(lcell), dginic*0.2  )  !  > 0.2 um
+        dgcor(lcell) = min( dgcor(lcell), dginic*10.0 )  ! < 10.0 um
+      end if
 
       END DO
 ! end loop on diameters                              
@@ -6856,7 +6865,10 @@ END SUBROUTINE vdvg
          chem_in_opt,aer_ic_opt, is_aerosol,                         &
          ids,ide, jds,jde, kds,kde,                                  &
          ims,ime, jms,jme, kms,kme,                                  &
-         its,ite, jts,jte, kts,kte                                   )
+         its,ite, jts,jte, kts,kte, config_flags                     )
+
+    USE module_configure,only:  grid_config_rec_type
+
    implicit none
    INTEGER,      INTENT(IN   ) :: chem_in_opt,aer_ic_opt
    INTEGER,      INTENT(IN   ) ::                               &
@@ -6876,6 +6888,9 @@ END SUBROUTINE vdvg
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) ,               &
           INTENT(IN         ) ::                                   &
                      z_at_w
+   TYPE (grid_config_rec_type) , INTENT (in) :: config_flags
+
+
      integer i,j,k,l,ii,jj,kk     
      real tempfac,mwso4,zz
 !    real,dimension(its:ite,kts:kte,jts:jte) :: convfac
@@ -6891,15 +6906,226 @@ END SUBROUTINE vdvg
       REAL m3cor
       DATA splitfac/.98/
       DATA so4vaptoaer/.999/
-      integer iphase,itype
-      integer ll, n, p1st
+
+
+! *** Compute these once and they will all  be saved in COMMON
+        xxlsgn = log(sginin)
+        xxlsga = log(sginia)
+        xxlsgc = log(sginic)
+
+        l2sginin = xxlsgn**2
+        l2sginia = xxlsga**2
+        l2sginic = xxlsgc**2
+
+        en1 = exp(0.125*l2sginin)
+        ea1 = exp(0.125*l2sginia)
+        ec1 = exp(0.125*l2sginic)
+
+        esn04 = en1**4
+        esa04 = ea1**4
+        esc04 = ec1**4
+
+        esn05 = esn04*en1
+        esa05 = esa04*ea1
+
+        esn08 = esn04*esn04
+        esa08 = esa04*esa04
+        esc08 = esc04*esc04
+
+        esn09 = esn04*esn05
+        esa09 = esa04*esa05
+
+        esn12 = esn04*esn04*esn04
+        esa12 = esa04*esa04*esa04
+        esc12 = esc04*esc04*esc04
+
+        esn16 = esn08*esn08
+        esa16 = esa08*esa08
+        esc16 = esc08*esc08
+
+        esn20 = esn16*esn04
+        esa20 = esa16*esa04
+        esc20 = esc16*esc04
+
+        esn24 = esn12*esn12
+        esa24 = esa12*esa12
+        esc24 = esc12*esc12
+
+        esn25 = esn16*esn09
+        esa25 = esa16*esa09
+
+        esn28 = esn20*esn08
+        esa28 = esa20*esa08
+        esc28 = esc20*esc08
+
+
+        esn32 = esn16*esn16
+        esa32 = esa16*esa16
+        esc32 = esc16*esc16
+
+        esn36 = esn16*esn20
+        esa36 = esa16*esa20
+        esc36 = esc16*esc20
+
+        esn49 = esn25*esn20*esn04
+        esa49 = esa25*esa20*esa04
+
+        esn52 = esn16*esn36
+        esa52 = esa16*esa36
+
+        esn64 = esn32*esn32
+        esa64 = esa32*esa32
+        esc64 = esc32*esc32
+
+        esn100 = esn36*esn64
+
+        esnm20 = 1.0/esn20
+        esam20 = 1.0/esa20
+        escm20 = 1.0/esc20
+
+        esnm32 = 1.0/esn32
+        esam32 = 1.0/esa32
+        escm32 = 1.0/esc32
+
+
+        xxm3 = 3.0*xxlsgn/ sqrt2
+! factor used in error function cal
+        nummin_i = facatkn_min*so4fac*aeroconcmin/(dginin**3*esn36)
+
+        nummin_j = facacc_min*so4fac*aeroconcmin/(dginia**3*esa36)
+
+        nummin_c = anthfac*aeroconcmin/(dginic**3*esc36)
+
+! *** Note, DGVEM_I, DGVEM_J, DGVEM_C are for the mass (volume)
+!     size distribution , then
+
+!        vol = (p/6) * density * num * (dgemv_xx**3) *
+!                            exp(- 4.5 * log( sgem_xx)**2 ) )
+!        note minus sign!!
+
+        factnumn = exp(4.5*log(sgem_i)**2)/dgvem_i**3
+        factnuma = exp(4.5*log(sgem_j)**2)/dgvem_j**3
+        factnumc = exp(4.5*log(sgem_c)**2)/dgvem_c**3
+        ccofm = alphsulf*sqrt(pirs*rgasuniv/(2.0*mwh2so4))
+        ccofm_org = alphaorg*sqrt(pirs*rgasuniv/(2.0*mworg))
+        mwso4=96.03
+
+! initialize pointers used by aerosol-cloud-interaction routines
+        call aerosols_sorgam_init_aercld_ptrs( &
+           num_chem, is_aerosol, config_flags )
+        
+
+        pm2_5_dry(its:ite, kts:kte-1, jts:jte)    = 0.
+        pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
+        pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
+
+!
+!
+!  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
+!
+!
+        if(chem_in_opt == 1 ) return
+        do l=p_so4aj,num_chem
+         chem(ims:ime,kms:kme,jms:jme,l)=epsilc
+        enddo
+        chem(ims:ime,kms:kme,jms:jme,p_nu0)=1.e8
+        chem(ims:ime,kms:kme,jms:jme,p_ac0)=1.e8
+        do j=jts,jte
+        jj=min(jde-1,j)
+        do k=kts,kte-1
+        kk=min(kde-1,k)
+        do i=its,ite
+        ii=min(ide-1,i)
+
+!Option for alternate ic's
+        if( aer_ic_opt == AER_IC_DEFAULT ) then
+          chem(i,k,j,p_so4aj)=chem(ii,kk,jj,p_sulf)*CONVFAC(ii,kk,jj)*MWSO4*splitfac*so4vaptoaer
+          chem(i,k,j,p_so4ai)=chem(ii,kk,jj,p_sulf)*CONVFAC(ii,kk,jj)*MWSO4* &
+        (1.-splitfac)*so4vaptoaer
+          chem(i,k,j,p_sulf)=chem(ii,kk,jj,p_sulf)*(1.-so4vaptoaer)
+          chem(i,k,j,p_nh4aj) = 10.E-05
+          chem(i,k,j,p_nh4ai) = 10.E-05
+          chem(i,k,j,p_no3aj) = 10.E-05
+          chem(i,k,j,p_no3ai) = 10.E-05
+          chem(i,k,j,p_naaj)  = 10.E-05
+          chem(i,k,j,p_naai)  = 10.E-05
+          chem(i,k,j,p_claj)  = 10.E-05
+          chem(i,k,j,p_clai)  = 10.E-05
+        elseif( aer_ic_opt == AER_IC_PNNL ) then
+           zz = (z_at_w(ii,k,jj)+z_at_w(ii,k+1,jj))*0.5
+           call sorgam_init_aer_ic_pnnl(   &
+                chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
+        else
+           call wrf_error_fatal(   &
+                "aerosols_sorgam_init: unable to parse aer_ic_opt" )
+        end if
+
+!... i-mode
+      m3nuc = so4fac*chem(i,k,j,p_so4ai) + nh4fac*chem(i,k,j,p_nh4ai) + &
+        no3fac*chem(i,k,j,p_no3ai) +                                    &
+        nafac*chem(i,k,j,p_naai) + clfac*chem(i,k,j,p_clai) +           &
+        orgfac*chem(i,k,j,p_orgaro1i) + &
+        orgfac*chem(i,k,j,p_orgaro2i) + orgfac*chem(i,k,j,p_orgalk1i) + &
+        orgfac*chem(i,k,j,p_orgole1i) + orgfac*chem(i,k,j,p_orgba1i) + &
+        orgfac*chem(i,k,j,p_orgba2i) + orgfac*chem(i,k,j,p_orgba3i) + &
+        orgfac*chem(i,k,j,p_orgba4i) + orgfac*chem(i,k,j,p_orgpai) + &
+        anthfac*chem(i,k,j,p_p25i) + anthfac*chem(i,k,j,p_eci)
+
+!... j-mode
+      m3acc = so4fac*chem(i,k,j,p_so4aj) + nh4fac*chem(i,k,j,p_nh4aj) + &
+        no3fac*chem(i,k,j,p_no3aj) +                                    &
+        nafac*chem(i,k,j,p_naaj) + clfac*chem(i,k,j,p_claj) +           & 
+        orgfac*chem(i,k,j,p_orgaro1j) + &
+        orgfac*chem(i,k,j,p_orgaro2j) + orgfac*chem(i,k,j,p_orgalk1j) + &
+        orgfac*chem(i,k,j,p_orgole1j) + orgfac*chem(i,k,j,p_orgba1j) + &
+        orgfac*chem(i,k,j,p_orgba2j) + orgfac*chem(i,k,j,p_orgba3j) + &
+        orgfac*chem(i,k,j,p_orgba4j) + orgfac*chem(i,k,j,p_orgpaj) + &
+        anthfac*chem(i,k,j,p_p25j) + anthfac*chem(i,k,j,p_ecj)
+
+!...c-mode
+      m3cor = soilfac*chem(i,k,j,p_soila) + seasfac*chem(i,k,j,p_seas) + &
+        anthfac*chem(i,k,j,p_antha)
+
+
+!...NOW CALCULATE INITIAL NUMBER CONCENTRATION
+      chem(i,k,j,p_nu0) = m3nuc/((dginin**3)*esn36)
+
+      chem(i,k,j,p_ac0) = m3acc/((dginia**3)*esa36)
+        
+      chem(i,k,j,p_corn) = m3cor/((dginic**3)*esc36)
+
+      enddo
+      enddo
+      enddo
+
+
+    return
+    END SUBROUTINE aerosols_sorgam_init
+
+
+
+    SUBROUTINE aerosols_sorgam_init_aercld_ptrs(   &
+         num_chem, is_aerosol, config_flags )
+!
+! initialize pointers used by aerosol-cloud-interaction routines
+!
+    USE module_configure,only:  grid_config_rec_type
+    USE module_mosaic_wetscav,only:  initwet
+
+    implicit none
+    INTEGER, INTENT(IN) :: num_chem
+    LOGICAL, INTENT(OUT) :: is_aerosol(num_chem)
+    TYPE (grid_config_rec_type) , INTENT (in) :: config_flags
+
+
+    integer iphase, isize, itype, l, ll, n, p1st
+    REAL dp_meanvol_tmp
+
 
         nphase_aer = 1
 	if(p_so4cwj.ge. param_first_scalar) then
            nphase_aer = 2
 	endif
-        ntype_aer = 3
-	nsize_aer(:)=1
 	ai_phase=-999888777
 	cw_phase=-999888777
 	ci_phase=-999888777
@@ -6912,6 +7138,15 @@ END SUBROUTINE vdvg
 	if(nphase_aer>=4)ci_phase=4
 	if(nphase_aer>=5)cw_phase=5
 	if(nphase_aer>=6)cg_phase=6
+
+! aitken and accum mode have same set of species 
+!    so are treated as isize=1,2 of itype=1
+! coarse mode has different set of species
+!    so is  treated as isize=1 of itype=2
+        ntype_aer = 2
+	nsize_aer(1)=2
+	nsize_aer(2)=1
+
 	msectional = 0
 	maerosolincw = 0
 #if defined ( cw_species_are_in_registry )
@@ -6981,16 +7216,15 @@ END SUBROUTINE vdvg
 	dens_mastercomp_aer( 13) = dens_ec_aer
 	mw_mastercomp_aer(   13) =   mw_ec_aer
 	hygro_mastercomp_aer(13) = hygro_ec_aer
-
 	name_mastercomp_aer( 14) = 'p25'
-	dens_mastercomp_aer( 14) = dens_so4_aer
-	mw_mastercomp_aer(   14) =   mw_so4_aer + mw_nh4_aer
-	hygro_mastercomp_aer(14) = hygro_so4_aer + hygro_nh4_aer
+	dens_mastercomp_aer( 14) = dens_oin_aer
+	mw_mastercomp_aer(   14) =   mw_oin_aer
+	hygro_mastercomp_aer(14) = hygro_oin_aer
 
 	name_mastercomp_aer( 15) = 'anth'
-	dens_mastercomp_aer( 15) = dens_so4_aer
-	mw_mastercomp_aer(   15) =   mw_so4_aer + mw_nh4_aer
-	hygro_mastercomp_aer(15) = hygro_so4_aer + hygro_nh4_aer
+	dens_mastercomp_aer( 15) = dens_oin_aer
+	mw_mastercomp_aer(   15) =   mw_oin_aer
+	hygro_mastercomp_aer(15) = hygro_oin_aer
 
 	name_mastercomp_aer( 16) = 'seas'
 	dens_mastercomp_aer( 16) = dens_seas_aer
@@ -6998,9 +7232,9 @@ END SUBROUTINE vdvg
 	hygro_mastercomp_aer(16) = hygro_seas_aer
 
 	name_mastercomp_aer( 17) = 'soil'
-	dens_mastercomp_aer( 17) = dens_ca_aer
-	mw_mastercomp_aer(   17) =  mw_ca_aer + mw_co3_aer
-	hygro_mastercomp_aer(17) = hygro_ca_aer + hygro_co3_aer
+	dens_mastercomp_aer( 17) = dens_dust_aer
+	mw_mastercomp_aer(   17) =  mw_dust_aer
+	hygro_mastercomp_aer(17) = hygro_dust_aer
 
   	name_mastercomp_aer(18)  = 'sodium'
   	dens_mastercomp_aer(18)  = dens_na_aer
@@ -7012,110 +7246,132 @@ END SUBROUTINE vdvg
   	mw_mastercomp_aer(  19)  =   mw_cl_aer
   	hygro_mastercomp_aer(19) = hygro_cl_aer
 
-	lptr_so4_aer(:,:,:)      = 1
-	lptr_nh4_aer(:,:,:)      = 1
-	lptr_no3_aer(:,:,:)      = 1
-	lptr_na_aer(:,:,:)       = 1
-	lptr_cl_aer(:,:,:)       = 1
-	lptr_orgaro1_aer(:,:,:)  = 1
-	lptr_orgaro2_aer(:,:,:)  = 1
-	lptr_orgalk_aer(:,:,:)  = 1
-	lptr_orgole_aer(:,:,:)  = 1
-	lptr_orgba1_aer(:,:,:)  = 1
-	lptr_orgba2_aer(:,:,:)  = 1
-	lptr_orgba3_aer(:,:,:)  = 1
-	lptr_orgba4_aer(:,:,:)  = 1
-	lptr_orgpa_aer(:,:,:)  = 1
-	lptr_ec_aer(:,:,:)  = 1
-	lptr_p25_aer(:,:,:)  = 1
-	lptr_anth_aer(:,:,:) = 1
-	lptr_seas_aer(:,:,:) = 1
-	lptr_soil_aer(:,:,:) = 1
-	numptr_aer(:,:,:)          = 1
+	lptr_so4_aer(    :,:,:) = 1
+	lptr_nh4_aer(    :,:,:) = 1
+	lptr_no3_aer(    :,:,:) = 1
+	lptr_na_aer(     :,:,:) = 1
+	lptr_cl_aer(     :,:,:) = 1
+	lptr_orgaro1_aer(:,:,:) = 1
+	lptr_orgaro2_aer(:,:,:) = 1
+	lptr_orgalk_aer( :,:,:) = 1
+	lptr_orgole_aer( :,:,:) = 1
+	lptr_orgba1_aer( :,:,:) = 1
+	lptr_orgba2_aer( :,:,:) = 1
+	lptr_orgba3_aer( :,:,:) = 1
+	lptr_orgba4_aer( :,:,:) = 1
+	lptr_orgpa_aer(  :,:,:) = 1
+	lptr_ec_aer(     :,:,:) = 1
+	lptr_p25_aer(    :,:,:) = 1
+	lptr_anth_aer(   :,:,:) = 1
+	lptr_seas_aer(   :,:,:) = 1
+	lptr_soil_aer(   :,:,:) = 1
+	numptr_aer(      :,:,:) = 1
 
-! Accumulation mode
-	ncomp_aer(1) = 16
-      	  lptr_so4_aer(1,1,ai_phase)  = p_so4aj
-      	  lptr_nh4_aer(1,1,ai_phase)  = p_nh4aj
-      	  lptr_no3_aer(1,1,ai_phase)  = p_no3aj
-      	  lptr_na_aer(1,1,ai_phase)   = p_naaj
-      	  lptr_cl_aer(1,1,ai_phase)   = p_claj
-      	  lptr_orgaro1_aer(1,1,ai_phase) = p_orgaro1j
-      	  lptr_orgaro2_aer(1,1,ai_phase) = p_orgaro2j
-      	  lptr_orgalk_aer(1,1,ai_phase) = p_orgalk1j
-      	  lptr_orgole_aer(1,1,ai_phase) = p_orgole1j
-      	  lptr_orgba1_aer(1,1,ai_phase) = p_orgba1j
-      	  lptr_orgba2_aer(1,1,ai_phase) = p_orgba2j
-      	  lptr_orgba3_aer(1,1,ai_phase) = p_orgba3j
-      	  lptr_orgba4_aer(1,1,ai_phase) = p_orgba4j
-      	  lptr_orgpa_aer(1,1,ai_phase) = p_orgpaj
-      	  lptr_ec_aer(1,1,ai_phase) = p_ecj
-      	  lptr_p25_aer(1,1,ai_phase) = p_p25j
-	numptr_aer(1,1,ai_phase)          = p_ac0
+	do_cloudchem_aer(:,:) = .false.
+
+
 ! Aitken mode
-	ncomp_aer(2) = 16
-      	  lptr_so4_aer(1,2,ai_phase)= p_so4ai
-      	  lptr_nh4_aer(1,2,ai_phase) = p_nh4ai
-      	  lptr_no3_aer(1,2,ai_phase) = p_no3ai
-      	  lptr_na_aer(1,2,ai_phase)  = p_naai
-      	  lptr_cl_aer(1,2,ai_phase)  = p_clai
-      	  lptr_orgaro1_aer(1,2,ai_phase) = p_orgaro1i
-      	  lptr_orgaro2_aer(1,2,ai_phase) = p_orgaro2i
-      	  lptr_orgalk_aer(1,2,ai_phase) = p_orgalk1i
-      	  lptr_orgole_aer(1,2,ai_phase) = p_orgole1i
-      	  lptr_orgba1_aer(1,2,ai_phase) = p_orgba1i
-      	  lptr_orgba2_aer(1,2,ai_phase) = p_orgba2i
-      	  lptr_orgba3_aer(1,2,ai_phase) = p_orgba3i
-      	  lptr_orgba4_aer(1,2,ai_phase) = p_orgba4i
-      	  lptr_orgpa_aer(1,2,ai_phase) = p_orgpai
-      	  lptr_ec_aer(1,2,ai_phase) = p_eci
-      	  lptr_p25_aer(1,2,ai_phase) = p_p25i
-	numptr_aer(1,2,ai_phase)          = p_nu0
-! coarse mode
-	ncomp_aer(3) = 3
-          lptr_anth_aer(1,3,ai_phase) = p_antha
-      	  lptr_seas_aer(1,3,ai_phase) = p_seas
-      	  lptr_soil_aer(1,3,ai_phase) = p_soila
-	numptr_aer(1,3,ai_phase)          = p_corn
+	itype = 1
+	isize = 1
+	ncomp_aer(itype) = 16
+	numptr_aer(      isize,itype,ai_phase) = p_nu0
+      	lptr_so4_aer(    isize,itype,ai_phase) = p_so4ai
+      	lptr_nh4_aer(    isize,itype,ai_phase) = p_nh4ai
+      	lptr_no3_aer(    isize,itype,ai_phase) = p_no3ai
+        lptr_na_aer(     isize,itype,ai_phase) = p_naai
+        lptr_cl_aer(     isize,itype,ai_phase) = p_clai
+      	lptr_orgaro1_aer(isize,itype,ai_phase) = p_orgaro1i
+      	lptr_orgaro2_aer(isize,itype,ai_phase) = p_orgaro2i
+      	lptr_orgalk_aer( isize,itype,ai_phase) = p_orgalk1i
+      	lptr_orgole_aer( isize,itype,ai_phase) = p_orgole1i
+      	lptr_orgba1_aer( isize,itype,ai_phase) = p_orgba1i
+      	lptr_orgba2_aer( isize,itype,ai_phase) = p_orgba2i
+      	lptr_orgba3_aer( isize,itype,ai_phase) = p_orgba3i
+      	lptr_orgba4_aer( isize,itype,ai_phase) = p_orgba4i
+      	lptr_orgpa_aer(  isize,itype,ai_phase) = p_orgpai
+      	lptr_ec_aer(     isize,itype,ai_phase) = p_eci
+      	lptr_p25_aer(    isize,itype,ai_phase) = p_p25i
 ! aerosol in cloud water
         if(cw_phase.gt.0)then
+	  numptr_aer(      isize,itype,cw_phase) = p_nu0cw
+      	  lptr_so4_aer(    isize,itype,cw_phase) = p_so4cwi
+      	  lptr_nh4_aer(    isize,itype,cw_phase) = p_nh4cwi
+      	  lptr_no3_aer(    isize,itype,cw_phase) = p_no3cwi
+          lptr_na_aer(     isize,itype,ai_phase) = p_nacwi
+          lptr_cl_aer(     isize,itype,ai_phase) = p_clcwi
+      	  lptr_orgaro1_aer(isize,itype,cw_phase) = p_orgaro1cwi
+      	  lptr_orgaro2_aer(isize,itype,cw_phase) = p_orgaro2cwi
+      	  lptr_orgalk_aer( isize,itype,cw_phase) = p_orgalk1cwi
+      	  lptr_orgole_aer( isize,itype,cw_phase) = p_orgole1cwi
+      	  lptr_orgba1_aer( isize,itype,cw_phase) = p_orgba1cwi
+      	  lptr_orgba2_aer( isize,itype,cw_phase) = p_orgba2cwi
+      	  lptr_orgba3_aer( isize,itype,cw_phase) = p_orgba3cwi
+      	  lptr_orgba4_aer( isize,itype,cw_phase) = p_orgba4cwi
+      	  lptr_orgpa_aer(  isize,itype,cw_phase) = p_orgpacwi
+      	  lptr_ec_aer(     isize,itype,cw_phase) = p_eccwi
+      	  lptr_p25_aer(    isize,itype,cw_phase) = p_p25cwi
+	  do_cloudchem_aer(isize,itype) = .true.
+	endif
+
 ! Accumulation mode
-      	  lptr_so4_aer(1,1,cw_phase)= p_so4cwj
-      	  lptr_nh4_aer(1,1,cw_phase) = p_nh4cwj
-      	  lptr_no3_aer(1,1,cw_phase) = p_no3cwj
-      	  lptr_orgaro1_aer(1,1,cw_phase) = p_orgaro1cwj
-      	  lptr_orgaro2_aer(1,1,cw_phase) = p_orgaro2cwj
-      	  lptr_orgalk_aer(1,1,cw_phase) = p_orgalk1cwj
-      	  lptr_orgole_aer(1,1,cw_phase) = p_orgole1cwj
-      	  lptr_orgba1_aer(1,1,cw_phase) = p_orgba1cwj
-      	  lptr_orgba2_aer(1,1,cw_phase) = p_orgba2cwj
-      	  lptr_orgba3_aer(1,1,cw_phase) = p_orgba3cwj
-      	  lptr_orgba4_aer(1,1,cw_phase) = p_orgba4cwj
-      	  lptr_orgpa_aer(1,1,cw_phase) = p_orgpacwj
-      	  lptr_ec_aer(1,1,cw_phase) = p_eccwj
-      	  lptr_p25_aer(1,1,cw_phase) = p_p25cwj
-	numptr_aer(1,1,cw_phase)          = p_ac0cw
-! Aitken mode
-      	  lptr_so4_aer(1,2,cw_phase)= p_so4cwi
-      	  lptr_nh4_aer(1,2,cw_phase) = p_nh4cwi
-      	  lptr_no3_aer(1,2,cw_phase) = p_no3cwi
-      	  lptr_orgaro1_aer(1,2,cw_phase) = p_orgaro1cwi
-      	  lptr_orgaro2_aer(1,2,cw_phase) = p_orgaro2cwi
-      	  lptr_orgalk_aer(1,2,cw_phase) = p_orgalk1cwi
-      	  lptr_orgole_aer(1,2,cw_phase) = p_orgole1cwi
-      	  lptr_orgba1_aer(1,2,cw_phase) = p_orgba1cwi
-      	  lptr_orgba2_aer(1,2,cw_phase) = p_orgba2cwi
-      	  lptr_orgba3_aer(1,2,cw_phase) = p_orgba3cwi
-      	  lptr_orgba4_aer(1,2,cw_phase) = p_orgba4cwi
-      	  lptr_orgpa_aer(1,2,cw_phase) = p_orgpacwi
-      	  lptr_ec_aer(1,2,cw_phase) = p_eccwi
-      	  lptr_p25_aer(1,2,cw_phase) = p_p25cwi
-	numptr_aer(1,2,cw_phase)          = p_nu0cw
+	itype = 1
+	isize = 2
+	ncomp_aer(itype) = 16
+	numptr_aer(      isize,itype,ai_phase) = p_ac0
+      	lptr_so4_aer(    isize,itype,ai_phase) = p_so4aj
+      	lptr_nh4_aer(    isize,itype,ai_phase) = p_nh4aj
+      	lptr_no3_aer(    isize,itype,ai_phase) = p_no3aj
+        lptr_na_aer(     isize,itype,ai_phase) = p_naaj
+        lptr_cl_aer(     isize,itype,ai_phase) = p_claj
+      	lptr_orgaro1_aer(isize,itype,ai_phase) = p_orgaro1j
+      	lptr_orgaro2_aer(isize,itype,ai_phase) = p_orgaro2j
+      	lptr_orgalk_aer( isize,itype,ai_phase) = p_orgalk1j
+      	lptr_orgole_aer( isize,itype,ai_phase) = p_orgole1j
+      	lptr_orgba1_aer( isize,itype,ai_phase) = p_orgba1j
+      	lptr_orgba2_aer( isize,itype,ai_phase) = p_orgba2j
+      	lptr_orgba3_aer( isize,itype,ai_phase) = p_orgba3j
+      	lptr_orgba4_aer( isize,itype,ai_phase) = p_orgba4j
+      	lptr_orgpa_aer(  isize,itype,ai_phase) = p_orgpaj
+      	lptr_ec_aer(     isize,itype,ai_phase) = p_ecj
+      	lptr_p25_aer(    isize,itype,ai_phase) = p_p25j
+! aerosol in cloud water
+        if(cw_phase.gt.0)then
+          numptr_aer(      isize,itype,cw_phase) = p_ac0cw
+      	  lptr_so4_aer(    isize,itype,cw_phase) = p_so4cwj
+      	  lptr_nh4_aer(    isize,itype,cw_phase) = p_nh4cwj
+      	  lptr_no3_aer(    isize,itype,cw_phase) = p_no3cwj
+          lptr_na_aer(     isize,itype,ai_phase) = p_nacwj
+          lptr_cl_aer(     isize,itype,ai_phase) = p_clcwj
+      	  lptr_orgaro1_aer(isize,itype,cw_phase) = p_orgaro1cwj
+      	  lptr_orgaro2_aer(isize,itype,cw_phase) = p_orgaro2cwj
+      	  lptr_orgalk_aer( isize,itype,cw_phase) = p_orgalk1cwj
+      	  lptr_orgole_aer( isize,itype,cw_phase) = p_orgole1cwj
+      	  lptr_orgba1_aer( isize,itype,cw_phase) = p_orgba1cwj
+      	  lptr_orgba2_aer( isize,itype,cw_phase) = p_orgba2cwj
+      	  lptr_orgba3_aer( isize,itype,cw_phase) = p_orgba3cwj
+      	  lptr_orgba4_aer( isize,itype,cw_phase) = p_orgba4cwj
+      	  lptr_orgpa_aer(  isize,itype,cw_phase) = p_orgpacwj
+      	  lptr_ec_aer(     isize,itype,cw_phase) = p_eccwj
+      	  lptr_p25_aer(    isize,itype,cw_phase) = p_p25cwj
+	  do_cloudchem_aer(isize,itype) = .true.
+	endif
+
 ! coarse mode
-          lptr_anth_aer(1,3,cw_phase) = p_anthcw
-      	  lptr_seas_aer(1,3,cw_phase) = p_seascw
-      	  lptr_soil_aer(1,3,cw_phase) = p_soilcw
-	  numptr_aer(1,3,cw_phase)          = p_corncw
+	itype = 2
+	isize = 1
+	ncomp_aer(itype) = 3
+	numptr_aer(      isize,itype,ai_phase) = p_corn
+        lptr_anth_aer(   isize,itype,ai_phase) = p_antha
+      	lptr_seas_aer(   isize,itype,ai_phase) = p_seas
+      	lptr_soil_aer(   isize,itype,ai_phase) = p_soila
+! aerosol in cloud water
+        if(cw_phase.gt.0)then
+	  numptr_aer(      isize,itype,cw_phase) = p_corncw
+          lptr_anth_aer(   isize,itype,cw_phase) = p_anthcw
+      	  lptr_seas_aer(   isize,itype,cw_phase) = p_seascw
+      	  lptr_soil_aer(   isize,itype,cw_phase) = p_soilcw
+! no cloudchem for coarse mode because it has no so4/nh4/no3 species
+	  do_cloudchem_aer(isize,itype) = .false.
 	endif
 
 	massptr_aer(:,:,:,:) = -999888777
@@ -7234,16 +7490,15 @@ END SUBROUTINE vdvg
 	end do ! size
 	end do ! type
 	end do ! phase
-9320	format( a, i1, a, 10x )
 
-        waterptr_aer(:,:) = 0.
+        waterptr_aer(:,:) = 0
 
 	do itype=1,ntype_aer
-	do l=1,ncomp_aer(itype)
-	   dens_aer(l,itype) = dens_mastercomp_aer(mastercompptr_aer(l,itype))
-	   mw_aer(l,itype) = mw_mastercomp_aer(mastercompptr_aer(l,itype))
-	   hygro_aer(l,itype) = hygro_mastercomp_aer(mastercompptr_aer(l,itype))
-	   name_aer(l,itype) = name_mastercomp_aer(mastercompptr_aer(l,itype))
+	do ll=1,ncomp_aer(itype)
+	   dens_aer(ll,itype) = dens_mastercomp_aer(mastercompptr_aer(ll,itype))
+	   mw_aer(ll,itype) = mw_mastercomp_aer(mastercompptr_aer(ll,itype))
+	   hygro_aer(ll,itype) = hygro_mastercomp_aer(mastercompptr_aer(ll,itype))
+	   name_aer(ll,itype) = name_mastercomp_aer(mastercompptr_aer(ll,itype))
 	end do
 	end do
 
@@ -7259,218 +7514,70 @@ END SUBROUTINE vdvg
 	end do ! type
 	end do ! phase
         
-        pm2_5_dry(its:ite, kts:kte-1, jts:jte)    = 0.
-        pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
-        pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
-
-! *** Compute these once and they will all  be saved in COMMON
-        xxlsgn = log(sginin)
-        xxlsga = log(sginia)
-        xxlsgc = log(sginic)
-
-        l2sginin = xxlsgn**2
-        l2sginia = xxlsga**2
-        l2sginic = xxlsgc**2
-
-        en1 = exp(0.125*l2sginin)
-        ea1 = exp(0.125*l2sginia)
-        ec1 = exp(0.125*l2sginic)
-
-        dhi_sect(1,1)=1.e2*dginin*exp(l2sginin)
-        dlo_sect(1,1)=1.e2*dginin/exp(l2sginin)
-        dhi_sect(1,2)=1.e2*dginia*exp(l2sginia)
-        dlo_sect(1,2)=1.e2*dginia/exp(l2sginia)
-        dhi_sect(1,3)=1.e2*dginic*exp(l2sginic)
-        dlo_sect(1,3)=1.e2*dginic/exp(l2sginic)
-
-        sigmag_aer(1,1)=sginin
-        sigmag_aer(1,2)=sginia
-        sigmag_aer(1,3)=sginic
-
-        esn04 = en1**4
-        esa04 = ea1**4
-        esc04 = ec1**4
-
-        esn05 = esn04*en1
-        esa05 = esa04*ea1
-
-        esn08 = esn04*esn04
-        esa08 = esa04*esa04
-        esc08 = esc04*esc04
-
-        esn09 = esn04*esn05
-        esa09 = esa04*esa05
-
-        esn12 = esn04*esn04*esn04
-        esa12 = esa04*esa04*esa04
-        esc12 = esc04*esc04*esc04
-
-        esn16 = esn08*esn08
-        esa16 = esa08*esa08
-        esc16 = esc08*esc08
-
-        esn20 = esn16*esn04
-        esa20 = esa16*esa04
-        esc20 = esc16*esc04
-
-        esn24 = esn12*esn12
-        esa24 = esa12*esa12
-        esc24 = esc12*esc12
-
-        esn25 = esn16*esn09
-        esa25 = esa16*esa09
-
-        esn28 = esn20*esn08
-        esa28 = esa20*esa08
-        esc28 = esc20*esc08
-
-
-        esn32 = esn16*esn16
-        esa32 = esa16*esa16
-        esc32 = esc16*esc16
-
-        esn36 = esn16*esn20
-        esa36 = esa16*esa20
-        esc36 = esc16*esc20
-
-        esn49 = esn25*esn20*esn04
-        esa49 = esa25*esa20*esa04
-
-        esn52 = esn16*esn36
-        esa52 = esa16*esa36
-
-        esn64 = esn32*esn32
-        esa64 = esa32*esa32
-        esc64 = esc32*esc32
-
-        esn100 = esn36*esn64
-
-        esnm20 = 1.0/esn20
-        esam20 = 1.0/esa20
-        escm20 = 1.0/esc20
-
-        esnm32 = 1.0/esn32
-        esam32 = 1.0/esa32
-        escm32 = 1.0/esc32
-
-
-        xxm3 = 3.0*xxlsgn/ sqrt2
-! factor used in error function cal
-        nummin_i = facatkn_min*so4fac*aeroconcmin/(dginin**3*esn36)
-
-        nummin_j = facacc_min*so4fac*aeroconcmin/(dginia**3*esa36)
-
-        nummin_c = anthfac*aeroconcmin/(dginic**3*esc36)
-
-! *** Note, DGVEM_I, DGVEM_J, DGVEM_C are for the mass (volume)
-!     size distribution , then
-
-!        vol = (p/6) * density * num * (dgemv_xx**3) *
-!                            exp(- 4.5 * log( sgem_xx)**2 ) )
-!        note minus sign!!
-
-        factnumn = exp(4.5*log(sgem_i)**2)/dgvem_i**3
-        factnuma = exp(4.5*log(sgem_j)**2)/dgvem_j**3
-        factnumc = exp(4.5*log(sgem_c)**2)/dgvem_c**3
-        ccofm = alphsulf*sqrt(pirs*rgasuniv/(2.0*mwh2so4))
-        ccofm_org = alphaorg*sqrt(pirs*rgasuniv/(2.0*mworg))
-        mwso4=96.03
+! for sectional
+!    the dhi/dlo_sect are the upper/lower bounds for 
+!       mean-volume diameter for a section/bin
+! for modal
+!    they should be set to reasonable upper/lower
+!       bounds for mean-volume diameters of each modes
+!    they are primarily used to put reasonable bounds
+!       on number (in relation to mass/volume)
+!    the dcen_sect are used by initwet for the impaction scavenging
+!       lookup tables, and should represent a "base" mean-volume diameter
+! dp_meanvol_tmp (below) is the made-sorgam default initial value 
+!    for mean-volume diameter (in cm)
+! terminology:  (pi/6) * (mean-volume diameter)**3 ==
+!	(volume mixing ratio of section/mode)/(number mixing ratio)
 !
-!
-!  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
-!
-!
-        if(chem_in_opt == 1 ) return
-        do l=p_so4aj,num_chem
-         chem(ims:ime,kms:kme,jms:jme,l)=epsilc
-        enddo
-        chem(ims:ime,kms:kme,jms:jme,p_nu0)=1.e8
-        chem(ims:ime,kms:kme,jms:jme,p_ac0)=1.e8
-        do j=jts,jte
-        jj=min(jde-1,j)
-        do k=kts,kte-1
-        kk=min(kde-1,k)
-        do i=its,ite
-        ii=min(ide-1,i)
+        dhi_sect(:,:) = 0.0
+        dlo_sect(:,:) = 0.0
 
-!Option for alternate ic's
-        if( aer_ic_opt == AER_IC_DEFAULT ) then
-          chem(i,k,j,p_so4aj)=chem(ii,kk,jj,p_sulf)*CONVFAC(ii,kk,jj)*MWSO4*splitfac*so4vaptoaer
-          chem(i,k,j,p_so4ai)=chem(ii,kk,jj,p_sulf)*CONVFAC(ii,kk,jj)*MWSO4* &
-        (1.-splitfac)*so4vaptoaer
-          chem(i,k,j,p_sulf)=chem(ii,kk,jj,p_sulf)*(1.-so4vaptoaer)
-          chem(i,k,j,p_nh4aj) = 10.E-05
-          chem(i,k,j,p_nh4ai) = 10.E-05
-          chem(i,k,j,p_no3aj) = 10.E-05
-          chem(i,k,j,p_no3ai) = 10.E-05
-          chem(i,k,j,p_naaj)  = 10.E-05
-          chem(i,k,j,p_naai)  = 10.E-05
-          chem(i,k,j,p_claj)  = 10.E-05
-          chem(i,k,j,p_clai)  = 10.E-05
-        elseif( aer_ic_opt == AER_IC_PNNL ) then
-           zz = (z_at_w(ii,k,jj)+z_at_w(ii,k+1,jj))*0.5
-           call sorgam_init_aer_ic_pnnl(   &
-                chem, zz, i,k,j, ims,ime,jms,jme,kms,kme )
-        else
-           call wrf_error_fatal(   &
-                "aerosols_sorgam_init: unable to parse aer_ic_opt" )
-        end if
+        itype = 1
+        isize = 1
+        sigmag_aer(isize,itype) = sginin ! aitken
+        dp_meanvol_tmp = 1.0e2*dginin*exp(1.5*l2sginin) ! aitken
+        dcen_sect(isize,itype) = dp_meanvol_tmp
+        dhi_sect(isize,itype)  = dp_meanvol_tmp*4.0
+        dlo_sect(isize,itype)  = dp_meanvol_tmp/4.0
 
-!... i-mode
-      m3nuc = so4fac*chem(i,k,j,p_so4ai) + nh4fac*chem(i,k,j,p_nh4ai) + &
-        no3fac*chem(i,k,j,p_no3ai) +                                    &
-        nafac*chem(i,k,j,p_naai) + clfac*chem(i,k,j,p_clai) +           &
-        orgfac*chem(i,k,j,p_orgaro1i) + &
-        orgfac*chem(i,k,j,p_orgaro2i) + orgfac*chem(i,k,j,p_orgalk1i) + &
-        orgfac*chem(i,k,j,p_orgole1i) + orgfac*chem(i,k,j,p_orgba1i) + &
-        orgfac*chem(i,k,j,p_orgba2i) + orgfac*chem(i,k,j,p_orgba3i) + &
-        orgfac*chem(i,k,j,p_orgba4i) + orgfac*chem(i,k,j,p_orgpai) + &
-        anthfac*chem(i,k,j,p_p25i) + anthfac*chem(i,k,j,p_eci)
+        itype = 1
+        isize = 2
+        sigmag_aer(isize,itype) = sginia ! accum
+        dp_meanvol_tmp = 1.0e2*dginia*exp(1.5*l2sginia) ! accum 
+        dcen_sect(isize,itype) = dp_meanvol_tmp
+        dhi_sect(isize,itype)  = dp_meanvol_tmp*4.0
+        dlo_sect(isize,itype)  = dp_meanvol_tmp/4.0
 
-!... j-mode
-      m3acc = so4fac*(chem(i,k,j,p_so4aj)) + nh4fac*(chem(i,k,j,p_nh4aj)) + &
-        no3fac*(chem(i,k,j,p_no3aj)) +                                      &
-        nafac*chem(i,k,j,p_naaj) + clfac*chem(i,k,j,p_claj) +           & 
-        orgfac*(chem(i,k,j,p_orgaro1j)) + &
-        orgfac*(chem(i,k,j,p_orgaro2j)) + orgfac*(chem(i,k,j,p_orgalk1j)) + &
-        orgfac*(chem(i,k,j,p_orgole1j)) + orgfac*(chem(i,k,j,p_orgba1j)) + &
-        orgfac*(chem(i,k,j,p_orgba2j)) + orgfac*(chem(i,k,j,p_orgba3j)) + &
-        orgfac*(chem(i,k,j,p_orgba4j)) + orgfac*(chem(i,k,j,p_orgpaj)) + &
-        anthfac*(chem(i,k,j,p_p25j)) + anthfac*(chem(i,k,j,p_ecj))
+        itype = 2
+        isize = 1
+        sigmag_aer(isize,itype) = sginic ! coarse
+        dp_meanvol_tmp = 1.0e2*dginic*exp(1.5*l2sginic) ! coarse
+        dcen_sect(isize,itype) = dp_meanvol_tmp
+        dhi_sect(isize,itype)  = dp_meanvol_tmp*4.0
+        dlo_sect(isize,itype)  = dp_meanvol_tmp/4.0
 
-!...c-mode
-      m3cor = soilfac*chem(i,k,j,p_soila) + seasfac*chem(i,k,j,p_seas) + &
-        anthfac*chem(i,k,j,p_antha)
+        do itype = 1, ntype_aer
+        do isize = 1, nsize_aer(itype)
+           volumcen_sect(isize,itype) = (pirs/6.0)*(dcen_sect(isize,itype)**3)
+           volumlo_sect(isize,itype)  = (pirs/6.0)*(dlo_sect(isize,itype)**3)
+           volumhi_sect(isize,itype)  = (pirs/6.0)*(dhi_sect(isize,itype)**3)
+        end do
+        end do
 
 
-!...NOW CALCULATE INITIAL NUMBER CONCENTRATION
-      chem(i,k,j,p_nu0) = m3nuc/((dginin**3)*esn36)
+! do initialization of the impaction/interception scavenging 
+! lookup tables
+        call initwet(   &
+	    ntype_aer, nsize_aer, ncomp_aer,   &
+	    massptr_aer, dens_aer, numptr_aer,           &
+	    maxd_acomp, maxd_asize,maxd_atype, maxd_aphase,   &
+	    dcen_sect, sigmag_aer, &
+	    waterptr_aer, dens_water_aer, &
+	    scavimptblvol, scavimptblnum, nimptblgrow_mind,   &
+	    nimptblgrow_maxd, dlndg_nimptblgrow )
 
-      chem(i,k,j,p_ac0) = m3acc/((dginia**3)*esa36)
-        
-      chem(i,k,j,p_corn) = m3cor/((dginic**3)*esc36)
+    END SUBROUTINE aerosols_sorgam_init_aercld_ptrs
 
-!jdf, added if statement, don't want to overide specified values for PNNL case
-        if( aer_ic_opt == AER_IC_DEFAULT ) then
-          chem(i,k,j,p_so4aj)=chem(i,k,j,p_so4aj)
-          chem(i,k,j,p_so4ai)=chem(i,k,j,p_so4ai)
-          chem(i,k,j,p_nh4aj) = 10.E-05
-          chem(i,k,j,p_nh4ai) = 10.E-05
-          chem(i,k,j,p_no3aj) = 10.E-05
-          chem(i,k,j,p_no3ai) = 10.E-05
-          chem(i,k,j,p_naaj)  = 10.E-05
-          chem(i,k,j,p_naai)  = 10.E-05
-          chem(i,k,j,p_claj)  = 10.E-05
-          chem(i,k,j,p_clai)  = 10.E-05
-        endif
-!jdf
-        enddo
-        enddo
-        enddo
-
-
-    return
-    END SUBROUTINE aerosols_sorgam_init
 
 !****************************************************************
 !                                                               *
@@ -7488,9 +7595,9 @@ END SUBROUTINE vdvg
 !                                                               *
 !****************************************************************
     SUBROUTINE sorgam_init_aer_ic_pnnl(                  &
-         chem, z, i,k,j, ims,ime, jms,jme, kms,kme              )
+         chem, z, i,k,j, ims,ime, jms,jme, kms,kme )
 
-      USE module_configure,only:num_chem
+      USE module_configure,only:  num_chem, grid_config_rec_type
       implicit none
 
       INTEGER,INTENT(IN   ) :: i,k,j,                           &
@@ -7633,13 +7740,15 @@ END SUBROUTINE vdvg
       chem(i,k,j,p_orgba4i)  = conmin
       chem(i,k,j,p_seas)     = mult*1.75
 
+
     END SUBROUTINE sorgam_init_aer_ic_pnnl
 
 !------------------------------------------------------------------------
 SUBROUTINE sorgam_addemiss(                                             &
-     dtstep, u10, v10, alt, dz8w, xland, chem,                          &
-     emis_ant,                                                          &
-     seasalt_emiss_active,kemit,                                        &
+     id, dtstep, u10, v10, alt, dz8w, xland, chem,                      &
+     slai,ust,smois,ivgtyp,isltyp,                                      &
+     emis_ant,dust_emiss_active,                                        &
+     seasalt_emiss_active,kemit,num_soil_layers,                        &
      ids,ide, jds,jde, kds,kde,                                         &
      ims,ime, jms,jme, kms,kme,                                         &
      its,ite, jts,jte, kts,kte                                          )
@@ -7653,6 +7762,7 @@ SUBROUTINE sorgam_addemiss(                                             &
   USE module_state_description, only:  num_chem
 
   INTEGER,      INTENT(IN   ) :: seasalt_emiss_active, kemit,           &
+                                 dust_emiss_active,num_soil_layers,id,  &
                                  ids,ide, jds,jde, kds,kde,             &
                                  ims,ime, jms,jme, kms,kme,             &
                                  its,ite, jts,jte, kts,kte
@@ -7676,7 +7786,11 @@ SUBROUTINE sorgam_addemiss(                                             &
 
   REAL,  DIMENSION( ims:ime , jms:jme ),                                &
        INTENT(IN   ) ::                                                 &
-       u10, v10, xland
+       u10, v10, xland, slai, ust
+  INTEGER,  DIMENSION( ims:ime , jms:jme ),                             &
+       INTENT(IN   ) ::   ivgtyp, isltyp
+  REAL, DIMENSION( ims:ime, num_soil_layers, jms:jme ),    &
+       INTENT(INOUT) ::   smois
 
 ! Local variables...
   real, dimension(its:ite,kts:kemit,jts:jte) :: factor
@@ -7776,6 +7890,15 @@ SUBROUTINE sorgam_addemiss(                                             &
 !          ims,ime, jms,jme, kms,kme,                             &
 !          its,ite, jts,jte, kts,kte                              )
   end if
+  if( dust_emiss_active == 1 ) then
+      call sorgam_dust_emiss(                                     &
+           slai, ust, smois, ivgtyp, isltyp,                      &
+           id, dtstep, u10, v10, alt, dz8w,                       &
+           xland, num_soil_layers, chem,                          &
+           ids,ide, jds,jde, kds,kde,                             &
+           ims,ime, jms,jme, kms,kme,                             &
+           its,ite, jts,jte, kts,kte                              )
+  end if
 
 END SUBROUTINE sorgam_addemiss
 
@@ -7820,23 +7943,44 @@ SUBROUTINE sorgam_seasalt_emiss(                                        &
     integer :: p1st
 
     real :: dum, dumdlo, dumdhi, dumoceanfrac, dumspd10
-    real :: factaa, factbb
+    real :: factaa, factbb, fraccl, fracna
 
-    real :: ssemfact_numb
-    real :: ssemfact_mass
+    real :: ssemfact_numb_i, ssemfact_numb_j, ssemfact_numb_c
+    real :: ssemfact_mass_i, ssemfact_mass_j, ssemfact_mass_c
 
 
-!   compute emissions factors for the coarse mode (2.5-10 um)
-!   and setup in units of cm
-    dumdlo = 2.5e-4
-    dumdhi = 10e-4
-    call seasalt_emitfactors_1bin( -99, dumdlo, dumdhi,   &
-         ssemfact_numb, dum, ssemfact_mass )
+!   Compute emissions factors for the Aitken mode...
+!   Nope, we won't because the parameterization is only valid down to
+!   0.1 microns.
+!   Setup in units of cm.
+!    dumdlo = 0.039e-4
+!    dumdhi = 0.078e-4
+    ssemfact_numb_i = 0.
+    ssemfact_mass_i = 0.
 
-!   convert mass emissions factor from (g/m2/s) to (ug/m2/s)
-    ssemfact_mass = ssemfact_mass*1.0e6
+!   Compute emissions factors for the accumulation mode...
+!   Potentially, we could go down to 0.078 microns to match the bin
+!   boundary for MOSAIC, but MOSAIC is capped at 0.1 too. The upper end
+!   has been chosen to match the MOSAIC bin boundary closest to two
+!   standard deviations from the default bin mean diameter for the coarse
+!   mode.
+    dumdlo = 0.1e-4
+    dumdhi = 1.250e-4
+    call seasalt_emitfactors_1bin( 1, dumdlo, dumdhi,   &
+         ssemfact_numb_j, dum, ssemfact_mass_j )
 
-!   loop over i,j and apply seasalt emissions
+!   Compute emissions factors for the coarse mode...
+    dumdlo = 1.25e-4
+    dumdhi = 10.0e-4
+    call seasalt_emitfactors_1bin( 1, dumdlo, dumdhi,   &
+         ssemfact_numb_c, dum, ssemfact_mass_c )
+
+!   Convert mass emissions factor from (g/m2/s) to (ug/m2/s)
+    ssemfact_mass_i = ssemfact_mass_i*1.0e6
+    ssemfact_mass_j = ssemfact_mass_j*1.0e6
+    ssemfact_mass_c = ssemfact_mass_c*1.0e6
+
+!   Loop over i,j and apply seasalt emissions
     k = kts
     do j = jts, jte
     do i = its, ite
@@ -7858,13 +8002,426 @@ SUBROUTINE sorgam_seasalt_emiss(                                        &
        factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
        factbb = factaa * dumspd10
 
-       chem(i,k,j,p_seas) = chem(i,k,j,p_seas) +   &
-                            factbb * ssemfact_mass 
+!   Apportion seasalt mass emissions assumming that seasalt is pure NaCl
+       fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
+       fraccl = 1.0 - fracna
 
+!   Add the emissions into the chem array...
+       chem(i,k,j,p_naai) = chem(i,k,j,p_naai) +   &
+                            factbb * ssemfact_mass_i * fracna
+       chem(i,k,j,p_clai) = chem(i,k,j,p_clai) +   &
+                            factbb * ssemfact_mass_i * fraccl
+       chem(i,k,j,p_nu0)  = chem(i,k,j,p_nu0) +   &
+                            factbb * ssemfact_numb_i
+
+       chem(i,k,j,p_naaj) = chem(i,k,j,p_naaj) +   &
+                            factbb * ssemfact_mass_j * fracna
+       chem(i,k,j,p_claj) = chem(i,k,j,p_claj) +   &
+                            factbb * ssemfact_mass_j * fraccl
+       chem(i,k,j,p_ac0)  = chem(i,k,j,p_ac0) +   &
+                            factbb * ssemfact_numb_j
+
+       chem(i,k,j,p_seas) = chem(i,k,j,p_seas) +   &
+                            factbb * ssemfact_mass_c
        chem(i,k,j,p_corn) = chem(i,k,j,p_corn) +   &
-                            factbb * ssemfact_numb
+                            factbb * ssemfact_numb_c
     end do !i
     end do !j
 END SUBROUTINE sorgam_seasalt_emiss
+!----------------------------------------------------------------------
+
+   subroutine sorgam_dust_emiss(  slai,ust, smois, ivgtyp, isltyp,         &
+               id, dtstep, u10, v10, alt, dz8w, xland, num_soil_layers,    &
+               chem,                                                       &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+!
+! adds dust emissions for mosaic aerosol species (i.e. emission tendencies
+! over time dtstep are applied to the aerosol mixing ratios)
+!
+! This is a simple dust scheme based on Shaw et al. (2008) to appear in
+! Atmospheric Environment, recoded by Jerome Fast
+!
+! NOTE: 
+! 1) This version only works with the 8-bin version of MOSAIC.
+! 2) Dust added to MOSAIC's other inorganic specie, OIN.  If Ca and CO3 are 
+!    activated in the Registry, a small fraction also added to Ca and CO3.
+! 3) The main departure from Shaw et al., is now alphamask is computed since
+!    the land-use categories in that paper and in WRF differ.  WRF currently 
+!    does not have that many land-use categories and adhoc assumptions had to
+!    be made. This version was tested for Mexico in the dry season.  The main
+!    land-use categories in WRF that are likely dust sources are grass, shrub,
+!    and savannna (that WRF has in the desert regions of NW Mexico).  Having
+!    dust emitted from these types for other locations and other times of the
+!    year is not likely to be valid.
+! 4) An upper bound on ustar was placed because the surface parameterizations
+!    in WRF can produce unrealistically high values that lead to very high
+!    dust emission rates.
+! 5) Other departures' from Shaw et al. noted below, but are probably not as
+!    important as 2) and 3).
+!
+
+   USE module_configure, only:  grid_config_rec_type
+   USE module_state_description, only:  num_chem, param_first_scalar
+   USE module_data_mosaic_asect
+
+   IMPLICIT NONE
+
+!  TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER,      INTENT(IN   ) :: id,num_soil_layers,                      &
+                                  ids,ide, jds,jde, kds,kde,               &
+                                  ims,ime, jms,jme, kms,kme,               &
+                                  its,ite, jts,jte, kts,kte
+
+   REAL, INTENT(IN   ) ::    dtstep
+
+! 10-m wind speed components (m/s)
+   REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
+          INTENT(IN   ) ::   u10, v10, xland, slai, ust
+   INTEGER,  DIMENSION( ims:ime , jms:jme ),                               &
+          INTENT(IN   ) ::   ivgtyp, isltyp
+
+! trace species mixing ratios (aerosol mass = ug/kg; number = #/kg)
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+         INTENT(INOUT ) ::   chem
+
+! alt  = 1.0/(dry air density) in (m3/kg)
+! dz8w = layer thickness in (m)
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
+          INTENT(IN   ) ::   alt, dz8w
+
+   REAL, DIMENSION( ims:ime, num_soil_layers, jms:jme ) ,     &
+          INTENT(INOUT) ::   smois
+
+! local variables
+        integer i, j, k, l, l_oin, l_ca, l_co3, n, ii
+        integer iphase, itype, izob
+        integer p1st
+
+        real dum, dumdlo, dumdhi, dumlandfrac, dumspd10
+        real factaa, factbb, fracoin, fracca, fracco3, fractot
+        real ustart, ustar1, ustart0
+        real alphamask, f8, f50, f51, f52, wetfactor, sumdelta, ftot
+        real smois_grav, wp, pclay
+        real :: beta(4,7)
+        real :: gamma(4), delta(4)
+        real :: sz(8)
+        real :: dustflux, densdust, mass1part
+        real :: dp_meanvol_tmp
+!
+! from Nickovic et al., JGR, 2001 and Shaw et al. 2007
+! beta: fraction of clay, small silt, large silt, and sand correcsponding to Zobler class (7)
+! beta (1,*) for 0.5-1 um
+! beta (2,*) for 1-10 um
+! beta (3,*) for 10-25 um
+! beta (4,*) for 25-50 um
+!
+        beta(1,1)=0.12
+        beta(2,1)=0.04
+        beta(3,1)=0.04
+        beta(4,1)=0.80
+        beta(1,2)=0.34
+        beta(2,2)=0.28
+        beta(3,2)=0.28
+        beta(4,2)=0.10
+        beta(1,3)=0.45
+        beta(2,3)=0.15
+        beta(3,3)=0.15
+        beta(4,3)=0.25
+        beta(1,4)=0.12
+        beta(2,4)=0.09
+        beta(3,4)=0.09
+        beta(4,4)=0.70
+        beta(1,5)=0.40
+        beta(2,5)=0.05
+        beta(3,5)=0.05
+        beta(4,5)=0.50
+        beta(1,6)=0.34
+        beta(2,6)=0.18
+        beta(3,6)=0.18
+        beta(4,6)=0.30
+        beta(1,7)=0.22
+        beta(2,7)=0.09
+        beta(3,7)=0.09
+        beta(4,7)=0.60
+        gamma(1)=0.08
+        gamma(2)=1.00
+        gamma(3)=1.00
+        gamma(4)=0.12
+!
+! * Mass fractions for each size bin. These values were recommended by 
+!   Natalie Mahowold, with bins 7 and 8 the same as bins 3 and 4 from CAM.
+! * Changed slightly since Natelie's estimates do not add up to 1.0
+! * This would need to be made more generic for other bin sizes.
+!       sz(1)=0
+!       sz(2)=1.78751e-06
+!       sz(3)=0.000273786
+!       sz(4)=0.00847978
+!       sz(5)=0.056055
+!       sz(6)=0.0951896
+!       sz(7)=0.17
+!       sz(8)=0.67
+        sz(1)=0.0
+        sz(2)=0.0
+        sz(3)=0.0005
+        sz(4)=0.0095
+        sz(5)=0.03
+        sz(6)=0.10
+        sz(7)=0.18
+        sz(8)=0.68
+
+!   for now just do itype=1
+        itype = 1
+        iphase = ai_phase
+
+!   loop over i,j and apply dust emissions
+        k = kts
+        do 1830 j = jts, jte
+        do 1820 i = its, ite
+
+    if( xland(i,j) > 1.5 ) cycle
+
+! compute wind speed anyway, even though ustar is used below
+
+        dumlandfrac = 1.
+        dumspd10=(u10(i,j)*u10(i,j) + v10(i,j)*v10(i,j))**(0.5)
+        if(dumspd10 >= 5.0) then
+           dumspd10 = dumlandfrac* &
+         ( dumspd10*dumspd10*(dumspd10-5.0))
+         else
+            dumspd10=0.
+         endif
+
+! part1 - compute vegetation mask
+!
+! * f8, f50, f51, f52 refer to vegetation classes from the Olsen categories
+!   for desert, sand desert, grass aemi-desert, and shrub semi-desert
+! * in WRF, vegetation types 7, 8 and 10 are grassland, shrubland, and savanna
+!   that are dominate types in Mexico and probably have some erodable surface
+!   during the dry season
+! * currently modified these values so that only a small fraction of cell
+!   area is erodable
+! * these values are highly tuneable!
+
+         alphamask=0.001
+         if (ivgtyp(i,j) .eq. 7) then
+           f8=0.005
+           f50=0.00
+           f51=0.10
+           f52=0.00
+           alphamask=(f8+f50)*1.0+(f51+f52)*0.5
+         endif
+         if (ivgtyp(i,j) .eq. 8) then
+           f8=0.010
+           f50=0.00
+           f51=0.00
+           f52=0.15
+           alphamask=(f8+f50)*1.0+(f51+f52)*0.5
+         endif
+         if (ivgtyp(i,j) .eq. 10) then
+           f8=0.00
+           f50=0.00
+           f51=0.01
+           f52=0.00
+           alphamask=(f8+f50)*1.0+(f51+f52)*0.5
+         endif
+
+! part2 - zobler
+! 
+! * in Shaw's paper, dust is computed for 4 size ranges:
+!   0.5-1 um 
+!    1-10 um  
+!   10-25 um  
+!   25-50 um
+! * Shaw's paper also accounts for sub-grid variability in soil
+!   texture, but here we just assume the same soil texture for each
+!   grid cell
+! * since MOSAIC is currently has a maximum size range up to 10 um,
+!   neglect upper 2 size ranges and lowest size range (assume small)
+! * map WRF soil classes arbitrarily to Zolber soil textural classes
+! * skip dust computations for WRF soil classes greater than 13, i.e. 
+!   do not compute dust over water, bedrock, and other surfaces
+! * should be skipping for water surface at this point anyway
+!
+         izob=0
+         if(isltyp(i,j).eq.1) izob=1
+         if(isltyp(i,j).eq.2) izob=1
+         if(isltyp(i,j).eq.3) izob=4
+         if(isltyp(i,j).eq.4) izob=2
+         if(isltyp(i,j).eq.5) izob=2
+         if(isltyp(i,j).eq.6) izob=2
+         if(isltyp(i,j).eq.7) izob=7
+         if(isltyp(i,j).eq.8) izob=2
+         if(isltyp(i,j).eq.9) izob=6
+         if(isltyp(i,j).eq.10) izob=5
+         if(isltyp(i,j).eq.11) izob=2
+         if(isltyp(i,j).eq.12) izob=3
+         if(isltyp(i,j).ge.13) izob=0
+         if(izob.eq.0) goto 1840
+!
+! part3 - dustprod
+!
+         do ii=1,4
+           delta(ii)=0.0
+         enddo
+         sumdelta=0.0
+         do ii=1,4
+           delta(ii)=beta(ii,izob)*gamma(ii)
+           if(ii.lt.4) then
+             sumdelta=sumdelta+delta(ii)
+           endif
+         enddo
+         do ii=1,4
+           delta(ii)=delta(ii)/sumdelta
+         enddo
+
+! part4 - wetness
+!
+! * assume dry for now, have passed in soil moisture to this routine
+!   but needs to be included here
+! * wetfactor less than 1 would reduce dustflux
+! * convert model soil moisture (m3/m3) to gravimetric soil moisture
+!   (mass of water / mass of soil in %) assuming a constant density 
+!   for soil
+         pclay=beta(1,izob)*100.
+         wp=0.0014*pclay*pclay+0.17*pclay
+         smois_grav=(smois(i,1,j)/2.6)*100.
+         if(smois_grav.gt.wp) then
+           wetfactor=sqrt(1.0+1.21*(smois_grav-wp)**0.68)
+         else
+           wetfactor=1.0
+         endif
+!        wetfactor=1.0
+
+! part5 - dustflux
+! lower bound on ustar = 20 cm/s as in Shaw et al, but set upper
+! bound to 100 cm/s
+
+         ustar1=ust(i,j)*100.0
+         if(ustar1.gt.100.0) ustar1=100.0
+         ustart0=20.0
+         ustart=ustart0*wetfactor
+         if(ustar1.le.ustart) then
+           dustflux=0.0
+         else
+           dustflux=1.0e-14*(ustar1**4)*(1.0-(ustart/ustar1))
+         endif
+         dustflux=dustflux*10.0
+! units kg m-2 s-1
+         ftot=0.0
+         do ii=1,2
+           ftot=ftot+dustflux*alphamask*delta(ii)
+         enddo
+! convert to ug m-2 s-1
+         ftot=ftot*1.0e+09
+
+!   apportion other inorganics only
+         factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
+         factbb = factaa * ftot
+         fracoin = 1.00
+!        fracca = 0.03*0.4
+!        fracco3 = 0.03*0.6
+         fracca = 0.0
+         fracco3 = 0.0
+         fractot = fracoin + fracca + fracco3
+!   if (ivgtyp(i,j) .eq. 8) print*,'jdf',i,j,ustar1,ustart0,factaa,ftot
+         chem(i,k,j,p_p25j)=chem(i,k,j,p_p25j) +   &
+            factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot
+         chem(i,k,j,p_soila)=chem(i,k,j,p_soila) +   &
+            factbb * (sz(7)+sz(8)) * fractot
+! mass1part is mass of a single particle in ug, density of dust ~2.5 g cm-3
+         densdust=2.5
+         dp_meanvol_tmp = 1.0e2*dginia*exp(1.5*l2sginia) ! accum 
+         mass1part=0.523598*(dp_meanvol_tmp**3)*densdust*1.0e06
+         chem(i,k,j,p_ac0)=chem(i,k,j,p_ac0) +   &
+            factbb * (sz(3)+sz(4)+sz(5)+sz(6)) * fractot / mass1part
+         dp_meanvol_tmp = 1.0e2*dginic*exp(1.5*l2sginic) ! coarse
+         mass1part=0.523598*(dp_meanvol_tmp**3)*densdust*1.0e06
+         chem(i,k,j,p_corn)=chem(i,k,j,p_corn) +   &
+            factbb * (sz(7)+sz(8)) * fractot / mass1part
+
+1840    continue
+
+1820    continue
+1830    continue
+
+        return
+
+   END subroutine sorgam_dust_emiss
+
+
+
+!===========================================================================
+   subroutine wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
+               dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
+	       qlsink,precr,preci,precs,precg,qsrflx,                      &
+	       gas_aqfrac, numgas_aqfrac,                                  &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+
+!  wet removal by grid-resolved precipitation
+!  scavenging of cloud-phase aerosols and gases by collection, freezing, ...
+!  scavenging of interstitial-phase aerosols by impaction
+!  scavenging of gas-phase gases by mass transfer and reaction
+
+!----------------------------------------------------------------------
+   USE module_configure
+   USE module_state_description
+   USE module_data_sorgam
+   USE module_mosaic_wetscav,only:  wetscav
+
+!----------------------------------------------------------------------
+   IMPLICIT NONE
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER,      INTENT(IN   )    ::                                &
+                                      ids,ide, jds,jde, kds,kde,    &
+                                      ims,ime, jms,jme, kms,kme,    &
+                                      its,ite, jts,jte, kts,kte,    &
+                                      id, ktau, ktauc, numgas_aqfrac
+      REAL,      INTENT(IN   ) :: dtstep,dtstepc
+!
+! all advected chemical species
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),          &
+         INTENT(INOUT ) ::                                chem
+
+! fraction of gas species in cloud water
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, numgas_aqfrac ),     &
+         INTENT(IN ) ::                                   gas_aqfrac
+
+!
+!
+! input from meteorology
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+          INTENT(IN   ) ::                                          &
+                                                        alt,        &
+                                                      t_phy,        &
+                                                      p_phy,        &
+                                                   t8w,p8w,         &
+	                            qlsink,precr,preci,precs,precg, &
+                                                    rho_phy,cldfra
+   REAL, DIMENSION( ims:ime, jms:jme, num_chem ),          &
+         INTENT(OUT ) ::                                qsrflx ! column change due to scavening
+
+   call wetscav (id,ktau,dtstep,ktauc,config_flags,                     &
+        dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,            &
+        qlsink,precr,preci,precs,precg,qsrflx,                          &
+        gas_aqfrac, numgas_aqfrac,                                      &
+        ntype_aer, nsize_aer, ncomp_aer,                                &
+        massptr_aer, dens_aer, numptr_aer,                              &
+        maxd_acomp, maxd_asize,maxd_atype, maxd_aphase, ai_phase, cw_phase, &
+        volumcen_sect, volumlo_sect, volumhi_sect,                      &
+        waterptr_aer, dens_water_aer,                                   &
+        scavimptblvol, scavimptblnum, nimptblgrow_mind, nimptblgrow_maxd, dlndg_nimptblgrow, &
+        ids,ide, jds,jde, kds,kde,                                      &
+        ims,ime, jms,jme, kms,kme,                                      &
+        its,ite, jts,jte, kts,kte                                       )
+
+   end subroutine wetscav_sorgam_driver
 
 END Module module_aerosols_sorgam

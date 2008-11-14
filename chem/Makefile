@@ -47,14 +47,15 @@ MODULES =                           \
   module_bioemi_beis313.o           \
   module_bioemi_megan2.o            \
   module_vertmx_wrf.o               \
-  module_aerosols_sorgam.o          \
   module_mosaic_movesect.o          \
   module_mosaic_therm.o             \
   module_mosaic_newnuc.o            \
   module_mosaic_coag.o              \
   module_mosaic_driver.o            \
   module_mosaic_drydep.o            \
-  module_add_emis_cptec.o            \
+  module_sorgam_cloudchem.o         \
+  module_aerosols_sorgam.o          \
+  module_add_emis_cptec.o           \
   module_cbmz_addemiss.o            \
   module_cbm4_addemiss.o            \
   module_mosaic_addemiss.o          \
@@ -221,6 +222,8 @@ module_data_mosaic_therm.o:
 
 module_mosaic_addemiss.o: module_data_mosaic_asect.o 
 
+module_aerosols_sorgam.o: module_mosaic_addemiss.F
+
 module_mosaic_drydep.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o
 
 module_mosaic_initmixrats.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o
@@ -243,6 +246,8 @@ module_cmu_bulkaqchem.o: module_data_cmu_bulkaqchem.o module_cmu_dvode_solver.o
 
 module_mosaic_cloudchem.o: module_data_cmu_bulkaqchem.o module_cmu_bulkaqchem.o module_data_mosaic_asect.o module_mosaic_movesect.o module_mosaic_driver.o
 
+module_sorgam_cloudchem.o: module_data_cmu_bulkaqchem.o module_cmu_bulkaqchem.o module_data_sorgam.o module_aerosols_sorgam.o
+
 module_fastj_data.o:
 
 module_fastj_mie.o:
@@ -255,15 +260,15 @@ chem_driver.o: module_radm.o module_convtrans_prep.o module_racm.o module_data_r
 
 chemics_init.o: module_phot_mad.o module_gocart_chem.o module_aerosols_sorgam.o module_mixactivate_wrappers.o
 
-aerosol_driver.o: module_aerosols_sorgam.o 
+aerosol_driver.o: module_data_sorgam.o module_aerosols_sorgam.o module_mosaic_driver.o
 
-cloudchem_driver.o: module_mosaic_cloudchem.o
+cloudchem_driver.o: module_mosaic_cloudchem.o module_sorgam_cloudchem.o
 
 photolysis_driver.o: module_phot_mad.o module_phot_fastj.o module_ftuv_driver.o
 
 mechanism_driver.o: module_data_radm2.o module_radm.o module_data_racm.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o
 
-emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis313.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_plumerise1.o module_gocart_dust.o module_gocart_seasalt.o
+emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis313.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_aerosols_sorgam.o module_plumerise1.o module_gocart_dust.o module_gocart_seasalt.o
 
 dry_dep_driver.o: module_data_radm2.o module_dep_simple.o module_aerosols_sorgam.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 

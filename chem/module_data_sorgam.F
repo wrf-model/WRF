@@ -65,173 +65,6 @@ MODULE module_data_sorgam
 !bs * LSPCV       # of condensable organic vapor interacting between gas
 !bs               aerosol phase with SORGAM
 !bs
-!   maxd_atype = maximum allowable number of aerosol types
-!   maxd_asize = maximum allowable number of aerosol size bins
-!   maxd_acomp = maximum allowable number of chemical components
-!	in each aerosol size bin
-!   maxd_aphase = maximum allowable number of aerosol phases (gas, cloud, ice, rain, ...)
-!
-!   ntype_aer = number of aerosol types
-!   nsize_aer(t) = number of aerosol size bins for aerosol type t. each bin w/ same set of components
-!   nphase_aer = number of aerosol phases
-!
-!   msectional - if positive, moving-center sectional code is utilized,
-!	and each mode is actually a section.
-!   maerosolincw - if positive, both unactivated/interstitial and activated
-!	aerosol species are simulated.  if zero/negative, only the
-!	unactivated are simulated.
-!
-!   ncomp_aer(t) = number of chemical components for aerosol type t
-!   ncomp_aer_nontracer(t) = number of "non-tracer" chemical components while in gchm code
-!   mastercompptr_aer(c,t) = mastercomp type/i.d. for chemical component c
-!	(1=sulfate, others to be defined) and aerosol type t.
-!   massptr_aer(c,s,t,p) = gchm r-array index for the mixing ratio
-!	(moles-x/mole-air) for chemical component c in size bin s for type t and phase p
-!
-!   waterptr_aer(s,t) = mixing ratio (moles-water/mole-air) for water
-!       associated with aerosol size bin s and type t
-!   hygroptr_aer(s,t) = gchm r-array index for the bulk hygroscopicity of the size bin and type
-!   numptr_aer(s,t,p) = gchm r-array index for the number mixing ratio
-!	(particles/mole-air) for aerosol size bin s, type t, and phase p
-!       If zero or negative, then number is not being simulated.
-!
-!   mprognum_aer(s,t,p) - if positive, number mixing-ratio for size s, type t,
-!       and phase p will be prognosed.  Otherwise, no.
-!
-!   ntot_mastercomp_aer = number of aerosol chemical components defined
-!   dens_mastercomp_aer(mc) = dry density (g/cm^3) of aerosol master chemical component type c
-!   mw_mastercomp_aer(mc) = molecular weight of aerosol master chemical component type mc
-!   name_mastercomp_aer(mc) = name of aerosol master chemical component type mc
-!   mc=mastercompptr_aer(c,t)
-!   dens_aer(c,t) = dry density (g/cm^3) of aerosol chemical component type c and type t
-!   mw_aer(c,t) = molecular weight of aerosol chemical component type c and type t
-!   name_aer(c,t) = name of aerosol chemical component type c and type t
-!
-!   lptr_so4_aer(s,t,p) = gchm r-array index for the
-!	mixing ratio for sulfate associated with aerosol size bin s, type t, and phase p
-!   (similar for msa, oc, bc, nacl, dust)
-!
-!-----------------------------------------------------------------------
-!
-!   volumcen_sect(s,t)= volume (cm^3) at center of section m
-!   volumlo_sect(s,t) = volume (cm^3) at lower boundary of section m
-!   volumhi_sect(s,t) = volume (cm^3) at upper boundary of section m
-!
-!   dlo_sect(s,t) = diameter (cm) at lower boundary of section m
-!   dhi_sect(s,t) = diameter (cm) at upper boundary of section m
-!   dcen_sect(s,t) = volume arithmetic-mean diameter (cm) of section m
-!	(corresponds to volumcen_sect == 0.5*(volumlo_sect + volumhi_sect)
-!
-!-----------------------------------------------------------------------
-!   nov-04 sg ! replaced amode with aer and expanded aerosol dimension to include type and phase
-
-	integer, parameter :: maxd_atype = 3
-	integer, parameter :: maxd_asize = 1
-	integer, parameter :: maxd_acomp = 19
-	integer, parameter :: maxd_aphase = 2
-	integer, save :: ai_phase ! interstitial phase of aerosol
-	integer, save :: cw_phase ! cloud water phase of aerosol
-	integer, save :: ci_phase ! cloud ice  phase of aerosol
-	integer, save :: cr_phase ! rain  phase of aerosol
-	integer, save :: cs_phase ! snow  phase of aerosol
-	integer, save :: cg_phase ! graupel phase of aerosol
-
-	integer, save :: ntype_aer = 0 ! number of types
-	integer, save :: ntot_mastercomp_aer = 0 ! number of master components
-	integer, save :: nphase_aer = 0 ! number of phases
-
-	integer, save ::   &
-      	  msectional, maerosolincw,   &
-      	  nsize_aer( maxd_atype ),   & ! number of size bins
-      	  ncomp_aer( maxd_atype ),   & ! number of chemical components
-      	  ncomp_aer_nontracer( maxd_atype ),   &
-          mastercompptr_aer(maxd_acomp, maxd_atype), &   !  mastercomp index
-      	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ), & ! index for mixing ratio
-      	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
-      	  hygroptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol hygroscopicity
-      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), & ! index for the number mixing ratio
-          mprognum_aer(maxd_asize,maxd_atype,maxd_aphase)
-
-	real, save ::   &
-          dens_aer( maxd_acomp, maxd_atype ),   &
-          dens_mastercomp_aer( maxd_acomp ),   &
-      	  mw_mastercomp_aer( maxd_acomp ), &
-      	  mw_aer( maxd_acomp, maxd_atype ),  &
-      	  hygro_mastercomp_aer( maxd_acomp ), &
-      	  hygro_aer( maxd_acomp, maxd_atype )
-	character*10, save ::   &
-      	  name_mastercomp_aer( maxd_acomp ), &
-      	  name_aer( maxd_acomp, maxd_atype )
-
-	real, save ::   &
-          volumcen_sect( maxd_asize, maxd_atype ),   &
-          volumlo_sect( maxd_asize, maxd_atype ),   &
-          volumhi_sect( maxd_asize, maxd_atype ),   &
-          dcen_sect( maxd_asize, maxd_atype ),   &
-          dlo_sect( maxd_asize, maxd_atype ),   &
-          dhi_sect( maxd_asize, maxd_atype ),   &
-	  sigmag_aer(maxd_asize, maxd_atype)
-
-	integer, save ::                     &
-      	  lptr_so4_aer(maxd_asize,maxd_atype,maxd_aphase),      &
-      	  lptr_nh4_aer(maxd_asize,maxd_atype,maxd_aphase),      &
-      	  lptr_no3_aer(maxd_asize,maxd_atype,maxd_aphase),      &
-      	  lptr_na_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_cl_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgaro1_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgaro2_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgalk_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgole_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgba1_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgba2_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgba3_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgba4_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_orgpa_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_ec_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_p25_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-          lptr_anth_aer(maxd_asize,maxd_atype,maxd_aphase),      &
-      	  lptr_seas_aer(maxd_asize,maxd_atype,maxd_aphase),       &
-      	  lptr_soil_aer(maxd_asize,maxd_atype,maxd_aphase)
-
-
-!   molecular weights (g/mol)
-	real, parameter :: mw_so4_aer = 96.066
-	real, parameter :: mw_no3_aer = 62.007
-	real, parameter :: mw_seas_aer  = 58.440
-	real, parameter :: mw_ca_aer  = 40.080
-	real, parameter :: mw_co3_aer = 60.007
-	real, parameter :: mw_nh4_aer = 18.042
-	real, parameter :: mw_oc_aer  = 1.0
-	real, parameter :: mw_ec_aer  = 1.0
-	real, parameter :: mw_water_aer  = 18.016
-	real, parameter :: mw_cl_aer  = 35.450
-	real, parameter :: mw_na_aer  = 22.990
-
-!   dry densities (g/cm3)
-	real, parameter :: dens_so4_aer = 1.80
-	real, parameter :: dens_no3_aer = 1.80
-	real, parameter :: dens_seas_aer  = 2.20
-	real, parameter :: dens_nh4_aer = 1.80
-	real, parameter :: dens_oc_aer  = 1.00
-	real, parameter :: dens_ec_aer  = 1.70
-	real, parameter :: dens_ca_aer  = 2.20
-	real, parameter :: dens_cl_aer  = 2.20
-	real, parameter :: dens_na_aer  = 2.20
-
-!   water density (g/cm3)
-	real, parameter :: dens_water_aer  = 1.0
-
-!   hygroscopicity (dimensionless)
-	real, parameter :: hygro_so4_aer = 0.5
-	real, parameter :: hygro_no3_aer = 0.5
-	real, parameter :: hygro_seas_aer  = 1.16
-	real, parameter :: hygro_nh4_aer = 0.5
-	real, parameter :: hygro_oc_aer  = 0.14
-	real, parameter :: hygro_ec_aer  = 1.e-6
-	real, parameter :: hygro_ca_aer  = 0.1
-	real, parameter :: hygro_co3_aer = 0.1
-	real, parameter :: hygro_cl_aer  = 1.16
-	real, parameter :: hygro_na_aer  = 1.16
 !     param.inc stop
 
 ! //////////////////////////////////////////////////////////////////////
@@ -273,23 +106,23 @@ MODULE module_data_sorgam
 
 ! *** set up indices for array  CBLK
 
-! index for Accumulation mode sulfate aeroso
+! index for Accumulation mode sulfate aerosol
       INTEGER vso4aj
       PARAMETER (vso4aj=1)
 
-! index for Aitken mode sulfate concentraton
+! index for Aitken mode sulfate concentration
       INTEGER vso4ai
       PARAMETER (vso4ai=2)
 
-! index for Accumulation mode aerosol ammoni
+! index for Accumulation mode aerosol ammonium
       INTEGER vnh4aj
       PARAMETER (vnh4aj=3)
 
-! index for Aitken mode ammonium concentrati
+! index for Aitken mode ammonium concentration
       INTEGER vnh4ai
       PARAMETER (vnh4ai=4)
 
-! index for Accumulation mode aerosol nitrat
+! index for Accumulation mode aerosol nitrate
       INTEGER vno3aj
       PARAMETER (vno3aj=5)
 
@@ -301,7 +134,7 @@ MODULE module_data_sorgam
       INTEGER vnaaj
       PARAMETER (vnaaj=7)
 
-! index for Aitken mode sodium concentratio
+! index for Aitken mode sodium concentration
       INTEGER vnaai
       PARAMETER (vnaai=8)
 
@@ -309,11 +142,11 @@ MODULE module_data_sorgam
       INTEGER vclaj
       PARAMETER (vclaj=9)
 
-! index for Aitken mode chloride concentratio
+! index for Aitken mode chloride concentration
       INTEGER vclai
       PARAMETER (vclai=10)
 
-! index for Accumulation mode anthropogen
+! index for Accumulation mode anthropogenic
       INTEGER vorgaro1j
       PARAMETER (vorgaro1j=11)
 
@@ -321,7 +154,7 @@ MODULE module_data_sorgam
       INTEGER vorgaro1i
       PARAMETER (vorgaro1i=12)
 
-! index for Accumulation mode anthropogen
+! index for Accumulation mode anthropogenic
       INTEGER vorgaro2j
       PARAMETER (vorgaro2j=13)
 
@@ -329,7 +162,7 @@ MODULE module_data_sorgam
       INTEGER vorgaro2i
       PARAMETER (vorgaro2i=14)
 
-! index for Accumulation mode anthropogen
+! index for Accumulation mode anthropogenic
       INTEGER vorgalk1j
       PARAMETER (vorgalk1j=15)
 
@@ -337,7 +170,7 @@ MODULE module_data_sorgam
       INTEGER vorgalk1i
       PARAMETER (vorgalk1i=16)
 
-! index for Accumulation mode anthropogen
+! index for Accumulation mode anthropogenic
       INTEGER vorgole1j
       PARAMETER (vorgole1j=17)
 
@@ -345,43 +178,43 @@ MODULE module_data_sorgam
       INTEGER vorgole1i
       PARAMETER (vorgole1i=18)
 
-! index for Accumulation mode biogenic aero
+! index for Accumulation mode biogenic aerosol
       INTEGER vorgba1j
       PARAMETER (vorgba1j=19)
 
-! index for Aitken mode biogenic aerosol co
+! index for Aitken mode biogenic aerosol concentration
       INTEGER vorgba1i
       PARAMETER (vorgba1i=20)
 
-! index for Accumulation mode biogenic aero
+! index for Accumulation mode biogenic aerosol
       INTEGER vorgba2j
       PARAMETER (vorgba2j=21)
 
-! index for Aitken mode biogenic aerosol co
+! index for Aitken mode biogenic aerosol concentration
       INTEGER vorgba2i
       PARAMETER (vorgba2i=22)
 
-! index for Accumulation mode biogenic aero
+! index for Accumulation mode biogenic aerosol
       INTEGER vorgba3j
       PARAMETER (vorgba3j=23)
 
-! index for Aitken mode biogenic aerosol co
+! index for Aitken mode biogenic aerosol concentration
       INTEGER vorgba3i
       PARAMETER (vorgba3i=24)
 
-! index for Accumulation mode biogenic aero
+! index for Accumulation mode biogenic aerosol
       INTEGER vorgba4j
       PARAMETER (vorgba4j=25)
 
-! index for Aitken mode biogenic aerosol co
+! index for Aitken mode biogenic aerosol concentration
       INTEGER vorgba4i
       PARAMETER (vorgba4i=26)
 
-! index for Accumulation mode primary anthro
+! index for Accumulation mode primary anthropogenic
       INTEGER vorgpaj
       PARAMETER (vorgpaj=27)
 
-! index for Aitken mode primary anthropogeni
+! index for Aitken mode primary anthropogenic
       INTEGER vorgpai
       PARAMETER (vorgpai=28)
 
@@ -397,15 +230,15 @@ MODULE module_data_sorgam
       INTEGER vp25aj
       PARAMETER (vp25aj=31)
 
-! index for Aitken mode primary PM2.5 concen
+! index for Aitken mode primary PM2.5 concentration
       INTEGER vp25ai
       PARAMETER (vp25ai=32)
 
-! index for coarse mode anthropogenic aeroso
+! index for coarse mode anthropogenic aerososol
       INTEGER vantha
       PARAMETER (vantha=33)
 
-! index for coarse mode marine aerosol conce
+! index for coarse mode marine aerosol concentration
       INTEGER vseas
       PARAMETER (vseas=34)
 
@@ -429,7 +262,7 @@ MODULE module_data_sorgam
       INTEGER vh2oaj
       PARAMETER (vh2oaj=39)
 
-! index for Aitken mode aerosol water concen
+! index for Aitken mode aerosol water concentration
       INTEGER vh2oai
       PARAMETER (vh2oai=40)
 
@@ -445,19 +278,19 @@ MODULE module_data_sorgam
       INTEGER vcor3
       PARAMETER (vcor3=43)
 
-! index for sulfuric acid vapor concentratio
+! index for sulfuric acid vapor concentration
       INTEGER vsulf
       PARAMETER (vsulf=44)
 
-! index for nitric acid vapor concentration 
+! index for nitric acid vapor concentration
       INTEGER vhno3
       PARAMETER (vhno3=45)
 
-! index for ammonia gas concentration       
+! index for ammonia gas concentration
       INTEGER vnh3
       PARAMETER (vnh3=46)
 
-! index for HCL gas concentration       
+! index for HCL gas concentration
       INTEGER vhcl
       PARAMETER (vhcl=47)
 
@@ -709,40 +542,40 @@ MODULE module_data_sorgam
 
 ! Geometric Constants:
 
-      REAL*8 & ! PI (single precision 3.141593)                 
+      REAL*8 & ! PI (single precision 3.141593)
         pirs
       PARAMETER (pirs=3.14159265358979324)
 !      REAL     PIRS ! PI (single precision 3.141593)
 !      PARAMETER ( PIRS = 3.141593 )
 ! Fundamental Constants: ( Source: CRC76, pp 1-1 to 1-6)
 
-! Avogadro's Constant [ 1/mol ]                   
+! Avogadro's Constant [ 1/mol ]
       REAL avo
       PARAMETER (avo=6.0221367E23)
 
-! universal gas constant [ J/mol-K ]         
+! universal gas constant [ J/mol-K ]
       REAL rgasuniv
       PARAMETER (rgasuniv=8.314510)
 
-! standard atmosphere  [ Pa ]                
+! standard atmosphere  [ Pa ]
       REAL stdatmpa
       PARAMETER (stdatmpa=101325.0)
 
-! Standard Temperature [ K ]                  
+! Standard Temperature [ K ]
       REAL stdtemp
       PARAMETER (stdtemp=273.15)
 
-! Stefan-Boltzmann [ W/(m**2 K**4) ]           
+! Stefan-Boltzmann [ W/(m**2 K**4) ]
       REAL stfblz
       PARAMETER (stfblz=5.67051E-8)
 
 
-! mean gravitational acceleration [ m/sec**2 ]   
+! mean gravitational acceleration [ m/sec**2 ]
       REAL grav
       PARAMETER (grav=9.80622)
 ! FSB Non MKS qualtities:
 
-! Molar volume at STP [ L/mol ] Non MKS units  
+! Molar volume at STP [ L/mol ] Non MKS units
       REAL molvol
       PARAMETER (molvol=22.41410)
 
@@ -752,57 +585,57 @@ MODULE module_data_sorgam
 ! FSB                     78.06%  N2, 21% O2 and 0.943% A on a mole
       REAL mwair
                         ! fraction basis. ( Source : Hobbs, 1995) pp 69-
-! mean molecular weight for dry air [ g/mol ]        
+! mean molecular weight for dry air [ g/mol ]
       PARAMETER (mwair=28.9628)
 
-! dry-air gas constant [ J / kg-K ]            
+! dry-air gas constant [ J / kg-K ]
       REAL rdgas
       PARAMETER (rdgas=1.0E3*rgasuniv/mwair)
 
-!  3*PI                                            
+!  3*PI
       REAL threepi
       PARAMETER (threepi=3.0*pirs)
 
-!  6/PI                                              
+!  6/PI
       REAL f6dpi
       PARAMETER (f6dpi=6.0/pirs)
 
-!  1.0e9 * 6/PIRS                                 
+!  1.0e9 * 6/PIRS
       REAL f6dpi9
       PARAMETER (f6dpi9=1.0E9*f6dpi)
 
-! 1.0e-9 * 6/PIRS                                 
+! 1.0e-9 * 6/PIRS
       REAL f6dpim9
       PARAMETER (f6dpim9=1.0E-9*f6dpi)
 
-!  SQRT( PI )                                       
+!  SQRT( PI )
       REAL sqrtpi
       PARAMETER (sqrtpi=1.7724539)
 
-!  SQRT( 2 )                                         
+!  SQRT( 2 )
       REAL sqrt2
       PARAMETER (sqrt2=1.4142135623731)
 
-!  ln( sqrt( 2 ) )                                
+!  ln( sqrt( 2 ) )
       REAL lgsqt2
       PARAMETER (lgsqt2=0.34657359027997)
 
-!  1/ln( sqrt( 2 ) )                              
+!  1/ln( sqrt( 2 ) )
       REAL dlgsqt2
       PARAMETER (dlgsqt2=1.0/lgsqt2)
 
-!  1/3                                            
+!  1/3
       REAL one3
       PARAMETER (one3=1.0/3.0)
 
-!  2/3                                            
+!  2/3
       REAL two3
       PARAMETER (two3=2.0/3.0)
 
 
 ! *** physical constants:
 
-! Boltzmann's Constant [ J / K]             
+! Boltzmann's Constant [ J / K ]
       REAL boltz
       PARAMETER (boltz=rgasuniv/avo)
 
@@ -810,43 +643,43 @@ MODULE module_data_sorgam
 ! *** component densities [ kg/m**3 ] :
 
 
-!  bulk density of aerosol sulfate        
+!  bulk density of aerosol sulfate
       REAL rhoso4
       PARAMETER (rhoso4=1.8E3)
 
-!  bulk density of aerosol ammonium       
+!  bulk density of aerosol ammonium
       REAL rhonh4
       PARAMETER (rhonh4=1.8E3)
 
-! bulk density of aerosol nitrate          
+! bulk density of aerosol nitrate
       REAL rhono3
       PARAMETER (rhono3=1.8E3)
 
-!  bulk density of aerosol water          
+!  bulk density of aerosol water
       REAL rhoh2o
       PARAMETER (rhoh2o=1.0E3)
 
-! bulk density for aerosol organics        
+! bulk density for aerosol organics
       REAL rhoorg
       PARAMETER (rhoorg=1.0E3)
 
-! bulk density for aerosol soil dust      
+! bulk density for aerosol soil dust
       REAL rhosoil
       PARAMETER (rhosoil=2.6E3)
 
-! bulk density for marine aerosol        
+! bulk density for marine aerosol
       REAL rhoseas
       PARAMETER (rhoseas=2.2E3)
 
-! bulk density for anthropogenic aerosol  
+! bulk density for anthropogenic aerosol
       REAL rhoanth
       PARAMETER (rhoanth=2.2E3)
 
-! bulk density of aerosol sodium          
+! bulk density of aerosol sodium
       REAL rhona
       PARAMETER (rhona=2.2E3)
 
-! bulk density of aerosol chloride          
+! bulk density of aerosol chloride
       REAL rhocl
       PARAMETER (rhocl=2.2E3)
 
@@ -907,7 +740,7 @@ MODULE module_data_sorgam
       REAL dginin
       PARAMETER (dginin=0.01E-6)
 
-!  initial mean diameter for accumulation mode [ m
+!  initial mean diameter for accumulation mode [ m ]
       REAL dginia
       PARAMETER (dginia=0.07E-6)
 
@@ -1186,6 +1019,198 @@ MODULE module_data_sorgam
       REAL aeroconcmin
       PARAMETER (aeroconcmin=0.0001) 
 
+
+
+!*******************************************************************
+!*                                                                 *
+!*  start parameters and variables for aerosol-cloud interactions  *
+!*                                                                 *
+!*******************************************************************
+!
+!   maxd_atype = maximum allowable number of aerosol types
+!   maxd_asize = maximum allowable number of aerosol size bins
+!   maxd_acomp = maximum allowable number of chemical components
+!	in each aerosol size bin
+!   maxd_aphase = maximum allowable number of aerosol phases (gas, cloud, ice, rain, ...)
+!
+!   ntype_aer = number of aerosol types
+!   nsize_aer(t) = number of aerosol size bins for aerosol type t. each bin w/ same set of components
+!   nphase_aer = number of aerosol phases
+!
+!   msectional - if positive, moving-center sectional code is utilized,
+!	and each mode is actually a section.
+!   maerosolincw - if positive, both unactivated/interstitial and activated
+!	aerosol species are simulated.  if zero/negative, only the
+!	unactivated are simulated.
+!
+!   ncomp_aer(t) = number of chemical components for aerosol type t
+!   ncomp_aer_nontracer(t) = number of "non-tracer" chemical components while in gchm code
+!   mastercompptr_aer(c,t) = mastercomp type/i.d. for chemical component c
+!	(1=sulfate, others to be defined) and aerosol type t.
+!   massptr_aer(c,s,t,p) = gchm r-array index for the mixing ratio
+!	(moles-x/mole-air) for chemical component c in size bin s for type t and phase p
+!
+!   waterptr_aer(s,t) = mixing ratio (moles-water/mole-air) for water
+!       associated with aerosol size bin s and type t
+!   hygroptr_aer(s,t) = gchm r-array index for the bulk hygroscopicity of the size bin and type
+!   numptr_aer(s,t,p) = gchm r-array index for the number mixing ratio
+!	(particles/mole-air) for aerosol size bin s, type t, and phase p
+!       If zero or negative, then number is not being simulated.
+!
+!   mprognum_aer(s,t,p) - if positive, number mixing-ratio for size s, type t,
+!       and phase p will be prognosed.  Otherwise, no.
+!
+!   ntot_mastercomp_aer = number of aerosol chemical components defined
+!   dens_mastercomp_aer(mc) = dry density (g/cm^3) of aerosol master chemical component type c
+!   mw_mastercomp_aer(mc) = molecular weight of aerosol master chemical component type mc
+!   name_mastercomp_aer(mc) = name of aerosol master chemical component type mc
+!   mc=mastercompptr_aer(c,t)
+!   dens_aer(c,t) = dry density (g/cm^3) of aerosol chemical component type c and type t
+!   mw_aer(c,t) = molecular weight of aerosol chemical component type c and type t
+!   name_aer(c,t) = name of aerosol chemical component type c and type t
+!
+!   lptr_so4_aer(s,t,p) = gchm r-array index for the
+!	mixing ratio for sulfate associated with aerosol size bin s, type t, and phase p
+!   (similar for msa, oc, bc, nacl, dust)
+!
+!-----------------------------------------------------------------------
+!
+!   volumcen_sect(s,t)= volume (cm^3) at center of section m
+!   volumlo_sect(s,t) = volume (cm^3) at lower boundary of section m
+!   volumhi_sect(s,t) = volume (cm^3) at upper boundary of section m
+!
+!   dlo_sect(s,t) = diameter (cm) at lower boundary of section m
+!   dhi_sect(s,t) = diameter (cm) at upper boundary of section m
+!   dcen_sect(s,t) = volume arithmetic-mean diameter (cm) of section m
+!	(corresponds to volumcen_sect == 0.5*(volumlo_sect + volumhi_sect)
+!
+!-----------------------------------------------------------------------
+!   nov-04 sg ! replaced amode with aer and expanded aerosol dimension to include type and phase
+
+	integer, parameter :: maxd_atype = 2
+	integer, parameter :: maxd_asize = 2
+	integer, parameter :: maxd_acomp = 19
+	integer, parameter :: maxd_aphase = 2
+	integer, save :: ai_phase ! interstitial phase of aerosol
+	integer, save :: cw_phase ! cloud water phase of aerosol
+	integer, save :: ci_phase ! cloud ice  phase of aerosol
+	integer, save :: cr_phase ! rain  phase of aerosol
+	integer, save :: cs_phase ! snow  phase of aerosol
+	integer, save :: cg_phase ! graupel phase of aerosol
+
+	integer, save :: ntype_aer = 0 ! number of types
+	integer, save :: ntot_mastercomp_aer = 0 ! number of master components
+	integer, save :: nphase_aer = 0 ! number of phases
+
+	integer, save ::   &
+      	  msectional, maerosolincw,   &
+      	  nsize_aer( maxd_atype ),   & ! number of size bins
+      	  ncomp_aer( maxd_atype ),   & ! number of chemical components
+      	  ncomp_aer_nontracer( maxd_atype ),   &
+          mastercompptr_aer(maxd_acomp, maxd_atype), &   !  mastercomp index
+      	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ), & ! index for mixing ratio
+      	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
+      	  hygroptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol hygroscopicity
+      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), & ! index for the number mixing ratio
+          mprognum_aer(maxd_asize,maxd_atype,maxd_aphase)
+
+	real, save ::   &
+          dens_aer( maxd_acomp, maxd_atype ),   &
+          dens_mastercomp_aer( maxd_acomp ),   &
+      	  mw_mastercomp_aer( maxd_acomp ), &
+      	  mw_aer( maxd_acomp, maxd_atype ),  &
+      	  hygro_mastercomp_aer( maxd_acomp ), &
+      	  hygro_aer( maxd_acomp, maxd_atype )
+	character*10, save ::   &
+      	  name_mastercomp_aer( maxd_acomp ), &
+      	  name_aer( maxd_acomp, maxd_atype )
+
+	real, save ::   &
+          volumcen_sect( maxd_asize, maxd_atype ),   &
+          volumlo_sect( maxd_asize, maxd_atype ),   &
+          volumhi_sect( maxd_asize, maxd_atype ),   &
+          dcen_sect( maxd_asize, maxd_atype ),   &
+          dlo_sect( maxd_asize, maxd_atype ),   &
+          dhi_sect( maxd_asize, maxd_atype ),   &
+	  sigmag_aer(maxd_asize, maxd_atype)
+
+	integer, save ::                     &
+      	  lptr_so4_aer(maxd_asize,maxd_atype,maxd_aphase),        &
+      	  lptr_nh4_aer(maxd_asize,maxd_atype,maxd_aphase),        &
+      	  lptr_no3_aer(maxd_asize,maxd_atype,maxd_aphase),        &
+      	  lptr_orgaro1_aer(maxd_asize,maxd_atype,maxd_aphase),    &
+      	  lptr_orgaro2_aer(maxd_asize,maxd_atype,maxd_aphase),    &
+      	  lptr_orgalk_aer(maxd_asize,maxd_atype,maxd_aphase),     &
+      	  lptr_orgole_aer(maxd_asize,maxd_atype,maxd_aphase),     &
+      	  lptr_orgba1_aer(maxd_asize,maxd_atype,maxd_aphase),     &
+      	  lptr_orgba2_aer(maxd_asize,maxd_atype,maxd_aphase),     &
+      	  lptr_orgba3_aer(maxd_asize,maxd_atype,maxd_aphase),     &
+      	  lptr_orgba4_aer(maxd_asize,maxd_atype,maxd_aphase),     &
+      	  lptr_orgpa_aer(maxd_asize,maxd_atype,maxd_aphase),      &
+      	  lptr_ec_aer(maxd_asize,maxd_atype,maxd_aphase),         &
+      	  lptr_p25_aer(maxd_asize,maxd_atype,maxd_aphase),        &
+          lptr_anth_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_cl_aer(maxd_asize,maxd_atype,maxd_aphase),         &
+      	  lptr_na_aer(maxd_asize,maxd_atype,maxd_aphase),         &
+      	  lptr_seas_aer(maxd_asize,maxd_atype,maxd_aphase),       &
+      	  lptr_soil_aer(maxd_asize,maxd_atype,maxd_aphase)
+
+	logical, save ::                     &
+      	  do_cloudchem_aer(maxd_asize,maxd_atype)
+
+
+!   molecular weights (g/mol)
+	real, parameter :: mw_so4_aer   = 96.066
+	real, parameter :: mw_no3_aer   = 62.007
+	real, parameter :: mw_nh4_aer   = 18.042
+	real, parameter :: mw_oc_aer    = 1.0
+	real, parameter :: mw_ec_aer    = 1.0
+	real, parameter :: mw_oin_aer   = 1.0
+	real, parameter :: mw_dust_aer  = 100.087
+	real, parameter :: mw_seas_aer  = 58.440
+	real, parameter :: mw_cl_aer    = 35.450
+	real, parameter :: mw_na_aer    = 22.990
+	real, parameter :: mw_water_aer = 18.016
+
+!   dry densities (g/cm3)
+	real, parameter :: dens_so4_aer  = 1.80   ! = rhoso4
+	real, parameter :: dens_no3_aer  = 1.80   ! = rhono3
+	real, parameter :: dens_nh4_aer  = 1.80   ! = rhonh4
+	real, parameter :: dens_oc_aer   = 1.00   ! = rhoorg
+	real, parameter :: dens_ec_aer   = 1.70
+	real, parameter :: dens_dust_aer = 2.60  ! = rhosoil
+	real, parameter :: dens_oin_aer  = 2.20  ! = rhoanth
+	real, parameter :: dens_seas_aer = 2.20  ! = rhoseas
+	real, parameter :: dens_cl_aer   = 2.20
+	real, parameter :: dens_na_aer   = 2.20
+
+!   water density (g/cm3)
+	real, parameter :: dens_water_aer  = 1.0
+
+!   hygroscopicity (dimensionless)
+	real, parameter :: hygro_so4_aer  = 0.5
+	real, parameter :: hygro_no3_aer  = 0.5
+	real, parameter :: hygro_nh4_aer  = 0.5
+	real, parameter :: hygro_oc_aer   = 0.14
+	real, parameter :: hygro_ec_aer   = 1.e-6
+	real, parameter :: hygro_oin_aer  = 0.14
+	real, parameter :: hygro_dust_aer = 0.1
+	real, parameter :: hygro_seas_aer = 1.16
+	real, parameter :: hygro_cl_aer   = 1.16
+	real, parameter :: hygro_na_aer   = 1.16
+
+! table lookup of aerosol impaction/interception scavenging rates
+	real dlndg_nimptblgrow
+	integer nimptblgrow_mind, nimptblgrow_maxd
+	parameter (nimptblgrow_mind=-14, nimptblgrow_maxd=24)
+     	real scavimptblnum(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype), &
+     	     scavimptblvol(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype)
+
+!*****************************************************************
+!*                                                               *
+!*  end parameters and variables for aerosol-cloud interactions  *
+!*                                                               *
+!*****************************************************************
 
 
 END Module module_data_sorgam

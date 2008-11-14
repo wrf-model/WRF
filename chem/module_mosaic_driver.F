@@ -41,31 +41,47 @@
 !  4) Publications resulting from the usage of MOSAIC must use one or more of the
 !     references below (depending on the application) for proper acknowledgment.
 !
-! References: 
+! References for MOSAIC (The first one is the primary MOSAIC reference):
+! * Zaveri R.A., R.C. Easter, J.D. Fast, and L.K. Peters (2008), Model for
+!   simulating aerosol interactions and chemistry (MOSAIC), J. Geophys. Res.,
+!   113, D13204, doi:10.1029/2007JD008782.
 ! * Zaveri R.A., R.C. Easter, and A.S. Wexler (2005), A new method for multi-
 !   component activity coefficients of electrolytes in aqueous atmospheric
 !   aerosols, J. Geophys. Res., 110, D02201, doi:10.1029/2004JD004681.
 ! * Zaveri R.A., R.C. Easter, and L.K. Peters (2005), A computationally efficient
-!   multicomponent equilibrium solver for aerosols (MESA), In review, 
-!   J. Geophys. Res.
-! * Zaveri R.A., R.C. Easter, J.D. Fast, and L.K. Peters (2005), A new model
-!   for simulating aerosol interactions and chemistry (MOSAIC),  Manuscript in
-!   preparation. To be submitted to J. Geophys. Res.
-! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
-!   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
-!   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
-!   coupled meteorology-chemistry-aerosol model, Submitted to J. Geophys. Res.
+!   multicomponent equilibrium solver for aerosols (MESA), J. Geophys. Res.,
+!   110, D24203, doi:24203, doi:10.1029/2004JD005618.
 !
-! Contact Jerome Fast for updates on the status of manuscripts under review.  The  
-! third paper will be the main reference for MOSAIC when published. 
+! References for implementation of the aerosol optical properties and direct
+! effect in WRF-Chem:
+! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
+!   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone,
+!   particulates, and aerosol direct radiative forcing in the vicinity of
+!   Houston using a fully-coupled meteorology-chemistry-aerosol model, J.
+!   Geophys. Res., 111, D21305, doi:10.1029/2005JD006721.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
+!   Closure on the single scattering albedo in the WRF-Chem framework using
+!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
+
+! References for implementation of the aerosol-cloud interactions and indirect
+! effects in WRF-Chem:
+! * Gustafson, W. I., E. G. Chapman, S. J. Ghan, R. C. Easter, and J. D. Fast
+!   (2007), Impact on modeled cloud characteristics due to simplified treatment
+!   of uniform cloud condensation nuclei during NEAQS 2004, Geophys. Res. Lett.,
+!   34, L19809, L19809, doi:10.1029/2007GL0300321.
+! * Chapman, E.G., W.I. Gustafson, R.C. Easter, J.C. Barnard, S.J. Ghan, M.S.
+!   Pekour, and J.D. Fast (2008), Coupling aerosol-cloud-radiative processes in
+!   the WRF-Chem model: Investigating the radiative impact of elevated point
+!   sources, Atmos. Chem. Phys., submitted.
+!
+! Contact Jerome Fast for updates on the status of manuscripts under review.
 !
 ! Note that the version of MESA currently in WRF-chem does not contain some of 
 ! the code associated with the numerical speed described in the second paper - 
 ! a revised version of MESA will be included in the next release of MOSAIC.
 !
 ! Additional information:
-! * www.pnl.gov/atmos_sciences/raz 
-! * www.pnl.gov/atmos_sciences/Jdf/wrfchem.html
+! * www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support: 
 ! Funding for developing and evaluating MOSAIC was provided by the U.S. Department
@@ -103,7 +119,7 @@
 !-----------------------------------------------------------------------
 
 	subroutine mosaic_aerchem_driver(                         &
-		id, ktau, dtstep, ktauc, dtstepc, config_flags,   &
+		id, curr_secs, ktau, dtstep, ktauc, dtstepc, config_flags, &
 		t_phy, rho_phy, p_phy,                            &
 		moist, chem,                                      &
 		ids,ide, jds,jde, kds,kde,                        &
@@ -175,6 +191,7 @@
 !	chem_driver and routines under it do calculations
 !	over these spatial indices.
 
+    real(kind=8), intent(in) :: curr_secs
 	real, intent(in) :: dtstep, dtstepc
 !   dtstep - main model time step (s)
 !   dtstepc - time step for gas and aerosol chemistry(s)
@@ -281,12 +298,10 @@
 
 !   eventually iymdcur & ihmscur should be set to the correct date/time 
 !   using wrf timing routines
-	dum = dtstep*(ktau-1)
-	iymdcur = 1 + ifix( dum/86400.0 )
-        dum = mod( dum, 86400.0 )
-	ihmscur = nint( dum )
+	iymdcur = 1 + int( curr_secs/86400._8 )
+	ihmscur = nint( mod( curr_secs, 86400._8 ) )
 
-	t = dtstep*(ktau-1)
+	t = curr_secs
 	ncorecnt = ktau - 1
 
 #if defined ( aboxtest_box_testing_active )

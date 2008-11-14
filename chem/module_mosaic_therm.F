@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
       module module_mosaic_therm
 
@@ -121,6 +121,9 @@
         mclm_aer = m
 
         do 100 k = kclm_aer_calcbgn, kclm_aer_calcend
+
+!      epercent(:,:,:) = Z'FFF8000000000000' !NaN in r8... temporary hack
+      epercent(:,:,:) = 0. !temporary hack that does not core dump
 
           kclm_aer = k
           if (afracsubarea(k,m) .lt. 1.e-4) goto 100

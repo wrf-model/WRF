@@ -16,7 +16,7 @@ MODULE module_dry_dep_driver
 
 CONTAINS
 
-    subroutine dry_dep_driver(id,ktau,dtstep,config_flags,                &
+    subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
                p_phy,chem,rho_phy,dz8w,exch_h,hfx,dx,                     &
                cldfra, cldfra_old,                                        &
@@ -48,8 +48,8 @@ CONTAINS
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) ::                               &
-                                  ktau
+   INTEGER,      INTENT(IN   ) :: ktau
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_scalar ),       &
@@ -167,7 +167,7 @@ CONTAINS
            config_flags%chem_opt /= CHEM_TRACE2  .and.                   &
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
-          call wesely_driver(id,ktau,dtstep,                                 &
+          call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
@@ -177,7 +177,7 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
-          call wesely_driver(id,ktau,dtstep,                                 &
+          call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
@@ -202,7 +202,7 @@ CONTAINS
 !
 ! this does aerosol species (dust,seas, bc,oc) for gocart only
 !
-          call wesely_driver(id,ktau,dtstep,                                 &
+          call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
                gmt,julday,t_phy,moist,p8w,t8w,                            &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
@@ -257,7 +257,7 @@ CONTAINS
      CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR MOSAIC AEROSOLS')
        call mosaic_drydep_driver(                                       &
-               id, ktau, dtstep, config_flags,                          &
+               id, curr_secs, ktau, dtstep, config_flags,               &
                gmt, julday,                                             &
                t_phy, rho_phy, p_phy,                                   &
                ust, aer_res,                                            &
@@ -302,12 +302,12 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-        if (e_co(i,kts,j) .gt. 0) then
-           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-        endif
-        if (e_co(i,kts,j) .gt. 200) then
-           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
-        endif
+!!$        if (e_co(i,kts,j) .gt. 0) then
+!!$           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+!!$        endif
+!!$        if (e_co(i,kts,j) .gt. 200) then
+!!$           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+!!$        endif
 !
       do k=kts,kte
          zz(k)=z(i,k,j)-z_at_w(i,kts,j)
@@ -365,6 +365,7 @@ CONTAINS
    mixactivate_select: SELECT CASE(config_flags%chem_opt)
 
    CASE (RADM2SORG_AQ, RACMSORG_AQ)
+      CALL wrf_debug(15,'call mixactivate for sorgam aerosol')
       call sorgam_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &
 		dryrho_phy, t_phy, w, cldfra, cldfra_old, &
@@ -376,7 +377,7 @@ CONTAINS
 		ims,ime, jms,jme, kms,kme,                        &
 		its,ite, jts,jte, kts,kte                         )
    CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
-       CALL wrf_debug(15,'call mixactivate for mosaic aerosol')
+      CALL wrf_debug(15,'call mixactivate for mosaic aerosol')
       call mosaic_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &
 		dryrho_phy, t_phy, w, cldfra, cldfra_old, &

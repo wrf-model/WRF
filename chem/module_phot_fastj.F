@@ -36,11 +36,14 @@
 !   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
 !   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
 !   coupled meteorology-chemistry-aerosol model, Submitted to J. Geophys. Res.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
+!   Closure on the single scattering albedo in the WRF-Chem framework using
+!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
 !
 ! Contact Jerome Fast for updates on the status of manuscripts under review.  
 !
 ! Additional information:
-! *  www.pnl.gov/atmos_sciences/Jdf/wrfchem.html
+! *  www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support:
 ! Funding for adapting Fast-J was provided by the U.S. Department of Energy
@@ -56,7 +59,7 @@
 
 	contains
 !***********************************************************************
-       subroutine fastj_driver(id,ktau,dtstep,config_flags,            & 
+       subroutine fastj_driver(id,curr_secs,dtstep,config_flags,       &
                gmt,julday,t_phy,moist,p8w,p_phy,                       &
                chem,rho_phy,dz8w,xlat,xlong,z_at_w,                    &
                ph_o2,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,  &
@@ -134,8 +137,7 @@
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) ::                               &
-                                  ktau
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
@@ -182,8 +184,10 @@
       real radius_wet(nbin_a_maxd,kmaxd) !match arrays in MOSAIC routines.
       complex refindx(nbin_a_maxd,kmaxd)
 
-      integer i,j, k, nsub, isecfrm0, ixhour
-      real xtime, xhour, xmin, gmtp, tmidh
+      integer(kind=8) :: ixhour
+      integer i,j, k, nsub
+	  real(kind=8) :: xtime, xhour
+      real xmin, gmtp, tmidh
       real sla, slo
       real psfc
 
@@ -242,15 +246,14 @@
 !!$      end if
 
 ! determine current time of day in Greenwich Mean Time at middle 
-! of current time step, tmidh.  do this by computing the number of minutes 		
+! of current time step, tmidh.  do this by computing the number of minutes
 ! from beginning of run to middle of current time step
-        xtime=(ktau-1)*dtstep/60. + dtstep/120.   
-        ixhour = ifix(gmt + 0.01) + ifix(xtime/60.)	
-        xhour=float(ixhour)	!current hour
-        xmin = 60.*gmt + (xtime-xhour*60)
-        gmtp=mod(xhour,24.)	
-        tmidh= gmtp + xmin/60. 
-        isecfrm0 = ifix ( (ktau-1) * dtstep ) 
+    xtime    = curr_secs/60._8 + real(dtstep,8)/120._8
+    ixhour   = int(gmt + 0.01,8) + int(xtime/60._8,8)
+    xhour    = real(ixhour,8)	!current hour
+    xmin     = 60.*gmt + real(xtime-xhour*60_8,8)
+    gmtp     = mod(xhour,24._8)
+    tmidh    = gmtp + xmin/60.
 
 ! execute for each i,j column and each nsub subarea
     do nsub = 1, nsubareas
@@ -304,7 +307,7 @@
 !         call mieaer(                            &
 !              id, iclm, jclm, nbin_a,            &
 !              number_bin, radius_wet, refindx,   &
-!              dz, isecfrm0, lpar,                &
+!              dz, curr_secs, lpar,               &
 !              sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7,bscoef)
        end if
 
@@ -332,7 +335,7 @@
            pbnd, psfc, temp, ozone,                        &
            dz, cloudmr, airdensity, relhum, zatw,          &
            iclm, jclm, lpar, jpnl,                         &
-           isecfrm0, valuej, cos_sza, processingAerosols,  &
+           curr_secs, valuej, cos_sza, processingAerosols, &
            sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
 ! put column photolysis rates (valuej) into wrf photolysis (i,k,j) arrays
       CALL wrf_debug(250,'fastj_driver: calling mapJrates_tofrom_host')
@@ -492,7 +495,7 @@
              pbnd, psfc, temp, ozone,                          &
              dz, cloudmr, airdensity, relhum, zatw,            &
              isvode, jsvode, lpar, jpnl,                       &
-      	     isecfrm0, valuej, cos_sza, processingAerosols,    &
+      	     curr_secs, valuej, cos_sza, processingAerosols,   &
              sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
 !-----------------------------------------------------------------
 ! sets parameters for fastj call. 
@@ -507,7 +510,7 @@
 !    temp(lpar)= mid-cell temperature values (deg K)
 !    ozone(lpar) = mid-cell ozone mixing ratios 
 !    surface_albedo -- broadband albedo (dimensionless)
-!    isecfrm0 -- elapsed time from start of simulation in seconds.
+!    curr_secs -- elapsed time from start of simulation in seconds.
 !    isvode,jsvode  -- current column i,j.
 !
 !    lpar -- vertical extent of column (from module_fastj_cmnh)
@@ -593,7 +596,8 @@
 	real pbnd(0:lpar), psfc
 	real temp(lpar), ozone(lpar), surface_albedo
 	real dz(lpar), cloudmr(lpar), airdensity(lpar), relhum(lpar), zatw(lpar+1)
-	integer  isecfrm0, isvode, jsvode
+    real(kind=8) :: curr_secs
+	integer isvode, jsvode
 	
 	real cos_sza
     integer,parameter :: lunout=41
@@ -750,9 +754,9 @@
          valuej(k,nphoto_fastj)=0.0
          do l = 1, nphoto_fastj-1
             if (valuej(k,l) .lt. 0) then
-               write( msg, '(a,i8,4i4,1x,e11.4)' )   &
+               write( msg, '(a,f14.2,4i4,1x,e11.4)' )   &
                     'FASTJ negative Jrate ' //   &
-                    'tsec i j k l J(k,l)', isecfrm0,isvode,jsvode,k,l,valuej(k,l)
+                    'tsec i j k l J(k,l)', curr_secs,isvode,jsvode,k,l,valuej(k,l)
                call peg_message( lunerr, msg )
                valuej(k,l) = 0.0
 ! following code used if want run stopped with negative Jrate                 
@@ -768,39 +772,9 @@
 !	   valuej_no3rate(k) =   &
 !         	 valuej(k, lfastj_no3x) + valuej(k,lfastj_no3l)
 !	end do
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	
-!EC FOLLOWING PRINT LOOP SHOULD BE ELIMINATED FROM FINAL WRF CODE	
-! print outs of aerosol optical properties are performed
-! in mie subroutines. now output jrates.	
-!	write(27,909)
-! 909     format(   &
-!               'isecfrm0',2x, 'i', 2x, 'j',2x 'k',3x,  'cos_sza',7x,   &
-!         'no2',13x,'o3a', 13x,'o3b',13x,   &
-!         'h2o2' , 12x, 'hchoa',11x,'hchob', 11x,'ch3ooh',10x,'no3',   &
-!          13x,'hono',12x,'n2o5',12x, 'hno3',12x,'hno4')
-!
-!	do k = 1, lpar
-!	  write(27, 911) isecfrm0,isvode,jsvode,k, cos_sza,   &
-!      	     valuej(k, lfastj_no2),   &
-!             valuej(k, lfastj_o3a) ,   &
-!      	     valuej(k, lfastj_o3b),   &
-!      	     valuej(k, lfastj_h2o2),   &
-!      	     valuej(k, lfastj_hchoa),   &
-!      	     valuej(k, lfastj_hchob) ,   &
-!      	     valuej(k, lfastj_ch3ooh),   &
-!      	     valuej_no3rate(k),   &
-!      	     valuej(k, lfastj_hono),   &
-!      	     valuej(k, lfastj_n2o5),   &
-!      	     valuej(k, lfastj_hno3) ,   &
-!      	     valuej(k, lfastj_hno4)
-!
-!911	  format(i7,3(2x,i4),2x,f7.4, 2x,   &
-!             12(e14.6,2x))
-!        end do
-!EC END PRINT LOOP.	
-!ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	  	
-	return
+
 	end subroutine interface_fastj                          
+
 !***********************************************************************
 	subroutine set_common_mie(lpar, &
           sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7)
@@ -971,11 +945,17 @@
 !
 
 ! JCB - note that pj(NB+1) = p and is defined such elsewhere
-        do i=1,lpar+1
-	pj(i)=pressure(i)
-	T(nslon,nslat,i)=temperature(i)
-	OD(nslon,nslat,i)=optical_depth(i)
+! wig: v3.0.0 release has do loop from 1:lpar+1 but T is never
+!      initialized at lpar+1 leading to model instabilities. T and OD
+!      are ultimately never used at lpar+1. So, I changed this loop to
+!      1:lpar and then just assign pj a value at lpar+1.
+        do i=1,lpar
+           pj(i)=pressure(i)
+           T(nslon,nslat,i)=temperature(i)
+           OD(nslon,nslat,i)=optical_depth(i)
         enddo
+        pj(lpar+1) = pressure(i)
+     
 ! surface albedo
 	SA(nslon,nslat)=surface_albedo
 !
@@ -1269,7 +1249,6 @@
       integer isvode,jsvode
 
        pj(NB+1) = 0.d0 ! define top level
-
 !
 !  Set up cloud and surface properties
       call CLDSRF(isvode,jsvode,odcol,nslat,nslon,p,t,od,sa,lpar,jpnl)

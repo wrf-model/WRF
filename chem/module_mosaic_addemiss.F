@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 MODULE module_mosaic_addemiss
 !WRF:MODEL_LAYER:CHEMICS
@@ -871,6 +871,8 @@ END MODULE module_mosaic_addemiss
         real :: gamma(4), delta(4)
         real :: sz(8)
         real :: dustflux, densdust, mass1part
+
+        p1st = param_first_scalar
 !
 ! from Nickovic et al., JGR, 2001 and Shaw et al. 2007
 ! beta: fraction of clay, small silt, large silt, and sand correcsponding to Zobler class (7)
@@ -958,7 +960,7 @@ END MODULE module_mosaic_addemiss
 ! part1 - compute vegetation mask
 !
 ! * f8, f50, f51, f52 refer to vegetation classes from the Olsen categories
-!   for desert, sand desert, grass aemi-desert, and shrub semi-desert
+!   for desert, sand desert, grass semi-desert, and shrub semi-desert
 ! * in WRF, vegetation types 7, 8 and 10 are grassland, shrubland, and savanna
 !   that are dominate types in Mexico and probably have some erodable surface
 !   during the dry season

@@ -38,11 +38,14 @@
 !   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
 !   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
 !   coupled meteorology-chemistry-aerosol model. JGR, 111, doi:10.1029/2005JD006721.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
+!   Closure on the single scattering albedo in the WRF-Chem framework using
+!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
 !
 ! Contact Jerome Fast for updates on the status of manuscripts under review.  
 !
 ! Additional information:
-! *  www.pnl.gov/atmos_sciences/Jdf/wrfchem.html
+! *  www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support:
 ! Funding for this code development was provided by the U.S. Department of Energy
@@ -91,7 +94,7 @@
 ! THIS CODE IS STILL BEING TESTED.  USERS ARE ENCOURAGED TO USE ONLY
 ! AER_OP_OPT=1
 !
-      subroutine optical_averaging(id,ktau,dtstep,config_flags,         &
+      subroutine optical_averaging(id,curr_secs,dtstep,config_flags,    &
                  nbin_o,haveaer,option_method,option_mie,chem,dz8w,alt, &
                  h2oai,h2oaj,                                           &
                  tauaer1,tauaer2,tauaer3,tauaer4,                       &
@@ -112,8 +115,9 @@
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) :: ktau, nbin_o
-      REAL,      INTENT(IN   ) :: dtstep
+   INTEGER,      INTENT(IN   ) :: nbin_o
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
+   REAL,         INTENT(IN   ) :: dtstep
 !
 ! array that holds all advected chemical species
 !
@@ -150,7 +154,7 @@
            refindx_col, refindx_core_col, refindx_shell_col
    real, dimension( kts:kte ) :: dz
 !
-   integer isecfrm0, nspint
+   integer nspint
    integer iclm, jclm, k, isize
    integer option_method, option_mie
    parameter ( nspint = 4 ) ! number of spectral interval bands 
@@ -167,7 +171,8 @@
 !
    chem_select: SELECT CASE(config_flags%chem_opt)
 !
-   CASE (RADM2SORG,RADM2SORG_KPP)
+   CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+          RACMSORG,  RACMSORG_AQ,  RACMSORG_KPP)
      call optical_prep_modal(nbin_o, chem, alt,                        &
           h2oai, h2oaj, refindx, radius_wet, number_bin,               &
           radius_core, refindx_core, refindx_shell,                    &
@@ -218,7 +223,6 @@
           end if
        enddo
        enddo
-       isecfrm0 = ifix ( (ktau-1) * dtstep )
 
        if (option_method .eq. 2) then
           do k = kts, kte
@@ -268,7 +272,7 @@
        if (option_mie .eq. 1) then 
           call mieaer(id, iclm, jclm, nbin_o,                          &
              number_bin_col, radius_wet_col, refindx_col,              &
-             dz, isecfrm0, kte,                                        &
+             dz, curr_secs, kte,                                       &
              sizeaer, extaer, waer, gaer, tauaer,                      &
              l2, l3, l4, l5, l6, l7, bscoef                            )
        endif
@@ -276,7 +280,7 @@
           call mieaer_sc(id, iclm, jclm, nbin_o,                       &
              number_bin_col, radius_wet_col, refindx_col,              &
              radius_core_col, refindx_core_col,                        &
-             dz, isecfrm0, kte,                                        &
+             dz, curr_secs, kte,                                       &
              sizeaer, extaer, waer, gaer, tauaer,                      &
              l2, l3, l4, l5, l6, l7, bscoef                            )
        endif
@@ -284,7 +288,7 @@
           call mieaer_sc(id, iclm, jclm, nbin_o,                       &
              number_bin_col, radius_wet_col, refindx_shell_col,        &
              radius_core_col, refindx_core_col,                        &
-             dz, isecfrm0, kte,                                        &
+             dz, curr_secs, kte,                                       &
              sizeaer, extaer, waer, gaer, tauaer,                      &
              l2, l3, l4, l5, l6, l7, bscoef                            )
        endif
@@ -936,6 +940,10 @@
         mass_clj = 0.0
         mass_msai = 0.0
         mass_msaj = 0.0
+        mass_nai = 0.0
+        mass_naj = 0.0
+        mass_cli = 0.0
+        mass_clj = 0.0
         mass_h2oi = 0.0
         mass_h2oj = 0.0
         mass_antha = 0.0
@@ -954,92 +962,97 @@
         conv1b = (1.0/alt(i,k,j)) * 1.0e-6
 
 ! Accumulation mode...
-        l=lptr_so4_aer(1,1,iphase)
+!       isize = 1 ; itype = 1   ! before march-2008 ordering
+        isize = 2 ; itype = 1   ! after  march-2008 ordering
+        l=lptr_so4_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_so4j= chem(i,k,j,l)*conv1a
-        l=lptr_no3_aer(1,1,iphase)
+        l=lptr_no3_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_no3j= chem(i,k,j,l)*conv1a
-        l=lptr_nh4_aer(1,1,iphase)
+        l=lptr_nh4_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_nh4j= chem(i,k,j,l)*conv1a
-        l=lptr_p25_aer(1,1,iphase)
+        l=lptr_p25_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_oinj= chem(i,k,j,l)*conv1a
-        l=lptr_orgaro1_aer(1,1,iphase)
+        l=lptr_orgaro1_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_aro1j= chem(i,k,j,l)*conv1a
-        l=lptr_orgaro2_aer(1,1,iphase)
+        l=lptr_orgaro2_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_aro2j= chem(i,k,j,l)*conv1a
-        l=lptr_orgalk_aer(1,1,iphase)
+        l=lptr_orgalk_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_alk1j= chem(i,k,j,l)*conv1a
-        l=lptr_orgole_aer(1,1,iphase)
+        l=lptr_orgole_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ole1j= chem(i,k,j,l)*conv1a
-        l=lptr_orgba1_aer(1,1,iphase)
+        l=lptr_orgba1_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba1j= chem(i,k,j,l)*conv1a
-        l=lptr_orgba2_aer(1,1,iphase)
+        l=lptr_orgba2_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba2j= chem(i,k,j,l)*conv1a
-        l=lptr_orgba3_aer(1,1,iphase)
+        l=lptr_orgba3_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba3j= chem(i,k,j,l)*conv1a
-        l=lptr_orgba4_aer(1,1,iphase)
+        l=lptr_orgba4_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba4j= chem(i,k,j,l)*conv1a
-        l=lptr_orgpa_aer(1,1,iphase)
+        l=lptr_orgpa_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_paj= chem(i,k,j,l)*conv1a
-        l=lptr_ec_aer(1,1,iphase)
+        l=lptr_ec_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_bcj= chem(i,k,j,l)*conv1a
-        l=lptr_na_aer(1,1,iphase)
+        l=lptr_na_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_naj= chem(i,k,j,l)*conv1a
-        l=lptr_cl_aer(1,1,iphase)
+        l=lptr_cl_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_clj= chem(i,k,j,l)*conv1a
-        l=numptr_aer(1,1,iphase)
+        l=numptr_aer(isize,itype,iphase)
         if (l .ge. p1st)  num_aj= chem(i,k,j,l)*conv1b
         mass_h2oj= h2oaj(i,k,j) * 1.0e-12
         mass_ocj=mass_aro1j+mass_aro2j+mass_alk1j+mass_ole1j+ &
                  mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j+mass_paj
 
 ! Aitken mode...
-        l=lptr_so4_aer(1,2,iphase)
+!       isize = 1 ; itype = 2   ! before march-2008 ordering
+        isize = 1 ; itype = 1   ! after  march-2008 ordering
+        l=lptr_so4_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_so4i= chem(i,k,j,l)*conv1a
-        l=lptr_no3_aer(1,2,iphase)
+        l=lptr_no3_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_no3i= chem(i,k,j,l)*conv1a
-        l=lptr_nh4_aer(1,2,iphase)
+        l=lptr_nh4_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_nh4i= chem(i,k,j,l)*conv1a
-        l=lptr_p25_aer(1,2,iphase)
+        l=lptr_p25_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_oini= chem(i,k,j,l)*conv1a
-        l=lptr_orgaro1_aer(1,2,iphase)
+        l=lptr_orgaro1_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_aro1i= chem(i,k,j,l)*conv1a
-        l=lptr_orgaro2_aer(1,2,iphase)
+        l=lptr_orgaro2_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_aro2i= chem(i,k,j,l)*conv1a
-        l=lptr_orgalk_aer(1,2,iphase)
+        l=lptr_orgalk_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_alk1i= chem(i,k,j,l)*conv1a
-        l=lptr_orgole_aer(1,2,iphase)
+        l=lptr_orgole_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ole1i= chem(i,k,j,l)*conv1a
-        l=lptr_orgba1_aer(1,2,iphase)
+        l=lptr_orgba1_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba1i= chem(i,k,j,l)*conv1a
-        l=lptr_orgba2_aer(1,2,iphase)
+        l=lptr_orgba2_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba2i= chem(i,k,j,l)*conv1a
-        l=lptr_orgba3_aer(1,2,iphase)
+        l=lptr_orgba3_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba3i= chem(i,k,j,l)*conv1a
-        l=lptr_orgba4_aer(1,2,iphase)
+        l=lptr_orgba4_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_ba4i= chem(i,k,j,l)*conv1a
-        l=lptr_orgpa_aer(1,2,iphase)
+        l=lptr_orgpa_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_pai= chem(i,k,j,l)*conv1a
-        l=lptr_ec_aer(1,2,iphase)
+        l=lptr_ec_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_bci= chem(i,k,j,l)*conv1a
-        l=lptr_na_aer(1,2,iphase)
+        l=lptr_na_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_nai= chem(i,k,j,l)*conv1a
-        l=lptr_cl_aer(1,2,iphase)
+        l=lptr_cl_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_cli= chem(i,k,j,l)*conv1a
-        l=numptr_aer(1,2,iphase)
+        l=numptr_aer(isize,itype,iphase)
         if (l .ge. p1st)  num_ai= chem(i,k,j,l)*conv1b
         mass_h2oi= h2oai(i,k,j) * 1.0e-12
         mass_oci=mass_aro1i+mass_aro2i+mass_alk1i+mass_ole1i+ &
                  mass_ba1i+mass_ba2i+mass_ba3i+mass_ba4i+mass_pai
 
-
 ! Coarse mode...
-        l=lptr_anth_aer(1,3,iphase)
+!       isize = 1 ; itype = 3   ! before march-2008 ordering
+        isize = 1 ; itype = 2   ! after  march-2008 ordering
+        l=lptr_anth_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_antha= chem(i,k,j,l)*conv1a
-        l=lptr_seas_aer(1,3,iphase)
+        l=lptr_seas_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_seas= chem(i,k,j,l)*conv1a
-        l=lptr_soil_aer(1,3,iphase)
+        l=lptr_soil_aer(isize,itype,iphase)
         if (l .ge. p1st)  mass_soil= chem(i,k,j,l)*conv1a
-        l=numptr_aer(1,3,iphase)
+        l=numptr_aer(isize,itype,iphase)
         if (l .ge. p1st)  num_ac= chem(i,k,j,l)*conv1b
 
         vol_ai = (mass_so4i/dens_so4)+(mass_no3i/dens_no3)+ &
@@ -1206,7 +1219,7 @@
 !	radius_wet(nbin_a,kmaxd) -- wet radius, cm
 !    	refindx(nbin_a,kmaxd) --volume averaged complex index of refraction
 !	dz -- depth of individual cells in column, m
-!	isecfrm0 - time from start of run, sec
+!	curr_secs -- time from start of run, sec
 !	lpar -- number of grid cells in vertical (via module_fastj_cmnh)
 !   kmaxd -- predefined maximum allowed levels from module_data_mosaic_other
 !            passed here via module_fastj_cmnh
@@ -1222,7 +1235,7 @@
         subroutine mieaer( &
 	          id, iclm, jclm, nbin_a,   &
               number_bin_col, radius_wet_col, refindx_col,   &
-              dz, isecfrm0, lpar, &
+              dz, curr_secs, lpar, &
               sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7,bscoef)  ! added bscoef JCB 2007/02/01
 
 !       USE module_data_mosaic_other, only : kmaxd
@@ -1245,7 +1258,8 @@
         data wavmid     &
             / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
 !jdf
-    integer, intent(in) :: id, iclm, jclm, nbin_a, isecfrm0
+    integer, intent(in) :: id, iclm, jclm, nbin_a
+    real(kind=8), intent(in) :: curr_secs
 !jdf    real, intent(in), dimension(nbin_a, kmaxd) :: number_bin_col
 !jdf    real, intent(inout), dimension(nbin_a, kmaxd) :: radius_wet_col
 !jdf    complex, intent(in) :: refindx_col(nbin_a, kmaxd)
@@ -1390,7 +1404,7 @@
  9099	format('for cell i = ', i3, 2x, 'j = ', i3)	
               write(*,9100)
  9100     format(   &
-               'isecfrm0', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
+               'curr_secs', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
       	       'ibin', 3x,   &
                'refindx_col(ibin,k)', 3x,   &
                'radius_wet_col(ibin,k)', 3x,   &
@@ -1401,7 +1415,7 @@
             do k = 1, lpar
             do ibin = 1, nbin_a
               write(*, 9120)   &
-                 isecfrm0,iclm, jclm, k, ibin,   &
+                 curr_secs,iclm, jclm, k, ibin,   &
                  refindx_col(ibin,k),   &
                  radius_wet_col(ibin,k),   &
                  number_bin_col(ibin,k)
@@ -1809,7 +1823,7 @@
  909	format(	' for cell i = ', i3, ' j = ', i3)          	
                write(*,910)
  910     format(   &
-               'isecfrm0', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
+               'curr_secs', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
       	        'dzmfastj', 8x,   &
                'tauaer(1,k)',1x, 'tauaer(2,k)',1x,'tauaer(3,k)',3x,   &
                'tauaer(4,k)',5x,   &
@@ -1825,7 +1839,7 @@
 !ec output for run_out.30
          do k = 1, lpar
          write(*, 912)   &
-           isecfrm0,iclm, jclm, k,   &
+           curr_secs,iclm, jclm, k,   &
            dz(k) ,   &
            (tauaer(n,k),   n=1,4),   &
            (waer(n,k),     n=1,4),   &
@@ -3804,7 +3818,7 @@
 !		in volume averaged mode
 !	refindx_core_col(nbin_a,kmaxd) -- complex index of refraction for core
 !	dz -- depth of individual cells in column, m
-!	isecfrm0 - time from start of run, sec
+!	curr_secs -- time from start of run, sec
 !	lpar -- number of grid cells in vertical (via module_fastj_cmnh)
 !   kmaxd -- predefined maximum allowed levels from module_data_mosaic_other
 !            passed here via module_fastj_cmnh
@@ -3823,7 +3837,7 @@
 	          id, iclm, jclm, nbin_a,   &
               number_bin_col, radius_wet_col, refindx_col,   &
               radius_core_col, refindx_core_col, &  ! jcb, 2007/07/25; for shell/core implementation, set radius_cor_col=0 for volume-average configuration
-              dz, isecfrm0, lpar, &
+              dz, curr_secs, lpar, &
               sizeaer,extaer,waer,gaer,tauaer,l2,l3,l4,l5,l6,l7,bscoef)  ! added bscoef JCB 2007/02/01
 !
 	USE module_data_mosaic_other, only : kmaxd
@@ -3847,7 +3861,8 @@
         data wavmid     &
             / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
 !jdf
-    integer, intent(in) :: id, iclm, jclm, nbin_a, isecfrm0
+    integer, intent(in) :: id, iclm, jclm, nbin_a
+    real(kind=8), intent(in) :: curr_secs
 !jdf    real, intent(in), dimension(nbin_a, kmaxd) :: number_bin_col
 !jdf    real, intent(inout), dimension(nbin_a, kmaxd) :: radius_wet_col
 !jdf    complex, intent(in) :: refindx_col(nbin_a, kmaxd)
@@ -3898,7 +3913,7 @@
  9099	format('for cell i = ', i3, 2x, 'j = ', i3)	
               write(*,9100)
  9100     format(   &
-               'isecfrm0', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
+               'curr_secs', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
       	       'ibin', 3x,   &
                'refindx_col(ibin,k)', 3x,   &
                'radius_wet_col(ibin,k)', 3x,   &
@@ -3909,7 +3924,7 @@
             do k = 1, lpar
             do ibin = 1, nbin_a
               write(*, 9120)   &
-                 isecfrm0,iclm, jclm, k, ibin,   &
+                 curr_secs,iclm, jclm, k, ibin,   &
                  refindx_col(ibin,k),   &
                  radius_wet_col(ibin,k),   &
                  number_bin_col(ibin,k)
@@ -4058,7 +4073,7 @@
  909	format(	' for cell i = ', i3, ' j = ', i3)          	
                write(*,910)
  910     format(   &
-               'isecfrm0', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
+               'curr_secs', 3x, 'i', 3x, 'j', 3x,'k', 3x,   &
       	        'dzmfastj', 8x,   &
                'tauaer(1,k)',1x, 'tauaer(2,k)',1x,'tauaer(3,k)',3x,   &
                'tauaer(4,k)',5x,   &
@@ -4074,7 +4089,7 @@
 !ec output for run_out.30
          do k = 1, lpar
          write(*, 912)   &
-           isecfrm0,iclm, jclm, k,   &
+           curr_secs,iclm, jclm, k,   &
            dz(k) ,   &
            (tauaer(n,k),   n=1,4),   &
            (waer(n,k),     n=1,4),   &

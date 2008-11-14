@@ -1,17 +1,20 @@
 !WRF:MODEL_LAYER:INITIALIZATION
 !
-   subroutine chem_init (id,chem,emis_ant,scalar,dt,bioemdt,photdt,chemdt,stepbioe,  &
-               stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,xlat,xlong,&
-               g,aerwrf,config_flags,alt,t,p,CONVFAC,ttday,tcosz,julday,gmt,    &
-               gd_cloud, gd_cloud2,raincv_a,raincv_b,                                  &
+   subroutine chem_init (id,chem,emis_ant,scalar,dt,bioemdt,photdt,chemdt,stepbioe, &
+               stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,xlat,xlong,    &
+               g,aerwrf,config_flags,grid,alt,t,p,CONVFAC,ttday,tcosz,julday,gmt,   &
+               gd_cloud, gd_cloud2,raincv_a,raincv_b,                               &
                gd_cloud_a, gd_cloud2_a,                              &
                gd_cloud_b, gd_cloud2_b,                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
                gaer1,gaer2,gaer3,gaer4,                              &
                waer1,waer2,waer3,waer4,                              &
                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer,                  &
-               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,chem_in_opt,       &
-               kemit,                                                &
+               pm2_5_dry,pm2_5_water,pm2_5_dry_ec,                   &
+               last_chem_time_year, last_chem_time_month,            &
+               last_chem_time_day, last_chem_time_hour,              &
+               last_chem_time_minute, last_chem_time_second,         &
+               chem_in_opt, kemit,                                   &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -26,11 +29,14 @@
    USE module_data_gocart_seas
    USE module_data_gocartchem
    USE module_gocart_chem ! , only: szangle
-   USE module_cbm4_initmixrats, only:  cbm4_init_wrf_mixrats
-   USE module_cbmz_initmixrats, only:  cbmz_init_wrf_mixrats
-   USE module_mosaic_driver, only:  init_data_mosaic_asect
-   USE module_mosaic_initmixrats, only:  mosaic_init_wrf_mixrats
-   USE module_input_chem_data, only:  get_last_gas, gasprofile_init_pnnl, setup_gasprofile_maps
+   USE module_cbm4_initmixrats, only:     cbm4_init_wrf_mixrats
+   USE module_cbmz_initmixrats, only:     cbmz_init_wrf_mixrats
+   USE module_mosaic_driver, only:        init_data_mosaic_asect
+   USE module_mosaic_initmixrats, only:   mosaic_init_wrf_mixrats
+   USE module_input_chem_data, only:      get_last_gas,              &
+                                          gasprofile_init_pnnl,      &
+                                          last_chem_time,            &
+                                          setup_gasprofile_maps
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    IMPLICIT NONE
 
@@ -38,6 +44,12 @@
    INTEGER,      INTENT(IN   ) :: plumerisefire_frq
    INTEGER,      INTENT(IN   ) :: chem_in_opt
    INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
+                                  last_chem_time_year,               &
+                                  last_chem_time_month,              &
+                                  last_chem_time_day,                &
+                                  last_chem_time_hour,               &
+                                  last_chem_time_minute,             &
+                                  last_chem_time_second,             &
                                   ids,ide, jds,jde, kds,kde,         &
                                   ims,ime, jms,jme, kms,kme,         &
                                   its,ite, jts,jte, kts,kte
@@ -74,9 +86,11 @@
    real, INTENT (IN) :: g
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
+   TYPE(domain) , TARGET,        INTENT (in) ::     grid
 !
 ! local stuff
 !
+   TYPE(WRFU_TimeInterval) :: tmpTimeInterval
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
@@ -122,8 +136,8 @@ call wrf_message("**************************************************************
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (RADM2SORG_AQ )
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQ chemistry from chem_driver')
-       call wrf_message("WARNING: RADM2SORG_AQ chemistry option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+       call wrf_message("WARNING: RADM2SORG_AQ chemistry option is experimental and not yet fully tested.")
+       call wrf_message("         We recommend contacting wrfchemhelp for assistance.")
      CASE (racmsorg_aq )
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM from chem_driver')
        call wrf_message("WARNING: RACMSORG_AQ chemistry option is highly experimental and not recommended for use.")
@@ -149,8 +163,8 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
-      if ( config_flags%chem_opt >= 11 .OR. config_flags%chem_opt <= 8) then
-        call wrf_error_fatal("ERROR: wet scavaging option requires chem_opt = 9 or 10 to function.")
+      if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
+        call wrf_error_fatal("ERROR: wet scavaging option requires chem_opt = 9 through 12 to function.")
       endif
       if ( config_flags%mp_physics /= 2 ) then
         call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 2 (Lin et al.) to function.")
@@ -158,8 +172,8 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%cldchem_onoff == 1 ) then
-      if ( config_flags%chem_opt >= 11 .OR. config_flags%chem_opt <= 8) then
-        call wrf_error_fatal("ERROR:  cloud chemistry option requires chem_opt = 9 or 10 to function.")
+      if ( config_flags%chem_opt >= 13 .OR. config_flags%chem_opt <= 8) then
+        call wrf_error_fatal("ERROR:  cloud chemistry option requires chem_opt = 9 through 12 to function.")
       endif
       if ( config_flags%mp_physics /= 2 ) then
         call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) to function.")
@@ -266,7 +280,7 @@ call wrf_message("**************************************************************
 !
     if ( (config_flags%gas_bc_opt == GAS_BC_PNNL) .or.   &
          (config_flags%gas_ic_opt == GAS_IC_PNNL) ) then
-       call gasprofile_init_pnnl
+       call gasprofile_init_pnnl( config_flags%chem_opt )
     end if
 !
 ! we are doing initialization here, first photolysis
@@ -441,7 +455,7 @@ call wrf_message("**************************************************************
                chem_in_opt,config_flags%aer_ic_opt,is_aerosol,       &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
-               its,ite, jts,jte, kts,kte                             )
+               its,ite, jts,jte, kts,kte, config_flags               )
 !...Convert aerosols to mixing ratio
         if( .NOT. config_flags%restart ) then
         if(config_flags%chem_in_opt == 0 .and. num_chem.gt.numgas)then
@@ -475,11 +489,12 @@ call wrf_message("**************************************************************
 
    END SELECT aer_select
 
-   aer_sanity_check : SELECT CASE(config_flags%chem_opt)
+   progn_sanity_check : SELECT CASE(config_flags%chem_opt)
    CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
-      if( config_flags%progn == 0 ) &
-           call wrf_error_fatal("ERROR: When using aqueous chemistry, progn must be set to 1.")
-   END SELECT aer_sanity_check
+      if( config_flags%progn /= 1 ) &
+           call wrf_error_fatal( &
+           "ERROR: When using a ..._AQ chemistry package, progn must be 1")
+   END SELECT progn_sanity_check
 
    do nv=1,num_chem
       do j=jts,jte
@@ -502,7 +517,8 @@ call wrf_message("**************************************************************
 ! initialization for cbmz gas-phase chemistry
 !
    cbmz_select: SELECT CASE(config_flags%chem_opt)
-     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+     CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
+           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
        CALL wrf_debug(15,'initializing cbmz gas-phase chemistry')
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
@@ -514,6 +530,7 @@ call wrf_message("**************************************************************
                its,ite, jts,jte, kts,kte               )
        endif
    END SELECT cbmz_select
+!
 ! initialization for cb4 gas-phase chemistry
 !
      cb4_select: SELECT CASE(config_flags%chem_opt)
@@ -529,7 +546,6 @@ call wrf_message("**************************************************************
                  its,ite, jts,jte, kts,kte               )
          endif
      END SELECT cb4_select
-
 !
 ! Initialize the cloud droplet number and mass
 !
@@ -538,7 +554,31 @@ call wrf_message("**************************************************************
             config_flags, chem, scalar,                &
             ims,ime, jms,jme, kms,kme,                 &
             its,ite, jts,jte, kts,kte                  )
-
+    end if
+!
+! Setup time info for chemistry
+!
+    if( config_flags%restart ) then
+       call wrf_debug( 15, "Setting last_chem_time from restart file" )
+! Do not know if I need the following nl_gets.
+! domain_get_sim_start_time uses them for simulation_start_...
+!          CALL nl_get_start_year   ( 1, last_chem_time_year   )
+!          CALL nl_get_start_month  ( 1, last_chem_time_month  )
+!          CALL nl_get_start_day    ( 1, last_chem_time_day    )
+!          CALL nl_get_start_hour   ( 1, last_chem_time_hour   )
+!          CALL nl_get_start_minute ( 1, last_chem_time_minute )
+!          CALL nl_get_start_second ( 1, last_chem_time_second )
+       call WRFU_TimeSet( last_chem_time(id),         &
+                          YY = last_chem_time_year,   &
+                          MM = last_chem_time_month,  &
+                          DD = last_chem_time_day,    &
+                          H  = last_chem_time_hour,   &
+                          M  = last_chem_time_minute, &
+                          S  = last_chem_time_second  )
+    else
+       call wrf_debug( 15, "Setting last_chem_time to model start time-dt" )
+       call WRFU_TimeIntervalSet(tmpTimeInterval, s_=real(dt,8))
+       last_chem_time(id) = domain_get_current_time(grid) - tmpTimeInterval
     end if
 
     END SUBROUTINE chem_init

@@ -1,10 +1,18 @@
+!**********************************************************************************  
+! This computer software was prepared by Battelle Memorial Institute, hereinafter
+! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
+! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
+! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-!   WRF-chem V3.0 : Original version of optical_driver written by Jerome Fast (PNNL)
-!                   and James Barnard (PNNL)
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
+!**********************************************************************************  
+!
+! WRF-chem V3.0 : Original version of optical_driver written by Jerome Fast (PNNL)
+!                 and James Barnard (PNNL)
 !
 !WRF:MODEL_LAYER:CHEMISTRY
 !
-      SUBROUTINE optical_driver (id,ktau,dtstep,config_flags,haveaer,    &
+      SUBROUTINE optical_driver(id,curr_secs,dtstep,config_flags,haveaer,&
                chem,dz8w,alt,                                            &
                h2oai,h2oaj,                                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                          &
@@ -26,8 +34,8 @@
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) :: ktau
-      REAL,      INTENT(IN   ) :: dtstep
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
+   REAL,         INTENT(IN   ) :: dtstep
 !
 ! array that holds all advected chemical species
 !
@@ -67,7 +75,8 @@
      return
    ENDIF
    select case (config_flags%chem_opt)
-   case ( RADM2SORG,           RADM2SORG_KPP,      &
+   case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
+          RACMSORG,            RACMSORG_KPP,       RACMSORG_AQ,  &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
       processingAerosols = .true.
@@ -85,7 +94,8 @@
 ! SHELL: shell-core approach, placeholder
 !
    select case (config_flags%chem_opt)
-   case ( RADM2SORG, RADM2SORG_KPP)
+   case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
+          RACMSORG,            RACMSORG_KPP,       RACMSORG_AQ   )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
@@ -93,7 +103,7 @@
    end select
 !
      call wrf_debug(15,'optical averaging')
-     chem_opt_select: SELECT CASE(config_flags%aer_op_opt)
+     aer_op_opt_select: SELECT CASE(config_flags%aer_op_opt)
      CASE (VOLUME_APPROX)
        option_method=1
        option_mie=1
@@ -110,9 +120,16 @@
        option_method=3
        option_mie=2
      CASE DEFAULT
-     END SELECT chem_opt_select
-     call wrf_debug(15,'optical driver: call optical averaging')
-     call optical_averaging(id,ktau,dtstep,config_flags,             & 
+        if( config_flags%aer_op_opt > 0 ) then
+           call wrf_message('WARNING: Invalid aer_op_opt. Defaulting to VOLUME_APPROX.')
+           option_method=1
+           option_mie=1
+        end if
+     END SELECT aer_op_opt_select
+
+     if( config_flags%aer_op_opt > 0 ) then
+        call wrf_debug(15,'optical driver: call optical averaging')
+        call optical_averaging(id,curr_secs,dtstep,config_flags,     &
              nbin_o,haveaer,option_method,option_mie,chem,dz8w,alt,  &
              h2oai,h2oaj,                                            &
              tauaer1,tauaer2,tauaer3,tauaer4,                        &
@@ -123,6 +140,11 @@
              ids,ide, jds,jde, kds,kde,                              &
              ims,ime, jms,jme, kms,kme,                              &
              its,ite, jts,jte, kts,kte                               )
+     else
+        !If aer_op_opt==0 then the optical arrays are already set to
+        !zero in chemics_init so there will not be a problem if the
+        !user has selected aer_ra_feedback=1.
+     end if
 !
    endif
    return

@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 
 !----------------------------------------------------------------------
@@ -84,7 +84,6 @@ CONTAINS
 
 
 ! calculate volume-weighted bulk hygroscopicity for each type and size
-!!$      hygro(its:ite, :, jts:jte, :, :) = 0. !~wig: testing, should not need this
       do 100 j=jts,jte
       do 100 k=kts,kte
       do 100 i=its,ite

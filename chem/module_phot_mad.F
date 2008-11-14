@@ -1154,18 +1154,18 @@
       ! END MODULE module_data_photmad
 !
     CONTAINS
-      subroutine madronich1_driver(id,ktau,dtstep,config_flags,haveaer, &
-               gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,             &
-               chem,rho_phy,dz8w,                                       &
-               xlat,xlong,z_at_w,gd_cloud,gd_cloud2,                    &
-               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2, &
-               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &
-               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,          &
-               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob, &
-               pm2_5_dry,pm2_5_water,uvrad,                             &
-               ids,ide, jds,jde, kds,kde,                               &
-               ims,ime, jms,jme, kms,kme,                               &
-               its,ite, jts,jte, kts,kte                                )
+      subroutine madronich1_driver(id,curr_secs,ktau,config_flags,haveaer,&
+               gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,               &
+               chem,rho_phy,dz8w,                                         &
+               xlat,xlong,z_at_w,gd_cloud,gd_cloud2,                      &
+               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,   &
+               ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,       &
+               ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,            &
+               ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,   &
+               pm2_5_dry,pm2_5_water,uvrad,                               &
+               ids,ide, jds,jde, kds,kde,                                 &
+               ims,ime, jms,jme, kms,kme,                                 &
+               its,ite, jts,jte, kts,kte                                  )
    USE module_configure
    USE module_state_description
    USE module_model_constants
@@ -1175,8 +1175,8 @@
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte
-   INTEGER,      INTENT(IN   ) ::                               &
-                                  ktau
+   INTEGER,      INTENT(IN   ) :: ktau
+   REAL(KIND=8), INTENT(IN   ) :: curr_secs
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),        &
          INTENT(IN ) ::                                   moist
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
@@ -1204,8 +1204,7 @@
                                                      xlong
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,    &     
           INTENT(INOUT   ) ::                               uvrad
-      REAL,      INTENT(IN   ) ::                               &
-                             dtstep,gmt
+      REAL,      INTENT(IN   ) ::                      gmt
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
@@ -1214,21 +1213,23 @@
 !                                                    
 ! LOCAL  VAR
 
-   INTEGER :: ki,i,j,k,ixhour,n,iprt
+   INTEGER(KIND=8) :: ixhour
+   INTEGER :: ki,i,j,k,n,iprt
 !   photolysis input
 !
       real tt(kts:kte+1),o33(kts:kte+1),rhoa(kts:kte+1),aerext(kts:kte+1),qll(kts:kte+1),    &
            phizz(kts:kte+1),phot1(nreakj-1,kts:kte+1)
-      real :: xtime,xhour,xmin,gmtp,uvb_dd1,uvb_du1,uvb_dir1
+      real(kind=8) :: xtime,xhour
+      real :: xmin,gmtp,uvb_dd1,uvb_du1,uvb_dir1
       real :: zenith,zenita,azimuth,dobsi
       real :: bext340,bexth2o,ctr
       integer :: naerspec
 !     print *,'gmt,julday in madronich1= ',gmt,julday
-      xtime=ktau*dtstep/60.
-      ixhour=ifix(gmt+.01)+ifix(xtime/60.)
-      xhour=float(ixhour)
-      xmin=60.*gmt+(xtime-xhour*60.)
-      gmtp=mod(xhour,24.)
+      xtime=curr_secs/60._8   !min since simulation start
+      ixhour=int(gmt+.01,8)+int(xtime/60._8,8)
+      xhour=real(ixhour,8)
+      xmin=60.*gmt+real(xtime-xhour*60._8,8)
+      gmtp=mod(xhour,24._8)
       gmtp=gmtp+xmin/60.
 !     print *,'gmtp = ',gmtp,xhour,xmin
       do 100 j=jts,jte

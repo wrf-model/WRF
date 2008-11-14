@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 
 !  file cloudchem_driver.F
@@ -29,10 +29,11 @@
    USE module_state_description
    USE module_model_constants
    USE module_mosaic_cloudchem, only: mosaic_cloudchem_driver
+   USE module_sorgam_cloudchem, only: sorgam_cloudchem_driver
 
    !  This driver calls subroutines for wet scavenging.
    !
-   !  1. MADE-SORGAM (not yet implemented)
+   !  1. MADE-SORGAM
    !  2. MOSAIC
 
 !----------------------------------------------------------------------
@@ -161,10 +162,25 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+   CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
 
-       call wrf_debug(15,'cloudchem_driver calling mosaic_cloudchem_driver')
+       call wrf_debug(15, &
+       'cloudchem_driver calling mosaic_cloudchem_driver')
        call mosaic_cloudchem_driver(                  &
+            id, ktau, ktauc, dtstepc, config_flags,   &
+            p_phy, t_phy, rho_phy, alt,               &
+            cldfra, ph_no2,                           &
+            moist, chem,                              &
+            gas_aqfrac, numgas_aqfrac,                &
+            ids,ide, jds,jde, kds,kde,                &
+            ims,ime, jms,jme, kms,kme,                &
+            its,ite, jts,jte, kts,kte )
+
+   CASE ( RADM2SORG_AQ, RACMSORG_AQ )
+
+       call wrf_debug(15, &
+       'cloudchem_driver calling sorgam_cloudchem_driver')
+       call sorgam_cloudchem_driver(                  &
             id, ktau, ktauc, dtstepc, config_flags,   &
             p_phy, t_phy, rho_phy, alt,               &
             cldfra, ph_no2,                           &

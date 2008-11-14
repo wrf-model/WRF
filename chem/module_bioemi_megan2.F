@@ -25,7 +25,7 @@ MODULE module_bioemi_megan2
 CONTAINS
 
   SUBROUTINE bio_emissions_megan2(id,config_flags,ktau,dtstep,         &
-       julday,gmt,xlat,xlong,p_phy,rho_phy,dz8w,                       &
+       curr_secs,julday,gmt,xlat,xlong,p_phy,rho_phy,dz8w,             &
        chem, ne_area,                                                  &
        current_month,                                                  &
        T2,swdown,                                                      &
@@ -67,6 +67,9 @@ CONTAINS
     INTEGER, INTENT (IN) :: julday   
     !...GTM hour of start of simulation, time step in seconds
     REAL, INTENT(IN) :: gmt,dtstep
+
+    ! ...number of seconds into the simulation
+    REAL(KIND=8), INTENT(IN) :: curr_secs
 
     ! ...3rd dimension size of array e_bio
     INTEGER, INTENT (IN) :: ne_area
@@ -186,12 +189,12 @@ CONTAINS
 
     !...minutes since start of run to the middle of the
     !...current times step (seconds included as decimals)
-    REAL :: xtime
+    REAL(KIND=8) :: xtime
  
     !...the GMT hour of the middle of the current time step
     !...(can be greater than 24)
     INTEGER :: ixhour
-    REAL :: xhour
+    REAL(KIND=8) :: xhour
 
     !...minutes past the previous hour mark, at the
     !...middle of the current time step
@@ -355,20 +358,22 @@ CONTAINS
 
     !...minutes since start of run to the middle of the
     !...current times step (seconds included as decimals)
-    xtime=(ktau-1)*dtstep/60. + dtstep/120.
+    !(old way in r4 this will fail in about 2 yrs)...
+!    xtime=(ktau-1)*dtstep/60. + dtstep/120.
+    xtime = curr_secs/60._8 + real(dtstep/120.,8)
     !...the GMT hour of the middle of the current time step
     !...(can be greater than 24)
-    ixhour = ifix(gmt + 0.01) + ifix(xtime/60.)     
-    xhour=float(ixhour)
+    ixhour = int(gmt + 0.01) + int(xtime/60._8)
+    xhour=real(ixhour,8)
     !...minutes past the previous hour mark, at the
     !...middle of the current time step
-    xmin = 60.*gmt + (xtime-xhour*60)
+    xmin = 60.*gmt + real(xtime-xhour*60._8,8)
     !...the GMT hour of the middle of the current time step
     !...(between 0 and 24)
-    gmtp=MOD(xhour,24.)
+    gmtp=MOD(xhour,24._8)
     !...GMT hour plus minutes (in fractaionl hour) of the middle
     !...of the current time step
-    tmidh= gmtp + xmin/60. 
+    tmidh= gmtp + xmin/60.
 
     WRITE(mesg,*) 'calculate MEGAN emissions at ktau, gmtp, tmidh = ',ktau, gmtp, tmidh
     CALL wrf_message(mesg)
@@ -382,11 +387,11 @@ CONTAINS
     ! SHC  (11/08/2007)
     GAS_MECH_SELECT1: SELECT CASE (config_flags%chem_opt)
              
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP)
        ! get p_of_radm2cbmz(:), p_of_radm2(:), and radm2_per_megan(:)
        CALL get_megan2radm2_table
 
-    CASE (RACM, RACMSORG,RACM_KPP,GOCARTRACM_KPP,RACMSORG_KPP, RACM_MIM_KPP )
+    CASE (RACM, RACMSORG, RACMSORG_AQ, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP )
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
@@ -685,7 +690,7 @@ CONTAINS
           !...
           GAS_MECH_SELECT: SELECT CASE (config_flags%chem_opt)
              
-          CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_KPP)
+          CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP)
 
              DO icount = 1, n_megan2radm2
 
@@ -758,7 +763,7 @@ CONTAINS
                 
              END DO
 
-          CASE (RACM, RACMSORG,RACM_KPP,RACMSORG_KPP, RACM_MIM_KPP )
+          CASE (RACM, RACM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP)
              
              DO icount = 1, n_megan2racm
 

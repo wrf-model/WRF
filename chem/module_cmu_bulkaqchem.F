@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 
       module module_cmu_bulkaqchem
@@ -70,19 +70,17 @@
         tbeg_sec, tend_sec,   &
         gas, aerosol, gas_aqfrac,   &
         temp, p, lwc, rh,   &
-        co2_mixrat_in, photo_in, iradical_in, idecomp_hmsa_hso5, iaq,   &
+        co2_mixrat_in, photo_in, xprescribe_ph,   &
+        iradical_in, idecomp_hmsa_hso5, iaq,   &
         yaq_beg, yaq_end, ph_cmuaq_cur )
 
       use module_data_cmu_bulkaqchem, only:   &
-              akeq, akhen,   &
-              co2_mixrat, iradical,   &
               kaqx_hmsa, kaqx_hso5m, kaqx_siv,   &
               mdiag_fullequil, mdiag_hybrd,   &
               mdiag_negconc, mdiag_rsrate, mdiag_svode,   &
-              meqn1, meqn1max, naers, ngas,   &
+              meqn1max, naers, ngas,   &
               na4, naa, nac, nahmsa, nahso5, nan, nar, nas,   &
               ng4, nga, ngc, ngh2o2, nghcho, nghcooh, ngn, ngso2,   &
-              photo,   &
               rideal,   &
               wh2o2, wh2so4, whcho, whcl, whcooh, whno3,   &
               wnh3, wso2, wmol
@@ -158,21 +156,21 @@
       integer iradical_in, idecomp_hmsa_hso5, iaq
       double precision tbeg_sec, tend_sec
       double precision temp, p, lwc, rh
-      double precision co2_mixrat_in, photo_in
+      double precision co2_mixrat_in, photo_in, xprescribe_ph
       double precision gas(ngas), aerosol(naers)
       double precision gas_aqfrac(ngas)
       double precision yaq_beg(meqn1max), yaq_end(meqn1max), ph_cmuaq_cur
 
 !   local variables
-      integer i, isp
-      integer icount, iprint, negconc_count
+      integer i, icount, iradical, iprint, isp
+      integer meqn1, negconc_count
 
       double precision   &
-        ammonold, chlorold, crustal,   &
+        ammonold, chlorold, co2_mixrat, crustal,   &
         dammon, dchlor, dhmsa, dhso5, dnit, dsulf,   &
         fammon, fh2o2, fh2so4, fhcho, fhcl, fhcooh, fhno3, fso2,   &
         hmsaold, hso5old,   &
-        pres,   &
+        photo, pres,   &
         salt, sodium, stime, stout, sulfateold,   &
         tnitold, watcont, watvap,   &
         whchowhmsa, wso2whmsa, wso2whso5, wso2wsiv,   &
@@ -181,9 +179,10 @@
         duma, dumb, dumhion, vlwc
       double precision gascon(ngas)
       double precision yaq(meqn1max)
+      double precision akeq(17), akhen(21), akre(120)
 
-      integer ipar(8)
-      double precision rpar(8+ngas)
+      integer ipar(10)
+      double precision rpar(178+ngas+1)
 
 !
 !     initialization (only on first call)
@@ -205,7 +204,7 @@
 !     calc temperature dependent parameters
 !
       pres = p                                   ! pressure in atm
-      call constants(temp)
+      call constants( temp, akeq, akhen, akre )
 
 !
 !     zero the yaq matrix
@@ -365,17 +364,25 @@
       ipar(6) = 0
       ipar(7) = 0
       ipar(8) = 0
+      ipar(9) = iradical
 
-      rpar(1) = temp
-      rpar(2) = pres
-      rpar(3) = watcont
-      rpar(4) = watvap
-      rpar(5) = crustal
-      rpar(6) = salt
-      rpar(7) = sodium
-      rpar(8) = ph_cmuaq_cur
+      rpar( 1) = temp
+      rpar( 2) = pres
+      rpar( 3) = watcont
+      rpar( 4) = watvap
+      rpar( 5) = crustal
+      rpar( 6) = salt
+      rpar( 7) = sodium
+      rpar( 8) = photo
+      rpar( 9) = co2_mixrat
+      rpar(10) = xprescribe_ph
+
+      rpar(11) = ph_cmuaq_cur
+      rpar(21: 37) = akeq( 1: 17)
+      rpar(38: 58) = akhen(1: 21)
+      rpar(59:178) = akre( 1:120)
       do i = 1, ngas
-          rpar(8+i) = gascon(i)
+          rpar(178+i) = gascon(i)
       end do
 
 !
@@ -386,7 +393,7 @@
 !
 !     unload ipar, rpar
 !
-      ph_cmuaq_cur = rpar(8)
+      ph_cmuaq_cur = rpar(11)
 
 !
 !     calculate the differences
@@ -537,17 +544,17 @@
 ! last modification: june 13, 1998 by s.p.
 !
 !----------------------------------------------------------------------
-      subroutine aqintegr1( neqa, y, stime, stout, rpar, ipar )
+      subroutine aqintegr1( meqn1, y, stime, stout, rpar, ipar )
 
       use module_data_cmu_bulkaqchem, only:   &
               iopt, itask, itol, liw1, lrw1,   &
-              mdiag_svode, meqn1, meqn1max, mf,   &
+              mdiag_svode, meqn1max, mf,   &
               tola, tolr, worki, workr
 
       use module_cmu_dvode_solver, only:  dvode
 
 !   arguments
-      integer neqa, ipar(*)
+      integer meqn1, ipar(*)
       double precision y(meqn1max), stime, stout, rpar(*)
 
 !   local variables
@@ -572,7 +579,7 @@
 !
       istate = 1
 
-      call dvode( fex1, neqa, y, stime, stout, itol, rtol, atol, itask,   &
+      call dvode( fex1, meqn1, y, stime, stout, itol, rtol, atol, itask,   &
                   istate, iopt, rwork, lrw, iwork, liw, jex, mf,   &
                   rpar, ipar )
 
@@ -600,12 +607,12 @@
 
 
 !----------------------------------------------------------------------
-      subroutine fex1( neq, t, y, f, rpar, ipar )
+      subroutine fex1( meqn1, t, y, f, rpar, ipar )
 
-      use module_data_cmu_bulkaqchem, only:  meqn1, meqn1max
+      use module_data_cmu_bulkaqchem, only:  meqn1max
 
 !   arguments
-      integer neq, ipar(*)
+      integer meqn1, ipar(*)
       double precision t, y(meqn1max), f(meqn1max), rpar(*)
 
 !   local variables
@@ -620,9 +627,9 @@
 
 
 !----------------------------------------------------------------------
-      subroutine jex( neq, t, y, ml, mu, pd, nrowpd, rpar, ipar )
-      integer neq, ml, mu, nrowpd, ipar(*)
-      double precision t, y(neq), pd(nrowpd,neq), rpar(*)
+      subroutine jex( meqn1, t, y, ml, mu, pd, nrowpd, rpar, ipar )
+      integer meqn1, ml, mu, nrowpd, ipar(*)
+      double precision t, y(meqn1), pd(nrowpd,meqn1), rpar(*)
       call peg_error_fatal( -1,   &
           '*** module_cmuaq_bulk, subr jex -- should not be here ***' )
       end subroutine jex                             
@@ -640,59 +647,67 @@
 ! it does bulk-phase chemistry
 !
 !
-      subroutine aqratesa( neq, t, yaq, aqprod, aqdest, yaqprime,   &
+      subroutine aqratesa( meqn1, t, yaq, aqprod, aqdest, yaqprime,   &
       		rpar, ipar )
 
       use module_data_cmu_bulkaqchem, only:   &
-              akeq, akhen, akre, avdiam,   &
-              caratio, chyd, cmet, co2_mixrat, con,   &
-              epsfcn, factor, firon, fman, gcon, gmol,   &
-              iradical, ldfjac, lr,   &
-              maxfev, meqn1, meqn1max, ml, mode, mu,   &
+              avdiam,   &
+              caratio,   &
+              epsfcn, factor, firon, fman, gmol,   &
+              ldfjac, lr,   &
+              maxfev, meqn1max, ml, mode, mu,   &
               mdiag_hybrd, mdiag_rsrate,   &
               ngas, ngch3o2, nghno2, ngho2,   &
               ngno, ngno2, ngno3, ngo3, ngoh, ngpan,   &
               nprint, numfunc,   &
-              pres_cmuaq_cur,   &
-              rad, rideal,   &
-              temp_cmuaq_cur,   &
-              wh2o2, whcho, whcooh, wnh3, wso2, wmol, wvol,   &
+              rideal,   &
+              wh2o2, whcho, whcooh, wnh3, wso2, wmol,   &
               xtol
 
+#if defined ( ccboxtest_box_testing_active )
+      use module_data_ccboxwrf, only:  con_ccboxtest
+#endif
+
 !   arguments
-      integer neq, ipar(*)
+      integer meqn1, ipar(*)
       double precision t, yaq(meqn1max), yaqprime(meqn1max)
       double precision aqprod(meqn1max), aqdest(meqn1max)
       double precision rpar(*)
 
 !   local variables
-      integer nfev, info, i, j, n
-      integer icount, iprint
+      integer i, icount, info, iprint, iradical
+      integer j
+      integer n, nfev
 
+      double precision akeq(17), akhen(21), akre(120)
+      double precision c(46), cmet(4), con(28)
+      double precision dp(49), dl(49), diag(numfunc)
+      double precision fgl(21), flg(21), fvec(numfunc), fjac(ldfjac,numfunc)
+      double precision gfgl(21), gflg(21), gascon(ngas), gcon(22)
       double precision spres(22)
-      double precision c(46)
-      double precision fgl(21), flg(21), gfgl(21), gflg(21), rp(28), rl(28)
-      double precision dp(49), dl(49), rr(120)
       double precision x(numfunc)
-      double precision fvec(numfunc),diag(numfunc),fjac(ldfjac,numfunc),r(lr)
-      double precision qtf(numfunc),wa1(numfunc),wa2(numfunc),wa3(numfunc)
-      double precision wa4(numfunc)
+      double precision qtf(numfunc)
+      double precision rp(28), rl(28), r(lr), rr(120)
+      double precision wa1(numfunc),wa2(numfunc),wa3(numfunc),wa4(numfunc)
 
       double precision, parameter :: one=1.
 !
-      double precision hc1, hc2, wl, wlm, tlwc, vlwc, hyd, arytm, hno2, af
-      double precision ah, chen
-      double precision rsrate, sulfrate, sulfrateb
+      double precision af, ah, arytm
+      double precision chen, chyd, co2_mixrat, crustal
+      double precision dum
       double precision form
-      double precision ph, pres
+      double precision hc1, hc2, hyd, hno2
+      double precision ph, photo, pres
       double precision qsat
-      double precision tmin, temp
-      double precision watvap, watcont, crustal, salt, sodium
+      double precision rad, rsrate
+      double precision salt, sodium, sulfrate, sulfrateb
+      double precision temp, tlwc, tmin
+      double precision vlwc
+      double precision watvap, watcont, wl, wlm, wvol
                 ! lwc,wat. vapor in g/m3
                 ! crustal species concentration inside droplets (ug/m3)
                 ! na concentration inside droplets (ug/m3)
-      double precision dum
-      double precision gascon(ngas)
+      double precision xprescribe_ph
 
 
 !
@@ -700,6 +715,8 @@
 !
       icount  = ipar(1)
       iprint  = ipar(2)
+      iradical= ipar(9)
+
       temp    = rpar(1)
       pres    = rpar(2)
       watcont = rpar(3)
@@ -707,13 +724,16 @@
       crustal = rpar(5)
       salt    = rpar(6)
       sodium  = rpar(7)
-      ph      = rpar(8)
+      photo         = rpar( 8)
+      co2_mixrat    = rpar( 9)
+      xprescribe_ph = rpar(10)
+      ph            = rpar(11)
+      akeq( 1: 17)  = rpar(21: 37) 
+      akhen(1: 21)  = rpar(38: 58) 
+      akre( 1:120)  = rpar(59:178) 
       do i = 1, ngas
-          gascon(i) = rpar(8+i)
+          gascon(i) = rpar(178+i)
       end do
-
-      temp_cmuaq_cur = temp
-      pres_cmuaq_cur = pres
 
 !
 !     calculation of the temperature for this time (temp)
@@ -861,12 +881,18 @@
 !         the integrator to complete
 !
       if (ipar(7) .le. 0)   &
-          call fullequil(con,spres,cmet,akeq,akhen,vlwc,temp,hyd,ipar)
+          call fullequil( con, spres, cmet, akeq, akhen, vlwc,   &
+               temp, hyd, xprescribe_ph, ipar(7) )
       if (ipar(7) .gt. 0) then
           do i = 1, meqn1
               yaqprime(i) = 0.0
           end do
           ph=30.0
+          ipar(1) = icount
+          rpar(11) = ph
+#if defined ( ccboxtest_box_testing_active )
+          con_ccboxtest(:) = con(:)
+#endif
           return
       end if
       ph=-log10(hyd)
@@ -937,7 +963,7 @@
 !     pseudo-steady-state approximation for cl radical
 !     not used because it is of secondary importance
 !sp      call values(hyd, con, cmet, akeq,c)
-!sp      call react(c,cmet,con,akre,rr,arytm)
+!sp      call react(c,cmet,con,photo,akre,rr,arytm)
 !sp      pro=rr(23)+rr(49)+rr(96)
 !sp      if (con(22) .le. 0.0)then
 !sp      con(22) = 1.e-20
@@ -958,7 +984,7 @@
 !
 !     final calculation of reaction rates
 !
-      call react(c,cmet,con,akre,rr,arytm)
+      call react(c,cmet,con,photo,akre,rr,arytm)
 !
 !     calculation of net production and consumption rates
 !
@@ -1158,7 +1184,10 @@
 !   load ipar, rpar values
 !
       ipar(1) = icount
-      rpar(8) = ph
+      rpar(11) = ph
+#if defined ( ccboxtest_box_testing_active )
+      con_ccboxtest(:) = con(:)
+#endif
 
 !     write(*,'(a,1p,8e10.2 )') 'xxx t,yaq1-7 ', t, (yaq(i), i=1,7)
 !     write(*,'(a,1p,8e10.2 )') 'xxx t,yaq8-13', t, (yaq(i), i=8,13)
@@ -1346,14 +1375,15 @@
 ! ***********************************************************************
 
        subroutine fullequil(acon,aspres,acmet,aakeq,aakhen,awv,   &
-        atemp,axsol,ipar)
+        atemp,axsol,xprescribe_ph,nerr_fullequil)
 
        use module_data_cmu_bulkaqchem, only:  mdiag_fullequil
 
 !   arguments
-       integer ipar(*)
-       double precision acon(28), aspres(21), acmet(4), aakeq(17), aakhen(21)
-       double precision awv, atemp, axsol
+       integer nerr_fullequil
+       double precision acon(28), aspres(21), acmet(4), aakeq(17),   &
+           aakhen(21)
+       double precision awv, atemp, axsol, xprescribe_ph
 
 !   local variables
        integer i, k, ntry
@@ -1391,13 +1421,15 @@
 !      we find the initial interval [aa,bb] for the bisection method
 !      new version (31/10/87)
        x=10.0d0**(-14)
-       call electro(x,fa,con,spres,cmet,akeq,akhen,wv,temp)
+       call electro(x,fa,con,spres,cmet, &
+            akeq,akhen,wv,temp,xprescribe_ph)
        aa=x
 
 !      do 1035 i=-14,1
        do 1035 i = -(14+idum_01), (1+idum_01)
            x=10.0d0**i
-           call electro(x,f,con,spres,cmet,akeq,akhen,wv,temp)
+           call electro(x,f,con,spres,cmet, &
+                akeq,akhen,wv,temp,xprescribe_ph)
            if (f*fa .ge. 0.0d0) then
                aa=x
                fa=f
@@ -1430,7 +1462,7 @@
        end if
 
 !      otherwise, report the error and exit
-       ipar(7) = ipar(7) + 1
+       nerr_fullequil = nerr_fullequil + 1
        if (mdiag_fullequil .gt. 0) then
            write(6,*)    &
            '*** module_cmuaq_bulk - mistake in fullequil - con, cmet ='
@@ -1454,7 +1486,8 @@
            return
        end if
        xm=(aa+bb)/2.0d0
-       call electro(xm,fm,con,spres,cmet,akeq,akhen,wv,temp)
+       call electro(xm,fm,con,spres,cmet, &
+            akeq,akhen,wv,temp,xprescribe_ph)
        if (fa*fm .gt.  0.0d0) then
            aa=xm
            fa=fm
@@ -1473,10 +1506,10 @@
 ! called by fullequil
 ! ***********************************************************************
 
-       subroutine electro(x,f,con,spres,cmet,zkeq,zkhen,wv,temp)
+       subroutine electro(x,f,con,spres,cmet, &
+                  zkeq,zkhen,wv,temp,xprescribe_ph)
 
-       use module_data_cmu_bulkaqchem, only:  &
-               mprescribe_ph, rideal, xprescribe_ph
+       use module_data_cmu_bulkaqchem, only:  rideal
 
 !   arguments
 !
@@ -1484,7 +1517,7 @@
 !   renamed them to zkeq & zkhen 
 !       to avoid conflict with module_data_cmu_bulkaqchem
 !
-       double precision x, f, wv, temp
+       double precision x, f, wv, temp, xprescribe_ph
        double precision con(28),spres(21),cmet(4),zkeq(17),zkhen(21)
 
 !   local variables
@@ -1545,7 +1578,7 @@
 
         f=f1+f2+f3+f4+f5
 
-        if (mprescribe_ph .gt. 0) then
+        if (xprescribe_ph .ge. 0.0) then
             f = 10.0**(-xprescribe_ph) - x
         end if
 
@@ -1692,19 +1725,20 @@
 !   {dheq,dhhen,dhre} and the costants at 298 k {bkeq,bkhen,bkre}.
 !************************************************************************
 
-       subroutine constants(temp)
+       subroutine constants( temp, akeq, akhen, akre )
 
-       use module_data_cmu_bulkaqchem, only:  akeq, akhen, akre,   &
+       use module_data_cmu_bulkaqchem, only:   &
                maqurxn_all, maqurxn_sulf1, mopt_eqrt_cons
 
 !   arguments
-       double precision temp
+       double precision temp, akeq(17), akhen(21), akre(120)
 
 !   local variable
        integer i, iusei
-!       dimension akeq(17),akhen(21),akre(120)
        double precision, save :: dheq(17),dhhen(21),dhre(120)
        double precision, save :: bkeq(17),bkhen(21),bkre(120)
+       double precision :: bkre_75, dhre_75
+
 
        data dheq/1960.,1500.,0.,2720.,-3730.,8700.,-1260.,   &
        -1000.,-1760.,   &
@@ -1776,22 +1810,25 @@
        2.5e4,1.0e5,2.5e7,120.e0/
 
 
-!  when mopt_eqrt_cons=20, set s(iv)+h2o2 rxn rate constant
-!  to that used in mtcrm and testaqu22
-       if (mopt_eqrt_cons .eq. 20) then
-           bkre(75) = 4.19e7
-           dhre(75) = -1950.0
-       end if
-
        do 1020 i=1,17
        akeq(i)=bkeq(i)*exp(dheq(i)*(1.0/temp-1.0/298.0))
  1020  continue
+
        do 1025 i=1,21
        akhen(i)=bkhen(i)*exp(dhhen(i)*(1.0/temp-1.0/298.0))
  1025  continue
+
        do 1030 i=1,120
        akre(i)=bkre(i)*exp(dhre(i)*(1.0/temp-1.0/298.0))
  1030  continue
+
+!  when mopt_eqrt_cons=20, set s(iv)+h2o2 rxn rate constant
+!  to that used in mtcrm and testaqu22
+       if (mopt_eqrt_cons .eq. 20) then
+           bkre_75  = 4.19e7
+           dhre_75  = -1950.0
+           akre(75) = bkre_75*exp(dhre_75*(1.0/temp-1.0/298.0))
+       end if
 
 !  turn reactions on/off selectively
        do i = 1, 120
@@ -1959,9 +1996,9 @@
 ! output is the matrix of the 120 reaction rates.
 !************************************************************************
 
-      subroutine react(c,cmet,con,zkre,rr,arytm)
+      subroutine react(c,cmet,con,photo,zkre,rr,arytm)
 
-      use module_data_cmu_bulkaqchem, only:  chlorine, kiron, photo,   &
+      use module_data_cmu_bulkaqchem, only:  chlorine, kiron,   &
               mopt_eqrt_cons
 
 !   arguments
@@ -1972,7 +2009,7 @@
 !
 !     dimension c(46),cmet(4),con(28),zkre(120),rr(120)
       double precision c(46),cmet(4),con(28),zkre(120),rr(120)
-      double precision arytm
+      double precision photo,arytm
 
 !   local variables
       double precision ph, r1, r2, r3, r4, r5, sn

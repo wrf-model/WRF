@@ -44,8 +44,7 @@
 ! Contact Jerome Fast for updates on the status of manuscripts under review.  
 !
 ! Additional information:
-! 1) www.pnl.gov/atmos_sciences/raz 
-! 2) www.pnl.gov/atmos_sciences/Jdf/wrfchem.html
+! * www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support: 
 ! Funding for developing and evaluating CBMZ was provided by the U.S. Department
@@ -76,8 +75,8 @@
 !-----------------------------------------------------------------------
 
       subroutine cbmz_driver( &
-               id, ktau, dtstep, ktauc, dtstepc, config_flags, &
-               gmt, julday, t_phy, moist, p8w, t8w, &
+               id, curr_secs, ktau, dtstep, ktauc, dtstepc, &
+               config_flags, gmt, julday, t_phy, moist, p8w, t8w, &
                p_phy, chem, rho_phy, dz8w, z, z_at_w, vdrog3, &
                ph_o31d, ph_o33p, ph_no2, ph_no3o2, ph_no3o, ph_hno2, &
                ph_hno3, ph_hno4, ph_h2o2, ph_ch2or, ph_ch2om, &
@@ -103,7 +102,9 @@
 
    INTEGER, INTENT(IN ) :: ktau, ktauc
 
-      REAL, INTENT(IN ) :: dtstep, dtstepc, gmt
+   REAL(KIND=8), INTENT(IN) :: curr_secs
+
+   REAL, INTENT(IN ) :: dtstep, dtstepc, gmt
 !
 ! advected moisture variables
 !
@@ -160,10 +161,9 @@
 	integer :: lunerr, lunout, levdbg_err, levdbg_info
 	integer :: mgaschem
 
-
-	real :: abs_error, rel_error, trun
-	real :: tchem, dtchem
-	real :: tstart, tstop
+    real(kind=8) :: trun
+	real :: abs_error, rel_error
+	real :: dtchem, tchem, tstart, tstop
 	real :: airdenbox, pressbox, tempbox
 	real :: cair_mlc
 	real :: h2o, ch4, oxygen, nitrogen, hydrogen
@@ -251,12 +251,11 @@
 	do 2900 kt = kts, kte
 	do 2900 it = its, ite
 
-	trun = dtstep*(ktau-1)		! run time in s
-	tchem = gmt*3600.0 + dtstep*(ktau-1)
-	tchem = mod( tchem, 86400.0 )	! time from 00 UTC in s
+	trun   = curr_secs              ! run time in s
+	tchem  = mod( real(gmt*3600.0,8)+trun, 86400._8 ) ! time from 00 UTC in s
 	dtchem = dtstepc
-	tstart = tchem              	! s
-	tstop  = tstart + dtchem    	! s
+	tstart = tchem                  ! s
+	tstop  = tstart + dtchem        ! s
 
 !   skip integration for very small dtchem
 	if ((tstop-tstart) .le. 1.0e-5) goto 2900
@@ -444,10 +443,11 @@
 	implicit none
 
 !   subr arguments 
+    real(kind=8) :: trun
 	integer iok, isvode, jsvode, ksvode, i_force_dump, iregime,   &
               mgaschem, lunerr, lunout, levdbg_err, levdbg_info
 	integer inforodas(2,6), iodestatus_count(6)
-	real tstart, tstop, abs_error, rel_error, trun
+	real tstart, tstop, abs_error, rel_error
 	real tempbox, pressbox, airdenbox
 	real cboxnew(ngas_z), cboxold(ngas_z)
 	real rk_m1(nrxn_m1), rk_m2(nrxn_m2), rk_m3(nrxn_m3), rk_m4(nrxn_m4)
@@ -702,10 +702,11 @@
       implicit none
 
 !   subr arguments 
+      real(kind=8) :: trun
       integer i, iok, isvode, jsvode, ksvode, i_force_dump, iregime,   &
               mgaschem, lunerr, lunout, levdbg_err, levdbg_info
       integer iodestatus_count(6)
-      real tstart, tstop, abs_error, rel_error, trun
+      real tstart, tstop, abs_error, rel_error
       real tempbox, pressbox, airdenbox
       real cboxnew(ngas_z), cboxold(ngas_z)
       real rk_m1(nrxn_m1), rk_m2(nrxn_m2), rk_m3(nrxn_m3), rk_m4(nrxn_m4)

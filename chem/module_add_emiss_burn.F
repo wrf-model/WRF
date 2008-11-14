@@ -10,7 +10,7 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-  USE module_configure
+  USE module_configure, only: grid_config_rec_type
   USE module_state_description
   IMPLICIT NONE
 

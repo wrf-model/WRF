@@ -4,7 +4,7 @@
 ! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for information and terms of use
+! MOSAIC module: see module_mosaic_driver.F for references and terms of use
 !**********************************************************************************  
 !CPP directives to control ic/bc conditions...
 !(The directive in module_input_chem_data also needs to be set.)
@@ -192,7 +192,6 @@
 	real dgnum_nsm(nmaxd_nsm), sigmag_nsm(nmaxd_nsm)
 	real aaprof_nsm(maxd_acomp+1,nmaxd_nsm)
 	real bbprof_nsm(nmaxd_nsm)
-!       real erfc_num_recipes
 
 	character*80 msg
 	character*10 dumname

@@ -470,6 +470,7 @@ CONTAINS
       DATA RHIC,RHBC/1.,0.90/
       DATA PIE,TTFRZ,TBFRZ,C5/3.141592654,268.16,248.16,1.0723E-3/
       DATA RATE/0.03/
+!      DATA RATE/0.01/  ! value used in NRCM
 !-----------------------------------------------------------
       IPRNT=.FALSE.
       GDRY=-G/CP

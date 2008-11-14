@@ -21,7 +21,7 @@ CONTAINS
               ,GLW, GSW, SWDOWN, XLAT, XLONG, ALBEDO                      &
               ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
-              ,julyr, JULDAY, julian, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
+              ,julyr, JULDAY, julian, YR, xtime, RADT, STEPRA, ICLOUD, warm_rain     &
               ,declin_urb,COSZ_URB2D, omg_urb2d                           & !Optional urban
               ,ra_call_offset,RSWTOA,RLWTOA, CZMEAN                       &
               ,CFRACL, CFRACM, CFRACH                                     &
@@ -350,6 +350,7 @@ CONTAINS
 !
    REAL, INTENT(IN  )   ::                                GMT,dt, &
                                                    julian, xtime
+   INTEGER, INTENT(IN  ),OPTIONAL ::                          YR
 !
    INTEGER, INTENT(IN  ) ::                    JULDAY, itimestep
    REAL, INTENT(IN ),OPTIONAL     ::                    CURR_SECS
@@ -742,7 +743,7 @@ CONTAINS
                      aerosolcn=aerosolc_2,m_hybi0=m_hybi0,             &
                      paerlev=paerlev, naer_c=n_aerosolc,               &
                      cam_abs_dim1=cam_abs_dim1, cam_abs_dim2=cam_abs_dim2, &
-                     GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
+                     GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,YR=YR,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
                      SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
                    ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
                    ,doabsems=doabsems                               &
@@ -919,7 +920,7 @@ CONTAINS
                      aerosolcn=aerosolc_2,m_hybi0=m_hybi0,             &
                      paerlev=paerlev, naer_c=n_aerosolc,               &
                      cam_abs_dim1=cam_abs_dim1, cam_abs_dim2=cam_abs_dim2, &
-                     GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
+                     GMT=GMT,JULDAY=JULDAY,JULIAN=JULIAN,YR=YR,DT=DT,XTIME=XTIME,DECLIN=DECLIN,  &
                      SOLCON=SOLCON,RADT=RADT,DEGRAD=DEGRAD,n_cldadv=3  &
                    ,abstot_3d=abstot,absnxt_3d=absnxt,emstot_3d=emstot &
                    ,doabsems=doabsems                               &

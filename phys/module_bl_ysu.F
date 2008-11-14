@@ -171,8 +171,7 @@ contains
 !
   integer,   dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
-!
-     logical, intent(in)        :: flag_qi
+  logical, intent(in)        :: flag_qi
 !optional
    real,     dimension( ims:ime, jms:jme )                                   , &
              optional                                                        , &
@@ -216,6 +215,7 @@ contains
           enddo
         enddo
       endif
+!
       call ysu2d(J=j,ux=u3d(ims,kms,j),vx=v3d(ims,kms,j)                       &
               ,tx=t3d(ims,kms,j)                                               &
               ,qx=qv3d(ims,kms,j),qcx=qc3d(ims,kms,j)                          &
@@ -244,13 +244,14 @@ contains
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
+!
       do k = kts,kte
         do i = its,ite
-           rthblten(i,k,j) = rthblten(i,k,j)/pi3d(i,k,j)
-           if(present(rqiblten))rqiblten(i,k,j) = rqibl2dt(i,k)
+          rthblten(i,k,j) = rthblten(i,k,j)/pi3d(i,k,j)
+          if(present(rqiblten)) rqiblten(i,k,j) = rqibl2dt(i,k)
         enddo
       enddo
-    enddo
+   enddo
 !
    end subroutine ysu
 !
@@ -349,10 +350,10 @@ contains
 !
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(inout)   ::                                          utnp, &
-                                                                         vtnp, &
-                                                                         ttnp, &
-                                                                         qtnp, &
-                                                                        qctnp
+                						         vtnp, &
+	               			        		         ttnp, &
+		               	        			         qtnp, &
+			               				        qctnp
 !
    real,     dimension( ims:ime )                                            , &
              intent(inout)   ::                                           hol, &
@@ -375,7 +376,6 @@ contains
    real,     dimension( ims:ime ), intent(in   )   ::                     tsk
    real,     dimension( ims:ime ), intent(inout)   ::                     zol
    integer,  dimension( ims:ime ), intent(out  )   ::                  kpbl1d
-!
 !
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(in   )   ::                                            ux, &
@@ -434,6 +434,7 @@ contains
             intent(in  )    ::                                            u10, &
                                                                           v10
    real,    dimension( its:ite )    ::                                         &
+                                                                         brcr, &
                                                                     brcr_sbro
 !
    real,    dimension( its:ite, kts:kte, ncloud)  ::                    r3,f3
@@ -447,7 +448,7 @@ contains
 !
    integer, dimension( its:ite )             ::      kpbl
 !
-   real    ::  zoln,x,y,tvcon,e1,dtstep,brcr
+   real    ::  zoln,x,y,tvcon,e1,dtstep
    real    ::  zl,tskv,dthvdz,dthvm,vconv,rzol
    real    ::  dtthx,psix,dtg,psiq,ustm
    real    ::  dt2,rdt,spdk2,fm,fh,hol1,gamfac,vpert,prnum
@@ -621,9 +622,9 @@ contains
    do i = its,ite
      stable(i) = .false.
      brup(i) = br(i)
+     brcr(i) = brcr_ub
    enddo
 !
-   brcr = brcr_ub
    do k = 2,klpbl
      do i = its,ite
        if(.not.stable(i))then
@@ -631,19 +632,19 @@ contains
          spdk2   = max(ux(i,k)**2+vx(i,k)**2,1.)
          brup(i) = (thvx(i,k)-thermal(i))*(g*za(i,k)/thvx(i,1))/spdk2
          kpbl(i) = k
-         stable(i) = brup(i).gt.brcr
+         stable(i) = brup(i).gt.brcr(i)
        endif
      enddo
    enddo
 !
    do i = its,ite
      k = kpbl(i)
-     if(brdn(i).ge.brcr)then
+     if(brdn(i).ge.brcr(i))then
        brint = 0.
-     elseif(brup(i).le.brcr)then
+     elseif(brup(i).le.brcr(i))then
        brint = 1.
      else
-       brint = (brcr-brdn(i))/(brup(i)-brdn(i))
+       brint = (brcr(i)-brdn(i))/(brup(i)-brdn(i))
      endif
      hpbl(i) = za(i,k-1)+brint*(za(i,k)-za(i,k-1))
      if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
@@ -714,10 +715,10 @@ contains
      if(pblflg(i))then
        stable(i) = .false.
        brup(i) = br(i)
+       brcr(i) = brcr_ub
      endif
    enddo
 !
-   brcr = brcr_ub
    do k = 2,klpbl
      do i = its,ite
        if(.not.stable(i).and.pblflg(i))then
@@ -725,7 +726,7 @@ contains
          spdk2   = max(ux(i,k)**2+vx(i,k)**2,1.)
          brup(i) = (thvx(i,k)-thermal(i))*(g*za(i,k)/thvx(i,1))/spdk2
          kpbl(i) = k
-         stable(i) = brup(i).gt.brcr
+         stable(i) = brup(i).gt.brcr(i)
        endif
      enddo
    enddo
@@ -733,12 +734,12 @@ contains
    do i = its,ite
      if(pblflg(i)) then
        k = kpbl(i)
-       if(brdn(i).ge.brcr)then
+       if(brdn(i).ge.brcr(i))then
          brint = 0.
-       elseif(brup(i).le.brcr)then
+       elseif(brup(i).le.brcr(i))then
          brint = 1.
        else
-         brint = (brcr-brdn(i))/(brup(i)-brdn(i))
+         brint = (brcr(i)-brdn(i))/(brup(i)-brdn(i))
        endif
        hpbl(i) = za(i,k-1)+brint*(za(i,k)-za(i,k-1))
        if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1
@@ -766,37 +767,36 @@ contains
      endif
    enddo
 !
+   do i = its,ite
+     if(.not.stable(i))then
+       if((xland(i)-1.5).ge.0)then
+         brcr(i) = brcr_sbro(i)
+       else
+         brcr(i) = brcr_sb
+       endif
+     endif
+   enddo
    do k = 2,klpbl
      do i = its,ite
-       if((xland(i)-1.5).ge.0)then
-         brcr = brcr_sbro(i)
-       else
-         brcr = brcr_sb
-       endif
        if(.not.stable(i))then
          brdn(i) = brup(i)
          spdk2   = max(ux(i,k)**2+vx(i,k)**2,1.)
          brup(i) = (thvx(i,k)-thermal(i))*(g*za(i,k)/thvx(i,1))/spdk2
          kpbl(i) = k
-         stable(i) = brup(i).gt.brcr
+         stable(i) = brup(i).gt.brcr(i)
        endif
      enddo
    enddo
 !
    do i = its,ite
      if((.not.sfcflg(i)).and.hpbl(i).lt.zq(i,2)) then
-       if((xland(i)-1.5).ge.0)then
-         brcr = brcr_sbro(i)
-       else
-         brcr = brcr_sb
-       endif
        k = kpbl(i)
-       if(brdn(i).ge.brcr)then
+       if(brdn(i).ge.brcr(i))then
          brint = 0.
-       elseif(brup(i).le.brcr)then
+       elseif(brup(i).le.brcr(i))then
          brint = 1.
        else
-         brint = (brcr-brdn(i))/(brup(i)-brdn(i))
+         brint = (brcr(i)-brdn(i))/(brup(i)-brdn(i))
        endif
        hpbl(i) = za(i,k-1)+brint*(za(i,k)-za(i,k-1))
        if(hpbl(i).lt.zq(i,2)) kpbl(i) = 1

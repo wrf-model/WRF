@@ -56,6 +56,7 @@ CONTAINS
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved, start_of_simulation,&
+                         LAGDAY,                                 &
                          ids, ide, jds, jde, kds, kde,           &
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
@@ -76,10 +77,12 @@ CONTAINS
                          SH_URB2D, LH_URB2D, G_URB2D, RN_URB2D,  & !Optional urban
                          TS_URB2D, FRC_URB2D, UTYPE_URB2D,       & !Optional urban
                          TML,T0ML,HML,H0ML,HUML,HVML,            & !Optional oml
-                         itimestep                               & !Optional obs fdda
+                         itimestep,                              & !Optional obs fdda
 #if ( EM_CORE == 1 )
-                         ,fdob                                   & !Optional obs fdda
+                         fdob,                                   & !Optional obs fdda
 #endif
+                         TYR,TYRA,TDLY,TLAG,NYEAR,NDAY,tmn_update,   &
+                         ACHFX,ACLHF,ACGRDFLX                   &
                          )
 
 !-----------------------------------------------------------------
@@ -90,6 +93,7 @@ CONTAINS
    TYPE (grid_config_rec_type)              :: config_flags
 
    INTEGER , INTENT(IN)        :: id
+   INTEGER , INTENT(IN) ,OPTIONAL       :: tmn_update
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
 !   LOGICAL , INTENT (IN)       :: FNDSOILW, FNDSNOWH
    LOGICAL, PARAMETER          :: FNDSOILW=.true., FNDSNOWH=.true.
@@ -98,6 +102,8 @@ CONTAINS
                                   its, ite, jts, jte, kts, kte
 
    INTEGER , INTENT(IN)        :: num_soil_layers
+   INTEGER , INTENT(IN)        :: lagday
+   INTEGER , INTENT(OUT) ,OPTIONAL      :: nyear, nday
 
    LOGICAL,  INTENT(IN)        :: start_of_simulation
    REAL,     INTENT(IN)        :: DT, p_top, DX, DY
@@ -141,6 +147,11 @@ CONTAINS
                                                          XICEM, &
                                                         VEGFRA, &
                                                         ACSNOM
+
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            OPTIONAL, INTENT(INOUT)    ::                ACHFX, &
+                                                         ACLHF, &
+                                                      ACGRDFLX
 
    INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                         IVGTYP, &
@@ -204,6 +215,10 @@ CONTAINS
    REAL    , INTENT(INOUT)  , DIMENSION( : ) :: lu_state
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: TMN
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TYR
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TYRA
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TDLY
+   REAL,     DIMENSION( ims:ime , 1:lagday , jms:jme ) , INTENT(INOUT),OPTIONAL :: TLAG
 
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
@@ -276,7 +291,7 @@ CONTAINS
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
 
-   INTEGER :: i, j, k, itf, jtf
+   INTEGER :: i, j, k, itf, jtf, n
 integer myproc
 
 !-----------------------------------------------------------------
@@ -342,6 +357,24 @@ integer myproc
    ENDDO
    ENDDO
    ENDIF
+!
+   IF(PRESENT(TMN_UPDATE))THEN
+   if(tmn_update.eq.1) then
+   nyear=1
+   nday=1
+   DO j=jts,jtf
+   DO i=its,itf
+      TYR(i,j)=TMN(i,j)
+      TYRA(i,j)=TMN(i,j)
+      TDLY(i,j)=TMN(i,j)
+    DO n=1,lagday
+      TLAG(i,n,j)=TMN(i,j)
+    ENDDO
+   ENDDO
+   ENDDO
+   endif
+   ENDIF
+!
 
 !
    DO j=jts,jtf
@@ -447,6 +480,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
+                ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
 
@@ -1011,6 +1045,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
+                ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML                     ) !Optional oml
 !--------------------------------------------------------------------
@@ -1129,18 +1164,34 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TBL_URB3D !Optional urban
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
 
+   REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+                                        ACHFX,ACLHF,ACGRDFLX
 ! Optional OML variables
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TML,T0ML,HML,H0ML,HUML,HVML
    INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
    LOGICAL,  INTENT(IN) :: start_of_simulation
+   INTEGER :: i,j
 
 !-- calculate pbl time step
 
    STEPBL = nint(BLDT*60./DT)
    STEPBL = max(STEPBL,1)
+!-- initialization
 
+   IF(PRESENT(ACHFX))THEN
+   IF(.not.restart)THEN
+     DO j=jts,jte
+     DO i=its,ite
+        ACHFX(i,j)=0.
+        ACLHF(i,j)=0.
+        ACGRDFLX(i,j)=0.
+        SFCEVP(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
+   ENDIF
 
 !-- initialize surface layer scheme
 

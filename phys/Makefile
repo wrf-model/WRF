@@ -43,6 +43,7 @@ MODULES = \
 	module_sf_pxlsm.o \
 	module_sf_ruclsm.o \
 	module_sf_sfcdiags.o \
+	module_sf_sstskin.o \
 	module_sf_myjsfc.o \
 	module_sf_pxsfclay.o \
 	module_physics_addtendc.o \
@@ -260,6 +261,7 @@ module_surface_driver.o: \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
 		module_sf_sfcdiags.o		\
+		module_sf_sstskin.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  \

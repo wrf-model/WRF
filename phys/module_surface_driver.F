@@ -4,20 +4,22 @@ MODULE module_surface_driver
 CONTAINS
 
    SUBROUTINE surface_driver(                                         &
-     &           acsnom,acsnow,akhs,akms,albedo,br,canwat             &
+     &           acgrdflx,achfx,aclhf                                 &
+     &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
-     &          ,isltyp,itimestep,ivgtyp,lowlyr,mavail,rmol           &
+     &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol           &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
+     &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update      &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
      &          ,xicem,isice,iswater,ct,tke_myj                       &
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
-     &          ,flqc,flhc,psfc,sst,sst_update,t2,emiss               &
+     &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin,t2,emiss               &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
@@ -100,6 +102,8 @@ CONTAINS
    USE module_sf_slab
 !
    USE module_sf_sfcdiags
+   USE module_sf_sstskin
+!   USE module_sf_tmnupdate
 !
 
    !  This driver calls subroutines for the surface parameterizations.
@@ -157,6 +161,10 @@ CONTAINS
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- TSK           surface temperature (K)
 !-- TMN           soil temperature at lower boundary (K)
+!-- TYR           annual mean surface temperature of previous year (K)
+!-- TYRA          accumulated surface temperature in the current year (K)
+!-- TLAG          mean surface temperature of previous 140 days (K)
+!-- TDLY          accumulated daily mean surface temperature of the current day (K)
 !-- XLAND         land mask (1 for land, 2 for water)
 !-- ZNT           time-varying roughness length (m)
 !-- Z0            background roughness length (m)
@@ -208,6 +216,8 @@ CONTAINS
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
 !-- SST           sea-surface temperature (K)
+!-- SSTSK         skin sea-surface temperature (K)
+!-- DTW           warm layer temp diff (K)
 !-- TSLB          
 !-- ZS
 !-- DZS
@@ -261,6 +271,7 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           ra_lw_physics, sst_update
+   INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update
 
    INTEGER, INTENT(IN) :: ucmcall                                     !urban
 
@@ -274,10 +285,14 @@ CONTAINS
    INTEGER, INTENT(IN )::   ISFFLX
    INTEGER, INTENT(IN )::   ITIMESTEP
    INTEGER, INTENT(IN )::   NUM_SOIL_LAYERS
+   REAL,    INTENT(IN ),OPTIONAL ::   JULIAN_in
+   INTEGER, INTENT(IN )::   LAGDAY
    INTEGER, INTENT(IN )::   STEPBL
    INTEGER, INTENT(IN )::   ISICE
    INTEGER, INTENT(IN )::   ISWATER
    LOGICAL, INTENT(IN )::   WARM_RAIN
+   INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
+   INTEGER, INTENT(INOUT ),OPTIONAL ::   NDAY
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
@@ -287,7 +302,13 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   HT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SST
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   SSTSK
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   DTW
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   TMN
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TYR
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TYRA
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TDLY
+   REAL, DIMENSION( ims:ime , 1:lagday , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TLAG
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   VEGFRA
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   XICE
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
@@ -338,6 +359,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSFC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   ACSNOM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   SFCEVP
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT),OPTIONAL ::   ACHFX
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT),OPTIONAL ::   ACLHF
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT),OPTIONAL ::   ACGRDFLX
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   SFCEXC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   FLHC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   FLQC
@@ -469,8 +493,11 @@ CONTAINS
 
    REAL    :: DTMIN,DTBL
 !
-   INTEGER :: i,J,K,NK,jj,ij
+   INTEGER :: i,J,K,NK,jj,ij,n
    LOGICAL :: radiation, myj, frpcpn
+   REAL    :: julian
+   REAL    :: total_depth,mid_point_depth
+   REAL    :: tconst,tprior,tnew,yrday,deltat
 !-------------------------------------------------
 ! urban related variables are added to declaration
 !-------------------------------------------------
@@ -612,8 +639,108 @@ CONTAINS
         ENDIF
       ENDDO
       ENDDO
+    IF(PRESENT(SST_SKIN))THEN
+    IF (sst_skin .EQ. 1) THEN
+ ! Calculate skin sst based on Zeng and Beljaars (2005)
+        CALL wrf_debug( 100, 'in SST_UPDATE' )
+        CALL sst_skin_update(xland,glw,gsw,hfx,qfx,tsk,ust,         &
+                emiss,dtw,sstsk,dt,stbolt,                          &
+                ids, ide, jds, jde, kds, kde,                       &
+                ims, ime, jms, jme, kms, kme,                       &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+        DO j=j_start(ij),j_end(ij)
+          DO i=i_start(ij),i_end(ij)
+            IF(XLAND(i,j) .GT. 1.5)TSK(i,j)=SSTSK(i,j)
+          ENDDO
+        ENDDO
+    ENDIF
+    ENDIF
     ENDDO
     !$OMP END PARALLEL DO
+  ENDIF
+  IF(PRESENT(TMN_UPDATE))THEN
+! Update deep soil temperature
+  yrday=365.      ! number of days in a non-leap year
+  tconst=0.6      ! a constant based on Salathe et al. (2007)
+  IF (tmn_update .EQ. 1) THEN
+! print *, 'check tmn', nyear, nday
+! if it is the end of a day, update variables
+    deltat=(julian_in-int(julian_in))*24.*3600.
+    if(nint(deltat).lt.dt) then
+!   IF(MOD(itimestep,NINT(86400./dt)) .eq. 1)THEN
+! no leap year when coupled with CCSM
+!   if(mod(yr,4).eq.0) yrday=366.
+    julian=(julian_in-1.)+(dt/(60.*60.*24.))
+    print *, 'check day', itimestep, nyear, nday, julian, julian_in, deltat
+!   print *, 'end of day', itimestep, julian_in, yr, nday, nyear
+!   print *, 'check', julian, yrday, lagday
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
+! update tmn
+             tprior=0.0
+             do n=1,lagday
+             tprior=tprior+tlag(i,n,j)
+             if(i.eq.10.and.j.eq.10)print *, 'tprior',i,j,tprior,tlag(i,n,j),lagday,n
+             end do
+             tprior=tprior/lagday
+             tmn(i,j)=tconst*tyr(i,j)+(1.-tconst)*tprior
+! update tlag and tyra
+             do n=1,lagday-1
+             tlag(i,n,j)=tlag(i,n+1,j)
+             end do
+             tlag(i,lagday,j)=tdly(i,j)/nday
+             if(i.eq.10.and.j.eq.10)print *, 'xland',i,j,nday,tyr(i,j),tprior,tmn(i,j),tyra(i,j),tdly(i,j),tlag(i,lagday,j)
+             tdly(i,j)=0.0
+!        endif
+      ENDDO
+      ENDDO
+    ENDDO
+    nday=0
+! update tyr if it is the end of a year
+    if((yrday-julian).le.1.) then
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
+            tyr(i,j)=tyra(i,j)/nyear
+            tyra(i,j)=0.0
+!        endif
+      ENDDO
+      ENDDO
+    ENDDO
+    nyear=0
+    else
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
+            tyra(i,j)=tyra(i,j)+tlag(i,lagday,j)
+!        endif
+      ENDDO
+      ENDDO
+    ENDDO
+    nyear=nyear+1
+    endif
+    ELSE
+! accumulate tsk of current day
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij, i, j, k )
+    DO ij = 1 , num_tiles
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
+!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
+             tdly(i,j)=tdly(i,j)+tsk(i,j)
+!        endif
+      ENDDO
+      ENDDO
+    ENDDO
+    nday=nday+1
+    ENDIF
+  ENDIF
   ENDIF
 
 
@@ -848,6 +975,8 @@ CONTAINS
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
               SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+              IF(PRESENT(ACHFX))ACHFX(I,J)=ACHFX(I,J) + HFX(I,J)*DT
+              IF(PRESENT(ACLHF))ACLHF(I,J)=ACLHF(I,J) + LH(I,J)*DT
            ENDDO
            ENDDO
 
@@ -957,6 +1086,9 @@ CONTAINS
 !              CHKLOWQ(I,J)= 1.0
                SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
                SFCEXC(I,J)= CHS(I,J)
+               IF(PRESENT(ACHFX))ACHFX(I,J)=ACHFX(I,J) + HFX(I,J)*DT
+               IF(PRESENT(ACLHF))ACLHF(I,J)=ACLHF(I,J) + LH(I,J)*DT
+               IF(PRESENT(ACGRDFLX))ACGRDFLX(I,J)=ACGRDFLX(I,J) + GRDFLX(I,J)*DT
            ENDDO
            ENDDO
          

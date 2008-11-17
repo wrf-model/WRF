@@ -370,7 +370,7 @@ FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
       INTEGER :: dt_num, dt_den
 
 ! !ARGUMENTS:
-      TYPE(WRFU_TimeInterval), intent(in) :: timeinterval
+      TYPE(WRFU_TimeInterval), intent(INOUT) :: timeinterval
 
       CALL WRFU_TimeIntervalGet(timeinterval,Sn=dt_num,Sd=dt_den,S_i8=dt_whole)
       if (ABS(dt_den) < 1) then

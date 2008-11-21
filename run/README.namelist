@@ -546,6 +546,21 @@ The following are for observation nudging:
  obs_ipf_init                        = .true.   ; Enable obs init warning messages
  /
 
+ &scm
+ scm_force                           = 1,       ; switch for single column forcing (=0 off)
+ scm_force_dx                        = 4000.    ; DX for SCM forcing (in meters)
+ num_force_layers                    = 8        ; number of SCM forcing layers
+ scm_lu_index                        = 2        ; SCM landuse category (2 is dryland, cropland and pasture)
+ scm_isltyp                          = 4        ; SCM soil category (4 is silt loam)
+ scm_ivgtyp                          = 2        ; SCM landuse category
+ scm_vegfra                          = 0.5      ; SCM vegetation fraction
+ scm_canwat                          = 0.0      ; SCM canopy water
+ scm_lat                             = 37.600   ; SCM latitude
+ scm_lon                             = -96.700  ; SCM longitude
+ scm_th_adv                          = .true.   ; turn on theta advection in SCM
+ scm_wind_adv                        = .true.   ; turn on wind advection in SCM
+ scm_qv_adv                          = .true.   ; turn on moisture advection in SCM
+ scm_vert_adv                        = .true.   ; turn on vertical advection in SCM
 
  &dynamics
  rk_ord                              = 3,	; time-integration scheme option:

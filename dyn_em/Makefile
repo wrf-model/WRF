@@ -172,6 +172,28 @@ module_initialize_les.o : \
 		../share/module_bc.o \
 		module_init_utilities.o
 
+module_initialize_seabreeze2d_x.o : \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		module_init_utilities.o
+
+module_initialize_scm_xy.o : \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		module_init_utilities.o
+
 module_initialize_real.o :  \
 		nest_init_utils.o	\
 		../share/module_llxy.o	\

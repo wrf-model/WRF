@@ -48,6 +48,7 @@ dimspec    k      2     standard_domain              z          bottom_top
 dimspec    l      2     namelist=num_soil_layers     z          soil_layers
 dimspec    u      2     namelist=num_land_cat        z          land_cat
 dimspec    s      2     namelist=num_soil_cat        z          soil_cat
+dimspec    +      2     namelist=num_force_layers    z          force_layers
 dimspec    p      -     constant=7501                c          microphysics_rstrt_state
 dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
 dimspec    e      3     namelist=ensdim              z          ensemble dimension
@@ -153,6 +154,9 @@ state    real   ru_m           ikj     dyn_em      1         X      -        "ru
 state    real   ru_tend        ikj     dyn_em      1         X      -        "ru_tend"        ""   ""                                   
 i1       real   ru_tendf       ikj     dyn_em      1         X                                          
 state    real   u_save         ikj     dyn_em      1         X      -        "u_save"
+state    real   z_force        +       dyn_em      1         -      i3rh     "Z_FORCE" "height of forcing input" "m"
+state    real   u_g            +       dyn_em      1         -      i3rh     "U_G" "x-direction geostrophic wind" "m s-1"
+state    real   u_g_tend       +       dyn_em      1         -      i3rh     "U_G_TEND" "tendency x-direction geostrophic wind" "m s-1"
 #                                               
 # V Vel
 state    real   v              ikjb     dyn_em      2         Y     \
@@ -162,6 +166,8 @@ state    real   rv_m           ikj     dyn_em      1         Y      -        "rv
 state    real   rv_tend        ikj     dyn_em      1         Y      -        "rv_tend"
 i1       real   rv_tendf       ikj     dyn_em      1         Y                                          
 state    real   v_save         ikj     dyn_em      1         Y      -        "v_save"                   
+state    real   v_g            +       dyn_em      1         -      i3rh     "V_G" "y-direction geostrophic wind" "m s-1"
+state    real   v_g_tend       +       dyn_em      1         -      i3rh     "V_G_TEND" "tendency y-direction geostrophic wind" "m s-1"
 #                                               
 # Vertical Vel                                          
 state    real   w              ikjb     dyn_em      2         Z     \
@@ -174,6 +180,8 @@ i1       real   wwp            ikj     dyn_em      1         Z
 i1       real   rw_tend        ikj     dyn_em      1         Z                                          
 i1       real   rw_tendf       ikj     dyn_em      1         Z                                          
 i1       real   w_save         ikj     dyn_em      1         Z                                          
+state    real   w_subs         +       dyn_em      1         -      i3rh      "W_SUBS" "large-scale vertical velocity" "m s-1"
+state    real   w_subs_tend    +       dyn_em      1         -      i3rh      "W_SUBS_TEND" "tendency large-scale vertical velocity" "m s-1"
 
 # Geopotential
 state    real   ph             ikjb     dyn_em      2         Z     \
@@ -196,8 +204,26 @@ i1       real   t_tendf        ikj     dyn_em      1         -
 state    real   tp             ikj     dyn_em      2         -  
 i1       real   t_2save        ikj     dyn_em      1         -   
 state    real   t_save         ikj     dyn_em      1         -               "t_save"
-#
 
+state    real   th_upstream_x       +     dyn_em      1      -      i3rh     "TH_UPSTREAM_X" "upstream theta x-advection" "K s-1"
+state    real   th_upstream_x_tend  +     dyn_em      1      -      i3rh     "TH_UPSTREAM_X_TEND" "tendency upstream theta x-advection" "K s-2"
+state    real   th_upstream_y       +     dyn_em      1      -      i3rh     "TH_UPSTREAM_Y" "upstream theta y-advection" "K s-1"
+state    real   th_upstream_y_tend  +     dyn_em      1      -      i3rh     "TH_UPSTREAM_Y_TEND" "tendency upstream theta y-advection" "K s-2"
+
+state    real   qv_upstream_x       +     dyn_em      1      -      i3rh     "QV_UPSTREAM_X" "upstream qv x-advection" "kg kg-1 s-1"
+state    real   qv_upstream_x_tend  +     dyn_em      1      -      i3rh     "QV_UPSTREAM_X_TEND" "tendency upstream qv x-advection" "kg kg-1 s-2"
+state    real   qv_upstream_y       +     dyn_em      1      -      i3rh     "QV_UPSTREAM_Y" "upstream qv y-advection" "kg kg-1 s-1"
+state    real   qv_upstream_y_tend  +     dyn_em      1      -      i3rh     "QV_UPSTREAM_Y_TEND" "tendency upstream qv y-advection" "kg kg-1 s-2"
+
+state    real   u_upstream_x        +     dyn_em      1      -      i3rh     "U_UPSTREAM_X" "upstream u x-advection" "m s-2"
+state    real   u_upstream_x_tend   +     dyn_em      1      -      i3rh     "U_UPSTREAM_X_TEND" "tendency upstream u x-advection" "m s-3"
+state    real   u_upstream_y        +     dyn_em      1      -      i3rh     "U_UPSTREAM_Y" "upstream u y-advection" "m s-2"
+state    real   u_upstream_y_tend   +     dyn_em      1      -      i3rh     "U_UPSTREAM_Y_TEND" "tendency upstream u y-advection" "m s-3"
+
+state    real   v_upstream_x        +     dyn_em      1      -      i3rh     "V_UPSTREAM_X" "upstream v x-advection" "m s-2"
+state    real   v_upstream_x_tend   +     dyn_em      1      -      i3rh     "V_UPSTREAM_X_TEND" "tendency upstream v x-advection" "m s-3"
+state    real   v_upstream_y        +     dyn_em      1      -      i3rh     "V_UPSTREAM_Y" "upstream v y-advection" "m s-2"
+state    real   v_upstream_y_tend   +     dyn_em      1      -      i3rh     "V_UPSTREAM_Y_TEND" "tendency upstream v y-advection" "m s-3"
 
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \
@@ -1265,6 +1291,20 @@ rconfig   logical     obs_ipf_errob       namelist,fdda            1            
 rconfig   logical     obs_ipf_nudob       namelist,fdda            1              .false. h        "obs_ipf_nudob"     "Print obs nudge diagnostics"   ""
 rconfig   logical     obs_ipf_init        namelist,fdda            1              .true.  h        "obs_ipf_init"      "Enable obs init warning messages"   ""
 
+# Single-column model (SCM)
+rconfig   integer scm_force               namelist,scm  1       0           rh   "scm_force"            "SCM forcing switch" ""
+rconfig   real    scm_force_dx            namelist,scm  1       4000.       rh   "scm_force_dx"         "DX for SCM forcing" "m"
+rconfig   integer num_force_layers        namelist,scm  1       8           rh   "num_force_layers"     "Number of SCM forcing layers" ""
+rconfig   integer scm_lu_index            namelist,scm  1       2           rh   "scm_lu_index"         "SCM landuse index" ""
+rconfig   integer scm_isltyp              namelist,scm  1       4           rh   "scm_isltyp"           "SCM soil category" ""
+rconfig   real    scm_vegfra              namelist,scm  1       0.5         rh   "scm_vegfra"           "SCM vegetation fraction" ""
+rconfig   integer scm_canwat              namelist,scm  1       0.0         rh   "scm_canwat"           "SCM canopy water" "kg m-2"
+rconfig   real    scm_lat                 namelist,scm  1        36.605     rh   "scm_lat"              "SCM latitude" "degrees"
+rconfig   real    scm_lon                 namelist,scm  1       -97.485     rh   "scm_lon"              "SCM longitude" "degrees"
+rconfig   logical scm_th_adv              namelist,scm  1       .true.      rh   "scm_th_adv"           "Turn on theta advection in SCM"      ""
+rconfig   logical scm_wind_adv            namelist,scm  1       .true.      rh   "scm_wind_adv"         "Turn on wind advection in SCM"      ""
+rconfig   logical scm_qv_adv              namelist,scm  1       .true.      rh   "scm_qv_adv"           "Turn on qv advection in SCM"      ""
+rconfig   logical scm_vert_adv            namelist,scm  1       .true.      rh   "scm_vert_adv"         "Turn on vertical advection in SCM"      ""
 
 # Dynamics
 # dynamics option (see package definitions, below)

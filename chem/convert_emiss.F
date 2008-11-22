@@ -125,6 +125,17 @@ PROGRAM convert_emissions
    CHARACTER (LEN=80)       :: bdyname, bdyname2
    CHARACTER (LEN=20)       :: dname
 
+! Number of reference emission and LAI files to open
+   INTEGER, PARAMETER :: numfil=19
+   INTEGER            :: status,system
+! Filenames of reference emissions and LAI
+   CHARACTER*100 onefil
+   CHARACTER*12 emfil(numfil)
+   DATA emfil/'ISO','OLI','API','LIM','XYL','HC3','ETE','OLT',  &
+              'KET','ALD','HCHO','ETH','ORA2','CO','NR',        &
+              'NOAG_GROW','NOAG_NONGROW','NONONAG','ISOP'/
+
+
 ! these are needed on some compilers, eg compaq/alpha, to
 ! permit pass by reference through the registry generated
 ! interface to med_read_emissions, below
@@ -846,9 +857,9 @@ PROGRAM convert_emissions
 !    write(*,*) 'MAXVAL2 ',MAXVAL(dumc1(:,:))
 !    write(*,*) 'MINVAL2 ',MINVAL(dumc1(:,:))
 
-     write(message, FMT='(A)') ' put dumc1 into ebu_so2'
+     write(message, FMT='(A)') ' put dumc1 into ebu_in_so2'
      call wrf_debug(100, TRIM( message ) )
-     grid%ebu_so2(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+     grid%ebu_in_so2(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -858,7 +869,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_no(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_no(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -868,7 +879,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_ald(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_ald(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -878,7 +889,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_hcho(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_hcho(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -888,7 +899,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_ora2(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_ora2(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -898,7 +909,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-   !   grid%ebu_nh3(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+   !   grid%ebu_in_nh3(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -908,7 +919,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_hc3(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_hc3(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -918,7 +929,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_hc5(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_hc5(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -928,7 +939,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_hc8(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_hc8(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -938,7 +949,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_eth(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_eth(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -948,7 +959,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_co(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_co(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -958,7 +969,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-   !   grid%ebu_ol2(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+   !   grid%ebu_in_ol2(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -968,7 +979,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_olt(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_olt(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -978,7 +989,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_oli(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_oli(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -988,7 +999,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_tol(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_tol(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -998,7 +1009,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_xyl(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_xyl(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1008,7 +1019,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_ket(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_ket(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1018,7 +1029,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_csl(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_csl(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1028,7 +1039,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_iso(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_iso(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1038,7 +1049,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_pm25(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_pm25(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1048,7 +1059,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_pm10(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_pm10(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1058,7 +1069,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_oc(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_oc(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1068,7 +1079,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_bc(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_bc(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1078,7 +1089,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_dms(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_dms(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1088,7 +1099,7 @@ PROGRAM convert_emissions
 #else
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
-       grid%ebu_sulf(ips:ipe  ,1  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
+       grid%ebu_in_sulf(ips:ipe  ,jps:jpe  )=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -2003,6 +2014,282 @@ PROGRAM convert_emissions
      CALL  wrf_message ( message )
 
     endif  !    ERADM .or.ERADMSORG
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!    NOW DO BIOGENIC EMISSIONS FILE
+!
+    if(CONFIG_FLAGS%BIO_EMISS_OPT == BEIS313 ) then
+
+   write(message,FMT='(A)') ' READ BIOGENIC EMISSIONS '
+   CALL  wrf_debug ( 100, message )
+
+!!!!!-------------------------------------------------------------------
+
+! Loop over the file names
+      DO i=1,numfil
+
+!   Remove scratch unzipped file
+       status=system('rm -f scratem*')
+
+!   All reference emissions except NO
+       IF(i.LE.15)THEN 
+        onefil='../../run/BIOREF_'//             &
+         TRIM(ADJUSTL(emfil(i)))//'.gz'
+!   NO reference emissions
+       ELSE IF(i.GE.16.AND.i.LE.18)THEN 
+        onefil='../../run/AVG_'//                &
+         TRIM(ADJUSTL(emfil(i)))//'.gz'
+!   LAI
+       ELSE
+        onefil='../../run/LAI_'//                &
+         TRIM(ADJUSTL(emfil(i)))//'S.gz'
+       ENDIF
+
+!   Copy selected file to scratch
+       status=system('cp '//TRIM(ADJUSTL(onefil))//' scratem.gz')
+
+!   Unzip scratch
+       status=system('gunzip scratem')
+
+!   Open scratch and read into appropriate array
+       OPEN(26,FILE='scratem',FORM='FORMATTED')
+       IF(i.EQ. 1) then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+             grid%sebio_iso(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 2)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_oli(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 3)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_api(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 4)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_lim(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 5)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_xyl(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 6)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_hc3(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 7)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_ete(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 8)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_olt(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ. 9)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_ket(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.10)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_ald(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.11)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_hcho(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.12)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_eth(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.13)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_ora2(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.14)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_co(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.15)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_nr(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.16)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%noag_grow(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.17)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%noag_nongrow(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.18)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%nononag(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       IF(i.EQ.19)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%slai(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+       CLOSE(26)
+
+      ENDDO
+
+   write(message,FMT='(A)') ' PAST READ BIOGENIC EMISSIONS '
+   CALL  wrf_debug ( 100, message )
+
+   write(message,FMT='(A)') ' OPEN BIOGENIC EMISSIONS WRF file'
+   CALL  wrf_debug ( 100, message )
+
+   CALL construct_filename1( inpname , 'wrfbiochemi' , grid%id , 2 )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+   write(message,FMT='(A,A)') ' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
+   CALL  wrf_message ( message )
+
+   IF ( ierr .NE. 0 ) THEN
+     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+   ENDIF
+
+   write(message,FMT='(A)') ' WRITE BIOGENIC EMISSIONS WRF file '
+   CALL  wrf_debug ( 100, message )
+
+   CALL output_aux_model_input4 ( id1 , grid , config_flags , ierr )
+
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT4" )
+
+    endif  !    BIO_EMIS_OPT = BEIS313
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     DEALLOCATE ( dumc0 )
     DEALLOCATE ( dumc1 )

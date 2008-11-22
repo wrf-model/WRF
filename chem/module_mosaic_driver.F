@@ -30,16 +30,16 @@
 ! code, or Jerome Fast, the WRF-chem implementation team leader for PNNL
 !
 ! Terms of Use:
-!  1) MOSAIC and its sub-modules ASTEEM, MESA, and MTEM may not be included in 
-!     any commercial package or used for any commercial applications without the 
-!     primary author's prior consent.
-!  2) The MOSAIC source code is provided to the WRF modeling community; however, 
-!     no portion of MOSAIC can be used separately or in another code without the
-!     primary author's prior consent.
-!  3) The MOSAIC source code may be used for research, educational, and non-profit
-!     purposes only.  Any other usage must be first approved by the primary author.
-!  4) Publications resulting from the usage of MOSAIC must use one or more of the
-!     references below (depending on the application) for proper acknowledgment.
+! 1) Users are requested to consult the primary author prior to modifying the
+!   MOSAIC code or incorporating it or its submodules in another code. This is 
+!   meant to ensure that the any linkages and/or assumptions will not adversely
+!   affect the operation of MOSAIC.
+! 2) The MOSAIC source code is intended for research and educational purposes.
+!   Users are requested to contact the primary author regarding the use of
+!   MOSAIC code for any commercial application.
+! 3) Users preparing publications resulting from the usage of MOSAIC are requested
+!   to cite one or more of the references below (depending on the application) 
+!   for proper acknowledgement.
 !
 ! References for MOSAIC (The first one is the primary MOSAIC reference):
 ! * Zaveri R.A., R.C. Easter, J.D. Fast, and L.K. Peters (2008), Model for

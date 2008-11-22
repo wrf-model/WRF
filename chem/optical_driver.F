@@ -76,7 +76,7 @@
    ENDIF
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
-          RACMSORG,            RACMSORG_KPP,       RACMSORG_AQ,  &
+                               RACMSORG_KPP,       RACMSORG_AQ,  &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )
       processingAerosols = .true.
@@ -95,7 +95,7 @@
 !
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
-          RACMSORG,            RACMSORG_KPP,       RACMSORG_AQ   )
+                               RACMSORG_KPP,       RACMSORG_AQ   )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN,   &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ )

@@ -179,7 +179,7 @@ CONTAINS
                          +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)/dz8w(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
         enddo
-      CASE (RADM2SORG,RACMSORG,RACMSORG_KPP, RADM2SORG_KPP)
+      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP)
           do j=jts,jte
           do i=its,ite
            do k=kts+1,kte
@@ -328,7 +328,7 @@ CONTAINS
                          +r_q*ebu_pm10(i,k,j)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         enddo
         enddo
-      CASE (GOCARTRACM_KPP)
+      CASE (GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)
           do j=jts,jte
           do i=its,ite
            do k=kts+1,kte

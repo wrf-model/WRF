@@ -23,15 +23,17 @@
 ! team leader for PNNL
 !
 ! Terms of Use:
-!  1) This module may not be included in  commerical package or used for any
-!     commercial applications without the consent of the PNNL contact. 
-!  2) This module is provided to the WRF modeling community; however, no portion
-!     of it can be used separately or in another code without the consent of the
-!     PNNL contact.
-!  3) This module may be used for research, educational, and non-profit purposes
-!     only.  Any other usage must be first approved by the PNNL contact.
-!  4) Publications resulting from the usage of this module must use one the
-!     reference below for proper acknowledgment.
+! 1) Users are requested to consult the primary author prior to modifying
+!    this module or incorporating it or its submodules in another code. This is 
+!   meant to ensure that the any linkages and/or assumptions will not adversely
+!   affect its operation.
+! 2) This module is intended for research and educational purposes.
+!   Users are requested to contact the primary author regarding the use of
+!   this module for any commercial application.
+! 3) Users preparing publications resulting from the usage of this module are requested
+!   to cite one or more of the references below (depending on the application) 
+!   for proper acknowledgement.
+
 !
 ! References: 
 ! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
@@ -172,7 +174,7 @@
    chem_select: SELECT CASE(config_flags%chem_opt)
 !
    CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-          RACMSORG,  RACMSORG_AQ,  RACMSORG_KPP)
+                     RACMSORG_AQ,  RACMSORG_KPP)
      call optical_prep_modal(nbin_o, chem, alt,                        &
           h2oai, h2oaj, refindx, radius_wet, number_bin,               &
           radius_core, refindx_core, refindx_shell,                    &

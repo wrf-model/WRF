@@ -22,15 +22,16 @@
 ! team leader for PNNL
 !
 ! Terms of Use:
-!  1) This module may not be included in  commerical package or used for any
-!     commercial applications without the consent of the PNNL contact. 
-!  2) This module is provided to the WRF modeling community; however, no portion
-!     of it can be used separately or in another code without the consent of the
-!     PNNL contact.
-!  3) This module may be used for research, educational, and non-profit purposes
-!     only.  Any other usage must be first approved by the PNNL contact.
-!  4) Publications resulting from the usage of this module must use one the
-!     reference below for proper acknowledgment.
+! 1) Users are requested to consult the primary author prior to modifying
+!    this module or incorporating it or its submodules in another code. This is 
+!   meant to ensure that the any linkages and/or assumptions will not adversely
+!   affect its operation.
+! 2) This module is intended for research and educational purposes.
+!   Users are requested to contact the primary author regarding the use of
+!   this module for any commercial application.
+! 3) Users preparing publications resulting from the usage of this module are requested
+!   to cite one or more of the references below (depending on the application) 
+!   for proper acknowledgement.
 !
 ! Note that the aerosol optical properites are currently tied to the use of Fast-J
 ! and MOSAIC.  Future modifications will make the calculations more generic so the

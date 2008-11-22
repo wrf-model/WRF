@@ -41,8 +41,6 @@
   USE module_configure
   USE module_state_description                       
   USE module_data_sorgam
-! USE module_data_radm2                               
-! USE module_data_racm                               
           
    INTEGER,      INTENT(IN   ) :: id,julday,                              &
                                   numgas,                                 &
@@ -240,9 +238,11 @@
          end do
       end if
 
-! For gocartracm
+! For gocartracm,radm
 !     
-      if  (config_flags%chem_opt == GOCARTRACM_KPP          )   then
+      if  ((config_flags%chem_opt == GOCARTRACM_KPP)  .OR.     &
+           (config_flags%chem_opt == GOCARTRADM2_KPP) .OR.     &
+           (config_flags%chem_opt == GOCARTRADM2))   then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_sulf)        = 0.

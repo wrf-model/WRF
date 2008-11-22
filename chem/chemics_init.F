@@ -121,11 +121,15 @@ call wrf_message("**************************************************************
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
        call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance.")
-     CASE (GOCARTRACM_KPP)
-       CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
+     CASE (GOCARTRADM2_KPP)
+       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
        call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (GOCARTRADM2)
+       CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
+       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
+     CASE (GOCARTRACM_KPP)
+       CALL wrf_debug(15,'calling gocart and racmkpp driver from chem_driver')
+       call wrf_message("WARNING: GOCART aerosol option is highly experimental and not recommended for use.")
      CASE (CBM4_KPP )
        CALL wrf_debug(15,'calling CB4 from chem_driver')
        call wrf_message("WARNING: CB4 chemistry option is highly experimental and not recommended for use.")
@@ -145,20 +149,18 @@ call wrf_message("**************************************************************
    END SELECT chem_select
 
    if ( config_flags%dust_opt == 1 ) then
-       call wrf_message("WARNING: dust option currently works only with the GOCART aerosol option.")
+       call wrf_message("WARNING: dust option  1 currently works only with the GOCART aerosol option.")
        call wrf_message("WARNING: dust option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    endif
 
    if ( config_flags%seas_opt == 1 ) then
-       call wrf_message("WARNING: sea salt option currently works only with the GOCART aerosol option.")
+       call wrf_message("WARNING: sea salt option 1 currently works only with the GOCART aerosol option.")
        call wrf_message("WARNING: sea salt option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    endif
 
    if ( config_flags%biomass_burn_opt == 1 ) then
-       call wrf_message("WARNING: biomass burning option works only when chem_opt is set to RACMPM_KPP.")
-       call wrf_message("WARNING: biomass burning option is highly experimental and not recommended for use.")
+!      call wrf_message("WARNING: biomass burning option works only when chem_opt is set to RACMPM_KPP.")
+!      call wrf_message("WARNING: biomass burning option is highly experimental and not recommended for use.")
 !      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
    endif
 
@@ -336,7 +338,7 @@ call wrf_message("**************************************************************
              enddo
           enddo
         endif
-     CASE (RADM2_KPP,RADM2SORG_KPP)
+     CASE (RADM2_KPP,RADM2SORG_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
@@ -364,7 +366,7 @@ call wrf_message("**************************************************************
             enddo
           endif
         endif
-     CASE (GOCARTRACM_KPP)
+     CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
        CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')
         ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
@@ -447,7 +449,7 @@ call wrf_message("**************************************************************
                  if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
            enddo
           enddo
-     CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG,RACMSORG_KPP)
+     CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG_KPP)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
        call aerosols_sorgam_init(chem,convfac,z_at_w,                &
@@ -596,7 +598,7 @@ subroutine print_chem_species_index( chem_opt )
 ! Gas species...
 !
   select case (chem_opt)
-  case (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2_KPP, RADM2SORG_KPP)
+  case (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2_KPP, RADM2SORG_KPP, GOCARTRADM2,GOCARTRADM2_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -638,7 +640,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
-  case (RACM, RACMSORG, RACMSORG_AQ, RACM_KPP, RACMPM_KPP, RACMSORG_KPP)
+  case (RACMSORG_AQ, RACM_KPP, RACMPM_KPP, RACMSORG_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"

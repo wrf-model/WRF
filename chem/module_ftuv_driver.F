@@ -199,7 +199,7 @@
 !     calculate the GMT
       isorg=0
       aer_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG,RACMSORG_KPP,RACMSORG_AQ)
+         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
          CASE DEFAULT

@@ -13,14 +13,23 @@ CONTAINS
          adapt_step_flag,curr_secs,                                        &
          plumerisefire_frq,stepfirepl,                                     &
          bioemdt,stepbioe,                                                 &
-         config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,  &
+         config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
          tsk,erod,g,emis_seas,emis_dust,                                   &
-         ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,            &
-         ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,       &
-         ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,         &
-         ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,         &
-         ebu_dms,ebu_sulf,mean_fct_agtf,mean_fct_agef,                     &
+         ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,                    &
+         ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,                         &
+         ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,                        &
+         ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,                         &
+         ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,                        &
+         ebu_oc,ebu_so2,ebu_dms,ebu_sulf,                                  &
+         ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,                        &
+         ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,                      &
+         ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,                    &
+         ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,                     &
+         ebu_in_tol,ebu_in_xyl,ebu_in_csl,ebu_in_hcho,                     &
+         ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1,                    &
+         ebu_in_ora2,ebu_in_bc,ebu_in_oc,ebu_in_so2,                       &
+         ebu_in_dms,ebu_in_sulf,mean_fct_agtf,mean_fct_agef,               &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
          u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
@@ -106,6 +115,16 @@ CONTAINS
            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
             ebu_dms,ebu_sulf
+
+   REAL, DIMENSION( ims:ime, jms:jme ),                                    &
+         OPTIONAL,                                                         &
+         INTENT(INOUT ) ::                                                 &
+           ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,           &
+           ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,         &
+           ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,      &
+           ebu_in_lim,ebu_in_tol,ebu_in_xyl,ebu_in_csl,ebu_in_hcho,        &
+           ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,      &
+           ebu_in_bc,ebu_in_oc,ebu_in_so2,ebu_in_dms,ebu_in_sulf
 
    REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
          OPTIONAL,                                                         &
@@ -216,12 +235,12 @@ CONTAINS
 ! ..
 
 ! Flags for turning on or off sea salt and/or dust emissions...
-!    >0 = sea salt/dust emissions turned on
-! As of May 2008 these only are used for MOSAIC and SORGAM
-! the gocart dust and seasalt modules are namelist defined
+! for PNNL modules:   >0 = sea salt/dust emissions turned on
+! As of NOV 2008 these only are used for MOSAIC and SORGAM
+! gocart  dust and seasalt will only work for GOCART and SORGAM
 !
-      dust_emiss_active    = 1
-      seasalt_emiss_active = 1
+      if(config_flags%dust_opt == 2 )dust_emiss_active    = 1
+      if(config_flags%seas_opt == 2 )seasalt_emiss_active = 1
 !
 ! Setup the timing flags...
 ! (methodology is adapated from module_radiation_driver.F)
@@ -317,9 +336,14 @@ CONTAINS
            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
-           ebu_dms,ebu_sulf,mean_fct_agtf,mean_fct_agef,                   &
-           mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,        &
-           firesize_agsv,firesize_aggr,                                    &
+           ebu_dms,ebu_sulf,                                               &
+           ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,      &
+           ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,  &
+           ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_xyl,   &
+           ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1, &
+           ebu_in_ora2,ebu_in_bc,ebu_in_oc,ebu_in_so2,ebu_in_dms,ebu_in_sulf,    &
+           mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
+           firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
            config_flags, t_phy,moist,                                      &
            chem,rho_phy,vvel,u_phy,v_phy,p_phy,                       &
            emis_ant,z_at_w,z,                                                       &
@@ -358,12 +382,10 @@ CONTAINS
        endif
      CASE (BEIS313)
        if( do_bioemiss ) then
-!        if (config_flags%chem_opt > RACMSORG .AND. config_flags%chem_opt < 100  ) then !<100: kpp mechs, e.g. RACMSORG_KPP
-!        the above test is unsafe
          beis313_check_mechanism_ok: SELECT CASE(config_flags%chem_opt)
             CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-                  RACM, RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP, &
-                  CBM4_KPP, NMHC9_KPP, GOCART_SIMPLE, GOCARTRACM_KPP)
+                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP, &
+                  CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
             CASE DEFAULT 
                CALL wrf_error_fatal( &
                   "emissions_driver: beis3.1.3 biogenic emis. implemented for RADM2 & RACM only")
@@ -419,7 +441,7 @@ CONTAINS
 !
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-          RACM, RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP)
+          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -490,7 +512,7 @@ CONTAINS
           end do
        end do
 
-    CASE (GOCARTRACM_KPP)
+    CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -519,7 +541,7 @@ CONTAINS
        end if ! emiss_inpt_opt /= 3
 
 !
-! simple fix for now
+! simple fix for now for emiss_opt=3
 !
        do j=jts,jte  
           do i=its,ite  
@@ -618,7 +640,7 @@ CONTAINS
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
-          RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
+          RACMSORG_AQ,RACMSORG_KPP)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             slai,ust,smois,ivgtyp,isltyp,                               &

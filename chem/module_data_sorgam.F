@@ -1206,6 +1206,12 @@ MODULE module_data_sorgam
      	real scavimptblnum(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype), &
      	     scavimptblvol(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype)
 
+
+!SAM 10/08 Gaussian quadrature constants for SORGAM deposition numerical integration
+      INTEGER NGAUSdv
+      PARAMETER( NGAUSdv = 7 )  ! Number of Gaussian Quadrature Points - constants defined in aerosols_sorgam_init
+      REAL Y_GQ(NGAUSdv), WGAUS(NGAUSdv)
+
 !*****************************************************************
 !*                                                               *
 !*  end parameters and variables for aerosol-cloud interactions  *

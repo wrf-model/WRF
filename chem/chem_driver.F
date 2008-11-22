@@ -1,5 +1,5 @@
 !
-!   WRF-chem V3.0 : Original version of chem_driver written by Georg Grell (ESRL/GSD)
+!   WRF-chem V3.1 : Original version of chem_driver written by Georg Grell (ESRL/GSD)
 !                   Further developments, bugfixes and improvements  by
 !                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
 !
@@ -353,9 +353,6 @@
      CASE (RADM2SORG_AQ)
        CALL wrf_debug(15,'calling radm2sorg_aq aerosols driver from chem_driver')
        haveaer = .true.
-     CASE (RACM)
-       CALL wrf_debug(15,'calling racm from chem_driver')
-       haveaer = .false.
      CASE (RACM_KPP)
        CALL wrf_debug(15,'calling racm_kpp from chem_driver')
      CASE (RACMPM_KPP)
@@ -364,9 +361,6 @@
      CASE (RACM_MIM_KPP)
        CALL wrf_debug(15,'calling racm_mim_kpp from chem_driver')
        haveaer = .false.
-     CASE (RACMSORG)
-       CALL wrf_debug(15,'calling racmsorg aerosols driver from chem_driver')
-       haveaer = .true.
      CASE (RACMSORG_KPP)
        CALL wrf_debug(15,'calling racmsorg_kpp aerosols driver from chem_driver')
        haveaer = .false.
@@ -375,6 +369,12 @@
        haveaer = .false.
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racm driver from chem_driver')
+       haveaer = .false.
+     CASE (GOCARTRADM2_KPP)
+       CALL wrf_debug(15,'calling gocart and radmkpp driver from chem_driver')
+       haveaer = .false.
+     CASE (GOCARTRADM2)
+       CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
        haveaer = .false.
      CASE (CBMZ)
        CALL wrf_debug(15,'calling cbmz from chem_driver')
@@ -522,7 +522,7 @@
       enddo
       select case (config_flags%chem_opt)
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-             RACMSORG,  RACMSORG_AQ,  RACMSORG_KPP)
+                        RACMSORG_AQ,  RACMSORG_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -589,15 +589,6 @@
                its,ite, jts,jte,kts,kte                                     )
        endif ! chem_conv_tr
 
-!       if( config_flags%chem_conv_tr>0)then
-!           call convtrans_prep(grid%gd_cloud,grid%gd_cloud2,grid%gd_cloud_a,&
-!               grid%gd_cloud_b,grid%raincv,grid%raincv_a,grid%raincv_b,     &
-!               grid%gd_cloud2_a,grid%gd_cloud2_b,stepave,ktau,grid%dt,        &
-!               config_flags%cu_rad_feedback,  config_flags%cu_physics,      &
-!               ids,ide, jds,jde, kds,kde,                                   &
-!               ims,ime, jms,jme, kms,kme,                                   &
-!               its,ite, jts,jte,kts,kte                                     )
-!       endif ! chem_conv_tr
 !
 !
 #if ( EM_CORE == 1 )
@@ -652,7 +643,15 @@
               grid%ebu_pm10,grid%ebu_dien,grid%ebu_iso,grid%ebu_api,grid%ebu_lim,          &
               grid%ebu_tol,grid%ebu_xyl,grid%ebu_csl,grid%ebu_hcho,grid%ebu_ald,           &
               grid%ebu_ket,grid%ebu_macr,grid%ebu_ora1,grid%ebu_ora2,grid%ebu_bc,          &
-              grid%ebu_oc,grid%ebu_so2,grid%ebu_dms,grid%ebu_sulf,grid%mean_fct_agtf,      &
+              grid%ebu_oc,grid%ebu_so2,grid%ebu_dms,grid%ebu_sulf,                         &
+              grid%ebu_in_no,grid%ebu_in_co,grid%ebu_in_co2,grid%ebu_in_eth,               &
+              grid%ebu_in_hc3,grid%ebu_in_hc5,grid%ebu_in_hc8,grid%ebu_in_ete,             &
+              grid%ebu_in_olt,grid%ebu_in_oli,grid%ebu_in_pm25,grid%ebu_in_pm10,           &
+              grid%ebu_in_dien,grid%ebu_in_iso,grid%ebu_in_api,grid%ebu_in_lim,            &
+              grid%ebu_in_tol,grid%ebu_in_xyl,grid%ebu_in_csl,grid%ebu_in_hcho,            &
+              grid%ebu_in_ald,grid%ebu_in_ket,grid%ebu_in_macr,grid%ebu_in_ora1,           &
+              grid%ebu_in_ora2,grid%ebu_in_bc,grid%ebu_in_oc,grid%ebu_in_so2,              &
+              grid%ebu_in_dms,grid%ebu_in_sulf, grid%mean_fct_agtf,                        &
               grid%mean_fct_agef,grid%mean_fct_agsv,grid%mean_fct_aggr,grid%firesize_agtf, &
               grid%firesize_agef,grid%firesize_agsv,grid%firesize_aggr,                    &
               grid%u10,grid%v10,grid%ivgtyp,grid%isltyp,grid%gsw,grid%vegfra,grid%rmol,    &

@@ -1232,6 +1232,19 @@ integer myproc
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
            isfc = 1
+#if (NMM_CORE==1)
+      CASE (GFDLSFCSCHEME)
+           CALL myjsfcinit(LOWLYR,UST,                         &
+                                      Z0,                      &
+                                          XLAND,XICE,          &
+                         IVGTYP,restart,                       &
+                         allowed_to_read ,                     &
+                         ids, ide, jds, jde, kds, kde,         &
+                         ims, ime, jms, jme, kms, kme,         &
+                         its, ite, jts, jte, kts, kte          )
+           isfc = 1
+#endif
+
 
       CASE DEFAULT
 
@@ -1264,6 +1277,17 @@ integer myproc
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
+     CASE (GFDLSLAB)
+           CALL nmmlsminit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
+                     SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &
+                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   &
+                     TMN,                                          &
+                     num_soil_layers,                              &
+                     allowed_to_read ,                             &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+                     its,ite, jts,jte, kts,kte                     )
+
 #endif
       CASE (LSMSCHEME)
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &

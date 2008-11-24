@@ -638,12 +638,12 @@
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
-     &                ,TWBS,QWBS,SFCSHX,SFCLHX,SFCEVP                   &
+     &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP                   &
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
-     &                ,UZ0H,VZ0H,DUDT,DVDT                              & 
+     &                ,UZ0H,VZ0H,DUDT,DVDT,SFENTH                              & 
      &                ,RTHBLTEN,RQVBLTEN                                & 
      &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
      &                ,GRID,CONFIG_FLAGS                                &
@@ -701,6 +701,7 @@
 !
       REAL,INTENT(IN) :: DT,PDTOP,PT
 !
+      REAL,INTENT(IN) :: SFENTH
       REAL,INTENT(INOUT) :: APHTIM,ARDSW,ARDLW,ASRFC
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: AETA1,AETA2,DETA1,DETA2
@@ -759,6 +760,8 @@
                                                     ,SFCEXC,SMSTAV      &
                                                     ,SOILTB,TWBS
 !
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -1138,7 +1141,7 @@
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
-     &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,QSFC=QS  &
+     &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,TAUX=TAUX,TAUY=TAUY,QSFC=QS  &
      &          ,QSHLTR=QSHLTR,QZ0=QZ0,RAINCV=RAIN                      &
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
@@ -1151,7 +1154,7 @@
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
-     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE     &
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_MYJ=TKE,SFENTH=SFENTH     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
      &          ,PSFC=PSFC_OUT,EMISS=EPSR,EMBCK=EMBCK                   &

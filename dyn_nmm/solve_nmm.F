@@ -84,7 +84,7 @@
       INTEGER :: KVH,NTSD_rad,RC
       INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
 !
-      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC
+      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,SFENTH
 !
       LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS
 !
@@ -1119,12 +1119,20 @@
      &            ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK             &
      &            ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR               &
      &            ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG     &
+#if (NMM_CORE==1)
+     &            ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP                      &
+#else
      &            ,TWBS,QWBS,SFCSHX,SFCLHX,SFCEVP                      &
+#endif
      &            ,POTEVP,POTFLX,SUBSHX                                &
      &            ,APHTIM,ARDSW,ARDLW,ASRFC                            &
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
+#if (NMM_CORE==1)
+     &            ,UZ0H,VZ0H,DUDT,DVDT,SFENTH                                & 
+#else
      &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
+#endif
      &            ,RTHBLTEN,RQVBLTEN                                   & 
      &            ,GRID%PCPFLG,DDATA                                   &
      &            ,GRID,CONFIG_FLAGS                                   &

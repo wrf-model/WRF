@@ -110,10 +110,10 @@
  h_sca_adv_order                     = 5,      5,      5,
  v_sca_adv_order                     = 3,      3,      3,
  non_hydrostatic                     = .true., .true., .true.,
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 0,      0,      0,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
  /
 
  &bdy_control

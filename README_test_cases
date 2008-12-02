@@ -105,3 +105,6 @@ The available test cases are
    75, 1825-1830).  This test of the global solver is dry, and
    produces  midlatitude jets, breaking midlatitude baroclinic 
    waves, etc.
+
+10) Single column model (test/em_scm_xy)
+

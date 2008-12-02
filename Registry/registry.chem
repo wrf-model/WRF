@@ -14,7 +14,8 @@ state   integer last_chem_time_second    -  misc    -         -      r       "la
 #
 # Emissions variables
 #
-state   integer emissframes   -          -          -         -      -       "emissframes"           ""         ""
+state   integer emissframes      -          -          -         -      -       "emissframes"           ""         ""
+state   integer fireemissframes  -        -          -        -        -      "fireemissframes"       ""         ""
 state   real     -            i+jf     emis_ant     -         -      -       -                     "Anthropogenic Emissions"         ""
 state    real  e_iso          i+jf     emis_ant     1         Z      i5h     "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"  "mol km^-2 hr^-1"
 state    real  e_so2          i+jf     emis_ant     1         Z      i5h     "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
@@ -74,47 +75,78 @@ state    real  eseas2       i%jf      emis_seas      1         Z      rh     "ES
 state    real  eseas3       i%jf      emis_seas      1         Z      rh     "ESEAS3"         "Sea-Salt emissions bin3 "  ""
 state    real  eseas4       i%jf      emis_seas      1         Z      rh     "ESEAS4"         "Sea-Salt emissions bin4 "  ""
 # biomassburning emission arrays (used by fire plume rise)
-state    real  ebu_no       ikj      misc           1         Z      i07h     "ebu_no"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_co       ikj      misc           1         Z      i07h     "ebu_co"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_co2      ikj      misc           1         Z      i07h     "ebu_co2"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_eth      ikj      misc           1         Z      i07h     "ebu_eth"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_hc3      ikj      misc           1         Z      i07h     "ebu_hc3"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_hc5      ikj      misc           1         Z      i07h     "ebu_hc5"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_hc8      ikj      misc           1         Z      i07h     "ebu_hc8"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_ete      ikj      misc           1         Z      i07h     "ebu_ete"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_olt      ikj      misc           1         Z      i07h     "ebu_olt"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_oli      ikj      misc           1         Z      i07h     "ebu_oli"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_pm25      ikj      misc           1        Z      i07h     "ebu_pm25"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_pm10      ikj      misc           1        Z      i07h     "ebu_pm10"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_dien      ikj      misc           1        Z     i07h     "ebu_dien"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_iso      ikj      misc           1         Z      i07h     "ebu_iso"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_api      ikj      misc           1         Z      i07h     "ebu_api"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_lim      ikj      misc           1         Z      i07h     "ebu_lim"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_tol      ikj      misc           1         Z      i07h     "ebu_tol"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_xyl      ikj      misc           1         Z      i07h     "ebu_xyl"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_csl      ikj      misc           1         Z      i07h     "ebu_csl"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_hcho      ikj      misc           1        Z     i07h     "ebu_hcho"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_ald      ikj      misc           1         Z      i07h     "ebu_ald"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_ket      ikj      misc           1         Z      i07h     "ebu_ket"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_macr      ikj      misc           1        Z     i07h     "ebu_macr"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_ora1      ikj      misc           1        Z     i07h     "ebu_ora1"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_ora2      ikj      misc           1        Z     i07h     "ebu_ora2"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_nh3      ikj      misc           1        Z     i07h     "ebu_nh3"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_so2      ikj      misc           1        Z     i07h     "ebu_so2"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_dms      ikj      misc           1        Z     i07h     "ebu_dms"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_oc      ikj      misc           1        Z     i07h     "ebu_oc"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_bc      ikj      misc           1        Z     i07h     "ebu_bc"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_sulf      ikj      misc           1        Z     i07h     "ebu_sulf"         "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_no       ikj      misc           1         Z        h      "ebu_no"        "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_co       ikj      misc           1         Z        h      "ebu_co"        "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_co2      ikj      misc           1         Z        h      "ebu_co2"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_eth      ikj      misc           1         Z        h      "ebu_eth"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hc3      ikj      misc           1         Z        h      "ebu_hc3"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hc5      ikj      misc           1         Z        h      "ebu_hc5"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hc8      ikj      misc           1         Z        h      "ebu_hc8"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_ete      ikj      misc           1         Z        h      "ebu_ete"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_olt      ikj      misc           1         Z        h      "ebu_olt"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_oli      ikj      misc           1         Z        h      "ebu_oli"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_pm25     ikj      misc           1         Z        h      "ebu_pm25"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_pm10     ikj      misc           1         Z        h      "ebu_pm10"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_dien     ikj      misc           1         Z        h      "ebu_dien"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_iso      ikj      misc           1         Z        h      "ebu_iso"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_api      ikj      misc           1         Z        h      "ebu_api"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_lim      ikj      misc           1         Z        h      "ebu_lim"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_tol      ikj      misc           1         Z        h      "ebu_tol"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_xyl      ikj      misc           1         Z        h      "ebu_xyl"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_csl      ikj      misc           1         Z        h      "ebu_csl"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hcho     ikj      misc           1         Z        h      "ebu_hcho"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_ald      ikj      misc           1         Z        h      "ebu_ald"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_ket      ikj      misc           1         Z        h      "ebu_ket"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_macr     ikj      misc           1         Z        h      "ebu_macr"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_ora1     ikj      misc           1         Z        h      "ebu_ora1"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_ora2     ikj      misc           1         Z        h      "ebu_ora2"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_nh3      ikj      misc           1         Z        h      "ebu_nh3"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_so2      ikj      misc           1         Z        h      "ebu_so2"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_dms      ikj      misc           1         Z        h      "ebu_dms"       "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_oc       ikj      misc           1         Z        h      "ebu_oc"        "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_bc       ikj      misc           1         Z        h      "ebu_bc"        "Reference biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_sulf     ikj      misc           1         Z        h      "ebu_sulf"      "Reference biomass burning emiss"  "mol km^-2 hr^-1"
 
-# additional arrays needed for biomass burnin5
-state    real  mean_fct_agtf      ij      misc           1         -      i07h     "mean_fct_agtf"         "mean fraction of tropical forest"  "?"
-state    real  mean_fct_agef      ij      misc           1         -      i07h     "mean_fct_agef"         "mean fraction of extra tropical forest"  "?"
-state    real  mean_fct_agsv      ij      misc           1         -      i07h     "mean_fct_agsv"         "mean fraction of savanna"  "?"
-state    real  mean_fct_aggr      ij      misc           1         -      i07h     "mean_fct_aggr"         "mean fraction of grassland"  "?"
-state    real  firesize_agtf      ij      misc           1         -      i07h     "firesize_agtf"         "mean firesize for tropical forest"  "?"
-state    real  firesize_agef      ij      misc           1         -      i07h     "firesize_agef"         "mean firesize for extratropical forest"  "?"
-state    real  firesize_agsv      ij      misc           1         -      i07h     "firesize_agsv"         "mean firesize for savanna"  "?"
-state    real  firesize_aggr      ij      misc           1         -      i07h     "firesize_aggr"         "mean firesize for grassland"  "?"
+# additional arrays needed for biomass burning emissions input
+state    real  ebu_in_no          ij      misc      1         -        i07       "ebu_in_no"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_co          ij      misc      1         -        i07       "ebu_in_co"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_co2         ij      misc      1         -        i07       "ebu_in_co2"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_eth         ij      misc      1         -        i07       "ebu_in_eth"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hc3         ij      misc      1         -        i07       "ebu_in_hc3"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hc5         ij      misc      1         -        i07       "ebu_in_hc5"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hc8         ij      misc      1         -        i07       "ebu_in_hc8"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ete         ij      misc      1         -        i07       "ebu_in_ete"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_olt         ij      misc      1         -        i07       "ebu_in_olt"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_oli         ij      misc      1         -        i07       "ebu_in_oli"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_pm25        ij      misc      1         -        i07       "ebu_in_pm25"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_pm10        ij      misc      1         -        i07       "ebu_in_pm10"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_dien        ij      misc      1         -        i07       "ebu_in_dien"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_iso         ij      misc      1         -        i07       "ebu_in_iso"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_api         ij      misc      1         -        i07       "ebu_in_api"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_lim         ij      misc      1         -        i07       "ebu_in_lim"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_tol         ij      misc      1         -        i07       "ebu_in_tol"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_xyl         ij      misc      1         -        i07       "ebu_in_xyl"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_csl         ij      misc      1         -        i07       "ebu_in_csl"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hcho        ij      misc      1         -        i07       "ebu_in_hcho"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ald         ij      misc      1         -        i07       "ebu_in_ald"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ket         ij      misc      1         -        i07       "ebu_in_ket"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_macr        ij      misc      1         -        i07       "ebu_in_macr"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ora1        ij      misc      1         -        i07       "ebu_in_ora1"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ora2        ij      misc      1         -        i07       "ebu_in_ora2"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_nh3         ij      misc      1         -        i07       "ebu_in_nh3"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_so2         ij      misc      1         -        i07       "ebu_in_so2"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_dms         ij      misc      1         -        i07       "ebu_in_dms"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_oc          ij      misc      1         -        i07       "ebu_in_oc"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_bc          ij      misc      1         -        i07       "ebu_in_bc"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_sulf        ij      misc      1         -        i07       "ebu_in_sulf"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  mean_fct_agtf      ij      misc      1         -        i07h      "mean_fct_agtf"         "mean fraction of tropical forest"  "?"
+state    real  mean_fct_agef      ij      misc      1         -        i07h      "mean_fct_agef"         "mean fraction of extra tropical forest"  "?"
+state    real  mean_fct_agsv      ij      misc      1         -        i07h      "mean_fct_agsv"         "mean fraction of savanna"  "?"
+state    real  mean_fct_aggr      ij      misc      1         -        i07h      "mean_fct_aggr"         "mean fraction of grassland"  "?"
+state    real  firesize_agtf      ij      misc      1         -        i07h      "firesize_agtf"         "mean firesize for tropical forest"  "?"
+state    real  firesize_agef      ij      misc      1         -        i07h      "firesize_agef"         "mean firesize for extratropical forest"  "?"
+state    real  firesize_agsv      ij      misc      1         -        i07h      "firesize_agsv"         "mean firesize for savanna"  "?"
+state    real  firesize_aggr      ij      misc      1         -        i07h      "firesize_aggr"         "mean firesize for grassland"  "?"
 
 #
 state    real  e_bio          ijo     misc        1         Z      r        "E_BIO"             "EMISSIONS"             "ppm m/min"
@@ -803,24 +835,28 @@ state integer  STEPCHEM          -        misc     1         -      r        "ST
 state integer  STEPFIREPL        -        misc     1         -      r        "STEPFIREPL"            "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CALLSTO PLUMERISE FIRE ROUTINE"             "NA"
                                                 
 #
-rconfig   character  emi_inname        namelist,chem       1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions infile"  ""    ""
-rconfig   character  fireemi_inname        namelist,chem       1       "wrffirechemi_d<domain>_<date>"   -     "name of chem fire emissions infile"  ""    ""
-rconfig   character  emi_outname       namelist,chem       1  "wrfchemi_d<domain>_<date>"   -     "name of chem emissions outfile" ""    ""
-rconfig   character  fireemi_outname       namelist,chem       1  "wrffirechemi_d<domain>_<date>"   -     "name of chem fire emissions outfile" ""    ""
-rconfig   character  input_chem_inname       namelist,chem   1  "wrf_chem_input_d<domain>_<date>"   -     "name of chem infile"  ""    ""
-rconfig   character  input_chem_outname      namelist,chem     1  "wrf_chem_input_d<domain>_<date>"   -     "name of chem outfile" ""    ""
-rconfig   integer frames_per_emissfile    namelist,chem        1              12      h     "frames_per_emissfile"          ""      ""
-rconfig   integer frames_per_fireemissfile    namelist,chem        1              1      h     "frames_per_fireemissfile"          ""      ""
-rconfig   integer io_style_emissions      namelist,chem        1              1       -     "io_style_emissions"    ""      ""
-rconfig   integer     io_form_emissions   namelist,chem        1              2       h        "io_form_emissions"              ""      ""
-rconfig   real    BIOEMDT                 namelist,chem        max_domains          0       h    "BIOEMDT"          "" ""
-rconfig   real    PHOTDT                  namelist,chem        max_domains          0       h    "PHOTDT"          ""  ""
-rconfig   real    CHEMDT                  namelist,chem        max_domains          0       h    "CHEMDT"          ""  ""
-rconfig   integer ne_area                 namelist,chem                  1      41      irh    "ne_area"               ""      ""
-rconfig   integer kemit                   namelist,chem                  1             9       irh   "kemit"                 ""      ""
-rconfig   integer nmegan                  namelist,chem                  1      138     irh    "nmegan"                ""      ""
-rconfig   integer kfuture                 namelist,chem                  1      1     -    "kfuture"                ""      ""
-rconfig   integer errosion_dim            namelist,chem                  1      3     -    "errosion_dim"            ""      ""
+rconfig   character  emi_inname            namelist,chem        1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions infile"  ""    ""
+rconfig   character  fireemi_inname        namelist,chem        1       "wrffirechemi_d<domain>_<date>"   -     "name of chem fire emissions infile"  ""    ""
+rconfig   character  input_chem_inname     namelist,chem        1       "wrf_chem_input_d<domain>_<date>"   -     "name of chem infile"  ""    ""
+rconfig   character  emi_outname           namelist,chem        1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions outfile" ""    ""
+rconfig   character  fireemi_outname       namelist,chem        1       "wrffirechemi_out_d<domain>_<date>"   -     "name of chem fire emissions outfile" ""    ""
+rconfig   character  input_chem_outname    namelist,chem        1       "wrf_chem_input_d<domain>_<date>"   -     "name of chem outfile" ""    ""
+rconfig   integer frames_per_emissfile     namelist,chem        1              12      h       "frames_per_emissfile"          ""      ""
+rconfig   integer frames_per_fireemissfile namelist,chem        1              1       h       "frames_per_fireemissfile"          ""      ""
+rconfig   integer   io_style_emissions     namelist,chem        1              1       -       "io_style_emissions"    ""      ""
+rconfig   integer    io_form_emissions     namelist,chem        1              2       h       "io_form_emissions"              ""      ""
+rconfig   integer  io_style_fireemissions  namelist,chem        1              1       -       "io_style_fireemissions"              ""    ""
+rconfig   integer    io_form_fireemissions namelist,chem        1              2       h       "io_form_fireemissions"               ""    ""
+rconfig   real    BIOEMDT                  namelist,chem        max_domains    0       h       "BIOEMDT"          "" ""
+rconfig   real    PHOTDT                   namelist,chem        max_domains    0       h       "PHOTDT"          ""  ""
+rconfig   real    CHEMDT                   namelist,chem        max_domains    0       h       "CHEMDT"          ""  ""
+rconfig   integer ne_area                  namelist,chem        1              41      irh     "ne_area"               ""      ""
+rconfig   integer kemit                    namelist,chem        1              9       irh     "kemit"                 ""      ""
+rconfig   integer nmegan                   namelist,chem        1              138     irh     "nmegan"                ""      ""
+rconfig   integer kfuture                  namelist,chem        1              1       -       "kfuture"                ""      ""
+rconfig   integer errosion_dim             namelist,chem        1              3       -       "errosion_dim"            ""      ""
+rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
+
 
 # Default chemistry settings are: passive/prescribed aerosols (chem_opt=0)
 #                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
@@ -857,8 +893,6 @@ rconfig   integer     aer_op_opt          namelist,chem          max_domains    
 package   prescribe_aerosol     chem_opt==0         -             -
 package   radm2         chem_opt==1                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2
 package   radm2sorg     chem_opt==2                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
-package   racm          chem_opt==3                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hcl,ho,ho2
-package   racmsorg      chem_opt==4                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 package   cbmz          chem_opt==5                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf
 package   cbmz_bb       chem_opt==6                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 package   cbmz_mosaic_4bin chem_opt==7               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
@@ -899,6 +933,10 @@ package   gocart_simple     chem_opt==300                   -             chem:s
 
 package   gocartracm_kpp     chem_opt==301                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
 
+package   gocartradm2_kpp     chem_opt==302                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
+
+package   gocartradm2     chem_opt==303                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,dms,msa,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
+
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
@@ -921,7 +959,11 @@ package   gunther1      bio_emiss_opt==1             -             -
 package   beis313       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
 # the following arrays only needed for burn options
-package   biomassb      biomass_burn_opt==1             -          state:ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms,mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr
+package   biomassb      biomass_burn_opt==1             -          state:ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_ap
+i,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms,mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_ag
+tf,firesize_agef,firesize_agsv,firesize_aggr,ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu
+_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms
+
 # dust and sea salt packages
 package   dustgocart    dust_opt==1                  -              emis_dust:edust1,edust2,edust3,edust4,edust5 
 package   seasgocart    seas_opt==1                  -              emis_seas:eseas1,eseas2,eseas3,eseas4

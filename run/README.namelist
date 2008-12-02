@@ -546,6 +546,21 @@ The following are for observation nudging:
  obs_ipf_init                        = .true.   ; Enable obs init warning messages
  /
 
+ &scm
+ scm_force                           = 1,       ; switch for single column forcing (=0 off)
+ scm_force_dx                        = 4000.    ; DX for SCM forcing (in meters)
+ num_force_layers                    = 8        ; number of SCM forcing layers
+ scm_lu_index                        = 2        ; SCM landuse category (2 is dryland, cropland and pasture)
+ scm_isltyp                          = 4        ; SCM soil category (4 is silt loam)
+ scm_ivgtyp                          = 2        ; SCM landuse category
+ scm_vegfra                          = 0.5      ; SCM vegetation fraction
+ scm_canwat                          = 0.0      ; SCM canopy water
+ scm_lat                             = 37.600   ; SCM latitude
+ scm_lon                             = -96.700  ; SCM longitude
+ scm_th_adv                          = .true.   ; turn on theta advection in SCM
+ scm_wind_adv                        = .true.   ; turn on wind advection in SCM
+ scm_qv_adv                          = .true.   ; turn on moisture advection in SCM
+ scm_vert_adv                        = .true.   ; turn on vertical advection in SCM
 
  &dynamics
  rk_ord                              = 3,	; time-integration scheme option:
@@ -612,10 +627,13 @@ The following are for observation nudging:
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
- pd_moist (max_dom)                  = F        ; positive definite advection of moisture
- pd_scalar (max_dom)                 = F        ; positive definite advection of scalars
- pd_chem (max_dom)                   = F        ; positive definite advection of chem variables
- pd_tke (max_dom)                    = F        ; positive definite advection of tke
+
+                                                ; advection options for scalar variables: 0=simple, 1=positive definite, 2=monotonic
+ moist_adv_opt (max_dom)             = 1        ; for moisture
+ scalar_adv_opt (max_dom)            = 1        ; for scalars
+ chem_adv_opt (max_dom)              = 1        ; for chem variables
+ tke_adv_opt (max_dom)               = 1        ; for tke
+
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also

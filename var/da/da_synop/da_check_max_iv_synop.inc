@@ -74,7 +74,7 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%synop(n)%p%qc == fails_error_max ) iv%synop(n)%q%qc =0
+      if( iv%synop(n)%p%qc == fails_error_max ) iv%synop(n)%p%qc =0
       if( iv%synop(n)%p%qc >= obs_qc_pointer ) then
       call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%p, max_error_p , failed)         
       if( iv%info(synop)%proc_domain(1,n) ) then

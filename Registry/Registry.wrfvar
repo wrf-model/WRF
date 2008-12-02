@@ -48,6 +48,7 @@ dimspec    k      3     standard_domain              z          bottom_top
 dimspec    l      3     namelist=num_soil_layers     z          soil_layers
 dimspec    u      3     namelist=num_land_cat        z          land_cat
 dimspec    s      3     namelist=num_soil_cat        z          soil_cat
+dimspec    +      2     namelist=num_force_layers    z          force_layers
 dimspec    p      -     constant=7501                c          microphysics_rstrt_state
 dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
 dimspec    e      3     namelist=ensdim              z          ensemble dimension
@@ -153,6 +154,9 @@ state    real   ru_m           ijk     dyn_em      1         X      -        "ru
 state    real   ru_tend        ijk     dyn_em      1         X      -        "ru_tend"        ""   ""                                   
 i1       real   ru_tendf       ijk     dyn_em      1         X                                          
 state    real   u_save         ijk     dyn_em      1         X      -        "u_save"
+state    real   z_force        |       dyn_em      1         -      i3rh     "Z_FORCE" "height of forcing input" "m"
+state    real   u_g            |       dyn_em      1         -      i3rh     "U_G" "x-direction geostrophic wind" "m s-1"
+state    real   u_g_tend       |       dyn_em      1         -      i3rh     "U_G_TEND" "tendency x-direction geostrophic wind" "m s-1"
 state    real   a_u            ijkb    misc        2         X      i01rh03usdf=(bdy_interp:dt)     "A_U"                    "x-wind component"   "m s-1"
 state    real   g_u            ijkb    misc        2         X      i01rh03usdf=(bdy_interp:dt)     "G_U"                    "x-wind component"   "m s-1"
 #                                               
@@ -164,6 +168,8 @@ state    real   rv_m           ijk     dyn_em      1         Y      -        "rv
 state    real   rv_tend        ijk     dyn_em      1         Y      -        "rv_tend"
 i1       real   rv_tendf       ijk     dyn_em      1         Y                                          
 state    real   v_save         ijk     dyn_em      1         Y      -        "v_save"                   
+state    real   v_g            |       dyn_em      1         -      i3rh     "V_G" "y-direction geostrophic wind" "m s-1"
+state    real   v_g_tend       |       dyn_em      1         -      i3rh     "V_G_TEND" "tendency y-direction geostrophic wind" "m s-1"
 state    real   a_v            ijkb    misc        2         Y     i01rh03usdf=(bdy_interp:dt)      "A_V"                     "y-wind component"   "m s-1"
 state    real   g_v            ijkb    misc        2         Y     i01rh03usdf=(bdy_interp:dt)      "G_V"                     "y-wind component"   "m s-1"
 #                                               
@@ -178,6 +184,8 @@ i1       real   wwp            ijk     dyn_em      1         Z
 i1       real   rw_tend        ijk     dyn_em      1         Z                                          
 i1       real   rw_tendf       ijk     dyn_em      1         Z                                          
 i1       real   w_save         ijk     dyn_em      1         Z                                          
+state    real   w_subs         |       dyn_em      1         -      i3rh      "W_SUBS" "large-scale vertical velocity" "m s-1"
+state    real   w_subs_tend    |       dyn_em      1         -      i3rh      "W_SUBS_TEND" "tendency large-scale vertical velocity" "m s-1"
 state    real   a_w            ijkb    misc        2         Z     irh03usdf=(bdy_interp:dt)  "a_w"                        "z-wind component"   "m s-1"
 state    real   g_w            ijkb    misc        2         Z     irh03usdf=(bdy_interp:dt)  "g_w"                        "z-wind component"   "m s-1"
 
@@ -210,6 +218,26 @@ i1       real   t_tendf        ijk     dyn_em      1         -
 state    real   tp             ijk     dyn_em      2         -  
 i1       real   t_2save        ijk     dyn_em      1         -   
 state    real   t_save         ijk     dyn_em      1         -               "t_save"
+
+state    real   th_upstream_x       |     dyn_em      1      -      i3rh     "TH_UPSTREAM_X" "upstream theta x-advection" "K s-1"
+state    real   th_upstream_x_tend  |     dyn_em      1      -      i3rh     "TH_UPSTREAM_X_TEND" "tendency upstream theta x-advection" "K s-2"
+state    real   th_upstream_y       |     dyn_em      1      -      i3rh     "TH_UPSTREAM_Y" "upstream theta y-advection" "K s-1"
+state    real   th_upstream_y_tend  |     dyn_em      1      -      i3rh     "TH_UPSTREAM_Y_TEND" "tendency upstream theta y-advection" "K s-2"
+
+state    real   qv_upstream_x       |     dyn_em      1      -      i3rh     "QV_UPSTREAM_X" "upstream qv x-advection" "kg kg-1 s-1"
+state    real   qv_upstream_x_tend  |     dyn_em      1      -      i3rh     "QV_UPSTREAM_X_TEND" "tendency upstream qv x-advection" "kg kg-1 s-2"
+state    real   qv_upstream_y       |     dyn_em      1      -      i3rh     "QV_UPSTREAM_Y" "upstream qv y-advection" "kg kg-1 s-1"
+state    real   qv_upstream_y_tend  |     dyn_em      1      -      i3rh     "QV_UPSTREAM_Y_TEND" "tendency upstream qv y-advection" "kg kg-1 s-2"
+
+state    real   u_upstream_x        |     dyn_em      1      -      i3rh     "U_UPSTREAM_X" "upstream u x-advection" "m s-2"
+state    real   u_upstream_x_tend   |     dyn_em      1      -      i3rh     "U_UPSTREAM_X_TEND" "tendency upstream u x-advection" "m s-3"
+state    real   u_upstream_y        |     dyn_em      1      -      i3rh     "U_UPSTREAM_Y" "upstream u y-advection" "m s-2"
+state    real   u_upstream_y_tend   |     dyn_em      1      -      i3rh     "U_UPSTREAM_Y_TEND" "tendency upstream u y-advection" "m s-3"
+
+state    real   v_upstream_x        |     dyn_em      1      -      i3rh     "V_UPSTREAM_X" "upstream v x-advection" "m s-2"
+state    real   v_upstream_x_tend   |     dyn_em      1      -      i3rh     "V_UPSTREAM_X_TEND" "tendency upstream v x-advection" "m s-3"
+state    real   v_upstream_y        |     dyn_em      1      -      i3rh     "V_UPSTREAM_Y" "upstream v y-advection" "m s-2"
+state    real   v_upstream_y_tend   |     dyn_em      1      -      i3rh     "V_UPSTREAM_Y_TEND" "tendency upstream v y-advection" "m s-3"
 #
 
 
@@ -1531,6 +1559,20 @@ rconfig   logical     obs_ipf_errob       namelist,fdda            1            
 rconfig   logical     obs_ipf_nudob       namelist,fdda            1              .false. h        "obs_ipf_nudob"     "Print obs nudge diagnostics"   ""
 rconfig   logical     obs_ipf_init        namelist,fdda            1              .true.  h        "obs_ipf_init"      "Enable obs init warning messages"   ""
 
+# Single-column model (SCM)
+rconfig   integer scm_force               namelist,scm  1       0           rh   "scm_force"            "SCM forcing switch" ""
+rconfig   real    scm_force_dx            namelist,scm  1       4000.       rh   "scm_force_dx"         "DX for SCM forcing" "m"
+rconfig   integer num_force_layers        namelist,scm  1       8           rh   "num_force_layers"     "Number of SCM forcing layers" ""
+rconfig   integer scm_lu_index            namelist,scm  1       2           rh   "scm_lu_index"         "SCM landuse index" ""
+rconfig   integer scm_isltyp              namelist,scm  1       4           rh   "scm_isltyp"           "SCM soil category" ""
+rconfig   real    scm_vegfra              namelist,scm  1       0.5         rh   "scm_vegfra"           "SCM vegetation fraction" ""
+rconfig   integer scm_canwat              namelist,scm  1       0.0         rh   "scm_canwat"           "SCM canopy water" "kg m-2"
+rconfig   real    scm_lat                 namelist,scm  1        36.605     rh   "scm_lat"              "SCM latitude" "degrees"
+rconfig   real    scm_lon                 namelist,scm  1       -97.485     rh   "scm_lon"              "SCM longitude" "degrees"
+rconfig   logical scm_th_adv              namelist,scm  1       .true.      rh   "scm_th_adv"           "Turn on theta advection in SCM"      ""
+rconfig   logical scm_wind_adv            namelist,scm  1       .true.      rh   "scm_wind_adv"         "Turn on wind advection in SCM"      ""
+rconfig   logical scm_qv_adv              namelist,scm  1       .true.      rh   "scm_qv_adv"           "Turn on qv advection in SCM"      ""
+rconfig   logical scm_vert_adv            namelist,scm  1       .true.      rh   "scm_vert_adv"         "Turn on vertical advection in SCM"      ""
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1561,11 +1603,11 @@ rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    5    
 rconfig   integer     v_mom_adv_order     namelist,dynamics	max_domains    3       rh       "v_mom_adv_order"               ""      ""
 rconfig   integer     h_sca_adv_order     namelist,dynamics	max_domains    5       rh       "h_sca_adv_order"               ""      ""
 rconfig   integer     v_sca_adv_order     namelist,dynamics	max_domains    3       rh       "v_sca_adv_order"               ""      ""
-rconfig   logical     pd_moist            namelist,dynamics	max_domains    .false.  rh    "pd_moist"         "positive-definite RK3 transport switch"      ""
-rconfig   logical     pd_moist_dfi        namelist,dynamics	max_domains    .false.  rh    "pd_moist_dfi"    "positive-definite RK3 transport switch"      ""
-rconfig   logical     pd_chem             namelist,dynamics	max_domains    .false. rh    "pd_chem"          "positive-definite RK3 transport switch"      ""
-rconfig   logical     pd_scalar           namelist,dynamics	max_domains    .false. rh    "pd_scalar"        "positive-definite RK3 transport switch"      ""
-rconfig   logical     pd_tke              namelist,dynamics	max_domains    .false. rh    "pd_tke"           "positive-definite RK3 transport switch"      ""
+rconfig   integer  moist_adv_opt          namelist,dynamics	max_domains    1       rh    "moist_adv_opt"         "positive-definite RK3 transport switch"      ""
+rconfig   integer  moist_adv_dfi_opt      namelist,dynamics	max_domains    1       rh    "moist_adv_dfi_opt"    "positive-definite RK3 transport switch"      ""
+rconfig   integer  chem_adv_opt           namelist,dynamics	max_domains    1       rh    "chem_adv_opt"          "positive-definite RK3 transport switch"      ""
+rconfig   integer  scalar_adv_opt         namelist,dynamics	max_domains    1       rh    "scalar_adv_opt"        "positive-definite RK3 transport switch"      ""
+rconfig   integer  tke_adv_opt            namelist,dynamics	max_domains    1       rh    "tke_adv_opt"           "positive-definite RK3 transport switch"      ""
 rconfig   logical top_radiation           namelist,dynamics	max_domains    .false. rh    "top_radiation"         ""      ""
 rconfig   integer mix_isotropic           namelist,dynamics	max_domains    0       h    "mix_isotropic"            "0=anistropic, 1=isotropic"      ""
 rconfig   real    mix_upper_bound         namelist,dynamics	max_domains    0.1     h    "mix_upper_bound"          "non-dimensional limit"      ""
@@ -1725,6 +1767,10 @@ package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_
 
 package   restofwrf      use_wps_input==0            -             -
 
+package   original       moist_adv_opt==0            -             -
+package   positivedef    moist_adv_opt==1            -             -
+package   monotonic      moist_adv_opt==2            -             -
+
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -
 package   dfi_fwd        dfi_stage==2                -             -
@@ -1796,7 +1842,7 @@ halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,p
 halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
 halo      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
-halo      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut
+halo      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut,muts
 halo      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
 halo      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,scalar;4:mu_2,al
 halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,scalar;4:mu_1,mu_2
@@ -1846,17 +1892,21 @@ halo      HALO_OBS_NUDGE dyn_em 24:pb,p,uratx,vratx,tratx
 # Periodic Boundary Communications
 
 period    PERIOD_BDY_EM_INIT dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t_init,phb,ph0,php,pb,al,alt,alb,mu_1,mu_2,mub,mu0,ht,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,sina,cosa,e,f
-period    PERIOD_BDY_EM_MOIST dyn_em 3:moist
-period    PERIOD_BDY_EM_CHEM dyn_em 3:chem
-period    PERIOD_BDY_EM_SCALAR dyn_em 3:scalar
-period    PERIOD_BDY_EM_TKE dyn_em 3:tke_2
-period    PERIOD_BDY_EM_MOIST2 dyn_em 3:moist
-period    PERIOD_BDY_EM_CHEM2 dyn_em 3:chem
-period    PERIOD_BDY_EM_SCALAR2 dyn_em 3:scalar
-period    PERIOD_BDY_EM_MOIST_OLD dyn_em 3:moist_old
-period    PERIOD_BDY_EM_CHEM_OLD dyn_em 3:chem_old
-period    PERIOD_BDY_EM_SCALAR_OLD dyn_em 3:scalar_old
-period    PERIOD_BDY_EM_TKE_OLD dyn_em 3:tke_1
+
+# Monotonic, positive definite advection requires 4 values for moist, chem, tke, and scalar for periodic lateral boundaries
+
+period    PERIOD_BDY_EM_MOIST dyn_em 4:moist
+period    PERIOD_BDY_EM_CHEM dyn_em 4:chem
+period    PERIOD_BDY_EM_SCALAR dyn_em 4:scalar
+period    PERIOD_BDY_EM_TKE dyn_em 4:tke_2
+period    PERIOD_BDY_EM_MOIST2 dyn_em 4:moist
+period    PERIOD_BDY_EM_CHEM2 dyn_em 4:chem
+period    PERIOD_BDY_EM_SCALAR2 dyn_em 4:scalar
+period    PERIOD_BDY_EM_MOIST_OLD dyn_em 4:moist_old
+period    PERIOD_BDY_EM_CHEM_OLD dyn_em 4:chem_old
+period    PERIOD_BDY_EM_SCALAR_OLD dyn_em 4:scalar_old
+period    PERIOD_BDY_EM_TKE_OLD dyn_em 4:tke_1
+
 period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy,ustm
@@ -1868,6 +1918,7 @@ period    PERIOD_BDY_EM_B2 dyn_em 2:ru_tend,rv_tend
 period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfvx,msfvy,muu,msfux,msfuy,msfvx_inv
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2
 period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,mu_1,mu_2
+period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
 
 #
 #swap SWAP_ETAMP_NEW  dyn_em 1:dz8w,p_phy,pi_phy,rho,th_phy,moist,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,RAINNC,RAINNCV,SR,LOWLYR

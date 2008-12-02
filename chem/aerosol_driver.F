@@ -168,7 +168,7 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)
       call gocart_aerosols_driver(ktauc,dtstepc,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,dx,g,         &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -195,7 +195,7 @@
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-   CASE (RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
+   CASE (RACMSORG_AQ,RACMSORG_KPP)
 ! ???? are separate cases needed here for radm2sorg and racmsorg packages ????
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
@@ -277,7 +277,7 @@
 !
    sum_pm_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_gocart')
        CALL sum_pm_gocart (                                            &
             alt, chem,pm2_5_dry, pm2_5_dry_ec, pm10,                   &
@@ -285,7 +285,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (RADM2SORG,RADM2SORG_AQ,RACMSORG,RACMSORG_AQ,RADM2SORG_KPP,RACMSORG_KPP)
+   CASE (RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RADM2SORG_KPP,RACMSORG_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &

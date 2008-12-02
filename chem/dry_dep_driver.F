@@ -233,7 +233,7 @@ CONTAINS
      CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
        call sorgam_depdriver (id,ktau,dtstep,                           &
-               ust,t_phy,moist,p8w,t8w,                                 &
+               ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,               &
@@ -242,10 +242,10 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
-     CASE (RACMSORG,RACMSORG_AQ,RACMSORG_KPP)
+     CASE (RACMSORG_AQ,RACMSORG_KPP)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RACM')
        call sorgam_depdriver (id,ktau,dtstep,                           &
-               ust,t_phy,moist,p8w,t8w,                                 &
+               ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
                alt,p_phy,chem,rho_phy,dz8w,z,z_at_w,                    &
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,               &
@@ -302,12 +302,12 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-!!$        if (e_co(i,kts,j) .gt. 0) then
-!!$           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-!!$        endif
-!!$        if (e_co(i,kts,j) .gt. 200) then
-!!$           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
-!!$        endif
+        if (e_co(i,kts,j) .gt. 0) then
+           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+        endif
+        if (e_co(i,kts,j) .gt. 200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+        endif
 !
       do k=kts,kte
          zz(k)=z(i,k,j)-z_at_w(i,kts,j)

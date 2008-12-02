@@ -37,6 +37,7 @@ CONTAINS
     USE module_pbl_driver, ONLY : pbl_driver
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
+    USE module_force_scm
     USE module_big_step_utilities_em, ONLY : phy_prep
     USE module_dm
     USE module_utility
@@ -537,6 +538,47 @@ BENCH_START(cu_driver_tim)
 #endif
      &                                                          )
 BENCH_END(cu_driver_tim)
+
+! JPH call force_scm to update bl tendencies
+      CALL force_scm(itimestep=grid%itimestep,dt=grid%dt                  &
+     &             ,scm_force=config_flags%scm_force                      &
+     &             ,dx=config_flags%scm_force_dx                          &
+     &             ,num_force_layers=grid%num_force_layers                &
+     &             ,scm_th_adv=config_flags%scm_th_adv                    &
+     &             ,scm_qv_adv=config_flags%scm_qv_adv                    &
+     &             ,scm_wind_adv=config_flags%scm_wind_adv                &
+     &             ,scm_vert_adv=config_flags%scm_vert_adv                &
+     &             ,u_base=grid%u_base,v_base=grid%v_base                 &
+     &             ,z_base=grid%z_base                                    &
+     &             ,z_force=grid%z_force,u_g=grid%u_g,v_g=grid%v_g        &
+     &             ,u_g_tend=grid%u_g_tend,v_g_tend=grid%v_g_tend         &
+     &             ,w_subs=grid%w_subs, w_subs_tend=grid%w_subs_tend      &
+     &             ,th_upstream_x=grid%th_upstream_x                      &
+     &             ,th_upstream_x_tend=grid%th_upstream_x_tend            &
+     &             ,th_upstream_y=grid%th_upstream_y                      &
+     &             ,th_upstream_y_tend=grid%th_upstream_y_tend            &
+     &             ,qv_upstream_x=grid%qv_upstream_x                      &
+     &             ,qv_upstream_x_tend=grid%qv_upstream_x_tend            &
+     &             ,qv_upstream_y=grid%qv_upstream_y                      &
+     &             ,qv_upstream_y_tend=grid%qv_upstream_y_tend            &
+     &             ,u_upstream_x=grid%u_upstream_x                        &
+     &             ,u_upstream_x_tend=grid%u_upstream_x_tend              &
+     &             ,u_upstream_y=grid%u_upstream_y                        &
+     &             ,u_upstream_y_tend=grid%u_upstream_y_tend              &
+     &             ,v_upstream_x=grid%v_upstream_x                        &
+     &             ,v_upstream_x_tend=grid%v_upstream_x_tend              &
+     &             ,v_upstream_y=grid%v_upstream_y                        &
+     &             ,v_upstream_y_tend=grid%v_upstream_y_tend              &
+     &             ,z=grid%z,z_at_w=z_at_w                                &
+     &             ,th=th_phy, qv=moist(ims,kms,jms,P_QV)                 &
+     &             ,u=u_phy, v=v_phy                                      &
+     &             ,thten=grid%rthblten, qvten=grid%rqvblten              &
+     &             ,uten=grid%rublten, vten=grid%rvblten                  &
+     &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+     &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+     &             ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+     &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &
+     &              )
 
       CALL wrf_debug ( 200 , ' call fddagd_driver' )
 

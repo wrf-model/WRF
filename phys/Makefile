@@ -65,7 +65,8 @@ MODULES = \
 	module_fdda_psufddagd.o \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
-	module_fddaobs_driver.o
+	module_fddaobs_driver.o \
+	module_force_scm.o
   
 OBJS    =
 
@@ -285,5 +286,9 @@ module_fddaobs_driver.o: \
 		../share/module_bc.o  \
 		../share/module_model_constants.o  \
 		module_fddaobs_rtfdda.o
+
+module_force_scm.o: \
+		../dyn_em/module_init_utilities.o 
+
 
 # DO NOT DELETE

@@ -104,7 +104,7 @@
 
       ! set diffusion to zero for backward integration
       CALL nl_set_km_opt( 1, head_grid%km_opt_dfi)
-      CALL nl_set_pd_moist( 1, head_grid%pd_moist_dfi)
+      CALL nl_set_moist_adv_dfi_opt( 1, head_grid%moist_adv_dfi_opt)
 
       head_grid%start_subtime = domain_get_start_time ( head_grid )
       head_grid%stop_subtime = domain_get_stop_time ( head_grid )
@@ -182,7 +182,7 @@
 
       ! reset km_opt to norlmal
       CALL nl_set_km_opt( 1, head_grid%km_opt)
-      CALL nl_set_pd_moist( 1, head_grid%pd_moist)
+      CALL nl_set_moist_adv_opt( 1, head_grid%moist_adv_opt)
 
       CALL Setup_Timekeeping (head_grid)
       head_grid%start_subtime = domain_get_start_time ( head_grid )

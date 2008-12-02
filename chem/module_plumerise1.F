@@ -25,9 +25,14 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,    &
            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,      &
            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,      &
-           ebu_dms,ebu_sulf,mean_fct_agtf,mean_fct_agef,                  &
-           mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,       &
-           firesize_agsv,firesize_aggr,                                   &
+           ebu_dms,ebu_sulf,                                              &
+           ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,      &
+           ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,  &
+           ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_xyl,   &
+           ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1, &
+           ebu_in_ora2,ebu_in_bc,ebu_in_oc,ebu_in_so2,ebu_in_dms,ebu_in_sulf,    &
+           mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
+           firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
            config_flags, t_phy,moist,                                     &
            chem,rho_phy,vvel,u_phy,v_phy,p_phy,                              &
            emis_ant,z_at_w,z,                                                       &
@@ -64,6 +69,15 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,      &
            ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_bc,ebu_oc,ebu_so2,       &
            ebu_dms,ebu_sulf
+
+   REAL, DIMENSION( ims:ime, jms:jme ),                                        &
+         OPTIONAL,                                                             &
+         INTENT(IN ) ::                                                        &
+         ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,      &
+         ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,  &
+         ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_xyl,   &
+         ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_ket,ebu_in_macr,ebu_in_ora1, &
+         ebu_in_ora2,ebu_in_bc,ebu_in_oc,ebu_in_so2,ebu_in_dms,ebu_in_sulf
 
    REAL, DIMENSION( ims:ime, jms:jme ),                 &
          INTENT(IN ) ::                                                &
@@ -103,6 +117,36 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 
        do j=jts,jte
           do i=its,ite
+               ebu_no(i,kts,j)=ebu_in_no(i,j)
+               ebu_co(i,kts,j)=ebu_in_co(i,j)
+               ebu_co2(i,kts,j)=ebu_in_co2(i,j)
+               ebu_eth(i,kts,j)=ebu_in_eth(i,j)
+               ebu_hc3(i,kts,j)=ebu_in_hc3(i,j)
+               ebu_hc5(i,kts,j)=ebu_in_hc5(i,j)
+               ebu_hc8(i,kts,j)=ebu_in_hc8(i,j)
+               ebu_ete(i,kts,j)=ebu_in_ete(i,j)
+               ebu_olt(i,kts,j)=ebu_in_olt(i,j)
+               ebu_oli(i,kts,j)=ebu_in_oli(i,j)
+               ebu_pm25(i,kts,j)=ebu_in_pm25(i,j)
+               ebu_pm10(i,kts,j)=ebu_in_pm10(i,j)
+               ebu_dien(i,kts,j)=ebu_in_dien(i,j)
+               ebu_iso(i,kts,j)=ebu_in_iso(i,j)
+               ebu_api(i,kts,j)=ebu_in_api(i,j)
+               ebu_lim(i,kts,j)=ebu_in_lim(i,j)
+               ebu_tol(i,kts,j)=ebu_in_tol(i,j)
+               ebu_xyl(i,kts,j)=ebu_in_xyl(i,j)
+               ebu_csl(i,kts,j)=ebu_in_csl(i,j)
+               ebu_hcho(i,kts,j)=ebu_in_hcho(i,j)
+               ebu_ald(i,kts,j)=ebu_in_ald(i,j)
+               ebu_ket(i,kts,j)=ebu_in_ket(i,j)
+               ebu_macr(i,kts,j)=ebu_in_macr(i,j)
+               ebu_ora1(i,kts,j)=ebu_in_ora1(i,j)
+               ebu_ora2(i,kts,j)=ebu_in_ora2(i,j)
+               ebu_sulf(i,kts,j)=ebu_in_sulf(i,j)
+               ebu_bc(i,kts,j)=ebu_in_bc(i,j)
+               ebu_oc(i,kts,j)=ebu_in_oc(i,j)
+               ebu_so2(i,kts,j)=ebu_in_so2(i,j)
+               ebu_dms(i,kts,j)=ebu_in_dms(i,j)
              do k=kts+1,kte
                ebu_co(i,k,j)=0.
                ebu_co2(i,k,j)=0.
@@ -133,7 +177,6 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                ebu_oc(i,k,j)=0.
                ebu_so2(i,k,j)=0.
                ebu_dms(i,k,j)=0.
-
              enddo
           enddo
        enddo

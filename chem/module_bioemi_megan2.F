@@ -387,11 +387,11 @@ CONTAINS
     ! SHC  (11/08/2007)
     GAS_MECH_SELECT1: SELECT CASE (config_flags%chem_opt)
              
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP,GOCARTRADM2, GOCARTRADM2_KPP)
        ! get p_of_radm2cbmz(:), p_of_radm2(:), and radm2_per_megan(:)
        CALL get_megan2radm2_table
 
-    CASE (RACM, RACMSORG, RACMSORG_AQ, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP )
+    CASE (RACMSORG_AQ, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP )
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
@@ -763,7 +763,7 @@ CONTAINS
                 
              END DO
 
-          CASE (RACM, RACM_KPP, RACM_MIM_KPP, RACMSORG, RACMSORG_AQ, RACMSORG_KPP)
+          CASE (RACM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP, RACMPM_KPP)
              
              DO icount = 1, n_megan2racm
 

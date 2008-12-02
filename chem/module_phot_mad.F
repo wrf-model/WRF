@@ -1,4 +1,13 @@
-
+      !        convert zsurf to km
+      !         fix params 
+      ! SM NOTES, Aug 2008
+      ! deleted subroutine delted
+      ! deleted subroutine nlayde
+      ! deleted subroutine leqt1b
+      ! added subroutines ps2str, tridiag
+      ! added subroutines sphers, airmas, for future 
+      ! use with better Schumman-Runge parameterization
+      ! should be able do delete: nsurf, use 1 instead
     MODULE module_phot_mad
       ! preliminary fixed values for T, p, O3 and caer
       ! use values in correct units!!
@@ -1152,7 +1161,7 @@
         0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, &
         0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000/
       ! END MODULE module_data_photmad
-!
+
     CONTAINS
       subroutine madronich1_driver(id,curr_secs,ktau,config_flags,haveaer,&
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,               &
@@ -1209,14 +1218,14 @@
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 
    LOGICAL, INTENT(IN) :: haveaer
-!         
-!                                                    
+         
+                                                    
 ! LOCAL  VAR
 
    INTEGER(KIND=8) :: ixhour
    INTEGER :: ki,i,j,k,n,iprt
 !   photolysis input
-!
+
       real tt(kts:kte+1),o33(kts:kte+1),rhoa(kts:kte+1),aerext(kts:kte+1),qll(kts:kte+1),    &
            phizz(kts:kte+1),phot1(nreakj-1,kts:kte+1)
       real(kind=8) :: xtime,xhour
@@ -1224,6 +1233,8 @@
       real :: zenith,zenita,azimuth,dobsi
       real :: bext340,bexth2o,ctr
       integer :: naerspec
+      real :: zsurf
+
 !     print *,'gmt,julday in madronich1= ',gmt,julday
       xtime=curr_secs/60._8   !min since simulation start
       ixhour=int(gmt+.01,8)+int(xtime/60._8,8)
@@ -1250,6 +1261,8 @@
         if(zenith.ge.90.) go to 199
         zenita = cos(zenith*pi/180.)
         if(zenith.gt.75.)   zenita=1./chap(zenith)
+        zsurf = z_at_w(i,1,j)*0.001
+
 ! photmad berechnet photolysefrequenzen nach Madronich in folgender Reihenfolge
         
 ! o2 absorp       1             schumman-runge corrected in srband
@@ -1282,7 +1295,7 @@
           bext340=5.E-6
           bexth2o=5.E-6
           if(haveaer.and.ktau.gt.1)then
-
+ 
 ! dry aerosol mass
 !rf check ki (or ki+1 or ki-1 ?)
                 aerext(k)=pm2_5_dry(i,k,j)*bext340+ &
@@ -1330,7 +1343,8 @@
 !            print *,k,rhoa(1),phizz(1),qll(1),aerext(1),o33(1),tt(1),zenita
 !         endif
 !write(0,*)'calling photolysis_mad --------',i,j
-        call photolysis_mad(kte,zenita,phizz,tt,rhoa,o33,aerext,qll,dobsi,phot1, &
+        call photolysis_mad(kte,zenita,zenith,zsurf, &
+             phizz,tt,rhoa,o33,aerext,qll,dobsi,phot1, &
              nreacj,iprt,uvb_dd1,uvb_du1,uvb_dir1)
 !write(0,*)'back from photolysis_mad ---------------------------- '
 !       print *,'after photmad, i,j = ',i,j
@@ -1372,7 +1386,8 @@
 
 END SUBROUTINE madronich1_driver
 
-      SUBROUTINE photolysis_mad(mkxcc,a,zmm5,tmm5,pmm5,o3mm5,aerext,wlmm5, &
+      SUBROUTINE photolysis_mad(mkxcc,a,zenith,zsurf,         &
+          zmm5,tmm5,pmm5,o3mm5,aerext,wlmm5,                  &
           dobsnew,phot1,nrtest,iprt,uvb_dd1,uvb_du1,uvb_dir1)
         ! Note that nreakj can differ from nreacj in csolve1!!!!!!
         ! ----- INPUT ------------------------------------------------
@@ -1436,8 +1451,22 @@ END SUBROUTINE madronich1_driver
           hilf1(mkxcc+1), hilfd(nj), o3(mkxcc+1+nabv), qy(nj,130,nreakj), &
           s(nj,130,nreakj), t(mkxcc+1+nabv), vaer(nj), vair(nj), vcld(nj), &
           vo3(nj), vt(nj), z(nj), zkm(mkxcc+1), zmid(nj), zz(mkxcc+1+nabv)
+ 
+          REAL :: fldir(nj,130), fldn(nj,130), flup(nj,130)
+
         ! .. Data Statements ..
         DATA xnkg/2.143E25/
+
+        REAL :: zenith, zsurf
+        REAL zasl(nj)
+
+        ! EXTERNAL sphers, airmas
+        INTEGER, PARAMETER :: kzmax = 200
+        REAL :: dsdh(0:kzmax,kzmax)
+        INTEGER :: nid(0:kzmax)
+        INTEGER :: ii
+        REAL vcol(nj), scol(nj)
+
         ! EXTERNAL o3scal, optics, srband, subgrid, trapez
         ! wave length range !!! If photolysis is also desired for levels above
         ! 2
@@ -1628,6 +1657,16 @@ END SUBROUTINE madronich1_driver
         IF (iprt==1) PRINT *, 'nlevel = ', nlevel
         ! -----------------------------------------------------------------------
 
+! compute altitudes relative to sea level
+        DO ii = 1, nlevel
+           zasl(ii) = z(ii) + zsurf
+        ENDDO
+! compute spherical increments
+        CALL sphers(kzmax, nlevel, z, zenith, dsdh, nid)
+! here can also call airmass to compute air mass factors for Lyman alpha and 
+! Schmumann-Runge parameterizations
+!     CALL airmas(nlevel, dsdh, nid, vair, vcol, scol)
+
         ! subroutine srband computes effective ozone cross sections in the
         ! schumann-runge region, using the parameterization of allen and
         ! freder
@@ -1645,14 +1684,14 @@ END SUBROUTINE madronich1_driver
         ! flux is in loop 90
 
         ! ----------------------------------------------------------------------
-        CALL optics(iprt,a,vair,arayl,gray,omray,ao2,vo3,ao3,vcld,gcld,omcld, &
-          vaer,aaer,gaer,omaer,nlayer,nlevel,nsurf,endir,endn,enup)
-        ! ----------------------------------------------------------------------
 
-        ! Actinic flux is simply computed from irradiance, using a factor of 2
-        ! for the diffuse part. This is only a very rough estimate according
-        ! to
-        ! Ruggaber et al. (1993), JGR 98D, 1151-1162
+        CALL optics(iprt, &
+          zenith, a, dsdh, nid, &
+          vair,arayl,gray,omray,ao2,vo3,ao3,vcld,gcld,omcld, &
+          vaer,aaer,gaer,omaer,nlevel, kzmax, &
+          endir,endn,enup, fldir,fldn,flup)
+
+        ! ----------------------------------------------------------------------
 
         DO nr = 1, nreakj
 
@@ -1665,12 +1704,18 @@ END SUBROUTINE madronich1_driver
         DO 50 kl = kl0, kl1
 
           DO 50 lev = 1, nlevel
-            df = fext(kl)*(endir(lev,kl)/a+2.*(endn(lev,kl)+enup(lev,kl)))
+
+! calculate actinic flux, direct + diffuse-dn + diffuse-up
+            df = fext(kl)*(fldir(lev,kl) + fldn(lev,kl) + flup(lev,kl))
+
+! calculate contribution to j-vals, sum over wavelengths
 
             DO 50 nr = 1, nreakj
               dj = df*s(lev,kl,nr)*qy(lev,kl,nr)
               d(nr,lev) = d(nr,lev) + dj
 50      CONTINUE
+
+! calculate spectral irradiance at surface:
          uvb_dd1=0.
          uvb_du1=0.
          uvb_dir1=0.   
@@ -1685,6 +1730,8 @@ END SUBROUTINE madronich1_driver
         enddo
 
         ! print *,'d(4,1) = ',d(4,1)
+
+! interpolate j-values to new altitudes:
 
         DO nr = 1, nreakj - 1
           ! write(06,'(' nr',i3)') nr
@@ -1834,245 +1881,6 @@ END SUBROUTINE madronich1_driver
         RETURN
 
       END SUBROUTINE o3scal
-
-      ! #######################################################################
-
-      SUBROUTINE leqt1b(a,n,nlc,nuc,ia,b,m,ib,ijob,xl)
-        ! -leqt1b--------s-------library
-        ! 3---------------------------------------
-        ! function            - matrix decomposition, linear equation
-        ! solution - space economizer solution -
-        ! band storage mode
-        ! usage               - call leqt1b (a,n,nlc,nuc,ia,b,m,ib,ijob,xl,
-        ! ier)
-        ! parameters   a      - input/output matrix of dimension n by
-        ! (nuc+nlc+1). see parameter ijob.
-        ! n      - order of matrix a and the number of rows in
-        ! b. (input)
-        ! nlc    - number of lower codiagonals in matrix a.
-        ! (input)
-        ! nuc    - number of upper codiagonals in matrix a.
-        ! (input)
-        ! ia     - row dimension of a as specified in the
-        ! calling program. (input)
-        ! b      - input/output matrix of dimension n by m.
-        ! on input, b contains the m right-hand sides
-        ! of the equation ax = b. on output, the
-        ! solution matrix x replaces b. if ijob = 1,
-        ! b is not used.
-        ! m      - number of right hand sides (columns in b).
-        ! (input)
-        ! ib     - row dimension of b as specified in the
-        ! calling program. (input)
-        ! ijob   - input option parameter. ijob = i implies when
-        ! i = 0, factor the matrix a and solve the
-        ! equation ax = b. on input, a contains the
-        ! coefficient matrix of the equation ax = b,
-        ! where a is assumed to be an n by n band
-        ! matrix. a is stored in band storage mode
-        ! and therefore has dimension n by
-        ! (nlc+nuc+1). on output, a is replaced
-        ! by the u matrix of the l-u decomposition
-        ! of a rowwise permutation of matrix a. u is
-        ! stored in band storage mode.
-        ! i = 1, factor the matrix a. a contains the
-        ! same input/output information as if
-        ! ijob = 0.
-        ! i = 2, solve the equation ax = b. this
-        ! option implies that leqt1b has already
-        ! been called using ijob = 0 or 1 so that
-        ! the matrix a has already been factored.
-        ! in this case, output matrices a and xl
-        ! must have been saved for reuse in the
-        ! call to leqt1b.
-        ! xl     - work area of dimension n*(nlc+1). the first
-        ! nlc*n locations of xl contain components of
-        ! the l matrix of the l-u decomposition of a
-        ! rowwise permutation of a. the last n
-        ! locations contain the pivot indices.
-        ! -----------------------------------------------------------------------
-        ! latest revision     - november 27,1973
-        ! dimension          a(ia,1),xl(n,1),b(ib,1)   ! Urspr. Zustand, fun
-        ! .. Scalar Arguments ..
-        INTEGER :: ia, ib, ijob, m, n, nlc, nuc
-        ! .. Array Arguments ..
-        REAL :: a(ia,5), b(ib,5), xl(n,5)
-        ! .. Local Scalars ..
-        REAL :: one, p, q, rn, zero
-        INTEGER :: i, ik, j, jbeg, jend, k, k1, kk, l, nc, nlc1, nn
-        ! .. Intrinsic Functions ..
-        INTRINSIC abs
-        ! .. Data Statements ..
-        DATA zero/0./, one/1.0/
-
-        p = 0
-        jbeg = nlc + 1
-        nlc1 = jbeg
-
-        IF (ijob==2) GO TO 170
-        rn = n
-        ! restructure the matrix
-        ! find reciprocal of the largest
-        ! absolute value in row i
-        i = 1
-        nc = jbeg + nuc
-        nn = nc
-        jend = nc
-
-        IF (n==1 .OR. nlc==0) GO TO 50
-10      k = 1
-        p = zero
-
-        DO 20 j = jbeg, jend
-          a(i,k) = a(i,j)
-          q = abs(a(i,k))
-
-          IF (q>p) p = q
-          k = k + 1
-20      CONTINUE
-
-        IF (p==zero) GO TO 280
-        xl(i,nlc1) = one/p
-
-        IF (k>nc) GO TO 40
-
-        DO 30 j = k, nc
-          a(i,j) = zero
-30      CONTINUE
-40      i = i + 1
-        jbeg = jbeg - 1
-
-        IF (jend-jbeg==n) jend = jend - 1
-
-        IF (i<=nlc) GO TO 10
-        jbeg = i
-        nn = jend
-50      jend = n - nuc
-
-        DO 90 i = jbeg, n
-          p = zero
-
-          DO 60 j = 1, nn
-            q = abs(a(i,j))
-
-            IF (q>p) p = q
-60        CONTINUE
-
-          IF (p==zero) GO TO 280
-          xl(i,nlc1) = one/p
-
-          IF (i==jend) GO TO 80
-
-          IF (i<jend) GO TO 90
-          k = nn + 1
-
-          DO 70 j = k, nc
-            a(i,j) = zero
-70        CONTINUE
-80        nn = nn - 1
-90      CONTINUE
-        l = nlc
-        ! l-u decomposition
-        DO 160 k = 1, n
-          p = abs(a(k,1))*xl(k,nlc1)
-          i = k
-
-          IF (l<n) l = l + 1
-          k1 = k + 1
-
-          IF (k1>l) GO TO 110
-
-          DO 100 j = k1, l
-            q = abs(a(j,1))*xl(j,nlc1)
-
-            IF (q<=p) GO TO 100
-            p = q
-            i = j
-100       CONTINUE
-110       xl(i,nlc1) = xl(k,nlc1)
-          xl(k,nlc1) = i
-          ! singularity found
-          IF ((rn+p)==rn) GO TO 280
-          ! interchange rows i and k
-          IF (k==i) GO TO 130
-
-          DO 120 j = 1, nc
-            p = a(k,j)
-            a(k,j) = a(i,j)
-            a(i,j) = p
-120       CONTINUE
-
-130       IF (k1>l) GO TO 160
-
-          DO 150 i = k1, l
-            p = a(i,1)/a(k,1)
-            ik = i - k
-            xl(k1,ik) = p
-
-            DO 140 j = 2, nc
-              a(i,j-1) = a(i,j) - p*a(k,j)
-140         CONTINUE
-            a(i,nc) = zero
-150       CONTINUE
-160     CONTINUE
-
-        IF (ijob==1) GO TO 270
-        ! forward substitution
-170     l = nlc
-
-        DO 220 k = 1, n
-          i = xl(k,nlc1)
-
-          IF (i==k) GO TO 190
-
-          DO 180 j = 1, m
-            p = b(k,j)
-            b(k,j) = b(i,j)
-            b(i,j) = p
-180       CONTINUE
-
-190       IF (l<n) l = l + 1
-          k1 = k + 1
-
-          IF (k1>l) GO TO 220
-
-          DO 210 i = k1, l
-            ik = i - k
-            p = xl(k1,ik)
-
-            DO 200 j = 1, m
-              b(i,j) = b(i,j) - p*b(k,j)
-200         CONTINUE
-210       CONTINUE
-220     CONTINUE
-        ! backward substitution
-        jbeg = nuc + nlc
-
-        DO 260 j = 1, m
-          l = 1
-          k1 = n + 1
-
-          DO 250 i = 1, n
-            k = k1 - i
-            p = b(k,j)
-
-            IF (l==1) GO TO 240
-
-            DO 230 kk = 2, l
-              ik = kk + k
-              p = p - a(k,kk)*b(ik-1,j)
-230         CONTINUE
-240         b(k,j) = p/a(k,1)
-
-            IF (l<=jbeg) l = l + 1
-250       CONTINUE
-260     CONTINUE
-
-270     RETURN
-
-280     CONTINUE
-        CALL wrf_error_fatal ( ' leqt1b error--matrix algorithmically singular')
-      END SUBROUTINE leqt1b
 
       ! #######################################################################
 
@@ -2364,7 +2172,7 @@ END SUBROUTINE madronich1_driver
 80        CONTINUE
 90      CONTINUE
 
-        ! ----------------------------------------------* layers
+        ! ----------------------------------------------  layers
         nlayer = nlevel - 1
         ! write(06,'('  Layers    ',i3)') nlayer
         lay = 0
@@ -2460,58 +2268,61 @@ END SUBROUTINE madronich1_driver
 
       END SUBROUTINE subgrid
 
-      SUBROUTINE optics(iprt,a,vair,arayl,gray,omray,ao2,vo3,ao3,vcld,gcld, &
-          omcld,vaer,aaer,gaer,omaer,nlayer,nlevel,nsurf,endir,endn,enup)
+      SUBROUTINE optics(iprt, &
+          zenith, a, dsdh, nid, &
+          vair,arayl,gray,omray,ao2,vo3,ao3,vcld,gcld, &
+          omcld,vaer,aaer,gaer,omaer,nlevel, kzmax, &
+          endir,endn,enup, fldir,fldn,flup)
+
         ! sm this subroutine prepares the data needed for the flux
         ! calculation,
-        ! t
-        ! sm     calls the scattering subroutine delted. it returns values of
-        ! the
-        ! sm     flux flux(lev,kl) for altitude lev-1, wavelength kl.
+        ! sm     calls the scattering subroutine ps2str. it returns values of
+        ! sm     flux(lev,kl) for altitude lev-1, wavelength kl.
         ! sm it calculates the optical depths (vertical)
         ! sm     for each layer, from the vertical profiles of o2, o3,
         ! sm     air, cloud, and aerosol, and from the associated 'cross
         ! sections
-        ! implicit real*4 (a-h,o-z)
+
         ! .. Scalar Arguments ..
-        REAL :: a, gaer, gcld, gray, omaer, omcld, omray
-        INTEGER :: iprt, nlayer, nlevel, nsurf
+
+        INTEGER :: iprt, nlevel
+        REAL :: zenith, mu0
+        REAL :: gaer, gcld, gray, omaer, omcld, omray
+
         ! .. Local Scalars ..
-        REAL :: dtabs, dtaer, dtair, dtcld, dto2, dto3, dtscat, fdinc, fuinc, &
-          solflx, sumtau
-        INTEGER :: ii, lay, lev, nlev, nz, nzm1
-        LOGICAL :: mudept
+        REAL :: dtabs, dtaer, dtair, dtcld, dto2, dto3, dtscat
+        INTEGER :: ii, lay, lev
+
         ! .. Intrinsic Functions ..
-        ! EXTERNAL delted
-        INTRINSIC amin1
-        ! .. Parameters ..
-        INTEGER, PARAMETER :: nsol = 1
+        INTRINSIC amax1
+
         ! .. Array Arguments ..
+        
+        INTEGER :: kzmax
+        REAL :: dsdh(0:kzmax,kzmax)
+        INTEGER :: nid(0:kzmax)
         REAL :: aaer(130), ao2(nj,130), ao3(nj,130), arayl(130), &
-          endir(nj,130), endn(nj,130), enup(nj,130), vaer(nj), vair(nj), &
-          vcld(nj), vo3(nj)
+          vaer(nj), vair(nj), vcld(nj), vo3(nj)
+        REAL :: fldir(nj,130), fldn(nj,130), flup(nj,130)
+        REAL :: endir(nj,130), endn(nj,130), enup(nj,130)
+        LOGICAL, PARAMETER :: delta = .TRUE.
+
         ! .. Local Arrays ..
-        REAL :: alb(nsol), dir(nj,nsol), dtau(nj), flxd(nj,nsol), &
-          flxu(nj,nsol), g(nj), musun(nsol), om(nj)
-        ! if(iprt.eq.1)then
-        ! write(06,*) a,kl0,kl1,gray,omray,gcld,omcld,gaer,omaer,
-        ! &nlayer,nlevel,nsurf
-        ! do kl=1,nlevel
-        ! write(06,'(5e12.4)') vair(kl),vo3(kl),vcld(kl),vaer(kl)
-        ! write(06,*) ao2
-        ! enddo
-        ! endif
-        ! stop
+        REAL :: alb, dtau(nj), g(nj), om(nj)
+        REAL :: fdr(nj), fup(nj), fdn(nj), edr(nj), eup(nj), edn(nj)
+        REAL, PARAMETER :: largest = 1.E+36
+
+
+
         ! loop over wavelengths
         DO 30 kl = kl0, kl1
 
           ! calculate optical depths for all layers (including cloud
           ! sublayers)
 
-          sumtau = 0.
+          DO 10 lay = 1, nlevel - 1
+            ii = nlevel - lay
 
-          DO 10 lay = nsurf, nlayer
-            ii = nlayer + 1 - lay
             dtair = vair(lay)*arayl(kl)
             dto2 = 0.2095*vair(lay)*ao2(lay,kl)
             dto3 = vo3(lay)*ao3(lay,kl)
@@ -2521,40 +2332,38 @@ END SUBROUTINE madronich1_driver
             dtscat = dtair + dtcld + dtaer
             dtabs = dto2 + dto3
 
+            dtscat = AMAX1(dtscat, 1./largest)
+            dtabs = AMAX1(dtabs, 1./largest)
+
             dtau(ii) = dtabs + dtscat
-            om(ii) = (omray*dtair+omcld*dtcld+omaer*dtaer)/dtau(ii)
+            om(ii) = dtscat/dtau(ii)
+            om(ii) = AMAX1(om(ii), 1./largest)
+            
             g(ii) = (gray*dtair+gcld*dtcld+gaer*dtaer)/dtscat
-            sumtau = sumtau + dtau(ii)
-            ! if(kl.eq.103.and.iprt.eq.1) ! 55um
-            ! &      write(06,'(' Ope',i4,3e12.4)')
-            ! 2      ii,arayl(kl),dtcld,dtau(ii)
+
 10        CONTINUE
 
-          ! if(kl.eq.103.and.iprt.eq.1) ! 55um
-          ! &write(06,'(' Opt. Dicke',i4,2e12.4)') kl,sumtau
+          alb = albedoph(kl)
 
-          ! initialize fluxes and other delted parameters
-          solflx = 1.
-          fdinc = 0.
-          fuinc = 0.
-          alb(1) = albedoph(kl)
-          musun(1) = amin1(a,0.999)
-          mudept = .FALSE.
-          nz = nlevel - nsurf + 1
-          nzm1 = nz - 1
-          nlev = nj
-          ! if(iprt.eq.1)print *,'nz = ',nz
           ! ---------------------------------------------------------------------
-          CALL delted(dtau,om,g,musun,alb,solflx,fdinc,fuinc,mudept,nz,dir, &
-            flxu,flxd)
-          ! if(iprt.eq.1)print *,'nz = ',nz
-          ! ---------------------------------------------------------------------
+
+! call pseudo-spherical 2-stream, set to delta-Eddington in subroutine. 
+
+          CALL ps2str(kzmax,nlevel,zenith,a,alb,dtau,om,g, &
+                     dsdh, nid, delta, &
+                     fdr, fup, fdn, edr, eup, edn)
+
           ! return to upright grid
-          DO 20 ii = 1, nlevel - nsurf + 1
-            lev = nlevel + 1 - ii
-            endir(lev,kl) = dir(ii,nsol)
-            endn(lev,kl) = flxd(ii,nsol)
-            enup(lev,kl) = flxu(ii,nsol)
+          DO 20 ii = 1, nlevel
+            lev = nlevel - ii + 1
+
+            endir(lev,kl) = edr(ii)
+            endn(lev,kl) = edn(ii)
+            enup(lev,kl) = eup(ii)
+            fldir(lev,kl) = fdr(ii)
+            fldn(lev,kl) = fdn(ii)
+            flup(lev,kl) = fup(ii)
+
 20        CONTINUE
 
 30      CONTINUE
@@ -2562,392 +2371,6 @@ END SUBROUTINE madronich1_driver
         RETURN
 
       END SUBROUTINE optics
-
-      ! #######################################################################
-
-      SUBROUTINE nlayde(ib,musun,alb,fdinc,fuinc,mudept,dir,flxu,flxd,tau,lm, &
-          pp,ex,tx,ty,tz,isav,flxsun,nl2)
-        ! multi-layer delta-eddington
-        ! ib = number of levels
-        ! the top and bottom boundary conditions plus the flux continuity
-        ! conditions at each interior level form a penta-diagonal system
-        ! of 2*ib-2 equations for the unknown constants (2 for each layer).
-        ! the columns of the -ss- array contain the diagonals of the coeffi
-        ! cient matrix, the lowermost diagonal in column 1, etc. (this is t
-        ! so-called band storage mode required by imsl routine leqt2b).
-        ! ueberflussig, falls man nur eine Sonnenhoehe vorsieht.
-        ! .. Scalar Arguments ..
-        REAL :: fdinc, fuinc
-        INTEGER :: ib, nl2
-        LOGICAL :: mudept
-        ! .. Local Scalars ..
-        REAL :: albdo, rmu0, t1
-        INTEGER :: i, ibm1, ic, ijob, ip1, ir, j, ktr, last, lastm2, np
-        ! .. Intrinsic Functions ..
-        ! EXTERNAL leqt1b
-        INTRINSIC exp
-        ! .. Parameters ..
-        INTEGER, PARAMETER :: nsol = 1
-        ! .. Array Arguments ..
-        REAL :: alb(1), dir(nj,1), ex(nj), flxd(nj,1), flxsun(1), flxu(nj,1), &
-          isav(nj), lm(nj), musun(1), pp(nj), tau(nj), tx(nj), ty(nj), tz(nj)
-        ! .. Local Arrays ..
-        REAL :: alph(nj), beta(nj), cc(mj,5), exsun(nj), ss(mj,5), work(mj,3), &
-          x(mj)
-
-        ibm1 = ib - 1
-        last = 2*ib - 2
-        ss(1,5) = 0.
-        ss(1,1) = ss(1,5)
-        ss(1,2) = ss(1,5)
-        ss(1,3) = (1.-pp(1))/ex(1)
-        ss(1,4) = (1.+pp(1))*ex(1)
-        lastm2 = last - 2
-
-        DO 10 j = 2, lastm2, 2
-          i = j/2
-          ip1 = i + 1
-          ss(j,1) = 0.
-          ss(j,2) = 1.0
-          ss(j,3) = 1.0
-          ss(j,4) = -1.0/ex(ip1)
-          ss(j,5) = -ex(ip1)
-          ss(j+1,1) = -pp(i)
-          ss(j+1,2) = pp(i)
-          ss(j+1,3) = pp(ip1)/ex(ip1)
-          ss(j+1,4) = -pp(ip1)*ex(ip1)
-          ss(j+1,5) = 0.
-10      CONTINUE
-        ss(last,5) = 0.
-        ss(last,1) = ss(last,5)
-        ss(last,4) = ss(last,5)
-
-        IF (mudept) GO TO 30
-        ss(last,2) = 1. + pp(ibm1) - alb(1)*(1.-pp(ibm1))
-        ss(last,3) = 1. - pp(ibm1) - alb(1)*(1.+pp(ibm1))
-
-        ! calculate the l-u decomposition of penta-diagonal matrix -ss-
-
-        ! leqt2b call for testing purposes
-        ! call leqt2b(ss,last,2,2,nl2,x,1,nl2,  1 ,work,nl2,work(1,8))
-
-        ! leqt1b destroys the input coeff matrix, so since we must
-        ! preserve -ss-, we must let it destroy -cc- instead.
-        DO 20 ic = 1, 5
-
-          DO 20 ir = 1, last
-20      cc(ir,ic) = ss(ir,ic)
-        ! ---------------------------------------------------------------------
-        CALL leqt1b(cc,last,2,2,nl2,x,1,nl2,1,work)
-        ! ---------------------------------------------------------------------
-
-        ! for each sun angle, calculate the r.h.s. of the banded system,
-        ! solve, and use the solution to construct the fluxes at each level
-
-30      DO 90 np = 1, nsol
-          rmu0 = 1./musun(np)
-          t1 = rmu0**2 - lm(1)**2
-
-          IF (t1==0.) THEN
-            t1 = 1.E-7
-            PRINT *, 'ACHTUNG t1=0 fuer lm(1)'
-          END IF
-
-          alph(1) = tx(1)/t1
-          beta(1) = ty(1)*(musun(np)*tz(1)+rmu0)/t1
-          x(1) = alph(1) + beta(1) + fdinc
-
-          DO 40 j = 2, lastm2, 2
-            i = j/2
-            ip1 = i + 1
-            t1 = rmu0**2 - lm(ip1)**2
-
-            IF (t1==0.) THEN
-              t1 = 1.E-7
-              PRINT *, 'ACHTUNG t1=0 fuer lm(', ip1, ')'
-            END IF
-
-            alph(ip1) = tx(ip1)/t1
-            beta(ip1) = ty(ip1)*(musun(np)*tz(ip1)+rmu0)/t1
-            exsun(ip1) = exp(-rmu0*tau(ip1))
-            x(j) = (alph(i)-alph(ip1))*exsun(ip1)
-            x(j+1) = (beta(i)-beta(ip1))*exsun(ip1)
-40        CONTINUE
-          exsun(ib) = exp(-rmu0*tau(ib))
-
-          IF (mudept) GO TO 50
-          albdo = alb(1)
-          ijob = 2
-          GO TO 70
-50        albdo = alb(np)
-          ijob = 0
-          ss(last,2) = 1. + pp(ibm1) - alb(np)*(1.-pp(ibm1))
-          ss(last,3) = 1. - pp(ibm1) - alb(np)*(1.+pp(ibm1))
-
-          DO 60 ic = 1, 5
-
-            DO 60 ir = 1, last
-60        cc(ir,ic) = ss(ir,ic)
-
-70        x(last) = (alph(ibm1)-beta(ibm1)+albdo*(flxsun(np)-alph(ibm1)-beta( &
-            ibm1)))*exsun(ib) + fuinc
-
-          ! solve penta-diagonal system with r.h.s. -x-.  soln goes into -x-
-
-          ! call leqt2b(ss,last,2,2,nl2,x,1,nl2,ijob,work,nl2,work(1,8))
-
-          ! ---------------------------------------------------------------------
-          CALL leqt1b(cc,last,2,2,nl2,x,1,nl2,ijob,work)
-          ! ---------------------------------------------------------------------
-
-          dir(1,np) = flxsun(np)
-          flxd(1,np) = fdinc
-          flxu(1,np) = (1.+pp(1))/ex(1)*x(1) + (1.-pp(1))*ex(1)*x(2) - &
-            alph(1) + beta(1)
-          ktr = 2
-
-          DO 80 i = 1, ibm1
-
-            IF (i+1/=isav(ktr)) GO TO 80
-            dir(ktr,np) = flxsun(np)*exsun(i+1)
-            flxd(ktr,np) = (1.-pp(i))*x(2*i-1) + (1.+pp(i))*x(2*i) - &
-              (alph(i)+beta(i))*exsun(i+1)
-            flxu(ktr,np) = (1.+pp(i))*x(2*i-1) + (1.-pp(i))*x(2*i) - &
-              (alph(i)-beta(i))*exsun(i+1)
-            ktr = ktr + 1
-80        CONTINUE
-90      CONTINUE
-
-        RETURN
-
-      END SUBROUTINE nlayde
-
-      ! #######################################################################
-
-      SUBROUTINE delted(dtau,om,g,musun,alb,solflx,fdinc,fuinc,mudept,nz,dir, &
-          flxu,flxd)
-        ! calculate up- and down-fluxes of radiation in a vertically inhomo-
-        ! geneous atmosphere using the delta-eddington approximation
-        ! author-- w.j. wiscombe
-        ! national center for atmospheric research
-        ! p.o. box 3000
-        ! boulder, colorado 80303
-        ! input variables
-        ! nz = number of levels (level 1 is the top of the atmosphere,
-        ! level nz is the surface)
-        ! dtau(i), i=1,...,nz-1 = optical depth of layer between levels i an
-        ! om(i),   i=1,...,nz-1 = single-scattering albedoph of layer between
-        ! levels i and i+1
-        ! g(i), i=1,...,nz-1 = asymmetry factor for layer between levels i a
-        ! nsol = number of incident-beam zenith angles
-        ! musun(i),i=1,...,nsol = cosine(s) of incident-beam zenith angle(s)
-        ! alb(i), i=1,...,nsol = surface albedoph
-        ! mudept = true, alb(i) corresponds to musun(i).  false, alb(1) is
-        ! used for all values of musun(i).
-        ! solflx = incident-beam flux (normal to beam) at level 1
-        ! the beam) at the top of the atmosphere
-        ! fdinc = incident diffuse down-flux at level 1
-        ! fuinc = incident diffuse up-flux at level nz
-        ! nlev = level dimension (of arrays dtau, etc.)
-        ! output variables (in same units as solflx, fdinc, and fuinc)
-        ! dir(i,np)   direct flux at level -i- for sun angle -np-
-        ! (note--in the delta-eddington approxn, because of t
-        ! truncation of the forward scattering peak, this
-        ! quantity includes scattered radiation travelling in
-        ! very nearly the same direction as the actual direct
-        ! flux.  e.g., it includes the aureole around the sun
-        ! flxd(i,np)  diffuse down-flux at level -i- for sun angle -np-
-        ! (note--this will be less than the actual diffuse
-        ! down-flux by the same amount that the direct flux
-        ! -dir- is augmented.)
-        ! flxu(i,np)  diffuse up-flux at level -i- for sun angle -np-
-        ! internal
-        ! code variable     description (or name in write-up)
-        ! gp          g-prime (transformed asymmetry parameter)
-        ! omp         omega-prime (transformed single scattering albedoph)
-        ! dtaup       delta-tau-prime (transformed layer optical depth)
-        ! tau(i)      cumulative optical depth from top (i=1) to level i
-        ! lm(i)       lambda-sub-i
-        ! pp(i)       p-sub-i
-        ! lmdtau      lm(i)*dtaup
-        ! ex(i)       exp(lmdtau)
-        ! exsun(i)    exp(-tau(i)/musun(np))
-        ! alph(i)     alpha-sub-i
-        ! beta(i)     beta-sub-i
-        ! tx(i)       0.75*solflx*omp*(1.+gp *(1.-omp))
-        ! ty(i)       0.5*solflx*omp
-        ! tz(i)       3.*gp*(1.-omp)
-        ! (tx,ty,tz are merely intermediate quantities for computing alph,
-        ! isav        array of level indices.  fluxes are calculated only
-        ! at these levels.
-        ! flxsun(np)  incident flux musun(np)*solflx at level 1
-        ! prec        a number somewhat larger than the computer precisio
-        ! subtracted from any single-scattering albedophs which
-        ! are exactly equal to one.
-        ! cutpt       any layer for which lmdtau.gt.cutpt is subdivided
-        ! into equal sublayers, all of which have lmdtau.lt.c
-        ! nsub        number of sublayers into which an offending layer
-        ! is divided (the whole process being transparent
-        ! to the user)
-        ! nl2         2*nlev-2 (input to banded matrix subroutine)
-        ! ss(nl2,5)   the penta-diagonal matrix c, in band storage mode
-        ! cc(nl2,5)   same as -ss- array.  used to submit -ss- to leqt1b.
-        ! work(nl2,3)  a temporary storage array used by subroutine leqt1
-        ! x(nl2)      the vector (x-hat). also temporarily stores
-        ! r.h.s. d in linear system  c*(x-hat) = d.
-        ! --note-- this code is not perfectly optimized, either in terms of
-        ! core storage or execution speed, but it should be noted t
-        ! in general, the lions share of computing time is occupied
-        ! the exponentials and the penta-diagonal solution routines
-        ! so eliminating a few operations here or there has almost
-        ! no impact on running time.
-        ! ******************* 10 x computer precision  **********************
-        ! *********** cut-off point for lm(i)*dtaup ************
-        ! .. Scalar Arguments ..
-        REAL :: fdinc, fuinc, solflx
-        INTEGER :: nz
-        LOGICAL :: mudept
-        ! .. Local Scalars ..
-        REAL :: aux, aux2, c1, cutpt, dtaup, ff, gp, lmdtau, omp, prec, scale, &
-          t1
-        INTEGER :: i, ii, ip1, iup, iupm1, ktr, layers, nl2, nlev, np, nsub, &
-          nzm1
-        ! .. Intrinsic Functions ..
-        ! EXTERNAL nlayde
-        INTRINSIC exp, float, sqrt
-        ! .. Parameters ..
-        INTEGER, PARAMETER :: nsol = 1
-        ! .. Array Arguments ..
-        REAL :: alb(1), dir(nj,1), dtau(nj), flxd(nj,1), flxu(nj,1), g(nj), &
-          musun(1), om(nj)
-        ! .. Local Arrays ..
-        REAL :: ex(nj), flxsun(1), isav(nj), lm(nj), pp(nj), tau(nj), tx(nj), &
-          ty(nj), tz(nj)
-        ! .. Data Statements ..
-        DATA c1/0.66666666666667/
-        DATA prec/1.E-7/
-        DATA cutpt/7./
-        ! set incident flux at top of atmosphere
-        DO 10 np = 1, nsol
-10      flxsun(np) = musun(np)*solflx
-
-        nzm1 = nz - 1
-        nlev = nj
-        nl2 = 2*nlev - 2
-
-        ! scale optical depth, sing-scat albedoph, and asymmetry factor
-        ! and calculate various fcns of these variables
-
-        nzm1 = nz - 1
-        tau(1) = 0.
-
-        DO 20 i = 1, nzm1
-          ff = g(i)**2
-          gp = g(i)/(1.+g(i))
-          scale = 1. - ff*om(i)
-          omp = (1.-ff)*om(i)/scale
-
-          IF (om(i)==1.0) omp = 1. - prec
-          t1 = 1. - omp*gp
-          aux = 3.*(1.-omp)*t1
-
-          IF (om(i)==1.0) aux = 3.*prec*t1
-          aux2 = 1. - om(i)
-          lm(i) = sqrt(aux)
-          pp(i) = c1*lm(i)/t1
-          t1 = gp*(1.-omp)
-          tx(i) = 0.75*solflx*omp*(1.+t1)
-          ty(i) = 0.5*solflx*omp
-          tz(i) = 3.*t1
-          isav(i) = i
-          dtaup = scale*dtau(i)
-          lmdtau = lm(i)*dtaup
-          ! test for a layer which is so highly absorbing that it would
-          ! cause ill-conditioning in the penta-diagonal matrix.  if one
-          ! is found, subdivide it appropriately.
-          IF (lmdtau>cutpt) GO TO 30
-          ex(i) = exp(lmdtau)
-          tau(i+1) = tau(i) + dtaup
-20      CONTINUE
-        isav(nz) = nz
-
-
-        ! normal calculation
-
-        ! ---------------------------------------------------------------------
-        ! Nur noch nz > 2 moeglich
-        CALL nlayde(nz,musun,alb,fdinc,fuinc,mudept,dir,flxu,flxd,tau,lm,pp, &
-          ex,tx,ty,tz,isav,flxsun,nl2)
-        ! ---------------------------------------------------------------------
-        GO TO 80
-
-        ! sidestep potential ill-conditioning by subdividing offending
-        ! layer, and any others like it.
-
-30      layers = nzm1
-        ktr = i
-
-40      nsub = lmdtau/cutpt + 1.
-        dtaup = dtaup/float(nsub)
-        ex(i) = exp(lm(i)*dtaup)
-        tau(i+1) = tau(i) + dtaup
-        ip1 = i + 1
-        iup = i + nsub
-        iupm1 = iup - 1
-
-        DO 50 ii = ip1, iupm1
-          lm(ii) = lm(i)
-          pp(ii) = pp(i)
-          tx(ii) = tx(i)
-          ty(ii) = ty(i)
-          tz(ii) = tz(i)
-          ex(ii) = ex(i)
-50      tau(ii+1) = tau(ii) + dtaup
-        ktr = ktr + 1
-        isav(ktr) = isav(ktr-1) + nsub
-        layers = layers + nsub - 1
-
-        IF (layers>nlev) then
-            CALL wrf_error_fatal ( 'layers>nlev')
-        endif
-
-        IF (iup>layers) GO TO 70
-
-        DO 60 i = iup, layers
-          ff = g(ktr)**2
-          gp = g(ktr)/(1.+g(ktr))
-          scale = 1. - ff*om(ktr)
-          omp = (1.-ff)*om(ktr)/scale
-
-          IF (om(ktr)==1.0) omp = 1. - prec
-          t1 = 1. - omp*gp
-          lm(i) = sqrt(3.*(1.-omp)*t1)
-          pp(i) = c1*lm(i)/t1
-          t1 = gp*(1.-omp)
-          tx(i) = 0.75*solflx*omp*(1.+t1)
-          ty(i) = 0.5*solflx*omp
-          tz(i) = 3.*t1
-          dtaup = scale*dtau(ktr)
-          lmdtau = lm(i)*dtaup
-          ! test for a layer which is so highly absorbing that it would
-          ! cause ill-conditioning in the penta-diagonal matrix.  if one
-          ! is found, subdivide it appropriately.
-          IF (lmdtau>cutpt) GO TO 40
-          ex(i) = exp(lmdtau)
-          tau(i+1) = tau(i) + dtaup
-          ktr = ktr + 1
-          isav(ktr) = isav(ktr-1) + 1
-60      CONTINUE
-
-        ! ---------------------------------------------------------------------
-70      CALL nlayde(layers+1,musun,alb,fdinc,fuinc,mudept,dir,flxu,flxd,tau, &
-          lm,pp,ex,tx,ty,tz,isav,flxsun,nl2)
-        ! ---------------------------------------------------------------------
-
-80      CONTINUE
-        RETURN
-
-      END SUBROUTINE delted
 
       ! #######################################################################
 
@@ -3230,5 +2653,744 @@ END SUBROUTINE madronich1_driver
         END DO
 
       END SUBROUTINE photmad_init
+
+! =========================================================================== 
+
+      SUBROUTINE ps2str(kzmax, kz,zen,mu,rsfc,tauu,omu,gu, &
+           dsdh, nid, delta,                               &
+           fdr, fup, fdn, edr, eup, edn)
+
+! ---------------------------------------------------------------------------- 
+!   PURPOSE:                                                                  
+!   Solve two-stream equations for multiple layers.  The subroutine is based  
+!   on equations from:  Toon et al., J.Geophys.Res., v94 (D13), Nov 20, 1989. 
+!   It contains 9 two-stream methods to choose from.  A pseudo-spherical      
+!   correction has also been added.                                           
+! ---------------------------------------------------------------------------- 
+!   PARAMETERS:                                                               
+!   KZ      - INTEGER, number of specified altitude levels in the working (I) 
+!             grid                                                            
+!   ZEN     - REAL, solar zenith angle (degrees)                          (I) 
+!   RSFC    - REAL, surface albedo at current wavelength                  (I) 
+!   TAUU    - REAL, unscaled optical depth of each layer                  (I) 
+!   OMU     - REAL, unscaled single scattering albedo of each layer       (I) 
+!   GU      - REAL, unscaled asymmetry parameter of each layer            (I) 
+!   DSDH    - REAL, slant path of direct beam through each layer crossed  (I) 
+!             when travelling from the top of the atmosphere to layer i;      
+!             DSDH(i,j), i = 0..NZ-1, j = 1..NZ-1                             
+!   NID     - INTEGER, number of layers crossed by the direct beam when   (I) 
+!             travelling from the top of the atmosphere to layer i;           
+!             NID(i), i = 0..NZ-1                                             
+!   DELTA   - LOGICAL, switch to use delta-scaling                        (I) 
+!             .TRUE. -> apply delta-scaling                                   
+!             .FALSE.-> do not apply delta-scaling                            
+!   FDR     - REAL, contribution of the direct component to the total     (O) 
+!             actinic flux at each altitude level                             
+!   FUP     - REAL, contribution of the diffuse upwelling component to    (O) 
+!             the total actinic flux at each altitude level                   
+!   FDN     - REAL, contribution of the diffuse downwelling component to  (O) 
+!             the total actinic flux at each altitude level                   
+!   EDR     - REAL, contribution of the direct component to the total     (O) 
+!             spectral irradiance at each altitude level                      
+!   EUP     - REAL, contribution of the diffuse upwelling component to    (O) 
+!             the total spectral irradiance at each altitude level            
+!   EDN     - REAL, contribution of the diffuse downwelling component to  (O) 
+!             the total spectral irradiance at each altitude level            
+! ---------------------------------------------------------------------------- 
+
+      IMPLICIT NONE
+
+!******
+! input:
+!******
+      INTEGER kz
+      REAL zen, rsfc
+      REAL tauu(kz), omu(kz), gu(kz)
+      INTEGER kzmax
+      REAL dsdh(0:kzmax,kzmax)
+      INTEGER nid(0:kzmax)
+      LOGICAL delta
+
+!******
+! output:
+!******
+      REAL fup(kz),fdn(kz),fdr(kz)
+      REAL eup(kz),edn(kz),edr(kz)
+
+!******
+! local:
+!******
+      INTEGER nlevel
+      REAL tausla(0:kz), tauc(0:kz)
+      REAL mu2(0:kz), mu, sum
+
+! internal coefficients and matrix
+
+      REAL lam(kz),taun(kz),bgam(kz)
+      REAL e1(kz),e2(kz),e3(kz),e4(kz)
+      REAL cup(kz),cdn(kz),cuptn(kz),cdntn(kz)
+      REAL mu1(kz)
+      INTEGER row
+      REAL a(2*kz),b(2*kz),d(2*kz),e(2*kz),y(2*kz)
+
+!******
+! other:
+!******
+      REAL pifs, fdn0
+      REAL gi(kz), omi(kz), tempg
+      REAL f, g, om
+      REAL gam1, gam2, gam3, gam4
+
+! For calculations of Associated Legendre Polynomials for GAMA1,2,3,4
+! in delta-function, modified quadrature, hemispheric constant,
+! Hybrid modified Eddington-delta function metods, p633,Table1.
+! W.E.Meador and W.R.Weaver, GAS,1980,v37,p.630
+! W.J.Wiscombe and G.W. Grams, GAS,1976,v33,p2440, 
+! uncomment the following two lines and the appropriate statements further
+! down.
+!     REAL YLM0, YLM2, YLM4, YLM6, YLM8, YLM10, YLM12, YLMS, BETA0,
+!    >     BETA1, BETAn, amu1, subd
+
+      REAL expon, expon0, expon1, divisr, temp, up, dn
+      REAL ssfc
+      INTEGER nlayer, mrows, lev
+
+      INTEGER i, j
+
+! Some additional program constants:
+
+      REAL pi
+      PARAMETER (pi=3.1415926535898)
+      REAL largest
+      PARAMETER(largest=1.E+36)
+      REAL precis
+      PARAMETER(precis = 1.e-7)
+      REAL eps
+      PARAMETER (eps = 1.E-3)
+!_______________________________________________________________________
+
+! MU = cosine of solar zenith angle
+! RSFC = surface albedo
+! TAUU =  unscaled optical depth of each layer
+! OMU  =  unscaled single scattering albedo
+! GU   =  unscaled asymmetry factor
+! KLEV = max dimension of number of layers in atmosphere
+! NLAYER = number of layers in the atmosphere
+! NLEVEL = nlayer + 1 = number of levels
+
+! initial conditions:  pi*solar flux = 1;  diffuse incidence = 0
+
+      nlevel = kz
+      pifs = 1.      
+      fdn0 = 0.
+      nlayer = nlevel - 1
+!      mu = COS(zen*pi/180.)
+
+!************* compute coefficients for each layer:
+! GAM1 - GAM4 = 2-stream coefficients, different for different approximations
+! EXPON0 = calculation of e when TAU is zero
+! EXPON1 = calculation of e when TAU is TAUN
+! CUP and CDN = calculation when TAU is zero
+! CUPTN and CDNTN = calc. when TAU is TAUN
+! DIVISR = prevents division by zero
+
+        DO j = 0, kz
+           tauc(j) = 0.
+           tausla(j) = 0.
+           mu2(j) = 1./SQRT(largest)
+        END DO
+
+       IF( .NOT. delta ) THEN
+         DO i = 1, nlayer
+           gi(i) = gu(i)
+           omi(i) = omu(i)
+           taun(i) = tauu(i)
+         ENDDO
+       ELSE 
+
+! delta-scaling. Has to be done for delta-Eddington approximation, 
+! delta discrete ordinate, Practical Improved Flux Method, delta function,
+! and Hybrid modified Eddington-delta function methods approximations
+
+         DO i = 1, nlayer
+           f = gu(i)*gu(i)
+           gi(i) = (gu(i) - f)/(1 - f)
+           omi(i) = (1 - f)*omu(i)/(1 - omu(i)*f)       
+           taun(i) = (1 - omu(i)*f)*tauu(i)
+         ENDDO
+        END IF
+
+
+! calculate slant optical depth at the top of the atmosphere when zen>90.
+! in this case, higher altitude of the top layer is recommended which can 
+! be easily changed in gridz.f.
+
+         IF(zen .GT. 90.0) THEN
+           IF(nid(0) .LT. 0) THEN
+             tausla(0) = largest
+           ELSE
+             sum = 0.0
+             DO j = 1, nid(0)
+              sum = sum + 2.*taun(j)*dsdh(0,j)
+             END DO
+             tausla(0) = sum 
+           END IF
+         END IF
+  
+
+        DO 11, i = 1, nlayer
+
+         g = gi(i)
+         om = omi(i)
+         tauc(i) = tauc(i-1) + taun(i)
+
+! stay away from 1 by precision.  For g, also stay away from -1
+
+         tempg = AMIN1(abs(g),1. - precis)
+         g = SIGN(tempg,g)
+         om = AMIN1(om,1.-precis)
+
+
+! calculate slant optical depth
+!              
+          IF(nid(i) .LT. 0) THEN
+            tausla(i) = largest
+          ELSE
+            sum = 0.0
+            DO j = 1, MIN(nid(i),i)
+               sum = sum + taun(j)*dsdh(i,j)
+            ENDDO
+            DO j = MIN(nid(i),i)+1,nid(i)
+               sum = sum + 2.*taun(j)*dsdh(i,j)
+            ENDDO
+            tausla(i) = sum 
+            IF(tausla(i) .EQ. tausla(i-1)) THEN
+              mu2(i) = SQRT(largest)
+            ELSE
+              mu2(i) = (tauc(i)-tauc(i-1))/(tausla(i)-tausla(i-1))
+              mu2(i) = SIGN( AMAX1(ABS(mu2(i)),1./SQRT(largest)), &
+                           mu2(i) )
+            END IF
+          END IF
+
+!** the following gamma equations are from pg 16,289, Table 1
+!** save mu1 for each approx. for use in converting irradiance to actinic flux
+
+! Eddington approximation(Joseph et al., 1976, JAS, 33, 2452):
+
+        gam1 =  (7. - om*(4. + 3.*g))/4.
+        gam2 = -(1. - om*(4. - 3.*g))/4.
+        gam3 = (2. - 3.*g*mu)/4.
+        gam4 = 1. - gam3
+        mu1(i) = 0.5
+
+! quadrature (Liou, 1973, JAS, 30, 1303-1326; 1974, JAS, 31, 1473-1475):
+
+!          gam1 = 1.7320508*(2. - om*(1. + g))/2.
+!          gam2 = 1.7320508*om*(1. - g)/2.
+!          gam3 = (1. - 1.7320508*g*mu)/2.
+!          gam4 = 1. - gam3
+!          mu1(i) = 1./sqrt(3.)
+         
+! hemispheric mean (Toon et al., 1089, JGR, 94, 16287):
+
+!          gam1 = 2. - om*(1. + g)
+!          gam2 = om*(1. - g)
+!          gam3 = (2. - g*mu)/4.
+!          gam4 = 1. - gam3
+!          mu1(i) = 0.5
+
+! PIFM  (Zdunkovski et al.,1980, Conrib.Atmos.Phys., 53, 147-166):
+!         GAM1 = 0.25*(8. - OM*(5. + 3.*G))
+!         GAM2 = 0.75*OM*(1.-G)
+!         GAM3 = 0.25*(2.-3.*G*MU)
+!         GAM4 = 1. - GAM3
+!         mu1(i) = 0.5
+
+! delta discrete ordinates  (Schaller, 1979, Contrib.Atmos.Phys, 52, 17-26):
+!         GAM1 = 0.5*1.7320508*(2. - OM*(1. + G))
+!         GAM2 = 0.5*1.7320508*OM*(1.-G)
+!         GAM3 = 0.5*(1.-1.7320508*G*MU)
+!         GAM4 = 1. - GAM3
+!         mu1(i) = 1./sqrt(3.)
+
+! Calculations of Associated Legendre Polynomials for GAMA1,2,3,4
+! in delta-function, modified quadrature, hemispheric constant,
+! Hybrid modified Eddington-delta function metods, p633,Table1.
+! W.E.Meador and W.R.Weaver, GAS,1980,v37,p.630
+! W.J.Wiscombe and G.W. Grams, GAS,1976,v33,p2440
+!      YLM0 = 2.
+!      YLM2 = -3.*G*MU
+!      YLM4 = 0.875*G**3*MU*(5.*MU**2-3.)
+!      YLM6=-0.171875*G**5*MU*(15.-70.*MU**2+63.*MU**4)
+!     YLM8=+0.073242*G**7*MU*(-35.+315.*MU**2-693.*MU**4
+!    *+429.*MU**6)
+!     YLM10=-0.008118*G**9*MU*(315.-4620.*MU**2+18018.*MU**4
+!    *-25740.*MU**6+12155.*MU**8)
+!     YLM12=0.003685*G**11*MU*(-693.+15015.*MU**2-90090.*MU**4
+!    *+218790.*MU**6-230945.*MU**8+88179.*MU**10)
+!      YLMS=YLM0+YLM2+YLM4+YLM6+YLM8+YLM10+YLM12
+!      YLMS=0.25*YLMS
+!      BETA0 = YLMS
+
+!         amu1=1./1.7320508
+!      YLM0 = 2.
+!      YLM2 = -3.*G*amu1
+!      YLM4 = 0.875*G**3*amu1*(5.*amu1**2-3.)
+!      YLM6=-0.171875*G**5*amu1*(15.-70.*amu1**2+63.*amu1**4)
+!     YLM8=+0.073242*G**7*amu1*(-35.+315.*amu1**2-693.*amu1**4
+!    *+429.*amu1**6)
+!     YLM10=-0.008118*G**9*amu1*(315.-4620.*amu1**2+18018.*amu1**4
+!    *-25740.*amu1**6+12155.*amu1**8)
+!     YLM12=0.003685*G**11*amu1*(-693.+15015.*amu1**2-90090.*amu1**4
+!    *+218790.*amu1**6-230945.*amu1**8+88179.*amu1**10)
+!      YLMS=YLM0+YLM2+YLM4+YLM6+YLM8+YLM10+YLM12
+!      YLMS=0.25*YLMS
+!      BETA1 = YLMS
+
+!         BETAn = 0.25*(2. - 1.5*G-0.21875*G**3-0.085938*G**5
+!    *-0.045776*G**7)
+
+
+! Hybrid modified Eddington-delta function(Meador and Weaver,1980,JAS,37,630):
+!         subd=4.*(1.-G*G*(1.-MU))
+!         GAM1 = (7.-3.*G*G-OM*(4.+3.*G)+OM*G*G*(4.*BETA0+3.*G))/subd
+!         GAM2 =-(1.-G*G-OM*(4.-3.*G)-OM*G*G*(4.*BETA0+3.*G-4.))/subd
+!         GAM3 = BETA0
+!         GAM4 = 1. - GAM3
+!         mu1(i) = (1. - g*g*(1.- mu) )/(2. - g*g)
+
+!****
+! delta function  (Meador, and Weaver, 1980, JAS, 37, 630):
+!         GAM1 = (1. - OM*(1. - beta0))/MU
+!         GAM2 = OM*BETA0/MU
+!         GAM3 = BETA0
+!         GAM4 = 1. - GAM3
+!         mu1(i) = mu
+!****
+! modified quadrature (Meador, and Weaver, 1980, JAS, 37, 630):
+!         GAM1 = 1.7320508*(1. - OM*(1. - beta1))
+!         GAM2 = 1.7320508*OM*beta1
+!         GAM3 = BETA0
+!         GAM4 = 1. - GAM3
+!         mu1(i) = 1./sqrt(3.)
+
+! hemispheric constant (Toon et al., 1989, JGR, 94, 16287):
+!         GAM1 = 2.*(1. - OM*(1. - betan))
+!         GAM2 = 2.*OM*BETAn
+!         GAM3 = BETA0
+!         GAM4 = 1. - GAM3
+!         mu1(i) = 0.5
+
+!****
+
+! lambda = pg 16,290 equation 21
+! big gamma = pg 16,290 equation 22
+! if gam2 = 0., then bgam = 0. 
+
+         lam(i) = sqrt(gam1*gam1 - gam2*gam2)
+
+         IF( gam2 .NE. 0.) THEN
+            bgam(i) = (gam1 - lam(i))/gam2
+         ELSE
+            bgam(i) = 0.
+         ENDIF
+
+         expon = EXP(-lam(i)*taun(i))
+
+! e1 - e4 = pg 16,292 equation 44
+         
+         e1(i) = 1. + bgam(i)*expon
+         e2(i) = 1. - bgam(i)*expon
+         e3(i) = bgam(i) + expon
+         e4(i) = bgam(i) - expon
+
+! the following sets up for the C equations 23, and 24
+! found on page 16,290
+! prevent division by zero (if LAMBDA=1/MU, shift 1/MU^2 by EPS = 1.E-3
+! which is approx equiv to shifting MU by 0.5*EPS* (MU)**3
+
+         expon0 = EXP(-tausla(i-1))
+         expon1 = EXP(-tausla(i))
+          
+         divisr = lam(i)*lam(i) - 1./(mu2(i)*mu2(i))
+         temp = AMAX1(eps,abs(divisr))
+         divisr = SIGN(temp,divisr)
+
+         up = om*pifs*((gam1 - 1./mu2(i))*gam3 + gam4*gam2)/divisr
+         dn = om*pifs*((gam1 + 1./mu2(i))*gam4 + gam2*gam3)/divisr
+         
+! cup and cdn are when tau is equal to zero
+! cuptn and cdntn are when tau is equal to taun
+
+         cup(i) = up*expon0
+         cdn(i) = dn*expon0
+         cuptn(i) = up*expon1
+         cdntn(i) = dn*expon1
+ 
+   11 CONTINUE
+
+!**************** set up matrix ******
+! ssfc = pg 16,292 equation 37  where pi Fs is one (unity).
+
+      ssfc = rsfc*mu*EXP(-tausla(nlayer))*pifs
+
+! MROWS = the number of rows in the matrix
+
+      mrows = 2*nlayer     
+      
+! the following are from pg 16,292  equations 39 - 43.
+! set up first row of matrix:
+
+      i = 1
+      a(1) = 0.
+      b(1) = e1(i)
+      d(1) = -e2(i)
+      e(1) = fdn0 - cdn(i)
+
+      row=1
+
+! set up odd rows 3 thru (MROWS - 1):
+      i = 0
+      DO 20, row = 3, mrows - 1, 2
+         i = i + 1
+         a(row) = e2(i)*e3(i) - e4(i)*e1(i)
+         b(row) = e1(i)*e1(i + 1) - e3(i)*e3(i + 1)
+         d(row) = e3(i)*e4(i + 1) - e1(i)*e2(i + 1)
+         e(row) = e3(i)*(cup(i + 1) - cuptn(i)) + &
+              e1(i)*(cdntn(i) - cdn(i + 1))
+   20 CONTINUE
+
+! set up even rows 2 thru (MROWS - 2): 
+
+      i = 0
+      DO 30, row = 2, mrows - 2, 2
+         i = i + 1
+         a(row) = e2(i + 1)*e1(i) - e3(i)*e4(i + 1)
+         b(row) = e2(i)*e2(i + 1) - e4(i)*e4(i + 1)
+         d(row) = e1(i + 1)*e4(i + 1) - e2(i + 1)*e3(i + 1)
+         e(row) = (cup(i + 1) - cuptn(i))*e2(i + 1) - &
+              (cdn(i + 1) - cdntn(i))*e4(i + 1)
+   30 CONTINUE
+
+! set up last row of matrix at MROWS:
+
+      row = mrows
+      i = nlayer
+      
+      a(row) = e1(i) - rsfc*e3(i)
+      b(row) = e2(i) - rsfc*e4(i)
+      d(row) = 0.
+      e(row) = ssfc - cuptn(i) + rsfc*cdntn(i)
+
+! solve tri-diagonal matrix:
+
+      CALL tridag(a, b, d, e, y, mrows)
+
+!*** unfold solution of matrix, compute output fluxes:
+
+      row = 1 
+      lev = 1
+      j = 1
+      
+! the following equations are from pg 16,291  equations 31 & 32
+
+      fdr(lev) = EXP( -tausla(0) )
+      edr(lev) = mu * fdr(lev)
+      edn(lev) = fdn0
+      eup(lev) =  y(row)*e3(j) - y(row + 1)*e4(j) + cup(j)
+      fdn(lev) = edn(lev)/mu1(lev)
+      fup(lev) = eup(lev)/mu1(lev)
+
+      DO 60, lev = 2, nlayer + 1
+         fdr(lev) = EXP(-tausla(lev-1))
+         edr(lev) =  mu *fdr(lev)
+         edn(lev) =  y(row)*e3(j) + y(row + 1)*e4(j) + cdntn(j)
+         eup(lev) =  y(row)*e1(j) + y(row + 1)*e2(j) + cuptn(j)
+         fdn(lev) = edn(lev)/mu1(j)
+         fup(lev) = eup(lev)/mu1(j)
+
+         row = row + 2
+         j = j + 1
+   60 CONTINUE
+!_______________________________________________________________________
+
+      END SUBROUTINE ps2str
+
+! =========================================================================== 
+
+      SUBROUTINE tridag(a,b,c,r,u,n)
+
+!_______________________________________________________________________
+! solves tridiagonal system.  From Numerical Recipies, p. 40
+!_______________________________________________________________________
+
+      IMPLICIT NONE
+
+! input:
+      INTEGER n
+      REAL a, b, c, r
+      DIMENSION a(n),b(n),c(n),r(n)
+
+! output:
+      REAL u
+      DIMENSION u(n)
+
+! local:
+      INTEGER j
+
+      REAL bet, gam
+      DIMENSION gam(2*n)
+!_______________________________________________________________________
+
+      IF (b(1) .EQ. 0.) STOP 'subroutine tridag failed, 1001'
+      bet   = b(1)
+      u(1) = r(1)/bet
+      DO 11, j = 2, n   
+         gam(j) = c(j - 1)/bet
+         bet = b(j) - a(j)*gam(j)
+         IF (bet .EQ. 0.) STOP 'subroutine tridag failed, 2002'
+         u(j) = (r(j) - a(j)*u(j - 1))/bet
+   11 CONTINUE
+      DO 12, j = n - 1, 1, -1  
+         u(j) = u(j) - gam(j + 1)*u(j + 1)
+   12 CONTINUE
+!_______________________________________________________________________
+
+      END SUBROUTINE tridag
+
+! =========================================================================== 
+
+      SUBROUTINE sphers(kz, nz, z, zen, dsdh, nid)
+
+! ---------------------------------------------------------------------------- 
+!   PURPOSE:                                                                  
+!   Calculate slant path over vertical depth ds/dh in spherical geometry.     
+!   Calculation is based on:  A.Dahlback, and K.Stamnes, A new spheric model  
+!   for computing the radiation field available for photolysis and heating    
+!   at twilight, Planet.Space Sci., v39, n5, pp. 671-683, 1991 (Appendix B)   
+! ---------------------------------------------------------------------------- 
+!   PARAMETERS:                                                               
+!   NZ      - INTEGER, number of specified altitude levels in the working (I) 
+!             grid                                                            
+!   Z       - REAL, specified altitude working grid (km)                  (I) 
+!   ZEN     - REAL, solar zenith angle (degrees)                          (I) 
+!   DSDH    - REAL, slant path of direct beam through each layer crossed  (O) 
+!             when travelling from the top of the atmosphere to layer i;      
+!             DSDH(i,j), i = 0..NZ-1, j = 1..NZ-1                             
+!   NID     - INTEGER, number of layers crossed by the direct beam when   (O) 
+!             travelling from the top of the atmosphere to layer i;           
+!             NID(i), i = 0..NZ-1                                             
+! ---------------------------------------------------------------------------- 
+!   EDIT HISTORY:                                                             
+!   double precision fix for shallow layers - Julia Lee-Taylor Dec 2000       
+! ---------------------------------------------------------------------------- 
+!  This program is free software;  you can redistribute it and/or modify      
+!  it under the terms of the GNU General Public License as published by the   
+!  Free Software Foundation;  either version 2 of the license, or (at your    
+!  option) any later version.                                                 
+!  The TUV package is distributed in the hope that it will be useful, but     
+!  WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHANTIBI-   
+!  LITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public      
+!  License for more details.                                                  
+!  To obtain a copy of the GNU General Public License, write to:              
+!  Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.    
+! ---------------------------------------------------------------------------- 
+!  To contact the authors, please mail to:                                    
+!  Sasha Madronich, NCAR/ACD, P.O.Box 3000, Boulder, CO, 80307-3000, USA  or  
+!  send email to:  sasha@ucar.edu                                             
+! ---------------------------------------------------------------------------- 
+!  Copyright (C) 1994-2008   University Corporation for Atmospheric Research  
+! ---------------------------------------------------------------------------- 
+
+      IMPLICIT NONE
+
+! input
+      INTEGER kz, nz
+      REAL zen, z(kz)
+
+! output
+      INTEGER nid(0:kz)
+      REAL dsdh(0:kz,kz)
+
+! more program constants
+! pi:
+      REAL pi
+      PARAMETER(pi=3.1415926535898)
+      REAL  dr
+      PARAMETER ( dr = pi/180.)
+
+! radius of the earth:
+      REAL re
+      REAL radius
+      PARAMETER(radius=6.371E+3)
+
+      REAL ze(kz)
+
+! local 
+
+      DOUBLE PRECISION zenrad, rpsinz, rj, rjp1, dsj, dhj, ga, gb, sm
+      INTEGER i, j, k
+      INTEGER id
+
+      INTEGER nlayer
+      REAL zd(0:kz-1)
+
+! ----------------------------------------------------------------------------
+
+      zenrad = zen*dr
+
+! number of layers:
+      nlayer = nz - 1
+
+! include the elevation above sea level to the radius of the earth:
+      re = radius + z(1)
+! correspondingly z changed to the elevation above earth surface:
+      DO k = 1, nz
+         ze(k) = z(k) - z(1)
+      END DO
+
+! inverse coordinate of z
+      zd(0) = ze(nz)
+      DO k = 1, nlayer
+        zd(k) = ze(nz - k)
+      END DO
+
+! initialize dsdh(i,j), nid(i)
+      DO i = 0, kz
+       nid(i) = 0
+       DO j = 1, kz
+        dsdh(i,j) = 0.
+       END DO
+      END DO
+
+! calculate ds/dh of every layer
+      DO 100 i = 0, nlayer
+
+        rpsinz = (re + zd(i)) * SIN(zenrad)
+ 
+        IF ( (zen .GT. 90.0) .AND. (rpsinz .LT. re) ) THEN
+           nid(i) = -1
+        ELSE
+
+
+! Find index of layer in which the screening height lies
+      
+           id = i 
+           IF( zen .GT. 90.0 ) THEN
+              DO 10 j = 1, nlayer
+                 IF( (rpsinz .LT. ( zd(j-1) + re ) ) .AND. &
+                     (rpsinz .GE. ( zd(j) + re )) ) id = j
+ 10           CONTINUE
+           END IF
+ 
+           DO 20 j = 1, id
+
+             sm = 1.0
+             IF(j .EQ. id .AND. id .EQ. i .AND. zen .GT. 90.0) &
+                sm = -1.0
+ 
+             rj = re + zd(j-1)
+             rjp1 = re + zd(j)
+ 
+             dhj = zd(j-1) - zd(j)
+ 
+             ga = rj*rj - rpsinz*rpsinz
+             gb = rjp1*rjp1 - rpsinz*rpsinz
+             IF (ga .LT. 0.0) ga = 0.0
+             IF (gb .LT. 0.0) gb = 0.0
+ 
+             IF(id.GT.i .AND. j.EQ.id) THEN
+                dsj = SQRT( ga )
+             ELSE
+                dsj = SQRT( ga ) - sm*SQRT( gb )
+             END IF
+             dsdh(i,j) = dsj / dhj
+ 20        CONTINUE
+ 
+           nid(i) = id
+ 
+        END IF
+
+ 100  CONTINUE
+
+! ----------------------------------------------------------------------------
+
+      END SUBROUTINE sphers
+
+! =========================================================================== 
+
+      SUBROUTINE airmas(kz, nz, dsdh, nid, cz, &
+            vcol, scol)
+
+! ---------------------------------------------------------------------------- 
+!   PURPOSE:                                                                  
+!   Calculate vertical and slant air columns, in spherical geometry, as a     
+!   function of altitude.                                                     
+! ---------------------------------------------------------------------------- 
+!   PARAMETERS:                                                               
+!   kZ      - INTEGER, number of specified altitude levels in the working (I) 
+!             grid                                                            
+!   DSDH    - REAL, slant path of direct beam through each layer crossed  (O) 
+!             when travelling from the top of the atmosphere to layer i;      
+!             DSDH(i,j), i = 0..NZ-1, j = 1..NZ-1                             
+!   NID     - INTEGER, number of layers crossed by the direct beam when   (O) 
+!             travelling from the top of the atmosphere to layer i;           
+!             NID(i), i = 0..NZ-1                                             
+!   VCOL    - REAL, output, vertical air column, molec cm-2, above level iz   
+!   SCOL    - REAL, output, slant air column in direction of sun, above iz    
+!             also in molec cm-2                                              
+! ---------------------------------------------------------------------------- 
+
+      IMPLICIT NONE
+
+! Input:
+
+      INTEGER kz, nz
+      INTEGER nid(0:kz)
+      REAL dsdh(0:kz,kz)
+      REAL cz(nz)
+
+! output: 
+
+      REAL vcol(nz), scol(nz)
+
+! internal:
+
+      INTEGER id, j
+      REAL sum, vsum
+      REAL largest
+      PARAMETER(largest=1.E+36)
+
+! calculate vertical and slant column from each level:
+! work downward
+
+      vsum = 0.
+      DO id = 0, nz - 1
+         vsum = vsum + cz(nz-id)
+         vcol(nz-id) = vsum
+         sum = 0.
+         IF(nid(id) .LT. 0) THEN
+            sum = largest
+         ELSE
+
+! single pass layers:
+
+            DO j = 1, MIN(nid(id), id)
+               sum = sum + cz(nz-j)*dsdh(id,j)
+            ENDDO
+
+! double pass layers:
+
+            DO j = MIN(nid(id),id)+1, nid(id)
+               sum = sum + 2.*cz(nz-j)*dsdh(id,j)
+            ENDDO
+
+         ENDIF
+         scol(nz - id) = sum
+
+      ENDDO
+
+      END SUBROUTINE airmas
 
     END MODULE module_phot_mad

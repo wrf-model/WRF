@@ -113,6 +113,24 @@ subroutine da_check_rh(grid)
            do k=kts,kte
              if (imod(k) .eq. 1) then
                grid%xa%rh(i,j,k) = grid%xa%rh(i,j,k)+(grid%xb%rh(i,j,k)+grid%xa%rh(i,j,k))*weight
+
+! To guarantee the adjusted relative humidity will not be out of the range (YRG, 10/21/2008):
+               oldrha = grid%xa%rh(i,j,k)+grid%xb%rh(i,j,k)
+               if ( (oldrha > maximum_rh) ) then
+                  grid%xa%rh(i,j,k) = maximum_rh - grid%xb%rh(i,j,k)
+                  if (print_detail_xa ) &
+                     write(unit=stdout, fmt='(3I5," Warning=== Adjusted RH > maximum_rh=",f10.2,&
+                            & " total_rh, xb%rh, xa%rh:",3f10.2)') &
+                          i, j, k, maximum_rh, oldrha, grid%xb%rh(i,j,k), grid%xa%rh(i,j,k)
+               else if ( oldrha < minimum_rh ) then
+                  grid%xa%rh(i,j,k) = minimum_rh - grid%xb%rh(i,j,k)
+                  if (print_detail_xa ) &
+                     write(unit=stdout, fmt='(3I5," Warning=== Adjusted RH < minimum_rh=",f10.2,&
+                            & " total_rh, xb%rh, xa%rh:",3f10.2)') &
+                          i, j, k, minimum_rh, oldrha, grid%xb%rh(i,j,k), grid%xa%rh(i,j,k)
+               endif
+! ...........................................................................................
+
                call da_tprh_to_q_lin1(grid%xb%t(i,j,k), grid%xb%p(i,j,k), grid%xb%es(i,j,k), &
                                       grid%xb%q(i,j,k), grid%xb%rh(i,j,k),  grid%xa%t(i,j,k), &
                                       grid%xa%p(i,j,k), grid%xa%rh(i,j,k), grid%xa%q(i,j,k))

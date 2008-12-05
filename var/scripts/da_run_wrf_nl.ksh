@@ -10,6 +10,7 @@
 #
 # The other input files for VAR are the T+1,T+2,T+3 dumps
 
+set -x
 arg1=$1
 
 cd $WORK_DIR/nl

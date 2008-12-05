@@ -97,7 +97,7 @@ export RUN_CMD=${RUN_CMD:-$RUN_CMD_DEFAULT}
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/code/$RELEASE}    # Directory containing codes.
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}  # WRF-Var code directory.
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}  # WRF-Var code directory.
 export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da}     # WRF-Var executable location.
 export WPS_DIR=${WPS_DIR:-$REL_DIR/wps}           # WPS directory.
 export WPB_DIR=${WPB_DIR:-$REL_DIR/wpb}           # Perturbed LBC dir.
@@ -233,8 +233,8 @@ export NL_MULTI_INC=${NL_MULTI_INC:-0}  # Analysis type.
 export NL_VAR4D=${NL_VAR4D:-false}
 export NL_GLOBAL=${NL_GLOBAL:-false}
 export BE_DIR=${BE_DIR:-$REG_DIR/be}                   # Background error covariance directory.
-export BIASCORR_DIR=${BIASCORR_DIR:-$WRFVAR_DIR/run/biascorr}
-export OBS_TUNING_DIR=${OBS_TUNING_DIR:-$WRFVAR_DIR/run/obs_tuning}
+export BIASCORR_DIR=${BIASCORR_DIR:-$WRFVAR_DIR/var/run/biascorr}
+export OBS_TUNING_DIR=${OBS_TUNING_DIR:-$WRFVAR_DIR/var/run/obs_tuning}
 export DA_BACK_ERRORS=${DA_BACK_ERRORS:-$BE_DIR/be.dat} # background errors.
 export NL_OB_FORMAT=${NL_OB_FORMAT:-2}   # Observation format: 1=BUFR, 2=ASCII "little_r"
 export NL_LATS_STATS_OPTION_FALSE=${NL_LATS_STATS_OPTION_FALSE:-false}

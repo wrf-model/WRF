@@ -1,0 +1,53 @@
+                      How to run VERIFY with WRFDA v3.0.1.1
+                      =====================================
+
+				Y.-R. Guo, 11/14/2008
+
+1, get_data_files.csh
+
+   This shell is used to prepare the data files for testing verification 
+   with WRFDA v3.0.1.1
+
+   a) observation files for verification;
+   b) the first guess files for filtering the observations;
+   c) WRF forecast files for experiments.
+
+2, da_run_suite_wrapper_qc_obs.ksh
+
+   This shel script gave the filtered observation files: 
+
+	${directory}/${time}/wrfvar/filtered_obs
+
+3, da_run_suite_wrapper_verif_obs.ksh
+
+   This shell script will generate the "gts_omb_oma" files for specific EXP
+   and specific forecast time based on the filtered_obs and forecast files.
+   The results are in
+
+      ${REGION}/${EXPT}_H${VERIFY_HOUR}/(${time}+${VERIFY_HOUR})/wrfvar
+
+   Note: before running this script, you should do 
+
+      cp da_run_suite_verif_obs.ksh  ${WRFVAR_DIR}/var/scripts/.
+
+4, da_run_wrapper_verif_obs_plot.ksh
+
+   This shell script creates the verification plots for multiple experiments,
+   which includes the i) vertical profile; ii) Time average; and iii) Time_series
+   for ABIAS, BIAS, and RMSE.
+
+   Before running this script, carefully edit it.
+
+   da_run_wrapper_verif_obs_plot.ksh ==> da_verif_obs_plot.ksh
+
+   Input files:"gts_omb_oma", could be from the normal WRFVar runs or VERIFY 
+               runs 
+     
+      export GET_OMBOMA_PLOTS=false: only uses the omb part for verification against the obs
+      export GET_OMBOMA_PLOTS=true : plot both omb and oma for normal WRFVar runs.
+
+   Executable : da_verif_obs.exe
+
+   Note: before running da_run_wrapper_verif_obs_plot.ksh, you should do
+
+      cp da_verif_obs_plot.ksh    ${WRFVAR_DIR}/var/scripts/.

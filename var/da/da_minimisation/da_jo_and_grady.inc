@@ -331,6 +331,8 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
    else
       jo_radiance = 0.0
    end if
+#else
+   jo_radiance = 0.0
 #endif
 
    if (iv%info(airsr)%nlocal > 0) then

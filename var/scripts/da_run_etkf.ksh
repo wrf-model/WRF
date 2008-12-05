@@ -23,9 +23,9 @@
 #-----------------------------------------------------------------------
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}
 export NUM_PROCS=1 # will not run parallel
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/etkf}
 export WORK_DIR=$RUN_DIR/working

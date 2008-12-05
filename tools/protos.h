@@ -35,7 +35,7 @@ node_t * get_type_entry ( char * typename ) ;
 node_t * get_rconfig_entry( char * name ) ;
 node_t * get_entry ( char * name , node_t * node ) ;
 node_t * get_entry_r ( char * name , char * use , node_t * node ) ;
-node_t * get_dim_entry( char c ) ;
+node_t * get_dim_entry( char *s ) ;
 node_t * new_node ( int kind ) ;
 
 node_t * get_4d_entry ( char * name ) ;

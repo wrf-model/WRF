@@ -1952,22 +1952,31 @@ END
    END SUBROUTINE rsl_comm_iter_init
 
    LOGICAL FUNCTION rsl_comm_iter ( id , is_intermediate,                     &
-                                    shw ,  xy , ds, de, ps, pe, nds,nde, & 
+                                    shw ,  xy , ds, de_in, ps, pe, nds,nde, & 
                                     sendbeg_m, sendw_m, sendbeg_p, sendw_p,   &
                                     recvbeg_m, recvw_m, recvbeg_p, recvw_p    )
       USE module_dm, ONLY : ntasks_x, ntasks_y, mytask_x, mytask_y
       IMPLICIT NONE
-      INTEGER, INTENT(IN)  :: id,shw,xy,ds,de,ps,pe,nds,nde
+      INTEGER, INTENT(IN)  :: id,shw,xy,ds,de_in,ps,pe,nds,nde
       LOGICAL, INTENT(IN)  :: is_intermediate  ! treated differently, coarse but with same decomp as nest
       INTEGER, INTENT(OUT) :: sendbeg_m, sendw_m, sendbeg_p, sendw_p
       INTEGER, INTENT(OUT) :: recvbeg_m, recvw_m, recvbeg_p, recvw_p
-      INTEGER k, kn, ni, nj, Px, Py, nt, me, lb, ub, ierr 
+      INTEGER k, kn, ni, nj, de, Px, Py, nt, me, lb, ub, ierr 
       LOGICAL went
       INTEGER iter, plus_send_start, plus_recv_start, &
                     minus_send_start, minus_recv_start 
       INTEGER parent_grid_ratio, parent_start
       COMMON /rcii/ iter, plus_send_start, plus_recv_start, &
                           minus_send_start, minus_recv_start
+
+#if (NMM_CORE == 1 )
+! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
+! adjust decomposition to reflect.  20081206 JM
+      de = de_in - 1
+#else
+      de = de_in
+#endif
+
       IF ( xy .EQ. 1 ) THEN  ! X/I axis
         nt = ntasks_x 
         me = mytask_x

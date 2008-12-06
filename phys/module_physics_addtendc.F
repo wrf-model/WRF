@@ -32,6 +32,7 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                       RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,&
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,   &
                       RMUNDGDTEN,                                  &
+                      rthfrten,rqvfrten,                           &    ! fire
                       n_moist,n_scalar,config_flags,rk_step,adv_moist_cond, &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
@@ -82,6 +83,10 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                                                       RVNDGDTEN
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   & ! fire
+                                                       rthfrten, &
+                                                       rqvfrten   
 !------------------------------------------------------------------
 
 !  set up loop bounds for this grid's boundary conditions
@@ -117,6 +122,15 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                       mu_tendf, moist_tendf,                   &
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,          &
                       RQVNDGDTEN,RMUNDGDTEN,                   &
+                      ids, ide, jds, jde, kds, kde,            &
+                      ims, ime, jms, jme, kms, kme,            &
+                      its, ite, jts, jte, kts, kte             )
+
+   if (config_flags%ifire .gt. 0)                              & ! fire
+      CALL phy_fr_ten(config_flags,rk_step,n_moist,            &
+                      rt_tendf,ru_tendf,rv_tendf,              &
+                      mu_tendf, moist_tendf,                   &
+                      rthfrten,rqvfrten,                       &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
@@ -748,6 +762,71 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
    END SELECT
 
 END SUBROUTINE phy_fg_ten
+
+!=================================================================
+SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
+                      rt_tendf,ru_tendf,rv_tendf,              &
+                      mu_tendf, moist_tendf,                   &
+                      rthfrten,rqvfrten,                       &
+                      ids, ide, jds, jde, kds, kde,              &
+                      ims, ime, jms, jme, kms, kme,              &
+                      its, ite, jts, jte, kts, kte               )
+!-----------------------------------------------------------------
+   USE module_state_description, ONLY :                         &
+                   FIRE_CAWFE
+!-----------------------------------------------------------------
+   IMPLICIT NONE
+!-----------------------------------------------------------------
+   TYPE(grid_config_rec_type) ,     INTENT(IN   ) :: config_flags
+
+   INTEGER , INTENT(IN)        ::  ids, ide, jds, jde, kds, kde, &
+                                   ims, ime, jms, jme, kms, kme, &
+                                   its, ite, jts, jte, kts, kte, &
+                                   n_moist, rk_step
+
+   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_moist),         &
+          INTENT(INOUT)     ::                      moist_tendf
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   &
+                                                       rthfrten, &
+                                                       rqvfrten 
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::   &
+                                                       rt_tendf, &
+                                                       ru_tendf, &
+                                                       rv_tendf
+
+   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT)::  mu_tendf
+
+! LOCAL VARS
+
+   INTEGER :: i,j,k,IBGN,IEND,JBGN,JEND
+
+!-----------------------------------------------------------------
+
+   SELECT CASE(config_flags%ifire)
+
+      CASE (FIRE_CAWFE,FIRE_SFIRE,FIRE_SFIRED)
+! Jan Mandel added FIRE_SFIRE Nov 17 2007
+! Jan Mandel added FIRE_SFIRED Nov 17 2007
+
+           CALL add_a2a(rt_tendf,rthfrten,                       &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),rqvfrten,  &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+      CASE DEFAULT
+
+   END SELECT
+
+END SUBROUTINE phy_fr_ten
 
 !----------------------------------------------------------------------
 SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &

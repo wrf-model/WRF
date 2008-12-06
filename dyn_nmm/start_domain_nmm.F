@@ -141,7 +141,7 @@
       TYPE(WRFU_Time) :: currentTime
 
 ! z0base new
- 
+
       REAL,DIMENSION(0:30) :: VZ0TBL_24
       VZ0TBL_24= (/0.,                                                 &
      &            1.00,  0.07,  0.07,  0.07,  0.07,  0.15,             &
@@ -149,7 +149,7 @@
      &            2.65,  1.09,  0.80,  0.001, 0.04,  0.05,             &
      &            0.01,  0.04,  0.06,  0.05,  0.03,  0.001,            &
      &            0.000, 0.000, 0.000, 0.000, 0.000, 0.000/)
- 
+
 ! end z0base new
 !
 !----------------------------------------------------------------------
@@ -207,7 +207,7 @@
       ENDIF
 #endif
 !
-!---------------------------------------------------------------------- 
+!----------------------------------------------------------------------
 !
       WRITE(0,196)IHRST,IDAT
       WRITE(LIST,196)IHRST,IDAT
@@ -482,7 +482,7 @@
           QZ0(I,J)=QSH(I,J)
           UZ0(I,J)=0.
           VZ0(I,J)=0.
-! 
+!
         ENDDO
         ENDDO
 
@@ -550,7 +550,7 @@
           ENDIF
         ENDDO
         ENDDO
-!***  
+!***
 !***  INITIALIZE TURBULENT KINETIC ENERGY (TKE) TO A SMALL
 !***  VALUE (EPSQ2) ABOVE GROUND.  SET TKE TO ZERO IN THE
 !***  THE LOWEST MODEL LAYER.  IN THE LOWEST TWO ATMOSPHERIC
@@ -578,7 +578,7 @@
         ENDDO
         ENDDO
       ENDIF
-!***  
+!***
 !***  PAD ABOVE GROUND SPECIFIC HUMIDITY IF IT IS TOO SMALL.
 !***  INITIALIZE LATENT HEATING ACCUMULATION ARRAYS.
 !***
@@ -702,10 +702,10 @@
 !
 !***  N_IUP_H HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR UPSTREAM ADVECTION (FULL ROWS IN THE 3RD THROUGH 7TH
-!***  ROWS FROM THE SOUTH AND NORTH GLOBAL BOUNDARIES AND 
+!***  ROWS FROM THE SOUTH AND NORTH GLOBAL BOUNDARIES AND
 !***  FOUR POINTS ADJACENT TO THE WEST AND EAST GLOBAL BOUNDARIES
 !***  ON ALL OTHER INTERNAL ROWS).  SIMILARLY FOR N_IUP_V.
-!***  BECAUSE OF HORIZONTAL OPERATIONS, THESE POINTS EXTEND OUTSIDE 
+!***  BECAUSE OF HORIZONTAL OPERATIONS, THESE POINTS EXTEND OUTSIDE
 !***  OF THE UPSTREAM REGION SOMEWHAT.
 !***  N_IUP_ADH HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR THE COMPUTATION OF THE TENDENCIES THEMSELVES (ADT, ADQ2M
@@ -714,7 +714,7 @@
 !***  N_IUP_ADV HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR THE VELOCITY POINT TENDENCIES.
 !***  IUP_H AND IUP_V HOLD THE ACTUAL I VALUES USED IN EACH ROW.
-!***  LIKEWISE FOR IUP_ADH AND IUP_ADV. 
+!***  LIKEWISE FOR IUP_ADH AND IUP_ADV.
 !***  ALSO, SET UPSTRM FOR THOSE TASKS AROUND THE GLOBAL EDGE.
 !
       UPSTRM=.FALSE.
@@ -1060,7 +1060,7 @@
 !***  LVL HOLDS THE HEIGHT (IN MODEL LAYERS) OF THE TOPOGRAPHY AT
 !***  EACH GRID POINT.
 !----------------------------------------------------------------------
-!   
+!
       DO J=JFS,JFE
       DO I=IFS,IFE
         LVL(I,J)=LM-KTE
@@ -1070,7 +1070,7 @@
 !***  DETERMINE MODEL LAYER LIMITS FOR HIGH(3), MIDDLE(2),
 !***  AND LOW(1) CLOUDS.  ALSO FIND MODEL LAYER THAT IS JUST BELOW
 !***  (HEIGHT-WISE) 400 MB. (K400)
-!*** 
+!***
       K400=0
       PSUM=PT
       SLPM=101325.
@@ -1102,7 +1102,7 @@
       DO K=KPS,KPE-1
         PHALF(K+1)=AETA(K)*PDIF+PT
       ENDDO
-      
+
 !
       PHALF(1)=0.
       PHALF(LM+1)=PSS
@@ -1199,7 +1199,7 @@
       ENDDO
 !
 !----------------------------------------------------------------------
-!***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH 
+!***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH
 !----------------------------------------------------------------------
 !
       IF(.NOT.RESTRT)THEN
@@ -1393,7 +1393,7 @@
       ALLOCATE(T_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ;  T_TRANS = 0.
       ALLOCATE(RRI(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ;  RRI = 0.
       ALLOCATE(CLDFRA_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_TRANS = 0.
-#ifndef WRF_CHEM      
+#ifndef WRF_CHEM
       ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
 #if 0
@@ -1425,8 +1425,8 @@
           TL=T(I,J,K)
           CWML=CWM(I,J,K)
           RRI(I,K,J)=R_D*TL*(1.+P608*Q(I,J,K))/PLYR
-          ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             & 
-                     *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*ROG        & 
+          ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             &
+                     *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*ROG        &
                      *(Q(I,J,K)*P608-CWML+1.)
         ENDDO
 !
@@ -1473,7 +1473,7 @@
       ENDIF
 !
 !***  Always define the quantity Z0BASE
-                                                                                                                                              
+
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE
@@ -1492,12 +1492,12 @@
       num_ozmixm=1
       num_aerosolc=1
 
-! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer 
-! called inside phy_init due to moving nest changes.  (When nests move 
-! phy_init may not be called on a process if, for example, it is a moving 
-! nest and if this part of the domain is not being initialized (not the 
-! leading edge).)  Calling domain_setgmtetc() here will avoid this problem 
-! when NMM moves to moving nests.  
+! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer
+! called inside phy_init due to moving nest changes.  (When nests move
+! phy_init may not be called on a process if, for example, it is a moving
+! nest and if this part of the domain is not being initialized (not the
+! leading edge).)  Calling domain_setgmtetc() here will avoid this problem
+! when NMM moves to moving nests.
       CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
       if(restrt) then
@@ -1510,7 +1510,7 @@
       endif
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
-! includes these as dummy arguments or declares them.  Access them from 
+! includes these as dummy arguments or declares them.  Access them from
 ! GRID.  JM 20050819
 
       CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,GRID%RESTART,SFULL,SMID &
@@ -1543,6 +1543,7 @@
      &             ,SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW            &
      &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMC                     &
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
+     &             ,grid%SNOALB                                         &
      &             ,GRID%DX,GRID%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY    &
      &             ,MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE           &
      &             ,.TRUE.,.FALSE.,START_OF_SIMULATION                  &
@@ -1584,26 +1585,26 @@
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
-           moist(I,J,K,P_QV) = Q(I,J,K) / (1.-Q(I,J,K))                 
-        enddo      
-        enddo      
-        enddo      
-     
-! Also sum cloud water, ice, rain, snow, graupel into Ferrier CWM       
-! array (if any hydrometeors found and non-zero from initialization     
-! package).  Then, determine fractions ice and rain from species.       
-     
-        IF (.not. (MAXVAL(CWM).gt.0. .and. MAXVAL(CWM).lt.1.) ) then    
+           moist(I,J,K,P_QV) = Q(I,J,K) / (1.-Q(I,J,K))
+        enddo
+        enddo
+        enddo
+
+! Also sum cloud water, ice, rain, snow, graupel into Ferrier CWM
+! array (if any hydrometeors found and non-zero from initialization
+! package).  Then, determine fractions ice and rain from species.
+
+        IF (.not. (MAXVAL(CWM).gt.0. .and. MAXVAL(CWM).lt.1.) ) then
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
-     &       write(0,*) ' summing moist(:,:,:,',i_m,') into CWM array'  
+     &       write(0,*) ' summing moist(:,:,:,',i_m,') into CWM array'
           DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
-            IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN  
-               CWM(I,J,K) = CWM(I,J,K) + moist(I,J,K,i_m)               
-            ENDIF  
-          enddo    
+            IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN
+               CWM(I,J,K) = CWM(I,J,K) + moist(I,J,K,i_m)
+            ENDIF
+          enddo
           enddo
           enddo
           enddo
@@ -1719,7 +1720,7 @@
           ENDDO
         ENDDO
       ENDDO
-      
+
       DO J=JMS,JME
         DO K=KMS,KME
           DO I=IMS,IME
@@ -1727,7 +1728,7 @@
             T_TRANS(I,K,J)=T(I,J,K)
           ENDDO
         ENDDO
-      ENDDO 
+      ENDDO
        CALL CHEM_INIT (GRID%ID,CHEM,GRID%DT,GRID%BIOEMDT,GRID%PHOTDT,GRID%CHEMDT, &
                STEPBIOE,STEPPHOT,STEPCHEM,STEPFIREPL,GRID%PLUMERISEFIRE_FRQ,      &
                ZINT,G,AERWRF,CONFIG_FLAGS,                     &
@@ -1742,9 +1743,9 @@
                IMS , IME , JMS , JME , KMS , KME ,                   &
                ITS , ITE , JTS , JTE , KTS , KTE                     )
 
-!     
+!
 ! calculate initial pm
-!     
+!
         SELECT CASE (CONFIG_FLAGS%CHEM_OPT)
         CASE (RADM2SORG, RACMSORG,RACMSORG_KPP)
            CALL SUM_PM_SORGAM (                                             &
@@ -1753,7 +1754,7 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-             
+
         CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
            CALL SUM_PM_MOSAIC (                                             &
                 RRI, CHEM,                                            &
@@ -1761,7 +1762,7 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-             
+
         CASE DEFAULT
            DO J=JTS,MIN(JTE,JDE-1)
               DO K=KTS,MIN(KTE,KDE-1)

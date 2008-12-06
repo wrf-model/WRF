@@ -1,0 +1,8 @@
+#!/bin/csh -f
+set g=`which git`
+if ($status) then
+   echo s=`date`
+else
+   set v=`git log | head -1`
+endif
+echo id="'$v'"

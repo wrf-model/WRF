@@ -386,6 +386,7 @@ BENCH_START(update_phy_ten_tim)
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,  &
                            grid%RMUNDGDTEN,                                 &
+                           grid%rthfrten,grid%rqvfrten,                     &  ! fire
                            num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &

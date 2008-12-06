@@ -288,8 +288,8 @@ state  real   grnflx    ij    dyn_nmm   1    -     irh      "GRNFLX"    "Deep so
 state  real   pctsno    ij    dyn_nmm   1    -     irh
 state  real   soiltb    ij    dyn_nmm   1    -     i01rh    "SOILTB"    "Deep ground soil temperature"     "K"
 state  real   vegfrc    ij    dyn_nmm   1    -     i01rh    "VEGFRC"    "Vegetation fraction"              ""
-state  real   shdmin    ij    dyn_nmm   1    -     -
-state  real   shdmax    ij    dyn_nmm   1    -     -
+state  real   shdmin    ij    dyn_nmm   1    -     i012r    "SHDMAX"    "ANNUAL MAX VEG FRACTION"          ""
+state  real   shdmax    ij    dyn_nmm   1    -     i012r    "SHDMIN"    "ANNUAL MIN VEG FRACTION"          ""
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh      "SH2O"      "Unfrozen soil moisture volume fraction"  ""
 state  real   smc       ilj   dyn_nmm   1    Z     irh      "SMC"       "Soil moisture volume fraction"    ""
 state  real   stc       ilj   dyn_nmm   1    Z     irh      "STC"       "Soil temperature"                 "K"
@@ -573,6 +573,7 @@ state    real   T2               ij     misc        1         -     ir        "T
 state    real   U10              ij     misc        1         -     irh       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01r      "XICE"                 "SEA ICE"         ""
+state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     irh     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
 state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
@@ -584,6 +585,7 @@ state    real   SFCEVP           ij     misc        1         -     irh     "SFC
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
 state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
+state    real   SNOTIME          ij     misc        1         -     r        "SNOTIME"              "SNOTIME"                             ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
 state    real   RMOL             ij     misc        1         -     ir       "RMOL"               ""         ""
@@ -593,6 +595,7 @@ state    real   SST              ij     misc        1         -     i01rh       
 state    real   WEASD            ij     misc        1         -     i01rh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
+state    real  NOAHRES          ij      misc        1         -      h        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
 state    real   tke_myj         ijk     misc        1         -     r         "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -     -         "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
@@ -816,6 +819,8 @@ rconfig   real    seaice_threshold        namelist,physics      1            271
 rconfig   integer sst_update              namelist,physics      1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer ucmcall                 namelist,physics      max_domains  0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"    "use 2d field vs table values  false=table, True=2d"   ""
+rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
+rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
 
 
 # nmm variables
@@ -908,6 +913,7 @@ rconfig   real    truelat2                derived                  max_domains  
 rconfig   real    moad_cen_lat            derived                  max_domains    0       -        "moad_cen_lat"             "center latitude of the most coarse grid"      "degrees, negative is south"
 rconfig   real    stand_lon               derived                  max_domains    0       -        "stand_lon"             "standard longitude, parallel to j-direction, perpendicular to i-direction "      "degrees, negative is west"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
+rconfig   character mminlu                derived                  max_domains    0       -        "mminlu"               "land use dataset"             ""
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
 rconfig   integer isice                   derived                  max_domains    0       -        "isice"                "land use index of ice"        "index category"
 rconfig   integer isurban                 derived                  max_domains    0       -        "isurban"              "land use index for 'urban and built-up"     "index category"

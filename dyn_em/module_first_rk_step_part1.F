@@ -29,18 +29,21 @@ CONTAINS
                             )
     USE module_state_description
     USE module_model_constants
-    USE module_domain, ONLY : domain, domain_clock_get
+    USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
     USE module_radiation_driver, ONLY : pre_radiation_driver, radiation_driver
     USE module_surface_driver, ONLY : surface_driver
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_pbl_driver, ONLY : pbl_driver
+    USE module_fr_sfire_driver
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
     USE module_big_step_utilities_em, ONLY : phy_prep
     USE module_dm
     USE module_utility
+! jm debug
+    USE module_fr_sfire_util
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -99,15 +102,38 @@ CONTAINS
 ! Local
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc
-    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask 
+    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask
     INTEGER                             :: ij
     INTEGER  num_roof_layers
     INTEGER  num_wall_layers
     INTEGER  num_road_layers
     INTEGER  iswater
-    INTEGER  rk_step 
+    INTEGER  :: isurban
+    INTEGER  rk_step
     INTEGER                         :: yr, month, day, hr, minute, sec, rc
-    CHARACTER*80                    :: message
+    CHARACTER*80                    :: mesg
+
+   INTEGER                         :: sids , side , sjds , sjde , skds , skde , &
+                                      sims , sime , sjms , sjme , skms , skme , &
+                                      sips , sipe , sjps , sjpe , skps , skpe
+
+! fire related variables
+   INTEGER:: fire_num_ignitions,fire_ignition_longlat
+   integer, parameter::fire_max_ignitions=5
+   REAL, DIMENSION(fire_max_ignitions)::  fire_ignition_start_x, &
+        fire_ignition_start_y, &
+        fire_ignition_end_x, &
+        fire_ignition_end_y, &
+        fire_ignition_time, &
+        fire_ignition_radius
+
+    CHARACTER(len=256) :: MMINLU
+
+
+  CALL get_ijk_from_subgrid (  grid ,                   &
+                            sids, side, sjds, sjde, skds, skde,    &
+                            sims, sime, sjms, sjme, skms, skme,    &
+                            sips, sipe, sjps, sjpe, skps, skpe    )
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
@@ -153,7 +179,7 @@ BENCH_END(init_zero_tend_tim)
                         mu_3d, rho,                             &
                         th_phy, p_phy, pi_phy, u_phy, v_phy,    &
                         p8w, t_phy, t8w, grid%z, z_at_w,             &
-                        dz8w, grid%fnm, grid%fnp,                         &    
+                        dz8w, grid%fnm, grid%fnp,                         &
                         grid%rthraten,                               &
                         grid%rthblten, grid%rublten, grid%rvblten,             &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
@@ -174,7 +200,7 @@ BENCH_END(phy_prep_tim)
 
 ! radiation
      CALL domain_clock_get( grid, current_time=currentTime, &
-                            current_timestr=message )
+                            current_timestr=mesg )
      CALL WRFU_TimeGet( currentTime, YY=yr, dayOfYear=day, H=hr, M=minute, S=sec, rc=rc)
 !         print *, 'current year', yr, day, rc
          IF( rc/= WRFU_SUCCESS)THEN
@@ -182,18 +208,18 @@ BENCH_END(phy_prep_tim)
          ENDIF
 
 ! this driver is only needed to handle non-local shadowing effects
-      CALL pre_radiation_driver ( grid, config_flags                        & 
-     &        ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    & 
+      CALL pre_radiation_driver ( grid, config_flags                        &
+     &        ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    &
      &        ,XLAT=grid%xlat, XLONG=grid%xlong, GMT=grid%gmt                  &
      &        ,julian=grid%julian, xtime=grid%xtime, RADT=grid%radt            &
-     &        ,STEPRA=grid%stepra                                              & 
+     &        ,STEPRA=grid%stepra                                              &
      &        ,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa  &
      &        ,shadowmask=shadowmask,slope_rad=config_flags%slope_rad          &
-     &        ,topo_shading=config_flags%topo_shading                          & 
-     &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc & 
+     &        ,topo_shading=config_flags%topo_shading                          &
+     &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc &
      &        ,ht_shad_bxs=grid%ht_shad_bxs, ht_shad_bxe=grid%ht_shad_bxe      &
      &        ,ht_shad_bys=grid%ht_shad_bys, ht_shad_bye=grid%ht_shad_bye      &
-     &        ,nested=config_flags%nested, min_ptchsz=grid%min_ptchsz          & 
+     &        ,nested=config_flags%nested, min_ptchsz=grid%min_ptchsz          &
      &        ,spec_bdy_width=config_flags%spec_bdy_width                      &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
@@ -248,7 +274,7 @@ BENCH_START(rad_driver_tim)
      &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)          &
      &        ,kts=k_start, kte=min(k_end,kde-1)                          &
      &        ,num_tiles=grid%num_tiles                                   &
-            ! Optional                          
+            ! Optional
      &        , CLDFRA=grid%cldfra                                        &
      &        , PB=grid%pb                                                     &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy                 &
@@ -310,6 +336,8 @@ BENCH_START(surf_driver_tim)
       num_wall_layers = grid%num_soil_layers !urban
       num_road_layers = grid%num_soil_layers !urban
       CALL nl_get_iswater(grid%id, iswater)
+      CALL nl_get_isurban(grid%id, isurban)
+      call nl_get_mminlu(grid%id, mminlu)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
 
@@ -382,7 +410,7 @@ BENCH_START(surf_driver_tim)
      &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
      &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &
      &        ,G_URB2D=grid%g_urb2d                                       & !H urban
-     &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban 
+     &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban
      &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
      &        ,ucmcall=grid%ucmcall                                       & !H urban
@@ -423,6 +451,10 @@ BENCH_START(surf_driver_tim)
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav          & ! ruc lsm
      &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag                    & ! ruc lsm
      &        ,POTEVP=grid%POTEVP, SNOPCX=grid%SNOPCX, SOILTB=grid%SOILTB                & ! ruc lsm
+     &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
+     &        ,SNOTIME = grid%SNOTIME &
+     &        ,RDLAI2D=config_flags%rdlai2d                                   &
+     &        ,NOAHRES=grid%noahres                                       &
      &                                                              )
 BENCH_END(surf_driver_tim)
 
@@ -474,6 +506,29 @@ BENCH_START(pbl_driver_tim)
      &                                                          )
 
 BENCH_END(pbl_driver_tim)
+
+!*****
+! fire 
+
+! Jan Mandel's call to SFIRE
+
+      IF ((grid%sr_x > 0 .OR. grid%sr_y > 0) .AND. config_flags%ifire == 2) THEN
+
+BENCH_START(fire_driver_tim)
+        if(config_flags%ifire.eq.2)then 
+            call sfire_driver_em ( grid , config_flags    &
+            ,ids,ide, kds,kde, jds,jde                              &
+            ,ims,ime, kms,kme, jms,jme                              &
+            ,ips,ipe, kps,kpe, jps,jpe                              &
+            ,sids,side, sjds,sjde                        &
+            ,sims,sime, sjms,sjme                        &
+            ,sips,sipe, sjps,sjpe                        &
+            ,rho,z_at_w,dz8w)
+        endif
+
+BENCH_END(fire_driver_tim)
+       ENDIF
+
 
 ! cumulus para.
 

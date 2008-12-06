@@ -65,7 +65,13 @@ MODULES = \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
-	module_force_scm.o
+	module_force_scm.o \
+        module_fr_sfire_driver.o \
+        module_fr_sfire_atm.o \
+        module_fr_sfire_model.o \
+        module_fr_sfire_core.o \
+        module_fr_sfire_phys.o \
+        module_fr_sfire_util.o
   
 OBJS    =
 
@@ -289,5 +295,46 @@ module_fddaobs_driver.o: \
 module_force_scm.o: \
 		../dyn_em/module_init_utilities.o 
 
+get_sfire_id.inc:
+		touch sfire_id.inc
+		cat sfire_id.inc
+
+module_fr_sfire_driver.o: \
+                get_sfire_id.inc \
+		../share/module_model_constants.o  \
+		module_fr_sfire_atm.o \
+		module_fr_sfire_phys.o \
+		module_fr_sfire_model.o \
+		module_fr_sfire_util.o 
+
+module_fr_sfire_atm.o: \
+		../share/module_model_constants.o  \
+		module_fr_sfire_util.o 
+
+module_fr_sfire_model.o: \
+                fr_sfire_params_args.h \
+                fr_sfire_params_decl.h \
+	        module_fr_sfire_core.o \
+                module_fr_sfire_phys.o \
+		module_fr_sfire_util.o 
+
+module_fr_sfire_core.o: \
+                fr_sfire_params_args.h \
+                fr_sfire_params_decl.h \
+		module_fr_sfire_util.o \
+	        module_fr_sfire_phys.o 
+
+module_fr_sfire_phys.o: \
+                fr_sfire_params_args.h \
+                fr_sfire_params_decl.h \
+		module_fr_sfire_util.o 
+
+module_fr_sfire_util.o: \
+                ../frame/module_wrf_error.o 
+
+module_fire_debug_output.o: \
+	        ../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../share/mediation_integrate.o
 
 # DO NOT DELETE

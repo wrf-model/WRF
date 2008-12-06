@@ -1,5 +1,5 @@
 !WRF:MEDIATION:IO
-!  ---principal wrf output routine (called from routines in module_io_domain ) 
+!  ---principal wrf output routine (called from routines in module_io_domain )
   SUBROUTINE output_wrf ( fid , grid , config_flags, switch , ierr )
     USE module_io
     USE module_wrf_error
@@ -22,7 +22,7 @@
     INTEGER ids , ide , jds , jde , kds , kde , &
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
-      
+
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
     INTEGER , DIMENSION(3) :: patch_start , patch_end
@@ -63,6 +63,7 @@
     CHARACTER*256 message
     CHARACTER*80  fname
     CHARACTER*80  char_junk
+    CHARACTER(LEN=256) :: MMINLU
     INTEGER    ibuf(1)
     REAL       rbuf(1)
     TYPE(WRFU_TimeInterval) :: bdy_increment
@@ -83,7 +84,7 @@
     WRITE(wrf_err_message,*)'output_wrf: fid,filestate = ',fid,filestate
     CALL wrf_debug( 300 , wrf_err_message )
 
-    ! io_form is used to determine if multi-file I/O is enabled and to 
+    ! io_form is used to determine if multi-file I/O is enabled and to
     ! control writing of format-specific time-independent metadata
     IF ( switch .EQ. model_input_only ) THEN
       CALL nl_get_io_form_input( 1, io_form )
@@ -215,7 +216,8 @@
     CALL nl_get_gmt (grid%id, gmt)
     CALL nl_get_julyr (grid%id, julyr)
     CALL nl_get_julday (grid%id, julday)
-    CALL nl_get_mminlu ( 1, char_junk(1:4) )
+    CALL nl_get_mminlu ( grid%id, mminlu )
+    call wrf_debug(300,"OUTPUT_WRF:  mminlu = " // mminlu )
     CALL nl_get_iswater (grid%id, iswater )
     CALL nl_get_cen_lat ( grid%id , cen_lat )
     CALL nl_get_cen_lon ( grid%id , cen_lon )
@@ -395,7 +397,7 @@
     ENDIF
 
 ! added these fields for use by reassembly programs , 010831, JM
-! modified these fields so "patch" == "domain" when multi-file output 
+! modified these fields so "patch" == "domain" when multi-file output
 ! formats are not used.  051018, TBH
 
     ibuf(1) = MAX(ips,ids)
@@ -488,12 +490,17 @@
 #endif
     ENDIF
 #if (NMM_CORE == 1)
-        write(0,*) 'MMINLU would be: ', MMINLU(1:4)
-        MMINLU(1:4)='USGS'
-        write(0,*) 'MMINLU now: ', MMINLU(1:4)
+        write(0,*) 'MMINLU would be: ', TRIM(MMINLU)
+        ! MMINLU='USGS'
+        write(0,*) 'MMINLU now: ', TRIM(MMINLU)
 #endif
     CALL wrf_put_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , ierr )
-    CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  mminlu(1:4) , ierr )
+    IF(MMINLU(1:1) .EQ. " ")THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  "    "       , ierr )
+    ELSE
+       CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  TRIM(mminlu) , ierr )
+    END IF
+    call wrf_put_dom_ti_integer ( fid , 'NUM_LAND_CAT', config_flags%num_land_cat, 1, ierr)
     CALL wrf_put_dom_ti_integer ( fid , 'ISWATER' ,  iswater , 1 , ierr )
 !   CALL wrf_put_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , ierr )
@@ -520,7 +527,7 @@
       CALL wrf_put_dom_ti_integer ( fid , 'COMPRESSION' , config_flags%compression , 1 , ierr )
     ENDIF
 
-    CALL nl_get_adjust_output_times( grid%id, adjust ) 
+    CALL nl_get_adjust_output_times( grid%id, adjust )
     current_date_save = current_date
 #if 1
     IF ( switch .EQ. model_input_only ) THEN

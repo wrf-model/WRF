@@ -71,7 +71,7 @@
 !
 !-----------------------------------------------------------------------
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                                &
-     &          ,IMS,IME,JMS,JME,KMS,KME                                & 
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,IPS,IPE,JPS,JPE,KPS,KPE                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE
 !
@@ -134,7 +134,7 @@
 !
 #ifdef DEREF_KLUDGE
 ! SEE http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-      INTEGER :: SM31,EM31,SM32,EM32,SM33,EM33 
+      INTEGER :: SM31,EM31,SM32,EM32,SM33,EM33
       INTEGER :: SM31X,EM31X,SM32X,EM32X,SM33X,EM33X
       INTEGER :: SM31Y,EM31Y,SM32Y,EM32Y,SM33Y,EM33Y
 #endif
@@ -274,7 +274,7 @@
         ENDDO
       ENDIF
 !
-      GRID%SIGMA=1 
+      GRID%SIGMA=1
       HYDRO=.FALSE.
 !
 !
@@ -478,7 +478,7 @@
 !
 !***  Only for chemistry:
 !
-#ifdef WRF_CHEM   
+#ifdef WRF_CHEM
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A_2.inc"
 #endif
@@ -559,7 +559,7 @@
      &         ,T,U,V,PDSLO,TOLD,UOLD,VOLD                              &
      &         ,PETDT,UPSTRM                                            &
      &         ,FEW,FNS,FNE,FSE                                         &
-     &         ,ADT,ADU,ADV                                             & 
+     &         ,ADT,ADU,ADV                                             &
      &         ,N_IUP_H,N_IUP_V                                         &
      &         ,N_IUP_ADH,N_IUP_ADV                                     &
      &         ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                             &
@@ -700,8 +700,8 @@
      &                  ,1,1                                            &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
-     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)                              
-     
+     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
+
           CALL VAD2_SCAL(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM          &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP             &
      &                  ,HBM2                                           &
@@ -734,20 +734,20 @@
           DO I=MYIS,MYIE
             Q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))
           ENDDO
-          ENDDO   
-          ENDDO   
+          ENDDO
+          ENDDO
 !
         ENDIF vad2_micro_check
 !
         vad2_tim=vad2_tim+timef()-btimx
 !
       ENDIF
-!    
+!
 !-----------------------------------------------------------------------
 !***  VERTICAL ADVECTION OF CHEMISTRY
 !-----------------------------------------------------------------------
 !
-#ifdef WRF_CHEM  
+#ifdef WRF_CHEM
       IF(MOD(NTSD,GRID%IDTAD)==0)THEN
 #ifdef IBM
         btimx=timef()
@@ -763,22 +763,22 @@
         ENDDO
         ENDDO
 
-         
+
         CALL VAD2_SCAL(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM            &
      &           ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                    &
      &           ,HBM2                                                  &
-     &           ,CHEM_TRANS,PETDT                                            & 
+     &           ,CHEM_TRANS,PETDT                                            &
      &           ,N_IUP_H,N_IUP_V                                       &
      &           ,N_IUP_ADH,N_IUP_ADV                                   &
      &           ,IUP_H,IUP_V,IUP_ADH,IUP_ADV                           &
      &           ,IHE,IHW,IVE,IVW                                       &
-     &           ,NUM_CHEM,1                                            & 
+     &           ,NUM_CHEM,1                                            &
      &           ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &           ,IMS,IME,JMS,JME,KMS,KME                               &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
-      ENDIF      
-#endif 
+      ENDIF
+#endif
 !
 !-----------------------------------------------------------------------
 !***  HORIZONTAL ADVECTION OF Q, TKE, AND CLOUD WATER
@@ -829,7 +829,7 @@
 !***  UPDATE MOIST ARRAY.
 !***  REMEMBER THAT MOIST IS ONLY USED WITH THE PHYSICS AND THUS
 !***  THE P_QV SLOT (=2) IS MIXING RATIO, NOT SPECIFIC HUMIDITY.
-!***  ALTHOUGH MOIST IS ONLY USED FOR PHYSICS IN OPERATIONS, IT IS 
+!***  ALTHOUGH MOIST IS ONLY USED FOR PHYSICS IN OPERATIONS, IT IS
 !***  UPDATED HERE FROM Q EVERY ADVECTION TIMESTEP FOR NON-OPERATIONAL
 !***  CONFIGURATIONS WHERE IT MAY BE USED OUTSIDE OF THE PHYSICS.
 !
@@ -881,7 +881,7 @@
           CALL HAD2_SCAL(                                              &
 #if defined(DM_PARALLEL)
      &                   GRID%DOMDESC,                                 &
-#endif        
+#endif
      &                   NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM         &
      &                  ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP            &
      &                  ,HBM2,HBM3                                     &
@@ -894,7 +894,7 @@
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
-!        
+!
           CALL HAD2_SCAL(                                              &
 #if defined(DM_PARALLEL)
      &                   GRID%DOMDESC,                                 &
@@ -927,15 +927,15 @@
      &                  ,NUM_SCALAR,2                                  &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
-     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)                             
-!    
-          DO K=KTS,KTE 
+     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
+!
+          DO K=KTS,KTE
           DO J=MYJS,MYJE
           DO I=MYIS,MYIE
-            Q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))           
+            Q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))
           ENDDO
-          ENDDO    
-          ENDDO   
+          ENDDO
+          ENDDO
 !
 !-----------------------------------------------------------------------
         ENDIF had2_micro_check
@@ -996,7 +996,7 @@
 !***  RADIATION
 !----------------------------------------------------------------------
 !
-!***  When allocating CAM radiation 4d arrays (ozmixm, aerosolc), 
+!***  When allocating CAM radiation 4d arrays (ozmixm, aerosolc),
 !***  the following two scalars are not needed.
 !
       NUM_OZMIXM=1
@@ -1041,10 +1041,10 @@
      &                ,CUPPT,VEGFRC,SNO,HTOP,HBOT                      &
      &                ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM                  &
      &                ,GRID,CONFIG_FLAGS                               &
-     &                ,RTHRATEN                                        &  
+     &                ,RTHRATEN                                        &
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
-     &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
+     &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              &
      &                ,GAER1, GAER2, GAER3, GAER4                      &
      &                ,WAER1, WAER2, WAER3, WAER4                      &
 #endif
@@ -1086,7 +1086,7 @@
       rdtemp_tim=rdtemp_tim+timef()-btimx
 !
 !----------------------------------------------------------------------
-!***  TURBULENT PROCESSES 
+!***  TURBULENT PROCESSES
 !----------------------------------------------------------------------
 !
       IF(MOD(NTSD,GRID%NPHS)==0)THEN
@@ -1115,6 +1115,7 @@
      &            ,THZ0,QZ0,UZ0,VZ0,QSH,MAVAIL                         &
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &
      &            ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX           &
+     &            ,SNOTIME                                             &
      &            ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB          &
      &            ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK             &
      &            ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR               &
@@ -1124,8 +1125,8 @@
      &            ,APHTIM,ARDSW,ARDLW,ASRFC                            &
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
-     &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
-     &            ,RTHBLTEN,RQVBLTEN                                   & 
+     &            ,UZ0H,VZ0H,DUDT,DVDT                                 &
+     &            ,RTHBLTEN,RQVBLTEN                                   &
      &            ,GRID%PCPFLG,DDATA                                   &
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
@@ -1195,7 +1196,7 @@
 !
         ICLTEND=-1
         btimx=timef()
-! 
+!
         CALL CLTEND(ICLTEND,GRID%NPHS,T,T_OLD,T_ADJ                    &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -1228,7 +1229,7 @@
         btimx=timef()
 !
 !***  GET TENDENCIES FOR GD SCHEME.
-!    
+!
         IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME)THEN
           DT_INV=1./GRID%DT
           DO J=JMS,JME
@@ -1274,7 +1275,7 @@
      &             ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                    &
      &             ,SM,HBM2,LPBL,CNVBOT,CNVTOP                         &
      &             ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS                  &
-     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
+     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         &
      &             ,AVCNVC,ACUTIM,IHE,IHW                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
@@ -1333,7 +1334,7 @@
 !----------------------------------------------------------------------
 !***  CALCULATE TEMP TENDENCIES AND RESTORE ORIGINAL TEMPS
 !----------------------------------------------------------------------
-!      
+!
         ICLTEND=0
         btimx=timef()
 !
@@ -1446,7 +1447,7 @@
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 
- 
+
 !
       bocoh_tim=bocoh_tim+timef()-btimx
 !     if(mod(ntsd,n_print_time)==0)then
@@ -1584,7 +1585,7 @@
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE )
- 
+
 !
       bocov_tim=bocov_tim+timef()-btimx
 !

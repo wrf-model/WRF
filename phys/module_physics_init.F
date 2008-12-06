@@ -36,7 +36,7 @@ CONTAINS
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
-                         CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,EMBCK,  & !EMBCK new 
+                         CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,EMBCK,  & !EMBCK new
                          LU_INDEX,                               &
                          landuse_ISICE, landuse_LUCATS,          &
                          landuse_LUSEAS, landuse_ISN,            &
@@ -45,7 +45,7 @@ CONTAINS
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
-                         TSLB,ZS,DZS,num_soil_layers,warm_rain,  & 
+                         TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
                          adv_moist_cond,                         &
                          APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                          APR_CAPMA,APR_CAPME,APR_CAPMI,          &
@@ -53,6 +53,7 @@ CONTAINS
                          SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,&
                          ACSNOM,IVGTYP,ISLTYP, SFCEVP, SMOIS,    &
                          SH2O, SNOWH, SMFR3D,                    &  ! temporary
+                         SNOALB,                                 &
                          DX,DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY, &
                          mp_restart_state,tbpvs_state,tbpvs0_state,&
                          allowed_to_read, moved, start_of_simulation,&
@@ -167,6 +168,8 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              GSW,ALBEDO,ALBBCK,GLW,EMISS,EMBCK                          !EMBCK new
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::   SNOALB
+
 
    REAL,     INTENT(IN) :: GMT
 
@@ -273,7 +276,7 @@ CONTAINS
 
 !obs fdda
    INTEGER, OPTIONAL, INTENT(IN) :: itimestep
-#if ( EM_CORE == 1 ) 
+#if ( EM_CORE == 1 )
    TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
 #endif
 
@@ -282,14 +285,15 @@ CONTAINS
    REAL    :: ALBLND,ZZLND,ZZWTR,THINLD,XMAVA,CEN_LAT,pptop
    REAL,     DIMENSION( kms:kme )  :: sfull, shalf
    REAL :: obs_twindo_cg, obs_twindo
-   
-   CHARACTER*4 :: MMINLU_loc
+
+   CHARACTER*256 :: MMINLU_loc
    CHARACTER*80 :: message
    INTEGER :: ISWATER
    INTEGER :: ucmcall
    INTEGER :: omlcall
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
+   LOGICAL :: rdmaxalb
 
    INTEGER :: i, j, k, itf, jtf, n
 integer myproc
@@ -298,7 +302,8 @@ integer myproc
 
    ucmcall=config_flags%ucmcall
    usemonalb=config_flags%usemonalb
-#if ( EM_CORE == 1 ) 
+   rdmaxalb=config_flags%rdmaxalb
+#if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
    oml_hml0=config_flags%oml_hml0
@@ -386,7 +391,7 @@ integer myproc
        EMISS(i,j)=EMBCK(i,j)
        THC(i,j)=THINLD
        ZNT(i,j)=ZZLND
-#if  ! ( NMM_CORE == 1 ) 
+#if  ! ( NMM_CORE == 1 )
        Z0(i,j)=ZZLND
 #endif
        MAVAIL(i,j)=XMAVA
@@ -397,10 +402,10 @@ integer myproc
        EMISS(i,j)=EMBCK(i,j)
        THC(i,j)=THINLD
        ZNT(i,j)=ZZWTR
-#if  ! ( NMM_CORE == 1 ) 
+#if  ! ( NMM_CORE == 1 )
        Z0(i,j)=ZZWTR
 #endif
-       MAVAIL(i,j)=1.0 
+       MAVAIL(i,j)=1.0
      ENDIF
 
    ENDDO
@@ -412,14 +417,15 @@ integer myproc
 !-- initialize surface properties
 
      CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss, embck,            &
-                znt, Z0, thc, xland, xice, xicem, julday, cen_lat, iswater, mminlu_loc,  &
+                znt, Z0, thc, xland, xice, xicem, julday, cen_lat, iswater, &
+                TRIM ( mminlu_loc ) ,                               &
                 landuse_ISICE, landuse_LUCATS,                      &
                 landuse_LUSEAS, landuse_ISN,                        &
                 lu_state,                                           &
                 allowed_to_read , usemonalb ,                       &
                 ids, ide, jds, jde, kds, kde,                       &
                 ims, ime, jms, jme, kms, kme,                       &
-                its, ite, jts, jte, kts, kte                       ) 
+                its, ite, jts, jte, kts, kte                       )
    ENDIF
 
   ENDIF
@@ -447,7 +453,7 @@ integer myproc
                 m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                 paerlev,n_aerosolc,                             &
                 sfull,shalf,pptop,swrad_scat,                   &
-                config_flags,restart,                           & 
+                config_flags,restart,                           &
                 allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
@@ -462,13 +468,14 @@ integer myproc
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
                 IVGTYP,ISLTYP,SMOIS,SMFR3D,MAVAIL,              &
-                SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
+                SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if (NMM_CORE == 1)
                 Z0,XLAND,XICE,                                  &
 #else
                 ZNT,XLAND,XICE,                                 &
 #endif
                 SFCEVP,GRDFLX,                                  &
+                TRIM (MMINLU_LOC),                              &
                 allowed_to_read ,                               &
                 start_of_simulation ,                           &
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -504,7 +511,7 @@ integer myproc
 
    CALL mp_init(RAINNC,config_flags,restart,warm_rain,          &
                 adv_moist_cond,                                 &
-                MPDT, DT, DX, DY, LOWLYR,                       & 
+                MPDT, DT, DX, DY, LOWLYR,                       &
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
@@ -544,8 +551,8 @@ integer myproc
                   config_flags%truelat1,                        &
                   config_flags%truelat2,                        &
                   config_flags%map_proj,                        &
-                  xlat,                                         & 
-                  xlong,                                        & 
+                  xlat,                                         &
+                  xlong,                                        &
                   model_config_rec%s_sn(1),                     &
                   model_config_rec%e_sn(1),                     &
                   model_config_rec%s_we(1),                     &
@@ -580,7 +587,7 @@ integer myproc
 
    INTEGER , INTENT(IN)           :: iswater, julday
    REAL    , INTENT(IN)           :: cen_lat
-   CHARACTER*4, INTENT(IN)        :: mminlu
+   CHARACTER(LEN=*), INTENT(IN)        :: mminlu
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usemonalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
@@ -591,13 +598,13 @@ integer myproc
 
 !---------------------------------------------------------------------
 ! Local
-   CHARACTER*4 LUTYPE
+   CHARACTER*256 LUTYPE
    CHARACTER*80 :: message
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
    INTEGER  :: i, j, itf, jtf, is, cats, seas, curs
    INTEGER , PARAMETER :: OPEN_OK = 0
    INTEGER :: ierr
-   INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12 
+   INTEGER , PARAMETER :: max_cats = 100 , max_seas = 12
    REAL    , DIMENSION( max_cats, max_seas ) :: ALBD, SLMO, SFEM, SFZ0, THERIN, SFHC
    REAL    , DIMENSION( max_cats )     :: SCFX
 ! save these fields in case nest moves or has to be reinitialized
@@ -631,9 +638,9 @@ integer myproc
    ENDDO
 
 ! Determine season (summer=1, winter=2)
-   ISN=1                                                            
-   IF(JULDAY.LT.105.OR.JULDAY.GT.288)ISN=2                         
-   IF(CEN_LAT.LT.0.0)ISN=3-ISN                                   
+   ISN=1
+   IF(JULDAY.LT.105.OR.JULDAY.GT.288)ISN=2
+   IF(CEN_LAT.LT.0.0)ISN=3-ISN
 
    FOUND_LU = .TRUE.
    IF ( allowed_to_read ) THEN
@@ -643,14 +650,14 @@ integer myproc
         IF ( ierr .NE. OPEN_OK ) THEN
           WRITE(message,FMT='(A)') &
           'module_physics_init.F: LANDUSE_INIT: open failure for LANDUSE.TBL'
-          CALL wrf_error_fatal ( message ) 
+          CALL wrf_error_fatal ( message )
         END IF
       ENDIF
 
 ! Read info from file LANDUSE.TBL
       IF(MMINLU.EQ.'OLD ')THEN
 !       ISWATER=7
-        ISICE=11 
+        ISICE=11
       ELSE IF(MMINLU.EQ.'USGS')THEN
 !       ISWATER=16
         ISICE=24
@@ -661,55 +668,54 @@ integer myproc
 !       ISWATER=15
         ISICE=3
       ENDIF
-      PRINT *, 'INPUT LANDUSE = ',MMINLU
+      call wrf_message ( 'INPUT LandUse = "' // MMINLU // '"' )
       FOUND_LU = .FALSE.
       end_of_file = .FALSE.
 !!! BEGINNING OF 1999 LOOP
- 1999 CONTINUE                                                      
+ 1999 CONTINUE
       IF ( wrf_dm_on_monitor() ) THEN
-        READ (landuse_unit,2000,END=2002)LUTYPE                                
+        READ (landuse_unit,*,END=2002)LUTYPE
         GOTO 2003
  2002   CONTINUE
         CALL wrf_message( 'INPUT FILE FOR LANDUSE REACHED END OF FILE' )
         end_of_file = .TRUE.
  2003   CONTINUE
-        IF ( .NOT. end_of_file ) READ (landuse_unit,*)LUCATS,LUSEAS                                    
+        IF ( .NOT. end_of_file ) READ (landuse_unit,*)LUCATS,LUSEAS
         FOUND_LU = LUTYPE.EQ.MMINLU
       ENDIF
       CALL wrf_dm_bcast_bytes (end_of_file, LWORDSIZE )
       IF ( .NOT. end_of_file ) THEN
-        CALL wrf_dm_bcast_string(lutype, 4)
+        CALL wrf_dm_bcast_string(lutype, 256)
         CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
         CALL wrf_dm_bcast_bytes (luseas,  IWORDSIZE )
         CALL wrf_dm_bcast_bytes (found_lu,  LWORDSIZE )
- 2000   FORMAT (A4)                                                
-        IF(FOUND_LU)THEN                                  
-          LUN=LUCATS                                             
-          NSN=LUSEAS                                            
-            PRINT *, 'LANDUSE TYPE = ',LUTYPE,' FOUND',        &
+        IF(FOUND_LU)THEN
+          LUN=LUCATS
+          NSN=LUSEAS
+            PRINT *, 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
                    LUCATS,' CATEGORIES',LUSEAS,' SEASONS',     &
                    ' WATER CATEGORY = ',ISWATER,               &
-                   ' SNOW CATEGORY = ',ISICE                
-        ENDIF                                             
-        DO ls=1,luseas                                   
+                   ' SNOW CATEGORY = ',ISICE
+        ENDIF
+        DO ls=1,luseas
           if ( wrf_dm_on_monitor() ) then
-            READ (landuse_unit,*)                                   
+            READ (landuse_unit,*)
           endif
-          DO LC=1,LUCATS                               
-            IF(found_lu)THEN                  
+          DO LC=1,LUCATS
+            IF(found_lu)THEN
               IF ( wrf_dm_on_monitor() ) THEN
-                READ (landuse_unit,*)LI,ALBD(LC,LS),SLMO(LC,LS),SFEM(LC,LS),        &       
-                           SFZ0(LC,LS),THERIN(LC,LS),SCFX(LC),SFHC(LC,LS)       
+                READ (landuse_unit,*)LI,ALBD(LC,LS),SLMO(LC,LS),SFEM(LC,LS),        &
+                           SFZ0(LC,LS),THERIN(LC,LS),SCFX(LC),SFHC(LC,LS)
               ENDIF
               CALL wrf_dm_bcast_bytes (LI,  IWORDSIZE )
               IF(LC.NE.LI)CALL wrf_error_fatal ( 'module_start: MISSING LANDUSE UNIT ' )
-            ELSE                                                            
+            ELSE
               IF ( wrf_dm_on_monitor() ) THEN
-                READ (landuse_unit,*)                                                  
+                READ (landuse_unit,*)
               ENDIF
-            ENDIF                                                         
-          ENDDO                                                          
-        ENDDO                                                           
+            ENDIF
+          ENDDO
+        ENDDO
         IF(NSN.EQ.1.AND.FOUND_LU) THEN
            ISN = 1
         END IF
@@ -725,9 +731,9 @@ integer myproc
       IF(.NOT. found_lu .AND. .NOT. end_of_file ) GOTO 1999
 !!! END OF 1999 LOOP
 
-      IF(.NOT. found_lu .OR. end_of_file )THEN                                         
+      IF(.NOT. found_lu .OR. end_of_file )THEN
         CALL wrf_message ( 'LANDUSE IN INPUT FILE DOES NOT MATCH LUTABLE: TABLE NOT USED' )
-      ENDIF                                                     
+      ENDIF
     ENDIF  ! allowed_to_read
 
     IF(FOUND_LU)THEN
@@ -739,40 +745,40 @@ integer myproc
         DO i = its, itf
           IS=nint(lu_index(i,j))
           ! only do this check on read-in data
-          IF(IS.LT.0.OR.IS.GT.LUN.AND.allowed_to_read)THEN                                        
+          IF(IS.LT.0.OR.IS.GT.LUN.AND.allowed_to_read)THEN
             WRITE ( wrf_err_message , * ) 'ERROR: LANDUSE OUTSIDE RANGE =',IS,' AT ',I,J,' LUN= ',LUN
             CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-          ENDIF                                                            
-!   SET NO-DATA POINTS (IS=0) TO WATER                                    
-          IF(IS.EQ.0)THEN                                                
-            IS=ISWATER                                                  
-          ENDIF                                                        
-          IF(.NOT.usemonalb)ALBBCK(I,J)=ALBD(IS,ISN)/100.                                  
+          ENDIF
+!   SET NO-DATA POINTS (IS=0) TO WATER
+          IF(IS.EQ.0)THEN
+            IS=ISWATER
+          ENDIF
+          IF(.NOT.usemonalb)ALBBCK(I,J)=ALBD(IS,ISN)/100.
           ALBEDO(I,J)=ALBBCK(I,J)
           IF(SNOWC(I,J) .GT. 0.5)ALBEDO(I,J)=ALBBCK(I,J)*(1.+SCFX(IS))
-          THC(I,J)=THERIN(IS,ISN)/100.                               
-          Z0(I,J)=SFZ0(IS,ISN)/100.                                
+          THC(I,J)=THERIN(IS,ISN)/100.
+          Z0(I,J)=SFZ0(IS,ISN)/100.
           ZNT(I,J)=Z0(I,J)
-          EMBCK(I,J)=SFEM(IS,ISN)                                  
-          EMISS(I,J)=EMBCK(I,J)                                  
-          MAVAIL(I,J)=SLMO(IS,ISN)                                
-          IF(IS.NE.ISWATER)THEN                                  
-            XLAND(I,J)=1.0                                      
-          ELSE                                                 
-            XLAND(I,J)=2.0                                    
-          ENDIF                                              
+          EMBCK(I,J)=SFEM(IS,ISN)
+          EMISS(I,J)=EMBCK(I,J)
+          MAVAIL(I,J)=SLMO(IS,ISN)
+          IF(IS.NE.ISWATER)THEN
+            XLAND(I,J)=1.0
+          ELSE
+            XLAND(I,J)=2.0
+          ENDIF
 !    SET SEA-ICE POINTS TO LAND WITH ICE/SNOW SURFACE PROPERTIES
           XICEM(I,J)=XICE(I,J)
           IF(XICE(I,J).GT.0.5)THEN
             XLAND(I,J)=1.0
             ALBBCK(I,J)=ALBD(ISICE,ISN)/100.
             ALBEDO(I,J)=ALBBCK(I,J)
-            THC(I,J)=THERIN(ISICE,ISN)/100.                              
-            Z0(I,J)=SFZ0(ISICE,ISN)/100.                               
+            THC(I,J)=THERIN(ISICE,ISN)/100.
+            Z0(I,J)=SFZ0(ISICE,ISN)/100.
             ZNT(I,J)=Z0(I,J)
-            EMBCK(I,J)=SFEM(ISICE,ISN)                                 
-            EMISS(I,J)=EMBCK(I,J)                                  
-            MAVAIL(I,J)=SLMO(ISICE,ISN)                               
+            EMBCK(I,J)=SFEM(ISICE,ISN)
+            EMISS(I,J)=EMBCK(I,J)
+            MAVAIL(I,J)=SLMO(ISICE,ISN)
           ENDIF
         ENDDO
       ENDDO
@@ -797,11 +803,11 @@ integer myproc
     ENDDO
 
     RETURN
-        
-   END SUBROUTINE landuse_init 
+
+   END SUBROUTINE landuse_init
 
 !=====================================================================
-   SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       & 
+   SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       &
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                       levsiz,XLAT,n_ozmixm,                           &
                       cldfra_old,                                     & ! Optional
@@ -809,7 +815,7 @@ integer myproc
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,                  &
-                      config_flags,restart,                          & 
+                      config_flags,restart,                          &
                       allowed_to_read, start_of_simulation,          &
                       ids, ide, jds, jde, kds, kde,                  &
                       ims, ime, jms, jme, kms, kme,                  &
@@ -921,7 +927,7 @@ integer myproc
    END SELECT mp_select
 
 !-- chose long wave radiation scheme
- 
+
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
         CASE (RRTMSCHEME)
@@ -972,7 +978,7 @@ integer myproc
 
    END SELECT lwrad_select
 !-- initialize short wave radiation scheme
- 
+
    swrad_select: SELECT CASE(config_flags%ra_sw_physics)
 
         CASE (SWRADSCHEME)
@@ -1026,13 +1032,14 @@ integer myproc
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
                 IVGTYP,ISLTYP,SMOIS,SMFR3D,mavail,              &
-                SNOWH,SH2O,FNDSOILW, FNDSNOWH,                  &
+                SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if  ( NMM_CORE == 1 )
                 Z0,XLAND,XICE,                                  &
 #else
                 ZNT,XLAND,XICE,                                 &
 #endif
                 SFCEVP,GRDFLX,                                  &
+                MMINLU,                                         &
                 allowed_to_read,                                &
                 start_of_simulation,                            &
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
@@ -1071,12 +1078,13 @@ integer myproc
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL, INTENT(IN)         ::   FNDSOILW, FNDSNOWH
+   LOGICAL, INTENT(IN)         ::   RDMAXALB
 
    INTEGER , INTENT(IN)        ::     ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN)        ::     num_soil_layers
-   INTEGER , INTENT(IN)        ::     UCMCALL 
+   INTEGER , INTENT(IN)        ::     UCMCALL
 
    REAL ,    INTENT(IN)        ::     DT, BLDT
    INTEGER , INTENT(INOUT)     ::     STEPBL
@@ -1085,12 +1093,13 @@ integer myproc
              INTENT(OUT) :: SMFR3D
 
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ),&
-                   INTENT(INOUT) :: SMOIS,SH2O,TSLB 
+                   INTENT(INOUT) :: SMOIS,SH2O,TSLB
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(INOUT)    ::                           SNOW, &
                                                          SNOWH, &
                                                          SNOWC, &
+                                                        SNOALB, &
                                                         CANWAT, &
                                                         MAVAIL, &
                                                         SMSTAV, &
@@ -1131,6 +1140,7 @@ integer myproc
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
+   CHARACTER(LEN=*), INTENT(IN)   :: MMINLU
    LOGICAL,  INTENT(IN)           :: allowed_to_read
    INTEGER :: isn, isfc
 
@@ -1245,7 +1255,7 @@ integer myproc
       CASE (SLABSCHEME)
 
            CALL slabinit(TSK,TMN,                              &
-                         TSLB,ZS,DZS,num_soil_layers,          & 
+                         TSLB,ZS,DZS,num_soil_layers,          &
                          allowed_to_read ,start_of_simulation ,&
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &
@@ -1269,7 +1279,8 @@ integer myproc
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
-                     FNDSOILW, FNDSNOWH,                       &
+                     MMINLU,                                   &
+                     SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
@@ -1313,7 +1324,8 @@ integer myproc
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
-                     FNDSOILW, FNDSNOWH,                       &
+                     MMINLU,                                   &
+                     SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
@@ -1449,7 +1461,7 @@ integer myproc
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: LOWLYR
 
 ! LOCAL VAR
-   
+
   INTEGER :: i,j,itf,jtf
 
 !--------------------------------------------------------------------
@@ -1557,7 +1569,7 @@ integer myproc
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
-   USE module_mp_morr_two_moment  
+   USE module_mp_morr_two_moment
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -1616,8 +1628,8 @@ integer myproc
                           its, ite, jts, jte, kts, kte            )
      CASE (THOMPSON)
          IF(start_of_simulation.or.restart)CALL thompson_init
-     CASE (MORR_TWO_MOMENT)          
-         CALL morr_two_moment_init  
+     CASE (MORR_TWO_MOMENT)
+         CALL morr_two_moment_init
 
      CASE DEFAULT
 
@@ -1734,7 +1746,7 @@ integer myproc
    REAL    , INTENT(IN)    :: cen_lat      ! domain center latitude
    REAL    , INTENT(IN)    :: cen_lon      ! domain center longitude
    REAL    , INTENT(IN)    :: stand_lon    ! domain longitude
-   REAL    , INTENT(IN)    :: true_lat1    ! domain standard parallel 
+   REAL    , INTENT(IN)    :: true_lat1    ! domain standard parallel
    REAL    , INTENT(IN)    :: true_lat2    ! domain second standard parallel
    INTEGER , INTENT(IN)    :: map_proj     ! map projection
    REAL, DIMENSION( ims:ime, jms:jme ),                            &
@@ -1754,7 +1766,7 @@ integer myproc
       IF ( obs_nudge_opt(inest) .eq. 0 ) RETURN
 
       e_sn = jde
-      CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &  
+      CALL fddaobs_init(obs_nudge_opt, maxdom, inest, parid,       &
                         idynin, dtramp, fdaend, restart,           &
                         obs_twindo_cg,                             &
                         obs_twindo, itimestep,                     &
@@ -1763,8 +1775,8 @@ integer myproc
                         xlat, xlong,                               &
                         e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,  &
                         fdob, ipf_init,                            &
-                        ids,ide, jds,jde, kds,kde,                 &  
-                        ims,ime, jms,jme, kms,kme,                 &  
+                        ids,ide, jds,jde, kds,kde,                 &
+                        ims,ime, jms,jme, kms,kme,                 &
                         its,ite, jts,jte, kts,kte)
 
    END SUBROUTINE fdob_init

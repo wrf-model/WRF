@@ -279,9 +279,13 @@
     CALL nl_set_map_proj ( grid%id , config_flags%map_proj )
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
-    IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
-         ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
-         ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
+    IF ( ierr .NE. 0 ) THEN
+       WRITE(wrf_err_message,*)'MMINLU error on input'
+       CALL wrf_debug ( 0 , wrf_err_message )
+       mminlu = " "
+    ELSE IF ( ( ( mminlu(1:1) .GE. "A" ) .AND. ( mminlu(1:1) .LE. "Z" ) ) .OR. &
+              ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
+              ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
        ! no-op, the mminlu field is probably OK
     ELSE IF ( mminlu(1:1) .EQ. " " ) THEN
        mminlu = " "

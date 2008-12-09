@@ -149,7 +149,7 @@
     ! in the traditional USGS dataset
 
     call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
-    if (ierr /= 0) then
+    if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
        call wrf_message("Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
        num_land_cat_compare = 24
 !      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")

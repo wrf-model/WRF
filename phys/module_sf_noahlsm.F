@@ -66,7 +66,7 @@ CONTAINS
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                        SOILW,SOILM,Q1,                                  &    !D
                        RDLAI2D,                                         &
-                       SNOTIME1, SNOALB2,                               &
+                       SNOTIME1,                                        &
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)                    !P
 ! ----------------------------------------------------------------------
@@ -292,7 +292,7 @@ CONTAINS
       REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,CH,CM,                        &
                             CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,    &
                             EMISSI
-      REAL, INTENT(INOUT):: SNOTIME1,SNOALB2
+      REAL, INTENT(INOUT):: SNOTIME1
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: ET
@@ -548,7 +548,7 @@ CONTAINS
               SNCOVR = MIN(SNCOVR,0.98)
             endif
               CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1,ALBEDO,EMISSI,   &
-                         DT,SNOWNG,SNOTIME1,SNOALB2)
+                         DT,SNOWNG,SNOTIME1)
             END IF
 ! ----------------------------------------------------------------------
 ! SNOW COVER, ALBEDO OVER SEA-ICE, GLACIAL ICE
@@ -875,7 +875,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
       SUBROUTINE ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI,   &
-                         DT,SNOWNG,SNOTIME1,SNOALB2)
+                         DT,SNOWNG,SNOTIME1)
 
 ! ----------------------------------------------------------------------
 ! CALCULATE ALBEDO INCLUDING SNOW EFFECT (0 -> 1)
@@ -898,8 +898,9 @@ CONTAINS
       REAL, INTENT(IN)  ::  ALB, SNOALB, EMBRD, SHDFAC, SHDMIN, SNCOVR, TSNOW
       REAL, INTENT(IN)  :: DT
       LOGICAL, INTENT(IN) :: SNOWNG
-      REAL, INTENT(INOUT):: SNOTIME1,SNOALB2
+      REAL, INTENT(INOUT):: SNOTIME1
       REAL, INTENT(OUT) ::  ALBEDO, EMISSI
+      REAL              :: SNOALB2
       REAL              :: TM,SNOALB1
       REAL, PARAMETER   :: COEF=0.5, SNACCA=0.94,SNACCB=0.58,SNTHWA=0.82,SNTHWB=0.46
 ! turn of vegetation effect

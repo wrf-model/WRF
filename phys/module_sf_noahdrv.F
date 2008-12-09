@@ -321,7 +321,6 @@ CONTAINS
 
       REAL  :: SMCDRY,SMCMAX,SMCREF,SMCWLT,SNOMLT,SOILM,SOILW,Q1,T1
       REAL  :: SNOTIME1    ! LSTSNW1 INITIAL NUMBER OF TIMESTEPS SINCE LAST SNOWFALL
-      REAL  :: SNOALB2    ! snow albedo
 
       REAL  :: DUMMY,Z0BRD
 !
@@ -562,10 +561,14 @@ CONTAINS
         CHK=CHS(I,J)
         SHMIN=SHDMIN(I,J)/100. !NEW
         SHMAX=SHDMAX(I,J)/100. !NEW
-!       kmh 06/28/2006 set SNOALB1 = 0.8 instead of 0.7
-! winter value        SNOALB1=0.80
-        SNOALB1=0.70        ! summer value
-!        SNOALB1=0.80        ! winter value
+        IF (ICE /= 0) THEN
+           ! kmh 06/28/2006 set SNOALB1 = 0.8 instead of 0.7
+           ! winter value        SNOALB1=0.80
+           SNOALB1=0.70        ! summer value
+           ! SNOALB1=0.80        ! winter value
+        ELSE
+           SNOALB1 = SNOALB(I,J)
+        ENDIF
 ! convert snow water equivalent from mm to meter
         SNEQV=SNOW(I,J)*0.001
 ! snow depth in meters
@@ -739,7 +742,7 @@ CONTAINS
                  RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                  SOILW,SOILM,Q1,                                  &    !D
                  RDLAI2D,                                         &
-                 SNOTIME1, SNOALB2,                               &
+                 SNOTIME1,                                        &
                  RIBB,                                            &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
 

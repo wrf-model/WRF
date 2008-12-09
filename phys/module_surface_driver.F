@@ -359,7 +359,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   Q10
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   QSHLTR
-   REAL, DIMENSION( ims:ime, jms:jme ) ::  RIB
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   TH10
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   TSHLTR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   U10
@@ -912,7 +911,7 @@ CONTAINS
               xland,                                               &
               ust,znt,z0,pblh,mavail,rmol,                         &
               akhs,akms,                                           &
-              rib,                                                 &
+              br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
               p1000mb,                                             &
@@ -1075,7 +1074,7 @@ CONTAINS
 ! MEK JUL2007
                 potevp,                                         & !o
                 rdlai2d,                                        &
-                rib,                                            & !?
+                br,                                             & !?
                   NOAHRES,                                      &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &

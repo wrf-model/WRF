@@ -144,24 +144,6 @@
       CALL wrf_debug ( 100, TRIM(wrf_err_message) )
     ENDIF
 
-    ! Test to make sure that the number of land categories is set correctly
-    ! The default is set to 24 somewhere, from the number of categories
-    ! in the traditional USGS dataset
-
-    call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
-    if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
-       call wrf_message("Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
-       num_land_cat_compare = 24
-!      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")
-    endif
-    if ( config_flags%num_land_cat /= num_land_cat_compare ) then
-       call wrf_message("----------------- ERROR -------------------")
-       WRITE(wrf_err_message,'("namelist    : NUM_LAND_CAT = ",I10)') config_flags%num_land_cat
-       call wrf_message(wrf_err_message)
-       WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
-       call wrf_message(wrf_err_message)
-       call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
-    endif
     !  Test to make sure that the input data is the right size.  Do this for input from real/ideal into
     !  WRF, and from the standard initialization into real.
 
@@ -297,6 +279,25 @@
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_char for MMINLU returns ' // TRIM(mminlu)
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_mminlu ( grid%id, mminlu )
+
+    ! Test to make sure that the number of land categories is set correctly
+    ! The default is set to 24 somewhere, from the number of categories
+    ! in the traditional USGS dataset
+
+    call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
+    if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
+       call wrf_message("Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
+       num_land_cat_compare = 24
+!      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")
+    endif
+    if ( config_flags%num_land_cat /= num_land_cat_compare ) then
+       call wrf_message("----------------- ERROR -------------------")
+       WRITE(wrf_err_message,'("namelist    : NUM_LAND_CAT = ",I10)') config_flags%num_land_cat
+       call wrf_message(wrf_err_message)
+       WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
+       call wrf_message(wrf_err_message)
+       call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
+    endif
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater

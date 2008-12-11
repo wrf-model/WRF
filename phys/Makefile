@@ -65,7 +65,9 @@ MODULES = \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
-	module_force_scm.o \
+	module_force_scm.o 
+
+FIRE_MODULES = \
         module_fr_sfire_driver.o \
         module_fr_sfire_atm.o \
         module_fr_sfire_model.o \
@@ -86,14 +88,14 @@ $(LIBTARGET) :
                   $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NMM_OBJS) $(NMM_MODULES) ; \
                 else                                                         \
                   $(MAKE) non_nmm                                          ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS)             ; \
+                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(FIRE_MODULES) $(OBJS)             ; \
                 fi
 
 include ../configure.wrf
 
 nmm_contrib : $(NMM_OBJS) $(NMM_MODULES) $(MODULES) $(OBJS)
 
-non_nmm : $(MODULES) $(OBJS)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(OBJS)
 
 clean:
 	@ echo 'use the clean script'

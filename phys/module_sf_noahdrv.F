@@ -561,18 +561,11 @@ CONTAINS
         CHK=CHS(I,J)
         SHMIN=SHDMIN(I,J)/100. !NEW
         SHMAX=SHDMAX(I,J)/100. !NEW
-        IF (ICE /= 0) THEN
-           ! kmh 06/28/2006 set SNOALB1 = 0.8 instead of 0.7
-           ! winter value        SNOALB1=0.80
-           SNOALB1=0.70        ! summer value
-           ! SNOALB1=0.80        ! winter value
-        ELSE
-           SNOALB1 = SNOALB(I,J)
-        ENDIF
 ! convert snow water equivalent from mm to meter
         SNEQV=SNOW(I,J)*0.001
 ! snow depth in meters
         SNOWHK=SNOWH(I,J)
+        SNCOVR=SNOWC(I,J)
 
 ! if "SR" present, set frac of frozen precip ("FFROZP") = snow-ratio ("SR", range:0-1)
 ! SR from e.g. Ferrier microphysics
@@ -638,6 +631,14 @@ CONTAINS
          IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'
             SOILTYP=7
           ENDIF
+        IF (ICE /= 0) THEN
+           ! kmh 06/28/2006 set SNOALB1 = 0.8 instead of 0.7
+           ! winter value        SNOALB1=0.80
+           SNOALB1=0.70        ! summer value
+           ! SNOALB1=0.80        ! winter value
+        ELSE
+           SNOALB1 = SNOALB(I,J)
+        ENDIF
           CMC=CANWAT(I,J)
 
 !-------------------------------------------

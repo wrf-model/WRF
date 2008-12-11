@@ -356,11 +356,12 @@ CONTAINS
             DO KZ = 2,NSOIL
                ZSOIL (KZ) = - SLDPTH (KZ) + ZSOIL (KZ -1)
             END DO
+         END IF
 ! ----------------------------------------------------------------------
 ! NEXT IS CRUCIAL CALL TO SET THE LAND-SURFACE PARAMETERS, INCLUDING
 ! SOIL-TYPE AND VEG-TYPE DEPENDENT PARAMETERS.
 ! ----------------------------------------------------------------------
-          CALL REDPRM (VEGTYP,SOILTYP,SLOPETYP,CFACTR,CMCMAX,RSMAX,TOPT,   &
+         CALL REDPRM (VEGTYP,SOILTYP,SLOPETYP,CFACTR,CMCMAX,RSMAX,TOPT,   &
                        REFKDT,KDT,SBETA, SHDFAC,RSMIN,RGL,HS,ZBOT,FRZX,    &
                          PSISAT,SLOPE,SNUP,SALP,BEXP,DKSAT,DWSAT,          &
                          SMCMAX,SMCWLT,SMCREF,SMCDRY,F1,QUARTZ,FXEXP,      &
@@ -368,7 +369,6 @@ CONTAINS
                          LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
                          ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
                          LSOIL,LOCAL)
-         END IF
 
 !urban
          IF(VEGTYP==ISURBAN)THEN

@@ -3555,7 +3555,8 @@ END
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-#include "HALO_NMM_INTERP_DOWN1.inc"
+!#include "HALO_NMM_INTERP_DOWN1.inc"
+#include "HALO_INTERP_DOWN.inc"
 
 #include "nest_interpdown_interp.inc"
 

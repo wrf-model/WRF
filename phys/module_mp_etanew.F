@@ -452,6 +452,7 @@ MODULE module_mp_etanew
                 QW=QW-QR
               ENDIF
             ENDIF
+            IF (QI .LE. 0.) F_RimeF(L,I,J)=1.
             RimeF_col(L)=F_RimeF(L,I,J)               ! (real)
             QI_col(L)=QI
             QR_col(L)=QR
@@ -484,12 +485,13 @@ MODULE module_mp_etanew
       !
       !--- REAL*4 array storage
       !
-            F_RimeF(L,I,J)=MAX(1., RimeF_col(L))
             IF (QI_col(L) .LE. EPSQ) THEN
               F_ice(L,I,J)=0.
               IF (T_col(L) .LT. T_ICEK) F_ice(L,I,J)=1.
+              F_RimeF(L,I,J)=1.
             ELSE
               F_ice(L,I,J)=MAX( 0., MIN(1., QI_col(L)/WC_col(L)) )
+              F_RimeF(L,I,J)=MAX(1., RimeF_col(L))
             ENDIF
             IF (QR_col(L) .LE. EPSQ) THEN
               DUM=0

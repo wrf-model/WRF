@@ -15,6 +15,7 @@ MODULES =                 		\
         module_IGWAVE_ADJUST.o         	\
         module_NONHY_DYNAM.o         	\
         module_PHYSICS_CALLS.o       	\
+        module_GWD.o                    \
         module_MPPINIT.o        	\
         module_TIMERS.o                 \
         module_si_io_nmm.o              \
@@ -33,6 +34,7 @@ MODULES =                 		\
 OBJS    = 		          	\
 	init_modules_nmm.o  		\
 	start_domain_nmm.o  		\
+	shift_domain_nmm.o  		\
 	solve_nmm.o         		\
 	RDTEMP.o    			\
 	BUCKETS.o 			\
@@ -79,10 +81,13 @@ module_PHYSICS_CALLS.o: \
 		../phys/module_sf_myjsfc.o  \
 		../phys/module_surface_driver.o  \
 		../phys/module_pbl_driver.o  \
+                ./module_GWD.o  \
 		../phys/module_cu_bmj.o  \
 		../phys/module_cumulus_driver.o  \
 		../phys/module_mp_etanew.o  \
 		../phys/module_microphysics_driver.o
+
+module_GWD.o: ../frame/module_dm.o
 
 module_initialize_real.o: ../share/module_model_constants.o
 

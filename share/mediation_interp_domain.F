@@ -157,9 +157,8 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 !
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
-!    CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,   &
 #if defined(MOVE_NESTS) || (!defined(SGIALTIX))
-  CALL alloc_space_field ( grid, grid%id , 1 , 3 , .FALSE. ,   &
+  CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
                            grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose

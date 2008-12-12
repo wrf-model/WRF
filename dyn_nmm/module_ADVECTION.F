@@ -974,6 +974,8 @@
 !   02-02-06  BLACK    - CONVERTED TO WRF FORMAT
 !   02-09-06  WOLFE    - MORE CONVERSION TO GLOBAL INDEXING
 !   04-11-23  BLACK    - THREADED
+!   05-12-14  BLACK    - CONVERTED FROM IKJ TO IJK
+!   07-08-14  janjic   - bc & no conservation in the advection step
 !
 ! USAGE: CALL VAD2 FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
@@ -1021,7 +1023,6 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM,Q,Q2
 !
-!----------------------------------------------------------------------
 !***  LOCAL VARIABLES
 !----------------------------------------------------------------------
 !
@@ -1033,18 +1034,17 @@
 !
       INTEGER,DIMENSION(KTS:KTE) :: LA
 !
-      REAL*8 :: ADDT,AFRP,D2PQE,D2PQQ,D2PQW,DEP,DETAP,DPDN,DPUP,DQP     &
+      REAL*8 :: ADDT,AFRP,D2PQE,D2PQQ,D2PQW,DEP,DETAP,DQP               &
      &       ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                           &
      &       ,Q00,Q4P,QP,QP0                                            &
-     &       ,RFACEK,RFACQK,RFACWK,RFC,RR                               &
+     &       ,rdpdn,rdpup,sfacek,sfacqk,sfacwk,RFC,RR                   &
      &       ,SUMNE,SUMNQ,SUMNW,SUMPE,SUMPQ,SUMPW                       &
      &       ,W00,W4P,WP,WP0
-
-      REAL :: SFACEK,SFACQK,SFACWK
 !
       REAL,DIMENSION(KTS:KTE) :: AFR,DEL,DQL,DWL,E3,E4,PETDTK           &
      &                          ,RFACE,RFACQ,RFACW,Q3,Q4,W3,W4
 !
+!-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
@@ -1052,14 +1052,14 @@
 !
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
-!$omp& private(afr,afrp,d2pqe,d2pqq,d2pqw,del,dep,detap,dpdn,dpup       &
+!$omp& private(afr,afrp,bot,d2pqe,d2pqq,d2pqw,del,dep,detap,dpdn,dpup   &
 !$omp&        ,dql,dqp,dwl,dwp,e00,e3,e4,e4p,ep,ep0,haddt,i,j,k         &
 !$omp&        ,la,lap,llap,petdtk,q00,q3,q4,q4p,qp,qp0,rfacek,rfacqk    &
-!$omp&        ,rfacwk,rfc,rr,sumne,sumnq,sumnw,sumpe,sumpq,sumpw        &
-!$omp&        ,w00,w3,w4,w4p,wp,wp0,sfacek,sfacqk,sfacwk)
+!$omp&        ,rfacwk,rfc,rr,sumne,sumnq,sumnw,sumpe,sumpq,sumpw,top    &
+!$omp&        ,w00,w3,w4,w4p,wp,wp0)
 !-----------------------------------------------------------------------
 !
-      main_integration : DO J=MYJS2,MYJE2
+      main_integration: DO J=MYJS2,MYJE2
 !
 !-----------------------------------------------------------------------
 !
@@ -1090,10 +1090,10 @@
 !
             PETDTK(KTS)=PETDT(I,J,KTS)*0.5
 !
-          ELSE   
+          ELSE
 !
 !-----------------------------------------------------------------------
-!***	PERFORM HORIZONTAL AVERAGING OF VERTICAL VELOCITY
+!***    PERFORM HORIZONTAL AVERAGING OF VERTICAL VELOCITY
 !-----------------------------------------------------------------------
 !
             PETDTK(KTE)=(PETDT(I+IHW(J-1),J-1,KTE-1)                    &
@@ -1139,44 +1139,41 @@
             LA(K)=LAP
             LLAP=K+LAP
 !
-            IF(LLAP>KTS-1.AND.LLAP<KTE+1)THEN                             !zjmod
-              RR=ABS(RR/((AETA1(LLAP)-AETA1(K))*PDTOP                   &
-     &                  +(AETA2(LLAP)-AETA2(K))*PDSL(I,J)))
-              IF(RR>0.9)RR=0.9
+            if(llap.gt.kts-1.and.llap.lt.kte+1) then ! internal and outflow pts.
+              rr=abs(rr &
+     &          /((aeta1(llap)-aeta1(k))*pdtop &
+     &           +(aeta2(llap)-aeta2(k))*pdsl(i,j)))
+              if(rr.gt.0.999) rr=0.999   
 !
               AFR(K)=(((FF4*RR+FF3)*RR+FF2)*RR+FF1)*RR
-              DQP=(Q3(LLAP)-Q3(K))*RR
-              DWP=(W3(LLAP)-W3(K))*RR
-              DEP=(E3(LLAP)-E3(K))*RR
-              DQL(K)=DQP
-              DWL(K)=DWP
-              DEL(K)=DEP
-            ELSE
-              RR=0.
-              AFR(K)=0.
-              DQL(K)=0.
-              DWL(K)=0.
-              DEL(K)=0.
-            ENDIF
+              dql(k)=(q3(llap)-q3(k))*rr
+              dwl(k)=(w3(llap)-w3(k))*rr
+              del(k)=(e3(llap)-e3(k))*rr
+            elseif(llap.eq.kts-1) then
+!
+!chem              rr=abs(rr &
+!chem                /((1.-aeta2(kts))*pdsl(i,j)))
+!chem              afr(kts)=0.
+!chem              dql(kts)=(epsq  -q3(kts))*rr
+!chem              dwl(kts)=(climit-w3(kts))*rr
+!chem              del(kts)=(epsq2 -e3(kts))*rr
+!
+              rr=0.
+              afr(kts)=0.
+              dql(kts)=0.
+              dwl(kts)=0.
+              del(kts)=0.
+            else
+              rr=abs(rr &
+                /(aeta1(kte)*pdtop))
+              afr(kte)=0.
+              dql(kte)=(epsq  -q3(kte))*rr
+              dwl(kte)=(climit-w3(kte))*rr
+              del(kte)=(epsq2 -e3(kte))*rr
+            endif
           ENDDO
 !
 !-----------------------------------------------------------------------
-!
-          IF(LA(KTE-1)>0)THEN
-            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))             &
-     &         /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
-            DQL(KTE)=-DQL(KTE-1)*RFC
-            DWL(KTE)=-DWL(KTE-1)*RFC
-            DEL(KTE)=-DEL(KTE-1)*RFC
-          ENDIF
-!
-          IF(LA(KTS+1)<0)THEN
-            RFC=(DETA1(KTS+1)*PDTOP+DETA2(KTS+1)*PDSL(I,J))             &
-     &         /(DETA1(KTS  )*PDTOP+DETA2(KTS  )*PDSL(I,J))
-            DQL(KTS)=-DQL(KTS+1)*RFC
-            DWL(KTS)=-DWL(KTS+1)*RFC
-            DEL(KTS)=-DEL(KTS+1)*RFC
-          ENDIF
 !
           DO K=KTS,KTE
             Q4(K)=Q3(K)+DQL(K)
@@ -1195,9 +1192,15 @@
           SUMPE=0.
           SUMNE=0.
 !
-          antifiltering_limiters: DO K=KTE-1,KTS+1,-1
+!***  ANTI-FILTERING LIMITERS
+!
+          antifilter: DO K=KTE-1,KTS+1,-1
 !
             DETAP=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+!
+            DQL(K)=0.
+            DWL(K)=0.
+            DEL(K)=0.
 !
             Q4P=Q4(K)
             W4P=W4(K)
@@ -1205,18 +1208,25 @@
 !
             LAP=LA(K)
 !
-            DPDN=(AETA1(K+LAP)-AETA1(K))*PDTOP                          &
-     &          +(AETA2(K+LAP)-AETA2(K))*PDSL(I,J)
-            DPUP=(AETA1(K)-AETA1(K-LAP))*PDTOP                          &
-     &          +(AETA2(K)-AETA2(K-LAP))*PDSL(I,J)
+            if(lap.ne.0)then
+              rdpdn=1./((aeta1(k+lap)-aeta1(k))*pdtop &
+     &                 +(aeta2(k+lap)-aeta2(k))*pdsl(i,j))
+              rdpup=1./((aeta1(k)-aeta1(k-lap))*pdtop &
+     &                 +(aeta2(k)-aeta2(k-lap))*pdsl(i,j))
 !
-            AFRP=2.*AFR(K)*DPDN*DPDN/(DPDN+DPUP)
-            D2PQQ=((Q4(K+LAP)-Q4P)/DPDN                                 &
-     &            -(Q4P-Q4(K-LAP))/DPUP)*AFRP
-            D2PQW=((W4(K+LAP)-W4P)/DPDN                                 &
-     &            -(W4P-W4(K-LAP))/DPUP)*AFRP
-            D2PQE=((E4(K+LAP)-E4P)/DPDN                                 &
-     &            -(E4P-E4(K-LAP))/DPUP)*AFRP
+              afrp=afr(k)*detap
+!
+              d2pqq=((q4(k+lap)-q4p)*rdpdn &
+     &              -(q4p-q4(k-lap))*rdpup)*afrp
+              d2pqw=((w4(k+lap)-w4p)*rdpdn &
+     &              -(w4p-w4(k-lap))*rdpup)*afrp
+              d2pqe=((e4(k+lap)-e4p)*rdpdn &
+     &              -(e4p-e4(k-lap))*rdpup)*afrp
+            ELSE
+              D2PQQ=0.
+              D2PQW=0.
+              D2PQE=0.
+            ENDIF
 !
             QP=Q4P-D2PQQ
             WP=W4P-D2PQW
@@ -1231,93 +1241,78 @@
             E00=E3(K)
             EP0=E3(K+LAP)
 !
-            QP=MAX(QP,MIN(Q00,QP0))
-            QP=MIN(QP,MAX(Q00,QP0))
-            WP=MAX(WP,MIN(W00,WP0))
-            WP=MIN(WP,MAX(W00,WP0))
-            EP=MAX(EP,MIN(E00,EP0))
-            EP=MIN(EP,MAX(E00,EP0))
+            IF(LAP/=0)THEN
+              QP=MAX(QP,MIN(Q00,QP0))
+              QP=MIN(QP,MAX(Q00,QP0))
+              WP=MAX(WP,MIN(W00,WP0))
+              WP=MIN(WP,MAX(W00,WP0))
+              EP=MAX(EP,MIN(E00,EP0))
+              EP=MIN(EP,MAX(E00,EP0))
+            ENDIF
 !
-            DQP=QP-Q00
-            DWP=WP-W00
-            DEP=EP-E00
+            dqp=qp-q4p
+            dwp=wp-w4p
+            dep=ep-e4p
 !
             DQL(K)=DQP
             DWL(K)=DWP
             DEL(K)=DEP
 !
-          ENDDO antifiltering_limiters
-!
-!-----------------------------------------------------------------------
-!
-          IF(LA(KTE-1)>0)THEN
-            RFC=(DETA1(KTE-1)*PDTOP+DETA2(KTE-1)*PDSL(I,J))             &
-     &         /(DETA1(KTE  )*PDTOP+DETA2(KTE  )*PDSL(I,J))
-            DQL(KTE)=-DQL(KTE-1)*RFC+DQL(KTE)
-            DWL(KTE)=-DWL(KTE-1)*RFC+DWL(KTE)
-            DEL(KTE)=-DEL(KTE-1)*RFC+DEL(KTE)
-          ENDIF
-!
-          IF(LA(KTS+1)<0)THEN
-            RFC=(DETA1(KTS+1)*PDTOP+DETA2(KTS+1)*PDSL(I,J))             &
-     &         /(DETA1(KTS  )*PDTOP+DETA2(KTS  )*PDSL(I,J))
-            DQL(KTS)=-DQL(KTS+1)*RFC+DQL(KTS)
-            DWL(KTS)=-DWL(KTS+1)*RFC+DWL(KTS)
-            DEL(KTS)=-DEL(KTS+1)*RFC+DEL(KTS)
-          ENDIF
-!
-          DO K=KTS,KTE
-            DETAP=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
-            DQP=DQL(K)*DETAP 
-            DWP=DWL(K)*DETAP
-            DEP=DEL(K)*DETAP
+            DQP=DQP*DETAP
+            DWP=DWP*DETAP
+            DEP=DEP*DETAP
 !
             IF(DQP>0.)THEN
               SUMPQ=SUMPQ+DQP
             ELSE
               SUMNQ=SUMNQ+DQP
             ENDIF
+!
             IF(DWP>0.)THEN
               SUMPW=SUMPW+DWP
             ELSE
               SUMNW=SUMNW+DWP
             ENDIF
+!
             IF(DEP>0.)THEN
               SUMPE=SUMPE+DEP
             ELSE
               SUMNE=SUMNE+DEP
             ENDIF
-          ENDDO
+!
+          ENDDO antifilter
+!
+!-----------------------------------------------------------------------
+!
+          DQL(KTS)=0.
+          DWL(KTS)=0.
+          DEL(KTS)=0.
+!
+          DQL(KTE)=0.
+          DWL(KTE)=0.
+          DEL(KTE)=0.
 !
 !-----------------------------------------------------------------------
 !***  FIRST MOMENT CONSERVING FACTOR
 !-----------------------------------------------------------------------
 !
-          IF(SUMPQ>1.E-9)THEN
-            SFACQK=-SUMNQ/SUMPQ
-          ELSE
-            SFACQK=1.
-          ENDIF
+          if(sumpq*(-sumnq).gt.1.e-9) then
+            sfacqk=-sumnq/sumpq
+          else
+            sfacqk=0.
+          endif
 !
-          IF(SUMPW>1.E-9)THEN
-            SFACWK=-SUMNW/SUMPW
-          ELSE
-            SFACWK=1.
-          ENDIF
+          if(sumpw*(-sumnw).gt.1.e-9) then
+            sfacwk=-sumnw/sumpw
+          else
+            sfacwk=0.
+          endif
 !
-          IF(SUMPE>1.E-9)THEN
-            SFACEK=-SUMNE/SUMPE
-          ELSE
-            SFACEK=1.
-          ENDIF
-!
-          IF(SFACQK<CONSERVE_MIN.OR.SFACQK>CONSERVE_MAX)SFACQK=1.
-          IF(SFACWK<CONSERVE_MIN.OR.SFACWK>CONSERVE_MAX)SFACWK=1.
-          IF(SFACEK<CONSERVE_MIN.OR.SFACEK>CONSERVE_MAX)SFACEK=1.
-!
-          RFACQK=1./SFACQK
-          RFACWK=1./SFACWK
-          RFACEK=1./SFACEK
+          if(sumpe*(-sumne).gt.1.e-9) then
+            sfacek=-sumne/sumpe
+          else
+            sfacek=0.
+          endif
 !
 !-----------------------------------------------------------------------
 !***  IMPOSE CONSERVATION ON ANTI-FILTERING
@@ -1325,45 +1320,54 @@
 !
           DO K=KTE,KTS,-1
 !
-            DQP=DQL(K)
-            IF(SFACQK>=1.)THEN
-              IF(DQP<0.)DQP=DQP*RFACQK
-            ELSE
-              IF(DQP>0.)DQP=DQP*SFACQK
-            ENDIF
-            Q(I,J,K)=Q3(K)+DQP
+            dqp=dql(k)
+            if(sfacqk.gt.0.) then
+              if(sfacqk.ge.1.) then
+                if(dqp.lt.0.) dqp=dqp/sfacqk
+              else
+                if(dqp.gt.0.) dqp=dqp*sfacqk
+              endif
+            else
+              dqp=0.
+            endif
+            q  (i,j,k)=q4(k)+dqp
 !
-            DWP=DWL(K)
-            IF(SFACWK>=1.)THEN
-              IF(DWP<0.)DWP=DWP*RFACWK
-            ELSE
-              IF(DWP>0.)DWP=DWP*SFACWK
-            ENDIF  
-            CWM(I,J,K)=W3(K)+DWP
+            dwp=dwl(k)
+            if(sfacwk.gt.0.) then
+              if(sfacwk.ge.1.) then
+                if(dwp.lt.0.) dwp=dwp/sfacwk
+              else
+                if(dwp.gt.0.) dwp=dwp*sfacwk
+              endif
+            else
+              dwp=0.
+            endif
+            cwm(i,j,k)=w4(k)+dwp
 !
-            DEP=DEL(K)
-            IF(SFACEK>=1.)THEN
-              IF(DEP<0.)DEP=DEP*RFACEK
-            ELSE
-              IF(DEP>0.)DWP=DWP*SFACEK
-            ENDIF  
-            E3(K)=E3(K)+DEP
+            dep=del(k)
+            if(sfacek.gt.0.) then
+              if(sfacek.ge.1.) then
+                if(dep.lt.0.) dep=dep/sfacek
+              else
+                if(dep.gt.0.) dep=dep*sfacek
+              endif
+            else
+              dep=0.
+            endif
+            e3 (    k)=e4(k)+dep
 !
           ENDDO
-!
 !-----------------------------------------------------------------------
-!
           HBM2IJ=HBM2(I,J)
           Q2(I,J,KTE)=MAX(E3(KTE)+E3(KTE)-EPSQ2,EPSQ2)*HBM2IJ           &
-     &               +Q2(I,J,KTE)*(1.-HBM2IJ)
+       &             +Q2(I,J,KTE)*(1.-HBM2IJ)
           DO K=KTE-1,KTS+1,-1
             Q2(I,J,K)=MAX(E3(K)+E3(K)-Q2(I,J,K+1),EPSQ2)*HBM2IJ         &
-     &               +Q2(I,J,K)*(1.-HBM2IJ)
+       &             +Q2(I,J,K)*(1.-HBM2IJ)
           ENDDO
-!
 !-----------------------------------------------------------------------
 !
-        ENDDO main_iloop 
+        ENDDO main_iloop
 !
 !-----------------------------------------------------------------------
 !
@@ -1373,9 +1377,11 @@
 !
       END SUBROUTINE VAD2
 !
+
+!-----------------------------------------------------------------------
+!
 !-----------------------------------------------------------------------
 !***********************************************************************
-!-----------------------------------------------------------------------
       SUBROUTINE HAD2(                                                  &
 #if defined(DM_PARALLEL)
      &                domdesc ,                                         &
@@ -1411,6 +1417,7 @@
 !   03-05-23  JANJIC   - ADDED SLOPE FACTOR
 !   04-11-23  BLACK    - THREADED
 !   05-12-14  BLACK    - CONVERTED FROM IKJ TO IJK
+!   07-08-14  janjic   - no conservation in advection step
 !
 ! USAGE: CALL HAD2 FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
@@ -1597,8 +1604,8 @@
 !
           JFPF(I,J,K)=J-JFP
           JFQF(I,J,K)=J-JFQ
-      if(i==111.and.j==438.and.k==1)then
-      endif
+!     if(i==111.and.j==438.and.k==1)then
+!     endif
 !
 !-----------------------------------------------------------------------
           IF(.NOT.HYDRO)THEN ! z currently not available for hydro=.true.
@@ -1764,9 +1771,13 @@
           ESTIJ=MAX(ESTIJ,MIN(E00,EP0,E0Q))
           ESTIJ=MIN(ESTIJ,MAX(E00,EP0,E0Q))
 !
-          DQSTIJ=QSTIJ-Q(I,J,K)
-          DWSTIJ=WSTIJ-CWM(I,J,K)
-          DESTIJ=ESTIJ-E1(I,J,K)
+!          DQSTIJ=QSTIJ-Q(I,J,K)
+!          DWSTIJ=WSTIJ-CWM(I,J,K)
+!          DESTIJ=ESTIJ-E1(I,J,K)
+!
+          dqstij=qstij-q1(i,j,k)
+          dwstij=wstij-w1(i,j,k)
+          destij=estij-e2(i,j,k)
 !
           DQST(I,J,K)=DQSTIJ
           DWST(I,J,K)=DWSTIJ
@@ -1958,63 +1969,69 @@
 !***  IMPOSE CONSERVATION ON ANTI-FILTERING
 !-----------------------------------------------------------------------
 !
-        DO J=MYJS2,MYJE2
-          IF(RFACQ<1.)THEN
+        if(rfacq<1.)then
+          do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
               DQSTIJ=DQST(I,J,K)
               RFQIJ=HBM2(I,J)*(RFACQ-1.)+1.
               IF(DQSTIJ>=0.)DQSTIJ=DQSTIJ*RFQIJ
-              Q(I,J,K)=Q(I,J,K)+DQSTIJ
+              q(i,j,k)=q1(i,j,k)+dqstij
             ENDDO
-          ELSE
+          enddo
+        else
+          do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
               DQSTIJ=DQST(I,J,K)
               RFQIJ=HBM2(I,J)*(RFACQ-1.)+1.
               IF(DQSTIJ<0.)DQSTIJ=DQSTIJ/RFQIJ
-              Q(I,J,K)=Q(I,J,K)+DQSTIJ
+              q(i,j,k)=q1(i,j,k)+dqstij
             ENDDO
-          ENDIF
-        ENDDO
+          enddo
+        endif
 !
 !-----------------------------------------------------------------------
 !
-        DO J=MYJS2,MYJE2
-          IF(RFACW<1.)THEN
+        if(rfacw<1.)then
+          do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
               DWSTIJ=DWST(I,J,K)
               RFWIJ=HBM2(I,J)*(RFACW-1.)+1.
               IF(DWSTIJ>=0.)DWSTIJ=DWSTIJ*RFWIJ
-              CWM(I,J,K)=CWM(I,J,K)+DWSTIJ
+              cwm(i,j,k)=w1(i,j,k)+dwstij
             ENDDO
-          ELSE
+          enddo
+        else
+          do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
               DWSTIJ=DWST(I,J,K)
               RFWIJ=HBM2(I,J)*(RFACW-1.)+1.
               IF(DWSTIJ<0.)DWSTIJ=DWSTIJ/RFWIJ
-              CWM(I,J,K)=CWM(I,J,K)+DWSTIJ
+              cwm(i,j,k)=w1(i,j,k)+dwstij
             ENDDO
-          ENDIF
-        ENDDO
-!
+          enddo
+        endif
+
 !-----------------------------------------------------------------------
 !
-        DO J=MYJS2,MYJE2
-          IF(RFACE<1.)THEN
+        if(rface<1.)then
+          do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
               DESTIJ=DEST(I,J,K)
               RFEIJ=HBM2(I,J)*(RFACE-1.)+1.
               IF(DESTIJ>=0.)DESTIJ=DESTIJ*RFEIJ
-              E1(I,J,K)=E1(I,J,K)+DESTIJ
+              e1(i,j,k)=e2(i,j,k)+destij
             ENDDO
-          ELSE
+          enddo
+        else
+          do j=MYJS2,MYJE2
             DO I=MYIS1,MYIE1
               DESTIJ=DEST(I,J,K)
               RFEIJ=HBM2(I,J)*(RFACE-1.)+1.
               IF(DESTIJ<0.)DESTIJ=DESTIJ/RFEIJ
-              E1(I,J,K)=E1(I,J,K)+DESTIJ
+              e1(i,j,k)=e2(i,j,k)+destij
             ENDDO
-          ENDIF
-        ENDDO
+          enddo
+        endif
 !
 !-----------------------------------------------------------------------
 !

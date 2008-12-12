@@ -101,7 +101,7 @@ CONTAINS
 
 ! Local
 
-    REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc
+    REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
     INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask
     INTEGER                             :: ij
     INTEGER  num_roof_layers
@@ -475,7 +475,7 @@ BENCH_START(pbl_driver_tim)
      &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=p8w            &
      &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
      &        ,PSIM=psim          ,P_PHY=p_phy        ,QFX=grid%qfx            &
-     &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0                                &
+     &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
      &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
      &        ,RQVBLTEN=grid%rqvblten  ,RTHBLTEN=grid%rthblten  ,RUBLTEN=grid%rublten    &

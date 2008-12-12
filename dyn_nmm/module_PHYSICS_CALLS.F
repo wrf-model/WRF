@@ -21,6 +21,7 @@
       USE MODULE_SF_MYJSFC
       USE MODULE_SURFACE_DRIVER
       USE MODULE_PBL_DRIVER
+      USE MODULE_GWD
       USE MODULE_CU_BMJ
       USE MODULE_CUMULUS_DRIVER
       USE MODULE_MP_ETANEW
@@ -628,7 +629,7 @@
 !- RLWIN/RSWIN - downward longwave/shortwave at the surface (also TOTLWDN/TOTSWDN in RADIATION)
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
-     &                ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ             &
+     &                ,FIS,Z0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ       &
      &                ,MOIST,RMOL,MOL                                   &
      &                ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT               &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
@@ -644,9 +645,12 @@
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
-     &                ,UZ0H,VZ0H,DUDT,DVDT                              &
+     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc              & ! GWD
      &                ,RTHBLTEN,RQVBLTEN                                &
      &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
+     &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
+     &                ,HLENS,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX      & ! GWD
+     &                ,CROT,SROT                                        & ! GWD
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -676,6 +680,7 @@
 !   02-05-03  JANJIC     - REMOVAL OF SUPERSATURATION AT 2m AND 10m
 !   04-11-18  BLACK      - THREADED
 !   05-12-15  BLACK      - CONVERTED FROM IKJ TO IJK
+!   07-05-15  FERRIER    - ADDED GRAVITY WAVE DRAG (GWD) & MOUNTAIN BLOCKING
 !
 ! USAGE: CALL TURBL FROM SOLVE_NMM
 !
@@ -719,6 +724,9 @@
      &                                             ,SHDMIN,SHDMAX       &
 !    &                                             ,SICE,SIGT4,SM,SR    & !Bandaid
      &                                             ,SIGT4               &
+     &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
+     &                ,HLENS,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX      & ! GWD
+     &                ,CROT,SROT                                        & ! GWD
      &                                             ,SST,VBM2,VEGFRC
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
@@ -732,6 +740,7 @@
      &                                                ,ALBEDO           &
      &                                                ,BGROFF,CMC       &
      &                                                ,MAVAIL,MOL       &
+     &                                                ,MIXHT            &
      &                                                ,PBLH,POTEVP      &
      &                                                ,POTFLX,PREC      &
      &                                                ,QCG,QS,QSG       &
@@ -755,7 +764,8 @@
      &                                              ,ASWOUT,ASWTOA      &
      &                                              ,PSHLTR,Q10,QSHLTR  &
      &                                              ,TH10,TSHLTR        &
-     &                                              ,U10,V10
+     &                                              ,U10,V10            & ! GWD
+     &                                              ,UGWDsfc,VGWDsfc      ! GWD
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
                                                     ,SFCEXC,SMSTAV      &
@@ -812,7 +822,7 @@
      &       ,U_FRAME,V_FRAME,XLVRW
 !
       REAL :: APES,CKLQ,EXNER,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX,RLIVWV   &
-     &       ,THBOT
+     &       ,THBOT,DPL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: BR,CHKLOWQ,CT,CWMLOW,ELFLX     &
      &                                  ,EXNSFC,FACTRS,FLHC,FLQC,GZ1OZ0 &
@@ -827,8 +837,10 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY,DZ   &
      &                                          ,P_PHY,P8W,PI_PHY       &
      &                                          ,RQCBLTEN,RQIBLTEN      &
-     &                                          ,RR                     &
+!BSF &                                     ,RQSBLTEN,RQRBLTEN,RQGBLTEN  &
+     &                                          ,RR,DELP                & ! GWD
      &                                          ,T_PHY,TH_PHY,TKE       &
+     &                                          ,DUDT_GWD,DVDT_GWD      & ! GWD
      &                                          ,U_PHY,V_PHY,Z
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
@@ -838,6 +850,13 @@
       LOGICAL :: E_BDY,WARM_RAIN
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
+!
+      INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
+      LOGICAL :: FQ_I                    !BSF
+
+      CHARACTER(len=255) :: message
+!dbg integer :: kpblmin,kpblmax,lpblmin,lpblmax    !dbg
+!
 !
     INTEGER  :: isurban
     CHARACTER(len=256) :: MMINLU
@@ -1016,10 +1035,15 @@
           RQVBLTEN(I,K,J)=0.
           RQCBLTEN(I,K,J)=0.
           RQIBLTEN(I,K,J)=0.
+!BSF          RQSBLTEN(I,K,J)=0.
+!BSF          RQRBLTEN(I,K,J)=0.
+!BSF          RQGBLTEN(I,K,J)=0.
 !
-          Z(I,K+1,J)=Z(I,K,J)+TL/PLYR                                   &
-     &              *(DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J))*ROG            &
-                    *(Q(I,J,K)*P608-CWML+1.)
+!-- Next 3 lines modified for GWD
+!
+          DPL=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
+          Z(I,K+1,J)=Z(I,K,J)+TL/PLYR*DPL*ROG*(Q(I,J,K)*P608-CWML+1.)
+          DELP(I,K,J)=DPL
           DZ(I,K,J)=Z(I,K+1,J)-Z(I,K,J)
         ENDDO
       ENDDO
@@ -1230,15 +1254,27 @@
       ENDDO
       ENDDO
 !
+!BSF: Logical FQ_I index PQ_I are set to values associated with snow
+!     for the ETAMPNEW scheme so that they can be mixed by the PBL schemes.
+!
+      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+         FQ_I=F_QS
+         PQ_I=P_QS
+      ELSE
+         FQ_I=F_QI
+         PQ_I=P_QI
+      ENDIF
+!
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &
      &               ,U_FRAME=U_FRAME,V_FRAME=V_FRAME                 &
      &               ,RUBLTEN=DUDT_PHY,RVBLTEN=DVDT_PHY               &
-     &               ,RTHBLTEN=RTHBLTEN                               &
-     &               ,RQVBLTEN=RQVBLTEN,RQCBLTEN=RQCBLTEN             &
-     &               ,RQIBLTEN=RQIBLTEN                               &
+     &               ,RTHBLTEN=RTHBLTEN,RQVBLTEN=RQVBLTEN             & !BSF
+     &               ,RQCBLTEN=RQCBLTEN,RQIBLTEN=RQIBLTEN             & !BSF
+!BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
+!BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,HT=SFCZ             &
-     &               ,UST=USTAR,PBLH=PBLH                             &
+     &               ,UST=USTAR,MIXHT=MIXHT,PBLH=PBLH                 &
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
      &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
      &               ,P_PHY=P_PHY,PI_PHY=PI_PHY,P8W=P8W,T_PHY=T_PHY   &
@@ -1260,8 +1296,8 @@
                 ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
+     &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &
      &               ,QR_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR &
-     &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &               ,HOL=HOL)
@@ -1335,8 +1371,9 @@
         DO I=MYIS,MYIE1
 !         TSHLTR(I,J)=TSHLTR(I,J)*(1.E5/PSHLTR(I,J))**RCP
           IF(TSHLTR(I,J)<200..OR.TSHLTR(I,J)>350.)THEN
-            WRITE(0,*)'Troublesome TSHLTR...I,J,TSHLTR,PSHLTR: '        &
+            WRITE(message,*)'Troublesome TSHLTR...I,J,TSHLTR,PSHLTR: '        &
                       ,I,J,TSHLTR(I,J),PSHLTR(I,J)
+            CALL wrf_message(trim(message))
           ENDIF
 	ENDDO
 	ENDDO
@@ -1409,6 +1446,44 @@
       ENDDO
       ENDDO
 !
+!=======================================================================
+!===  Begin gravity wave drag (GWD) and mountain blocking (MB)  ========
+!=======================================================================
+!
+      IGS=MYIS1
+      IGE=MYIE1
+      JGS=MYJS2
+      JGE=MYJE2
+!dbg !dbg
+!dbg kpblmin=100
+!dbg kpblmax=-100
+!dbg DO J=JGS,JGE
+!dbg   DO I=IGS,IGE
+!dbg     kpblmin=min(kpblmin,kpbl(i,j))
+!dbg     kpblmax=max(kpblmax,kpbl(i,j))
+!dbg   enddo
+!dbg enddo
+!dbg print *,'TURBL: IGS,IGE,JGS,JGE,kpblmin,kpblmax=',IGS,IGE,JGS,JGE,kpblmin,kpblmax
+!dbg
+!     CALL GWD_driver(U=U_PHY,V=V_PHY,T=T_PHY                           &
+!    &               ,Q=MOIST_TRANS(IMS,KMS,JMS,P_QV)                   &
+!    &               ,Z=Z,DP=DELP,PINT=P8W,PMID=P_PHY,EXNR=PI_PHY       &
+!    &               ,KPBL=KPBL,ITIME=NTSD                              &
+!    &               ,HSTDV=HSTDV,HCNVX=HCNVX,HASYW=HASYW,HASYS=HASYS   &
+!    &               ,HASYSW=HASYSW,HASYNW=HASYNW,HLENW=HLENW           &
+!    &               ,HLENS=HLENS,HLENSW=HLENSW,HLENNW=HLENNW           &
+!    &               ,HANGL=HANGL,HANIS=HANIS,HSLOP=HSLOP,HZMAX=HZMAX   &
+!    &               ,CROT=CROT,SROT=SROT                               &
+!    &               ,DUDT=DUDT_GWD,DVDT=DVDT_GWD                       &
+!    &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc                   &
+!    &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE   &
+!    &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME   &
+!    &               ,ITS=IGS,ITE=IGE,JTS=JGS,JTE=JGE,KTS=KTS,KTE=KTE )
+!
+!=======================================================================
+!=====  End gravity wave drag (GWD) and mountain blocking (MB)  ========
+!=======================================================================
+!
 !-----------------------------------------------------------------------
 !***  TRANSFER THE WIND TENDENCIES.
 !-----------------------------------------------------------------------
@@ -1418,6 +1493,8 @@
       DO I=ITS,ITE
         DUDT(I,J,K)=DUDT_PHY(I,K,J)
         DVDT(I,J,K)=DVDT_PHY(I,K,J)
+!       DUDT(I,J,K)=DUDT_PHY(I,K,J)+DUDT_GWD(I,K,J)
+!       DVDT(I,J,K)=DVDT_PHY(I,K,J)+DVDT_GWD(I,K,J)
       ENDDO
       ENDDO
       ENDDO
@@ -1461,36 +1538,36 @@
           RATIOMX=QOLD/(1.-QOLD)+DQDT*DTPHS
           Q(I,J,K)=RATIOMX/(1.+RATIOMX)
 !         Q(I,J,K)=MAX(Q(I,J,K),EPSQ)
-          QW=MAX(0.,MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
-!
-          IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
-            QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )
-          ELSE
-            QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )
-          ENDIF
-!
-          QR=MAX(0.,MOIST(I,J,K,P_QR) )
-!         CWM(I,J,K)=QW+QI+QR
+          MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          DO I_M=1,N_MOIST
-            IF(I_M/=P_QV)THEN
-              CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
-            ENDIF
-            IF(I_M==P_QV)THEN
-              MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
-            ELSEIF (I_M==P_QC)THEN
-              CWM(I,J,K)=MAX(0.,(CWM(I,J,K)+RQCBLTEN(I,K,J)*DTPHS))
-            ELSEIF(I_M==P_QI)THEN
-              CWM(I,J,K)=MAX(0.,(CWM(I,J,K)+RQIBLTEN(I,K,J)*DTPHS))
-            ENDIF
-          ENDDO
+          IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+            DO I_M=1,N_MOIST
+              IF(I_M==P_QC) THEN
+                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
+              ELSE IF(I_M==P_QI) THEN
+                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQIBLTEN(I,K,J)*DTPHS) )
+!BSF              ELSE IF(I_M==P_QS) THEN
+!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQSBLTEN(I,K,J)*DTPHS) )
+!BSF              ELSE IF(I_M==P_QR) THEN
+!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQRBLTEN(I,K,J)*DTPHS) )
+!BSF              ELSE IF(I_M==P_QG) THEN
+!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQGBLTEN(I,K,J)*DTPHS) )
+              ENDIF
+              IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
+            ENDDO
+          ELSE
 !
-          MOIST(I,J,K,P_QC)=QW
-          MOIST(I,J,K,P_QR)=QR
+!-- Allow vertical mixing to modify cloud ice + snow for ETAMPNEW
 !
-          IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+            QW=MAX(0.,MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
+            QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
+!BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
+            QR=MAX(0.,MOIST(I,J,K,P_QR) )
+            MOIST(I,J,K,P_QC)=QW
             MOIST(I,J,K,P_QS)=QI
+            MOIST(I,J,K,P_QR)=QR
+            CWM(I,J,K)=QW+QI+QR
 !
             IF(QI<=EPSQ)THEN
               F_ICE(I,K,J)=0.
@@ -1504,9 +1581,7 @@
               F_RAIN(I,K,J)=QR/(QW+QR)
             ENDIF
 !
-          ELSE
-            MOIST(I,J,K,P_QI)=QI
-          ENDIF
+          ENDIF     !-- IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
 !
           Q2(I,J,K)=2.*TKE(I,K,J)
         ENDDO
@@ -1833,10 +1908,12 @@
       LOGICAL :: RESTART,WARM_RAIN
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
 !
+      CHARACTER(LEN=255) :: message
+!
 !-----------------------------------------------------------------------
 !***  FOR TEMPERATURE CHANGE CHECK ONLY.
 !-----------------------------------------------------------------------
-      INTEGER :: DTEMP_CHECK=1.0
+      INTEGER :: DTEMP_CHECK=2.0
       REAL :: TCHANGE
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -2254,8 +2331,9 @@
 !
           TCHANGE=DTDT*DTCNVC
 	  IF(ABS(TCHANGE)>DTEMP_CHECK)THEN
-            WRITE(0,*)'BIG T CHANGE BY CONVECTION=',TCHANGE             &
+            WRITE(message,*)'BIG T CHANGE BY CONVECTION=',TCHANGE             &
                      ,' AT (',I,',',J,',',K,') FOR NTSD=',NTSD
+            CALL wrf_message(trim(message))
 	  ENDIF
 !
         ENDDO

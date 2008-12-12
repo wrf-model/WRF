@@ -103,12 +103,11 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
      &                                              ,QFX,Q10,QSHLTR    &
-     &                                              ,TH10,TSHLTR,T02       &
+     &                                              ,TH10,TSHLTR,T02   &
      &                                              ,U10,V10,TH02,Q02
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
-     &                                                ,RIB             &
-     &                                                ,PBLH,QSFC
+     &                                                ,PBLH,QSFC,RIB
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: QZ0,RMOL,THZ0   &
      &                                                ,USTAR,UZ0,VZ0   &
@@ -357,7 +356,7 @@ CONTAINS
 !----------------------------------------------------------------------
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
      &                 ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
-     &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM    &
+     &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
@@ -386,8 +385,8 @@ CONTAINS
      &                  ,Z0BASE
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
-     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RLMO,TH02,TH10,U10,V10
-      REAL, INTENT(OUT) :: RIB
+     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO              &
+     &                   ,TH02,TH10,U10,V10
 !
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
 !----------------------------------------------------------------------
@@ -396,7 +395,7 @@ CONTAINS
 !***
       INTEGER :: ITR,K
 !
-      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,DTHV,DU2,ELFC,FCT              &
+      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,CZETMAX,DTHV,DU2,ELFC,FCT      &
      &       ,HLFLX,HSFLX,HV,PSH02,PSH10,PSHZ,PSHZL,PSM10,PSMZ,PSMZL   &
      &       ,RDZ,RDZT,RLMA,RLMN,RLMP                                  &
      &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
@@ -678,11 +677,22 @@ CONTAINS
 !
 !mp   Topo modification of ZILFC term
 !	
-          TOPOTERM=TOPOFAC*ZSFC**2.
-          TOPOTERM=MAX(TOPOTERM,3.0)
+!         TOPOTERM=TOPOFAC*ZSFC**2.
+!         TOPOTERM=MAX(TOPOTERM,3.0)
 !
+!  RIB modification to ZILFC term
+!
+!         CZETMAX = 20.
+          CZETMAX = 10.
+! stable
           IF(DTHV>0.)THEN
-            ZZIL=ZILFC*TOPOTERM
+!            ZZIL=ZILFC*TOPOTERM
+            IF (RIB<RIC) THEN
+              ZZIL=ZILFC*(1.0+(RIB/RIC)*(RIB/RIC)*CZETMAX)
+            ELSE
+              ZZIL=ZILFC*(1.0+CZETMAX)
+            ENDIF
+! unstable
           ELSE
             ZZIL=ZILFC
           ENDIF

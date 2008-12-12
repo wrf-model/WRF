@@ -207,6 +207,7 @@ state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd *
 #
 state real  pblh        ij    dyn_nmm   1    -     rh       "PBLH"     "PBL Height"                           "m"
 state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model layer of PBL top"               ""
+state  real   mixht     ij    dyn_nmm   1    -     h        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irh      "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rh    "Z0"       "Roughness height"                     "m"
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
@@ -288,11 +289,32 @@ state  real   grnflx    ij    dyn_nmm   1    -     irh      "GRNFLX"    "Deep so
 state  real   pctsno    ij    dyn_nmm   1    -     irh
 state  real   soiltb    ij    dyn_nmm   1    -     i01rh    "SOILTB"    "Deep ground soil temperature"     "K"
 state  real   vegfrc    ij    dyn_nmm   1    -     i01rh    "VEGFRC"    "Vegetation fraction"              ""
-state  real   shdmin    ij    dyn_nmm   1    -     i012r    "SHDMAX"    "ANNUAL MAX VEG FRACTION"          ""
-state  real   shdmax    ij    dyn_nmm   1    -     i012r    "SHDMIN"    "ANNUAL MIN VEG FRACTION"          ""
+state  real   shdmin    ij    dyn_nmm   1    -     -
+state  real   shdmax    ij    dyn_nmm   1    -     -
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh      "SH2O"      "Unfrozen soil moisture volume fraction"  ""
 state  real   smc       ilj   dyn_nmm   1    Z     irh      "SMC"       "Soil moisture volume fraction"    ""
 state  real   stc       ilj   dyn_nmm   1    Z     irh      "STC"       "Soil temperature"                 "K"
+#
+# module_GWD.F
+#
+state  real   hstdv     ij    dyn_nmm   1    -     i01rh      "HSTDV"     "Standard deviation of height"     "m"
+state  real   hcnvx     ij    dyn_nmm   1    -     i01rh      "HCNVX"     "Normalized 4th moment of orographic convexity"     ""
+state  real   hasyw     ij    dyn_nmm   1    -     i01rh      "HASYW"     "Orographic asymmetry in W-E plane"  ""
+state  real   hasys     ij    dyn_nmm   1    -     i01rh      "HASYS"     "Orographic asymmetry in S-N plane"  ""
+state  real   hasysw    ij    dyn_nmm   1    -     i01rh      "HASYSW"    "Orographic asymmetry in SW-NE plane"  ""
+state  real   hasynw    ij    dyn_nmm   1    -     i01rh      "HASYNW"    "Orographic asymmetry in NW-SE plane"  ""
+state  real   hlenw     ij    dyn_nmm   1    -     i01rh      "HLENW"     "Orographic length scale in W-E plane"  ""
+state  real   hlens     ij    dyn_nmm   1    -     i01rh      "HLENS"     "Orographic length scale in S-N plane"  ""
+state  real   hlensw    ij    dyn_nmm   1    -     i01rh      "HLENSW"    "Orographic length scale in SW-NE plane"  ""
+state  real   hlennw    ij    dyn_nmm   1    -     i01rh      "HLENNW"    "Orographic length scale in NW-SE plane"  ""
+state  real   hangl     ij    dyn_nmm   1    -     i01rh      "HANGL"     "Angle of the mountain range w/r/t east"  "deg"
+state  real   hanis     ij    dyn_nmm   1    -     i01rh      "HANIS"     "Anisotropy/aspect ratio of orography"   ""
+state  real   hslop     ij    dyn_nmm   1    -     i01rh      "HSLOP"     "Slope of orography"             ""
+state  real   hzmax     ij    dyn_nmm   1    -     i01rh      "HZMAX"     "Maximum height above mean orography"    "m"
+state  real   crot      ij    dyn_nmm   1    -      -       "CROT"      "Cosine of angle between model and earth coordinates"    ""
+state  real   srot      ij    dyn_nmm   1    -      -       "SROT"      "Sine of angle between model and earth coordinates"    ""
+state  real   UGWDsfc   ij    dyn_nmm   1    -      h       "UGWDsfc"   "Surface zonal wind stress due to gravity wave drag"    "N m-2"
+state  real   VGWDsfc   ij    dyn_nmm   1    -      h       "VGWDsfc"   "Surface meridional wind stress due to gravity wave drag"    "N m-2"
 #
 # module_NHYDRO.F
 #
@@ -821,7 +843,6 @@ rconfig   integer ucmcall                 namelist,physics      max_domains  0  
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"    "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
 rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
-
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"

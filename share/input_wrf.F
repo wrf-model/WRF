@@ -311,6 +311,14 @@
     ENDIF
     CALL nl_set_iswater ( grid%id , config_flags%iswater )
 
+    CALL wrf_get_dom_ti_integer ( fid , 'ISLAKE' ,  config_flags%islake , 1 , icnt , ierr )
+    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISLAKE returns ',config_flags%islake
+    CALL wrf_debug ( 300 , wrf_err_message )
+    IF ( ierr .NE. 0 ) THEN
+         config_flags%islake = -1
+    ENDIF
+    CALL nl_set_islake ( grid%id , config_flags%islake )
+
     CALL wrf_get_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISICE returns ',config_flags%isice
     CALL wrf_debug ( 300 , wrf_err_message )

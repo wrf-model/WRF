@@ -140,7 +140,7 @@ SUBROUTINE med_nest_move ( parent, nest )
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
      END SUBROUTINE blend_terrain
-     SUBROUTINE  store_terrain ( ter_interpolated , ter_input , &
+     SUBROUTINE  copy_3d_field ( ter_interpolated , ter_input , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
@@ -149,7 +149,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                             ips , ipe , jps , jpe , kps , kpe
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
-     END SUBROUTINE store_terrain
+     END SUBROUTINE copy_3d_field
    END INTERFACE
 
   ! set grid pointer for code in deref_kludge (if used)
@@ -316,15 +316,15 @@ SUBROUTINE med_nest_move ( parent, nest )
      IF ( input_from_hires ) THEN
 
 ! store horizontally interpolated terrain in temp location
-       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+       CALL  copy_3d_field ( nest%ht_fine , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%mub_fine , nest%mub , &
+       CALL  copy_3d_field ( nest%mub_fine , nest%mub , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%phb_fine , nest%phb , &
+       CALL  copy_3d_field ( nest%phb_fine , nest%phb , &
                              ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe )

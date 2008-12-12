@@ -248,6 +248,12 @@ integer::oops1,oops2
          CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
 
+      IF ( flag_tavgsfc .EQ. 1 ) THEN
+         we_have_tavgsfc = .TRUE.
+      ELSE
+         we_have_tavgsfc = .FALSE.
+      END IF
+
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
       !  vertical locations already.
 
@@ -537,12 +543,6 @@ integer::oops1,oops2
          !  pressure.
          !  Note that on output, grid%psfc is now hi-res.  The low-res surface pressure and 
          !  elevation are grid%psfc_gc and grid%ht_gc (same as grid%ght_gc(k=1)).
-
-         IF ( flag_tavgsfc .EQ. 1 ) THEN
-            we_have_tavgsfc = .TRUE.
-         ELSE
-            we_have_tavgsfc = .FALSE.
-         END IF
 
          IF      ( ( flag_psfc    .EQ. 1 ) .AND. &
                    ( flag_soilhgt .EQ. 1 ) .AND. &
@@ -848,6 +848,43 @@ integer::oops1,oops2
                             its , ite , jts , jte , kts , kte )
 
       END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
+
+      ! Set the temperature of the inland lakes to tavgsfc if the temperature is available
+      ! and islake is > num_veg_cat
+
+      num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
+      CALL nl_get_iswater ( grid%id , grid%iswater )
+      CALL nl_get_islake  ( grid%id , grid%islake )
+
+      IF ( grid%islake < 0 ) THEN
+         CALL wrf_debug ( 0 , 'Old data, no inland lake information')
+      ELSE
+         IF ( we_have_tavgsfc ) THEN
+
+            CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
+            DO j=jts,MIN(jde-1,jte)
+               DO i=its,MIN(ide-1,ite)
+                  IF ( grid%landusef(i,grid%islake,j) >= 0.5 ) THEN
+                     grid%sst(i,j) = grid%tavgsfc(i,j)
+                     grid%tsk(i,j) = grid%tavgsfc(i,j)
+                  END IF
+               END DO
+            END DO
+
+         ELSE     ! We don't have tavgsfc
+
+            CALL wrf_debug ( 0 , 'No average surface temperature for use with inland lakes')
+
+         END IF
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               grid%landusef(i,grid%iswater,j) = grid%landusef(i,grid%iswater,j) + &
+                                                 grid%landusef(i,grid%islake,j)
+               grid%landusef(i,grid%islake,j) = 0.
+            END DO
+         END DO
+
+      END IF
 
       !  Save the grid%tsk field for later use in the sea ice surface temperature
       !  for the Noah LSM scheme.
@@ -1812,6 +1849,11 @@ endif
          END IF
 
       END IF
+
+!  Set flag to denote that we are saving original values of HT, MUB, and 
+!  PHB for 2-way nesting and cycling.
+
+      grid%save_topo_from_real=1
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
 #ifdef DM_PARALLEL

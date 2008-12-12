@@ -487,7 +487,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Store horizontally interpolated terrain in temp location
 
-         CALL  store_terrain ( nested_grid%ht_fine , nested_grid%ht , &
+         CALL  copy_3d_field ( nested_grid%ht_fine , nested_grid%ht , &
                                nids , nide , njds , njde , 1   , 1   , &
                                nims , nime , njms , njme , 1   , 1   , &
                                nips , nipe , njps , njpe , 1   , 1   )

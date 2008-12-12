@@ -153,7 +153,7 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
 
 END SUBROUTINE blend_terrain
 
-SUBROUTINE store_terrain ( ter_interpolated , ter_input , &
+SUBROUTINE copy_3d_field ( ter_interpolated , ter_input , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
@@ -176,7 +176,7 @@ SUBROUTINE store_terrain ( ter_interpolated , ter_input , &
       END DO
    END DO
 
-END SUBROUTINE store_terrain
+END SUBROUTINE copy_3d_field
 
 SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
                            th, pp, qv,  &

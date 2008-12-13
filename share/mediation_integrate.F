@@ -204,7 +204,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT9_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput9_in ( grid , config_flags )
      WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput9_inname) , " for domain ",grid%id
+        TRIM(config_flags%sgfdda_inname) , " for domain ",grid%id
      CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT9_ALARM ), rc=rc )
    ENDIF
@@ -1556,7 +1556,7 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
        CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
      CASE ( 9 )
        CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
-                        config_flags%auxinput9_inname, grid%auxinput9_oid, &
+                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
                         input_aux_model_input9, ierr )
        CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
      CASE ( 10 )

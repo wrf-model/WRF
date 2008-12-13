@@ -542,7 +542,7 @@ BENCH_END(set_phys_bc_tim)
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
                              , scalar , scalar_tend             &
-                             , fdda3d, fdda2d                   &
+                             , fdda3d, fdda2d, sfdda2d          &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &

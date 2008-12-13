@@ -11,7 +11,7 @@ CONTAINS
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
                              , scalar , scalar_tend             &
-                             , fdda3d, fdda2d                   &
+                             , fdda3d, fdda2d, sfdda2d          &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
@@ -65,6 +65,7 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
     REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
+    REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_sfdda2d),INTENT(INOUT)      :: sfdda2d
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
@@ -165,6 +166,7 @@ BENCH_END(init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_PHYS_A.inc"
+#     include "HALO_EM_FDDA_SFC.inc"
 #endif
 
       !$OMP PARALLEL DO   &
@@ -424,12 +426,12 @@ BENCH_START(surf_driver_tim)
      &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
      &        ,PXLSM_SOIL_NUDGE=config_flags%grid_fdda                    &   ! P-X LSM
            ! Optional PX LSM nudging
-     &        ,t2_ndg_old=fdda2d(ims,1,jms,P_t2_ndg_old)                  &
-     &        ,q2_ndg_old=fdda2d(ims,1,jms,P_q2_ndg_old)                  &
-     &        ,t2_ndg_new=fdda2d(ims,1,jms,P_t2_ndg_new)                  &
-     &        ,q2_ndg_new=fdda2d(ims,1,jms,P_q2_ndg_new)                  &
-     &        ,sn_ndg_old=fdda2d(ims,1,jms,P_sn_ndg_old)                  &
-     &        ,sn_ndg_new=fdda2d(ims,1,jms,P_sn_ndg_new)                  &
+     &        ,t2_ndg_old=sfdda2d(ims,1,jms,P_t2_ndg_old)                  &
+     &        ,q2_ndg_old=sfdda2d(ims,1,jms,P_q2_ndg_old)                  &
+     &        ,t2_ndg_new=sfdda2d(ims,1,jms,P_t2_ndg_new)                  &
+     &        ,q2_ndg_new=sfdda2d(ims,1,jms,P_q2_ndg_new)                  &
+     &        ,sn_ndg_old=sfdda2d(ims,1,jms,P_sn_ndg_old)                  &
+     &        ,sn_ndg_new=sfdda2d(ims,1,jms,P_sn_ndg_new)                  &
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
@@ -659,13 +661,34 @@ BENCH_START(fdda_driver_tim)
                   dz8w=dz8w,z=grid%z,z_at_w=z_at_w,                            &
                   config_flags=config_flags,dx=grid%DX,n_moist=num_moist,  &
                   STEPFG=grid%STEPFG,                                          &
-                  pblh=grid%pblh,ht=grid%ht,                                        &
+                  pblh=grid%pblh,ht=grid%ht,REGIME=grid%regime,ZNT=grid%znt,              &
                     IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
                    ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
                    ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
                    ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
                    ,KTS=k_start, KTE=min(k_end,kde-1)                     &
-                   , num_tiles=grid%num_tiles                             )
+                   , num_tiles=grid%num_tiles,                            &
+                   u10=grid%u10, v10=grid%v10, th2=grid%th2, q2=grid%q2,  &
+                   u10_ndg_old=sfdda2d(ims,1,jms,P_u10_ndg_old),              &
+                   v10_ndg_old=sfdda2d(ims,1,jms,P_v10_ndg_old),             &
+                   t2_ndg_old=sfdda2d(ims,1,jms,P_t2_ndg_old),              &
+                   th2_ndg_old=sfdda2d(ims,1,jms,P_th2_ndg_old),              &
+                   q2_ndg_old=sfdda2d(ims,1,jms,P_q2_ndg_old),             &
+                   rh_ndg_old=sfdda2d(ims,1,jms,P_rh_ndg_old),             &
+                   psl_ndg_old=sfdda2d(ims,1,jms,P_psl_ndg_old),             &
+                   ps_ndg_old=sfdda2d(ims,1,jms,P_ps_ndg_old),             &
+                   tob_ndg_old=sfdda2d(ims,1,jms,P_tob_ndg_old),             &
+                   odis_ndg_old=sfdda2d(ims,1,jms,P_odis_ndg_old),             &
+                   u10_ndg_new=sfdda2d(ims,1,jms,P_u10_ndg_new),              &
+                   v10_ndg_new=sfdda2d(ims,1,jms,P_v10_ndg_new),             &
+                   t2_ndg_new=sfdda2d(ims,1,jms,P_t2_ndg_new),              &
+                   th2_ndg_new=sfdda2d(ims,1,jms,P_th2_ndg_New),              &
+                   q2_ndg_new=sfdda2d(ims,1,jms,P_q2_ndg_new),             &
+                   rh_ndg_new=sfdda2d(ims,1,jms,P_rh_ndg_new),             &
+                   psl_ndg_new=sfdda2d(ims,1,jms,P_psl_ndg_new),             &
+                   ps_ndg_new=sfdda2d(ims,1,jms,P_ps_ndg_new),             &
+                   tob_ndg_new=sfdda2d(ims,1,jms,P_tob_ndg_new),             &
+                   odis_ndg_new=sfdda2d(ims,1,jms,P_odis_ndg_new)  )
 BENCH_END(fdda_driver_tim)
 
   END SUBROUTINE first_rk_step_part1

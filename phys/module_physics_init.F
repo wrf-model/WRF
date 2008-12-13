@@ -1723,6 +1723,10 @@ integer myproc
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%gfdda_end_h, &
+               config_flags%grid_sfdda, &
+               config_flags%guv_sfc, &
+               config_flags%gt_sfc, &
+               config_flags%gq_sfc, &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &

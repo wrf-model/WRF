@@ -216,7 +216,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid 
     INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput9 .GT. 0 ) THEN
+    IF ( config_flags%io_form_sgfdda .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , aux_model_input9_only , ierr )
     ENDIF
     RETURN
@@ -533,7 +533,7 @@ CONTAINS
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
     INTEGER, INTENT(INOUT) :: ierr
-    IF ( config_flags%io_form_auxinput9 .GT. 0 ) THEN
+    IF ( config_flags%io_form_sgfdda .GT. 0 ) THEN
       CALL input_wrf ( fid , grid , config_flags , aux_model_input9_only , ierr )
     ENDIF
     RETURN

@@ -15,10 +15,15 @@ CONTAINS
                   p_phy,pi_phy,p8w,t_phy,dz8w,z,z_at_w,           &
                   config_flags,DX,n_moist,                        &
                   STEPFG,                                         &
-                  pblh,ht,                                        &
+                  pblh,ht,regime,znt,                             &
                   ids,ide, jds,jde, kds,kde,                      &
                   ims,ime, jms,jme, kms,kme,                      &
-                  i_start,i_end, j_start,j_end, kts,kte, num_tiles)
+                  i_start,i_end, j_start,j_end, kts,kte, num_tiles, &
+                  u10, v10, th2, q2, &
+                  u10_ndg_old, v10_ndg_old, t2_ndg_old, th2_ndg_old, q2_ndg_old, &
+                  rh_ndg_old, psl_ndg_old, ps_ndg_old, tob_ndg_old, odis_ndg_old, &
+                  u10_ndg_new, v10_ndg_new, t2_ndg_new, th2_ndg_new, q2_ndg_new, &
+                  rh_ndg_new, psl_ndg_new, ps_ndg_new, tob_ndg_new, odis_ndg_new )
 !------------------------------------------------------------------
    USE module_configure
    USE module_state_description
@@ -165,20 +170,55 @@ CONTAINS
 !
    REAL,    DIMENSION( ims:ime , jms:jme ),     &
                INTENT(IN   ) ::           pblh, &
-                                            ht
+                                            ht, &
+                                           znt
+
+   REAL,    DIMENSION( ims:ime , jms:jme ), INTENT(INOUT   ) :: regime
+
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(IN   )    ::                       u10, &
+                                                         v10, &
+                                                         th2, &
+                                                         q2
+
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(IN)       ::                       u10_ndg_old,  &
+                                                         v10_ndg_old,  &
+                                                         t2_ndg_old,   &
+                                                         th2_ndg_old,  &
+                                                         q2_ndg_old,   &
+                                                         rh_ndg_old,   &
+                                                         psl_ndg_old,  &
+                                                         ps_ndg_old,   &
+                                                         odis_ndg_old,  &
+                                                         u10_ndg_new,  &
+                                                         v10_ndg_new,  &
+                                                         t2_ndg_new,   &
+                                                         th2_ndg_new,  &
+                                                         q2_ndg_new,   &
+                                                         rh_ndg_new,   &
+                                                         psl_ndg_new,  &
+                                                         ps_ndg_new,   &
+                                                         odis_ndg_new
+
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+               INTENT(IN)       ::                       tob_ndg_old,  &
+                                                         tob_ndg_new
 
 !  LOCAL  VAR
 
 !
    INTEGER :: i,J,K,NK,jj,ij
+   CHARACTER (LEN=256) :: message
 
 !------------------------------------------------------------------
 !
 #if  ! ( NMM_CORE == 1 )
-  if (config_flags%grid_fdda .eq. 0) return
+  if (config_flags%grid_fdda .eq. 0 .AND. config_flags%grid_sfdda .eq. 0) return
 
   IF (itimestep == 1) THEN
 
+   IF( config_flags%grid_fdda .eq. 1 ) THEN
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij,i,j,k )
    DO ij = 1 , num_tiles
@@ -197,8 +237,23 @@ CONTAINS
       ENDDO
 
    ENDDO
+
+!  IF( config_flags%grid_sfdda .eq. 1 ) THEN
+!    DO ij = 1 , num_tiles
+!       DO j=j_start(ij),j_end(ij)
+!       DO i=i_start(ij),i_end(ij)
+!             u10_ndg_old(i,j) = u10(i,j)
+!             v10_ndg_old(i,j) = v10(i,j)
+!             th2_ndg_old(i,j) = th2(i,j) - 300.0
+!              q2_ndg_old(i,j) = q2(i,j)
+!       ENDDO
+!       ENDDO
+
+!    ENDDO
+!  ENDIF
    !$OMP END PARALLEL DO
 
+   ENDIF
   ENDIF
 
   IF (itimestep .eq. 1 .or. mod(itimestep,STEPFG) .eq. 0) THEN
@@ -227,11 +282,25 @@ CONTAINS
   !$OMP PARALLEL DO   &
   !$OMP PRIVATE ( ij, i,j,k )
   DO ij = 1 , num_tiles
+   IF( config_flags%grid_fdda == 1 ) THEN
    fdda_select: SELECT CASE(config_flags%grid_fdda)
 
       CASE (PSUFDDAGD)
         CALL wrf_debug(100,'in PSU FDDA scheme')
-           CALL FDDAGD(itimestep,dt,xtime, &
+
+           IF( config_flags%bl_pbl_physics == 2 ) THEN
+             DO i = ims, ime
+             DO j = jms, jme
+               IF( pblh(i,j) > z_at_w(i,1,j)-ht(i,j) ) THEN
+                 regime(i,j) = 4.0
+               ELSE
+                 regime(i,j) = 1.0
+               ENDIF
+             ENDDO
+             ENDDO
+           ENDIF
+
+           CALL FDDAGD(itimestep,dx,dt,xtime, &
                id, &
                config_flags%gfdda_interval_m, &
                config_flags%gfdda_end_h, &
@@ -247,17 +316,25 @@ CONTAINS
                config_flags%guv, &
                config_flags%gt, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
+     config_flags%grid_sfdda, &
+     config_flags%sgfdda_interval_m, &
+     config_flags%sgfdda_end_h, &
+     config_flags%guv_sfc, &
+     config_flags%gt_sfc, config_flags%gq_sfc, config_flags%rinblw, &
                u3d,v3d,th_phy,t_phy,                 &
                moist(ims,kms,jms,P_QV),     &
                p_phy,pi_phy,                &
                u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,mu_ndg_old,       &
                u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,mu_ndg_new,       &
+     u10_ndg_old, v10_ndg_old, t2_ndg_old, th2_ndg_old, q2_ndg_old, &
+     rh_ndg_old, psl_ndg_old, ps_ndg_old, tob_ndg_old, odis_ndg_old,  &
+     u10_ndg_new, v10_ndg_new, t2_ndg_new, th2_ndg_new, q2_ndg_new, &
+     rh_ndg_new, psl_ndg_new, ps_ndg_new, tob_ndg_new, odis_ndg_new,  &
                RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,&
-               pblh, ht, z, z_at_w,                             &
+               pblh, ht, regime, znt, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte  )
-
 
      CASE DEFAULT
 
@@ -265,6 +342,7 @@ CONTAINS
        CALL wrf_error_fatal ( wrf_err_message )
 
    END SELECT fdda_select
+   ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO

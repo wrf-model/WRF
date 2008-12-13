@@ -42,8 +42,10 @@
     REAL    diff_6th_factor
     INTEGER grid_fdda, gfdda_interval_m, gfdda_end_h, if_ramping, &
             obs_nudge_opt, obs_nudge_wind, obs_nudge_temp, obs_nudge_mois, obs_nudge_pstr, obs_idynin, obs_ionf
+    INTEGER grid_sfdda, sgfdda_interval_m, sgfdda_end_h
     REAL    fgdt, guv, gt, gq, dtramp_min, &
             obs_coef_wind, obs_coef_temp, obs_coef_mois, obs_coef_pstr, obs_dtramp, fdda_end
+    REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     LOGICAL pd_moist, pd_scalar, pd_tke
 #endif
     CHARACTER (len=19) simulation_start_date
@@ -105,7 +107,7 @@
     ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
       CALL nl_get_io_form_auxinput8( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
-      CALL nl_get_io_form_auxinput9( 1, io_form )
+      CALL nl_get_io_form_sgfdda( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
       CALL nl_get_io_form_gfdda( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
@@ -185,6 +187,9 @@
     CALL nl_get_grid_fdda  ( grid%id , grid_fdda )
     CALL nl_get_gfdda_end_h( grid%id , gfdda_end_h )
     CALL nl_get_gfdda_interval_m ( grid%id , gfdda_interval_m )
+    CALL nl_get_grid_sfdda  ( grid%id , grid_sfdda )
+    CALL nl_get_sgfdda_end_h( grid%id , sgfdda_end_h )
+    CALL nl_get_sgfdda_interval_m ( grid%id , sgfdda_interval_m )
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -193,6 +198,13 @@
     CALL nl_get_gq         ( grid%id , gq )
     CALL nl_get_if_ramping ( 1       , if_ramping )
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
+    ENDIF
+
+    IF ( grid_sfdda == 1 ) THEN
+    CALL nl_get_guv_sfc      ( grid%id , guv_sfc )
+    CALL nl_get_gt_sfc       ( grid%id , gt_sfc )
+    CALL nl_get_gq_sfc       ( grid%id , gq_sfc )
+    CALL nl_get_rinblw       ( grid%id , rinblw )
     ENDIF
 
     CALL nl_get_obs_nudge_opt  ( grid%id , obs_nudge_opt )
@@ -353,6 +365,9 @@
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_FDDA', grid_fdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_INTERVAL_M', gfdda_interval_m , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_END_H', gfdda_end_h , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GRID_SFDDA', grid_sfdda , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_INTERVAL_M', sgfdda_interval_m , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_END_H', sgfdda_end_h , 1 , ierr )
 #endif
 
       IF ( switch .EQ. history_only ) THEN
@@ -376,6 +391,13 @@
         CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
         CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
+      ENDIF
+
+      IF ( grid_sfdda == 1 ) THEN
+        CALL wrf_put_dom_ti_real    ( fid, 'GUV_SFC', guv_sfc , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GT_SFC', gt_sfc , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GQ_SFC', gq_sfc , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'RINBLW', rinblw , 1 , ierr )
       ENDIF
 
       CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_OPT', obs_nudge_opt , 1 , ierr )

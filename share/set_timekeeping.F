@@ -74,12 +74,12 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput6_interval_m, auxinput7_interval_m, auxinput8_interval_m, &
               auxinput6_interval_s, auxinput7_interval_s, auxinput8_interval_s
 
-   INTEGER :: auxinput9_interval  , gfdda_interval  , auxinput11_interval  , &
-              auxinput9_interval_mo, gfdda_interval_mo, auxinput11_interval_mo, &
-              auxinput9_interval_d, gfdda_interval_d, auxinput11_interval_d, &
-              auxinput9_interval_h, gfdda_interval_h, auxinput11_interval_h, &
-              auxinput9_interval_m, gfdda_interval_m, auxinput11_interval_m, &
-              auxinput9_interval_s, gfdda_interval_s, auxinput11_interval_s
+   INTEGER :: sgfdda_interval  , gfdda_interval  , auxinput11_interval  , &
+              sgfdda_interval_mo, gfdda_interval_mo, auxinput11_interval_mo, &
+              sgfdda_interval_d, gfdda_interval_d, auxinput11_interval_d, &
+              sgfdda_interval_h, gfdda_interval_h, auxinput11_interval_h, &
+              sgfdda_interval_m, gfdda_interval_m, auxinput11_interval_m, &
+              sgfdda_interval_s, gfdda_interval_s, auxinput11_interval_s
 
    INTEGER :: history_begin  , restart_begin  ,  &
               history_begin_y, restart_begin_y,  &
@@ -153,13 +153,13 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput6_begin_m, auxinput7_begin_m, auxinput8_begin_m, &
               auxinput6_begin_s, auxinput7_begin_s, auxinput8_begin_s
 
-   INTEGER :: auxinput9_begin  , gfdda_begin  , auxinput11_begin  , &
-              auxinput9_begin_y, gfdda_begin_y, auxinput11_begin_y, &
-              auxinput9_begin_mo, gfdda_begin_mo, auxinput11_begin_mo, &
-              auxinput9_begin_d, gfdda_begin_d, auxinput11_begin_d, &
-              auxinput9_begin_h, gfdda_begin_h, auxinput11_begin_h, &
-              auxinput9_begin_m, gfdda_begin_m, auxinput11_begin_m, &
-              auxinput9_begin_s, gfdda_begin_s, auxinput11_begin_s
+   INTEGER :: sgfdda_begin  , gfdda_begin  , auxinput11_begin  , &
+              sgfdda_begin_y, gfdda_begin_y, auxinput11_begin_y, &
+              sgfdda_begin_mo, gfdda_begin_mo, auxinput11_begin_mo, &
+              sgfdda_begin_d, gfdda_begin_d, auxinput11_begin_d, &
+              sgfdda_begin_h, gfdda_begin_h, auxinput11_begin_h, &
+              sgfdda_begin_m, gfdda_begin_m, auxinput11_begin_m, &
+              sgfdda_begin_s, gfdda_begin_s, auxinput11_begin_s
 
    INTEGER :: history_end  , restart_end  ,  &
               history_end_y, restart_end_y,  &
@@ -225,15 +225,15 @@ SUBROUTINE Setup_Timekeeping ( grid )
               auxinput6_end_m, auxinput7_end_m, auxinput8_end_m, &
               auxinput6_end_s, auxinput7_end_s, auxinput8_end_s
 
-   INTEGER :: auxinput9_end  , gfdda_end  , auxinput11_end  , &
-              auxinput9_end_y, gfdda_end_y, auxinput11_end_y, &
-              auxinput9_end_mo, gfdda_end_mo, auxinput11_end_mo, &
-              auxinput9_end_d, gfdda_end_d, auxinput11_end_d, &
-              auxinput9_end_h, gfdda_end_h, auxinput11_end_h, &
-              auxinput9_end_m, gfdda_end_m, auxinput11_end_m, &
-              auxinput9_end_s, gfdda_end_s, auxinput11_end_s
+   INTEGER :: sgfdda_end  , gfdda_end  , auxinput11_end  , &
+              sgfdda_end_y, gfdda_end_y, auxinput11_end_y, &
+              sgfdda_end_mo, gfdda_end_mo, auxinput11_end_mo, &
+              sgfdda_end_d, gfdda_end_d, auxinput11_end_d, &
+              sgfdda_end_h, gfdda_end_h, auxinput11_end_h, &
+              sgfdda_end_m, gfdda_end_m, auxinput11_end_m, &
+              sgfdda_end_s, gfdda_end_s, auxinput11_end_s
 
-   INTEGER :: grid_fdda
+   INTEGER :: grid_fdda, grid_sfdda
 
    INTEGER :: run_days, run_hours, run_minutes, run_seconds
    INTEGER :: time_step, time_step_fract_num, time_step_fract_den
@@ -2001,64 +2001,76 @@ SUBROUTINE Setup_Timekeeping ( grid )
                            __LINE__  )
    ENDIF
 
+#if (EM_CORE == 1)
+  CALL nl_get_grid_sfdda( grid%id, grid_sfdda )
+#endif
 ! AUXINPUT9_ INTERVAL
-! auxinput9_interval is left there (and means minutes) for consistency, but
-! auxinput9_interval_m will take precedence if specified
-   CALL nl_get_auxinput9_interval( grid%id, auxinput9_interval )   ! same as minutes
-   CALL nl_get_auxinput9_interval_mo( grid%id, auxinput9_interval_mo )
-   CALL nl_get_auxinput9_interval_d( grid%id, auxinput9_interval_d )
-   CALL nl_get_auxinput9_interval_h( grid%id, auxinput9_interval_h )
-   CALL nl_get_auxinput9_interval_m( grid%id, auxinput9_interval_m )
-   CALL nl_get_auxinput9_interval_s( grid%id, auxinput9_interval_s )
-   IF ( auxinput9_interval_m .EQ. 0 ) auxinput9_interval_m = auxinput9_interval
+! sgfdda_interval is left there (and means minutes) for consistency, but
+! sgfdda_interval_m will take precedence if specified
+   CALL nl_get_sgfdda_interval( grid%id, sgfdda_interval )   ! same as minutes
+   CALL nl_get_sgfdda_interval_mo( grid%id, sgfdda_interval_mo )
+   CALL nl_get_sgfdda_interval_d( grid%id, sgfdda_interval_d )
+   CALL nl_get_sgfdda_interval_h( grid%id, sgfdda_interval_h )
+   CALL nl_get_sgfdda_interval_m( grid%id, sgfdda_interval_m )
+   CALL nl_get_sgfdda_interval_s( grid%id, sgfdda_interval_s )
+   IF ( sgfdda_interval_m .EQ. 0 ) sgfdda_interval_m = sgfdda_interval
 
-   IF ( MAX( auxinput9_interval_mo, auxinput9_interval_d,   &
-             auxinput9_interval_h, auxinput9_interval_m , auxinput9_interval_s   ) .GT. 0 ) THEN
-     CALL WRFU_TimeIntervalSet( interval, MM=auxinput9_interval_mo, D=auxinput9_interval_d, &
-                                        H=auxinput9_interval_h, M=auxinput9_interval_m, S=auxinput9_interval_s, rc=rc )
+   IF ( MAX( sgfdda_interval_mo, sgfdda_interval_d,   &
+             sgfdda_interval_h, sgfdda_interval_m , sgfdda_interval_s   ) .GT. 0 ) THEN
+     CALL WRFU_TimeIntervalSet( interval, MM=sgfdda_interval_mo, D=sgfdda_interval_d, &
+                                        H=sgfdda_interval_h, M=sgfdda_interval_m, S=sgfdda_interval_s, rc=rc )
      CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                           'WRFU_TimeIntervalSet(auxinput9_interval) FAILED', &
+                           'WRFU_TimeIntervalSet(sgfdda_interval) FAILED', &
                            __FILE__ , &
                            __LINE__  )
    ELSE
      interval = run_length + padding_interval
    ENDIF
+#if (EM_CORE == 1)
+   IF( grid_sfdda == 0 ) interval = run_length + padding_interval
+#endif
 
-   CALL nl_get_auxinput9_begin_y( grid%id, auxinput9_begin_y )
-   CALL nl_get_auxinput9_begin_mo( grid%id, auxinput9_begin_mo )
-   CALL nl_get_auxinput9_begin_d( grid%id, auxinput9_begin_d )
-   CALL nl_get_auxinput9_begin_h( grid%id, auxinput9_begin_h )
-   CALL nl_get_auxinput9_begin_m( grid%id, auxinput9_begin_m )
-   CALL nl_get_auxinput9_begin_s( grid%id, auxinput9_begin_s )
-   IF ( MAX( auxinput9_begin_y, auxinput9_begin_mo, auxinput9_begin_d,   &
-             auxinput9_begin_h, auxinput9_begin_m , auxinput9_begin_s   ) .GT. 0 ) THEN
-      CALL WRFU_TimeIntervalSet( begin_time , MM=auxinput9_begin_mo, D=auxinput9_begin_d, &
-                                      H=auxinput9_begin_h, M=auxinput9_begin_m, S=auxinput9_begin_s, rc=rc )
+   CALL nl_get_sgfdda_begin_y( grid%id, sgfdda_begin_y )
+   CALL nl_get_sgfdda_begin_mo( grid%id, sgfdda_begin_mo )
+   CALL nl_get_sgfdda_begin_d( grid%id, sgfdda_begin_d )
+   CALL nl_get_sgfdda_begin_h( grid%id, sgfdda_begin_h )
+   CALL nl_get_sgfdda_begin_m( grid%id, sgfdda_begin_m )
+   CALL nl_get_sgfdda_begin_s( grid%id, sgfdda_begin_s )
+   IF ( MAX( sgfdda_begin_y, sgfdda_begin_mo, sgfdda_begin_d,   &
+             sgfdda_begin_h, sgfdda_begin_m , sgfdda_begin_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( begin_time , MM=sgfdda_begin_mo, D=sgfdda_begin_d, &
+                                      H=sgfdda_begin_h, M=sgfdda_begin_m, S=sgfdda_begin_s, rc=rc )
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_TimeIntervalSet(auxinput9_begin) FAILED', &
+                            'WRFU_TimeIntervalSet(sgfdda_begin) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    ELSE
       begin_time = zero_time
    ENDIF
 
-   CALL nl_get_auxinput9_end_y( grid%id, auxinput9_end_y )
-   CALL nl_get_auxinput9_end_mo( grid%id, auxinput9_end_mo )
-   CALL nl_get_auxinput9_end_d( grid%id, auxinput9_end_d )
-   CALL nl_get_auxinput9_end_h( grid%id, auxinput9_end_h )
-   CALL nl_get_auxinput9_end_m( grid%id, auxinput9_end_m )
-   CALL nl_get_auxinput9_end_s( grid%id, auxinput9_end_s )
-   IF ( MAX( auxinput9_end_y, auxinput9_end_mo, auxinput9_end_d,   &
-             auxinput9_end_h, auxinput9_end_m , auxinput9_end_s   ) .GT. 0 ) THEN
-      CALL WRFU_TimeIntervalSet( end_time , MM=auxinput9_end_mo, D=auxinput9_end_d, &
-                                     H=auxinput9_end_h, M=auxinput9_end_m, S=auxinput9_end_s, rc=rc )
+   CALL nl_get_sgfdda_end_y( grid%id, sgfdda_end_y )
+   CALL nl_get_sgfdda_end_mo( grid%id, sgfdda_end_mo )
+   CALL nl_get_sgfdda_end_d( grid%id, sgfdda_end_d )
+   CALL nl_get_sgfdda_end_h( grid%id, sgfdda_end_h )
+#if (EM_CORE == 1)
+   IF( grid_sfdda == 1 ) sgfdda_end_h = sgfdda_end_h - NINT( sgfdda_interval_m/60.0 )
+#endif
+   CALL nl_get_sgfdda_end_m( grid%id, sgfdda_end_m )
+   CALL nl_get_sgfdda_end_s( grid%id, sgfdda_end_s )
+   IF ( MAX( sgfdda_end_y, sgfdda_end_mo, sgfdda_end_d,   &
+             sgfdda_end_h, sgfdda_end_m , sgfdda_end_s   ) .GT. 0 ) THEN
+      CALL WRFU_TimeIntervalSet( end_time , MM=sgfdda_end_mo, D=sgfdda_end_d, &
+                                     H=sgfdda_end_h, M=sgfdda_end_m, S=sgfdda_end_s, rc=rc )
       CALL wrf_check_error( WRFU_SUCCESS, rc, &
-                            'WRFU_TimeIntervalSet(auxinput9_end) FAILED', &
+                            'WRFU_TimeIntervalSet(sgfdda_end) FAILED', &
                             __FILE__ , &
                             __LINE__  )
    ELSE
       end_time = run_length + padding_interval
    ENDIF
+#if (EM_CORE == 1)
+   IF( grid_sfdda == 0 ) end_time = run_length + padding_interval
+#endif
 
    CALL domain_alarm_create( grid, AUXINPUT9_ALARM, interval, begin_time, end_time )
 

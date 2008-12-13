@@ -2182,7 +2182,8 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! ASSUME COLLECTION OF SNOW BY RAIN PRODUCES GRAUPEL NOT HAIL
 
-            IF (IHAIL.EQ.0) THEN
+! HM MODIFY FOR WRFV3.1
+!            IF (IHAIL.EQ.0) THEN
             IF (QNI3D(K).GE.0.1E-3.AND.QR3D(K).GE.0.1E-3) THEN
             PSACR(K) = CONS31*(((1.2*UMR-0.95*UMS)**2+              &
                   0.08*UMS*UMR)**0.5*RHO(K)*                     &
@@ -2191,7 +2192,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                   2./(LAMS(K)**2*LAMR(K)**2)+                  &
                   0.5/(LAMS(K)*LAMR(K)**3)))            
             END IF
-            END IF
+!            END IF
 
          END IF
 
@@ -2307,7 +2308,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! TO LIMIT RIME-SPLINTERING IN STRATIFORM CLOUDS
 
 ! ONLY CALCULATE FOR GRAUPEL NOT HAIL
-         IF (IHAIL.EQ.0) THEN
+!         IF (IHAIL.EQ.0) THEN
 ! v1.4
          IF (QG3D(K).GE.0.1E-3) THEN
          IF (QC3D(K).GE.0.5E-3.OR.QR3D(K).GE.0.1E-3) THEN
@@ -2357,7 +2358,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                END IF
             END IF
             END IF
-         END IF
+!         END IF
 
 !........................................................................
 ! CONVERSION OF RIMED CLOUD WATER ONTO SNOW TO GRAUPEL
@@ -2365,7 +2366,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! HAIL ASSUMED TO ONLY FORM BY FREEZING OF RAIN
 ! OR COLLISIONS OF RAIN WITH CLOUD ICE
 
-           IF (IHAIL.EQ.0) THEN
+!           IF (IHAIL.EQ.0) THEN
 	   IF (PSACWS(K).GT.0.) THEN
 ! ONLY ALLOW CONVERSION IF QNI > 0.1 AND QC > 0.5 G/KG FOLLOWING RUTLEDGE AND HOBBS (1984)
               IF (QNI3D(K).GE.0.1E-3.AND.QC3D(K).GE.0.5E-3) THEN
@@ -2412,7 +2413,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             PSACR(K)=PSACR(K)*(1.-DUM)
             END IF
 	   END IF
-           END IF
+!           END IF
 
 !.......................................................................
 ! FREEZING OF RAIN DROPS

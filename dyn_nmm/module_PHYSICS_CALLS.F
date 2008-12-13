@@ -631,7 +631,7 @@
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
      &                ,FIS,Z0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ       &
      &                ,MOIST,RMOL,MOL                                   &
-     &                ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT               &
+     &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
      &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
@@ -717,7 +717,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CZEN,CZMEAN         &
      &                                             ,DX_ARRAY            &
-     &                                             ,FIS,HBM2            &
+     &                                             ,F,FIS,HBM2          &
      &                                             ,PD,RES              &
      &                                             ,RLWIN,RLWTOA        &
      &                                             ,RSWIN,RSWOUT,RSWTOA &
@@ -785,7 +785,8 @@
      &                                                        ,RTHBLTEN
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: EL_MYJ     &   !<--- Used only in physics (IKJ)
-     &                                                      ,EXCH_H
+     &                                                      ,EXCH_H     &
+     &                                                      ,EXCH_M
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: KEEPFR3DFLAG & !<--- Used only in physics (IKJ)
      &                                                      ,SH2O,SMC     &
@@ -934,6 +935,7 @@
         Z(I,K,J)=0.
         DZ(I,K,J)=0.
         EXCH_H(I,K,J)=0.
+        EXCH_M(I,K,J)=0.
       ENDDO
       ENDDO
       ENDDO
@@ -1278,8 +1280,8 @@
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
      &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
      &               ,P_PHY=P_PHY,PI_PHY=PI_PHY,P8W=P8W,T_PHY=T_PHY   &
-     &               ,DZ8W=DZ,Z=Z,TKE_MYJ=TKE,EL_MYJ=EL_MYJ           &
-     &               ,EXCH_H=EXCH_H,AKHS=AKHS,AKMS=AKMS               &
+     &               ,DZ8W=DZ,Z=Z,TKE_MYJ=TKE,EL_MYJ=EL_MYJ,F=F       &
+     &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &

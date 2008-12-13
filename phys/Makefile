@@ -10,6 +10,7 @@ MODULES = \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
 	module_bl_myjpbl.o \
+	module_bl_qnsepbl.o \
 	module_bl_acm.o \
 	module_cu_g3.o \
 	module_cu_kf.o  \
@@ -45,6 +46,7 @@ MODULES = \
 	module_sf_sfcdiags.o \
 	module_sf_sstskin.o \
 	module_sf_myjsfc.o \
+	module_sf_qnsesfc.o \
 	module_sf_pxsfclay.o \
 	module_physics_addtendc.o \
 	module_physics_init.o \
@@ -103,6 +105,7 @@ clean:
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
 module_bl_myjpbl.o: ../share/module_model_constants.o
+module_bl_qnsepbl.o: ../share/module_model_constants.o
 
 module_bl_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
@@ -140,6 +143,7 @@ module_sf_lsm_nmm.o: ../share/module_model_constants.o \
 		../share/module_MPP.o
 
 module_sf_myjsfc.o: ../share/module_model_constants.o 
+module_sf_qnsesfc.o: ../share/module_model_constants.o 
 
 module_sf_gfs.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
@@ -172,6 +176,7 @@ module_physics_init.o : \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
+		module_sf_qnsesfc.o		\
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
@@ -182,6 +187,7 @@ module_physics_init.o : \
 		module_bl_gfs.o			\
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
+		module_bl_qnsepbl.o		\
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
@@ -231,6 +237,7 @@ module_cumulus_driver.o: \
 
 module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
+		module_bl_qnsepbl.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
@@ -264,6 +271,7 @@ module_surface_driver.o: \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
+		module_sf_qnsesfc.o		\
 		module_sf_pxsfclay.o		\
 		module_sf_gfs.o  		\
 		module_sf_noahdrv.o		\

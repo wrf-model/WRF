@@ -469,7 +469,8 @@ BENCH_START(pbl_driver_tim)
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
      &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct         &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
-     &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h      ,GRDFLX=grid%grdflx      &
+     &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m   &
+     &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
      &        ,ITIMESTEP=grid%itimestep                    ,KPBL=grid%kpbl          &
      &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=p8w            &

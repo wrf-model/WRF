@@ -628,6 +628,7 @@ state    real  NOAHRES          ij      misc        1         -      h        "N
 state    real   tke_myj         ijk     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
+state    real   EXCH_M         ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"        "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"       "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"         "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"      "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"         "U WIND COMPONENT AT TOP OF VISC. SUBLYR"       "m s-1"
@@ -1007,6 +1008,7 @@ package   heldsuarez    ra_lw_physics==31            -             -
 package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
+package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
@@ -1016,6 +1018,7 @@ package   nmmlsmscheme   sf_surface_physics==99      -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
+package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 

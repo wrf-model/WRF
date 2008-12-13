@@ -1064,11 +1064,13 @@ integer myproc
    USE module_bl_gfs
    USE module_bl_acm
    USE module_sf_myjsfc
+   USE module_sf_qnsesfc
    USE module_sf_noahdrv
    USE module_sf_urban
    USE module_sf_ruclsm
    USE module_sf_pxlsm
    USE module_bl_myjpbl
+   USE module_bl_qnsepbl
 #if (NMM_CORE == 1)
    USE module_sf_lsm_nmm
 #endif
@@ -1215,6 +1217,21 @@ integer myproc
            isfc = 1
       CASE (MYJSFCSCHEME)
            CALL myjsfcinit(LOWLYR,UST,                         &
+#if ( NMM_CORE == 1 )
+                                      Z0,                      &
+#else
+                                      ZNT,                     &
+#endif
+                                          XLAND,XICE,          &
+                         IVGTYP,restart,                       &
+                         allowed_to_read ,                     &
+                         ids, ide, jds, jde, kds, kde,         &
+                         ims, ime, jms, jme, kms, kme,         &
+                         its, ite, jts, jte, kts, kte          )
+           isfc = 2
+
+      CASE (QNSESFCSCHEME)
+           CALL qnsesfcinit(LOWLYR,UST,                         &
 #if ( NMM_CORE == 1 )
                                       Z0,                      &
 #else
@@ -1389,6 +1406,13 @@ integer myproc
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            CALL myjpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
+                        TKE_MYJ,EXCH_H,restart,               &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+      CASE (QNSEPBLSCHEME)
+           CALL qnsepblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
                         TKE_MYJ,EXCH_H,restart,               &
                         allowed_to_read ,                     &
                         ids, ide, jds, jde, kds, kde,         &

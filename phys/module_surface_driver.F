@@ -72,6 +72,7 @@ CONTAINS
 #if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
+                                       ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
@@ -81,6 +82,7 @@ CONTAINS
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
+                                       ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
@@ -94,6 +96,7 @@ CONTAINS
 
    USE module_sf_sfclay
    USE module_sf_myjsfc
+   USE module_sf_qnsesfc
    USE module_sf_gfs
    USE module_sf_noahdrv
    USE module_sf_ruclsm
@@ -920,6 +923,28 @@ CONTAINS
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
+       ENDIF
+
+      CASE (QNSESFCSCHEME)
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
+                                                      .TRUE. ) THEN
+            CALL wrf_debug(100,'in QNSESFC')
+            CALL QNSESFC(itimestep,ht,dz8w,                         &
+              p_phy,p8w,th_phy,t_phy,                              &
+              qv_curr,qc_curr,                                     &
+              u_phy,v_phy,tke_myj,                                 &
+              tsk,qsfc,thz0,qz0,uz0,vz0,                           &
+              lowlyr,                                              &
+              xland,                                               &
+              ust,znt,z0,pblh,mavail,rmol,                         &
+              akhs,akms,                                           &
+              chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
+              u10,v10,tshltr,th10,qshltr,q10,pshltr,               &
+              ids,ide, jds,jde, kds,kde,                           &
+              ims,ime, jms,jme, kms,kme,                           &
+              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF
 
      CASE (GFSSFCSCHEME)

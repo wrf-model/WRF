@@ -665,6 +665,7 @@ i1      real   BR             ij     misc        1         -     -         "BR" 
 state    real   tke_myj        ijk     misc        1         -      r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"      "m2 s-2"
 state    real   EL_MYJ          ijk     misc        1         -     -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H          ijk     misc        1         -     r          "EXCH_H"               "EXCHANGE COEFFICIENTS "
+state    real   EXCH_M          ijk     misc        1         -     r          "EXCH_M"               "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
 state   real   THZ0             ij     misc        1         -      r        "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
 state    real  Z0               ij     misc        1         -     rh        "Z0"                    "Background ROUGHNESS LENGTH"                  "m"
@@ -1749,6 +1750,7 @@ package   gfdlswscheme  ra_sw_physics==99            -             -
 package   sfclayscheme   sf_sfclay_physics==1        -             state:regime
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
+package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             state:regime
 
 package   slabscheme     sf_surface_physics==1       -             -
@@ -1759,6 +1761,7 @@ package   pxlsmscheme    sf_surface_physics==7       -             fdda2d:t2_ndg
 package   ysuscheme      bl_pbl_physics==1           -             state:regime
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
+package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             state:regime
 package   mrfscheme      bl_pbl_physics==99          -             state:regime
 

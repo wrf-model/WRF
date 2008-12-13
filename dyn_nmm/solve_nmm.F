@@ -1118,7 +1118,7 @@
      &            ,Q2,U,V,THS,NMM_TSK,SST,PREC,SNO                     &
      &            ,FIS,Z0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ          &   !PLee (3/07)
      &            ,MOIST,RMOL,MOL                                      &
-     &            ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT                  &
+     &            ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT         &
      &            ,THZ0,QZ0,UZ0,VZ0,QSH,MAVAIL                         &
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &
      &            ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX           &

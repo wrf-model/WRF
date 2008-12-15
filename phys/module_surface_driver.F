@@ -10,14 +10,22 @@ CONTAINS
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol           &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
+#if (NMM_CORE==1)
+     &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0                &
+#else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
+#endif
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update      &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
+#if (NMM_CORE==1)
+     &          ,xicem,isice,iswater,ct,tke_myj,sfenth                       &
+#else
      &          ,xicem,isice,iswater,ct,tke_myj                       &
+#endif
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
      &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin,t2,emiss               &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
@@ -89,7 +97,9 @@ CONTAINS
                                        ,NMMLSMSCHEME              &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
-                                       ,PXLSMSCHEME
+                                       ,PXLSMSCHEME               &
+                                       ,GFDLSFCSCHEME             &
+                                       ,GFDLSLAB
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
@@ -104,6 +114,7 @@ CONTAINS
    USE module_sf_pxlsm
 #if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
+   USE module_sf_gfdl
 #endif
 
    USE module_sf_slab
@@ -185,6 +196,8 @@ CONTAINS
 !-- SNOWC         flag indicating snow coverage (1 for snow cover)
 !-- HFX           net upward heat flux at the surface (W/m^2)
 !-- QFX           net upward moisture flux at the surface (kg/m^2/s)
+!-- TAUX          RHO*U**2 for ocean coupling
+!-- TAUY          RHO*U**2 for ocean coupling
 !-- LH            net upward latent heat flux at surface (W/m^2)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
 !-- tke_myj       turbulence kinetic energy from Mellor-Yamada-Janjic (MYJ) (m^2/s^2)
@@ -304,6 +317,9 @@ CONTAINS
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NDAY
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
+#if (NMM_CORE==1)
+   real , intent(IN )::   SFENTH
+#endif
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SMOIS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   TSLB
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   GLW
@@ -337,6 +353,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   PBLH
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   Q2
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QFX
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUX
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT):: TAUY
+#endif
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SFCRUNOFF
@@ -506,6 +526,7 @@ CONTAINS
    REAL    :: DTMIN,DTBL
 !
    INTEGER :: i,J,K,NK,jj,ij,n
+   INTEGER :: gfdl_ntsflg
    LOGICAL :: radiation, myj, frpcpn
    LOGICAL, INTENT(in), OPTIONAL :: rdlai2d
    REAL    :: julian
@@ -964,7 +985,34 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
        ENDIF
+#if (NMM_CORE==1)
 
+    CASE (GFDLSFCSCHEME)
+       CALL wrf_debug( 100, 'in GFDLSFC' )
+
+      IF(sf_surface_physics .eq. 88)THEN  
+        GFDL_NTSFLG=1
+      ELSE
+        GFDL_NTSFLG=0
+      ENDIF 
+
+      CALL SF_GFDL(u_phytmp,v_phytmp,t_phy,qv_curr,p_phy, & 
+                   CP,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM,                 & 
+                   DTBL, SMOIS,num_soil_layers,ISLTYP,ZNT,UST,PSIM,PSIH,                          &  !DT & MAVAIL  
+                   XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
+                   QGH,QSFC,U10,V10,                              &
+                   GZ1OZ0,WSPD,BR,ISFFLX,                         &
+                   EP_1,EP_2,KARMAN,GFDL_NTSFLG,SFENTH,           &
+                   ids,ide, jds,jde, kds,kde,                     &
+                   ims,ime, jms,jme, kms,kme,                             &
+                   i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte    )
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              CHKLOWQ(I,J)= 1.0
+           ENDDO
+           ENDDO
+
+#endif
      CASE DEFAULT
 
        WRITE( message , * )                                &

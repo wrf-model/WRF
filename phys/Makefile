@@ -36,6 +36,7 @@ MODULES = \
 	module_ra_hs.o  \
 	module_sf_sfclay.o \
 	module_sf_gfs.o \
+	module_sf_gfdl.o \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \

@@ -225,6 +225,8 @@ state  real   mavail    ij    dyn_nmm   1    -     irh
 state  real   qsh       ij    dyn_nmm   1    -     irh      "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
+state  real   taux      ij    dyn_nmm   1    -     irh      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
+state  real   tauy      ij    dyn_nmm   1    -     irh      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh       "ACPREC"   "Accumulated total precipitation"      "m"
@@ -887,6 +889,7 @@ rconfig   real    trdlw                   namelist,physics     max_domains    6.
 rconfig   real    tsrfc                   namelist,physics     max_domains    6.       rh    "tsrfc"  "number of hours in bucket for evaporation / sfc fluxes"
 rconfig   logical pcpflg                  namelist,physics     max_domains   .false.   rh    "pcpflg"  "logical switch that turns on/off the precipitation assimilation"
 rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "sigma"  "logical switch for NMM vertical coordinate (sigma or hybrid)"
+rconfig   real    sfenth                  namelist,physics     max_domains    1.0       irh     "sea spray parameter"
 rconfig   integer co2tf                   namelist,physics     1              0       -      "co2tf"  "GFDL radiation co2 flag"
 rconfig   integer ra_call_offset          namelist,physics     1             -1       -      "ra_call_offset" "radiation call offset in timesteps (-1=old, 0=new offset)" ""
 rconfig   real    cam_abs_freq_s          namelist,physics      1         21600.      -      "cam_abs_freq_s" "CAM radiation frequency for clear-sky longwave calculations" "s"
@@ -1008,11 +1011,13 @@ package   heldsuarez    ra_lw_physics==31            -             -
 package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
+package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
+package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -
 package   nmmlsmscheme   sf_surface_physics==99      -             -
 package   ysuscheme      bl_pbl_physics==1           -             -

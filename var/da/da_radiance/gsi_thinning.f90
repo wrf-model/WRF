@@ -10,7 +10,6 @@ module gsi_thinning
 !
 !
 ! Subroutines Included:
-!   sub makegvals      - set up for superob weighting
 !   sub makegrids      - set up thinning grids
 !   sub map2tgrids     - map observation to location on thinning grid
 !   sub destroygrids   - deallocate thinning grid arrays
@@ -60,6 +59,7 @@ module gsi_thinning
   end type thinning_type
 
   type(thinning_type), allocatable  :: thinning_grid(:)
+  type(thinning_type), allocatable  :: thinning_grid_conv(:)
 
 contains
 
@@ -165,6 +165,108 @@ contains
     return
   end subroutine makegrids
 
+  subroutine make3grids (n,rmesh)
+! compute dimention of thinning box
+! output (mlat,mlonx,istart_val)
+    implicit none
+
+    integer(i_kind), intent(in) :: n  ! sensor index
+    real(r_kind), intent(in) :: rmesh ! thinning box size
+
+    logical odd
+    integer(i_kind) i,ii,j,k,nlat,nlon
+    integer(i_kind) icnt,mlonj
+    real(r_kind) delonx,delat,dgv,dx,dy
+    real(r_kind) twopi,halfpi,dlon_g,dlat_g,dlon_e,dlat_e
+    real(r_kind) factor,factors,delon
+    real(r_kind) rkm2dg,glatm,glatx
+
+!   Initialize variables, set constants
+      thinning_grid_conv(n)%dthin = 1
+      thinning_grid_conv(n)%maxthin=thinning_grid_conv(n)%dthin
+
+      thinning_grid_conv(n)%istart_val=0
+      twopi  = two*pi
+      halfpi = pi*half
+      rkm2dg = r360/(twopi*rearth_equator)*r1000
+
+       dx    = rmesh*rkm2dg
+       dy    = dx
+       thinning_grid_conv(n)%mlat  = dlat_grid/dy + half
+       thinning_grid_conv(n)%mlonx = dlon_grid/dx + half
+       delat = dlat_grid/thinning_grid_conv(n)%mlat
+       delonx= dlon_grid/thinning_grid_conv(n)%mlonx
+       dgv   = delat*half
+
+       thinning_grid_conv(n)%mlat=max(2,thinning_grid_conv(n)%mlat)
+       thinning_grid_conv(n)%mlonx=max(2,thinning_grid_conv(n)%mlonx)
+    
+      do ii=1,thinning_grid_conv(n)%maxthin
+       thinning_grid_conv(n)%istart_val(ii+1)=thinning_grid_conv(n)%istart_val(ii)
+          icnt=0
+          do j = 1,thinning_grid_conv(n)%mlat
+             glatx = rlat_min + (j-1)*delat
+             glatx = glatx*deg2rad
+             glatm = glatx + dgv*deg2rad
+             factor = abs(cos(abs(glatm)))
+             mlonj = nint(thinning_grid_conv(n)%mlonx*factor)
+             mlonj = max(2,mlonj)
+             do i = 1,mlonj
+                icnt=icnt+1
+                thinning_grid_conv(n)%istart_val(ii+1)=thinning_grid_conv(n)%istart_val(ii+1)+1
+             enddo
+          enddo
+      end do
+
+! making thinning box
+! output: mlon(mlat),glat(mlat),glon(mlonx,mlat),hll(mlonx,mlat)
+
+    allocate(thinning_grid_conv(n)%mlon(thinning_grid_conv(n)%mlat), &
+             thinning_grid_conv(n)%glat(thinning_grid_conv(n)%mlat), &
+             thinning_grid_conv(n)%glon(thinning_grid_conv(n)%mlonx,thinning_grid_conv(n)%mlat), &
+             thinning_grid_conv(n)%hll(thinning_grid_conv(n)%mlonx,thinning_grid_conv(n)%mlat))
+
+!   Set up thinning grid lon & lat.  The lon & lat represent the location of the
+!   lower left corner of the thinning grid box.
+
+       thinning_grid_conv(n)%itxmax=0
+      do j = 1,thinning_grid_conv(n)%mlat
+       thinning_grid_conv(n)%glat(j) = rlat_min + (j-1)*delat
+       thinning_grid_conv(n)%glat(j) = thinning_grid_conv(n)%glat(j)*deg2rad
+       glatm = thinning_grid_conv(n)%glat(j) + dgv*deg2rad
+
+       factor = abs(cos(abs(glatm)))
+       mlonj  = nint(thinning_grid_conv(n)%mlonx*factor)     
+       thinning_grid_conv(n)%mlon(j) = max(2,mlonj)
+       delon = dlon_grid/thinning_grid_conv(n)%mlon(j)
+
+       thinning_grid_conv(n)%glat(j) = min(max(-halfpi,thinning_grid_conv(n)%glat(j)),halfpi)
+       do i = 1,thinning_grid_conv(n)%mlon(j)
+          thinning_grid_conv(n)%itxmax=thinning_grid_conv(n)%itxmax+1
+          thinning_grid_conv(n)%hll(i,j)=thinning_grid_conv(n)%itxmax
+          thinning_grid_conv(n)%glon(i,j) = rlon_min + (i-1)*delon
+          thinning_grid_conv(n)%glon(i,j) = thinning_grid_conv(n)%glon(i,j)*deg2rad
+          thinning_grid_conv(n)%glon(i,j) = min(max(zero,thinning_grid_conv(n)%glon(i,j)),twopi)
+       enddo
+       !write(6,'(f10.5,i8,2i10)') glat(j)*rad2deg, mlon(j),hll(1,j),hll(mlon(j),j)
+       !write(6,'(10f8.3)')   (glon(i,j)*rad2deg,i=1,mlon(j))
+
+    end do
+
+!   Allocate  and initialize arrays
+    allocate(thinning_grid_conv(n)%icount(thinning_grid_conv(n)%itxmax))
+    allocate(thinning_grid_conv(n)%ibest_obs(thinning_grid_conv(n)%itxmax))
+    allocate(thinning_grid_conv(n)%score_crit(thinning_grid_conv(n)%itxmax))
+
+    do j=1,thinning_grid_conv(n)%itxmax
+       thinning_grid_conv(n)%icount(j)     = 0
+       thinning_grid_conv(n)%ibest_obs(j)  = 0
+       thinning_grid_conv(n)%score_crit(j) = 9.99e6_r_kind
+    end do
+
+    return
+  end subroutine make3grids
+
   subroutine map2grids(n,dlat_earth,dlon_earth,crit1,iobs,itx,ithin,itt,iobsout,iuse)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
@@ -259,6 +361,99 @@ contains
 
     return
   end subroutine map2grids
+
+  subroutine map2grids_conv(n,dlat_earth,dlon_earth,crit1,iobs,itx,ithin,itt,iobsout,iuse)
+!$$$  subprogram documentation block
+!                .      .    .                                       .
+! subprogram:    map2grids
+!     prgmmr:    treadon     org: np23                date: 2002-10-17
+!
+! abstract:  This routine maps observations to the thinning grid.
+!
+! program history log:
+!   2002-10-17  treadon
+!   2004-06-22  treadon - update documentation
+!   2004-07-23  derber - modify code to thin obs as read in
+!   2004-12-08  li, xu - fix bug --> set iuse=.true. when use_all=.true.
+!   2005-10-14  treadon - variable name change (dlat0,dlon0) --> d*_earth
+!   2006-03-25  kistler - define iobsout for the case use_all=.true.
+!
+!   input argument list:
+!         n      - sensor index
+!     dlat_earth - earth relative observation latitude (radians)
+!     dlon_earth - earth relative observation longitude (radians)
+!     crit1      - quality indicator for observation (smaller = better)
+!     ithin      - number of obs to retain per thinning grid box
+!
+!   output argument list:
+!     iobs  - observation counter
+!     itx   - combined (i,j) index of observation on thinning grid
+!     itt   - superobs thinning counter
+!     iobsout- location for observation to be put
+!     iuse  - .true. if observation should be used
+!
+    implicit none
+    logical, intent(out) :: iuse
+    integer(i_kind), intent(out) :: itt,itx
+    integer(i_kind), intent(in)  :: ithin,n
+    integer(i_kind), intent(inout) :: iobs, iobsout
+    real(r_kind),intent(in):: dlat_earth,dlon_earth,crit1
+
+    integer(i_kind) :: ix,iy
+    real(r_kind) dlat1,dlon1,dx,dy,dxx,dyy
+    real(r_kind) dist1,crit
+
+!   Compute (i,j) indices of coarse mesh grid (grid number 1) which 
+!   contains the current observation.
+    dlat1=dlat_earth
+    dlon1=dlon_earth
+
+    call grdcrd(dlat1,1,thinning_grid_conv(n)%glat,thinning_grid_conv(n)%mlat,1)
+    iy=int(dlat1)
+    dy=dlat1-iy
+    iy=max(1,min(iy,thinning_grid_conv(n)%mlat))
+
+    call grdcrd(dlon1,1,thinning_grid_conv(n)%glon(1,iy),thinning_grid_conv(n)%mlon(iy),1)
+    ix=int(dlon1)
+    dx=dlon1-ix
+    ix=max(1,min(ix,thinning_grid_conv(n)%mlon(iy)))
+
+    dxx=half-min(dx,one-dx)
+    dyy=half-min(dy,one-dy)
+    dist1=dxx*dxx+dyy*dyy+half
+    itx=thinning_grid_conv(n)%hll(ix,iy)
+    itt=thinning_grid_conv(n)%istart_val(ithin)+itx
+    if(ithin == 0) itt=0
+
+!   Increment obs counter on coarse mesh grid.  Also accumulate observation
+!   score and distance functions
+
+    thinning_grid_conv(n)%icount(itx)=thinning_grid_conv(n)%icount(itx)+1
+!   dist1=one - quarter*(dista + distb)  !dist1 is min at grid box center and 
+                                    !ranges from 1 (at corners)to 
+                                    !.5 (at center of box)
+    crit=crit1*dist1
+    iuse=.false.
+    
+    if(thinning_grid_conv(n)%icount(itx) == 1)then
+
+!   Increment obs counter
+
+      iuse=.true.
+      iobs=iobs+1
+      thinning_grid_conv(n)%score_crit(itx)= crit
+      thinning_grid_conv(n)%ibest_obs(itx) = iobs
+      iobsout=iobs
+
+    end if
+    if(crit < thinning_grid_conv(n)%score_crit(itx) .and. thinning_grid_conv(n)%icount(itx) > 1)then
+      iuse=.true.
+      thinning_grid_conv(n)%score_crit(itx)= crit
+      iobsout = thinning_grid_conv(n)%ibest_obs(itx)
+    end if
+
+    return
+  end subroutine map2grids_conv
 
   subroutine map2tgrid(n,dlat_earth,dlon_earth,dist1,crit1,itx,ithin,itt,iuse)
 !   input argument list:
@@ -443,6 +638,26 @@ end subroutine grdcrd
     deallocate(thinning_grid(n)%score_crit)
     return
   end subroutine destroygrids
+
+  subroutine destroygrids_conv(n)
+    implicit none
+    integer(i_kind), intent(in) :: n
+    deallocate(thinning_grid_conv(n)%mlon,thinning_grid_conv(n)%glat, &
+               thinning_grid_conv(n)%glon,thinning_grid_conv(n)%hll)
+    deallocate(thinning_grid_conv(n)%icount)
+    deallocate(thinning_grid_conv(n)%ibest_obs)
+    deallocate(thinning_grid_conv(n)%score_crit)
+    return
+  end subroutine destroygrids_conv
+
+  subroutine cleangrids_conv(n)
+    implicit none
+    integer(i_kind), intent(in) :: n
+    thinning_grid_conv(n)%icount(:)     = 0
+    thinning_grid_conv(n)%ibest_obs(:)  = 0
+    thinning_grid_conv(n)%score_crit(:) = 9.99e6_r_kind
+    return
+  end subroutine cleangrids_conv
 
   subroutine destroy_sfc(n)
     implicit none

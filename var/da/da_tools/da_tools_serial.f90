@@ -16,6 +16,7 @@ contains
 #include "da_change_date.inc"
 #include "da_array_print.inc"
 #include "da_advance_cymdh.inc"
+#include "da_advance_time.inc"
 #include "da_find_fft_factors.inc"
 #include "da_find_fft_trig_funcs.inc"
 

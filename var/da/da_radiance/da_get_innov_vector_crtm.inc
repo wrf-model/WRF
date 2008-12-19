@@ -7,6 +7,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    !       1. interpolate grid%xb to obs location
    !       2. call foreward RTM to get simulated bright temperature 
    !       3. obs BT - simulated BT
+   !  HISTORY: 12/15/2008 effective radius unit is micron     Zhiquan Liu
    !---------------------------------------------------------------------------
 
    implicit none
@@ -304,12 +305,12 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
                ! reset the da_cld_eff_radius calcualted effective radius to constants if desired
 
-               Atmosphere(1)%Cloud(1)%Effective_Radius(kte-k+1)=0.01  ! in mm
-               Atmosphere(1)%Cloud(2)%Effective_Radius(kte-k+1)=0.03  ! in mm
-               !Atmosphere(1)%Cloud(3)%Effective_Radius(kte-k+1)=0.3
-               !Atmosphere(1)%Cloud(4)%Effective_Radius(kte-k+1)=0.6
-               !Atmosphere(1)%Cloud(5)%Effective_Radius(kte-k+1)=0.6
-               Atmosphere(1)%Cloud(6)%Effective_Radius(kte-k+1)=0.6
+               Atmosphere(1)%Cloud(1)%Effective_Radius(kte-k+1)=10.0  ! in micron
+               Atmosphere(1)%Cloud(2)%Effective_Radius(kte-k+1)=30.0  ! in micron
+               !Atmosphere(1)%Cloud(3)%Effective_Radius(kte-k+1)=300
+               !Atmosphere(1)%Cloud(4)%Effective_Radius(kte-k+1)=600
+               !Atmosphere(1)%Cloud(5)%Effective_Radius(kte-k+1)=600
+               Atmosphere(1)%Cloud(6)%Effective_Radius(kte-k+1)=600
 
             end if
          end do

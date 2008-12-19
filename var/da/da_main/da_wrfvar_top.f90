@@ -14,7 +14,7 @@ module da_wrfvar_top
       wrfu_cal_gregorian
 
 #if defined(RTTOV) || defined(CRTM)
-   use module_radiance, only : satinfo, time_slots
+   use module_radiance, only : satinfo
 #endif
 #ifdef RTTOV
    use module_radiance, only : coefs, sensor_descriptor

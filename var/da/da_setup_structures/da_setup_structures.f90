@@ -12,7 +12,7 @@ module da_setup_structures
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
       truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, &
-      use_radar_rf, num_ob_indexes,kts, kte, &
+      use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, &
       num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, &
@@ -42,7 +42,8 @@ module da_setup_structures
       rtminit_sensor, thinning, qc_rad,& 
       num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err,&
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
-      fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg
+      fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
+      thin_mesh_conv, time_slots, comm, ierr, root
 
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info
@@ -58,8 +59,20 @@ module da_setup_structures
    use da_ssmi, only : da_read_obs_ssmi,da_scan_obs_ssmi
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print, da_find_fft_factors, &
       da_find_fft_trig_funcs
+   use da_tools, only: da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_vtox_transforms, only : da_check_eof_decomposition
+#ifdef BUFR
+   use da_control, only : thin_conv
+   use module_radiance, only : init_constants_derived
+   use gsi_thinning, only : r999,r360,rlat_min,rlat_max,rlon_min,rlon_max, &
+                            dlat_grid,dlon_grid,thinning_grid_conv, &
+                            make3grids, destroygrids_conv
+#ifdef DM_PARALLEL
+   use mpi, only : mpi_min, mpi_max
+   use da_par_util, only : true_mpi_real
+#endif
+#endif
 
    implicit none
 

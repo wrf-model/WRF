@@ -89,7 +89,6 @@ module module_radiance
 
    integer                     :: n_scatt_coef
    character(len=5), pointer   :: coefs_scatt_instname(:)
-   real,             pointer   :: time_slots(:)
 #ifdef RTTOV
    type( rttov_coef ), pointer :: coefs(:)         ! RTTOV8_5 coefficients
    type( rttov_scatt_coef ), pointer :: coefs_scatt(:)

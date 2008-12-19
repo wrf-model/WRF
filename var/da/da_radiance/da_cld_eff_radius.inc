@@ -12,6 +12,7 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
    !   rain/snow/graupel: assume exponential particle size distribution and
    !                             spherical particles
    !                      use Gauss-Laguerre Quadrature for integration
+   ! HISTORY: 12/15/2008 effective radius unit is micron.       Zhiquan Liu
    !---------------------------------------------------------------------------
 
    integer, intent(in)  :: method
@@ -118,9 +119,6 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
    ! Ramp between the resultant value and a sea ice value in the presence of ice.
    reff_water = reff_water + (rliqice-reff_water) * min(1.0,max(0.0,xice))
 
-   reff_water = reff_water * 0.001   ! micron to mm
-   write(555,*) 'reff_water=',reff_water
-
 ! cloud ice effective radius
 
    if ( method == 1 ) then
@@ -139,9 +137,6 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
       ! 0.125 = 1/8
       reff_ice = 1.0e6 * 0.5 * ( rho * qci / 2.08e22 ) ** 0.125
    end if
-
-   reff_ice = reff_ice * 0.001   ! micron to mm
-   write(555,*) 'reff_ice=',reff_ice
 !
 ! cloud rain/snow/graupel effective radius
 !
@@ -167,8 +162,7 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
          sum1_rain = sum1_rain + totalw(nk) * (xk(nk)**3) * psd_rain(nk)
          sum2_rain = sum2_rain + totalw(nk) * (xk(nk)**2) * psd_rain(nk)
       end do
-      reff_rain = 10. * sum1_rain/sum2_rain    ! mm
-   write(555,*) 'reff_rain=',reff_rain
+      reff_rain = 10000.0 * sum1_rain/sum2_rain    ! micron
    end if
    if ( qsn > limit ) then
       do nk = 1, 32
@@ -176,8 +170,7 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
          sum1_snow = sum1_snow + totalw(nk) * (xk(nk)**3) * psd_snow(nk)
          sum2_snow = sum2_snow + totalw(nk) * (xk(nk)**2) * psd_snow(nk)
       end do
-      reff_snow = 10. * sum1_snow/sum2_snow    ! mm
-   write(555,*) 'reff_snow=',reff_snow
+      reff_snow = 10000.0 * sum1_snow/sum2_snow    ! micron
    end if
    if ( qgr > limit ) then
       do nk = 1, 32
@@ -185,8 +178,7 @@ subroutine da_cld_eff_radius(t,rho,qci,qrn,qsn,qgr,snow,xice,xland,method, &
          sum1_grau = sum1_grau + totalw(nk) * (xk(nk)**3) * psd_grau(nk)
          sum2_grau = sum2_grau + totalw(nk) * (xk(nk)**2) * psd_grau(nk)
       end do
-      reff_grau = 10. * sum1_grau/sum2_grau    ! mm
-   write(555,*) 'reff_grau=',reff_grau
+      reff_grau = 10000.0 * sum1_grau/sum2_grau    ! micron
    end if
 
 end subroutine da_cld_eff_radius

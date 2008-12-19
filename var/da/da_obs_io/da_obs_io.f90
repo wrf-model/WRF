@@ -19,10 +19,10 @@ module da_obs_io
       max_profiler_input, max_sound_input, max_mtgirs_input,max_ships_input, &
       max_satem_input,max_pilot_input, max_metar_input, max_ssmt1_input, &
       max_synop_input,max_ssmt2_input,  max_qscat_input, &
-      obs_names, num_ob_indexes, fm_index, ids,ide, &
+      obs_names, num_ob_indexes, fm_index, ids,ide, ite, jte, &
       sound, mtgirs,synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, pseudo, &
-      radar, radiance, airsr, sonde_sfc, trace_use_dull
+      radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc
 
    use da_define_structures, only : iv_type, multi_level_type, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
@@ -32,12 +32,20 @@ module da_obs_io
    use da_par_util1, only : da_proc_sum_int
    use da_physics, only : da_tp_to_qs
    use da_reporting, only : da_warning, message, da_error
-   use da_tools, only : da_llxy
-   use da_tools_serial, only : da_free_unit, da_get_unit
+   use da_tools, only : da_llxy, da_get_julian_time
+   use da_tools_serial, only : da_free_unit, da_get_unit, da_advance_time
    use da_tracing, only : da_trace_entry, da_trace_exit
 
 #ifdef BUFR
+   use da_control, only : thin_conv
    use da_grid_definitions, only : da_earth_2_model_wind
+   use module_radiance, only : deg2rad
+   use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
+#ifdef DM_PARALLEL
+   use da_control, only : root
+   use mpi, only : mpi_min
+   use da_par_util, only : true_mpi_real
+#endif
 #endif
    use da_reporting, only : message, da_message
 

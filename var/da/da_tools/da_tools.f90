@@ -20,7 +20,7 @@ module da_tools
       y_start_sub_domain, start_lat, delt_lat, delt_lon, start_lon, cp, &
       missing, surface_correction,print_detail_map, use_rad, stderr, &
       t_kelvin, trace_use_frequent, jds, jde, pptop,ppbot,npres_print, &
-      rad_to_deg, deg_to_rad
+      rad_to_deg, deg_to_rad, print_detail_obs
 
    use da_define_structures, only : info_type, field_type, x_type,  &
       model_loc_type, synop_type, bad_info_type, da_gauss_noise, &
@@ -101,6 +101,9 @@ contains
 #include "da_get_2d_sum.inc"
 #include "da_get_3d_sum.inc"
 #include "da_get_print_lvl.inc"
+
+#include "da_get_julian_time.inc"
+#include "da_get_time_slots.inc"
 
 end module da_tools
 

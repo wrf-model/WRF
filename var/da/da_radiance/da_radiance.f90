@@ -6,7 +6,6 @@ module da_radiance
 
    use module_domain, only : xb_type, domain
    use module_radiance, only : satinfo, coefs_scatt_instname, &
-      time_slots, &
       i_kind,r_kind, r_double, &
        one, zero, three,deg2rad,rad2deg, &
       n_scatt_coef,q2ppmv, &
@@ -50,7 +49,7 @@ module da_radiance
       pseudo_rad_ichan, pseudo_rad_tb, pseudo_rad_lat,pseudo_rad_lon, &
       pseudo_rad_err, use_simulated_rad, use_crtm_kmatrix , &
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
-      airs_warmest_fov
+      airs_warmest_fov, time_slots
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
@@ -71,15 +70,15 @@ module da_radiance
    use da_radiance1, only : num_tovs_before,num_tovs_after,tovs_copy_count, &
       tovs_send_pe, tovs_recv_pe, tovs_send_start, tovs_send_count, &
       tovs_recv_start,con_vars_type,aux_vars_type, datalink_type,da_qc_amsub, &
-      da_qc_amsua,da_biascorr, da_detsurtyp,da_biasprep,da_get_time_slots, &
-      da_get_julian_time,da_qc_rad, da_cld_eff_radius, da_read_biascoef
+      da_qc_amsua,da_biascorr, da_detsurtyp,da_biasprep, &
+      da_qc_rad, da_cld_eff_radius, da_read_biascoef
    use da_reporting, only : da_message, da_warning, message, da_error
 #ifdef RTTOV
    use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov
 #endif
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &
-      da_llxy, da_llxy_new, da_togrid_new
+      da_llxy, da_llxy_new, da_togrid_new, da_get_julian_time, da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, &
       da_trace_int_sort
    use da_varbc, only : da_varbc_direct,da_varbc_coldstart,da_varbc_precond, &

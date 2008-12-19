@@ -139,6 +139,7 @@ module da_define_structures
       real                   :: lon           ! Longitude in degree
       real                   :: elv           ! Elevation in m
       real                   :: pstar         ! Surface pressure
+      real                   :: dhr           ! obs time minus analysis time in hour
    end type info_type
 
    type infa_type

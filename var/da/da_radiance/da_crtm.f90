@@ -18,7 +18,7 @@ module da_crtm
       crtm_destroy_atmosphere, crtm_sensor_name, &
       crtm_allocate_surface,crtm_destroy_surface,crtm_assign_atmosphere, &
       crtm_assign_surface,crtm_zero_surface,CRTM_Zero_Atmosphere, satinfo, &
-      time_slots,crtm_platform_name, crtm_init, &
+      crtm_platform_name, crtm_init, &
       rttov_inst_name,rttov_platform_name, climatology_model_name, &
       crtm_options_type, crtm_allocate_options, crtm_destroy_options
 
@@ -28,14 +28,15 @@ module da_crtm
       time_window_min,num_fgat_time,rtminit_platform, &
       rtminit_satid, global,kms,kme,ims,ime,jms,jme,kts,kte,use_airs_mmr, &
       crtm_atmosphere,use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
-      use_antcorr
+      use_antcorr, time_slots
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
    use da_radiance1, only : da_biasprep,da_detsurtyp,da_biascorr, &
-      da_get_time_slots,da_biasprep,da_cld_eff_radius
+       da_biasprep,da_cld_eff_radius
 
    use da_reporting, only : da_error,message
    use da_tools_serial, only : da_free_unit, da_get_unit
+   use da_tools, only: da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit
 
     TYPE (CRTM_ChannelInfo_type), allocatable, save :: ChannelInfo(:)

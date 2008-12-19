@@ -33,6 +33,15 @@ subroutine da_wrfvar_init2
       call da_error(__FILE__,__LINE__, (/'can not assimilate gpspw and gpsztd simultaneously'/))
    end if
 
+   if (fg_format==fg_format_kma_global .or. fg_format==fg_format_wrf_arw_global) then
+   global=.true.
+     if( nproc_x /= 1 ) then
+      call da_error(__FILE__,__LINE__, (/'For global WRF-Var set nproc_x = 1'/))
+     end if
+   else
+   global = .false.
+   end if
+
    !<DESCRIPTION>
    ! Among the configuration variables read from the namelist is
    ! debug_level. This is retrieved using nl_get_debug_level (Registry

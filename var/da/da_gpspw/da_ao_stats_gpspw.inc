@@ -83,9 +83,9 @@ subroutine da_ao_stats_gpspw (stats_unit, iv, re)
    if (rootproc) then
       if (ntpw /= 0) then
          if (use_gpspwObs) then
-           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for Gpspw'
+           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for gpspw'
          else if (use_gpsztdObs) then
-           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for Gpsztd'
+           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for gpsztd'
          endif
 
          call da_print_stats_gpspw(stats_unit, ntpw, stats)

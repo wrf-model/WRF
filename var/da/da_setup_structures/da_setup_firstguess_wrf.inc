@@ -12,7 +12,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
    type(grid_config_rec_type), intent(in) :: config_flags
 
    integer           :: map_util_project
-   real              :: x, y, xxc, yyc, xxx, yyy, lat_cen, lon_cen
+   real              :: x, y, lat_cen, lon_cen
   
    real              :: buf(2)
 
@@ -104,7 +104,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
    ! Set map projection in WRFSI world.
    map_util_project = PROJ_LC
 
-   if (grid%map_proj == 0) then
+   if (grid%map_proj == 0 .or. grid%map_proj == 6 ) then
       map_util_project = PROJ_LATLON
    else if (grid%map_proj == 1) then
       map_util_project = PROJ_LC
@@ -123,7 +123,7 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
 
    cone_factor = map_info%cone
 
-   if (print_detail_map) then
+   if (.not. global .and. print_detail_map) then
      
       !----------------------------------------------------------------------
       ! Check the ll_to_ij:
@@ -157,13 +157,15 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags)
    start_x = 1.0
    start_y = 1.0
 
-   xxc = real(coarse_ix)/2.0
-   yyc = real(coarse_jy)/2.0
-
+   if( fg_format==fg_format_kma_global) then
+   delt_lat = 180.0/real(grid%e_sn - grid%s_sn - 1)
+   delt_lon = 360.0/real(grid%e_we - grid%s_we)
+   else if( fg_format==fg_format_wrf_arw_global) then
+   delt_lat = 180.0/real(grid%e_sn - grid%s_sn)
+   delt_lon = 360.0/real(grid%e_we - grid%s_we)
+   else
    call da_set_map_para ! set up the map background parameters
-
-   ! call da_llxy_default(PHIC,XLONC,X,Y)
-   call da_llxy_default(grid%cen_lat,grid%cen_lon,x,y)
+   end if
 
    !--------------------------------------------------------------------------
    ! [3.0] Interpolate WRF C-grid winds to p points of WRFVAR grid (interpolate 

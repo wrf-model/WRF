@@ -63,7 +63,7 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
 
       echo "VERIFY_HOUR= ${VERIFY_HOUR}"
       echo "Verify file=${DA_FIRST_GUESS}"
-      echo "Verify obs are: "$OB_DIR/$DATE/wrfvar/filtered_obs
+      echo "Verify obs are: "$OB_DIR/$DATE/filtered_obs
 
       $SCRIPTS_DIR/da_trace.ksh da_run_wrfvar $RUN_DIR
       $SCRIPTS_DIR/da_run_wrfvar.ksh > $RUN_DIR/index.html 2>&1

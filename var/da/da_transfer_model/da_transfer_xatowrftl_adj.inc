@@ -19,9 +19,10 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    real    :: rho_cgrid
 
    real, dimension(ims:ime,jms:jme,kms:kme) :: a_press
+#ifndef A2C
    real, dimension(ims:ime,jms:jme,kms:kme) :: utmp
    real, dimension(ims:ime,jms:jme,kms:kme) :: vtmp
-
+#endif
 
    integer ndynopt
 
@@ -89,6 +90,7 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    end if
 
 #endif
+#ifndef A2C
    !---------------------------------------------------------------------------
    ! [5.0] Adjoint of CONVERT FROM A-GRID TO C-GRID
    !---------------------------------------------------------------------------
@@ -96,11 +98,40 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    ! Fill the halo region for a_u and a_v.
    utmp=grid%xa%u
    vtmp=grid%xa%v
+#endif
    grid%xa%u=grid%a_u_2
    grid%xa%v=grid%a_v_2
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
 #ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV_ADJ.inc"
 #endif
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
+#else
    grid%a_u_2=grid%xa%u
    grid%a_v_2=grid%xa%v
    grid%xa%u=utmp
@@ -149,6 +180,7 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    end if
 
    grid%xa%v=grid%xa%v+vtmp
+#endif
 
    grid%a_u_2 = 0.0
    grid%a_v_2 = 0.0

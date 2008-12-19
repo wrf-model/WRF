@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_qscat_adj(iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -25,8 +27,13 @@ subroutine da_transform_xtoy_qscat_adj(iv, jo_grad_y, jo_grad_x)
       v(1,n) = jo_grad_y%qscat(n)%v
    end do
 
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(qscat), u,'u')
+   call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(qscat), v,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(qscat), u)
    call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(qscat), v)
+#endif
 
    deallocate (u)
    deallocate (v)

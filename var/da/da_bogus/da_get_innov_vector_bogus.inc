@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
 
    !------------------------------------------------------------------------------
    ! Purpose: calculate the innovations for the bogus data.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !------------------------------------------------------------------------------
 
    implicit none
@@ -77,8 +79,13 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
 
    ! [1.4] Interpolate horizontally:
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xb%u, iv%info(bogus), model_u,'u')
+   call da_interp_lin_3d (grid%xb%v, iv%info(bogus), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xb%u, iv%info(bogus), model_u)
    call da_interp_lin_3d (grid%xb%v, iv%info(bogus), model_v)
+#endif
    call da_interp_lin_3d (grid%xb%t, iv%info(bogus), model_t)
    call da_interp_lin_3d (grid%xb%q, iv%info(bogus), model_q)
 
@@ -152,7 +159,7 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
+    call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_bogus")
 

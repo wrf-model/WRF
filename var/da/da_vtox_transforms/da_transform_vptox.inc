@@ -2,6 +2,8 @@ subroutine da_transform_vptox(grid, vp, be, ep)
 
    !-----------------------------------------------------------------------
    ! Purpose: Physical transform of analysis increment variables.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -37,6 +39,8 @@ subroutine da_transform_vptox(grid, vp, be, ep)
   
    ! Temperature:
    grid%xa%t(its:ite,jts:jte,kts:kte) = vp%v3(its:ite,jts:jte,kts:kte)
+
+
    do k1 = kts, kte
       do k = kts, kte
          do j = jts, jte
@@ -56,9 +60,37 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    !--------------------------------------------------------------------------
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
+  
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
 
 #ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV.inc"
+#endif
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
 #endif
 
    ! Psi and chi to u and v:

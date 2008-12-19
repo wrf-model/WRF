@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_pseudo_adj(iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -34,8 +36,13 @@ subroutine da_transform_xtoy_pseudo_adj(iv, jo_grad_y, jo_grad_x)
       t(1,n) = jo_grad_y%pseudo(n)%t
    end do
 
+#ifdef A2C
+   call da_interp_lin_3d_adj(jo_grad_x%u, iv%info(pseudo), u,'u')
+   call da_interp_lin_3d_adj(jo_grad_x%v, iv%info(pseudo), v,'v')
+#else
    call da_interp_lin_3d_adj(jo_grad_x%u, iv%info(pseudo), u)
    call da_interp_lin_3d_adj(jo_grad_x%v, iv%info(pseudo), v)
+#endif
    call da_interp_lin_3d_adj(jo_grad_x%q, iv%info(pseudo), q)
    call da_interp_lin_3d_adj(jo_grad_x%p, iv%info(pseudo), p)
    call da_interp_lin_3d_adj(jo_grad_x%t, iv%info(pseudo), t)

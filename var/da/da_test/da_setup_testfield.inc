@@ -60,8 +60,37 @@ subroutine da_setup_testfield(grid)
       end do
    end if
 
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
+
 #ifdef DM_PARALLEL
 #include "HALO_XA.inc"
+#endif
+
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
 #endif
 
    if (sfc_assi_options == 2) then
@@ -69,6 +98,7 @@ subroutine da_setup_testfield(grid)
 #include "HALO_SFC_XA.inc"
 #endif
    end if
+
 
    if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
         use_ssmitbobs .or. use_ssmiretrievalobs) then

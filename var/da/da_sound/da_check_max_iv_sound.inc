@@ -22,8 +22,10 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
    do n = iv%info(sound)%n1,iv%info(sound)%n2
       do k = 1, iv%info(sound)%levels(n)
          call da_get_print_lvl(iv%sound(n)%p(k),ipr) 
-         if( iv%sound(n)%u(k)%qc == fails_error_max )iv%sound(n)%u(k)%qc =0
+         if( iv%sound(n)%u(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%u(k)%qc =0
          if( iv%sound(n)%u(k)%qc >= obs_qc_pointer ) then 
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%u(k), max_error_uv,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,1,ipr) = num_qcstat_conv(1,sound,1,ipr) + 1
@@ -35,8 +37,10 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
          end if
          end if
 
-         if( iv%sound(n)%v(k)%qc == fails_error_max )iv%sound(n)%v(k)%qc =0
+         if( iv%sound(n)%v(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%v(k)%qc =0
          if( iv%sound(n)%v(k)%qc >= obs_qc_pointer ) then 
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%v(k), max_error_uv,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,2,ipr) = num_qcstat_conv(1,sound,2,ipr) + 1
@@ -48,8 +52,10 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
          end if
          end if
 
-         if( iv%sound(n)%t(k)%qc == fails_error_max )iv%sound(n)%t(k)%qc =0
+         if( iv%sound(n)%t(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%t(k)%qc =0
          if( iv%sound(n)%t(k)%qc >= obs_qc_pointer ) then 
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%t(k), max_error_t ,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,3,ipr) = num_qcstat_conv(1,sound,3,ipr) + 1
@@ -61,8 +67,10 @@ subroutine da_check_max_iv_sound(iv, it,num_qcstat_conv)
          end if
          end if
 
-         if( iv%sound(n)%q(k)%qc == fails_error_max )iv%sound(n)%q(k)%qc =0
+         if( iv%sound(n)%q(k)%qc == fails_error_max .and. it > 1 )iv%sound(n)%q(k)%qc =0
          if( iv%sound(n)%q(k)%qc >= obs_qc_pointer ) then 
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(sound), n, iv%sound(n)%q(k), max_error_q ,failed)
          if( iv%info(sound)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,sound,4,ipr) = num_qcstat_conv(1,sound,4,ipr) + 1

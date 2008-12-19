@@ -2,6 +2,8 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    !---------------------------------------------------------------------------
    ! Purpose: Transforms analysis to control variables (Vp-type)
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !---------------------------------------------------------------------------
 
    implicit none
@@ -30,8 +32,37 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
 
    ! [2.2] Transform u, v to streamfunction via vorticity:
 
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
+
 #ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV_ADJ.inc"
+#endif
+
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
 #endif
 
    call da_uv_to_vorticity(xb, xa % u, xa % v, vor)

@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    !------------------------------------------------------------------------
@@ -95,8 +97,13 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    call da_interp_lin_3d_adj (jo_grad_x % wh,  iv%info(radar), model_w)
    call da_interp_lin_3d_adj (jo_grad_x % qrn, iv%info(radar), model_qrn)
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x % v,   iv%info(radar), model_v,'u')
+   call da_interp_lin_3d_adj (jo_grad_x % u,   iv%info(radar), model_u,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x % v,   iv%info(radar), model_v)
    call da_interp_lin_3d_adj (jo_grad_x % u,   iv%info(radar), model_u)
+#endif
 
    deallocate (model_p)
    deallocate (model_u)

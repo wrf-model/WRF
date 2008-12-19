@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_airsr (grid, iv, y)
 
    !-------------------------------------------------------------------------
    ! Purpose: Does transforms from model space to AIRS locations
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-------------------------------------------------------------------------
 
    implicit none

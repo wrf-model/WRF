@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_pilot_adj(iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -25,8 +27,13 @@ subroutine da_transform_xtoy_pilot_adj(iv, jo_grad_y, jo_grad_x)
       model_v(1:iv%info(pilot)%levels(n),n) = jo_grad_y%pilot(n)%v(:)
    end do
 
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(pilot), model_u,'u')
+   call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(pilot), model_v,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(pilot), model_u)
    call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(pilot), model_v)
+#endif
 
    deallocate(model_u)
    deallocate(model_v)

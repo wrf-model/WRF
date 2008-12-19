@@ -53,7 +53,8 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    if (global) then
       call da_transform_vtovv_global_adj(cv_size, xbx, be, cv, vv)
-   else
+   else if (fg_format == fg_format_wrf_arw_regional .or. &
+            fg_format == fg_format_wrf_nmm_regional) then
       call da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
    end if
 

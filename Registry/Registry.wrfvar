@@ -1971,6 +1971,7 @@ halo      HALO_SFC_XA        dyn_em 24:xa%u10,xa%v10,xa%t2,xa%q2
 halo      HALO_SSMI_XA       dyn_em 24:xa%ztd,xa%tpw,xa%speed,xa%tb19v,xa%tb19h,xa%tb22v,xa%tb37v,xa%tb37h,xa%tb85v,xa%tb85h,xa%ref
 halo      HALO_2D_WORK       dyn_em 24:xp%vxy
 halo      HALO_RADAR_XA_W    dyn_em 24:xa%w,xa%wh
+halo      HALO_XB_UV         dyn_em 24:xb%u,xb%v
 
 ##### Derived types for WRFVAR
 # BEGIN VP_TYPE DEFINITION:
@@ -2028,8 +2029,8 @@ typedef xb_type integer    kte
 #Grid variables	       			   
 typedef xb_type real    grid_box_area          ij       -         1        -       -  
 typedef xb_type real    map_factor             ij       -         1        -       -
-typedef xb_type real    u                      ijk      -         1        -       -
-typedef xb_type real    v                      ijk      -         1        -       -
+typedef xb_type real    u                      ijk      -         1        X       -
+typedef xb_type real    v                      ijk      -         1        Y       -
 typedef xb_type real    w                      ijk      -         1        -       -
 typedef xb_type real    t                      ijk      -         1        -       -
 typedef xb_type real    p                      ijk      -         1        -       -
@@ -2113,8 +2114,8 @@ typedef xb_type real    kma_b                  k        -         1        -    
 # END XB_TYPE DEFINITION
 
 # BEGIN X_TYPE DEFINITION
-typedef x_type real    u                      ijk      -         1        -       -
-typedef x_type real    v                      ijk      -         1        -       -
+typedef x_type real    u                      ijk      -         1        X       -
+typedef x_type real    v                      ijk      -         1        Y       -
 typedef x_type real    w                      ijk      -         1        -       -
 typedef x_type real    t                      ijk      -         1        -       -
 typedef x_type real    q                      ijk      -         1        -       -

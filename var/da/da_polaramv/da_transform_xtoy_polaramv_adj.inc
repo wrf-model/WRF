@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_polaramv_adj (iv, jo_grad_y, jo_grad_x)
 
    !-------------------------------------------------------------------------
    ! Purpose: X to Y Transpose operator for Polar AMVs 
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-------------------------------------------------------------------------
 
    implicit none
@@ -24,8 +26,13 @@ subroutine da_transform_xtoy_polaramv_adj (iv, jo_grad_y, jo_grad_x)
       v(1:size(jo_grad_y%polaramv(n)%v),n) = jo_grad_y%polaramv(n)%v(:)
    end do
 
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(polaramv), u,'u')
+   call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(polaramv), v,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(polaramv), u)
    call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(polaramv), v)
+#endif
 
    deallocate (u)
    deallocate (v)

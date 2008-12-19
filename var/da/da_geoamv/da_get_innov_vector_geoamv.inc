@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
 
    !-------------------------------------------------------------------------
    ! Purpose: Calculates innovation vector does QC for geoamv
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-------------------------------------------------------------------------
 
    implicit none
@@ -90,8 +92,13 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
       end do
    end if
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xb%u, iv%info(geoamv), model_u,'u')
+   call da_interp_lin_3d (grid%xb%v, iv%info(geoamv), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xb%u, iv%info(geoamv), model_u)
    call da_interp_lin_3d (grid%xb%v, iv%info(geoamv), model_v)
+#endif
 
    do n = iv%info(geoamv)%n1, iv%info(geoamv)%n2
       do k = 1, iv%info(geoamv)%levels(n)
@@ -110,9 +117,7 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
    !------------------------------------------------------------------------
    ! Perform optional maximum error check:
    !------------------------------------------------------------------------
-
-   if (check_max_iv) &    
-      call da_check_max_iv_geoamv(iv,it,num_qcstat_conv)     
+   call da_check_max_iv_geoamv(iv,it,num_qcstat_conv)     
 
    deallocate (model_u)
    deallocate (model_v)

@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
 
    !--------------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !--------------------------------------------------------------------------
 
    implicit none
@@ -27,8 +29,13 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
       allocate (model_q(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
       allocate (model_psfc(iv%info(buoy)%n1:iv%info(buoy)%n2))
       ! [1.2] Interpolate horizontally:
+#ifdef A2C
+      call da_interp_lin_3d (grid%xa%u, iv%info(buoy), model_u,'u')
+      call da_interp_lin_3d (grid%xa%v, iv%info(buoy), model_v,'v')
+#else
       call da_interp_lin_3d (grid%xa%u, iv%info(buoy), model_u)
       call da_interp_lin_3d (grid%xa%v, iv%info(buoy), model_v)
+#endif
       call da_interp_lin_3d (grid%xa%t, iv%info(buoy), model_t)
       call da_interp_lin_3d (grid%xa%q, iv%info(buoy), model_q)
 

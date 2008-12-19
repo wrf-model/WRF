@@ -2,6 +2,8 @@ subroutine da_transform_xtoxa(grid)
 
    !--------------------------------------------------------------------------------------------------
    ! Purpose: Transfers fields from WRF TL fields to dignostic fields needed by observational operators
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !--------------------------------------------------------------------------------------------------
 
    implicit none
@@ -23,7 +25,9 @@ subroutine da_transform_xtoxa(grid)
 
    do j=jts,jte
       do i=its,ite
-         if (fg_format == fg_format_wrf_arw_regional) then
+        if ((fg_format==fg_format_wrf_arw_regional) .or. &
+            (fg_format==fg_format_wrf_arw_global  ) ) then
+
             sdmd=0.0
             s1md=0.0
             do k=kts,kte
@@ -69,8 +73,36 @@ subroutine da_transform_xtoxa(grid)
 
    if (.not.test_transforms) then
       ! Exchange grid%xa halo region.
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
 #ifdef DM_PARALLEL
 #include "HALO_XA.inc"
+#endif
+
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
 #endif
 
       if (sfc_assi_options == 2) then

@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_pseudo(grid, iv, y)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -26,8 +28,13 @@ subroutine da_transform_xtoy_pseudo(grid, iv, y)
    allocate (p(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
    allocate (t(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
 
+#ifdef A2C
+   call da_interp_lin_3d(grid%xa%u, iv%info(pseudo), u,'u')
+   call da_interp_lin_3d(grid%xa%v, iv%info(pseudo), v,'v')
+#else
    call da_interp_lin_3d(grid%xa%u, iv%info(pseudo), u)
    call da_interp_lin_3d(grid%xa%v, iv%info(pseudo), v)
+#endif
    call da_interp_lin_3d(grid%xa%q, iv%info(pseudo), q)
    call da_interp_lin_3d(grid%xa%p, iv%info(pseudo), p)
    call da_interp_lin_3d(grid%xa%t, iv%info(pseudo), t)

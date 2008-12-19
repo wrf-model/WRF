@@ -2,6 +2,8 @@ subroutine da_transfer_xatowrf(grid)
 
    !---------------------------------------------------------------------------
    !  Purpose: Convert analysis increments into WRF increments
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !
    !  The following WRF fields are modified:  
    !    grid%u_2
@@ -25,9 +27,12 @@ subroutine da_transfer_xatowrf(grid)
 
    ! arrays to hold wrf increments on the c-grid 
 
-   real, dimension(ims:ime,jms:jme, &
-      kms:kme) :: &
+#ifdef A2C
+   real, dimension(ims:ime,jms:jme, kms:kme) :: q_cgrid, ph_cgrid
+#else
+   real, dimension(ims:ime,jms:jme, kms:kme) :: &
       u_cgrid, v_cgrid, q_cgrid, ph_cgrid
+#endif
 
    real, dimension(ims:ime,jms:jme) :: mu_cgrid
 
@@ -220,6 +225,7 @@ subroutine da_transfer_xatowrf(grid)
      end do
    end do
 
+
    ! ========================
    ! Write out the increment:
    ! ========================
@@ -229,18 +235,52 @@ subroutine da_transfer_xatowrf(grid)
       call da_write_increments (grid, q_cgrid, mu_cgrid, ph_cgrid)
    end if
 
+#ifdef A2C
+
+   !TBH:  NOTE that grid%xp%halo_id3 = HALO_PSICHI_UV_ADJ which its currently defined 
+   !TBH:  in the Regitstry as "dyn_em 24:grid%xa%u,grid%xa%v,grid%xa%psfc".  Clearly it its not 
+   !TBH:  necessary to update halos in grid%xa%psfc here!  
+
+!rizvi's update
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#else
    ! CONVERT FROM A-GRID TO C-GRID
+
 
    !TBH:  NOTE that grid%xp%halo_id3 = HALO_PSICHI_UV_ADJ which its currently defined 
    !TBH:  in the Regitstry as "dyn_em 24:grid%xa%u,grid%xa%v,grid%xa%psfc".  Clearly it its not 
    !TBH:  necessary to update halos in grid%xa%psfc here!  Also, 24-point stencil its 
    !TBH:  too thick, 9-point should suffice.  Apparently, grid%xp%halo_id3 its used 
-   !TBH:  in many places!  Thits needs to be fixed.  
+   !TBH:  in many places!  Thits needs to be fixed. 
+#endif
 
 #ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV_ADJ.inc"
 #endif
 
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
+#else
    ! Fill the boundary
 
    ! The southern boundary
@@ -289,7 +329,7 @@ subroutine da_transfer_xatowrf(grid)
    if (ite == ide) then
       v_cgrid(ite+1,jts:jte+1,kts:kte)=0.0
    end if
-
+#endif
    !---------------------------------------------------------------------------
    ! [5.0] add increment to the original guess and update "grid"
    !---------------------------------------------------------------------------
@@ -303,8 +343,10 @@ subroutine da_transfer_xatowrf(grid)
 
       do k=kts,kte
          do i=its,ite
+#ifndef A2C
             grid%u_2(i,j,k) = grid%u_2(i,j,k) + u_cgrid(i,j,k)
             grid%v_2(i,j,k) = grid%v_2(i,j,k) + v_cgrid(i,j,k)
+#endif
             grid%w_2(i,j,k) = grid%w_2(i,j,k) + grid%xa%w(i,j,k)
             grid%moist(i,j,k,P_QV) = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
             ! makte sure qv its positive.
@@ -333,6 +375,23 @@ subroutine da_transfer_xatowrf(grid)
       end do
    end do
 
+#ifdef A2C
+   do j=jts,jte
+      do k=kts,kte
+         do i=its,ite+1
+          grid%u_2(i,j,k) = grid%u_2(i,j,k) + grid%xa%u(i,j,k)
+         end do
+      end do
+   end do
+
+   do j=jts,jte+1
+      do k=kts,kte
+         do i=its,ite
+          grid%v_2(i,j,k) = grid%v_2(i,j,k) + grid%xa%v(i,j,k)
+         end do
+      end do
+   end do
+#else
    ! The northern boundary
    if (jte == jde) then
       j=jte+1
@@ -352,6 +411,7 @@ subroutine da_transfer_xatowrf(grid)
          end do
       end do
    end if
+#endif
 
    if (print_detail_xa) then
       write(unit=stdout, fmt=*) 'simple variables:'
@@ -382,12 +442,23 @@ subroutine da_transfer_xatowrf(grid)
          end do
       end if
 
+#ifdef A2C
       write(unit=stdout, fmt='(2(2x, a, e20.12))') &
          'maxval(mu_cgrid(its:ite,jts:jte))       =', &
          maxval(mu_cgrid(its:ite,jts:jte)), &
          'minval(mu_cgrid(its:ite,jts:jte))       =', &
          minval(mu_cgrid(its:ite,jts:jte)), &
-         'maxval(u_cgrid(its:ite,jts:jte,kts:kte))  =', &
+         'maxval(q_cgrid(its:ite,jts:jte,kts:kte))  =', &
+         maxval(q_cgrid(its:ite,jts:jte,kts:kte)), &
+         'minval(q_cgrid(its:ite,jts:jte,kts:kte))  =', &
+         minval(q_cgrid(its:ite,jts:jte,kts:kte))
+#else
+      write(unit=stdout, fmt='(2(2x, a, e20.12))') &
+         'maxval(mu_cgrid(its:ite,jts:jte))       =', &
+         maxval(mu_cgrid(its:ite,jts:jte)), &
+         'minval(mu_cgrid(its:ite,jts:jte))       =', &
+         minval(mu_cgrid(its:ite,jts:jte)), &
+        'maxval(u_cgrid(its:ite,jts:jte,kts:kte))  =', &
          maxval(u_cgrid(its:ite,jts:jte,kts:kte)), &
          'minval(u_cgrid(its:ite,jts:jte,kts:kte))  =', &
          minval(u_cgrid(its:ite,jts:jte,kts:kte)), &
@@ -399,10 +470,16 @@ subroutine da_transfer_xatowrf(grid)
          maxval(q_cgrid(its:ite,jts:jte,kts:kte)), &
          'minval(q_cgrid(its:ite,jts:jte,kts:kte))  =', &
          minval(q_cgrid(its:ite,jts:jte,kts:kte))
+#endif
 
       do k=kts,kte
          write(unit=stdout, fmt='(a, i3)') 'k=', k
 
+#ifdef A2C
+         write(unit=stdout, fmt='(2(2x, a, e20.12))') &
+            'maxval(q_cgrid(its:ite,jts:jte,k))  =', maxval(q_cgrid(its:ite,jts:jte,k)), &
+            'minval(q_cgrid(its:ite,jts:jte,k))  =', minval(q_cgrid(its:ite,jts:jte,k))
+#else
          write(unit=stdout, fmt='(2(2x, a, e20.12))') &
             'maxval(u_cgrid(its:ite,jts:jte,k))  =', maxval(u_cgrid(its:ite,jts:jte,k)), &
             'minval(u_cgrid(its:ite,jts:jte,k))  =', minval(u_cgrid(its:ite,jts:jte,k)), &
@@ -410,6 +487,7 @@ subroutine da_transfer_xatowrf(grid)
             'minval(v_cgrid(its:ite,jts:jte,k))  =', minval(v_cgrid(its:ite,jts:jte,k)), &
             'maxval(q_cgrid(its:ite,jts:jte,k))  =', maxval(q_cgrid(its:ite,jts:jte,k)), &
             'minval(q_cgrid(its:ite,jts:jte,k))  =', minval(q_cgrid(its:ite,jts:jte,k))
+#endif
       end do
    end if
 

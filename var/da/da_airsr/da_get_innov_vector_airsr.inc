@@ -5,6 +5,8 @@ subroutine da_get_innov_vector_airsr( it,num_qcstat_conv, grid, ob, iv)
    !                   AIRS retrieval locations 
    !                b) Does quality control check on innovation vector
    !                   if required.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !----------------------------------------------------------------------
 
    implicit none
@@ -104,7 +106,7 @@ subroutine da_get_innov_vector_airsr( it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_airsr(iv, it, num_qcstat_conv)     
+   call da_check_max_iv_airsr(iv, it, num_qcstat_conv)     
  
    deallocate (model_t)
    deallocate (model_q)

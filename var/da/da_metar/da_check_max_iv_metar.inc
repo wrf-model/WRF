@@ -22,8 +22,10 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(metar)%n1,iv%info(metar)%n2
-      if( iv%metar(n)%u%qc == fails_error_max )iv%metar(n)%u%qc =0
+      if( iv%metar(n)%u%qc == fails_error_max .and. it > 1 )iv%metar(n)%u%qc =0
       if( iv%metar(n)%u%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( check_max_iv) &
       call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%u, max_error_uv, failed)
       if( iv%info(metar)%proc_domain(1,n) ) then
       num_qcstat_conv(1,metar,1,1)= num_qcstat_conv(1,metar,1,1) + 1
@@ -35,8 +37,10 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%metar(n)%v%qc == fails_error_max )iv%metar(n)%v%qc =0
+      if( iv%metar(n)%v%qc == fails_error_max .and. it > 1 )iv%metar(n)%v%qc =0
       if( iv%metar(n)%v%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( check_max_iv) &
       call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%v, max_error_uv, failed)             
       if( iv%info(metar)%proc_domain(1,n) ) then
       num_qcstat_conv(1,metar,2,1)= num_qcstat_conv(1,metar,2,1) + 1
@@ -48,8 +52,10 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%metar(n)%t%qc == fails_error_max )iv%metar(n)%t%qc =0
+      if( iv%metar(n)%t%qc == fails_error_max .and. it > 1 )iv%metar(n)%t%qc =0
       if( iv%metar(n)%t%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( check_max_iv) &
       call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%t, max_error_t , failed)
       if( iv%info(metar)%proc_domain(1,n) ) then
       num_qcstat_conv(1,metar,3,1)= num_qcstat_conv(1,metar,3,1) + 1
@@ -61,8 +67,10 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%metar(n)%q%qc == fails_error_max )iv%metar(n)%q%qc =0
+      if( iv%metar(n)%q%qc == fails_error_max .and. it > 1 )iv%metar(n)%q%qc =0
       if( iv%metar(n)%q%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( check_max_iv) &
       call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%q, max_error_q , failed)
       if( iv%info(metar)%proc_domain(1,n) ) then
       num_qcstat_conv(1,metar,4,1)= num_qcstat_conv(1,metar,4,1) + 1
@@ -74,8 +82,10 @@ subroutine da_check_max_iv_metar(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%metar(n)%p%qc == fails_error_max )iv%metar(n)%p%qc =0
+      if( iv%metar(n)%p%qc == fails_error_max .and. it > 1 )iv%metar(n)%p%qc =0
       if( iv%metar(n)%p%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( check_max_iv) &
       call da_max_error_qc (it, iv%info(metar), n, iv%metar(n)%p, max_error_p , failed)         
       if( iv%info(metar)%proc_domain(1,n) ) then
       num_qcstat_conv(1,metar,5,1)= num_qcstat_conv(1,metar,5,1) + 1

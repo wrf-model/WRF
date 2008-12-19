@@ -25,7 +25,7 @@ module da_setup_structures
       use_ssmt1obs,use_ssmt2obs, use_shipsobs, use_satemobs, use_synopobs, &
       use_radar_rv,use_profilerobs, use_obsgts, use_geoamvobs, use_buoyobs, &
       jb_factor, je_factor, alphacv_method,its,ite,jts,jte,cv_size_domain_jb, &
-      cv_size_domain_je, cv_size_domain,ids,ide,jds,jde,kde,ensdim_alpha, &
+      cv_size_domain_je, cv_size_domain,ensdim_alpha, &
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale,len_scaling1, &
       len_scaling2,len_scaling3,len_scaling4,len_scaling5,max_vert_var1, &
       max_vert_var2,max_vert_var3,max_vert_var4,print_detail_be, &
@@ -33,7 +33,7 @@ module da_setup_structures
       var_scaling5,vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
-      ims,ime,jms,jme,kms,kme,kds, vert_corr_2, alphacv_method_xa, vert_evalue_global, &
+      vert_corr_2, alphacv_method_xa, vert_evalue_global, &
       vert_evalue_local, obs_names, num_ob_indexes, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
@@ -44,7 +44,9 @@ module da_setup_structures
       num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err,&
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
-      sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, root, comm, ierr
+      sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, &
+      ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr   
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info
    use da_obs_io, only : da_scan_obs_bufr,da_read_obs_bufr,da_read_obs_radar, &

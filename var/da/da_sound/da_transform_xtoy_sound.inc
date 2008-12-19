@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_sound (grid, iv, y)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -24,8 +26,13 @@ subroutine da_transform_xtoy_sound (grid, iv, y)
    allocate (t(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
    allocate (q(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
   
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(sound), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(sound), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(sound), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(sound), v)
+#endif
    call da_interp_lin_3d (grid%xa%t, iv%info(sound), t)
    call da_interp_lin_3d (grid%xa%q, iv%info(sound), q)
 

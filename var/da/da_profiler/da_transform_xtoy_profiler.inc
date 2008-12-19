@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_profiler (grid, iv, y)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -20,8 +22,13 @@ subroutine da_transform_xtoy_profiler (grid, iv, y)
    allocate (model_u(iv%info(profiler)%max_lev,iv%info(profiler)%n1:iv%info(profiler)%n2))
    allocate (model_v(iv%info(profiler)%max_lev,iv%info(profiler)%n1:iv%info(profiler)%n2))
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(profiler), model_u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(profiler), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(profiler), model_u)
    call da_interp_lin_3d (grid%xa%v, iv%info(profiler), model_v)
+#endif
 
    do n=iv%info(profiler)%n1,iv%info(profiler)%n2
       y%profiler(n)%u(:) = model_u(1:iv%info(profiler)%levels(n),n)

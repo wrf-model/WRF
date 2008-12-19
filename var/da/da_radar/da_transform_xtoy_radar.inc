@@ -4,6 +4,8 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    ! Purpose: calculate the Doppler radial velocity and 
    ! reflectivity at the observation location from the first guess.
    ! It is linearized. 
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !---------------------------------------------------------------------
  
    implicit none
@@ -48,8 +50,13 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    end do
 
    ! [1.4] Interpolate horizontally from dot points:
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u,   iv%info(radar), model_u,'u')
+   call da_interp_lin_3d (grid%xa%v,   iv%info(radar), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u,   iv%info(radar), model_u)
    call da_interp_lin_3d (grid%xa%v,   iv%info(radar), model_v)
+#endif
    call da_interp_lin_3d (grid%xa%qrn, iv%info(radar), model_qrn)
    call da_interp_lin_3d (grid%xa%wh,  iv%info(radar), model_w)
 

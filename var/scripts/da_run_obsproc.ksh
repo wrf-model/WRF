@@ -61,7 +61,7 @@ export FCST_RANGE=$FCST_RANGE_SAVE
 
 export OB_FILE=obs.${START_YEAR}${START_MONTH}${START_DAY}${START_HOUR}
 
-#ln -fs $OB_DIR/$DATE/$OB_FILE .
+ln -fs $OB_DIR/$DATE/$OB_FILE .
 
 if [[ -f $RTOBS_DIR/$DATE/${OB_FILE}.gz ]]; then
    # If compressed, unpack

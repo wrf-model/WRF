@@ -4,6 +4,8 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    ! Purpose: Test observation operator transform and adjoint for compatibility.
    !
    ! Method:  Standard adjoint test: < y, y > = < x, x_adj >.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !---------------------------------------------------------------------------
    
    implicit none
@@ -44,18 +46,37 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    partial_lhs = 0.0
    pertile_lhs = 0.0
 
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
+
 #ifdef DM_PARALLEL
 #include "HALO_XA.inc"
 #endif
 
-   !  grid%xa%u(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%v(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%w(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%t(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%p(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%q(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%rh(ims:ime, jms:jme, kms:kme) = 0.0
-   !  grid%xa%psfc(ims:ime, jms:jme) = 0.0
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
+#endif
 
    xa2_u(ims:ime, jms:jme, kms:kme) = grid%xa%u(ims:ime, jms:jme, kms:kme)
    xa2_v(ims:ime, jms:jme, kms:kme) = grid%xa%v(ims:ime, jms:jme, kms:kme)
@@ -69,6 +90,12 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    xa2_qcw(ims:ime, jms:jme, kms:kme) = grid%xa%qcw(ims:ime, jms:jme, kms:kme)
    xa2_qrn(ims:ime, jms:jme, kms:kme) = grid%xa%qrn(ims:ime, jms:jme, kms:kme)
 
+#ifdef A2C
+    if( ite == ide ) &    
+print*,__FILE__,jte,' xa2_u.xa2_u for col= ',ite+1,sum(xa2_u(ite+1, jts:jte, kts:kte) * xa2_u(ite+1, jts:jte, kts:kte))
+    if( jte == jde ) &    
+print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts:kte) * xa2_v(its:ite, jte+1, kts:kte))
+#endif
    if (var4d) then
       call da_transfer_xatowrftl(grid, config_flags, 'tl01')
 
@@ -185,6 +212,12 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
 
       call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
 
+#ifdef A2C
+    if( ite == ide ) &    
+print*,__FILE__,jte,' grid%xa%u.grid%xa%u for col= ',ite+1,sum(grid%xa%u(ite+1, jts:jte, kts:kte) * grid%xa%u(ite+1, jts:jte, kts:kte))
+    if( jte == jde ) &    
+print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite, jte+1, kts:kte) * grid%xa%v(its:ite, jte+1, kts:kte))
+#endif
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
           use_gpsztdobs .or. use_gpsrefobs .or.                 &
@@ -368,6 +401,19 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, grid, config_flags, iv, y)
    partial_rhs = partial_rhs &
       + sum (grid%xa%qcw(its:ite, jts:jte, kts:kte) * xa2_qcw(its:ite, jts:jte, kts:kte)) &
       + sum (grid%xa%qrn(its:ite, jts:jte, kts:kte) * xa2_qrn(its:ite, jts:jte, kts:kte))
+
+#ifdef A2C
+    if( ite == ide ) then
+print*,__FILE__,' contribution from ',ite+1,' col for U : ',sum (grid%xa%u(ite+1, jts:jte, kts:kte) * xa2_u(ite+1, jts:jte, kts:kte))
+   partial_rhs = partial_rhs &
+      + sum (grid%xa%u(ite+1, jts:jte, kts:kte) * xa2_u(ite+1, jts:jte, kts:kte))
+   end if
+    if( jte == jde ) then
+print*,__FILE__,' contribution from ',jte+1,' row for V : ',sum(grid%xa%v(its:ite, jte+1, kts:kte) * xa2_v(its:ite, jte+1, kts:kte))
+   partial_rhs = partial_rhs &
+      + sum (grid%xa%v(its:ite, jte+1, kts:kte) * xa2_v(its:ite, jte+1, kts:kte))
+   end if
+#endif
 
    !----------------------------------------------------------------------
    !  [7.0] Print output:

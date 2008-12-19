@@ -2,6 +2,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    !---------------------------------------------------------------------------
    ! Purpose: Transfers fields from WRF to first guess structure.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !---------------------------------------------------------------------------
 
    implicit none
@@ -29,6 +31,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    real   :: qvf1, cvpm, cpovcv, ppb, ttb, albn, aln, height
    real, allocatable :: arrayglobal(:,:)
+#ifdef A2C
+   real   :: uu, vv
+#endif
 
    !---------------------------------------------------------------------------
    ! Set xb array range indices for processor subdomain.
@@ -196,6 +201,44 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    ! the most east column, and the most north row are
    ! properly initailized for each tile.
    !---------------------------------------------------------------
+#ifdef A2C
+
+   grid%xa%u(its:ite+1,jts:jte,kts:kte) = grid%u_2(its:ite+1,jts:jte,kts:kte)
+   grid%xa%v(its:ite,jts:jte+1,kts:kte) = grid%v_2(its:ite,jts:jte+1,kts:kte)
+   grid%xb%u(its:ite+1,jts:jte,kts:kte) = grid%u_2(its:ite+1,jts:jte,kts:kte)
+   grid%xb%v(its:ite,jts:jte+1,kts:kte) = grid%v_2(its:ite,jts:jte+1,kts:kte)
+
+!rizvi's update
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+!rizvi's update
+#ifdef DM_PARALLEL
+#include "HALO_XB_UV.inc"
+#endif
+
+!rizvi's update
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
+
+#else
 
    do j=jts,jte
       do k=kts,kte
@@ -219,6 +262,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 #include "HALO_PSICHI_UV_ADJ.inc"
 #endif
 
+#endif
 
    if (print_detail_xb) then
       write(unit=stdout, fmt=*) &
@@ -500,9 +544,17 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             call da_error(__FILE__,__LINE__, message(1:2))
          end if
 
+#ifdef A2C
+         uu = 0.5*(grid%xb%u(i,j,kts)+grid%xb%u(i+1,j,kts) )
+         vv = 0.5*(grid%xb%v(i,j,kts)+grid%xb%v(i,j+1,kts) )
+#endif
          call da_sfc_wtq(grid%xb%psfc(i,j), grid%xb%tgrn(i,j), &
+#ifdef A2C
+            grid%xb%p(i,j,kts), grid%xb%t(i,j,kts), grid%xb%q(i,j,kts),uu,vv, &
+#else
             grid%xb%p(i,j,kts), grid%xb%t(i,j,kts), grid%xb%q(i,j,kts), &
             grid%xb%u(i,j,kts), grid%xb%v(i,j,kts), &
+#endif
             grid%xb%p(i,j,kts+1), grid%xb%t(i,j,kts+1), grid%xb%q(i,j,kts+1), &
             height,  grid%xb%rough(i,j),grid%xb%xland(i,j), &
             grid%xb%u10(i,j), grid%xb%v10(i,j), grid%xb%t2(i,j), &
@@ -568,10 +620,15 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       do i=its,ite
          height = grid%xb%h(i,j,kts) - grid%xb%terr(i,j)
          rgh_fac(i,j) = 1.0/log(height/0.0001)
-
+#ifndef A2C
          grid%xb%speed(i,j) = sqrt(grid%xb%u(i,j,kts)*grid%xb%u(i,j,kts) &
                          + grid%xb%v(i,j,kts)*grid%xb%v(i,j,kts) + 1.0e-6) &
                     *tmpvar*rgh_fac(i,j)
+#else
+         uu = 0.5*(grid%xb%u(i,j,kts)+grid%xb%u(i+1,j,kts) )
+         vv = 0.5*(grid%xb%v(i,j,kts)+grid%xb%v(i,j+1,kts) )
+         grid%xb%speed(i,j) = sqrt(uu*uu + vv*vv + 1.0e-6)*tmpvar*rgh_fac(i,j)
+#endif
       end do
    end do
 

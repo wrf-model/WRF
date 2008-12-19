@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_polaramv (grid, iv, y)
 
    !----------------------------------------------------------------------
    ! Purpose: X to Y Transform operator for Polar AMV's               
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !----------------------------------------------------------------------
 
    implicit none
@@ -19,8 +21,13 @@ subroutine da_transform_xtoy_polaramv (grid, iv, y)
    allocate (u(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
    allocate (v(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(polaramv), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(polaramv), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(polaramv), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(polaramv), v)
+#endif
 
    do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
       y%polaramv(n)%u(:) = u(1:size(y%polaramv(n)%u),n)

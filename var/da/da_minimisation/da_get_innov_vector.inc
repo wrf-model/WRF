@@ -3,6 +3,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -79,10 +81,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       if (iv%info(ships)%nlocal     > 0) &
          call da_get_innov_vector_ships     (it, num_qcstat_conv,grid, ob, iv)
       if ( (use_gpspwObs .and. iv%info(gpspw)%nlocal > 0) .or. &
-           (pseudo_var(1:3) == 'tpw' .and. num_pseudo > 0) ) then
+           (pseudo_var(1:3) == 'tpw' .and. iv%info(pseudo)%nlocal > 0) ) then
          call da_get_innov_vector_gpspw     (it, num_qcstat_conv,grid, ob, iv)
       else if ( (use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0) .or. &
-               (pseudo_var(1:3) == 'ztd' .and. num_pseudo > 0) ) then
+           (pseudo_var(1:3) == 'ztd' .and. iv%info(pseudo)%nlocal > 0) ) then
          call da_get_innov_vector_gpsztd    ( it, num_qcstat_conv, grid, ob, iv )
       end if
       if (iv%info(gpsref)%nlocal    > 0) &

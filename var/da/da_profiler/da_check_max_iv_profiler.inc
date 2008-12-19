@@ -24,8 +24,10 @@ subroutine da_check_max_iv_profiler(iv, it, num_qcstat_conv)
 
        call da_get_print_lvl(iv%profiler(n)%p(k),ipr)
 
-        if( iv%profiler(n)%u(k)%qc == fails_error_max )iv%profiler(n)%u(k)%qc =0
+        if( iv%profiler(n)%u(k)%qc == fails_error_max .and. it > 1 )iv%profiler(n)%u(k)%qc =0
         if( iv%profiler(n)%u(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc(it, iv%info(profiler), n, iv%profiler(n)%u(k), max_error_uv, failed)
         if( iv%info(profiler)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,profiler,1,ipr) = num_qcstat_conv(1,profiler,1,ipr) + 1
@@ -37,8 +39,10 @@ subroutine da_check_max_iv_profiler(iv, it, num_qcstat_conv)
          end if 
          end if 
 
-        if( iv%profiler(n)%v(k)%qc == fails_error_max )iv%profiler(n)%v(k)%qc =0
+        if( iv%profiler(n)%v(k)%qc == fails_error_max .and. it > 1 )iv%profiler(n)%v(k)%qc =0
         if( iv%profiler(n)%v(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc(it, iv%info(profiler), n, iv%profiler(n)%v(k), max_error_uv, failed)
         if( iv%info(profiler)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,profiler,2,ipr) = num_qcstat_conv(1,profiler,2,ipr) + 1

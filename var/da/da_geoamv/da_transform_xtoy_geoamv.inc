@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_geoamv (grid, iv, y)
 
    !-------------------------------------------------------------------------
    ! Purpose: X to Y Transform operator for Geo. AMVs
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-------------------------------------------------------------------------
 
    implicit none
@@ -19,8 +21,13 @@ subroutine da_transform_xtoy_geoamv (grid, iv, y)
    allocate (u(iv%info(geoamv)%max_lev,iv%info(geoamv)%n1:iv%info(geoamv)%n2))
    allocate (v(iv%info(geoamv)%max_lev,iv%info(geoamv)%n1:iv%info(geoamv)%n2))
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(geoamv), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(geoamv), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(geoamv), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(geoamv), v)
+#endif
 
    do n=iv%info(geoamv)%n1,iv%info(geoamv)%n2
       y%geoamv(n)%u(:) = u(1:size(y%geoamv(n)%u),n)

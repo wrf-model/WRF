@@ -1090,6 +1090,7 @@ rconfig   logical   print_detail_parallel   namelist,wrfvar1  1  .false.  -  "pr
 rconfig   logical   print_detail_be         namelist,wrfvar1  1  .false.  -  "print_detail_be"         ""  ""
 rconfig   logical   print_detail_timing     namelist,wrfvar1  1  .false.  -  "print_detail_timing"     ""  ""
 rconfig   logical   check_max_iv_print      namelist,wrfvar1  1  .true.   -  "check_max_iv_print"      ""  ""
+rconfig   logical   check_buddy_print       namelist,wrfvar1  1  .false.  -  "check_buddy_print"       ""  ""
 
 rconfig   integer   analysis_accu           namelist,wrfvar2  1  900      -  "analysis_accu"           ""  ""
 rconfig   logical   calc_w_increment        namelist,wrfvar2  1  .false.  -  "calc_w_increment"        ""  ""
@@ -1147,6 +1148,7 @@ rconfig   logical   use_filtered_rad        namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_obs_errfac          namelist,wrfvar4  1  .false.  - "use_obs_errfac"           ""  ""
 
 rconfig   logical   check_max_iv            namelist,wrfvar5  1  .true.   - "check_max_iv"             ""  ""
+rconfig   logical   check_buddy             namelist,wrfvar5  1  .false.  - "check_buddy"              ""  ""
 rconfig   logical   put_rand_seed           namelist,wrfvar5  1  .false.  - "put_rand_seed"            ""  ""
 rconfig   logical   omb_set_rand            namelist,wrfvar5  1  .false.  - "omb_set_rand"             ""  ""
 rconfig   logical   omb_add_noise           namelist,wrfvar5  1  .false.  - "omb_add_noise"            ""  ""

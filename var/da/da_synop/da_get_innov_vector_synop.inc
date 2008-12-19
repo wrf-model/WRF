@@ -199,13 +199,15 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    if (check_max_iv) &    
       call da_check_max_iv_synop(iv,ob, it,num_qcstat_conv)
 
+   if (check_buddy) call da_check_buddy_synop(iv, ob, grid%dx, it)
+ !
    deallocate (model_u)
    deallocate (model_v)
    deallocate (model_t)
    deallocate (model_q)
    deallocate (model_p)
    deallocate (model_hsm)
-
+   
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_synop")
 
 end subroutine da_get_innov_vector_synop

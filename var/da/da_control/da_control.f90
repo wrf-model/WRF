@@ -248,7 +248,8 @@ module da_control
    integer, parameter :: trace_csv_unit = 8
 
    integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit
-   integer :: check_max_iv_unit, rand_unit, omb_unit, filtered_obs_unit
+   integer :: check_max_iv_unit, check_buddy_unit, rand_unit, omb_unit, &
+              filtered_obs_unit
    integer :: biasprep_unit, qcstat_conv_unit
 
    integer,parameter :: filename_len = 200
@@ -386,6 +387,17 @@ module da_control
                       max_error_bt             = 500.0, &
                       max_error_bq             = 500.0, &
                       max_error_slp            = 500.0
+
+   ! Buddy check parameters (YRG, 10/3/2008):
+
+   real, parameter :: max_buddy_t             =     8.0, &
+                      max_buddy_uv            =     8.0, &
+                      max_buddy_z             =     8.0, &
+                      max_buddy_rh            =    40.0, &
+                      max_buddy_p             =   350.0, &
+                      buddy_weight            =     1.0, &
+                      bin_p_width             =  5000.0, &
+                      bin_z_width             =   500.0 
 
    ! Define various ways for bad data to be flagged.  
 

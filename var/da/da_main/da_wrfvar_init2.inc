@@ -132,11 +132,13 @@ subroutine da_wrfvar_init2
       call da_get_unit (stats_unit)
       call da_get_unit (jo_unit)
       call da_get_unit (check_max_iv_unit)
+      call da_get_unit (check_buddy_unit)
       open(unit=cost_unit,file="cost_fn",status="replace")
       open(unit=grad_unit,file="grad_fn",status="replace")
       open(unit=stats_unit,file="statistics",status="replace")
       open(unit=jo_unit,file="jo",status="replace")
       open(unit=check_max_iv_unit,file="check_max_iv",status="replace")
+      open(unit=check_buddy_unit ,file="buddy_check" ,status="replace")
    end if
 
    if (trace_use) call da_trace_exit("da_wrfvar_init2")

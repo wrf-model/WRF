@@ -38,18 +38,18 @@ INTEGER,INTENT(IN)    :: kte                 ! model level corresponding to surf
 INTEGER,INTENT(IN)    :: n                   ! pixel index 
 type (iv_type), intent(inout)  :: iv         ! O-B structure.
 
+INTEGER,PARAMETER     :: NITER             = 100
+INTEGER,PARAMETER     :: NBAND             = 1
+LOGICAL,PARAMETER     :: LPRECON           = .false.
+INTEGER,PARAMETER     :: NEIGNVEC          = 4
+INTEGER,PARAMETER     :: AIRS_Max_Channels = 2378
+
 !! local declarations 
 INTEGER               :: ichan(nchannels)    ! AIRS and IASI channel IDs
 REAL                  :: rad_obs(nchannels)  ! Observed radiance
 REAL                  :: rad_clr(nchannels)  ! Model clear radiance estimates
 REAL                  :: rad_ovc(nchannels,ndim-1) ! RT overcast radiance estimates
-double precision      :: px(ndim)            ! Cloud fractions
-
-INTEGER,PARAMETER     :: NITER             = 100
-INTEGER,PARAMETER     :: NBAND             = 1
-LOGICAL,PARAMETER     :: LPRECON           = .false.
-INTEGER,PARAMETER     :: NEIGNVEC          = 0
-INTEGER,PARAMETER     :: AIRS_Max_Channels = 2378
+double precision      :: px(ndim) !neignvec)        ! Cloud fractions
 REAL                  :: rad_cld(nchannels)
 INTEGER               :: ich,ilev,jlev,i,j,JBAND
 double precision      :: ZF, ZF_CLR
@@ -171,7 +171,6 @@ REAL :: ZHOOK_HANDLE
     !--------------------!
     IF (LPRECON) THEN
 !      write(76,*) '**** HESSIAN ****'
-
       hessian(:,:)= 0.0      
       DO ilev=1, NDIM
         DO jlev=ilev, NDIM
@@ -184,13 +183,13 @@ REAL :: ZHOOK_HANDLE
         ENDDO
 !	write(76,*) hessian(ilev,1:NDIM)
       ENDDO  
-!      call da_eof_decomposition(ndim, hessian, eignvec, eignval)
+!!!      call da_eof_decomposition(ndim, hessian, eignvec, eignval)
     ENDIF
        
      !-----------------!
      ! n2qn1 minimizer !
      !-----------------!
-      impres = 0  !2
+      impres = 2
       io     = 66
       NSIM   = NITER+5
       ZDXMIN = 1.e-6
@@ -201,8 +200,8 @@ REAL :: ZHOOK_HANDLE
       ALLOCATE(ZRZ(NRZ))
       ALLOCATE(DZS(NCHAN*NDIM))
       allocate(rzs(ndim*neignvec))
-      binf   = 0.0
-      bsup   = 1.0
+      binf   = -1000.0
+      bsup   = 1000.0
       izs(1) = nchan
       izs(2) = neignvec
       rzs    = 0.0
@@ -218,8 +217,9 @@ REAL :: ZHOOK_HANDLE
             ZRZ(i) = hessian(jlev,ilev)
           ENDDO
         ENDDO    
-!        rzs=RESHAPE(eignvec(1:ndim,1:neignvec),(/ndim*neignvec/))
       ENDIF
+!      rzs(1:ndim*neignvec)                  = RESHAPE(eignvec(1:ndim,1:neignvec),(/ndim*neignvec/))
+!      rzs(ndim*neignvec+1:(ndim+1)*neignvec)= eignval(1:neignvec)
 
       call da_cloud_sim_airs(0,NDIM,px,ZF,ZG,izs,RZS,DZS)
       ZDF1      = 1.e-1*ZF 
@@ -256,6 +256,8 @@ REAL :: ZHOOK_HANDLE
        iv%instid(isensor)%clwp(n) = iv%instid(isensor)%pm(cldtoplevel,n)
     end if  	    
     
+ print*,'999999 ',zf_clr,zf
+
 ! print*,'ACD_CTP',iv%instid(isensor)%info%lon(1,n), iv%instid(isensor)%info%lat(1,n),&
 !                  iv%instid(isensor)%clwp(n), cldtoplevel, SUM(px(1:ndim-1)), &
 !		  zf/zf_clr, nit, IMODE

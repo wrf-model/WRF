@@ -151,8 +151,8 @@ subroutine da_read_obs_radar (iv, filename)
          do i = 1, platform % info % levels
             ! height
             platform%each(i) = radar_each_level_type(missing_r, missing, -1.0,       &
-               field_type(missing_r, missing, missing_r), & ! rv
-               field_type(missing_r, missing, missing_r))   ! rf
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! rv
+               field_type(missing_r, missing, missing_r, missing, missing_r))   ! rf
 
             read (unit = iunit, fmt = '(3X, F12.1, 2(F12.3,I4,F12.3,2X))') &
                              platform % each (i) % height,           &

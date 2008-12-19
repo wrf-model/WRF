@@ -8,8 +8,8 @@ module da_varbc
    use module_radiance, only : q2ppmv
    use da_control, only : trace_use,missing_r, qc_varbc_bad, rtm_option, &
       stdout,rtm_option_rttov,rtm_option_crtm, filename_len, cv_size_domain, &
-      cv_size_domain_jp, use_varbc, freeze_varbc, varbc_factor, rootproc, &
-      ierr, comm
+      cv_size_domain_jp, use_varbc, freeze_varbc, varbc_factor, varbc_nobsmin, &
+      rootproc, ierr, comm
    use da_define_structures, only : iv_type, y_type, be_type, &
       varbc_info_type,varbc_type
    use da_radiance1, only : stats_rad_type, da_predictor_rttov, &

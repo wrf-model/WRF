@@ -73,14 +73,14 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
          ! read each level
          do i = 1, platform%info%levels
             platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
-               field_type(missing_r, missing, missing_r), & ! u
-               field_type(missing_r, missing, missing_r), & ! v
-               field_type(missing_r, missing, missing_r), & ! p
-               field_type(missing_r, missing, missing_r), & ! t
-               field_type(missing_r, missing, missing_r), & ! q
-               field_type(missing_r, missing, missing_r), & ! rh
-               field_type(missing_r, missing, missing_r), & ! td
-               field_type(missing_r, missing, missing_r))  ! speed 
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! v
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! p
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! t
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! q
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! rh
+               field_type(missing_r, missing, missing_r, missing, missing_r), & ! td
+               field_type(missing_r, missing, missing_r, missing, missing_r))  ! speed 
 
             read (unit = iunit, fmt = trim (fmt_each)) &
                platform%each (i)%p,            &

@@ -8,8 +8,9 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    !           2. call adjoint of RTM
    !           3. adjoint of interpolation from model grid to obs loc
    !
-   !  HISTORY: 11/19/2006 - Creation            Zhiquan Liu
-   !           01/11/2008 - Add crtm_cloud      Xiaoyan Zhang
+   !  HISTORY: 11/19/2006 - Creation                       Zhiquan Liu
+   !           01/11/2008 - Add crtm_cloud                 Xiaoyan Zhang
+   !           11/25/2008 - Zero Jacobian for top level    Tom Auligne
    !
    !---------------------------------------------------------------------------
 
@@ -21,6 +22,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    type (y_type),  intent(in)     :: jo_grad_y ! H' delta_x
    type (iv_type), intent(in)     :: iv        ! O-B structure.
 
+   integer, parameter             :: AIRS_Max_Channels = 281
+   
 #ifdef CRTM
 
    integer                        :: icld 
@@ -30,8 +33,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    integer                        :: ipred, npred, gammapred, id
    real                           :: cv_local(1:cv_size)
    real, allocatable              :: q_ad(:,:)
-   real, allocatable              :: t(:,:)
-   real, allocatable              :: p(:)
+   real, allocatable              :: t_ad(:,:)
+   real, allocatable              :: p_ad(:)
 
 !! for crtm_cloud
    real, allocatable              :: qcw(:,:)
@@ -52,6 +55,64 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    type (CRTM_Surface_type )      :: Surface(1), Surface_AD(1)
    type (CRTM_GeometryInfo_type ) :: GeometryInfo(1)
    type (CRTM_Options_type )      :: Options(1)
+   
+   integer                        :: ts_index
+   integer                        :: nclouds
+   integer, allocatable           :: cc_index(:)
+   real                           :: rad_clr, rad_cld   ! RT clear/cloudy radiances
+   real, allocatable              :: rad_ovc(:)         ! RT overcast radiances
+   real                           :: rad_ad, tb_ad
+
+   ! Initializations for AIRS (MMR) Cloud Detection
+   integer                        :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
+  
+      Band_Size(1:5) = (/86, 0, 0, 16, 0 /)
+      Bands(:,:)     = 0  
+      Bands(1:Band_Size(1),1) = &
+&    (/                                                 &              !&      1,   6,   7,  10,  11,  15,  16,  17,  20,  21, &
+&                                                       &              !&     22,  24,  27,  28,  30,  36,  39,  40,  42,  51, &
+&                                                       &              !&     52,  54,  55,  56,  59,  62,  63,  68,  69,  71, &
+&                                                       &              !&     72,  73,  74,  75,  76,  77,  78,  79,  80,  82, &
+&                     92,  93,  98,  99, 101, 104, 105, &              !&     83,  84,  86,  92,  93,  98,  99, 101, 104, 105, &
+&     108, 110, 111, 113, 116, 117, 123, 124, 128, 129, &
+&     138, 139, 144, 145, 150, 151, 156, 157, 159, 162, &
+&     165, 168, 169, 170, 172, 173, 174, 175, 177, 179, &
+&     180, 182, 185, 186, 190, 192,      198, 201, 204, &              !&     180, 182, 185, 186, 190, 192, 193, 198, 201, 204, &
+&     207, 210,      215, 216,      221,      226, 227, &              !&     207, 210, 213, 215, 216, 218, 221, 224, 226, 227, &
+&     232,                     252, 253, 256, 257, 261, &              !&     232, 239, 248, 250, 251, 252, 253, 256, 257, 261, &
+&     262, 267, 272, 295, 299,      305,           310, &              !&     262, 267, 272, 295, 299, 300, 305, 308, 309, 310, &
+&          321, 325, 333, 338, 355, 362, 375, 453, 475, &              !&     318, 321, 325, 333, 338, 355, 362, 375, 453, 475, &
+&     484, 497, 528, 587, 672, 787, 791, 843, 870, 914, &
+&     950 /)
+
+!      Bands(1:Band_Size(2),2) = &
+!&    (/ 1003, 1012, 1019, 1024, 1030, 1038, 1048, 1069, 1079, 1082,  &
+!&       1083, 1088, 1090, 1092, 1095, 1104, 1111, 1115, 1116, 1119,  &
+!&       1120, 1123, 1130, 1138, 1142, 1178, 1199, 1206, 1221, 1237,  &
+!&       1252, 1260, 1263, 1266, 1278, 1285 /)
+
+!      Bands(1:Band_Size(3),3) = &
+!&    (/       1301, 1304, 1329, 1371, 1382, 1415, 1424, 1449, 1455, &  !&    1290, 1301, 1304, 1329, 1371, 1382, 1415, 1424, 1449, 1455, &  
+!&       1466,       1477,             1500, 1519,       1538, 1545, &  !&    1466, 1471, 1477, 1479, 1488, 1500, 1519, 1520, 1538, 1545, &  
+!&       1565, 1574, 1583, 1593,       1627, 1636,       1652, 1669, &  !&    1565, 1574, 1583, 1593, 1614, 1627, 1636, 1644, 1652, 1669, & 
+!&                   1694, 1708,       1723, 1740, 1748,       1756, &  !&    1674, 1681, 1694, 1708, 1717, 1723, 1740, 1748, 1751, 1756, &
+!&             1766, 1771, 1777,       1783, 1794, 1800,       1806, &  !&    1763, 1766, 1771, 1777, 1780, 1783, 1794, 1800, 1803, 1806, &
+!&             1826, 1843  /)                                           !&    1812, 1826, 1843  /)
+
+      Bands(1:Band_Size(4),4) = &
+&    (/ 1852, 1865, 1866,       1868, 1869, 1872, 1873,       1876, &  !&    1852, 1865, 1866, 1867, 1868, 1869, 1872, 1873, 1875, 1876, 
+&             1881, 1882, 1883,                   1911, 1917, 1918, &  !&    1877, 1881, 1882, 1883, 1884, 1897, 1901, 1911, 1917, 1918, &
+&                   1924, 1928        /)                               !&    1921, 1923, 1924, 1928, 1937  /)   
+
+!      Bands(1:Band_Size(5),5) = &
+!&    (/ 1938, 1939, 1941, 1946, 1947, 1948, 1958, 1971, 1973, 1988, &
+!&       1995, 2084, 2085, 2097, 2098, 2099, 2100, 2101, 2103, 2104, &
+!&       2106, 2107, 2108, 2109, 2110, 2111, 2112, 2113, 2114, 2115, &
+!&       2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2128, 2134, &
+!&       2141, 2145, 2149, 2153, 2164, 2189, 2197, 2209, 2226, 2234, &
+!&       2280, 2318, 2321, 2325, 2328, 2333, 2339, 2348, 2353, 2355, &
+!&       2363, 2370, 2371, 2377  /)  
+
 
 !---------------------------------------------------------
 
@@ -99,8 +160,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       num_rad = iv%instid(inst)%info%n2 - iv%instid(inst)%info%n1 + 1
       if ( num_rad < 1 ) cycle
       allocate (q_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-      allocate (t(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
-      allocate (p(iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (t_ad(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
+      allocate (p_ad(iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
 
       if (crtm_cloud) then
          allocate (qcw(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
@@ -109,6 +170,10 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
          allocate (qsn(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
          allocate (qgr(kts:kte,iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
       end if
+      
+      q_ad = 0.0
+      t_ad = 0.0
+      p_ad = 0.0
 
 !      info => iv%instid(inst)%info
 
@@ -159,23 +224,26 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
           (/"Error in allocatting CRTM Options Structure"/))
       endif
 
-     if ( use_varbc .or. freeze_varbc ) then
         ! Gamma correction from VarBC
         !----------------------------
+#ifdef CRTM_MODIF
+      if (use_varbc) then
         gammapred = iv%instid(inst)%varbc_info%gammapred 
         do k = 1, nchanl
            npred = iv%instid(inst)%varbc(k)%npred
            if (npred <= 0) cycle                                               ! VarBC channels only
+           if (iv%instid(inst)%varbc_info%npredmax < gammapred)  cycle         ! Gamma channels only
            if (iv%instid(inst)%varbc(k)%pred_use(gammapred) < 0) cycle         ! Gamma channels only
            do ipred = 1, npred
               if (iv%instid(inst)%varbc(k)%ipred(ipred) /= gammapred) cycle
               RTSolution(k,1)%Gamma = iv%instid(inst)%varbc(k)%param(ipred)
            end do
         end do
-     end if
+      end if
+      RTSolution_AD(:,1)%Gamma    = 0.0
+#endif
 
-      !do n=1,num_rad
-      do n =  iv%instid(inst)%info%n1, iv%instid(inst)%info%n2
+      do n =  iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
 
       ! [1.0] Extract base state Atmosphere variables
             Atmosphere(1)%level_pressure(0) = iv%instid(inst)%pf(0,n)
@@ -282,9 +350,6 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
          RTSolution_AD(:,1)%brightness_temperature = jo_grad_y%instid(inst)%tb(:,n)
          RTSolution_AD(:,1)%radiance = 0.0 ! must assign zero, since each call of AD model will return non-zero value
-	 RTSolution_AD(:,1)%Gamma    = 0.0
-!       if (n <= 1 ) write(6,'(15f8.3)') 'CRTM_ADJ',RTSolution_AD(1:nchanl,1)%Gamma
-!       if (n <= 15) write(6,'(15f8.3)') RTSolution_AD(:,1)%brightness_temperature
 
       ! [1.4] Call CRTM_AD model
 
@@ -298,69 +363,65 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
                             RTSolution,   &
                             Options)
 
-         !Error_Status = CRTM_Adjoint(Atmosphere,   &
-         !                   Surface,      &
-         !                   RTSolution_AD,&
-         !                   GeometryInfo, &
-         !                   ChannelInfo,  &
-         !                   Atmosphere_AD,&
-         !                   Surface_AD,   &
-         !                   RTSolution) !,   &
-         !                   !Options = Options)
-         !if ( Error_Status /= 0 ) then
-         !     call da_error(__FILE__,__LINE__, &
-         !        (/"Error in calling CRTM_Adjoint"/))
-         !endif
-
       ! [1.5] Scale transformation and fill zero for no-control variable
-
-         Atmosphere_AD(1)%Level_Pressure(Atmosphere(1)%n_layers) = &
-                 Atmosphere_AD(1)%Level_Pressure(Atmosphere(1)%n_layers)*0.01 
-         Atmosphere_AD(1)%Absorber(:,1) = 1000.0*Atmosphere_AD(1)%Absorber(:,1) ! in g/kg
 
          if (crtm_cloud) then
             do k=kts,kte
-            do icld=1,Atmosphere(1)%n_Clouds
-
-                Atmosphere_AD(1)%Cloud(icld)%Water_Content(k)=Atmosphere_AD(1)%Cloud(icld)%Water_Content(k) &
-                 * (Atmosphere(1)%Level_Pressure(k)- Atmosphere(1)%Level_Pressure(k-1))*100./gravity
-
-            enddo
+               do icld=1,Atmosphere(1)%n_Clouds
+                  Atmosphere_AD(1)%Cloud(icld)%Water_Content(k) = &
+		        Atmosphere_AD(1)%Cloud(icld)%Water_Content(k) * &
+		        (Atmosphere(1)%Level_Pressure(k)- Atmosphere(1)%Level_Pressure(k-1)) / gravity
+               enddo
             enddo
          end if
-
 
        ! [1.6] Adjoint of Interpolate horizontally from ob to grid:
 
             do k=kts,kte ! from bottom to top
 
                if (crtm_cloud) then
-
                   qcw(k,n)=Atmosphere_AD(1)%Cloud(1)%Water_Content(kte-k+1)
                   qci(k,n)=Atmosphere_AD(1)%Cloud(2)%Water_Content(kte-k+1)
                   qrn(k,n)=Atmosphere_AD(1)%Cloud(3)%Water_Content(kte-k+1)
                   qsn(k,n)=Atmosphere_AD(1)%Cloud(4)%Water_Content(kte-k+1)
                   qgr(k,n)=Atmosphere_AD(1)%Cloud(5)%Water_Content(kte-k+1)
-
                end if    
 
-               if (atmosphere(1)%pressure(kte-k+1) < 75.0) then
-                  q_ad(k,n) = 0.0
-               else
-                  q_ad(k,n) = Atmosphere_AD(1)%Absorber(kte-k+1,1)
-               end if
-               t(k,n)=Atmosphere_AD(1)%Temperature(kte-k+1)
+               if (atmosphere(1)%pressure(kte-k+1) >= 75.0) &        ! Zero Jacobian for top level(s)
+                  q_ad(k,n) = Atmosphere_AD(1)%Absorber(kte-k+1,1) * 1000.0            ! in g/kg
+               if (k < kte) &                                        ! Zero Jacobian for top level
+                  t_ad(k,n)=Atmosphere_AD(1)%Temperature(kte-k+1)
             end do
 
-            p(n) = Atmosphere_AD(1)%Level_Pressure(atmosphere(1)%n_layers)
+            p_ad(n) = Atmosphere_AD(1)%Level_Pressure(atmosphere(1)%n_layers) * 0.01   ! in hPa
 
-               !if (n <=10 ) then
-               !   write(6,'(15f8.2)') RTSolution(:,1)%brightness_temperature
-               !   write(6,'(e15.5)') jo_grad_x% psfc(i,j)
-               !  do k=kts,kte
-               !   write(6,'(2e15.5)') jo_grad_x%t(i,j,k), jo_grad_x%q(i,j,k)
-               !  end do
-               !endif
+	    if (use_satcv) then
+	    ! Skin Temperature
+	    !-----------------
+	       ts_index = iv%instid(inst)%cv_index(n)%ts 	       
+!  	       if (Surface(1)%Land_Coverage  > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Land_Temperature
+!               if (Surface(1)%Water_Coverage > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Water_Temperature
+!               if (Surface(1)%Snow_Coverage  > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Snow_Temperature
+!               if (Surface(1)%Ice_Coverage   > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Ice_Temperature
+	 
+	    ! Cloud cover(s)
+	    !---------------
+	       nclouds       = iv%instid(inst)%cv_index(n)%nclouds
+	       allocate (cc_index(nclouds))
+	       allocate (rad_ovc (nclouds))
+	       cc_index(:)   = iv%instid(inst)%cv_index(n)%cc(:)
+	       do k = 1, nchanl
+                  if (ALL(iv%instid(inst)%ichan(k) /= Bands(:,1))) cycle   ! Only Channels in Band 1 	       
+                  rad_clr    = iv%instid(inst)%rad_xb(k,n)             
+                  rad_ovc(:) = iv%instid(inst)%rad_ovc(k,kte-nclouds+1:kte,n)
+		  rad_cld    = SUM(cv(cc_index)*rad_ovc) + (1.0 - SUM(cv(cc_index)))*rad_clr
+		  rad_ad     = 0.0
+	          tb_ad      = jo_grad_y%instid(inst)%tb(k,n)
+	          call CRTM_Planck_Temperature_AD(inst,k,rad_clr,tb_ad,rad_ad)
+	          cv(cc_index) = cv(cc_index) + rad_ad*(rad_ovc - rad_clr)
+	       end do			     
+	       deallocate(cc_index, rad_ovc)
+	    end if 
 
             Error_Status = CRTM_Destroy_Atmosphere( Atmosphere_AD )
             if ( Error_Status /= 0 ) then
@@ -375,12 +436,14 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             end if
 
          end do       !  end loop for pixels
-
-        if ( use_varbc .or. freeze_varbc ) then
-           ! [1.7] Gamma correction to VarBC
+	 
+         ! [1.7] Gamma correction to VarBC
+#ifdef CRTM_MODIF
+         if (use_varbc) then
            do k = 1, nchanl
               npred = iv%instid(inst)%varbc(k)%npred
               if (npred <= 0) cycle                                               ! VarBC channels only
+              if (iv%instid(inst)%varbc_info%npredmax < gammapred)  cycle         ! Gamma channels only
               if (iv%instid(inst)%varbc(k)%pred_use(gammapred) < 0) cycle         ! Gamma channels only
               do ipred = 1, npred
                  if (iv%instid(inst)%varbc(k)%ipred(ipred) /= gammapred) cycle
@@ -389,11 +452,12 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
                     SUM(RTSolution_AD(k,1)%Gamma * iv%instid(inst)%varbc(k)%vtox(ipred,1:npred))
               end do   
            end do	    
-        end if
+         end if
 
        ! Gathering Gamma correction across processors
        !--------------------------------------------- 
 !!!        call wrf_dm_sum_reals(cv_local, cv)
+#endif
       
         if (crtm_cloud) then
            call da_interp_lin_2d_adj_partial(jo_grad_x%qcw(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qcw)
@@ -403,13 +467,13 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
            call da_interp_lin_2d_adj_partial(jo_grad_x%qgr(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qgr)
         endif
 
-         call da_interp_lin_2d_adj_partial(jo_grad_x%t(:,:,kts:kte),    iv%instid(inst)%info, kts,kte, t)
+         call da_interp_lin_2d_adj_partial(jo_grad_x%t(:,:,kts:kte),    iv%instid(inst)%info, kts,kte, t_ad)
          call da_interp_lin_2d_adj_partial(jo_grad_x%q(:,:,kts:kte),    iv%instid(inst)%info, kts,kte, q_ad)
-         call da_interp_lin_2d_adj_partial(jo_grad_x%psfc, iv%instid(inst)%info, 1,1, p)
+         call da_interp_lin_2d_adj_partial(jo_grad_x%psfc, iv%instid(inst)%info, 1,1, p_ad)
 
          deallocate (q_ad)
-         deallocate (t)
-         deallocate (p)
+         deallocate (t_ad)
+         deallocate (p_ad)
 
          if (crtm_cloud) then
             deallocate (qcw)

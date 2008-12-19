@@ -177,7 +177,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
    if ( use_simulated_rad ) then
       write(unit=stdout,fmt='(a)') 'Reading simulated radiance'
-!hcl      call da_read_simulated_rad (iv)
+      call da_read_simulated_rad (iv)
    end if
 
    if ( use_pseudo_rad ) then

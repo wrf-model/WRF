@@ -151,12 +151,13 @@ module da_control
 
    integer, parameter :: nchan_amsua = 15
    integer, parameter :: nchan_amsub = 5
-   integer, parameter :: nchan_mhs = 5
-   integer, parameter :: nchan_msu = 4
+   integer, parameter :: nchan_mhs   = 5
+   integer, parameter :: nchan_msu   = 4
    integer, parameter :: nchan_hirs2 = 19
    integer, parameter :: nchan_hirs3 = 19
    integer, parameter :: nchan_hirs4 = 19
    integer, parameter :: nchan_ssmis = 24
+   integer, parameter :: nchan_airs  = 281
 
    ! WRFVAR Minimisation:
 
@@ -337,6 +338,7 @@ module da_control
    integer       :: cv_size_domain_jb    ! Total jb cv size.
    integer       :: cv_size_domain_je    ! Total je cv size.
    integer       :: cv_size_domain_jp    ! Total jp cv size.
+   integer       :: cv_size_domain_js    ! Total js cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
    ! Hybrid:

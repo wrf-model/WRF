@@ -74,7 +74,9 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%tb_inv(:,n)     = p%tb_inv(:)
    iv%instid(i)%tb_qc(:,n)      = 0
    iv%instid(i)%tb_error(:,n)   = 500.0
-   iv%instid(i)%rad_xb(:,n)        = 0.0
+   iv%instid(i)%tb_sens(:,n)    = 0.0
+   iv%instid(i)%tb_imp(:,n)     = 0.0
+   iv%instid(i)%rad_xb(:,n)     = 0.0
    iv%instid(i)%rad_obs(:,n)    = 0.0
    iv%instid(i)%rad_ovc(:,:,n)  = 0.0
    iv%instid(i)%emiss(:,n)      = 0.0

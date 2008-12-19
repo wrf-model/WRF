@@ -41,7 +41,7 @@ module da_wrfvar_top
       da_zero_vp_type,da_allocate_y,da_deallocate_observations, &
       da_deallocate_y
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
-      da_write_diagnostics
+      da_minimise_lz, da_write_diagnostics
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
                          da_write_obs_etkf
    use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims

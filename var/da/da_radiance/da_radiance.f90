@@ -43,13 +43,14 @@ module da_radiance
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
       bufr_landsea_mask,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
-      nchan_msu, nchan_amsua,nchan_hirs2, nchan_hirs3, nchan_hirs4, bufr_lon, &
-      bufr_satellite_id, bufr_ifov,nchan_amsub, tovs_start, bufr_lat, &
+      nchan_msu, nchan_amsua,nchan_hirs2, nchan_hirs3, nchan_hirs4, nchan_airs, &
+      bufr_lon, bufr_satellite_id, bufr_ifov,nchan_amsub, tovs_start, bufr_lat, &
       use_pseudo_rad, pseudo_rad_platid,pseudo_rad_satid, pseudo_rad_senid, &
-      pseudo_rad_ichan, pseudo_rad_tb, pseudo_rad_lat,pseudo_rad_lon, &
+      pseudo_rad_ichan, pseudo_rad_inv, pseudo_rad_lat,pseudo_rad_lon, &
       pseudo_rad_err, use_simulated_rad, use_crtm_kmatrix , &
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
-      airs_warmest_fov, time_slots
+      airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
+      ips, ipe, jps, jpe, simulated_rad_ngrid
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
@@ -78,7 +79,8 @@ module da_radiance
 #endif
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &
-      da_llxy, da_llxy_new, da_togrid_new, da_get_julian_time, da_get_time_slots
+      da_llxy, da_llxy_new, da_togrid_new, da_get_julian_time, da_get_time_slots, &
+      da_xyll, map_info
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, &
       da_trace_int_sort
    use da_varbc, only : da_varbc_direct,da_varbc_coldstart,da_varbc_precond, &
@@ -95,7 +97,7 @@ contains
 
 #include "da_calculate_grady_rad.inc"
 #include "da_read_filtered_rad.inc"
-!hcl #include "da_read_simulated_rad.inc"
+#include "da_read_simulated_rad.inc"
 #include "da_write_filtered_rad.inc"
 #include "da_read_obs_bufrtovs.inc"
 #include "da_read_obs_bufrairs.inc"

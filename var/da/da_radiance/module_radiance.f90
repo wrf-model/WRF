@@ -41,7 +41,8 @@ module module_radiance
    USE CRTM_SensorInfo
 #endif
    USE CRTM_Planck_Functions, only : CRTM_Planck_Temperature, &
-      CRTM_Planck_Radiance
+      CRTM_Planck_Radiance, CRTM_Planck_Temperature_TL, &
+      CRTM_Planck_Temperature_AD
 
    use gsi_kinds      ,  only : r_kind,r_double,i_kind,r_single
    use gsi_constants  ,  only : deg2rad, rad2deg,       &

@@ -40,11 +40,13 @@ module da_minimisation
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
       precondition_cg, precondition_factor, cv_size_domain_jp, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
-      num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit
+      num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, &
+      orthonorm_gradient, its, ite, jts, jte
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
-      xbx_type, jo_type, da_allocate_y,da_zero_x,da_deallocate_y
+      xbx_type, jo_type, da_allocate_y,da_zero_x,da_deallocate_y, &
+      da_zero_vp_type
    use da_obs, only : da_transform_xtoy_adj,da_transform_xtoy, &
-      da_add_noise_to_ob,da_random_omb_all
+      da_add_noise_to_ob,da_random_omb_all, da_obs_sensitivity
    use da_geoamv, only : da_calculate_grady_geoamv, da_ao_stats_geoamv, &
       da_oi_stats_geoamv, da_get_innov_vector_geoamv,da_residual_geoamv, &
       da_jo_and_grady_geoamv
@@ -136,6 +138,7 @@ module da_minimisation
 contains
       
 #include "da_calculate_j.inc"
+#include "da_calculate_gradj.inc"
 #include "da_jo_and_grady.inc"
 #include "da_calculate_residual.inc"
 #include "da_get_var_diagnostics.inc"
@@ -144,7 +147,9 @@ contains
 #include "da_dot_cv.inc"
 #include "da_write_diagnostics.inc"
 #include "da_minimise_cg.inc"
+#include "da_minimise_lz.inc"
 #include "da_calculate_grady.inc"
 #include "da_transform_vtoy.inc"
 #include "da_transform_vtoy_adj.inc"
+#include "da_adjoint_sensitivity.inc"
 end module da_minimisation

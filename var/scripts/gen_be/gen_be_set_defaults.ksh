@@ -54,6 +54,8 @@ export GLOBAL=${GLOBAL:-false}                       # Global or regional models
 export NUM_LEVELS=${NUM_LEVELS:-27}                  # Hard-wired for now....
 export N_SMTH_SL=${N_SMTH_SL:-2}                     # Amount of lengthscale smoothing (0=none).
 export STRIDE=${STRIDE:-1}                           # Calculate correlation evert STRIDE point (stage4 regional).
+export NBINS=${NBINS:-1}                             # Number of latitude bins for length scale computation
+export IBIN=${IBIN:-1}                               # Index of latitude bin to compute length scale for
 export TESTING_SPECTRAL=${TESTING_SPECTRAL:-.false.} # True if performing spectral tests.
 export LOCAL=${LOCAL:-true}                          # True if local machine.
 export NUM_JOBS=${NUM_JOBS:-1}                       # Number of jobs to run (stage4 regional)).

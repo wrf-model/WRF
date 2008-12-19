@@ -60,6 +60,8 @@ for VARIABLE in $CONTROL_VARIABLES; do
     ne = ${NE},
     k = ${VINDEX},
     stride = ${STRIDE},
+    nbins = ${NBINS},
+    ibin = ${IBIN},
     run_dir = '${WORK_DIR}' /
 EOF
  

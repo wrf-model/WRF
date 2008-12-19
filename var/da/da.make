@@ -185,7 +185,7 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
 	$(RM) $@
 	$(LD) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
         -L. -lwrfvar -L$(CRTM) -lcrtm -L$(RTTOV) -lrttov -L$(BUFR) -lbufr  \
-        -L$(LAPACK) -llapack -L$(BLAS) -lblas $(LIB_BUNDLED) $(LIB_EXTERNAL)
+        -L$(LAPACK) -llapack -L$(BLAS) -lblas -L$(MADIS) -lmadis $(LIB_BUNDLED) $(LIB_EXTERNAL)
 
 da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
 	$(LD) -o $@ $(LDFLAGS) da_wrfvar_esmf.o $(WRFVAR_LIB) \

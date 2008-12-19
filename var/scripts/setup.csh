@@ -128,6 +128,9 @@ endif
 if (-d ${EXT_DIR}/netcdf/pnetcdf-1.0.1/${COMPILER}_${PROCESSOR}) then
    setenv PNETCDF ${EXT_DIR}/netcdf/pnetcdf-1.0.1/${COMPILER}_${PROCESSOR}
 endif
+if (-d ${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}) then
+   setenv MADIS ${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}
+endif
 
 if (-d /usr/lpp/ppe.poe) then
    setenv MPIHOME /usr/lpp/ppe.poe
@@ -203,6 +206,9 @@ if ($?JASPER) then
 endif
 if ($?PNETCDF) then
    echo "PNETCDF         " $PNETCDF
+endif
+if ($?MADIS) then
+   echo "MADIS           " $MADIS
 endif
 if ($?SUBMIT) then
    echo "SUBMIT          " $SUBMIT

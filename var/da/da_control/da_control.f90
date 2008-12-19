@@ -234,6 +234,7 @@ module da_control
 
    integer, parameter :: ob_format_bufr = 1
    integer, parameter :: ob_format_ascii = 2
+   integer, parameter :: ob_format_madis = 3
 
    integer, parameter :: convert_fd2uv = 1
    integer, parameter :: convert_uv2fd = -1

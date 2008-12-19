@@ -7,15 +7,16 @@ module da_setup_structures
    use module_domain, only : xb_type, ep_type, domain
 
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, &
-      iv_type,da_allocate_background_errors,da_allocate_observations
+      iv_type,da_allocate_background_errors,da_allocate_observations, &
+      multi_level_type,each_level_type
    use da_control, only : trace_use,vert_evalue,stdout,rootproc, &
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
-      truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, &
+      truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
       use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, &
-      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, &
+      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, &
       use_airepobs, test_dm_exact, use_amsuaobs, use_amsubobs, &
       use_airsobs, use_bogusobs, sfc_assi_options, use_eos_amsuaobs, &
       use_filtered_rad, use_eos_radobs, use_gpsrefobs, use_hirs2obs, &
@@ -43,8 +44,7 @@ module da_setup_structures
       num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err,&
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
-      thin_mesh_conv, time_slots, comm, ierr, root
-
+      sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, root, comm, ierr
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info
    use da_obs_io, only : da_scan_obs_bufr,da_read_obs_bufr,da_read_obs_radar, &
@@ -91,6 +91,7 @@ contains
 #include "da_setup_obs_structures.inc"
 #include "da_setup_obs_structures_ascii.inc"
 #include "da_setup_obs_structures_bufr.inc"
+#include "da_setup_obs_structures_madis.inc"
 #include "da_setup_obs_interp_wts.inc"
 #include "da_setup_runconstants.inc"
 #include "da_cloud_model.inc"

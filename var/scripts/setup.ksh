@@ -105,6 +105,9 @@ fi
 if test -d ${EXT_DIR}/netcdf/pnetcdf-1.0.1/${COMPILER}_${PROCESSOR}; then
    export PNETCDF=${EXT_DIR}/netcdf/pnetcdf-1.0.1/${COMPILER}_${PROCESSOR}
 fi
+if test -d ${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}; then
+   export PNETCDF=${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}
+fi
 
 if test -d /usr/lpp/ppe.poe; then
    export MPIHOME=/usr/lpp/ppe.poe
@@ -145,6 +148,7 @@ echo "HDF5            " $HDF5
 echo "HDFEOS          " $HDFEOS
 echo "JASPER          " $JASPER      
 echo "PNETCDF         " $PNETCDF     
+echo "MADIS           " $MADIS     
 echo "SUBMIT          " $SUBMIT
 if test "$SUBMIT_OPTIONS1." != '.'; then
    echo "SUBMIT_OPTIONS1  $SUBMIT_OPTIONS1"

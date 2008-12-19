@@ -236,7 +236,7 @@ export BE_DIR=${BE_DIR:-$REG_DIR/be}                   # Background error covari
 export BIASCORR_DIR=${BIASCORR_DIR:-$WRFVAR_DIR/var/run/biascorr}
 export OBS_TUNING_DIR=${OBS_TUNING_DIR:-$WRFVAR_DIR/var/run/obs_tuning}
 export DA_BACK_ERRORS=${DA_BACK_ERRORS:-$BE_DIR/be.dat} # background errors.
-export NL_OB_FORMAT=${NL_OB_FORMAT:-2}   # Observation format: 1=BUFR, 2=ASCII "little_r"
+export NL_OB_FORMAT=${NL_OB_FORMAT:-2}   # Observation format: 1=BUFR, 2=ASCII "little_r 3=MADIS"
 export NL_LATS_STATS_OPTION_FALSE=${NL_LATS_STATS_OPTION_FALSE:-false}
 export NL_CV_OPTIONS_HUM=${NL_CV_OPTIONS_HUM:-1} # Humidity control variable.
 export NL_CHECK_MAX_IV=${NL_CHECK_MAX_IV:-true} # QC on O-B differences.
@@ -248,6 +248,8 @@ export OUTER_LOOP=${OUTER_ITER:-1}       # OUter loop number
 export NL_PUT_RAND_SEED=${NL_PUT_RAND_SEED:-false} # Set to true if want to specify seeds explicitly.
 export NL_SEED_ARRAY1=${NL_SEED_ARRAY1:-$DATE} # Random seed.
 export NL_SEED_ARRAY2=${NL_SEED_ARRAY2:-$DATE} # Random seed.
+
+
 
 # From Update_BC:
 export PHASE=${PHASE:-false}     # Indicate which phase update_bc is.

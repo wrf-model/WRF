@@ -2186,6 +2186,23 @@ BENCH_END(chem_adv_tim)
 
 
            IF( config_flags%specified ) THEN
+#ifdef WRF_CHEM
+            IF( ((is .EQ. p_tr17_1) .AND. (config_flags%scalar_opt .EQ. 2)) .OR. &
+                ((is .EQ. p_tr17_2) .AND. (config_flags%scalar_opt .EQ. 2)) ) THEN
+
+                CALL flow_dep_bdy_s1( scalar(ims,kms,jms,is),     &
+                                   grid%ru_m, grid%rv_m, config_flags,   &
+                                   grid%spec_zone,                  &
+                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                   ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                   ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                   grid%i_start(ij), grid%i_end(ij),  &
+                                   grid%j_start(ij), grid%j_end(ij),  &
+                                   k_start, k_end                    )
+
+             ELSE
+#endif
+
              CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
@@ -2195,6 +2212,9 @@ BENCH_END(chem_adv_tim)
                                   grid%i_start(ij), grid%i_end(ij),  &
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
+#ifdef WRF_CHEM
+            ENDIF
+#endif
            ENDIF
 
          ENDDO scalar_tile_loop_2

@@ -961,6 +961,9 @@ SUBROUTINE input_ext_chem_file (si_grid)
                 IF (desired_z .EQ. z_in(i,kk,j) )THEN
                   data_out(i,k,j,l) = data_in(i,kk,j,l)
                   EXIT input_loop
+                ELSE IF (desired_z .EQ. z_in(i,kk+1,j) )THEN
+                  data_out(i,k,j,l) = data_in(i,kk+1,j,l)
+                  EXIT input_loop
                 ELSE IF ( (desired_z .GT. z_in(i,kk,j)) .AND. &
                           (desired_z .LT. z_in(i,kk+1,j)) ) THEN
                   wgt0 = (desired_z - z_in(i,kk+1,j)) / &
@@ -2398,6 +2401,304 @@ SUBROUTINE input_chem_profile (si_grid)
 
    END SUBROUTINE flow_dep_bdy_chem
 #endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! this is a kludge routine as of now....
+!
+
+
+   SUBROUTINE flow_dep_bdy_s1 (  field,                     &
+                               u, v, config_flags, &
+                               spec_zone,                  &
+                               ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,  & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                               its,ite, jts,jte, kts,kte)
+
+!  This subroutine sets zero gradient conditions for outflow and zero value
+!  for inflow in the boundary specified region. Note that field must be unstaggered.
+!  The velocities, u and v, will only be used to check their sign (coupled vels OK)
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+
+
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: u
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: v
+      TYPE( grid_config_rec_type ) config_flags
+
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, i_inner, j_inner
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+!----------------------------------------------
+!jeff
+!--   hardwire outmost lateral boundary value at constant value
+
+      real value_bc
+
+      value_bc = 1.0
+
+!-----------------------------------------------
+
+      periodic_x = config_flags%periodic_x
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
+              IF(v(i,k,j) .lt. 0.)THEN
+                field(i,k,j) = field(i_inner,k,jbs+spec_zone)
+              ELSE
+                field(i,k,j) = value_bc
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1), jtf
+          b_dist = jbe - j
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
+              IF(v(i,k,j+1) .gt. 0.)THEN
+                field(i,k,j) = field(i_inner,k,jbe-spec_zone)
+              ELSE
+                field(i,k,j) = value_bc
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              j_inner = max(j,jbs+spec_zone)
+              j_inner = min(j_inner,jbe-spec_zone)
+              IF(u(i,k,j) .lt. 0.)THEN
+                field(i,k,j) = field(ibs+spec_zone,k,j_inner)
+              ELSE
+                field(i,k,j) = value_bc
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              j_inner = max(j,jbs+spec_zone)
+              j_inner = min(j_inner,jbe-spec_zone)
+              IF(u(i+1,k,j) .gt. 0.)THEN
+                field(i,k,j) = field(ibe-spec_zone,k,j_inner)
+              ELSE
+                field(i,k,j) = value_bc
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+    ENDIF
+
+   END SUBROUTINE flow_dep_bdy_s1
+
+!------------------------------------------------------------------------------
+
+   SUBROUTINE flow_dep_bdy_s2 (  field,                     &
+                               u, v, config_flags, &
+                               spec_zone,                  &
+                               ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,  & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                               its,ite, jts,jte, kts,kte, dtstep, ktau)
+
+!  This subroutine sets zero gradient conditions for outflow and zero value
+!  for inflow in the boundary specified region. Note that field must be unstaggered.
+!  The velocities, u and v, will only be used to check their sign (coupled vels OK)
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+
+
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: u
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: v
+      TYPE( grid_config_rec_type ) config_flags
+
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, i_inner, j_inner
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+!----------------------------------------------
+!jeff
+!--   hardwire outmost lateral boundary value with 1-day efolding decay
+
+      real,    INTENT(IN   ) :: dtstep
+      integer, INTENT(IN   ) :: ktau
+
+      real value_bc
+      real factor_decay
+
+!--  initial value
+
+      value_bc = 1.0
+
+!-- decay factor, with efolding time of one day
+
+      factor_decay = 1./(86400./dtstep)
+
+!-----------------------------------------------
+
+      periodic_x = config_flags%periodic_x
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
+              IF(v(i,k,j) .lt. 0.)THEN
+                field(i,k,j) = field(i_inner,k,jbs+spec_zone)
+              ELSE
+                if (ktau .eq. 1) then
+                   field(i,k,j) = value_bc
+                else
+                   field(i,k,j) = field(i,k,j) * (1. - factor_decay)
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1), jtf
+          b_dist = jbe - j
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              i_inner = max(i,ibs+spec_zone)
+              i_inner = min(i_inner,ibe-spec_zone)
+              IF(periodic_x)i_inner = i
+              IF(v(i,k,j+1) .gt. 0.)THEN
+                field(i,k,j) = field(i_inner,k,jbe-spec_zone)
+              ELSE
+                if (ktau .eq. 1) then
+                   field(i,k,j) = value_bc
+                else
+                   field(i,k,j) = field(i,k,j) * (1. - factor_decay)
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              j_inner = max(j,jbs+spec_zone)
+              j_inner = min(j_inner,jbe-spec_zone)
+              IF(u(i,k,j) .lt. 0.)THEN
+                field(i,k,j) = field(ibs+spec_zone,k,j_inner)
+              ELSE
+                if (ktau .eq. 1) then
+                   field(i,k,j) = value_bc
+                else
+                   field(i,k,j) = field(i,k,j) * (1. - factor_decay)
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              j_inner = max(j,jbs+spec_zone)
+              j_inner = min(j_inner,jbe-spec_zone)
+              IF(u(i+1,k,j) .gt. 0.)THEN
+                field(i,k,j) = field(ibe-spec_zone,k,j_inner)
+              ELSE
+                if (ktau .eq. 1) then
+                   field(i,k,j) = value_bc
+                else
+                   field(i,k,j) = field(i,k,j) * (1. - factor_decay)
+                endif
+              ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+    ENDIF
+
+   END SUBROUTINE flow_dep_bdy_s2
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE bdy_chem_value_gcm ( chem, chem_b, chem_bt, dt,ic)
                                   

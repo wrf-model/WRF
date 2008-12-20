@@ -208,8 +208,8 @@ CONTAINS
                t(k) = t_phy(i,k,j)
                p(k) = .001*p_phy(i,k,j)
                rh(k) = MIN( 95.,100. * moist(i,k,j,p_qv) /        &
-                        (3.80*exp(17.27*(t_phy(i,k,j)-273.)/       &
-                        (t_phy(i,k,j)-36.))/.01*p_phy(i,k,j))      )
+                        (3.80*exp(17.27*(t_phy(i,k,j)-273.)/      &
+                        (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j)))   )
                rh(k)=max(.1,0.01*rh(k))
 !               rh(k) = .10
             enddo

@@ -254,6 +254,17 @@ state    real   ht_coarse       ij     misc        1   -     r                - 
 state    real   tke            ikj     dyn_em      2         -       r        "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
 i1       real   tke_tend       ikj     dyn_em      1         -      
 
+# MYNN PBL variables
+state    real   qke        ikj     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
+state    real   tsq        ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
+state    real   qsq        ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
+state    real   cov        ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
+nce"      "K kg/kg"
+state    real   ch           ij      misc        1         -     -         "ch"                    "drag coeff for heat"    ""
+#state    real   K_m          ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
+#state    real   K_h          ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
+#state    real   K_q          ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
+
 # Pressure and Density
 state    real   p              ikj     dyn_em      1         -      rh        "p"           "perturbation pressure"         "Pa"
 state    real   al             ikj     dyn_em      1         -      r         "al"          "inverse perturbation density"  "m3 kg-1"
@@ -1269,6 +1280,8 @@ rconfig   integer no_mp_heating           namelist,physics      1              0
 rconfig   real    bucket_mm               namelist,physics      1             -1.      h     "bucket_mm" "bucket reset value for water accumulations -1: inactive"   ""
 rconfig   real    bucket_J                namelist,physics      1             -1.      h     "bucket_J"  "bucket reset value for energy accumulations -1: inactive"   ""
 
+rconfig   integer grav_settling           namelist,physics      max_domains  0         h    "grav_settling"     "activate gravitationalsettling of fog  0=no, 1=yes"
+
 #FDDA namelist parameters
 rconfig   real    FGDT                    namelist,fdda         max_domains    0       h        "FGDT"          ""      ""
 rconfig   integer  grid_fdda              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
@@ -1485,7 +1498,9 @@ package   sfclayscheme   sf_sfclay_physics==1        -             state:regime
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
+package   mynnsfcscheme  sf_sfclay_physics==5        -             state:regime
 package   pxsfcscheme    sf_sfclay_physics==7        -             state:regime
+
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
@@ -1496,8 +1511,11 @@ package   ysuscheme      bl_pbl_physics==1           -             state:regime
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             -
+package   mynnpblscheme2   bl_pbl_physics==5           -           state:regime
+package   mynnpblscheme3   bl_pbl_physics==6           -           state:regime
 package   acmpblscheme   bl_pbl_physics==7           -             state:regime
 package   mrfscheme      bl_pbl_physics==99          -             state:regime
+
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

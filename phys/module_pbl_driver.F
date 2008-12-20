@@ -21,6 +21,7 @@ CONTAINS
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
+                 ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -37,7 +38,7 @@ CONTAINS
                                                                    )
 !------------------------------------------------------------------
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3
 
    USE module_model_constants
 
@@ -49,6 +50,8 @@ CONTAINS
    USE module_bl_mrf
    USE module_bl_gfs
    USE module_bl_acm
+   USE module_bl_mynn
+
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
@@ -56,6 +59,7 @@ CONTAINS
    !      1. ysupbl
    !      2. myjpbl
    !      4. qnsepbl
+   !      5.  mynnpbl
    !      7.  acmpbl
    !      99. mrfpbl
    !
@@ -265,6 +269,21 @@ CONTAINS
                                                          RVBLTEN, &
                                                         RTHBLTEN, &
                                                   EXCH_H,EXCH_M,TKE_MYJ
+
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), &
+        &OPTIONAL, INTENT(INOUT) :: &
+        & qke,tsq,qsq,cov!,k_m,k_h,k_q
+
+   REAL,    DIMENSION( ims:ime , jms:jme ), &
+        &OPTIONAL, INTENT(IN) ::  &
+        & qcg, rmol, ch
+
+   
+   INTEGER, OPTIONAL, INTENT(IN)  :: grav_settling
+   
+
+
+
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                          EL_MYJ
@@ -332,6 +351,12 @@ CONTAINS
 
    REAL    :: DTMIN,DTBL
 !
+
+   INTEGER :: initflag
+!
+
+
+
    INTEGER :: i,J,K,NK,jj,ij,its,ite,jts,jte
    LOGICAL :: radiation
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
@@ -649,6 +674,48 @@ CONTAINS
            ELSE
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
+
+
+        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                & PRESENT(qke) .AND. PRESENT(tsq) .AND. &
+                & PRESENT(qsq) .AND. PRESENT(cov) .AND. &
+                & PRESENT(rmol) .AND. PRESENT(rmol) .AND. &
+                & PRESENT(qcg) .AND. PRESENT(ch) .AND. &
+                & PRESENT(grav_settling) ) THEN
+
+              CALL wrf_debug(100,'in MYNNPBL')
+
+              IF (itimestep==1) THEN
+                 initflag=1
+              ELSE
+                 initflag=0
+              ENDIF
+              
+              CALL  mynn_bl_driver(&
+                   &initflag=initflag,&
+                   &grav_settling=grav_settling,&
+                   &delt=dtbl,&
+                   &dz=dz8w,&
+                   &u=u_phy,v=v_phy,th=th_phy,qv=qv_curr,qc=qc_curr,&
+                   &p=p_phy,exner=pi_phy,rho=rho,&
+                   &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
+                   &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
+                   &Qke=qke,Tsq=tsq,Qsq=qsq,Cov=cov,&
+                   &Du=rublten,Dv=rvblten,Dth=rthblten,&
+                   &Dqv=rqvblten,Dqc=rqcblten,&
+                   &k_h=exch_h,k_m=exch_m&
+                   ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+                   ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+                   ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                   )
+
+           ELSE
+              CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
+           ENDIF
+
 
 
      CASE DEFAULT

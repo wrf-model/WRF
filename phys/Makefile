@@ -12,6 +12,7 @@ MODULES = \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
+	module_bl_mynn.o \
 	module_cu_g3.o \
 	module_cu_kf.o  \
 	module_cu_bmj.o \
@@ -48,6 +49,7 @@ MODULES = \
 	module_sf_sstskin.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
+	module_sf_mynn.o \
 	module_sf_pxsfclay.o \
 	module_physics_addtendc.o \
 	module_physics_init.o \
@@ -110,6 +112,12 @@ module_bl_qnsepbl.o: ../share/module_model_constants.o
 
 module_bl_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
+
+module_bl_mynn.o: ../share/module_model_constants.o
+
+module_sf_mynn.o: module_sf_sfclay.o module_bl_mynn.o \
+                ../share/module_model_constants.o
+
 
 module_cu_bmj.o: ../share/module_model_constants.o
 
@@ -177,6 +185,7 @@ module_physics_init.o : \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
+		module_sf_mynn.o                \
 		module_sf_qnsesfc.o		\
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
@@ -189,6 +198,7 @@ module_physics_init.o : \
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
+		module_bl_mynn.o                \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
@@ -243,6 +253,7 @@ module_pbl_driver.o:  \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
 		module_bl_gfs.o \
+		module_bl_mynn.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -278,6 +289,7 @@ module_surface_driver.o: \
 		module_sf_noahdrv.o		\
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
+		module_sf_mynn.o                \
 		module_sf_sfcdiags.o		\
 		module_sf_sstskin.o		\
 		../frame/module_state_description.o \

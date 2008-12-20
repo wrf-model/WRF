@@ -457,6 +457,8 @@ BENCH_START(surf_driver_tim)
      &        ,SNOTIME = grid%SNOTIME &
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
      &        ,NOAHRES=grid%noahres                                       &
+!mynn mp@
+     &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
      &                                                              )
 BENCH_END(surf_driver_tim)
 
@@ -506,6 +508,11 @@ BENCH_START(pbl_driver_tim)
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
+!mynn mp@
+     &    ,qke=grid%qke, tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov&
+     &    ,rmol=grid%rmol, ch=grid%ch &
+     &    ,qcg=grid%qcg, grav_settling=grid%grav_settling &
+!     &    ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q &
      &                                                          )
 
 BENCH_END(pbl_driver_tim)

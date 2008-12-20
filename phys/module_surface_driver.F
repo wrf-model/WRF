@@ -32,6 +32,9 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
+     &          ,ch,tsq,qsq,cov                                       & ! MYNN
+
+
             !  Optional urban
      &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
@@ -86,7 +89,8 @@ CONTAINS
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
-                                       ,PXLSMSCHEME
+                                       ,PXLSMSCHEME               &
+                                       ,MYNNSFCSCHEME             
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
@@ -99,7 +103,9 @@ CONTAINS
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
                                        ,GFDLSFCSCHEME             &
-                                       ,GFDLSLAB
+                                       ,GFDLSLAB                  &
+
+
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
@@ -112,6 +118,8 @@ CONTAINS
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
+   USE module_sf_mynn
+
 #if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
    USE module_sf_gfdl
@@ -130,10 +138,12 @@ CONTAINS
    !      1. sfclay
    !      2. myjsfc
    !      7. Pleim surface layer
+   !      8. MYNN surface layer
    !  surface: ground temp/lsm scheme:
    !      1. slab
    !      2. Noah LSM
    !      7. Pleim-Xiu LSM
+
    !      99. NMM LSM (NMM core only)
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -258,6 +268,8 @@ CONTAINS
 !-- RS           Stomatal resistence                   ! P-X LSM
 !-- NLCAT        Number of landuse categories          ! P-X LSM
 !-- NSCAT        Number of soil categories             ! P-X LSM
+!-- ch - drag coefficient for heat/moisture            ! MYNN LSM
+
 !
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -432,6 +444,13 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
+
+   REAL, DIMENSION( ims:ime , jms:jme ), &
+        &OPTIONAL, INTENT(INOUT   ):: ch
+   
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
+        &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov
+
 
    INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX
    INTEGER, OPTIONAL, INTENT(IN )::   OMLCALL
@@ -984,7 +1003,34 @@ CONTAINS
         CALL wrf_debug(100,'in SFCDIAGS')
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
+      ENDIF
+
+    CASE(MYNNSFCSCHEME)
+
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr)     &
+            & .AND.  PRESENT(qcg) ) THEN
+          
+          CALL wrf_debug(100,'in MYNNSFC')          
+
+          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,&
+               p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
+               xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
+               u10,v10,th2,t2,q2,                                  &
+               gz1oz0,wspd,br,isfflx,dx,                           &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+               &itimestep,ch,th_phy,pi_phy,qc_curr,&
+               &tsq,qsq,cov,qcg,&
+               ids,ide, jds,jde, kds,kde,                          &
+               ims,ime, jms,jme, kms,kme,                          &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+
+       ELSE
+          CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
+ 
        ENDIF
+
+
 #if (NMM_CORE==1)
 
     CASE (GFDLSFCSCHEME)

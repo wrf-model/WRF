@@ -32,9 +32,9 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
+#if ( EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
-
-
+#endif
             !  Optional urban
      &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
@@ -103,7 +103,7 @@ CONTAINS
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
                                        ,GFDLSFCSCHEME             &
-                                       ,GFDLSLAB                  &
+                                       ,GFDLSLAB 
 
 
 #endif
@@ -118,7 +118,9 @@ CONTAINS
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
+#if ( EM_CORE==1)
    USE module_sf_mynn
+#endif
 
 #if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
@@ -1005,6 +1007,7 @@ CONTAINS
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
       ENDIF
 
+#if ( EM_CORE==1)
     CASE(MYNNSFCSCHEME)
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr)     &
@@ -1029,7 +1032,7 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
  
        ENDIF
-
+#endif
 
 #if (NMM_CORE==1)
 

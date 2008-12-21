@@ -37,8 +37,13 @@ CONTAINS
                  ,f_qi,f_qs,f_qg                                   &
                                                                    )
 !------------------------------------------------------------------
+#if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3
+#else
+   USE module_state_description, ONLY :                            &
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME
+#endif
 
    USE module_model_constants
 
@@ -50,7 +55,9 @@ CONTAINS
    USE module_bl_mrf
    USE module_bl_gfs
    USE module_bl_acm
+#if (EM_CORE==1)
    USE module_bl_mynn
+#endif
 
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -675,6 +682,7 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
+#if (EM_CORE==1)
 
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
 
@@ -716,6 +724,7 @@ CONTAINS
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 
+#endif
 
 
      CASE DEFAULT

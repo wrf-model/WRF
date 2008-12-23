@@ -27,10 +27,12 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_thompson.o \
 	module_mp_gsfcgce.o \
-        module_mp_morr_two_moment.o \
+	module_mp_morr_two_moment.o \
 	module_ra_sw.o  \
 	module_ra_gsfcsw.o \
 	module_ra_rrtm.o  \
+	module_ra_rrtmg_lw.o  \
+	module_ra_rrtmg_sw.o  \
         module_ra_cam_support.o \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
@@ -168,6 +170,8 @@ module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o
 
 module_sf_pxlsm.o: ../share/module_model_constants.o
 
+module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
+
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
@@ -176,6 +180,8 @@ module_physics_addtendc.o: \
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
+		module_ra_rrtmg_lw.o		\
+		module_ra_rrtmg_sw.o		\
 		module_ra_cam.o		\
 		module_ra_cam_support.o		\
 		module_ra_sw.o			\
@@ -267,6 +273,8 @@ module_radiation_driver.o: \
 		module_ra_sw.o \
 		module_ra_gsfcsw.o \
 		module_ra_rrtm.o \
+		module_ra_rrtmg_lw.o \
+		module_ra_rrtmg_sw.o \
 		module_ra_cam.o \
 		module_ra_gfdleta.o \
 		module_ra_hs.o \

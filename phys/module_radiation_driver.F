@@ -18,6 +18,8 @@ CONTAINS
               ,  LWUPT,  LWUPTC,  LWDNT,  LWDNTC                          & ! Optional
               ,  LWUPB,  LWUPBC,  LWDNB,  LWDNBC                          & ! Optional
               ,LWCF,SWCF,OLR                                              & ! Optional
+              ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
+              ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
               ,GLW, GSW, SWDOWN, XLAT, XLONG, ALBEDO                      &
               ,EMISS, rho, p8w, p , pi , dz8w ,t, t8w, GMT                &
               ,XLAND, XICE, TSK, HTOP,HBOT,HTOPR,HBOTR, CUPPT, VEGFRA, SNOW     &
@@ -55,6 +57,7 @@ CONTAINS
 
 ! !USES:
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
+                                       ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ
@@ -66,6 +69,8 @@ CONTAINS
    USE module_ra_sw
    USE module_ra_gsfcsw
    USE module_ra_rrtm
+   USE module_ra_rrtmg_lw
+   USE module_ra_rrtmg_sw
    USE module_ra_cam
    USE module_ra_gfdleta
    USE module_ra_hs
@@ -74,9 +79,11 @@ CONTAINS
    !
    !  short wave radiation choices:
    !  1. swrad (19??)
+   !  4. rrtmg_sw - Added November 2008, MJIacono, AER, Inc.
    !
    !  long wave radiation choices:
    !  1. rrtmlwrad
+   !  4. rrtmg_lw - Added November 2008, MJIacono, AER, Inc.
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -323,11 +330,19 @@ CONTAINS
                       ACSWUPB,ACSWUPBC,ACSWDNB,ACSWDNBC,          &
                       ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,          &
                       ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC
+
+! TOA and surface, upward and downward, total and clear fluxes
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
                         SWUPT,  SWUPTC,  SWDNT,  SWDNTC,          &
                         SWUPB,  SWUPBC,  SWDNB,  SWDNBC,          &
                         LWUPT,  LWUPTC,  LWDNT,  LWDNTC,          &
                         LWUPB,  LWUPBC,  LWDNB,  LWDNBC
+
+! Upward and downward, total and clear sky layer fluxes (W m-2)
+   REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
+         OPTIONAL, INTENT(INOUT) ::                               &
+                               SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC, &
+                               LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC
 
    REAL, DIMENSION( ims:ime, jms:jme ),          OPTIONAL ,       &
          INTENT(INOUT)  ::                                  SWCF, &
@@ -526,6 +541,8 @@ CONTAINS
      DO k=kts,kte+1
      DO i=its,ite
         RTHRATEN(I,K,J)=0.
+        RTHRATENLW(I,K,J)=0.
+        RTHRATENSW(I,K,J)=0.
 !        SWUP(I,K,J) = 0.0
 !        SWDN(I,K,J) = 0.0
 !        SWUPCLEAR(I,K,J) = 0.0
@@ -538,6 +555,23 @@ CONTAINS
      ENDDO
      ENDDO
      ENDDO
+
+     IF ( PRESENT( SWUPFLX ) ) THEN
+        DO j=jts,jte
+        DO k=kts,kte+2
+        DO i=its,ite
+           SWUPFLX(I,K,J) = 0.0
+           SWDNFLX(I,K,J) = 0.0
+           SWUPFLXC(I,K,J) = 0.0
+           SWDNFLXC(I,K,J) = 0.0
+           LWUPFLX(I,K,J) = 0.0
+           LWDNFLX(I,K,J) = 0.0
+           LWUPFLXC(I,K,J) = 0.0
+           LWDNFLXC(I,K,J) = 0.0
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
 
 ! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
 !
@@ -610,6 +644,20 @@ CONTAINS
 !-- are defined in GFDL LW/SW schemes and do not need to be initialized.
 
         CASE (CAMLWSCHEME)
+
+     IF ( PRESENT ( CLDFRA ) .AND.                           &
+          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
+
+   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+                   F_QV,F_QC,F_QI,F_QS,t,p,                &
+                   F_ICE_PHY,F_RAIN_PHY,                   &
+                   ids,ide, jds,jde, kds,kde,              &
+                   ims,ime, jms,jme, kms,kme,              &
+                   its,ite, jts,jte, kts,kte               )
+     ENDIF
+
+        CASE (RRTMG_LWSCHEME)
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
@@ -699,7 +747,9 @@ CONTAINS
              ELSE
                CALL wrf_error_fatal('Can not call ETARA (1b). Missing moisture fields.')
              ENDIF
+
         CASE (CAMLWSCHEME)
+
              CALL wrf_debug(100, 'CALL camrad lw')
              IF(cam_abs_dim1 .ne. 4 .or. cam_abs_dim2 .ne. kde .or.  &
                 paerlev .ne. 29 .or. levsiz .ne. 59 )THEN
@@ -755,6 +805,31 @@ CONTAINS
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
 
+        CASE (RRTMG_LWSCHEME)
+             CALL wrf_debug (100, 'CALL rrtmg_lw')
+
+             CALL RRTMG_LWRAD(                                      &
+                  RTHRATENLW=RTHRATEN,                              &
+                  LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
+                  LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
+                  LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
+                  LWDNB=LWDNB,LWDNBC=LWDNBC,                        &
+                  GLW=GLW,OLR=RLWTOA,LWCF=LWCF,                     &
+                  EMISS=EMISS,                                      &
+                  P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
+                  T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
+                  ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
+                  QV3D=QV,QC3D=QC,QR3D=QR,                          &
+                  QI3D=QI,QS3D=QS,QG3D=QG,                          &
+                  F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
+                  F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
+                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
+                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
+                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
+                  LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
+                                                                    )
 
         CASE (HELDSUAREZ)
              CALL wrf_debug (100, 'CALL heldsuarez')
@@ -800,6 +875,20 @@ CONTAINS
                    its,ite, jts,jte, kts,kte               )
      ENDIF
  
+        CASE (RRTMG_SWSCHEME)
+
+     IF ( PRESENT ( CLDFRA ) .AND.                           &
+          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
+
+   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
+                   F_QV,F_QC,F_QI,F_QS,t,p,                &
+                   F_ICE_PHY,F_RAIN_PHY,                   &
+                   ids,ide, jds,jde, kds,kde,              &
+                   ims,ime, jms,jme, kms,kme,              &
+                   its,ite, jts,jte, kts,kte               )
+     ENDIF
+
         CASE DEFAULT
 
      END SELECT swrad_cldfra_select    
@@ -931,6 +1020,41 @@ CONTAINS
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
+             ENDDO
+             ENDDO
+             ENDDO
+
+        CASE (RRTMG_SWSCHEME)
+             CALL wrf_debug(100, 'CALL rrtmg_sw')
+             CALL RRTMG_SWRAD(                                         &
+                     RTHRATENSW=RTHRATENSW,                            &
+                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
+                     SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
+                     SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
+                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
+                     SWCF=SWCF,GSW=GSW,                                &
+                     XTIME=XTIME,GMT=GMT,XLAT=XLAT,XLONG=XLONG,        &
+                     RADT=RADT,DEGRAD=DEGRAD,DECLIN=DECLIN,            &
+                     COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
+                     ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
+                     p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
+                     ICLOUD=icloud,WARM_RAIN=warm_rain,                &
+                     XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
+                     QV3D=qv,QC3D=qc,QR3D=qr,                          &
+                     QI3D=qi,QS3D=qs,QG3D=qg,                          &
+                     F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
+                     F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
+                     IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
+                     IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
+                     ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
+                     SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
+                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC                 &
+                                                                       )
              DO j=jts,jte
              DO k=kts,kte
              DO i=its,ite

@@ -822,6 +822,8 @@ integer myproc
                       its, ite, jts, jte, kts, kte                   )
 !---------------------------------------------------------------------
    USE module_ra_rrtm
+   USE module_ra_rrtmg_lw
+   USE module_ra_rrtmg_sw
    USE module_ra_cam
    USE module_ra_sw
    USE module_ra_gsfcsw
@@ -959,6 +961,13 @@ integer myproc
 
              camlw = .true.
 
+        CASE (RRTMG_LWSCHEME)
+             CALL rrtmg_lwinit(                             &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
              CALL nl_get_start_day(id,iday)
@@ -1006,6 +1015,13 @@ integer myproc
 
         CASE (GSFCSWSCHEME)
              CALL gsfc_swinit(cen_lat, allowed_to_read )
+
+        CASE (RRTMG_SWSCHEME)
+             CALL rrtmg_swinit(                             &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
 
         CASE (GFDLSWSCHEME)
              IF(.not.etalw)THEN

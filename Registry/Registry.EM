@@ -1524,7 +1524,7 @@ package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten
 package   kfscheme       cu_physics==99              -             -
 
-package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new,t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,sn_ndg_new,sn_ndg_old;state:rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten
+package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten
 package   psusfddagd     grid_sfdda==1               -             sfdda2d:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,tob_ndg_old,odis_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_new,odis_ndg_new
 
 package   restofwrf      use_wps_input==0            -             -

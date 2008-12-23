@@ -318,6 +318,10 @@ Namelist variables for controlling the adaptive time step option:
  mp_zero_out_thresh                  = 1.e-8   ; critical value for moist array threshold, below which
                                                ; moist arrays (except for Qv) are set to zero (kg/kg)
 
+ gwd_opt                             = 0       ; for running without gravity wave drag
+                                     = 1       ; for running the WRF-ARW with its gravity wave drag
+                                     = 2       ; for running the WRF-NMM with its gravity wave drag
+
  gsfcgce_hail                        = 0       ; for running gsfcgce microphysics with graupel
                                      = 1       ; for running gsfcgce microphysics with hail
                                                  default value = 0

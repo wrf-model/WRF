@@ -846,6 +846,7 @@ rconfig   integer ucmcall                 namelist,physics      max_domains  0  
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"    "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
 rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
+rconfig   integer  gwd_opt                namelist,physics    max_domains    0       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"

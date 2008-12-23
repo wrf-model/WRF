@@ -1470,21 +1470,26 @@
 !dbg enddo
 !dbg print *,'TURBL: IGS,IGE,JGS,JGE,kpblmin,kpblmax=',IGS,IGE,JGS,JGE,kpblmin,kpblmax
 !dbg
-!     CALL GWD_driver(U=U_PHY,V=V_PHY,T=T_PHY                           &
-!    &               ,Q=MOIST_TRANS(IMS,KMS,JMS,P_QV)                   &
-!    &               ,Z=Z,DP=DELP,PINT=P8W,PMID=P_PHY,EXNR=PI_PHY       &
-!    &               ,KPBL=KPBL,ITIME=NTSD                              &
-!    &               ,HSTDV=HSTDV,HCNVX=HCNVX,HASYW=HASYW,HASYS=HASYS   &
-!    &               ,HASYSW=HASYSW,HASYNW=HASYNW,HLENW=HLENW           &
-!    &               ,HLENS=HLENS,HLENSW=HLENSW,HLENNW=HLENNW           &
-!    &               ,HANGL=HANGL,HANIS=HANIS,HSLOP=HSLOP,HZMAX=HZMAX   &
-!    &               ,CROT=CROT,SROT=SROT                               &
-!    &               ,DUDT=DUDT_GWD,DVDT=DVDT_GWD                       &
-!    &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc                   &
-!    &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE   &
-!    &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME   &
-!    &               ,ITS=IGS,ITE=IGE,JTS=JGS,JTE=JGE,KTS=KTS,KTE=KTE )
-!
+
+      IF (grid%gwd_opt .eq. 2) THEN
+       
+        CALL wrf_message("GWD usage currently may be problematic for some cases - use at own risk")
+
+      CALL GWD_driver(U=U_PHY,V=V_PHY,T=T_PHY                           &
+     &               ,Q=MOIST_TRANS(IMS,KMS,JMS,P_QV)                   &
+     &               ,Z=Z,DP=DELP,PINT=P8W,PMID=P_PHY,EXNR=PI_PHY       &
+     &               ,KPBL=KPBL,ITIME=NTSD                              &
+     &               ,HSTDV=HSTDV,HCNVX=HCNVX,HASYW=HASYW,HASYS=HASYS   &
+     &               ,HASYSW=HASYSW,HASYNW=HASYNW,HLENW=HLENW           &
+     &               ,HLENS=HLENS,HLENSW=HLENSW,HLENNW=HLENNW           &
+     &               ,HANGL=HANGL,HANIS=HANIS,HSLOP=HSLOP,HZMAX=HZMAX   &
+     &               ,CROT=CROT,SROT=SROT                               &
+     &               ,DUDT=DUDT_GWD,DVDT=DVDT_GWD                       &
+     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc                   &
+     &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE   &
+     &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME   &
+     &               ,ITS=IGS,ITE=IGE,JTS=JGS,JTE=JGE,KTS=KTS,KTE=KTE )
+
 !=======================================================================
 !=====  End gravity wave drag (GWD) and mountain blocking (MB)  ========
 !=======================================================================
@@ -1496,13 +1501,55 @@
       DO K=KTS,KTE
       DO J=JTS,JTE
       DO I=ITS,ITE
+
+
+!mp     temporary bandaid limiting GWD/MB wind tendencies
+
+        IF (DUDT_GWD(I,K,J) .gt. 1.6) then
+        write(message,*) 'BIG DUDT_GWD:: ', I,K,J, DUDT_GWD(I,K,J)
+        CALL wrf_message(message)
+        DUDT_GWD(I,K,J)=1.6
+        ENDIF
+
+        IF (DUDT_GWD(I,K,J) .lt. -1.6) then
+        write(message,*) 'BIG DUDT_GWD:: ', I,K,J, DUDT_GWD(I,K,J)
+        CALL wrf_message(message)
+        DUDT_GWD(I,K,J)=-1.6
+        ENDIF
+
+        IF (DVDT_GWD(I,K,J) .gt. 1.6) then
+        write(message,*) 'BIG DVDT_GWD:: ', I,K,J, DVDT_GWD(I,K,J)
+        CALL wrf_message(message)
+        DVDT_GWD(I,K,J)=1.6
+        ENDIF
+
+        IF (DVDT_GWD(I,K,J) .lt. -1.6) then
+        write(message,*) 'BIG DVDT_GWD:: ', I,K,J, DVDT_GWD(I,K,J)
+        CALL wrf_message(message)
+        DVDT_GWD(I,K,J)=-1.6
+        ENDIF
+
+!mp     end temporary bandaid
+
+        DUDT(I,J,K)=DUDT_PHY(I,K,J)+DUDT_GWD(I,K,J)
+        DVDT(I,J,K)=DVDT_PHY(I,K,J)+DVDT_GWD(I,K,J)
+
+      ENDDO
+      ENDDO
+      ENDDO
+
+      ELSE  ! no GWD
+
+      DO K=KTS,KTE
+      DO J=JTS,JTE
+      DO I=ITS,ITE
         DUDT(I,J,K)=DUDT_PHY(I,K,J)
         DVDT(I,J,K)=DVDT_PHY(I,K,J)
-!       DUDT(I,J,K)=DUDT_PHY(I,K,J)+DUDT_GWD(I,K,J)
-!       DVDT(I,J,K)=DVDT_PHY(I,K,J)+DVDT_GWD(I,K,J)
       ENDDO
       ENDDO
       ENDDO
+
+      ENDIF ! gwd_opt
 !
 !-----------------------------------------------------------------------
 !***  TRANSPOSE THE MOIST_TRANS ARRAY BACK TO THE PROGNOSTIC MOIST ARRAY.

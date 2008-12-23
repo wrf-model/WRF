@@ -147,6 +147,8 @@
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
 
+      INTEGER :: interval_seconds, restart_interval
+
 ! z0base new
  
       REAL,DIMENSION(0:30) :: VZ0TBL_24
@@ -218,6 +220,16 @@
       WRITE(message,196)IHRST,IDAT
       CALL wrf_message(trim(message))
   196 FORMAT(' FORECAST BEGINS ',I2,' GMT ',2(I2,'/'),I4)
+
+
+!!    Restarts must be made from times for which boundary data is available
+
+      CALL nl_get_interval_seconds(GRID%ID, interval_seconds)
+      CALL nl_get_restart_interval(GRID%ID, restart_interval)
+      IF (MOD(restart_interval*60,interval_seconds) /= 0) THEN
+         WRITE(wrf_err_message,*)' restart_interval is not integer multiplier of interval_seconds'
+         CALL WRF_ERROR_FATAL(wrf_err_message)
+      END IF
 
 !!!!!!tlb
 !!!! For now, set NPES to 1
@@ -1150,7 +1162,7 @@
 !***  SOME INITIAL VALUES RELATED TO TURBULENCE SCHEME
 !----------------------------------------------------------------------
 !
-      IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
+      IF(allowed_to_read.and.(.NOT.RESTRT))THEN       ! This is gopal's inclusion for moving nest
 
       DO J=JFS,JFE
       DO I=IFS,IFE
@@ -1659,7 +1671,7 @@
         IF (.not. (MAXVAL(CWM).gt.0. .and. MAXVAL(CWM).lt.1.) ) then    
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
-     &       CALL wrf_message(' summing moist(:,:,:,',i_m,') into CWM array')
+     &       CALL wrf_message(' summing moist(:,:,:,i_m) into CWM array')
           DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE

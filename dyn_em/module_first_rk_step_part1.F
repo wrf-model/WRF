@@ -509,10 +509,16 @@ BENCH_START(pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &    ,qke=grid%qke, tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov&
-     &    ,rmol=grid%rmol, ch=grid%ch &
-     &    ,qcg=grid%qcg, grav_settling=grid%grav_settling &
-!     &    ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q &
+     &        ,qke=grid%qke, tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
+     &        ,rmol=grid%rmol, ch=grid%ch                                 &
+     &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
+!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+!GWD for ARW
+     &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
+     &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
+     &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
+     &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
      &                                                          )
 
 BENCH_END(pbl_driver_tim)

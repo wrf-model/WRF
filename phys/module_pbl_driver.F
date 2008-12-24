@@ -13,7 +13,7 @@ CONTAINS
                  ,ust,pblh,hfx,qfx,grdflx                          &
                  ,u_phy,v_phy,th_phy,rho                           &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
-                 ,tke_myj,el_myj,exch_h,exch_m,akhs,akms                  &
+                 ,tke_myj,el_myj,exch_h,exch_m,akhs,akms           &
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
                  ,lowlyr,u10,v10                                   &
                  ,psim,psih,gz1oz0, wspd,br,chklowq                &
@@ -27,6 +27,10 @@ CONTAINS
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
              ! Optional
                  ,hol, mol, regime                                 &
+             ! Optional gravity-wave drag             
+                 ,gwd_opt                                          &
+                 ,dusfcg,dvsfcg,var2d,oc12d                        &
+                 ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -55,10 +59,10 @@ CONTAINS
    USE module_bl_mrf
    USE module_bl_gfs
    USE module_bl_acm
+   USE module_bl_gwdo
 #if (EM_CORE==1)
    USE module_bl_mynn
 #endif
-
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
@@ -341,7 +345,20 @@ CONTAINS
                OPTIONAL                                         , &
                INTENT(IN)    ::                           mut
 !
+   INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt
    REAL,       OPTIONAL, INTENT(IN)    ::               p_top
+
+  real,   dimension( ims:ime, jms:jme )                                      , &
+          optional                                                           , &
+             intent(inout  )   ::                                      dusfcg, &
+                                                                       dvsfcg
+!
+  real,   dimension( ims:ime, jms:jme )                                      , &
+          optional                                                           , &
+             intent(in  )   ::                                          var2d, &
+                                                                        oc12d, &
+                                                              oa1,oa2,oa3,oa4, &
+                                                              ol1,ol2,ol3,ol4
 
 !  LOCAL  VAR
 
@@ -733,6 +750,26 @@ CONTAINS
        CALL wrf_error_fatal ( message )
 
    END SELECT pbl_select
+
+   IF (PRESENT(gwd_opt)) THEN
+       IF(gwd_opt .EQ. 1)THEN
+             CALL gwdo(                                              &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
+              ,QV3D=qv_curr                                         &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,DUSFCG=dusfcg,DVSFCG=dvsfcg &
+              ,VAR2D=var2d,OC12D=oc12d     &
+              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
+              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,CP=cp,G=g,RD=r_d                           &
+              ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
+              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
+       ENDIF
+   ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO

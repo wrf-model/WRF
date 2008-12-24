@@ -13,6 +13,7 @@ MODULES = \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
 	module_bl_mynn.o \
+	module_bl_gwdo.o \
 	module_cu_g3.o \
 	module_cu_kf.o  \
 	module_cu_bmj.o \
@@ -263,6 +264,7 @@ module_pbl_driver.o:  \
 		module_bl_mrf.o \
 		module_bl_gfs.o \
 		module_bl_mynn.o \
+		module_bl_gwdo.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 

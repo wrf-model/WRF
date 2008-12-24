@@ -997,8 +997,9 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
+package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -

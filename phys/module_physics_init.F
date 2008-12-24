@@ -1633,6 +1633,7 @@ integer myproc
    USE module_mp_wsm6
    USE module_mp_etanew
    USE module_mp_thompson
+   USE module_mp_thompson07
    USE module_mp_morr_two_moment
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -1692,6 +1693,10 @@ integer myproc
                           its, ite, jts, jte, kts, kte            )
      CASE (THOMPSON)
          IF(start_of_simulation.or.restart)CALL thompson_init
+
+     CASE (THOMPSON07)
+         IF(start_of_simulation.or.restart)CALL thompson07_init
+
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init
 

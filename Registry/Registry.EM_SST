@@ -782,8 +782,8 @@ state    real  RAINC            ij      misc        1         -      rhdu     "R
 state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
 state  integer I_RAINC          ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINC"            "BUCKET FOR RAINC"                    ""
 state  integer I_RAINNC         ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINNC"           "BUCKET FOR RAINNC"                   ""
-state    real  PRATEC           ij      misc        1         -      rh       "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
-state    real  RAINCV           ij      misc        1         -      rh       "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
+state    real  PRATEC           ij      misc        1         -      r        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
+state    real  RAINCV           ij      misc        1         -      r        "RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
 state    real  RAINNCV          ij      misc        1         -      r        "RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real  RAINBL           ij      misc        1         -      r        "RAINBL"                "PBL TIME-STEP TOTAL PRECIPITATION"                       "mm"      
 state    real  SNOWNC           ij      misc        1         -      rhdu     "SNOWNC"                "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"               "mm"
@@ -1466,8 +1466,9 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg;scalar:qt
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
+package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -1478,8 +1479,9 @@ package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi
 package   etampnew_dfi      mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qt
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
-package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
+package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
+package   thompson07_dfi    mp_physics_dfi==98       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop

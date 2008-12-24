@@ -1524,7 +1524,7 @@ package   pxsfcscheme    sf_sfclay_physics==7        -             state:regime
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
-package   pxlsmscheme    sf_surface_physics==7       -             fdda2d:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
+package   pxlsmscheme    sf_surface_physics==7       -             sfdda2d:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
 package   ysuscheme      bl_pbl_physics==1           -             state:regime
 package   myjpblscheme   bl_pbl_physics==2           -             -

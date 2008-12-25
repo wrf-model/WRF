@@ -25,13 +25,13 @@ MODULE module_physics_addtendc
 
 CONTAINS
 
-SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
+SUBROUTINE update_phy_ten(rph_tendf,rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                       scalar_tendf,mu_tendf,                       &
                       RTHRATEN,RTHBLTEN,RTHCUTEN,RUBLTEN,RVBLTEN,  &
                       RQVBLTEN,RQCBLTEN,RQIBLTEN,                  &
                       RQVCUTEN,RQCCUTEN,RQRCUTEN,RQICUTEN,RQSCUTEN,&
-                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,   &
-                      RMUNDGDTEN,                                  &
+                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,   &
+                      RQVNDGDTEN,RMUNDGDTEN,                       &
                       rthfrten,rqvfrten,                           &    ! fire
                       n_moist,n_scalar,config_flags,rk_step,adv_moist_cond, &
                       ids, ide, jds, jde, kds, kde,                &
@@ -53,7 +53,8 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
    REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(INOUT) ::   &
                                                          ru_tendf, &
                                                          rv_tendf, &
-                                                         rt_tendf
+                                                         rt_tendf, &
+                                                         rph_tendf
 
    REAL , DIMENSION(ims:ime , jms:jme),INTENT(INOUT) ::  mu_tendf
 
@@ -78,6 +79,7 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
                                                        RQICUTEN, &
                                                        RQSCUTEN, &
                                                      RTHNDGDTEN, &
+                                                     RPHNDGDTEN, &
                                                      RQVNDGDTEN, &
                                                       RUNDGDTEN, &
                                                       RVNDGDTEN
@@ -118,10 +120,10 @@ SUBROUTINE update_phy_ten(rt_tendf,ru_tendf,rv_tendf,moist_tendf,  &
 
    if (config_flags%grid_fdda .gt. 0)                     &
       CALL phy_fg_ten(config_flags,rk_step,n_moist,            &
-                      rt_tendf,ru_tendf,rv_tendf,              &
+                      rph_tendf,rt_tendf,ru_tendf,rv_tendf,    &
                       mu_tendf, moist_tendf,                   &
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,          &
-                      RQVNDGDTEN,RMUNDGDTEN,                   &
+                      RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,        &
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
@@ -764,10 +766,10 @@ END SUBROUTINE phy_cu_ten
 
 !=================================================================
 SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
-                      rt_tendf,ru_tendf,rv_tendf,              &
+                      rph_tendf,rt_tendf,ru_tendf,rv_tendf,    &
                       mu_tendf, moist_tendf,                   &
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,          &
-                      RQVNDGDTEN,RMUNDGDTEN,                   &
+                      RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,        &
                       ids, ide, jds, jde, kds, kde,              &
                       ims, ime, jms, jme, kms, kme,              &
                       its, ite, jts, jte, kts, kte               )
@@ -786,6 +788,7 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   &
                                                        RTHNDGDTEN, &
+                                                       RPHNDGDTEN, &
                                                         RUNDGDTEN, &
                                                         RVNDGDTEN, &
                                                        RQVNDGDTEN
@@ -793,6 +796,7 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) ::  RMUNDGDTEN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::   &
+                                                       rph_tendf,&
                                                        rt_tendf, &
                                                        ru_tendf, &
                                                        rv_tendf
@@ -837,6 +841,28 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
+      CASE (SPNUDGING)
+
+! note fdda u and v tendencies are staggered
+           CALL add_c2c_u(ru_tendf,RUNDGDTEN,config_flags,       &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_c2c_v(rv_tendf,RVNDGDTEN,config_flags,       &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2a(rt_tendf,RTHNDGDTEN,config_flags,        &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2a_ph(rph_tendf,RPHNDGDTEN,config_flags,        &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
 
       CASE DEFAULT
 
@@ -1132,6 +1158,53 @@ SUBROUTINE add_a2a(lvar,rvar,config_flags,                  &
    ENDDO
 
 END SUBROUTINE add_a2a
+
+SUBROUTINE add_a2a_ph(lvar,rvar,config_flags,                  &
+                   ids,ide, jds, jde, kds, kde,             &
+                   ims, ime, jms, jme, kms, kme,            &
+                   its, ite, jts, jte, kts, kte             )
+!------------------------------------------------------------
+   IMPLICIT NONE
+!------------------------------------------------------------
+   TYPE(grid_config_rec_type),  INTENT(IN) :: config_flags
+
+   INTEGER , INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                              ims, ime, jms, jme, kms, kme, &
+                              its, ite, jts, jte, kts, kte
+
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(IN   ) ::&
+                                                      rvar
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(INOUT) ::&
+                                                      lvar
+
+! LOCAL VARS
+   INTEGER :: i,j,k,i_start,i_end,j_start,j_end
+
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+
+   IF ( config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
+
+   DO j = j_start,j_end
+   DO k = kts,kte
+   DO i = i_start,i_end
+      lvar(i,k,j) = lvar(i,k,j) + rvar(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+END SUBROUTINE add_a2a_ph
 
 !------------------------------------------------------------
 SUBROUTINE add_a2c_u(lvar,rvar,config_flags,                &

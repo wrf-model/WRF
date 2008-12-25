@@ -2135,7 +2135,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL nl_get_gfdda_end_d( grid%id, gfdda_end_d )
    CALL nl_get_gfdda_end_h( grid%id, gfdda_end_h )
 #if (EM_CORE == 1)
-   IF( grid_fdda == 1 ) gfdda_end_h = gfdda_end_h - NINT( gfdda_interval_m/60.0 )
+   IF( grid_fdda >= 1 ) gfdda_end_h = gfdda_end_h - NINT( gfdda_interval_m/60.0 )
 #endif
    CALL nl_get_gfdda_end_m( grid%id, gfdda_end_m )
    CALL nl_get_gfdda_end_s( grid%id, gfdda_end_s )

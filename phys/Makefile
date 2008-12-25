@@ -71,6 +71,7 @@ MODULES = \
 	module_surface_driver.o \
 	module_diagnostics.o \
 	module_fdda_psufddagd.o \
+	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
@@ -218,6 +219,7 @@ module_physics_init.o : \
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
 		module_fdda_psufddagd.o		\
+		module_fdda_spnudging.o         \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		module_mp_thompson07.o          \

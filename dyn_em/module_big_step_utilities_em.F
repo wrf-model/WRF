@@ -4359,7 +4359,7 @@ END SUBROUTINE pole_point_bc
                          RQRCUTEN, RQICUTEN, RQSCUTEN,                &
                          RTHFTEN,  RQVFTEN,                           &
                          RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
-                         RQVNDGDTEN, RMUNDGDTEN,                      &
+                         RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          its, ite, jts, jte, kts, kte                )
@@ -4435,8 +4435,11 @@ END SUBROUTINE pole_point_bc
           INTENT(INOUT)   ::                                RUNDGDTEN, &
                                                             RVNDGDTEN, &
                                                            RTHNDGDTEN, &
-                                                           RQVNDGDTEN, &
-                                                           RMUNDGDTEN
+                                                           RPHNDGDTEN, &
+                                                           RQVNDGDTEN
+
+   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
+          INTENT(INOUT)   ::                               RMUNDGDTEN
 
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
@@ -4735,6 +4738,17 @@ END SUBROUTINE pole_point_bc
       ENDDO
       ENDDO
       ENDDO
+
+      IF (config_flags%grid_fdda .EQ. 2) THEN
+      DO J=j_start,j_end
+      DO K=k_start,kte
+      DO I=i_start,i_end
+         RPHNDGDTEN(I,K,J)=RPHNDGDTEN(I,K,J)/mu(I,J)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      ELSE IF (config_flags%grid_fdda .EQ. 1) THEN
       IF (P_QV .ge. PARAM_FIRST_SCALAR) THEN
          DO J=j_start,j_end
          DO K=k_start,k_end
@@ -4743,6 +4757,7 @@ END SUBROUTINE pole_point_bc
          ENDDO
          ENDDO
          ENDDO
+      ENDIF
       ENDIF
 
     ENDIF

@@ -1014,6 +1014,7 @@ state integer  STEPFG            -        misc        1         -      r        
 state    real  RUNDGDTEN         ikj      misc        1         X      r        "RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
 state    real  RVNDGDTEN         ikj      misc        1         Y      r        "RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
 state    real  RTHNDGDTEN        ikj      misc        1         -      r        "RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
+state    real  RPHNDGDTEN        ikj      misc        1         -      r        "RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
 state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
 state    real  RMUNDGDTEN        ij       misc        1         -      r        "RMUNDGDTEN"              "MU TENDENCY DUE TO FDDA GRID NUDGING"     "Pa s-1"
 state    real    -               ikjf     fdda3d      1         -     -    -
@@ -1298,6 +1299,7 @@ rconfig   integer grav_settling           namelist,physics      max_domains   0 
 
 #FDDA namelist parameters
 rconfig   real    FGDT                    namelist,fdda         max_domains    0       h        "FGDT"          ""      ""
+rconfig   integer  FGDTZERO               namelist,fdda         max_domains    0       rh       "FGDTZERO"             ""      ""
 rconfig   integer  grid_fdda              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   integer  grid_sfdda             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   integer  if_no_pbl_nudging_uv   namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
@@ -1307,17 +1309,25 @@ rconfig   integer  if_zfac_uv             namelist,fdda         max_domains    0
 rconfig   integer   k_zfac_uv             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   integer  if_zfac_t              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   integer   k_zfac_t              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  if_zfac_ph             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer   k_zfac_ph             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   integer  if_zfac_q              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   integer   k_zfac_q              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   integer  dk_zfac_uv             namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
+rconfig   integer  dk_zfac_t              namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
+rconfig   integer  dk_zfac_ph             namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
 rconfig   real        guv                 namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        guv_sfc             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gt                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gt_sfc              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gq                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gq_sfc              namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
+rconfig   real        gph                 namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real    dtramp_min              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
 rconfig   integer if_ramping              namelist,fdda         1              0       h        "grid_fdda"            ""      ""
 rconfig   real    rinblw                  namelist,fdda         1              0       h        "grid_fdda"            ""      ""
+rconfig   integer xwavenum                namelist,fdda         max_domains    0       rh       "grid_fdda"            "top wave number to nudge in x direction"      ""
+rconfig   integer ywavenum                namelist,fdda         max_domains    0       rh       "grid_fdda"            "top wave number to nudge in y direction"      ""
 
 #Observational Nudging
 rconfig   integer     obs_nudge_opt       namelist,fdda            max_domains    0       rh       "obs_nudge_opt"     "Obs-nudging flag for domain"          ""
@@ -1541,8 +1551,10 @@ package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten
 package   kfscheme       cu_physics==99              -             -
 
-package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rqvndgdten,rmundgdten
+package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
 package   psusfddagd     grid_sfdda==1               -             sfdda2d:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,tob_ndg_old,odis_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_new,odis_ndg_new
+
+package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
 
 package   restofwrf      use_wps_input==0            -             -
 
@@ -1597,7 +1609,7 @@ halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
-halo      HALO_EM_FDDA_SFC dyn_em 4: odis_ndg_old, odis_ndg_new
+halo      HALO_EM_FDDA_SFC dyn_em 4: sfdda2d
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
 halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
@@ -1762,6 +1774,13 @@ xpose XPOSE_POLAR_FILTER_PH dyn_em ph_2,ph_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_MOIST dyn_em moist,fourd_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_CHEM dyn_em chem,fourd_xxx,dum_yyy
 xpose XPOSE_POLAR_FILTER_SCALAR dyn_em scalar,fourd_xxx,dum_yyy
+
+# xpose variables for spectral nudging
+state    real   dif_analysis     ikj     -           1
+state    real   dif_xxx          ikjx    -           1
+state    real   dif_yyy          ikjy    -           1
+
+xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 ##
 
 include registry.fire

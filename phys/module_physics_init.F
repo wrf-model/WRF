@@ -64,7 +64,7 @@ CONTAINS
                          ozmixm,pin,                             &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
-                         RQVNDGDTEN,RMUNDGDTEN,                  &    ! Optional
+                         RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
                          FGDT,STEPFG,                            &    ! Optional
                          cugd_tten,cugd_ttens,cugd_qvten,        &    ! Optional
                          cugd_qvtens,cugd_qcten,                 &    ! Optional
@@ -237,7 +237,7 @@ CONTAINS
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
-             RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RQVNDGDTEN
+             RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RPHNDGDTEN, RQVNDGDTEN
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              RMUNDGDTEN
 
@@ -526,7 +526,7 @@ integer myproc
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to fg_init' )
 
    CALL fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,          &
-                RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
+                RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,    &
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -1709,7 +1709,7 @@ integer myproc
 #if  ( EM_CORE == 1 )
 !==========================================================
    SUBROUTINE fg_init(STEPFG,FGDT,DT,id,RUNDGDTEN,RVNDGDTEN,    &
-                RTHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,               &
+                RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,    &
                 config_flags,restart,                           &
                 allowed_to_read ,                               &
                 ids, ide, jds, jde, kds, kde,                   &
@@ -1719,6 +1719,7 @@ integer myproc
 
 !--------------------------------------------------------------------
    USE module_fdda_psufddagd
+   USE module_fdda_spnudging, ONLY : fddaspnudginginit
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
@@ -1736,6 +1737,7 @@ integer myproc
                                                            RUNDGDTEN, &
                                                            RVNDGDTEN, &
                                                           RTHNDGDTEN, &
+                                                          RPHNDGDTEN, &
                                                           RQVNDGDTEN
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: RMUNDGDTEN
 
@@ -1776,6 +1778,32 @@ integer myproc
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
+
+      CASE (SPNUDGING)
+           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,&
+               config_flags%run_hours, &
+               config_flags%if_no_pbl_nudging_uv, &
+               config_flags%if_no_pbl_nudging_t, &
+               config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_zfac_uv, &
+               config_flags%k_zfac_uv, &
+               config_flags%dk_zfac_uv, &
+               config_flags%if_zfac_t, &
+               config_flags%k_zfac_t, &
+               config_flags%dk_zfac_t, &
+               config_flags%if_zfac_ph, &
+               config_flags%k_zfac_ph, &
+               config_flags%dk_zfac_ph, &
+               config_flags%guv, &
+               config_flags%gt, config_flags%gph, &
+               config_flags%if_ramping, config_flags%dtramp_min, &
+               config_flags%gfdda_end_h, &
+               config_flags%xwavenum,config_flags%ywavenum, &
+                      restart, allowed_to_read,                    &
+                      ids, ide, jds, jde, kds, kde,                &
+                      ims, ime, jms, jme, kms, kme,                &
+                      its, ite, jts, jte, kts, kte                 )
+
       CASE DEFAULT
 
    END SELECT fdda_select

@@ -43,7 +43,7 @@
     INTEGER grid_fdda, gfdda_interval_m, gfdda_end_h, if_ramping, &
             obs_nudge_opt, obs_nudge_wind, obs_nudge_temp, obs_nudge_mois, obs_nudge_pstr, obs_idynin, obs_ionf
     INTEGER grid_sfdda, sgfdda_interval_m, sgfdda_end_h
-    REAL    fgdt, guv, gt, gq, dtramp_min, &
+    REAL    fgdt, guv, gt, gq, gph, dtramp_min, &
             obs_coef_wind, obs_coef_temp, obs_coef_mois, obs_coef_pstr, obs_dtramp, fdda_end
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     LOGICAL pd_moist, pd_scalar, pd_tke
@@ -196,6 +196,15 @@
     CALL nl_get_guv        ( grid%id , guv )
     CALL nl_get_gt         ( grid%id , gt )
     CALL nl_get_gq         ( grid%id , gq )
+    CALL nl_get_if_ramping ( 1       , if_ramping )
+    CALL nl_get_dtramp_min ( 1       , dtramp_min )
+    ENDIF
+
+    IF ( grid_fdda == 2 ) THEN
+    CALL nl_get_fgdt       ( grid%id , fgdt )
+    CALL nl_get_guv        ( grid%id , guv )
+    CALL nl_get_gt         ( grid%id , gt )
+    CALL nl_get_gph        ( grid%id , gph )
     CALL nl_get_if_ramping ( 1       , if_ramping )
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
@@ -389,6 +398,15 @@
         CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
+      ENDIF
+
+      IF ( grid_fdda == 2 ) THEN
+        CALL wrf_put_dom_ti_real    ( fid, 'FGDT', fgdt , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GPH', gph , 1 , ierr )
         CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF

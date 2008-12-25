@@ -1,21 +1,21 @@
  &time_control
- run_days                            = 10,
- run_hours                           = 0,
+ run_days                            = 0,
+ run_hours                           = 59,
  run_minutes                         = 0,
  run_seconds                         = 0,
- start_year                          = 2003,
- start_month                         = 05,
- start_day                           = 3,
- start_hour                          = 12,
+ start_year                          = 1999,
+ start_month                         = 10,
+ start_day                           = 22,
+ start_hour                          = 19,
  start_minute                        = 00,
  start_second                        = 00,
- end_year                            = 2004,
- end_month                           = 05,
- end_day                             = 03,
- end_hour                            = 12,
+ end_year                            = 1999,
+ end_month                           = 10,
+ end_day                             = 25,
+ end_hour                            = 06,
  end_minute                          = 00,
  end_second                          = 00,
- history_interval                    = 360,
+ history_interval                    = 60,
  frames_per_outfile                  = 10000,
  restart                             = .false.,
  restart_interval                    = 1440000,
@@ -24,13 +24,13 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  auxinput3_inname                    = "force_ideal.nc"
- auxinput3_interval_d                = 365
+ auxinput3_interval_h                = 59
  debug_level                         = 3
  /
 
 
  &domains
- time_step                           = 20,
+ time_step                           = 60,
  time_step_fract_num                 = 0,
  time_step_fract_den                 = 1,
  max_dom                             = 1,
@@ -46,9 +46,9 @@
  /
 
  &scm
- scm_force                           = 1,
- scm_force_dx                        = 4000.
- num_force_layers                    = 8 
+ scm_force                           = 0
+ scm_force_dx                        = 10000
+ num_force_layers                    = 8
  scm_lu_index                        = 2
  scm_isltyp                          = 4
  scm_vegfra                          = 0.5
@@ -57,7 +57,7 @@
  scm_th_adv                          = .false.
  scm_wind_adv                        = .false.
  scm_qv_adv                          = .false.
- scm_vert_adv                        = .true.
+ scm_vert_adv                        = .false.
  /
 
  &physics

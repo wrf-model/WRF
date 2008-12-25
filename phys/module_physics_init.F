@@ -1635,6 +1635,8 @@ integer myproc
    USE module_mp_thompson
    USE module_mp_thompson07
    USE module_mp_morr_two_moment
+   USE module_mp_wdm5
+   USE module_mp_wdm6
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -1699,6 +1701,10 @@ integer myproc
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init
+     CASE (WDM5SCHEME)
+          CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
+     CASE (WDM6SCHEME)
+          CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
 
      CASE DEFAULT
 

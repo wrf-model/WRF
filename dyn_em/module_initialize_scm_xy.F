@@ -102,14 +102,14 @@ CONTAINS
    INTEGER :: ii, im1, jj, jm1, loop, error, fid, lm
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: xrad, yrad, zrad, rad, cof1, cof2
-!   REAL, EXTERNAL :: interp_0
    REAL    :: pi, rnd
 
 !  stuff from original initialization that has been dropped from the Registry 
-   REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
+   REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd
    REAL    :: qvf1, qvf2, pd_surf
    INTEGER :: it
    real :: thtmp, ptmp, temp(3)
+   real :: zsfc
 
    LOGICAL :: moisture_init
    LOGICAL :: dry_sounding
@@ -344,7 +344,7 @@ CONTAINS
 
   write(6,*) ' getting dry sounding for base state '
   dry_sounding = .true.
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in )
+  CALL get_sounding( zsfc, zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in )
 
   write(6,*) ' returned from reading sounding, nl_in is ',nl_in
 
@@ -355,10 +355,10 @@ CONTAINS
 
   DO j=jts,jte
   DO i=its,ite  ! flat surface
-    grid%phb(i,1,j) = 0.
+    grid%ht(i,j) = zsfc
+    grid%phb(i,1,j) = grid%ht(i,j) * g
+    grid%ph0(i,1,j) = grid%ht(i,j) * g
     grid%php(i,1,j) = 0.
-    grid%ph0(i,1,j) = 0.
-    grid%ht(i,j) = 0.
   ENDDO
   ENDDO
 
@@ -396,7 +396,7 @@ CONTAINS
 
   write(6,*) ' getting moist sounding for full state '
   dry_sounding = .false.
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in )
+  CALL get_sounding( zsfc, zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, nl_max, nl_in )
 
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
@@ -565,12 +565,14 @@ CONTAINS
   ENDDO
   ENDDO
 
+! Go ahead and initialize these from the sounding.  This will allow a run
+! to actually succeed even if scm_force = 0
   DO k=1,kte-1
-!    grid%t_base(k) = grid%t_1(1,k,1)
-!    grid%qv_base(k) = moist(1,k,1,P_QV)
-!    grid%u_base(k) = grid%u_1(1,k,1)
-!    grid%v_base(k) = grid%v_1(1,k,1)
-!    grid%z_base(k) = 0.5*(grid%phb(1,k,1)+grid%phb(1,k+1,1)+grid%ph_1(1,k,1)+grid%ph_1(1,k+1,1))/g
+    grid%t_base(k) = grid%t_1(1,k,1)
+    grid%qv_base(k) = moist(1,k,1,P_QV)
+    grid%u_base(k) = grid%u_1(1,k,1)
+    grid%v_base(k) = grid%v_1(1,k,1)
+    grid%z_base(k) = 0.5*(grid%phb(1,k,1)+grid%phb(1,k+1,1)+grid%ph_1(1,k,1)+grid%ph_1(1,k+1,1))/g
   ENDDO
 
   RETURN
@@ -604,11 +606,12 @@ CONTAINS
 !
 !---------------------------------------------------------------------------
 
-      subroutine get_sounding( zk, p, p_dry, theta, rho, &
+      subroutine get_sounding( zsfc, zk, p, p_dry, theta, rho, &
                                u, v, qv, dry, nl_max, nl_in )
       implicit none
 
       integer nl_max, nl_in
+      real zsfc
       real zk(nl_max), p(nl_max), theta(nl_max), rho(nl_max), &
            u(nl_max), v(nl_max), qv(nl_max), p_dry(nl_max)
       logical dry
@@ -638,7 +641,7 @@ CONTAINS
 
 !  first, read the sounding
 
-      call read_sounding( p_surf, th_surf, qv_surf, &
+      call read_sounding( zsfc, p_surf, th_surf, qv_surf, &
                           h_input, th_input, qv_input, u_input, v_input,n, nl, debug )
 
       if(dry) then
@@ -680,7 +683,13 @@ CONTAINS
           qvf = 1. + rvovrd*qv_input(1) 
           qvf1 = 1. + qv_input(1)
           rho_input(1) = rho_surf
-          dz = h_input(1)
+          dz = h_input(1)-zsfc
+
+! error check here
+          if ( dz < 0.0 ) then
+            write(6,*) "Your first input sounding level is below the WRF terrain elevation, aborting"
+            stop "module_initialize_scm_xy:get_sounding"
+          endif
           do it=1,10
             pm_input(1) = p_surf &
                     - 0.5*dz*(rho_surf+rho_input(1))*g*qvf1
@@ -739,11 +748,11 @@ CONTAINS
 
 !-------------------------------------------------------
 
-      subroutine read_sounding( ps,ts,qvs,h,th,qv,u,v,n,nl,debug )
+      subroutine read_sounding( zsfc,ps,ts,qvs,h,th,qv,u,v,n,nl,debug )
       implicit none
       integer n,nl
-      real ps,ts,qvs,h(n),th(n),qv(n),u(n),v(n)
-      real u10,v10,t2,q2,zsfc
+      real zsfc,ps,ts,qvs,h(n),th(n),qv(n),u(n),v(n)
+      real u10,v10,t2,q2
       logical end_of_file
       logical debug
 

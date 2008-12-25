@@ -2130,7 +2130,9 @@ BENCH_END(chem_adv_tim)
              IF (is .EQ. P_QNDROP .OR. is .EQ. P_QNI          & 
                                   .OR. is .EQ. P_QNS          &
                                   .OR. is .EQ. P_QNR          &
-                                  .OR. is .EQ. P_QNG) THEN             
+                                  .OR. is .EQ. P_QNG          &
+                                  .OR. is .EQ. P_QNN          &
+                                  .OR. is .EQ. P_QNC) THEN
 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
@@ -2754,6 +2756,8 @@ BENCH_START(micro_driver_tim)
       &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &  
       &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &  
       &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &  
+      &        , QNN_CURR=scalar(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
+      &        , QNC_CURR=scalar(ims,kms,jms,P_QNC), F_QNC=F_QNC          &
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &  
       &        , qicuten=grid%rqicuten,mu=grid%mut                        &  
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce

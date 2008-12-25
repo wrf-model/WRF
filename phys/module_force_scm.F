@@ -82,7 +82,8 @@ CONTAINS
    INTEGER                      :: i,j,k
    LOGICAL                      :: debug = .false.
    REAL                         :: t_x, t_y, qv_x, qv_y 
-   REAL                         :: u_x, u_y, v_x, v_y, tau_u, tau_v
+   REAL                         :: u_x, u_y, v_x, v_y
+   REAL, DIMENSION(kms:kme)     :: tau_u, tau_v
    REAL, DIMENSION(kms:kme)     :: th_adv_tend, qv_adv_tend
    REAL, DIMENSION(kms:kme)     :: u_adv_tend, v_adv_tend
    REAL, DIMENSION(kms:kme)     :: dthdz, dudz, dvdz, dqvdz
@@ -157,12 +158,12 @@ CONTAINS
           v_x = interp_0(v_upstream_x,z_force,z(ids,k,jds),num_force_layers)
           v_y = interp_0(v_upstream_y,z_force,z(ids,k,jds),num_force_layers)
 
-          tau_u = dx/abs(u_x)
-          tau_v = dx/abs(v_y)
+          tau_u(k) = dx/abs(u(ids,k,jds))
+          tau_v(k) = dx/abs(v(ids,k,jds))
 
           if ( scm_wind_adv ) then
-             u_adv_tend(k) = (u_x-u(ids,k,jds))/tau_u + (u_y-u(ids,k,jds))/tau_v
-             v_adv_tend(k) = (v_x-v(ids,k,jds))/tau_u + (v_y-v(ids,k,jds))/tau_v
+             u_adv_tend(k) = (u_x-u(ids,k,jds))/tau_u(k) + (u_y-u(ids,k,jds))/tau_v(k)
+             v_adv_tend(k) = (v_x-v(ids,k,jds))/tau_u(k) + (v_y-v(ids,k,jds))/tau_v(k)
           endif
 
        enddo
@@ -172,7 +173,8 @@ CONTAINS
        do k = kms,kme-1
           t_x = interp_0(th_upstream_x,z_force,z(ids,k,jds),num_force_layers)
           t_y = interp_0(th_upstream_y,z_force,z(ids,k,jds),num_force_layers)
-          th_adv_tend(k) = (t_x-th(ids,k,jds))/tau_u + (t_y-th(ids,k,jds))/tau_v
+
+          th_adv_tend(k) = (t_x-th(ids,k,jds))/tau_u(k) + (t_y-th(ids,k,jds))/tau_v(k)
        enddo
     endif
 
@@ -181,7 +183,7 @@ CONTAINS
           qv_x = interp_0(qv_upstream_x,z_force,z(ids,k,jds),num_force_layers)
           qv_y = interp_0(qv_upstream_y,z_force,z(ids,k,jds),num_force_layers)
 
-          qv_adv_tend(k) = (qv_x-qv(ids,k,jds))/tau_u + (qv_y-qv(ids,k,jds))/tau_v
+          qv_adv_tend(k) = (qv_x-qv(ids,k,jds))/tau_u(k) + (qv_y-qv(ids,k,jds))/tau_v(k)
        enddo
     endif
 

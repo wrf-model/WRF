@@ -63,7 +63,9 @@
    REAL    , PARAMETER :: rhowater     = 1000.
    REAL    , PARAMETER :: rhosnow      = 100.
    REAL    , PARAMETER :: rhoair0      = 1.28
-
+!
+   REAL    , PARAMETER :: n_ccn0       = 1.0E8
+!
    REAL    , PARAMETER :: DEGRAD       = 3.1415926/180.
    REAL    , PARAMETER :: DPD          = 360./365.
 

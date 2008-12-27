@@ -93,7 +93,6 @@
 #      define RSL_INTERNAL_MICROCLOCK rsl_internal_microclock_
 #      define TASK_FOR_POINT task_for_point_
 #      define TASK_FOR_POINT_MESSAGE task_for_point_message_
-#      define RSL_LITE_INIT_PERIOD rsl_lite_init_period__
 #      define RSL_LITE_INIT_PERIOD rsl_lite_init_period_
 #      define RSL_LITE_EXCH_PERIOD_Y rsl_lite_exch_period_y_
 #      define RSL_LITE_EXCH_PERIOD_X rsl_lite_exch_period_x_

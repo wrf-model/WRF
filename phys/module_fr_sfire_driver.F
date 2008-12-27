@@ -104,7 +104,6 @@ subroutine sfire_driver_em ( grid , config_flags                   &
     !real, dimension(ifms:ifme, jfms:jfme)::uf,vf,lfn_out  
     ! uf vf only do not need to be in the state but we need halo on them
     real, dimension(ifms:ifme, jfms:jfme)::lfn_out  
-    integer, dimension(ifms:ifme, jfms:jfme)::nfuel_cat_int
     real::lat_ctr,lon_ctr
 
 !*** executable
@@ -176,7 +175,6 @@ subroutine sfire_driver_em ( grid , config_flags                   &
 
         endif
 #endif
-        nfuel_cat_int(:,:)=int(grid%nfuel_cat)
         ! need domain by 1 smaller, in last row.col winds are not set properly
         call sfire_driver_phys ( &
             fire_ifun,need_lfn_update,                  &
@@ -210,11 +208,10 @@ subroutine sfire_driver_em ( grid , config_flags                   &
             grid%grnhfx,grid%grnqfx,grid%canhfx,grid%canqfx, & ! out redundant arrays, atm grid
             grid%fgrnhfx,grid%fgrnqfx,grid%fcanhfx,grid%fcanqfx, & ! out redundant arrays, atm grid
             grid%fxlong,grid%fxlat,                           &       
-            nfuel_cat_int,                               & ! input, or internal for safekeeping
+            grid%nfuel_cat,                               & ! input, or internal for safekeeping
             grid%fuel_time,grid%zsf,                      & 
             grid%bbb,grid%betafl,grid%phiwc,grid%r_0,grid%fgip,grid%ischap&
         )
-        grid%nfuel_cat(:,:)=real(nfuel_cat_int(:,:))
       enddo
     enddo
     if(fire_test_steps>0)call crash('sfire_driver_em: test run of uncoupled fire model completed')
@@ -311,7 +308,7 @@ real,intent(in),dimension(ims:ime,kms:kme,jms:jme)::rho, &  ! air density  (kg/m
 
 real, dimension(ims:ime, jms:jme), intent(inout)::xlong, xlat ! inout because of extension at bdry
     
-integer, intent(inout), dimension(ifms:ifme,jfms:jfme):: &
+real, intent(inout), dimension(ifms:ifme,jfms:jfme):: &
     nfuel_cat                                       ! fuel data; can be also set inside (cell based, fire grid)
 
 real, intent(inout), dimension(ifms:ifme, jfms:jfme)::     &
@@ -522,6 +519,8 @@ do ij=1,num_tiles
 
     elseif(ifun.eq.2)then  
                
+        ! after the loop where zsf created exited and all synced
+        call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,zsf,'driver_phys:zsf')        
     elseif(ifun.eq.3)then  ! interpolate winds to the fire grid
     
         call interpolate_atm2fire(id,                     & ! flag for debug output
@@ -565,8 +564,8 @@ do ij=1,num_tiles
     
     if(ifun.eq.6)then ! heat fluxes into the atmosphere    
     
-    call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,fgrnhfx,'fire_driver:fgrnhfx')
-    call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,fgrnqfx,'fire_driver:fgrnqfx')
+        call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,fgrnhfx,'fire_driver:fgrnhfx')
+        call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,fgrnqfx,'fire_driver:fgrnqfx')
     
         ! sum the fluxes over atm cells
         call sum_2d_cells(        &
@@ -632,9 +631,8 @@ do ij=1,num_tiles
 enddo ! tiles
 !$OMP END PARALLEL DO
 
-if(ifun.eq.1)then
-    call print_2d_stats(ifts-1,ifte+1,jfts-1,jfte+1,ifms,ifme,jfms,jfme,zsf,'driver_phys:zsf')        
 #ifdef DEBUG_OUT
+if(ifun.eq.1)then
     if(pid.ne.0)then
         call write_array_m(ips,ipe,jps,jpe,ims,ime,jms,jme,zs,'zs',pid)
         call write_array_m(ifps,ifpe,jfps,jfpe,ifms,ifme,jfms,jfme,zsf,'zsf',pid)
@@ -1038,7 +1036,6 @@ end subroutine set_flags
 
 subroutine print_id
 character(len=128)::id,msg
-id=' '
 #include "sfire_id.inc"
 msg='version '//id
 call message(msg)

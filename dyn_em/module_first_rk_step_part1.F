@@ -39,7 +39,7 @@ CONTAINS
     USE module_surface_driver, ONLY : surface_driver
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_pbl_driver, ONLY : pbl_driver
-    USE module_fr_sfire_driver
+    USE module_fr_sfire_driver, ONLY : sfire_driver_em
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
@@ -127,18 +127,7 @@ CONTAINS
                                       sims , sime , sjms , sjme , skms , skme , &
                                       sips , sipe , sjps , sjpe , skps , skpe
 
-! fire related variables
-   INTEGER:: fire_num_ignitions,fire_ignition_longlat
-   integer, parameter::fire_max_ignitions=5
-   REAL, DIMENSION(fire_max_ignitions)::  fire_ignition_start_x, &
-        fire_ignition_start_y, &
-        fire_ignition_end_x, &
-        fire_ignition_end_y, &
-        fire_ignition_time, &
-        fire_ignition_radius
-
-    CHARACTER(len=256) :: MMINLU
-
+   CHARACTER (LEN=256) :: mminlu
 
   CALL get_ijk_from_subgrid (  grid ,                   &
                             sids, side, sjds, sjde, skds, skde,    &

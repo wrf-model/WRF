@@ -123,7 +123,7 @@ REAL, INTENT(out), dimension(ifms:ifme,jfms:jfme):: &
     grnhfx,grnqfx                           ! heat fluxes J/m^2/s  (cell)             
  
 ! constant arrays - set at initialization
-integer, intent(inout), dimension(ifms:ifme, jfms:jfme)::nfuel_cat ! cell based, data, constant
+real, intent(inout), dimension(ifms:ifme, jfms:jfme)::nfuel_cat ! cell based, data, constant
 real,intent(inout),dimension(ifms:ifme,jfms:jfme):: fuel_time
 real,intent(inout),dimension(ifms:ifme,jfms:jfme):: bbb,betafl,phiwc,r_0 ! (node) spread formula coefficients
 real,intent(inout),dimension(ifms:ifme,jfms:jfme):: fgip                 ! (cell) init mass of surface fuel (kg/m^2)

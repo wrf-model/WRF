@@ -341,7 +341,8 @@ module_force_scm.o: \
 		../dyn_em/module_init_utilities.o 
 
 get_sfire_id.inc:
-		touch sfire_id.inc
+	        chmod +x commit_hash
+		./commit_hash > sfire_id.inc
 		cat sfire_id.inc
 
 module_fr_sfire_driver.o: \

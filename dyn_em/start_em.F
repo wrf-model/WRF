@@ -54,7 +54,7 @@
 
    INTEGER     :: i_m
 
-   REAL        :: p00, t00, a, p_surf, pd_surf
+   REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp
 #ifdef WRF_CHEM
    REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
    PARAMETER ( RGASUNIV = 8.314510 )
@@ -322,6 +322,7 @@
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
+      CALL nl_get_iso_temp   ( 1 , tiso )
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -338,7 +339,9 @@
 
             DO k = 1, kte-1
                grid%pb(i,k,j) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
-               grid%t_init(i,k,j) = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+               temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+               grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+!              grid%t_init(i,k,j) = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
 

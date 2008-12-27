@@ -56,7 +56,7 @@
     INTEGER ids , ide , jds , jde , kds , kde , &
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
-
+    INTEGER ij, its, ite, jts, jte
 
 !   Modified to also call in4dob intially, since subr in4dob is no
 !   longer called from subr fddaobs_init. Note that itimestep is now
@@ -80,29 +80,49 @@
                                 ims, ime, jms, jme, kms, kme,                &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-      CALL in4dob(inest, xtime, ktau, krest, dtmin, grid%julday, grid%gmt,       &
-                  grid%obs_nudge_opt,  grid%obs_nudge_wind, grid%obs_nudge_temp, &
-                  grid%obs_nudge_mois, grid%obs_nudge_pstr, grid%obs_coef_wind,  & 
-                  grid%obs_coef_temp,  grid%obs_coef_mois,  grid%obs_coef_pstr,  &
-                  grid%obs_rinxy,      grid%obs_rinsig,     grid%fdob%window,    &
-                  grid%obs_npfi,       grid%obs_ionf,       grid%obs_nobs_prt,   &
-                  grid%obs_idynin,                                               &
-                  grid%obs_dtramp,     grid%fdob,           grid%fdob%varobs,    &
-                  grid%fdob%timeob,    grid%fdob%nlevs_ob,  grid%fdob%lev_in_ob, &
-                  grid%fdob%plfo,      grid%fdob%elevob,    grid%fdob%rio,       &
-                  grid%fdob%rjo,       grid%fdob%rko,                            & 
-                  config_flags%cen_lat,                                          &
-                  config_flags%cen_lon,                                          &
-                  config_flags%stand_lon,                                        &
-                  config_flags%truelat1, config_flags%truelat2,                  &
-                  grid%fdob%known_lat, grid%fdob%known_lon,                      &
-                  config_flags%dx, config_flags%dy, rovg, t0,                    &
-                  ide, jde,                                                      &
-                  grid%fdob%sn_maxcg, grid%fdob%we_maxcg, config_flags%map_proj, &
-                  model_config_rec%parent_grid_ratio,                            &
-                  model_config_rec%i_parent_start(inest),                        &
-                  model_config_rec%j_parent_start(inest),                        &
-                  model_config_rec%nobs_ndg_vars, grid%max_obs, iprt_in4dob)
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij )
+
+      DO ij = 1 , grid%num_tiles
+         its = grid%i_start(ij)
+         ite = min(grid%i_end(ij),ide-1)
+         jts = grid%j_start(ij)
+         jte = min(grid%j_end(ij),jde-1)
+
+         CALL in4dob(inest, xtime, ktau, krest, dtmin, grid%julday, grid%gmt,       &
+                     grid%obs_nudge_opt,  grid%obs_nudge_wind, grid%obs_nudge_temp, &
+                     grid%obs_nudge_mois, grid%obs_nudge_pstr, grid%obs_coef_wind,  &
+                     grid%obs_coef_temp,  grid%obs_coef_mois,  grid%obs_coef_pstr,  &
+                     grid%obs_rinxy,      grid%obs_rinsig,     grid%fdob%window,    &
+                     grid%obs_npfi,       grid%obs_ionf,                            &
+                     grid%obs_prt_max,    grid%obs_prt_freq,                        &
+                     grid%obs_idynin,                                               &
+                     grid%obs_dtramp,     grid%fdob,           grid%fdob%varobs,    &
+                     grid%fdob%timeob,    grid%fdob%nlevs_ob,  grid%fdob%lev_in_ob, &
+                     grid%fdob%plfo,      grid%fdob%elevob,    grid%fdob%rio,       &
+                     grid%fdob%rjo,       grid%fdob%rko,                            &
+                     grid%xlat, grid%xlong,                                         &
+                     config_flags%cen_lat,                                          &
+                     config_flags%cen_lon,                                          &
+                     config_flags%stand_lon,                                        &
+                     config_flags%truelat1, config_flags%truelat2,                  &
+                     grid%fdob%known_lat, grid%fdob%known_lon,                      &
+                     config_flags%dx, config_flags%dy, rovg, t0,                    &
+                     grid%fdob%obsprt,                                              &
+                     grid%fdob%latprt, grid%fdob%lonprt,                            &
+                     grid%fdob%mlatprt, grid%fdob%mlonprt,                          &
+                     ide, jde,                                                      &
+                     ims, ime, jms, jme,                                            &
+                     its, ite, jts, jte,                                            &
+                     config_flags%map_proj,                                         &
+                     model_config_rec%parent_grid_ratio,                            &
+                     model_config_rec%i_parent_start(inest),                        &
+                     model_config_rec%j_parent_start(inest),                        &
+                     model_config_rec%max_dom, grid%fdob%refprt,                    &
+                     model_config_rec%nobs_ndg_vars, grid%max_obs, iprt_in4dob)
+       ENDDO
+      !$OMP END PARALLEL DO
+
     ENDIF
 
     RETURN
@@ -117,21 +137,29 @@
                     ismois, ispstr, giv,                                 &
                     git, giq, gip,                                       &
                     rinxy, rinsig, twindo,                               &
-                    npfi, ionf, nobs_prt, idynin,                        &
+                    npfi, ionf, prt_max, prt_freq, idynin,               &
                     dtramp, fdob, varobs,                                &
                     timeob, nlevs_ob, lev_in_ob,                         &
                     plfo, elevob, rio,                                   &
                     rjo, rko,                                            &
+                    xlat, xlong,                                         &
                     cen_lat,                                             &
                     cen_lon,                                             &
                     stand_lon,                                           &
                     true_lat1, true_lat2,                                &
                     known_lat, known_lon,                                &
-                    dxm, dym, rovg, t0, e_we, e_sn,                      &
-                    sn_maxcg, we_maxcg, map_proj,                        &
+                    dxm, dym, rovg, t0,                                  &
+                    obs_prt,                                             &
+                    lat_prt, lon_prt,                                    &
+                    mlat_prt, mlon_prt,                                  &
+                    e_we, e_sn,                                          &
+                    ims, ime, jms, jme,                                  &
+                    its, ite, jts, jte,                                  &
+                    map_proj,                                            &
                     parent_grid_ratio,                                   &
                     i_parent_start,                                      &
                     j_parent_start,                                      &
+                    maxdom, refprt,                                      &
                     nndgv, niobf, iprt)
 
   USE module_domain
@@ -184,7 +212,8 @@
   REAL, intent(in)     :: twindo        ! (time window)/2 (min) for nudging
   INTEGER, intent(in)  :: npfi          ! coarse-grid time-step frequency for diagnostics
   INTEGER, intent(in)  :: ionf          ! coarse-grid time-step frequency for obs-nudging calcs
-  INTEGER, intent(in)  :: nobs_prt      ! Number of current obs to print grid information for.
+  INTEGER, intent(in)  :: prt_max       ! max number of entries of obs for diagnostic printout
+  INTEGER, intent(in)  :: prt_freq      ! frequency (in obs index) for diagnostic printout.
   INTEGER, intent(in)  :: idynin        ! for dynamic initialization using a ramp-down function
   REAL, intent(in)     :: dtramp        ! time period in minutes for ramping
   TYPE(fdob_type), intent(inout)  :: fdob     ! derived data type for obs data
@@ -197,8 +226,10 @@
   REAL, intent(inout) :: rio(niobf)           ! west-east grid coordinate (non-staggered grid)
   REAL, intent(inout) :: rjo(niobf)           ! south-north grid coordinate (non-staggered grid)
   REAL, intent(inout) :: rko(niobf)           ! vertical grid coordinate
+  REAL, DIMENSION( ims:ime, jms:jme ),                            &
+        INTENT(IN )       :: xlat, xlong      ! lat/lon on mass-pt grid (for diagnostics only)
   REAL, intent(in) :: cen_lat                 ! center latitude for map projection
-  REAL, intent(in) :: cen_lon                 ! center longiture for map projection
+  REAL, intent(in) :: cen_lon                 ! center longitude for map projection
   REAL, intent(in) :: stand_lon               ! standard longitude for map projection
   REAL, intent(in) :: true_lat1               ! truelat1 for map projection
   REAL, intent(in) :: true_lat2               ! truelat2 for map projection
@@ -208,21 +239,35 @@
   REAL, intent(in) :: dym                     ! grid size in y (meters)
   REAL, intent(in) :: rovg                    ! constant rho over g
   REAL, intent(in) :: t0                      ! background temperature
+  INTEGER, intent(inout) :: obs_prt(prt_max)  ! For printout of obs index
+  REAL, intent(inout) :: lat_prt(prt_max)     ! For printout of obs latitude 
+  REAL, intent(inout) :: lon_prt(prt_max)     ! For printout of obs longitude
+  REAL, intent(inout) :: mlat_prt(prt_max)    ! For printout of model lat at obs (ri,rj)
+  REAL, intent(inout) :: mlon_prt(prt_max)    ! For printout of model lon at obs (ri,rj)
   INTEGER, intent(in) :: e_we                 ! max grid index in south-north coordinate
   INTEGER, intent(in) :: e_sn                 ! max grid index in west-east   coordinate
-  INTEGER, intent(in) :: sn_maxcg             ! maximum coarse grid south-north coordinate
-  INTEGER, intent(in) :: we_maxcg             ! maximum coarse grid west-east   coordinate
+  INTEGER, intent(in) :: ims                  ! grid memory start index (west-east dim)
+  INTEGER, intent(in) :: ime                  ! grid memory end   index (west-east dim)
+  INTEGER, intent(in) :: jms                  ! grid memory start index (south-north dim)
+  INTEGER, intent(in) :: jme                  ! grid memory end   index (south-north dim)
+  INTEGER, intent(in) :: its                  ! grid tile   start index (west-east dim)
+  INTEGER, intent(in) :: ite                  ! grid tile   end   index (west-east dim)
+  INTEGER, intent(in) :: jts                  ! grid tile   start index (south-north dim)
+  INTEGER, intent(in) :: jte                  ! grid tile   end   index (south-north dim)
   INTEGER, intent(in) :: map_proj             ! map projection index
   INTEGER, intent(in) :: parent_grid_ratio    ! parent to nest grid ration
   INTEGER, intent(in) :: i_parent_start       ! starting i coordinate in parent domain
   INTEGER, intent(in) :: j_parent_start       ! starting j coordinate in parent domain
+  INTEGER, intent(in) :: maxdom               ! maximum number of domains
+  INTEGER, intent(inout) :: refprt(maxdom)    ! reference obs index for printout
   LOGICAL, intent(in) :: iprt                 ! print flag
       
 !***  DECLARATIONS FOR IMPLICIT NONE                                    
-  integer :: n, ndum, nopen, nlast, nvol, idate, imm, iss
-  integer :: nsta                             ! number of stations held in timeobs array 
-  integer :: nstaw                            ! # stations within the actual time window
-  integer :: ips                              ! # stations to report printout
+  integer :: n, ndum, nopen, nvol, idate, imm, iss
+  integer :: nlast                      ! the (very) last obs in the list
+  integer :: nsta                       ! number of stations held in timeobs array 
+  integer :: nstaw                      ! # stations within the actual time window
+  integer :: nprev=0                    ! previous n in obs read loop (for printout only)
   integer :: meas_count, imc, njend, njc, njcc, julob
   real    :: hourob, rjulob
   real    :: xhour, tback, tforwd, rjdate1, timanl1, rtimob
@@ -240,8 +285,10 @@
   character*14 date_char
   character*40 platform,source,id,namef
   character*2 fonc
-  real latitude,longitude,lastlat,lastlon
-  real lat_prt(100),lon_prt(100)
+  real latitude,longitude
+  real :: plat_prt=0.0        ! Previous obs latitude in read loop (used for printout)
+  real :: plon_prt=0.0        ! Previous obs longitude in read loop (used for printout)
+  logical :: newpass          ! New pass flag (used for printout)
   logical is_sound,bogus
   LOGICAL OPENED,exist
   integer :: ieof(5),ifon(5)
@@ -256,6 +303,10 @@
   endif
   IF (iprt) print *,'start in4dob ',inest,xtime
   IF(nudge_opt.NE.1)RETURN
+
+! Initialize obs for printout
+  obs_prt = -999
+  newpass = .true.
 
 ! if start time, or restart time, set obs array to missing value
   IF(KTAU.EQ.0.OR.KTAU.EQ.KTAUR) THEN
@@ -393,7 +444,7 @@
     endif
 
 100 CONTINUE
-!ajb 20070116 bugfix for situation that first obs is not in the domain
+!ajb 20070116 bugfix for zero array index. N=0 if first obs is not in the domain.
     IF(N.ne.0) THEN
       IF(TIMEOB(N).GT.TFORWD.and.timeob(n).lt.99999.) THEN
          GOTO 130
@@ -458,11 +509,13 @@
       read(nvol,102)latitude,longitude
  102  FORMAT(2x,2(f7.2,3x))
 
-! save lat and long for printout
-      if(n.eq.1) nlast=0          ! Requires N=1 on firstpass
-      if(nlast.le.100) then
-         call save_lat_lon(n,latitude,longitude,nlast,                  &
-                           lat_prt,lon_prt,lastlat,lastlon)
+! save obs and model latitude and longitude for printout
+      if(iprt) then
+      CALL collect_obs_info(newpass,inest,n,latitude,longitude,nprev,niobf,  &
+                         refprt(inest),rio,rjo,prt_max,prt_freq,xlat,xlong,  &
+                         obs_prt,lat_prt,lon_prt,mlat_prt,mlon_prt,          &
+                         plat_prt,plon_prt, e_we,e_sn,                       &
+                         ims,ime,jms,jme,its,ite,jts,jte)
       endif
 
 !     if(ifon.eq.4)print *,'ifon=4',latitude,longitude
@@ -679,31 +732,25 @@
             rh_qc=-888888.
           endif
 
-! yliu: add special processing of NPN and Range profiler
-!       only little_r interpolated and QC-ed data is used
-          if(namef(2:9).eq."PROFILER") then               
-            if((u_met_qc.ge.0..and.u_met_qc.lt.30000.).and.  &
-              (v_met_qc.ge.0..and.v_met_qc.lt.30000.))then
-!!yliu little_r already rotated the winds
-!             call vect(longitude,u_met_data,v_met_data,xlonc,xlatc,xn)
-              varobs(1,n)=u_met_data
-              varobs(2,n)=v_met_data
-            else
-              varobs(1,n)=-888888.
-              varobs(2,n)=-888888.
-            endif
+
+! Store horizontal wind components for WRF
+          if((u_met_qc.ge.0..and.u_met_qc.lt.30000.).and.  &
+             (v_met_qc.ge.0..and.v_met_qc.lt.30000.).and.  &
+! make sure at least 1 of the components is .ne.0
+             (u_met_data.ne.0..or.v_met_data.ne.0.))then
+
+! If Earth-relative wind vector, need to rotate it to grid-relative coords
+               if(u_met_qc.eq.129. .and. v_met_qc.eq.129.) then
+                  CALL rotate_vector(longitude,u_met_data,v_met_data,   &
+                                     obs_proj,map_proj)
+               endif
+               varobs(1,n)=u_met_data
+               varobs(2,n)=v_met_data
           else
-            if((u_met_qc.ge.0..and.u_met_qc.lt.30000.).and.  &
-              (v_met_qc.ge.0..and.v_met_qc.lt.30000.))then
-!!yliu little_r already rotated the winds
-!             call vect(longitude,u_met_data,v_met_data,xlonc,xlatc,xn)
-              varobs(1,n)=u_met_data
-              varobs(2,n)=v_met_data
-            else
-              varobs(1,n)=-888888.
-              varobs(2,n)=-888888.
-            endif
+               varobs(1,n)=-888888.
+               varobs(2,n)=-888888.
           endif
+
           r_data=-888888.
 
           if(rh_qc.ge.0..and.rh_qc.lt.30000.)then
@@ -791,8 +838,6 @@
         if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
 
 !Lilie
-
-
 !ajb Store potential temperature for WRF
         if(temperature_qc.ge.0..and.temperature_qc.lt.30000.)then
 
@@ -808,49 +853,23 @@
           varobs(3,n)=-888888.
         endif
 
-!        if((psfc_qc.ge.0..and.psfc_qc.lt.30000.).and.(psfc_data.gt.70000.  &
-!        .and.psfc_data.lt.105000.))then
-!          varobs(5,n)=psfc_data
-!        else
-!          varobs(5,n)=-888888.
-!        endif
-!        if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
-
+! Store horizontal wind components for WRF
         if((u_met_qc.ge.0..and.u_met_qc.lt.30000.).and.            &
            (v_met_qc.ge.0..and.v_met_qc.lt.30000.).and.            &
 ! make sure at least 1 of the components is .ne.0
            (u_met_data.ne.0..or.v_met_data.ne.0.))then
-!!yliu little_r already rotated the winds
-!!yliu   call vect(longitude,u_met_data,v_met_data,xlonc,xlatc,xn)
-          varobs(1,n)=u_met_data
-          varobs(2,n)=v_met_data
-        else
-          varobs(1,n)=-888888.
-          varobs(2,n)=-888888.
-        endif
-!! calculate psfc if slp is there
-!        if((psfc_qc.lt.0.).and.(slp_qc.ge.0..and.slp_qc.lt.30000.).and.   &
-!              (temperature_qc.ge.0..and.temperature_qc.lt.30000.).and.    &
-!              (slp_data.gt.90000.))then
-!          tbar=temperature_data+0.5*elevation*.0065
-!          psfc_data=slp_data*exp(-elevation/(rovg*tbar))
-!          varobs(5,n)=psfc_data*1.e-3
-!          psfc_qc=0.
-!        endif
 
-!!c *No* **Very rough** estimate of psfc from sfc elevation if UUtah ob and elev>1000m
-!! estimate psfc from temp and elevation
-!!   Do not know sfc pressure in model at this point.
-!!      if((psfc_qc.lt.0.).and.(elevation.gt.1000.).and.
-!!     1   (temperature_qc.ge.0..and.temperature_qc.lt.30000.)
-!!     1    .and.(platform(7:16).eq.'SYNOP PRET'))then
-!        if((psfc_qc.lt.0.).and.                                          &
-!          (temperature_qc.ge.0..and.temperature_qc.lt.30000.))then
-!          tbar=temperature_data+0.5*elevation*.0065
-!          psfc_data=100000.*exp(-elevation/(rovg*tbar))
-!          varobs(5,n)=psfc_data*1.e-3
-!          psfc_qc=0.
-!        endif
+! If Earth-relative wind vector, need to rotate it to grid-relative coords
+             if(u_met_qc.eq.129. .and. v_met_qc.eq.129.) then
+                CALL rotate_vector(longitude,u_met_data,v_met_data,   &
+                                   obs_proj,map_proj)
+             endif
+             varobs(1,n)=u_met_data
+             varobs(2,n)=v_met_data
+        else
+             varobs(1,n)=-888888.
+             varobs(2,n)=-888888.
+        endif
 
 ! jc
 ! if a ship ob has rh<70%, then throw out
@@ -1034,15 +1053,15 @@
         goto 100
       endif
 
-! check if ob is in the domain
-    if( (ri.lt.2.).or.(ri.gt.real(e_we-1)).or.(rj.lt.2.).or. &
-        (rj.gt.real(e_sn-1)) ) then
-!         if (iprt) write(6,*) 'Obs out of coarse mesh domain'
-!         write(6,*) 'we_maxcg-1 = ',real(we_maxcg-1)
-!         write(6,*) 'sn_maxcg-1 = ',real(sn_maxcg-1)
+! ajb bugfix begin:
+!! check if ob is in coarse mesh domain  (061404 switched sn/we)
+!      if( (ri.lt.2.).or.(ri.gt.real(we_maxcg-1)).or.(rj.lt.2.).or.         &
+!          (rj.gt.real(sn_maxcg-1)) ) then
 
-!       n=n-1
-!       if(is_sound)n=n-meas_count+1
+! check if ob is in the domain
+    if( (ri.lt.2.).or.(ri.gt.real(e_we-1)).or.(rj.lt.2.).or.         &
+        (rj.gt.real(e_sn-1)) ) then
+! ajb bugfix end
 
         n=n-meas_count
 !ajb  Reset timeob for discarded indices.
@@ -1084,6 +1103,7 @@
 !**********************************************************************
 !       --------------   END BIG 100 LOOP OVER N  --------------
 !**********************************************************************
+
       IF (iprt) write(6,5403) NVOL,XTIME
       IEOF(inest)=1
 
@@ -1122,7 +1142,6 @@
   IF(KTAU.EQ.KTAUR)THEN
     NSTA=0
     keep_obs : DO N=1,NIOBF
-
 ! try to keep all obs, but just don't use yet
 !  (don't want to throw away last obs read in - especially if
 !  its a sounding, in which case it looks like many obs)
@@ -1199,21 +1218,11 @@
 ! Find the number of stations that are actually within the time window.
   nstaw = nvals_le_limit(nsta, timeob, tforwd)
 
-! Print obs information, according to nobs_prt, but limit to 100 max.
-  if (iprt) then
-    ips = min(nstaw,nobs_prt,100)
-    if(ips.gt.0) then
-      write(6,'(/a,i4,a,i2)') 'MASS-PT LOCATIONS FOR FIRST',ips,  &
-                              ' ACCEPTED OBSERVATIONS FOR NEST ',inest
-      write(6,*) '  OBS#    I       J      LAT     LON    TIME(hrs)'
-    endif
-! Note: rio and rjo are referenced to non-staggered grid (not mass-point!)
-!       Hence subtract .5 from each to get mass-point coords.
-    do n=1,ips
-        write(6,'(2x,i4,2f8.3,2f8.2,3x,f8.5)')                     &
-                n,rio(n)-.5,rjo(n)-.5,lat_prt(n),lon_prt(n),timeob(n)
-    enddo
-  endif
+  CALL finish_obs_info(iprt,nstaw,niobf,rio,rjo,prt_max,prt_freq,          &
+                       xlat,xlong,e_we,e_sn,refprt(inest),obs_prt,         &
+                       lat_prt,lon_prt,mlat_prt,mlon_prt,                  &
+                       plat_prt,plon_prt,xtime,                            &
+                       ims,ime,jms,jme,its,ite,jts,jte)
 
   IF (iprt) write(6,160) KTAU,XTIME,NSTAW
   IF(KTAU.EQ.KTAUR)THEN
@@ -1588,12 +1597,14 @@ END SUBROUTINE rh2rb
   RETURN
   END FUNCTION nvals_le_limit
 
-  SUBROUTINE save_lat_lon(n,latitude,longitude,nlast,                     &
-                          lat_prt,lon_prt,lastlat,lastlon)
+  SUBROUTINE collect_obs_info(newpass,inest,n,latitude,longitude,nprev,niobf, &
+                              iref,rio,rjo,prt_max,prt_freq,xlat,xlong,obs,   &
+                              lat,lon, mlat,mlon,plat,plon,e_we,e_sn,         &
+                              ims,ime,jms,jme,its,ite,jts,jte)
 !*************************************************************************
-! Purpose: Save the latitude and longitude values for printing observation
-!          diagnostics. This is tricky because (1) This call occurs
-!          within the loop for reading the observation, (2) observations
+! Purpose: Collect obs and model latitude and longitude values for print
+!          diagnostics. This is tricky because (1) THIS SUBROUTINE CALL IS
+!          WITHIN THE LOOP FOR READING THE OBServations, (2) observations
 !          can be rejected, and (3) soundings may contain multiple obs
 !          levels (i.e., n jumps by the number of levels in the sounding.
 !          Here, "last" means the last iteration of the read obs loop.
@@ -1605,40 +1616,288 @@ END SUBROUTINE rh2rb
 
   IMPLICIT NONE
 
-  INTEGER, intent(in)    :: n               ! Observation index
-  REAL,    intent(in)    :: latitude        ! Latitude of obs
-  REAL,    intent(in)    :: longitude       ! Latitude of obs
-  INTEGER, intent(inout) :: nlast           ! Last observation index
-  REAL,    intent(out)   :: lat_prt(100)    ! Saved latitudes  for printout
-  REAL,    intent(out)   :: lon_prt(100)    ! Saved longitudes for printout
-  REAL,    intent(inout) :: lastlat         ! Stored value of last latitude 
-  REAL,    intent(inout) :: lastlon         ! Stored value of last longitude
+  LOGICAL, intent(inout) :: newpass        ! New pass flag
+  INTEGER, intent(in)    :: inest          ! nest index
+  INTEGER, intent(in)    :: n              ! Observation index
+  REAL,    intent(in)    :: latitude       ! Latitude of obs
+  REAL,    intent(in)    :: longitude      ! Latitude of obs
+  INTEGER, intent(inout) :: nprev          ! Previous observation index
+  INTEGER, intent(in)    :: niobf          ! Maximum number of observations
+  INTEGER, intent(inout) :: iref           ! Reference obs index
+  REAL,    intent(in)    :: rio(niobf)     ! West-east coord (non-stagger)
+  REAL,    intent(in)    :: rjo(niobf)     ! South-north coord (non-stagger)
+  INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
+  INTEGER, intent(in)    :: prt_freq       ! Frequency for diagnostic printout
+  REAL, DIMENSION( ims:ime, jms:jme ),                                   &
+           intent(in )   :: xlat, xlong    ! Lat/lon on mass-pt grid
+  INTEGER, intent(inout) :: obs(prt_max)   ! Obs index for printout
+  REAL,    intent(inout) :: lat(prt_max)   ! Obs latitude for printout
+  REAL,    intent(inout) :: lon(prt_max)   ! Obs longitude for printout
+  REAL,    intent(inout) :: mlat(prt_max)  ! Model latitude at (rio,rjo) for printout
+  REAL,    intent(inout) :: mlon(prt_max)  ! Model longitude at (rio,rjo) for printout
+  REAL,    intent(inout) :: plat           ! Previous latitude read
+  REAL,    intent(inout) :: plon           ! Previous longitude read
+  INTEGER, intent(in)    :: e_we           ! Max grid index in south-north
+  INTEGER, intent(in)    :: e_sn           ! Max grid index in west-east
+  INTEGER, intent(in)    :: ims            ! Grid mem start (west-east)
+  INTEGER, intent(in)    :: ime            ! Grid mem end   (west-east)
+  INTEGER, intent(in)    :: jms            ! Grid mem start (south-north)
+  INTEGER, intent(in)    :: jme            ! Grid mem end   (south-north)
+  INTEGER, intent(in)    :: its            ! Grid tile start (west-east)
+  INTEGER, intent(in)    :: ite            ! Grid tile end   (west-east)
+  INTEGER, intent(in)    :: jts            ! Grid tile start (south-north)
+  INTEGER, intent(in)    :: jte            ! Grid tile end   (south-north)
+! Local variables
+  integer nn                      ! Loop counter over obs index 
+  integer ndx                     ! Index into printout arrays
+  real    :: ri, rj               ! Mass-pt coord of obs 
+  integer :: ril, rjl             ! Mass-pt integer coord immed sw of obs 
+  integer :: iend, jend           ! Upper i, j index for interpolation
+  real    :: dxob, dyob           ! Grid fractions for interp
+  logical :: llsave               ! Save lat/lon values if true
+
+  if(newpass) then          ! No action on first pass 
+    iref = n-1
+    newpass = .false.
+  else
+! Start iteration only if we have not yet stored the 100th obs for printing.
+! Note: The loop below could represent multiple levels in a sounding, so we
+!       go ahead and start the loop if the beginning index (ndx) is 100 or
+!       less, and then exit the loop if ndx exceeds 100.
+    if(prt_freq.gt.0) then
+       ndx = (nprev-1-iref)/prt_freq + 1
+    else
+       write(6,*) 'STOP! OBS NAMELIST INPUT obs_prt_freq MUST BE GREATER THAN ZERO.'
+       write(6,*) 'THE NAMELIST VALUE IS',prt_freq,' FOR NEST ',inest
+       STOP
+    endif
+
+    if(ndx .le. prt_max) then
+
+   MODCHK : do nn = nprev, n-1
+        llsave = .false.
+        if( mod(nn-1,prt_freq) .eq. 0 ) then
+           ndx = (nn-1-iref)/prt_freq + 1
+           if(ndx.gt.prt_max) EXIT MODCHK       ! Limit printout to prt_max entries
+           llsave = .true.
+        endif
+        if(llsave) then
+
+! Collect obs index and latitude and longitude.
+          obs(ndx) = nn
+          lat(ndx) = plat
+          lon(ndx) = plon
+
+! Compute and collect the model latitude and longitude at the obs point.
+          CALL get_model_latlon(nn,niobf,rio,rjo,xlat,xlong,e_we,e_sn,    &
+                                ims,ime,jms,jme,its,ite,jts,jte,          &
+                                mlat(ndx),mlon(ndx))
+
+        endif  !end if(llsave)
+      enddo MODCHK
+
+   endif  !end if(nprev/prt_freq+1) .le. prt_max)
+
+  endif  ! end if(.not. newpass)
+
+! Save index of previous obs in read loop.
+  nprev = n
+  plat = latitude
+  plon = longitude
+
+  END SUBROUTINE collect_obs_info
+
+  SUBROUTINE finish_obs_info(iprt,nstaw,niobf,rio,rjo,prt_max,prt_freq, &
+                          xlat,xlong,e_we,e_sn,iref,obs,lat,lon,        &
+                          mlat,mlon,plat,plon,xtime,                    &
+                          ims,ime,jms,jme,its,ite,jts,jte)
+!*************************************************************************
+! Purpose: Finish collecting obs information, according to prt_freq, but
+!          limit to prt_max obs. Because latitude and longitude informa-
+!          tion was collected (with subroutine collect_obs_info) within
+!          the OBS READ LOOP, where lat&lon for obs N is collected on
+!          pass N+1, there could be one more obs whose lat&lon info needs
+!          to be collected (for printing). Note that in subroutine
+!          collect_obs_info, the obs lat&lon values for the currently read
+!          obs was stored into plat&plon for just this purpose.
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  LOGICAL, intent(in)    :: iprt          ! Print flag
+  INTEGER, intent(in)    :: nstaw         ! Number of observations
+  INTEGER, intent(in)    :: niobf         ! Maximum number of observations
+  REAL,    intent(in)    :: rio(niobf)    ! West-east coord (non-stagger)
+  REAL,    intent(in)    :: rjo(niobf)    ! South-north coord (non-stagger)
+  INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
+  INTEGER, intent(in)    :: prt_freq       ! Frequency for diagnostic printout
+  REAL, DIMENSION( ims:ime, jms:jme ),                                  &
+           intent(in)    :: xlat, xlong   ! Lat/lon on mass-pt grid
+  INTEGER, intent(in)    :: e_we          ! Max grid index in south-north
+  INTEGER, intent(in)    :: e_sn          ! Max grid index in west-east
+  INTEGER, intent(in)    :: iref          ! Reference obs index
+  INTEGER, intent(inout) :: obs(prt_max)  ! Saved obs indices to print
+  REAL,    intent(inout) :: lat(prt_max)  ! Saved latitudes
+  REAL,    intent(inout) :: lon(prt_max)  ! Saved longitudes
+  REAL,    intent(inout) :: mlat(prt_max) ! Saved model latitudes
+  REAL,    intent(inout) :: mlon(prt_max) ! Saved longitudes
+  REAL,    intent(in)    :: plat          ! Previous latitude read
+  REAL,    intent(in)    :: plon          ! Previous longitude read
+  REAL,    intent(in)    :: xtime         ! Model time in minutes
+  INTEGER, intent(in)    :: ims           ! Grid mem start (west-east)
+  INTEGER, intent(in)    :: ime           ! Grid mem end   (west-east)
+  INTEGER, intent(in)    :: jms           ! Grid mem start (south-north)
+  INTEGER, intent(in)    :: jme           ! Grid mem end   (south-north)
+  INTEGER, intent(in)    :: its           ! Grid tile start (west-east)
+  INTEGER, intent(in)    :: ite           ! Grid tile end   (west-east)
+  INTEGER, intent(in)    :: jts           ! Grid tile start (south-north)
+  INTEGER, intent(in)    :: jte           ! Grid tile end   (south-north)
 
 ! Local variables
-  integer ndum   ! Loop counter
+  integer :: n                    ! Loop counter over obs
+  integer :: lastobs              ! Last obs collected for printout
+  integer :: igap                 ! Gap between last obs read and last saved 
+  integer :: ndx                  ! Index into printout arrays
 
-! Store the lat/lon information for all the levels in the last obs that
-! was processed.
-  if(nlast.ge.1) then
-    do ndum = nlast, min(n-1,100)
-        lat_prt(ndum) = lastlat 
-        lon_prt(ndum) = lastlon 
-   enddo
+  if(iprt) then
 
-! Go ahead and fill up the rest of the print arrays, in case this is
-! the last iteration through the obs read loop.
-   do ndum = min(n-1,100)+1, 100
-     lat_prt(ndum) = latitude
-     lon_prt(ndum) = longitude
-   enddo
+! Find the last obs index whose lat&lon info was collected.
+    lastobs = 0
+    do n=1,prt_max
+       if(obs(n).ne.-999) then
+          lastobs = obs(n)
+       endif
+    enddo
+
+! There could be one more obs to collect.
+    igap = (nstaw-lastobs)/prt_freq
+    if(igap.eq.1) then
+!      write(6,*) 'We need to collect the last obs for printout.'
+       ndx = (nstaw-1-iref)/prt_freq + 1
+
+! Compute and collect model lat&lon at obs point.
+       CALL get_model_latlon(nstaw,niobf,rio,rjo,xlat,xlong,e_we,e_sn, &
+                             ims,ime,jms,jme,its,ite,jts,jte,          &
+                             mlat(ndx),mlon(ndx))
+
+! Collect obs index and lat&lon.
+       obs(ndx) = nstaw
+       lat(ndx) = plat
+       lon(ndx) = plon
+    endif
+
+  endif
+  END SUBROUTINE finish_obs_info
+
+  SUBROUTINE get_model_latlon(n,niobf,rio,rjo,xlat,xlong,e_we,e_sn,   &
+                              ims,ime,jms,jme,its,ite,jts,jte,        &
+                              mlat,mlon)
+!*************************************************************************
+! Purpose: Use bilinear interpolation to compute the model latitude and 
+!          longitude at the observation point.
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  INTEGER, intent(in)    :: n              ! Observation index
+  INTEGER, intent(in)    :: niobf          ! Maximum number of observations
+  REAL,    intent(in)    :: rio(niobf)     ! West-east coord (non-stagger)
+  REAL,    intent(in)    :: rjo(niobf)     ! South-north coord (non-stagger)
+  REAL, DIMENSION( ims:ime, jms:jme ),                                   &
+           intent(in )   :: xlat, xlong    ! Lat/lon on mass-pt grid
+  INTEGER, intent(in)    :: e_we           ! Max grid index in south-north
+  INTEGER, intent(in)    :: e_sn           ! Max grid index in west-east
+  INTEGER, intent(in)    :: ims            ! Grid mem start (west-east)
+  INTEGER, intent(in)    :: ime            ! Grid mem end   (west-east)
+  INTEGER, intent(in)    :: jms            ! Grid mem start (south-north)
+  INTEGER, intent(in)    :: jme            ! Grid mem end   (south-north)
+  INTEGER, intent(in)    :: its            ! Grid tile start (west-east)
+  INTEGER, intent(in)    :: ite            ! Grid tile end   (west-east)
+  INTEGER, intent(in)    :: jts            ! Grid tile start (south-north)
+  INTEGER, intent(in)    :: jte            ! Grid tile end   (south-north)
+  REAL,    intent(out)   :: mlat           ! Model latitude at obs point
+  REAL,    intent(out)   :: mlon           ! Model longitude at obs point
+
+! Local variables
+  integer ndx                     ! Index into save arrays
+  real    :: ri, rj               ! Mass-pt coord of obs 
+  integer :: ril, rjl             ! Mass-pt integer coord immed sw of obs 
+  integer :: iend, jend           ! Upper i, j index for interpolation
+  real    :: dxob, dyob           ! Grid fractions for interp
+
+! Compute model latitude and longitude if point on tile.
+  ri  = rio(n) - .5            ! mass-pt west-east obs grid coord
+  rj  = rjo(n) - .5            ! mass-pt south-north obs grid coord
+  ril = int(ri)
+  rjl = int(rj)
+  dxob = ri - float(ril)
+  dyob = rj - float(rjl)
+  iend = min(ite+1,e_we-2)
+  jend = min(jte+1,e_sn-2)
+  mlat = -999
+  mlon = -999
+
+  if(ri.ge.its .and. ri.lt.iend .and. rj.ge.jts .and. rj.lt.jend) then
+
+! bilinear interpolation
+     mlat = ((1.-dyob)*((1.-dxob)*xlat(ril,rjl)+             &
+            dxob*xlat(ril+1,rjl)                             &
+            )+dyob*((1.-dxob)*xlat(ril,rjl+1)+               &
+            dxob*xlat(ril+1,rjl+1)))
+
+     mlon = ((1.-dyob)*((1.-dxob)*xlong(ril,rjl)+            &
+            dxob*xlong(ril+1,rjl)                            &
+            )+dyob*((1.-dxob)*xlong(ril,rjl+1)+              &
+            dxob*xlong(ril+1,rjl+1)))
   endif
 
-! Keep knowledge of last iteration.
-  nlast = n
-  lastlat=latitude
-  lastlon=longitude
+  END SUBROUTINE get_model_latlon
 
-  END SUBROUTINE save_lat_lon
+  SUBROUTINE rotate_vector(lon,u,v,obs_proj,map_proj)
+
+  USE module_llxy
+
+!*************************************************************************
+! Purpose: Rotate a single Earth-relative wind vector to a grid-relative
+!          wind vector.
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  REAL,           intent(in)    :: lon        ! Longitude (deg)
+  REAL,           intent(inout) :: u          ! U-component of wind vector
+  REAL,           intent(inout) :: v          ! V-component of wind vector
+  TYPE(PROJ_INFO),intent(in)    :: obs_proj   ! Structure for obs projection
+  INTEGER,        intent(in)    :: map_proj   ! Map projection index
+
+! Local variables
+  real diff, alpha
+  double precision udbl, vdbl
+
+! Only rotate winds for Lambert conformal or polar stereographic
+  if (map_proj == PROJ_LC .or. map_proj == PROJ_PS) then
+
+     diff = obs_proj%stdlon - lon
+     if (diff > 180.) then
+        diff = diff - 360.
+     else if (diff < -180.) then
+        diff = diff + 360.
+     end if
+
+! Calculate the rotation angle, alpha, in radians
+     if (map_proj == PROJ_LC) then
+        alpha = diff * obs_proj%cone * rad_per_deg * obs_proj%hemi
+     else
+        alpha = diff * rad_per_deg * obs_proj%hemi
+     end if
+
+     udbl = v*sin(alpha) + u*cos(alpha)
+     vdbl = v*cos(alpha) - u*sin(alpha)
+     u = udbl
+     v = vdbl
+
+  endif
+  END SUBROUTINE rotate_vector
 
 #endif
 !-----------------------------------------------------------------------

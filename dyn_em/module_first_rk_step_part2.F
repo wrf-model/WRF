@@ -555,16 +555,10 @@ BENCH_END(hor_diff_tim)
                    grid%obs_rinsig,                                     &
                    grid%obs_npfi,                                       &
                    grid%obs_ionf,                                       &
-                   grid%obs_nobs_prt,                                   &
+                   grid%obs_prt_max,                                    &
+                   grid%obs_prt_freq,                                   &
                    grid%obs_idynin,                                     &
                    grid%obs_dtramp,                                     &
-                   model_config_rec%cen_lat(1),                         &
-                   model_config_rec%cen_lon(1),                         &
-                   config_flags%truelat1,                               &
-                   config_flags%truelat2,                               &
-                   config_flags%map_proj,                               &
-                   model_config_rec%i_parent_start,                     &
-                   model_config_rec%j_parent_start,                     &
                    grid%parent_grid_ratio,                              &
                    grid%max_dom, grid%itimestep,                        &
                    grid%dt, grid%gmt, grid%julday, grid%fdob,           &

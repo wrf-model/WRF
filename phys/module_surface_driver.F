@@ -910,7 +910,6 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               uratx,vratx,tratx,                                  &
                ustm,ck,cka,cd,cda,isftcflx                         )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
@@ -1069,6 +1068,28 @@ CONTAINS
        CALL wrf_error_fatal ( message )
 
      END SELECT sfclay_select
+
+!  Compute uratx, vratx, tratx for obs nudging
+     IF(PRESENT(uratx) .and. PRESENT(vratx) .and. PRESENT(tratx))THEN
+        DO J=j_start(ij),j_end(ij)
+        DO I=i_start(ij),i_end(ij)
+           IF(ABS(U10(I,J)) .GT. 1.E-10) THEN
+              uratx(I,J) = U_PHYTMP(I,1,J)/U10(I,J)
+           ELSE
+              uratx(I,J) = 1.2
+           END IF
+           IF(ABS(V10(I,J)) .GT. 1.E-10) THEN
+              vratx(I,J) = V_PHYTMP(I,1,J)/V10(I,J)
+           ELSE
+              vratx(I,J) = 1.2
+           END IF
+! (Quotient P1000mb/P_PHY must be conditioned due to large value of P1000mb)
+           tratx(I,J) = (T_PHY(I,1,J)*(P1000mb*0.001/(P_PHY(I,1,J)/1000.))**RCP)  &
+                        /TH2(I,J)
+        ENDDO
+        ENDDO
+     ENDIF
+
      ENDDO
      !$OMP END PARALLEL DO
 

@@ -23,7 +23,6 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     uratx,vratx,tratx,                            &
                      ustm,ck,cka,cd,cda,isftcflx                   )
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -61,9 +60,6 @@ CONTAINS
 !-- CHS         heat/moisture exchange coefficient for LSM (m/s)
 !-- QGH         lowest-level saturated mixing ratio
 !-- QSFC        ground saturated mixing ratio
-!-- uratx       ratio of surface U to U10
-!-- vratx       ratio of surface V to V10
-!-- tratx       ratio of surface T to TH2
 !-- U10         diagnostic 10m u wind
 !-- V10         diagnostic 10m v wind
 !-- TH2         diagnostic 2m theta (K)
@@ -179,9 +175,6 @@ CONTAINS
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
  
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(OUT)     ::              uratx,vratx,tratx
-
-      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX
@@ -230,8 +223,7 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
 #if ( EM_CORE == 1 )
-                ,uratx(ims,j),vratx(ims,j),tratx(ims,j),           &
-                isftcflx,                                          &
+                ,isftcflx,                                         &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               &
 #endif
@@ -255,7 +247,6 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     uratx,vratx,tratx,                            &
                      isftcflx,                                     &
                      ustm,ck,cka,cd,cda                            )
 !-------------------------------------------------------------------
@@ -327,9 +318,6 @@ CONTAINS
                                                               P1D, &
                                                               T1D
  
-      REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
-                INTENT(OUT)     ::              uratx,vratx,tratx
-
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 
@@ -724,20 +712,6 @@ CONTAINS
 !       VA10(I,J) = V10(I)                                     
 !       write(*,1002)UST(I),KARMAN*WSPD(I),PSIX,KARMAN*WSPD(I)/PSIX
 !                                                                                
-        IF(PRESENT(uratx) .and. PRESENT(vratx) .and. PRESENT(tratx))THEN
-          IF(ABS(U10(I)) .GT. 1.E-10) THEN
-             uratx(I) = UX(I)/U10(I)
-          ELSE
-             uratx(I) = 1.2
-          END IF
-          IF(ABS(V10(I)) .GT. 1.E-10) THEN
-             vratx(I) = VX(I)/V10(I)
-          ELSE
-             vratx(I) = 1.2 
-          END IF
-          tratx(I) = THX(I)/TH2(I)
-        ENDIF
-
         IF((XLAND(I)-1.5).LT.0.)THEN                                            
           UST(I)=AMAX1(UST(I),0.1)
         ENDIF                                                                    

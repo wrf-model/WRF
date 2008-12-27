@@ -42,9 +42,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                nudge_pstr,                                       &
                coef_wind, coef_temp, coef_mois,                  &
                coef_pstr, rinxy, rinsig,                         &
-               npfi, ionf, nobs_prt, idynin, dtramp,             &
-               xlatc_cg, xlonc_cg, true_lat1, true_lat2,         &
-               map_proj, i_parent_start, j_parent_start,         &
+               npfi, ionf,                                       &
+               obs_prt_max, obs_prt_freq, idynin, dtramp,        &
                parent_grid_ratio, maxdom, itimestep,             &
                dt, gmt, julday,                                  &
 #if ( EM_CORE == 1 ) 
@@ -112,16 +111,10 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, intent(inout)  :: rinsig
   INTEGER, intent(in) :: npfi
   INTEGER, intent(in) :: ionf
-  INTEGER, intent(in) :: nobs_prt      ! Number of current obs to print info.
+  INTEGER, intent(in) :: obs_prt_max      ! max number of obs in printout
+  INTEGER, intent(in) :: obs_prt_freq     ! frequency (in obs index) printout 
   INTEGER, intent(in) :: idynin
   REAL, intent(inout) :: dtramp
-  REAL, intent(in) :: xlatc_cg         ! center latitude  of coarse grid
-  REAL, intent(in) :: xlonc_cg         ! center longitude of coarse grid
-  REAL, intent(in) :: true_lat1
-  REAL, intent(in) :: true_lat2
-  INTEGER, intent(in) :: map_proj
-  INTEGER, intent(in) :: i_parent_start(maxdom)
-  INTEGER, intent(in) :: j_parent_start(maxdom)
   INTEGER, intent(in) :: parent_grid_ratio
   REAL, intent(in)     :: dt
   REAL, intent(in)     :: gmt
@@ -196,7 +189,6 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 ! Calculate forecast time.
   dtmin = dt/60.     
   xtime = dtmin*(itimestep-1)
-
   ktau  = itimestep - 1        !ktau corresponds to xtime
 
 ! DEFINE NSTA WHEN NOT NUDGING TO IND. OBS.
@@ -219,14 +211,17 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   IF( nsta.GT.0 ) THEN
     IF( MOD(ktau,infr).EQ.0 .OR. idarst.EQ.1) THEN
 
-        CALL ERROB(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
+        CALL errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
                    uratx, vratx, tratx,                              &
                    nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,    &
                    fdob%levidn, parid, fdob%nstat, fdob%nstaw,       &
                    nudge_wind, nudge_temp, nudge_mois, nudge_pstr,   &
-                   fdob%rio, fdob%rjo, fdob%rko, varobs, errf,       &
-                   i_parent_start, j_parent_start, ktau,             &
-                   parent_grid_ratio, npfi, nobs_prt, iprt_errob,    &
+                   fdob%timeob, fdob%rio, fdob%rjo, fdob%rko,        &
+                   varobs, errf, ktau, xtime,                        &
+                   parent_grid_ratio, npfi,                          &
+                   obs_prt_max, obs_prt_freq, iprt_errob,            &
+                   fdob%obsprt, fdob%latprt, fdob%lonprt,            &
+                   fdob%mlatprt, fdob%mlonprt,                       &
                    ids,ide, jds,jde, kds,kde,                        &
                    ims,ime, jms,jme, kms,kme,                        &
                    its,ite, jts,jte, kts,kte)
@@ -282,7 +277,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !--- OBS NUDGING FOR TEMP AND MOISTURE
 !
      NSTA=NSTAT
-     IF(J .GT. 2 .and. J .LT.fdob%sn_end) THEN
+     IF(J .GT. 2 .and. J .LT. jde-1) THEN
        IF(nudge_temp.EQ.1 .AND. NSTA.GT.0)  &
        THEN
 !         write(6,*) 'calling nudob: IVAR=3, J = ',j
@@ -292,7 +287,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
                   fdob%levidn,                                       &
-                  parid, nstat, i_parent_start, j_parent_start,      &
+                  parid, nstat,                                      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
                   parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,  &
                   fdob%rko, fdob%timeob, varobs, errf,               &
@@ -316,7 +311,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
                   fdob%levidn,                                       &
-                  parid, nstat, i_parent_start, j_parent_start,      &
+                  parid, nstat,                                      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
                   parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,  &
                   fdob%rko, fdob%timeob, varobs, errf,               &
@@ -341,7 +336,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
                 fdob%levidn,                                         &
-                parid, nstat, i_parent_start, j_parent_start,        &
+                parid, nstat,                                        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
                 parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,    &
                 fdob%rko, fdob%timeob, varobs, errf,                 &
@@ -362,7 +357,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
                 fdob%levidn,                                         &
-                parid, nstat, i_parent_start, j_parent_start,        &
+                parid, nstat,                                        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
                 parent_grid_ratio, dx, dtmin, fdob%rio, fdob%rjo,    &
                 fdob%rko, fdob%timeob, varobs, errf,                 &

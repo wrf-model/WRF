@@ -56,6 +56,7 @@ dimspec    n      1     namelist=dfi_time_dim        c          dfi time dimensi
 dimspec    z      -     namelist=max_obs          c          max_obs
 dimspec    h      -     namelist=nobs_err_flds    c          nobs_err_flds
 dimspec    r      -     namelist=nobs_ndg_vars    c          nobs_ndg_vars
+dimspec    [      -     namelist=obs_prt_max      c          obs_prt_max
 dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
 dimspec    m      2     constant=12                  z          months_per_year
 dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
@@ -1357,7 +1358,8 @@ rconfig   integer     obs_npfi            namelist,fdda            1            
 rconfig   integer     obs_ionf            namelist,fdda            max_domains    1       rh       "obs_ionf"          "Freq in cg timesteps for obs input and error calc"   ""
 rconfig   integer     obs_idynin          namelist,fdda            1              0       h        "obs_idynin"        "Flag for dynamic initialization"      ""
 rconfig   real        obs_dtramp          namelist,fdda            1              0       h        "obs_dtramp"        "Time period for ramping (idynin)"     "min"
-rconfig   integer     obs_nobs_prt        namelist,fdda            max_domains    0       rh       "obs_nobs_prt"      "Number of current obs to print grid coord. info."   ""
+rconfig   integer     obs_prt_max         namelist,fdda            1              1000    rh       "obs_prt_max"       "Maximum allowed obs entries in diagnostic printout"      ""
+rconfig   integer     obs_prt_freq        namelist,fdda            max_domains    1000    rh       "obs_prt_freq"      "Frequency in obs index for diagnostic printout."   ""
 rconfig   logical     obs_ipf_in4dob      namelist,fdda            1              .false. h        "obs_ipf_in4dob"    "Print obs input diagnostics"   ""
 rconfig   logical     obs_ipf_errob       namelist,fdda            1              .false. h        "obs_ipf_errob"     "Print obs error diagnostics"   ""
 rconfig   logical     obs_ipf_nudob       namelist,fdda            1              .false. h        "obs_ipf_nudob"     "Print obs nudge diagnostics"   ""
@@ -1621,7 +1623,7 @@ halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
-halo      HALO_EM_FDDA_SFC dyn_em 4: sfdda2d
+halo      HALO_EM_FDDA_SFC dyn_em 4:sfdda2d
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
 halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
@@ -1727,10 +1729,8 @@ typedef fdob_type integer IWTSIG       # flag for nudging on pressure surfaces
 typedef fdob_type integer NSTAT        # number of obs stations used to nudge current model step
 typedef fdob_type integer NSTAW        # number of obs stations within current time window
 typedef fdob_type integer KTAUR        # restart model step
-typedef fdob_type integer SN_MAXCG     # coarse domain grid dimension in south-north coordinate
-typedef fdob_type integer WE_MAXCG     # coarse domain grid dimension in west-east coordinate
-typedef fdob_type integer SN_END       # ending north-south grid index
 typedef fdob_type integer LEVIDN(max_domains)   # level of nest
+typedef fdob_type integer REFPRT(max_domains)   # reference obs index for diagnostic printout
 typedef fdob_type real    WINDOW       # time window half-period for nudging (in minutes) 
 typedef fdob_type real    RTLAST       # time in hours of last obs used in current model step
 typedef fdob_type real    DATEND       # time in minutes after which data are asuumed to have ended
@@ -1756,6 +1756,11 @@ typedef fdob_type real    elevob               z        -         1        -    
 typedef fdob_type real    rio                  z        -         1        -       -       "rio"             "west-east grid coordinate"
 typedef fdob_type real    rjo                  z        -         1        -       -       "rjo"             "south-north grid coordinate"
 typedef fdob_type real    rko                  z        -         1        -       -       "rko"             "vertical grid coordinate"
+typedef fdob_type integer obsprt               [        -         1        -       -       "obsprt"          "obs index for diagnostic printout"
+typedef fdob_type real    latprt               [        -         1        -       -       "latprt"          "obs latitude for diagnostic printout"
+typedef fdob_type real    lonprt               [        -         1        -       -       "lonprt"          "obs longitude for diagnostic printout"
+typedef fdob_type real    mlatprt              [        -         1        -       -       "mlatprt"         "model latitude at obs location"
+typedef fdob_type real    mlonprt              [        -         1        -       -       "mlonprt"         "model longitude at obs location"
 
 state fdob_type fdob - -
 

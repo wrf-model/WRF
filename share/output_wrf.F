@@ -46,7 +46,7 @@
     REAL    fgdt, guv, gt, gq, gph, dtramp_min, &
             obs_coef_wind, obs_coef_temp, obs_coef_mois, obs_coef_pstr, obs_dtramp, fdda_end
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
-    LOGICAL pd_moist, pd_scalar, pd_tke
+    INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -179,9 +179,9 @@
     call nl_get_w_damping            ( 1      ,  w_damping            )
 
 #if (EM_CORE == 1)
-    CALL nl_get_pd_moist  ( grid%id , pd_moist )
-    CALL nl_get_pd_scalar ( grid%id , pd_scalar )
-    CALL nl_get_pd_tke    ( grid%id , pd_tke )
+    CALL nl_get_moist_adv_opt  ( grid%id , moist_adv_opt )
+    CALL nl_get_scalar_adv_opt ( grid%id , scalar_adv_opt )
+    CALL nl_get_tke_adv_opt    ( grid%id , tke_adv_opt )
     CALL nl_get_diff_6th_opt  ( grid%id , diff_6th_opt )
     CALL nl_get_diff_6th_factor ( grid%id , diff_6th_factor )
     CALL nl_get_grid_fdda  ( grid%id , grid_fdda )
@@ -387,9 +387,9 @@
       CALL wrf_put_dom_ti_integer ( fid, 'W_DAMPING', w_damping , 1 , ierr )
 
 #if (EM_CORE == 1)
-      CALL wrf_put_dom_ti_logical ( fid, 'PD_MOIST', pd_moist , 1 , ierr )
-      CALL wrf_put_dom_ti_logical ( fid, 'PD_SCALAR', pd_scalar , 1 , ierr )
-      CALL wrf_put_dom_ti_logical ( fid, 'PD_TKE', pd_tke , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'MOIST_ADV_OPT', moist_adv_opt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SCALAR_ADV_OPT', scalar_adv_opt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'TKE_ADV_OPT', tke_adv_opt , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'DIFF_6TH_OPT', diff_6th_opt , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'DIFF_6TH_FACTOR', diff_6th_factor , 1 , ierr )
 

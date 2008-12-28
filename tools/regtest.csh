@@ -10,7 +10,7 @@
 #BSUB -e reg.err                        # error filename
 #BSUB -J regtest                        # job name
 #BSUB -q share                          # queue
-#BSUB -W 6:00                           # wallclock time
+#BSUB -W 12:00                          # wallclock time
 #BSUB -P 64000400
 
 # QSUB -q ded_4             # submit to 4 proc
@@ -428,7 +428,6 @@ if      ( $NESTED == TRUE ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss          )
 else if ( $NESTED != TRUE ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
-	set CORES = ( em_real em_b_wave nmm_real )
 	if ( $CHEM == TRUE ) then
 		set CORES = ( em_real em_real )
 	endif
@@ -664,22 +663,18 @@ cat >! phys_real_1  << EOF
 EOF
 
 cat >! dyn_real_SAFE  << EOF
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 0,      0,      0,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 cat >! dyn_real_1  << EOF
- pd_moist                            = .true.,  .true.,  .true., 
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 1,      1,      1,      
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
-
-if ( $GLOBAL == TRUE ) then
-	cp dyn_real_SAFE dyn_real_1
-endif
 
 cat >! time_real_1  << EOF
  auxinput1_inname                    = "met_em.d<domain>.<date>"
@@ -722,10 +717,10 @@ cat >! phys_real_2 << EOF
 EOF
 
 cat >! dyn_real_2  << EOF
- pd_moist                            = .true.,  .true.,  .true., 
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 1,      1,      1,      
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 if ( $GLOBAL == TRUE ) then
@@ -774,10 +769,10 @@ cat >! phys_real_3 << EOF
 EOF
 
 cat >! dyn_real_3  << EOF
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 2,      2,      2,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 cat >! time_real_3  << EOF
@@ -820,10 +815,10 @@ cat >! phys_real_4 << EOF
 EOF
 
 cat >! dyn_real_4  << EOF
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 2,      2,      2,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 cat >! time_real_4  << EOF
@@ -873,10 +868,10 @@ cat >! phys_real_5 << EOF
 EOF
 
 cat >! dyn_real_5  << EOF
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 2,      2,      2,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 cat >! time_real_5  << EOF
@@ -927,10 +922,10 @@ cat >! phys_real_6 << EOF
 EOF
 
 cat >! dyn_real_6  << EOF
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 0,      0,      0,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 cat >! time_real_6  << EOF
@@ -977,16 +972,11 @@ cat >! phys_real_7 << EOF
  cam_abs_dim2                        = 28
 EOF
 
-if ( $GLOBAL == TRUE ) then
-	sed -e 's/ cam_abs_dim2 *= [0-9][0-9]/ cam_abs_dim2 = 41/g' phys_real_5 >! phys_foo
-	mv phys_foo phys_real_7
-endif
-
 cat >! dyn_real_7  << EOF
- pd_moist                            = .false., .false., .false.,
- pd_scalar                           = .false., .false., .false.,
- pd_chem                             = .false., .false., .false.,
- pd_tke                              = .false., .false., .false.,
+ moist_adv_opt                       = 0,      0,      0,     
+ scalar_adv_opt                      = 0,      0,      0,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
 EOF
 
 cat >! time_real_7  << EOF
@@ -1002,6 +992,18 @@ cat >! damp_real_7  << EOF
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
 EOF
+
+if ( $GLOBAL == TRUE ) then
+	sed -e 's/ cam_abs_dim2 *= [0-9][0-9]/ cam_abs_dim2 = 41/g' phys_real_5 >! phys_foo
+	mv phys_foo phys_real_7
+	cp dyn_real_SAFE dyn_real_1
+	cp dyn_real_SAFE dyn_real_2
+	cp dyn_real_SAFE dyn_real_3
+	cp dyn_real_SAFE dyn_real_4
+	cp dyn_real_SAFE dyn_real_5
+	cp dyn_real_SAFE dyn_real_6
+	cp dyn_real_SAFE dyn_real_7
+endif
 
 cat >! fdda_real_1 << EOF
  grid_fdda                           = 1,     1,     1,
@@ -1163,6 +1165,10 @@ cat >! phys_quarter_ss_1b << EOF
  mp_physics                          = 1,     1,     1,
 EOF
 cat >! phys_quarter_ss_1c << EOF
+ moist_adv_opt                       = 1,      1,      1,
+ scalar_adv_opt                      = 1,      1,      1,
+ chem_adv_opt                        = 1,      1,      1,
+ tke_adv_opt                         = 1,      1,      1,
  non_hydrostatic                     = .true., .true., .true.,
 EOF
 cat >! phys_quarter_ss_1d  << EOF
@@ -1189,18 +1195,22 @@ cat >! phys_quarter_ss_2b << EOF
  mp_physics                          = 1,     1,     1,
 EOF
 cat >! phys_quarter_ss_2c << EOF
+ moist_adv_opt                       = 2,      2,      2,
+ scalar_adv_opt                      = 2,      2,      2,
+ chem_adv_opt                        = 2,      2,      2,
+ tke_adv_opt                         = 2,      2,      2,
  non_hydrostatic                     = .true., .true., .true.,
 EOF
 cat >! phys_quarter_ss_2d  << EOF
  input_from_file                     = .true.,.false.,.false.
 EOF
 cat >! phys_quarter_ss_2e << EOF
- periodic_x                          = .true., .false.,.false.,
- open_xs                             = .false.,.false.,.false.,
- open_xe                             = .false.,.false.,.false.,
- periodic_y                          = .true., .false.,.false.,
- open_ys                             = .false.,.false.,.false.,
- open_ye                             = .false.,.false.,.false.,
+ periodic_x                          = .false.,.false.,.false.,
+ open_xs                             = .true., .false.,.false.,
+ open_xe                             = .true., .false.,.false.,
+ periodic_y                          = .false.,.false.,.false.,
+ open_ys                             = .true., .false.,.false.,
+ open_ye                             = .true., .false.,.false.,
 EOF
 cat >! phys_quarter_ss_2f << EOF
  sf_sfclay_physics                   = 1,     1,     1,
@@ -1215,6 +1225,10 @@ cat >! phys_quarter_ss_3b << EOF
  mp_physics                          = 2,     2,     2,
 EOF
 cat >! phys_quarter_ss_3c << EOF
+ moist_adv_opt                       = 1,      1,      1,
+ scalar_adv_opt                      = 1,      1,      1,
+ chem_adv_opt                        = 1,      1,      1,
+ tke_adv_opt                         = 1,      1,      1,
  non_hydrostatic                     = .false., .false., .false.,
 EOF
 cat >! phys_quarter_ss_3d  << EOF
@@ -2083,7 +2097,7 @@ banner 9
 		endif
 
                 if ( ! -x external/io_netcdf/diffwrf ) set ok = 1
-                if ( ! -x external/io_int/diffwrf ) set ok = 1
+#	if ( ! -x external/io_int/diffwrf ) set ok = 1
 
 		if ( $ok != 0 ) then
 			echo "SUMMARY compilation    for $core           parallel $compopt $esmf_lib_str FAIL" >>! ${DEF_DIR}/wrftest.output
@@ -2220,7 +2234,7 @@ EOF
 	
 					cp ${CUR_DIR}/io_format io_format
 					sed -e '/^ mp_physics/,/ensdim/d' -e '/^ &physics/r ./phys_opt' \
-					    -e '/^ pd_moist/,/pd_scalar/d' -e '/^ non_hydrostatic/r ./dyn_opt' \
+					    -e '/^ moist_adv_opt/,/scalar_adv_opt/d' -e '/^ non_hydrostatic/r ./dyn_opt' \
 					    -e '/^ auxinput1_inname/d' -e '/^ debug_level/r ./time_opt' \
 					    -e '/^ input_from_file/d' -e '/^ interval_seconds/r ./nest_input_opt' \
 					    -e '/^ time_step /,/^ smooth_option/d' -e '/^ &domains/r ./dom_real' \
@@ -2749,7 +2763,7 @@ banner 25
  		                                    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format'	\
 						    -e '/^ mp_physics/d' -e '/^ &physics/r ./phys_mp' 						\
 						    -e '/^ sf_sfclay_physics/d' -e '/^ radt/r ./phys_sfclay' 					\
-						    -e '/^ non_hydrostatic/d' -e '/^ pd_tke/r ./phys_nh' 					\
+						    -e '/^ moist_adv_opt/,/^ non_hydrostatic/d' -e '/^ v_sca_adv_order/r ./phys_nh' 					\
 						    -e '/^ periodic_x /,/^ open_ye/d'								\
 						    -e '/^ &bdy_control/r ./phys_bc' 								\
 						    -e '/^ max_dom/d' -e '/^ time_step_fract_den/r ./dom_ideal'					\
@@ -2776,7 +2790,7 @@ banner 25
  		                                    -e '/^ io_form_history /,/^ io_form_boundary/d' -e '/^ restart_interval/r ./io_format'	\
 						    -e '/^ mp_physics/d' -e '/^ &physics/r ./phys_mp' 						\
 						    -e '/^ sf_sfclay_physics/d' -e '/^ radt/r ./phys_sfclay' 					\
-						    -e '/^ non_hydrostatic/d' -e '/^ pd_tke/r ./phys_nh' 					\
+						    -e '/^ moist_adv_opt/,/^ non_hydrostatic/d' -e '/^ v_sca_adv_order/r ./phys_nh' 					\
 						    -e '/^ periodic_x/d' -e '/^ open_xs/d' -e '/^ open_xe/d' 					\
 						    -e '/^ periodic_y/d' -e '/^ open_ys/d' -e '/^ open_ye/d' 					\
 						    -e '/^ &bdy_control/r ./phys_bc' 								\
@@ -3344,6 +3358,7 @@ cd $CUR_DIR
 rm -rf damp_*eal >& /dev/null
 rm -rf dom_*eal >& /dev/null
 rm -rf phys_real_* >& /dev/null
+rm -rf nest_real_* >& /dev/null
 rm -rf phys_quarter_* >& /dev/null
 rm -rf phys_b_wave_* >& /dev/null
 rm -rf version_info >& /dev/null

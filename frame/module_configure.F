@@ -345,6 +345,48 @@ CONTAINS
      CALL init_module_scalar_tables
    END SUBROUTINE init_module_configure
 
+   SUBROUTINE wrf_alt_nml_dynamics (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the dynamics namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     logical , DIMENSION(max_domains) :: pd_moist
+     logical , DIMENSION(max_domains) :: pd_chem
+     logical , DIMENSION(max_domains) :: pd_tke
+     logical , DIMENSION(max_domains) :: pd_scalar
+     NAMELIST /dynamics/ pd_moist
+     NAMELIST /dynamics/ pd_chem
+     NAMELIST /dynamics/ pd_tke
+     NAMELIST /dynamics/ pd_scalar
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = dynamics , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_error_fatal("Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
+                              TRIM(nml_name)//" namelist?")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrf_alt_nml_dynamics
+
 END MODULE module_configure
 
 

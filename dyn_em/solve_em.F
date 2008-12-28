@@ -1434,6 +1434,13 @@ BENCH_START(small_step_finish_tim)
                                  ips, ipe, jps, jpe,                &
                                  grid%i_start(ij), grid%i_end(ij),  &
                                  grid%j_start(ij), grid%j_end(ij) )
+
+         CALL set_physical_bc2d( grid%muts, 't', config_flags,   &
+                                 ids, ide, jds, jde,               &
+                                 ims, ime, jms, jme,                &
+                                 ips, ipe, jps, jpe,                &
+                                 grid%i_start(ij), grid%i_end(ij),  &
+                                 grid%j_start(ij), grid%j_end(ij) )
  
        END IF
 
@@ -1482,7 +1489,7 @@ BENCH_END(small_step_finish_tim)
 !-----------------------------------------------------------------------
 ! first moisture
 
-     IF (config_flags%pd_moist .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1506,7 +1513,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-       IF (config_flags%pd_moist) THEN
+       IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_MOIST_OLD_E_5.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -1539,11 +1546,11 @@ BENCH_END(small_step_finish_tim)
        END DO
        !$OMP END PARALLEL DO
 
-     END IF  ! end if for pd_moist
+     END IF  ! end if for moist_adv_opt
 
 ! scalars
 
-     IF (config_flags%pd_scalar .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1567,7 +1574,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-       IF (config_flags%pd_scalar) THEN
+       IF (config_flags%scalar_adv_opt /= ORIGINAL) THEN
 #ifndef RSL
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_SCALAR_OLD_E_5.inc"
@@ -1605,11 +1612,11 @@ BENCH_END(small_step_finish_tim)
          END DO
          !$OMP END PARALLEL DO
 
-       END IF  ! end if for pd_scalar
+       END IF  ! end if for scalar_adv_opt
 
 ! chem
 
-       IF (config_flags%pd_chem .and. (rk_step == rk_order)) THEN
+       IF ((config_flags%chem_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
@@ -1633,7 +1640,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-         IF (config_flags%pd_chem) THEN
+         IF (config_flags%chem_adv_opt /= ORIGINAL) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_CHEM_OLD_E_5.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -1666,11 +1673,11 @@ BENCH_END(small_step_finish_tim)
          END DO
          !$OMP END PARALLEL DO
 
-       ENDIF  ! end if for pd_chem
+       ENDIF  ! end if for chem_adv_opt
 
 ! tke
 
-       IF (config_flags%pd_tke .and. (rk_step == rk_order) &
+       IF ((config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order) &
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
          !$OMP PARALLEL DO   &
@@ -1693,7 +1700,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-         IF (config_flags%pd_tke) THEN
+         IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_TKE_OLD_E_5.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -1724,7 +1731,7 @@ BENCH_END(small_step_finish_tim)
 
 !---  end of positive definite physics tendency update
 
-       END IF  ! end if for pd_tke
+       END IF  ! end if for tke_adv_opt
 
 #ifdef DM_PARALLEL
 !
@@ -1744,6 +1751,8 @@ BENCH_END(small_step_finish_tim)
 !--------------------------------------------------------------
 
 #  include "HALO_EM_D.inc"
+! WCS addition 11/19/08
+#  include "PERIOD_EM_DA.inc"
 #endif
 
 !<DESCRIPTION>
@@ -1779,7 +1788,7 @@ BENCH_START(rk_scalar_tend_tim)
                CALL rk_scalar_tend (  im, im, config_flags,                  &
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%rv_m, grid%ww_m,                  &
-                           grid%mut, grid%mub, grid%mu_1,                    &
+                           grid%muts, grid%mub, grid%mu_1,                   &
                            grid%alt,                                         &
                            moist_old(ims,kms,jms,im),                        &
                            moist(ims,kms,jms,im),                            &
@@ -1791,7 +1800,7 @@ BENCH_START(rk_scalar_tend_tim)
                            grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif, &
                            grid%kvdif, grid%xkhh,                            &
                            grid%diff_6th_opt, grid%diff_6th_factor,          &
-                           config_flags%pd_moist,            &
+                           config_flags%moist_adv_opt,                       &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -1906,7 +1915,7 @@ BENCH_START(tke_adv_tim)
            CALL rk_scalar_tend ( 1, 1, config_flags,                               &
                             rk_step, dt_rk,                                        &
                             grid%ru_m, grid%rv_m, grid%ww_m,                       &
-                            grid%mut, grid%mub, grid%mu_1,                         &
+                            grid%muts, grid%mub, grid%mu_1,                        &
                             grid%alt,                                              &
                             grid%tke_1,                                            &
                             grid%tke_2,                                            &
@@ -1918,7 +1927,7 @@ BENCH_START(tke_adv_tim)
                             grid%rdx, grid%rdy, grid%rdn, grid%rdnw, grid%khdif,   &
                             grid%kvdif, grid%xkhh,                                 &
                             grid%diff_6th_opt, grid%diff_6th_factor,               &
-                            config_flags%pd_tke,              &
+                            config_flags%tke_adv_opt,                              &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
                             grid%i_start(ij), grid%i_end(ij), &
@@ -1988,7 +1997,7 @@ BENCH_START(chem_adv_tim)
              CALL rk_scalar_tend ( ic, ic, config_flags,                         &
                               rk_step, dt_rk,                                    &
                               grid%ru_m, grid%rv_m, grid%ww_m,                   &
-                              grid%mut, grid%mub, grid%mu_1,                     &
+                              grid%muts, grid%mub, grid%mu_1,                    &
                               grid%alt,                                          &
                               chem_old(ims,kms,jms,ic),                          &
                               chem(ims,kms,jms,ic),                              &
@@ -1997,10 +2006,10 @@ BENCH_START(chem_adv_tim)
                               grid%qv_base, .false., grid%fnm, grid%fnp,         &
                               grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
                               grid%msfvy, grid%msftx,grid%msfty,                 &
-                              grid%rdx, grid%rdy, grid%rdn, grid%rdnw,     &
+                              grid%rdx, grid%rdy, grid%rdn, grid%rdnw,           &
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
-                              config_flags%pd_chem,                              &
+                              config_flags%chem_adv_opt,                         &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2106,7 +2115,7 @@ BENCH_END(chem_adv_tim)
            CALL rk_scalar_tend ( is, is, config_flags,                            &
                                  rk_step, dt_rk,                                  &
                                  grid%ru_m, grid%rv_m, grid%ww_m,                 &
-                                 grid%mut, grid%mub, grid%mu_1,                   &
+                                 grid%muts, grid%mub, grid%mu_1,                  &
                                  grid%alt,                                        &
                                  scalar_old(ims,kms,jms,is),                      &
                                  scalar(ims,kms,jms,is),                          &
@@ -2118,7 +2127,7 @@ BENCH_END(chem_adv_tim)
                                  grid%rdx, grid%rdy, grid%rdn, grid%rdnw,         &
                                  grid%khdif, grid%kvdif, grid%xkhh,               &
                                  grid%diff_6th_opt, grid%diff_6th_factor,         &
-                                 config_flags%pd_scalar,           &
+                                 config_flags%scalar_adv_opt,                     &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  grid%i_start(ij), grid%i_end(ij), &
@@ -2540,13 +2549,13 @@ BENCH_END(bc_end_tim)
 
 
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-         IF ( (config_flags%pd_tke) .and. (rk_step == rk_order-1) ) THEN
+         IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_5.inc"
          ELSE
 #         include "HALO_EM_TKE_3.inc"
          ENDIF
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-         IF ( (config_flags%pd_tke) .and. (rk_step == rk_order-1) ) THEN
+         IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_7.inc"
          ELSE
 #         include "HALO_EM_TKE_5.inc"
@@ -2558,13 +2567,13 @@ BENCH_END(bc_end_tim)
 
        IF ( num_moist .GE. PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%pd_moist) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_MOIST_E_5.inc"
            ELSE
 #        include "HALO_EM_MOIST_E_3.inc"
            END IF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%pd_moist) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_MOIST_E_7.inc"
            ELSE
 #        include "HALO_EM_MOIST_E_5.inc"
@@ -2576,13 +2585,13 @@ BENCH_END(bc_end_tim)
        ENDIF
        IF ( num_chem >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%pd_chem) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%chem_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_CHEM_E_5.inc"
            ELSE
 #        include "HALO_EM_CHEM_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%pd_chem) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%chem_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_CHEM_E_7.inc"
            ELSE
 #        include "HALO_EM_CHEM_E_5.inc"
@@ -2594,13 +2603,13 @@ BENCH_END(bc_end_tim)
        ENDIF
        IF ( num_scalar >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%pd_scalar) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_SCALAR_E_5.inc"
            ELSE
 #        include "HALO_EM_SCALAR_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%pd_scalar) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_SCALAR_E_7.inc"
            ELSE
 #        include "HALO_EM_SCALAR_E_5.inc"

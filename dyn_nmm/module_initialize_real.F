@@ -34,8 +34,8 @@ CONTAINS
 
       !  Input space and data.  No gridded meteorological data has been stored, though.
 
-!     TYPE (domain), POINTER :: grid 
-      TYPE (domain)          :: grid 
+!     TYPE (domain), POINTER :: grid
+      TYPE (domain)          :: grid
 
       !  Local data.
 
@@ -111,12 +111,12 @@ CONTAINS
       REAL :: p_top_requested , ptsgm
       INTEGER :: num_metgrid_levels, ICOUNT
       REAL , DIMENSION(max_eta) :: eta_levels
-                                      
+
       LOGICAL :: stretch_grid, dry_sounding, debug, log_flag_sst, hyb_coor
 
         REAL, ALLOCATABLE,DIMENSION(:,:):: ADUM2D,SNOWC,HT,TG_ALT, &
                                            PDVP,PSFC_OUTV
-                                      
+
         REAL, ALLOCATABLE,DIMENSION(:,:,:):: P3D_OUT,P3DV_OUT,P3DV_IN, &
                                              QTMP,QTMP2
 
@@ -134,7 +134,7 @@ CONTAINS
 
 !-- Carsel and Parrish [1988]
          REAL , DIMENSION(100) :: lqmi
-         integer iicount 
+         integer iicount
 
         REAL:: TPH0D,TLM0D
         REAL:: TPH0,WB,SB,TDLM,TDPH
@@ -181,6 +181,9 @@ CONTAINS
 
         if (ALLOCATED(ADUM2D)) DEALLOCATE(ADUM2D)
         if (ALLOCATED(TG_ALT)) DEALLOCATE(TG_ALT)
+       IF ( CONFIG_FLAGS%FRACTIONAL_SEAICE == 1 ) THEN
+          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1")
+       ENDIF
 
 #define COPY_IN
 #include <scalar_derefs.inc>
@@ -335,7 +338,7 @@ CONTAINS
         write(start_date,435) config_flags%start_year, config_flags%start_month, &
                 config_flags%start_day, config_flags%start_hour
   435   format(I4,'-',I2.2,'-',I2.2,'_',I2.2,':00:00')
-        
+
         dlmd=config_flags%dx
         dphd=config_flags%dy
         tph0d=config_flags%cen_lat
@@ -345,7 +348,7 @@ CONTAINS
 
 !!
 
- !  Check to see if the boundary conditions are set 
+ !  Check to see if the boundary conditions are set
  !  properly in the namelist file.
  !  This checks for sufficiency and redundancy.
 
@@ -360,57 +363,57 @@ CONTAINS
       grid%real_data_init_type = model_config_rec%real_data_init_type
       write(message,*) 'what is flag_metgrid: ', flag_metgrid
       CALL wrf_message(message)
-                                                                                                                                              
+
      IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
-                                                                                                                                              
+
      num_metgrid_levels = grid%num_metgrid_levels
-                                                                                                                                              
+
 	IF (ght_gc(its,jts,num_metgrid_levels/2) .lt. ght_gc(its,jts,num_metgrid_levels/2+1)) THEN
 
-                                                                                                                                              
+
            write(message,*) 'normal ground up file order'
            hyb_coor=.false.
            CALL wrf_message(message)
-                                                                                                                                              
+
         ELSE
-                                                                                                                                              
+
            hyb_coor=.true.
            write(message,*) 'reverse the order of coordinate'
            CALL wrf_message(message)
-                                                                                                                                              
+
            CALL reverse_vert_coord(ght_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
-                                                                                                                                              
+
            CALL reverse_vert_coord(p_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
-                                                                                                                                              
+
            CALL reverse_vert_coord(t_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
-                                                                                                                                              
+
            CALL reverse_vert_coord(u_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
-                                                                                                                                              
+
            CALL reverse_vert_coord(v_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
-      
+
            CALL reverse_vert_coord(rh_gc, 2, num_metgrid_levels &
      &,                            IDS,IDE,JDS,JDE,KDS,KDE        &
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
-      
+
         endif
-      
-      
+
+
         IF (hyb_coor) THEN
                            ! limit extreme deviations from source model topography
                            ! due to potential for nasty extrapolation/interpolation issues
@@ -437,11 +440,11 @@ CONTAINS
              ENDIF
            END DO
           END DO
-      
+
           write(message,*) 'min, max of ht_gc after correct: ', minval(ht_gc), maxval(ht_gc)
           CALL wrf_debug(100,message)
         ENDIF
-      
+
       CALL boundary_smooth(ht_gc,landmask, grid, 12 , 12 &
      &,                          IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                          IMS,IME,JMS,JME,KMS,KME             &
@@ -464,15 +467,15 @@ CONTAINS
          ENDDO
        ENDDO
 ! First item is to define the target vertical coordinate
-                  
+
      num_metgrid_levels = grid%num_metgrid_levels
      eta_levels(1:kde) = model_config_rec%eta_levels(1:kde)
      ptsgm             = model_config_rec%ptsgm
      p_top_requested = grid%p_top_requested
      pt=p_top_requested
-                  
+
         if (internal_time_loop .eq. 1) then
-                  
+
         if (eta_levels(1) .ne. 1.0) then
           write(message,*) '********************************************************************* '
           CALL wrf_message(message)
@@ -490,14 +493,14 @@ CONTAINS
           CALL wrf_message(message)
           write(message,*) '********************************************************************** '
           CALL wrf_message(message)
-                                                                                                                                              
+
           CALL compute_nmm_levels(KDE,p_top_requested,eta_levels)
-                                                                                                                                              
+
           DO L=1,KDE
             write(message,*) 'L, eta_levels(L) returned :: ', L,eta_levels(L)
             CALL wrf_message(message)
           ENDDO
-         
+
         endif
 
         write(message,*) 'KDE-1: ', KDE-1
@@ -508,25 +511,25 @@ CONTAINS
         allocate(DSG2(1:KDE-1))
         allocate(SGML1(1:KDE))
         allocate(SGML2(1:KDE))
- 
+
       CALL define_nmm_vertical_coord (kde-1, ptsgm, pt,pdtop, eta_levels, &
                                       ETA1,DETA1,AETA1,             &
                                       ETA2,DETA2,AETA2, DFL, DFRLG         )
-                  
+
        DO L=KDS,KDE-1
         DETA(L)=eta_levels(L)-eta_levels(L+1)
        ENDDO
         endif
-                  
+
         if (.NOT. allocated(PDVP))     allocate(PDVP(IMS:IME,JMS:JME))
         if (.NOT. allocated(P3D_OUT))  allocate(P3D_OUT(IMS:IME,JMS:JME,KDS:KDE-1))
         if (.NOT. allocated(PSFC_OUTV)) allocate(PSFC_OUTV(IMS:IME,JMS:JME))
         if (.NOT. allocated(P3DV_OUT)) allocate(P3DV_OUT(IMS:IME,JMS:JME,KDS:KDE-1))
         if (.NOT. allocated(P3DV_IN))  allocate(P3DV_IN(IMS:IME,JMS:JME,num_metgrid_levels))
- 
+
         write(message,*) 'num_metgrid_levels: ', num_metgrid_levels
         CALL wrf_message(message)
-                  
+
        DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
            FIS(I,J)=ht_gc(I,J)*g
@@ -542,35 +545,35 @@ CONTAINS
                  ght_gc(I,J,1)=toposoil(I,J)
                 ENDIF
         ENDIF
-                         
+
          ENDDO
        ENDDO
-                         
+
       CALL compute_nmm_surfacep (ht_gc, ght_gc, p_gc , t_gc               &
      &,                          psfc_out, num_metgrid_levels  &
      &,                          IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                          IMS,IME,JMS,JME,KMS,KME             &
      &,                          ITS,ITE,JTS,JTE,KTS,KTE ) ! H points
-                  
+
       CALL compute_3d_pressure (psfc_out,AETA1,AETA2   &
      &,            pdtop,pt,pd,p3d_out                 &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
      &,            ITS,ITE,JTS,JTE,KTS,KTE )
-                  
+
 #ifdef DM_PARALLEL
         ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 # include "HALO_NMM_MG2.inc"
 #endif
-                         
+
 #ifdef DM_PARALLEL
 # include "HALO_NMM_MG3.inc"
 #endif
-                  
+
        do K=1,num_metgrid_levels
         do J=JTS,min(JTE,JDE-1)
          do I=ITS,min(ITE,IDE-1)
-                  
+
          IF (K .eq. KTS) THEN
            IF (J .eq. JDS .and. I .lt. IDE-1) THEN  ! S boundary
              PDVP(I,J)=0.5*(PD(I,J)+PD(I+1,J))
@@ -597,7 +600,7 @@ CONTAINS
                                   PSFC_OUT(I,J+1)+PSFC_OUT(I,J-1))
            ENDIF
           ENDIF
-                  
+
            IF (J .eq. JDS .and. I .lt. IDE-1) THEN  ! S boundary
              P3DV_IN(I,J,K)=0.5*(p_gc(I,J,K)+p_gc(I+1,J,K))
            ELSEIF (J .eq. JDE-1 .and. I .lt. IDE-1) THEN ! N boundary
@@ -615,39 +618,39 @@ CONTAINS
              P3DV_IN(I,J,K)=0.25*(p_gc(I,J,K)+p_gc(I+1,J,K) + &
                                   p_gc(I,J+1,K)+p_gc(I,J-1,K))
            ENDIF
-                  
+
          enddo
         enddo
        enddo
-                  
+
       CALL compute_3d_pressure (psfc_outv,AETA1,AETA2   &
      &,            pdtop,pt,pdvp,p3dv_out              &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
      &,            ITS,ITE,JTS,JTE,KTS,KTE )
-                  
+
       CALL interp_press2press_lin(p_gc, p3d_out        &
      &,            t_gc, T,num_metgrid_levels          &
      &,            .TRUE.,.TRUE.,.TRUE.               & ! extrap, ignore_lowest, t_field
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
      &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
-                  
-                  
+
+
       CALL interp_press2press_lin(p3dv_in, p3dv_out        &
      &,            u_gc, U,num_metgrid_levels          &
      &,            .FALSE.,.TRUE.,.FALSE.              &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
      &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
-                  
+
       CALL interp_press2press_lin(p3dv_in, p3dv_out        &
      &,            V_gc, V,num_metgrid_levels          &
      &,            .FALSE.,.TRUE.,.FALSE.              &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
      &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
-                  
+
        IF (hyb_coor) THEN
        CALL wind_adjust(p3dv_in,p3dv_out,U_gc,V_gc,U,V  &
      &,                 num_metgrid_levels,5000.        &
@@ -655,16 +658,16 @@ CONTAINS
      &,                 IMS,IME,JMS,JME,KMS,KME           &
      &,                 ITS,ITE,JTS,JTE,KTS,KTE )
        ENDIF
-                
- 
+
+
          ALLOCATE(qtmp(IMS:IME,JMS:JME,num_metgrid_levels))
          ALLOCATE(qtmp2(IMS:IME,JMS:JME,num_metgrid_levels))
-             
+
             CALL rh_to_mxrat (rh_gc, t_gc, p_gc, qtmp , .TRUE. , &
                         ids , ide , jds , jde , 1 , num_metgrid_levels , &
                         ims , ime , jms , jme , 1 , num_metgrid_levels , &
                         its , ite , jts , jte , 1 , num_metgrid_levels )
-                  
+
        do K=1,num_metgrid_levels
         do J=JTS,min(JTE,JDE-1)
          do I=ITS,min(ITE,IDE-1)
@@ -672,42 +675,42 @@ CONTAINS
          end do
         end do
        end do
-                  
+
       CALL interp_press2press_log(p_gc, p3d_out        &
      &,            QTMP2, Q,num_metgrid_levels          &
      &,            .FALSE.,.TRUE.                      &
      &,            IDS,IDE,JDS,JDE,KDS,KDE             &
      &,            IMS,IME,JMS,JME,KMS,KME             &
      &,            ITS,ITE,JTS,JTE,KTS,KTE, internal_time_loop )
-                  
+
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP)
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP2)
- 
+
          !  Get the monthly values interpolated to the current date
          !  for the traditional monthly
          !  fields of green-ness fraction and background albedo.
-                  
+
         if (internal_time_loop .eq. 1) then
-                  
+
          CALL monthly_interp_to_date ( greenfrac_gc , current_date , vegfra , &
                                        ids , ide , jds , jde , kds , kde , &
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
-                  
+
          CALL monthly_interp_to_date ( albedo12m_gc , current_date , albbck , &
                                        ids , ide , jds , jde , kds , kde , &
                                        ims , ime , jms , jme , kms , kme , &
                                        its , ite , jts , jte , kts , kte )
- 
+
          !  Get the min/max of each i,j for the monthly green-ness fraction.
-                  
+
          CALL monthly_min_max ( greenfrac_gc , shdmin , shdmax , &
                                 ids , ide , jds , jde , kds , kde , &
                                 ims , ime , jms , jme , kms , kme , &
                                 its , ite , jts , jte , kts , kte )
-                  
+
          !  The model expects the green-ness values in percent, not fraction.
-                  
+
          DO j = jts, MIN(jte,jde-1)
            DO i = its, MIN(ite,ide-1)
 !!              vegfra(i,j) = vegfra(i,j) * 100.
@@ -716,10 +719,10 @@ CONTAINS
               VEGFRC(I,J)=VEGFRA(I,J)
            END DO
          END DO
-                  
+
          !  The model expects the albedo fields as
          !  a fraction, not a percent.  Set the water values to 8%.
-                  
+
          DO j = jts, MIN(jte,jde-1)
            DO i = its, MIN(ite,ide-1)
               if (albbck(i,j) .lt. 5.) then
@@ -737,18 +740,18 @@ CONTAINS
               mxsnal(i,j)=snoalb(i,j)
            END DO
          END DO
-                  
+
          endif
-                  
+
 !  new deallocs
         DEALLOCATE(p3d_out,p3dv_out,p3dv_in)
- 
+
      END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
-                  
+
         if (internal_time_loop .eq. 1) then
-                  
+
 !!! WEASD has "snow water equivalent" in mm
-                  
+
        DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
 
@@ -811,7 +814,7 @@ CONTAINS
           END IF
           SI(I,J)=5.0*WEASD(I,J)
           SNO(I,J)=WEASD(I,J)
-               
+
 !!  convert VEGFRA
           VEGFRA(I,J)=VEGFRA(I,J)*100.
 !
@@ -857,14 +860,14 @@ CONTAINS
           SEAICESUM=SICE_G(I+IHE_G(J),J+1)+SICE_G(I+IHW_G(J),J+1)+ &
                     SICE_G(I+IHE_G(J),J-1)+SICE_G(I+IHW_G(J),J-1)
           IF (SEAICESUM .ge. 1. .and. SEAICESUM .lt. 3.) THEN
-                                                                                                                                              
+
             IF ((SICE_G(I+IHE_G(J),J+1).lt.0.1 .and. SM_G(I+IHE_G(J),J+1).lt.0.1) .OR. &
                 (SICE_G(I+IHW_G(J),J+1).lt.0.1 .and. SM_G(I+IHW_G(J),J+1).lt.0.1) .OR. &
                 (SICE_G(I+IHE_G(J),J-1).lt.0.1 .and. SM_G(I+IHE_G(J),J-1).lt.0.1) .OR. &
                 (SICE_G(I+IHW_G(J),J-1).lt.0.1 .and. SM_G(I+IHW_G(J),J-1).lt.0.1)) THEN
-                                                                                                                                              
+
 !             HAVE SEA ICE AND A SURROUNDING LAND POINT - CONVERT TO SEA ICE
-                                                                                                                                              
+
               write(message,*) 'making seaice (1): ', I,J
               CALL wrf_debug(100,message)
               SICE_G(I,J)=1.0
@@ -875,13 +878,13 @@ CONTAINS
           ELSEIF (SEAICESUM .ge. 3) THEN
 
 !       WATER POINT SURROUNDED BY ICE  - CONVERT TO SEA ICE
-                                                                                                                                              
+
             write(message,*) 'making seaice (2): ', I,J
             CALL wrf_debug(100,message)
             SICE_G(I,J)=1.0
             SM_G(I,J)=0.
           ENDIF
-                                                                                                                                              
+
         ENDIF
 
         ENDDO
@@ -962,7 +965,7 @@ CONTAINS
 
        DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
- 
+
           IF (SM(I,J) .gt. 0.5) THEN
                 landmask(I,J)=0.0
           ELSEIF (SM(I,J) .lt. 0.5 .and. SICE(I,J) .gt. 0.9) then
@@ -981,7 +984,7 @@ CONTAINS
            NMM_TSK(I,J)=SST(I,J)
            SST(I,J)=0.
         endif
- 
+
         ENDDO
       ENDDO
 
@@ -1001,7 +1004,7 @@ CONTAINS
   !  in elevation between the current model's elevation and the incoming data's
   !  orography.
 
-      IF ( ( flag_toposoil .EQ. 1 ) ) THEN 
+      IF ( ( flag_toposoil .EQ. 1 ) ) THEN
 
         ALLOCATE(HT(ims:ime,jms:jme))
 
@@ -1010,14 +1013,14 @@ CONTAINS
               HT(I,J)=FIS(I,J)/9.81
           END DO
         END DO
-           
+
 !       if (maxval(toposoil) .gt. 100.) then
 !
 !  Being avoided.   Something to revisit eventually.
 !
-!1219 might be simply a matter of including TOPOSOIL 
+!1219 might be simply a matter of including TOPOSOIL
 !
-!    CODE NOT TESTED AT NCEP USING THIS FUNCTIONALITY, 
+!    CODE NOT TESTED AT NCEP USING THIS FUNCTIONALITY,
 !    SO TO BE SAFE WILL AVOID FOR RETRO RUNS.
 !
 !        CALL adjust_soil_temp_new ( soiltb , 2 , &
@@ -1037,27 +1040,27 @@ CONTAINS
       END IF
 
       !  Process the LSM data.
-                                                                                                                                              
+
       !  surface_input_source=1 => use data from static file
       !                            (fractional category as input)
       !  surface_input_source=2 => use data from grib file
       !                            (dominant category as input)
-                                                                                                                                              
+
       IF ( config_flags%surface_input_source .EQ. 1 ) THEN
          vegcat (its,jts) = 0
          soilcat(its,jts) = 0
       END IF
-                                                                                                                                              
+
       !  Generate the vegetation and soil category information
       !  from the fractional input
       !  data, or use the existing dominant category fields if they exist.
-                                                                                                                                              
+
       IF ((soilcat(its,jts) .LT. 0.5) .AND. (vegcat(its,jts) .LT. 0.5)) THEN
-                                                                                                                                              
+
          num_veg_cat      = SIZE ( landusef_gc , DIM=3 )
          num_soil_top_cat = SIZE ( soilctop_gc , DIM=3 )
          num_soil_bot_cat = SIZE ( soilcbot_gc , DIM=3 )
-                                                                                                                                              
+
         do J=JMS,JME
         do K=1,num_veg_cat
         do I=IMS,IME
@@ -1065,7 +1068,7 @@ CONTAINS
         enddo
         enddo
         enddo
- 
+
         do J=JMS,JME
         do K=1,num_soil_top_cat
         do I=IMS,IME
@@ -1073,7 +1076,7 @@ CONTAINS
         enddo
         enddo
         enddo
- 
+
         do J=JMS,JME
         do K=1,num_soil_bot_cat
         do I=IMS,IME
@@ -1081,13 +1084,13 @@ CONTAINS
         enddo
         enddo
         enddo
- 
+
 !       sm (1=water, 0=land)
 !       landmask(0=water, 1=land)
- 
- 
+
+
         write(message,*) 'landmask into process_percent_cat_new'
- 
+
         CALL wrf_debug(1,message)
         do J=JTE,JTS,-(((JTE-JTS)/20)+1)
         write(message,641) (landmask(I,J),I=ITS,min(ITE,IDE-1),((ITE-ITS)/15)+1)
@@ -1103,18 +1106,18 @@ CONTAINS
                          ims , ime , jms , jme , kms , kme , &
                          its , ite , jts , jte , kts , kte , &
                          model_config_rec%iswater(grid%id) )
-                                                                                                                                              
+
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                vegcat(i,j)  = ivgtyp(i,j)
                soilcat(i,j) = isltyp(i,j)
             END DO
          END DO
-                                                                                                                                              
+
        ELSE
-                                                                                                                                              
+
          !  Do we have dominant soil and veg data from the input already?
-                                                                                                                                              
+
          IF ( soilcat(its,jts) .GT. 0.5 ) THEN
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
@@ -1129,12 +1132,12 @@ CONTAINS
                END DO
             END DO
          END IF
-                                                                                                                                              
+
        ENDIF
-                   
+
         DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
-                   
+
         IF (SICE(I,J) .lt. 0.1) THEN
           IF (landmask(I,J) .gt. 0.5 .and. sm(I,J) .gt. 0.5) THEN
                 write(message,*) 'land mask and SM both > 0.5: ', &
@@ -1152,10 +1155,10 @@ CONTAINS
             write(message,*) 'landmask says LAND, SM/SICE say SEAICE: ', I,J
           ENDIF
         ENDIF
-                   
+
            ENDDO
         ENDDO
-   
+
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
 
@@ -1180,7 +1183,7 @@ CONTAINS
           endif
             NMM_TSK(I,J)=0.
         endif
-                
+
         IF ( (NMM_TSK(I,J)+SST(I,J)) .lt. 200. .or. &
              (NMM_TSK(I,J)+SST(I,J)) .gt. 350. ) THEN
           write(message,*) 'TSK, SST trouble at : ', I,J
@@ -1188,27 +1191,27 @@ CONTAINS
           write(message,*) 'SM, NMM_TSK,SST ', SM(I,J),NMM_TSK(I,J),SST(I,J)
           CALL wrf_message(message)
         ENDIF
-                                                                                                                                              
+
             ENDDO
          ENDDO
-                                                                                                                                              
+
         write(message,*) 'SM'
         CALL wrf_message(message)
-                                                                                                                                              
+
         DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
           write(message,635) (sm(i,J),I=its,ite,((ite-its)/10)+1)
           CALL wrf_message(message)
         END DO
-                                                                                                                                              
+
         write(message,*) 'SST/NMM_TSK'
         CALL wrf_debug(10,message)
         DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
           write(message,635) (SST(I,J)+NMM_TSK(I,J),I=ITS,min(ide-1,ite),((ite-its)/10)+1)
           CALL wrf_debug(10,message)
         END DO
-                                                                                                                                              
+
   635   format(20(f5.1,1x))
-                                                                                                                                              
+
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
                IF ( ( landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
@@ -1218,26 +1221,26 @@ CONTAINS
                END IF
             END DO
          END DO
-                                                                                                                                              
+
 !      END IF
-                                                                                                                                              
+
    !  Land use categories, dominant soil and vegetation types (if available).
- 
+
 !       allocate(lu_index(ims:ime,jms:jme))
- 
+
           DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
                lu_index(i,j) = ivgtyp(i,j)
             END DO
           END DO
- 
+
         if (flag_sst .eq. 1) log_flag_sst=.true.
         if (flag_sst .eq. 0) log_flag_sst=.false.
- 
+
         write(message,*) 'st_input dimensions: ', size(st_input,dim=1), &
                                   size(st_input,dim=2),size(st_input,dim=3)
         CALL wrf_debug(100,message)
- 
+
 !        write(message,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
 !          CALL wrf_message(message)
 !        write(message,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
@@ -1246,7 +1249,7 @@ CONTAINS
 !          CALL wrf_message(message)
 !        write(message,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
 !          CALL wrf_message(message)
-                                                                                                                                              
+
 ! =============================================================
 
    IF (.NOT. ALLOCATED(TG_ALT))ALLOCATE(TG_ALT(grid%sm31:grid%em31,jms:jme))
@@ -1334,7 +1337,7 @@ CONTAINS
 
         write(message,*) 'call process_soil_real with num_st_levels_input: ',  num_st_levels_input
         CALL wrf_message( message )
-                                                                                                                                              
+
 ! =============================================================
 
   CALL process_soil_real ( adum2d, TG , &
@@ -1415,7 +1418,7 @@ CONTAINS
                                                                                        iicount
                    CALL wrf_message(message)
                    END IF
-                END IF 
+                END IF
                CASE ( RUCLSMSCHEME )
                 iicount = 0
                 IF      ( FLAG_SM000010 .EQ. 1 ) THEN
@@ -1456,7 +1459,7 @@ CONTAINS
             STC(I,L,J)=273.16    ! TG value used by Eta/NMM
           END DO
         END IF
-                
+
             END DO
           END DO
 
@@ -1476,7 +1479,7 @@ CONTAINS
         STC(I,L,J)=amax1(STC(I,L,J),STC(II,L,JJ))
         cur_smc=SMC(I,L,J)
 
-        if ( SMC(II,L,JJ) .gt. 0.005 .and. SMC(II,L,JJ) .lt. 1.0) then 
+        if ( SMC(II,L,JJ) .gt. 0.005 .and. SMC(II,L,JJ) .lt. 1.0) then
 		aposs_smc=SMC(II,L,JJ)
 
         if ( cur_smc .eq. 0 ) then
@@ -1748,22 +1751,22 @@ CONTAINS
           write(message,635) (stc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12+1)
           CALL wrf_message(message)
         ENDDO
-       
+
         write(message,*) 'SMC(1)'
         CALL wrf_message(message)
         DO J=min(jde-1,jte),jts,-((jte-jts)/15+1)
           write(message,635) (smc(I,1,J),I=its,min(ite,ide-1),(ite-its)/12+1)
           CALL wrf_message(message)
         ENDDO
-       
+
           DO j = jts, MIN(jde-1,jte)
           DO i=  ITS, MIN(IDE-1,ITE)
-       
+
           if (SM(I,J) .lt. 0.1 .and. SMC(I,1,J) .gt. 0.5 .and. SICE(I,J) .lt. 0.1) then
             write(message,*) 'very moist on land point: ', I,J,SMC(I,1,J)
             CALL wrf_debug(10,message)
           endif
-       
+
           enddo
         enddo
 
@@ -1783,7 +1786,7 @@ CONTAINS
          EMJ(J)= GRID%DT/( 4.*DXP)*DTAD
          EMTJ(J)=GRID%DT/(16.*DXP)*DTAD
         ENDDO
-        
+
           JA=0
           DO 161 J=3,5
           JA=JA+1
@@ -1851,9 +1854,9 @@ CONTAINS
             ENDDO
           ENDDO
         ENDIF
-       
+
   969   continue
-       
+
          DO j = jms, jme
             DO i = ims, ime
              fisx=max(fis(i,j),0.)
@@ -1861,23 +1864,24 @@ CONTAINS
      &                (0.*Z0MAX+FISx    *FCM+Z0LAND)
             ENDDO
           ENDDO
-       
+
         write(message,*) 'Z0 over memory, leaving module_initialize_real'
         CALL wrf_message(message)
         DO J=JME,JMS,-((JME-JMS)/20+1)
           write(message,635) (Z0(I,J),I=IMS,IME,(IME-IMS)/14+1)
           CALL wrf_message(message)
         ENDDO
-       
-       
+
+
         endif ! on first_time check
-       
+
         write(message,*) 'leaving init_domain_nmm'
         CALL wrf_message( TRIM(message) )
 !
        write(message,*)'STUFF MOVED TO REGISTRY:',grid%IDTAD,          &
      & grid%NSOIL,grid%NRADL,grid%NRADS,grid%NPHS,grid%NCNVC,grid%sigma
        CALL wrf_message( TRIM(message) )
+
 !==================================================================================
 
 #define COPY_OUT
@@ -2095,7 +2099,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   SUBROUTINE compute_nmm_surfacep ( TERRAIN_HGT_T, Z3D_IN, PRESS3D_IN, T3D_IN   &
-     &,                             psfc_out,generic           & 
+     &,                             psfc_out,generic           &
      &,                             IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                             IMS,IME,JMS,JME,KMS,KME             &
      &,                             ITS,ITE,JTS,JTE,KTS,KTE  )
@@ -2104,7 +2108,7 @@ CONTAINS
        IMPLICIT NONE
 
        real, allocatable:: dum2d(:,:),DUM2DB(:,:)
-       
+
        integer :: IDS,IDE,JDS,JDE,KDS,KDE
        integer :: IMS,IME,JMS,JME,KMS,KME
        integer :: ITS,ITE,JTS,JTE,KTS,KTE,Ilook,Jlook
@@ -2182,7 +2186,7 @@ CONTAINS
 
 !        if (rincr(I,J) .ne. 0 .and. abs(rincr(I,J)) .gt. 20.) then
 !          write(message,*) 'II, I,J,rincr: ', II, I,J,rincr(I,J)
-!          CALL wrf_message(message) 
+!          CALL wrf_message(message)
 !        endif
 
          endif
@@ -2203,7 +2207,7 @@ CONTAINS
          end do II_loop
 
        ALLOCATE(DUM2D(IMS:IME,JMS:JME))
-     
+
        DO J=JMS,JME
         DO I=IMS,IME
          DUM2D(I,J)=-9.
@@ -2251,7 +2255,7 @@ CONTAINS
 !             CALL wrf_message(message)
 !           ENDIF
 
-          ENDIF 
+          ENDIF
        END DO	
 
 !!!!!!!!!!!!!!!!!!!!!! START HYDRO CHECK
@@ -2275,9 +2279,9 @@ CONTAINS
                     I,J,PRESS3D_IN(i,j,2),PSFC_IN(I,J),Z3D_IN(I,J,2),TOPO_IN(I,J)
                IF (mod(I,5).eq.0 .AND. mod(J,5).eq.0) CALL wrf_debug(50,message)
 	      CYCLE I_loop
-             ENDIF 
+             ENDIF
 
-           ENDIF 
+           ENDIF
 
          ELSE ! z(2) equals TOPO_IN
 
@@ -2292,7 +2296,7 @@ CONTAINS
 	  ENDIF
 
          ENDIF
-       
+
          IF ( abs(PRESS3D_IN(i,j,2)-PSFC_IN(I,J)) .gt. 290.) THEN
            IF (PRESS3D_IN(i,j,2) .lt. PSFC_IN(I,J) .and. &
                           Z3D_IN(I,J,2) .lt. TOPO_IN(I,J)) THEN
@@ -2305,7 +2309,7 @@ CONTAINS
 !             CALL wrf_message(message)
              CYCLE I_loop
            ENDIF
-         ENDIF 
+         ENDIF
        ENDIF
 
 !!!!!!! loop over a few more levels
@@ -2314,7 +2318,7 @@ CONTAINS
           IF ( PRESS3D_IN(i,j,1) .ne. 200100. .AND. &
              (((PSFC_IN(I,J)-PRESS3D_IN(i,j,L)) .lt. 400.) .OR. &
                TOPO_IN(I,J) .lt. Z3D_IN(I,J,L))) then
-                 
+
 	    IF (Z3D_IN(I,J,L) .ne. TOPO_IN(I,J)) THEN
               dpdz=(PRESS3D_IN(i,j,L)-PSFC_IN(I,J))/ &
                    (Z3D_IN(I,J,L)-TOPO_IN(I,J))
@@ -2328,13 +2332,13 @@ CONTAINS
                   IF (mod(I,5).eq.0 .AND. mod(J,5).eq.0) &
                                                CALL wrf_debug(50,message)
 	          CYCLE I_loop
-                ENDIF 
+                ENDIF
               ENDIF
             ELSE
 	      IF (PRESS3D_IN(i,j,2) .eq. PSFC_IN(I,J)) THEN
 !	        write(message,*) 'all equal at I,J: ', I,J
 !               CALL wrf_message(message)
-              ELSE 
+              ELSE
 	        CYCLE I_loop
               ENDIF
             ENDIF
@@ -2347,8 +2351,8 @@ CONTAINS
             ELSEIF (PRESS3D_IN(i,j,L) .gt. PSFC_IN(I,J) .AND.  &
                     Z3D_IN(I,J,L) .gt. TOPO_IN(I,J)) THEN
              CYCLE I_loop
-            ENDIF 
-          ENDIF 
+            ENDIF
+          ENDIF
         END DO
 !!!!!!!!!!!!!!!!!!!!!! END HYDRO CHECK
 
@@ -2402,11 +2406,11 @@ CONTAINS
                  dlnpdz= (log(BOT_INPUT_PRESS)-log(PRESS3D_IN(i,j,LL)) ) / &
                    (BOT_INPUT_HGT-Z3D_IN(i,j,LL))
                 EXIT FIND_THICK
-               ENDIF 
+               ENDIF
               END DO FIND_THICK
 
             ENDIF
-        
+
           ENDIF
 
         dum2d(I,J)= exp(log(BOT_INPUT_PRESS) + dlnpdz * &
@@ -2422,7 +2426,7 @@ CONTAINS
            CALL wrf_message(message)
            write(message,*) 'PRESS3D_IN: ', PRESS3D_IN(I,J,1:10)
            CALL wrf_message(message)
-         ENDIF 
+         ENDIF
 
         ELSE ! target level bounded by input levels
 
@@ -2492,7 +2496,7 @@ CONTAINS
 
             IF (dum2d(I,J) .eq. -9.) THEN
               CALL wrf_error_fatal("quitting due to undefined surface pressure")
-            ENDIF 
+            ENDIF
           ENDIF
 
           DEFINED_PSFC(I,J)=.TRUE.
@@ -2502,7 +2506,7 @@ CONTAINS
             CALL wrf_message(message)
           ENDIF
 
-        ENDIF 
+        ENDIF
 
         ENDDO I_loop
         ENDDO
@@ -2549,7 +2553,7 @@ CONTAINS
          END DO
         END DO
 
-      
+
 
 !! "traditional" isobaric only approach ------------------------------------------------
 
@@ -2626,12 +2630,12 @@ CONTAINS
 
         IF (DUM2DB(I,J) .eq. -9.) THEN
           write(message,*) 'HOPELESS PSFC, I QUIT'
-          CALL wrf_error_fatal(message) 
+          CALL wrf_error_fatal(message)
         ENDIF
 
 	if (I .eq. Ilook .and. J .eq. Jlook) THEN
 	  write(message,*) ' traditional psfc: ', I,J,DUM2DB(I,J)
-          CALL wrf_message(message) 
+          CALL wrf_message(message)
         ENDIF
 
        ENDDO
@@ -2763,14 +2767,14 @@ CONTAINS
 
         INTEGER          :: IDS,IDE,JDS,JDE,KDS,KDE
         INTEGER          :: IMS,IME,JMS,JME,KMS,KME
-        INTEGER          :: ITS,ITE,JTS,JTE,KTS,KTE  
+        INTEGER          :: ITS,ITE,JTS,JTE,KTS,KTE
 
         REAL, INTENT(IN) :: psfc_out(IMS:IME,JMS:JME)
         REAL, INTENT(IN) :: SGML1(KDE),SGML2(KDE),pdtop,pt
 
         REAL, INTENT(OUT):: p3d_out(IMS:IME,JMS:JME,KDS:KDE-1)
         REAL, INTENT(OUT):: PD(IMS:IME,JMS:JME)
-         
+
         CHARACTER (len=255) :: message
 
 !	write(message,*) 'pdtop, pt, psfc_out(1,1): ', pdtop, pt, psfc_out(1,1)
@@ -2804,7 +2808,7 @@ CONTAINS
 
   SUBROUTINE interp_press2press_lin(press_in,press_out, &
                                     data_in, data_out,generic          &
-     &,                             extrapolate,ignore_lowest,TFIELD    & 
+     &,                             extrapolate,ignore_lowest,TFIELD    &
      &,                             IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                             IMS,IME,JMS,JME,KMS,KME             &
      &,                             ITS,ITE,JTS,JTE,KTS,KTE, internal_time )
@@ -2858,8 +2862,8 @@ CONTAINS
           I .ne. IDS .and. I .ne. IDE-1 ) THEN
 !! not on boundary
           CYCLE test_i
-        ENDIF 
-     ENDIF 
+        ENDIF
+     ENDIF
 
 
        col_smooth=.false.
@@ -2882,7 +2886,7 @@ CONTAINS
           IF (desired_press .GT. press_in(i,j,LMIN)) THEN
            IF (TFIELD .and. K .eq. 1  .and. (desired_press - press_in(i,j,LMIN)) .gt. 3000.) then
             col_smooth=.TRUE.   ! due to large extrapolation distance
-           ENDIF 
+           ENDIF
 	
 
             IF ((desired_press - press_in(i,j,LMIN)).LT. 50.) THEN ! 0.5 mb
@@ -2917,7 +2921,7 @@ CONTAINS
 ! restrict slope to -1K/10 hPa
           dvaldlnp=max(dvaldlnp, -1.0/ &
                                 log( press_in(i,j,LMIN) / &
-                                   ( press_in(i,j,LMIN)-1000.)  )) 
+                                   ( press_in(i,j,LMIN)-1000.)  ))
 
           data_out(I,J,K)= data_in(i,j,LMIN) + dvaldlnp * &
                                ( log(desired_press)-log(press_in(i,j,LMIN)) )
@@ -2927,7 +2931,7 @@ CONTAINS
 ! restrict slope to +0.8K/10 hPa
           dvaldlnp=min(dvaldlnp, 0.8/ &
                                 log( press_in(i,j,LMIN) / &
-                                   ( press_in(i,j,LMIN)-1000.)  )) 
+                                   ( press_in(i,j,LMIN)-1000.)  ))
 
           data_out(I,J,K)= data_in(i,j,LMIN) + dvaldlnp * &
                                ( log(desired_press)-log(press_in(i,j,LMIN)) )
@@ -2993,7 +2997,7 @@ CONTAINS
 
   SUBROUTINE wind_adjust(press_in,press_out, &
                                     U_in, V_in,U_out,V_out           &
-     &,                             generic,depth_replace    & 
+     &,                             generic,depth_replace    &
      &,                             IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                             IMS,IME,JMS,JME,KMS,KME             &
      &,                             ITS,ITE,JTS,JTE,KTS,KTE )
@@ -3030,7 +3034,7 @@ CONTAINS
         ELSE
           p1d_in(L)=(press_in(I,J,2)-press_in(I,J,L))
           EXIT INLOOP
-        ENDIF 
+        ENDIF
     END DO INLOOP
 
    OUTLOOP: DO L=KDS,KDE-1
@@ -3040,7 +3044,7 @@ CONTAINS
           MAXLOUT=L
         ELSE
           EXIT OUTLOOP
-        ENDIF 
+        ENDIF
     END DO OUTLOOP
 
         DO L=1,MAXLOUT
@@ -3061,7 +3065,7 @@ CONTAINS
 
    END DO FINDLOOP
         END DO   ! MAXLOUT loop
-           
+
 
         ENDIF
 
@@ -3075,7 +3079,7 @@ CONTAINS
 
   SUBROUTINE interp_press2press_log(press_in,press_out, &
                                     data_in, data_out, generic          &
-     &,                             extrapolate,ignore_lowest           & 
+     &,                             extrapolate,ignore_lowest           &
      &,                             IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                             IMS,IME,JMS,JME,KMS,KME             &
      &,                             ITS,ITE,JTS,JTE,KTS,KTE, internal_time )
@@ -3133,7 +3137,7 @@ CONTAINS
             I .ne. IDS .and. I .ne. IDE-1 ) THEN
 !! not on boundary
           CYCLE test_i
-        ENDIF 
+        ENDIF
       ENDIF
 
 
@@ -3358,11 +3362,11 @@ CONTAINS
       SUBROUTINE  boundary_smooth(h, landmask, grid, nsmth , nrow &
      &,                          IDS,IDE,JDS,JDE,KDS,KDE             &
      &,                          IMS,IME,JMS,JME,KMS,KME             &
-     &,                          ITS,ITE,JTS,JTE,KTS,KTE ) 
+     &,                          ITS,ITE,JTS,JTE,KTS,KTE )
 
 	implicit none
 
-      TYPE (domain)          :: grid 
+      TYPE (domain)          :: grid
 
         integer :: IDS,IDE,JDS,JDE,KDS,KDE
         integer :: IMS,IME,JMS,JME,KMS,KME
@@ -3456,7 +3460,7 @@ CONTAINS
         do J=JMS,JME
          do I=IMS,IME
          grid%ht_gc(I,J)=h(I,J)
-         enddo 
+         enddo
         enddo
 #ifdef DM_PARALLEL
 # include "HALO_NMM_MG.inc"
@@ -3464,7 +3468,7 @@ CONTAINS
          do J=JMS,JME
          do I=IMS,IME
          h(I,J)=grid%ht_gc(I,J)
-         enddo 
+         enddo
         enddo
 
 
@@ -3509,7 +3513,7 @@ CONTAINS
 	write(message,*) 'DOING E BOUND SMOOTHING for I= ', min(ITE,IDE-1)
         CALL wrf_message(message)
          I=min(ITE,IDE-1)
-         do J=JTS,min(JTE,JDE-1) 
+         do J=JTS,min(JTE,JDE-1)
           if (hbms(I,J) .eq. 1  .and. J .ge. JDS+2 .and. J .le. JDE-3 .and. mod(J,2) .eq. 1) then
            h(I,J)=0.75*h(I,J)+0.125*(h(I+ihw(J),J+1)+h(I+ihw(J),J-1))
           endif
@@ -3521,7 +3525,7 @@ CONTAINS
         do J=JMS,JME
          do I=IMS,IME
          grid%ht_gc(I,J)=h(I,J)
-         enddo 
+         enddo
         enddo
 #ifdef DM_PARALLEL
 #include "HALO_NMM_MG.inc"
@@ -3529,7 +3533,7 @@ CONTAINS
         do J=JMS,JME
          do I=IMS,IME
          h(I,J)=grid%ht_gc(I,J)
-        enddo 
+        enddo
         enddo
 
 ! extra smoothing along inner boundary
@@ -3559,7 +3563,7 @@ CONTAINS
                                 h(i,JDE-1)+h(i+1,JDE-1))
            enddo
           endif
-        
+
            if (JTS .eq. 1) then
              JSTART=4
            else
@@ -3718,7 +3722,7 @@ CONTAINS
                                        its , ite , jts , jte , kts , kte,  &
                                        start_z, end_z
 
-        REAL, INTENT(INOUT)         :: field(IMS:IME,JMS:JME,end_z) 
+        REAL, INTENT(INOUT)         :: field(IMS:IME,JMS:JME,end_z)
 ! local
 
         INTEGER                     :: I,J,L
@@ -3741,7 +3745,7 @@ CONTAINS
             END DO
           END DO
         END DO
-       
+
         DEALLOCATE(dum3d)
 
         END SUBROUTINE reverse_vert_coord
@@ -3750,103 +3754,103 @@ CONTAINS
 !--------------------------------------------------------------------
 
         SUBROUTINE compute_nmm_levels(ninterface, ptop, eta_levels)
-                                                                                                                                              
+
         USE module_model_constants
-                                                                                                                                              
+
         IMPLICIT NONE
-                                                                                                                                              
+
         character(len=132):: message
         integer        ::  ninterface,Lthick,L
         real, parameter:: gamma=.0065
         real, parameter:: t_stand=288.
         real, parameter:: p_stand=101325.
-                                                                                                                                              
+
         real           ::  maxdz_compute, ptop
         real           ::  plower,pupper,tlay, sum
-                                                                                                                                              
+
         real             :: eta_levels(ninterface)
         real, allocatable:: Z(:)
         real, allocatable:: deta_levels_spline(:)
-                                                                                                                                              
+
         logical:: print_pbl_warn
-                                                                                                                                              
+
 !----------------------------------------------------
-                                                                                                                                              
+
         allocate(Z(ninterface))
         allocate(deta_levels_spline(ninterface-1))
-                    
+
         CALL compute_eta_spline(ninterface-1,deta_levels_spline,ptop)
-                    
+
         sum=0.
         DO L=1,ninterface-1
           sum=sum+deta_levels_spline(L)
         ENDDO
-                    
+
         eta_levels(1)=1.00
-                    
+
         DO L=2,ninterface
           eta_levels(L)=eta_levels(L-1)-deta_levels_spline(L-1)
         ENDDO
-                    
+
         eta_levels(ninterface)=0.00
-                    
+
         DO L=2,ninterface-1
           eta_levels(L)=0.5*(eta_levels(L))+0.25*(eta_levels(L-1)+eta_levels(L+1))
         ENDDO
-                    
+
         Z(1)=0.
         maxdz_compute=0.
         print_pbl_warn=.false.
-                    
+
         DO L=2,ninterface
           tlay=max( t_stand-gamma*Z(L-1), 216.5)
           plower=ptop+(p_stand-ptop)*eta_levels(L-1)
           pupper=ptop+(p_stand-ptop)*eta_levels(L)
           Z(L)=Z(L-1)+(tlay*r_d/g)*(log(plower)-log(pupper))
-                    
+
           if (plower .gt. 85000. .and. pupper .lt. 85000. .and. L .lt. 10) then
             print_pbl_warn=.true.
           endif
-                    
+
           write(message,*) 'L, eta(l), pupper, Z(L): ', L, eta_levels(L),pupper,Z(L)
           CALL wrf_debug(100,message)
-                    
+
           if (Z(L)-Z(L-1) .gt. maxdz_compute) then
             Lthick=L
           endif
-                    
+
           maxdz_compute=max(maxdz_compute,Z(L)-Z(L-1))
         ENDDO
-                    
+
         if (print_pbl_warn) then
           write(message,*) 'WARNING - PBL MAY BE POORLY RESOLVED WITH NUMBER OF VERTICAL LEVELS'
           CALL wrf_message(message)
           write(message,*) '        - CONSIDER INCREASING THE VERTICAL RESOLUTION'
           CALL wrf_message(message)
         endif
-                    
+
         write(message,*) 'thickest layer was: ', maxdz_compute , 'meters thick at level: ', Lthick
         CALL wrf_message(message)
-                    
+
         END SUBROUTINE compute_nmm_levels
- 
+
 !---------------------------
 
      SUBROUTINE compute_eta_spline(LM, dsg, ptop)
-                    
+
      IMPLICIT NONE
- 
+
      real:: dsg(LM), ptop, sum, rsum
      real, allocatable:: xold(:),dold(:)
      real, allocatable:: xnew(:),sgm(:)
      real, allocatable:: pps(:),qqs(:),y2s(:)
      integer nlev,LM,L,KOLD
-                    
+
     IF (LM .ge. 46) THEN
      KOLD=9
      allocate(xold(KOLD))
      allocate(dold(KOLD))
-                    
+
      xold(1)=.00
      dold(1)=.006
      xold(2)=.13
@@ -3861,7 +3865,7 @@ CONTAINS
      dold(6)=.040
      xold(7)=.69
      dold(7)=.018
-                    
+
      if (ptop .ge. 2000.) then
       xold(8)=.90
       dold(8)=.012
@@ -3873,13 +3877,13 @@ CONTAINS
       xold(9)=1.0
       dold(9)=.003
      endif
- 
+
     ELSE
- 
+
      KOLD=8
      allocate(xold(KOLD))
      allocate(dold(KOLD))
-                    
+
      xold(1)=.00
      dold(1)=.006
      xold(2)=.18
@@ -3894,7 +3898,7 @@ CONTAINS
      dold(6)=.017
      xold(7)=.85
      dold(7)=.012
-                 
+
      if (ptop .ge. 2000.) then
       xold(8)=1.0
       dold(8)=.013
@@ -3902,42 +3906,42 @@ CONTAINS
       xold(8)=1.0
       dold(8)=.008
      endif
-                 
+
     ENDIF
-                    
+
         allocate(xnew(lm))
         allocate(sgm(lm))
         allocate(pps(lm))
         allocate(qqs(lm))
         allocate(y2s(lm))
-                 
+
     DO L=1,LM
        xnew(l)=float(l-1)/float(lm-1)
     ENDDO
-          
+
     y2s=0.
-         
+
     CALL spline(kold,kold,xold,dold,y2s,lm,xnew,dsg,pps,qqs)
-           
+
     sum=0.
     DO l=1,lm
        sum=sum+dsg(l)
     ENDDO
-                 
+
     rsum=1./sum
     sgm(1)=0.
-                
+
     DO L=1,lm-1
      dsg(l)=dsg(l)*rsum
      sgm(l+1)=sgm(l)+dsg(l)
     ENDDO
     sgm(lm+1)=1.
     dsg(lm)=sgm(lm+1)-sgm(lm)
-                 
+
     END SUBROUTINE compute_eta_spline
-                 
+
 ! -------------------------------------------------------------------
-                    
+
      subroutine spline(JTBX,NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
 !   ********************************************************************
 !   *                                                                  *
@@ -3979,16 +3983,16 @@ CONTAINS
      &       ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
 !-----------------------------------------------------------------------
       NOLDM1=NOLD-1
- 
+
       DXL=XOLD(2)-XOLD(1)
       DXR=XOLD(3)-XOLD(2)
       DYDXL=(YOLD(2)-YOLD(1))/DXL
       DYDXR=(YOLD(3)-YOLD(2))/DXR
       RTDXC=0.5/(DXL+DXR)
-                    
+
       P(1)= RTDXC*(6.*(DYDXR-DYDXL)-DXL*Y2(1))
       Q(1)=-RTDXC*DXR
-                    
+
       first_loop: DO K=3,NOLD-1
         IF(NOLD==3) exit first_loop   ! should be impossible to execute
         DXL=DXR
@@ -4000,11 +4004,11 @@ CONTAINS
         P(K-1)= DEN*(6.*(DYDXR-DYDXL)-DXL*P(K-2))
         Q(K-1)=-DEN*DXR
       END DO first_loop
-                    
+
       DO K=NOLDM1,2,-1
          Y2(K)=P(K-1)+Q(K-1)*Y2(K+1)
       END DO
-        
+
 !-----------------------------------------------------------------------
       second_loop:  DO K1=1,NNEW+1
         XK=XNEW(K1)
@@ -4014,12 +4018,12 @@ CONTAINS
             exit third_loop
           ENDIF
         END DO third_loop
-                    
+
         IF (XOLD(K2) .le. XK) THEN
           YNEW(K1)=YOLD(NOLD)
           CYCLE second_loop
         ENDIF
-                    
+
         IF (K1 .eq. 1 .or. K .ne. KOLD) THEN
           K=KOLD
           Y2K=Y2(K)
@@ -4030,12 +4034,12 @@ CONTAINS
           BK=0.5*Y2K
           CK=RDX*(YOLD(K+1)-YOLD(K))-.1666667*DX*(Y2KP1+Y2K+Y2K)
         ENDIF
- 
+
         X=XK-XOLD(K)
         XSQ=X*X
         YNEW(K1)=AK*XSQ*X+BK*XSQ+CK*X+YOLD(K)
       END DO second_loop
-                    
+
       END SUBROUTINE SPLINE
 
 !--------------------------------------------------------------------
@@ -4064,7 +4068,7 @@ CONTAINS
 !      DATA SMCMAX /0.421,0.464,0.468,0.434,0.406, &
 !                  0.465,0.404,0.439,0.421/
 
-        
+
 !!!      NOT SURE...PSIS=SATPSI, BETA=BB??
 
         DATA PSIS /0.069, 0.036, 0.141, 0.759, 0.759, 0.355,   &

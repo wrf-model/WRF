@@ -107,7 +107,8 @@ CONTAINS
      &                                              ,U10,V10,TH02,Q02
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
-     &                                                ,PBLH,QSFC,RIB
+     &                                                ,PBLH,QSFC
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT)   :: RIB
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: QZ0,RMOL,THZ0   &
      &                                                ,USTAR,UZ0,VZ0   &

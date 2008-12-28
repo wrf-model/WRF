@@ -29,8 +29,8 @@ CONTAINS
                   SNOTIME,                                      & !?
                   ACSNOM,ACSNOW,                                & !O
                   SNOPCX,                                       & !O
-! MEK JUL2007
                   POTEVP,                                       & !O
+                  XICE_THRESHOLD,                               &
                   RDLAI2D,                                      &
                   RIB,                                          & !?
                   NOAHRES,                                      &
@@ -454,6 +454,8 @@ CONTAINS
   REAL, PARAMETER  :: CAPA=R_D/CP
   REAL :: APELM,APES,SFCTH2,PSFC
 
+  real, intent(in) :: xice_threshold
+
 !  PRINT *,'THIS IS UNIFIED NOAH LSM'
 
 ! MEK MAY 2007
@@ -491,8 +493,7 @@ CONTAINS
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
           IF((XLAND(I,J)-1.5).GE.0.)THEN
 ! check sea-ice point
-            IF(XICE(I,J).EQ.1..and.IPRINT)PRINT*,' sea-ice at water point, I=',I,  &
-              'J=',J
+            IF( XICE(I,J).GE. XICE_THRESHOLD .and. IPRINT ) PRINT*, ' sea-ice at water point, I=',I,'J=',J
 !***   Open Water Case
             SMSTAV(I,J)=1.0
             SMSTOT(I,J)=1.0
@@ -501,7 +502,7 @@ CONTAINS
               TSLB(I,NS,J)=273.16                                          !STEMP
             ENDDO
           ELSE
-            IF(XICE(I,J).EQ.1.)THEN
+            IF ( XICE(I,J) .GE. XICE_THRESHOLD ) THEN
 !***        SEA-ICE CASE
               SMSTAV(I,J)=1.0
               SMSTOT(I,J)=1.0
@@ -585,7 +586,7 @@ CONTAINS
         ELSE
 ! Land or sea-ice case
 
-          IF (XICE(I,J) >= 0.02) THEN
+          IF (XICE(I,J) >= XICE_THRESHOLD) THEN
              ! Sea-ice point
              ICE = 1
           ELSE IF ( VEGTYP == ISICE ) THEN

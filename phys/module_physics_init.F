@@ -14,9 +14,13 @@ MODULE module_physics_init
    USE module_model_constants
    USE module_configure
 #ifdef DM_PARALLEL
+#if ( EM_CORE == 1 )
    USE module_dm , ONLY : wrf_dm_maxval, & 
         halo_em_init_1_sub, halo_em_init_2_sub, halo_em_init_3_sub, halo_em_init_4_sub, halo_em_init_5_sub, &
         period_bdy_em_init_sub, period_bdy_em_moist_sub, period_bdy_em_tke_sub, period_bdy_em_scalar_sub, period_bdy_em_chem_sub
+#else
+   USE module_dm , ONLY : wrf_dm_maxval
+#endif
 #endif
 
 CONTAINS

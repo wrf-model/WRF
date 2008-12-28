@@ -728,7 +728,8 @@
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
      &                ,HLENS,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX      & ! GWD
      &                ,CROT,SROT                                        & ! GWD
-     &                                             ,SST,VBM2,VEGFRC
+     &                                             ,VBM2,VEGFRC
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SST
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
                                                       ,TG,SICE          &
@@ -854,6 +855,7 @@
       LOGICAL :: E_BDY,WARM_RAIN
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
+      INTEGER :: FRACTIONAL_SEAICE
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I                    !BSF
@@ -871,6 +873,10 @@
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
 !
       UCMCALL=CONFIG_FLAGS%UCMCALL
+      FRACTIONAL_SEAICE = CONFIG_FLAGS%FRACTIONAL_SEAICE
+      IF ( FRACTIONAL_SEAICE == 1 ) THEN
+         CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1.")
+      ENDIF
 !
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
@@ -1168,7 +1174,8 @@
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
      &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,SWDOWN=RSW_DN_SFC        &
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
-     &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX,ISLTYP=ISLTYP      &
+     &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
+     &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE,ISLTYP=ISLTYP      &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &

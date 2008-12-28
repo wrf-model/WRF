@@ -82,11 +82,11 @@ CONTAINS
                                         EP1,                            &
                                         EP2,                            &
                                         KARMAN,                         &
-                                        R,                              & 
+                                        R,                              &
                                         ROVCP,                          &
-                                        XLV 
+                                        XLV
 
-      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      & 
+      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      &
                                         P3D,                            &
                                         QV3D,                           &
                                         T3D,                            &
@@ -97,8 +97,12 @@ CONTAINS
                                         TSK,                            &
                                         PSFC,                           &
                                         XLAND
- 
-      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
+
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
+                                        UST,                            &
+                                        ZNT
+
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
                                         BR,                             &
                                         CHS,                            &
                                         CHS2,                           &
@@ -114,13 +118,9 @@ CONTAINS
                                         QFX,                            &
                                         QGH,                            &
                                         QSFC,                           &
-                                        UST,                            &
-                                        ZNT,                            &
-                                        WSPD
-
-      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
                                         U10,                            &
-                                        V10 
+                                        V10,                            &
+                                        WSPD
 
 
 !--------------------------- LOCAL VARS ------------------------------
@@ -165,10 +165,10 @@ CONTAINS
                                         U10M,                           &
                                         USTAR,                          &
                                         V1,                             &
-                                        V10M,                           & 
+                                        V10M,                           &
                                         WIND,                           &
                                         Z0RL,                           &
-                                        Z1                              
+                                        Z1
 
 
       INTEGER ::                                                        &
@@ -319,11 +319,11 @@ CONTAINS
      &                     T1(IM),       Q1(IM),      SHELEG(IM),       &
      &                     TSKIN(IM),    QSURF(IM),   SMC(IM,KM),       &
      &                     STC(IM,KM),   DM(IM),      SIGMAF(IM),       &
-     &                     CANOPY(IM),   DLWFLX(IM),  SLRAD(IM),        & 
+     &                     CANOPY(IM),   DLWFLX(IM),  SLRAD(IM),        &
      &                     SNOWMT(IM),   Z0RL(IM),    TG3(IM),          &
      &                     GFLUX(IM),    F10M(IM),    U10M(IM),         &
      &                     V10M(IM),     T2M(IM),     Q2M(IM),          &
-     &                     ZSOIL(IM,KM), CM(IM),      CH(IM),           & 
+     &                     ZSOIL(IM,KM), CM(IM),      CH(IM),           &
      &                     RB(IM),       RHSCNPY(IM), RHSMC(IM,KM),     &
      &                     AIM(IM,KM),   BIM(IM,KM),  CIM(IM,KM),       &
      &                     RCL(IM),      PRSL1(IM),   PRSLKI(IM),       &
@@ -601,7 +601,7 @@ CONTAINS
       ENDDO
 
 !##DG  IF(LAT.EQ.LATD) THEN
-!##DG    PRINT *, ' z0max, ztmax, restar, RAT(I) =', 
+!##DG    PRINT *, ' z0max, ztmax, restar, RAT(I) =',
 !##DG &   z0max, ztmax, restar, RAT(I)
 !##DG  ENDIF
       DO I = 1, IM
@@ -956,7 +956,7 @@ CONTAINS
         !
 	        eth = (TERM1(I) + TERM2(I)) /                                 &
 	   &          (DELTA(I) + RSMALL(I) * (1. + RSI * CH(I) * WIND(I)))
-		ET(I,K) = eth                                               & 
+		ET(I,K) = eth                                               &
 	   &               * ETPFAC(I) * PARTLND(I)
 	        ENDIF
 	      ENDDO
@@ -1250,7 +1250,7 @@ CONTAINS
 	        BI(I,1) = DFT1(I) * DDZ(I) / (-ZSOIL(I,1) * HCPCT(I))
 	        CI(I,1) = -BI(I,1)
 	        BI(I,1) = BI(I,1)                                             &
-	   &            + DFT0(I) / (.5 * ZSOIL(I,1) **2 * HCPCT(I) * ZZ(I))  
+	   &            + DFT0(I) / (.5 * ZSOIL(I,1) **2 * HCPCT(I) * ZZ(I))
         !         SS = DFT0(I) * (STSOIL(I,1) - YY(I))                          &
         !    &         / (.5 * ZSOIL(I,1) * ZZ(I))
         !         RHSTC(1) = (DFT1(I) * DTDZ1(I) - SS)
@@ -1304,7 +1304,7 @@ CONTAINS
 	        IF(FLAG(I)) THEN
 		RHSTC(I,K) = (DFT2(I) * DTDZ2(I) - DFT1(I) * DTDZ1(I))      &
 	   &                 / ((ZSOIL(I,K) - ZSOIL(I,K-1)) * HCPCT(I))
-		AI(I,K) = -DFT1(I) * DDZ(I)                                 & 
+		AI(I,K) = -DFT1(I) * DDZ(I)                                 &
 	   &                / ((ZSOIL(I,K-1) - ZSOIL(I,K)) * HCPCT(I))
 		BI(I,K) = -(AI(I,K) + CI(I,K))
 		DFT1(I) = DFT2(I)
@@ -1590,7 +1590,7 @@ CONTAINS
 !         KSAT = FUNCKT(TSAT(I),SOILTYP(I))
 !         INFMAX(I) = -DSAT * (TSAT(I) - SMC(I,1))
 !    &                / (.5 * ZSOIL(I,1))                               &
-!    &                + KSAT 
+!    &                + KSAT
           INFMAX(I) = (-ZSOIL(I,1)) *                                   &
      &                ((TSAT(I) - SMC(I,1)) / DELT - RHSMC(I,1))        &
      &                * RHOH2O

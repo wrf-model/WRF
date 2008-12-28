@@ -4,8 +4,10 @@
 !
 MODULE module_fdda_spnudging
 
-  USE module_dm
-  USE module_wrf_error
+#ifdef DM_PARALLEL
+  USE module_dm , ONLY : ntasks_x, ntasks_y, local_communicator_x, local_communicator_y, data_order_xzy
+#endif
+  USE module_wrf_error , ONLY : wrf_err_message
 
 CONTAINS
 !

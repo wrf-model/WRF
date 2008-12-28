@@ -62,18 +62,18 @@ CONTAINS
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ
    USE module_model_constants
-   USE module_wrf_error
+   USE module_wrf_error , ONLY : wrf_err_message
 
 ! *** add new modules of schemes here
 
-   USE module_ra_sw
-   USE module_ra_gsfcsw
-   USE module_ra_rrtm
-   USE module_ra_rrtmg_lw
-   USE module_ra_rrtmg_sw
-   USE module_ra_cam
-   USE module_ra_gfdleta
-   USE module_ra_hs
+   USE module_ra_sw , ONLY : swrad
+   USE module_ra_gsfcsw , ONLY : gsfcswrad
+   USE module_ra_rrtm , ONLY : rrtmlwrad
+   USE module_ra_rrtmg_lw , ONLY : rrtmg_lwrad
+   USE module_ra_rrtmg_sw , ONLY : rrtmg_swrad
+   USE module_ra_cam , ONLY : camrad
+   USE module_ra_gfdleta , ONLY : etara
+   USE module_ra_hs , ONLY : hsrad
 
    !  This driver calls subroutines for the radiation parameterizations.
    !

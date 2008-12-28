@@ -14,7 +14,12 @@
    USE module_bc_em
    USE module_configure, ONLY : grid_config_rec_type
    USE module_tiles, ONLY : set_tiles
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : wrf_dm_min_real, ntasks_x, ntasks_y, &
+        local_communicator_periodic, local_communicator, mytask, ntasks 
+#else
    USE module_dm, ONLY : wrf_dm_min_real
+#endif
 
    USE module_physics_init
 #ifdef WRF_CHEM

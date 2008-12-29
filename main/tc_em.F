@@ -1,0 +1,2115 @@
+!  Create an initial data set for the WRF model based on real data.  This
+!  program is specifically set up for the Eulerian, mass-based coordinate.
+PROGRAM tc_data
+   USE module_machine
+   USE module_domain, ONLY : domain, alloc_and_configure_domain, &
+        domain_clock_set, head_grid, program_name, domain_clockprint
+   USE module_io_domain
+
+   
+   USE module_driver_constants
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
+        initial_config, get_config_as_buffer, set_config_as_buffer
+   USE module_timing
+   USE module_state_description, ONLY : realonly
+   USE module_symbols_util, ONLY: wrfu_cal_gregorian
+   USE module_utility, ONLY : WRFU_finalize
+
+   IMPLICIT NONE
+
+
+   REAL    :: time , bdyfrq
+
+   INTEGER :: loop , levels_to_process , debug_level
+
+
+   TYPE(domain) , POINTER :: null_domain
+   TYPE(domain) , POINTER :: grid , another_grid
+   TYPE(domain) , POINTER :: grid_ptr , grid_ptr2
+   TYPE (grid_config_rec_type)              :: config_flags
+   INTEGER                :: number_at_same_level
+
+   INTEGER :: max_dom, domain_id , grid_id , parent_id , parent_id1 , id
+   INTEGER :: e_we , e_sn , i_parent_start , j_parent_start
+   INTEGER :: idum1, idum2 
+#ifdef DM_PARALLEL
+   INTEGER                 :: nbytes
+   INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
+   INTEGER                 :: configbuf( configbuflen )
+   LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+#endif
+   LOGICAL found_the_id
+
+   INTEGER :: ids , ide , jds , jde , kds , kde
+   INTEGER :: ims , ime , jms , jme , kms , kme
+   INTEGER :: ips , ipe , jps , jpe , kps , kpe
+   INTEGER :: ijds , ijde , spec_bdy_width
+   INTEGER :: i , j , k , idts, rc
+   INTEGER :: sibling_count , parent_id_hold , dom_loop
+
+   CHARACTER (LEN=80)     :: message
+
+   INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
+   INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
+   INTEGER :: interval_seconds , real_data_init_type
+   INTEGER :: time_loop_max , time_loop
+   real::t1,t2
+   INTERFACE
+     SUBROUTINE Setup_Timekeeping( grid )
+      USE module_domain, ONLY : domain
+      TYPE(domain), POINTER :: grid
+     END SUBROUTINE Setup_Timekeeping
+   END INTERFACE
+
+#include "version_decl"
+
+   !  Define the name of this program (program_name defined in module_domain)
+
+   program_name = "TC_EM " // TRIM(release_version) // " PREPROCESSOR"
+
+!  The TC bogus algorithm assumes that the user defines a central point, and then
+!  allows the program to remove a typhoon based on a distance in km.  This is
+!  implemented on a single processor only.
+
+#ifdef DM_PARALLEL
+   IF ( .NOT. wrf_dm_on_monitor() ) THEN
+      CALL wrf_error_fatal( 'TC bogus must run with a single processor only, re-run with num procs set to 1' )
+   END IF
+#endif
+
+#ifdef DM_PARALLEL
+   CALL disable_quilting
+#endif
+
+   !  Initialize the modules used by the WRF system.  Many of the CALLs made from the
+   !  init_modules routine are NO-OPs.  Typical initializations are: the size of a
+   !  REAL, setting the file handles to a pre-use value, defining moisture and
+   !  chemistry indices, etc.
+
+   CALL       wrf_debug ( 100 , 'real_em: calling init_modules ' )
+   CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
+   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+   CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
+
+   !  The configuration switches mostly come from the NAMELIST input.
+
+#ifdef DM_PARALLEL
+   IF ( wrf_dm_on_monitor() ) THEN
+      CALL initial_config
+   END IF
+   CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
+   CALL wrf_dm_bcast_bytes( configbuf, nbytes )
+   CALL set_config_as_buffer( configbuf, configbuflen )
+!   CALL wrf_dm_initialize
+#else
+   CALL initial_config
+#endif
+
+
+   CALL nl_get_debug_level ( 1, debug_level )
+   CALL set_wrf_debug_level ( debug_level )
+
+   CALL  wrf_message ( program_name )
+
+   !  There are variables in the Registry that are only required for the real
+   !  program, fields that come from the WPS package.  We define the run-time
+   !  flag that says to allocate space for these input-from-WPS-only arrays.
+
+   CALL nl_set_use_wps_input ( 1 , REALONLY )
+
+   !  Allocate the space for the mother of all domains.
+
+   NULLIFY( null_domain )
+   CALL       wrf_debug ( 100 , 'real_em: calling alloc_and_configure_domain ' )
+   CALL alloc_and_configure_domain ( domain_id  = 1           , &
+                                     grid       = head_grid   , &
+                                     parent     = null_domain , &
+                                     kid        = -1            )
+
+   grid => head_grid
+   CALL nl_get_max_dom ( 1 , max_dom )
+
+   IF ( model_config_rec%interval_seconds .LE. 0 ) THEN
+     CALL wrf_error_fatal( 'namelist value for interval_seconds must be > 0')
+   END IF
+
+   all_domains : DO domain_id = 1 , max_dom
+
+      IF ( ( model_config_rec%input_from_file(domain_id) ) .OR. &
+           ( domain_id .EQ. 1 ) ) THEN
+
+         CALL Setup_Timekeeping ( grid )
+         CALL set_current_grid_ptr( grid )
+         CALL domain_clockprint ( 150, grid, &
+                'DEBUG real:  clock after Setup_Timekeeping,' )
+         CALL domain_clock_set( grid, &
+                                time_step_seconds=model_config_rec%interval_seconds )
+         CALL domain_clockprint ( 150, grid, &
+                'DEBUG real:  clock after timeStep set,' )
+
+
+         CALL       wrf_debug ( 100 , 'real_em: calling set_scalar_indices_from_config ' )
+         CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
+
+         CALL       wrf_debug ( 100 , 'real_em: calling model_to_grid_config_rec ' )
+         CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+         !  Initialize the WRF IO: open files, init file handles, etc.
+
+         CALL       wrf_debug ( 100 , 'real_em: calling init_wrfio' )
+         CALL init_wrfio
+
+         !  Some of the configuration values may have been modified from the initial READ
+         !  of the NAMELIST, so we re-broadcast the configuration records.
+
+#ifdef DM_PARALLEL
+         CALL       wrf_debug ( 100 , 'real_em: re-broadcast the configuration records' )
+         CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
+         CALL wrf_dm_bcast_bytes( configbuf, nbytes )
+         CALL set_config_as_buffer( configbuf, configbuflen )
+#endif
+
+         !   No looping in this layer.  
+
+         CALL       wrf_debug ( 100 , 'calling tc_med_sidata_input' )
+         CALL tc_med_sidata_input ( grid , config_flags )
+         CALL       wrf_debug ( 100 , 'backfrom tc_med_sidata_input' )
+
+      ELSE 
+         CYCLE all_domains
+      END IF
+
+   END DO all_domains
+
+   CALL set_current_grid_ptr( head_grid )
+
+   !  We are done.
+
+   CALL       wrf_debug (   0 , 'real_em: SUCCESS COMPLETE REAL_EM INIT' )
+
+   CALL wrf_shutdown
+
+   CALL WRFU_Finalize( rc=rc )
+
+
+END PROGRAM tc_data
+
+
+!-----------------------------------------------------------------
+SUBROUTINE tc_med_sidata_input ( grid , config_flags )
+  ! Driver layer
+   USE module_domain
+   USE module_io_domain
+  ! Model layer
+   USE module_configure
+   USE module_bc_time_utilities
+   USE module_optional_input
+
+   USE module_date_time
+   USE module_utility
+
+   IMPLICIT NONE
+
+
+  ! Interface 
+   INTERFACE
+     SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
+       USE module_domain
+       TYPE (domain) grid
+       LOGICAL, INTENT(IN) :: allowed_to_read
+     END SUBROUTINE start_domain
+   END INTERFACE
+
+  ! Arguments
+   TYPE(domain)                :: grid
+   TYPE (grid_config_rec_type) :: config_flags
+  ! Local
+   INTEGER                :: time_step_begin_restart
+   INTEGER                :: idsi , ierr , myproc, internal_time_loop
+   CHARACTER (LEN=80)      :: si_inpname
+   CHARACTER (LEN=80)      :: message
+
+   CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
+
+   INTEGER :: time_loop_max , loop, rc
+   INTEGER :: julyr , julday 
+   REAL :: gmt
+real::t1,t2,t3,t4
+
+   grid%input_from_file = .true.
+   grid%input_from_file = .false.
+
+   CALL tc_compute_si_start ( model_config_rec%start_year  (grid%id) , &
+                                   model_config_rec%start_month (grid%id) , &
+                                   model_config_rec%start_day   (grid%id) , &
+                                   model_config_rec%start_hour  (grid%id) , &
+                                   model_config_rec%start_minute(grid%id) , &
+                                   model_config_rec%start_second(grid%id) , &
+                                   model_config_rec%interval_seconds      , &
+                                   model_config_rec%real_data_init_type   , &
+                                   start_date_char)
+
+   end_date_char = start_date_char
+   IF ( end_date_char .LT. start_date_char ) THEN
+      CALL wrf_error_fatal( 'Ending date in namelist ' // end_date_char // ' prior to beginning date ' // start_date_char )
+   END IF
+   print *,"the start date char ",start_date_char
+   print *,"the end date char ",end_date_char
+
+   time_loop_max = 1
+   !  Override stop time with value computed above.  
+   CALL domain_clock_set( grid, stop_timestr=end_date_char )
+
+   ! TBH:  for now, turn off stop time and let it run data-driven
+   CALL WRFU_ClockStopTimeDisable( grid%domain_clock, rc=rc ) 
+   CALL wrf_check_error( WRFU_SUCCESS, rc, &
+                         'WRFU_ClockStopTimeDisable(grid%domain_clock) FAILED', &
+                         __FILE__ , &
+                         __LINE__  )
+   CALL domain_clockprint ( 150, grid, &
+          'DEBUG med_sidata_input:  clock after stopTime set,' )
+
+   !  Here we define the initial time to process, for later use by the code.
+   
+   current_date_char = start_date_char
+   start_date = start_date_char // '.0000'
+   current_date = start_date
+
+   CALL nl_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
+
+   !!!!!!!  Loop over each time period to process.
+
+   CALL cpu_time ( t1 )
+   DO loop = 1 , time_loop_max
+
+      internal_time_loop = loop
+      IF ( ( grid%id .GT. 1 ) .AND. ( loop .GT. 1 ) .AND. &
+           ( model_config_rec%grid_fdda(grid%id) .EQ. 0 ) .AND. &
+           ( model_config_rec%sst_update .EQ. 0 ) ) EXIT
+
+      print *,' '
+      print *,'-----------------------------------------------------------------------------'
+      print *,' '
+      print '(A,I2,A,A,A,I4,A,I4)' , &
+      ' Domain ',grid%id,': Current date being processed: ',current_date, ', which is loop #',loop,' out of ',time_loop_max
+
+      !  After current_date has been set, fill in the julgmt stuff.
+
+      CALL geth_julgmt ( config_flags%julyr , config_flags%julday , config_flags%gmt )
+
+        print *,'configflags%julyr, %julday, %gmt:',config_flags%julyr, config_flags%julday, config_flags%gmt
+      !  Now that the specific Julian info is available, save these in the model config record.
+
+      CALL nl_set_gmt (grid%id, config_flags%gmt)
+      CALL nl_set_julyr (grid%id, config_flags%julyr)
+      CALL nl_set_julday (grid%id, config_flags%julday)
+
+      !  Open the input file for tc stuff.  Either the "new" one or the "old" one.  The "new" one could have
+      !  a suffix for the type of the data format.  Check to see if either is around.
+
+      CALL cpu_time ( t3 )
+      WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ', &
+                                             TRIM(config_flags%auxinput1_inname)
+      CALL wrf_debug ( 100 , wrf_err_message )
+      IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
+         CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , &
+                                    current_date_char , config_flags%io_form_auxinput1 )
+      ELSE
+         CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , &
+                                    current_date_char )
+      END IF
+      CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
+      IF ( ierr .NE. 0 ) THEN
+         CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // &
+                               ' for input; bad date in namelist or file not in directory' )
+      END IF
+
+      !  Input data.
+
+      CALL wrf_debug ( 100 , 'med_sidata_input: calling input_aux_model_input1' )
+      CALL input_aux_model_input1 ( idsi ,   grid , config_flags , ierr )
+      WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for input ',NINT(t4-t3) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
+      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
+      CALL cpu_time ( t4 )
+      print *,"the out name ",config_flags%auxinput1_outname
+
+      !  Possible optional SI input.  This sets flags used by init_domain.
+      CALL cpu_time ( t3 )
+      IF ( loop .EQ. 1 ) THEN
+         already_been_here = .FALSE.
+         CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_input' )
+         CALL init_module_optional_input ( grid , config_flags )
+      END IF
+      CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
+      CALL  optional_input ( grid , idsi )
+
+      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+
+      CALL cpu_time ( t3 )
+      print *,"before assemble output"
+
+      CALL assemble_output ( grid , config_flags , loop , time_loop_max, current_date_char )
+      CALL cpu_time ( t4 )
+      WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for output ',NINT(t4-t3) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
+      CALL cpu_time ( t2 )
+      WRITE ( wrf_err_message , FMT='(A,I4,A,I10,A)' ) 'Timing for loop # ',loop,' = ',NINT(t2-t1) ,' s.'
+      CALL wrf_debug( 0, wrf_err_message )
+
+      CALL cpu_time ( t1 )
+   END DO
+
+END SUBROUTINE tc_med_sidata_input
+
+
+!-------------------------------------------------------------------------------------
+SUBROUTINE tc_compute_si_start(  &
+   start_year , start_month , start_day , start_hour , start_minute , start_second , &
+   interval_seconds , real_data_init_type , &
+   start_date_char)
+
+   USE module_date_time
+
+   IMPLICIT NONE
+
+   INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
+   INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
+   INTEGER :: interval_seconds , real_data_init_type
+   INTEGER :: time_loop_max , time_loop
+
+   CHARACTER(LEN=19) :: current_date_char , start_date_char , end_date_char , next_date_char
+
+#ifdef PLANET
+   WRITE ( start_date_char , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2)' ) &
+           start_year,start_day,start_hour,start_minute,start_second
+#else
+   WRITE ( start_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
+           start_year,start_month,start_day,start_hour,start_minute,start_second
+#endif
+
+
+END SUBROUTINE tc_compute_si_start
+
+!-----------------------------------------------------------------------
+SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_date_char )
+
+   USE module_big_step_utilities_em
+   USE module_domain
+   USE module_io_domain
+   USE module_configure
+   USE module_date_time
+   USE module_bc
+   IMPLICIT NONE
+
+   TYPE(domain)                 :: grid
+   TYPE (grid_config_rec_type)  :: config_flags
+
+   INTEGER , INTENT(IN)         :: loop , time_loop_max
+
+!These values are in the name list and are avaiable from
+!from the config_flags.
+   real    :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax
+
+
+   INTEGER :: ids , ide , jds , jde , kds , kde
+   INTEGER :: ims , ime , jms , jme , kms , kme
+   INTEGER :: ips , ipe , jps , jpe , kps , kpe
+   INTEGER :: ijds , ijde , spec_bdy_width
+   INTEGER :: i , j , k , idts
+
+   INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
+   INTEGER , SAVE :: id, id2,  id4 
+   CHARACTER (LEN=80) :: tcoutname , bdyname
+   CHARACTER(LEN= 4) :: loop_char
+   CHARACTER(LEN=19) ::  current_date_char
+   
+character *19 :: temp19
+character *24 :: temp24 , temp24b
+
+real::t1,t2
+
+   !  Various sizes that we need to be concerned about.
+
+   ids = grid%sd31
+   ide = grid%ed31
+   kds = grid%sd32
+   kde = grid%ed32
+   jds = grid%sd33
+   jde = grid%ed33
+
+   ims = grid%sm31
+   ime = grid%em31
+   kms = grid%sm32
+   kme = grid%em32
+   jms = grid%sm33
+   jme = grid%em33
+
+   ips = grid%sp31
+   ipe = grid%ep31
+   kps = grid%sp32
+   kpe = grid%ep32
+   jps = grid%sp33
+   jpe = grid%ep33
+
+   ijds = MIN ( ids , jds )
+   ijde = MAX ( ide , jde )
+
+   !  Boundary width, scalar value.
+
+   spec_bdy_width = model_config_rec%spec_bdy_width
+   interval_seconds = model_config_rec%interval_seconds
+   sst_update = model_config_rec%sst_update
+   grid_fdda = model_config_rec%grid_fdda(grid%id)
+
+
+!  here we are going to call the temp subroutine.
+   print *,"here before temp sub"
+   grid%stand_lon = 141.
+   grid%cen_lat = 26.99999
+   grid%map_proj = 3
+   
+
+   latc_loc   = config_flags%latc_loc
+   lonc_loc   = config_flags%lonc_loc
+   vmax       = config_flags%vmax_meters_per_second
+   vmax_ratio = config_flags%vmax_ratio
+   rmax       = config_flags%rmax
+   call tc_bogus(grid%cen_lat,grid%stand_lon,grid%map_proj,grid%truelat1,grid%truelat2, &
+                 grid%dx,ipe,jpe,grid%num_metgrid_levels,latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
+   stop
+!Notes jps is the starting y. Usally 1
+!      jpe is the ending y position on the staggered grid north south or ny
+!      ipe is the ending x postiion on the staggered grid east west of nx
+
+   !  Open the tc bogused output file. cd 
+   CALL construct_filename4a( tcoutname , config_flags%auxinput1_outname , grid%id , 2 , &
+                                    current_date_char , config_flags%io_form_auxinput1 )
+
+   print *,"outfile name from construct filename ",tcoutname
+   CALL open_w_dataset ( id1, TRIM(tcoutname) , grid , config_flags ,output_aux_model_input1,"DATASET=AUXINPUT1",ierr )
+   IF ( ierr .NE. 0 ) THEN
+        CALL wrf_error_fatal( 'tc_em: error opening tc bogus file for writing' )
+   END IF
+   CALL output_aux_model_input1( id1, grid , config_flags , ierr )
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXINPUT1" )
+
+
+END SUBROUTINE assemble_output
+
+!----------------------------------------------------------------------------------------------
+
+SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
+                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
+      
+!center  lat is the center latitude from the global attributes 
+!stdlon  is the center longitude from the global attributes 
+!nproj   is the map projection from the global attributes
+!dsm     is the spacing in meters from the global attributes
+!ew      is the west_east_stag from the dimensions. We want the full domain.
+!ns      is the south_north_stag from the dimensions. We want the full domain.
+!nz      is the number of metgrid levels from the dimensions
+!latc_loc is the center latitude of the bogus strorm.  It comes from the namelist entry
+!lonc_loc is the center longitude of the bogus strorm.  It comes from the namelist entry
+!vmax    is the max vortex it comes from the namelist entry
+!vmax_ratio
+!rmax    
+
+!module_llxy resides in the share directory.
+  USE module_llxy
+!This is for the large structure (grid)
+  USE module_domain
+
+
+
+  IMPLICIT NONE 
+  TYPE(domain)                 :: grid
+  integer ew,ns,nz,ns,ew
+  integer nproj
+  integer num_storm,nstrm
+  real :: centerlat,stdlon,conef,truelat1,truelat2,dsm,dx
+  real :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax
+  
+  real :: press(ns,ew,nz),p(nz), rhmx(nz), vwgt(nz)
+  real, dimension(:,:,:) , allocatable :: u11,v11,t11,rh11,phi11
+  real, dimension(:,:,:) , allocatable :: umass,vmass
+  real, dimension(:,:,:) , allocatable :: u1 , v1 , t1 , rh1 , phi1
+  real, dimension(ns,ew) :: mfx,mfd,lond,terrain,cor,xlat,pslx
+
+
+  CHARACTER*2  jproj
+  LOGICAL :: l_tcbogus
+
+!These values are hard coded in the procedure proc_namelist.F
+!Since we don't include this module we will declare them here
+!and hard code them.
+  real :: r_search,r_vor,beta,devps,humidity_max
+  real :: devpc,const,r_vor2,cnst,alphar,epsilon,vormx , rad , sum_q 
+  real :: avg_q ,q_old,ror,q_new,sum_rh,avg_rh,rh_min,rhbkg,rhbog,dph
+  real :: rh_max,min_RH_value,r_ratio,ps
+  integer :: vert_variation
+  integer :: i,k,j,jx,ix,kx
+  integer :: k00,kfrm ,kto ,k85,n_iter,i_mvc,j_mvc,nct,itr
+  integer :: strmci(nz), strmcj(nz)
+  real :: disx,disy,alpha,degran,pie,rovcp,cp
+  REAL :: rho,pprm,phip0,x0,y0,vmx,xico,xjco,xicn,xjcn,p85,xlo,rconst
+  real :: ptop_in_pa 
+  real :: latinc,loninc
+  real :: rtemp,colat0,colat
+  REAL :: q1(ns,ew,nz), psi1(ns,ew,nz) 
+
+! This is the entire map projection enchilada.
+  TYPE(proj_info) :: proj
+
+  
+
+  REAL :: lat1 , lon1
+! These values are read in from the data set. 
+   real :: knowni,knownj
+
+!  TC bogus
+   REAL utcr(ns,ew,nz),  vtcr(ns,ew,nz)
+   REAL utcp(ns,ew,nz),  vtcp(ns,ew,nz)
+   REAL psitc(ns,ew,nz), psiv(nz)
+   REAL vortc(ns,ew,nz), vorv(nz)
+   REAL tptc(ns,ew,nz),  rhtc(ns,ew,nz)
+   REAL phiptc(ns,ew,nz)
+
+!  Work arrays
+   REAL uuwork(nz), vvwork(nz)
+   REAL vort(ns,ew,nz), div(ns,ew,nz)
+   REAL vortsv(ns,ew,nz)
+   REAL theta(ns,ew,nz), t_reduce(ns,ew,nz)
+   REAL ug(ns,ew,nz),   vg(ns,ew,nz),  vorg(ns,ew,nz)
+   REAL uchi(ns,ew,nz), vchi(ns,ew,nz)
+   REAL delpx(ns,ew)
+
+!subroutines for relaxation
+   REAL outold(ns,ew), outnew(ns,ew)
+   REAL rd(ns,ew),     ff(ns,ew)
+   REAL tmp1(ns,ew),   tmp2(ns,ew) 
+
+!  Background fields.
+   REAL , DIMENSION (ns,ew,nz) :: u0, v0, t0, t00, rh0, q0,       &
+                                  phi0, psi0, chi
+
+
+!  Perturbations
+   REAL psipos(ns,ew,nz), upos(ns,ew,nz), vpos(ns,ew,nz),     &
+        tpos(ns,ew,nz),   psi(ns,ew,nz),                      &
+        phipos(ns,ew,nz), phip(ns,ew,nz)
+      
+!  Final fields.
+   REAL u2(ns,ew,nz),  v2(ns,ew,nz),                          &
+        t2(ns,ew,nz),                                         &
+        z2(ns,ew,nz),  phi2(ns,ew,nz),                        &
+        rh2(ns,ew,nz), q2(ns,ew,nz)
+      
+
+   print *,"the dimensions: north-south = ",ns," east-west =",ew
+   IF (nproj .EQ. 1) THEN
+        jproj = 'LC'
+        print *,"Lambert Conformal projection"
+   ELSE IF (nproj .EQ. 2) THEN
+        jproj = 'ST'
+   ELSE IF (nproj .EQ. 3) THEN
+        jproj = 'ME'
+        print *,"A mercator projection"
+   END IF
+   num_storm = 1
+
+!NOTE: the ptop in the namelist is not in pa
+  ptop_in_pa = 10000
+  knowni = 1.
+  knownj = 1.
+  pie     = 3.141592653589793
+  degran = pie/180.
+  rconst = 287.04
+  min_RH_value = 5.0
+  cp = 1004.0
+  rovcp = rconst/cp
+   
+   r_search = 400000.0
+   r_vor = 300000.0
+   r_vor2 = r_vor * 4
+   beta = 0.5
+   devpc= 40.0
+   vert_variation = 1   
+   humidity_max   = 95.0 
+   alphar         = 1.8
+   latinc        = -999.
+   loninc        = -999.
+
+  !  Set up initializations for map projection so that the lat/lon
+  !  of the tropical storm can be put into model (i,j) space.  This needs to be done once per 
+  !  map projection definition.  Since this is the domain that we are "GOING TO", it is a once
+  !  per regridder requirement.  If the user somehow ends up calling this routine for several
+  !  time periods, there is no problemos, just a bit of overhead with redundant calls.
+   
+   dx = dsm
+   lat1 = grid%xlat_gc(1,1)
+   lon1 = grid%xlong_gc(1,1)
+   IF( jproj .EQ. 'ME' )THEN
+       IF ( lon1  .LT. -180. ) lon1  = lon1  + 360.
+       IF ( lon1  .GT.  180. ) lon1  = lon1  - 360.
+       IF ( stdlon .LT. -180. ) stdlon = stdlon + 360.
+       IF ( stdlon .GT.  180. ) stdlon = stdlon - 360.
+       CALL map_set ( proj_merc, proj, lat1, lon1, lat1, lon1, knowni, knownj, dx, &
+                      latinc,loninc,stdlon , truelat1 , truelat2)
+       conef = 0.
+   ELSE IF ( jproj .EQ. 'LC' ) THEN
+        CALL map_set (proj_lc,proj, lat1, lon1, lat1, lon1, knowni, knownj, dx, &
+                       latinc,loninc,stdlon , truelat1 , truelat2)
+       conef = proj%cone
+   ELSE IF ( jproj .EQ. 'ST' ) THEN
+        conef = 1.
+        CALL map_set ( proj_ps,proj,lat1, lon1, lat1, lon1, knowni, knownj, dx, &
+                      latinc,loninc,stdlon , truelat1 , truelat2)
+   END IF
+
+
+!  Put the vertical column of pressures into hPa from Pa.  The first level is defined as the surface.
+!  The second level is usually 1000 mb.  The last level, kx, is defined as ptop. These come in from 
+!  the namelist
+   kx = nz
+   DO k=1,kx
+      p(k) = grid%p_gc(1,k,1)*0.01
+   END DO
+
+!  Initialize the vertical profiles for humidity and weighting.
+!The ptop variable will be read in from the namelist
+   IF ( ( ptop_in_pa .EQ. 40000. ) .OR. ( ptop_in_pa .EQ. 60000. ) ) THEN
+         PRINT '(A)','Hold on pardner, your value for PTOP is gonna cause problems for the TC bogus option.'
+         PRINT '(A)','Make it higher up than 400 mb.'
+         STOP 'ptop_woes_for_tc_bogus'
+   END IF
+
+ IF ( vert_variation .EQ. 1 ) THEN
+    DO k=1,kx
+       IF ( p(k) .GT. 400. ) THEN
+               rhmx(k) = humidity_max
+       ELSE
+               rhmx(k) = humidity_max * MAX( 0.1 , (p(k) - ptop_in_pa/100.)/(400.-ptop_in_pa/100.) )
+       END IF
+
+        IF ( p(k) .GT. 600. ) THEN
+             vwgt(k) = 1.0
+        ELSE IF ( p(k) .LE. 100. ) THEN
+             vwgt(k) = 0.0001
+        ELSE
+             vwgt(k) = MAX ( 0.0001 , (p(k)-ptop_in_pa/100.)/(600.-ptop_in_pa/100.) )
+        END IF
+      END DO
+
+ ELSE IF ( vert_variation .EQ. 2 ) THEN
+         IF ( kx .eq. 24 ) THEN
+            rhmx = (/ 95.,       95., 95., 95., 95., 95., 95., 95.,      &
+                      95., 95.,  95., 95., 95., 90., 85., 80., 75.,      &
+                      70., 66.,  60., 39., 10., 10., 10./)
+            vwgt = (/ 1.0000,         1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.9850,      &
+                      0.9680, 0.9500, 0.9290, 0.9060, 0.8810, 0.8500, 0.7580, 0.6500, 0.5100,      &
+                      0.3500, 0.2120, 0.0500, 0.0270, 0.0001, 0.0001, 0.0001/)
+         ELSE
+            PRINT '(A)','Number of vertical levels assumed to be 24 for AFWA TC bogus option'
+            STOP 'AFWA_TC_BOGUS_LEVEL_ERROR'
+         END IF
+ END IF
+
+ ns = ns
+ ew = ew
+!Put the U and V into the new arrays.
+ allocate(u11  (1:ns, 1:ew, 1:nz))
+ allocate(v11  (1:ns, 1:ew, 1:nz))
+ allocate(umass(1:ew, 1:nz, 1:ns))
+ allocate(vmass(1:ew, 1:nz, 1:ns))
+
+!first U
+ do i = 1,ns-1
+    do j = 1,ew
+       do k = 1,nz
+          u11(i,j,k) = grid%u_gc(j,k,i)
+       end do
+    end do
+ end do
+
+
+
+!now V
+ do i = 1,ns
+    do j = 1,ew-1
+       do k = 1,nz
+          v11(i,j,k) = grid%v_gc(j,k,i)
+       end do
+    end do
+ end do
+ 
+ do i = 1,ns
+    print *,v11(i,1,1)
+ end do
+ stop
+
+
+! do i = 1,ew
+!    do k = 1,nz
+!       do j = 1,ns-1
+!          umass(i,k,j) = 0.5 * (grid%u_gc(i,k,j) + grid%u_gc(i + 1,k,j))
+!       end do
+!    end do
+! end do
+
+
+! do i = 1,ew-1
+!    do k = 1,nz
+!       do j = 1,ns
+!          vmass(i,k,j) = 0.5 * (grid%v_gc(i,k,j) + grid%v_gc(i,k,j+1))
+!       end do
+!    end do
+! end do
+
+
+!here we need to transpose the level(k) and the ns direction
+!So the ordering will be j,i,k - ns,ew,level
+!we want MM5 ordering
+ allocate(u11  (1:ns, 1:ew, 1:nz))
+ allocate(v11  (1:ns, 1:ew, 1:nz))
+ allocate(t11  (1:ns, 1:ew, 1:nz))
+ allocate(rh11 (1:ns, 1:ew, 1:nz))
+ allocate(phi11(1:ns, 1:ew, 1:nz))
+
+ do i = 1,ns-1
+    do j = 1,ew
+       do k = 1,nz
+          u11(i,j,k) = grid%u_gc(j,k,i)
+       end do
+    end do
+ end do
+
+do i = 1,ns-1
+   print *,i,u11(i,1,1)
+end do
+
+stop
+ do i = 1,ns
+    do j = 1,ew
+       do k = 1,nz
+           u11(i,j,k)   = umass(j,k,i)
+           v11(i,j,k)   = vmass(j,k,i)
+           t11(i,j,k)   = grid%t_gc(j,k,i)
+           rh11(i,j,k)  = grid%rh_gc(j,k,i)
+           phi11(i,j,k) = grid%ght_gc(j,k,i)
+       end do
+    end do
+ end do
+ deallocate(umass)
+ deallocate(vmass) 
+
+
+
+!  Save initial fields.
+ allocate(u1  (1:ns, 1:ew, 1:nz))
+ allocate(v1  (1:ns, 1:ew, 1:nz))
+ allocate(t1  (1:ns, 1:ew, 1:nz))
+ allocate(rh1 (1:ns, 1:ew, 1:nz))
+ allocate(phi1(1:ns, 1:ew, 1:nz))
+!for wrf we need this 
+   jx = ew
+   ix = ns
+    u1   = u11
+    v1   = v11
+    t1   = t11
+   rh1   = rh11
+  phi1   = phi11 * 9.81
+
+!The two d fields
+ do i = 1,ns
+    do j = 1,ew
+!       pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
+!       cor(i,j)     = grid%f(j,i)  !coreolous
+!       lond(i,j)    = grid%xlong_gc(j,i)
+       terrain(i,j) = grid%ht_gc(j,i)
+       xlat(i,j)    = grid%xlat_gc(1,1)
+    end do
+ end do
+ cor  = transpose(grid%f)
+ pslx = transpose(grid%pslv_gc) 
+ pslx = pslx * 0.01
+ lond = transpose(grid%xlong_gc)
+ call crs2dot(lond,ns,ew)
+
+
+ DO k=1,kx
+     CALL expand ( rh1(1,1,k) , ns-1 , ew-1 , ns , ew )
+     CALL expand ( t1 (1,1,k) , ns-1 , ew-1 , ns , ew )
+ END DO
+  
+
+!  Loop over the number of storms to process.
+   
+ l_tcbogus = .FALSE.
+
+ k00  = 2
+ kfrm = k00
+ p85  = 850.
+
+ kto  = kfrm
+ DO k=kfrm+1,kx
+     IF ( p(k) .GE. p85 ) THEN
+           kto = kto + 1
+     END IF
+ END DO
+ k85 = kto 
+
+
+!  Parameters for max wind
+ rho  = 1.2
+ pprm = devpc*100.
+ phip0= pprm/rho 
+
+!latc_loc and lonc_loc will come in from the namelist.  Hard code
+!them for now.
+
+ CALL latlon_to_ij ( proj , latc_loc , lonc_loc , x0 , y0 )
+ IF ( ( x0 .LT. 1. ) .OR. ( x0 .GT. REAL(jx-1) ) .OR. &
+              ( y0 .LT. 1. ) .OR. ( y0 .GT. REAL(ix-1) ) ) THEN
+         PRINT '(A,I3,A,A,A)','         Storm position is outside the computational domain.'
+         PRINT '(A,2F6.2,A)' ,'         Storm postion: (x,y) = ',x0,y0,'.'
+         stop
+ END IF
+
+ l_tcbogus = .TRUE.
+!  Bogus vortex specifications, vmax (m/s); rmax (m);
+ vmx = vmax  * vmax_ratio
+ print *,"the vmx  ",vmax,vmax_ratio,vmx
+
+ IF (  latc_loc .LT. 0.  ) THEN
+       vmx = -vmx
+ END IF
+   
+ IF (  vmax  .LE. 0.  ) THEN
+       vmx = SQRT( 2.*(1-beta)*ABS(phip0) )  
+ END IF
+
+ xico    = y0
+ xjco    = x0
+ xicn    = xico
+ xjcn    = xjco
+ n_iter  = 1
+
+
+!  Start computing.
+
+ PRINT '(/,A,I3,A,A,A)'     ,'---> TC: Processing storm number= ',nstrm,' for date= simlaku'
+ PRINT '(A,F6.2,A,F7.2,A)'  ,'         Storm center lat= ',latc_loc,' lon= ',lonc_loc,'.'
+ PRINT '(A,2F6.2,A)'        ,'         Storm center grid position (x,y)= ',xjcn,xicn,'.'
+ PRINT '(A,F5.2,F9.2,A)'    ,'         Storm max wind (m/s) and max radius (m)= ',vmx,rmax,'.'
+ PRINT '(A,F5.2,A)'         ,'         Estmated central press dev (mb)= ',devpc,'.'
+
+
+!  Initialize storm center to (1,1)
+
+  DO k=1,kx
+     strmci(k) = 1
+     strmcj(k) = 1
+  END DO
+ 
+!  Define complete field of bogus storm
+!Note dx is spacing in meters
+  DO i=1,ns
+     DO j=1,ew
+        disx = REAL(j) - xjcn
+        disy = REAL(i) - xicn
+        CALL rankine(disx,disy,dx,kx,vwgt,rmax,vmx,uuwork,vvwork,psiv,vorv)
+        DO k=1,kx
+           utcp(i,j,k)  = uuwork(k)
+           vtcp(i,j,k)  = vvwork(k)
+           psitc(i,j,k) = psiv(k)
+           vortc(i,j,k) = vorv(k)
+        END DO
+     END DO
+  END DO
+
+
+! Rotate wind to map proj
+
+  DO i=1,ns-1
+     DO j=1,ew-1
+!i don't think we want xlong_gc here check with dave.
+        xlo = stdlon-lond(i,j)
+!        print *,xlo
+        IF ( xlo .GT. 180.)xlo = xlo-360.
+        IF ( xlo .LT.-180.)xlo = xlo+360.
+   
+        alpha = xlo*conef*degran*SIGN(1.,centerlat)
+        DO k=1,kx
+           utcr(i,j,k) = vtcp(i,j,k)*SIN(alpha)+utcp(i,j,k)*COS(alpha)
+           vtcr(i,j,k) = vtcp(i,j,k)*COS(alpha)-utcp(i,j,k)*SIN(alpha)
+           if(vtcr(i,j,k) .gt. 500.) then
+              print *,i,j,k,"a very bad value of vtcr"
+              stop
+           end if
+           if(utcr(i,j,k) .gt. 500.) then
+              print *,i,j,k,"a very bad value of utcr"
+              stop
+           end if           
+        END DO
+     END DO
+  END DO
+ 
+
+   DO k=1,kx
+      DO i=1,ns-1
+         utcr(i,ew,k) = utcr(i,ew-1,k)
+         vtcr(i,ew,k) = vtcr(i,ew-1,k)
+      END DO
+      DO j=1,ew-1
+          utcr(ns,j,k) = utcr(ns-1,j,k)
+          vtcr(ns,j,k) = vtcr(ns-1,j,k)
+      END DO
+   
+       utcr( 1,ew,k) = utcr(   2,ew-1,k)
+       utcr(ns, 1,k) = utcr(ns-1,   2,k)
+       utcr(ns,ew,k) = utcr(ns-1,ew-1,k)
+   
+       vtcr( 1,ew,k) = vtcr(   2,ew-1,k)
+       vtcr(ns, 1,k) = vtcr(ns-1,   2,k)
+       vtcr(ns,ew,k) = vtcr(ns-1,ew-1,k)
+   END DO
+
+!This is the map scale factor on cross points.
+    do i = 1,ns
+      do j = 1,ew
+         mfx(i,j) = grid%msft(j,i)
+         mfd(i,j) = grid%msft(j,i)
+      end do
+   end do
+   call crs2dot(mfd,ns,ew)
+
+
+!  Compute vorticity of FG 
+   CALL vor(u1,v1,mfd,mfx,ns,ew,kx,dx,vort)
+
+
+!  Compute divergence of FG
+   CALL diverg(u1,v1,mfd,mfx,ns,ew,kx,dx,div) 
+
+
+!  Compute mixing ratio of FG
+   CALL mxratprs(rh1,t1,p*100.,ns,ew,kx,q1,min_RH_value)
+   q1(:,:,1) = q1(:,:,2)
+
+   DO k=1,kx
+      CALL expand ( q1(1,1,k) , ns-1 , ew-1 , ns , ew )
+   END DO
+
+!  Compute initial streamfunction - PSI1 
+   vortsv = vort
+   q0 = q1
+   
+
+!  Solve for streamfunction.
+   DO k=1,kx 
+      DO i=1,ns
+         DO j=1,ew
+            ff(i,j) = vort(i,j,k)
+            tmp1(i,j)= 0.0
+         END DO
+      END DO
+      epsilon = 1.E-2
+      CALL relax(tmp1,ff,rd,ns,ew,dx,epsilon,alphar)
+      DO i=1,ns
+         DO j=1,ew
+            psi1(i,j,k) = tmp1(i,j)
+         END DO
+      END DO
+   END DO
+   print *,"after relax one"
+   
+   DO k=1,kx  !start of the k loop
+      IF ( latc_loc .GE. 0. ) THEN
+           vormx = -1.e10
+      ELSE
+           vormx =  1.e10
+      END IF
+   
+      i_mvc = 1
+      j_mvc = 1
+
+      DO i=1,ns
+         DO j=1,ew
+            rad = SQRT((REAL(i)-xico)**2.+(REAL(j)-xjco)**2.)*dx
+            IF ( rad .LE. r_search ) THEN
+               IF ( latc_loc .GE. 0. ) THEN
+                   IF ( vortsv(i,j,k) .GT. vormx ) THEN
+                        vormx = vortsv(i,j,k)
+                        i_mvc = i
+                        j_mvc = j
+                    END IF
+               ELSE IF (latc_loc .LT. 0. ) THEN
+                    IF ( vortsv(i,j,k) .LT. vormx ) THEN
+                         vormx = vortsv(i,j,k)
+                         i_mvc = i
+                         j_mvc = j
+                    END IF
+               END IF
+            END IF
+         END DO
+      END DO
+      strmci(k) = i_mvc 
+      strmcj(k) = j_mvc
+
+      DO i=1,ns
+         DO j=1,ew
+            rad = SQRT(REAL((i-i_mvc)**2.+(j-j_mvc)**2.))*dx
+            IF ( rad .GT. r_vor ) THEN
+                 vort(i,j,k) = 0.
+                 div(i,j,k)  = 0.
+            END IF
+         END DO
+      END DO   
+
+      DO itr=1,n_iter
+         sum_q = 0.
+         nct = 0
+         DO i=1,ns
+            DO j=1,ew
+               rad = SQRT(REAL(i-i_mvc)**2.+REAL(j-j_mvc)**2.)*dx
+               IF ( (rad .LT. r_vor2).AND.(rad .GE. 0.8*r_vor2) ) THEN
+                     sum_q = sum_q + q0(i,j,k)
+                     nct = nct + 1
+               END IF
+             END DO
+          END DO
+          avg_q = sum_q/MAX(REAL(nct),1.)
+   
+          DO i=1,ns
+             DO j=1,ew
+                 q_old = q0(i,j,k)
+                 rad = SQRT(REAL(i-i_mvc)**2.+REAL(j-j_mvc)**2.)*dx
+                 IF ( rad .LT. r_vor2 ) THEN
+                      ror = rad/r_vor2
+                      q_new = ((1.-ror)*avg_q) + (ror*q_old)
+                      q0(i,j,k) = q_new
+                 END IF
+              END DO
+           END DO
+     END DO !end of itr loop
+ END DO !of the k loop
+
+
+!  Compute divergent wind
+   DO k=1,kx
+      DO i=1,ns
+         DO j=1,ew
+            ff(i,j) = div(i,j,k)
+            tmp1(i,j)= 0.0
+         END DO
+      END DO
+      epsilon = 1.e-2
+!     epsilon = 1.E-5
+      CALL relax(tmp1,ff,rd,ns,ew,dx,epsilon,alphar)
+      DO i=1,ns
+         DO j=1,ew
+            chi(i,j,k) = tmp1(i,j)
+         END DO
+      END DO
+    END DO !of the k loop for divergent winds 
+
+    DO k=1,kx !start of k loop
+         DO i=2,ns-1
+            DO j=2,ew-1
+               uchi(i,j,k) = ((chi(i  ,j  ,k)+chi(i-1,j  ,k))- (chi(i  ,j-1,k)+chi(i-1,j-1,k)))/(2.*dx)
+               vchi(i,j,k) = ((chi(i  ,j  ,k)+chi(i  ,j-1,k))- (chi(i-1,j  ,k)+chi(i-1,j-1,k)))/(2.*dx)
+            END DO
+         END DO
+   
+         DO i=2,ns-1
+            uchi(i,1,k)  = (chi(i   ,   2,k)-chi(i   ,   1,k))/(2.*dx)
+            uchi(i,ew,k) = (chi(i   ,ew  ,k)-chi(i   ,ew-1,k))/(2.*dx)
+            vchi(i,1,k)  = (chi(i   ,   2,k)-chi(i -1,   2,k))/(2.*dx)
+            vchi(i,ew,k) = (chi(i   ,ew-1,k)-chi(i -1,ew-1,k))/(2.*dx)
+         END DO
+         DO j=2,ew-1
+            uchi(1,j,k)  = (chi(   2,j   ,k)-chi(   2,j -1,k))/(2.*dx)
+            uchi(ns,j,k) = (chi(ns-1,j   ,k)-chi(ns-1,j -1,k))/(2.*dx)
+            vchi(1,j,k)  = (chi(   2,j -1,k)-chi(   1,j -1,k))/(2.*dx)
+            vchi(ns,j,k) = (chi(ns  ,j -1,k)-chi(ns-1,j -1,k))/(2.*dx)
+         END DO
+   
+         uchi( 1, 1,k) = uchi(   2,   2,k)
+         uchi( 1,ew,k) = uchi(   2,ew-1,k)
+         uchi(ns, 1,k) = uchi(ns-1,   2,k)
+         uchi(ns,ns,k) = uchi(ns-1,ew-1,k)
+   
+         vchi( 1, 1,k) = vchi(   2,   2,k)
+         vchi( 1,ew,k) = vchi(   2,ew-1,k)
+         vchi(ns, 1,k) = vchi(ns-1,   2,k)
+         vchi(ns,ew,k) = vchi(ns-1,ew-1,k)
+     END DO !end of k loop
+
+
+!  Compute background streamfunction (PSI0) and perturbation field (PSI)
+     DO k=1,kx 
+         DO i=1,ns
+            DO j=1,ew
+               ff(i,j)=vort(i,j,k)
+               tmp1(i,j)=0.0
+            END DO
+         END DO
+         epsilon = 1.e-2
+!              epsilon = 1.E-5
+         CALL relax(tmp1,ff,rd,ns,ew,dx,epsilon,alphar)
+         DO i=1,ns
+            DO j=1,ew
+               psi(i,j,k)=tmp1(i,j)
+            END DO
+         END DO
+     END DO
+
+     DO k=1,kx
+        DO i=2,ns-1
+           DO j=2,ew-1
+              psi0(i,j,k) = psi1(i,j,k)-psi(i,j,k)
+           END DO
+        END DO
+     END DO
+
+     DO k=k00,kx
+        DO i=1,ns
+           DO j=1,ew
+              psipos(i,j,k)=psi(i,j,k)
+           END DO
+        END DO
+     END DO
+
+         
+    DO k=1,kx
+       DO i=2,ns-1
+          DO j=2,ew-1
+              upos(i,j,k) = -((psi(i  ,j  ,k)+psi(i  ,j-1,k))-(psi(i-1,j-1,k)+psi(i-1,j  ,k)))/(2.*dx)
+              vpos(i,j,k) =  ((psi(i  ,j  ,k)+psi(i-1,j  ,k))-(psi(i-1,j-1,k)+psi(i  ,j-1,k)))/(2.*dx)
+          END DO
+       END DO
+   
+       DO i=2,ns-1
+          upos(i,1,k)  = -(psi(i   ,   2,k)-psi(i -1,   2,k))/(2.*dx)
+          upos(i,ew,k) = -(psi(i   ,ew-1,k)-psi(i -1,ew-1,k))/(2.*dx)
+          vpos(i,1,k)  =  (psi(i   ,   2,k)-psi(i   ,   1,k))/(2.*dx)
+          vpos(i,ew,k) =  (psi(i   ,ew  ,k)-psi(i   ,ew-1,k))/(2.*dx)
+       END DO
+       DO j=2,ew-1
+           upos(1,j,k)  = -(psi(   2,j   ,k)-psi(   1,j   ,k))/(2.*dx)
+           upos(ns,j,k) = -(psi(ns  ,j   ,k)-psi(ns-1,j   ,k))/(2.*dx)
+           vpos(1,j,k)  =  (psi(   2,j   ,k)-psi(   2,j -1,k))/(2.*dx)
+           vpos(ns,j,k) =  (psi(ns-1,j   ,k)-psi(ns-1,j -1,k))/(2.*dx)
+       END DO
+   
+       upos( 1, 1,k) = upos(   2,   2,k)
+       upos( 1,ew,k) = upos(   2,ew-1,k)
+       upos(ns, 1,k) = upos(ns-1,   2,k)
+       upos(ns,ew,k) = upos(ns-1,ew-1,k)
+   
+       vpos( 1, 1,k) = vpos(   2,   2,k)
+       vpos( 1,ew,k) = vpos(   2,ew-1,k)
+       vpos(ns, 1,k) = vpos(ns-1,   2,k)
+       vpos(ns,ew,k) = vpos(ns-1,ew-1,k)
+   
+    END DO
+
+!  Background u, v fields.
+     DO k=1,kx
+        DO i=1,ns
+           DO j=1,ew
+              u0(i,j,k) = u1(i,j,k)-(upos(i,j,k)+uchi(i,j,k))
+              v0(i,j,k) = v1(i,j,k)-(vpos(i,j,k)+vchi(i,j,k))
+           END DO
+        END DO
+     END DO
+
+
+!  Geostrophic vorticity.
+     CALL geowind(phi1,mfx,mfd,cor,ns,ew,kx,dx,ug,vg)
+     CALL vor(ug,vg,mfd,mfx,ns,ew,kx,dx,vorg)
+
+
+     DO k=1,kx
+        i_mvc = strmci(k)
+        j_mvc = strmcj(k)
+   
+         DO i=1,ns
+           DO j=1,ew
+               rad = SQRT(REAL(i-i_mvc)**2.+REAL(j-j_mvc)**2.)*dx
+               IF ( rad .GT. r_vor ) THEN
+                    vorg(i,j,k) = 0.
+               END IF
+           END DO
+         END DO
+     END DO
+   
+      DO k=k00,kx
+         DO i=1,ns
+            DO j=1,ew
+               ff(i,j) = vorg(i,j,k)
+               tmp1(i,j)= 0.0
+            END DO
+         END DO
+         epsilon = 1.e-3
+         CALL relax(tmp1,ff,rd,ns,ew,dx,epsilon,alphar)
+         DO i=1,ns
+            DO j=1,ew
+               phip(i,j,k) = tmp1(i,j)
+            END DO
+         END DO
+     END DO
+
+     print *,"the background geopotential"
+     !  Background geopotential.
+     DO k=k00,kx
+         DO i=1,ns
+            DO j=1,ew
+               phi0(i,j,k)   = phi1(i,j,k) - phip(i,j,k)
+!               print *,i,j,k,phi0(i,j,k)
+            END DO
+         END DO
+     END DO
+
+     print *,"the background temperature"
+     !  Background temperature
+     DO k=k00,kx 
+        DO i=1,ns
+           DO j=1,ew
+              IF( k .EQ.  2 ) THEN
+                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k  ))/LOG(p(k+1)/p(k  ))
+              ELSE IF ( k .EQ. kx ) THEN
+                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k  )-phip(i,j,k-1))/LOG(p(k  )/p(k-1))
+              ELSE
+                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k-1))/LOG(p(k+1)/p(k-1))
+              END IF
+
+              t0(i,j,k) = t1(i,j,k)-tpos(i,j,k)
+              t00(i,j,k) = t0(i,j,k)
+           END DO
+        END DO
+     END DO
+
+     print *,"the background rh"
+     !  Background RH.
+     CALL qvtorh (q0,t0,p*100.,k00,ix,jx,kx,rh0,min_RH_value)
+
+     DO k=k00,kx
+        CALL expand ( rh0(1,1,k) , ix-1 , jx-1 , ix , jx )
+     END DO
+   
+     DO k=k00,kx
+        rh_max= rhmx(k)
+        i_mvc = strmci(k)
+        j_mvc = strmcj(k)
+   
+        sum_rh = 0.
+        nct = 0
+        DO i=1,ns
+           DO j=1,ew
+              rad = SQRT(REAL(i-i_mvc)**2.+REAL(j-j_mvc)**2.)*dx
+              IF ( (rad .LT. r_vor2).AND.(rad .GE. 0.8*r_vor2) ) THEN
+                  sum_rh = sum_rh + rh0(i,j,k)
+                  nct = nct + 1
+              END IF
+           END DO
+        END DO
+        avg_rh = sum_rh/MAX(REAL(nct),1.)
+   
+        DO i=1,ns
+            DO j=1,ew
+               rh_min = avg_rh 
+               rad = SQRT((REAL(i)-xico)**2.+(REAL(j)-xjco)**2.)*dx
+               IF ( rad .LE. rmax ) THEN
+                  rhtc(i,j,k) = rh_max
+               ELSE
+                  rhtc(i,j,k) = (rmax/rad)*rh_max+(1.-(rmax/rad))*rh_min
+               END IF
+            END DO
+         END DO
+     END DO
+   
+     ! adjust T0
+     DO k=k00,kx
+        DO i=1,ns
+           DO j=1,ew
+              theta(i,j,k) = t1(i,j,k)*(1000./p(k))**rovcp
+           END DO
+        END DO
+     END DO
+
+     i_mvc = strmci(k00)
+     j_mvc = strmcj(k00)
+
+
+     DO k=kfrm,kto
+        DO i=1,ns
+           DO j=1,ew
+              rad = SQRT(REAL(i-i_mvc)**2.+REAL(j-j_mvc)**2.)*dx
+              IF ( rad .LT. r_vor2 ) THEN
+                  t_reduce(i,j,k) = theta(i,j,k85)-0.03*(p(k)-p(k85))
+                  t0(i,j,k) = t00(i,j,k)*(rad/r_vor2) + (((p(k)/1000.)**rovcp)*t_reduce(i,j,k))*(1.-(rad/r_vor2))
+              END IF
+           END DO
+        END DO
+     END DO
+
+     !  New RH.
+     DO k=k00,kx
+        DO i=1,ns
+           DO j=1,ew
+              rhbkg = rh0(i,j,k)
+              rhbog = rhtc(i,j,k)
+              rad = SQRT((REAL(i)-xico)**2.+(REAL(j)-xjco)**2.)*dx
+               IF ( (rad.GT.rmax) .AND. (rad.LE.r_vor2) ) THEN
+                    r_ratio = (rad-rmax)/(r_vor2-rmax)
+                    rh2(i,j,k) = ((1.-r_ratio)*rhbog) + (r_ratio*rhbkg)
+              ELSE IF (rad .LE. rmax ) THEN
+                    rh2(i,j,k) = rhbog
+              ELSE
+                    rh2(i,j,k) = rhbkg
+              END IF
+          END DO
+        END DO
+    END DO
+   
+
+    ! New wind field.
+    DO k=1,kx
+       DO i=1,ns
+          DO j=1,ew
+             u2(i,j,k) = u0(i,j,k)+utcr(i,j,k)
+             v2(i,j,k) = v0(i,j,k)+vtcr(i,j,k)
+          END DO
+       END DO
+    END DO
+
+    !  Geopotential perturbation
+    DO k=1,kx
+       DO i=1,ns
+          DO j=1,ew
+              tmp1(i,j)=psitc(i,j,k)
+          END DO
+       END DO
+!       print *,"before balance ",dx
+       CALL balance(cor,tmp1,ns,ew,dx,outold)
+       DO i=1,ns
+          DO j=1,ew
+             ff(i,j)=outold(i,j)
+             print *,"ff ",i,j,k,ff(i,j)
+             tmp1(i,j)=0.0
+          END DO
+       END DO
+       epsilon = 1.e-3
+       CALL relax (tmp1,ff,rd,ns,ew,dx,epsilon,alphar)
+       print *,"after the geop relax",k
+       DO i=1,ns
+          DO j=1,ew
+             phiptc(i,j,k) = tmp1(i,j)
+             print *,i,j,phiptc(i,j,k)
+          END DO
+       END DO
+    END DO
+    print *,"after the geopotential perturbation"
+    stop
+   !  New geopotential field.
+   DO k=1,kx
+      DO i=1,ns
+         DO j=1,ew
+             phi2(i,j,k)  = phi0(i,j,k) + phiptc(i,j,k)
+         END DO
+      END DO
+   END DO
+
+   print *,"new temperature field"
+   !  New temperature field.
+    DO k=k00,kx
+       DO i=1,ns
+          DO j=1,ew
+             IF( k .EQ.  2 ) THEN
+                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k  ))/LOG(p(k+1)/p(k  ))
+             ELSE IF ( k .EQ. kx ) THEN
+                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k  )-phiptc(i,j,k-1))/LOG(p(k  )/p(k-1))
+             ELSE
+                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k-1))/LOG(p(k+1)/p(k-1))
+             END IF
+             t2(i,j,k) = t0(i,j,k) + tptc(i,j,k)
+             print *,i,j,k,t2(i,j,k)
+           END DO
+        END DO
+    END DO
+
+
+   !  Surface pressure change.
+      DO i=1,ns
+         DO j=1,ew
+            dph = phi2(i,j,k00)-phi1(i,j,k00)
+            delpx(i,j) = rho*dph*0.01
+         END DO
+      END DO
+ 
+    !  New SLP.
+      DO i=1,ns
+         DO j=1,ew
+            pslx(i,j) = pslx(i,j)+delpx(i,j)
+         END DO
+      END DO
+
+!     tmp1=delpx
+!    CALL crs2dot(tmp1,ix,jx)
+!      DO i=1,ix
+!         DO j=1,jx
+!            psld(i,j) = psld(i,j)+tmp1(i,j)
+!         END DO
+!      END DO
+
+
+  !  Set new geopotential at surface to terrain elevation.
+
+     DO i=1,ns-1
+        DO j=1,ew-1
+           z2(i,j,1) = terrain(i,j) 
+        END DO
+     END DO
+     CALL expand(z2(1,1,1),ix-1,jx-1,ix,jx)
+   
+  !  Geopotential back to height.
+
+     DO k=k00,kx
+         DO i=1,ns
+            DO j=1,ew
+               z2(i,j,k) = phi2(i,j,k)/9.81 
+            END DO
+         END DO
+         CALL expand(z2(1,1,k),ix-1,jx-1,ix,jx)
+     END DO
+     
+
+     !  New surface temperature, assuming same theta as from 1000 mb.
+     print *,"surface temperature"
+     DO i=1,ns
+        DO j=1,ew
+           ps = pslx(i,j)
+           t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
+           print *,i,j,t2(i,j,1),ps
+        END DO
+     END DO
+     stop
+
+     !  Set surface RH to the value from 1000 mb.
+     DO i=1,ns
+        DO j=1,ew
+           rh2(i,j,1) = rh2(i,j,k00)
+        END DO
+     END DO
+
+    !  Modification of tropical storm complete.
+    PRINT '(A,I3,A)'       ,'         Bogus storm number ',nstrm,' completed.'
+
+
+ deallocate(u11)
+ deallocate(v11)
+ deallocate(t11)
+ deallocate(rh11)
+ deallocate(phi11)
+ deallocate(u1)
+ deallocate(v1)
+ deallocate(t1)
+ deallocate(rh1)
+ deallocate(phi1)
+
+
+ do i = 1,ns
+    do j = 1,ew
+       do k = 1,nz
+             grid%u_gc(j,k,i) = u2(i,j,k)
+             grid%v_gc(j,k,i) = v2(i,j,k)
+             grid%t_gc(j,k,i) = t2(i,j,k)
+             print *,i,j,k,t2(i,j,k)
+            grid%rh_gc(j,k,i) = rh2(i,j,k)
+           grid%ght_gc(j,k,i) = z2(i,j,k)
+       end do
+    end do
+ end do
+
+END SUBROUTINE tc_bogus
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE expand(slab,istart,jstart,itot,jtot)
+
+   !  Fill the nearest data to the empty rows or columns of a slab
+
+      IMPLICIT NONE
+
+      INTEGER :: istart, jstart, itot, jtot
+      REAL , DIMENSION(itot,jtot) :: slab
+
+      INTEGER :: i1, j1, i, j
+
+      DO j1=jstart,jtot-1
+         DO i=1,istart
+            slab(i,j1+1)=slab(i,j1)
+         END DO
+      END DO
+
+      DO i1=istart,itot-1
+         DO j=1,jtot
+            slab(i1+1,j)=slab(i1,j)
+         END DO
+      END DO
+
+   END SUBROUTINE expand
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE rankine(dx,dy,ds,nlvl,vwgt,rmax,vmax,uu,vv,psi,vor)
+
+   !  Define analytical bogus vortex
+
+      IMPLICIT NONE
+
+      INTEGER nlvl
+      REAL , DIMENSION(nlvl) :: uu, vv, psi, vor
+      REAL , DIMENSION(nlvl) :: vwgt
+      REAL :: dx,dy,ds,rmax,vmax
+ 
+      REAL , PARAMETER :: alpha1= 1.
+      REAL , PARAMETER :: alpha2= -0.75
+      real :: pi
+
+
+      INTEGER :: k
+      REAL :: vr , ang , rr , term1 , bb , term2 , alpha
+
+
+      pi = 3.141592653589793
+      !  Wind component
+
+      DO k=1,nlvl
+         rr = SQRT(dx**2+dy**2)*ds
+         IF ( rr .LT. rmax ) THEN
+            alpha = 1.
+         ELSE IF ( rr .GE. rmax ) THEN
+            alpha = alpha2
+         END IF
+         vr = vmax * (rr/rmax)**(alpha)
+         IF ( dx.GE.0. ) THEN
+            ang = (pi/2.) - ATAN2(dy,MAX(dx,1.e-6))
+            uu(k) = vwgt(k)*(-vr*COS(ang))
+            vv(k) = vwgt(k)*( vr*SIN(ang))
+         ELSE IF ( dx.LT.0. ) THEN
+            ang = ((3.*pi)/2.) + ATAN2(dy,dx)
+            uu(k) = vwgt(k)*(-vr*COS(ang))
+            vv(k) = vwgt(k)*(-vr*SIN(ang))
+         END IF
+      END DO
+
+      !  psi
+
+      DO k=1,nlvl
+         rr = SQRT(dx**2+dy**2)*ds
+         IF ( rr .LT. rmax ) THEN
+            psi(k) = vwgt(k) * (vmax*rr*rr)/(2.*rmax)
+         ELSE IF ( rr .GE. rmax ) THEN
+            IF (alpha1.EQ.1.0 .AND. alpha2.eq.-1.0) THEN
+               psi(k) = vwgt(k) * vmax*rmax*(0.5+LOG(rr/rmax))
+            ELSE IF (alpha1.EQ.1.0 .AND. alpha2.NE.-1.0) THEN
+               term1 = vmax/(rmax**alpha1)*(rmax**(alpha1+1)/(alpha1+1))
+               bb    = (rr**(alpha2+1)/(alpha2+1))-(rmax**(alpha2+1))/(alpha2+1)
+               term2 = vmax/(rmax**alpha2)*bb
+               psi(k) = vwgt(k) * (term1 + term2)
+            END IF
+         END IF
+      END DO
+
+      ! vort
+
+      DO k=1,nlvl
+         rr = SQRT(dx**2+dy**2)*ds
+         IF ( rr .LT. rmax ) THEN
+            vor(k) = vwgt(k) * (2.*vmax)/rmax
+         ELSE IF ( rr .GE. rmax ) THEN
+            vor(k) = vwgt(k) * ( (vmax/rmax**alpha2)*(rr**(alpha2-1.))*(1.+alpha2) )
+         END IF
+      END DO
+
+   END SUBROUTINE rankine
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE vor(u,v,dmf,xmf,i1,j1,k1,ds,vort)
+
+      !  Compute k component of del cross velocity
+      !  vort = m*m (dv/dx - du/dy), where u and v are coupled
+      !  with map factors (dot point) and m is the map factors
+      !  on cross points
+
+      IMPLICIT NONE
+
+      INTEGER :: i1 , j1 , k1
+
+      REAL , DIMENSION(i1,j1,k1) :: u, v, vort
+      REAL , DIMENSION(i1,j1   ) :: xmf, dmf
+
+      REAL :: ds
+
+      REAL :: ds2r , u1 , u2 , u3 , u4 , v1 , v2 , v3 , v4
+      INTEGER :: i , j , k
+
+      ds2r=1./(2.*ds)
+
+      DO k=1,k1
+         DO j=1,j1-1
+            DO i=1,i1-1
+               u1=u(i  ,j  ,k)/dmf(i  ,j  )
+               u2=u(i+1,j  ,k)/dmf(i+1,j  )
+               u3=u(i  ,j+1,k)/dmf(i  ,j+1)
+               u4=u(i+1,j+1,k)/dmf(i+1,j+1)
+               v1=v(i  ,j  ,k)/dmf(i  ,j  )
+               v2=v(i+1,j  ,k)/dmf(i+1,j  )
+               v3=v(i  ,j+1,k)/dmf(i  ,j+1)
+               v4=v(i+1,j+1,k)/dmf(i+1,j+1)
+               vort(i,j,k)=xmf(i,j)*xmf(i,j)*ds2r*((v4-v2+v3-v1)-(u2-u1+u4-u3))
+               print *,i,j,k,vort(i,j,k)
+            END DO
+         END DO
+      END DO
+
+      CALL fillit(vort,i1,j1,k1,i1,j1,1,i1-1,1,j1-1)
+
+   END SUBROUTINE vor
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE diverg(u,v,dmf,xmf,i1,j1,k1,ds,div)
+
+   !  Computes divergence
+   !  div = m*m (du/dx + dv/dy)
+
+      IMPLICIT NONE
+
+      INTEGER :: i1, j1 , k1
+
+      REAL , DIMENSION(i1,j1,k1) :: u, v, div
+      REAL , DIMENSION(i1,j1   ) :: xmf, dmf
+      REAL :: ds
+
+      REAL :: ds2r , u1 , u2 , u3 , u4 , v1 , v2 , v3 , v4
+      INTEGER :: i , j , k
+
+      ds2r = 1./(2.*ds)
+
+      DO k = 1, k1
+         DO j = 1, j1-1
+            DO i = 1, i1-1
+               u1=u(i  ,j  ,k)/dmf(i  ,j  )
+               u2=u(i+1,j  ,k)/dmf(i+1,j  )
+               u3=u(i  ,j+1,k)/dmf(i  ,j+1)
+               u4=u(i+1,j+1,k)/dmf(i+1,j+1)
+               v1=v(i  ,j  ,k)/dmf(i  ,j  )
+               v2=v(i+1,j  ,k)/dmf(i+1,j  )
+               v2=v(i+1,j  ,k)/dmf(i+1,j  )
+               v3=v(i  ,j+1,k)/dmf(i  ,j+1)
+               v4=v(i+1,j+1,k)/dmf(i+1,j+1)
+               div(i,j,k) = xmf(i,j)*xmf(i,j)*ds2r*((u3-u1+u4-u2)+(v2-v1+v4-v3))
+            END DO
+         END DO
+      END DO
+   END SUBROUTINE diverg
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE mxratprs (rh, t, ppa, ix, jx, kx, q, min_RH_value)
+
+      
+      IMPLICIT NONE
+
+      INTEGER   :: i , ix , j , jx , k , kx 
+
+
+      REAL      :: min_RH_value
+      REAL      :: ppa(kx)
+      REAL      :: p( KX )
+      REAL      :: q (ix,jx,kx),rh(ix,jx,kx),t(ix,jx,kx)
+
+      REAL      :: es
+      REAL      :: qs
+      REAL      :: cp              = 1004.0
+      REAL      :: svp1,svp2,svp3
+      REAL      :: celkel
+      REAL      :: eps
+      
+
+      !  This function is designed to compute (q) from basic variables
+      !  p (mb), t(K) and rh(0-100%) to give (q) in (kg/kg).
+
+      
+      p = ppa * 0.01
+
+      DO k = 1, kx
+         DO j = 1, jx - 1
+            DO i = 1, ix - 1
+                  rh(i,j,k) = MIN ( MAX ( rh(i,j,k) ,min_RH_value ) , 100. ) 
+            END DO
+         END DO
+      END DO
+
+      rh(ix,:,:) = rh(ix-1,:,:)
+      rh(:,jx,:) = rh(:,jx-1,:)
+      t (ix,:,:) = t (ix-1,:,:)
+      t (:,jx,:) = t (:,jx-1,:)
+
+      svp3   =  29.65
+      svp1   =  0.6112
+      svp2   =  17.67
+      celkel =  273.15
+         eps =  0.622
+      DO k = 1, kx
+         DO j = 1, jx
+            DO i = 1, ix
+               es = svp1 * 10. * EXP(svp2 * (t(i,j,k) - celkel ) / (t(i,j,k) - svp3 ))
+               qs = eps * es / (p(k) - es)
+               q(i,j,k) = MAX(0.01 * rh(i,j,k) * qs,0.0)
+            END DO
+         END DO
+      END DO
+
+   END SUBROUTINE mxratprs
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE fillit (f, ix, jx, kx, imx, jmx, ifirst, ilast, jfirst, jlast)
+
+      IMPLICIT NONE
+
+      INTEGER                     :: i
+      INTEGER                     :: ifirst
+      INTEGER                     :: ilast
+      INTEGER                     :: imx
+      INTEGER                     :: ix
+      INTEGER                     :: j
+      INTEGER                     :: jfirst
+      INTEGER                     :: jlast
+      INTEGER                     :: jmx
+      INTEGER                     :: jx
+      INTEGER                     :: k
+      INTEGER                     :: kx
+
+      REAL , dimension(ix,jx,kx) :: f
+
+      DO k = 1 , kx
+         DO j = jfirst, jlast
+            DO i = 1, ifirst - 1
+               f(i,j,k) = f(ifirst,j,k)
+            END DO
+            DO i = ilast + 1, imx
+               f(i,j,k) = f(ilast,j,k)
+            END DO
+         END DO
+   
+         DO j = 1, jfirst - 1
+            f(:,j,k) = f(:,jfirst,k)
+         END DO
+         DO j = jlast + 1, jmx
+            f(:,j,k) = f(:,jlast,k)
+         END DO
+      END DO
+
+   END SUBROUTINE fillit
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   SUBROUTINE crs2dot(field,dim1,dim2)
+   
+      IMPLICIT NONE
+
+      INTEGER :: dim1 , dim2
+      REAL , DIMENSION(dim1,dim2) :: field,dummy
+      INTEGER :: i , j 
+      
+      dummy(2:dim1-1,2:dim2-1)           = ( field(1:dim1-2,1:dim2-2) + &
+                                             field(1:dim1-2,2:dim2-1) + &
+                                             field(2:dim1-1,1:dim2-2) + &
+                                             field(2:dim1-1,2:dim2-1) ) * 0.25
+   
+      dummy(2:dim1-1,1:dim2:dim2-1)      = ( field(1:dim1-2,1:dim2-1:dim2-2) + &
+                                             field(2:dim1-1,1:dim2-1:dim2-2) ) * 0.5
+   
+      dummy(1:dim1:dim1-1,2:dim2-1)      = ( field(1:dim1-1:dim1-2,1:dim2-2) + &
+                                             field(1:dim1-1:dim1-2,2:dim2-1) ) * 0.5
+   
+      dummy(1:dim1:dim1-1,1:dim2:dim2-1) =   field(1:dim1-1:dim1-2,1:dim2-1:dim2-2)
+   
+      field                              =   dummy
+   
+   END SUBROUTINE crs2dot
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE relax (chi, ff, rd, imx, jmx, ds, smallres, alpha)
+
+      IMPLICIT NONE
+
+      INTEGER, PARAMETER    :: mm = 20000
+
+      INTEGER               :: i
+      INTEGER               :: ie
+      INTEGER               :: imx
+      INTEGER               :: iter
+      INTEGER               :: j
+      INTEGER               :: je
+      INTEGER               :: jm
+      INTEGER               :: jmx
+      INTEGER               :: mi
+
+      REAL                  :: alpha
+      REAL                  :: alphaov4
+      REAL                  :: chi(imx,jmx)
+      REAL                  :: chimx( jmx ) 
+      REAL                  :: ds
+      REAL                  :: epx
+      REAL                  :: fac
+      REAL                  :: ff(imx,jmx)
+      REAL                  :: rd(imx,jmx)
+      REAL                  :: rdmax( jmx )
+      REAL                  :: smallres
+
+      LOGICAL               :: converged = .FALSE.
+
+      fac = ds * ds
+      alphaov4 = alpha * 0.25
+
+      ie=imx-2
+      je=jmx-2
+
+      DO j = 1, jmx
+         DO i = 1, imx
+            ff(i,j) = fac * ff(i,j)
+            rd(i,j) = 0.0
+         END DO
+      END DO
+
+      iter_loop : DO iter = 1, mm
+         mi = iter
+         chimx = 0.0
+
+
+         DO j = 2, je
+            DO i = 2, ie
+               chimx(j) = MAX(ABS(chi(i,j)),chimx(j))
+            END DO
+         END DO
+
+         epx = MAXVAL(chimx) * SMALLRES * 4.0 / alpha
+
+         DO j = 2, je
+            DO i = 2, ie
+               rd(i,j) = chi(i,j+1) + chi(i,j-1) + chi(i+1,j) + chi(i-1,j) - 4.0 * chi(i,j) - ff(i,j)
+               chi(i,j) = chi(i,j) + rd(i,j) * alphaov4
+            END DO
+         END DO
+
+         rdmax = 0.0
+
+         DO j = 2, je
+            DO i = 2, ie
+               rdmax(j) = MAX(ABS(rd(i,j)),rdmax(j))
+            END DO
+         END DO
+
+         IF (MAXVAL(rdmax) .lt. epx) THEN
+            converged = .TRUE.
+            EXIT iter_loop
+         END IF
+
+      END DO iter_loop
+
+      IF (converged ) THEN
+!        PRINT '(A,I5,A)','Relaxation converged in ',mi,' iterations.'
+      ELSE
+         PRINT '(A,I5,A)','Relaxation did not converge in',mm,' iterations.'
+         STOP 'no_converge'
+      END IF
+
+   END SUBROUTINE relax
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   SUBROUTINE geowind(height,xmf,dmf,cor,imx,jmx,kx,ds,ug,vg)
+
+   !  Computes the geostrophic wind components from the height gradient.
+   !  There is no Coriolis parameter used - this is the tropics.
+
+      IMPLICIT NONE
+
+      !     input       height   geopotential               cross    3d
+      !                 xmf      map factors                cross    2d
+      !                 dmf      map factors                dot      2d
+      !                 imx      dot point dimension n-s
+      !                 jmx      dot point dimension e-w
+      !                 kx       number of vertical levels
+      !
+      !     output      ug       u component of geo wind    cross    3d
+      !                 vg       v component of geo wind    cross    3D
+
+      INTEGER :: imx , jmx , kx
+      REAL :: ds
+      REAL , DIMENSION(imx,jmx,kx) :: height
+      REAL , DIMENSION(imx,jmx   ) :: xmf , dmf , cor
+
+      REAL , DIMENSION(imx,jmx,kx) :: ug , vg
+
+      REAL :: ds2r , h1 , h2 , h3 , h4
+      INTEGER :: i , j , k
+
+      ds2r=1./(2.*ds)
+
+      DO k=1,kx
+         DO j=2,jmx-1
+            DO i=2,imx-1
+               h1=height(i-1,j-1,k)
+               h2=height(i  ,j-1,k)
+               h3=height(i-1,j  ,k)
+               h4=height(i  ,j  ,k)
+!              ug(i,j,k)=-1.*g*dmf(i,j)/cor(i,j)*ds2r*(h4-h3+h2-h1)
+!              vg(i,j,k)=    g*dmf(i,j)/cor(i,j)*ds2r*(h4-h2+h3-h1)
+               ug(i,j,k)=-1.*dmf(i,j)*ds2r*(h4-h3+h2-h1)
+               vg(i,j,k)=    dmf(i,j)*ds2r*(h4-h2+h3-h1)
+            END DO
+         END DO
+      END DO
+
+      CALL fillit(ug,imx,jmx,kx,imx,jmx,2,imx-1,2,jmx-1)
+      CALL fillit(vg,imx,jmx,kx,imx,jmx,2,imx-1,2,jmx-1)
+
+   END SUBROUTINE geowind
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE balance (f,psi,ix,jx,ds,out)
+
+   !  Calculates the forcing terms in balance equation
+
+   IMPLICIT NONE
+
+      !  f       coriolis force
+      !  psi     stream function
+      !  ix, jx  grid points in east west, north south direction, respectively
+      !  ds      grid distance
+      !  out     output array
+  
+      INTEGER :: ix , jx
+      REAL , DIMENSION(ix,jx) :: f,psi,out
+      REAL :: ds
+
+      REAL :: psixx , psiyy , psiy , psixy 
+      REAL :: dssq , ds2 , dssq4
+
+      INTEGER :: i , j
+
+      dssq  = ds * ds
+      ds2   = ds * 2.
+      dssq4 = ds * ds * 4.
+
+!      print *,"in balance",dssq,ds2,dssq4,ds
+      DO i=2,ix-2
+         DO j=2,jx-2
+            psixx = ( psi(i,j+1) + psi(i,j-1) - 2.*psi(i,j) ) / dssq
+            psiyy = ( psi(i+1,j) + psi(i-1,j) - 2.*psi(i,j) ) / dssq
+            psiy  = ( psi(i+1,j) - psi(i-1,j) ) / ds2
+            psixy = ( psi(i+1,j+1)+psi(i-1,j-1)-psi(i-1,j+1)-psi(i+1,j-1)) / dssq4
+!            print *,f(i,j),f(i+1,j),f(i+1,j+1),f(i,j+1),psixx,psiyy,psiy,psixy
+            out(i,j)=0.25*(f(i,j)+f(i+1,j)+f(i+1,j+1)+f(i,j+1))*(psixx+psiyy)    &
+                   +psiy*(f(i+1,j+1)+f(i+1,j)-f(i,j)-f(i,j+1))/ ds2              &
+                   -2.*(psixy*psixy-psixx*psiyy)
+         END DO
+      END DO
+
+      CALL fill(out,ix,jx,ix,jx,2,ix-2,2,jx-2)
+
+   END SUBROUTINE balance
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE fill (f, ix, jx, imx, jmx, ifirst, ilast, jfirst, jlast)
+
+      IMPLICIT NONE
+
+      INTEGER                     :: I
+      INTEGER                     :: IFIRST
+      INTEGER                     :: ILAST
+      INTEGER                     :: IMX
+      INTEGER                     :: IX
+      INTEGER                     :: J
+      INTEGER                     :: JFIRST
+      INTEGER                     :: JLAST
+      INTEGER                     :: JMX
+      INTEGER                     :: JX
+
+      REAL                        :: F(ix,jx)
+
+      DO j = jfirst, jlast
+         DO i = 1, ifirst - 1
+            f(i,j) = f(ifirst,j)
+         END DO
+         DO i = ilast + 1, imx
+            f(i,j) = f(ilast,j)
+         END DO
+      END DO
+
+      DO j = 1, jfirst - 1
+         f(:,j) = f(:,jfirst)
+      END DO
+      DO j = jlast + 1, jmx
+         f(:,j) = f(:,jlast)
+      END DO
+
+   END SUBROUTINE fill
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE qvtorh ( q , t , p , k00, imx , jmx , kxs , rh, min_RH_value   )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: imx , jmx , kxs , k00
+      REAL , INTENT(IN) , DIMENSION(imx,jmx,kxs) :: q , t
+      REAL , INTENT(IN) , DIMENSION(kxs) :: p
+
+      REAL , INTENT(OUT) , DIMENSION(imx,jmx,kxs) :: rh
+
+      real    min_RH_value
+
+      !  Local variables.
+
+      INTEGER :: i , j , k
+      REAL      :: es
+      REAL      :: qs
+      REAL      :: cp              = 1004.0
+      REAL      :: svp1,svp2,svp3
+      REAL      :: celkel
+      REAL      :: eps
+      svp3   =  29.65
+      svp1   =  0.6112
+      svp2   =  17.67
+      celkel =  273.15
+         eps =  0.622
+
+      DO k = k00 , kxs
+         DO j = 1 , jmx - 1
+            DO i = 1 , imx - 1
+               es = svp1 * 10. * EXP(svp2 * (t(i,j,k) - celkel ) / (t(i,j,k) - svp3 ))
+               qs = eps*es/(0.01*p(k) - es)
+               rh(i,j,k) = MIN ( 100. , MAX ( 100.*q(i,j,k)/qs , min_RH_value ) )
+            END DO
+         END DO
+      END DO
+
+   END SUBROUTINE qvtorh

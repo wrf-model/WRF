@@ -1249,6 +1249,15 @@ rconfig   logical   perturb_input   namelist,domains    1              .false. h
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   real      max_dz          namelist,domains    1               1000.
 
+# TC (tropical cyclone bogusing)
+rconfig   logical insert_bogus_storm   namelist,tc     	1              .false. irh    "insert_bogus_storm"   "T/F for inserting a bogus typhoon"      "flag"
+rconfig   integer num_storm            namelist,tc     	1              1       irh    "num_storm"     "Number of bogus typhoons"  ""
+rconfig   real    latc_loc             namelist,tc     	1              -999.   irh    "latc_loc"      "center latitude of the bogus tyhoon"  "DEGREES"
+rconfig   real    lonc_loc             namelist,tc     	1              -999.   irh    "lonc_loc"      "center longitude of the bogus tyhoon"  "DEGREES"
+rconfig   real    vmax_meters_per_second   namelist,tc  1              -999.   irh    "vmax_meters_per_second"  "vmax of bogus storm in meters per second"  ""
+rconfig   real    rmax                 namelist,tc     	1              -999.   irh    "rmax"  "maximum radius outward from storm center"  ""
+rconfig   real    vmax_ratio           namelist,tc      1              -999.   irh    "vmax_ratio"  ""  ""
+
 # Physics
 rconfig   integer     mp_physics          namelist,physics	max_domains    0       rh       "mp_physics"            ""      ""
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""

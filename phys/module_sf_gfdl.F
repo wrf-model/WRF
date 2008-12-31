@@ -564,7 +564,6 @@ CONTAINS
 !-----------------------------------------------------------------------
 
       integer, parameter :: icntx = 30
-      data amask/ -98.0/
 
       integer, dimension(1   :ime) :: ifz
       integer, dimension(1   :ime) :: indx
@@ -651,12 +650,12 @@ CONTAINS
       real :: ux1,ugz,x10,uzo,uq,ux2,ux3,xtan,xden,y10,uzet1o,ugz10
       real :: szet2, zal2,ugz2 
       real :: rovcp,boycon,cmo2,psps1,zog,enrca,rca,cmo1,amask,en,ca,a,c
-      real :: ip,sgz,zal10,szet10,fmz,szo,sq,fmzo,rzeta1,zal1g,szetao,rzeta2,zal2g
+      real :: sgz,zal10,szet10,fmz,szo,sq,fmzo,rzeta1,zal1g,szetao,rzeta2,zal2g
       real :: hcap,xks,pith,teps,diffot,delten,alevp,psps2,alfus,nstep
       real :: shfx,sigt4,reflect
       real :: cor1,cor2,szetho,zal2gh,cons_p000001,cons_7,vis,ustar,restar,rat
       real :: wndm,ckg
-      integer:: i,j,ii,iq,nnest,icnt,ngd
+      integer:: ip,i,j,ii,iq,nnest,icnt,ngd
 
 !-----------------------------------------------------------------------
 !     internal variables
@@ -684,6 +683,7 @@ CONTAINS
 !     tables used to obtain the vapor pressures or saturated vapor 
 !     pressure
 !-----------------------------------------------------------------------
+      data amask/ -98.0/
 
       data tab11/21*0.01403,0.01719,0.02101,0.02561,0.03117,0.03784,      &
      &.04584,.05542,.06685,.08049,.09672,.1160,.1388,.1658,.1977,.2353,   &
@@ -933,7 +933,7 @@ CONTAINS
 
       if (ip .EQ. 0) go to 170
       do i = 1,ip
-        szetam(i) = 1.0e+50
+        szetam(i) = 1.0e+30
         sgzm(i)   = 0.0e+00
         szeta(i)  = zeta(istb(i))
         ifz(i)    = 1
@@ -1148,7 +1148,7 @@ CONTAINS
       do i = 1,iq
         uzeta (i) = zeta(iutb(i))
         ifz   (i) = 1
-        uzetam(i) = 1.0e+50
+        uzetam(i) = 1.0e+30
         ugzm  (i) = 0.0e+00
       enddo
 

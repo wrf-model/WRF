@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/ksh -aeux
 #============================================================;
 # Purpose:  Main script to run the verification package
 #============================================================;
@@ -36,7 +36,7 @@ export EXP_LINES_COLORS=${EXP_LINES_COLORS:-'(/"blue","green", "orange"/)'}
 export PLOT_WKS=${PLOT_WKS:-x11}
 export CLEAN=${CLEAN:-false}
 export GET_OMBOMA_PLOTS=${GET_OMBOMA_PLOTS:-false}
-export FILE_PATH_STRING=${FILE_PATH_STRING:-'wrfvar/working/gts_omb_oma_${OUTER_ITER}'}
+export FILE_PATH_STRING=${FILE_PATH_STRING:-'wrfvar/gts_omb_oma_'${OUTER_ITER}}
 
 #=========================================================
 #=========================================================
@@ -182,13 +182,13 @@ else
       if [[ "$ob_fname" == "surface_p_${DIAG_VAR1}.diag" ]]; then
          ob_unit='"hPa"'
       elif [[ "$ob_fname" == "surface_t_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='T (~S~o~N~C)'
+         ob_unit='T (Degree)'
       elif [[ "$ob_fname" == "surface_u_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='U (ms~S~-1~N~)' 
+         ob_unit='U (m/s)' 
       elif [[ "$ob_fname" == "surface_v_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='V (ms~S~-1~N~)' 
+         ob_unit='V (m/s)' 
       elif [[ "$ob_fname" == "surface_q_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='Q (gmKg~S~-1~N~)' 
+         ob_unit='Q (gm/Kg)' 
       else
          echo "Unknown surface variable:-Don't know what to do??"
       fi
@@ -215,13 +215,13 @@ else
    echo $ncol >> fnames_upr     
    while read ob_fname; do
       if [[ "$ob_fname" == "upr_t_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='T (~S~o~N~C)'
+         ob_unit='T (Degree)'
       elif [[ "$ob_fname" == "upr_u_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='U (ms~S~-1~N~)' 
+         ob_unit='U (m/s)' 
       elif [[ "$ob_fname" == "upr_v_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='V (ms~S~-1~N~)' 
+         ob_unit='V (m/s)' 
       elif [[ "$ob_fname" == "upr_q_${DIAG_VAR1}.diag" ]]; then
-         ob_unit='Q (gmKg~S~-1~N~)' 
+         ob_unit='Q (gm/Kg)' 
       else
          echo "Unknown upper-air variable:-Don't know what to do??"
       fi
@@ -248,13 +248,13 @@ else
    while read ob_fname
    do
       if [ "$ob_fname" = "gupr_t_${DIAG_VAR1}.diag" ]; then
-         ob_unit='T (~S~o~N~C)'
+         ob_unit='T (Degree)'
       elif [ "$ob_fname" = "gupr_u_${DIAG_VAR1}.diag" ]; then
-         ob_unit='U (ms~S~-1~N~)'
+         ob_unit='U (m/s)'
       elif [ "$ob_fname" = "gupr_v_${DIAG_VAR1}.diag" ]; then
-         ob_unit='V (ms~S~-1~N~)'
+         ob_unit='V (m/s)'
       elif [ "$ob_fname" = "gupr_q_${DIAG_VAR1}.diag" ]; then
-         ob_unit='Q (gmKg~S~-1~N~)'
+         ob_unit='Q (gm/Kg)'
       else
          echo "Unknown upper-air veritcal (gupr) variable:-Don't know what to do??"
       fi
@@ -333,25 +333,25 @@ NCL_COMMAND_LINE="'wksdev=\"${PLOT_WKS}\"' 'run_dir=\"${WORK_DIR}\"' \
 
 #----------------
 if [ "$plotsfc" = "true" ] || [ "$plotupr" = "true" ]; then
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_obs_time_series.ncl" > run1
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_obs_time_series.ncl" > run1
 chmod +x run1
 ./run1 > run1.log 2>&1
 fi
 #----------------
 if [ "$plotupr" = "true" ]; then
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_obs_vert_profile.ncl" > run2
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_obs_vert_profile.ncl" > run2
 chmod +x run2
 ./run2 > run2.log 2>&1
 fi
 #----------------
 if [ "$plotupr" = "true" ]; then
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_obs_time_average.ncl" > run3
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_obs_time_average.ncl" > run3
 chmod +x run3
 ./run3 > run3.log 2>&1
 fi
 #----------------
 if [ "$plotgpsref" = "true" ]; then
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_obs_vert_profile_gpsref.ncl" > run4
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_obs_vert_profile_gpsref.ncl" > run4
 chmod +x run4
 ./run4 > run4.log 2>&1
 fi

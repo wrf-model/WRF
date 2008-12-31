@@ -20,8 +20,10 @@
    integer                      :: it          ! External loop counter.
    type (j_type)                :: j           ! Cost function.
 
-   integer                      :: cv_size, i, ichan
+   integer                      :: cv_size, i, ichan, k
    real                         :: j_grad_norm_target ! Target j norm.
+
+   integer                      :: n, size_js, js_start, nclouds, kts_100hPa(1)
 
 #ifdef DM_PARALLEL
    integer                      :: wrf_done_unit
@@ -111,7 +113,37 @@
 #if defined(RTTOV) || defined(CRTM)
       if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
 #endif
-      cv_size = be % cv % size
+
+   !---------------------------------------------------------------------------
+   ! [5.2] Set up satellite control variable:
+   !---------------------------------------------------------------------------
+
+   if (use_satcv) then  
+      be % cv % size_js = 0.0
+      size_js  = 0                        
+      js_start = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
+      
+      do i= 1, iv % num_inst
+         allocate(iv%instid(i)%cv_index(iv%instid(i)%num_rad))
+         do n = 1,iv%instid(i)%num_rad
+           kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
+                        MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
+           nclouds = kte - kts_100hPa(1) + 1
+           allocate(iv%instid(i)%cv_index(n)%cc(nclouds))
+            iv%instid(i)%cv_index(n)%ts    = js_start + size_js + 1
+           iv%instid(i)%cv_index(n)%cc(:) = (/ (js_start + size_js + 1 + k, k=1,nclouds) /)  
+           iv%instid(i)%cv_index(n)%nclouds = nclouds
+           size_js =  size_js + nclouds + 1
+        end do
+      end do
+      
+      be % cv % size_js = size_js
+      be % cv % size    = be % cv % size + be % cv % size_js               
+      cv_size_domain_js = be % cv % size_js
+      cv_size_domain    = cv_size_domain + cv_size_domain_js
+   end if   
+
+   cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
    ! [6.0] Set up ensemble perturbation input:
@@ -247,8 +279,13 @@
       call da_allocate_y (iv, re)
       call da_allocate_y (iv, y)
 
-      call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
-         xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
+      if (use_lanczos) then
+         call da_minimise_lz( grid, config_flags, it, be % cv % size, & 
+            xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)  
+      else
+         call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
+            xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
+      end if
       !------------------------------------------------------------------------
 
       ! reset cv to random noise
@@ -405,6 +442,8 @@
             deallocate (iv%instid(i)%tb_qc)
             deallocate (iv%instid(i)%tb_inv)
             deallocate (iv%instid(i)%tb_error)
+            deallocate (iv%instid(i)%tb_sens)
+            deallocate (iv%instid(i)%tb_imp)
             deallocate (iv%instid(i)%rad_xb)
             deallocate (iv%instid(i)%rad_obs)
             deallocate (iv%instid(i)%rad_ovc)
@@ -436,6 +475,13 @@
    	       deallocate (iv%instid(i)%varbc)
 	    end if
 
+           if (use_satcv) then
+              do n = 1,iv%instid(i)%num_rad
+                 deallocate (iv%instid(i)%cv_index(n)%cc)
+              end do
+              deallocate (iv%instid(i)%cv_index)  
+           end if
+
             if (rtm_option == rtm_option_crtm) then
                deallocate(iv%instid(i)%water_coverage)
                deallocate(iv%instid(i)%land_coverage)
@@ -464,6 +510,8 @@
                  end if
               end if
             end if
+
+            deallocate(iv%instid(i)%cv_index)
          end if
 #ifdef RTTOV
          if (rtm_option == rtm_option_rttov) then

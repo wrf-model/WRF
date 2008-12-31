@@ -5,7 +5,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
 
    INTEGER iswater , map_proj, julyr, julday
    REAL    truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon
-   CHARACTER (LEN=4) :: char_junk
+   CHARACTER (LEN=256) :: char_junk
 
 ! single-value constants
 
@@ -25,7 +25,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%julyr   = parent%julyr
    nest%julday  = parent%julday
 
-   CALL nl_get_mminlu ( 1,char_junk(1:4) )
+   CALL nl_get_mminlu ( 1,char_junk(1:256) )
    CALL nl_get_iswater (1, iswater )
    CALL nl_get_truelat1 ( 1 , truelat1 )
    CALL nl_get_truelat2 ( 1 , truelat2 )
@@ -46,7 +46,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
      CALL nl_set_stand_lon ( nest%id , stand_lon )
      CALL nl_set_map_proj ( nest%id , map_proj )
    END IF
-   nest%gmt     = gmt 
+   nest%gmt     = gmt
    nest%julday  = julday
    nest%julyr   = julyr
    nest%iswater = iswater
@@ -79,15 +79,15 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
 END SUBROUTINE init_domain_constants_em
 
 SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
-                           ids , ide , jds , jde , kds , kde , & 
-                           ims , ime , jms , jme , kms , kme , & 
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
 
    USE module_configure
    IMPLICIT NONE
 
-   INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , & 
-                                                 ims , ime , jms , jme , kms , kme , & 
+   INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , &
+                                                 ims , ime , jms , jme , kms , kme , &
                                                  ips , ipe , jps , jpe , kps , kpe
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)    :: ter_interpolated
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: ter_input
@@ -102,19 +102,19 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
    !  to get that value.  We blend the coarse and fine in the next blend_width
    !  rows and columns.  After that, in the interior, it is 100% fine grid.
 
-   CALL nl_get_spec_bdy_width ( 1, spec_bdy_width) 
+   CALL nl_get_spec_bdy_width ( 1, spec_bdy_width)
    CALL nl_get_blend_width ( 1, blend_width)
 
    !  Initialize temp values to the nest ter elevation.  This fills in the values
-   !  that will not be modified below.  
+   !  that will not be modified below.
 
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe
          DO i = ips , MIN(ipe, ide-1)
             ter_temp(i,k,j) = ter_input(i,k,j)
-         END DO 
-      END DO 
-   END DO 
+         END DO
+      END DO
+   END DO
 
    !  To avoid some tricky indexing, we fill in the values inside out.  This allows
    !  us to overwrite incorrect assignments.  There are replicated assignments, and
@@ -136,9 +136,9 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
                       ( i .GE. ide - spec_bdy_width     ) .OR.  ( j .GE. jde - spec_bdy_width     ) ) THEN
                ter_temp(i,k,j) =      ter_interpolated(i,k,j)
             END IF
-         END DO 
-      END DO 
-   END DO 
+         END DO
+      END DO
+   END DO
 
    !  Set nest elevation with temp values.  All values not overwritten in the above
    !  loops have been previously set in the initial assignment.
@@ -147,21 +147,21 @@ SUBROUTINE blend_terrain ( ter_interpolated , ter_input , &
       DO k = kps , kpe
          DO i = ips , MIN(ipe, ide-1)
             ter_input(i,k,j) = ter_temp(i,k,j)
-         END DO 
-      END DO 
-   END DO 
+         END DO
+      END DO
+   END DO
 
 END SUBROUTINE blend_terrain
 
-SUBROUTINE store_terrain ( ter_interpolated , ter_input , &
-                           ids , ide , jds , jde , kds , kde , & 
-                           ims , ime , jms , jme , kms , kme , & 
+SUBROUTINE copy_3d_field ( ter_interpolated , ter_input , &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
 
    IMPLICIT NONE
 
-   INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , & 
-                                                 ims , ime , jms , jme , kms , kme , & 
+   INTEGER , INTENT(IN)                       :: ids , ide , jds , jde , kds , kde , &
+                                                 ims , ime , jms , jme , kms , kme , &
                                                  ips , ipe , jps , jpe , kps , kpe
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(OUT) :: ter_interpolated
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)  :: ter_input
@@ -172,11 +172,11 @@ SUBROUTINE store_terrain ( ter_interpolated , ter_input , &
       DO k = kps , kpe
          DO i = ips , MIN(ipe, ide-1)
             ter_interpolated(i,k,j) = ter_input(i,k,j)
-         END DO 
-      END DO 
-   END DO 
+         END DO
+      END DO
+   END DO
 
-END SUBROUTINE store_terrain
+END SUBROUTINE copy_3d_field
 
 SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
                            th, pp, qv,  &
@@ -268,7 +268,7 @@ SUBROUTINE input_terrain_rsmas ( grid ,                        &
    REAL , DIMENSION(ids:ide,jds:jde) :: ht_g, xlat_g, xlon_g
 #endif
 
-   CALL wrf_get_myproc ( myproc ) 
+   CALL wrf_get_myproc ( myproc )
 
 #if 0
 CALL domain_clock_get ( grid, current_timestr=message2 )
@@ -291,11 +291,11 @@ enddo
    CALL wrf_patch_to_global_real ( grid%xlat , xlat_g , grid%domdesc, ' ' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
-                                   ips, ipe   , jps , jpe   , 1 , 1   ) 
+                                   ips, ipe   , jps , jpe   , 1 , 1   )
    CALL wrf_patch_to_global_real ( grid%xlong , xlon_g , grid%domdesc, ' ' , 'xy' ,       &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
-                                   ips, ipe   , jps , jpe   , 1 , 1   ) 
+                                   ips, ipe   , jps , jpe   , 1 , 1   )
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL get_terrain ( grid%dx/1000., xlat_g(ids:ide,jds:jde), xlon_g(ids:ide,jds:jde), ht_g(ids:ide,jds:jde), &
@@ -306,7 +306,7 @@ enddo
    CALL wrf_global_to_patch_real ( ht_g , grid%ht , grid%domdesc, ' ' , 'xy' ,         &
                                    ids, ide-1 , jds , jde-1 , 1 , 1 , &
                                    ims, ime   , jms , jme   , 1 , 1 , &
-                                   ips, ipe   , jps , jpe   , 1 , 1   ) 
+                                   ips, ipe   , jps , jpe   , 1 , 1   )
 #else
 
    CALL get_terrain ( grid%dx/1000., grid%xlat(ids:ide,jds:jde), grid%xlong(ids:ide,jds:jde), grid%ht(ids:ide,jds:jde), &
@@ -325,7 +325,7 @@ write(30+myproc,*)grid%ht(i,j)
 enddo
 enddo
 #endif
-                       
+
 END SUBROUTINE input_terrain_rsmas
 
 SUBROUTINE update_after_feedback_em ( grid  &

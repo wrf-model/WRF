@@ -129,12 +129,13 @@
 !
 !----------------------------------------------------------------------
       SUBROUTINE MYJPBL(DT,STEPBL,HT,DZ                                &
-     &                 ,PMID,PINT,TH,T,EXNER,QV,CWM,U,V,RHO            &
-     &                 ,TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0              &
+     &                 ,PMID,PINT,TH,T,EXNER,QV,QCW,QCI,QCS,QCR,QCG    & !BSF
+     &                 ,U,V,RHO,TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0      & !BSF
      &                 ,LOWLYR,XLAND,SICE,SNOW                         &
      &                 ,TKE_MYJ,EXCH_H,USTAR,ZNT,EL_MYJ,PBLH,KPBL,CT   &
-     &                 ,AKHS,AKMS,ELFLX                                &
+     &                 ,AKHS,AKMS,ELFLX,MIXHT                          &   !PLee (3/07)
      &                 ,RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN     &
+     &                 ,RQIBLTEN,RQSBLTEN,RQRBLTEN,RQGBLTEN            & !BSF
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -158,21 +159,26 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HT,SICE,SNOW       &
      &                                             ,TSK,XLAND
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,DZ     &
-     &                                                     ,EXNER      &
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: DZ,EXNER   &  !BSF
      &                                                     ,PMID,PINT  &
-     &                                                     ,QV,RHO     &
-     &                                                     ,T,TH,U,V   
+     &                                                     ,RHO        &  !BSF
+     &                                                     ,T,TH,U,V
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PBLH
+      REAL,OPTIONAL,INTENT(IN),DIMENSION(IMS:IME,KMS:KME,JMS:JME)::    &  !BSF
+                                                QV,QCW,QCI,QCS,QCR,QCG    !BSF
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PBLH,MIXHT            !PLee (3/07)
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
-     &    ,INTENT(OUT) ::                      EL_MYJ                  &
-     &                                        ,RQCBLTEN,RQVBLTEN       &
-     &                                        ,RTHBLTEN                &
+      REAL, INTENT(OUT), DIMENSION(IMS:IME,KMS:KME,JMS:JME) ::         &   !BSF
+     &                                         EL_MYJ,RTHBLTEN         &   !BSF
      &                                        ,RUBLTEN,RVBLTEN        
+!
+      REAL,OPTIONAL,INTENT(OUT),DIMENSION(IMS:IME,KMS:KME,JMS:JME)::   &   !BSF
+     &                                             RQCBLTEN,RQVBLTEN   &   !BSF
+     &                                            ,RQIBLTEN,RQSBLTEN   &   !BSF
+     &                                            ,RQRBLTEN,RQGBLTEN       !BSF
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CT,QSFC,QZ0     &
      &                                                ,THZ0,USTAR      &
@@ -187,16 +193,41 @@
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: I,J,K,KFLIP,LLOW,LMH,LMXL
+!
+!-- NSPECE is the number of mass SPECies to be vertically mixed
+!   (NSPECS - starting number, NSPECE - ending number)
+!   => Up to 7 species are possible (T,Q,QCW,QCI,QCS,QCR,QCG)
+!
+!-- Logic behind the order of QCW,QCI,QCS,QCR,QCG is based on
+!   increasing terminal fall speed of hydrometeors from cloud
+!   droplets with very low fall speeds (QCW) to fast falling
+!   graupel (QCG)
+!
+      INTEGER, PARAMETER :: NSPECS=1, NSPECE=7  !BSF
+!
+!-- flQI,flQS,flQR,flQG controls what hydrometeors are present
+!   that contribute to total condensate, CWM.  These flags may also be
+!   used in future high resolution runs where all condensate fields
+!   could be vertically mixed (to be determined).  It is assumed
+!   that cloud water is always being passed into the scheme.
+!
+      LOGICAL :: flQI,flQS,flQR,flQG  !BSF
+!
+      INTEGER :: I,J,K,KFLIP,LLOW,LMH,LMXL, NUMS,NSPEC,NSP   !BSF
 !
       INTEGER,DIMENSION(ITS:ITE,JTS:JTE) :: LPBL
 !
-      REAL :: AKHS_DENS,AKMS_DENS,APEX,DCDT,DELTAZ,DQDT,DTDIF,DTDT     &
+      REAL :: AKHS_DENS,AKMS_DENS,APEX,DELTAZ,DQDT,DTDIF,DTDT          &   !BSF
      &       ,DTTURBL,DUDT,DVDT,EXNSFC,PSFC,PTOP,QFC1,QLOW,QOLD        &
      &       ,RATIOMX,RDTTURBL,RG,RWMSK,SEAMASK,THNEW,THOLD,TX         &
      &       ,ULOW,VLOW,WMSK
 !
-      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK
+      REAL, DIMENSION(NSPECS:NSPECE) :: CLOW,CTS,SZ0  !BSF
+!
+      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK          & !BSF
+     &                          ,QCWK,QCIK,QCSK,QCRK,QCGK  !BSF
+!
+      REAL, DIMENSION(NSPECS:NSPECE,KTS:KTE) :: SPECIES
 !
       REAL,DIMENSION(KTS:KTE-1) :: AKHK,AKMK,EL,GH,GM
 !
@@ -206,7 +237,7 @@
 !
       REAL,DIMENSION(KTS:KTE,ITS:ITE) :: RHOK
 !
-      REAL,DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: APE,THE
+      REAL,DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: APE,THE, CWM  !BSF
 !
       REAL,DIMENSION(ITS:ITE,KTS:KTE-1,JTS:JTE) :: AKH,AKM
 !
@@ -229,6 +260,32 @@
 !***  MAKE PREPARATIONS
 !
 !----------------------------------------------------------------------
+!BSF  Begin:
+      NSPEC=3   !-- T, Q, Cloud water
+      flQI=.FALSE.
+      flQS=.FALSE.
+      flQR=.FALSE.
+      flQG=.FALSE.
+!
+      IF (PRESENT(QCI)) THEN
+        flQI=.TRUE.
+        NSPEC=NSPEC+1
+      ENDIF
+!BSF      IF (PRESENT(QCS)) THEN
+!BSF        flQS=.TRUE.
+!BSF        NSPEC=NSPEC+1
+!BSF      ENDIF
+!BSF      IF (PRESENT(QCR)) THEN
+!BSF        flQR=.TRUE.
+!BSF        NSPEC=NSPEC+1
+!BSF      ENDIF
+!BSF      IF (PRESENT(QCG)) THEN
+!BSF        flQG=.TRUE.
+!BSF        NSPEC=NSPEC+1
+!BSF      ENDIF
+!
+!BSF  End:
+
       DTTURBL=DT*STEPBL
       RDTTURBL=1./DTTURBL
       DTDIF=DTTURBL
@@ -271,6 +328,11 @@
           APEX=1./EXNER(I,K,J)
           APE(I,K,J)=APEX
           TX=T(I,K,J)
+          CWM(I,K,J)=QCW(I,K,J)                          !BSF
+          IF (flQI) CWM(I,K,J)=CWM(I,K,J)+QCI(I,K,J)     !BSF
+!BSF          IF (flQS) CWM(I,K,J)=CWM(I,K,J)+QCS(I,K,J)
+!BSF          IF (flQR) CWM(I,K,J)=CWM(I,K,J)+QCR(I,K,J)
+!BSF          IF (flQG) CWM(I,K,J)=CWM(I,K,J)+QCG(I,K,J)
           THE(I,K,J)=(CWM(I,K,J)*(-ELOCP/TX)+1.)*TH(I,K,J)
         ENDDO
       ENDDO
@@ -336,7 +398,7 @@
 !***
           CALL MIXLEN(LMH,UK,VK,TK,THEK,QK,CWMK                        &
      &               ,Q2K,ZHK,GM,GH,EL                                 &
-     &               ,PBLH(I,J),LPBL(I,J),LMXL,CT(I,J)                 &
+     &               ,PBLH(I,J),LPBL(I,J),LMXL,CT(I,J),MIXHT(I,J)      &    !PLee (3/07)
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -368,16 +430,17 @@
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,PRINT_DIAG)   ! debug
 !
 !***  COUNTING DOWNWARD FROM THE TOP, THE EXCHANGE COEFFICIENTS AKH 
-!***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  COUNTING 
-!***  COUNTING UPWARD FROM THE BOTTOM, THOSE SAME COEFFICIENTS EXCH_H
-!***  ARE DEFINED ON THE TOPS OF THE LAYERS KTS TO KTE-1.
+!***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  
+!***  COUNTING UPWARD FROM THE BOTTOM, THOSE SAME COEFFICIENTS AS
+!***  EXCH_H ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1
+!***  THUS EXCH_H INDICES INCREASE UPWARD WITH K=KTS AT THE GROUND.
 !
           DO K=KTS,KTE-1
             KFLIP=KTE-K
             AKH(I,K,J)=AKHK(K)
             AKM(I,K,J)=AKMK(K)
             DELTAZ=0.5*(ZHK(KFLIP)-ZHK(KFLIP+2))
-            EXCH_H(I,K,J)=AKHK(KFLIP)*DELTAZ
+            EXCH_H(I,K+1,J)=AKHK(KFLIP)*DELTAZ
           ENDDO
 !
 !----------------------------------------------------------------------
@@ -433,6 +496,33 @@
             RATIOMX=QV(I,KFLIP,J)
             QK(K)=RATIOMX/(1.+RATIOMX)
             CWMK(K)=CWM(I,KFLIP,J)
+            QCWK(K)=QCW(I,KFLIP,J)
+!BSF  Begin:
+            SPECIES(1,K)=THEK(K)
+            SPECIES(2,K)=QK(K)
+            SPECIES(3,K)=QCWK(K)
+            NSP=3
+            IF (flQI) THEN
+              NSP=NSP+1
+              QCIK(K)=QCI(I,KFLIP,J)
+              SPECIES(NSP,K)=QCIK(K)
+            ENDIF
+!BSF            IF (flQS) THEN
+!BSF              NSP=NSP+1
+!BSF              QCSK(K)=QCS(I,KFLIP,J)
+!BSF              SPECIES(NSP,K)=QCSK(K)
+!BSF            ENDIF
+!BSF            IF (flQR) THEN
+!BSF              NSP=NSP+1
+!BSF              QCRK(K)=QCR(I,KFLIP,J)
+!BSF              SPECIES(NSP,K)=QCRK(K)
+!BSF            ENDIF
+!BSF            IF (flQG) THEN
+!BSF              NSP=NSP+1
+!BSF              QCGK(K)=QCG(I,KFLIP,J)
+!BSF              SPECIES(NSP,K)=QCGK(K)
+!BSF            ENDIF
+!BSF  End:
             ZHK(K)=ZINT(I,K,J)
             RHOK(K,I)=PMID(I,KFLIP,J)/(R_D*T(I,KFLIP,J)*               &
      &                                (1.+P608*QK(K)-CWMK(K)))
@@ -475,6 +565,25 @@
 !
           QZ0 (I,J)=(1.-SEAMASK)*QSFC(I,J)+SEAMASK*QZ0 (I,J)
 !
+! BSF: Begin
+          SZ0(1)=THZ0(I,J)
+          SZ0(2)=QZ0 (I,J)
+          DO NUMS=3,NSPECE
+            SZ0(NUMS)=0.
+          ENDDO
+!
+          CLOW(1)=1.
+          CLOW(2)=CHKLOWQ(I,J)
+          DO NUMS=3,NSPECE
+            CLOW(NUMS)=0.
+          ENDDO
+!
+          CTS(1)=CT(I,J)
+          DO NUMS=2,NSPECE
+            CTS(NUMS)=0.
+          ENDDO
+! BSF: End
+!
 !***  LOWEST LAYER ABOVE GROUND MUST BE FLIPPED
 !
           LMH=KTE-LOWLYR(I,J)+1
@@ -484,9 +593,9 @@
 !***  TEMPERATURE AND WATER VAPOR
 !----------------------------------------------------------------------
 !
-          CALL VDIFH(DTDIF,LMH,THZ0(I,J),QZ0(I,J)                      &
-     &              ,AKHS_DENS,CHKLOWQ(I,J),CT(I,J)                    &
-     &              ,THEK,QK,CWMK,AKHK,ZHK,RHOK(KTS,I)                 &
+          CALL VDIFH(DTDIF,LMH,NSPECS,NSPECE,LPBL(I,J),SZ0             &  !BSF
+     &              ,AKHS_DENS,CLOW,CTS                                &  !BSF
+     &              ,SPECIES,NSPEC,AKHK,ZHK,RHOK(KTS,I)                &  !BSF
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &              ,IMS,IME,JMS,JME,KMS,KME                           &
      &              ,ITS,ITE,JTS,JTE,KTS,KTE,I,J)
@@ -494,6 +603,36 @@
 !***
 !***  COMPUTE PRIMARY VARIABLE TENDENCIES
 !***
+!BSF Begin:
+          DO K=KTS,KTE
+            THEK(K)=SPECIES(1,K)
+            QK  (K)=SPECIES(2,K)
+            QCWK(K)=SPECIES(3,K)
+            CWMK(K)=QCWK(K)
+            NSP=3
+            IF (flQI) THEN
+              NSP=NSP+1
+              QCIK(K)=SPECIES(NSP,K)
+              CWMK(K)=CWMK(K)+QCIK(K)
+            ENDIF
+!BSF            IF (flQS) THEN
+!BSF              NSP=NSP+1
+!BSF              QCSK(K)=SPECIES(NSP,K)
+!BSF              CWMK(K)=CWMK(K)+QCSK(K)
+!BSF            ENDIF
+!BSF            IF (flQR) THEN
+!BSF              NSP=NSP+1
+!BSF              QCRK(K)=SPECIES(NSP,K)
+!BSF              CWMK(K)=CWMK(K)+QCRK(K)
+!BSF            ENDIF
+!BSF            IF (flQG) THEN
+!BSF              NSP=NSP+1
+!BSF              QCGK(K)=SPECIES(NSP,K)
+!BSF              CWMK(K)=CWMK(K)+QCGK(K)
+!BSF            ENDIF
+          ENDDO
+!BSF End:
+!
           DO K=KTS,KTE
             KFLIP=KTE+1-K
             THOLD=TH(I,K,J)
@@ -501,11 +640,15 @@
             DTDT=(THNEW-THOLD)*RDTTURBL
             QOLD=QV(I,K,J)/(1.+QV(I,K,J))
             DQDT=(QK(KFLIP)-QOLD)*RDTTURBL
-            DCDT=(CWMK(KFLIP)-CWM(I,K,J))*RDTTURBL
-!
             RTHBLTEN(I,K,J)=DTDT
             RQVBLTEN(I,K,J)=DQDT/(1.-QK(KFLIP))**2
-            RQCBLTEN(I,K,J)=DCDT
+!BSF Begin:
+            RQCBLTEN(I,K,J)=(QCWK(KFLIP)-QCW(I,K,J))*RDTTURBL
+            IF (flQI) RQIBLTEN(I,K,J)=(QCIK(KFLIP)-QCI(I,K,J))*RDTTURBL
+!BSF            IF (flQS) RQSBLTEN(I,K,J)=(QCSK(KFLIP)-QCS(I,K,J))*RDTTURBL
+!BSF            IF (flQR) RQRBLTEN(I,K,J)=(QCRK(KFLIP)-QCR(I,K,J))*RDTTURBL
+!BSF            IF (flQG) RQGBLTEN(I,K,J)=(QCGK(KFLIP)-QCG(I,K,J))*RDTTURBL
+!BSF End:
           ENDDO
 !
 !*** Begin debugging
@@ -633,7 +776,7 @@
 !   *                                                                *
 !   ******************************************************************
 !
-     &(LMH,U,V,T,THE,Q,CWM,Q2,Z,GM,GH,EL,PBLH,LPBL,LMXL,CT             &
+     &(LMH,U,V,T,THE,Q,CWM,Q2,Z,GM,GH,EL,PBLH,LPBL,LMXL,CT,MIXHT       &    !PLee(3/07)
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
      &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -654,7 +797,7 @@
 !
       REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
 !
-      REAL,INTENT(OUT) :: PBLH
+      REAL,INTENT(OUT) :: PBLH,MIXHT                                         !PLee (3/07)
 !
       REAL,DIMENSION(KTS:KTE-1),INTENT(OUT) :: EL,GH,GM
 !
@@ -764,6 +907,7 @@
 !----------------------------------------------------------------------
 !
       BLMX=Z(LMXL)-Z(LMH+1)
+      MIXHT=BLMX              !PLee (3/07)
 !
 !----------------------------------------------------------------------
       DO K=LPBL,LMH
@@ -1263,14 +1407,18 @@
 !----------------------------------------------------------------------
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !---------------------------------------------------------------------
-      SUBROUTINE VDIFH(DTDIF,LMH,THZ0,QZ0,RKHS,CHKLOWQ,CT             &
-     &                ,THE,Q,CWM,RKH,Z,RHO                            &
+      SUBROUTINE VDIFH(DTDIF,LMH,MSS,MSE,LPBL,SZ0                     &
+     &                ,RKHS,CLOW,CTS                                  &
+     &                ,SPECIES,NSPEC,RKH,ZHK,RHO                      &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                ,IMS,IME,JMS,JME,KMS,KME                        &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE,I,J)
 !     ***************************************************************
 !     *                                                             *
 !     *         VERTICAL DIFFUSION OF MASS VARIABLES                *
+!     *                                                             *
+!     * Z. JANJIC MODIFIED TO WORK WITH ARBITRARY NUMBER OF SPECIES *
+!     * ON 05/17/2008                                               *
 !     *                                                             *
 !     ***************************************************************
 !---------------------------------------------------------------------
@@ -1282,81 +1430,92 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE,I,J
 !
-      INTEGER,INTENT(IN) :: LMH
+      INTEGER,INTENT(IN):: LMH,LPBL,MSS,MSE,NSPEC   !BSF
 !
-      REAL,INTENT(IN) :: CHKLOWQ,CT,DTDIF,QZ0,RKHS,THZ0
+!     REAL,INTENT(IN) :: CHKLOWQ,CT,DTDIF,QZ0,RKHS,THZ0
 !
-      REAL,DIMENSION(KTS:KTE-1),INTENT(IN) :: RKH
-      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: RHO
-      REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
-      REAL,DIMENSION(KTS:KTE),INTENT(INOUT) :: CWM,Q,THE
+      REAL,INTENT(IN):: DTDIF,RKHS
 !
+      REAL,DIMENSION(MSS:MSE),INTENT(IN):: CLOW,CTS,SZ0
+!
+      REAL,DIMENSION(KTS:KTE-1),INTENT(IN):: RKH
+!
+      REAL,DIMENSION(KTS:KTE  ),INTENT(IN):: RHO
+!
+      REAL,DIMENSION(KTS:KTE+1),INTENT(IN):: ZHK
+!
+      REAL,DIMENSION(MSS:MSE,KTS:KTE),INTENT(INOUT):: SPECIES
+
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
 !***
-      INTEGER :: K
+      INTEGER:: K,M
 !
-      REAL :: CF,CMB,CMCB,CMQB,CMTB,CTHF,DTOZL,DTOZS                   &
-     &       ,RCML,RKHH,RKQS,RSCB,RSQB,RSTB
+      REAL:: CF,CMB,CMSB,DTOZL,DTOZS,RCML,RHOK,RKHH,RKHZ,RKSS,RSSB
 !
-      REAL,DIMENSION(KTS:KTE-1) :: CM,CR,DTOZ,RKCT,RSC,RSQ,RST
+      REAL,DIMENSION(KTS:KTE-1):: CM,CR,DTOZ
+!
+      REAL,DIMENSION(MSS:MSE,KTS:KTE-1):: RKCT,RSS
 !
 !----------------------------------------------------------------------
 !**********************************************************************
-!----------------------------------------------------------------------
-      CTHF=0.5*CT
-!
+!---PREPARATIONS-------------------------------------------------------
       DO K=KTS,LMH-1
-        DTOZ(K)=DTDIF/(Z(K)-Z(K+1))
+        DTOZ(K)=DTDIF/(ZHK(K)-ZHK(K+1))
         CR(K)=-DTOZ(K)*RKH(K)
-        RKCT(K)=RKH(K)*(Z(K)-Z(K+2))*CTHF
+        IF(K.LT.LPBL) THEN
+          DO M=MSS,NSPEC
+            RKCT(M,K)=0.
+          ENDDO
+        ELSE
+          RKHZ=RKH(K)*(ZHK(K)-ZHK(K+2))
+          DO M=MSS,NSPEC
+            RKCT(M,K)=RKHZ*CTS(M)*0.5
+          ENDDO
+        ENDIF
       ENDDO
-!
-      CM(KTS)=DTOZ(KTS)*RKH(KTS)+RHO(KTS)
-!----------------------------------------------------------------------
-      RST(KTS)=-RKCT(KTS)*DTOZ(KTS)                                    &
-     &         +THE(KTS)*RHO(KTS)
-      RSQ(KTS)=Q(KTS)  *RHO(KTS)
-      RSC(KTS)=CWM(KTS)*RHO(KTS)
-!----------------------------------------------------------------------
+!---TOP LEVEL----------------------------------------------------------
+      RHOK=RHO(KTS)
+      CM(KTS)=DTOZ(KTS)*RKH(KTS)+RHOK
+      DO M=MSS,NSPEC
+        RSS(M,KTS)=-RKCT(M,KTS)*DTOZ(KTS)+SPECIES(M,KTS)*RHOK
+      ENDDO
+!---INTERMEDIATE LEVELS------------------------------------------------
       DO K=KTS+1,LMH-1
         DTOZL=DTOZ(K)
         CF=-DTOZL*RKH(K-1)/CM(K-1)
-        CM(K)=-CR(K-1)*CF+(RKH(K-1)+RKH(K))*DTOZL+RHO(K)
-        RST(K)=-RST(K-1)*CF+(RKCT(K-1)-RKCT(K))*DTOZL+THE(K)*RHO(K)
-        RSQ(K)=-RSQ(K-1)*CF+Q(K)  *RHO(K)
-        RSC(K)=-RSC(K-1)*CF+CWM(K)*RHO(K)
+        RHOK=RHO(K)
+        CM(K)=-CR(K-1)*CF+(RKH(K-1)+RKH(K))*DTOZL+RHOK
+        DO M=MSS,NSPEC
+          RSS(M,K)=-RSS(M,K-1)*CF &
+                   +(RKCT(M,K-1)-RKCT(M,K))*DTOZL+SPECIES(M,K)*RHOK
+        ENDDO
       ENDDO
-!
-      DTOZS=DTDIF/(Z(LMH)-Z(LMH+1))
+!---BOTTOM LEVEL-------------------------------------------------------
+      DTOZS=DTDIF/(ZHK(LMH)-ZHK(LMH+1))
       RKHH=RKH(LMH-1)
 !
       CF=-DTOZS*RKHH/CM(LMH-1)
-      RKQS=RKHS*CHKLOWQ
-!
       CMB=CR(LMH-1)*CF
-      CMTB=-CMB+(RKHH+RKHS)*DTOZS+RHO(LMH)
-      CMQB=-CMB+(RKHH+RKQS)*DTOZS+RHO(LMH)
-      CMCB=-CMB+(RKHH     )*DTOZS+RHO(LMH)
+      RHOK=RHO(LMH)
 !
-      RSTB=-RST(LMH-1)*CF+RKCT(LMH-1)*DTOZS+THE(LMH)*RHO(LMH)
-      RSQB=-RSQ(LMH-1)*CF+Q(LMH)  *RHO(LMH)
-      RSCB=-RSC(LMH-1)*CF+CWM(LMH)*RHO(LMH)
-!----------------------------------------------------------------------
-      THE(LMH)=(DTOZS*RKHS*THZ0+RSTB)/CMTB
-      Q(LMH)  =(DTOZS*RKQS*QZ0 +RSQB)/CMQB
-      CWM(LMH)=(                RSCB)/CMCB
-!----------------------------------------------------------------------
+      DO M=MSS,NSPEC
+        RKSS=RKHS*CLOW(M)
+        CMSB=-CMB+(RKHH+RKSS)*DTOZS+RHOK
+        RSSB=-RSS(M,LMH-1)*CF+RKCT(M,LMH-1)*DTOZS+SPECIES(M,LMH)*RHOK
+        SPECIES(M,LMH)=(DTOZS*RKSS*SZ0(M)+RSSB)/CMSB
+      ENDDO
+!---BACKSUBSTITUTION---------------------------------------------------
       DO K=LMH-1,KTS,-1
         RCML=1./CM(K)
-        THE(K)=(-CR(K)*THE(K+1)+RST(K))*RCML
-        Q(K)  =(-CR(K)*  Q(K+1)+RSQ(K))*RCML
-        CWM(K)=(-CR(K)*CWM(K+1)+RSC(K))*RCML
+        DO M=MSS,NSPEC
+          SPECIES(M,K)=(-CR(K)*SPECIES(M,K+1)+RSS(M,K))*RCML
+        ENDDO
       ENDDO
 !----------------------------------------------------------------------
-!
       END SUBROUTINE VDIFH
+!
 !
 !----------------------------------------------------------------------
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

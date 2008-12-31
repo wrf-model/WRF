@@ -7,6 +7,8 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 ! used the PW structure for ZTD to avoid declaration of the
 ! another structure.          
 !                                 Y.-R. Guo           05/21/2008
+!    Updated for Analysis on Arakawa-C grid
+!    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
 !----------------------------------------------------------------
    IMPLICIT NONE
 
@@ -209,9 +211,7 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 !------------------------------------------------------------------------
 !        [5.0] Perform optional maximum error check:
 !------------------------------------------------------------------------
-      if (  check_max_iv ) then
-         call da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
-      end if
+      call da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
 
       if (rootproc .and. check_max_iv_print) then
          write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &

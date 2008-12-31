@@ -11,7 +11,7 @@ CONTAINS
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
                              , scalar , scalar_tend             &
-                             , fdda3d, fdda2d                   &
+                             , fdda3d, fdda2d, sfdda2d          &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
@@ -25,22 +25,29 @@ CONTAINS
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
+                             , imsx,imex,jmsx,jmex,kmsx,kmex    &
+                             , ipsx,ipex,jpsx,jpex,kpsx,kpex    &
+                             , imsy,imey,jmsy,jmey,kmsy,kmey    &
+                             , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
                             )
     USE module_state_description
     USE module_model_constants
-    USE module_domain, ONLY : domain, domain_clock_get
+    USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
     USE module_radiation_driver, ONLY : pre_radiation_driver, radiation_driver
     USE module_surface_driver, ONLY : surface_driver
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_pbl_driver, ONLY : pbl_driver
+    USE module_fr_sfire_driver, ONLY : sfire_driver_em
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
     USE module_big_step_utilities_em, ONLY : phy_prep
     USE module_dm
     USE module_utility
+! jm debug
+    USE module_fr_sfire_util
     IMPLICIT NONE
 
     TYPE ( domain ), INTENT(INOUT) :: grid
@@ -49,7 +56,12 @@ CONTAINS
 
     INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
-                           ips, ipe, jps, jpe, kps, kpe
+                           ips, ipe, jps, jpe, kps, kpe,     &
+                           imsx,imex,jmsx,jmex,kmsx,kmex,    &
+                           ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
+                           imsy,imey,jmsy,jmey,kmsy,kmey,    &
+                           ipsy,ipey,jpsy,jpey,kpsy,kpey
+
 
     LOGICAL ,INTENT(IN)                        :: adapt_step_flag
     REAL, INTENT(IN)                           :: curr_secs
@@ -62,6 +74,7 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
     REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
+    REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_sfdda2d),INTENT(INOUT)      :: sfdda2d
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
@@ -98,16 +111,28 @@ CONTAINS
 
 ! Local
 
-    REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc
-    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask 
+    REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
+    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask
     INTEGER                             :: ij
     INTEGER  num_roof_layers
     INTEGER  num_wall_layers
     INTEGER  num_road_layers
     INTEGER  iswater
-    INTEGER  rk_step 
+    INTEGER  :: isurban
+    INTEGER  rk_step
     INTEGER                         :: yr, month, day, hr, minute, sec, rc
-    CHARACTER*80                    :: message
+    CHARACTER*80                    :: mesg
+
+   INTEGER                         :: sids , side , sjds , sjde , skds , skde , &
+                                      sims , sime , sjms , sjme , skms , skme , &
+                                      sips , sipe , sjps , sjpe , skps , skpe
+
+   CHARACTER (LEN=256) :: mminlu
+
+  CALL get_ijk_from_subgrid (  grid ,                   &
+                            sids, side, sjds, sjde, skds, skde,    &
+                            sims, sime, sjms, sjme, skms, skme,    &
+                            sips, sipe, sjps, sjpe, skps, skpe    )
 
  ! initialize all tendencies to zero in order to update physics
  ! tendencies first (separate from dry dynamics).
@@ -139,6 +164,7 @@ BENCH_END(init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_PHYS_A.inc"
+#     include "HALO_EM_FDDA_SFC.inc"
 #endif
 
       !$OMP PARALLEL DO   &
@@ -153,7 +179,7 @@ BENCH_END(init_zero_tend_tim)
                         mu_3d, rho,                             &
                         th_phy, p_phy, pi_phy, u_phy, v_phy,    &
                         p8w, t_phy, t8w, grid%z, z_at_w,             &
-                        dz8w, grid%fnm, grid%fnp,                         &    
+                        dz8w, grid%fnm, grid%fnp,                         &
                         grid%rthraten,                               &
                         grid%rthblten, grid%rublten, grid%rvblten,             &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,           &
@@ -161,7 +187,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%rqrcuten, grid%rqicuten, grid%rqscuten,           &
                         grid%rthften,  grid%rqvften,                      &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN,       &
-                        grid%RQVNDGDTEN, grid%RMUNDGDTEN,                 &
+                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,                 &
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &
@@ -174,7 +200,7 @@ BENCH_END(phy_prep_tim)
 
 ! radiation
      CALL domain_clock_get( grid, current_time=currentTime, &
-                            current_timestr=message )
+                            current_timestr=mesg )
      CALL WRFU_TimeGet( currentTime, YY=yr, dayOfYear=day, H=hr, M=minute, S=sec, rc=rc)
 !         print *, 'current year', yr, day, rc
          IF( rc/= WRFU_SUCCESS)THEN
@@ -182,18 +208,18 @@ BENCH_END(phy_prep_tim)
          ENDIF
 
 ! this driver is only needed to handle non-local shadowing effects
-      CALL pre_radiation_driver ( grid, config_flags                        & 
-     &        ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    & 
+      CALL pre_radiation_driver ( grid, config_flags                        &
+     &        ,itimestep=grid%itimestep, ra_call_offset=grid%ra_call_offset    &
      &        ,XLAT=grid%xlat, XLONG=grid%xlong, GMT=grid%gmt                  &
      &        ,julian=grid%julian, xtime=grid%xtime, RADT=grid%radt            &
-     &        ,STEPRA=grid%stepra                                              & 
+     &        ,STEPRA=grid%stepra                                              &
      &        ,ht=grid%ht,dx=grid%dx,dy=grid%dy,sina=grid%sina,cosa=grid%cosa  &
      &        ,shadowmask=shadowmask,slope_rad=config_flags%slope_rad          &
-     &        ,topo_shading=config_flags%topo_shading                          & 
-     &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc & 
+     &        ,topo_shading=config_flags%topo_shading                          &
+     &        ,shadlen=config_flags%shadlen,ht_shad=grid%ht_shad,ht_loc=ht_loc &
      &        ,ht_shad_bxs=grid%ht_shad_bxs, ht_shad_bxe=grid%ht_shad_bxe      &
      &        ,ht_shad_bys=grid%ht_shad_bys, ht_shad_bye=grid%ht_shad_bye      &
-     &        ,nested=config_flags%nested, min_ptchsz=grid%min_ptchsz          & 
+     &        ,nested=config_flags%nested, min_ptchsz=grid%min_ptchsz          &
      &        ,spec_bdy_width=config_flags%spec_bdy_width                      &
             ! indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
@@ -248,7 +274,7 @@ BENCH_START(rad_driver_tim)
      &        ,j_start=grid%j_start,j_end=min(grid%j_end, jde-1)          &
      &        ,kts=k_start, kte=min(k_end,kde-1)                          &
      &        ,num_tiles=grid%num_tiles                                   &
-            ! Optional                          
+            ! Optional
      &        , CLDFRA=grid%cldfra                                        &
      &        , PB=grid%pb                                                     &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy                 &
@@ -310,6 +336,8 @@ BENCH_START(surf_driver_tim)
       num_wall_layers = grid%num_soil_layers !urban
       num_road_layers = grid%num_soil_layers !urban
       CALL nl_get_iswater(grid%id, iswater)
+      CALL nl_get_isurban(grid%id, isurban)
+      call nl_get_mminlu(grid%id, mminlu)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
 
@@ -382,7 +410,7 @@ BENCH_START(surf_driver_tim)
      &        ,TGL_URB3D=grid%tgl_urb3d                                   & !H urban
      &        ,SH_URB2D=grid%sh_urb2d     ,LH_URB2D=grid%lh_urb2d         &
      &        ,G_URB2D=grid%g_urb2d                                       & !H urban
-     &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban 
+     &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban
      &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
      &        ,ucmcall=grid%ucmcall                                       & !H urban
@@ -396,12 +424,12 @@ BENCH_START(surf_driver_tim)
      &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
      &        ,PXLSM_SOIL_NUDGE=config_flags%grid_fdda                    &   ! P-X LSM
            ! Optional PX LSM nudging
-     &        ,t2_ndg_old=fdda2d(ims,1,jms,P_t2_ndg_old)                  &
-     &        ,q2_ndg_old=fdda2d(ims,1,jms,P_q2_ndg_old)                  &
-     &        ,t2_ndg_new=fdda2d(ims,1,jms,P_t2_ndg_new)                  &
-     &        ,q2_ndg_new=fdda2d(ims,1,jms,P_q2_ndg_new)                  &
-     &        ,sn_ndg_old=fdda2d(ims,1,jms,P_sn_ndg_old)                  &
-     &        ,sn_ndg_new=fdda2d(ims,1,jms,P_sn_ndg_new)                  &
+     &        ,t2_ndg_old=sfdda2d(ims,1,jms,P_t2_ndg_old)                  &
+     &        ,q2_ndg_old=sfdda2d(ims,1,jms,P_q2_ndg_old)                  &
+     &        ,t2_ndg_new=sfdda2d(ims,1,jms,P_t2_ndg_new)                  &
+     &        ,q2_ndg_new=sfdda2d(ims,1,jms,P_q2_ndg_new)                  &
+     &        ,sn_ndg_old=sfdda2d(ims,1,jms,P_sn_ndg_old)                  &
+     &        ,sn_ndg_new=sfdda2d(ims,1,jms,P_sn_ndg_new)                  &
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
@@ -423,6 +451,12 @@ BENCH_START(surf_driver_tim)
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav          & ! ruc lsm
      &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag                    & ! ruc lsm
      &        ,POTEVP=grid%POTEVP, SNOPCX=grid%SNOPCX, SOILTB=grid%SOILTB                & ! ruc lsm
+     &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
+     &        ,SNOTIME = grid%SNOTIME &
+     &        ,RDLAI2D=config_flags%rdlai2d                                   &
+     &        ,NOAHRES=grid%noahres                                       &
+!mynn mp@
+     &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
      &                                                              )
 BENCH_END(surf_driver_tim)
 
@@ -437,13 +471,14 @@ BENCH_START(pbl_driver_tim)
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
      &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct         &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
-     &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h      ,GRDFLX=grid%grdflx      &
+     &        ,EL_MYJ=grid%el_myj      ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m   &
+     &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
      &        ,ITIMESTEP=grid%itimestep                    ,KPBL=grid%kpbl          &
      &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=p8w            &
      &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
      &        ,PSIM=psim          ,P_PHY=p_phy        ,QFX=grid%qfx            &
-     &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0                                &
+     &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
      &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
      &        ,RQVBLTEN=grid%rqvblten  ,RTHBLTEN=grid%rthblten  ,RUBLTEN=grid%rublten    &
@@ -471,9 +506,43 @@ BENCH_START(pbl_driver_tim)
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
+!mynn mp@
+     &        ,qke=grid%qke, tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
+     &        ,rmol=grid%rmol, ch=grid%ch                                 &
+     &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
+!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+!GWD for ARW
+     &        ,GWD_OPT=config_flags%gwd_opt &
+     &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
+     &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
+     &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
+     &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
      &                                                          )
 
 BENCH_END(pbl_driver_tim)
+
+!*****
+! fire 
+
+! Jan Mandel's call to SFIRE
+
+      IF ((grid%sr_x > 0 .OR. grid%sr_y > 0) .AND. config_flags%ifire == 2) THEN
+
+BENCH_START(fire_driver_tim)
+        if(config_flags%ifire.eq.2)then 
+            call sfire_driver_em ( grid , config_flags    &
+            ,ids,ide, kds,kde, jds,jde                              &
+            ,ims,ime, kms,kme, jms,jme                              &
+            ,ips,ipe, kps,kpe, jps,jpe                              &
+            ,sids,side, sjds,sjde                        &
+            ,sims,sime, sjms,sjme                        &
+            ,sips,sipe, sjps,sjpe                        &
+            ,rho,z_at_w,dz8w)
+        endif
+
+BENCH_END(fire_driver_tim)
+       ENDIF
+
 
 ! cumulus para.
 
@@ -583,33 +652,63 @@ BENCH_END(cu_driver_tim)
       CALL wrf_debug ( 200 , ' call fddagd_driver' )
 
 BENCH_START(fdda_driver_tim)
-      CALL fddagd_driver(itimestep=grid%itimestep,dt=grid%dt,xtime=grid%XTIME,   &
-                  id=grid%id,      &
-                  RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,             &
-                  RTHNDGDTEN=grid%rthndgdten,RQVNDGDTEN=grid%rqvndgdten,         &
-                  RMUNDGDTEN=grid%rmundgdten,                                    &
-                  u_ndg_old=fdda3d(ims,kms,jms,P_u_ndg_old),              &
-                  v_ndg_old=fdda3d(ims,kms,jms,P_v_ndg_old),              &
-                  t_ndg_old=fdda3d(ims,kms,jms,P_t_ndg_old),              &
-                  q_ndg_old=fdda3d(ims,kms,jms,P_q_ndg_old),              &
-                  mu_ndg_old=fdda2d(ims,1,jms,P_mu_ndg_old),              &
-                  u_ndg_new=fdda3d(ims,kms,jms,P_u_ndg_new),              &
-                  v_ndg_new=fdda3d(ims,kms,jms,P_v_ndg_new),              &
-                  t_ndg_new=fdda3d(ims,kms,jms,P_t_ndg_new),              &
-                  q_ndg_new=fdda3d(ims,kms,jms,P_q_ndg_new),              &
-                  mu_ndg_new=fdda2d(ims,1,jms,P_mu_ndg_new),              &
-                  u3d=grid%u_2,v3d=grid%v_2,th_phy=th_phy,rho=rho,moist=moist,      &
-                  p_phy=p_phy,pi_phy=pi_phy,p8w=p8w,t_phy=t_phy,          &
-                  dz8w=dz8w,z=grid%z,z_at_w=z_at_w,                            &
-                  config_flags=config_flags,dx=grid%DX,n_moist=num_moist,  &
-                  STEPFG=grid%STEPFG,                                          &
-                  pblh=grid%pblh,ht=grid%ht,                                        &
-                    IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
-                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
-                   ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
-                   ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
-                   ,KTS=k_start, KTE=min(k_end,kde-1)                     &
-                   , num_tiles=grid%num_tiles                             )
+      CALL fddagd_driver(itimestep=grid%itimestep,dt=grid%dt,xtime=grid%XTIME,      &
+                  id=grid%id,                                                       &
+                  RUNDGDTEN=grid%rundgdten,RVNDGDTEN=grid%rvndgdten,                &
+                  RTHNDGDTEN=grid%rthndgdten,RPHNDGDTEN=grid%rphndgdten,            &
+                  RQVNDGDTEN=grid%rqvndgdten,RMUNDGDTEN=grid%rmundgdten,            &
+                  u_ndg_old=fdda3d(ims,kms,jms,P_u_ndg_old),                        &
+                  v_ndg_old=fdda3d(ims,kms,jms,P_v_ndg_old),                        &
+                  t_ndg_old=fdda3d(ims,kms,jms,P_t_ndg_old),                        &
+                  ph_ndg_old=fdda3d(ims,kms,jms,P_ph_ndg_old),                      &
+                  q_ndg_old=fdda3d(ims,kms,jms,P_q_ndg_old),                        &
+                  mu_ndg_old=fdda2d(ims,1,jms,P_mu_ndg_old),                        &
+                  u_ndg_new=fdda3d(ims,kms,jms,P_u_ndg_new),                        &
+                  v_ndg_new=fdda3d(ims,kms,jms,P_v_ndg_new),                        &
+                  t_ndg_new=fdda3d(ims,kms,jms,P_t_ndg_new),                        &
+                  ph_ndg_new=fdda3d(ims,kms,jms,P_ph_ndg_new),                      &
+                  q_ndg_new=fdda3d(ims,kms,jms,P_q_ndg_new),                        &
+                  mu_ndg_new=fdda2d(ims,1,jms,P_mu_ndg_new),                        &
+                  u3d=grid%u_2,v3d=grid%v_2,th_phy=th_phy,                          &
+                  ph=grid%ph_2,rho=rho,moist=moist,                                 &
+                  p_phy=p_phy,pi_phy=pi_phy,p8w=p8w,t_phy=t_phy,                    &
+                  dz8w=dz8w,z=grid%z,z_at_w=z_at_w,                                 &
+                  grid=grid,config_flags=config_flags,dx=grid%DX,n_moist=num_moist, &
+                  STEPFG=grid%STEPFG,                                               &
+                  pblh=grid%pblh,ht=grid%ht,REGIME=grid%regime,ZNT=grid%znt         &
+                   ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde               &
+                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme               &
+                   ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)               &
+                   ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)               &
+                   ,KTS=k_start, KTE=min(k_end,kde-1)                               &
+                   , num_tiles=grid%num_tiles,                                      &
+                   u10=grid%u10, v10=grid%v10, th2=grid%th2, q2=grid%q2,            &
+                   u10_ndg_old=sfdda2d(ims,1,jms,P_u10_ndg_old),                    &
+                   v10_ndg_old=sfdda2d(ims,1,jms,P_v10_ndg_old),                    &
+                   t2_ndg_old=sfdda2d(ims,1,jms,P_t2_ndg_old),                      &
+                   th2_ndg_old=sfdda2d(ims,1,jms,P_th2_ndg_old),                    &
+                   q2_ndg_old=sfdda2d(ims,1,jms,P_q2_ndg_old),                      &
+                   rh_ndg_old=sfdda2d(ims,1,jms,P_rh_ndg_old),                      &
+                   psl_ndg_old=sfdda2d(ims,1,jms,P_psl_ndg_old),                    &
+                   ps_ndg_old=sfdda2d(ims,1,jms,P_ps_ndg_old),                      &
+                   tob_ndg_old=sfdda2d(ims,1,jms,P_tob_ndg_old),                    &
+                   odis_ndg_old=sfdda2d(ims,1,jms,P_odis_ndg_old),                  &
+                   u10_ndg_new=sfdda2d(ims,1,jms,P_u10_ndg_new),                    &
+                   v10_ndg_new=sfdda2d(ims,1,jms,P_v10_ndg_new),                    &
+                   t2_ndg_new=sfdda2d(ims,1,jms,P_t2_ndg_new),                      &
+                   th2_ndg_new=sfdda2d(ims,1,jms,P_th2_ndg_New),                    &
+                   q2_ndg_new=sfdda2d(ims,1,jms,P_q2_ndg_new),                      &
+                   rh_ndg_new=sfdda2d(ims,1,jms,P_rh_ndg_new),                      &
+                   psl_ndg_new=sfdda2d(ims,1,jms,P_psl_ndg_new),                    &
+                   ps_ndg_new=sfdda2d(ims,1,jms,P_ps_ndg_new),                      &
+                   tob_ndg_new=sfdda2d(ims,1,jms,P_tob_ndg_new),                    &
+                   odis_ndg_new=sfdda2d(ims,1,jms,P_odis_ndg_new)                   &
+                   ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe               &
+                   ,IMSX=imsx,IMEX=imex,JMSX=jmsx,JMEX=jmex,KMSX=kmsx,KMEX=kmex     &
+                   ,IPSX=ipsx,IPEX=ipex,JPSX=jpsx,JPEX=jpex,KPSX=kpsx,KPEX=kpex     &
+                   ,IMSY=imsy,IMEY=imey,JMSY=jmsy,JMEY=jmey,KMSY=kmsy,KMEY=kmey     &
+                   ,IPSY=ipsy,IPEY=ipey,JPSY=jpsy,JPEY=jpey,KPSY=kpsy,KPEY=kpey     )
+
 BENCH_END(fdda_driver_tim)
 
   END SUBROUTINE first_rk_step_part1

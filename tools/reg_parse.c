@@ -213,20 +213,23 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
     }
     if      ( !strcmp( tokens[ TABLE ] , "state" ) )
     {
+        int inbrace = 0 ;
         strcpy( newdims, "" ) ;
         strcpy( newdims4d, "" ) ;
         is4d = 0 ; wantstend = 0 ; wantsbdy = 0 ; 
         for ( i = 0 ; i < (len_of_tok = strlen(tokens[F_DIMS])) ; i++ )
         {
           x = tolower(tokens[F_DIMS][i]) ;
-          if ( x >= 'a' && x <= 'z' ) {
+          if ( x == '{' ) { inbrace = 1 ; }
+          if ( x == '}' ) { inbrace = 0 ; }
+          if ( x >= 'a' && x <= 'z' && !inbrace ) {
             if ( x == 'f' ) { is4d = 1 ; }
             if ( x == 't' ) { wantstend = 1 ; }
             if ( x == 'b' ) { wantsbdy = 1 ; }
           }
           sprintf(xstr,"%c",x) ;
-          if ( x != 'b' ) strcat ( newdims , xstr ) ;
-          if ( x != 'f' && x != 't' ) strcat( newdims4d , xstr ) ;
+          if ( x != 'b' || inbrace ) strcat ( newdims , xstr ) ;
+          if ( x != 'f' && x != 't' || inbrace ) strcat( newdims4d , xstr ) ;
 
         }
         if ( wantsbdy ) {
@@ -697,11 +700,9 @@ reg_parse( FILE * infile )
     {
       node_t * dim_struct ;
       dim_struct = new_node( DIM ) ;
-      if ( strlen( tokens[DIM_NAME] ) > 1 )
-        { fprintf(stderr,"Registry warning: dimspec (%s) must be only one letter\n",tokens[DIM_NAME] ) ; }
-      if ( get_dim_entry ( tokens[DIM_NAME][0] ) != NULL )
-        { fprintf(stderr,"Registry warning: dimspec (%c) already defined\n",tokens[DIM_NAME][0] ) ; }
-      dim_struct->dim_name = tokens[DIM_NAME][0] ;
+      if ( get_dim_entry ( tokens[DIM_NAME] ) != NULL )
+        { fprintf(stderr,"Registry warning: dimspec (%s) already defined\n",tokens[DIM_NAME] ) ; }
+      strcpy(dim_struct->dim_name,tokens[DIM_NAME]) ;
       if ( set_dim_order( tokens[DIM_ORDER], dim_struct ) )
         { fprintf(stderr,"Registry warning: problem with dimorder (%s)\n",tokens[DIM_ORDER] ) ; }
       if ( set_dim_len( tokens[DIM_SPEC], dim_struct ) )
@@ -824,12 +825,12 @@ reg_parse( FILE * infile )
 }
 
 node_t *
-get_dim_entry( char c )
+get_dim_entry( char *s )
 {
   node_t * p ;
   for ( p = Dim ; p != NULL ; p = p->next )
   {
-    if ( p->dim_name == c ) return( p ) ;
+    if ( !strcmp(p->dim_name, s ) ) return( p ) ;
   }
   return(NULL) ;
 }

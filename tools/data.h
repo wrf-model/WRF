@@ -77,7 +77,7 @@ typedef struct node_struct {
 
 /* fields used by Dim nodes */
 
-  char dim_name ;
+  char dim_name[32] ;
   char dim_data_name[NAMELEN] ;
   int  coord_axis ;   /* X, Y, Z, C */
                                  /* DOMAIN_STANDARD, NAMELIST, CONSTANT */

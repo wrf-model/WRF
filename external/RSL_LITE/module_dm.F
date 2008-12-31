@@ -436,7 +436,7 @@ CONTAINS
          DO i = c_ids, c_ide
             ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  thisdomain_max_halo_width, thisdomain_max_halo_width, ierr )
+                                  1, 1,  ierr )
             IF ( Px .EQ. mytask_x ) THEN
                c_ipe = i
                IF ( c_ips .EQ. -1 ) c_ips = i
@@ -456,7 +456,7 @@ CONTAINS
          DO j = c_jds, c_jde
             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  thisdomain_max_halo_width, thisdomain_max_halo_width, ierr )
+                                  1, 1, ierr )
 
 
             IF ( Py .EQ. mytask_y ) THEN
@@ -579,6 +579,32 @@ CONTAINS
          intermediate_grid%parents(1)%ptr => nest_grid     ! the intermediate grid considers nest its parent
          intermediate_grid%num_parents = 1
 
+         intermediate_grid%is_intermediate = .TRUE.
+         SELECT CASE ( model_data_order )
+            CASE ( DATA_ORDER_ZXY )
+               intermediate_grid%nids = nest_grid%sd32 ; intermediate_grid%njds = nest_grid%sd33
+               intermediate_grid%nide = nest_grid%ed32 ; intermediate_grid%njde = nest_grid%sd33
+            CASE ( DATA_ORDER_ZYX )
+               intermediate_grid%nids = nest_grid%sd33 ; intermediate_grid%njds = nest_grid%sd32
+               intermediate_grid%nide = nest_grid%ed33 ; intermediate_grid%njde = nest_grid%sd32
+            CASE ( DATA_ORDER_XYZ )
+               intermediate_grid%nids = nest_grid%sd31 ; intermediate_grid%njds = nest_grid%sd32
+               intermediate_grid%nide = nest_grid%ed31 ; intermediate_grid%njde = nest_grid%sd32
+            CASE ( DATA_ORDER_YXZ)
+               intermediate_grid%nids = nest_grid%sd32 ; intermediate_grid%njds = nest_grid%sd31
+               intermediate_grid%nide = nest_grid%ed32 ; intermediate_grid%njde = nest_grid%sd31
+            CASE ( DATA_ORDER_XZY )
+               intermediate_grid%nids = nest_grid%sd31 ; intermediate_grid%njds = nest_grid%sd33
+               intermediate_grid%nide = nest_grid%ed31 ; intermediate_grid%njde = nest_grid%sd33
+            CASE ( DATA_ORDER_YZX )
+               intermediate_grid%nids = nest_grid%sd33 ; intermediate_grid%njds = nest_grid%sd31
+               intermediate_grid%nide = nest_grid%ed33 ; intermediate_grid%njde = nest_grid%sd31
+         END SELECT
+         intermediate_grid%nids = ids
+         intermediate_grid%nide = ide
+         intermediate_grid%njds = jds
+         intermediate_grid%njde = jde
+
          c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
          c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
 
@@ -666,7 +692,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth, maxhalowidth, ierr )
+                             1, 1, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( ips .EQ. -1 ) ips = i
@@ -685,7 +711,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth, maxhalowidth, ierr )
+                             1, 1, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( jps .EQ. -1 ) jps = j
@@ -756,7 +782,7 @@ CONTAINS
     ierr = 0
     DO k = kds, kde
        CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, maxhalowidth, ierr )
+                             1, 1, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           kpex = k
           IF ( kpsx .EQ. -1 ) kpsx = k
@@ -778,7 +804,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde
        CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, maxhalowidth, ierr )
+                             1, 1, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpex = j
           IF ( jpsx .EQ. -1 ) jpsx = j
@@ -814,7 +840,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
        CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
-                             maxhalowidth, 1, ierr ) ! x and y for proc mesh reversed
+                             1, 1, ierr ) ! x and y for proc mesh reversed
        IF ( Py .EQ. mytask_y ) THEN
           ipey = i
           IF ( ipsy .EQ. -1 ) ipsy = i
@@ -838,7 +864,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth, maxhalowidth , ierr )
+                             1, 1 , ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
@@ -853,7 +879,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             maxhalowidth , maxhalowidth , ierr )
+                             1 , 1 , ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
@@ -1911,6 +1937,175 @@ END
 #endif
       RETURN
    END FUNCTION wrf_dm_on_monitor
+
+   SUBROUTINE rsl_comm_iter_init(shw,ps,pe)
+      INTEGER shw, ps, pe
+      INTEGER iter, plus_send_start, plus_recv_start, &
+                    minus_send_start, minus_recv_start 
+      COMMON /rcii/ iter, plus_send_start, plus_recv_start, &
+                          minus_send_start, minus_recv_start
+      iter = 0 
+      minus_send_start = ps
+      minus_recv_start = ps-1
+      plus_send_start = pe
+      plus_recv_start = pe+1
+   END SUBROUTINE rsl_comm_iter_init
+
+   LOGICAL FUNCTION rsl_comm_iter ( id , is_intermediate,                     &
+                                    shw ,  xy , ds, de_in, ps, pe, nds,nde, & 
+                                    sendbeg_m, sendw_m, sendbeg_p, sendw_p,   &
+                                    recvbeg_m, recvw_m, recvbeg_p, recvw_p    )
+      USE module_dm, ONLY : ntasks_x, ntasks_y, mytask_x, mytask_y
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)  :: id,shw,xy,ds,de_in,ps,pe,nds,nde
+      LOGICAL, INTENT(IN)  :: is_intermediate  ! treated differently, coarse but with same decomp as nest
+      INTEGER, INTENT(OUT) :: sendbeg_m, sendw_m, sendbeg_p, sendw_p
+      INTEGER, INTENT(OUT) :: recvbeg_m, recvw_m, recvbeg_p, recvw_p
+      INTEGER k, kn, ni, nj, de, Px, Py, nt, me, lb, ub, ierr 
+      LOGICAL went
+      INTEGER iter, plus_send_start, plus_recv_start, &
+                    minus_send_start, minus_recv_start 
+      INTEGER parent_grid_ratio, parent_start
+      COMMON /rcii/ iter, plus_send_start, plus_recv_start, &
+                          minus_send_start, minus_recv_start
+
+#if (NMM_CORE == 1 )
+! In case of NMM CORE, the domain only ever runs from ids..ide-1 and jds..jde-1 so
+! adjust decomposition to reflect.  20081206 JM
+      de = de_in - 1
+#else
+      de = de_in
+#endif
+
+      IF ( xy .EQ. 1 ) THEN  ! X/I axis
+        nt = ntasks_x 
+        me = mytask_x
+        IF ( is_intermediate ) THEN
+           CALL nl_get_i_parent_start(id,parent_start)
+           CALL nl_get_parent_grid_ratio(id,parent_grid_ratio)
+        ENDIF
+      ELSE
+        nt = ntasks_y
+        me = mytask_y
+        IF ( is_intermediate ) THEN
+           CALL nl_get_j_parent_start(id,parent_start)
+           CALL nl_get_parent_grid_ratio(id,parent_grid_ratio)
+        ENDIF
+      ENDIF
+      iter = iter + 1
+
+#if (DA_CORE == 0)
+      went = .FALSE.
+      ! send to minus 
+      sendw_m = 0 
+      sendbeg_m = 1
+      IF ( me .GT. 0 ) THEN
+        lb = minus_send_start
+        sendbeg_m = lb-ps+1
+        DO k = lb,ps+shw-1
+          went = .TRUE.
+          IF ( is_intermediate ) THEN
+            kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ELSE
+            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ENDIF
+          IF ( Px .NE. me+(iter-1) ) THEN
+            exit
+          ENDIF
+          minus_send_start = minus_send_start+1
+          sendw_m = sendw_m + 1
+        ENDDO
+      ENDIF
+      ! recv from minus 
+      recvw_m = 0 
+      recvbeg_m = 1
+      IF ( me .GT. 0 ) THEN
+        ub = minus_recv_start
+        recvbeg_m = ps - ub
+        DO k = minus_recv_start,ps-shw,-1
+          went = .TRUE.
+          IF ( is_intermediate ) THEN
+            kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ELSE
+            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ENDIF
+          IF ( Px .NE. me-iter ) THEN
+            exit
+          ENDIF
+          minus_recv_start = minus_recv_start-1
+          recvw_m = recvw_m + 1
+        ENDDO
+      ENDIF
+
+      ! send to plus
+      sendw_p = 0 
+      sendbeg_p = 1
+      IF ( me .LT. nt-1 ) THEN
+        ub = plus_send_start
+        sendbeg_p = pe - ub + 1 
+        DO k = ub,pe-shw+1,-1
+          went = .TRUE.
+          IF ( is_intermediate ) THEN
+            kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ELSE
+            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ENDIF
+          IF ( Px .NE. me-(iter-1) ) THEN
+            exit
+          ENDIF
+          plus_send_start = plus_send_start - 1
+          sendw_p = sendw_p + 1
+        ENDDO
+      ENDIF
+      ! recv from plus
+      recvw_p = 0 
+      recvbeg_p = 1
+      IF ( me .LT. nt-1 ) THEN
+        lb = plus_recv_start
+        recvbeg_p = lb - pe
+        DO k = lb,pe+shw
+          went = .TRUE.
+          IF ( is_intermediate ) THEN
+            kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ELSE
+            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+          ENDIF
+          IF ( Px .NE. me+iter ) THEN
+            exit
+          ENDIF
+          plus_recv_start = plus_recv_start + 1
+          recvw_p = recvw_p + 1
+        ENDDO
+      ENDIF
+#else
+      if ( iter .eq. 1 ) then
+        went = .true.
+      else 
+        went = .false.
+      endif
+      sendw_m = 0 ; sendw_p = 0 ; recvw_m = 0 ; recvw_p = 0 
+      sendbeg_m = 1 ; if ( me .GT. 0 ) sendw_m = shw ; 
+      sendbeg_p = 1 ; if ( me .LT. nt-1 ) sendw_p = shw 
+      recvbeg_m = 1 ; if ( me .GT. 0 ) recvw_m = shw ; 
+      recvbeg_p = 1 ; if ( me .LT. nt-1 ) recvw_p = shw ;
+
+      ! write(0,*)'shw  ', shw , ' xy ',xy
+      ! write(0,*)' ds, de, ps, pe, nds,nde ',ds, de, ps, pe, nds,nde
+      ! write(0,*)'sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p '
+      ! write(0,*)sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p
+#endif
+      !if ( went ) then
+      !  write(0,*)'shw  ', shw , ' xy ',xy
+      !  write(0,*)' ds, de, ps, pe, nds,nde ',ds, de, ps, pe, nds,nde
+      !  write(0,*)'sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p '
+      !  write(0,*)sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p
+      !endif
+      rsl_comm_iter = went
+   END FUNCTION rsl_comm_iter
 
    INTEGER FUNCTION wrf_dm_monitor_rank()
 !     USE module_dm
@@ -3380,7 +3575,8 @@ END
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-#include "HALO_NMM_INTERP_DOWN1.inc"
+!#include "HALO_NMM_INTERP_DOWN1.inc"
+#include "HALO_INTERP_DOWN.inc"
 
 #include "nest_interpdown_interp.inc"
 

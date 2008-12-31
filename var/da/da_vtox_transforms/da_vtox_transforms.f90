@@ -12,10 +12,20 @@ module da_vtox_transforms
    use module_comm_dm, only : halo_psichi_uv_adj_sub,halo_ssmi_xa_sub,halo_sfc_xa_sub, &
       halo_radar_xa_w_sub, halo_xa_sub, halo_psichi_uv_sub, &
       halo_psichi_uv_sub, halo_xa_sub
-   use da_control, only : ips,ipe,jps,jpe,kps,kpe
 #endif
    use module_domain, only : ep_type, vp_type, x_type, domain
 
+#ifdef A2C
+   use da_control, only : trace_use, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
+      vertical_ip,alphacv_method,use_radarobs,use_radar_rf,use_ssmitbobs, &
+      use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
+      use_gpsrefobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
+      fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
+      stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
+      alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull,&
+      ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe
+#else
    use da_control, only : trace_use, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
       its,ite,jts,jte,kts,kte, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
       vertical_ip,alphacv_method,use_radarobs,use_radar_rf,use_ssmitbobs, &
@@ -23,7 +33,10 @@ module da_vtox_transforms
       use_gpsrefobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
       fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       ids, ide, stdout, use_rad, crtm_cloud, vert_corr_2, fg_format_wrf_arw_global, &
-      alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull
+      alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull, &
+      ips,ipe,jps,jpe,kps,kpe
+#endif
+
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x
    use da_dynamics, only : da_psichi_to_uv,da_psichi_to_uv_adj
    use da_physics, only : da_uvprho_to_w_lin,da_uvprho_to_w_adj, &

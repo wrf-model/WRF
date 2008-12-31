@@ -11,7 +11,7 @@ module da_rttov
 
 #ifdef RTTOV
    use module_radiance, only : satinfo, coefs_scatt_instname, &
-      time_slots, i_kind,r_kind, r_double, &
+       i_kind,r_kind, r_double, &
        one, zero, three,deg2rad, n_scatt_coef,q2ppmv, gsi_emiss
    use module_radiance, only : coefs,coefs_scatt,profile_type,radiance_type, &
       rttov_coef,platform_name,rttov_inst_name,transmission_type, &
@@ -33,7 +33,7 @@ module da_rttov
       rtminit_print, rttov_scatt,comm,ierr,biasprep, qc_rad, &
       num_fgat_time,stdout,trace_use, use_error_factor_rad, &
       qc_good, qc_bad,myproc,biascorr, global,ims,ime,jms,jme, &
-      use_airs_mmr
+      use_airs_mmr, time_slots
    use da_interpolation, only : da_to_zk_new, &
       da_interp_lin_2d, da_interp_lin_3d, da_interp_lin_3d_adj, da_interp_lin_2d_adj
    use da_tools_serial, only : da_get_unit, da_free_unit
@@ -43,9 +43,9 @@ module da_rttov
    use da_radiance1, only : num_tovs_after,tovs_copy_count, &
       tovs_send_pe, tovs_recv_pe, tovs_send_start, tovs_send_count, &
       tovs_recv_start,con_vars_type,aux_vars_type, &
-      da_biascorr, da_detsurtyp,da_biasprep,da_get_time_slots
+      da_biascorr, da_detsurtyp,da_biasprep
    use da_reporting, only : da_message, message, da_warning
-   use da_tools, only : da_convert_zk
+   use da_tools, only : da_convert_zk, da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
    use da_wrf_interfaces, only : wrf_dm_bcast_integer
    use da_reporting, only : da_warning

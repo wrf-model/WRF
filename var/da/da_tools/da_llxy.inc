@@ -2,6 +2,8 @@ subroutine da_llxy (info, loc, outside, outside_all)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    ! This routine converts (lat, lon) into (x,y) coordinates
@@ -22,21 +24,25 @@ subroutine da_llxy (info, loc, outside, outside_all)
    
    ! get the (x, y) coordinates
 
-   if (fg_format == fg_format_wrf_arw_regional) then
+   if ( fg_format == fg_format_wrf_arw_regional .or. &
+        fg_format == fg_format_wrf_arw_global   ) then   
       call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
    else if (fg_format == fg_format_wrf_nmm_regional) then
       call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
-   else if (global) then
-      call da_llxy_global (info%lat, info%lon, loc%x, loc%y)
    else
       call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
    end if
 
+#ifdef A2C
+   call da_togrid (loc%x, its-3, ite+3, loc%i, loc%dx, loc%dxm)!
+
+   call da_togrid (loc%y, jts-3, jte+3, loc%j, loc%dy, loc%dym)
+#else
    call da_togrid (loc%x, its-2, ite+2, loc%i, loc%dx, loc%dxm)!
 
    call da_togrid (loc%y, jts-2, jte+2, loc%j, loc%dy, loc%dym)
-   
 
+#endif
    ! refactor to remove this ugly duplication later
    if (present(outside_all)) then
       outside_all = .false.
@@ -59,19 +65,18 @@ subroutine da_llxy (info, loc, outside, outside_all)
       end if
    end if
 
-   if (global) then
+   if (fg_format == fg_format_kma_global) then
       if ((loc%j < jts-1) .or. (loc%j > jte)) then
          outside = .true.
          return
       end if
 
-    if (fg_format == fg_format_kma_global) then
       if (loc%j == jde) then
          loc%j = loc%j - 1
          loc%dy  = 1.0
          loc%dym = 0.0
       end if
-    end if
+
       return
    end if
 
@@ -84,8 +89,15 @@ subroutine da_llxy (info, loc, outside, outside_all)
    end if
 
    ! FIX? hack
+#ifdef A2C
+!rizviupdt   if ((loc%i < its-1) .or. (loc%i > ite) .or. &
+!rizviupdt      (loc%j < jts-1) .or. (loc%j > jte)) then
+   if ((loc%i < its-2) .or. (loc%i > ite) .or. &
+      (loc%j < jts-2) .or. (loc%j > jte)) then
+#else
    if ((loc%i < its-1) .or. (loc%i > ite) .or. &
       (loc%j < jts-1) .or. (loc%j > jte)) then
+#endif
    ! if ((loc%i < its-1) .or. (loc%i >= ite) .or. &
    !     (loc%j < jts-1) .or. (loc%j >= jte)) then
       outside = .true.

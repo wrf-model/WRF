@@ -13,10 +13,11 @@ CONTAINS
                 ,ids,ide, jds,jde, kds,kde                      &
                 ,ims,ime, jms,jme, kms,kme                      &
                 ,its,ite, jts,jte, kts,kte                      &
-                ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
                 ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN            &
-                                                                )
-
+#ifdef HWRF
+                ,RUCUTEN,RVCUTEN,MOMMIX,store_rand                         & 
+#endif
+                ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       )                                                                
 !-------------------------------------------------------------------
       USE MODULE_GFS_MACHINE , ONLY : kind_phys, kind_evod
       USE MODULE_GFS_FUNCPHYS , ONLY : gfuncphys
@@ -51,6 +52,9 @@ CONTAINS
 !               PBL parameterization (kg/kg/s)
 !-- RQIBLTEN    Qi tendency due to
 !               PBL parameterization (kg/kg/s)
+!-- MOMMIX      MOMENTUM MIXING COEFFICIENT (can be set in the namelist)
+!-- RUCUTEN     U tendency due to Cumulus Momentum Mixing (for HWRF-SAS)
+!-- RVCUTEN     V tendency due to Cumulus Momentum Mixing (for HWRF-SAS)
 !-- CP          heat capacity at constant pressure for dry air (J/kg/K)
 !-- GRAV        acceleration due to gravity (m/s^2)
 !-- ROVCP       R/CP
@@ -102,8 +106,11 @@ CONTAINS
 
       REAL,    INTENT(IN) ::                                            &
                                         DT
-
-
+      
+#ifdef HWRF
+      REAL,    INTENT(IN) ::    MOMMIX
+      REAL,    DIMENSION( ims:ime , jms:jme ), INTENT(IN) :: STORE_RAND
+#endif
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         XLAND
 
@@ -139,7 +146,13 @@ CONTAINS
                                         RQCCUTEN,                       &
                                         RQICUTEN,                       &
                                         RQVCUTEN,                       &
-                                        RTHCUTEN
+                                        RTHCUTEN 
+#ifdef HWRF
+      REAL, DIMENSION(ims:ime, jms:jme, kms:kme),                       &
+               OPTIONAL, INTENT(INOUT) ::                               &
+                                        RUCUTEN,                        &
+                                        RVCUTEN                       
+#endif
                                                                                                       
 !
 ! Flags relating to the optional tendency arrays declared above
@@ -282,7 +295,8 @@ CONTAINS
 
    if(itimestep.eq.0) then
       CALL GFUNCPHYS
-
+#ifdef HWRF
+#else
         CALL nl_get_start_year(1,start_year)   
         CALL nl_get_start_month(1,start_month)   
         CALL nl_get_start_day(1,start_day)   
@@ -297,7 +311,7 @@ CONTAINS
         call random_seed(put=nrnd)
         call random_number(wrk)
         seed0 = seed0 + nint(wrk*1000.0)
-  
+#endif
    endif
 
    if (adapt_step_flag) then
@@ -346,12 +360,24 @@ CONTAINS
 
 
 !      call random_number(XKT2)
+#ifdef HWRF
+      DO i=its,ite
+         XKT2(i) = STORE_RAND(i,j)
+      ENDDO
+
+      DO i=its,ite
+        PS(i)=PSFC(i,j)*.001
+        RCS(i)=1.
+        SLIMSK(i)=ABS(XLAND(i,j)-2.)
+      ENDDO
+#else
       DO i=its,ite
         xkt2(i)=rannum(i,j)
         PS(i)=PSFC(i,j)*.001
         RCS(i)=1.
         SLIMSK(i)=ABS(XLAND(i,j)-2.)
       ENDDO
+#endif
 
       DO i=its,ite
         PRSI(i,kts)=PS(i)
@@ -406,7 +432,21 @@ CONTAINS
           RQVCUTEN(I,K,J)=(Q1(I,K)/(1.-q1(i,k))-QV3D(I,K,J))*RDELT
         ENDDO
       ENDDO
-
+#ifdef HWRF
+!===============================================================================
+!     ADD MOMENTUM MIXING TERM AS TENDENCIES. This is gopal's doing for SAS
+!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has
+!     divergence damping term, a reducion factor for cumulum mixing may be
+!     required otherwise storms were too weak.
+!===============================================================================
+!
+      DO K=KTS,KTE
+        DO I=ITS,ITE
+         RUCUTEN(I,J,K)=MOMMIX*(U1(I,K)-U3D(I,K,J))*RDELT
+         RVCUTEN(I,J,K)=MOMMIX*(V1(I,K)-V3D(I,K,J))*RDELT
+        ENDDO
+      ENDDO
+#endif
       IF(PRESENT(RQCCUTEN))THEN
         IF ( F_QC ) THEN
           DO K=KTS,KTE
@@ -652,11 +692,22 @@ CONTAINS
       ALPHAs  = .5
       BETAl   = .15
       betas   = .15
+#ifdef HWRF
+      BETAl   = .5
+      betas   = .5
+#else
       BETAl   = .05
       betas   = .05
+#endif
 !     EVEF    = 0.07
+
+#ifdef HWRF
+      evfact  = 0.6
+      evfactl = 0.6
+#else
       evfact  = 0.3
       evfactl = 0.3
+#endif
       PDPDWN  = 0.
       PDETRN  = 200.
       xlambu  = 1.e-4

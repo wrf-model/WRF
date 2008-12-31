@@ -97,6 +97,9 @@
 	        iv%instid(inst)%varbc(k)%param(1) = mode
 
 	    Deallocate ( hist, hist_tot )
+            write(unit=stdout,fmt='(A,A,I5,A,F5.2)') 'VARBC: Cold-starting ', &
+                  trim(adjustl(iv%instid(inst)%rttovid_string)),iv%instid(inst)%ichan(k),&
+	          ' --> ',mode			       	
 	 end if
       end do                                                              !  end loop for channels
 
@@ -110,9 +113,7 @@
       end do	 
     
       if (global_cs) then                                                 !! Instrument coldstart only
-      
-         write(unit=stdout,fmt='(A,A)') 'VARBC: Computing predictor statistics for ', &
- 	         trim(adjustl(iv%instid(inst)%rttovid_string))
+
          allocate (mean(npredmax), rms(npredmax), mean_tot(npredmax), rms_tot(npredmax))
 
         ! Accumulate statistics for predictor mean/std
@@ -128,9 +129,12 @@
         ! ------------------------------------------------------
 	 call wrf_dm_sum_reals(mean, mean_tot)
   	 call wrf_dm_sum_reals(rms,  rms_tot)	 
-         if (num_rad_tot > 0) then
+         if (num_rad_tot >= varbc_nobsmin) then
 	    mean_tot = mean_tot / num_rad_tot
             rms_tot  = rms_tot  / num_rad_tot
+	 else
+	    mean_tot = 0.0
+	    rms_tot  = 1.0   
 	 end if
 	 
         ! Store statistics
@@ -147,7 +151,7 @@
     !  [3]: Normalize predictors
     !---------------------------------------------------------------------------
       do i = 1,  npredmax
-         if ( iv%instid(inst)%varbc_info%pred_std(i) <= 0 ) cycle
+         if ( iv%instid(inst)%varbc_info%pred_std(i) <= 0.0 ) cycle
          do n = 1, num_rad      
             iv%instid(inst)%varbc_info%pred(i,n) = &
           ( iv%instid(inst)%varbc_info%pred(i,n) - &

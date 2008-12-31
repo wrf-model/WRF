@@ -47,6 +47,8 @@ subroutine da_read_pseudo_rad (iv)
       nchan=nchan_mhs
    else if (sensor_id == 10)  then
       nchan=nchan_ssmis
+   else if (sensor_id == 11)  then
+      nchan=nchan_airs
    end if
 
    inst = 1    ! single instrument
@@ -75,7 +77,7 @@ subroutine da_read_pseudo_rad (iv)
    do k = 1, nchan
       tb_inv(k) = missing_r
    end do
-   tb_inv(pseudo_rad_ichan)=pseudo_rad_tb
+   tb_inv(pseudo_rad_ichan)=pseudo_rad_inv
 
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------  

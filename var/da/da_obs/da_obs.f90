@@ -57,6 +57,7 @@ module da_obs
    use da_tools_serial,    only : da_free_unit, da_get_unit
    use da_tools,     only : da_add_noise, da_add_noise_new,da_random_omb
    use da_tracing,   only : da_trace_entry, da_trace_exit 
+   use module_dm,    only : wrf_dm_sum_real, wrf_dm_sum_reals
 
    implicit none
 
@@ -72,5 +73,6 @@ contains
 #include "da_setup_pseudo_obs.inc"
 #include "da_store_obs_grid_info.inc"
 #include "da_count_filtered_obs.inc"
+#include "da_obs_sensitivity.inc"
 
 end module da_obs

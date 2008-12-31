@@ -57,8 +57,12 @@ subroutine da_final_write_filtered_obs
 
          !  Read surface Info
          !  -------------------
-         read (iunit, fmt = fmt_srfc) platform%loc%slp, platform%loc%pw
-         write(filtered_obs_unit, fmt = fmt_srfc) platform%loc%slp, platform%loc%pw
+         read (iunit, fmt = fmt_srfc)  &
+            platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
+            platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
+         write(filtered_obs_unit, fmt = fmt_srfc)  &
+            platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
+            platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
          ! == levels < 1 and not GPSPW, go back to reports
 
@@ -72,36 +76,38 @@ subroutine da_final_write_filtered_obs
          do i = 1, platform%info%levels
 
             platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
-                          field_type(missing_r, missing, missing_r), & ! u
-                          field_type(missing_r, missing, missing_r), & ! v
-                          field_type(missing_r, missing, missing_r), & ! p
-                          field_type(missing_r, missing, missing_r), & ! t
-                          field_type(missing_r, missing, missing_r), & ! q
-                          field_type(missing_r, missing, missing_r), & ! rh
-                          field_type(missing_r, missing, missing_r), & ! td
-                          field_type(missing_r, missing, missing_r))  ! speed 
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! v
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! p
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! t
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! q
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! rh
+                          field_type(missing_r, missing, missing_r, missing, missing_r), & ! td
+                          field_type(missing_r, missing, missing_r, missing, missing_r))  ! speed 
 
             read (unit = iunit, fmt = trim (fmt_each)) &
-                 platform%each (i)%p,            &
-                 platform%each (i)%speed,        &
-                 platform%each (i)%v,            &
-                 platform%each (i)%height,       &
-                 platform%each (i)%height_qc,    &
-                 height_error,                   &
-                 platform%each (i)%t,            &
-                 platform%each (i)%td,           &
-                 platform%each (i)%rh
+               platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+               platform%each(i)%speed%inv, platform%each(i)%speed%qc, &
+               platform%each(i)%speed%error, &
+               platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+               platform%each(i)%height,       &
+               platform%each(i)%height_qc,    &
+               height_error,                   &
+               platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+               platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+               platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
 
             write (unit = filtered_obs_unit, fmt = trim (fmt_each)) &
-                 platform%each (i)%p,            &
-                 platform%each (i)%speed,        &
-                 platform%each (i)%v,            &
-                 platform%each (i)%height,       &
-                 platform%each (i)%height_qc,    &
-                 height_error,                   &
-                 platform%each (i)%t,            &
-                 platform%each (i)%td,           &
-                 platform%each (i)%rh
+               platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+               platform%each(i)%speed%inv, platform%each(i)%speed%qc, &
+               platform%each(i)%speed%error, &
+               platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+               platform%each(i)%height,       &
+               platform%each(i)%height_qc,    &
+               height_error,                   &
+               platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+               platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+               platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
          end do
       end do reports                  !  Loop over reports              
       close (iunit)

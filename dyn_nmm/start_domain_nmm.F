@@ -25,6 +25,7 @@
       USE MODULE_DIFFUSION_NMM,ONLY: HDIFF
       USE MODULE_BNDRY_COND,   ONLY: BOCOH, BOCOV
       USE MODULE_PHYSICS_INIT
+      USE MODULE_GWD
 !     USE MODULE_RA_GFDLETA
 !
       USE MODULE_EXT_INTERNAL
@@ -126,9 +127,14 @@
 #endif
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
       LOGICAL :: START_OF_SIMULATION
+      LOGICAL :: LRESTART
+
+#ifndef WRF_NMM_NEST
+      LOGICAL :: MOVED = .FALSE.
+#endif
+
       integer :: jam,retval
-      character(20) :: seeout="hi08.t00z.nhbmeso"
-      real :: dummyx(791)
+      CHARACTER(LEN=255) :: message
       integer myproc
       real :: dsig,dsigsum,pdbot,pdtot,rpdtot
       real :: fisx,ht,prodx,rg
@@ -136,9 +142,12 @@
       integer :: i_u=49,j_u=475,n_u=07
       integer :: i_v=49,j_v=475,n_v=07
       integer :: num_ozmixm, num_aerosolc
+      real :: cen_lat,cen_lon,dtphs   ! GWD
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
+
+      INTEGER :: interval_seconds, restart_interval
 
 ! z0base new
  
@@ -175,7 +184,6 @@
      &                             ,config_flags)
 !
         RESTRT=config_flags%restart
-!       write(0,*) 'set RESTRT to: ', RESTRT
 
 #if 1
       IF(IME>NMM_MAX_DIM )THEN
@@ -209,9 +217,20 @@
 !
 !---------------------------------------------------------------------- 
 !
-      WRITE(0,196)IHRST,IDAT
-      WRITE(LIST,196)IHRST,IDAT
+      WRITE(message,196)IHRST,IDAT
+      CALL wrf_message(trim(message))
   196 FORMAT(' FORECAST BEGINS ',I2,' GMT ',2(I2,'/'),I4)
+
+
+!!    Restarts must be made from times for which boundary data is available
+
+      CALL nl_get_interval_seconds(GRID%ID, interval_seconds)
+      CALL nl_get_restart_interval(GRID%ID, restart_interval)
+      IF (MOD(restart_interval*60,interval_seconds) /= 0) THEN
+         WRITE(wrf_err_message,*)' restart_interval is not integer multiplier of interval_seconds'
+         CALL WRF_ERROR_FATAL(wrf_err_message)
+      END IF
+
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -422,7 +441,7 @@
         DO I=IFS,IFE
           PDSL(I,J)  =PD(I,J)*RES(I,J)
           PREC(I,J)  =0.
-          ACPREC(I,J)=0.
+          IF(allowed_to_read)ACPREC(I,J)=0.  ! This is gopal's inclusion for moving nest
           CUPREC(I,J)=0.
           rg=1./g
           ht=fis(i,j)*rg
@@ -437,6 +456,7 @@
           AKHS(I,J)  =0.
           TWBS(I,J)  =0.
           QWBS(I,J)  =0.
+          IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
           CLDEFI(I,J)=1.
           HTOP(I,J)  =REAL(KTS)
           HTOPD(I,J) =REAL(KTS)
@@ -444,12 +464,24 @@
           HBOT(I,J)  =REAL(KTE)
           HBOTD(I,J) =REAL(KTE)
           HBOTS(I,J) =REAL(KTE)
+          ENDIF
 !***
 !***  AT THIS POINT, WE MUST CALCULATE THE INITIAL POTENTIAL TEMPERATURE
 !***  OF THE SURFACE AND OF THE SUBGROUND.
 !***  EXTRAPOLATE DOWN FOR INITIAL SURFACE POTENTIAL TEMPERATURE.
 !***  ALSO DO THE SHELTER PRESSURE.
 !***
+!
+!***  BECAUSE WE REINITIALIZE TOPOGRAPHY, LAND SEA MASK AND FIND THE TEMPERATURE
+!***  FIELD OVER THE NEW TOPOGRAPHY, AFTER THE MOVE, I THINK IT MORE APPROPRIATE
+!***  TO USE NMM_TSK OR SST TO RE-DERIVE THS AND QS (AND CONSEQUENTLY THZ0 AND QZ0).
+!***  THIS MAY BE MORE CONSISTENT WITH THE PSEUDO-HYDROSTATIC BALANCING THAT IS
+!***  DONE OVER THE NEW TERRAIN (AND WITH NEW SM). gopal!
+!***
+!***
+
+      IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
+
           PM1=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
           APEM1=(1.E5/PM1)**CAPA
 
@@ -460,11 +492,6 @@
           THS(I,J)=T(I,J,KTS)*APEM1
           TSFCK=T(I,J,KTS)
 	ENDIF
-
-!	if (I .eq. IFE/2 .and. J .eq. JFE/2) then
-!	write(6,*) 'I,J,T(I,KOFF+1,J),NMM_TSK(I,J):: ', I,J,T(I,KOFF+1,J),NMM_TSK(I,J)
-!	write(6,*) 'THS(I,J): ', THS(I,J)
-!	endif
 
           PSFCK=PD(I,J)+PDTOP+PT
 !
@@ -482,6 +509,8 @@
           QZ0(I,J)=QSH(I,J)
           UZ0(I,J)=0.
           VZ0(I,J)=0.
+
+      ENDIF  ! endif for allowed to read
 ! 
         ENDDO
         ENDDO
@@ -490,9 +519,10 @@
 !***  INITIALIZE CLOUD FIELDS
 !***
       IF (MAXVAL(CWM) .gt. 0. .and. MAXVAL(CWM) .lt. 1.) then
-        write(0,*) 'appear to have CWM values...do not zero'
+        CALL wrf_message('appear to have CWM values...do not zero')
       ELSE
-        write(0,*) 'zeroing CWM'
+        IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
+        CALL wrf_message('zeroing CWM')
         DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -500,6 +530,7 @@
           ENDDO
           ENDDO
         ENDDO
+        ENDIF
       ENDIF
 !***
 !***  INITIALIZE ACCUMULATOR ARRAYS TO ZERO.
@@ -541,6 +572,7 @@
 !***
         EPS=R_D/R_V
 !
+      IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
         DO J=JFS,JFE
         DO I=IFS,IFE
           IF(SM(I,J)>0.5)THEN
@@ -550,6 +582,7 @@
           ENDIF
         ENDDO
         ENDDO
+      ENDIF
 !***  
 !***  INITIALIZE TURBULENT KINETIC ENERGY (TKE) TO A SMALL
 !***  VALUE (EPSQ2) ABOVE GROUND.  SET TKE TO ZERO IN THE
@@ -559,9 +592,10 @@
 !***EROGERS: add check for realistic values of q2
 !
       IF (MAXVAL(Q2) .gt. epsq2 .and. MAXVAL(Q2) .lt. 200.) then
-        write(0,*) 'appear to have Q2 values...do not zero'
+        CALL wrf_message('appear to have Q2 values...do not zero')
       ELSE
-        write(0,*) 'zeroing Q2'
+      IF(allowed_to_read)THEN       ! This is gopal's inclusion for moving nest
+        CALL wrf_message('zeroing Q2')
         DO K=KPS,KPE-1
         DO J=JFS,JFE
         DO I=IFS,IFE
@@ -577,6 +611,7 @@
           Q2(I,J,KTE-1)= HBM2(I,J)*Q2INI
         ENDDO
         ENDDO
+      ENDIF
       ENDIF
 !***  
 !***  PAD ABOVE GROUND SPECIFIC HUMIDITY IF IT IS TOO SMALL.
@@ -632,14 +667,22 @@
       NPHS0=GRID%NPHS
 
       IF(MYPE==0)THEN
-        write(0,*)' start_nmm TSTART=',grid%tstart
-        write(0,*)' start_nmm TPREC=',grid%tprec
-        write(0,*)' start_nmm THEAT=',grid%theat
-        write(0,*)' start_nmm TCLOD=',grid%tclod
-        write(0,*)' start_nmm TRDSW=',grid%trdsw
-        write(0,*)' start_nmm TRDLW=',grid%trdlw
-        write(0,*)' start_nmm TSRFC=',grid%tsrfc
-        write(0,*)' start_nmm PCPFLG=',grid%pcpflg
+        WRITE( wrf_err_message, * )' start_nmm TSTART=',grid%tstart
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm TPREC=',grid%tprec
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm THEAT=',grid%theat
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm TCLOD=',grid%tclod
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm TRDSW=',grid%trdsw
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm TRDLW=',grid%trdlw
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm TSRFC=',grid%tsrfc
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
+        WRITE( wrf_err_message, * )' start_nmm PCPFLG=',grid%pcpflg
+        CALL wrf_debug( 1, TRIM(wrf_err_message) )
       ENDIF
 
       NSTART = INT(grid%TSTART*TSPH+0.5)
@@ -925,21 +968,7 @@
         ENDDO
       ENDIF
 !----------------------------------------------------------------------
-!!!!!!!!!!!!!!!!!!!!tlb
-!!!Read in EM and EMT from the original NMM nhb file
-!!!   call int_get_fresh_handle( retval )
-!!!   close(retval)
-!!!   open(unit=retval,file=seeout,form='UNFORMATTED',iostat=ier)
-!!!!!!do j=1,128
-!!!     read(seeout)
-!!!!!!  read(55)
-!!!!!!enddo
-!!!   read(seeout)dummyx,em,emt
-!!!!!!read(55)dummyx,em,emt
-!!!   close(retval)
       jam=6+2*(JDE-JDS-1-9)
-!     read(55)(em(j),j=1,jam),(emt(j),j=1,jam)
-!!!!!!!!!!!!!!!!!!!!tlb
 !
 !***  EXTRACT EM AND EMT FOR THE LOCAL SUBDOMAINS
 !
@@ -1133,6 +1162,8 @@
 !***  SOME INITIAL VALUES RELATED TO TURBULENCE SCHEME
 !----------------------------------------------------------------------
 !
+      IF(allowed_to_read.and.(.NOT.RESTRT))THEN       ! This is gopal's inclusion for moving nest
+
       DO J=JFS,JFE
       DO I=IFS,IFE
 !***
@@ -1146,6 +1177,8 @@
         QLM=Q(I,J,KTS)
         PLM=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
         APELM=(1.0E5/PLM)**CAPA
+          TERM1=-0.068283/T(I,J,KTS)
+          PSHLTR(I,J)=(PD(I,J)+PDTOP+PT)*EXP(TERM1)
         APELMNW=(1.0E5/PSHLTR(I,J))**CAPA
         THLM=TLM*APELM
         DPLM=(DETA1(KTS)*PDTOP+DETA2(KTS)*PDSL(I,J))*0.5
@@ -1197,6 +1230,8 @@
 !       ENDIF
       ENDDO
       ENDDO
+
+      END IF ! IF(allowed_to_read)THEN
 !
 !----------------------------------------------------------------------
 !***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH 
@@ -1220,7 +1255,7 @@
 !
 !!!!	SHOULD DWDT BE REDEFINED IF RESTRT?
 
-      IF(.NOT.RESTRT.OR.NEST)THEN
+      IF((.NOT.RESTRT.OR.NEST).AND. allowed_to_read)THEN ! This is gopal's inclusion for moving nest
         DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -1249,11 +1284,11 @@
 !
 !!!!	SHOULD PINT,Z,W BE REDEFINED IF RESTRT?
 
-      write(0,*)' restrt=',restrt,' nest=',nest
-      write(0,*)' ifs=',ifs,' ife=',ife
-      write(0,*)' jfs=',jfs,' jfe=',jfe
-      write(0,*)' kps=',kps,' kpe=',kpe
-      write(0,*)' pdtop=',pdtop,' pt=',pt
+      WRITE( wrf_err_message, * )' restrt=',restrt,' nest=',nest
+        CALL wrf_debug( 0, TRIM(wrf_err_message) )
+      WRITE( wrf_err_message, * )' pdtop=',pdtop,' pt=',pt
+        CALL wrf_debug( 0, TRIM(wrf_err_message) )
+
       IF(.NOT.RESTRT.OR.NEST)THEN
         DO K=KPS,KPE
         DO J=JFS,JFE
@@ -1265,6 +1300,15 @@
         ENDDO
         ENDDO
       ENDIF
+
+        DO K=KTS,KTE-1
+        DO J=JFS,JFE
+        DO I=IFS,IFE
+          RTOP(I,J,K)=(Q(I,J,K)*P608-CWM(I,J,K)+1.)*T(I,J,K)*R_D/ &
+                      ((PINT(I,J,K+1)+PINT(I,J,K))*0.5)
+        ENDDO
+        ENDDO
+        ENDDO
 
 #ifndef NO_RESTRICT_ACCEL
 !----------------------------------------------------------------------
@@ -1442,7 +1486,6 @@
 !***  NOTE: KTE=NUMBER OF LAYERS PLUS ONE
 !-----------------------------------------------------------------------
 !
-      write(0,*)' start_domain kte=',kte
       PDTOT=101325.-PT
       RPDTOT=1./PDTOT
       PDBOT=PDTOT-PDTOP
@@ -1513,7 +1556,17 @@
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
 
-      CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,GRID%RESTART,SFULL,SMID &
+      IF (GRID%RESTART) THEN
+         LRESTART = GRID%RESTART
+      ELSE
+         IF (moved) THEN
+            LRESTART = .TRUE.
+         ELSE
+            LRESTART = .FALSE.
+         ENDIF
+      END IF
+
+      CALL PHY_INIT(GRID%ID,CONFIG_FLAGS,GRID%DT,LRESTART,SFULL,SMID    &
      &             ,PT,TSFC,GRID%RADT,GRID%BLDT,GRID%CUDT,GRID%GSMDT    &
      &             ,RTHCUTEN, RQVCUTEN, RQRCUTEN                        &
      &             ,RQCCUTEN, RQSCUTEN, RQICUTEN                        &
@@ -1543,14 +1596,35 @@
      &             ,SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW            &
      &             ,ACSNOM,IVGTYP,ISLTYP,SFCEVP,SMC                     &
      &             ,SH2O, SNOWH, SMFR3D                                 &  ! temporary
+     &             ,grid%SNOALB                                         &
      &             ,GRID%DX,GRID%DY,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY    &
      &             ,MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE           &
-     &             ,.TRUE.,.FALSE.,START_OF_SIMULATION                  &
+     &             ,.TRUE.,moved,START_OF_SIMULATION                    &
      &             ,1                                                   & ! lagday
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
      &                )
+
+!-----------------------------------------------------------------------
+!---- Initialization for gravity wave drag (GWD) & mountain blocking (MB)
+!
+      CALL nl_get_cen_lat(GRID%ID, CEN_LAT)    !-- CEN_LAT in deg
+      CALL nl_get_cen_lon(GRID%ID, CEN_LON)    !-- CEN_LON in deg
+      DTPHS=grid%dt*grid%nphs
+      CALL GWD_init(DTPHS,GRID%DX,GRID%DY,CEN_LAT,CEN_LON,RESTRT        &
+     &              ,GLAT,GLON,CROT,SROT,HANGL                          &
+     &              ,IDS,IDE,JDS,JDE,KDS,KDE                            &
+     &              ,IMS,IME,JMS,JME,KMS,KME                            &
+     &              ,ITS,ITE,JTS,JTE,KTS,KTE )
+      IF(.NOT.RESTRT)THEN
+        DO J=MYJS,MYJE
+        DO I=MYIS,MYIE
+          UGWDsfc(I,J)=0.
+          VGWDsfc(I,J)=0.
+        ENDDO
+        ENDDO
+      ENDIF
 
 !-----------------------------------------------------------------------
 !
@@ -1580,7 +1654,8 @@
 ! Added by Greg Thompson, NCAR-RAL, for initializing water vapor
 ! mixing ratio (from NMM's specific humidity var) into moist array.
 
-        write(0,*) 'Initializng moist(:,:,:, Qv) from Q'
+!!mp
+        CALL wrf_message('Initializng moist(:,:,:, Qv) from Q')
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
@@ -1596,7 +1671,7 @@
         IF (.not. (MAXVAL(CWM).gt.0. .and. MAXVAL(CWM).lt.1.) ) then    
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
-     &       write(0,*) ' summing moist(:,:,:,',i_m,') into CWM array'  
+     &       CALL wrf_message(' summing moist(:,:,:,i_m) into CWM array')
           DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
@@ -1609,7 +1684,7 @@
           enddo
 
           IF (.not. ( (maxval(F_ICE)+maxval(F_RAIN)) .gt. EPSQ) ) THEN
-            write(0,*) '  computing F_ICE'
+            CALL wrf_message(' computing F_ICE')
             do i_m = 2, num_moist
             DO J=JFS,JFE
             DO K=KPS,KPE
@@ -1628,7 +1703,7 @@
             enddo
             enddo
             enddo
-            write(0,*) '  computing F_RAIN'
+            CALL wrf_message(' computing F_RAIN')
 !
             DO J=JFS,JFE
             DO K=KPS,KPE
@@ -1654,7 +1729,6 @@
 ! End addition by Greg Thompson
 
         IF (maxval(F_ICE) .gt. 0.) THEN
-        write(0,*) 'F_ICE > 0'
          do J=JMS,JME
          do K=KMS,KME
          do I=IMS,IME
@@ -1665,7 +1739,6 @@
         ENDIF
 
         IF (maxval(F_RAIN) .gt. 0.) THEN
-        write(0,*) 'F_RAIN > 0'
          do J=JMS,JME
          do K=KMS,KME
          do I=IMS,IME
@@ -1676,7 +1749,6 @@
         ENDIF
 
         IF (maxval(F_RIMEF) .gt. 0.) THEN
-          write(0,*) 'F_RIMEF > 0'
           do J=JMS,JME
           do K=KMS,KME
           do I=IMS,IME

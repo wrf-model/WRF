@@ -27,8 +27,13 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   j = *j_p - 1 ;
   npx = *npx_p ;
   npy = *npy_p ;
+#if 0
   minx = *minx_p ;
   miny = *miny_p ;
+#else
+  minx = 1 ;
+  miny = 1 ;
+#endif
   ids = *ids_p - 1 ; ide = *ide_p - 1 ;
   jds = *jds_p - 1 ; jde = *jde_p - 1 ;
   idim = ide - ids + 1 ;

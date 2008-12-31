@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_sonde_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -36,8 +38,13 @@ subroutine da_transform_xtoy_sonde_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
          model_q(1,n)  = jo_grad_y%sonde_sfc(n)%q
          model_psfc(n) = jo_grad_y%sonde_sfc(n)%p
       end do
+#ifdef A2C
+      call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(sonde_sfc), model_u,'u')
+      call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(sonde_sfc), model_v,'v')
+#else
       call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(sonde_sfc), model_u)
       call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(sonde_sfc), model_v)
+#endif
       call da_interp_lin_3d_adj (jo_grad_x%t, iv%info(sonde_sfc), model_t)
       call da_interp_lin_3d_adj (jo_grad_x%q, iv%info(sonde_sfc), model_q)
 

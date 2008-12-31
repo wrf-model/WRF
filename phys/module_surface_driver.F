@@ -32,7 +32,10 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
-            !  Optional urban 
+#if ( EM_CORE==1)
+     &          ,ch,tsq,qsq,cov                                       & ! MYNN
+#endif
+            !  Optional urban
      &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban
      &          ,num_road_layers, dzr, dzb, dzg                       & !I urban
@@ -69,6 +72,10 @@ CONTAINS
      &          ,omlcall,oml_hml0,oml_gamma                           &
      &          ,tml,t0ml,hml,h0ml,huml,hvml,f                        &
      &          ,ustm,ck,cka,cd,cda,isftcflx                          &
+     &         ,isurban, mminlu                                       &
+     &          ,snotime                                              &
+     &           ,rdlai2d                                             &
+     &          ,noahres                                              &
              !  Optional adaptive time step
      &          ,bldt,curr_secs,adapt_step_flag                       &
                                                                       )
@@ -76,15 +83,18 @@ CONTAINS
 #if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
+                                       ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
-                                       ,PXLSMSCHEME
+                                       ,PXLSMSCHEME               &
+                                       ,MYNNSFCSCHEME             
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
+                                       ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
@@ -93,18 +103,25 @@ CONTAINS
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
                                        ,GFDLSFCSCHEME             &
-                                       ,GFDLSLAB
+                                       ,GFDLSLAB 
+
+
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
 
    USE module_sf_sfclay
    USE module_sf_myjsfc
+   USE module_sf_qnsesfc
    USE module_sf_gfs
    USE module_sf_noahdrv
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
+#if ( EM_CORE==1)
+   USE module_sf_mynn
+#endif
+
 #if ( NMM_CORE == 1 )
    USE module_sf_lsm_nmm
    USE module_sf_gfdl
@@ -123,10 +140,12 @@ CONTAINS
    !      1. sfclay
    !      2. myjsfc
    !      7. Pleim surface layer
+   !      8. MYNN surface layer
    !  surface: ground temp/lsm scheme:
    !      1. slab
    !      2. Noah LSM
    !      7. Pleim-Xiu LSM
+
    !      99. NMM LSM (NMM core only)
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -231,7 +250,7 @@ CONTAINS
 !-- SST           sea-surface temperature (K)
 !-- SSTSK         skin sea-surface temperature (K)
 !-- DTW           warm layer temp diff (K)
-!-- TSLB          
+!-- TSLB
 !-- ZS
 !-- DZS
 !-- num_soil_layers number of soil layer
@@ -251,6 +270,8 @@ CONTAINS
 !-- RS           Stomatal resistence                   ! P-X LSM
 !-- NLCAT        Number of landuse categories          ! P-X LSM
 !-- NSCAT        Number of soil categories             ! P-X LSM
+!-- ch - drag coefficient for heat/moisture            ! MYNN LSM
+
 !
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -272,7 +293,7 @@ CONTAINS
 !-- kte           end index for k in tile
 !
 !******************************************************************
-!------------------------------------------------------------------ 
+!------------------------------------------------------------------
 
    INTEGER, INTENT(IN) ::                                             &
      &           ids,ide,jds,jde,kds,kde                              &
@@ -303,6 +324,8 @@ CONTAINS
    INTEGER, INTENT(IN )::   STEPBL
    INTEGER, INTENT(IN )::   ISICE
    INTEGER, INTENT(IN )::   ISWATER
+   INTEGER, INTENT(IN ), OPTIONAL :: ISURBAN
+   CHARACTER(LEN=*), INTENT(IN ), OPTIONAL :: MMINLU
    LOGICAL, INTENT(IN )::   WARM_RAIN
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NDAY
@@ -332,6 +355,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOALB
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACSNOW
+   REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SNOTIME
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKHS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKMS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO
@@ -408,12 +432,12 @@ CONTAINS
 !  arguments for NCAR surface physics
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   ALBBCK  ! INOUT needed for NMM
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   EMBCK  
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   EMBCK
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   LH
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SH2O
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   Z0
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   Z0
 
 !
 ! Optional
@@ -422,6 +446,13 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TML, T0ML, HML, H0ML, HUML, HVML
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN    )::   F
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(OUT   )::   CK, CKA, CD, CDA, USTM
+
+   REAL, DIMENSION( ims:ime , jms:jme ), &
+        &OPTIONAL, INTENT(INOUT   ):: ch
+   
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
+        &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov
+
 
    INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX
    INTEGER, OPTIONAL, INTENT(IN )::   OMLCALL
@@ -452,7 +483,7 @@ CONTAINS
                                                   t2_ndg_new,            &
                                                   q2_ndg_new,            &
                                                   sn_ndg_old,            &
-                                                  sn_ndg_new 
+                                                  sn_ndg_new
 !
 !
 ! Flags relating to the optional tendency arrays declared above
@@ -497,6 +528,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   smfr3d
    REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), OPTIONAL, INTENT(INOUT)::   keepfr3dflag
 
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
+
 !  LOCAL  VAR
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
@@ -516,6 +549,7 @@ CONTAINS
    INTEGER :: i,J,K,NK,jj,ij,n
    INTEGER :: gfdl_ntsflg
    LOGICAL :: radiation, myj, frpcpn
+   LOGICAL, INTENT(in), OPTIONAL :: rdlai2d
    REAL    :: julian
    REAL    :: total_depth,mid_point_depth
    REAL    :: tconst,tprior,tnew,yrday,deltat
@@ -526,9 +560,9 @@ CONTAINS
      REAL, OPTIONAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D  !urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D   !urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D  !urban
-     INTEGER,  OPTIONAL, INTENT(IN) :: num_roof_layers                         !urban
-     INTEGER,  OPTIONAL, INTENT(IN) :: num_wall_layers                         !urban
-     INTEGER,  OPTIONAL, INTENT(IN) :: num_road_layers                         !urban
+     INTEGER,  INTENT(IN) :: num_roof_layers                         !urban
+     INTEGER,  INTENT(IN) :: num_wall_layers                         !urban
+     INTEGER,  INTENT(IN) :: num_road_layers                         !urban
      REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZR          !urban
      REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZB          !urban
      REAL, OPTIONAL, DIMENSION(1:num_soil_layers), INTENT(IN) :: DZG          !urban
@@ -555,8 +589,8 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: RN_URB2D !urban
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT):: TS_URB2D !urban
 !
-     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: FRC_URB2D  !urban 
-     INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: UTYPE_URB2D  !urban 
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: FRC_URB2D  !urban
+     INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)  :: UTYPE_URB2D  !urban
 
      REAL,  DIMENSION( ims:ime, jms:jme )  :: PSIM_URB2D  !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: PSIH_URB2D  !urban local var
@@ -600,8 +634,8 @@ CONTAINS
     DO ij = 1 , num_tiles
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
-         RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j) + RAINNCV(i,j) 
-         RAINBL(i,j) = MAX (RAINBL(i,j), 0.0) 
+         RAINBL(i,j) = RAINBL(i,j) + RAINCV(i,j) + RAINNCV(i,j)
+         RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
       ENDDO
       ENDDO
     ENDDO
@@ -784,7 +818,7 @@ CONTAINS
       ENDIF
     ENDIF
   ENDIF
-  
+
   IF ( run_param ) then
 
 ! IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
@@ -795,9 +829,9 @@ CONTAINS
 
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
-!---- 
+!----
 ! CALCULATE CONSTANT
- 
+
      DTMIN=DT/60.
 ! Surface schemes need PBL time step for updates and accumulations
 ! Assume these schemes provide no tendencies
@@ -876,7 +910,6 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               uratx,vratx,tratx,                                  &
                ustm,ck,cka,cd,cda,isftcflx                         )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
@@ -922,6 +955,7 @@ CONTAINS
               xland,                                               &
               ust,znt,z0,pblh,mavail,rmol,                         &
               akhs,akms,                                           &
+              br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
               p1000mb,                                             &
@@ -930,6 +964,28 @@ CONTAINS
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
+       ENDIF
+
+      CASE (QNSESFCSCHEME)
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
+                                                      .TRUE. ) THEN
+            CALL wrf_debug(100,'in QNSESFC')
+            CALL QNSESFC(itimestep,ht,dz8w,                         &
+              p_phy,p8w,th_phy,t_phy,                              &
+              qv_curr,qc_curr,                                     &
+              u_phy,v_phy,tke_myj,                                 &
+              tsk,qsfc,thz0,qz0,uz0,vz0,                           &
+              lowlyr,                                              &
+              xland,                                               &
+              ust,znt,z0,pblh,mavail,rmol,                         &
+              akhs,akms,                                           &
+              chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
+              u10,v10,tshltr,th10,qshltr,q10,pshltr,               &
+              ids,ide, jds,jde, kds,kde,                           &
+              ims,ime, jms,jme, kms,kme,                           &
+              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF
 
      CASE (GFSSFCSCHEME)
@@ -948,7 +1004,35 @@ CONTAINS
         CALL wrf_debug(100,'in SFCDIAGS')
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
+      ENDIF
+
+#if ( EM_CORE==1)
+    CASE(MYNNSFCSCHEME)
+
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr)     &
+            & .AND.  PRESENT(qcg) ) THEN
+          
+          CALL wrf_debug(100,'in MYNNSFC')          
+
+          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,&
+               p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
+               xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
+               u10,v10,th2,t2,q2,                                  &
+               gz1oz0,wspd,br,isfflx,dx,                           &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+               &itimestep,ch,th_phy,pi_phy,qc_curr,&
+               &tsq,qsq,cov,qcg,&
+               ids,ide, jds,jde, kds,kde,                          &
+               ims,ime, jms,jme, kms,kme,                          &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+
+       ELSE
+          CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
+ 
        ENDIF
+#endif
+
 #if (NMM_CORE==1)
 
     CASE (GFDLSFCSCHEME)
@@ -978,12 +1062,34 @@ CONTAINS
 
 #endif
      CASE DEFAULT
-        
+
        WRITE( message , * )                                &
    'The sfclay option does not exist: sf_sfclay_physics = ', sf_sfclay_physics
        CALL wrf_error_fatal ( message )
 
      END SELECT sfclay_select
+
+!  Compute uratx, vratx, tratx for obs nudging
+     IF(PRESENT(uratx) .and. PRESENT(vratx) .and. PRESENT(tratx))THEN
+        DO J=j_start(ij),j_end(ij)
+        DO I=i_start(ij),i_end(ij)
+           IF(ABS(U10(I,J)) .GT. 1.E-10) THEN
+              uratx(I,J) = U_PHYTMP(I,1,J)/U10(I,J)
+           ELSE
+              uratx(I,J) = 1.2
+           END IF
+           IF(ABS(V10(I,J)) .GT. 1.E-10) THEN
+              vratx(I,J) = V_PHYTMP(I,1,J)/V10(I,J)
+           ELSE
+              vratx(I,J) = 1.2
+           END IF
+! (Quotient P1000mb/P_PHY must be conditioned due to large value of P1000mb)
+           tratx(I,J) = (T_PHY(I,1,J)*(P1000mb*0.001/(P_PHY(I,1,J)/1000.))**RCP)  &
+                        /TH2(I,J)
+        ENDDO
+        ENDDO
+     ENDIF
+
      ENDDO
      !$OMP END PARALLEL DO
 
@@ -1069,20 +1175,20 @@ CONTAINS
        IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.    &
 !          PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
 !          PRESENT(declin_urb) .AND.  PRESENT(cosz_urb2d)    .AND.    &
-!          PRESENT(omg_urb2d)  .AND. PRESENT( xlat_urb2d)    .AND.    &       
-!          PRESENT(dzr)       .AND.    & 
+!          PRESENT(omg_urb2d)  .AND. PRESENT( xlat_urb2d)    .AND.    &
+!          PRESENT(dzr)       .AND.    &
 !          PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
 !          PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
 !          PRESENT(tg_urb2d) .AND. PRESENT(tc_urb2d) .AND.            &
-!          PRESENT(qc_urb2d) .AND. PRESENT(uc_urb2d) .AND.            & 
-!          PRESENT(xxxr_urb2d) .AND. PRESENT(xxxb_urb2d) .AND.        & 
+!          PRESENT(qc_urb2d) .AND. PRESENT(uc_urb2d) .AND.            &
+!          PRESENT(xxxr_urb2d) .AND. PRESENT(xxxb_urb2d) .AND.        &
 !          PRESENT(xxxg_urb2d) .AND.                                  &
 !          PRESENT(xxxc_urb2d) .AND. PRESENT(trl_urb3d) .AND.         &
-!          PRESENT(tbl_urb3d)   .AND. PRESENT(tgl_urb3d)  .AND.       &         
+!          PRESENT(tbl_urb3d)   .AND. PRESENT(tgl_urb3d)  .AND.       &
 !          PRESENT(sh_urb2d) .AND. PRESENT(lh_urb2d)  .AND.           &
 !          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
-!          PRESENT(ts_urb2d)                          .AND.           & 
-!          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &          
+!          PRESENT(ts_urb2d)                          .AND.           &
+!          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          IF( PRESENT(sr) ) THEN
@@ -1092,22 +1198,27 @@ CONTAINS
          CALL wrf_debug(100,'in NOAH DRV')
            CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
-                sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
+                sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
                 albedo,albbck,znt,z0, tmn,xland,xice, emiss, embck,    &
-                snowc,qsfc,rainbl,                              & 
+                snowc,qsfc,rainbl,                              &
+                mminlu,                                         &
                 num_soil_layers,dtbl,dzs,itimestep,             &
                 smois,tslb,snow,canwat,                         &
-                chs, chs2, cqs2, cpm,rcp,SR,chklowq,qz0,        &    
+                chs, chs2, cqs2, cpm,rcp,SR,chklowq,lai,qz0,    &
 !MEk June07
                 myj,frpcpn,                                     &
-		sh2o,snowh,                                     & !h  
+		sh2o,snowh,                                     & !h
                 u_phy,v_phy,                                    & !I
                 snoalb,shdmin,shdmax,                           & !i
-                acsnom,acsnow,                                  & !o 
+                snotime,                                        & !o
+                acsnom,acsnow,                                  & !o
 ! MEK MAY 2007
-                snopcx,                                         & !o 
+                snopcx,                                         & !o
 ! MEK JUL2007
                 potevp,                                         & !o
+                rdlai2d,                                        &
+                br,                                             & !?
+                  NOAHRES,                                      &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -1139,7 +1250,7 @@ CONTAINS
                IF(PRESENT(ACGRDFLX))ACGRDFLX(I,J)=ACGRDFLX(I,J) + GRDFLX(I,J)*DT
            ENDDO
            ENDDO
-         
+
           CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -1150,7 +1261,7 @@ CONTAINS
      IF(UCMCALL.eq.1) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
-          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &  !urban
+          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
               IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
 !             TH2(I,J)  = TH2_URB2D(I,J)                       !urban
 !             T2(I,J)   = TH2_URB2D(I,J)/(1.E5/PSFC(I,J))**RCP !urban
@@ -1219,7 +1330,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 !tgs     ENDIF
- 
+
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for RUCLSM in surface driver')
@@ -1234,9 +1345,9 @@ CONTAINS
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
                                                       .TRUE. ) THEN
            CALL wrf_debug(100,'in P-X LSM')
-           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,    &     
+           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,    &
                       psfc, gsw, glw, rainbl, emiss,                  &
-                      ITIMESTEP, num_soil_layers, DT, anal_interval,  & 
+                      ITIMESTEP, num_soil_layers, DT, anal_interval,  &
                       xland, albbck, albedo, snoalb, smois, tslb,     &
                       mavail,T2, Q2,                                  &
                       zs, dzs, psih,                                  &
@@ -1250,12 +1361,12 @@ CONTAINS
                       t2obs, q2obs, pxlsm_smois_init, pxlsm_soil_nudge, &
                       ids,ide, jds,jde, kds,kde,                      &
                       ims,ime, jms,jme, kms,kme,                      &
-                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)                      
+                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
 
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
               CHKLOWQ(I,J)= 1.0
-              TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP 
+              TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
               SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
            ENDDO
            ENDDO

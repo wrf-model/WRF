@@ -10,17 +10,22 @@ MODULE module_sf_noahlsm
 
 ! VEGETATION PARAMETERS
         INTEGER :: LUCATS , BARE
+        INTEGER :: NATURAL
         integer, PARAMETER :: NLUS=50
-        CHARACTER*4 LUTYPE
+        CHARACTER(LEN=256) LUTYPE
         INTEGER, DIMENSION(1:NLUS) :: NROTBL
-        real, dimension(1:NLUS) ::  SNUPTBL, RSTBL, RGLTBL, HSTBL, LAITBL,        &
-                                    ALBTBL, Z0TBL, SHDTBL, MAXALB
+        real, dimension(1:NLUS) ::  SNUPTBL, RSTBL, RGLTBL, HSTBL,                &
+                                    SHDTBL, MAXALB,                               &
+                                    EMISSMINTBL, EMISSMAXTBL,                     &
+                                    LAIMINTBL, LAIMAXTBL,                         &
+                                    Z0MINTBL, Z0MAXTBL,                           &
+                                    ALBEDOMINTBL, ALBEDOMAXTBL
         REAL ::   TOPT_DATA,CMCMAX_DATA,CFACTR_DATA,RSMAX_DATA
 
 ! SOIL PARAMETERS
         INTEGER :: SLCATS
         INTEGER, PARAMETER :: NSLTYPE=30
-        CHARACTER*4 SLTYPE
+        CHARACTER(LEN=256) SLTYPE
         REAL, DIMENSION (1:NSLTYPE) :: BB,DRYSMC,F11,                           &
         MAXSMC, REFSMC,SATPSI,SATDK,SATDW, WLTSMC,QTZ
 
@@ -38,7 +43,7 @@ MODULE module_sf_noahlsm
 CONTAINS
 !
 
-      SUBROUTINE SFLX (FFROZP,ICE,DT,ZLVL,NSOIL,SLDPTH,                 &    !C
+      SUBROUTINE SFLX (FFROZP,ICE,ISURBAN,DT,ZLVL,NSOIL,SLDPTH,         &    !C
                        LOCAL,                                           &    !L
                        LLANDUSE, LSOIL,                                 &    !CL
                        LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,SFCSPD,  &    !F
@@ -60,6 +65,9 @@ CONTAINS
                        RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                        SOILW,SOILM,Q1,                                  &    !D
+                       RDLAI2D,                                         &
+                       SNOTIME1,                                        &
+                       RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)                    !P
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SFLX - UNIFIED NOAHLSM VERSION 1.0 JULY 2007
@@ -87,7 +95,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! 1. CONFIGURATION INFORMATION (C):
 ! ----------------------------------------------------------------------
-!   ICE        SEA-ICE FLAG  (=1: SEA-ICE, =0: LAND)
+!   ICE        SEA-ICE FLAG  (=1: SEA-ICE, =0: LAND (NO ICE), --1 LAND-ICE).
 !   DT         TIMESTEP (SEC) (DT SHOULD NOT EXCEED 3600 SECS, RECOMMEND
 !                1800 SECS OR LESS)
 !   ZLVL       HEIGHT (M) ABOVE GROUND OF ATMOSPHERIC FORCING VARIABLES
@@ -234,6 +242,10 @@ CONTAINS
 !   SOILM      TOTAL SOIL COLUMN MOISTURE CONTENT (FROZEN+UNFROZEN) (M)
 !   Q1         Effective mixing ratio at surface (kg kg-1), used for
 !              diagnosing the mixing ratio at 2 meter for coupled model
+!  Documentation for SNOTIME1 and SNOABL2 ?????
+!  What categories of arguments do these variables fall into ????
+!  Documentation for RIBB ?????
+!  What category of argument does RIBB fall into ?????
 ! ----------------------------------------------------------------------
 ! 9. PARAMETERS (P):
 ! ----------------------------------------------------------------------
@@ -256,25 +268,32 @@ CONTAINS
 ! ----------------------------------------------------------------------
       LOGICAL, INTENT(IN)::  LOCAL
       LOGICAL            ::  FRZGRA, SNOWNG
-      CHARACTER (LEN=4), INTENT(IN)::  LLANDUSE, LSOIL
+      CHARACTER (LEN=256), INTENT(IN)::  LLANDUSE, LSOIL
 
 ! ----------------------------------------------------------------------
 ! 1. CONFIGURATION INFORMATION (C):
 ! ----------------------------------------------------------------------
       INTEGER,INTENT(IN) ::  ICE,NSOIL,SLOPETYP,SOILTYP,VEGTYP
+      INTEGER, INTENT(IN) :: ISURBAN
       INTEGER,INTENT(OUT)::  NROOT
       INTEGER  KZ, K, iout
 
 ! ----------------------------------------------------------------------
 ! 2. LOGICAL:
 ! ----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: RDLAI2D
+
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
                             SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
-                            EMBRD, FFROZP
-      REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,ALBEDO,CH,CM,                 &
-                            CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,ALB,&
+                            FFROZP
+      REAL, INTENT(OUT)  :: EMBRD
+      REAL, INTENT(OUT)  :: ALBEDO, ALB
+      REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,CH,CM,                        &
+                            CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,    &
                             EMISSI
+      REAL, INTENT(INOUT):: SNOTIME1
+      REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: ET
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  SH2O, SMC, STC
@@ -292,6 +311,11 @@ CONTAINS
               RSNOW,SNDENS,SNCOND,SBETA,SN_NEW,SLOPE,SNUP,SALP,SOILWM,      &
               SOILWW,T1V,T24,T2V,TH2V,TOPT,TFREEZ,TSNOW,ZBOT,Z0,PRCPF,      &
               ETNS,PTU,LSUBS
+      REAL :: INTERP_FRACTION
+      REAL :: LAIMIN,    LAIMAX
+      REAL :: ALBEDOMIN, ALBEDOMAX
+      REAL :: EMISSMIN,  EMISSMAX
+      REAL :: Z0MIN,     Z0MAX
 
 ! ----------------------------------------------------------------------
 ! DECLARATIONS - PARAMETERS
@@ -309,7 +333,11 @@ CONTAINS
          SNOMLT = 0.0
 
 ! ----------------------------------------------------------------------
-!  THE VARIABLE "ICE" IS A FLAG DENOTING SEA-ICE CASE
+!  THE VARIABLE "ICE" IS A FLAG DENOTING SEA-ICE / LAND-ICE / ICE-FREE LAND
+!     SEA-ICE CASE,          ICE =  1
+!     NON-GLACIAL LAND,      ICE =  0
+!     GLACIAL-ICE LAND,      ICE = -1
+      IF (ICE /= 0) SHDFAC = 0.0
 ! ----------------------------------------------------------------------
 ! SEA-ICE LAYERS ARE EQUAL THICKNESS AND SUM TO 3 METERS
 ! ----------------------------------------------------------------------
@@ -328,20 +356,22 @@ CONTAINS
             DO KZ = 2,NSOIL
                ZSOIL (KZ) = - SLDPTH (KZ) + ZSOIL (KZ -1)
             END DO
+         END IF
 ! ----------------------------------------------------------------------
 ! NEXT IS CRUCIAL CALL TO SET THE LAND-SURFACE PARAMETERS, INCLUDING
 ! SOIL-TYPE AND VEG-TYPE DEPENDENT PARAMETERS.
 ! ----------------------------------------------------------------------
-          CALL REDPRM (VEGTYP,SOILTYP,SLOPETYP,CFACTR,CMCMAX,RSMAX,TOPT,   &
+         CALL REDPRM (VEGTYP,SOILTYP,SLOPETYP,CFACTR,CMCMAX,RSMAX,TOPT,   &
                        REFKDT,KDT,SBETA, SHDFAC,RSMIN,RGL,HS,ZBOT,FRZX,    &
                          PSISAT,SLOPE,SNUP,SALP,BEXP,DKSAT,DWSAT,          &
                          SMCMAX,SMCWLT,SMCREF,SMCDRY,F1,QUARTZ,FXEXP,      &
-                         RTDIS,SLDPTH,ZSOIL,NROOT,NSOIL,Z0BRD,CZIL,XLAI,   &
-                         CSOIL,ALB,PTU,LLANDUSE,LSOIL,LOCAL)
-         END IF
+                         RTDIS,SLDPTH,ZSOIL,NROOT,NSOIL,CZIL,              &
+                         LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
+                         ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
+                         LSOIL,LOCAL)
 
 !urban
-         IF(VEGTYP==1)THEN
+         IF(VEGTYP==ISURBAN)THEN
               SHDFAC=0.05
               RSMIN=400.0
               SMCMAX = 0.45
@@ -350,6 +380,48 @@ CONTAINS
               SMCDRY = 0.40
          ENDIF
 
+         IF ( SHDFAC >= SHDMAX ) THEN
+            EMBRD = EMISSMAX
+            IF (.NOT. RDLAI2D) THEN
+               XLAI  = LAIMAX
+            ENDIF
+            ALB   = ALBEDOMAX
+            Z0BRD = Z0MAX
+         ELSE IF ( SHDFAC <= SHDMIN ) THEN
+            EMBRD = EMISSMIN
+            IF(.NOT. RDLAI2D) THEN
+               XLAI  = LAIMIN
+            ENDIF
+            ALB   = ALBEDOMIN
+            Z0BRD = Z0MIN
+         ELSE
+
+            IF ( SHDMAX > SHDMIN ) THEN
+
+               INTERP_FRACTION = ( SHDFAC - SHDMIN ) / ( SHDMAX - SHDMIN )
+               ! Bound INTERP_FRACTION between 0 and 1
+               INTERP_FRACTION = MIN ( INTERP_FRACTION, 1.0 )
+               INTERP_FRACTION = MAX ( INTERP_FRACTION, 0.0 )
+               ! Scale Emissivity and LAI between EMISSMIN and EMISSMAX by INTERP_FRACTION
+               EMBRD = ( ( 1.0 - INTERP_FRACTION ) * EMISSMIN  ) + ( INTERP_FRACTION * EMISSMAX  )
+               IF (.NOT. RDLAI2D) THEN
+                  XLAI  = ( ( 1.0 - INTERP_FRACTION ) * LAIMIN    ) + ( INTERP_FRACTION * LAIMAX    )
+               ENDIF
+               ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMIN ) + ( INTERP_FRACTION * ALBEDOMAX )
+               Z0BRD = ( ( 1.0 - INTERP_FRACTION ) * Z0MIN     ) + ( INTERP_FRACTION * Z0MAX     )
+
+            ELSE
+
+               EMBRD = 0.5 * EMISSMIN  + 0.5 * EMISSMAX
+               IF (.NOT. RDLAI2D) THEN
+                  XLAI  = 0.5 * LAIMIN    + 0.5 * LAIMAX
+               ENDIF
+               ALB   = 0.5 * ALBEDOMIN + 0.5 * ALBEDOMAX
+               Z0BRD = 0.5 * Z0MIN     + 0.5 * Z0MAX
+
+            ENDIF
+
+         ENDIF
 ! ----------------------------------------------------------------------
 !  INITIALIZE PRECIPITATION LOGICALS.
 ! ----------------------------------------------------------------------
@@ -357,18 +429,41 @@ CONTAINS
          FRZGRA = .FALSE.
 
 ! ----------------------------------------------------------------------
+! OVER SEA-ICE OR GLACIAL-ICE, IF S.W.E. (SNEQV) BELOW THRESHOLD LOWER
+! BOUND (0.01 M FOR SEA-ICE, 0.10 M FOR GLACIAL-ICE), THEN SET AT LOWER
+! BOUND
+! ----------------------------------------------------------------------
 ! IF SEA-ICE CASE, ASSIGN DEFAULT WATER-EQUIV SNOW ON TOP
 ! ----------------------------------------------------------------------
          IF (ICE == 1) THEN
-            SNEQV = 0.01
-            SNOWH = 0.05
+            ! Sea-ice case
+            IF ( SNEQV < 0.01 ) THEN
+               SNEQV = 0.01
+               SNOWH = 0.05
+            ENDIF
+         ELSE IF ( ICE == -1 ) THEN
+            ! Land-ice case
+            IF ( SNEQV < 0.10 ) THEN
+               SNEQV = 0.10
+               SNOWH = 0.50
+            ENDIF
+         END IF
+! ----------------------------------------------------------------------
+! FOR SEA-ICE AND GLACIAL-ICE CASES, SET SMC AND SH20 VALUES = 1.0
+! ----------------------------------------------------------------------
+         IF ( ICE /= 0 ) THEN
+            DO KZ = 1,NSOIL
+               SMC(KZ) = 1.0
+               SH2O(KZ) = 1.0
+            END DO
+         ENDIF
 ! ----------------------------------------------------------------------
 ! IF INPUT SNOWPACK IS NONZERO, THEN COMPUTE SNOW DENSITY "SNDENS" AND
 !   SNOW THERMAL CONDUCTIVITY "SNCOND" (NOTE THAT CSNOW IS A FUNCTION
 !   SUBROUTINE)
 ! ----------------------------------------------------------------------
-         END IF
-         IF (SNEQV == 0.0) THEN
+         IF ( SNEQV <= 1.E-7 ) THEN ! safer IF	kmh (2008/03/25)
+            SNEQV = 0.0
             SNDENS = 0.0
             SNOWH = 0.0
             SNCOND = 1.0
@@ -411,6 +506,16 @@ CONTAINS
 ! UPDATE SNOW THERMAL CONDUCTIVITY
 ! ----------------------------------------------------------------------
             CALL SNOW_NEW (SFCTMP,SN_NEW,SNOWH,SNDENS)
+!
+! kmh 09/04/2006 set Snow Density at 0.2 g/cm**3
+! for "cold permanent ice" or new "dry" snow
+!
+           IF ( (ICE /= 0) .and. SNCOVR .GT. 0.99 ) THEN
+!  if soil temperature less than 268.15 K, treat as typical Antarctic/Greenland snow firn
+              IF ( STC(1) .LT. (TFREEZ - 5.) ) SNDENS = 0.2
+              IF ( SNOWNG .AND. (T1.LT.273.) .AND. (SFCTMP.LT.273.) ) SNDENS=0.2
+           ENDIF
+!
             CALL CSNOW (SNCOND,SNDENS)
 
 ! ----------------------------------------------------------------------
@@ -427,7 +532,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! IF SNOW DEPTH=0, SET SNOW FRACTION=0, ALBEDO=SNOW FREE ALBEDO.
 ! ----------------------------------------------------------------------
-         IF (ICE == 0) THEN
+         IF (ICE == 0 .OR. ICE == -1) THEN
             IF (SNEQV  == 0.0) THEN
                SNCOVR = 0.0
                ALBEDO = ALB
@@ -438,23 +543,43 @@ CONTAINS
 ! DETERMINE SURFACE ALBEDO MODIFICATION DUE TO SNOWDEPTH STATE.
 ! ----------------------------------------------------------------------
               CALL SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR)
-! limit snow cover fraction to maximum of 0.98
+!   Don't limit snow cover fraction over permanent ice kmh 2008/03/25
+            if ( ICE == 0 ) then
               SNCOVR = MIN(SNCOVR,0.98)
-              CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI)
+            endif
+              CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1,ALBEDO,EMISSI,   &
+                         DT,SNOWNG,SNOTIME1)
             END IF
 ! ----------------------------------------------------------------------
-! SNOW COVER, ALBEDO OVER SEA-ICE
+! SNOW COVER, ALBEDO OVER SEA-ICE, GLACIAL ICE
 ! ----------------------------------------------------------------------
          ELSE
             SNCOVR = 1.0
-            ALBEDO = 0.65
-            EMISSI = EMISSI_S
+!
+! Albedo of sea ice
+!
+! This value should vary seasonally. 0.65 may be good for Arctic Ocean summer bare ice
+!   value could be as low as 0.4 for Arctic bare ice and melt pond combo (Perovich data)
+!   0.82 may be good for Arctic spring/fall sea ice (Perovich data)
+!   0.81 may be good for Antarctic sea ice (Wendler et al. December cruise data)
+!
+            ALBEDO = 0.80
+!
+            EMISSI = 0.98
          END IF
 ! ----------------------------------------------------------------------
-! THERMAL CONDUCTIVITY FOR SEA-ICE CASE
+! THERMAL CONDUCTIVITY FOR SEA-ICE CASE, GLACIAL-ICE CASE
 ! ----------------------------------------------------------------------
-         IF (ICE == 1) THEN
+         IF ( (ICE == 1) .or. (ICE == -1) ) THEN
             DF1 = 2.2
+!
+! kmh 09/03/2006
+! kmh 03/25/2008  change SNCOVR threshold to 0.97
+!
+            IF (  SNCOVR .GT. 0.97 ) THEN
+               DF1 = SNCOND
+            ENDIF
+!
          ELSE
 ! ----------------------------------------------------------------------
 ! NEXT CALCULATE THE SUBSURFACE HEAT FLUX, WHICH FIRST REQUIRES
@@ -483,9 +608,17 @@ CONTAINS
             CALL TDFCND (DF1,SMC (1),QUARTZ,SMCMAX,SH2O (1))
 
 !urban
-            IF (VEGTYP==1) DF1=3.24
+            IF ( VEGTYP == ISURBAN ) DF1=3.24
 
             DF1 = DF1 * EXP (SBETA * SHDFAC)
+!
+! kmh 09/03/2006
+! kmh 03/25/2008  change SNCOVR threshold to 0.97
+!
+            IF (  SNCOVR .GT. 0.97 ) THEN
+               DF1 = SNCOND
+            ENDIF
+!
 ! ----------------------------------------------------------------------
 ! FINALLY "PLANE PARALLEL" SNOWPACK EFFECT FOLLOWING
 ! V.J. LINARDINI REFERENCE CITED ABOVE. NOTE THAT DTOT IS
@@ -520,6 +653,13 @@ CONTAINS
 ! MID-LAYER SOIL TEMPERATURE
 ! ----------------------------------------------------------------------
             DF1 = DF1A * SNCOVR + DF1* (1.0- SNCOVR)
+            IF ( ICE /= 0 ) then
+               !  kmh  12/15/2005  correct for too deep snow layer
+               !  kmh  09/03/2006  adjust DTOT
+               IF ( DTOT .GT. 2.*DSOIL ) then
+                  DTOT = 2.*DSOIL
+               ENDIF
+            ENDIF
             SSOIL = DF1 * (T1- STC (1) ) / DTOT
          END IF
 ! ----------------------------------------------------------------------
@@ -591,8 +731,11 @@ CONTAINS
 
          CALL PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL,     &
                        Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,          &
-                         DQSDT2,FLX2,EMISSI,SNEQV)
-
+!
+! kmh 01/09/2007 add T1,ICE,SNCOVR to call
+!
+                         DQSDT2,FLX2,EMISSI,SNEQV,T1,ICE,SNCOVR)
+!
 ! ----------------------------------------------------------------------
 ! CALL CANRES TO CALCULATE THE CANOPY RESISTANCE AND CONVERT IT INTO PC
 ! IF NONZERO GREENNESS FRACTION
@@ -624,7 +767,7 @@ CONTAINS
                             DKSAT,DWSAT,TBOT,ZBOT,RUNOFF1,RUNOFF2,       &
                             RUNOFF3,EDIR,EC,ET,ETT,NROOT,ICE,RTDIS,      &
                             QUARTZ,FXEXP,CSOIL,                          &
-                            BETA,DRIP,DEW,FLX1,FLX3,VEGTYP)
+                            BETA,DRIP,DEW,FLX1,FLX3,VEGTYP,ISURBAN)
             ETA_KINEMATIC = ETA
          ELSE
             CALL SNOPAC (ETP,ETA,PRCP,PRCPF,SNOWNG,SMC,SMCMAX,SMCWLT,    &
@@ -637,6 +780,8 @@ CONTAINS
                          RUNOFF2,RUNOFF3,EDIR,EC,ET,ETT,NROOT,SNOMLT,    &
                          ICE,RTDIS,QUARTZ,FXEXP,CSOIL,                   &
                          BETA,DRIP,DEW,FLX1,FLX2,FLX3,ESNOW,ETNS,EMISSI, &
+                         RIBB,SOLDN,                                     &
+                         ISURBAN,                                        &
                          VEGTYP)
             ETA_KINEMATIC =  ESNOW + ETNS
          END IF
@@ -684,17 +829,14 @@ CONTAINS
          SSOIL = -1.0* SSOIL
 
 ! ----------------------------------------------------------------------
+!  FOR THE CASE OF LAND (BUT NOT GLACIAL-ICE):
 !  CONVERT RUNOFF3 (INTERNAL LAYER RUNOFF FROM SUPERSAT) FROM M TO M S-1
-!  AND ADD TO SUBSURFACE RUNOFF/DRAINAGE/BASEFLOW
-! ----------------------------------------------------------------------
-         RUNOFF3 = RUNOFF3/ DT
-         RUNOFF2 = RUNOFF2+ RUNOFF3
-
-! ----------------------------------------------------------------------
-! TOTAL COLUMN SOIL MOISTURE IN METERS (SOILM) AND ROOT-ZONE
-! SOIL MOISTURE AVAILABILITY (FRACTION) RELATIVE TO POROSITY/SATURATION
+!  AND ADD TO SUBSURFACE RUNOFF/DRAINAGE/BASEFLOW.  RUNOFF2 IS ALREADY
+!  A RATE AT THIS POINT
 ! ----------------------------------------------------------------------
          IF (ICE == 0) THEN
+            RUNOFF3 = RUNOFF3/ DT
+            RUNOFF2 = RUNOFF2+ RUNOFF3
             SOILM = -1.0* SMC (1)* ZSOIL (1)
             DO K = 2,NSOIL
               SOILM = SOILM + SMC (K)* (ZSOIL (K -1) - ZSOIL (K))
@@ -716,6 +858,13 @@ CONTAINS
               SOILW = SOILWW / SOILWM
             END IF
          ELSE
+! ----------------------------------------------------------------------
+! FOR THE CASE OF SEA-ICE (ICE=1) OR GLACIAL-ICE (ICE=-1), ADD ANY
+! SNOWMELT DIRECTLY TO SURFACE RUNOFF (RUNOFF1) SINCE THERE IS NO
+! SOIL MEDIUM, AND THUS NO CALL TO SUBROUTINE SMFLX (FOR SOIL MOISTURE
+! TENDENCY).
+! ----------------------------------------------------------------------
+            RUNOFF1 = SNOMLT/DT
            SOILWM = 0.0
            SOILW  = 0.0
            SOILM  = 0.0
@@ -725,7 +874,8 @@ CONTAINS
   END SUBROUTINE SFLX
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI)
+      SUBROUTINE ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,TSNOW,ALBEDO,EMISSI,   &
+                         DT,SNOWNG,SNOTIME1)
 
 ! ----------------------------------------------------------------------
 ! CALCULATE ALBEDO INCLUDING SNOW EFFECT (0 -> 1)
@@ -746,7 +896,13 @@ CONTAINS
 ! (1985, JCAM, VOL 24, 402-411)
 ! ----------------------------------------------------------------------
       REAL, INTENT(IN)  ::  ALB, SNOALB, EMBRD, SHDFAC, SHDMIN, SNCOVR, TSNOW
+      REAL, INTENT(IN)  :: DT
+      LOGICAL, INTENT(IN) :: SNOWNG
+      REAL, INTENT(INOUT):: SNOTIME1
       REAL, INTENT(OUT) ::  ALBEDO, EMISSI
+      REAL              :: SNOALB2
+      REAL              :: TM,SNOALB1
+      REAL, PARAMETER   :: COEF=0.5, SNACCA=0.94,SNACCB=0.58,SNTHWA=0.82,SNTHWB=0.46
 ! turn of vegetation effect
 !      ALBEDO = ALB + (1.0- (SHDFAC - SHDMIN))* SNCOVR * (SNOALB - ALB)
 !      ALBEDO = (1.0-SNCOVR)*ALB + SNCOVR*SNOALB !this is equivalent to below
@@ -759,20 +915,77 @@ CONTAINS
 !          ELSE
 !            IF (TSNOW.LT.273.16) THEN
 !              TM=0.1*(TSNOW-263.16)
-!              ALBEDO=0.5*((0.9-0.2*(TM**3))+(0.8-0.16*(TM**3)))
+!              SNOALB1=0.5*((0.9-0.2*(TM**3))+(0.8-0.16*(TM**3)))
 !            ELSE
-!              ALBEDO=0.67
+!              SNOALB1=0.67
+!             IF(SNCOVR.GT.0.95) SNOALB1= 0.6
+!             SNOALB1 = ALB + SNCOVR*(SNOALB-ALB)
 !            ENDIF
 !          ENDIF
+!            ALBEDO = ALB + SNCOVR*(SNOALB1-ALB)
 
 !     ISBA FORMULATION (VERSEGHY, 1991; BAKER ET AL., 1990)
+!          SNOALB1 = SNOALB+COEF*(0.85-SNOALB)
+!          SNOALB2=SNOALB1
+!!m          LSTSNW=LSTSNW+1
+!          SNOTIME1 = SNOTIME1 + DT
+!          IF (SNOWNG) THEN
+!             SNOALB2=SNOALB
+!!m             LSTSNW=0
+!             SNOTIME1 = 0.0
+!          ELSE
+!            IF (TSNOW.LT.273.16) THEN
+!!              SNOALB2=SNOALB-0.008*LSTSNW*DT/86400
+!!m              SNOALB2=SNOALB-0.008*SNOTIME1/86400
+!              SNOALB2=(SNOALB2-0.65)*EXP(-0.05*DT/3600)+0.65
+!!              SNOALB2=(ALBEDO-0.65)*EXP(-0.01*DT/3600)+0.65
+!            ELSE
+!              SNOALB2=(SNOALB2-0.5)*EXP(-0.0005*DT/3600)+0.5
+!!              SNOALB2=(SNOALB-0.5)*EXP(-0.24*LSTSNW*DT/86400)+0.5
+!!m              SNOALB2=(SNOALB-0.5)*EXP(-0.24*SNOTIME1/86400)+0.5
+!            ENDIF
+!          ENDIF
+!
+!!print *, 'MUKUL PRINTS in ALCALC'
+!!               print*,'SNOALB2',SNOALB2,'ALBEDO',ALBEDO,'DT',DT
+!          ALBEDO = ALB + SNCOVR*(SNOALB2-ALB)
+!          IF (ALBEDO .GT. SNOALB2) ALBEDO=SNOALB2
+!!m          LSTSNW1=LSTSNW
+!!          SNOTIME = SNOTIME1
+
+! formulation by Livneh
+! ----------------------------------------------------------------------
+! SNOALB IS CONSIDERED AS THE MAXIMUM SNOW ALBEDO FOR NEW SNOW, AT
+! A VALUE OF 85%. SNOW ALBEDO CURVE DEFAULTS ARE FROM BRAS P.263. SHOULD
+! NOT BE CHANGED EXCEPT FOR SERIOUS PROBLEMS WITH SNOW MELT.
+! TO IMPLEMENT ACCUMULATIN PARAMETERS, SNACCA AND SNACCB, ASSERT THAT IT
+! IS INDEED ACCUMULATION SEASON. I.E. THAT SNOW SURFACE TEMP IS BELOW
+! ZERO AND THE DATE FALLS BETWEEN OCTOBER AND FEBRUARY
+! ----------------------------------------------------------------------
+         SNOALB1 = SNOALB+COEF*(0.85-SNOALB)
+         SNOALB2=SNOALB1
+! ---------------- Initial LSTSNW --------------------------------------
+          IF (SNOWNG) THEN
+             SNOTIME1 = 0.
+          ELSE
+           SNOTIME1=SNOTIME1+DT
+                IF (TSNOW.LT.273.16) THEN
+                   SNOALB2=SNOALB1*(SNACCA**((SNOTIME1/86400.0)**SNACCB))
+                ELSE
+                   SNOALB2 =SNOALB1*(SNTHWA**((SNOTIME1/86400.0)**SNTHWB))
+                ENDIF
+          ENDIF
+!
+           ALBEDO = ALB + SNCOVR*(SNOALB2-ALB)
+           IF (ALBEDO .GT. SNOALB2) ALBEDO=SNOALB2
+
 !          IF (TSNOW.LT.273.16) THEN
 !            ALBEDO=SNOALB-0.008*DT/86400
 !          ELSE
 !            ALBEDO=(SNOALB-0.5)*EXP(-0.24*DT/86400)+0.5
 !          ENDIF
 
-      IF (ALBEDO > SNOALB) ALBEDO = SNOALB
+!      IF (ALBEDO > SNOALB) ALBEDO = SNOALB
 
 ! ----------------------------------------------------------------------
   END SUBROUTINE ALCALC
@@ -1086,6 +1299,29 @@ CONTAINS
   END SUBROUTINE EVAPO
 ! ----------------------------------------------------------------------
 
+  SUBROUTINE FAC2MIT(SMCMAX,FLIMIT)
+    IMPLICIT NONE		
+    REAL, INTENT(IN)  :: SMCMAX
+    REAL, INTENT(OUT) :: FLIMIT
+
+    FLIMIT = 0.90
+
+    IF ( SMCMAX == 0.395 ) THEN
+       FLIMIT = 0.59
+    ELSE IF ( ( SMCMAX == 0.434 ) .OR. ( SMCMAX == 0.404 ) ) THEN
+       FLIMIT = 0.85
+    ELSE IF ( ( SMCMAX == 0.465 ) .OR. ( SMCMAX == 0.406 ) ) THEN
+       FLIMIT = 0.86
+    ELSE IF ( ( SMCMAX == 0.476 ) .OR. ( SMCMAX == 0.439 ) ) THEN
+       FLIMIT = 0.74
+    ELSE IF ( ( SMCMAX == 0.200 ) .OR. ( SMCMAX == 0.464 ) ) THEN
+       FLIMIT = 0.80
+    ENDIF
+
+! ----------------------------------------------------------------------
+  END SUBROUTINE FAC2MIT
+! ----------------------------------------------------------------------
+
       SUBROUTINE FRH2O (FREE,TKELV,SMC,SH2O,SMCMAX,BEXP,PSIS)
 
 ! ----------------------------------------------------------------------
@@ -1229,7 +1465,7 @@ CONTAINS
 
       SUBROUTINE HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,          &
                        TBOT,ZBOT,PSISAT,SH2O,DT,BEXP,                   &
-                       F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP)
+                       F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE HRT
@@ -1241,6 +1477,7 @@ CONTAINS
       IMPLICIT NONE
       LOGICAL              :: ITAVG
       INTEGER, INTENT(IN)  :: NSOIL, VEGTYP
+      INTEGER, INTENT(IN)  :: ISURBAN
       INTEGER              :: I, K
 
       REAL, INTENT(IN)     :: BEXP, CSOIL, DF1, DT,F1,PSISAT,QUARTZ,     &
@@ -1257,7 +1494,7 @@ CONTAINS
 
 
 !urban
-        IF(VEGTYP==1) then
+        IF( VEGTYP == ISURBAN ) then
             CSOIL_LOC=3.0E6
         ELSE
             CSOIL_LOC=CSOIL
@@ -1379,7 +1616,7 @@ CONTAINS
             CALL TDFCND (DF1N,SMC (K),QUARTZ,SMCMAX,SH2O (K))
 
 !urban
-       IF(VEGTYP==1) DF1N = 3.24
+       IF ( VEGTYP == ISURBAN ) DF1N = 3.24
 
             DENOM = 0.5 * ( ZSOIL (K -1) - ZSOIL (K +1) )
 
@@ -1412,7 +1649,7 @@ CONTAINS
 
 
 !urban
-       IF(VEGTYP==1) DF1N = 3.24
+       IF ( VEGTYP == ISURBAN ) DF1N = 3.24
 
             DENOM = .5 * (ZSOIL (K -1) + ZSOIL (K)) - ZBOT
 
@@ -1476,15 +1713,18 @@ CONTAINS
   END SUBROUTINE HRT
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE HRTICE (RHSTS,STC,NSOIL,ZSOIL,YY,ZZ1,DF1,AI,BI,CI)
+      SUBROUTINE HRTICE (RHSTS,STC,TBOT,ICE,NSOIL,ZSOIL,YY,ZZ1,DF1,AI,BI,CI)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE HRTICE
 ! ----------------------------------------------------------------------
 ! CALCULATE THE RIGHT HAND SIDE OF THE TIME TENDENCY TERM OF THE SOIL
-! THERMAL DIFFUSION EQUATION IN THE CASE OF SEA-ICE PACK.  ALSO TO
-! COMPUTE (PREPARE) THE MATRIX COEFFICIENTS FOR THE TRI-DIAGONAL MATRIX
-! OF THE IMPLICIT TIME SCHEME.
+! THERMAL DIFFUSION EQUATION IN THE CASE OF SEA-ICE (ICE=1) OR GLACIAL
+! ICE (ICE=-1). COMPUTE (PREPARE) THE MATRIX COEFFICIENTS FOR THE
+! TRI-DIAGONAL MATRIX OF THE IMPLICIT TIME SCHEME.
+!
+! (NOTE:  THIS SUBROUTINE ONLY CALLED FOR SEA-ICE OR GLACIAL ICE, BUT
+! NOT FOR NON-GLACIAL LAND (ICE = 0).
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -1496,15 +1736,34 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: AI, BI,CI
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: STC, ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: RHSTS
+      REAL,                     INTENT(IN) :: TBOT
+      INTEGER,                  INTENT(IN) :: ICE
       REAL                   :: DDZ,DDZ2,DENOM,DTSDZ,DTSDZ2,SSOIL,       &
-                                ZBOT,TBOT
-      REAL, PARAMETER        :: HCPCT = 1.72396E+6
+                                ZBOT
+      REAL                   :: HCPCT
+      REAL :: DF1K
+      REAL :: DF1N
+      REAL :: ZMD
 
 ! ----------------------------------------------------------------------
 ! SET A NOMINAL UNIVERSAL VALUE OF THE SEA-ICE SPECIFIC HEAT CAPACITY,
 ! HCPCT = 1880.0*917.0.
 ! ----------------------------------------------------------------------
-      DATA TBOT /271.16/
+      IF ( ICE == 1 ) THEN
+         ! Sea-ice values
+         HCPCT = 1.72396E+6
+      ELSEIF (ICE == -1) THEN
+! SET A NOMINAL UNIVERSAL VALUE OF GLACIAL-ICE SPECIFIC HEAT CAPACITY,
+!   HCPCT = 2100.0*900.0 = 1.89000E+6 (SOURCE:  BOB GRUMBINE, 2005)
+!   TBOT PASSED IN AS ARGUMENT, VALUE FROM GLOBAL DATA SET
+         !
+         ! A least-squares fit for the four points provided by
+         ! Keith Hines for the Yen (1981) values for Antarctic
+         ! snow firn.
+         !
+         HCPCT = 1.E6 * (0.8194 - 0.1309*0.5*ZSOIL(1))
+         DF1K = DF1
+      ENDIF
 
 ! ----------------------------------------------------------------------
 ! THE INPUT ARGUMENT DF1 IS A UNIVERSALLY CONSTANT VALUE OF SEA-ICE
@@ -1518,7 +1777,11 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! CALC THE MATRIX COEFFICIENTS AI, BI, AND CI FOR THE TOP LAYER
 ! ----------------------------------------------------------------------
-      ZBOT = ZSOIL (NSOIL)
+      IF (ICE == 1) THEN
+         ZBOT = ZSOIL (NSOIL)
+      ELSE IF (ICE == -1) THEN
+         ZBOT = -25.0
+      ENDIF
       DDZ = 1.0 / ( -0.5 * ZSOIL (2) )
       AI (1) = 0.0
       CI (1) = (DF1 * DDZ) / (ZSOIL (1) * HCPCT)
@@ -1542,8 +1805,32 @@ CONTAINS
 ! LOOP THRU THE REMAINING SOIL LAYERS, REPEATING THE ABOVE PROCESS
 ! ----------------------------------------------------------------------
       DDZ2 = 0.0
+      DF1K = DF1
+      DF1N = DF1
       DO K = 2,NSOIL
 
+       IF ( ICE == -1 ) THEN
+          ZMD = 0.5 * (ZSOIL(K)+ZSOIL(K-1))
+          ! For the land-ice case
+! kmh 09/03/2006 use Yen (1981)'s values for Antarctic snow firn
+!         IF ( K .eq. 2 ) HCPCT = 0.855108E5
+!         IF ( K .eq. 3 ) HCPCT = 0.922906E5
+!         IF ( K .eq. 4 ) HCPCT = 1.009986E6
+
+          ! Least squares fit to the four points supplied by Keith Hines
+          ! from Yen (1981) for Antarctic snow firn.  Not optimal, but
+          ! probably better than just a constant.
+          HCPCT = 1.E6 * ( 0.8194 - 0.1309*ZMD )
+
+!         IF ( K .eq. 2 ) DF1N = 0.345356
+!         IF ( K .eq. 3 ) DF1N = 0.398777
+!         IF ( K .eq. 4 ) DF1N = 0.472653
+
+          ! Least squares fit to the three points supplied by Keith Hines
+          ! from Yen (1981) for Antarctic snow firn.  Not optimal, but
+          ! probably better than just a constant.
+          DF1N = 0.32333 - ( 0.10073 * ZMD )
+       ENDIF
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL SOIL TEMP GRADIENT THRU THIS LAYER.
 ! ----------------------------------------------------------------------
@@ -1555,7 +1842,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
             DTSDZ2 = ( STC (K) - STC (K +1) ) / DENOM
             DDZ2 = 2. / (ZSOIL (K -1) - ZSOIL (K +1))
-            CI (K) = - DF1 * DDZ2 / ( (ZSOIL (K -1) - ZSOIL (K))*HCPCT)
+            CI (K) = - DF1N * DDZ2 / ( (ZSOIL (K -1) - ZSOIL (K))*HCPCT)
 
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL SOIL TEMP GRADIENT THRU THE LOWEST LAYER.
@@ -1577,13 +1864,14 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! CALC MATRIX COEFS, AI, AND BI FOR THIS LAYER.
 ! ----------------------------------------------------------------------
-         RHSTS (K) = ( DF1 * DTSDZ2- DF1 * DTSDZ ) / DENOM
-         AI (K) = - DF1 * DDZ / ( (ZSOIL (K -1) - ZSOIL (K)) * HCPCT)
+         RHSTS (K) = ( DF1N * DTSDZ2- DF1K * DTSDZ ) / DENOM
+         AI (K) = - DF1K * DDZ / ( (ZSOIL (K -1) - ZSOIL (K)) * HCPCT)
 
 ! ----------------------------------------------------------------------
 ! RESET VALUES OF DTSDZ AND DDZ FOR LOOP TO NEXT SOIL LYR.
 ! ----------------------------------------------------------------------
          BI (K) = - (AI (K) + CI (K))
+         DF1K = DF1N
          DTSDZ = DTSDZ2
          DDZ = DDZ2
       END DO
@@ -1651,7 +1939,7 @@ CONTAINS
                          DKSAT,DWSAT,TBOT,ZBOT,RUNOFF1,RUNOFF2,         &
                          RUNOFF3,EDIR,EC,ET,ETT,NROOT,ICE,RTDIS,        &
                          QUARTZ,FXEXP,CSOIL,                            &
-                         BETA,DRIP,DEW,FLX1,FLX3,VEGTYP)
+                         BETA,DRIP,DEW,FLX1,FLX3,VEGTYP,ISURBAN)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE NOPAC
@@ -1663,6 +1951,7 @@ CONTAINS
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)  :: ICE, NROOT,NSOIL,VEGTYP
+      INTEGER, INTENT(IN)  :: ISURBAN
       INTEGER              :: K
 
       REAL, INTENT(IN)     :: BEXP,CFACTR, CMCMAX,CSOIL,DKSAT,DT,DWSAT, &
@@ -1781,7 +2070,7 @@ CONTAINS
       CALL TDFCND (DF1,SMC (1),QUARTZ,SMCMAX,SH2O (1))
 
 !urban
-      IF (VEGTYP==1) DF1=3.24
+      IF ( VEGTYP == ISURBAN ) DF1=3.24
 !
 
 ! ----------------------------------------------------------------------
@@ -1804,7 +2093,7 @@ CONTAINS
 !urban
       CALL SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL,        &
                   TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,ICE,         &
-                  QUARTZ,CSOIL,VEGTYP)
+                  QUARTZ,CSOIL,VEGTYP,ISURBAN)
 
 ! ----------------------------------------------------------------------
 ! SET FLX1 AND FLX3 (SNOPACK PHASE CHANGE HEAT FLUXES) TO ZERO SINCE
@@ -1820,7 +2109,7 @@ CONTAINS
 
       SUBROUTINE PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL, &
      &                   Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,       &
-     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV)
+     &              DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,ICE,SNCOVR)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE PENMAN
@@ -1834,6 +2123,12 @@ CONTAINS
       REAL, INTENT(IN)        :: CH, DQSDT2,FDOWN,PRCP,                 &
                                  Q2, Q2SAT,SSOIL, SFCPRS, SFCTMP,       &
                                  T2V, TH2,EMISSI_IN,SNEQV
+      REAL, INTENT(IN)        :: T1 , SNCOVR
+!
+! kmh 09/13/2006
+      INTEGER, INTENT(IN)     :: ICE
+! kmh 09/03/2006
+!
       REAL, INTENT(OUT)       :: EPSCA,ETP,FLX2,RCH,RR,T24
       REAL                    :: A, DELTA, FNET,RAD,RHO,EMISSI,ELCP1,LVS
 
@@ -1847,14 +2142,18 @@ CONTAINS
 ! PREPARE PARTIAL QUANTITIES FOR PENMAN EQUATION.
 ! ----------------------------------------------------------------------
         EMISSI=EMISSI_IN
-      IF(SNEQV == 0.)THEN
-        ELCP1=ELCP
-        LVS=LSUBC
-      ELSE
-!        EMISSI=EMISSI_S  ! FOR SNOW
-        ELCP1=ELCP*LSUBS/LSUBC
-        LVS=LSUBS
-      ENDIF
+        IF (ICE==0) THEN
+           ELCP1  = (1.0-SNCOVR)*ELCP  + SNCOVR*ELCP*LSUBS/LSUBC
+           LVS    = (1.0-SNCOVR)*LSUBC + SNCOVR*LSUBS
+        ELSE
+           IF ( T1 > 273.15 ) THEN
+              ELCP1=ELCP
+              LVS=LSUBC
+           ELSE
+              ELCP1  = ELCP*LSUBS/LSUBC
+              LVS    = LSUBS
+           ENDIF
+        ENDIF
 
       FLX2 = 0.0
 !      DELTA = ELCP * DQSDT2
@@ -1904,8 +2203,10 @@ CONTAINS
                          REFKDT,KDT,SBETA, SHDFAC,RSMIN,RGL,HS,ZBOT,FRZX,  &
                          PSISAT,SLOPE,SNUP,SALP,BEXP,DKSAT,DWSAT,          &
                          SMCMAX,SMCWLT,SMCREF,SMCDRY,F1,QUARTZ,FXEXP,      &
-                         RTDIS,SLDPTH,ZSOIL, NROOT,NSOIL,Z0BRD,CZIL,LAI,   &
-                         CSOIL,ALBBRD,PTU,LLANDUSE,LSOIL,LOCAL)
+                         RTDIS,SLDPTH,ZSOIL, NROOT,NSOIL,CZIL,             &
+                         LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
+                         ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
+                         LSOIL, LOCAL)
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
@@ -1984,13 +2285,17 @@ CONTAINS
 ! ----------------------------------------------------------------------
       INTEGER, PARAMETER     :: MAX_SLOPETYP=30,MAX_SOILTYP=30,MAX_VEGTYP=30
       LOGICAL                :: LOCAL
-      CHARACTER (LEN=4), INTENT(IN)::  LLANDUSE, LSOIL
+      CHARACTER (LEN=256), INTENT(IN)::  LLANDUSE, LSOIL
 
 ! Veg parameters
       INTEGER, INTENT(IN)    :: VEGTYP
       INTEGER, INTENT(OUT)   :: NROOT
-      REAL, INTENT(OUT)      :: HS,LAI,RSMIN,RGL,SHDFAC,SNUP,Z0BRD,         &
-                                CMCMAX,RSMAX,TOPT,ALBBRD
+      REAL, INTENT(OUT)      :: HS,RSMIN,RGL,SHDFAC,SNUP,                   &
+                                CMCMAX,RSMAX,TOPT,                          &
+                                EMISSMIN,  EMISSMAX,                        &
+                                LAIMIN,    LAIMAX,                          &
+                                Z0MIN,     Z0MAX,                           &
+                                ALBEDOMIN, ALBEDOMAX
 ! Soil parameters
       INTEGER, INTENT(IN)    :: SOILTYP
       REAL, INTENT(OUT)      :: BEXP,DKSAT,DWSAT,F1,QUARTZ,SMCDRY,          &
@@ -2067,12 +2372,14 @@ CONTAINS
       RSMIN = RSTBL (VEGTYP)
       RGL = RGLTBL (VEGTYP)
       HS = HSTBL (VEGTYP)
-      LAI = LAITBL (VEGTYP)
-               IF(LOCAL) THEN
-                 ALBBRD = ALBTBL(VEGTYP)
-                 Z0BRD = Z0TBL(VEGTYP)
-                 SHDFAC = SHDTBL(VEGTYP)
-               ENDIF
+      EMISSMIN  = EMISSMINTBL  (VEGTYP)
+      EMISSMAX  = EMISSMAXTBL  (VEGTYP)
+      LAIMIN    = LAIMINTBL    (VEGTYP)
+      LAIMAX    = LAIMAXTBL    (VEGTYP)
+      Z0MIN     = Z0MINTBL     (VEGTYP)
+      Z0MAX     = Z0MAXTBL     (VEGTYP)
+      ALBEDOMIN = ALBEDOMINTBL (VEGTYP)
+      ALBEDOMAX = ALBEDOMAXTBL (VEGTYP)
 
                IF (VEGTYP .eq. BARE) SHDFAC = 0.0
                IF (NROOT .gt. NSOIL) THEN
@@ -2173,7 +2480,7 @@ CONTAINS
 
       SUBROUTINE SHFLX (SSOIL,STC,SMC,SMCMAX,NSOIL,T1,DT,YY,ZZ1,ZSOIL,  &
                          TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,ICE,  &
-                         QUARTZ,CSOIL,VEGTYP)
+                         QUARTZ,CSOIL,VEGTYP,ISURBAN)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SHFLX
@@ -2184,7 +2491,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN)   :: ICE, NSOIL, VEGTYP
+      INTEGER, INTENT(IN)   :: ICE, NSOIL, VEGTYP, ISURBAN
       INTEGER               :: I
 
       REAL, INTENT(IN)      :: BEXP,CSOIL,DF1,DT,F1,PSISAT,QUARTZ,     &
@@ -2202,11 +2509,11 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
 ! ----------------------------------------------------------------------
-! SEA-ICE CASE
+! SEA-ICE CASE, GLACIAL ICE CASE
 ! ----------------------------------------------------------------------
-      IF (ICE == 1) THEN
+      IF ( ICE /= 0 ) THEN
 
-         CALL HRTICE (RHSTS,STC,NSOIL,ZSOIL,YY,ZZ1,DF1,AI,BI,CI)
+         CALL HRTICE (RHSTS,STC,TBOT,ICE,NSOIL,ZSOIL,YY,ZZ1,DF1,AI,BI,CI)
 
          CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
 
@@ -2216,7 +2523,7 @@ CONTAINS
       ELSE
          CALL HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT,        &
                     ZBOT,PSISAT,SH2O,DT,                                &
-                    BEXP,F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP)
+                    BEXP,F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
 
          CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
       END IF
@@ -2272,6 +2579,8 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS, RHSTT, &
                                               SICE, SH2OA, SH2OFG
       REAL                  :: DUMMY, EXCESS,FRZFACT,PCPDRP,RHSCT,TRHSCT
+      REAL :: FAC2
+      REAL :: FLIMIT
 
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE.
@@ -2324,7 +2633,14 @@ CONTAINS
 !   OF SECTION 2 OF KALNAY AND KANAMITSU
 ! PCPDRP IS UNITS OF KG/M**2/S OR MM/S, ZSOIL IS NEGATIVE DEPTH IN M
 ! ----------------------------------------------------------------------
-!      IF ( PCPDRP .GT. 0.0 ) THEN
+!  According to Dr. Ken Mitchell's suggestion, add the second contraint
+!  to remove numerical instability of runoff and soil moisture
+!  FLIMIT is a limit value for FAC2
+      FAC2=0.0
+      DO I=1,NSOIL
+         FAC2=MAX(FAC2,SH2O(I)/SMCMAX)
+      ENDDO
+      CALL FAC2MIT(SMCMAX,FLIMIT)
 
 ! ----------------------------------------------------------------------
 ! FROZEN GROUND VERSION:
@@ -2332,7 +2648,8 @@ CONTAINS
 ! INC&UDED IN SSTEP SUBR.  FROZEN GROUND CORRECTION FACTOR, FRZFACT
 ! ADDED.  ALL WATER BALANCE CALCULATIONS USING UNFROZEN WATER
 ! ----------------------------------------------------------------------
-      IF ( (PCPDRP * DT) > (0.001*1000.0* (- ZSOIL (1))* SMCMAX) ) THEN
+      IF ( ( (PCPDRP * DT) > (0.0001*1000.0* (- ZSOIL (1))* SMCMAX) )   &
+           .OR. (FAC2 > FLIMIT) ) THEN
          CALL SRT (RHSTT,EDIR,ET,SH2O,SH2O,NSOIL,PCPDRP,ZSOIL,          &
                     DWSAT,DKSAT,SMCMAX,BEXP,RUNOFF1,                    &
                     RUNOFF2,DT,SMCWLT,SLOPE,KDT,FRZFACT,SICE,AI,BI,CI)
@@ -2404,7 +2721,6 @@ CONTAINS
 
       SUBROUTINE SNKSRC (TSNSR,TAVG,SMC,SH2O,ZSOIL,NSOIL,               &
      &                      SMCMAX,PSISAT,BEXP,DT,K,QTOT)
-
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNKSRC
 ! ----------------------------------------------------------------------
@@ -2414,7 +2730,6 @@ CONTAINS
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)   :: K,NSOIL
-
       REAL, INTENT(IN)      :: BEXP, DT, PSISAT, QTOT, SMC, SMCMAX,    &
                                TAVG
       REAL, INTENT(INOUT)   :: SH2O
@@ -2502,6 +2817,9 @@ CONTAINS
                           RUNOFF2,RUNOFF3,EDIR,EC,ET,ETT,NROOT,SNOMLT,  &
                           ICE,RTDIS,QUARTZ,FXEXP,CSOIL,                 &
                           BETA,DRIP,DEW,FLX1,FLX2,FLX3,ESNOW,ETNS,EMISSI,&
+                          RIBB,SOLDN,                                   &
+                          ISURBAN,                                      &
+
                           VEGTYP)
 
 ! ----------------------------------------------------------------------
@@ -2514,16 +2832,21 @@ CONTAINS
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)   :: ICE, NROOT, NSOIL,VEGTYP
+      INTEGER, INTENT(IN)   :: ISURBAN
       INTEGER               :: K
+!
+! kmh 09/03/2006 add IT16 for surface temperature iteration
+!
+      INTEGER               :: IT16
       LOGICAL, INTENT(IN)   :: SNOWNG
       REAL, INTENT(IN)      :: BEXP,CFACTR, CMCMAX,CSOIL,DF1,DKSAT,     &
-                               DT,DWSAT, EPSCA,ETP,FDOWN,F1,FXEXP,      &
+                               DT,DWSAT, EPSCA,FDOWN,F1,FXEXP,          &
                                FRZFACT,KDT,PC, PRCP,PSISAT,Q2,QUARTZ,   &
                                RCH,RR,SBETA,SFCPRS, SFCTMP, SHDFAC,     &
                                SLOPE,SMCDRY,SMCMAX,SMCREF,SMCWLT, T24,  &
-                               TBOT,TH2,ZBOT,EMISSI
+                               TBOT,TH2,ZBOT,EMISSI,SOLDN
       REAL, INTENT(INOUT)   :: CMC, BETA, ESD,FLX2,PRCPF,SNOWH,SNCOVR,  &
-                               SNDENS, T1
+                               SNDENS, T1, RIBB, ETP
       REAL, INTENT(OUT)     :: DEW,DRIP,EC,EDIR, ETNS, ESNOW,ETT,       &
                                FLX1,FLX3, RUNOFF1,RUNOFF2,RUNOFF3,      &
                                SSOIL,SNOMLT
@@ -2538,13 +2861,23 @@ CONTAINS
                                SNCOND,SSOIL1, T11,T12, T12A, T12AX,     &
                                T12B, T14, YY, ZZ1
 !                               T12B, T14, YY, ZZ1,EMISSI_S
-
+!
+! kmh 01/11/2007 add T15, T16, and DTOT2 for SFC T iteration and snow heat flux
+!
+      REAL                  :: T15, T16, DTOT2
       REAL, PARAMETER       :: ESDMIN = 1.E-6, LSUBC = 2.501000E+6,     &
                                LSUBS = 2.83E+6, TFREEZ = 273.15,        &
                                SNOEXP = 2.0
 
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE:
+! ----------------------------------------------------------------------
+! IF SEA-ICE (ICE=1) OR GLACIAL-ICE (ICE=-1), SNOWCOVER FRACTION = 1.0,
+! AND SUBLIMATION IS AT THE POTENTIAL RATE.
+! FOR NON-GLACIAL LAND (ICE=0), IF SNOWCOVER FRACTION < 1.0, TOTAL
+! EVAPORATION < POTENTIAL DUE TO NON-POTENTIAL CONTRIBUTION FROM
+! NON-SNOW COVERED FRACTION.
+! ----------------------------------------------------------------------
 ! INITIALIZE EVAP TERMS.
 ! ----------------------------------------------------------------------
 ! conversions:
@@ -2579,18 +2912,29 @@ CONTAINS
 ! CONVERT POTENTIAL EVAP (ETP) FROM KG M-2 S-1 TO ETP1 IN M S-1
 ! ----------------------------------------------------------------------
       PRCP1 = PRCPF *0.001
-      ETP1 = ETP * 0.001
 ! ----------------------------------------------------------------------
 ! IF ETP<0 (DOWNWARD) THEN DEWFALL (=FROSTFALL IN THIS CASE).
 ! ----------------------------------------------------------------------
       BETA = 1.0
       IF (ETP <= 0.0) THEN
+         IF ( ( RIBB >= 0.1 ) .AND. ( FDOWN > 150.0 ) ) THEN
+            ETP=(MIN(ETP*(1.0-RIBB),0.)*SNCOVR/0.980 + ETP*(0.980-SNCOVR))/0.980
+         ENDIF
         IF(ETP == 0.) BETA = 0.0
+        ETP1 = ETP * 0.001
          DEW = -ETP1
          ESNOW2 = ETP1*DT
          ETANRG = ETP*((1.-SNCOVR)*LSUBC + SNCOVR*LSUBS)
       ELSE
-         IF (ICE /=  1) THEN
+         ETP1 = ETP * 0.001
+         IF ( ICE /= 0 ) THEN
+            ! SEA-ICE AND GLACIAL-ICE CASE
+            ESNOW = ETP
+            ESNOW1 = ESNOW*0.001
+            ESNOW2 = ESNOW1*DT
+            ETANRG = ESNOW*LSUBS
+         ELSE IF ( ICE ==  0) THEN
+            ! NON-GLACIAL LAND CASE
              IF (SNCOVR <  1.) THEN
                CALL EVAPO (ETNS1,SMC,NSOIL,CMC,ETP1,DT,ZSOIL,           &
                             SH2O,                                       &
@@ -2707,11 +3051,17 @@ CONTAINS
 ! BETA<1
 ! SNOWPACK HAS SUBLIMATED AWAY, SET DEPTH TO ZERO.
 ! ----------------------------------------------------------------------
+!  kmh  12/15/2005 modify SSOIL
+!  kmh  09/03/2006 modify DTOT
+         if ( DTOT .GT. 2.0*DSOIL ) then
+           DTOT = 2.0*DSOIL
+         endif
          SSOIL = DF1 * (T1- STC (1)) / DTOT
          IF (ESD-ESNOW2 <= ESDMIN) THEN
             ESD = 0.0
             EX = 0.0
             SNOMLT = 0.0
+            FLX3 = 0.0
 ! ----------------------------------------------------------------------
 ! SUBLIMATION LESS THAN DEPTH OF SNOWPACK
 ! SNOWPACK (ESD) REDUCED BY ESNOW2 (DEPTH OF SUBLIMATED SNOW)
@@ -2757,18 +3107,27 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! END OF 'T12 .LE. TFREEZ' IF-BLOCK
 ! ----------------------------------------------------------------------
-         PRCP1 = PRCP1+ EX
+! ----------------------------------------------------------------------
+! IF NON-GLACIAL LAND, ADD SNOWMELT RATE (EX) TO PRECIP RATE TO BE USED
+! IN SUBROUTINE SMFLX (SOIL MOISTURE EVOLUTION) VIA INFILTRATION.
+!
+! FOR SEA-ICE AND GLACIAL-ICE, THE SNOWMELT WILL BE ADDED TO SUBSURFACE
+! RUNOFF/BASEFLOW LATER NEAR THE END OF SFLX (AFTER RETURN FROM CALL TO
+! SUBROUTINE SNOPAC)
+! ----------------------------------------------------------------------
+         IF (ICE == 0) PRCP1 = PRCP1+ EX
 
 ! ----------------------------------------------------------------------
 ! SET THE EFFECTIVE POTNL EVAPOTRANSP (ETP1) TO ZERO SINCE THIS IS SNOW
 ! CASE, SO SURFACE EVAP NOT CALCULATED FROM EDIR, EC, OR ETT IN SMFLX
 ! (BELOW).
-! IF SEAICE (ICE=1) SKIP CALL TO SMFLX.
-! SMFLX RETURNS UPDATED SOIL MOISTURE VALUES.  IN THIS, THE SNOW PACK
-! CASE, ETA1 IS NOT USED IN CALCULATION OF EVAP.
+! IF SEAICE (ICE==1) SKIP CALL TO SMFLX.
+! SMFLX RETURNS UPDATED SOIL MOISTURE VALUES FOR NON-GLACIAL LAND.
+! IF SEA-ICE (ICE==1) OR GLACIAL-ICE (ICE==-1), SKIP CALL TO SMFLX,
+! SINCE NO SOIL MEDIUM FOR SEA-ICE OR GLACIAL-ICE.
 ! ----------------------------------------------------------------------
       END IF
-      IF (ICE /=  1) THEN
+      IF (ICE == 0) THEN
          CALL SMFLX (SMC,NSOIL,CMC,DT,PRCP1,ZSOIL,                      &
                       SH2O,SLOPE,KDT,FRZFACT,                           &
                       SMCMAX,BEXP,SMCWLT,DKSAT,DWSAT,                   &
@@ -2798,21 +3157,46 @@ CONTAINS
       T11 = T1
       CALL SHFLX (SSOIL1,STC,SMC,SMCMAX,NSOIL,T11,DT,YY,ZZ1,ZSOIL,      &
                    TBOT,ZBOT,SMCWLT,PSISAT,SH2O,BEXP,F1,DF1,ICE,        &
-                   QUARTZ,CSOIL,VEGTYP)
+                   QUARTZ,CSOIL,VEGTYP,ISURBAN)
 
 ! ----------------------------------------------------------------------
 ! SNOW DEPTH AND DENSITY ADJUSTMENT BASED ON SNOW COMPACTION.  YY IS
 ! ASSUMED TO BE THE SOIL TEMPERTURE AT THE TOP OF THE SOIL COLUMN.
 ! ----------------------------------------------------------------------
-      IF (ESD >  0.) THEN
-         CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
-      ELSE
-         ESD = 0.
-         SNOWH = 0.
-         SNDENS = 0.
-         SNCOND = 1.
-        SNCOVR = 0.
-      END IF
+      IF (ICE == 0) THEN
+         ! NON-GLACIAL LAND
+         IF (ESD >  0.) THEN
+            CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
+         ELSE
+            ESD = 0.
+            SNOWH = 0.
+            SNDENS = 0.
+            SNCOND = 1.
+            SNCOVR = 0.
+         END IF
+      ELSEIF (ICE == 1) THEN
+         ! SEA-ICE
+         IF (ESD .GE. 0.01) THEN
+            CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
+        ELSE
+           ESD = 0.01
+           SNOWH = 0.05
+           !KWM???? SNDENS =
+           !KWM???? SNCOND =
+           SNCOVR = 1.0
+        ENDIF
+      ELSEIF (ICE == -1) THEN
+         ! GLACIAL-ICE
+         IF (ESD .GE. 0.10) THEN
+            CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
+         ELSE
+            ESD = 0.10
+            SNOWH = 0.50
+            !KWM???? SNDENS =
+            !KWM???? SNCOND =
+            SNCOVR = 1.0
+        ENDIF
+      ENDIF
 ! ----------------------------------------------------------------------
   END SUBROUTINE SNOPAC
 ! ----------------------------------------------------------------------
@@ -3153,7 +3537,7 @@ CONTAINS
                          SICEMAX)
          INFMAX = MAX (INFMAX,WCND)
 
-         INFMAX = MIN (INFMAX,PX)
+         INFMAX = MIN (INFMAX,PX/DT)
          IF (PCPDRP >  INFMAX) THEN
             RUNOFF1 = PCPDRP - INFMAX
             PDDUM = INFMAX
@@ -3749,12 +4133,13 @@ CONTAINS
 !     CALC THE RATIO OF THE ACTUAL TO THE MAX PSBL SOIL H2O CONTENT
 ! ----------------------------------------------------------------------
       REAL     WDF
-      FACTR1 = 0.2 / SMCMAX
+      FACTR1 = 0.05 / SMCMAX
 
 ! ----------------------------------------------------------------------
 ! PREP AN EXPNTL COEF AND CALC THE SOIL WATER DIFFUSIVITY
 ! ----------------------------------------------------------------------
       FACTR2 = SMC / SMCMAX
+      FACTR1 = MIN(FACTR1,FACTR2)
       EXPON = BEXP + 2.0
 
 ! ----------------------------------------------------------------------

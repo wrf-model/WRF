@@ -96,7 +96,7 @@ CONTAINS
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2
       REAL    :: qvf , qvf1 , qvf2 , pd_surf
-      REAL    :: p00 , t00 , a
+      REAL    :: p00 , t00 , a , tiso
       REAL    :: hold_znw
       LOGICAL :: were_bad
 
@@ -161,7 +161,7 @@ integer::oops1,oops2
       !  necessary constants:  p00 (sea level pressure, Pa), t00 (sea level temperature, K), 
       !  and A (temperature difference, from 1000 mb to 300 mb, K).
    
-      CALL const_module_initialize ( p00 , t00 , a ) 
+      CALL const_module_initialize ( p00 , t00 , a , tiso ) 
 
       !  Fix the snow (water equivalent depth, kg/m^2) and the snowh (physical snow
       !  depth, m) fields.
@@ -247,6 +247,12 @@ integer::oops1,oops2
       ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
+
+      IF ( flag_tavgsfc .EQ. 1 ) THEN
+         we_have_tavgsfc = .TRUE.
+      ELSE
+         we_have_tavgsfc = .FALSE.
+      END IF
 
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
       !  vertical locations already.
@@ -538,12 +544,6 @@ integer::oops1,oops2
          !  Note that on output, grid%psfc is now hi-res.  The low-res surface pressure and 
          !  elevation are grid%psfc_gc and grid%ht_gc (same as grid%ght_gc(k=1)).
 
-         IF ( flag_tavgsfc .EQ. 1 ) THEN
-            we_have_tavgsfc = .TRUE.
-         ELSE
-            we_have_tavgsfc = .FALSE.
-         END IF
-
          IF      ( ( flag_psfc    .EQ. 1 ) .AND. &
                    ( flag_soilhgt .EQ. 1 ) .AND. &
                    ( flag_slp     .EQ. 1 ) .AND. &
@@ -613,7 +613,7 @@ integer::oops1,oops2
 
             CALL compute_eta ( grid%znw , &
                                eta_levels , max_eta , max_dz , &
-                               grid%p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , &
+                               grid%p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
                                its , ite , jts , jte , kts , kte )
@@ -848,6 +848,43 @@ integer::oops1,oops2
                             its , ite , jts , jte , kts , kte )
 
       END IF     !   <----- END OF VERTICAL INTERPOLATION PART ---->
+
+      ! Set the temperature of the inland lakes to tavgsfc if the temperature is available
+      ! and islake is > num_veg_cat
+
+      num_veg_cat      = SIZE ( grid%landusef , DIM=2 )
+      CALL nl_get_iswater ( grid%id , grid%iswater )
+      CALL nl_get_islake  ( grid%id , grid%islake )
+
+      IF ( grid%islake < 0 ) THEN
+         CALL wrf_debug ( 0 , 'Old data, no inland lake information')
+      ELSE
+         IF ( we_have_tavgsfc ) THEN
+
+            CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
+            DO j=jts,MIN(jde-1,jte)
+               DO i=its,MIN(ide-1,ite)
+                  IF ( grid%landusef(i,grid%islake,j) >= 0.5 ) THEN
+                     grid%sst(i,j) = grid%tavgsfc(i,j)
+                     grid%tsk(i,j) = grid%tavgsfc(i,j)
+                  END IF
+               END DO
+            END DO
+
+         ELSE     ! We don't have tavgsfc
+
+            CALL wrf_debug ( 0 , 'No average surface temperature for use with inland lakes')
+
+         END IF
+         DO j=jts,MIN(jde-1,jte)
+            DO i=its,MIN(ide-1,ite)
+               grid%landusef(i,grid%iswater,j) = grid%landusef(i,grid%iswater,j) + &
+                                                 grid%landusef(i,grid%islake,j)
+               grid%landusef(i,grid%islake,j) = 0.
+            END DO
+         END DO
+
+      END IF
 
       !  Save the grid%tsk field for later use in the sea ice surface temperature
       !  for the Noah LSM scheme.
@@ -1535,12 +1572,11 @@ endif
 
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 ) 
 
-
             DO k = 1, kte-1
                grid%php(i,k,j) = grid%znw(k)*(p_surf - grid%p_top) + grid%p_top ! temporary, full lev base pressure
                grid%pb(i,k,j) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
-!              temp = MAX ( 200., t00 + A*LOG(grid%pb(i,k,j)/p00) )
-               temp =             t00 + A*LOG(grid%pb(i,k,j)/p00)
+               temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+!              temp =             t00 + A*LOG(grid%pb(i,k,j)/p00)
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
@@ -1813,6 +1849,11 @@ endif
 
       END IF
 
+!  Set flag to denote that we are saving original values of HT, MUB, and 
+!  PHB for 2-way nesting and cycling.
+
+      grid%save_topo_from_real=1
+
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
 #ifdef DM_PARALLEL
 #   include "HALO_EM_INIT_1.inc"
@@ -1828,14 +1869,15 @@ endif
 
 !---------------------------------------------------------------------
 
-   SUBROUTINE const_module_initialize ( p00 , t00 , a ) 
+   SUBROUTINE const_module_initialize ( p00 , t00 , a , tiso ) 
       USE module_configure
       IMPLICIT NONE
       !  For the real-data-cases only.
-      REAL , INTENT(OUT) :: p00 , t00 , a
+      REAL , INTENT(OUT) :: p00 , t00 , a , tiso
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
+      CALL nl_get_iso_temp   ( 1 , tiso )
    END SUBROUTINE const_module_initialize
 
 !-------------------------------------------------------------------
@@ -1871,7 +1913,7 @@ endif
 
       REAL :: p_surf ,  pd_surf, p_surf_int , pb_int , ht_hold
       REAL :: qvf , qvf1 , qvf2
-      REAL :: p00 , t00 , a
+      REAL :: p00 , t00 , a , tiso
       REAL , DIMENSION(:,:,:) , ALLOCATABLE :: t_init_int
 
       !  Local domain indices and counters.
@@ -1884,6 +1926,8 @@ endif
                                      its, ite, jts, jte, kts, kte, &
                                      ips, ipe, jps, jpe, kps, kpe, &
                                      i, j, k
+
+      REAL    :: temp, temp_int
 
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -1944,7 +1988,7 @@ endif
       !  necessary constants:  p00 (sea level pressure, Pa), t00 (sea level temperature, K), 
       !  and A (temperature difference, from 1000 mb to 300 mb, K).
 
-      CALL const_module_initialize ( p00 , t00 , a ) 
+      CALL const_module_initialize ( p00 , t00 , a , tiso ) 
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho 
@@ -1964,8 +2008,13 @@ endif
             DO k = 1, kte-1
                grid%pb(i,k,j) = grid%znu(k)*(p_surf     - grid%p_top) + grid%p_top
                pb_int    = grid%znu(k)*(p_surf_int - grid%p_top) + grid%p_top
-               grid%t_init(i,k,j)    = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
-               t_init_int(i,k,j)= (t00 + A*LOG(pb_int   /p00))*(p00/pb_int   )**(r_d/cp) - t0
+               temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+!              temp =             t00 + A*LOG(pb/p00)
+               grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+!              grid%t_init(i,k,j)    = (t00 + A*LOG(grid%pb(i,k,j)/p00))*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+               temp_int = MAX ( tiso, t00 + A*LOG(pb_int   /p00) )
+               t_init_int(i,k,j)= temp_int*(p00/pb_int   )**(r_d/cp) - t0
+!              t_init_int(i,k,j)= (t00 + A*LOG(pb_int   /p00))*(p00/pb_int   )**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
        
@@ -3978,7 +4027,7 @@ print *,'p sfc = ',psfc(i,j)
 
    SUBROUTINE compute_eta ( znw , &
                            eta_levels , max_eta , max_dz , &
-                           p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , &
+                           p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            its , ite , jts , jte , kts , kte )
@@ -3993,7 +4042,7 @@ print *,'p sfc = ',psfc(i,j)
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
       REAL , INTENT(IN)           :: max_dz
-      REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0
+      REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
       INTEGER , INTENT(IN)        :: max_eta
       REAL , DIMENSION (max_eta) , INTENT(IN)  :: eta_levels
 
@@ -4066,8 +4115,8 @@ print *,'p sfc = ',psfc(i,j)
 
          DO k = 1, prac_levels-1
             pb = znu_prac(k)*(p_surf - p_top) + p_top
-!           temp = MAX ( 200., t00 + A*LOG(pb/p00) )
-            temp =             t00 + A*LOG(pb/p00)
+            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+!           temp =             t00 + A*LOG(pb/p00)
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
          END DO
@@ -4102,8 +4151,8 @@ print *,'p sfc = ',psfc(i,j)
 
          DO k = 8, kte-1-2
             pb = znw(k) * (p_surf - p_top) + p_top
-!           temp = MAX ( 200., t00 + A*LOG(pb/p00) )
-            temp =             t00 + A*LOG(pb/p00)
+            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+!           temp =             t00 + A*LOG(pb/p00)
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
             znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
@@ -4120,8 +4169,8 @@ print *,'p sfc = ',psfc(i,j)
             DO loop = 1 , 10
                DO k = 8, kte-1-2
                   pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
-!                 temp = MAX ( 200., t00 + A*LOG(pb/p00) )
-                  temp =             t00 + A*LOG(pb/p00)
+                  temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+!                 temp =             t00 + A*LOG(pb/p00)
                   t_init = temp*(p00/pb)**(r_d/cp) - t0
                   alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
                   znw(k+1) = znw(k) - dz*g / ( mub*alb(k) )
@@ -4136,8 +4185,8 @@ print *,'p sfc = ',psfc(i,j)
 
             DO k = 1, kde-1-2
                pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
-!              temp = MAX ( 200., t00 + A*LOG(pb/p00) )
-               temp =             t00 + A*LOG(pb/p00)
+               temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+!              temp =             t00 + A*LOG(pb/p00)
                t_init = temp*(p00/pb)**(r_d/cp) - t0
                alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
             END DO

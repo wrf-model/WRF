@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_qscat(grid, iv, y)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -20,8 +22,13 @@ subroutine da_transform_xtoy_qscat(grid, iv, y)
    allocate (u(1,iv%info(qscat)%n1:iv%info(qscat)%n2))
    allocate (v(1,iv%info(qscat)%n1:iv%info(qscat)%n2))
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(qscat), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(qscat), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(qscat), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(qscat), v)
+#endif
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
       y%qscat(n)%u = u(1,n)

@@ -2,6 +2,8 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
 
    !--------------------------------------------------------------------------
    ! Purpose: Adjoint for Physical transform of variables 
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !--------------------------------------------------------------------------
 
    implicit none
@@ -37,11 +39,40 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          + grid%xa%q (its:ite,jts:jte,kts:kte) * grid%xb%qs(its:ite,jts:jte,kts:kte)
    end if
 
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+#endif
 #ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV_ADJ.inc"
 #endif
 
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
+#endif
+
+
    ! Transform psi and chi to u and v:
+
    call da_psichi_to_uv_adj(grid%xa % u, grid%xa % v, grid%xb % coefx, grid%xb % coefy, vp % v1, vp % v2)
 
    !--------------------------------------------------------------------------

@@ -15,12 +15,17 @@ module da_tools
       map_projection, psi1, pole, start_x, phic, start_y, xlonc, ycntr, &
       obs_qc_pointer, anal_type_verify, fg_format_wrf_arw_regional, &
       fg_format_wrf_nmm_regional, fg_format_wrf_arw_global, fg_format_kma_global, &
-      set_omb_rand_fac, fails_error_max, missing_r,x_start_sub_domain, global, &
+      set_omb_rand_fac, fails_error_max, fails_buddy_check, no_buddies, &
+      missing_r, x_start_sub_domain, global, myproc, comm, &
       x_end_sub_domain, y_end_sub_domain, def_sub_domain, &
       y_start_sub_domain, start_lat, delt_lat, delt_lon, start_lon, cp, &
       missing, surface_correction,print_detail_map, use_rad, stderr, &
       t_kelvin, trace_use_frequent, jds, jde, pptop,ppbot,npres_print, &
-      rad_to_deg, deg_to_rad
+      rad_to_deg, deg_to_rad, num_procs, print_detail_obs
+
+#ifdef DM_PARALLEL
+   use mpi, only : mpi_integer
+#endif
 
    use da_define_structures, only : info_type, field_type, x_type,  &
       model_loc_type, synop_type, bad_info_type, da_gauss_noise, &
@@ -89,6 +94,7 @@ contains
 #include "da_togrid_new.inc"
 #include "da_togrid.inc"
 #include "da_unifva.inc"
+#include "da_buddy_qc.inc"
 
 #include "da_eof_decomposition_test.inc"
 #include "da_eof_decomposition.inc"
@@ -101,6 +107,9 @@ contains
 #include "da_get_2d_sum.inc"
 #include "da_get_3d_sum.inc"
 #include "da_get_print_lvl.inc"
+
+#include "da_get_julian_time.inc"
+#include "da_get_time_slots.inc"
 
 end module da_tools
 

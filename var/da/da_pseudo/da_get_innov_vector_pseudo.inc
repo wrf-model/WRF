@@ -20,19 +20,25 @@ subroutine da_get_innov_vector_pseudo(grid, ob, iv)
    
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_pseudo")
 
+
    allocate (model_u(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
    allocate (model_v(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
    allocate (model_q(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
    allocate (model_p(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
    allocate (model_t(1,iv%info(pseudo)%n1:iv%info(pseudo)%n2))
 
+   call da_convert_zk (iv%info(pseudo))
+
+#ifdef A2C
+   call da_interp_lin_3d (grid%xb%u, iv%info(pseudo), model_u,'u')
+   call da_interp_lin_3d (grid%xb%v, iv%info(pseudo), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xb%u, iv%info(pseudo), model_u)
    call da_interp_lin_3d (grid%xb%v, iv%info(pseudo), model_v)
+#endif
    call da_interp_lin_3d (grid%xb%t, iv%info(pseudo), model_t)
    call da_interp_lin_3d (grid%xb%p, iv%info(pseudo), model_p)
    call da_interp_lin_3d (grid%xb%q, iv%info(pseudo), model_q)
-
-   call da_convert_zk (iv%info(pseudo))
 
    do n=iv%info(pseudo)%n1,iv%info(pseudo)%n2
       !---------------------------------------------------------------

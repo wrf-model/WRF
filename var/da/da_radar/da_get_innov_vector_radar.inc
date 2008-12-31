@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -88,8 +90,13 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    ! [2.0] Interpolate horizontally to ob points:
 
    call da_interp_lin_3d (grid%xb % p,   iv%info(radar), model_p)
+#ifdef A2C
+   call da_interp_lin_3d (grid%xb % u,   iv%info(radar), model_u,'u')
+   call da_interp_lin_3d (grid%xb % v,   iv%info(radar), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xb % u,   iv%info(radar), model_u)
    call da_interp_lin_3d (grid%xb % v,   iv%info(radar), model_v)
+#endif
    call da_interp_lin_3d (grid%xb % wh,  iv%info(radar), model_w)
    call da_interp_lin_3d (grid%xb % rho, iv%info(radar), model_rho)
    call da_interp_lin_3d (grid%xb % qrn, iv%info(radar), model_qrn)
@@ -121,7 +128,8 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
       ! [3.0] Calculate rv, rf at OBS location and initialise components of &
       ! innovation vector:
 
-      if (fg_format == fg_format_wrf_arw_regional) then
+      if (fg_format == fg_format_wrf_arw_regional .or. &
+          fg_format == fg_format_wrf_arw_global ) then
          call da_llxy_wrf(map_info, &
             iv%radar(n)%stn_loc%lat, iv%radar(n)%stn_loc%lon, &
             iv%radar(n)%stn_loc%x,   iv%radar(n)%stn_loc%y)

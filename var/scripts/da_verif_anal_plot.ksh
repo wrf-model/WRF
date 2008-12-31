@@ -174,13 +174,13 @@ else
    while read ob_fname
    do
      if [[ "$ob_fname" = "TK_time_series_${VERIFY_HOUR}" ]]; then
-        ob_unit='T (~S~o~N~C)'
+        ob_unit='T (Degree)'
      elif [[ "$ob_fname" = "U_time_series_${VERIFY_HOUR}" ]]; then
-        ob_unit='U (ms~S~-1~N~)' 
+        ob_unit='U (m/s)' 
      elif [[ "$ob_fname" = "V_time_series_${VERIFY_HOUR}" ]]; then
-        ob_unit='V (ms~S~-1~N~)' 
+        ob_unit='V (m/s)' 
      elif [[ "$ob_fname" = "QVAPOR_time_series_${VERIFY_HOUR}" ]]; then
-        ob_unit='Q (gmKg~S~-1~N~)' 
+        ob_unit='Q (gm/Kg)' 
      else
         echo "Unknown upper-air variable:-Don't know what to do??"
      fi
@@ -198,17 +198,17 @@ for LEVEL in ${DESIRED_LEVELS} ; do
 
 NCL_COMMAND_LINE="'wksdev=\"${PLOT_WKS}\"' 'run_dir=\"${RUN_DIR}\"' 'exp_legends=${EXP_LEGENDS}' 'exp_line_cols=${EXP_LINES_COLORS}' 'select_levs=${LEVEL}' 'select_scores=${DESIRED_SCORES}'   'bar_label_angle=${BAR_LABEL_ANGLE}' 'verify_hour=${VERIFY_HOUR}'"
 
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_anal_time_series.ncl" > run1
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_anal_time_series.ncl" > run1
 chmod +x run1
 ./run1
 #-----------------------------------------------------------------------------------------------------------------------
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_anal_time_average.ncl" > run2
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_anal_time_average.ncl" > run2
 chmod +x run2
 ./run2
 #-----------------------------------------------------------------------------------------------------------------------
 done
 #-----------------------------------------------------------------------------------------------------------------------
-echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/graphics/ncl/verif_anal_vert_profile.ncl" > run3
+echo "ncl ${NCL_COMMAND_LINE} ${WRFVAR_DIR}/var/graphics/ncl/verif_anal_vert_profile.ncl" > run3
 chmod +x run3
 ./run3
 

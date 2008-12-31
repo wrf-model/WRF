@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
 
    !----------------------------------------------------------------------
    ! Purpose: Calculates innovation vector, does QC for polaramv
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !----------------------------------------------------------------------
 
    implicit none
@@ -82,8 +84,13 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
 
    ! [1.2] Interpolate horizontally to ob:
 
+#ifdef A2C
+   call da_interp_lin_3d (grid%xb%u, iv%info(polaramv), model_u,'u')
+   call da_interp_lin_3d (grid%xb%v, iv%info(polaramv), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xb%u, iv%info(polaramv), model_u)
    call da_interp_lin_3d (grid%xb%v, iv%info(polaramv), model_v)
+#endif
 
    do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
       do k = 1, iv%info(polaramv)%levels(n)
@@ -106,7 +113,7 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
    ! Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_polaramv(iv, it, num_qcstat_conv)     
+    call da_check_max_iv_polaramv(iv, it, num_qcstat_conv)     
 
    deallocate (model_u)
    deallocate (model_v)

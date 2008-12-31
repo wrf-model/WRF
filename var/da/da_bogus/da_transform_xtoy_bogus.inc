@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_bogus (grid, iv, y)
 
    !---------------------------------------------------------------------
    ! Purpose: the linearized bogus observation operators.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !---------------------------------------------------------------------
 
    implicit none
@@ -81,8 +83,13 @@ subroutine da_transform_xtoy_bogus (grid, iv, y)
    t(:,:)=0.0
    q(:,:)=0.0
   
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(bogus), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(bogus), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(bogus), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(bogus), v)
+#endif
    call da_interp_lin_3d (grid%xa%t, iv%info(bogus), t)
    call da_interp_lin_3d (grid%xa%q, iv%info(bogus), q)
 

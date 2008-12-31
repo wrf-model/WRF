@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
 
    !--------------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !--------------------------------------------------------------------------
 
    implicit none
@@ -22,8 +24,13 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
    allocate (v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (t(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
   
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(airep), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(airep), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(airep), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(airep), v)
+#endif
    call da_interp_lin_3d (grid%xa%t, iv%info(airep), t)
 
    do n=iv%info(airep)%n1,iv%info(airep)%n2

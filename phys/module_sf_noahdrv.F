@@ -16,20 +16,24 @@ CONTAINS
 !----------------------------------------------------------------
    SUBROUTINE lsm(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   HFX,QFX,LH,GRDFLX, QGH,GSW,SWDOWN,GLW,SMSTAV,SMSTOT, &
-                  SFCRUNOFF, UDRUNOFF,IVGTYP,ISLTYP,VEGFRA,     &
+                  SFCRUNOFF, UDRUNOFF,IVGTYP,ISLTYP,ISURBAN,ISICE,VEGFRA,    &
                   ALBEDO,ALBBCK,ZNT,Z0,TMN,XLAND,XICE,EMISS,EMBCK,   &
-                  SNOWC,QSFC,RAINBL,                            &
+                  SNOWC,QSFC,RAINBL,MMINLU,                     &
                   num_soil_layers,DT,DZS,ITIMESTEP,             &
                   SMOIS,TSLB,SNOW,CANWAT,                       &
-                  CHS,CHS2,CQS2,CPM,ROVCP,SR,chklowq,qz0,       & !H
+                  CHS,CHS2,CQS2,CPM,ROVCP,SR,chklowq,lai,qz0,   & !H
                   myj,frpcpn,                                   &
                   SH2O,SNOWH,                                   & !H
                   U_PHY,V_PHY,                                  & !I
                   SNOALB,SHDMIN,SHDMAX,                         & !I
+                  SNOTIME,                                      & !?
                   ACSNOM,ACSNOW,                                & !O
                   SNOPCX,                                       & !O
 ! MEK JUL2007
                   POTEVP,                                       & !O
+                  RDLAI2D,                                      &
+                  RIB,                                          & !?
+                  NOAHRES,                                      &
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
@@ -134,6 +138,7 @@ CONTAINS
 !-- ACSNOW      accumulated snow fall (mm) (water equivalent)
 !-- SNOPCX      snow phase change heat flux (W/m^2)
 !-- POTEVP      accumulated potential evaporation (W/m^2)
+!-- RIB         Documentation needed!!!
 ! ----------------------------------------------------------------------
 !-- RUNOFF1     surface runoff (m s-1), not infiltrating the surface
 !-- RUNOFF2     subsurface runoff (m s-1), drainage out bottom of last
@@ -184,6 +189,8 @@ CONTAINS
                                     its,ite, jts,jte, kts,kte
 
    INTEGER,  INTENT(IN   )   ::  ucmcall                        !urban
+   INTEGER,  INTENT(IN   )   ::  isurban
+   INTEGER,  INTENT(IN   )   ::  isice
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -196,12 +203,14 @@ CONTAINS
                                                            GSW, &
                                                         SWDOWN, & !added 10 jan 2007
                                                            GLW, &
-                                                            Z0, &
-                                                        ALBBCK, &
                                                         RAINBL, &
                                                         EMBCK,  &
                                                         SR
 
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)    ::                         ALBBCK, &
+                                                            Z0
+   CHARACTER(LEN=*), INTENT(IN   )    ::                 MMINLU
 
    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
             INTENT(IN   )    ::                           QV3D, &
@@ -249,14 +258,19 @@ CONTAINS
                                                       UDRUNOFF, &
                                                         ACSNOM, &
                                                         ACSNOW, &
+                                                       SNOTIME, &
                                                         SNOPCX, &
                                                         EMISS,  &
+                                                          RIB,  &
                                                         POTEVP, &
                                                         ALBEDO, &
                                                            ZNT
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(OUT)      ::                         NOAHRES
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
                INTENT(OUT)    ::                        CHKLOWQ
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
 
 ! Local variables (moved here from driver to make routine thread safe, 20031007 jm)
@@ -298,6 +312,7 @@ CONTAINS
 ! MEK MAY 2007
       REAL ::  FDTLIW
 ! MEK JUL2007 for pot. evap.
+      REAL :: RIBB
       REAL ::  FDTW
 
       REAL  :: EMISSI
@@ -305,6 +320,7 @@ CONTAINS
       REAL  :: SNCOVR,SNEQV,SNOWHK,CMC, CHK,TH2
 
       REAL  :: SMCDRY,SMCMAX,SMCREF,SMCWLT,SNOMLT,SOILM,SOILW,Q1,T1
+      REAL  :: SNOTIME1    ! LSTSNW1 INITIAL NUMBER OF TIMESTEPS SINCE LAST SNOWFALL
 
       REAL  :: DUMMY,Z0BRD
 !
@@ -335,6 +351,8 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: XLAT_URB2D
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: U_PHY
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: V_PHY
+
+     LOGICAL, intent(in) :: rdlai2d
 
 ! input variables lsm --> urban
      INTEGER :: UTYPE_URB ! urban type [urban=1, suburban=2, rural=3]
@@ -543,11 +561,11 @@ CONTAINS
         CHK=CHS(I,J)
         SHMIN=SHDMIN(I,J)/100. !NEW
         SHMAX=SHDMAX(I,J)/100. !NEW
-        SNOALB1=SNOALB(I,J)     !NEW
 ! convert snow water equivalent from mm to meter
         SNEQV=SNOW(I,J)*0.001
 ! snow depth in meters
         SNOWHK=SNOWH(I,J)
+        SNCOVR=SNOWC(I,J)
 
 ! if "SR" present, set frac of frozen precip ("FFROZP") = snow-ratio ("SR", range:0-1)
 ! SR from e.g. Ferrier microphysics
@@ -567,9 +585,14 @@ CONTAINS
         ELSE
 ! Land or sea-ice case
 
-          IF (XICE(I,J) .GT. 0.5) THEN
-             ICE=1
+          IF (XICE(I,J) >= 0.02) THEN
+             ! Sea-ice point
+             ICE = 1
+          ELSE IF ( VEGTYP == ISICE ) THEN
+             ! Land-ice point
+             ICE = -1
           ELSE
+             ! Neither sea ice or land ice.
              ICE=0
           ENDIF
           DQSDT2=Q2SAT*A23M4/(SFCTMP-A4)**2
@@ -580,7 +603,7 @@ CONTAINS
             E2SAT=611.2*EXP(6174.*(1./273.15 - 1./SFCTSNO))
             Q2SATI=0.622*E2SAT/(SFCPRS-E2SAT)
             Q2SATI=Q2SATI/(1.0+Q2SATI)    ! spec. hum.
-            IF(T1 .GT. 273.15)THEN
+            IF (T1 .GT. 273.14) THEN
 ! warm ground temps, weight the saturation between ice and water according to SNOWC
               Q2SAT=Q2SAT*(1.-SNOWC(I,J)) + Q2SATI*SNOWC(I,J)
               DQSDT2=DQSDT2*(1.-SNOWC(I,J)) + Q2SATI*6174./(SFCTSNO**2)*SNOWC(I,J)
@@ -593,10 +616,12 @@ CONTAINS
             IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
           ENDIF
 
-          IF(ICE.EQ.0)THEN
-            TBOT=TMN(I,J)
+          IF(ICE.EQ.1)THEN
+             ! Sea-ice point has deep-level temperature of -2 C
+             TBOT=271.16
           ELSE
-            TBOT=271.16
+             ! Land-ice or land points have the usual deep-soil temperature.
+             TBOT=TMN(I,J)
           ENDIF
           IF(VEGTYP.EQ.25) SHDFAC=0.0000
           IF(VEGTYP.EQ.26) SHDFAC=0.0000
@@ -606,6 +631,14 @@ CONTAINS
          IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'
             SOILTYP=7
           ENDIF
+        IF (ICE /= 0) THEN
+           ! kmh 06/28/2006 set SNOALB1 = 0.8 instead of 0.7
+           ! winter value        SNOALB1=0.80
+           SNOALB1=0.70        ! summer value
+           ! SNOALB1=0.80        ! winter value
+        ELSE
+           SNOALB1 = SNOALB(I,J)
+        ENDIF
           CMC=CANWAT(I,J)
 
 !-------------------------------------------
@@ -627,6 +660,8 @@ CONTAINS
         ALBBRD=ALBBCK(I,J)
         Z0BRD=Z0(I,J)
         EMBRD=EMBCK(I,J)
+        SNOTIME1 = SNOTIME(I,J)
+        RIBB=RIB(I,J)
 !FEI: temporaray arrays above need to be changed later by using SI
 
           DO 70 NS=1,NSOIL
@@ -640,15 +675,14 @@ CONTAINS
           endif
 !
 
-!Fei: urban. for urban surface, if calling UCM, redefine urban as 5: Cropland/Grassland Mosaic
+!Fei: urban. for urban surface, if calling UCM, redefine the natural surface in cities as
+! the "NATURAL" category in the VEGPARM.TBL
 	
 	   IF(UCMCALL == 1 ) THEN
-                IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
+                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
                   IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
-		 VEGTYP = 5
-                 SHDFAC = 0.8
-                 ALBEDOK =0.2
-                 ALBBRD  =0.2
+		 VEGTYP = NATURAL
+                 SHDFAC = SHDTBL(NATURAL)
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
            T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
 	         ELSE
@@ -656,9 +690,9 @@ CONTAINS
                  ENDIF
                 ENDIF
            ELSE
-                 IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
+                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
                   IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
-                  VEGTYP = 1
+                  VEGTYP = ISURBAN
            	 ENDIF
            ENDIF
 
@@ -687,13 +721,17 @@ CONTAINS
            endif
 
 
-       CALL SFLX (FFROZP, ICE,DT,ZLVL,NSOIL,SLDPTH,               &    !C
+          IF (rdlai2d) THEN
+             xlai = lai(i,j)
+          endif
+
+       CALL SFLX (FFROZP, ICE, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,     &    !C
                  LOCAL,                                           &    !L
                  LUTYPE, SLTYPE,                                  &    !CL
                  LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,DUMMY,         &    !F
                  DUMMY,DUMMY, DUMMY,                              &    !F PRCPRAIN not used
                  TH2,Q2SAT,DQSDT2,                                &    !I
-                 VEGTYP,SOILTYP,SLOPETYP,SHDFAC,SHMIN,DUMMY,      &    !I
+                 VEGTYP,SOILTYP,SLOPETYP,SHDFAC,SHMIN,SHMAX,      &    !I
                  ALBBRD, SNOALB1,TBOT, Z0BRD, Z0K, EMISSI, EMBRD, &    !S
                  CMC,T1,STC,SMC,SWC,SNOWHK,SNEQV,ALBEDOK,CHK,dummy,&    !H
                  ETA,SHEAT, ETA_KINEMATIC,FDOWN,                  &    !O
@@ -704,7 +742,13 @@ CONTAINS
                  RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                  RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                  SOILW,SOILM,Q1,                                  &    !D
+                 RDLAI2D,                                         &
+                 SNOTIME1,                                        &
+                 RIBB,                                            &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
+
+
+       lai(i,j) = xlai
 
 
           IF(IPRINT) THEN
@@ -737,6 +781,8 @@ CONTAINS
 !          SNOWH(I,J)=SNOWHK*1000.
           SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
           ALBEDO(I,J)=ALBEDOK
+          ALBBCK(I,J)=ALBBRD
+          Z0(I,J)=Z0BRD
           EMISS(I,J) = EMISSI
 ! MEK Nov2006 turn off
 !          ZNT(I,J)=Z0K
@@ -750,6 +796,7 @@ CONTAINS
           GRDFLX(I,J)=SSOIL
           SNOWC(I,J)=SNCOVR
           CHS2(I,J)=CQS2(I,J)
+          SNOTIME(I,J) = SNOTIME1
 !      prevent diagnostic ground q (q1) from being greater than qsat(tsk)
 !      as happens over snow cover where the cqs2 value also becomes irrelevant
 !      by setting cqs2=chs in this situation the 2m q should become just qv(k=1)
@@ -767,6 +814,12 @@ CONTAINS
    80     CONTINUE
 !       ENDIF
 
+     !
+     ! Residual of surface energy balance equation terms
+     !
+     noahres(i,j) =     ( solnet + lwdn ) - sheat + ssoil - eta - ( emissi * STBOLT * (t1**4) ) - flx1 - flx2 - flx3
+
+
         IF (UCMCALL == 1 ) THEN                                              ! Beginning of UCM CALL if block
 !--------------------------------------
 ! URBAN CANOPY MODEL START - urban
@@ -774,7 +827,7 @@ CONTAINS
 ! Input variables lsm --> urban
 
 
-          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
+          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
               IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN
 
 ! Call urban
@@ -975,7 +1028,8 @@ CONTAINS
   SUBROUTINE LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
-                     FNDSOILW, FNDSNOWH,                       &
+                     MMINLU,                                   &
+                     SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
@@ -1001,6 +1055,7 @@ CONTAINS
             INTENT(INOUT)    ::                           SNOW, &
                                                          SNOWH, &
                                                          SNOWC, &
+                                                        SNOALB, &
                                                         CANWAT, &
                                                         SMSTAV, &
                                                         SMSTOT, &
@@ -1013,9 +1068,12 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN)       ::                         IVGTYP, &
                                                         ISLTYP
+   CHARACTER(LEN=*),  INTENT(IN)      ::                MMINLU
 
    LOGICAL, INTENT(IN)       ::                      FNDSOILW , &
                                                      FNDSNOWH
+   LOGICAL, INTENT(IN)       ::                      RDMAXALB
+
 
    INTEGER                   :: L
    REAL                      :: BX, SMCMAX, PSISAT, FREE
@@ -1023,16 +1081,13 @@ CONTAINS
                                 GRAV = 9.81, T0 = 273.15
    INTEGER                   :: errflag
 
-      character*4 :: MMINLU, MMINSL
-!
-        MMINLU='USGS'
+   character*256 :: MMINSL
         MMINSL='STAS'
 !
 
 ! initialize three Noah LSM related tables
    IF ( allowed_to_read ) THEN
      CALL wrf_message( 'INITIALIZE THREE Noah LSM RELATED TABLES' )
-!     CALL  LSM_PARM_INIT
      CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
    ENDIF
 
@@ -1048,6 +1103,9 @@ CONTAINS
          errflag = 1
          WRITE(err_message,*)"module_sf_noahlsm.F: lsminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
          CALL wrf_message(err_message)
+       ENDIF
+       IF(.not.RDMAXALB) THEN
+          SNOALB(i,j)=MAXALB(IVGTYP(i,j))*0.01
        ENDIF
      ENDDO
    ENDDO
@@ -1145,21 +1203,6 @@ CONTAINS
 
 
 
-!
-!-----------------------------------------------------------------
-        SUBROUTINE LSM_PARM_INIT
-!-----------------------------------------------------------------
-
-        character*4 :: MMINLU, MMINSL
-
-        MMINLU='USGS'
-        MMINSL='STAS'
-        call SOIL_VEG_GEN_PARM( MMINLU, MMINSL)
-
-!-----------------------------------------------------------------
-        END SUBROUTINE LSM_PARM_INIT
-!-----------------------------------------------------------------
-
 !-----------------------------------------------------------------
         SUBROUTINE SOIL_VEG_GEN_PARM( MMINLU, MMINSL)
 !-----------------------------------------------------------------
@@ -1167,11 +1210,11 @@ CONTAINS
         USE module_wrf_error
         IMPLICIT NONE
 
+        CHARACTER(LEN=*), INTENT(IN) :: MMINLU, MMINSL
         integer :: LUMATCH, IINDEX, LC, NUM_SLOPE
         integer :: ierr
         INTEGER , PARAMETER :: OPEN_OK = 0
 
-        character*4 :: MMINLU, MMINSL
         character*128 :: mess , message
         logical, external :: wrf_dm_on_monitor
 
@@ -1209,41 +1252,52 @@ CONTAINS
           CALL wrf_error_fatal ( message )
         END IF
 
-        WRITE ( mess, * ) 'INPUT LANDUSE = ',MMINLU
-        CALL wrf_message( mess )
 
         LUMATCH=0
 
-        READ (19,*)
-        READ (19,2000,END=2002)LUTYPE
-        READ (19,*)LUCATS,IINDEX
- 2000   FORMAT (A4)
+        FIND_LUTYPE : DO WHILE (LUMATCH == 0)
+           READ (19,*,END=2002)
+           READ (19,*,END=2002)LUTYPE
+           READ (19,*)LUCATS,IINDEX
 
-        IF(LUTYPE.EQ.MMINLU)THEN
-          WRITE( mess , * ) 'LANDUSE TYPE = ',LUTYPE,' FOUND',           &
-                  LUCATS,' CATEGORIES'
-          CALL wrf_message( mess )
-          LUMATCH=1
-        ENDIF
+           IF(LUTYPE.EQ.MMINLU)THEN
+              WRITE( mess , * ) 'LANDUSE TYPE = ' // TRIM ( LUTYPE ) // ' FOUND', LUCATS,' CATEGORIES'
+              CALL wrf_message( mess )
+              LUMATCH=1
+           ELSE
+              call wrf_message ( "Skipping over LUTYPE = " // TRIM ( LUTYPE ) )
+              DO LC = 1, LUCATS+12
+                 read(19,*)
+              ENDDO
+           ENDIF
+        ENDDO FIND_LUTYPE
 ! prevent possible array overwrite, Bill Bovermann, IBM, May 6, 2008
-        IF ( SIZE(ALBTBL)  < LUCATS .OR. &
-             SIZE(Z0TBL)   < LUCATS .OR. &
-             SIZE(SHDTBL)  < LUCATS .OR. &
-             SIZE(NROTBL)  < LUCATS .OR. &
-             SIZE(RSTBL)   < LUCATS .OR. &
-             SIZE(RGLTBL)  < LUCATS .OR. &
-             SIZE(HSTBL)   < LUCATS .OR. &
-             SIZE(SNUPTBL) < LUCATS .OR. &
-             SIZE(LAITBL)  < LUCATS .OR. &
-             SIZE(MAXALB)  < LUCATS  ) THEN
+        IF ( SIZE(SHDTBL)       < LUCATS .OR. &
+             SIZE(NROTBL)       < LUCATS .OR. &
+             SIZE(RSTBL)        < LUCATS .OR. &
+             SIZE(RGLTBL)       < LUCATS .OR. &
+             SIZE(HSTBL)        < LUCATS .OR. &
+             SIZE(SNUPTBL)      < LUCATS .OR. &
+             SIZE(MAXALB)       < LUCATS .OR. &
+             SIZE(LAIMINTBL)    < LUCATS .OR. &
+             SIZE(LAIMAXTBL)    < LUCATS .OR. &
+             SIZE(Z0MINTBL)     < LUCATS .OR. &
+             SIZE(Z0MAXTBL)     < LUCATS .OR. &
+             SIZE(ALBEDOMINTBL) < LUCATS .OR. &
+             SIZE(ALBEDOMAXTBL) < LUCATS .OR. &
+             SIZE(EMISSMINTBL ) < LUCATS .OR. &
+             SIZE(EMISSMAXTBL ) < LUCATS ) THEN
            CALL wrf_error_fatal('Table sizes too small for value of LUCATS in module_sf_noahdrv.F')
         ENDIF
 
         IF(LUTYPE.EQ.MMINLU)THEN
           DO LC=1,LUCATS
-              READ (19,*)IINDEX,ALBTBL(LC),Z0TBL(LC),SHDTBL(LC),   &
+              READ (19,*)IINDEX,SHDTBL(LC),                        &
                         NROTBL(LC),RSTBL(LC),RGLTBL(LC),HSTBL(LC), &
-                        SNUPTBL(LC),LAITBL(LC),MAXALB(LC)
+                        SNUPTBL(LC),MAXALB(LC), LAIMINTBL(LC),     &
+                        LAIMAXTBL(LC),EMISSMINTBL(LC),             &
+                        EMISSMAXTBL(LC), ALBEDOMINTBL(LC),         &
+                        ALBEDOMAXTBL(LC), Z0MINTBL(LC), Z0MAXTBL(LC)
           ENDDO
 !
           READ (19,*)
@@ -1256,32 +1310,43 @@ CONTAINS
           READ (19,*)RSMAX_DATA
           READ (19,*)
           READ (19,*)BARE
+          READ (19,*)
+          READ (19,*)NATURAL
         ENDIF
 !
  2002   CONTINUE
 
         CLOSE (19)
+        IF (LUMATCH == 0) then
+           CALL wrf_error_fatal ("Land Use Dataset '"//MMINLU//"' not found in VEGPARM.TBL.")
+        ENDIF
       ENDIF
 
       CALL wrf_dm_bcast_string  ( LUTYPE  , 4 )
       CALL wrf_dm_bcast_integer ( LUCATS  , 1 )
       CALL wrf_dm_bcast_integer ( IINDEX  , 1 )
       CALL wrf_dm_bcast_integer ( LUMATCH , 1 )
-      CALL wrf_dm_bcast_real    ( ALBTBL  , NLUS )
-      CALL wrf_dm_bcast_real    ( Z0TBL   , NLUS )
       CALL wrf_dm_bcast_real    ( SHDTBL  , NLUS )
       CALL wrf_dm_bcast_real    ( NROTBL  , NLUS )
       CALL wrf_dm_bcast_real    ( RSTBL   , NLUS )
       CALL wrf_dm_bcast_real    ( RGLTBL  , NLUS )
       CALL wrf_dm_bcast_real    ( HSTBL   , NLUS )
       CALL wrf_dm_bcast_real    ( SNUPTBL , NLUS )
-      CALL wrf_dm_bcast_real    ( LAITBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( LAIMINTBL    , NLUS )
+      CALL wrf_dm_bcast_real    ( LAIMAXTBL    , NLUS )
+      CALL wrf_dm_bcast_real    ( Z0MINTBL     , NLUS )
+      CALL wrf_dm_bcast_real    ( Z0MAXTBL     , NLUS )
+      CALL wrf_dm_bcast_real    ( EMISSMINTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( EMISSMAXTBL  , NLUS )
+      CALL wrf_dm_bcast_real    ( ALBEDOMINTBL , NLUS )
+      CALL wrf_dm_bcast_real    ( ALBEDOMAXTBL , NLUS )
       CALL wrf_dm_bcast_real    ( MAXALB  , NLUS )
       CALL wrf_dm_bcast_real    ( TOPT_DATA    , 1 )
       CALL wrf_dm_bcast_real    ( CMCMAX_DATA  , 1 )
       CALL wrf_dm_bcast_real    ( CFACTR_DATA  , 1 )
       CALL wrf_dm_bcast_real    ( RSMAX_DATA  , 1 )
       CALL wrf_dm_bcast_integer ( BARE    , 1 )
+      CALL wrf_dm_bcast_integer ( NATURAL , 1 )
 
 !
 !-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL
@@ -1294,17 +1359,17 @@ CONTAINS
           CALL wrf_error_fatal ( message )
         END IF
 
-        MMINSL='STAS'                       !oct2
-        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ',MMINSL
+        WRITE(mess,*) 'INPUT SOIL TEXTURE CLASSIFICAION = ', TRIM ( MMINSL )
         CALL wrf_message( mess )
 
         LUMATCH=0
 
         READ (19,*)
         READ (19,2000,END=2003)SLTYPE
+ 2000   FORMAT (A4)
         READ (19,*)SLCATS,IINDEX
         IF(SLTYPE.EQ.MMINSL)THEN
-            WRITE( mess , * ) 'SOIL TEXTURE CLASSIFICATION = ',SLTYPE,' FOUND', &
+            WRITE( mess , * ) 'SOIL TEXTURE CLASSIFICATION = ', TRIM ( SLTYPE ) , ' FOUND', &
                   SLCATS,' CATEGORIES'
             CALL wrf_message ( mess )
           LUMATCH=1

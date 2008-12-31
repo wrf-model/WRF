@@ -90,7 +90,7 @@ program da_verif_obs
    if_plot_gpsref    = .false.
    if_plot_airsret   = .false.
 
-   file_path_string = 'wrfvar/working/gts_omb_oma'
+   file_path_string = 'wrfvar/gts_omb_oma_01'
 
    ! Read in namelist information defined in module define_cons_types
 

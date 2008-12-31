@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_geoamv_adj (iv, jo_grad_y, jo_grad_x)
 
    !-------------------------------------------------------------------------
    ! Purpose: X to Y Transpose operator for Geo. AMVs
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-------------------------------------------------------------------------
 
    implicit none
@@ -24,9 +26,14 @@ subroutine da_transform_xtoy_geoamv_adj (iv, jo_grad_y, jo_grad_x)
       v(1:size(jo_grad_y%geoamv(n)%v),n) = jo_grad_y%geoamv(n)%v(:)
    end do
 
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(geoamv), u,'u')
+   call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(geoamv), v,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(geoamv), u)
    call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(geoamv), v)
-   
+#endif
+
    deallocate (u)
    deallocate (v)
 

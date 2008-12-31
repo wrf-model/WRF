@@ -13,19 +13,24 @@ CONTAINS
                  ,ust,pblh,hfx,qfx,grdflx                          &
                  ,u_phy,v_phy,th_phy,rho                           &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
-                 ,tke_myj,el_myj,exch_h,akhs,akms                  &
-                 ,thz0,qz0,uz0,vz0,qsfc                            &
+                 ,tke_myj,el_myj,exch_h,exch_m,akhs,akms           &
+                 ,thz0,qz0,uz0,vz0,qsfc,f                          &
                  ,lowlyr,u10,v10                                   &
                  ,psim,psih,gz1oz0, wspd,br,chklowq                &
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
-                 ,kpbl,ct,lh,snow,xice                             &
+                 ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
+                 ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
              ! Optional
                  ,hol, mol, regime                                 &
+             ! Optional gravity-wave drag             
+                 ,gwd_opt                                          &
+                 ,dusfcg,dvsfcg,var2d,oc12d                        &
+                 ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -36,24 +41,36 @@ CONTAINS
                  ,f_qi,f_qs,f_qg                                   &
                                                                    )
 !------------------------------------------------------------------
+#if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3
+#else
+   USE module_state_description, ONLY :                            &
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME
+#endif
 
    USE module_model_constants
 
 ! *** add new modules of schemes here
 
    USE module_bl_myjpbl
+   USE module_bl_qnsepbl
    USE module_bl_ysu
    USE module_bl_mrf
    USE module_bl_gfs
    USE module_bl_acm
+   USE module_bl_gwdo
+#if (EM_CORE==1)
+   USE module_bl_mynn
+#endif
 
    !  This driver calls subroutines for the PBL parameterizations.
    !
    !  pbl scheme:
    !      1. ysupbl
    !      2. myjpbl
+   !      4. qnsepbl
+   !      5.  mynnpbl
    !      7.  acmpbl
    !      99. mrfpbl
    !
@@ -233,6 +250,7 @@ CONTAINS
                                                             PSIH, &
                                                           GZ1OZ0, &
                                                               BR, &
+                                                               F, &
                                                          CHKLOWQ
 !
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
@@ -245,6 +263,7 @@ CONTAINS
                                                             QSFC, &
                                                             AKHS, &
                                                             AKMS, &
+                                                           MIXHT, &   
                                                              QZ0, &
                                                             THZ0, &
                                                              UZ0, &
@@ -260,7 +279,22 @@ CONTAINS
                INTENT(INOUT)    ::                       RUBLTEN, &
                                                          RVBLTEN, &
                                                         RTHBLTEN, &
-                                                  EXCH_H,TKE_MYJ
+                                                  EXCH_H,EXCH_M,TKE_MYJ
+
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), &
+        &OPTIONAL, INTENT(INOUT) :: &
+        & qke,tsq,qsq,cov!,k_m,k_h,k_q
+
+   REAL,    DIMENSION( ims:ime , jms:jme ), &
+        &OPTIONAL, INTENT(IN) ::  &
+        & qcg, rmol, ch
+
+   
+   INTEGER, OPTIONAL, INTENT(IN)  :: grav_settling
+   
+
+
+
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                          EL_MYJ
@@ -311,7 +345,20 @@ CONTAINS
                OPTIONAL                                         , &
                INTENT(IN)    ::                           mut
 !
+   INTEGER,    OPTIONAL, INTENT(IN)    ::               gwd_opt
    REAL,       OPTIONAL, INTENT(IN)    ::               p_top
+
+  real,   dimension( ims:ime, jms:jme )                                      , &
+          optional                                                           , &
+             intent(inout  )   ::                                      dusfcg, &
+                                                                       dvsfcg
+!
+  real,   dimension( ims:ime, jms:jme )                                      , &
+          optional                                                           , &
+             intent(in  )   ::                                          var2d, &
+                                                                        oc12d, &
+                                                              oa1,oa2,oa3,oa4, &
+                                                              ol1,ol2,ol3,ol4
 
 !  LOCAL  VAR
 
@@ -328,6 +375,12 @@ CONTAINS
 
    REAL    :: DTMIN,DTBL
 !
+
+   INTEGER :: initflag
+!
+
+
+
    INTEGER :: i,J,K,NK,jj,ij,its,ite,jts,jte
    LOGICAL :: radiation
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
@@ -351,8 +404,6 @@ CONTAINS
 
   if (bl_pbl_physics .eq. 0) return
 ! RAINBL in mm (Accumulation between PBL calls)
-
-
 !
 ! Modified for adaptive time step
 !
@@ -574,13 +625,43 @@ CONTAINS
              CALL myjpbl(                                           &
                DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
               ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
-              ,QV=qv_curr, CWM=qc_curr                               &
+              ,QV=qv_curr,QCW=qc_curr,QCI=qi_curr,QCS=qs_curr       & !BSF
+              ,QCR=qr_curr,QCG=qg_curr                              & !BSF
               ,U=u_phy,V=v_phy,RHO=rho                              &
               ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
               ,QZ0=qz0,UZ0=uz0,VZ0=vz0                              &
               ,LOWLYR=lowlyr                                        &
               ,XLAND=xland,SICE=xice,SNOW=snow                      &
               ,TKE_MYJ=tke_myj,EXCH_H=exch_h,USTAR=ust,ZNT=znt      &
+              ,EL_MYJ=el_myj,PBLH=pblh,KPBL=kpbl,CT=ct              &
+              ,AKHS=akhs,AKMS=akms,ELFLX=lh,MIXHT=mixht             &  
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
+              ,RQIBLTEN=rqiblten,RQSBLTEN=rqsblten                  & !BSF
+              ,RQRBLTEN=rqrblten,RQGBLTEN=rqgblten                  & !BSF
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
+           ENDIF
+ 
+      CASE (QNSEPBLSCHEME)
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                                                        .TRUE.  ) THEN
+             CALL wrf_debug(100,'in QNSEPBL')
+             CALL qnsepbl(                                           &
+               DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
+              ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
+              ,QV=qv_curr, CWM=qc_curr                              &
+              ,U=u_phy,V=v_phy,RHO=rho                              &
+              ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
+              ,QZ0=qz0,UZ0=uz0,VZ0=vz0,CORF=f                       &
+              ,LOWLYR=lowlyr                                        &
+              ,XLAND=xland,SICE=xice,SNOW=snow                      &
+              ,TKE=tke_myj,EXCH_H=exch_h,EXCH_M=exch_m,USTAR=ust,ZNT=znt      &
               ,EL_MYJ=el_myj,PBLH=pblh,KPBL=kpbl,CT=ct              &
               ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
@@ -590,9 +671,8 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
            ELSE
-               CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
+               CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
            ENDIF
- 
       CASE (ACMPBLSCHEME)
            
            !!  These are values that are not supplied to pbl driver, but are required by ACM
@@ -619,6 +699,50 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
+#if (EM_CORE==1)
+
+        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                & PRESENT(qke) .AND. PRESENT(tsq) .AND. &
+                & PRESENT(qsq) .AND. PRESENT(cov) .AND. &
+                & PRESENT(rmol) .AND. PRESENT(rmol) .AND. &
+                & PRESENT(qcg) .AND. PRESENT(ch) .AND. &
+                & PRESENT(grav_settling) ) THEN
+
+              CALL wrf_debug(100,'in MYNNPBL')
+
+              IF (itimestep==1) THEN
+                 initflag=1
+              ELSE
+                 initflag=0
+              ENDIF
+              
+              CALL  mynn_bl_driver(&
+                   &initflag=initflag,&
+                   &grav_settling=grav_settling,&
+                   &delt=dtbl,&
+                   &dz=dz8w,&
+                   &u=u_phy,v=v_phy,th=th_phy,qv=qv_curr,qc=qc_curr,&
+                   &p=p_phy,exner=pi_phy,rho=rho,&
+                   &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
+                   &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
+                   &Qke=qke,Tsq=tsq,Qsq=qsq,Cov=cov,&
+                   &Du=rublten,Dv=rvblten,Dth=rthblten,&
+                   &Dqv=rqvblten,Dqc=rqcblten,&
+                   &k_h=exch_h,k_m=exch_m&
+                   ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+                   ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+                   ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                   )
+
+           ELSE
+              CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
+           ENDIF
+
+#endif
+
 
      CASE DEFAULT
 
@@ -626,6 +750,26 @@ CONTAINS
        CALL wrf_error_fatal ( message )
 
    END SELECT pbl_select
+
+   IF (PRESENT(gwd_opt)) THEN
+       IF(gwd_opt .EQ. 1)THEN
+             CALL gwdo(                                              &
+               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
+              ,QV3D=qv_curr                                         &
+              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
+              ,DUSFCG=dusfcg,DVSFCG=dvsfcg &
+              ,VAR2D=var2d,OC12D=oc12d     &
+              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
+              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,CP=cp,G=g,RD=r_d                           &
+              ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
+              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
+       ENDIF
+   ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO

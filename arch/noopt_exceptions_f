@@ -121,6 +121,7 @@ output_wrf.o \
 solve_interface.o \
 start_domain.o \
 start_domain_nmm.o \
+shift_domain_nmm.o \
 start_em.o \
 wrf_fddaobs_in.o \
 wrf_tsin.o :
@@ -214,7 +215,7 @@ nl_get_0_routines.o \
 nl_get_1_routines.o \
 module_configure.o :
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
-	$(RM) $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

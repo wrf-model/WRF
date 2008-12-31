@@ -7,6 +7,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    !       1. interpolate grid%xb to obs location
    !       2. call foreward RTM to get simulated bright temperature 
    !       3. obs BT - simulated BT
+   !  HISTORY: 12/15/2008 effective radius unit is micron     Zhiquan Liu
    !---------------------------------------------------------------------------
 
    implicit none
@@ -37,7 +38,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: model_isltyp, model_ivgtyp
    integer :: model_isflg
 
-   real    :: v_p(kms:kme)  ! Model value p at ob hor. location.
    real    :: model_qcw(kms:kme)
    real    :: model_rho(kms:kme)
    real, allocatable :: model_snow(:)  ! snow water equivalent, different from model_snowh,
@@ -64,7 +64,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    type (CRTM_Atmosphere_type), allocatable :: Atmosphere_K(:,:)
    type (CRTM_Surface_type),    allocatable :: Surface_K(:,:)
 
-   real :: t(1), a(1)
+   real :: t(1), a(1), p(1)
 
 !! for crtm cloud
    real :: qcw(1),qrn(1), qci(1),qsn(1),qgr(1)
@@ -84,7 +84,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    Atmosphere(1)%n_Clouds=0
    Atmosphere(1)%n_Aerosols=0
    if (crtm_cloud) Atmosphere(1)%n_Clouds=6
-!   if (use_airs_mmr) Atmosphere(1)%n_Clouds=1
  
    Error_Status = CRTM_Allocate_Atmosphere( Atmosphere(1)%n_Layers, &
                                             Atmosphere(1)%n_Absorbers, &
@@ -199,13 +198,15 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       model_snow(:)   = 0.0
       model_vegfra(:) = 0.0
 
+      ! Gamma correction from VarBC
+      !----------------------------
+#ifdef CRTM_MODIF
       if ( use_varbc .or. freeze_varbc ) then
-         ! Gamma correction from VarBC
-         !----------------------------
          gammapred = iv%instid(inst)%varbc_info%gammapred 
          do k = 1, nchanl
             npred = iv%instid(inst)%varbc(k)%npred
             if (npred <= 0) cycle                                           ! VarBC channels only
+            if (iv%instid(inst)%varbc_info%npredmax < gammapred)  cycle     ! Gamma channels only
             if (iv%instid(inst)%varbc(k)%pred_use(gammapred) < 0) cycle     ! Gamma channels only
 	    do ipred = 1, npred
 	       if (iv%instid(inst)%varbc(k)%ipred(ipred) /= gammapred) cycle
@@ -213,15 +214,18 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             end do		  
          end do
       end if
+      RTSolution_K(:,1)%Gamma = 0.0
+#endif
 
+      ! Allocate Overcast Radiances for AIRS Cloud Detection (MMR)
       !----------------------------------------------------------------
-      ! Compute Overcast Radiances for AIRS Cloud Detection(MMR)
-      !----------------------------------------------------------------
+#ifdef CRTM_MODIF
       if (use_airs_mmr) then
          do i = 1, nchanl
             allocate(RTSolution(i,1)%Overcast(Atmosphere(1)%n_Layers))
          end do		         
       end if   
+#endif
 	
       do n=n1,n2
          ! if ( n > iv%instid(inst)%num_rad ) exit
@@ -235,15 +239,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          dxm = iv%instid(inst)%info%dxm(1,n)
          dym = iv%instid(inst)%info%dym(1,n)
 
-         ! horizontal interpolate grid%xb pressure to ob position for every grid%xb layer
-         ! get CRTM pressure Layers 
-         do k=kts,kte ! from bottem to top
-            v_p(k) = dym*(dxm*grid%xb%p(i,j  ,k) + dx*grid%xb%p(i+1,j  ,k)) &
-                + dy *(dxm*grid%xb%p(i,j+1,k) + dx*grid%xb%p(i+1,j+1,k))
-            v_p(k) = 0.01*v_p(k)  ! convert Pa to hPa
-            Atmosphere(1)%Pressure(kte-k+1)=v_p(k) ! from top to bottom
-         end do
-
          ! determine surface type of obs location
          !-----------------------------------------
          call da_detsurtyp ( grid%xb%snow, grid%xb%xice, grid%xb%landmask,  &
@@ -254,30 +249,32 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             Surface(1)%Water_Coverage, Surface(1)%Ice_Coverage, &
             Surface(1)%Land_Coverage, Surface(1)%Snow_Coverage )
 
-         call da_interp_lin_2d_partial (grid%xb%snow, iv%instid(inst)%info, 1, n, n, model_snow(n:n) )
+         call da_interp_2d_partial (grid%xb%snow, iv%instid(inst)%info, 1, n, n, model_snow(n:n))
 
          ! [1.2] Interpolate horizontally to ob:
          do k=kts,kte ! from bottom to top
-            call da_interp_lin_2d_partial (grid%xb%t(:,:,k), iv%instid(inst)%info,k,n,n,t)
-            call da_interp_lin_2d_partial (grid%xb%q(:,:,k), iv%instid(inst)%info,k,n,n,a) 
+            call da_interp_2d_partial (grid%xb%p(:,:,k), iv%instid(inst)%info,k,n,n,p)
+            call da_interp_2d_partial (grid%xb%t(:,:,k), iv%instid(inst)%info,k,n,n,t)
+            call da_interp_2d_partial (grid%xb%q(:,:,k), iv%instid(inst)%info,k,n,n,a) 
+
+            Atmosphere(1)%Pressure(kte-k+1)    = 0.01   * p(1)  ! convert Pa to hPa
             Atmosphere(1)%Temperature(kte-k+1) = t(1)
-            Atmosphere(1)%Absorber(kte-k+1,1)  = a(1)
-            Atmosphere(1)%Absorber(kte-k+1,1) = 1000.0*Atmosphere(1)%Absorber(kte-k+1,1) ! in g/kg
+            Atmosphere(1)%Absorber(kte-k+1,1)  = 1000.0 * a(1)  ! in g/kg
 
             ! NOTE: WRF high-level q values seems too big, replaced by constants
-            if (v_p(k) < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001
+            if (p(1) < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001
 
             call da_interp_lin_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
             
             if (crtm_cloud) then
 
-               call da_interp_lin_2d_partial (grid%xb%qci(:,:,k), iv%instid(inst)%info,k,n,n,qci)
+               call da_interp_2d_partial (grid%xb%qci(:,:,k), iv%instid(inst)%info,k,n,n,qci)
 
-               call da_interp_lin_2d_partial (grid%xb%qrn(:,:,k), iv%instid(inst)%info,k,n,n,qrn)
+               call da_interp_2d_partial (grid%xb%qrn(:,:,k), iv%instid(inst)%info,k,n,n,qrn)
  
-               call da_interp_lin_2d_partial (grid%xb%qsn(:,:,k), iv%instid(inst)%info, k,n,n,qsn)
+               call da_interp_2d_partial (grid%xb%qsn(:,:,k), iv%instid(inst)%info, k,n,n,qsn)
  
-               call da_interp_lin_2d_partial (grid%xb%qgr(:,:,k), iv%instid(inst)%info, k,n,n,qgr)
+               call da_interp_2d_partial (grid%xb%qgr(:,:,k), iv%instid(inst)%info, k,n,n,qgr)
 
                Atmosphere(1)%Cloud(1)%Water_Content(kte-k+1)=model_qcw(kte-k+1)
                Atmosphere(1)%Cloud(2)%Water_Content(kte-k+1)=qci(1)
@@ -286,7 +283,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                Atmosphere(1)%Cloud(5)%Water_Content(kte-k+1)=qgr(1)
                Atmosphere(1)%Cloud(6)%Water_Content(kte-k+1)=0.0
 
-               call da_interp_lin_2d_partial (grid%xb%rho(:,:,k), iv%instid(inst)%info, k,n,n, &
+               call da_interp_2d_partial (grid%xb%rho(:,:,k), iv%instid(inst)%info, k,n,n, &
                   model_rho(k:k) )
 
                call da_cld_eff_radius(Atmosphere(1)%Temperature(kte-k+1),model_rho(k),&
@@ -304,26 +301,26 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
                ! reset the da_cld_eff_radius calcualted effective radius to constants if desired
 
-               Atmosphere(1)%Cloud(1)%Effective_Radius(kte-k+1)=0.01  ! in mm
-               Atmosphere(1)%Cloud(2)%Effective_Radius(kte-k+1)=0.03  ! in mm
-               !Atmosphere(1)%Cloud(3)%Effective_Radius(kte-k+1)=0.3
-               !Atmosphere(1)%Cloud(4)%Effective_Radius(kte-k+1)=0.6
-               !Atmosphere(1)%Cloud(5)%Effective_Radius(kte-k+1)=0.6
-               Atmosphere(1)%Cloud(6)%Effective_Radius(kte-k+1)=0.6
+               Atmosphere(1)%Cloud(1)%Effective_Radius(kte-k+1)=10.0  ! in micron
+               Atmosphere(1)%Cloud(2)%Effective_Radius(kte-k+1)=30.0  ! in micron
+               !Atmosphere(1)%Cloud(3)%Effective_Radius(kte-k+1)=300
+               !Atmosphere(1)%Cloud(4)%Effective_Radius(kte-k+1)=600
+               !Atmosphere(1)%Cloud(5)%Effective_Radius(kte-k+1)=600
+               Atmosphere(1)%Cloud(6)%Effective_Radius(kte-k+1)=600
 
             end if
          end do
 
-         call da_interp_lin_2d_partial (grid%xb%u10,  iv%instid(inst)%info, 1, n, n, model_u10(n:n))
-         call da_interp_lin_2d_partial (grid%xb%v10,  iv%instid(inst)%info, 1, n, n, model_v10(n:n))
-         call da_interp_lin_2d_partial (grid%xb%psfc, iv%instid(inst)%info, 1, n, n, model_psfc(n:n))
+         call da_interp_2d_partial (grid%xb%u10,  iv%instid(inst)%info, 1, n, n, model_u10(n:n))
+         call da_interp_2d_partial (grid%xb%v10,  iv%instid(inst)%info, 1, n, n, model_v10(n:n))
+         call da_interp_2d_partial (grid%xb%psfc, iv%instid(inst)%info, 1, n, n, model_psfc(n:n))
 
          model_psfc(n) = 0.01*model_psfc(n)           ! convert to hPa
-         model_ptop = 0.01*grid%xb%ptop
+         model_ptop    = 0.01*grid%xb%ptop
 
          ! get CRTM levels (0.005hPa at top) /model full level
-         Atmosphere(1)%Level_Pressure(0)=model_ptop   ! to sigma level 51-->sigmaf=0
-         Atmosphere(1)%Level_Pressure(Atmosphere(1)%n_Layers)=model_psfc(n) ! to sigma level 1->sigmaf=1
+         Atmosphere(1)%Level_Pressure(0)                      = model_ptop    ! to sigma level 51-->sigmaf=0
+         Atmosphere(1)%Level_Pressure(Atmosphere(1)%n_Layers) = model_psfc(n) ! to sigma level 1->sigmaf=1
 
          do k=kts+1,kte
             Atmosphere(1)%Level_Pressure(kte-k+1)= grid%xb%sigmaf(k)*(model_psfc(n)-model_ptop)+model_ptop
@@ -340,19 +337,19 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
 
          if ( model_isflg == 0 ) then   ! over sea using SST
-            call da_interp_lin_2d_partial (grid%xb % tgrn, iv%instid(inst)%info, 1, n, n, model_ts(n:n))
+            call da_interp_2d_partial (grid%xb % tgrn, iv%instid(inst)%info, 1, n, n, model_ts(n:n))
          else
-            call da_interp_lin_2d_partial (grid%xb % tsk,  iv%instid(inst)%info, 1, n, n, model_ts(n:n))
+            call da_interp_2d_partial (grid%xb % tsk,  iv%instid(inst)%info, 1, n, n, model_ts(n:n))
          end if
 
-         call da_interp_lin_2d_partial (grid%xb % terr, iv%instid(inst)%info, 1, n, n, model_elv(n:n))
+         call da_interp_2d_partial (grid%xb % terr, iv%instid(inst)%info, 1, n, n, model_elv(n:n))
 
          ! variables for emissivity calculations
          !---------------------------------------- 
-         call da_interp_lin_2d_partial (grid%xb % smois,  iv%instid(inst)%info, 1, n, n, model_smois(n:n) )
-         call da_interp_lin_2d_partial (grid%xb % tslb,   iv%instid(inst)%info, 1, n, n, model_tslb(n:n) )
-         call da_interp_lin_2d_partial (grid%xb % snowh,  iv%instid(inst)%info, 1, n, n, model_snowh(n:n) )
-         call da_interp_lin_2d_partial (grid%xb % vegfra, iv%instid(inst)%info, 1, n, n, model_vegfra(n:n) )
+         call da_interp_2d_partial (grid%xb % smois,  iv%instid(inst)%info, 1, n, n, model_smois(n:n) )
+         call da_interp_2d_partial (grid%xb % tslb,   iv%instid(inst)%info, 1, n, n, model_tslb(n:n) )
+         call da_interp_2d_partial (grid%xb % snowh,  iv%instid(inst)%info, 1, n, n, model_snowh(n:n) )
+         call da_interp_2d_partial (grid%xb % vegfra, iv%instid(inst)%info, 1, n, n, model_vegfra(n:n) )
 
          ! model_snowh(n) = model_snowh(n)*100.0   ! convert from m to mm
          model_vegfra(n) = 0.01*model_vegfra(n)  ! convert range to 0~1
@@ -415,46 +412,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             Surface(1)%SensorData%Tb(1:nchanl) = ob%instid(inst)%tb(1:nchanl,n)
          end if
 	 
-!         if (use_airs_mmr) then
-!	    Atmosphere(1)%n_Clouds = 1
-!            do k=kts,kte
-!               if (Atmosphere(1)%pressure(k)<100.0) cycle
-!	    
-!  	       Atmosphere(1)%Cloud(1)%Water_Content(:) = 0.0
-!	       if (Atmosphere(1)%Temperature(k)>273.0) then
-!	          Atmosphere(1)%Cloud(1)%Type                = WATER_CLOUD
-!  	          Atmosphere(1)%Cloud(1)%Water_Content(k)    = 0.001
-!	          Atmosphere(1)%Cloud(1)%Effective_Radius(k) = 0.01
-!	       else if (Atmosphere(1)%Temperature(k)<243.0) then
-!	          Atmosphere(1)%Cloud(1)%Type                = ICE_CLOUD
-!  	          Atmosphere(1)%Cloud(1)%Water_Content(k)    = 0.0001
-!	          Atmosphere(1)%Cloud(1)%Effective_Radius(k) = 0.03
-!	       else
-!	          Atmosphere(1)%Cloud(1)%Type                = SNOW_CLOUD
-!  	          Atmosphere(1)%Cloud(1)%Water_Content(k)    = 0.005
-!	          Atmosphere(1)%Cloud(1)%Effective_Radius(k) = 0.6
-!	       end if
-!	    
-!  	       ! Convert from kg/kg to kg/m^2
-!	       Atmosphere(1)%Cloud(1)%Water_Content(k)=Atmosphere(1)%Cloud(1)%Water_Content(k)*&
-!	       (Atmosphere(1)%Level_pressure(k)-Atmosphere(1)%Level_Pressure(k-1))*100.0/gravity
-!	    
-!               call da_crtm_direct(1, nchanl, 1, Atmosphere,   &
-!                  Surface,      &
-!                  GeometryInfo, &
-!                  ChannelInfo(inst:inst),  &
-!                  RTSolution)
-!	       
-!  	       do i = 1, nchanl  
-!                  iv%instid(inst)%rad_ovc(i,k,n)=RTSolution(i,1)%Radiance !Brightness_Temperature
-!	       end do
-!	    end do
-!
-!   	    print*,'ACD : Clear & overcast radiances for ',n,'/',iv%instid(inst)%num_rad         
-!	    Atmosphere(1)%n_Clouds = 0
-!         end if
-
-
          if (use_crtm_kmatrix) then
    
             ! CRTM surface/atmosphere K initialization
@@ -484,7 +441,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             ! Assign tb = R^-1 Re :
             RTSolution_K(:,1)%brightness_temperature = 1.
             RTSolution_K(:,1)%radiance = 0.
-	    RTSolution_K(:,1)%Gamma = 0.
 	    
             ! [1.3] Call RTM K-Matrix model
             call da_crtm_k(1, nchanl, 1, Atmosphere,   &
@@ -498,7 +454,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                                Options)
          else
 	 
-            ! [1.3] Call RTM foreward model
+            ! [1.3] Call RTM forward model
             call da_crtm_direct(1, nchanl, 1, Atmosphere,   &
                Surface,      &
                GeometryInfo, &
@@ -508,11 +464,15 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 	    
 	 end if
 
+         ! Compute Overcast Radiances for AIRS Cloud Detection (MMR)
+         !----------------------------------------------------------------
+#ifdef CRTM_MODIF
          if (use_airs_mmr) then
 	    do i = 1, nchanl
                iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Overcast(:)
 	    end do		         
 	 end if   
+#endif
 	
          !----------------------------------------------------------------
          ! [2.0] calculate components of innovation vector:
@@ -521,27 +481,24 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             iv%instid(inst)%tb_xb(k,n)  = RTSolution(k,1)%Brightness_Temperature
             iv%instid(inst)%rad_xb(k,n) = RTSolution(k,1)%Radiance
             iv%instid(inst)%emiss(k,n)  = RTSolution(k,1)%surface_emissivity
-            if (use_pseudo_rad) then ! input is innovation
-              if ( iv%instid(inst)%tb_inv(k,n) > missing_r ) then
-                ob%instid(inst)%tb(k,n)=RTSolution(k,1)%Brightness_Temperature+iv%instid(inst)%tb_inv(k,n)
-              else
-                ob%instid(inst)%tb(k,n)   = missing_r
-              end if
-            else 
-	      if ( iv%instid(inst)%tb_inv(k,n) > missing_r ) then 
-                iv%instid(inst)%tb_inv(k,n) = &
-                ob%instid(inst)%tb(k,n) - RTSolution(k,1)%Brightness_Temperature
-              else
-                iv%instid(inst)%tb_inv(k,n)   = missing_r
-              end if
-            end if
+      
+            if (use_pseudo_rad .or. use_simulated_rad) then ! input is innovation
+              ob%instid(inst)%tb(k,n) = missing_r
+	      if ( iv%instid(inst)%tb_inv(k,n) > missing_r ) &
+                ob%instid(inst)%tb(k,n) = RTSolution(k,1)%Brightness_Temperature + iv%instid(inst)%tb_inv(k,n)
+            else
+               if ( iv%instid(inst)%tb_inv(k,n) > missing_r ) & 
+                  iv%instid(inst)%tb_inv(k,n) = ob%instid(inst)%tb(k,n) - iv%instid(inst)%tb_xb(k,n)	    
+	    end if
 
             if (use_crtm_kmatrix) then
                ! surface Jacobian
                iv%instid(inst)%ts_jacobian(k,n) = Surface_k(k,1)%water_temperature
                iv%instid(inst)%windspeed_jacobian(k,n) = Surface_k(k,1)%wind_speed
                iv%instid(inst)%emiss_jacobian(k,n) = RTSolution_k(k,1)%surface_emissivity
+#ifdef CRTM_MODIF
                iv%instid(inst)%gamma_jacobian(k,n) = RTSolution_k(k,1)%Gamma
+#endif
 	    end if   
          end do
 
@@ -610,11 +567,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 	       end if	  
             end if
          end do
-
-!         print*,'GAMMA_FP',&
-!            iv%instid(inst)%info%lon(1,n), iv%instid(inst)%info%lat(1,n),&
-!            MAXLOC(iv%instid(inst)%t_jacobian(:,:,n),dim=2),&
-!	    iv%instid(inst)%gamma_jacobian(:,n)
 
          !----------------------------------------------
          ! [4.0] store surface information to innovation structure

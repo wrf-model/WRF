@@ -42,8 +42,8 @@
 #########################################################################
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export SUITE_DIR=${SUITE_DIR:-$RUN_DIR}
 

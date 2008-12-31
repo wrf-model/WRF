@@ -9,6 +9,9 @@ subroutine da_detsurtyp (snow,ice,landsea, vegtyp, soiltyp, is, ie, js, je, &
    !      2. calculate percentage of sea/ice/land/snow
    !      3. determine surface type at obs location
    !      4. find nearest grid vegtype and soil type 
+   !
+   !  HISTORY: 11/25/2008 - Use input surface type percentage      Tom Auligne
+   !
    !---------------------------------------------------------------------------
 
    implicit none
@@ -37,33 +40,33 @@ subroutine da_detsurtyp (snow,ice,landsea, vegtyp, soiltyp, is, ie, js, je, &
    !                7 mixed predominately snow
 
    !  local variables
-   integer   ::  n, xbflag(4)   ! surface type at xb location
-                               ! 0:sea  1:sea-ice 2:land  3:snow
+!   integer   ::  n, xbflag(4)   ! surface type at xb location
+!                               ! 0:sea  1:sea-ice 2:land  3:snow
    real      ::  w(4),minw      ! weight at 4 xb locations
 
    if (trace_use) call da_trace_entry("da_detsurtyp")    
 
    ! 1.0 determine surface type of xb at 4 location around obs
    !-------------------------------------------------------
-   if ( nint(landsea(i  ,j  )) == 0 ) xbflag(1) = 0 ! sea
-   if ( nint(landsea(i+1,j  )) == 0 ) xbflag(2) = 0 ! sea
-   if ( nint(landsea(i  ,j+1)) == 0 ) xbflag(3) = 0 ! sea
-   if ( nint(landsea(i+1,j+1)) == 0 ) xbflag(4) = 0 ! sea
-
-   if ( nint(landsea(i  ,j  )) == 1 ) xbflag(1) = 2 ! land/snow/sea-ice
-   if ( nint(landsea(i+1,j  )) == 1 ) xbflag(2) = 2 ! land/snow/sea-ice
-   if ( nint(landsea(i  ,j+1)) == 1 ) xbflag(3) = 2 ! land/snow/sea-ice
-   if ( nint(landsea(i+1,j+1)) == 1 ) xbflag(4) = 2 ! land/snow/sea-ice
-
-   if ( nint(snow(i  ,j  )) == 1 ) xbflag(1) = 3 ! snow
-   if ( nint(snow(i+1,j  )) == 1 ) xbflag(2) = 3 ! snow
-   if ( nint(snow(i  ,j+1)) == 1 ) xbflag(3) = 3 ! snow
-   if ( nint(snow(i+1,j+1)) == 1 ) xbflag(4) = 3 ! snow
-
-   if ( nint(ice(i  ,j  )) == 1 ) xbflag(1) = 1 ! sea-ice
-   if ( nint(ice(i+1,j  )) == 1 ) xbflag(2) = 1 ! sea-ice
-   if ( nint(ice(i  ,j+1)) == 1 ) xbflag(3) = 1 ! sea-ice
-   if ( nint(ice(i+1,j+1)) == 1 ) xbflag(4) = 1 ! sea-ice 
+!   if ( nint(landsea(i  ,j  )) == 0 ) xbflag(1) = 0 ! sea
+!   if ( nint(landsea(i+1,j  )) == 0 ) xbflag(2) = 0 ! sea
+!   if ( nint(landsea(i  ,j+1)) == 0 ) xbflag(3) = 0 ! sea
+!   if ( nint(landsea(i+1,j+1)) == 0 ) xbflag(4) = 0 ! sea
+!
+!   if ( nint(landsea(i  ,j  )) == 1 ) xbflag(1) = 2 ! land/snow/sea-ice
+!   if ( nint(landsea(i+1,j  )) == 1 ) xbflag(2) = 2 ! land/snow/sea-ice
+!   if ( nint(landsea(i  ,j+1)) == 1 ) xbflag(3) = 2 ! land/snow/sea-ice
+!   if ( nint(landsea(i+1,j+1)) == 1 ) xbflag(4) = 2 ! land/snow/sea-ice
+!
+!   if ( nint(snow(i  ,j  )) == 1 ) xbflag(1) = 3 ! snow
+!   if ( nint(snow(i+1,j  )) == 1 ) xbflag(2) = 3 ! snow
+!   if ( nint(snow(i  ,j+1)) == 1 ) xbflag(3) = 3 ! snow
+!   if ( nint(snow(i+1,j+1)) == 1 ) xbflag(4) = 3 ! snow
+!
+!   if ( nint(ice(i  ,j  )) == 1 ) xbflag(1) = 1 ! sea-ice
+!   if ( nint(ice(i+1,j  )) == 1 ) xbflag(2) = 1 ! sea-ice
+!   if ( nint(ice(i  ,j+1)) == 1 ) xbflag(3) = 1 ! sea-ice
+!   if ( nint(ice(i+1,j+1)) == 1 ) xbflag(4) = 1 ! sea-ice 
 
    ! 2.0 determine surface type percentage at obs location
    !------------------------------------------------------
@@ -80,22 +83,39 @@ subroutine da_detsurtyp (snow,ice,landsea, vegtyp, soiltyp, is, ie, js, je, &
    !
    !--------------------------------------------------------
 
-   seap = 0.0
-   icep = 0.0
-   snop = 0.0
-   lndp = 0.0
+!   seap = 0.0
+!   icep = 0.0
+!   snop = 0.0
+!   lndp = 0.0
    w(1) = dym*dxm   ! weight for point (i,j)
    w(2) = dym*dx    ! weight for point (i+1,j)
    w(3) = dy *dxm   ! weight for point (i,j+1)
    w(4) = dy *dx    ! weight for point (i+1,j+1)
 
-   do n = 1, 4
-      if (xbflag(n) == 0) seap = seap+w(n)
-      if (xbflag(n) == 1) icep = icep+w(n)
-      if (xbflag(n) == 2) lndp = lndp+w(n)
-      if (xbflag(n) == 3) snop = snop+w(n)
-   end do
-
+!   do n = 1, 4
+!      if (xbflag(n) == 0) seap = seap+w(n)
+!      if (xbflag(n) == 1) icep = icep+w(n)
+!      if (xbflag(n) == 2) lndp = lndp+w(n)
+!      if (xbflag(n) == 3) snop = snop+w(n)
+!   end do
+   
+   lndp = 1.0/SUM(w) * ( w(1)*landsea(i,j)         + w(2)*landsea(i+1,j)          + &
+                         w(3)*landsea(i,j+1)       + w(4)*landsea(i+1,j+1) )
+   
+   icep = 1.0/SUM(w) * ( w(1)*ice(i,j)              + w(2)*ice(i+1,j)              + &
+                         w(3)*ice(i,j+1)            + w(4)*ice(i+1,j+1) )
+   
+   snop = 1.0/SUM(w) * ( w(1)*MIN(snow(i,j),   1.0) + w(2)*MIN(snow(i+1,j),   1.0) + &
+                         w(3)*MIN(snow(i,j+1), 1.0) + w(4)*MIN(snow(i+1,j+1), 1.0) )
+   
+   if (icep > 0.0) then
+      snop = MIN(snop, 1.0 - icep)
+      seap = 1.0 - icep - snop
+   else
+      seap = 1.0 - lndp
+   end if   
+   lndp = MAX(1.0-seap-icep-snop, 0.0)
+   
    ! fo2d   = dym*(dxm*fm2d(i,j  ) + dx*fm2d(i+1,j  )) &
    !         + dy *(dxm*fm2d(i,j+1) + dx*fm2d(i+1,j+1))
 

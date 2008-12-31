@@ -17,7 +17,11 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    real    :: sdmd, s1md
    real    :: rho_cgrid
 
+#ifdef A2C
+   real, allocatable, dimension(:,:,:) :: g_press
+#else
    real, allocatable, dimension(:,:,:) :: utmp, vtmp, g_press
+#endif
 
    integer ndynopt
 
@@ -113,8 +117,42 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
    ! [5.0] convert from a-grid to c-grid
    !---------------------------------------------------------------------------
 
-#ifdef DM_PARALLEL
+#ifdef A2C
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe + 1
+     ide = ide + 1
+  end if
 
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe + 1
+     jde = jde + 1
+  end if
+
+#ifdef DM_PARALLEL
+#include "HALO_PSICHI_UV_ADJ.inc"
+#endif
+
+!rizvi's update
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
+     ipe = ipe - 1
+     ide = ide - 1
+  end if
+
+  if ((fg_format==fg_format_wrf_arw_regional  .or. &
+       fg_format==fg_format_wrf_arw_global  ) .and. jde == jpe ) then
+     jpe = jpe - 1
+     jde = jde - 1
+  end if
+!rizvi's update
+
+   grid%g_u_2 = grid%xa%u
+   grid%g_v_2 = grid%xa%v
+
+#else
+#ifdef DM_PARALLEL
 #include "HALO_PSICHI_UV_ADJ.inc"
 
    allocate ( utmp(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
@@ -200,6 +238,7 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam)
 
 #endif
 
+#endif
    !---------------------------------------------------------------------------
    ! [6.0] save OTHERinCREMENT 
    !---------------------------------------------------------------------------

@@ -204,7 +204,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT9_ALARM ), rc=rc ) ) THEN
      CALL med_auxinput9_in ( grid , config_flags )
      WRITE ( message , FMT='(A,A,A,i3)' )  "Input data processed for " , &
-        TRIM(config_flags%auxinput9_inname) , " for domain ",grid%id
+        TRIM(config_flags%sgfdda_inname) , " for domain ",grid%id
      CALL wrf_debug ( 0 , message )
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT9_ALARM ), rc=rc )
    ENDIF
@@ -357,8 +357,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                          ,save_rainnc             &
                                          ,save_sfcevp             &
                                          ,save_sfcrunoff          &
-                                         ,save_udrunoff           &
-                                         ,save_mub
+                                         ,save_udrunoff
 
    TYPE(WRFU_Time)        :: strt_time, cur_time
 
@@ -399,7 +398,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
      END SUBROUTINE blend_terrain
 
-     SUBROUTINE  store_terrain ( ter_interpolated , ter_input , &
+     SUBROUTINE  copy_3d_field ( ter_interpolated , ter_input , &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
@@ -408,7 +407,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                             ips , ipe , jps , jpe , kps , kpe
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_interpolated
        REAL , DIMENSION(ims:ime,jms:jme) :: ter_input
-     END SUBROUTINE store_terrain
+     END SUBROUTINE copy_3d_field
 
      SUBROUTINE  input_terrain_rsmas ( grid ,                  &
                            ids , ide , jds , jde , kds , kde , &
@@ -439,6 +438,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      where ( parent%nest_pos .gt. 0. ) parent%nest_pos = parent%nest_pos + 500.  ! make a cliff
 #endif
 
+! fill in entire fine grid domain with interpolated coarse grid data
      CALL med_interp_domain( parent, nest )
 
 !  De-reference dimension information stored in the grid data structure.
@@ -459,23 +459,26 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                       ' from an input file. ***'
        CALL wrf_debug ( 0 , message )
 
-! store horizontally interpolated terrain in temp location
-       CALL  store_terrain ( nest%ht_int  , nest%ht , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%mub_fine , nest%mub , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%phb_fine , nest%phb , &
-                             ids , ide , jds , jde , kds , kde , &
-                             ims , ime , jms , jme , kms , kme , &
-                             ips , ipe , jps , jpe , kps , kpe )
+! store horizontally interpolated terrain-based fields in temp location
+       IF ( nest%save_topo_from_real == 1 ) THEN
+          CALL  copy_3d_field ( nest%ht_int  , nest%ht , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  copy_3d_field ( nest%mub_fine , nest%mub , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  copy_3d_field ( nest%phb_fine , nest%phb , &
+                                ids , ide , jds , jde , kds , kde , &
+                                ims , ime , jms , jme , kms , kme , &
+                                ips , ipe , jps , jpe , kps , kpe )
+       END IF
 
        IF ( nest_config_flags%input_from_file ) THEN
 ! read input from dataset
           CALL med_initialdata_input_ptr( nest , nest_config_flags )
+
        ELSE IF ( nest_config_flags%input_from_hires ) THEN
 ! read in high res topography
           CALL  input_terrain_rsmas ( nest,                               &
@@ -486,30 +489,31 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
        ! save elevation and mub for temp and qv adjustment
 
-       allocate (save_mub(ims:ime,jms:jme))
-
-       CALL  store_terrain ( nest%ht_fine , nest%ht , &
+       CALL  copy_3d_field ( nest%ht_fine , nest%ht , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
-       CALL  store_terrain ( nest%mub_save , nest%mub , &
+       CALL  copy_3d_field ( nest%mub_save , nest%mub , &
                              ids , ide , jds , jde , 1   , 1   , &
                              ims , ime , jms , jme , 1   , 1   , &
                              ips , ipe , jps , jpe , 1   , 1   )
 
-! blend parent and nest fields: terrain, mub, and phb.  THe mub and phb are used in start_domain.
-       CALL  blend_terrain ( nest%ht_int  , nest%ht , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  blend_terrain ( nest%mub_fine , nest%mub , &
-                             ids , ide , jds , jde , 1   , 1   , &
-                             ims , ime , jms , jme , 1   , 1   , &
-                             ips , ipe , jps , jpe , 1   , 1   )
-       CALL  blend_terrain ( nest%phb_fine , nest%phb , &
-                             ids , ide , jds , jde , kds , kde , &
-                             ims , ime , jms , jme , kms , kme , &
-                             ips , ipe , jps , jpe , kps , kpe )
+! blend parent and nest fields: terrain, mub, and phb.  The ht, mub and phb are used in start_domain.
+
+       IF ( nest%save_topo_from_real == 1 ) THEN
+          CALL  blend_terrain ( nest%ht_int  , nest%ht , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  blend_terrain ( nest%mub_fine , nest%mub , &
+                                ids , ide , jds , jde , 1   , 1   , &
+                                ims , ime , jms , jme , 1   , 1   , &
+                                ips , ipe , jps , jpe , 1   , 1   )
+          CALL  blend_terrain ( nest%phb_fine , nest%phb , &
+                                ids , ide , jds , jde , kds , kde , &
+                                ims , ime , jms , jme , kms , kme , &
+                                ips , ipe , jps , jpe , kps , kpe )
+       ENDIF
 
        !  adjust temp and qv
 
@@ -520,8 +524,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                             ims , ime , jms , jme , kms , kme , &
                             ips , ipe , jps , jpe , kps , kpe )
 
-       deallocate (save_mub)
- 
      ELSE
        WRITE(message,FMT='(A,I2,A,I2,A)') '*** Initializing nest domain #',nest%id,&
                                      ' by horizontally interpolating parent domain #' ,parent%id, &
@@ -1554,7 +1556,7 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
        CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
      CASE ( 9 )
        CALL open_aux_u( grid, config_flags, stream, AUXINPUT9_ALARM,       &
-                        config_flags%auxinput9_inname, grid%auxinput9_oid, &
+                        config_flags%sgfdda_inname, grid%auxinput9_oid, &
                         input_aux_model_input9, ierr )
        CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
      CASE ( 10 )

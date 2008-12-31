@@ -196,6 +196,8 @@
       REAL :: BCHR,CONVFAC,CWK,DT,PLYR,RRI
 !
       LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
+!
+      CHARACTER(LEN=255) :: message
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -512,7 +514,25 @@
 !
       IF(S_BDY)THEN
         DO I=MYIS,MYIE1
+          CWK=PD(I,2)
           PD(I,2)=0.25*(PD(I,1)+PD(I+1,1)+PD(I,3)+PD(I+1,3))
+!
+!***  NESTING TEST
+!
+          IF(I<=IDE-1.AND.ABS(CWK-PD(I,2))>=300.)THEN
+            WRITE(message,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE SOUTHERN BOUNDARY AT',I,2,'GRID #',GRIDID
+            CALL wrf_message(trim(message))
+            WRITE(message,*)'             ',CWK/100.
+            CALL wrf_message(trim(message))
+            WRITE(message,*)PD(I,3)/100.,'               ',PD(I+1,3)/100.
+            CALL wrf_message(trim(message))
+            WRITE(message,*)'             ',PD(I,2)/100.
+            CALL wrf_message(trim(message))
+            WRITE(message,*)PD(I,1)/100.,'             ',PD(I+1,1)/100.
+            CALL wrf_message(trim(message))
+            CALL wrf_message('   ')
+          ENDIF
+
         ENDDO
       ENDIF
 !
@@ -527,12 +547,17 @@
 !***  NESTING TEST
 !
           IF(I<=IDE-1.AND.ABS(CWK-PD(I,JJM-1))>=300.)THEN
-            WRITE(0,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE NORTHERN BOUNDARY AT',I,JJM-1,'GRID #',GRIDID
-            WRITE(0,*)'             ',CWK/100.
-            WRITE(0,*)PD(I,JJM)/100.,'               ',PD(I+1,JJM)/100.
-            WRITE(0,*)'             ',PD(I,JJM-1)/100.
-            WRITE(0,*)PD(I,JJM-2)/100.,'             ',PD(I+1,JJM-2)/100.
-            WRITE(0,*)
+            WRITE(message,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE NORTHERN BOUNDARY AT',I,JJM-1,'GRID #',GRIDID
+            CALL wrf_message(trim(message))
+            WRITE(message,*)'             ',CWK/100.
+            CALL wrf_message(trim(message))
+            WRITE(message,*)PD(I,JJM)/100.,'               ',PD(I+1,JJM)/100.
+            CALL wrf_message(trim(message))
+            WRITE(message,*)'             ',PD(I,JJM-1)/100.
+            CALL wrf_message(trim(message))
+            WRITE(message,*)PD(I,JJM-2)/100.,'             ',PD(I+1,JJM-2)/100.
+            CALL wrf_message(trim(message))
+            CALL wrf_message('   ')
           ENDIF
 
         ENDDO
@@ -552,12 +577,17 @@
 !***  NESTING TEST
 !
              IF(ABS(CWK-PD(1,JJ))>300.)THEN
-              WRITE(0,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE WESTERN BOUNDARY AT',J,1,'GRID #',GRIDID
-              WRITE(0,*)'             ',CWK/100.
-              WRITE(0,*)PD(1,JJ+1)/100.,'               ',PD(2,JJ+1)/100.
-              WRITE(0,*)'             ',PD(1,JJ)/100.
-              WRITE(0,*)PD(1,JJ-1)/100,'               ',PD(2,JJ-1)/100.
-              WRITE(0,*)
+              WRITE(message,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE WESTERN BOUNDARY AT',1,JJ,'GRID #',GRIDID
+              CALL wrf_message(trim(message))
+              WRITE(message,*)'             ',CWK/100.
+              CALL wrf_message(trim(message))
+              WRITE(message,*)PD(1,JJ+1)/100.,'               ',PD(2,JJ+1)/100.
+              CALL wrf_message(trim(message))
+              WRITE(message,*)'             ',PD(1,JJ)/100.
+              CALL wrf_message(trim(message))
+              WRITE(message,*)PD(1,JJ-1)/100.,'               ',PD(2,JJ-1)/100.
+              CALL wrf_message(trim(message))
+              CALL wrf_message('   ')
             ENDIF
 
           ENDIF
@@ -572,9 +602,27 @@
 !
           IF(E_BDY.AND.J>=MY_JS_GLB-JBPAD1                              &
      &            .AND.J<=MY_JE_GLB+JTPAD1)THEN
+            CWK=PD(IIM-1,J)
             JJ=J
             PD(IIM-1,JJ)=0.25*(PD(IIM-1,JJ-1)+PD(IIM,JJ-1)              &
      &                        +PD(IIM-1,JJ+1)+PD(IIM,JJ+1))
+!
+!***  NESTING TEST
+!
+             IF(ABS(CWK-PD(IIM-1,JJ))>300.)THEN
+              WRITE(message,*)'PSEUDO HYDROSTATIC IMBALANCE AT THE EASTERN BOUNDARY AT',IIM-1,JJ,'GRID #',GRIDID
+              CALL wrf_message(trim(message))
+              WRITE(message,*)'             ',CWK/100.
+              CALL wrf_message(trim(message))
+              WRITE(message,*)PD(IIM-1,JJ+1)/100.,'               ',PD(IIM,JJ+1)/100.
+              CALL wrf_message(trim(message))
+              WRITE(message,*)'             ',PD(IIM-1,JJ)/100.
+              CALL wrf_message(trim(message))
+              WRITE(message,*)PD(IIM-1,JJ-1)/100.,'               ',PD(IIM,JJ-1)/100.
+              CALL wrf_message(trim(message))
+              CALL wrf_message('   ')
+            ENDIF
+
           ENDIF
 !
         ENDDO

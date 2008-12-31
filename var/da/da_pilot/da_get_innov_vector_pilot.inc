@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD     
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -60,8 +62,13 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
    call da_convert_zk (iv%info(pilot))
 
    ! [1.4] Interpolate horizontally:
+#ifdef A2C
+   call da_interp_lin_3d (grid%xb%u, iv%info(pilot), model_u,'u')
+   call da_interp_lin_3d (grid%xb%v, iv%info(pilot), model_v,'v')
+#else
    call da_interp_lin_3d (grid%xb%u, iv%info(pilot), model_u)
    call da_interp_lin_3d (grid%xb%v, iv%info(pilot), model_v)
+#endif
 
    do n=iv%info(pilot)%n1,iv%info(pilot)%n2
       !------------------------------------------------------------------------
@@ -90,7 +97,7 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
    ! [5.0] Perform optional maximum error check:
    !------------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_pilot(iv, it, num_qcstat_conv)    
+    call da_check_max_iv_pilot(iv, it, num_qcstat_conv)    
 
    deallocate (model_u)
    deallocate (model_v)

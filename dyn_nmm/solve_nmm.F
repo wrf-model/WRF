@@ -294,9 +294,12 @@
       KTS=KPS
       KTE=MIN(KPE,KDF)
       if(ntsd==0)then
-        write(0,*)' its=',its,' ite=',ite
-        write(0,*)' jts=',jts,' jte=',jte
-        write(0,*)' kts=',kts,' kte=',kte
+        write(message,*)' its=',its,' ite=',ite
+        call wrf_message(trim(message))
+        write(message,*)' jts=',jts,' jte=',jte
+        call wrf_message(trim(message))
+        write(message,*)' kts=',kts,' kte=',kte
+        call wrf_message(trim(message))
       endif
 !-----------------------------------------------------------------------
 !***  SET TIMING VARIABLES TO ZERO AT START OF FORECAST.
@@ -533,6 +536,7 @@
      &           ,IMS,IME,JMS,JME,KMS,KME                               &
      &           ,ITS,ITE,JTS,JTE,KTS,KTE)
 
+
       pdte_tim=pdte_tim+timef()-btimx
 !
 !-----------------------------------------------------------------------
@@ -597,6 +601,9 @@
 !
       btimx=timef()
 !
+
+
+
       CALL VADZ(NTSD,GRID%DT,FIS,GRID%SIGMA,DFL,HBM2                    &
      &         ,DETA1,DETA2,PDTOP                                       &
      &         ,PINT,PDSL,PDSLO,PETDT                                   &
@@ -1109,12 +1116,13 @@
      &            ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT                 &
      &            ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR                 &
      &            ,Q2,U,V,THS,NMM_TSK,SST,PREC,SNO                     &
-     &            ,FIS,Z0,Z0BASE,USTAR,PBLH,LPBL,EL_MYJ                &
+     &            ,FIS,Z0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ          &   !PLee (3/07)
      &            ,MOIST,RMOL,MOL                                      &
-     &            ,EXCH_H,AKHS,AKMS,AKHS_OUT,AKMS_OUT                  &
+     &            ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT         &
      &            ,THZ0,QZ0,UZ0,VZ0,QSH,MAVAIL                         &
      &            ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF             &
      &            ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX           &
+     &            ,SNOTIME                                             &
      &            ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB          &
      &            ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK             &
      &            ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR               &
@@ -1129,12 +1137,14 @@
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
 #if (NMM_CORE==1)
-     &            ,UZ0H,VZ0H,DUDT,DVDT,SFENTH                                & 
+     &            ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH          & 
 #else
      &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
 #endif
      &            ,RTHBLTEN,RQVBLTEN                                   & 
      &            ,GRID%PCPFLG,DDATA                                   &
+     &            ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW,HLENS   & ! GWD
+     &            ,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX,CROT,SROT     & ! GWD
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
@@ -1217,7 +1227,8 @@
 !----------------------------------------------------------------------
 !
       IF(MOD(NTSD,GRID%NCNVC)==0.AND.                                  &
-     &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN
+     &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME .or.                     &
+     &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN                       ! Kwon's doing for SAS
 !
         btimx=timef()
 !-----------------
@@ -1283,6 +1294,9 @@
      &             ,SM,HBM2,LPBL,CNVBOT,CNVTOP                         &
      &             ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS                  &
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
+#ifdef HWRF
+     &                 ,DUCUDT, DVCUDT, GRID%MOMMIX, store_rand             &
+#endif                       
      &             ,AVCNVC,ACUTIM,IHE,IHW                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
@@ -1292,6 +1306,43 @@
 !----------------------------------------------------------------------
 !
         cucnvc_tim=cucnvc_tim+timef()-btimx
+!
+
+
+
+#ifdef HWRF
+!-------------------------------------------------------------------------------------
+!       This is gopal's doing for SAS
+
+        IF(CONFIG_FLAGS%CU_PHYSICS.EQ.SASSCHEME)THEN
+!
+        btimx=timef()
+!-----------------
+#ifdef DM_PARALLEL
+# include "HALO_NMM_SAS_A.inc"
+#endif
+!-----------------
+#ifdef DM_PARALLEL
+# include "HALO_NMM_SAS_B.inc"
+#endif
+!-----------------
+        exch_tim=exch_tim+timef()-btimx
+
+!
+!***  INTERPOLATE WINDS FROM H POINTS BACK TO V POINTS AFTER SAS 
+!
+        btimx=timef()
+
+        CALL UV_H_TO_V(NTSD,GRID%DT,GRID%NPHS,UZ0H,VZ0H,UZ0,VZ0         &
+     &                ,DUCUDT,DVCUDT,U,V,HBM2,IVE,IVW                   &
+     &                ,IDS,IDF,JDS,JDF,KDS,KDE                          &
+     &                ,IMS,IME,JMS,JME,KMS,KME                          &
+     &                ,ITS,ITE,JTS,JTE,KTS,KTE)
+        uv_htov_tim=uv_htov_tim+timef()-btimx
+
+        ENDIF ! for SAS only 
+#endif
+!--------------------------------------------------------------------------------
 !
       ENDIF convection
 !
@@ -1629,32 +1680,56 @@
      &       +exch_tim+adjppt_tim
 !
       if(mod(ntsd,n_print_time)==0)then
-        write(0,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3          &
+        write(message,*)' ntsd=',ntsd,' solve_tim=',solve_tim*1.e-3          &
      &           ,' sum_tim=',sum_tim*1.e-3
-        write(0,*)' pdte_tim=',pdte_tim*1.e-3,' pct=',pdte_tim/sum_tim*100.
-        write(0,*)' adve_tim=',adve_tim*1.e-3,' pct=',adve_tim/sum_tim*100.
-        write(0,*)' vtoa_tim=',vtoa_tim*1.e-3,' pct=',vtoa_tim/sum_tim*100.
-        write(0,*)' vadz_tim=',vadz_tim*1.e-3,' pct=',vadz_tim/sum_tim*100.
-        write(0,*)' hadz_tim=',hadz_tim*1.e-3,' pct=',hadz_tim/sum_tim*100.
-        write(0,*)' eps_tim=',eps_tim*1.e-3,' pct=',eps_tim/sum_tim*100.
-        write(0,*)' vad2_tim=',vad2_tim*1.e-3,' pct=',vad2_tim/sum_tim*100.
-        write(0,*)' had2_tim=',had2_tim*1.e-3,' pct=',had2_tim/sum_tim*100.
-        write(0,*)' radiation_tim=',radiation_tim*1.e-3,' pct=',radiation_tim/sum_tim*100.
-        write(0,*)' rdtemp_tim=',rdtemp_tim*1.e-3,' pct=',rdtemp_tim/sum_tim*100.
-        write(0,*)' turbl_tim=',turbl_tim*1.e-3,' pct=',turbl_tim/sum_tim*100.
-        write(0,*)' cltend_tim=',cltend_tim*1.e-3,' pct=',cltend_tim/sum_tim*100.
-        write(0,*)' cucnvc_tim=',cucnvc_tim*1.e-3,' pct=',cucnvc_tim/sum_tim*100.
-        write(0,*)' gsmdrive_tim=',gsmdrive_tim*1.e-3,' pct=',gsmdrive_tim/sum_tim*100.
-        write(0,*)' adjppt_tim=',adjppt_tim*1.e-3,' pct=',adjppt_tim/sum_tim*100.
-        write(0,*)' hdiff_tim=',hdiff_tim*1.e-3,' pct=',hdiff_tim/sum_tim*100.
-        write(0,*)' bocoh_tim=',bocoh_tim*1.e-3,' pct=',bocoh_tim/sum_tim*100.
-        write(0,*)' pfdht_tim=',pfdht_tim*1.e-3,' pct=',pfdht_tim/sum_tim*100.
-        write(0,*)' ddamp_tim=',ddamp_tim*1.e-3,' pct=',ddamp_tim/sum_tim*100.
-        write(0,*)' bocov_tim=',bocov_tim*1.e-3,' pct=',bocov_tim/sum_tim*100.
-        write(0,*)' uv_h_to_v_tim=',uv_htov_tim*1.e-3,' pct=',uv_htov_tim/sum_tim*100.
-        write(0,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' pdte_tim=',pdte_tim*1.e-3,' pct=',pdte_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' adve_tim=',adve_tim*1.e-3,' pct=',adve_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' vtoa_tim=',vtoa_tim*1.e-3,' pct=',vtoa_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' vadz_tim=',vadz_tim*1.e-3,' pct=',vadz_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' hadz_tim=',hadz_tim*1.e-3,' pct=',hadz_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' eps_tim=',eps_tim*1.e-3,' pct=',eps_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' vad2_tim=',vad2_tim*1.e-3,' pct=',vad2_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' had2_tim=',had2_tim*1.e-3,' pct=',had2_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' radiation_tim=',radiation_tim*1.e-3,' pct=',radiation_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' rdtemp_tim=',rdtemp_tim*1.e-3,' pct=',rdtemp_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' turbl_tim=',turbl_tim*1.e-3,' pct=',turbl_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' cltend_tim=',cltend_tim*1.e-3,' pct=',cltend_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' cucnvc_tim=',cucnvc_tim*1.e-3,' pct=',cucnvc_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' gsmdrive_tim=',gsmdrive_tim*1.e-3,' pct=',gsmdrive_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' adjppt_tim=',adjppt_tim*1.e-3,' pct=',adjppt_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' hdiff_tim=',hdiff_tim*1.e-3,' pct=',hdiff_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' bocoh_tim=',bocoh_tim*1.e-3,' pct=',bocoh_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' pfdht_tim=',pfdht_tim*1.e-3,' pct=',pfdht_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' ddamp_tim=',ddamp_tim*1.e-3,' pct=',ddamp_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' bocov_tim=',bocov_tim*1.e-3,' pct=',bocov_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' uv_h_to_v_tim=',uv_htov_tim*1.e-3,' pct=',uv_htov_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
+        call wrf_message(trim(message))
 !        call time_stats(exch_tim,'exchange',ntsd,mype,npes,mpi_comm_comp)
-!        write(0,*)' exch_tim_max=',exch_tim_max*1.e-3
+!        write(message,*)' exch_tim_max=',exch_tim_max*1.e-3
+!        call wrf_message(trim(message))
 !
         call field_stats(t,mype,mpi_comm_comp                          &
      &                  ,ids,ide,jds,jde,kds,kde                       &
@@ -1937,8 +2012,8 @@
 !           OPEN(UNIT=IUNIT,FILE=FILENAME,STATUS='NEW'                 &
 !               ,FORM='UNFORMATTED',IOSTAT=IER)
 !           IF(IER/=0)THEN
-!             WRITE(0,*)' Opening file error=',IER
-!             WRITE(6,*)' Opening file error=',IER
+!             WRITE(message,*)' Opening file error=',IER
+!             CALL wrf_message(trim(message))
 !           ENDIF
 !           EXIT OPEN_UNIT
 !         ENDIF
@@ -2091,8 +2166,10 @@
 !
       DO I=ITS,IEND
         IF(T(I,J,K)>330..OR.T(I,J,K)<180..OR.T(I,J,K)/=T(I,J,K))THEN
-          WRITE(0,100)NAME,NTSD
-          WRITE(0,200)I,J,K,T(I,J,K),MYPE,NTSD
+          WRITE(errmess,100)NAME,NTSD
+          CALL wrf_message(trim(errmess))
+          WRITE(errmess,200)I,J,K,T(I,J,K),MYPE,NTSD
+          CALL wrf_message(trim(errmess))
   200     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' T=',E12.5      &
      &,          ' MYPE=',I3,' NTSD=',I5)
           IRET=666
@@ -2104,8 +2181,10 @@
 !         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
         ELSEIF(Q(I,J,K)<-1.E-4.OR.Q(I,J,K)>30.E-3                      &
      &         .OR.Q(I,J,K)/=Q(I,J,K))THEN
-          WRITE(0,100)NAME,NTSD
-          WRITE(0,300)I,J,K,Q(I,J,K),MYPE,NTSD
+          WRITE(errmess,100)NAME,NTSD
+          CALL wrf_message(trim(errmess))
+          WRITE(errmess,300)I,J,K,Q(I,J,K),MYPE,NTSD
+          CALL wrf_message(trim(errmess))
   300     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' Q=',E12.5      &
      &,          ' MYPE=',I3,' NTSD=',I5)
           IRET=666
@@ -2116,8 +2195,10 @@
 !         CALL WRF_ERROR_FATAL(ERRMESS)
 !         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
         ELSEIF(PINT(I,J,K)<0..OR.PINT(I,J,K)/=PINT(I,J,K))THEN
-          WRITE(0,100)NAME,NTSD
-          WRITE(0,315)I,J,K,PINT(I,J,K),MYPE,NTSD
+          WRITE(errmess,100)NAME,NTSD
+          CALL wrf_message(trim(errmess))
+          WRITE(errmess,315)I,J,K,PINT(I,J,K),MYPE,NTSD
+          CALL wrf_message(trim(errmess))
   315     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' PINT=',E12.5      &
      &,          ' MYPE=',I3,' NTSD=',I5)
           IRET=666
@@ -2125,8 +2206,10 @@
 !         CALL WRF_ERROR_FATAL(ERRMESS)
 !         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
         ELSEIF(W(I,J,K)/=W(I,J,K))THEN
-          WRITE(0,100)NAME,NTSD
-          WRITE(0,325)I,J,K,W(I,J,K),MYPE,NTSD
+          WRITE(errmess,100)NAME,NTSD
+          CALL wrf_message(trim(errmess))
+          WRITE(errmess,325)I,J,K,W(I,J,K),MYPE,NTSD
+          CALL wrf_message(trim(errmess))
   325     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' W=',E12.5      &
      &,          ' MYPE=',I3,' NTSD=',I5)
           IRET=666
@@ -2145,8 +2228,10 @@
       DO I=ITS,IEND
         IF(ABS(U(I,J,K))>125..OR.ABS(V(I,J,K))>125.                    &
      &         .OR.U(I,J,K)/=U(I,J,K).OR.V(I,J,K)/=V(I,J,K))THEN
-          WRITE(0,100)NAME,NTSD
-          WRITE(0,400)I,J,K,U(I,J,K),V(I,J,K),MYPE,NTSD
+          WRITE(errmess,100)NAME,NTSD
+          CALL wrf_message(trim(errmess))
+          WRITE(errmess,400)I,J,K,U(I,J,K),V(I,J,K),MYPE,NTSD
+          CALL wrf_message(trim(errmess))
   400     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' U=',E12.5      &
      &,          ' V=',E12.5,' MYPE=',I3,' NTSD=',I5)
           IRET=666
@@ -2200,6 +2285,7 @@
       CHARACTER(5) :: TIMESTEP
       CHARACTER(6) :: FMT
       CHARACTER(25) :: TITLE
+      CHARACTER(LEN=256) :: message
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------
@@ -2298,11 +2384,16 @@
 !***  WRITE RESULTS
 !
       IF(MYPE==0)THEN
-        WRITE(0,100)TITLE
-        WRITE(0,105)TIME_MAX,IPE_MAX
-        WRITE(0,110)TIME_MIN,IPE_MIN
-        WRITE(0,115)TIME_MEDIAN,IPE_MEDIAN
-        WRITE(0,120)TIME_MEAN
+        WRITE(message,100)TITLE
+        CALL wrf_message(trim(message))
+        WRITE(message,105)TIME_MAX,IPE_MAX
+        CALL wrf_message(trim(message))
+        WRITE(message,110)TIME_MIN,IPE_MIN
+        CALL wrf_message(trim(message))
+        WRITE(message,115)TIME_MEDIAN,IPE_MEDIAN
+        CALL wrf_message(trim(message))
+        WRITE(message,120)TIME_MEAN
+        CALL wrf_message(trim(message))
   100   FORMAT(' Time for ',A)
   105   FORMAT(' Maximum=',G11.5,' for PE ',I2.2)
   110   FORMAT(' Minimum=',G11.5,' for PE ',I2.2)
@@ -2467,6 +2558,8 @@
       REAL(KIND=DOUBLE) :: F_MEAN,POINTS,RMS,ST_DEV,SUMFK,SUMF2K
       REAL,DIMENSION(KTS:KTE) :: FMAX,FMAX_0,FMIN,FMIN_0
       REAL(KIND=DOUBLE),DIMENSION(KTS:KTE) :: SUMF,SUMF_0,SUMF2,SUMF2_0
+ 
+      CHARACTER(LEN=256) :: message
 !----------------------------------------------------------------------
 !
       I_BY_J=(IDE-IDS)*(JDE-JDS)-(JDE-JDS-1)/2  ! This assumes that
@@ -2522,8 +2615,10 @@
      &                (POINTS*(POINTS-1)))
           RMS=SQRT(SUMF2_0(K)/POINTS)
           KFLIP=KTE-K+1
-          WRITE(0,101)KFLIP,FMAX_0(K),FMIN_0(K)
-          WRITE(0,102)F_MEAN,ST_DEV,RMS
+          WRITE(message,101)KFLIP,FMAX_0(K),FMIN_0(K)
+          CALL wrf_message(trim(message))
+          WRITE(message,102)F_MEAN,ST_DEV,RMS
+          CALL wrf_message(trim(message))
   101     FORMAT(' LAYER=',I2,' MAX=',E13.6,' MIN=',E13.6)
   102     FORMAT(9X,' MEAN=',E13.6,' STDEV=',E13.6,' RMS=',E13.6)
         ENDDO

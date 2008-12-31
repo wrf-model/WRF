@@ -90,7 +90,7 @@ CONTAINS
                        rainnc, rainncv,                            &
                        snownc, snowncv, sr,                        &
                        graupelnc, graupelncv,                      &
-!                       f_qg, qg, pgold                             &
+!                       f_qg, qg, pgold,                            &
                        f_qg, qg,                                   &
                        ihail, ice2                                 &
                                                                    )
@@ -138,10 +138,7 @@ CONTAINS
                                                        snowncv,   &
                                                        sr,        &
                                                        graupelnc, &
-                                                       graupelncv
-
-
-
+                                                       graupelncv 
 
   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
 
@@ -165,13 +162,13 @@ CONTAINS
   INTEGER ::  itaobraun, istatmin, new_ice_sat, id
 
   INTEGER :: i, j, k
-  INTEGER :: iskip, ih, icount, ibud, i12h 
+  INTEGER :: iskip, ih, icount, ibud, i24h 
   REAL    :: hour
   REAL    , PARAMETER :: cmin=1.e-20
   REAL    :: dth, dqv, dqrest, dqall, dqall1, rhotot, a1, a2 
-  REAL, DIMENSION( its:ite , kts:kte , jts:jte ) ::                   &
-                         th1, qv1, ql1, qr1, qi1, qs1, qg1
-
+!  REAL, DIMENSION( its:ite , kts:kte , jts:jte ) ::                   &
+!                         th1, qv1, ql1, qr1, qi1, qs1, qg1
+ 
   LOGICAL :: flag_qg
 
 !
@@ -186,11 +183,12 @@ CONTAINS
 !c  ice2 = 0    for 3 ice --- ice, snow and graupel/hail
 !c  ice2 = 1    for 2 ice --- ice and snow only
 !c  ice2 = 2    for 2 ice --- ice and graupel only, use ihail = 0 only
+!c  ice2 = 3    for 0 ice --- no ice, warm only
 
-   i12h=int(86400./dt_in)
-!  if (itimestep.eq.1.or.itimestep.eq.1441) then
-!  if (mod(itimestep,1440).eq.1) then
-  if (mod(itimestep,i12h).eq.1) then
+!  if (ice2 .eq. 2) ihail = 0
+
+  i24h=nint(86400./dt_in)
+  if (mod(itimestep,i24h).eq.1) then
      write(6,*) 'ihail=',ihail,'  ice2=',ice2
      if (ice2.eq.0) then
         write(6,*) 'Running 3-ice scheme in GSFCGCE with'
@@ -208,8 +206,10 @@ CONTAINS
      else if (ice2.eq.2) then
              write(6,*) 'Running 2-ice scheme in GSFCGCE with'
              write(6,*) '     ice and graupel'
+     else if (ice2.eq.3) then
+             write(6,*) 'Running warm rain only scheme in GSFCGCE without any ice'
      else
-             write(6,*) 'gsfcgce_2ice in namelist.input has to be 0, 1, or 2'
+             write(6,*) 'gsfcgce_2ice in namelist.input has to be 0, 1, 2, or 3'
              stop
      endif !ice2
   endif !itimestep
@@ -256,8 +256,7 @@ CONTAINS
 !c Negative values correction
 
    iskip = 1
-!   i12h=int(86400./dt_in)
-
+ 
    if (iskip.eq.0) then
       call negcor(qv,rho,dz8w,ims,ime,jms,jme,kms,kme, &
                            itimestep,1,             &
@@ -277,9 +276,8 @@ CONTAINS
       call negcor(qg,rho,dz8w,ims,ime,jms,jme,kms,kme, &
                            itimestep,6,             &
                            its,ite,jts,jte,kts,kte)
-      if (mod(itimestep,i12h).eq.1) then
-         print *,'negative correction used in gsfcgce mp '
-      endif
+!   else if (mod(itimestep,i24h).eq.1) then
+!      print *,'no neg correction in mp at timestep=',itimestep
    endif ! iskip
 
 !c microphysics in GCE
@@ -358,7 +356,8 @@ CONTAINS
 !   REAL    , PARAMETER ::     xnos = 3.0e6
    REAL    , PARAMETER ::     xnos = 1.6e7   ! Tao's value
    REAL    , PARAMETER ::                              &
-             constb = 0.8, constd = 0.25, o6 = 1./6.,           &
+!             constb = 0.8, constd = 0.25, o6 = 1./6.,           &
+             constb = 0.8, constd = 0.11, o6 = 1./6.,           &
              cdrag = 0.6
 !  Lin
 !  REAL    , PARAMETER ::     xnoh = 4.0e4
@@ -1193,7 +1192,7 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde, &
                        ims,ime, jms,jme, kms,kme, &
                        its,ite, jts,jte, kts,kte  &
-                                                             )
+                           )
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !                                                                      c
 !   Tao, W.-K., and J. Simpson, 1989: Modeling study of a tropical     c
@@ -1221,7 +1220,7 @@ CONTAINS
 !   Tao, W.-K., J. J. Shi,  S. Lang, C. Peters-Lidard, A. Hou, S.      c
 !   Braun, and J. Simpson, 2007: New, improved bulk-microphysical      c
 !   schemes for studying precipitation processes in WRF. Part I:       c
-!   Comparisons with other schemes. to appear on Mon. Wea. Rev.        C 
+!   Comparisons with other schemes. to appear on Mon. Wea. Rev.        C
 !                                                                      c
 !   Coded by Tao (1989-2003), modified by S. Lang (2006/07)            c
 !                                                                      c
@@ -1359,7 +1358,7 @@ CONTAINS
          dlt3,    dlt4,       &
            zr,      vr,       &
            zs,      vs,       &
-          dbz,   pssub,       &
+                 pssub,       &
         pgsub,     dda
 
 !JJS      COMMON/B5/
@@ -1391,17 +1390,20 @@ CONTAINS
 !JJS     common/bls/ y0(nx,ny),ts0new(nx,ny),qss0new(nx,ny)
 
 !JJS      COMMON/BLS/
-  real, dimension (its:ite,jts:jte) ::     &
+  real, dimension (ims:ime,jms:jme) ::     &
            y0,     ts0,   qss0
 
 !JJS      COMMON/BI/ IT(its:ite,jts:jte), ICS(its:ite,jts:jte,4)
   integer, dimension (its:ite,jts:jte) ::        it  
   integer, dimension (its:ite,jts:jte, 4) ::    ics 
 
+  integer :: i24h
+  integer :: iwarm
+  real :: r2is, r2ig
+  
+
 !JJS      COMMON/MICRO/
-  real, dimension (its:ite,kts:kte,jts:jte)  ::     &
-          physc,   physe,   physd,   &
-          physs,   physm,   physf
+!  real, dimension (ims:ime,kms:kme,jms:jme)  ::    dbz 
 
 !23456789012345678901234567890123456789012345678901234567890123456789012
 
@@ -1431,21 +1433,22 @@ CONTAINS
 !
       save
 
-!       write(6, *) 'in gsfcgce_open_ice2 at itimestep=',itimestep
+!    i24h=nint(86400./dt) 
+!    if (mod(itimestep,i24h).eq.1) then
 !       write(6, *) 'ims=', ims, '  ime=', ime
 !       write(6, *) 'jms=', jms, '  jme=', jme
 !       write(6, *) 'kms=', kms, '  kme=', kme
 !       write(6, *) 'its=', its, '  ite=', ite
 !       write(6, *) 'jts=', jts, '  jte=', jte
 !       write(6, *) 'kts=', kts, '  kte=', kte
-!       write(6, *) 'ihail=', ihail
+!       write(6, *) '    ihail=', ihail
 !       write(6, *) 'itaobraun=',itaobraun
-!       write(6, *) 'ICE2=', ICE2
+!       write(6, *) '    ice2=', ICE2
 !       write(6, *) 'istatmin=',istatmin
 !       write(6, *) 'new_ice_sat=', new_ice_sat
 !       write(6, *) 'id=', id
 !       write(6, *) 'dt=', dt
-!      endif
+!    endif
 
 !JJS  convert from mks to cgs, and move from WRF grid to GCE grid
       do k=kts,kte
@@ -1473,8 +1476,6 @@ CONTAINS
          enddo !i
          enddo !j
       enddo !k
-
-      if (ice2 .eq. 2) ihail = 0
 
       do k=kts,kte
          do j=jts,jte
@@ -1507,27 +1508,45 @@ CONTAINS
 !c        beta=-.46
        endif
 !C  TAO 2007 START
-!   ICE2=2 ! 2ICE with cloud ice and graupel (no snow) - r2ice=1, r2iceg=0.
+!   ICE2=0 ! default, 3ice with loud ice, snow and graupel
+!              r2is=1., r2ig=1.
 !   ICE2=1 ! 2ice with cloud ice and snow (no graupel) - r2iceg=1, r2ice=0.
+!              r2is=1., r2ig=0.
+!   ICE2=2 ! 2ice with cloud ice and graupel (no snow) - r2ice=1, r2iceg=0.
+!              r2is=0., r2ig=1.
 !c
-        r2ice=1.
-        r2iceg=1.
+!        r2ice=1.
+!        r2iceg=1.
+         r2ig=1.
+         r2is=1.
           if (ice2 .eq. 1) then
-              r2ice=0.
-                r2iceg=1.
+!              r2ice=0.
+!              r2iceg=1.
+              r2ig=0.
+              r2is=1.
           endif
-            if (ice2 .eq. 2) then
-                r2ice=1.
-                r2iceg=0.
-            endif
+          if (ice2 .eq. 2) then
+!              r2ice=1.
+!              r2iceg=0.
+              r2ig=1.
+              r2is=0.
+          endif
 !C  TAO 2007 END
+     
+!JJS  10/7/2008
+!   ICE2=3 ! no ice, warm rain only
+    iwarm = 0
+    if (ice2 .eq. 3 ) iwarm = 1
+
+
+
       cmin=1.e-19
       cmin1=1.e-20
       cmin2=1.e-12
-      ucor=3071.29/tnw**.75
-      ucos=687.97*roqs**.25/tns**.75
-      ucog=687.97*roqg**.25/tng**.75
-      uwet=4.464**.95
+      ucor=3071.29/tnw**0.75
+      ucos=687.97*roqs**0.25/tns**0.75
+      ucog=687.97*roqg**0.25/tng**0.75
+      uwet=4.464**0.95
 
       rijl2 = 1. / (ide-ids) / (jde-jds)
 
@@ -1672,6 +1691,110 @@ CONTAINS
          vs(i,j)=0.0
          vg(i,j)=0.0
 
+!JJS 10/7/2008     vvvvv
+    IF (IWARM .EQ. 1) THEN
+!JJS   for calculating processes related to warm rain only
+                qi(i,j)=0.0
+                qs(i,j)=0.0
+                qg(i,j)=0.0
+                dep(i,j)=0.
+                pint(i,j)=0.
+                psdep(i,j)=0.
+                pgdep(i,j)=0.
+                dd1(i,j)=0.
+                pgsub(i,j)=0.
+                psmlt(i,j)=0.
+                pgmlt(i,j)=0.
+                pimlt(i,j)=0.
+                psacw(i,j)=0.
+                piacr(i,j)=0.
+                psfw(i,j)=0.
+                pgfr(i,j)=0.
+                dgacw(i,j)=0.
+                dgacr(i,j)=0.
+                psacr(i,j)=0.
+                wgacr(i,j)=0.
+                pihom(i,j)=0.
+                pidw(i,j)=0.
+
+                if (qr(i,j) .gt. cmin1) then
+                   dd(i,j)=r00*qr(i,j)
+                   y1(i,j)=dd(i,j)**.25
+                   zr(i,j)=zrc/y1(i,j)
+                   vr(i,j)=max(vrcf*dd(i,j)**bwq, 0.)
+                endif
+
+!* 21 * PRAUT   AUTOCONVERSION OF QC TO QR                        **21**
+!* 22 * PRACW : ACCRETION OF QC BY QR                             **22**
+                pracw(i,j)=0.
+                praut(i,j)=0.0
+                pracw(i,j)=r22f*qc(i,j)/zr(i,j)**bw3
+                y1(i,j)=qc(i,j)-bnd3
+                if (y1(i,j).gt.0.0) then
+                    praut(i,j)=r00*y1(i,j)*y1(i,j)/(1.2e-4+rn21/y1(i,j))
+                 endif
+
+!C********   HANDLING THE NEGATIVE CLOUD WATER (QC)    ******************
+                 Y1(I,J)=QC(I,J)/D2T
+                 PRAUT(I,J)=MIN(Y1(I,J), PRAUT(I,J))
+                 PRACW(I,J)=MIN(Y1(I,J), PRACW(I,J))
+                 Y1(I,J)=(PRAUT(I,J)+PRACW(I,J))*D2T
+               
+               if (qc(i,j) .lt. y1(i,j) .and. y1(i,j) .ge. cmin2) then
+                   y2(i,j)=qc(i,j)/(y1(i,j)+cmin2)
+                   praut(i,j)=praut(i,j)*y2(i,j)
+                   pracw(i,j)=pracw(i,j)*y2(i,j)
+                   qc(i,j)=0.0
+               else
+                  qc(i,j)=qc(i,j)-y1(i,j)
+               endif
+               
+               PR(I,J)=(PRAUT(I,J)+PRACW(I,J))*D2T
+               QR(I,J)=QR(I,J)+PR(I,J)
+                        
+!*****   TAO ET AL (1989) SATURATION TECHNIQUE  ***********************
+           
+           cnd(i,j)=0.0
+           tair(i,j)=(pt(i,j)+tb0)*pi0
+              y1(i,j)=1./(tair(i,j)-c358)
+              qsw(i,j)=rp0*exp(c172-c409*y1(i,j))
+              dd(i,j)=cp409*y1(i,j)*y1(i,j)
+              dm(i,j)=qv(i,j)+qb0-qsw(i,j)
+              cnd(i,j)=dm(i,j)/(1.+avcp*dd(i,j)*qsw(i,j))
+!c    ******   condensation or evaporation of qc  ******
+              cnd(i,j)=max(-qc(i,j), cnd(i,j))
+                         pt(i,j)=pt(i,j)+avcp*cnd(i,j)
+             qv(i,j)=qv(i,j)-cnd(i,j)
+                         qc(i,j)=qc(i,j)+cnd(i,j)
+
+!C     ******   EVAPORATION   ******
+!* 23 * ERN : EVAPORATION OF QR (SUBSATURATION)                   **23**
+            ern(i,j)=0.0
+
+            if(qr(i,j).gt.0.0) then
+               tair(i,j)=(pt(i,j)+tb0)*pi0
+               rtair(i,j)=1./(tair(i,j)-c358)
+               qsw(i,j)=rp0*exp(c172-c409*rtair(i,j))
+               ssw(i,j)=(qv(i,j)+qb0)/qsw(i,j)-1.0
+               dm(i,j)=qv(i,j)+qb0-qsw(i,j)
+               rsub1(i,j)=cv409*qsw(i,j)*rtair(i,j)*rtair(i,j)
+               dd1(i,j)=max(-dm(i,j)/(1.+rsub1(i,j)), 0.0)
+               y1(i,j)=.78/zr(i,j)**2+r23af*scv(i,j)/zr(i,j)**bwh5
+               y2(i,j)=r23br/(tca(i,j)*tair(i,j)**2)+1./(dwv(i,j) &
+                       *qsw(i,j))
+!cccc
+               ern(i,j)=r23t*ssw(i,j)*y1(i,j)/y2(i,j)
+               ern(i,j)=min(dd1(i,j),qr(i,j),max(ern(i,j),0.))
+               pt(i,j)=pt(i,j)-avcp*ern(i,j)
+               qv(i,j)=qv(i,j)+ern(i,j)
+               qr(i,j)=qr(i,j)-ern(i,j)
+            endif
+
+       ELSE       ! part of if (iwarm.eq.1) then
+!JJS 10/7/2008     ^^^^^
+
+!JJS   for calculating processes related to both ice and warm rain
+
 !     ***   COMPUTE ZR,ZS,ZG,VR,VS,VG      *****************************
 
             if (qr(i,j) .gt. cmin1) then
@@ -1733,18 +1856,18 @@ CONTAINS
 
             if (tair(i,j).lt.t0) then
                esi(i,j)=exp(.025*tairc(i,j))
-               psaut(i,j)=r2iceg*max(rn1*esi(i,j)*(qi(i,j)-bnd1) ,0.0)
-               psaci(i,j)=r2iceg*r3f*esi(i,j)*qi(i,j)*dd(i,j)
+               psaut(i,j)=r2is*max(rn1*esi(i,j)*(qi(i,j)-bnd1) ,0.0)
+               psaci(i,j)=r2is*r3f*esi(i,j)*qi(i,j)*dd(i,j)
 !JJS 3/30/06
 !    to cut water to snow accretion by half
 !               PSACW(I,J)=R4F*QC(I,J)*DD(I,J)
-               psacw(i,j)=r2iceg*0.5*r4f*qc(i,j)*dd(i,j)
+               psacw(i,j)=r2is*0.5*r4f*qc(i,j)*dd(i,j)
 !JJS 3/30/06
-               praci(i,j)=r2iceg*r5f*qi(i,j)/zr(i,j)**bw3
-               piacr(i,j)=r2iceg*r6f*qi(i,j)*(zr(i,j)**(-bw6))
+               praci(i,j)=r2is*r5f*qi(i,j)/zr(i,j)**bw3
+               piacr(i,j)=r2is*r6f*qi(i,j)*(zr(i,j)**(-bw6))
 !JJS               PIACR(I,J)=R6F*QI(I,J)/ZR(I,J)**BW6
             else
-               qsacw(i,j)=r2iceg*r4f*qc(i,j)*dd(i,j)
+               qsacw(i,j)=r2is*r4f*qc(i,j)*dd(i,j)
             endif
 
 !* 21 * PRAUT   AUTOCONVERSION OF QC TO QR                        **21**
@@ -1770,7 +1893,7 @@ CONTAINS
                y1(i,j)=rn12a(it(i,j))
                y2(i,j)=rn12b(it(i,j))
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-          psfw(i,j)=r2iceg* &
+          psfw(i,j)=r2is* &
                     max(d2t*y1(i,j)*(y2(i,j)+r12r*qc(i,j))*qi(i,j),0.0)
                rtair(i,j)=1./(tair(i,j)-c76)
                y2(i,j)=exp(c218-c580*rtair(i,j))
@@ -1792,7 +1915,7 @@ CONTAINS
                      a2=dep(i,j)/pidep(i,j)
                      pidep(i,j)=dep(i,j)
                 endif
-                  psfi(i,j)=r2iceg*a2*.5*qi(i,j)*y1(i,j)/(sqrt(ami100) &
+                  psfi(i,j)=r2is*a2*.5*qi(i,j)*y1(i,j)/(sqrt(ami100) &
                           -sqrt(ami40))
                   elseif(dm(i,j).lt.-cmin2) then
 !
@@ -1828,7 +1951,7 @@ CONTAINS
             y5(i,j)=.05*y3(i,j)*y4(i,j)
             dd(i,j)=y1(i,j)*(y3(i,j)/zs(i,j)**5+y4(i,j)/zs(i,j)**3 &
                     +y5(i,j)/zs(i,j))
-            pgacs(i,j)=r2ice*r2iceg*r9r*egs(i,j)*dd(i,j)
+            pgacs(i,j)=r2ig*r2is*r9r*egs(i,j)*dd(i,j)
 !JJS 1/3/06 from Steve and Chunglin
             if (ihail.eq.1) then
                dgacs(i,j)=pgacs(i,j)
@@ -1836,14 +1959,14 @@ CONTAINS
                dgacs(i,j)=0.
             endif
 !JJS 1/3/06 from Steve and Chunglin
-            wgacs(i,j)=r2ice*r2iceg*r9r*dd(i,j)
+            wgacs(i,j)=r2ig*r2is*r9r*dd(i,j)
 !            WGACS(I,J)=0.  ! 6/15/02 tao's
             y1(i,j)=1./zg(i,j)**bg3
 
             if(ihail .eq. 1) then
-               dgacw(i,j)=r2ice*max(r14r*qc(i,j)*y1(i,j), 0.0)
+               dgacw(i,j)=r2ig*max(r14r*qc(i,j)*y1(i,j), 0.0)
             else
-               dgacw(i,j)=r2ice*max(r14f*qc(i,j)*y1(i,j), 0.0)
+               dgacw(i,j)=r2ig*max(r14f*qc(i,j)*y1(i,j), 0.0)
             endif
 
             qgacw(i,j)=dgacw(i,j)
@@ -1854,7 +1977,7 @@ CONTAINS
             y5(i,j)=.05*y3(i,j)*y4(i,j)
             dd(i,j)=r16r*y1(i,j)*(y3(i,j)/zr(i,j)**5+y4(i,j)/zr(i,j)**3 &
                     +y5(i,j)/zr(i,j))
-            dgacr(i,j)=r2ice*max(dd(i,j), 0.0)
+            dgacr(i,j)=r2ig*max(dd(i,j), 0.0)
             qgacr(i,j)=dgacr(i,j)
 
             if (tair(i,j).ge.t0) then
@@ -1879,14 +2002,14 @@ CONTAINS
             if (tair(i,j).lt.t0) then
                y1(i,j)=qi(i,j)/zg(i,j)**bg3
                if (ihail.eq.1) then
-                  dgaci(i,j)=r2ice*r15r*y1(i,j)
-                  wgaci(i,j)=r2ice*r15ar*y1(i,j)
+                  dgaci(i,j)=r2ig*r15r*y1(i,j)
+                  wgaci(i,j)=r2ig*r15ar*y1(i,j)
 !                  WGACI(I,J)=0.  ! 6/15/02 tao's
                else
 
-!JJS                  DGACI(I,J)=r2ice*R15F*Y1(I,J)
+!JJS                  DGACI(I,J)=r2ig*R15F*Y1(I,J)
                    dgaci(i,j)=0.
-                  wgaci(i,j)=r2ice*r15af*y1(i,j)
+                  wgaci(i,j)=r2ig*r15af*y1(i,j)
 !                  WGACI(I,J)=0.  ! 6/15/02 tao's
                endif
 !
@@ -1904,7 +2027,7 @@ CONTAINS
                         -tca(i,j)*tairc(i,j)
                 dd(i,j)=y1(i,j)*(r17r*y4(i,j)*y3(i,j) &
                        +(wgaci(i,j)+wgacs(i,j))*(alf+rn17b*tairc(i,j)))
-                pgwet(i,j)=r2ice*max(dd(i,j), 0.0)
+                pgwet(i,j)=r2ig*max(dd(i,j), 0.0)
                endif
             endif
 !JJS  125    CONTINUE
@@ -2031,9 +2154,9 @@ CONTAINS
             y3(i,j)=5./y2(i,j)
             y4(i,j)=.08*y3(i,j)*y3(i,j)
             y5(i,j)=.05*y3(i,j)*y4(i,j)
-            pracs(i,j)=r2ice*r2iceg*r7r*y1(i,j)*(y3(i,j)/zs(i,j)**5 &
+            pracs(i,j)=r2ig*r2is*r7r*y1(i,j)*(y3(i,j)/zs(i,j)**5 &
                       +y4(i,j)/zs(i,j)**3+y5(i,j)/zs(i,j))
-            psacr(i,j)=r2iceg*r8r*y1(i,j)*(y3(i,j)/zr(i,j)**5 &
+            psacr(i,j)=r2is*r8r*y1(i,j)*(y3(i,j)/zr(i,j)**5 &
                       +y4(i,j)/zr(i,j)**3+y5(i,j)/zr(i,j))
             qsacr(i,j)=psacr(i,j)
 
@@ -2052,10 +2175,10 @@ CONTAINS
 
             if (tair(i,j) .lt. t0) then
 !               Y1(I,J)=EXP(.09*TAIRC(I,J))
-!               PGAUT(I,J)=r2iceg*max(RN2*Y1(I,J)*(QS(I,J)-BND2), 0.0)
+!               PGAUT(I,J)=r2is*max(RN2*Y1(I,J)*(QS(I,J)-BND2), 0.0)
 !         IF(IHAIL.EQ.1) PGAUT(I,J)=max(RN2*Y1(I,J)*(QS(I,J)-BND2),0.0)
                y2(i,j)=exp(rn18a*(t0-tair(i,j)))
-!JJS              PGFR(I,J)=r2ice*max(R18R*(Y2(I,J)-1.)/ZR(I,J)**7., 0.0)
+!JJS              PGFR(I,J)=r2ig*max(R18R*(Y2(I,J)-1.)/ZR(I,J)**7., 0.0)
 !              pgfr(i,j)=r2ice*max(r18r*(y2(i,j)-1.)* &
 !                                    (zr(i,j)**(-7.)), 0.0)
 !        modify to prevent underflow on some computers (JD)
@@ -2150,7 +2273,7 @@ CONTAINS
                y2(i,j)=.78/zs(i,j)**2+r101f*scv(i,j)/zs(i,j)**bsh5
                dd(i,j)=r11rt*y1(i,j)*y2(i,j)+r11at*tairc(i,j) &
                        *(qsacw(i,j)+qsacr(i,j))
-               psmlt(i,j)=r2iceg*max(0.0, min(dd(i,j), qs(i,j)))
+               psmlt(i,j)=r2is*max(0.0, min(dd(i,j), qs(i,j)))
 
                if(ihail.eq.1) then
                   y3(i,j)=.78/zg(i,j)**2+r19aq*scv(i,j)/zg(i,j)**bgh5
@@ -2160,7 +2283,7 @@ CONTAINS
 
                dd1(i,j)=r19rt*y1(i,j)*y3(i,j)+r19bt*tairc(i,j) &
                         *(qgacw(i,j)+qgacr(i,j))
-               pgmlt(i,j)=r2ice*max(0.0, min(dd1(i,j), qg(i,j)))
+               pgmlt(i,j)=r2ig*max(0.0, min(dd1(i,j), qg(i,j)))
                pt(i,j)=pt(i,j)-afcp*(psmlt(i,j)+pgmlt(i,j))
                qr(i,j)=qr(i,j)+psmlt(i,j)+pgmlt(i,j)
                qs(i,j)=qs(i,j)-psmlt(i,j)
@@ -2479,8 +2602,8 @@ CONTAINS
                y2(i,j)=.78/zs(i,j)**2+r101f*scv(i,j)/zs(i,j)**bsh5
                psdep(i,j)=r10t*ssi(i,j)*y2(i,j)/y1(i,j)
                pssub(i,j)=psdep(i,j)
-               psdep(i,j)=r2iceg*max(psdep(i,j), 0.)
-               pssub(i,j)=r2iceg*max(-qs(i,j), min(pssub(i,j), 0.))
+               psdep(i,j)=r2is*max(psdep(i,j), 0.)
+               pssub(i,j)=r2is*max(-qs(i,j), min(pssub(i,j), 0.))
 
                if(ihail.eq.1) then
                   y2(i,j)=.78/zg(i,j)**2+r20bq*scv(i,j)/zg(i,j)**bgh5
@@ -2488,21 +2611,21 @@ CONTAINS
                   y2(i,j)=.78/zg(i,j)**2+r20bs*scv(i,j)/zg(i,j)**bgh5
                endif
 
-               pgsub(i,j)=r2ice*r20t*ssi(i,j)*y2(i,j)/y1(i,j)
+               pgsub(i,j)=r2ig*r20t*ssi(i,j)*y2(i,j)/y1(i,j)
                dm(i,j)=qv(i,j)+qb0-qsi(i,j)
                rsub1(i,j)=cs580*qsi(i,j)*rtair(i,j)*rtair(i,j)
 
 !     ********   DEPOSITION OR SUBLIMATION OF QS  **********************
 
                y1(i,j)=dm(i,j)/(1.+rsub1(i,j))
-               psdep(i,j)=r2iceg*min(psdep(i,j),max(y1(i,j),0.))
+               psdep(i,j)=r2is*min(psdep(i,j),max(y1(i,j),0.))
                y2(i,j)=min(y1(i,j),0.)
-               pssub(i,j)=r2iceg*max(pssub(i,j),y2(i,j))
+               pssub(i,j)=r2is*max(pssub(i,j),y2(i,j))
 
 !     ********   SUBLIMATION OF QG   ***********************************
 
                dd(i,j)=max((-y2(i,j)-qs(i,j)), 0.)
-              pgsub(i,j)=r2ice*min(dd(i,j), qg(i,j), max(pgsub(i,j),0.))
+              pgsub(i,j)=r2ig*min(dd(i,j), qg(i,j), max(pgsub(i,j),0.))
 
                if(qc(i,j)+qi(i,j).gt.1.e-5) then
                   dlt1(i,j)=1.
@@ -2542,6 +2665,10 @@ CONTAINS
                qv(i,j)=qv(i,j)+ern(i,j)
                qr(i,j)=qr(i,j)-ern(i,j)
             endif
+
+!JJS 10/7/2008     vvvvv
+    ENDIF    ! part of if (iwarm.eq.1) then
+!JJS 10/7/2008     ^^^^^
 
 !            IF (QV(I,J)+QB0 .LE. 0.) QV(I,J)=-QB0
             if (qc(i,j) .le. cmin1) qc(i,j)=0.
@@ -2620,12 +2747,18 @@ CONTAINS
                +pgfr(i,j)+dgacw(i,j)+dgacr(i,j)+psacr(i,j) &
                +wgacr(i,j))+pihom(i,j)+pidw(i,j)
 
-           physc(i,k,j) = avcp * sccc / d2t
-           physe(i,k,j) = avcp * seee / d2t
-           physd(i,k,j) = ascp * sddd / d2t
-           physs(i,k,j) = ascp * ssss / d2t
-           physm(i,k,j) = afcp * smmm / d2t
-           physf(i,k,j) = afcp * sfff / d2t
+!           physc(i,k,j) = avcp * sccc / d2t
+!           physe(i,k,j) = avcp * seee / d2t
+!           physd(i,k,j) = ascp * sddd / d2t
+!           physs(i,k,j) = ascp * ssss / d2t
+!           physf(i,k,j) = afcp * sfff / d2t
+!           physm(i,k,j) = afcp * smmm / d2t
+!           physc(i,k,j) = physc(i,k,j) + avcp * sccc 
+!           physe(i,k,j) = physc(i,k,j) + avcp * seee 
+!           physd(i,k,j) = physd(i,k,j) + ascp * sddd 
+!           physs(i,k,j) = physs(i,k,j) + ascp * ssss 
+!           physf(i,k,j) = physf(i,k,j) + afcp * sfff 
+!           physm(i,k,j) = physm(i,k,j) + afcp * smmm 
 
 !JJS modified by JJS on 5/1/2007  ^^^^^
 

@@ -57,6 +57,8 @@ MODULE module_domain_type
       TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: nests                            
       TYPE(domain) , POINTER                              :: sibling ! overlapped domains at same lev
       TYPE(domain) , POINTER                              :: intermediate_grid
+      LOGICAL                                             :: is_intermediate
+      INTEGER :: nids, nide, njds, njde  ! for intermediate domains, carry around the nest dimensions 
       INTEGER                                             :: num_parents, num_nests, num_siblings
       INTEGER      , DIMENSION( max_parents )             :: child_of_parent
       INTEGER      , DIMENSION( max_nests )               :: active

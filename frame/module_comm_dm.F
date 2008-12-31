@@ -5,6 +5,13 @@ MODULE module_comm_dm
 
    PRIVATE module_comm_dm_dummy
 
+#ifdef DM_PARALLEL
+   INTEGER, PRIVATE :: rsl_sendw_p, rsl_sendbeg_p, rsl_recvw_p, rsl_recvbeg_p
+   INTEGER, PRIVATE :: rsl_sendw_m, rsl_sendbeg_m, rsl_recvw_m, rsl_recvbeg_m
+   LOGICAL, EXTERNAL :: rsl_comm_iter
+#endif
+
+
 CONTAINS
 
    ! Avoid complaints about empty CONTAINS from some compilers.  

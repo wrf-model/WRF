@@ -129,16 +129,16 @@ wrf_fddaobs_in.o \
 module_alloc_space.o \
 wrf_tsin.o :
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
-	$(RM) $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90
 
 solve_em.o :
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
-	$(RM) $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(SOLVE_EM_SPECIAL) $(FCSUFFIX) $*.f90
 
 module_sf_ruclsm.o : module_sf_ruclsm.F
@@ -146,9 +146,9 @@ module_cu_kf.o : module_cu_kf.F
 
 module_sf_ruclsm.o module_cu_kf.o :
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
-	$(RM) $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(OMP) $(FCSUFFIX) $*.f90
 
 # compile without OMP
@@ -218,7 +218,7 @@ nl_get_0_routines.o \
 nl_get_1_routines.o \
 module_configure.o :
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
-	$(RM) $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

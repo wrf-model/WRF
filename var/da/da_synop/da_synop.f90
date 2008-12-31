@@ -5,7 +5,9 @@ module da_synop
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
       check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
-      max_error_p,max_error_q, sfc_assi_options, fails_error_max, &
+      max_error_p,max_error_q, sfc_assi_options, no_buddies, fails_error_max, &
+      fails_buddy_check, check_buddy, check_buddy_print, check_buddy_unit, &
+      buddy_weight , max_buddy_uv, max_buddy_t, max_buddy_p, max_buddy_rh, &
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kts,kte,kms,kme,sfc_assi_options_1,sfc_assi_options_2 , &
       trace_use_dull, synop, max_ext_its,qcstat_conv_unit,ob_vars
@@ -21,7 +23,8 @@ module da_synop
    use da_physics, only : da_sfc_pre, da_transform_xtopsfc, &
       da_transform_xtopsfc_adj
    use da_statistics, only : da_stats_calculate
-   use da_tools, only : da_max_error_qc, da_residual, da_obs_sfc_correction, da_convert_zk
+   use da_tools, only : da_max_error_qc, da_residual, da_obs_sfc_correction, &
+                        da_buddy_qc, da_convert_zk
    use da_tracing, only : da_trace_entry, da_trace_exit
 
    ! The "stats_synop_type" is ONLY used locally in da_synop:
@@ -56,6 +59,7 @@ contains
 #include "da_get_innov_vector_synop.inc"
 #include "da_check_max_iv_synop.inc"
 #include "da_calculate_grady_synop.inc"
+#include "da_check_buddy_synop.inc"
 
 end module da_synop
 

@@ -83,6 +83,8 @@ module da_define_structures
       real                   :: inv             ! Innovation vector
       integer                :: qc              ! Observation QC
       real                   :: error           ! Observational error
+      real                   :: sens            ! Sensitivity vector
+      real                   :: imp             ! Impact vector
    end type field_type
 
    type model_loc_type
@@ -139,6 +141,7 @@ module da_define_structures
       real                   :: lon           ! Longitude in degree
       real                   :: elv           ! Elevation in m
       real                   :: pstar         ! Surface pressure
+      real                   :: dhr           ! obs time minus analysis time in hour
    end type info_type
 
    type infa_type
@@ -390,6 +393,12 @@ module da_define_structures
       real,    pointer     :: vtox(:,:)
    end type varbc_type
    
+   type cv_index_type
+      integer              :: ts
+      integer              :: nclouds
+      integer, pointer     :: cc(:)
+   end type cv_index_type
+
    type instid_type
       ! Instrument triplet, follow the convension of RTTOV
       integer              :: platform_id, satellite_id, sensor_id
@@ -406,6 +415,8 @@ module da_define_structures
       integer, pointer     :: tb_qc(:,:)
       real,    pointer     :: tb_error(:,:)
       real,    pointer     :: tb_xb(:,:) 
+      real,    pointer     :: tb_sens(:,:)
+      real,    pointer     :: tb_imp(:,:)
       real,    pointer     :: rad_xb(:,:)
       real,    pointer     :: rad_obs(:,:)
       real,    pointer     :: rad_ovc(:,:,:)
@@ -480,9 +491,10 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
 
-      type (varbc_info_type)      :: varbc_info
-      type (varbc_type),pointer   :: varbc(:)
-      type (infa_type) :: info
+      type (varbc_info_type)        :: varbc_info
+      type (varbc_type),pointer     :: varbc(:)
+      type (cv_index_type), pointer :: cv_index(:)
+      type (infa_type)              :: info
    end type instid_type
 
    type iv_type
@@ -797,6 +809,7 @@ module da_define_structures
       integer :: size_jb     ! Size of CV array for Jb term.
       integer :: size_je     ! Size of CV array for Je term.
       integer :: size_jp     ! Size of CV array for Jp term.
+      integer :: size_js     ! Size of CV array for Js term.
       integer :: size1c      ! Complex size of CV array of 1st variable error.
       integer :: size2c      ! Complex size of CV array of 2nd variable error.
       integer :: size3c      ! Complex size of CV array of 3rd variable error.

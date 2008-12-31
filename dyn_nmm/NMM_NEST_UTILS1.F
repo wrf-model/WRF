@@ -19,6 +19,7 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
  INTEGER                            :: IDS,IDE,JDS,JDE,KDS,KDE
  INTEGER                            :: IMS,IME,JMS,JME,KMS,KME
  INTEGER                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ CHARACTER(LEN=255)                 :: message
 
 !----------------------------------------------------------------------------
 !  PURPOSE: 
@@ -85,14 +86,22 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
     nest%dx     = parent%dx/nest%parent_grid_ratio
     nest%dy     = parent%dy/nest%parent_grid_ratio
 
-    write(0,*)" - i_parent_start = ",nest%i_parent_start
-    write(0,*)" - j_parent_start = ",nest%j_parent_start
-    write(0,*)" - parent%wbd0    = ",parent%wbd0
-    write(0,*)" - parent%sbd0    = ",parent%sbd0
-    write(0,*)" - nest%wbd0      = ",nest%wbd0
-    write(0,*)" - nest%sbd0      = ",nest%sbd0
-    write(0,*)" - nest%dx        = ",nest%dx
-    write(0,*)" - nest%dy        = ",nest%dy
+    write(message,*)" - i_parent_start = ",nest%i_parent_start
+    CALL wrf_message(trim(message))
+    write(message,*)" - j_parent_start = ",nest%j_parent_start
+    CALL wrf_message(trim(message))
+    write(message,*)" - parent%wbd0    = ",parent%wbd0
+    CALL wrf_message(trim(message))
+    write(message,*)" - parent%sbd0    = ",parent%sbd0
+    CALL wrf_message(trim(message))
+    write(message,*)" - nest%wbd0      = ",nest%wbd0
+    CALL wrf_message(trim(message))
+    write(message,*)" - nest%sbd0      = ",nest%sbd0
+    CALL wrf_message(trim(message))
+    write(message,*)" - nest%dx        = ",nest%dx
+    CALL wrf_message(trim(message))
+    write(message,*)" - nest%dy        = ",nest%dy
+    CALL wrf_message(trim(message))
 !
     CALL nl_set_dx (nest%id , nest%dx)   ! for output purpose
     CALL nl_set_dy (nest%id , nest%dy)   ! for output purpose
@@ -108,8 +117,10 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
     CALL nl_set_cen_lat ( nest%id , nest%cen_lat)  ! for output purpose
     CALL nl_set_cen_lon ( nest%id , nest%cen_lon)  ! for output purpose
 
-    write(0,*)" - nest%cen_lat   = ",nest%cen_lat
-    write(0,*)" - nest%cen_lon   = ",nest%cen_lon
+    write(message,*)" - nest%cen_lat   = ",nest%cen_lat
+    CALL wrf_message(trim(message))
+    write(message,*)" - nest%cen_lon   = ",nest%cen_lon
+    CALL wrf_message(trim(message))
 
 
 !   soil configuration
@@ -380,11 +391,6 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
       STPH0 = SIN(TPH0)
       CTPH0 = COS(TPH0)
 
-!      WRITE(0,*) 'WB,SB,DLM,DPH,DTR: ',WBD1,SBD1,DLM,DPH,DTR    
-!      WRITE(0,*) 'IMS,IME,JMS,JME,KMS,KME',IMS,IME,JMS,JME,KMS,KME 
-!      WRITE(0,*) 'IDS,IDE,JDS,JDE,KDS,KDE',IDS,IDE,JDS,JDE,KDS,KDE
-!      WRITE(0,*) 'ITS,ITE,JTS,JTE,KTS,KTE',ITS,ITE,JTS,JTE,KTS,KTE 
-
                                                 !    .H
       DO J = JTS,MIN(JTE,JDE-1)                 ! H./    This loop takes care of zig-zag 
 !                                               !   \.H  starting points along j  
@@ -575,7 +581,6 @@ END SUBROUTINE EARTH_LATLON
              NROW=NROW+1                    ! FIND THE NEAREST H ROW
              NCOL=NCOL+1                    ! FIND THE NEAREST H COLUMN
             ENDIF 
-!            WRITE(60,*)'NEAREST PARENT IS:','col=',COL,'row=',ROW,'ncol=',NCOL,'nrow=',NROW
       ELSE
 !***
 !***  NOW CONSIDER THE SITUATION WHERE THE POINT h IS AT
@@ -606,7 +611,6 @@ END SUBROUTINE EARTH_LATLON
              ELSE
               NCOL=NCOL+1                    ! FIND THE NEAREST H COLUMN
              ENDIF
-!             WRITE(60,*)'NEAREST PARENT IS:','col=',COL,'row=',ROW,'ncol=',NCOL,'nrow=',NROW
       ENDIF
 
       KROWS=((NROW-1)/2)*IMT
@@ -687,7 +691,6 @@ END SUBROUTINE EARTH_LATLON
         HBWGT2(I,J)=0.0
         HBWGT3(I,J)=0.0
         HBWGT4(I,J)=0.0
-!        WRITE(60,*)'TRIVIAL SOLUTION'
       ELSE                                      ! SAME LONGITUDE BUT DIFFERENT LATS
 !
          IF(TLATHC .GT. TLAT)THEN      ! NESTED POINT SOUTH OF PARENT
@@ -696,14 +699,12 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW-1
           TLATHX(I,J)=TLATHC-DPH
           TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'VANISHING SLOPE, -ve: TLATHC-DPH, TLONHC-DLM'
          ELSE                                   ! NESTED POINT NORTH OF PARENT
           KOUTB(I,J)=K+(P_IDE-1)-1
           IIH(I,J) = NCOL-1
           JJH(I,J) = NROW+1
           TLATHX(I,J)=TLATHC+DPH
           TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'VANISHING SLOPE, +ve: TLATHC+DPH, TLONHC-DLM' 
          ENDIF
 !***
 !***
@@ -779,7 +780,6 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW
           TLATHX(I,J)=TLATHC
           TLONHX(I,J)=TLONHC
-!          WRITE(60,*)'HERE WE GO1: TLATHC, TLONHC'
         ELSE
           IF(TLONHC.LE.WB+DLM)CALL wrf_error_fatal("2H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
           KOUTB(I,J)=K-1
@@ -787,7 +787,6 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW
           TLATHX(I,J)=TLATHC
           TLONHX(I,J)=TLONHC -2.*DLM
-!          WRITE(60,*)'HERE WE GO2: TLATHC, TLONHC -2.*DLM'
         ENDIF
 
 !
@@ -799,7 +798,6 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW+1
           TLATHX(I,J)=TLATHC+DPH
           TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO3:  TLATHC+DPH, TLONHC-DLM'
         ELSE
           IF(TLATHC.LE.SB+DPH)CALL wrf_error_fatal("4H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
           KOUTB(I,J)=K-(P_IDE-1)
@@ -807,7 +805,6 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW-1
           TLATHX(I,J)=TLATHC-DPH
           TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO4:  TLATHC-DPH, TLONHC-DLM' 
         ENDIF
 
 !
@@ -819,7 +816,6 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW-1
           TLATHX(I,J)=TLATHC-DPH
           TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO5:  TLATHC-DPH, TLONHC-DLM'
         ELSE
           IF(TLATHC.GE.-SB-DPH)CALL wrf_error_fatal("6H:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
           KOUTB(I,J)=K+(P_IDE-1)-1
@@ -827,7 +823,6 @@ END SUBROUTINE EARTH_LATLON
           JJH(I,J) = NROW+1
           TLATHX(I,J)=TLATHC+DPH
           TLONHX(I,J)=TLONHC-DLM
-!          WRITE(60,*)'HERE WE GO6: TLATHC+DPH,  TLONHC-DLM'
         ENDIF
       ENDIF
 
@@ -908,8 +903,9 @@ END SUBROUTINE EARTH_LATLON
       HBWGT3(I,J)=MAX(HBWGT3(I,J),0.0)   ! all weights must be GE zero (postive def)
       HBWGT4(I,J)=MAX(HBWGT4(I,J),0.0)   ! all weights must be GE zero (postive def)
 
-!      write(0,105)"H WEIGHTS:",I,J,HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
+!      write(message,105)"H WEIGHTS:",I,J,HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
 !                               HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J),IIH(i,j),JJH(i,j)
+!      CALL wrf_message(trim(message))
 ! 105  format(a,2i4,5f7.3,2i4)
 
    ENDDO
@@ -1046,7 +1042,6 @@ END SUBROUTINE EARTH_LATLON
              NROW=NROW+1                    ! FIND THE NEAREST V ROW
              NCOL=NCOL+1                    ! FIND THE NEAREST V COLUMN
             ENDIF
-!            WRITE(61,*)'NEAREST PARENT IS:','col=',COL,'row=',ROW,'ncol=',NCOL,'nrow=',NROW
       ELSE
 
 !***
@@ -1077,7 +1072,6 @@ END SUBROUTINE EARTH_LATLON
              ELSE
               NCOL=NCOL+1                    ! FIND THE NEAREST H COLUMN
              ENDIF
-!             WRITE(61,*)'NEAREST PARENT IS:','col=',COL,'row=',ROW,'ncol=',NCOL,'nrow=',NROW
 
       ENDIF
 
@@ -1158,7 +1152,6 @@ END SUBROUTINE EARTH_LATLON
          VBWGT2(I,J)=0.0
          VBWGT3(I,J)=0.0
          VBWGT4(I,J)=0.0
-!         WRITE(61,*)'TRIVIAL SOLUTION'
        ELSE                              ! SAME LONGITUDE BUT DIFFERENT LATS 
           
          IF(TLATVC .GT. TLAT)THEN      ! NESTED POINT SOUTH OF PARENT
@@ -1167,14 +1160,12 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J) = NROW-1
           TLATVX(I,J)=TLATVC-DPH
           TLONVX(I,J)=TLONVC-DLM
-!          WRITE(61,*)'VANISHING SLOPE, -ve: TLATVC-DPH, TLONVC-DLM'
          ELSE                                   ! NESTED POINT NORTH OF PARENT
           KOUTB(I,J)=K+(P_IDE-1)-1
           IIV(I,J) = NCOL-1
           JJV(I,J) = NROW+1
           TLATVX(I,J)=TLATVC+DPH
           TLONVX(I,J)=TLONVC-DLM
-!          WRITE(61,*)'VANISHING SLOPE, +ve: TLATVC+DPH, TLONVC-DLM'
          ENDIF
 
 !***
@@ -1250,7 +1241,6 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J)=NROW
           TLATVX(I,J)=TLATVC
           TLONVX(I,J)=TLONVC
-!          WRITE(61,*)'HERE WE GO1: TLATHC, TLONHC'
         ELSE
           IF(TLONVC.LE.WB+DLM)CALL wrf_error_fatal("2V:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
           KOUTB(I,J)=K-1
@@ -1258,7 +1248,6 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J) = NROW
           TLATVX(I,J)=TLATVC
           TLONVX(I,J)=TLONVC-2.*DLM
-!          WRITE(61,*)'HERE WE GO2: TLATHC, TLONHC -2.*DLM'
         ENDIF
  
       ELSEIF(DSLOPE.GT.DSLP0)THEN
@@ -1269,7 +1258,6 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J) = NROW+1
           TLATVX(I,J)=TLATVC+DPH
           TLONVX(I,J)=TLONVC-DLM
-!          WRITE(61,*)'HERE WE GO3:  TLATHC+DPH, TLONHC-DLM'
         ELSE
           IF(TLATVC.LE.SB+DPH)CALL wrf_error_fatal("4V:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
           KOUTB(I,J)=K-(P_IDE-1)
@@ -1277,7 +1265,6 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J) = NROW-1
           TLATVX(I,J)=TLATVC-DPH
           TLONVX(I,J)=TLONVC-DLM
-!          WRITE(61,*)'HERE WE GO4:  TLATHC-DPH, TLONHC-DLM'
         ENDIF
  
       ELSEIF(DSLOPE.LT.-DSLP0)THEN
@@ -1288,7 +1275,6 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J) = NROW-1
           TLATVX(I,J)=TLATVC-DPH
           TLONVX(I,J)=TLONVC-DLM
-!          WRITE(61,*)'HERE WE GO5:  TLATHC-DPH, TLONHC-DLM'
         ELSE
           IF(TLATVC.GE.-SB-DPH)CALL wrf_error_fatal("6V:NESTED DOMAIN TOO CLOSE TO THE BOUNDARY OF PARENT")
           KOUTB(I,J)=K+(P_IDE-1)-1
@@ -1296,7 +1282,6 @@ END SUBROUTINE EARTH_LATLON
           JJV(I,J) = NROW+1
           TLATVX(I,J)=TLATVC+DPH
           TLONVX(I,J)=TLONVC-DLM
-!          WRITE(61,*)'HERE WE GO6: TLATHC+DPH,  TLONHC-DLM'
         ENDIF
       ENDIF
 !
@@ -1376,9 +1361,6 @@ END SUBROUTINE EARTH_LATLON
       VBWGT3(I,J)=MAX(VBWGT3(I,J),0.0)   ! all weights must be GE zero (postive def)
       VBWGT4(I,J)=MAX(VBWGT4(I,J),0.0)   ! all weights must be GE zero (postive def)
 
-!      WRITE(61,*)I,J,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J), &
-!                    VBWGT1(I,J)+VBWGT2(I,J)+VBWGT3(I,J)+VBWGT4(I,J),IIV(i,j),JJV(i,j)
-
     ENDDO
   ENDDO
 
@@ -1405,6 +1387,7 @@ SUBROUTINE WEIGTS_CHECK(HBWGT1,HBWGT2,HBWGT3,HBWGT4,       &
   REAL , PARAMETER :: EPSI=1.0E-3
   INTEGER          :: I,J
   REAL             :: ADDSUM
+ CHARACTER(LEN=255):: message
 
 !-------------------------------------------------------------------------------------
 
@@ -1413,7 +1396,8 @@ SUBROUTINE WEIGTS_CHECK(HBWGT1,HBWGT2,HBWGT3,HBWGT4,       &
 ! CHECK FIRST
 
   IF((ITE-ITS) .LE. 5 .OR. (JTE-JTS) .LE. 5)THEN
-   WRITE(0,*)'ITE-ITS=',ITE-ITS,'JTE-JTS=',JTE-JTS
+   WRITE(message,*)'ITE-ITS=',ITE-ITS,'JTE-JTS=',JTE-JTS
+   CALL wrf_message(trim(message))
    CALL wrf_error_fatal ('NESTED DOMAIN:PLEASE OPTIMIZE THE NUMBER OF PROCESSES; TRY SQUARES OF NUMBERS') 
   ENDIF
 
@@ -1426,7 +1410,8 @@ SUBROUTINE WEIGTS_CHECK(HBWGT1,HBWGT2,HBWGT3,HBWGT4,       &
    DO I = ITS, MIN(ITE,IDE-1)
       ADDSUM=HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J)
       IF(ABS(1.0-ADDSUM) .GE. EPSI)THEN
-       WRITE(0,*)'I=',I,'J=',J,'WEIGHTS=',HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J),1-ADDSUM
+       WRITE(message,*)'I=',I,'J=',J,'WEIGHTS=',HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J),1-ADDSUM
+       CALL wrf_message(trim(message))
        CALL wrf_error_fatal ('NESTED DOMAIN:SOMETHING IS WRONG WITH WEIGHTS COMPUTATION AT MASS POINTS') 
       ENDIF
    ENDDO
@@ -1437,7 +1422,8 @@ SUBROUTINE WEIGTS_CHECK(HBWGT1,HBWGT2,HBWGT3,HBWGT4,       &
    DO I = ITS, MIN(ITE,IDE-1)
       ADDSUM=VBWGT1(I,J)+VBWGT2(I,J)+VBWGT3(I,J)+VBWGT4(I,J)
       IF(ABS(1.0-ADDSUM) .GE. EPSI)THEN 
-       WRITE(0,*)'I=',I,'J=',J,'WEIGHTS=',VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J),1-ADDSUM
+       WRITE(message,*)'I=',I,'J=',J,'WEIGHTS=',VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J),1-ADDSUM
+       CALL wrf_message(trim(message))
        CALL wrf_error_fatal ('NESTED DOMAIN:SOMETHING IS WRONG WITH WEIGHTS COMPUTATION AT VELOCITY POINTS')
       ENDIF
    ENDDO
@@ -1464,6 +1450,7 @@ SUBROUTINE BOUNDS_CHECK( IIH,JJH,IIV,JJV,          &
 ! local variables
 
  INTEGER :: I,J
+ CHARACTER(LEN=255)                 :: message
 
 !***  Gopal       - Initial version 
 !***
@@ -1485,8 +1472,10 @@ SUBROUTINE BOUNDS_CHECK( IIH,JJH,IIV,JJV,          &
    DO I = ITS, MIN(ITE,IDE-1)
       IF(IIH(I,J) .LT. (IPOS-SHW) .OR. JJH(I,J) .LT. (JPOS-SHW) .OR.   &
          IIV(I,J) .LT. (IPOS-SHW) .OR. JJV(I,J) .LT. (JPOS-SHW))THEN
-         WRITE(0,*)I,J,IIH(I,J),IPOS,JJH(I,J),JPOS,SHW
-         WRITE(0,*)I,J,IIV(I,J),IPOS,JJV(I,J),JPOS,SHW
+         WRITE(message,*)I,J,IIH(I,J),IPOS,JJH(I,J),JPOS,SHW
+         CALL wrf_message(trim(message))
+         WRITE(message,*)I,J,IIV(I,J),IPOS,JJV(I,J),JPOS,SHW
+         CALL wrf_message(trim(message))
          CALL wrf_error_fatal ('CHECK NESTED DOMAIN BOUNDS: TRY INCREASING STENCIL WIDTH') 
       ENDIF
    ENDDO
@@ -1563,7 +1552,6 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
         RTOPP    = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608)/APELP
         DZ       = RTOPP*(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))   ! (RTv/P_TOT)*D(P_HYDRO)
         Z3d_IN(I,J,K+1) = Z3d_IN(I,J,K) + DZ
-!       IF(I==2 .AND. J==2)WRITE(0,*)'INSIDE BASE_STATE',K,T(I,K,J)
       ENDDO
      ENDDO
     ENDDO
@@ -1739,6 +1727,7 @@ END SUBROUTINE BASE_STATE_PARENT
       INTEGER :: II,JJ,K,K1,K2,KOLD,NOLDM1
       REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                 &
              ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
+      CHARACTER(LEN=255) :: message
 !---------------------------------------------------------------------
 
 !     debug
@@ -1746,10 +1735,12 @@ END SUBROUTINE BASE_STATE_PARENT
       II=9999 !67 !35 !50   !4
       JJ=9999 !31 !73 !115  !192
       IF(I.eq.II.and.J.eq.JJ)THEN
-        WRITE(0,*)'DEBUG in SPLINE1:HSO= ',xnew(1:nold)
+        WRITE(message,*)'DEBUG in SPLINE1:HSO= ',xnew(1:nold)
+        CALL wrf_debug(1,trim(message))
         DO K=1,NOLD
-         WRITE(0,*)'DEBUG in SPLINE1:L,ZETAI,PINTI= ' &
+         WRITE(message,*)'DEBUG in SPLINE1:L,ZETAI,PINTI= ' &
                         ,K,YOLD(K),XOLD(K)
+         CALL wrf_debug(1,trim(message))
         ENDDO 
       ENDIF 
 
@@ -1827,7 +1818,8 @@ END SUBROUTINE BASE_STATE_PARENT
 !  debug
 
       if(i.eq.ii.and.j.eq.jj)then
-        write(0,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', k1,xnew(k1),ynew(k1)
+        write(message,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', k1,xnew(k1),ynew(k1)
+        CALL wrf_debug(1,trim(message))
       endif
 
 !
@@ -1895,8 +1887,13 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
  integer :: io_form_input
 
- write(0,*)"in NEST_TERRAIN config_flags%io_form_input = ", config_flags%io_form_input
- write(0,*)"in NEST_TERRAIN config_flags%auxinput1_inname = ", config_flags%auxinput1_inname
+ CHARACTER(LEN=512) :: message
+
+ write(message,*)"in NEST_TERRAIN config_flags%io_form_input = ", config_flags%io_form_input
+ CALL wrf_message(trim(message))
+ write(message,*)"in NEST_TERRAIN config_flags%auxinput1_inname = ", config_flags%auxinput1_inname
+ CALL wrf_message(trim(message))
+
  io_form_input = config_flags%io_form_input
  if (config_flags%auxinput1_inname(1:7) == "met_nmm") then
     input_type = 2
@@ -1944,7 +1941,8 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 !      This part of the code is Dusan's doing. Extended by gopal for multiple nest (Feb 19,2005)
 !
        call find_ijstart_level (nest,i_start,j_start,level)
-       write(0,*)" nest%id =", nest%id , " i_start,j_start,level =", i_start,j_start,level
+       write(message,*)" nest%id =", nest%id , " i_start,j_start,level =", i_start,j_start,level
+       CALL wrf_message(trim(message))
 
        write(nestpath,"(a4,i1,a1)") 'nest',level,'/'
 
@@ -2084,7 +2082,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
           end if
 
        else
-          CALL wrf_error_fatal('this routine NEST_TERRAIN should nou be called for top-level domain')
+          CALL wrf_error_fatal('this routine NEST_TERRAIN should not be called for top-level domain')
        end if
 
 ! select subdomain from big fine grid
@@ -2107,15 +2105,18 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
         END DO
         END DO
 
-        WRITE(0,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
-        WRITE(0,*)'WRFSI LAT      COMPUTED LAT'
-        WRITE(0,*)lah_nest(1,1),nest%hlat(1,1)
-        WRITE(0,*)'WRFSI LON      COMPUTED LON'
-        WRITE(0,*)loh_nest(1,1),nest%hlon(1,1)
+        WRITE(message,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
+       CALL wrf_message(trim(message))
+       CALL wrf_message('WRFSI LAT      COMPUTED LAT')
+        WRITE(message,*)lah_nest(1,1),nest%hlat(1,1)
+       CALL wrf_message(trim(message))
+       CALL wrf_message('WRFSI LON      COMPUTED LON')
+        WRITE(message,*)loh_nest(1,1),nest%hlon(1,1)
+       CALL wrf_message(trim(message))
 
         IF(ABS(lah_nest(1,1)-nest%hlat(1,1)) .GE. 0.5 .OR.  & 
            ABS(loh_nest(1,1)-nest%hlon(1,1)) .GE. 0.5)THEN 
-            WRITE(0,*)'CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO' 
+            CALL wrf_message('CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO') 
             CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
         ENDIF
 
@@ -2140,7 +2141,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
         do j=4,jm-3,2
             avc_nest(im-1,j)=0.25*(avc_nest(im-1,j-1)+avc_nest(im,j-1)+ &
-           &                       avc_nest(im-1,j+1)+avc_nest(im,j+1))
+           &                     avc_nest(im-1,j+1)+avc_nest(im,j+1))
         enddo
 
         DO J = 1,NNYP
@@ -2165,7 +2166,7 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
       ENDDO
 
       DEALLOCATE(DATA1)
-      WRITE(0,*)'end of NEST_TERRAIN'
+      CALL wrf_message('end of NEST_TERRAIN')
 
 END SUBROUTINE NEST_TERRAIN
 !===========================================================================================
@@ -2276,6 +2277,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: ERAD=6371200.
  REAL, PARAMETER:: DTR=0.01745329
 
+ CHARACTER(LEN=255) :: message
+
    !  Definitions of dummy arguments to solve
 #include <dummy_decl.inc>
 
@@ -2300,7 +2303,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
     NNYP=min(JTE,JDE-1)
     JAM=6+2*((JDE-1)-10)         ! this should be the fix instead of JAM=6+2*(NNYP-10)
 
-    WRITE(0,*)'TIME STEP ON DOMAIN',grid%id,'==',dt
+    WRITE(message,*)'TIME STEP ON DOMAIN',grid%id,'==',dt
+    CALL wrf_message(trim(message))
 
 !
     ALLOCATE(KHL2(JTS:NNYP),KVL2(JTS:NNYP),KHH2(JTS:NNYP),KVH2(JTS:NNYP))
@@ -2314,6 +2318,41 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !   INTERPOLATED FROM MOTHER (WRFSI) DOMAIN. THIS PART OF THE CODE HAS TO BE REVISITED
 !   LATER ON
 
+!   Since SM has been changed on parent domain to be 0 over sea ice it can not be used here
+!   to find where sea ice is. That's why alogirthm here is slightly different than the
+!   one used in module_initalize_real.F
+
+    DO J = JTS, MIN(JTE,JDE-1)
+     DO I = ITS, MIN(ITE,IDE-1)
+
+      IF (SM(I,J).GT.0.9) THEN                              ! OVER WATER SURFACE
+         EPSR(I,J)= 0.97
+         EMBCK(I,J)= 0.97
+         GFFC(I,J)= 0.
+         ALBEDO(I,J)=.06
+         ALBASE(I,J)=.06
+      ENDIF
+
+      IF (SICE(I,J).GT.0.9) THEN                            ! OVER SEA-ICE
+         SM(I,J)=0.
+         SI(I,J)=0.
+         GFFC(I,J)=0.
+         ALBEDO(I,J)=.60
+         ALBASE(I,J)=.60
+      ENDIF
+
+      IF (SM(I,J).LT.0.5.AND.SICE(I,J).LT.0.5) THEN         ! OVER LAND SURFACE
+           SI(I,J)=5.0*WEASD(I,J)/1000. ! SNOW WATER EQ (mm) OBTAINED FROM PARENT (SI) IS INTERPOLATED
+           EPSR(I,J)=1.0                ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           EMBCK(I,J)=1.0               ! EMISSIVITY DEFINED OVER LAND IN THE NESTED DOMAIN
+           GFFC(I,J)=0.0                ! just leave zero as irrelevant
+           SNO(I,J)=SI(I,J)*.20         ! LAND-SNOW COVER
+      ENDIF
+
+     ENDDO
+    ENDDO
+
+#if 0
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS, MIN(ITE,IDE-1)
       IF(SM(I,J).GT.0.9) THEN           ! OVER WATER SURFACE
@@ -2350,6 +2389,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !
      ENDDO
     ENDDO
+#endif
 
 !   This may just be a fix and may need some Registry related changes, later on
 
@@ -2559,7 +2599,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 ! --------------DERIVED VERTICAL GRID CONSTANTS--------------------------
 
-     WRITE(0,*)'NEW CHANGE',F4D,EF4T,F4Q
+     WRITE(message,*)'NEW CHANGE',F4D,EF4T,F4Q
+     CALL wrf_message(trim(message))
 
       DO L=KDS,KDE-1
         RDETA(L)=1./DETA(L)
@@ -2659,13 +2700,11 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !    IF (wrf_dm_on_monitor()) THEN   !!!! NECESSARY TO LIMIT THIS TO TASK ZERO?
       
      ALLOCATE(EMJ(JDS:JDE-1),EMTJ(JDS:JDE-1))
-     write(0,*) 'FIGURING OUT EMJ, EMTJ ', JDS, JDE-1
      DO J=JDS,JDE-1
        TPH=SB+float(J-1)*DPH
        DXP=ERAD*DLM*COS(TPH)
        EMJ(J)= grid%DT/( 4.*DXP)*DTAD
        EMTJ(J)=grid%DT/(16.*DXP)*DTAD
-!       write(0,*) 'J, EMTJ(J): ', J, EMTJ(J)
      ENDDO
 
           JA=0
@@ -2674,7 +2713,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
           KHLA(JA)=2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
  161      EMT(JA)=EMTJ(J)
-          DO 162 J=(JDE-1)-4,(JDE-2)-2
+          DO 162 J=(JDE-1)-4,(JDE-1)-2
           JA=JA+1
           KHLA(JA)=2
           KHHA(JA)=(IDE-1)-1-MOD(J+1,2)
@@ -2721,7 +2760,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !!
                                                                 !   phantom
         IF (ABS(IDE-1-ITE) .eq. 1 ) THEN                        !      | 
-         WRITE(0,*)'zero phantom winds'                         !  H  [x]    H    V
+         CALL wrf_message('zero phantom winds')                 !  H  [x]    H    V
          DO K=KDS,KDE-1                                         !  
           DO J=JDS,JDE-1,2                                      !  V  [H]    V    H
            IF (J .ge. JTS .and. J .le. JTE) THEN                !
@@ -2769,6 +2808,7 @@ END SUBROUTINE med_initialize_nest_nmm
 !======================================================================
 
       subroutine smdhld(ime,jme,h,s,lines,nsmud)
+      character(len=255) :: message
       dimension ihw(jme),ihe(jme)
       dimension h(ime,jme),s(ime,jme) &
      &         ,hbms(ime,jme),hne(ime,jme),hse(ime,jme)
@@ -2793,7 +2833,6 @@ END SUBROUTINE med_initialize_nest_nmm
           ihl=ibas+mod(j,2)+m2l*mod(j+1,2)
           ihh=ime-ibas-m2l*mod(j+1,2)
 
-!       write(6,*) 'no smooth limits for J: ', J, 'are  ', ihl,ihh
 !
           do i=ihl,ihh
       hbms(i,j)=0.
@@ -2802,8 +2841,10 @@ END SUBROUTINE med_initialize_nest_nmm
 !-----------------------------------------------------------------------
                   do ks=1,nsmud
 
-                write(6,*) 'H(1,1): ', h(1,1)
-                write(6,*) 'H(3,1): ', h(1,1)
+                write(message,*) 'H(1,1): ', h(1,1)
+                CALL wrf_message(trim(message))
+                write(message,*) 'H(3,1): ', h(1,1)
+                CALL wrf_message(trim(message))
 !-----------------------------------------------------------------------
               do j=1,jme-1
           do i=1,ime-1
@@ -2888,25 +2929,6 @@ END SUBROUTINE med_initialize_nest_nmm
 
                       enddo   ! end ks loop
 
-!!      (light touch) with 5-point filter over untouched interior?
-
-!       do ks=1,5
-!       do J=lines-1,jme-(lines-1)
-!       do I=lines-1,ime-(lines-1)
-!       if (s(I,J) .eq. 0 .and.
-!     &      h(I,J) .gt. h(i+ihw(J),J+1) .and.
-!     &      h(I,J) .gt. h(I+ihe(J),J+1) .and.
-!     &      h(I,J) .gt. h(i+ihw(J),J-1) .and.
-!     &      h(I,J) .gt. h(I+ihe(J),J-1)) then
-!       write(6,*) 'smoothing topo at I,J...', I,J,H(I,J)
-!       h(I,J)=h(I,J)+0.125*( h(i+ihw(J),J+1) + h(I+ihe(J),J+1) +
-!     &                      h(i+ihw(J),J-1) + h(I+ihe(J),J-1) -
-!     &                       4*h(I,J) )
-!       write(6,*) 'post smoothing val', ks,H(I,J)
-!       endif
-!       enddo
-!       enddo
-!       enddo
 
 !-----------------------------------------------------------------------
       return
@@ -2982,8 +3004,6 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
     ALAT  = parent_SLAT - 0.5*(NJDE-2)*parent_DPHD/nest%parent_grid_ratio
     ALON  = parent_SLON - 1.0*(NIDE-2)*parent_DLMD/nest%parent_grid_ratio
 
-!    WRITE(0,*)'ALAT AND ALON=',ALAT,ALON
-
     CALL EARTH_LATLON ( parent%HLAT,parent%HLON,parent%VLAT,parent%VLON, & !output
                         parent_DLMD,parent_DPHD,parent_WBD,parent_SBD,                   & !inputs
                         parent_CLAT,parent_CLON,                                         &
@@ -3006,7 +3026,6 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
         IF(DIFF1 .LE. ERR .AND. DIFF2 .LE. ERR)THEN
          ILOC=I
          JLOC=J
-!         WRITE(0,*)'ITERATED',ERR,ITER,I,J,parent%HLAT(I,J),ALAT,parent%HLON(I,J),ALON
         ENDIF
       ENDDO
      ENDDO
@@ -3021,16 +3040,22 @@ SUBROUTINE initial_nest_pivot ( parent , nest, iloc, jloc )
      ENDIF
 
      IF(ILOC .NE. -99 .AND. JLOC .NE. -99)THEN
-       WRITE(0,*)'NOTE: I_PARENT_START AND J_PARENT_START FOUND FOR THE NESTED DOMAIN CONFIGURATION AT ITER=',ITER
-       WRITE(0,*)'istart=',ILOC
-       WRITE(0,*)'jstart=',JLOC
+       WRITE(message,*)'NOTE: I_PARENT_START AND J_PARENT_START FOUND FOR THE NESTED DOMAIN CONFIGURATION AT ITER=',ITER
+       CALL wrf_message(trim(message))
+       WRITE(message,*)'istart=',ILOC
+       CALL wrf_message(trim(message))
+       WRITE(message,*)'jstart=',JLOC
+       CALL wrf_message(trim(message))
      ELSE
        ILOC=IDE/3
        JLOC=JDE/3
 !
-       WRITE(0,*)'WARNING: COULD NOT LOCATE I_PARENT_START AND J_PARENT_START FROM INPUT STORM INFO'
-       WRITE(0,*)'ISTART=',IDE/3
-       WRITE(0,*)'JSTART=',JDE/3
+       WRITE(message,*)'WARNING: COULD NOT LOCATE I_PARENT_START AND J_PARENT_START FROM INPUT STORM INFO'
+       CALL wrf_message(trim(message))
+       WRITE(message,*)'ISTART=',IDE/3
+       CALL wrf_message(trim(message))
+       WRITE(message,*)'JSTART=',JDE/3
+       CALL wrf_message(trim(message))
      ENDIF
 
      RETURN

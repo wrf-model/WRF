@@ -178,7 +178,9 @@ subroutine da_read_obs_ascii (iv, filename)
       ! read model location
       ! =========================
 
-      read (iunit, fmt = fmt_loc) platform%loc%slp, platform%loc%pw
+      read (iunit, fmt = fmt_loc)  &
+         platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
+         platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
       ! levels < 1 and .not.GPSPW and .not.GPSZD, go back to reports
 
@@ -193,26 +195,27 @@ subroutine da_read_obs_ascii (iv, filename)
 
       do i = 1, platform%info%levels
          platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
-            field_type(missing_r, missing, missing_r), & ! u
-            field_type(missing_r, missing, missing_r), & ! v
-            field_type(missing_r, missing, missing_r), & ! p
-            field_type(missing_r, missing, missing_r), & ! t
-            field_type(missing_r, missing, missing_r), & ! q
-            field_type(missing_r, missing, missing_r), & ! rh
-            field_type(missing_r, missing, missing_r), & ! td
-            field_type(missing_r, missing, missing_r))  ! speed 
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! v
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! p
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! t
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! q
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! rh
+            field_type(missing_r, missing, missing_r, missing, missing_r), & ! td
+            field_type(missing_r, missing, missing_r, missing, missing_r))  ! speed
 
          read (unit = iunit, fmt = trim (fmt_each)) &
-            platform%each (i)%p,            &
-            platform%each (i)%speed,        &
+            platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+            platform%each(i)%speed%inv, platform%each(i)%speed%qc, &
+            platform%each(i)%speed%error, &
             ! Here the 'direction' is stored in platform%each (i)%v:
-            platform%each (i)%v,            &
-            platform%each (i)%height,       &
-            platform%each (i)%height_qc,    &
-            height_error,                   &
-            platform%each (i)%t,            &
-            platform%each (i)%td,           &
-            platform%each (i)%rh
+            platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+            platform%each(i)%height,       &
+            platform%each(i)%height_qc,    &
+            height_error,                  &
+            platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+            platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+            platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
 
          if (print_detail_obs) then
             write(unit=stdout, fmt = '(a, i6)') 'i=', i

@@ -587,6 +587,7 @@ FORMAT_FREE     =       -ffree-form -ffree-line-length-huge
 FCSUFFIX        =
 BYTESWAPIO      =       -fendian=big
 FCBASEOPTS      =       -Wno=101,139,155,158 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+LIB_LOCAL       =    -L/usr/lib -lSystemStubs
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp

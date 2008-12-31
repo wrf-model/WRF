@@ -216,6 +216,7 @@ state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd *
 #
 state real  pblh        ij    dyn_nmm   1    -     rh       "PBLH"     "PBL Height"                           "m"
 state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model layer of PBL top"               ""
+state  real   mixht     ij    dyn_nmm   1    -     h        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irh      "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rh    "Z0"       "Roughness height"                     "m"
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
@@ -224,6 +225,8 @@ state  real   mavail    ij    dyn_nmm   1    -     irh
 state  real   qsh       ij    dyn_nmm   1    -     irh      "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
+state  real   taux      ij    dyn_nmm   1    -     irh      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
+state  real   tauy      ij    dyn_nmm   1    -     irh      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh       "ACPREC"   "Accumulated total precipitation"      "m"
@@ -302,6 +305,27 @@ state  real   shdmax    ij    dyn_nmm   1    -     -
 state  real   sh2o      ilj   dyn_nmm   1    Z     irh      "SH2O"      "Unfrozen soil moisture volume fraction"  ""
 state  real   smc       ilj   dyn_nmm   1    Z     irh      "SMC"       "Soil moisture volume fraction"    ""
 state  real   stc       ilj   dyn_nmm   1    Z     irh      "STC"       "Soil temperature"                 "K"
+#
+# module_GWD.F
+#
+state  real   hstdv     ij    dyn_nmm   1    -     i01rh      "HSTDV"     "Standard deviation of height"     "m"
+state  real   hcnvx     ij    dyn_nmm   1    -     i01rh      "HCNVX"     "Normalized 4th moment of orographic convexity"     ""
+state  real   hasyw     ij    dyn_nmm   1    -     i01rh      "HASYW"     "Orographic asymmetry in W-E plane"  ""
+state  real   hasys     ij    dyn_nmm   1    -     i01rh      "HASYS"     "Orographic asymmetry in S-N plane"  ""
+state  real   hasysw    ij    dyn_nmm   1    -     i01rh      "HASYSW"    "Orographic asymmetry in SW-NE plane"  ""
+state  real   hasynw    ij    dyn_nmm   1    -     i01rh      "HASYNW"    "Orographic asymmetry in NW-SE plane"  ""
+state  real   hlenw     ij    dyn_nmm   1    -     i01rh      "HLENW"     "Orographic length scale in W-E plane"  ""
+state  real   hlens     ij    dyn_nmm   1    -     i01rh      "HLENS"     "Orographic length scale in S-N plane"  ""
+state  real   hlensw    ij    dyn_nmm   1    -     i01rh      "HLENSW"    "Orographic length scale in SW-NE plane"  ""
+state  real   hlennw    ij    dyn_nmm   1    -     i01rh      "HLENNW"    "Orographic length scale in NW-SE plane"  ""
+state  real   hangl     ij    dyn_nmm   1    -     i01rh      "HANGL"     "Angle of the mountain range w/r/t east"  "deg"
+state  real   hanis     ij    dyn_nmm   1    -     i01rh      "HANIS"     "Anisotropy/aspect ratio of orography"   ""
+state  real   hslop     ij    dyn_nmm   1    -     i01rh      "HSLOP"     "Slope of orography"             ""
+state  real   hzmax     ij    dyn_nmm   1    -     i01rh      "HZMAX"     "Maximum height above mean orography"    "m"
+state  real   crot      ij    dyn_nmm   1    -      -       "CROT"      "Cosine of angle between model and earth coordinates"    ""
+state  real   srot      ij    dyn_nmm   1    -      -       "SROT"      "Sine of angle between model and earth coordinates"    ""
+state  real   UGWDsfc   ij    dyn_nmm   1    -      h       "UGWDsfc"   "Surface zonal wind stress due to gravity wave drag"    "N m-2"
+state  real   VGWDsfc   ij    dyn_nmm   1    -      h       "VGWDsfc"   "Surface meridional wind stress due to gravity wave drag"    "N m-2
 #
 # module_NHYDRO.F
 #
@@ -501,6 +525,8 @@ state   real    qns            ijkftb  scalar      1         -     i01rhusdf=(bd
 state   real    qnr            ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
 state   real    qng            ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
 state   real    qndrop         ijkftb  scalar      1         -     i01rhusdf=(bdy_interp:dt)       "QNDROP"           "Droplet number mixing ratio"        "# kg-1"
+state   real    qnn            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
+state   real    qnc            ikjftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -579,6 +605,7 @@ state    real   T2               ij     misc        1         -     irh       "T
 state    real   U10              ij     misc        1         -     irh       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01r      "XICE"                 "SEA ICE"         ""
+state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     irh     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
 state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
@@ -590,6 +617,7 @@ state    real   SFCEVP           ij     misc        1         -     irh     "SFC
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i012r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
 state    real   SFCEXC           ij     misc        1         -     irh     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
+state    real   SNOTIME          ij     misc        1         -     r        "SNOTIME"              "SNOTIME"                             ""
 state    real   ACSNOW           ij     misc        1         -     irh       "ACSNOW"               "ACCUMULATED SNOW" ""
 state    real   ACSNOM           ij     misc        1         -     irh       "ACSNOM"               "ACCUMULATED MELTED SNOW"         ""
 state    real   RMOL             ij     misc        1         -     irh      "RMOL"               ""         ""
@@ -599,10 +627,12 @@ state    real   SST              ij     misc        1         -     i01rh       
 state    real   WEASD            ij     misc        1         -     i01rh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" ""
 state    real  ZNT              ij      misc        1         -     ir        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
+state    real  NOAHRES          ij      misc        1         -      h        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
 state    real   tke_myj         ijk     misc        1         -     r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"     "m2 s-2"
 state    real   EL_MYJ          ikj     misc        1         -      -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
+state    real   EXCH_M         ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"        "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"       "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"         "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"      "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"         "U WIND COMPONENT AT TOP OF VISC. SUBLYR"       "m s-1"
@@ -843,6 +873,10 @@ rconfig   real    seaice_threshold        namelist,physics      1            271
 rconfig   integer sst_update              namelist,physics      1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer ucmcall                 namelist,physics      max_domains  0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
 rconfig   logical usemonalb               namelist,physics      1            .true.    h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
+rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
+rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
+rconfig   integer  gwd_opt                namelist,physics    max_domains    0       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
+
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
@@ -859,6 +893,7 @@ rconfig   real    trdlw                   namelist,physics     max_domains    6.
 rconfig   real    tsrfc                   namelist,physics     max_domains    6.       rh    "tsrfc"  "number of hours in bucket for evaporation / sfc fluxes"
 rconfig   logical pcpflg                  namelist,physics     max_domains   .false.   rh    "pcpflg"  "logical switch that turns on/off the precipitation assimilation"
 rconfig   integer sigma                   namelist,physics     max_domains    1       irh    "sigma"  "logical switch for NMM vertical coordinate (sigma or hybrid)"
+rconfig   real    sfenth                  namelist,physics     max_domains    1.0       irh     "sea spray parameter"
 rconfig   integer co2tf                   namelist,physics     1              0       -      "co2tf"  "GFDL radiation co2 flag"
 rconfig   integer ra_call_offset          namelist,physics     1             -1       -      "ra_call_offset" "radiation call offset in timesteps (-1=old, 0=new offset)" ""
 rconfig   real    cam_abs_freq_s          namelist,physics      1         21600.      -      "cam_abs_freq_s" "CAM radiation frequency for clear-sky longwave calculations" "s"
@@ -881,6 +916,7 @@ rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.
 rconfig   real    base_pres               namelist,dynamics     1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics     1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics     1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
+rconfig   real    iso_temp                namelist,dynamics     1               0.     h    "iso_temp" "Isothermal temperature in stratosphere, real only"      "K"
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.2     h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
@@ -933,8 +969,10 @@ rconfig   real    truelat2                derived                  max_domains  
 rconfig   real    moad_cen_lat            derived                  max_domains    0       -        "moad_cen_lat"             "center latitude of the most coarse grid"      "degrees, negative is south"
 rconfig   real    stand_lon               derived                  max_domains    0       -        "stand_lon"             "standard longitude, parallel to j-direction, perpendicular to i-direction "      "degrees, negative is west"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
+rconfig   character mminlu                derived                  max_domains    0       -        "mminlu"               "land use dataset"             ""
 rconfig   real    emifrq                  derived                  max_domains    0       -        "emifrq"               "chem emissions input frequency"      "seconds"
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
+rconfig   integer islake                  derived                  max_domains    0       -        "islake"               "land use index of inland lake"      "index category"
 rconfig   integer isice                   derived                  max_domains    0       -        "isice"                "land use index of ice"        "index category"
 rconfig   integer isurban                 derived                  max_domains    0       -        "isurban"              "land use index for 'urban and built-up"     "index category"
 rconfig   integer isoilwater              derived                  max_domains    0       -        "isoilwater"           "land use index of water for soil"        "index category"
@@ -962,31 +1000,40 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson       mp_physics==8               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
+package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
+package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
+package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
+package   rrtmg_lwscheme  ra_lw_physics==4           -             -
 package   gfdllwscheme  ra_lw_physics==99            -             moist:qv,qc,qr,qi
 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
+package   rrtmg_swscheme  ra_sw_physics==4           -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   heldsuarez    ra_lw_physics==31            -             -
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
+package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
+package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
+package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -
 package   nmmlsmscheme   sf_surface_physics==99      -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
+package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 

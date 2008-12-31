@@ -243,6 +243,7 @@ subroutine da_qc_airs (i, nchan, ob, iv)
       end do ! end loop pixel           
 			  
     ! Do inter-processor communication to gather statistics.
+#ifdef CRTM_MODIF
       if (use_airs_mmr) then
          do k = 1, nchan
             bias_global(k)   = wrf_dm_sum_real(bias_local(k))
@@ -250,11 +251,13 @@ subroutine da_qc_airs (i, nchan, ob, iv)
             if (numrad_global(k) > 0) bias_global(k) = bias_global(k) / numrad_global(k)
          end do
       end if
+#endif
       
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
 
            ! 1. Cloud detection scheme (NESDIS or MMR)
            !---------------------------------------------
+#ifdef CRTM_MODIF
          if (use_airs_mmr) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
 	    
@@ -280,9 +283,9 @@ subroutine da_qc_airs (i, nchan, ob, iv)
 	    
 	    ndim = kte_surf - kts_100hPa(1) + 1
 	 
-            call da_cloud_detect_airs(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
-	       
+            call da_cloud_detect_airs(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)	       
          end if	          
+#endif
 	 
 	 do k = 1, nchan
 	    if (iv%instid(i)%cloud_flag(k,n) == qc_bad) iv%instid(i)%tb_qc(k,n) = qc_bad

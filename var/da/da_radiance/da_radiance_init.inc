@@ -11,6 +11,8 @@ subroutine da_radiance_init(iv,ob)
 !  6.0 Get FGAT time slots
 !
 !  HISTORY: 10/24/2007 Created from da_crtm_init            Tom Auligne
+!  HISTORY: 12/15/2008 getting FGAT time slots is moved to 
+!                      da_setup_obs_structures.inc.         Hui-Chuan Lin
 !------------------------------------------------------------------------------
 
  implicit none 
@@ -246,14 +248,6 @@ subroutine da_radiance_init(iv,ob)
     call da_free_unit(unit_factor_rad)
 
  end if
-
-!---------------------------------------------
-!  6.0 get FGAT time slots
-!---------------------------------------------
-  allocate ( time_slots(0:num_fgat_time) )
-  call da_get_time_slots(num_fgat_time,time_window_min,analysis_date, &
-                         time_window_max, time_slots)
-
 
   deallocate(nscan)
   deallocate(nchanl)

@@ -14,7 +14,7 @@ module da_wrfvar_top
       wrfu_cal_gregorian
 
 #if defined(RTTOV) || defined(CRTM)
-   use module_radiance, only : satinfo, time_slots
+   use module_radiance, only : satinfo
 #endif
 #ifdef RTTOV
    use module_radiance, only : coefs, sensor_descriptor
@@ -22,7 +22,7 @@ module da_wrfvar_top
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &
       num_dfi_moist, num_scalar, num_a_scalar, num_g_scalar, num_dfi_scalar, &
-      num_fdda3d, num_fdda2d, num_ozmixm, num_aerosolc, num_chem
+      num_fdda3d, num_fdda2d, num_sfdda2d, num_ozmixm, num_aerosolc, num_chem
    use module_tiles, only : set_tiles
 
 #ifdef DM_PARALLEL
@@ -41,7 +41,7 @@ module da_wrfvar_top
       da_zero_vp_type,da_allocate_y,da_deallocate_observations, &
       da_deallocate_y
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
-      da_write_diagnostics
+      da_minimise_lz, da_write_diagnostics
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
                          da_write_obs_etkf
    use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims

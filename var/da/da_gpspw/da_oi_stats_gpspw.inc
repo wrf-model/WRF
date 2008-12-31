@@ -48,7 +48,7 @@ subroutine da_oi_stats_gpspw (stats_unit, iv)
         if (use_gpspwObs) then
           write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for gpspw'
         else if (use_gpsztdObs) then
-          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for Gpsztd'
+          write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of OI for gpsztd'
         endif
 
          call da_print_stats_gpspw(stats_unit, ntpw, stats)

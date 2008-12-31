@@ -13,7 +13,6 @@ module da_test
       ntasks, data_order_xy
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
       halo_sfc_xa_sub, halo_ssmi_xa_sub
-   use da_control, only : ips,ipe,jds,jde,jps,jpe,kds,kde,kps,kpe
    use mpi, only : mpi_sum
 #endif
 
@@ -22,9 +21,8 @@ module da_test
       domain
    use module_state_description, only : dyn_em,dyn_em_tl,dyn_em_ad,p_a_qv
 
-   use da_control, only : trace_use,ims,ime,jms,jme,kms,kme, &
-      ierr, trace_use_dull, comm,global,stdout,rootproc, &
-      its,ite,jts,jte,kts,kte,sfc_assi_options,typical_qrn_rms, &
+   use da_control, only : trace_use,ierr, trace_use_dull, comm,global,stdout,rootproc, &
+      sfc_assi_options,typical_qrn_rms, &
       typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, &
       typical_q_rms,typical_qcw_rms,print_detail_testing,typical_rh_rms, &
       fg_format, fg_format_wrf_arw_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
@@ -40,7 +38,10 @@ module da_test
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
-      use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud
+      use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, &
+      ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe
+
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type
    use da_dynamics, only : da_uv_to_divergence,da_uv_to_vorticity, &

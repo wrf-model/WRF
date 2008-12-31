@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD    
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -115,8 +117,13 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
       end if
 
       ! [1.2] Interpolate horizontally:
+#ifdef A2C
+      call da_interp_lin_3d (grid%xb%u, iv%info(sonde_sfc), model_u,'u')
+      call da_interp_lin_3d (grid%xb%v, iv%info(sonde_sfc), model_v,'v')
+#else
       call da_interp_lin_3d (grid%xb%u, iv%info(sonde_sfc), model_u)
       call da_interp_lin_3d (grid%xb%v, iv%info(sonde_sfc), model_v)
+#endif
       call da_interp_lin_3d (grid%xb%t, iv%info(sonde_sfc), model_t)
       call da_interp_lin_3d (grid%xb%q, iv%info(sonde_sfc), model_q)
       call da_interp_lin_3d (grid%xb%p, iv%info(sonde_sfc), model_p)
@@ -197,7 +204,7 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
    !     [5.0] Perform optional maximum error check:
    !-----------------------------------------------------------------------
 
-   if (check_max_iv) call da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
+    call da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
  
    deallocate (model_u)
    deallocate (model_v)

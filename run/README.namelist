@@ -318,6 +318,10 @@ Namelist variables for controlling the adaptive time step option:
  mp_zero_out_thresh                  = 1.e-8   ; critical value for moist array threshold, below which
                                                ; moist arrays (except for Qv) are set to zero (kg/kg)
 
+ gwd_opt                             = 0       ; for running without gravity wave drag
+                                     = 1       ; for running the WRF-ARW with its gravity wave drag
+                                     = 2       ; for running the WRF-NMM with its gravity wave drag
+
  gsfcgce_hail                        = 0       ; for running gsfcgce microphysics with graupel
                                      = 1       ; for running gsfcgce microphysics with hail
                                                  default value = 0
@@ -336,6 +340,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, rrtm scheme
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
+                                     = 4, rrtmg scheme
                                      = 31, Earth Held-Suarez forcing
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
@@ -346,6 +351,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Goddard short wave
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
+                                     = 4, rrtmg scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
 
@@ -492,6 +498,7 @@ Namelist variables for controlling the adaptive time step option:
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
+                                                = 2: spectral nudging
  gfdda_inname                        = "wrffdda_d<domain>" ; defined name in real
  gfdda_interval_m (max_dom)          = 360      ; time interval (min) between analysis times
  gfdda_end_h (max_dom)               = 6        ; time (h) to stop nudging after start of forecast
@@ -512,6 +519,19 @@ Namelist variables for controlling the adaptive time step option:
  if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
  dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
                                                                                   -60.0=ramping ends at last analysis time
+
+The following are for spectral nudging:
+ fgdtzero (max_dom)                  = 0,
+ if_no_pbl_nudging_ph                = 0,
+ if_zfac_ph (max_dom)                = 0,
+  k_zfac_ph (max_dom)                = 10,
+ dk_zfac_uv (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases 
+                                                  linearly to full strength
+ dk_zfac_t  (max_dom)                = 1,
+ dk_zfac_ph (max_dom)                = 1,
+ gph (max_dom)                       = 0.0003,
+ xwavenum (max_dom)                  = 3,       ; top wave number to nudge in x direction
+ ywavenum (max_dom)                  = 3,       ; top wave number to nudge in y direction
 
 The following are for observation nudging:
  obs_nudge_opt (max_dom)             = 1        ; obs-nudging fdda on (=0 off) for each domain
@@ -627,13 +647,10 @@ The following are for observation nudging:
  v_mom_adv_order (max_dom)           = 3,       ; vertical momentum advection order
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
-
-                                                ; advection options for scalar variables: 0=simple, 1=positive definite, 2=monotonic
- moist_adv_opt (max_dom)             = 1        ; for moisture
- scalar_adv_opt (max_dom)            = 1        ; for scalars
- chem_adv_opt (max_dom)              = 1        ; for chem variables
- tke_adv_opt (max_dom)               = 1        ; for tke
-
+ pd_moist (max_dom)                  = F        ; positive definite advection of moisture
+ pd_scalar (max_dom)                 = F        ; positive definite advection of scalars
+ pd_chem (max_dom)                   = F        ; positive definite advection of chem variables
+ pd_tke (max_dom)                    = F        ; positive definite advection of tke
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
                                                   (if using a time_step much larger than 6*dx (in km),
                                                   proportionally increase number of sound steps - also

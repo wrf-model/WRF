@@ -156,9 +156,9 @@ wrfio_esmf :
 
 .F.o:
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $*.f90
-	$(RM) $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) > $*.f90
+	$(RM) $*.b $*.bb
 	$(FC) -o $@ -c $(FCFLAGS) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
 
 .F.f90:

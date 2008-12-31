@@ -41,10 +41,7 @@ CONTAINS
   SUBROUTINE fddaobs_init(obs_nudge_opt, maxdom, inest, parid,         &
                           idynin, dtramp, fdaend, restart,             &
                           obs_twindo_cg, obs_twindo, itimestep,        &
-                          cen_lat, cen_lon, stand_lon,                 &
-                          true_lat1, true_lat2, map_proj,              &
                           xlat, xlong,                                 &
-                          e_sn, s_sn_cg, e_sn_cg, s_we_cg, e_we_cg,    &
 #if ( EM_CORE == 1 )
                           fdob,                                        &
 #endif
@@ -79,19 +76,8 @@ CONTAINS
   REAL, intent(in)     :: obs_twindo_cg  ! time window on coarse grid
   REAL, intent(in)     :: obs_twindo
   INTEGER, intent(in)  :: itimestep
-  REAL    , INTENT(IN) :: cen_lat      ! domain center latitude (for map proj)
-  REAL    , INTENT(IN) :: cen_lon      ! domain center longitude (for map proj)
-  REAL    , INTENT(IN) :: stand_lon    ! domain standard longitude (for map proj)
-  REAL,    intent(in)  :: true_lat1    ! domain truelat1 (for map proj)
-  REAL,    intent(in)  :: true_lat2    ! domain truelat2 (for map proj)
-  INTEGER, intent(in)  :: map_proj     ! map projection index    
   REAL, DIMENSION( ims:ime, jms:jme ),                            &
         INTENT(IN)     :: xlat, xlong  ! lat/long locations on mass point grid
-  INTEGER, intent(in)  :: e_sn         ! ending   south-north grid index
-  INTEGER, intent(in)  :: s_sn_cg      ! starting south-north coarse-grid index
-  INTEGER, intent(in)  :: e_sn_cg      ! ending   south-north coarse-grid index
-  INTEGER, intent(in)  :: s_we_cg      ! starting west-east   coarse-grid index
-  INTEGER, intent(in)  :: e_we_cg      ! ending   west-east   coarse-grid index
 #if ( EM_CORE == 1 ) 
   TYPE(fdob_type), intent(inout)  :: fdob
 #endif
@@ -187,10 +173,6 @@ CONTAINS
       fdob%known_lat = wrf_dm_min_real(known_lat)
       fdob%known_lon = wrf_dm_min_real(known_lon)
 
-  fdob%sn_maxcg = e_sn_cg - s_sn_cg + 1   ! coarse domain grid dimension in N-S 
-  fdob%we_maxcg = e_we_cg - s_we_cg + 1   ! coarse domain grid dimension in W-E
-  fdob%sn_end = e_sn - 1                  ! ending S-N grid coordinate
-
 ! Calculate the nest levels, levidn. Note that each nest
 ! must know the nest levels levidn(maxdom) of each domain.
   do nest=1,maxdom
@@ -230,12 +212,16 @@ CONTAINS
 #if ( EM_CORE == 1 )
 !-----------------------------------------------------------------------
 SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
-                 uratx, vratx, tratx, nndgv,                    & 
-                 nerrf, niobf, maxdom, levidn, parid, nstat,    &
-                 nstaw, iswind,                                 &
-                 istemp, ismois, ispstr, rio, rjo, rko, varobs, &
-                 errf, i_parent_start, j_parent_start,          &
-                 ktau, iratio, npfi, nobs_prt, iprt,            &
+                 uratx, vratx, tratx,                           &
+                 nndgv, nerrf, niobf, maxdom,                   &
+                 levidn, parid, nstat, nstaw,                   &
+                 iswind, istemp, ismois, ispstr,                &
+                 timeob, rio, rjo, rko,                         &
+                 varobs, errf, ktau, xtime,                     &
+                 iratio, npfi,                                  &
+                 prt_max, prt_freq, iprt,                       &
+                 obs_prt, lat_prt, lon_prt,                     &
+                 mlat_prt, mlon_prt,                            & 
                  ids,ide, jds,jde, kds,kde,                     &
                  ims,ime, jms,jme, kms,kme,                     &
                  its,ite, jts,jte, kts,kte  )
@@ -282,22 +268,27 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !
 !-----------------------------------------------------------------------
 
-  INTEGER, INTENT(IN)  :: inest                        ! Domain index.
-  INTEGER, INTENT(IN)  :: nndgv                        ! Number of nudge variables.
-  INTEGER, INTENT(IN)  :: nerrf                        ! Number of error fields.
-  INTEGER, INTENT(IN)  :: niobf                        ! Number of observations.
-  INTEGER, INTENT(IN)  :: maxdom                       ! Maximum number of domains.
-  INTEGER, INTENT(IN)  :: levidn(maxdom)               ! Level of nest.
-  INTEGER, INTENT(IN)  :: parid(maxdom)                ! Id of parent grid.
-  INTEGER, INTENT(IN)  :: i_parent_start(maxdom)       ! Start i index in parent domain.
-  INTEGER, INTENT(IN)  :: j_parent_start(maxdom)       ! Start j index in parent domain.
-  INTEGER, INTENT(IN)  :: ktau
-  INTEGER, INTENT(IN)  :: iratio                       ! Nest to parent gridsize ratio.
-  INTEGER, INTENT(IN)  :: npfi                         ! Coarse-grid diagnostics freq.
-  INTEGER, INTENT(IN)  :: nobs_prt                     ! Number of current obs to print info.
-  LOGICAL, INTENT(IN)  :: iprt                         ! Print flag
-  INTEGER, INTENT(IN)  :: nstat                        ! # stations held for use
-  INTEGER, INTENT(IN)  :: nstaw                        ! # stations in current window
+  INTEGER, INTENT(IN)  :: inest                  ! Domain index.
+  INTEGER, INTENT(IN)  :: nndgv                  ! Number of nudge variables.
+  INTEGER, INTENT(IN)  :: nerrf                  ! Number of error fields.
+  INTEGER, INTENT(IN)  :: niobf                  ! Number of observations.
+  INTEGER, INTENT(IN)  :: maxdom                 ! Maximum number of domains.
+  INTEGER, INTENT(IN)  :: levidn(maxdom)         ! Level of nest.
+  INTEGER, INTENT(IN)  :: parid(maxdom)          ! Id of parent grid.
+  INTEGER, INTENT(IN)  :: ktau                   ! Model time step index
+  REAL, INTENT(IN)     :: xtime                  ! Forecast time in minutes
+  INTEGER, INTENT(IN)  :: iratio                 ! Nest to parent gridsize ratio.
+  INTEGER, INTENT(IN)  :: npfi                   ! Coarse-grid diagnostics freq.
+  INTEGER, INTENT(IN)  :: prt_max                ! Max number of obs to print.
+  INTEGER, INTENT(IN)  :: prt_freq               ! Frequency of obs to print.
+  LOGICAL, INTENT(IN)  :: iprt                   ! Print flag
+  INTEGER, INTENT(INOUT) :: obs_prt(prt_max)     ! Print obs indices 
+  REAL, INTENT(INOUT) :: lat_prt(prt_max)        ! Print obs latitude 
+  REAL, INTENT(INOUT) :: lon_prt(prt_max)        ! Print obs longitude
+  REAL, INTENT(INOUT) :: mlat_prt(prt_max)       ! Print model lat at obs loc
+  REAL, INTENT(INOUT) :: mlon_prt(prt_max)       ! Print model lon at obs loc
+  INTEGER, INTENT(IN)  :: nstat                  ! # stations held for use
+  INTEGER, INTENT(IN)  :: nstaw                  ! # stations in current window
   INTEGER, intent(in)  :: iswind
   INTEGER, intent(in)  :: istemp
   INTEGER, intent(in)  :: ismois
@@ -317,9 +308,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL,   INTENT(IN) :: uratx( ims:ime, jms:jme ) ! U to U10 ratio on mass points.
   REAL,   INTENT(IN) :: vratx( ims:ime, jms:jme ) ! V to V10 ratio on mass points.
   REAL,   INTENT(IN) :: tratx( ims:ime, jms:jme ) ! T to TH2 ratio on mass points.
+  REAL,   INTENT(IN) :: timeob(niobf)             ! Obs time (hrs)
   REAL,   INTENT(IN) :: rio(niobf)                ! Obs west-east coordinate (non-stag grid).
   REAL,   INTENT(IN) :: rjo(niobf)                ! Obs south-north coordinate (non-stag grid).
-  REAL,   INTENT(INOUT) :: rko(niobf)
+  REAL,   INTENT(INOUT) :: rko(niobf)             ! Obs bottom-top coordinate
   REAL,   INTENT(INOUT) :: varobs(nndgv, niobf)
   REAL,   INTENT(INOUT) :: errf(nerrf, niobf)
 
@@ -365,6 +357,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   integer i_start,i_end,j_start,j_end    ! loop ranges for uratio,vratio calc.
   integer k_start,k_end
   integer ips                            ! For printing obs information
+  integer pnx                            ! obs index for printout
 
   real gridx,gridy,dxob,dyob,dzob,dxob_ms,dyob_ms
   real pob
@@ -637,17 +630,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     
     ENDIF      ! end if(inest.eq.1)
 
+
 ! Print obs information.
-    if (iprt) then
-      if(ityp.eq.3) then   !mass-point case
-        ips = min(nstaw,nobs_prt)
-        if(ips.gt.0) then
-          write(6,*) '  OBS#    I       J       K'
-        endif
-        do n=1,ips
-          write(6,'(2x,i4,3f8.3)') n,ra(n),rb(n),rc(n)
-        enddo
-      endif
+    if(ityp.eq.3) then   !mass-point case
+       CALL print_obs_info(iprt,inest,niobf,rio,rjo,rko,                  &
+                           prt_max,prt_freq,obs_prt,lat_prt,lon_prt,      &
+                           mlat_prt,mlon_prt,timeob,xtime)
     endif
 
 !   INITIALIZE THE ARRAY OF DIFFERENCES BETWEEN THE OBSERVATIONS
@@ -959,9 +947,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
               write(6,*)
               do k=k_end,1,-1
                 press = pbase(iob,k,job)+pp(iob,k,job)
-                ttemp = exp ( alog(300.+TB(IOB,k,JOB)) - &
-                                           .2857143*alog(100000./press) ) 
-                write(6,*) k,300.+TB(IOB,k,JOB),ttemp,pbase(iob,k,job)
+                ttemp = (t0+tb(iob,k,job)) / (100000./press)**.2857143
+                write(6,*) k,t0+TB(IOB,k,JOB),ttemp,pbase(iob,k,job)
               enddo
             endif
 !ajb        end testing only
@@ -1243,7 +1230,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   SUBROUTINE nudob(j, ivar, aten, inest, ifrest, ktau, ktaur,         &
                        xtime, mu, msfx, msfy, nndgv, nerrf, niobf, maxdom,   &
                        npfi, ionf, rinxy, twindo, levidn,             &
-                       parid, nstat, i_parent_start, j_parent_start,  &
+                       parid, nstat,                                  &
                        fdob, lev_in_ob, plfo, nlevs_ob,               &
                        iratio, dx, dtmin, rio, rjo, rko,              &
                        timeob, varobs, errf, pbase, ptop, pp,         &
@@ -1337,8 +1324,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   INTEGER, INTENT(IN)  :: levidn(maxdom)             ! level of nest
   INTEGER, INTENT(IN)  :: parid(maxdom)              ! parent domain id
   INTEGER, INTENT(IN)  :: nstat                      ! number of obs stations
-  INTEGER, INTENT(IN)  :: i_parent_start(maxdom)     ! Start i index in parent domain.
-  INTEGER, INTENT(IN)  :: j_parent_start(maxdom)     ! Start j index in parent domain.
   TYPE(fdob_type), intent(inout)  :: fdob
   REAL, INTENT(IN)     :: lev_in_ob(niobf)           ! Level in sounding-type obs.
   REAL, intent(IN)     :: plfo(niobf)
@@ -2404,6 +2389,66 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
       
   RETURN
   END SUBROUTINE calc_pottemp_scales
+
+  SUBROUTINE print_obs_info(iprt,inest,niobf,rio,rjo,rko,                &
+                            prt_max,prt_freq,obs,lat,lon,                &
+                            mlat,mlon,timeob,xtime)
+!*************************************************************************
+! Purpose: Print obs information.
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  LOGICAL, intent(in)    :: iprt          ! Print flag
+  INTEGER, intent(in)    :: inest         ! Nest level
+  INTEGER, intent(in)    :: niobf         ! Maximum number of observations
+  REAL,    intent(in)    :: rio(niobf)    ! West-east coord (non-stagger)
+  REAL,    intent(in)    :: rjo(niobf)    ! South-north coord (non-stagger)
+  REAL,    intent(in)    :: rko(niobf)    ! Bottom-top north coord (non-stagger)
+  INTEGER, intent(in)    :: prt_max        ! Max no. of obs for diagnostic printout
+  INTEGER, intent(in)    :: prt_freq       ! Frequency for diagnostic printout
+  INTEGER, intent(inout) :: obs(prt_max)  ! Saved obs indices to print
+  REAL,    intent(inout) :: lat(prt_max)  ! Saved latitudes
+  REAL,    intent(inout) :: lon(prt_max)  ! Saved longitudes
+  REAL,    intent(inout) :: mlat(prt_max) ! Saved model latitudes
+  REAL,    intent(inout) :: mlon(prt_max) ! Saved longitudes
+  REAL,    intent(in)    :: timeob(niobf) ! Times of each observation (hours)
+  REAL,    intent(in)    :: xtime         ! Model time in minutes
+
+! Local variables
+  integer :: n                    ! Loop counter over obs
+  integer :: pnx                  ! Obs index for printout
+
+  if(iprt) then
+    if(prt_max.gt.0) then
+
+      if(obs(1).ne.-999) then
+        write(6,'(/a36,i4,a10,f8.1,a8)')                                   &
+              'REPORTING OBS MASS-PT LOCS FOR NEST ',inest,                &
+              ' AT XTIME=',xtime,' MINUTES'
+        write(6,'(a5,i4,a5,i5,a48/)')                                      &
+              'FREQ=',prt_freq,', MAX=',prt_max,                           &
+              ' LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC'
+        write(6,'(a42,a44)') '    OBS#     I       J       K     OBS LAT', &
+                '  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)'
+      endif
+    endif
+
+! Note: rio and rjo are referenced to non-staggered grid (not mass-point!)
+!       Hence subtract .5 from each to get mass-point coords.
+    do n=1,prt_max
+       pnx = obs(n)
+       if(pnx.ne.-999) then
+           write(6,'(2x,i7,3f8.3,2f9.3,,2x,f9.3,2x,f9.3,3x,f6.2)')    &
+               pnx,rio(pnx)-.5,rjo(pnx)-.5,rko(pnx),lat(n),lon(n),    &
+               mlat(n),mlon(n),timeob(pnx)
+
+!         write(6,'(2x,i4,3f8.3)') pnx,ra(pnx),rb(pnx),rc(pnx)
+       endif
+    enddo
+    if(obs(1).ne.-999) write(6,*)
+  endif
+  END SUBROUTINE print_obs_info
 #endif
 
 END MODULE module_fddaobs_rtfdda

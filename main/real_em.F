@@ -736,7 +736,7 @@ real::t1,t2
 
       END IF
 
-      IF(grid_fdda .EQ. 1)THEN
+      IF(grid_fdda .GE. 1)THEN
          DO j = jps , jpe
             DO k = kps , kpe
                DO i = ips , ipe
@@ -818,7 +818,7 @@ real::t1,t2
                CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
             END IF
          END IF
-         IF(grid_fdda .EQ. 1)THEN
+         IF(grid_fdda .GE. 1)THEN
             CALL construct_filename1( inpname , 'wrffdda' , grid%id , 2 )
             CALL open_w_dataset ( id2, TRIM(inpname) , grid , config_flags , output_aux_model_input10 , "DATASET=AUXINPUT10", ierr )
             IF ( ierr .NE. 0 ) THEN
@@ -861,7 +861,7 @@ real::t1,t2
 
       END IF
 
-      IF(grid_fdda .EQ. 1)THEN
+      IF(grid_fdda .GE. 1)THEN
          DO j = jps , jpe
             DO k = kps , kpe
                DO i = ips , ipe
@@ -991,7 +991,7 @@ real::t1,t2
 
       !  Output gridded/analysis FDDA file.
 
-      IF(grid_fdda .EQ. 1) THEN
+      IF(grid_fdda .GE. 1) THEN
          CALL output_aux_model_input10 ( id2, grid , config_flags , ierr )
       END IF
 
@@ -1054,7 +1054,7 @@ real::t1,t2
 
          END IF
 
-         IF(grid_fdda .EQ. 1)THEN
+         IF(grid_fdda .GE. 1)THEN
             DO j = jps , jpe
                DO k = kps , kpe
                   DO i = ips , ipe
@@ -1134,7 +1134,7 @@ real::t1,t2
             END IF
          END IF
 
-         IF(grid_fdda .EQ. 1) THEN
+         IF(grid_fdda .GE. 1) THEN
             CALL close_dataset ( id2 , config_flags , "DATASET=AUXINPUT10" )
          END IF
 

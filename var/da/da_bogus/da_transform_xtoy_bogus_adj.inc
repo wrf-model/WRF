@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_bogus_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    !---------------------------------------------------------------------
    ! Purpose: the adjoint of bogus observation operators.
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !---------------------------------------------------------------------
 
    implicit none
@@ -46,8 +48,13 @@ subroutine da_transform_xtoy_bogus_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    ! [1.1] Adjoint feedback from Y to X for u and v:
 
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(bogus), temp_u,'u')
+   call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(bogus), temp_v,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(bogus), temp_u)
    call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(bogus), temp_v)
+#endif
    call da_interp_lin_3d_adj (jo_grad_x%t, iv%info(bogus), temp_t)
    call da_interp_lin_3d_adj (jo_grad_x%q, iv%info(bogus), temp_q)
    deallocate (temp_u)

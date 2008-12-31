@@ -95,7 +95,6 @@ subroutine da_transform_xtoy_gpspw (grid, iv, y)
             dpw = dpw + ddpw
          end do 
       end if 
-
       y % gpspw(n)% tpw = dym* (dxm * grid%xa%tpw(i,j) + &
                                 dx  * grid%xa%tpw(i+1,j)) + &
                          dy * (dxm * grid%xa%tpw(i,j+1) + &

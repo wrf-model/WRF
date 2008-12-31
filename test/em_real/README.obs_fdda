@@ -100,7 +100,8 @@ Below is an example of a namelist set up to activate obs-nudging on domains
  obs_ionf                            = 2, 2, 2, 2, 2,
  obs_idynin                          = 0,
  obs_dtramp                          = 40.,
- obs_nobs_prt                        = 10, 10, 10, 10, 10,
+ obs_prt_freq                        = 10, 10, 10, 10, 10,
+ obs_prt_max                         = 10
  obs_ipf_errob                       = .true.
  obs_ipf_nudob                       = .true.
  obs_ipf_in4dob                      = .true.

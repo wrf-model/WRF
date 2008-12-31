@@ -353,7 +353,7 @@ BENCH_END(phy_bc_tim)
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
 #      include "HALO_EM_PHYS_PBL.inc"
        ENDIF
-       IF ( config_flags%grid_fdda .eq. 1) THEN
+       IF ( config_flags%grid_fdda .ge. 1) THEN
 #      include "HALO_EM_FDDA.inc"
        ENDIF
        IF ( config_flags%diff_opt .ge. 1 ) THEN
@@ -377,15 +377,16 @@ BENCH_START(update_phy_ten_tim)
        DO ij = 1 , grid%num_tiles
 
          CALL wrf_debug ( 200 , ' call update_phy_ten' )
-         CALL update_phy_ten(t_tendf, ru_tendf, rv_tendf,moist_tend,        &
+         CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
                            scalar_tend, mu_tendf,                           &
                            grid%rthraten,grid%rthblten,grid%rthcuten,       &
                            grid%rublten,grid%rvblten,                       &
                            grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
                            grid%rqicuten,grid%rqscuten,grid%RUNDGDTEN,      &
-                           grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN,  &
-                           grid%RMUNDGDTEN,                                 &
+                           grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
+                           grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
+                           grid%rthfrten,grid%rqvfrten,                     &  ! fire
                            num_moist,num_scalar,config_flags,rk_step,          &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &
@@ -554,16 +555,10 @@ BENCH_END(hor_diff_tim)
                    grid%obs_rinsig,                                     &
                    grid%obs_npfi,                                       &
                    grid%obs_ionf,                                       &
-                   grid%obs_nobs_prt,                                   &
+                   grid%obs_prt_max,                                    &
+                   grid%obs_prt_freq,                                   &
                    grid%obs_idynin,                                     &
                    grid%obs_dtramp,                                     &
-                   model_config_rec%cen_lat(1),                         &
-                   model_config_rec%cen_lon(1),                         &
-                   config_flags%truelat1,                               &
-                   config_flags%truelat2,                               &
-                   config_flags%map_proj,                               &
-                   model_config_rec%i_parent_start,                     &
-                   model_config_rec%j_parent_start,                     &
                    grid%parent_grid_ratio,                              &
                    grid%max_dom, grid%itimestep,                        &
                    grid%dt, grid%gmt, grid%julday, grid%fdob,           &

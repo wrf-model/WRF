@@ -169,14 +169,23 @@ subroutine da_setup_obs_structures( grid, ob, iv)
 
    iv%info(:)%max_lev = 1
 
+   ! get FGAT time slots
+
+   allocate ( time_slots(0:num_fgat_time) )
+   call da_get_time_slots(num_fgat_time,time_window_min,analysis_date, &
+                          time_window_max, time_slots)
+
    if (use_obsgts) then
       ! Conventional obs can be in BUFR or ascii format
       if (ob_format == ob_format_bufr) then
          call da_message((/'Using BUFR format observation input'/))
-         call da_setup_obs_structures_bufr (ob, iv)
+         call da_setup_obs_structures_bufr (grid, ob, iv)
       else if (ob_format == ob_format_ascii) then
          call da_message((/'Using ASCII format observation input'/))
          call da_setup_obs_structures_ascii (ob, iv, grid)
+      else if (ob_format == ob_format_madis) then
+         call da_message((/'Using MADIS format observation input'/))
+         call da_setup_obs_structures_madis (ob, iv) 
       end if
    end if
 

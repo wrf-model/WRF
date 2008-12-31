@@ -97,7 +97,7 @@ export RUN_CMD=${RUN_CMD:-$RUN_CMD_DEFAULT}
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/code/$RELEASE}    # Directory containing codes.
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}  # WRF-Var code directory.
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}  # WRF-Var code directory.
 export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da}     # WRF-Var executable location.
 export WPS_DIR=${WPS_DIR:-$REL_DIR/wps}           # WPS directory.
 export WPB_DIR=${WPB_DIR:-$REL_DIR/wpb}           # Perturbed LBC dir.
@@ -233,10 +233,10 @@ export NL_MULTI_INC=${NL_MULTI_INC:-0}  # Analysis type.
 export NL_VAR4D=${NL_VAR4D:-false}
 export NL_GLOBAL=${NL_GLOBAL:-false}
 export BE_DIR=${BE_DIR:-$REG_DIR/be}                   # Background error covariance directory.
-export BIASCORR_DIR=${BIASCORR_DIR:-$WRFVAR_DIR/run/biascorr}
-export OBS_TUNING_DIR=${OBS_TUNING_DIR:-$WRFVAR_DIR/run/obs_tuning}
+export BIASCORR_DIR=${BIASCORR_DIR:-$WRFVAR_DIR/var/run/biascorr}
+export OBS_TUNING_DIR=${OBS_TUNING_DIR:-$WRFVAR_DIR/var/run/obs_tuning}
 export DA_BACK_ERRORS=${DA_BACK_ERRORS:-$BE_DIR/be.dat} # background errors.
-export NL_OB_FORMAT=${NL_OB_FORMAT:-2}   # Observation format: 1=BUFR, 2=ASCII "little_r"
+export NL_OB_FORMAT=${NL_OB_FORMAT:-2}   # Observation format: 1=BUFR, 2=ASCII "little_r 3=MADIS"
 export NL_LATS_STATS_OPTION_FALSE=${NL_LATS_STATS_OPTION_FALSE:-false}
 export NL_CV_OPTIONS_HUM=${NL_CV_OPTIONS_HUM:-1} # Humidity control variable.
 export NL_CHECK_MAX_IV=${NL_CHECK_MAX_IV:-true} # QC on O-B differences.
@@ -244,10 +244,12 @@ export NL_NTMAX=${NL_NTMAX:-100}         # Maximum number of inner loop iteratio
 export NL_CHECK_RH=${NL_CHECK_RH:-2}     # RH bounds check.
 export NL_JCDFI_USE=${NL_JCDFI_USE:-false} # Turn off JcDF option
 export NL_JCDFI_IO=${NL_JCDFI_IO:-false} # Turn off JcDF IO
-export OUTER_LOOP=${OUTER_ITER:-1}       # OUter loop number
+export OUTER_ITER=${OUTER_ITER:-01}       # OUter loop number
 export NL_PUT_RAND_SEED=${NL_PUT_RAND_SEED:-false} # Set to true if want to specify seeds explicitly.
 export NL_SEED_ARRAY1=${NL_SEED_ARRAY1:-$DATE} # Random seed.
 export NL_SEED_ARRAY2=${NL_SEED_ARRAY2:-$DATE} # Random seed.
+
+
 
 # From Update_BC:
 export PHASE=${PHASE:-false}     # Indicate which phase update_bc is.

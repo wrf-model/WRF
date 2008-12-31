@@ -7,15 +7,16 @@ module da_setup_structures
    use module_domain, only : xb_type, ep_type, domain
 
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, &
-      iv_type,da_allocate_background_errors,da_allocate_observations
+      iv_type,da_allocate_background_errors,da_allocate_observations, &
+      multi_level_type,each_level_type
    use da_control, only : trace_use,vert_evalue,stdout,rootproc, &
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
-      truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, &
-      use_radar_rf, num_ob_indexes,kts, kte, &
+      truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
+      use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, &
-      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, &
+      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, &
       use_airepobs, test_dm_exact, use_amsuaobs, use_amsubobs, &
       use_airsobs, use_bogusobs, sfc_assi_options, use_eos_amsuaobs, &
       use_filtered_rad, use_eos_radobs, use_gpsrefobs, use_hirs2obs, &
@@ -24,7 +25,7 @@ module da_setup_structures
       use_ssmt1obs,use_ssmt2obs, use_shipsobs, use_satemobs, use_synopobs, &
       use_radar_rv,use_profilerobs, use_obsgts, use_geoamvobs, use_buoyobs, &
       jb_factor, je_factor, alphacv_method,its,ite,jts,jte,cv_size_domain_jb, &
-      cv_size_domain_je, cv_size_domain,ids,ide,jds,jde,kde,ensdim_alpha, &
+      cv_size_domain_je, cv_size_domain,ensdim_alpha, &
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale,len_scaling1, &
       len_scaling2,len_scaling3,len_scaling4,len_scaling5,max_vert_var1, &
       max_vert_var2,max_vert_var3,max_vert_var4,print_detail_be, &
@@ -32,7 +33,7 @@ module da_setup_structures
       var_scaling5,vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
-      ims,ime,jms,jme,kms,kme,kds, vert_corr_2, alphacv_method_xa, vert_evalue_global, &
+      vert_corr_2, alphacv_method_xa, vert_evalue_global, &
       vert_evalue_local, obs_names, num_ob_indexes, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
@@ -42,8 +43,10 @@ module da_setup_structures
       rtminit_sensor, thinning, qc_rad,& 
       num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err,&
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
-      fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg
-
+      fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
+      sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, &
+      ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr   
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info
    use da_obs_io, only : da_scan_obs_bufr,da_read_obs_bufr,da_read_obs_radar, &
@@ -58,8 +61,20 @@ module da_setup_structures
    use da_ssmi, only : da_read_obs_ssmi,da_scan_obs_ssmi
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print, da_find_fft_factors, &
       da_find_fft_trig_funcs
+   use da_tools, only: da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_vtox_transforms, only : da_check_eof_decomposition
+#ifdef BUFR
+   use da_control, only : thin_conv
+   use module_radiance, only : init_constants_derived
+   use gsi_thinning, only : r999,r360,rlat_min,rlat_max,rlon_min,rlon_max, &
+                            dlat_grid,dlon_grid,thinning_grid_conv, &
+                            make3grids, destroygrids_conv
+#ifdef DM_PARALLEL
+   use mpi, only : mpi_min, mpi_max
+   use da_par_util, only : true_mpi_real
+#endif
+#endif
 
    implicit none
 
@@ -78,6 +93,7 @@ contains
 #include "da_setup_obs_structures.inc"
 #include "da_setup_obs_structures_ascii.inc"
 #include "da_setup_obs_structures_bufr.inc"
+#include "da_setup_obs_structures_madis.inc"
 #include "da_setup_obs_interp_wts.inc"
 #include "da_setup_runconstants.inc"
 #include "da_cloud_model.inc"

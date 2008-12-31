@@ -2,6 +2,8 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
 
    !----------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !----------------------------------------------------------------
 
    implicit none
@@ -131,7 +133,6 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
                obs_terr   = iv%info(gpspw)%elv(n)
                model_terr = dym*(dxm*grid%xb%terr(i,j)   + dx*grid%xb%terr(i+1,j)) + &
                           dy *(dxm*grid%xb%terr(i,j+1) + dx*grid%xb%terr(i+1,j+1))
-
                if (obs_terr <= model_terr) then
                   model_q(1) = dym*(dxm*grid%xb%q(i,j,1)   + dx*grid%xb%q(i+1,j,1)) + &
                              dy *(dxm*grid%xb%q(i,j+1,1) + dx*grid%xb%q(i+1,j+1,1))
@@ -160,7 +161,6 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
                      dpw = dpw + ddpw
                   end do
                end if
-
                iv % gpspw(n) % tpw % inv = ob % gpspw(n) % tpw - model_tpw + 0.1*dpw
             end if
          end if
@@ -170,7 +170,7 @@ subroutine da_get_innov_vector_gpspw (it,num_qcstat_conv, grid, ob, iv)
          !------------------------------------------------------------------------
 
       end do
-      if ( check_max_iv) call da_check_max_iv_gpspw(iv, it, num_qcstat_conv) 
+      call da_check_max_iv_gpspw(iv, it, num_qcstat_conv) 
    end if
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpspw")
 

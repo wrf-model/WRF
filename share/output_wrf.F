@@ -1,5 +1,5 @@
 !WRF:MEDIATION:IO
-!  ---principal wrf output routine (called from routines in module_io_domain ) 
+!  ---principal wrf output routine (called from routines in module_io_domain )
   SUBROUTINE output_wrf ( fid , grid , config_flags, switch , ierr )
     USE module_io
     USE module_wrf_error
@@ -22,12 +22,12 @@
     INTEGER ids , ide , jds , jde , kds , kde , &
             ims , ime , jms , jme , kms , kme , &
             ips , ipe , jps , jpe , kps , kpe
-      
+
     INTEGER , DIMENSION(3) :: domain_start , domain_end
     INTEGER , DIMENSION(3) :: memory_start , memory_end
     INTEGER , DIMENSION(3) :: patch_start , patch_end
     INTEGER i,j
-    INTEGER julyr, julday, idt, iswater , map_proj
+    INTEGER julyr, julday, idt, iswater , islake, map_proj
     INTEGER filestate
     LOGICAL dryrun
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
@@ -42,9 +42,11 @@
     REAL    diff_6th_factor
     INTEGER grid_fdda, gfdda_interval_m, gfdda_end_h, if_ramping, &
             obs_nudge_opt, obs_nudge_wind, obs_nudge_temp, obs_nudge_mois, obs_nudge_pstr, obs_idynin, obs_ionf
-    REAL    fgdt, guv, gt, gq, dtramp_min, &
+    INTEGER grid_sfdda, sgfdda_interval_m, sgfdda_end_h
+    REAL    fgdt, guv, gt, gq, gph, dtramp_min, &
             obs_coef_wind, obs_coef_temp, obs_coef_mois, obs_coef_pstr, obs_dtramp, fdda_end
-    INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
+    REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
+    LOGICAL pd_moist, pd_scalar, pd_tke
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -63,6 +65,7 @@
     CHARACTER*256 message
     CHARACTER*80  fname
     CHARACTER*80  char_junk
+    CHARACTER(LEN=256) :: MMINLU
     INTEGER    ibuf(1)
     REAL       rbuf(1)
     TYPE(WRFU_TimeInterval) :: bdy_increment
@@ -83,7 +86,7 @@
     WRITE(wrf_err_message,*)'output_wrf: fid,filestate = ',fid,filestate
     CALL wrf_debug( 300 , wrf_err_message )
 
-    ! io_form is used to determine if multi-file I/O is enabled and to 
+    ! io_form is used to determine if multi-file I/O is enabled and to
     ! control writing of format-specific time-independent metadata
     IF ( switch .EQ. model_input_only ) THEN
       CALL nl_get_io_form_input( 1, io_form )
@@ -104,7 +107,7 @@
     ELSE IF ( switch .EQ. aux_model_input8_only ) THEN
       CALL nl_get_io_form_auxinput8( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input9_only ) THEN
-      CALL nl_get_io_form_auxinput9( 1, io_form )
+      CALL nl_get_io_form_sgfdda( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input10_only ) THEN
       CALL nl_get_io_form_gfdda( 1, io_form )
     ELSE IF ( switch .EQ. aux_model_input11_only ) THEN
@@ -176,14 +179,17 @@
     call nl_get_w_damping            ( 1      ,  w_damping            )
 
 #if (EM_CORE == 1)
-    CALL nl_get_moist_adv_opt  ( grid%id , moist_adv_opt )
-    CALL nl_get_scalar_adv_opt ( grid%id , scalar_adv_opt )
-    CALL nl_get_tke_adv_opt    ( grid%id , tke_adv_opt )
+    CALL nl_get_pd_moist  ( grid%id , pd_moist )
+    CALL nl_get_pd_scalar ( grid%id , pd_scalar )
+    CALL nl_get_pd_tke    ( grid%id , pd_tke )
     CALL nl_get_diff_6th_opt  ( grid%id , diff_6th_opt )
     CALL nl_get_diff_6th_factor ( grid%id , diff_6th_factor )
     CALL nl_get_grid_fdda  ( grid%id , grid_fdda )
     CALL nl_get_gfdda_end_h( grid%id , gfdda_end_h )
     CALL nl_get_gfdda_interval_m ( grid%id , gfdda_interval_m )
+    CALL nl_get_grid_sfdda  ( grid%id , grid_sfdda )
+    CALL nl_get_sgfdda_end_h( grid%id , sgfdda_end_h )
+    CALL nl_get_sgfdda_interval_m ( grid%id , sgfdda_interval_m )
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -192,6 +198,22 @@
     CALL nl_get_gq         ( grid%id , gq )
     CALL nl_get_if_ramping ( 1       , if_ramping )
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
+    ENDIF
+
+    IF ( grid_fdda == 2 ) THEN
+    CALL nl_get_fgdt       ( grid%id , fgdt )
+    CALL nl_get_guv        ( grid%id , guv )
+    CALL nl_get_gt         ( grid%id , gt )
+    CALL nl_get_gph        ( grid%id , gph )
+    CALL nl_get_if_ramping ( 1       , if_ramping )
+    CALL nl_get_dtramp_min ( 1       , dtramp_min )
+    ENDIF
+
+    IF ( grid_sfdda == 1 ) THEN
+    CALL nl_get_guv_sfc      ( grid%id , guv_sfc )
+    CALL nl_get_gt_sfc       ( grid%id , gt_sfc )
+    CALL nl_get_gq_sfc       ( grid%id , gq_sfc )
+    CALL nl_get_rinblw       ( grid%id , rinblw )
     ENDIF
 
     CALL nl_get_obs_nudge_opt  ( grid%id , obs_nudge_opt )
@@ -215,8 +237,10 @@
     CALL nl_get_gmt (grid%id, gmt)
     CALL nl_get_julyr (grid%id, julyr)
     CALL nl_get_julday (grid%id, julday)
-    CALL nl_get_mminlu ( 1, char_junk(1:4) )
+    CALL nl_get_mminlu ( grid%id, mminlu )
+    call wrf_debug(300,"OUTPUT_WRF:  mminlu = " // mminlu )
     CALL nl_get_iswater (grid%id, iswater )
+    CALL nl_get_islake (grid%id, islake )
     CALL nl_get_cen_lat ( grid%id , cen_lat )
     CALL nl_get_cen_lon ( grid%id , cen_lon )
     CALL nl_get_truelat1 ( grid%id , truelat1 )
@@ -350,6 +374,9 @@
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_FDDA', grid_fdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_INTERVAL_M', gfdda_interval_m , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'GFDDA_END_H', gfdda_end_h , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'GRID_SFDDA', grid_sfdda , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_INTERVAL_M', sgfdda_interval_m , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_END_H', sgfdda_end_h , 1 , ierr )
 #endif
 
       IF ( switch .EQ. history_only ) THEN
@@ -360,9 +387,9 @@
       CALL wrf_put_dom_ti_integer ( fid, 'W_DAMPING', w_damping , 1 , ierr )
 
 #if (EM_CORE == 1)
-      CALL wrf_put_dom_ti_integer ( fid, 'MOIST_ADV_OPT', moist_adv_opt , 1 , ierr )
-      CALL wrf_put_dom_ti_integer ( fid, 'SCALAR_ADV_OPT', scalar_adv_opt , 1 , ierr )
-      CALL wrf_put_dom_ti_integer ( fid, 'TKE_ADV_OPT', tke_adv_opt , 1 , ierr )
+      CALL wrf_put_dom_ti_logical ( fid, 'PD_MOIST', pd_moist , 1 , ierr )
+      CALL wrf_put_dom_ti_logical ( fid, 'PD_SCALAR', pd_scalar , 1 , ierr )
+      CALL wrf_put_dom_ti_logical ( fid, 'PD_TKE', pd_tke , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'DIFF_6TH_OPT', diff_6th_opt , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'DIFF_6TH_FACTOR', diff_6th_factor , 1 , ierr )
 
@@ -373,6 +400,22 @@
         CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
         CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
+      ENDIF
+
+      IF ( grid_fdda == 2 ) THEN
+        CALL wrf_put_dom_ti_real    ( fid, 'FGDT', fgdt , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GPH', gph , 1 , ierr )
+        CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
+      ENDIF
+
+      IF ( grid_sfdda == 1 ) THEN
+        CALL wrf_put_dom_ti_real    ( fid, 'GUV_SFC', guv_sfc , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GT_SFC', gt_sfc , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GQ_SFC', gq_sfc , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'RINBLW', rinblw , 1 , ierr )
       ENDIF
 
       CALL wrf_put_dom_ti_integer ( fid, 'OBS_NUDGE_OPT', obs_nudge_opt , 1 , ierr )
@@ -395,7 +438,7 @@
     ENDIF
 
 ! added these fields for use by reassembly programs , 010831, JM
-! modified these fields so "patch" == "domain" when multi-file output 
+! modified these fields so "patch" == "domain" when multi-file output
 ! formats are not used.  051018, TBH
 
     ibuf(1) = MAX(ips,ids)
@@ -488,13 +531,19 @@
 #endif
     ENDIF
 #if (NMM_CORE == 1)
-        write(0,*) 'MMINLU would be: ', MMINLU(1:4)
-        MMINLU(1:4)='USGS'
-        write(0,*) 'MMINLU now: ', MMINLU(1:4)
+        write(0,*) 'MMINLU would be: ', TRIM(MMINLU)
+        ! MMINLU='USGS'
+        write(0,*) 'MMINLU now: ', TRIM(MMINLU)
 #endif
     CALL wrf_put_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , ierr )
-    CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  mminlu(1:4) , ierr )
+    IF(MMINLU(1:1) .EQ. " ")THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  "    "       , ierr )
+    ELSE
+       CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  TRIM(mminlu) , ierr )
+    END IF
+    call wrf_put_dom_ti_integer ( fid , 'NUM_LAND_CAT', config_flags%num_land_cat, 1, ierr)
     CALL wrf_put_dom_ti_integer ( fid , 'ISWATER' ,  iswater , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( fid , 'ISLAKE' ,   islake , 1 , ierr )
 !   CALL wrf_put_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISICE' ,  config_flags%isice , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
@@ -520,7 +569,15 @@
       CALL wrf_put_dom_ti_integer ( fid , 'COMPRESSION' , config_flags%compression , 1 , ierr )
     ENDIF
 
-    CALL nl_get_adjust_output_times( grid%id, adjust ) 
+#if (EM_CORE == 1)
+      IF ( switch .EQ. history_only ) THEN
+         ! This flag sets the switch which defines the topography as the original
+         ! generated by real.exe. False means it has been modified by the WRF model.
+         grid%save_topo_from_real=0
+      ENDIF
+#endif
+
+    CALL nl_get_adjust_output_times( grid%id, adjust )
     current_date_save = current_date
 #if 1
     IF ( switch .EQ. model_input_only ) THEN

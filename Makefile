@@ -88,6 +88,20 @@ nmm_wrf : wrf
 
 #  Eulerian mass coordinate initializations
 
+em_fire : wrf
+	@ echo '--------------------------------------'
+	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=fire em_ideal )
+	( cd test/em_fire ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/em_fire ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/em_fire ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd test/em_fire ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
+	( cd test/em_fire ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/em_fire/namelist.input . )
+	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_fire/input_sounding . )
+
 em_quarter_ss : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=quarter_ss em_ideal )
@@ -204,9 +218,11 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
                ln -sf ../../run/ETAMPNEW_DATA . ;                      \
                ln -sf ../../run/RRTM_DATA . ;                          \
+               ln -sf ../../run/RRTMG_LW_DATA . ;                      \
+               ln -sf ../../run/RRTMG_SW_DATA . ;                      \
                ln -sf ../../run/CAM_ABS_DATA . ;                       \
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
                ln -sf ../../run/ozone.formatted . ;                    \
@@ -214,7 +230,7 @@ em_real : wrf
                ln -sf ../../run/ozone_plev.formatted . ;               \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
-                  ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;           \
+                  ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;           \
                fi ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . ) ; \
@@ -231,9 +247,11 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \
+	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
              ln -sf ../../run/RRTM_DATA . ;                         \
+             ln -sf ../../run/RRTMG_LW_DATA . ;                      \
+             ln -sf ../../run/RRTMG_SW_DATA . ;                      \
              ln -sf ../../run/CAM_ABS_DATA . ;                         \
              ln -sf ../../run/CAM_AEROPT_DATA . ;                         \
              ln -sf ../../run/ozone.formatted . ;                         \
@@ -242,6 +260,8 @@ em_real : wrf
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
+                ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA_DBL ;          \
+                ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA_DBL ;          \
              fi )
 	( cd test/em_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )

@@ -6,7 +6,7 @@
 #########################################################################
 
 export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}
 export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export RUN_DIR=${RUN_DIR:-$EXP_DIR/wrfvar}
@@ -231,7 +231,7 @@ else
 fi
 ln -fs $WRFVAR_DIR/run/CAM_ABS_DATA .
 ln -fs $WRFVAR_DIR/run/CAM_AEROPT_DATA .
-ln -fs $WRFVAR_DIR/run/gmao_airs_bufr.tbl .
+ln -fs $WRFVAR_DIR/var/run/gmao_airs_bufr.tbl .
 ln -fs $BUILD_DIR/da_wrfvar.exe .
 export PATH=$WRFVAR_DIR/var/scripts:$PATH
 
@@ -268,7 +268,7 @@ if [[ -f $DA_VARBC_IN ]]; then
    ln -fs $DA_VARBC_IN "VARBC.in"
 fi
 
-export RADIANCE_INFO_DIR=${RADIANCE_INFO_DIR:-$WRFVAR_DIR/run/radiance_info}
+export RADIANCE_INFO_DIR=${RADIANCE_INFO_DIR:-$WRFVAR_DIR/var/run/radiance_info}
 ln -fs $RADIANCE_INFO_DIR radiance_info
 
 if [[ $NL_NUM_FGAT_TIME -gt 1 ]]; then

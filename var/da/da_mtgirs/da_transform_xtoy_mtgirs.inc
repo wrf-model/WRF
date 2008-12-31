@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -24,8 +26,13 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
    allocate (t(iv%info(mtgirs)%max_lev,iv%info(mtgirs)%n1:iv%info(mtgirs)%n2))
    allocate (q(iv%info(mtgirs)%max_lev,iv%info(mtgirs)%n1:iv%info(mtgirs)%n2))
   
+#ifdef A2C
+   call da_interp_lin_3d (grid%xa%u, iv%info(mtgirs), u,'u')
+   call da_interp_lin_3d (grid%xa%v, iv%info(mtgirs), v,'v')
+#else
    call da_interp_lin_3d (grid%xa%u, iv%info(mtgirs), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(mtgirs), v)
+#endif
    call da_interp_lin_3d (grid%xa%t, iv%info(mtgirs), t)
    call da_interp_lin_3d (grid%xa%q, iv%info(mtgirs), q)
 

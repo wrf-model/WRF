@@ -2,6 +2,8 @@ subroutine da_transform_xtoy_sound_adj(iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   !    Updated for Analysis on Arakawa-C grid
+   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !-----------------------------------------------------------------------
 
    implicit none
@@ -31,11 +33,16 @@ subroutine da_transform_xtoy_sound_adj(iv, jo_grad_y, jo_grad_x)
       q(1:size(jo_grad_y%sound(n)%q),n) = jo_grad_y%sound(n)%q(:)
    end do
 
+#ifdef A2C
+   call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(sound), u,'u')
+   call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(sound), v,'v')
+#else
    call da_interp_lin_3d_adj (jo_grad_x%u, iv%info(sound), u)
    call da_interp_lin_3d_adj (jo_grad_x%v, iv%info(sound), v)
+#endif
    call da_interp_lin_3d_adj (jo_grad_x%t, iv%info(sound), t)
    call da_interp_lin_3d_adj (jo_grad_x%q, iv%info(sound), q)
-
+   
    deallocate (u)
    deallocate (v)
    deallocate (t)

@@ -20,7 +20,7 @@
  history_interval                    = 60,       60,
  frames_per_outfile                  = 1,        1,
  restart                             = .false.,
- restart_interval                    = 6000,
+ restart_interval                    = 5760,
  reset_simulation_start              = F,
  io_form_input                       = 2
  io_form_history                     = 2
@@ -86,6 +86,7 @@
  icloud                              = 0,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0
+ gwd_opt                             = 0
  /
 
  &dynamics

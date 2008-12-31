@@ -28,6 +28,37 @@ contains
 !-------------------------------------------------------------------
       implicit none
 !-------------------------------------------------------------------
+!
+!     this code is a revised vertical diffusion package ("ysupbl")
+!     with a nonlocal turbulent mixing in the pbl after "mrfpbl".
+!     the ysupbl (hong et al. 2006) is based on the study of noh 
+!     et al.(2003) and accumulated realism of the behavior of the 
+!     troen and mahrt (1986) concept implemented by hong and pan(1996). 
+!     the major ingredient of the ysupbl is the inclusion of an explicit
+!     treatment of the entrainment processes at the entrainment layer.
+!     this routine uses an implicit approach for vertical flux
+!     divergence and does not require "miter" timesteps.
+!     it includes vertical diffusion in the stable atmosphere
+!     and moist vertical diffusion in clouds.
+!
+!     mrfpbl:
+!     coded by song-you hong (ncep), implemented by jimy dudhia (ncar)
+!     fall 1996
+!
+!     ysupbl:
+!     coded by song-you hong (yonsei university) and implemented by
+!         song-you hong (yonsei university) and jimy dudhia (ncar)
+!     summer 2002
+!
+!     references:
+!
+!        hong, noh, and dudhia (2006), mon. wea. rev. 
+!        hong and pan (1996), mon. wea. rev.
+!        noh, chun, hong, and raasch (2003), boundary layer met.
+!        troen and mahrt (1986), boundary layer met.
+!
+!-------------------------------------------------------------------
+!
 !-- u3d         3d u-velocity interpolated to theta points (m/s)
 !-- v3d         3d v-velocity interpolated to theta points (m/s)
 !-- th3d	3d potential temperature (k)
@@ -275,36 +306,6 @@ contains
                   regime                                           )
 !-------------------------------------------------------------------
    implicit none
-!-------------------------------------------------------------------
-!
-!     this code is a revised vertical diffusion package ("ysupbl")
-!     with a nonlocal turbulent mixing in the pbl after "mrfpbl".
-!     the ysupbl (hong et al. 2006) is based on the study of noh 
-!     et al.(2003) and accumulated realism of the behavior of the 
-!     troen and mahrt (1986) concept implemented by hong and pan(1996). 
-!     the major ingredient of the ysupbl is the inclusion of an explicit
-!     treatment of the entrainment processes at the entrainment layer.
-!     this routine uses an implicit approach for vertical flux
-!     divergence and does not require "miter" timesteps.
-!     it includes vertical diffusion in the stable atmosphere
-!     and moist vertical diffusion in clouds.
-!
-!     mrfpbl:
-!     coded by song-you hong (ncep), implemented by jimy dudhia (ncar)
-!     fall 1996
-!
-!     ysupbl:
-!     coded by song-you hong (yonsei university) and implemented by
-!         song-you hong (yonsei university) and jimy dudhia (ncar)
-!     summer 2002
-!
-!     references:
-!
-!        hong, noh, and dudhia (2006), mon. wea. rev. 
-!        hong and pan (1996), mon. wea. rev.
-!        noh, chun, hong, and raasch (2003), boundary layer met.
-!        troen and mahrt (1986), boundary layer met.
-!
 !-------------------------------------------------------------------
 !
    integer,parameter ::  ncloud = 3

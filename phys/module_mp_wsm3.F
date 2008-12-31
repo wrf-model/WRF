@@ -9,38 +9,35 @@
 MODULE module_mp_wsm3
 !
 !
-   REAL, PARAMETER, PRIVATE :: dtcldcr     = 120.
-   REAL, PARAMETER, PRIVATE :: n0r = 8.e6
-   REAL, PARAMETER, PRIVATE :: avtr = 841.9
-   REAL, PARAMETER, PRIVATE :: bvtr = 0.8
-   REAL, PARAMETER, PRIVATE :: r0 = .8e-5 ! 8 microm  in contrast to 10 micro m
-   REAL, PARAMETER, PRIVATE :: peaut = .55   ! collection efficiency
-   REAL, PARAMETER, PRIVATE :: xncr = 3.e8   ! maritime cloud in contrast to 3.e8 in tc80
-   REAL, PARAMETER, PRIVATE :: xmyu = 1.718e-5 ! the dynamic viscosity kgm-1s-1
-   REAL, PARAMETER, PRIVATE :: avts = 11.72
-   REAL, PARAMETER, PRIVATE :: bvts = .41
-   REAL, PARAMETER, PRIVATE :: n0smax =  1.e11 ! t=-90C unlimited
-   REAL, PARAMETER, PRIVATE :: lamdarmax = 8.e4
-   REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5
-   REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4
-   REAL, PARAMETER, PRIVATE :: betai = .6
-   REAL, PARAMETER, PRIVATE :: xn0 = 1.e-2
-   REAL, PARAMETER, PRIVATE :: dicon = 11.9
-   REAL, PARAMETER, PRIVATE :: di0 = 12.9e-6
-   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6
-   REAL, PARAMETER, PRIVATE :: n0s = 2.e6             ! temperature dependent n0s
+   REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
+   REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
+   REAL, PARAMETER, PRIVATE :: avtr = 841.9       ! a constant for terminal velocity of rain
+   REAL, PARAMETER, PRIVATE :: bvtr = 0.8         ! a constant for terminal velocity of rain
+   REAL, PARAMETER, PRIVATE :: r0 = .8e-5         ! 8 microm  in contrast to 10 micro m
+   REAL, PARAMETER, PRIVATE :: peaut = .55        ! collection efficiency
+   REAL, PARAMETER, PRIVATE :: xncr = 3.e8        ! maritime cloud in contrast to 3.e8 in tc80
+   REAL, PARAMETER, PRIVATE :: xmyu = 1.718e-5    ! the dynamic viscosity kgm-1s-1
+   REAL, PARAMETER, PRIVATE :: avts = 11.72       ! a constant for terminal velocity of snow
+   REAL, PARAMETER, PRIVATE :: bvts = .41         ! a constant for terminal velocity of snow
+   REAL, PARAMETER, PRIVATE :: n0smax =  1.e11    ! maximum n0s (t=-90C unlimited)
+   REAL, PARAMETER, PRIVATE :: lamdarmax = 8.e4   ! limited maximum value for slope parameter of rain
+   REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
+   REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
+   REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
+   REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
+   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
-   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9
-   REAL, SAVE ::                                     &
-             qc0, qck1,bvtr1,bvtr2,bvtr3,bvtr4,g1pbr,&
-             g3pbr,g4pbr,g5pbro2,pvtr,eacrr,pacrr,   &
-             precr1,precr2,xm0,xmmax,roqimax,bvts1,  &
-             bvts2,bvts3,bvts4,g1pbs,g3pbs,g4pbs,    &
-             g5pbso2,pvts,pacrs,precs1,precs2,pidn0r,&
-             pidn0s,xlv1,                            &
-             rslopermax,rslopesmax,rslopegmax,       &
-             rsloperbmax,rslopesbmax,rslopegbmax,    &
-             rsloper2max,rslopes2max,rslopeg2max,    &
+   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
+   REAL, SAVE ::                                      &
+             qc0, qck1,bvtr1,bvtr2,bvtr3,bvtr4,g1pbr, &
+             g3pbr,g4pbr,g5pbro2,pvtr,eacrr,pacrr,    &
+             precr1,precr2,xmmax,roqimax,bvts1,       &
+             bvts2,bvts3,bvts4,g1pbs,g3pbs,g4pbs,     &
+             g5pbso2,pvts,pacrs,precs1,precs2,pidn0r, &
+             pidn0s,xlv1,                             &
+             rslopermax,rslopesmax,rslopegmax,        &
+             rsloperbmax,rslopesbmax,rslopegbmax,     &
+             rsloper2max,rslopes2max,rslopeg2max,     &
              rsloper3max,rslopes3max,rslopeg3max
 !
 ! Specifies code-inlining of fpvs function in WSM32D below. JM 20040507
@@ -48,19 +45,19 @@ MODULE module_mp_wsm3
 CONTAINS
 !===================================================================
 !
-  SUBROUTINE wsm3(th, q, qci, qrs                                  &
-                   , w, den, pii, p, delz                          &
-                   , delt,g, cpd, cpv, rd, rv, t0c                 &
-                   , ep1, ep2, qmin                                &
-                   , XLS, XLV0, XLF0, den0, denr                   &
-                   , cliq,cice,psat                                &
-                   , rain, rainncv                                 &
-                   ,snow, snowncv                                  &
-                   ,sr                                             &
-                   , ids,ide, jds,jde, kds,kde                     &
-                   , ims,ime, jms,jme, kms,kme                     &
-                   , its,ite, jts,jte, kts,kte                     &
-                                                                   )
+  SUBROUTINE wsm3(th, q, qci, qrs                     &
+                   , w, den, pii, p, delz             &
+                   , delt,g, cpd, cpv, rd, rv, t0c    &
+                   , ep1, ep2, qmin                   &
+                   , XLS, XLV0, XLF0, den0, denr      &
+                   , cliq,cice,psat                   &
+                   , rain, rainncv                    &
+                   , snow, snowncv                    &
+                   , sr                               &
+                   , ids,ide, jds,jde, kds,kde        &
+                   , ims,ime, jms,jme, kms,kme        &
+                   , its,ite, jts,jte, kts,kte        &
+                                                      )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -88,51 +85,52 @@ CONTAINS
 !             Dudhia (D89, 1989) J. Atmos. Sci.
 !             Hong and Lim (HL, 2006) J. Korean Meteor. Soc.
 !
-  INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde , &
-                                      ims,ime, jms,jme, kms,kme , &
-                                      its,ite, jts,jte, kts,kte
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                                          &
-                                                             th,  &
-                                                              q,  &
-                                                             qci, &
-                                                             qrs
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(IN   ) ::                                       w, &
-                                                             den, &
-                                                             pii, &
-                                                               p, &
-                                                            delz
-  REAL, INTENT(IN   ) ::                                    delt, &
-                                                               g, &
-                                                              rd, &
-                                                              rv, &
-                                                             t0c, &
-                                                            den0, &
-                                                             cpd, &
-                                                             cpv, &
-                                                             ep1, &
-                                                             ep2, &
-                                                            qmin, &
-                                                             XLS, &
-                                                            XLV0, &
-                                                            XLF0, &
-                                                            cliq, &
-                                                            cice, &
-                                                            psat, &
-                                                            denr
-  REAL, DIMENSION( ims:ime , jms:jme ),                           &
-        INTENT(INOUT) ::                                    rain, &
-                                                         rainncv, &
-                                                              sr
+  INTEGER,      INTENT(IN   )    ::                ids,ide, jds,jde, kds,kde , &
+                                                   ims,ime, jms,jme, kms,kme , &
+                                                   its,ite, jts,jte, kts,kte
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                              &
+        INTENT(INOUT) ::                                                       &
+                                                                          th,  &
+                                                                           q,  &
+                                                                          qci, &
+                                                                          qrs
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                              &
+        INTENT(IN   ) ::                                                    w, &
+                                                                          den, &
+                                                                          pii, &
+                                                                            p, &
+                                                                         delz
 
-  REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                &
-        INTENT(INOUT) ::                                    snow, &
-                                                         snowncv
+  REAL, INTENT(IN   ) ::                                                 delt, &
+                                                                            g, &
+                                                                           rd, &
+                                                                           rv, &
+                                                                          t0c, &
+                                                                         den0, &
+                                                                          cpd, &
+                                                                          cpv, &
+                                                                          ep1, &
+                                                                          ep2, &
+                                                                         qmin, &
+                                                                          XLS, &
+                                                                         XLV0, &
+                                                                         XLF0, &
+                                                                         cliq, &
+                                                                         cice, &
+                                                                         psat, &
+                                                                         denr
+  REAL, DIMENSION( ims:ime , jms:jme ),                                        &
+        INTENT(INOUT) ::                                                 rain, &
+                                                                      rainncv
+
+  REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                              &
+        INTENT(INOUT) ::                                                 snow, &
+                                                                      snowncv, &
+                                                                           sr
 
 ! LOCAL VAR
-  REAL, DIMENSION( its:ite , kts:kte ) ::   t
-  INTEGER ::               i,j,k
+  REAL, DIMENSION( its:ite , kts:kte ) ::                                   t
+  INTEGER ::                                                            i,j,k
 !-------------------------------------------------------------------
       DO j=jts,jte
          DO k=kts,kte
@@ -140,21 +138,21 @@ CONTAINS
             t(i,k)=th(i,k,j)*pii(i,k,j)
          ENDDO
          ENDDO
-         CALL wsm32D(t, q(ims,kms,j), qci(ims,kms,j)               &
-                    ,qrs(ims,kms,j),w(ims,kms,j), den(ims,kms,j)   &
-                    ,p(ims,kms,j), delz(ims,kms,j)                 &
-                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
-                    ,ep1, ep2, qmin                                &
-                    ,XLS, XLV0, XLF0, den0, denr                   &
-                    ,cliq,cice,psat                                &
-                    ,j                                             &
-                    ,rain(ims,j), rainncv(ims,j)                   &
-                    ,sr(ims,j)                                     &
-                    ,ids,ide, jds,jde, kds,kde                     &
-                    ,ims,ime, jms,jme, kms,kme                     &
-                    ,its,ite, jts,jte, kts,kte                     &
-                    ,snow(ims,j),snowncv(ims,j)                    &
-                                                                   )
+         CALL wsm32D(t, q(ims,kms,j), qci(ims,kms,j)                           &
+                    ,qrs(ims,kms,j),w(ims,kms,j), den(ims,kms,j)               &
+                    ,p(ims,kms,j), delz(ims,kms,j)                             &
+                    ,delt,g, cpd, cpv, rd, rv, t0c                             &
+                    ,ep1, ep2, qmin                                            &
+                    ,XLS, XLV0, XLF0, den0, denr                               &
+                    ,cliq,cice,psat                                            &
+                    ,j                                                         &
+                    ,rain(ims,j), rainncv(ims,j)                               &
+                    ,snow(ims,j),snowncv(ims,j)                                &
+                    ,sr(ims,j)                                                 &
+                    ,ids,ide, jds,jde, kds,kde                                 &
+                    ,ims,ime, jms,jme, kms,kme                                 &
+                    ,its,ite, jts,jte, kts,kte                                 &
+                                                                               )
          DO K=kts,kte
          DO I=its,ite
             th(i,k,j)=t(i,k)/pii(i,k,j)
@@ -164,91 +162,118 @@ CONTAINS
   END SUBROUTINE wsm3
 !===================================================================
 !
-  SUBROUTINE wsm32D(t, q, qci, qrs,w, den, p, delz                &
-                   ,delt,g, cpd, cpv, rd, rv, t0c                 &
-                   ,ep1, ep2, qmin                                &
-                   ,XLS, XLV0, XLF0, den0, denr                   &
-                   ,cliq,cice,psat                                &
-                   ,lat                                           &
-                   ,rain, rainncv                                 &
-                   ,sr                                            &
-                   ,ids,ide, jds,jde, kds,kde                     &
-                   ,ims,ime, jms,jme, kms,kme                     &
-                   ,its,ite, jts,jte, kts,kte                     &
-                   ,snow,snowncv                                  &
-                                                                  )
+  SUBROUTINE wsm32D(t, q, qci, qrs,w, den, p, delz                             &
+                   ,delt,g, cpd, cpv, rd, rv, t0c                              &
+                   ,ep1, ep2, qmin                                             &
+                   ,XLS, XLV0, XLF0, den0, denr                                &
+                   ,cliq,cice,psat                                             &
+                   ,lat                                                        &
+                   ,rain, rainncv                                              &
+                   ,snow,snowncv                                               &
+                   ,sr                                                         &
+                   ,ids,ide, jds,jde, kds,kde                                  &
+                   ,ims,ime, jms,jme, kms,kme                                  &
+                   ,its,ite, jts,jte, kts,kte                                  &
+                                                                               )
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
-  INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde , &
-                                      ims,ime, jms,jme, kms,kme , &
-                                      its,ite, jts,jte, kts,kte,  &
-                                      lat
-  REAL, DIMENSION( its:ite , kts:kte ),                           &
-        INTENT(INOUT) ::                                          &
-                                                               t
-  REAL, DIMENSION( ims:ime , kms:kme ),                           &
-        INTENT(INOUT) ::                                          &
-                                                               q, &
-                                                             qci, &
-                                                             qrs
-  REAL, DIMENSION( ims:ime , kms:kme ),                           &
-        INTENT(IN   ) ::                                       w, &
-                                                             den, &
-                                                               p, &
-                                                            delz
-  REAL, INTENT(IN   ) ::                                    delt, &
-                                                               g, &
-                                                             cpd, &
-                                                             cpv, &
-                                                             t0c, &
-                                                            den0, &
-                                                              rd, &
-                                                              rv, &
-                                                             ep1, &
-                                                             ep2, &
-                                                            qmin, &
-                                                             XLS, &
-                                                            XLV0, &
-                                                            XLF0, &
-                                                            cliq, &
-                                                            cice, &
-                                                            psat, &
-                                                            denr
-  REAL, DIMENSION( ims:ime ),                                     &
-        INTENT(INOUT) ::                                    rain, &
-                                                         rainncv, &
-                                                              sr
+  INTEGER,      INTENT(IN   )    ::                 ids,ide, jds,jde, kds,kde, &
+                                                    ims,ime, jms,jme, kms,kme, &
+                                                    its,ite, jts,jte, kts,kte, &
+                                                    lat
+  REAL, DIMENSION( its:ite , kts:kte ),                                        &
+        INTENT(INOUT) ::                                                       &
+                                                                            t
+  REAL, DIMENSION( ims:ime , kms:kme ),                                        &
+        INTENT(INOUT) ::                                                       &
+                                                                            q, &
+                                                                          qci, &
+                                                                          qrs
+  REAL, DIMENSION( ims:ime , kms:kme ),                                        &
+        INTENT(IN   ) ::                                                    w, &
+                                                                          den, &
+                                                                            p, &
+                                                                         delz
+  REAL, INTENT(IN   ) ::                                                 delt, &
+                                                                            g, &
+                                                                          cpd, &
+                                                                          cpv, &
+                                                                          t0c, &
+                                                                         den0, &
+                                                                           rd, &
+                                                                           rv, &
+                                                                          ep1, &
+                                                                          ep2, &
+                                                                         qmin, &
+                                                                          XLS, &
+                                                                         XLV0, &
+                                                                         XLF0, &
+                                                                         cliq, &
+                                                                         cice, &
+                                                                         psat, &
+                                                                         denr
+  REAL, DIMENSION( ims:ime ),                                                  &
+        INTENT(INOUT) ::                                                 rain, &
+                                                                      rainncv
 
-  REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
-        INTENT(INOUT) ::                                    snow, &
-                                                         snowncv
+  REAL, DIMENSION( ims:ime ),     OPTIONAL,                                    &
+        INTENT(INOUT) ::                                                 snow, &
+                                                                      snowncv, &
+                                                                           sr
 ! LOCAL VAR
-  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
-        rh, qs, denfac, rslope, rslope2, rslope3, rslopeb,        &
-        pgen, paut, pacr, pisd, pres, pcon, fall, falk,           &
-        xl, cpm, work1, work2, xni, qs0, n0sfac
-  INTEGER, DIMENSION( its:ite ) ::  kwork1, kwork2
-  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
-              falkc, work1c, work2c, fallc
-! variables for optimization
-  REAL, DIMENSION( its:ite )           :: tvec1
-  INTEGER, DIMENSION( its:ite ) :: mstep, numdt
+  REAL, DIMENSION( its:ite , kts:kte ) ::                                      &
+                                                                           rh, &
+                                                                           qs, &
+                                                                       denfac, &
+                                                                       rslope, &
+                                                                      rslope2, &
+                                                                      rslope3, &
+                                                                      rslopeb
+  REAL, DIMENSION( its:ite , kts:kte ) ::                                      &
+                                                                         pgen, &
+                                                                         pisd, &
+                                                                         paut, &
+                                                                         pacr, &
+                                                                         pres, &
+                                                                         pcon
+  REAL, DIMENSION( its:ite , kts:kte ) ::                                      &
+                                                                         fall, &
+                                                                         falk, &
+                                                                           xl, &
+                                                                          cpm, &
+                                                                        work1, &
+                                                                        work2, &
+                                                                          xni, &
+                                                                          qs0, &
+                                                                       n0sfac
+  REAL, DIMENSION( its:ite , kts:kte ) ::                                      &
+                                                                        falkc, &
+                                                                       work1c, &
+                                                                       work2c, &
+                                                                        fallc
+
+  INTEGER, DIMENSION( its:ite ) ::                                      kwork1,&
+                                                                        kwork2
+
+  INTEGER, DIMENSION( its:ite ) ::                                      mstep, &
+                                                                        numdt
   LOGICAL, DIMENSION( its:ite ) :: flgcld
-  REAL  ::  pi,                                                   &
-            cpmcal, xlcal, lamdar, lamdas, diffus,                &
-            viscos, xka, venfac, conden, diffac,                  &
-            x, y, z, a, b, c, d, e,                               &
-            fallsum, fallsum_qsi, vt2i,vt2s,acrfac,               &      
-            qdt, pvt, qik, delq, facq, qrsci, frzmlt,             &
-            snomlt, hold, holdrs, facqci, supcol, coeres,         &
-            supsat, dtcld, xmi, qciik, delqci, eacrs, satdt,      &
-            qimax, diameter, xni0, roqi0, supice
-  REAL  :: holdc, holdci
-  INTEGER :: i, j, k, mstepmax,                                   &
+  REAL  ::  pi,                                                                &
+            cpmcal, xlcal, lamdar, lamdas, diffus,                             &
+            viscos, xka, venfac, conden, diffac,                               &
+            x, y, z, a, b, c, d, e,                                            &
+            fallsum, fallsum_qsi, vt2i,vt2s,acrfac,                            &      
+            qdt, pvt, qik, delq, facq, qrsci, frzmlt,                          &
+            snomlt, hold, holdrs, facqci, supcol, coeres,                      &
+            supsat, dtcld, xmi, qciik, delqci, eacrs, satdt,                   &
+            qimax, diameter, xni0, roqi0, supice,holdc, holdci
+  INTEGER :: i, j, k, mstepmax,                                                &
             iprt, latd, lond, loop, loops, ifsat, kk, n
 ! Temporaries used for inlining fpvs function
   REAL  :: dldti, xb, xai, tr, xbi, xa, hvap, cvap, hsub, dldt, ttp
+! variables for optimization
+  REAL, DIMENSION( its:ite )    :: tvec1
 !
 !=================================================================
 !   compute internal functions
@@ -271,9 +296,9 @@ CONTAINS
       viscos(x,y) = 1.496e-6 * (x*sqrt(x)) /(x+120.)/y  ! 1.496e-6*x**1.5/(x+120.)/y
       xka(x,y) = 1.414e3*viscos(x,y)*y
       diffac(a,b,c,d,e) = d*a*a/(xka(c,d)*rv*c*c)+1./(e*diffus(c,b))
-!      venfac(a,b,c) = (viscos(b,c)/diffus(b,a))**(.3333333)       &
+!      venfac(a,b,c) = (viscos(b,c)/diffus(b,a))**(.3333333)                   &
 !                      /viscos(b,c)**(.5)*(den0/c)**0.25
-      venfac(a,b,c) = exp(log((viscos(b,c)/diffus(b,a)))*((.3333333)))    &
+      venfac(a,b,c) = exp(log((viscos(b,c)/diffus(b,a)))*((.3333333)))         &
                      /sqrt(viscos(b,c))*sqrt(sqrt(den0/c))
       conden(a,b,c,d,e) = (max(b,qmin)-c)/(1.+d*d/(rv*e)*c/(a*a))
 !
@@ -427,9 +452,10 @@ CONTAINS
 !-------------------------------------------------------------
 ! Ni: ice crystal number concentraiton   [HDC 5c]
 !-------------------------------------------------------------
-!         xni(i,k) = min(max(5.38e7*(den(i,k)                           &
-!                   *max(qci(i,k),qmin))**0.75,1.e3),1.e6)
-          xni(i,k) = min(max(5.38e7*exp(log((den(i,k)*max(qci(i,k),qmin)))*(0.75)),1.e3),1.e6)
+!         xni(i,k) = min(max(5.38e7                                            &
+!                   *(den(i,k)*max(qci(i,k),qmin))**0.75,1.e3),1.e6)
+          xni(i,k) = min(max(5.38e7                                            &
+                    *exp(log((den(i,k)*max(qci(i,k),qmin)))*(0.75)),1.e3),1.e6)
         enddo
       enddo
 !
@@ -470,7 +496,7 @@ CONTAINS
               hold = falk(i,k)
               fall(i,k) = fall(i,k)+falk(i,k)
               holdrs = qrs(i,k)
-              qrs(i,k) = max(qrs(i,k)-(falk(i,k)                        &
+              qrs(i,k) = max(qrs(i,k)-(falk(i,k)                               &
                         -falk(i,k+1)*delz(i,k+1)/delz(i,k))*dtcld/den(i,k),0.)
             endif
           enddo
@@ -524,7 +550,7 @@ CONTAINS
               holdc = falkc(i,k)
               fallc(i,k) = fallc(i,k)+falkc(i,k)
               holdci = qci(i,k)
-              qci(i,k) = max(qci(i,k)-(falkc(i,k)                       &
+              qci(i,k) = max(qci(i,k)-(falkc(i,k)                              &
                         -falkc(i,k+1)*delz(i,k+1)/delz(i,k))*dtcld/den(i,k),0.)
             endif
           enddo
@@ -539,6 +565,7 @@ CONTAINS
         mstep(i) = 0
       enddo
       do k = kts, kte
+!
         do i = its, ite
           if(t(i,k).ge.t0c) then
             mstep(i) = k
@@ -562,10 +589,10 @@ CONTAINS
         if(k*kk.ge.1) then
           qrsci = qrs(i,k) + qci(i,k)
           if(qrsci.gt.0..or.fall(i,kk).gt.0.) then
-            frzmlt = min(max(-w(i,k)*qrsci/delz(i,k),-qrsci/dtcld),    &
-                     qrsci/dtcld)
-            snomlt = min(max(fall(i,kk)/den(i,kk),-qrs(i,k)/dtcld),    &
-                     qrs(i,k)/dtcld)
+            frzmlt = min(max(-w(i,k)*qrsci/delz(i,k),-qrsci/dtcld),            &
+                    qrsci/dtcld)
+            snomlt = min(max(fall(i,kk)/den(i,kk),-qrs(i,k)/dtcld),            &
+                    qrs(i,k)/dtcld)
             if(k.eq.kk) then
               t(i,k) = t(i,k) - xlf0/cpm(i,k)*(frzmlt+snomlt)*dtcld
             else
@@ -589,8 +616,7 @@ CONTAINS
         rainncv(i) = 0.
         if(fallsum.gt.0.) then
           rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000.
-          rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.                &
-                  + rain(i)
+          rain(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rain(i)
         endif
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
         snowncv(i) = 0.
@@ -600,7 +626,8 @@ CONTAINS
         endif
         ENDIF
         sr(i) = 0.
-        if(fallsum.gt.0.)sr(i)=fallsum_qsi*delz(i,kts)/denr*dtcld*1000./(rainncv(i)+1.e-12)
+        if(fallsum.gt.0.) sr(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.     &
+                                 /(rainncv(i)+1.e-12)
       enddo
 !
 !----------------------------------------------------------------
@@ -679,7 +706,7 @@ CONTAINS
 !        (C->R)
 !---------------------------------------------------------------
             if(qrs(i,k).gt.qcrmin.and.qci(i,k).gt.qmin) then
-                pacr(i,k) = min(pacrr*rslope3(i,k)*rslopeb(i,k)          &
+                pacr(i,k) = min(pacrr*rslope3(i,k)*rslopeb(i,k)                &
                      *qci(i,k)*denfac(i,k),qci(i,k)/dtcld)
             endif
 !---------------------------------------------------------------
@@ -688,7 +715,7 @@ CONTAINS
 !---------------------------------------------------------------
             if(qrs(i,k).gt.0.) then
                 coeres = rslope2(i,k)*sqrt(rslope(i,k)*rslopeb(i,k))
-                pres(i,k) = (rh(i,k)-1.)*(precr1*rslope2(i,k)            &
+                pres(i,k) = (rh(i,k)-1.)*(precr1*rslope2(i,k)                  &
                          +precr2*work2(i,k)*coeres)/work1(i,k)
               if(pres(i,k).lt.0.) then
                 pres(i,k) = max(pres(i,k),-qrs(i,k)/dtcld)
@@ -717,23 +744,25 @@ CONTAINS
 !-------------------------------------------------------------
 ! Ni: ice crystal number concentraiton   [HDC 5c]
 !-------------------------------------------------------------
-!           xni(i,k) = min(max(5.38e7*(den(i,k)                         &
-!                     *max(qci(i,k),qmin))**0.75,1.e3),1.e6)
-            xni(i,k) = min(max(5.38e7*exp(log((den(i,k)*max(qci(i,k),qmin)))*(0.75)),1.e3),1.e6)
+!           xni(i,k) = min(max(5.38e7                                          &
+!                     *(den(i,k)*max(qci(i,k),qmin))**0.75,1.e3),1.e6)
+            xni(i,k) = min(max(5.38e7                                          &
+                      *exp(log((den(i,k)*max(qci(i,k),qmin)))*(0.75)),1.e3),1.e6)
             eacrs = exp(0.07*(-supcol))
 !
             if(qrs(i,k).gt.qcrmin.and.qci(i,k).gt.qmin) then
               xmi = den(i,k)*qci(i,k)/xni(i,k)
               diameter  = min(dicon * sqrt(xmi),dimax)
               vt2i = 1.49e4*diameter**1.31
+!             vt2i = 1.49e4*exp((log(diameter))*(1.31))
               vt2s = pvts*rslopeb(i,k)*denfac(i,k)
 !-------------------------------------------------------------
 ! praci: Accretion of cloud ice by rain [HL A15] [LFO 25]
 !        (T<T0: I->R)
 !-------------------------------------------------------------
-              acrfac = 2.*rslope3(i,k)+2.*diameter*rslope2(i,k)          &
+              acrfac = 2.*rslope3(i,k)+2.*diameter*rslope2(i,k)                &
                       +diameter**2*rslope(i,k)
-              pacr(i,k) = min(pi*qci(i,k)*eacrs*n0s*n0sfac(i,k)          &
+              pacr(i,k) = min(pi*qci(i,k)*eacrs*n0s*n0sfac(i,k)                &
                        *abs(vt2s-vt2i)*acrfac/4.,qci(i,k)/dtcld)
             endif
 !-------------------------------------------------------------
@@ -758,7 +787,7 @@ CONTAINS
 !-------------------------------------------------------------
             if(qrs(i,k).gt.0..and.ifsat.ne.1) then
               coeres = rslope2(i,k)*sqrt(rslope(i,k)*rslopeb(i,k))
-              pres(i,k) = (rh(i,k)-1.)*n0sfac(i,k)*(precs1*rslope2(i,k)   &
+              pres(i,k) = (rh(i,k)-1.)*n0sfac(i,k)*(precs1*rslope2(i,k)        &
                         +precs2*work2(i,k)*coeres)/work1(i,k)
               supice = satdt-pisd(i,k)
               if(pres(i,k).lt.0.) then
@@ -818,10 +847,9 @@ CONTAINS
           endif
           work2(i,k) = -pres(i,k)-pgen(i,k)-pisd(i,k)
           q(i,k) = q(i,k)+work2(i,k)*dtcld
-          qci(i,k) = max(qci(i,k)-(paut(i,k)+pacr(i,k)-pgen(i,k)     &
-                   -pisd(i,k))*dtcld,0.)
-          qrs(i,k) = max(qrs(i,k)+(paut(i,k)+pacr(i,k)               &
-                   +pres(i,k))*dtcld,0.)
+          qci(i,k) = max(qci(i,k)-(paut(i,k)+pacr(i,k)-pgen(i,k)-pisd(i,k))    &
+                    *dtcld,0.)
+          qrs(i,k) = max(qrs(i,k)+(paut(i,k)+pacr(i,k)+pres(i,k))*dtcld,0.)
           if(t(i,k).lt.t0c) then
             t(i,k) = t(i,k)-xls*work2(i,k)/cpm(i,k)*dtcld
           else
@@ -861,7 +889,7 @@ CONTAINS
           work1(i,k) = conden(t(i,k),q(i,k),qs(i,k),xl(i,k),cpm(i,k))
           work2(i,k) = qci(i,k)+work1(i,k)
           pcon(i,k) = min(max(work1(i,k),0.),max(q(i,k),0.))/dtcld
-          if(qci(i,k).gt.0..and.work1(i,k).lt.0.and.t(i,k).gt.t0c)      &
+          if(qci(i,k).gt.0..and.work1(i,k).lt.0.and.t(i,k).gt.t0c)             &
             pcon(i,k) = max(work1(i,k),-qci(i,k))/dtcld
           q(i,k) = q(i,k)-pcon(i,k)*dtcld
           qci(i,k) = max(qci(i,k)+pcon(i,k)*dtcld,0.)
@@ -907,7 +935,7 @@ CONTAINS
 !--------------------------------------------------------------------------
       IMPLICIT NONE
 !--------------------------------------------------------------------------
-      REAL t,rd,rv,cvap,cliq,cice,hvap,hsub,psat,t0c,dldt,xa,xb,dldti,   &
+      REAL t,rd,rv,cvap,cliq,cice,hvap,hsub,psat,t0c,dldt,xa,xb,dldti,         &
            xai,xbi,ttp,tr
       INTEGER ice
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -955,7 +983,6 @@ CONTAINS
    pacrr = pi*n0r*avtr*g3pbr*.25*eacrr
    precr1 = 2.*pi*n0r*.78
    precr2 = 2.*pi*n0r*.31*avtr**.5*g5pbro2
-   xm0  = (di0/dicon)**2
    xmmax = (dimax/dicon)**2
    roqimax = 2.08e22*dimax**8
 !

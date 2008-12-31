@@ -65,7 +65,7 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
               {
                 set_mem_order( q->members, memord , NAMELEN) ;
                 if ( ad == 0 ) 
-                /* acutal or dummy argument */
+                /* actual or dummy argument */
                 {
 /* explicit dummy or actual arguments for 4D arrays */
 if ( q->mark == 0 ) {
@@ -378,7 +378,15 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     if ( subgrid != 0 ) {
       fprintf(fp,"IF ( grid%%sr_y .GT. 0 ) THEN\n") ;
     }
-    fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( local_communicator, %d, &\n",maxstenwidth) ;
+
+    fprintf(fp,"CALL rsl_comm_iter_init(%d,jps,jpe)\n",maxstenwidth) ;
+    fprintf(fp,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %d , &\n", maxstenwidth ) ; 
+    fprintf(fp,"                         0 , jds,jde,jps,jpe, grid%%njds, grid%%njde , & \n" ) ;
+    fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
+    fprintf(fp," CALL RSL_LITE_INIT_EXCH ( local_communicator, %d, 0, &\n",maxstenwidth) ;
+    fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -403,14 +411,23 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     }
 
 /* generate packs prior to stencil exchange in Y */
-    gen_packs( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator" ) ;
 /* generate stencil exchange in Y */
-    fprintf(fp,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
+    fprintf(fp,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+    fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in Y */
-    gen_packs( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator" ) ;
+    fprintf(fp,"ENDDO\n") ; 
 
 /* generate the stencil init statement for X transfer */
-    fprintf(fp,"CALL RSL_LITE_INIT_EXCH ( local_communicator, %d , &\n",maxstenwidth) ;
+    fprintf(fp,"CALL rsl_comm_iter_init(%d,ips,ipe)\n",maxstenwidth) ;
+    fprintf(fp,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %d , &\n", maxstenwidth ) ; 
+    fprintf(fp,"                         1 , ids,ide,ips,ipe, grid%%nids, grid%%nide , & \n" ) ;
+    fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
+    fprintf(fp," CALL RSL_LITE_INIT_EXCH ( local_communicator, %d, 1, &\n",maxstenwidth) ;
+    fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
     if ( n4d > 0 ) {
       fprintf(fp,  "     %d  &\n", n3dR ) ;
       for ( i = 0 ; i < n4d ; i++ ) {
@@ -434,11 +451,13 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
       fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
     }
 /* generate packs prior to stencil exchange in X */
-    gen_packs( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator" ) ;
 /* generate stencil exchange in X */
-    fprintf(fp,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y )\n") ;
+    fprintf(fp,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+    fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in X */
-    gen_packs( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator" ) ;
+    gen_packs_halo( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator" ) ;
+    fprintf(fp,"    ENDDO\n") ; 
     if ( subgrid != 0 ) {
       fprintf(fp,"ENDIF\n") ;
     }
@@ -455,6 +474,180 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     }
   }
   return(0) ;
+}
+
+gen_packs_halo ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   
+{
+  node_t * q ;
+  node_t * dimd ;
+  char fname[NAMELEN] ;
+  char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
+  char commuse[NAMELEN] ;
+  int maxstenwidth, stenwidth ;
+  char * t1, * t2 , *wordsize ;
+  char varref[NAMELEN] ;
+  char varname[NAMELEN] ;
+  char * pos1 , * pos2 ;
+  char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
+  int xdex,ydex,zdex ;
+
+    strcpy( tmp, p->comm_define ) ;
+    strcpy( commuse, p->use ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    while ( t1 != NULL )
+    {
+      strcpy( tmp2 , t1 ) ;
+      if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for halo %s\n", p->name ) ; continue ; }
+      t2 = strtok_rentr(NULL,",", &pos2) ;
+      while ( t2 != NULL )
+      {
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
+          { fprintf(stderr,"WARNING 1b : %s in halo spec %s (%s) is not defined in registry.\n",t2,p->name, commuse) ; }
+        else
+        {
+
+          strcpy( varname, t2 ) ;
+          strcpy( varref, t2 ) ;
+          if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
+             sprintf(varref,"grid%%%s",t2) ;
+          }
+
+          if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") ) { ; }
+          else if ( q->boundary_array ) { ; }
+          else
+          { 
+            if      ( ! strcmp( q->type->name, "real") )            { wordsize = "RWORDSIZE" ; }
+            else if ( ! strcmp( q->type->name, "integer") )         { wordsize = "IWORDSIZE" ; }
+            else if ( ! strcmp( q->type->name, "doubleprecision") ) { wordsize = "DWORDSIZE" ; }
+            if ( q->node_kind & FOURD )
+            {
+              node_t *member ;
+              zdex = get_index_for_coord( q , COORD_Z ) ;
+              if ( zdex >=1 && zdex <= 3 )
+              {
+                set_mem_order( q->members, memord , NAMELEN) ;
+fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
+                xdex = get_index_for_coord( q , COORD_X ) ;
+                ydex = get_index_for_coord( q , COORD_Y ) ;
+fprintf(fp," IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
+fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace),%d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
+                       packname, commname, varref , shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+if ( !strcmp( packname, "RSL_LITE_PACK_SWAP" ) ||
+     !strcmp( packname, "RSL_LITE_PACK_CYCLE" ) ) {
+  fprintf(fp,"thisdomain_max_halo_width,                         &\n") ;
+}
+if ( q->subgrid == 0 ) {
+fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
+fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
+fprintf(fp,"ips, ipe, jps, jpe, kps, kpe              )\n") ;
+} else {
+fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
+fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,kms,kme,&\n") ;
+fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
+}
+fprintf(fp," ENDIF\n") ;
+fprintf(fp,"ENDDO\n") ;
+              }
+              else
+              {
+                fprintf(stderr,"WARNING: %d some dimension info missing for 4d array %s\n",zdex,t2) ;
+              }
+            }
+            else
+            {
+              set_mem_order( q, memord , NAMELEN) ;
+              if       ( q->ndims == 3 ) {
+
+                dimd = get_dimnode_for_coord( q , COORD_Z ) ;
+                xdex = get_index_for_coord( q , COORD_X ) ;
+                ydex = get_index_for_coord( q , COORD_Y ) ;
+                zdex = get_index_for_coord( q , COORD_Z ) ;
+                fprintf(fp,"IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
+                if ( dimd != NULL )
+                {
+                  char s[256], e[256] ;
+
+                  if      ( dimd->len_defined_how == DOMAIN_STANDARD ) {
+                    fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                        packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+                    fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+                    if ( q->subgrid == 0 ) {
+                      fprintf(fp,"ids, ide, jds, jde, kds, kde,             &\n") ;
+                      fprintf(fp,"ims, ime, jms, jme, kms, kme,             &\n") ;
+                      fprintf(fp,"ips, ipe, jps, jpe, kps, kpe              )\n") ;
+                    } else {
+fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
+fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,kms,kme,&\n") ;
+fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
+                    }
+                  }
+                  else if ( dimd->len_defined_how == NAMELIST )
+                  {
+                    if ( !strcmp(dimd->assoc_nl_var_s,"1") ) {
+                      strcpy(s,"1") ;
+                      sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                    } else {
+                      sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
+                      sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                    }
+                    fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                        packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+                    fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+                    if ( q->subgrid == 0 ) {
+                      fprintf(fp,"ids, ide, jds, jde, %s, %s,             &\n",s,e) ;
+                      fprintf(fp,"ims, ime, jms, jme, %s, %s,             &\n",s,e) ;
+                      fprintf(fp,"ips, ipe, jps, jpe, %s, %s              )\n",s,e) ;
+                    } else {
+fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
+fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,%s,%s,&\n",s,e) ;
+fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,%s,%s)\n",s,e) ;
+                    }
+                  }
+                  else if ( dimd->len_defined_how == CONSTANT )
+                  {
+                    fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                        packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+                    fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+                    if ( q->subgrid == 0 ) {
+                      fprintf(fp,"ids, ide, jds, jde, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
+                      fprintf(fp,"ims, ime, jms, jme, %d, %d,             &\n",dimd->coord_start,dimd->coord_end) ;
+                      fprintf(fp,"ips, ipe, jps, jpe, %d, %d              )\n",dimd->coord_start,dimd->coord_end) ;
+                    } else {
+fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
+fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,%d,%d,&\n",dimd->coord_start,dimd->coord_end) ;
+fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,%d,%d)\n",dimd->coord_start,dimd->coord_end) ;
+                    }
+                  }
+                }
+                fprintf(fp,"ENDIF\n") ;
+              } else if ( q->ndims == 2 ) {
+                xdex = get_index_for_coord( q , COORD_X ) ;
+                ydex = get_index_for_coord( q , COORD_Y ) ;
+                fprintf(fp,"IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
+                fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                       packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+                fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
+                if ( q->subgrid == 0 ) {
+                  fprintf(fp,"ids, ide, jds, jde, 1  , 1  ,             &\n") ;
+                  fprintf(fp,"ims, ime, jms, jme, 1  , 1  ,             &\n") ;
+                  fprintf(fp,"ips, ipe, jps, jpe, 1  , 1                )\n") ;
+                } else {
+fprintf(fp,"ids, ide*grid%%sr_x, jds, jde*grid%%sr_y, kds, kde, &\n") ;
+fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%sr_y,1,1,&\n") ;
+fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,1,1)\n") ;
+                }
+                fprintf(fp,"ENDIF\n") ;
+              }
+            }
+          }
+          
+        }
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+      }
+      t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+    }
 }
 
 gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   

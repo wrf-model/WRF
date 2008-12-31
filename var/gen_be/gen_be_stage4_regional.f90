@@ -16,18 +16,21 @@ program gen_be_stage4_regional
    integer             :: ni, nj                     ! Dimensions read in.
    integer             :: k, kdum                    ! Vertical index.
    integer             :: stride                     ! Calculate correlation with every stride point.
+   integer             :: nbins                      ! Number of latitude bins
+   integer             :: ibin                       ! Which latitude bin to process (1:nbins)
    integer             :: nn                         ! Dimension of radii bins.
    integer             :: sdate, cdate, edate        ! Starting, current ending dates.
    integer             :: interval                   ! Period between dates (hours).
    integer             :: ne                         ! Number of ensemble members.
    integer             :: member                     ! Loop counters.
+   integer             :: jstart, jend               ! Starting and ending j indices
    real                :: count                      ! Counter for times/members.
    integer, allocatable:: nr(:)                      ! Number of points in each bin.
    real, allocatable   :: field(:,:)                 ! Input 2D field.
    real, allocatable   :: cov(:)                     ! Covariance as a function of distance.
 
    namelist / gen_be_stage4_regional_nl / start_date, end_date, interval, variable, &
-                                          ne, k, stride, run_dir
+                                          ne, k, nbins, ibin, stride, run_dir
 
    integer :: ounit,iunit,namelist_unit
 
@@ -49,6 +52,8 @@ program gen_be_stage4_regional
    ne = 1
    k = 1
    stride = 1
+   nbins = 1
+   ibin = 1
    run_dir = '/mmmtmp/dmbarker'
    open(unit=namelist_unit, file='gen_be_stage4_regional_nl.nl', &
         form='formatted', status='old', action='read')
@@ -58,6 +63,7 @@ program gen_be_stage4_regional
    read(start_date(1:10), fmt='(i10)')sdate
    read(end_date(1:10), fmt='(i10)')edate
    write(UNIT=6,FMT='(4a)')' Computing error correlation scales for dates ', start_date, ' to ', end_date
+   write(UNIT=6,FMT='(a,i3,a,i3)') '                                    for bin ', ibin, ' of ', nbins
    write(UNIT=6,FMT='(a,i8,a)')' Interval between dates = ', interval, 'hours.'
    write(UNIT=6,FMT='(a,i8)')' Number of ensemble members at each time = ', ne
    write(UNIT=6,FMT='(a,i8)')' Stride over which to jump points in correlation calculation = ', stride
@@ -89,6 +95,10 @@ program gen_be_stage4_regional
          open (UNIT=iunit, file = filename, form='unformatted')
          read(UNIT=iunit) ni, nj, kdum
 
+         jstart = floor(real(ibin-1)*real(nj)/real(nbins))+1
+         jend   = floor(real(ibin)  *real(nj)/real(nbins))
+         write(UNIT=6,FMT='(a,i4,a,i4)') 'Computing length scale over j range ', jstart, ' to ', jend
+
          if ( count == 1.0 ) then
             nn = ni * ni + nj * nj  ! Maximum radius across grid (squared).
             allocate(field(1:ni,1:nj))
@@ -96,14 +106,14 @@ program gen_be_stage4_regional
             allocate(cov(0:nn))
             cov(0:nn) = 0.0
 
-            call get_grid_info( ni, nj, nn, stride, nr )
+            call get_grid_info( ni, nj, nn, stride, nr, jstart, jend )
          end if
 
          read(UNIT=iunit)field(1:ni,1:nj)
          close(UNIT=iunit)
 
 !        Calculate spatial correlation:
-         call get_covariance( ni, nj, nn, stride, count, nr, field, cov )
+         call get_covariance( ni, nj, nn, stride, count, nr, jstart, jend, field, cov )
 
          count = count + 1.0
 
@@ -132,13 +142,14 @@ program gen_be_stage4_regional
 
 contains
 
-subroutine get_grid_info( ni, nj, nn, stride, nr )
+subroutine get_grid_info( ni, nj, nn, stride, nr, jstart, jend )
 
    implicit none
 
    integer, intent(in)    :: ni, nj                  ! Grid dimensions.
    integer, intent(in)    :: nn                      ! Dimension of radii bins.
    integer, intent(in)    :: stride                  ! Calculate correlation with every stride point.
+   integer, intent(in)    :: jstart, jend            ! Starting and ending j indices
    integer, intent(out)   :: nr(0:nn)                ! Number of points in each bin.
 
    integer                :: i, j, m, n              ! Indices.
@@ -148,7 +159,8 @@ subroutine get_grid_info( ni, nj, nn, stride, nr )
 
 !  [1] Get points distribution nr(0:nn):
 
-   do j = 1, nj, stride                                ! Pick every stride point to save cost.
+!$OMP PARALLEL DO PRIVATE(I,J,N,D2) REDUCTION(+:NR)
+   do j = jstart, jend, stride                         ! Pick every stride point to save cost.
       do i = 1, ni, stride                             ! Pick every stride point to save cost.
 
 !        Calculate points distribution (i,j) for points that haven't already been computed:
@@ -161,7 +173,7 @@ subroutine get_grid_info( ni, nj, nn, stride, nr )
          end do
 
 !        Now complete remaining rows:
-         do n = j+1, nj
+         do n = j+1, jend
             do m = 1, ni
                d2 = (m-i)*(m-i) + (n-j)*(n-j)          ! Calculate distance (squared)
                nr(d2) = nr(d2) + 1                     ! Add this point to number at this distance.
@@ -169,10 +181,11 @@ subroutine get_grid_info( ni, nj, nn, stride, nr )
          end do ! n
       end do ! i
    end do ! j
+!$OMP END PARALLEL DO
 
 end subroutine get_grid_info
 
-subroutine get_covariance( ni, nj, nn, stride, count, nr, field, cov )
+subroutine get_covariance( ni, nj, nn, stride, count, nr, jstart, jend, field, cov )
    
 !  Calculate the number of points, distance matrx between points on grid.
 !  Dale Barker: May 16th 2005.
@@ -184,6 +197,7 @@ subroutine get_covariance( ni, nj, nn, stride, count, nr, field, cov )
    integer, intent(in)    :: stride                  ! Calculate correlation with every stride point.
    real, intent(in)       :: count                   ! Number of times/ensemble members so far.
    integer, intent(in)    :: nr(0:nn)                ! Number of points in each bin.
+   integer, intent(in)    :: jstart, jend            ! Starting and ending j indices
    real, intent(in)       :: field(1:ni,1:nj)        ! 2D field.
    real, intent(inout)    :: cov(0:nn)               ! Covariance of each bin.
 
@@ -196,7 +210,8 @@ subroutine get_covariance( ni, nj, nn, stride, count, nr, field, cov )
 
    bb(0:nn) = 0.0
 
-   do j = 1, nj, stride                                ! Pick every stride point to save cost.
+!$OMP PARALLEL DO PRIVATE(I,J,N,D2) REDUCTION(+:BB)
+   do j = jstart, jend, stride                         ! Pick every stride point to save cost.
       do i = 1, ni, stride                             ! Pick every stride point to save cost.
 
 !        Calculate spatial correlations with point (i,j) that haven't already been computed:
@@ -209,7 +224,7 @@ subroutine get_covariance( ni, nj, nn, stride, count, nr, field, cov )
          end do
 
 !        Now complete remaining rows:
-         do n = j+1, nj
+         do n = j+1, jend
             do m = 1, ni
                d2 = (m-i)*(m-i) + (n-j)*(n-j)          ! Calculate distance (squared)
                bb(d2) = bb(d2) + field(i,j) * field(m,n)
@@ -218,8 +233,10 @@ subroutine get_covariance( ni, nj, nn, stride, count, nr, field, cov )
 
       end do ! i
    end do ! j
+!$OMP END PARALLEL DO
 
 !  Calculate average values for each bin at this time:
+!$OMP PARALLEL DO PRIVATE(D2)
    do d2 = 0, nn
       if ( nr(d2) /= 0 ) then
          bb(d2) = bb(d2) / real(nr(d2))
@@ -229,6 +246,7 @@ subroutine get_covariance( ni, nj, nn, stride, count, nr, field, cov )
 
       end if
    end do
+!$OMP END PARALLEL DO
 
 end subroutine get_covariance
 

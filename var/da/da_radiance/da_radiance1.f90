@@ -225,9 +225,7 @@ contains
 #include "da_ao_stats_rad.inc"
 #include "da_oi_stats_rad.inc"
 #include "da_print_stats_rad.inc"
-#include "da_get_time_slots.inc"
 #include "da_qc_rad.inc"
-#include "da_get_julian_time.inc"
 
 end module da_radiance1
 

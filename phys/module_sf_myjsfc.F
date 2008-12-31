@@ -65,12 +65,13 @@
 CONTAINS
 !
 !----------------------------------------------------------------------
-      SUBROUTINE MYJSFC(ITIMESTEP,HT,DZ                                & 
+      SUBROUTINE MYJSFC(ITIMESTEP,HT,DZ                                &
      &                 ,PMID,PINT,TH,T,QV,QC,U,V,Q2                    &
      &                 ,TSK,QSFC,THZ0,QZ0,UZ0,VZ0                      &
      &                 ,LOWLYR,XLAND                                   &
      &                 ,USTAR,ZNT,Z0BASE,PBLH,MAVAIL,RMOL              &
      &                 ,AKHS,AKMS                                      &
+     &                 ,RIB                                            &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
      &                 ,QGH,CPM,CT                                     &
      &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
@@ -98,15 +99,15 @@ CONTAINS
      &                                                     ,PMID,PINT  &
      &                                                     ,Q2,QC,QV   &
      &                                                     ,T,TH       &
-     &                                                     ,U,V   
+     &                                                     ,U,V
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
      &                                              ,QFX,Q10,QSHLTR    &
-     &                                              ,TH10,TSHLTR,T02       &
+     &                                              ,TH10,TSHLTR,T02   &
      &                                              ,U10,V10,TH02,Q02
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
-     &                                                ,PBLH,QSFC
+     &                                                ,PBLH,QSFC,RIB
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: QZ0,RMOL,THZ0   &
      &                                                ,USTAR,UZ0,VZ0   &
@@ -114,7 +115,7 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CHS,CHS2,CQS2     &
      &                                              ,CPM,CT,FLHC,FLQC  &
-     &                                              ,QGH 
+     &                                              ,QGH
 !
       REAL,INTENT(IN) :: P1000mb
 !----------------------------------------------------------------------
@@ -304,7 +305,7 @@ CONTAINS
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
      &               ,UZ0(I,J),VZ0(I,J),TZ0,THZ0(I,J),QZ0(I,J)         &
      &               ,USTAR(I,J),ZNT(I,J),Z0BASE(I,J),CT(I,J),RMOL(I,J) &
-     &               ,AKMS(I,J),AKHS(I,J),PBLH(I,J),MAVAIL(I,J)        &
+     &               ,AKMS(I,J),AKHS(I,J),RIB(I,J),PBLH(I,J),MAVAIL(I,J) &
      &               ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
      &               ,HFX(I,J),QFX(I,J),FLX_LH(I,J)                    &
      &               ,FLHC(I,J),FLQC(I,J),QGH(I,J),CPM(I,J)            &
@@ -349,13 +350,13 @@ CONTAINS
 !----------------------------------------------------------------------
       ENDDO setup_integration
 !----------------------------------------------------------------------
- 
+
       END SUBROUTINE MYJSFC
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !----------------------------------------------------------------------
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
      &                 ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
-     &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,PBLH,WETM    &
+     &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
      &                 ,ZSL,PLOW                                       &
@@ -384,7 +385,8 @@ CONTAINS
      &                  ,Z0BASE
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
-     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RLMO,TH02,TH10,U10,V10
+     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO              &
+     &                   ,TH02,TH10,U10,V10
 !
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
 !----------------------------------------------------------------------
@@ -393,9 +395,9 @@ CONTAINS
 !***
       INTEGER :: ITR,K
 !
-      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,DTHV,DU2,ELFC,FCT              &
+      REAL :: A,B,BTGH,BTGX,CXCHL,CXCHS,CZETMAX,DTHV,DU2,ELFC,FCT      &
      &       ,HLFLX,HSFLX,HV,PSH02,PSH10,PSHZ,PSHZL,PSM10,PSMZ,PSMZL   &
-     &       ,RDZ,RDZT,RIB,RLMA,RLMN,RLMP                              &
+     &       ,RDZ,RDZT,RLMA,RLMN,RLMP                                  &
      &       ,RLOGT,RLOGU,RWGH,RZ,RZST,RZSU,SIMH,SIMM,TEM,THM          &
      &       ,UMFLX,USTARK,VMFLX,WGHT,WGHTT,WGHTQ,WSTAR2               &
      &       ,X,XLT,XLT4,XLU,XLU4,XT,XT4,XU,XU4,ZETALT,ZETALU          &
@@ -430,7 +432,7 @@ CONTAINS
 !
 !----------------------------------------------------------------------
 !
-      IF(SEAMASK>0.5)THEN 
+      IF(SEAMASK>0.5)THEN
 !
 !----------------------------------------------------------------------
         DO ITR=1,ITRMX
@@ -529,7 +531,7 @@ CONTAINS
           B=(ELOCP/TEM-1.-P608)*THM
 !
           DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)        &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B) 
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
 !
           DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
           RIB=BTGX*DTHV*ZSL/DU2
@@ -629,7 +631,7 @@ CONTAINS
 !
 !----------------------------------------------------------------------
 !
-      ELSE  
+      ELSE
 !
 !----------------------------------------------------------------------
         IF(NTSD==1)THEN
@@ -653,7 +655,7 @@ CONTAINS
         B=(ELOCP/TEM-1.-P608)*THM
 !
         DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)          &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B) 
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
 !
         DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
         RIB=BTGX*DTHV*ZSL/DU2
@@ -675,11 +677,22 @@ CONTAINS
 !
 !mp   Topo modification of ZILFC term
 !	
-          TOPOTERM=TOPOFAC*ZSFC**2.
-          TOPOTERM=MAX(TOPOTERM,3.0)
+!         TOPOTERM=TOPOFAC*ZSFC**2.
+!         TOPOTERM=MAX(TOPOTERM,3.0)
 !
+!  RIB modification to ZILFC term
+!
+!         CZETMAX = 20.
+          CZETMAX = 10.
+! stable
           IF(DTHV>0.)THEN
-            ZZIL=ZILFC*TOPOTERM
+!            ZZIL=ZILFC*TOPOTERM
+            IF (RIB<RIC) THEN
+              ZZIL=ZILFC*(1.0+(RIB/RIC)*(RIB/RIC)*CZETMAX)
+            ELSE
+              ZZIL=ZILFC*(1.0+CZETMAX)
+            ENDIF
+! unstable
           ELSE
             ZZIL=ZILFC
           ENDIF
@@ -1005,7 +1018,7 @@ CONTAINS
       CPM=CP*(1.+0.8*QLOW)
 !
 !***  DO NOT COMPUTE QS OVER LAND POINTS HERE SINCE IT IS
-!***  A PROGNOSTIC VARIABLE THERE.  IT IS OKAY TO USE IT 
+!***  A PROGNOSTIC VARIABLE THERE.  IT IS OKAY TO USE IT
 !***  AS A DIAGNOSTIC OVER WATER SINCE IT WILL CAUSE NO
 !***  INTERFERENCE BEFORE BEING RECOMPUTED IN MYJPBL.
 !

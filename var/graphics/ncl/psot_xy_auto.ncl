@@ -133,10 +133,12 @@ begin
   res@gsnDraw               = False           ; (a) do not draw
   res@gsnFrame              = False           ; (b) do not advance 'frame'
 
-;  res@mpGridAndLimbOn       = True            ; trun on lat/lon lines
-;  res@pmTickMarkDisplayMode = "Always"        ; turn on tickmarks
-;  res@tmXTOn = False                          ; turn off top   labels 
-;  res@tmYROn = False                          ; turn off right labels
+  res@mpGridAndLimbOn       = True            ; trun on lat/lon lines
+  res@pmTickMarkDisplayMode = "Always"        ; turn on tickmarks
+  res@tmXTOn = False                          ; turn off top   labels 
+  res@tmYROn = False                          ; turn off right labels
+  res@lbLabelStride = 2                       ; Color bar value writing
+
 
   res@vcGlyphStyle       = "CurlyVector"      ; curly vectors
   res@vcRefMagnitudeF    = 0.2                ; define vector ref mag
@@ -159,10 +161,11 @@ begin
   res1@gsnDraw               = False          ; (a) do not draw
   res1@gsnFrame              = False          ; (b) do not advance 'frame'
 
-;  res1@mpGridAndLimbOn       = True           ; trun on lat/lon lines
-;  res1@pmTickMarkDisplayMode = "Always"       ; turn on tickmarks
-;  res1@tmXTOn = False                         ; turn off top   labels
-;  res1@tmYROn = False                         ; turn off right labels
+  res1@mpGridAndLimbOn       = True           ; trun on lat/lon lines
+  res1@pmTickMarkDisplayMode = "Always"       ; turn on tickmarks
+  res1@tmXTOn = False                         ; turn off top   labels
+  res1@tmYROn = False                         ; turn off right labels
+  res1@lbLabelStride = 2                      ; Color bar value writing
 
 
   res@gsnLeftString         = "U"
@@ -173,7 +176,7 @@ begin
   res@gsnRightString        = df2g@units
   plts(1)                   = gsn_csm_vector_scalar_map(wks,df1g,df2g,df2g,res) ;vector overlaid
 
-  res1@gsnLeftString         = "Theta'"
+  res1@gsnLeftString         = "Theta"
   plts(2)                   = gsn_csm_contour_map(wks,df3,res1)
 ;  plts(2)                   = gsn_csm_vector_scalar_map(wks,df1g,df2g,df3,res1) ;no vector overlaid
 

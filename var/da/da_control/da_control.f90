@@ -151,12 +151,13 @@ module da_control
 
    integer, parameter :: nchan_amsua = 15
    integer, parameter :: nchan_amsub = 5
-   integer, parameter :: nchan_mhs = 5
-   integer, parameter :: nchan_msu = 4
+   integer, parameter :: nchan_mhs   = 5
+   integer, parameter :: nchan_msu   = 4
    integer, parameter :: nchan_hirs2 = 19
    integer, parameter :: nchan_hirs3 = 19
    integer, parameter :: nchan_hirs4 = 19
    integer, parameter :: nchan_ssmis = 24
+   integer, parameter :: nchan_airs  = 281
 
    ! WRFVAR Minimisation:
 
@@ -233,6 +234,7 @@ module da_control
 
    integer, parameter :: ob_format_bufr = 1
    integer, parameter :: ob_format_ascii = 2
+   integer, parameter :: ob_format_madis = 3
 
    integer, parameter :: convert_fd2uv = 1
    integer, parameter :: convert_uv2fd = -1
@@ -247,7 +249,8 @@ module da_control
    integer, parameter :: trace_csv_unit = 8
 
    integer :: y_unit, yp_unit, cost_unit, grad_unit, stats_unit, jo_unit
-   integer :: check_max_iv_unit, rand_unit, omb_unit, filtered_obs_unit
+   integer :: check_max_iv_unit, check_buddy_unit, rand_unit, omb_unit, &
+              filtered_obs_unit
    integer :: biasprep_unit, qcstat_conv_unit
 
    integer,parameter :: filename_len = 200
@@ -337,6 +340,7 @@ module da_control
    integer       :: cv_size_domain_jb    ! Total jb cv size.
    integer       :: cv_size_domain_je    ! Total je cv size.
    integer       :: cv_size_domain_jp    ! Total jp cv size.
+   integer       :: cv_size_domain_js    ! Total js cv size.
    integer       :: cv_size_domain       ! Total cv size.    
 
    ! Hybrid:
@@ -384,6 +388,17 @@ module da_control
                       max_error_bt             = 500.0, &
                       max_error_bq             = 500.0, &
                       max_error_slp            = 500.0
+
+   ! Buddy check parameters (YRG, 10/3/2008):
+
+   real, parameter :: max_buddy_t             =     8.0, &
+                      max_buddy_uv            =     8.0, &
+                      max_buddy_z             =     8.0, &
+                      max_buddy_rh            =    40.0, &
+                      max_buddy_p             =   350.0, &
+                      buddy_weight            =     1.0, &
+                      bin_p_width             =  5000.0, &
+                      bin_z_width             =   500.0 
 
    ! Define various ways for bad data to be flagged.  
 
@@ -606,5 +621,7 @@ module da_control
    real, parameter :: ppbot(npres_print) = (/ 1200.0, 999.9, 899.9, 799.0, 599.9, 399.9,  &
                       299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
 
+   real, allocatable :: time_slots(:)
+   logical           :: thin_conv = .true.  ! hardwired for PREPBUFR obs
 
 end module da_control

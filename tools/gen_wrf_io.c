@@ -410,7 +410,8 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
   for ( p = node ; p != NULL ; p = p->next )
   {
 
-    if ( p->ndims > 3 ) continue ; /* short circuit anything with more than 3 dims, (not counting 4d arrays) */
+
+    if ( p->ndims > 3 && ! p->node_kind & FOURD ) continue ; /* short circuit anything with more than 3 dims, (not counting 4d arrays) */
 
     if ( p->node_kind & I1 ) continue ;  /* short circuit anything that's not a state var */
 
@@ -422,6 +423,7 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
     if ( p->stag_y ) strcat(stagstr, "Y") ;
     if ( p->stag_z ) strcat(stagstr, "Z") ;
 
+
     if ( !strcmp(p->name,"-") ) continue ;
 
     if ( p->node_kind & FOURD )
@@ -429,35 +431,60 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
       node_t * nd , *pp ;
       char p1[NAMELEN], sv[NAMELEN], tl[25] ;
 
+
       set_dim_strs( p->members, ddim, mdim, pdim , "", 0 ) ;           /* dimensions with staggering */
       set_dim_strs( p->members, ddim_no, mdim_no, pdim_no , "", 1 ) ;  /* dimensions ignoring staggering */
 
+
       if ( ! ( io_mask & BOUNDARY ) )
       {
+        int d ;
+        char moredims[80], formatdims[80], temp[10], temp2[80],tx[80],r[80], *colon  ;
         set_mem_order( p->members, memord , NAMELEN) ;
+        memord[3] = '\0' ; /* snip off any extra dimensions */
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR , num_%s\n",p->name ) ;
+        strcpy(moredims,"") ; strcpy(formatdims,"") ;
+        for ( d = 3 ; d < p->ndims ; d++ ) {
+          strcpy(r,""); 
+          range_of_dimension( r, tx , d , p , "model_config_rec%" ) ;
+          colon = index(tx,':') ; if ( colon != NULL ) *colon = ',' ;
+          sprintf(temp,"idim%d",d-2) ;
+          strcat(moredims,",") ; strcat(moredims,temp) ;
+          strcat(formatdims,"\"_\",I5.5,") ;
+fprintf(fp,"  DO %s = %s\n",temp,tx ) ;
+        }
+        formatdims[strlen(formatdims)-1] = '\0' ;
+        strcat(moredims,",") ;
 fprintf(fp,"  IF (BTEST(%s_stream_table(grid%%id, itrace ) , switch )) THEN\n",p->name) ;
+        if ( p->ndims > 3 ) {
+           strcpy(temp2,moredims+1) ; temp2[strlen(temp2)-1] = '\0' ;
+fprintf(fp,"    WRITE(extradims,'(%s)')%s\n",formatdims,temp2) ;
+        }
 fprintf(fp,"    CALL wrf_ext_%s_field (  &\n", (sw_io == GEN_INPUT)?"read":"write" ) ;
 fprintf(fp,"          fid                             , &  ! DataHandle\n") ;
 fprintf(fp,"          current_date(1:19)              , &  ! DateStr\n") ; 
+        if ( p->ndims > 3 ) {
+fprintf(fp,"          TRIM(%s_dname_table( grid%%id, itrace ))//TRIM(extradims), & !data name\n",p->name) ;
+        } else {
 fprintf(fp,"          TRIM(%s_dname_table( grid%%id, itrace )), & !data name\n",p->name) ;
+        }
         strcpy( tl, "" ) ;
         if ( p->members->ntl > 1 && p->members->ntl <= 3 ) sprintf( tl, "_%d",p->members->ntl ) ;
         if ( ok_to_collect_distribute ) {
 fprintf(fp,"                       globbuf_%s               , &  ! Field \n",p->members->type->name ) ;
         } else {
            if        ( !strcmp(memord,"XYZ") ) {
-fprintf(fp,"          grid%%%s%s(ims,jms,kms,itrace)  , &  ! Field\n",p->name,tl) ;
+fprintf(fp,"          grid%%%s%s(ims,jms,kms%sitrace)  , &  ! Field\n",p->name,tl,moredims) ;
            } else if ( !strcmp(memord,"YXZ") ) {
-fprintf(fp,"          grid%%%s%s(jms,ims,kms,itrace)  , &  ! Field\n",p->name,tl) ;
+fprintf(fp,"          grid%%%s%s(jms,ims,kms%sitrace)  , &  ! Field\n",p->name,tl,moredims) ;
            } else if ( !strcmp(memord,"XZY") ) {
-fprintf(fp,"          grid%%%s%s(ims,kms,jms,itrace)  , &  ! Field\n",p->name,tl) ;
+fprintf(fp,"          grid%%%s%s(ims,kms,jms%sitrace)  , &  ! Field\n",p->name,tl,moredims) ;
            } else if ( !strcmp(memord,"YZX") ) {
-fprintf(fp,"          grid%%%s%s(jms,kms,ims,itrace)  , &  ! Field\n",p->name,tl) ;
+fprintf(fp,"          grid%%%s%s(jms,kms,ims%sitrace)  , &  ! Field\n",p->name,tl,moredims) ;
            } else if ( !strcmp(memord,"ZXY") ) {
-fprintf(fp,"          grid%%%s%s(kms,ims,jms,itrace)  , &  ! Field\n",p->name,tl) ;
+fprintf(fp,"          grid%%%s%s(kms,ims,jms%sitrace)  , &  ! Field\n",p->name,tl,moredims) ;
            } else if ( !strcmp(memord,"ZYX") ) {
-fprintf(fp,"          grid%%%s%s(kms,jms,ims,itrace)  , &  ! Field\n",p->name,tl) ;
+fprintf(fp,"          grid%%%s%s(kms,jms,ims%sitrace)  , &  ! Field\n",p->name,tl,moredims) ;
            }
         }
         if (!strncmp(p->members->type->name,"real",4)) {
@@ -526,6 +553,9 @@ fprintf(fp,"'%s ext_write_field '//TRIM(%s_dname_table( grid%%id, itrace ))//' m
         fprintf(fp," & \n") ;
 fprintf(fp,"                         ierr )\n" ) ;
 fprintf(fp, "  ENDIF\n" ) ;
+        for ( d = 3 ; d < p->ndims ; d++ ) {
+fprintf(fp,"  ENDDO ! idim%d \n",d-2 ) ;
+        }
 fprintf(fp, "ENDDO\n") ;
       } 
 /* BOUNDARY FOR 4-D TRACER */

@@ -41,6 +41,9 @@ CONTAINS
                      ,rqicuten,rqscuten,rqgcuten                      &
                      ,rqvblten,rqvften                                &
                      ,rthcuten,rthraten,rthblten,rthften              &
+#ifdef HWRF
+                     ,rucuten,rvcuten,mommix,store_rand               &
+#endif
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
@@ -127,6 +130,12 @@ CONTAINS
 !                 cumulus scheme precipitation (kg/kg/s)
 !-- RQICUTEN      Qi tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
+#ifdef HWRF
+!-- RUCUTEN      RU tendency due to SAS
+!-- MOMMIX       MOMENTUM MIXING DUE TO SAS                 
+!-- RVCUTEN      RV tendency due to SAS
+#endif
+
 !
 !-- RAINC         accumulated total cumulus scheme precipitation (mm)
 !-- RAINCV        cumulus scheme precipitation (mm)
@@ -298,6 +307,14 @@ CONTAINS
                                                       ,   forcet &
                                                       ,   forceq &
                      ,rthften,rthcuten
+#ifdef HWRF
+   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
+         OPTIONAL, INTENT(INOUT) :: rucuten,rvcuten                          
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+                    INTENT(IN) ::  STORE_RAND 
+
+#endif
+
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     OPTIONAL,                                    &
@@ -311,7 +328,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
-
+#ifdef HWRF
+   REAL, INTENT(INOUT) :: mommix
+#endif
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -550,6 +569,10 @@ CONTAINS
               ! optionals
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+#ifdef HWRF
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN,MOMMIX=MOMMIX  &
+               ,store_rand=store_rand  &
+#endif              
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                                 )

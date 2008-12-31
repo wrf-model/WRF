@@ -992,7 +992,7 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data)
       geom_in.parm_1 = grid_info->latin1;
       geom_in.parm_2 = dx;
       geom_in.parm_3 = dy;
-      geom_in.usRes_flag = 128;
+      geom_in.usRes_flag = 136;
       break;
     case WRF_LAMBERT:
       strcpy(geom_in.prjn_name,"lambert");

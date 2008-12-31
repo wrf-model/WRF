@@ -13,7 +13,7 @@
 export DATE=${DATE:-2003010100}
 export FCST_RANGE=${FCST_RANGE:-6}
 export REL_DIR=${REL_DIR:-$HOME/trunk}
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}
 export BUILD_DIR=${BUILD_DIR:-$WRFVAR_DIR/var/da}
 
 #-----------------------------------------------------------------------

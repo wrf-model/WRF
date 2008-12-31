@@ -28,8 +28,10 @@ subroutine da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
       do k = 1, iv%info(bogus)%levels(n)
          call da_get_print_lvl(iv%bogus(n)%p(k),ipr)
 
-        if( iv%bogus(n)%u(k)%qc == fails_error_max )iv%bogus(n)%u(k)%qc =0
+        if( iv%bogus(n)%u(k)%qc == fails_error_max .and. it > 1 )iv%bogus(n)%u(k)%qc =0
         if( iv%bogus(n)%u(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(bogus), n, iv%bogus(n)%u(k), max_error_buv,failed)
         if( iv%info(bogus)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,bogus,1,ipr) = num_qcstat_conv(1,bogus,1,ipr) + 1
@@ -41,8 +43,10 @@ subroutine da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
          end if
          end if
 
-        if( iv%bogus(n)%v(k)%qc == fails_error_max )iv%bogus(n)%v(k)%qc =0
+        if( iv%bogus(n)%v(k)%qc == fails_error_max  .and. it > 1 )iv%bogus(n)%v(k)%qc =0
         if( iv%bogus(n)%v(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(bogus), n, iv%bogus(n)%v(k), max_error_buv,failed)
         if( iv%info(bogus)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,bogus,2,ipr) = num_qcstat_conv(1,bogus,2,ipr) + 1
@@ -54,8 +58,10 @@ subroutine da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
          end if
          end if
 
-        if( iv%bogus(n)%t(k)%qc == fails_error_max )iv%bogus(n)%t(k)%qc =0
+        if( iv%bogus(n)%t(k)%qc == fails_error_max .and. it > 1 )iv%bogus(n)%t(k)%qc =0
         if( iv%bogus(n)%t(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(bogus), n, iv%bogus(n)%t(k), max_error_bt ,failed)
         if( iv%info(bogus)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,bogus,3,ipr) = num_qcstat_conv(1,bogus,3,ipr) + 1
@@ -67,8 +73,10 @@ subroutine da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
          end if
          end if
 
-        if( iv%bogus(n)%q(k)%qc == fails_error_max )iv%bogus(n)%q(k)%qc =0
+        if( iv%bogus(n)%q(k)%qc == fails_error_max .and. it > 1 )iv%bogus(n)%q(k)%qc =0
         if( iv%bogus(n)%q(k)%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(bogus), n, iv%bogus(n)%q(k), max_error_bq ,failed)
         if( iv%info(bogus)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,bogus,4,ipr) = num_qcstat_conv(1,bogus,4,ipr) + 1
@@ -84,8 +92,10 @@ subroutine da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
       ! Sea Level Pressure
 
       if( iv%info(bogus)%proc_domain(1,n) ) then
-        if( iv%bogus(n)%slp%qc == fails_error_max )iv%bogus(n)%slp%qc =0
+        if( iv%bogus(n)%slp%qc == fails_error_max .and. it > 1 )iv%bogus(n)%slp%qc =0
         if( iv%bogus(n)%slp%qc >= obs_qc_pointer ) then
+         failed=.false.
+         if( check_max_iv) &
          call da_max_error_qc (it,iv%info(bogus), n, iv%bogus(n)%slp, max_error_slp ,failed)
                     num_qcstat_conv(1,bogus,5,1) = num_qcstat_conv(1,bogus,5,1) + 1
          if(failed) then

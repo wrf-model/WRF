@@ -9,8 +9,8 @@ export RUN_DIR=$EXP_DIR
 export OB_DIR=$FILTERED_OBS_DIR
 
 
-export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/wrfvar}
-export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/scripts}
+export WRFVAR_DIR=${WRFVAR_DIR:-$REL_DIR/WRFDA}
+export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 . ${SCRIPTS_DIR}/da_set_defaults.ksh
 export SUITE_DIR=${SUITE_DIR:-$RUN_DIR}
 
@@ -53,9 +53,9 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
       export RUN_DIR=$SUITE_DIR/$DATE/wrfvar
       mkdir -p $RUN_DIR
 
-      export DA_FIRST_GUESS=${FC_DIR}/$DATE/analysis
+      export DA_FIRST_GUESS=${FC_DIR}/$DATE/wrfinput_d01
       if [[ ${VERIFY_HOUR} != 0 ]]; then
-        export PREVF_DATE=`$WRFVAR_DIR/build/da_advance_time.exe $DATE -$VERIFY_HOUR 2>/dev/null`
+        export PREVF_DATE=`$BUILD_DIR/da_advance_time.exe $DATE -$VERIFY_HOUR 2>/dev/null`
         export DA_FIRST_GUESS=${FC_DIR}/${PREVF_DATE}/${VERIFICATION_FILE_STRING}_d01_${ANALYSIS_DATE}
       fi
       export DA_ANALYSIS=$RUN_DIR/analysis

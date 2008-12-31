@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # Chemistry Variables  (all shared at this point)
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #
@@ -455,6 +455,27 @@ state   real   tracer_19    ikjftb   chem        1         -   irhusdf=(bdy_inte
 state   real   tracer_20    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tracer_20"             "tracer20    mix ratio"        "ppmv"
 state   real   tracer_ens    ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "tracer_ens"             "tracer- ensemble average    mix ratio"        "ppmv"
 
+state   real    tr17_0     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_0"         "tr17_0"          -
+state   real    tr17_1     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_1"         "tr17_1"          -
+state   real    tr17_2     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_2"         "tr17_2"          -
+state   real    tr17_3     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_3"         "tr17_3"          -
+state   real    tr17_4     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_4"         "tr17_4"          -
+state   real    tr17_5     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_5"         "tr17_5"          -
+state   real    tr17_6     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"          -
+state   real    tr17_7     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"          -
+state   real    tr17_8     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"          -
+state   real    tr17_9     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr17_9"         "tr17_9"          -
+state   real    tr18_0     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_0"         "tr18_0"          -
+state   real    tr18_1     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_1"         "tr18_1"          -
+state   real    tr18_2     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_2"         "tr18_2"          -
+state   real    tr18_3     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_3"         "tr18_3"          -
+state   real    tr18_4     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_4"         "tr18_4"          -
+state   real    tr18_5     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_5"         "tr18_5"          -
+state   real    tr18_6     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_6"         "tr18_6"          -
+state   real    tr18_7     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_7"         "tr18_7"          -
+state   real    tr18_8     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_8"         "tr18_8"          -
+state   real    tr18_9     ikjftb  scalar        1         -     i09rhusdf=(bdy_interp:dt)    "tr18_9"         "tr18_9"          -
+
 #Aerosol variables inside the chem array...
 # the first two are for simple advection of total pm25 and pm10 mass
 #
@@ -833,6 +854,9 @@ state integer  STEPBIOE          -        misc        1         -      r      "S
 state integer  STEPPHOT          -        misc     1         -      r        "STEPPHOT"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PHOTOLYSIS CALLS"             "NA"
 state integer  STEPCHEM          -        misc     1         -      r        "STEPCHEM"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CHEM MECH CALLS"             "NA"
 state integer  STEPFIREPL        -        misc     1         -      r        "STEPFIREPL"            "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CALLSTO PLUMERISE FIRE ROUTINE"             "NA"
+
+# Scalar arrays for tracers
+
                                                 
 #
 rconfig   character  emi_inname            namelist,chem        1       "wrfchemi_d<domain>_<date>"   -     "name of chem emissions infile"  ""    ""
@@ -887,6 +911,7 @@ rconfig   integer     aer_ic_opt          namelist,chem          max_domains    
 rconfig   logical     have_bcs_chem       namelist,chem          max_domains    .false. rh    "have_bcs_chem"       ""      ""
 rconfig   integer     aer_ra_feedback     namelist,chem          max_domains    0       rh    "aer_ra_feedback"     ""      ""
 rconfig   integer     aer_op_opt          namelist,chem          max_domains    1       rh    "aer_op_opt"          ""      ""
+rconfig   integer     scalar_opt          namelist,chem          max_domains    0       rh    "scalar_opt"          ""      ""
 
 # CHEMISTRY PACKAGE DEFINITIONS
 #
@@ -997,5 +1022,6 @@ package   aer_bc_pnnl                 aer_bc_opt==101              -            
 package   aer_ic_default              aer_ic_opt==1                -             -
 package   aer_ic_pnnl                 aer_ic_opt==101              -             -
 
-
+package   scalar_me     scalar_opt==1       -             scalar:tr17_0,tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8,tr17_9,tr18_0,tr18_1,tr18_2,tr18_3,tr18_4,tr18_5,tr18_6,tr18_7,tr18_8,tr18_9
+package   scalar_sUS    scalar_opt==2       -             scalar:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 

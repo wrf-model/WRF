@@ -414,7 +414,21 @@ BENCH_START(surf_driver_tim)
      &        ,RN_URB2D=grid%rn_urb2d     , TS_URB2D=grid%ts_urb2d        & !H urban
      &        ,FRC_URB2D=grid%frc_urb2d                                   & !H urban
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
-     &        ,ucmcall=grid%ucmcall                                       & !H urban
+         ! Optional urban for BEP scheme
+     &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
+     &        ,NUM_URBAN_LAYERS=config_flags%num_urban_layers             & !multi-layer urban
+     &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d        & !multi-layer urban
+     &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d        & !multi-layer urban
+     &        ,SFW1_URB3D=grid%sfw1_urb3d,SFW2_URB3D=grid%sfw2_urb3d      & !multi-layer urban
+     &        ,SFR_URB3D=grid%sfr_urb3d,SFG_URB3D=grid%sfg_urb3d          & !multi-layer urban
+     &        ,GMT=grid%gmt,XLAT=grid%xlat,XLONG=grid%xlong,JULDAY=grid%julday  &
+     &        ,A_U_BEP=grid%a_u_bep,A_V_BEP=grid%a_v_bep,A_T_BEP=grid%a_t_bep   &
+     &        ,A_Q_BEP=grid%a_q_bep                                             &
+     &        ,B_U_BEP=grid%b_u_bep,B_V_BEP=grid%b_v_bep,B_T_BEP=grid%b_t_bep   &
+     &        ,B_Q_BEP=grid%b_q_bep                                             &
+     &        ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                            &
+     &        ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep   &
+     &        ,DL_U_BEP=grid%dl_u_bep                                           &
            ! P-X LSM Variables
      &        ,LANDUSEF=grid%landusef, SOILCTOP=grid%soilctop             &   ! P-X LSM
      &        ,SOILCBOT=grid%soilcbot                                     &   ! P-X LSM
@@ -491,6 +505,21 @@ BENCH_START(pbl_driver_tim)
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
      &        ,ZNT=grid%znt                                                    &
+! variables added for BEP
+     &          ,FRC_URB2D=grid%frc_urb2d                                                  &
+     &          ,A_U_BEP=grid%a_u_bep,A_V_BEP=grid%a_v_bep,A_T_BEP=grid%a_t_bep          &
+     &          ,A_Q_BEP=grid%a_q_bep                                                    &
+     &          ,B_U_BEP=grid%b_u_bep,B_V_BEP=grid%b_v_bep,B_T_BEP=grid%b_t_bep          &
+     &          ,B_Q_BEP=grid%b_q_bep                                                    &
+     &          ,SF_BEP=grid%sf_bep,VL_BEP=grid%vl_bep                                   &
+     &          ,A_E_BEP=grid%a_e_bep,B_E_BEP=grid%b_e_bep,DLG_BEP=grid%dlg_bep          &
+     &          ,DL_U_BEP=grid%dl_u_bep                                                  &
+     &          ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
+     &          ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics                          &
+! Bep changes end
+! add tke_boulac, and turbulent fluxes
+     &          ,TKE_BOULAC=grid%tke_boulac,WU_TUR=grid%wu_tur,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur   &
+! end add tke_boulac, and turbulent fluxes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
      &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &

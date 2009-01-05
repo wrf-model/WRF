@@ -463,7 +463,10 @@ Namelist variables for controlling the adaptive time step option:
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
                                                   = 2: Pleim-Xu landsurface model
- ucmcall(max_dom)                    = 0,       ; activate urban canopy model (in Noah LSM only) (0=no, 1=yes)
+ sf_urban_physics(max_dom)           = 0,       ; activate urban canopy model (in Noah LSM only) 
+                                                  = 0: no
+                                                  = 1: Single-layer, Noah UCM (Hiroyuki Kusaka)
+                                                  = 2: Multi-layer, BEP scheme (Alberto Martilli) 
  num_land_cat                        = 24,      ; number of land categories in input data
  num_soil_cat                        = 16,      ; number of soil categories in input data
 

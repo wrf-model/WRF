@@ -46,7 +46,6 @@ CONTAINS
      &          ,trl_urb3d,tbl_urb3d,tgl_urb3d                        & !H urban
      &          ,sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d          & !H urban
      &          ,frc_urb2d, utype_urb2d                               & !H urban
-     &          ,ucmcall                                              & ! urban
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
@@ -79,8 +78,19 @@ CONTAINS
      &          ,noahres                                              &
              !  Optional adaptive time step
      &          ,bldt,curr_secs,adapt_step_flag                       &
-                                                                      )
-
+         ! Optional urban with BEP
+     &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
+     &          ,num_urban_layers                                     & !multi-layer urban
+     &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d           & !multi-layer urban
+     &          ,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d            & !multi-layer urban
+     &          ,a_u_bep,a_v_bep,a_t_bep,a_q_bep                      &
+     &          ,b_u_bep,b_v_bep,b_t_bep,b_q_bep                      &
+     &          ,sf_bep,vl_bep                                        &
+     &          ,a_e_bep,b_e_bep,dlg_bep                              &
+     &          ,dl_u_bep                                             &                          
+         ! Optional urban Bep end
+     &                                                             )
+              
 #if ( ! NMM_CORE == 1 )
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,MYJSFCSCHEME              &
@@ -148,6 +158,8 @@ CONTAINS
    !      7. Pleim-Xiu LSM
 
    !      99. NMM LSM (NMM core only)
+   !  surface: ground temp/lsm scheme for urban:
+   !      2.  BEP
 !------------------------------------------------------------------
    IMPLICIT NONE
 !======================================================================
@@ -263,6 +275,8 @@ CONTAINS
 !-- cd            momentum exchange coeff at 10 meters
 !-- cka           enthalpy exchange coeff at the lowest model level
 !-- cda           momentum exchange coeff at the lowest model level
+!!!!!!!!!!!!!!
+!
 !
 !-- LANDUSEF     Landuse fraction                      ! P-X LSM
 !-- SOILCTOP     Top soil fraction                     ! P-X LSM
@@ -307,10 +321,8 @@ CONTAINS
    INTEGER, INTENT(IN)::   NSCAT
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
-                          ra_lw_physics, sst_update
+                          sf_urban_physics,ra_lw_physics, sst_update
    INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update
-
-   INTEGER, INTENT(IN) :: ucmcall                                     !urban
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
@@ -423,6 +435,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   U_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   V_PHY
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   Z
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::   TKE_MYJ
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   DZS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
@@ -440,9 +453,36 @@ CONTAINS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SH2O
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   Z0
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   Z0
 
-!
+! Variables for multi-layer UCM
+   REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
+   INTEGER, OPTIONAL, INTENT(IN  ) ::                               JULDAY
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
+   INTEGER, INTENT(IN )::   NUM_URBAN_LAYERS
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_e_bep   !Implicit component TKE
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_q_bep   !Implicit component TKE
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_u_bep   !Explicit momentum component X-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_v_bep   !Explicit momentum component Y-direction
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_t_bep   !Explicit component pot. temperature
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_e_bep   !Explicit component TKE
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_q_bep   !Explicit component TKE
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep    !Fraction air volume in grid cell
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep   !Height above ground
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::sf_bep  !Fraction air at the face of grid cell
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep  !Length scale
+
 ! Optional
 !
 !  arguments for Ocean Mixed Layer Model
@@ -642,6 +682,7 @@ CONTAINS
 !
 !------------------------------------------------------------------
 !
+
 
   if (sf_sfclay_physics .eq. 0) return
 ! if (sf_sfclay_physics .eq. 0 .or. sf_surface_physics.eq.0) return
@@ -1018,7 +1059,6 @@ CONTAINS
       CASE (MYJSFCSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN
-
         myj =.true.
 
         CALL wrf_debug(100,'in MYJSFC')
@@ -1375,7 +1415,7 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-                ucmcall                                         &
+                sf_urban_physics                                &
 !Optional urban
                 ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
                 uc_urb2d,                                       & !H urban
@@ -1389,7 +1429,16 @@ CONTAINS
                 xlat_urb2d,                                     & !I urban
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
-                FRC_URB2D, UTYPE_URB2D                          & ! urban
+                FRC_URB2D, UTYPE_URB2D,                         & !I urban
+                num_urban_layers,                               & !I multi-layer urban
+                trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
+                sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
+                th_phy,rho,p_phy,ust,                           & !I multi-layer urban
+                gmt,julday,xlong,xlat,                          & !I multi-layer urban
+                a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban 
+                a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
+                b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
+                dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 )
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             IF ( isisfc .EQ. 1 ) THEN
@@ -1440,9 +1489,8 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
-
 !urban
-     IF(UCMCALL.eq.1) THEN
+     IF(SF_URBAN_PHYSICS.eq.1) THEN
        DO j=j_start(ij),j_end(ij)                             !urban
          DO i=i_start(ij),i_end(ij)                           !urban
           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
@@ -1575,7 +1623,7 @@ CONTAINS
               endif
            ENDIF
 !tgs     IF(.not. MYJ) then
-
+             
           CALL SFCDIAGS(HFX,QFX,TSK,QVG,CHS2,CQS2,T2,TH2,Q2,      &
                      PSFC,CP,R_d,RCP,                              &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -1710,11 +1758,11 @@ CONTAINS
        ENDIF
 
      END SELECT sfc_select
+
      ENDDO
      !$OMP END PARALLEL DO
 
  430 CONTINUE
-
 
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 

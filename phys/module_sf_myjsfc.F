@@ -243,7 +243,6 @@ CONTAINS
             THEK(K)=(CWMK(K)*(-ELOCP/TK(K))+1.)*THK(K)
             Q2K(K)=2.*Q2(I,KFLIP,J)
 !
-!
 !***  COMPUTE THE HEIGHTS OF THE LAYER INTERFACES
 !
             ZHK(K)=ZINT(I,K,J)
@@ -304,7 +303,7 @@ CONTAINS
        endif
 !
           CALL SFCDIF(NTSD,SEAMASK,THSK(I,J),QSFC(I,J),PSFC            &
-     &               ,UZ0(I,J),VZ0(I,J),TZ0,THZ0(I,J),QZ0(I,J)         &
+     &               ,UZ0(I,J),VZ0(I,J),TZ0,TSK(I,J),THZ0(I,J),QZ0(I,J)         &
      &               ,USTAR(I,J),ZNT(I,J),Z0BASE(I,J),CT(I,J),RMOL(I,J) &
      &               ,AKMS(I,J),AKHS(I,J),RIB(I,J),PBLH(I,J),MAVAIL(I,J) &
      &               ,CHS(I,J),CHS2(I,J),CQS2(I,J)                     &
@@ -356,7 +355,7 @@ CONTAINS
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !----------------------------------------------------------------------
       SUBROUTINE SFCDIF(NTSD,SEAMASK,THS,QS,PSFC                       &
-     &                 ,UZ0,VZ0,TZ0,THZ0,QZ0                           &
+     &                 ,UZ0,VZ0,TZ0,TSK,THZ0,QZ0                       &
      &                 ,USTAR,Z0,Z0BASE,CT,RLMO,AKMS,AKHS,RIB,PBLH,WETM &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,QGH,CPM &
      &                 ,ULOW,VLOW,TLOW,THLOW,THELOW,QLOW,CWMLOW        &
@@ -382,7 +381,7 @@ CONTAINS
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK,ZSFC       &
-     &                  ,THELOW,THLOW,THS,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
+     &                  ,THELOW,THLOW,THS,TSK,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
      &                  ,Z0BASE
 !
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
@@ -604,8 +603,10 @@ CONTAINS
             PSHZL=(PSIH1(K+2)-PSIH1(K+1))*RDZT+PSIH1(K+1)
 !
             SIMH=(PSHZL-PSHZ+RLOGT)*FH01
+
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
+!!!!!!!!!!!!!!!!!!!!!
             AKMS=MAX(USTARK/SIMM,CXCHS)
             AKHS=MAX(USTARK/SIMH,CXCHS)
 !
@@ -1024,7 +1025,8 @@ CONTAINS
 !***  INTERFERENCE BEFORE BEING RECOMPUTED IN MYJPBL.
 !
       IF(SEAMASK>0.5)THEN
-        QS=QLOW+QFX/(RLOW*AKHS)
+          QS=PQ0SEA/PSFC                                      &
+     &         *EXP(A2S*(TSK-A3S)/(TSK-A4S)) 
         QS=QS/(1.-QS)
       ENDIF
 !----------------------------------------------------------------------

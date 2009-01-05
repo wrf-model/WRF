@@ -14,6 +14,8 @@ MODULES = \
 	module_bl_acm.o \
 	module_bl_mynn.o \
 	module_bl_gwdo.o \
+	module_bl_myjurb.o \
+	module_bl_boulac.o \
 	module_cu_g3.o \
 	module_cu_kf.o  \
 	module_cu_bmj.o \
@@ -48,6 +50,7 @@ MODULES = \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
         module_sf_urban.o  \
+        module_sf_bep.o  \
 	module_sf_lsm_nmm.o  \
 	module_sf_pxlsm.o \
 	module_sf_ruclsm.o \
@@ -115,6 +118,11 @@ clean:
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
 module_bl_myjpbl.o: ../share/module_model_constants.o
+
+module_bl_myjurb.o: ../share/module_model_constants.o
+
+module_bl_boulac.o: ../share/module_model_constants.o
+
 module_bl_qnsepbl.o: ../share/module_model_constants.o
 
 module_bl_gfs.o: module_gfs_machine.o \
@@ -167,9 +175,11 @@ module_sf_gfs.o: module_gfs_machine.o \
 		 module_progtm.o
 
 module_sf_noahdrv.o: module_sf_noahlsm.o module_data_gocart_dust.o \
-                     module_sf_urban.o
+                     module_sf_urban.o module_sf_bep.o
 
 module_sf_noahlsm.o: ../share/module_model_constants.o
+
+module_sf_bep.o: ../share/module_model_constants.o
 
 module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o 
 
@@ -201,6 +211,7 @@ module_physics_init.o : \
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
+                module_sf_bep.o                 \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
 		module_bl_ysu.o			\
@@ -210,6 +221,8 @@ module_physics_init.o : \
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
 		module_bl_mynn.o                \
+		module_bl_myjurb.o              \
+		module_bl_boulac.o              \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
@@ -265,10 +278,12 @@ module_cumulus_driver.o: \
 
 module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
+		module_bl_myjurb.o \
 		module_bl_qnsepbl.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
+                module_bl_boulac.o \
 		module_bl_gfs.o \
 		module_bl_mynn.o \
 		module_bl_gwdo.o \

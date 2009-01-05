@@ -46,6 +46,7 @@ dimspec    i      1     standard_domain              x          west_east
 dimspec    j      3     standard_domain              y          south_north
 dimspec    k      2     standard_domain              z          bottom_top
 dimspec    l      2     namelist=num_soil_layers     z          soil_layers
+dimspec    %      2     namelist=num_urban_layers    z          urban_layers
 dimspec    u      2     namelist=num_land_cat        z          land_cat
 dimspec    s      2     namelist=num_soil_cat        z          soil_cat
 dimspec    |      2     namelist=num_force_layers    z          force_layers
@@ -513,7 +514,6 @@ state   real   soilctop            isj   misc          1     Z     i012    "SOIL
 state   real   soilcbot            isj   misc          1     Z     i012    "SOILCBOT"      "SOIL CAT FRACTION (BOTTOM)"  ""
 state   real   soilcat             ij    misc          1     -     i12     "SOILCAT"       "SOIL CAT DOMINANT TYPE" ""
 state   real   vegcat              ij    misc          1     -     i12     "VEGCAT"        "VEGETATION CAT DOMINANT TYPE" ""
-
 #---------------------------------------------------------------------------------------------------------------------------------------
 # SI - end variables from netCDF format from Standard Initialization
 #---------------------------------------------------------------------------------------------------------------------------------------
@@ -624,6 +624,14 @@ state    real   RN_URB2D        ij    misc        1         -     r       "RN_UR
 state    real   TS_URB2D        ij    misc        1         -     r       "TS_URB"  "SKIN TEMPERATURE"          "K"
 state    real   FRC_URB2D       ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB"  "URBAN FRACTION"         "dimensionless"
 state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
+state    real   TRB_URB4D        i%j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
+state    real   TW1_URB4D       i%j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
+state    real   TW2_URB4D       i%j    misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
+state    real   TGB_URB4D        i%j    misc       1         Z    r      "TGB_URB4D" "ROAD LAYER TEMPERATURE"          "K"
+state    real   SFW1_URB3D      i%j    misc       1         Z     r       "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFW2_URB3D      i%j    misc       1         Z     r       "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFR_URB3D       i%j    misc       1         Z     r       "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFG_URB3D       i%j    misc       1         Z     r       "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 
 
 # urban variables from radiation model
@@ -686,6 +694,29 @@ state   real   OL1              ij     misc        1         -     i012rhdus "OL
 state   real   OL2              ij     misc        1         -     i012rhdus "OL2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 state   real   OL3              ij     misc        1         -     i012rhdus "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 state   real   OL4              ij     misc        1         -     i012rhdus "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+
+# BEP urban scheme  variables
+state    real    a_u_bep       ikj     misc        1         Z      -        "a_u_bep"               "IMPLICIT FOR X-COMP."      "s-1"
+state    real    a_v_bep       ikj     misc        1         Z      -        "a_v_bep"               "IMPLICIT FOR Y-COMP."      "s-1"
+state    real    a_t_bep       ikj     misc        1         Z      -        "a_t_bep"               "IMPLICIT FOR Pot. Temp"    "s-1"
+state    real    a_q_bep       ikj     misc        1         Z      -        "a_q_bep"               "IMPLICIT FOR Moisture"     "s-1"
+state    real    a_e_bep       ikj     misc        1         Z      -        "a_e_bep"               "IMPLICIT FOR TKE"          "s-1"
+state    real    b_u_bep       ikj     misc        1         Z      -        "b_u_bep"               "EXPLICIT FOR X-COMP."      "m s-2"
+state    real    b_v_bep       ikj     misc        1         Z      -        "b_v_bep"               "EXPLICIT FOR Y-COMP."      "m s-2"
+state    real    b_t_bep       ikj     misc        1         Z      -        "b_t_bep"               "EXPLICIT FOR Pot. Temp"    "K s-1"
+state    real    b_q_bep       ikj     misc        1         Z      -        "b_q_bep"               "EXPLICIT FOR Moisture"     "kg s-1"
+state    real    b_e_bep       ikj     misc        1         Z      -        "b_e_bep"               "EXPLICIT FOR TKE"          "m2 s-3"
+state    real    dlg_bep       ikj     misc        1         Z      -        "dlg_bep"               "length scale 1"            "m"
+state    real    dl_u_bep      ikj     misc        1         Z      -        "dl_u_bep"              "urban length scale"        "m"
+state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
+state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
+# BOULAC PBL variables
+state    real   tke_boulac        ikj     misc        1         -      r        "tke_boulac"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
+# Diagnostic PBL variables
+state    real   wu_tur        ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
+state    real   wv_tur        ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
+state    real   wt_tur        ikj     misc        1         -      r        "wt_tur"               "Turbulent flux of temperature"      "K m s-1"
+state    real   wq_tur        ikj     misc        1         -      r        "wq_tur"               "Turbulent flux of water vapor"      "- m s-1"
 
 # gfdl (eta) radiation State Variables
 state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
@@ -1261,6 +1292,7 @@ rconfig   real    naer                    namelist,physics      max_domains    1
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
@@ -1271,6 +1303,7 @@ rconfig   integer ICLOUD                  namelist,physics	1             1      
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
+rconfig   integer num_urban_layers        namelist,physics	1            400       irh    "num_urban_layers"               ""      ""
 rconfig   integer num_months              namelist,physics      1            12       irh    "num_months"               ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
@@ -1289,7 +1322,6 @@ rconfig   real    seaice_threshold        namelist,physics	1            271     
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sst_skin                namelist,physics      1            0         h    "sst_skin" "calculate sst skin temperature 0=no, 1=yes"   ""
 rconfig   integer tmn_update              namelist,physics      1            0         h    "tmn_update" "update tmn from calculation  0=no, 1=yes"   ""
-rconfig   integer ucmcall                 namelist,physics      max_domains  0         h    "ucmcall"     "activate urban model  0=no, 1=yes"   ""
 rconfig   logical usemonalb               namelist,physics      1            .false.   h    "usemonalb"   "use 2d field vs table values  false=table, True=2d"   ""
 rconfig   logical rdmaxalb                namelist,physics      1            .true.    h     "rdmaxalb"    "false set it to table values"   ""
 rconfig   logical rdlai2d                 namelist,physics      1            .false.   h     "rdlai2d"     "false set it to table values"   ""
@@ -1557,6 +1589,8 @@ package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             state:regime
 package   pxsfcscheme    sf_sfclay_physics==7        -             state:regime
 
+package   noahucmscheme  sf_urban_physics==1         -             -
+package   bepscheme      sf_urban_physics==2         -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
@@ -1570,8 +1604,8 @@ package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   mynnpblscheme2   bl_pbl_physics==5           -           state:regime
 package   mynnpblscheme3   bl_pbl_physics==6           -           state:regime
 package   acmpblscheme   bl_pbl_physics==7           -             state:regime
+package   boulacscheme   bl_pbl_physics==8
 package   mrfscheme      bl_pbl_physics==99          -             state:regime
-
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

@@ -185,6 +185,10 @@ CONTAINS
           CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1")
        ENDIF
 
+      if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
+         call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
+      endif
+
 #define COPY_IN
 #include <scalar_derefs.inc>
 #ifdef DM_PARALLEL

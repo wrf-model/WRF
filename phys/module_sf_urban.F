@@ -18,22 +18,34 @@ MODULE module_sf_urban
    REAL, ALLOCATABLE, DIMENSION(:) :: R_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: RW_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: HGT_TBL
-   REAL, ALLOCATABLE, DIMENSION(:) :: CDS_TBL
-   REAL, ALLOCATABLE, DIMENSION(:) :: AS_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: AH_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETR_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETB_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETG_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: FRC_URB_TBL
 
-   REAL                            :: CAPR_DATA, CAPB_DATA, CAPG_DATA
-   REAL                            :: AKSR_DATA, AKSB_DATA, AKSG_DATA
-   REAL                            :: ALBR_DATA, ALBB_DATA, ALBG_DATA
-   REAL                            :: EPSR_DATA, EPSB_DATA, EPSG_DATA
-   REAL                            :: Z0R_DATA,  Z0B_DATA,  Z0G_DATA
-   REAL                            :: Z0HR_DATA, Z0HB_DATA, Z0HG_DATA
-   REAL                            :: TRLEND_DATA, TBLEND_DATA, TGLEND_DATA
+   REAL, ALLOCATABLE, DIMENSION(:) :: CAPR_TBL, CAPB_TBL, CAPG_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: AKSR_TBL, AKSB_TBL, AKSG_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: ALBR_TBL, ALBB_TBL, ALBG_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: EPSR_TBL, EPSB_TBL, EPSG_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: Z0R_TBL,  Z0B_TBL,  Z0G_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: Z0HR_TBL, Z0HB_TBL, Z0HG_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: TRLEND_TBL, TBLEND_TBL, TGLEND_TBL
+!for BEP
 
+   ! MAXDIRS :: The maximum number of street directions we're allowed to define
+   INTEGER, PARAMETER :: MAXDIRS = 3
+   ! MAXHGTS :: The maximum number of building height bins we're allowed to define
+   INTEGER, PARAMETER :: MAXHGTS = 50
+
+   INTEGER, ALLOCATABLE, DIMENSION(:)   :: NUMDIR_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: STREET_DIRECTION_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: STREET_WIDTH_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: BUILDING_WIDTH_TBL
+   INTEGER, ALLOCATABLE, DIMENSION(:)   :: NUMHGT_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: HEIGHT_BIN_TBL
+   REAL,    ALLOCATABLE, DIMENSION(:,:) :: HPERCENT_BIN_TBL
+!end BEP
    INTEGER                         :: BOUNDR_DATA,BOUNDB_DATA,BOUNDG_DATA
    INTEGER                         :: CH_SCHEME_DATA, TS_SCHEME_DATA
    INTEGER                         :: ahoption        ! Miao, 2007/01/17, cal. ah
@@ -75,7 +87,8 @@ MODULE module_sf_urban
 !
 ! Input Data from WRF [MKS unit]:
 !
-!     UTYPE  [-]     : Urban type. 1=urban, 2=suburban, 3=rural 
+!     UTYPE  [-]     : Urban type. 1=Commercial/Industrial; 2=High-intensity residential; 
+!                    : 3=low-intensity residential 
 !     TA     [K]     : Potential temperature at 1st wrf level (absolute temp)
 !     QA     [kg/kg] : Mixing ratio at 1st atmospheric level
 !     UA     [m/s]   : Wind speed at 1st atmospheric level
@@ -135,28 +148,34 @@ MODULE module_sf_urban
 !     CHS, CHS2 [m/s]    : CH*U at ZA, CH*U at 2 m (not used)
 !
 ! Important parameters:
+!
+! Morphology of the urban canyon:
+! These parameters assigned in the urban_param.tbl
+!
+!    ZR  [m]             : roof level (building height)
+!    ROOF_WIDTH [m]      : roof (i.e., building) width
+!    ROAD_WIDTH [m]      : road width
+!
+! Parameters derived from the morphological terms above.
+! These parameters are computed in the code.
+!
+!    HGT [-]             : normalized building height
+!    SVF [-]             : sky view factor
+!    R   [-]             : Normalized roof width (a.k.a. "building coverage ratio")
+!    RW  [-]             : = 1 - R
+!    Z0C [m]             : Roughness length above canyon for momentum (1/10 of ZR)
+!    Z0HC [m]            : Roughness length above canyon for heat (1/10 of Z0C)
+!    ZDC [m]             : Zero plane displacement height (1/5 of ZR)
+!
 ! Following parameter are assigned in run/urban_param.tbl
 !
-!  ZR  [m]             : roof level (building height)
-!  Z0C [m]             : Roughness length above canyon for momentum (1/10 of ZR)
-!  Z0HC [m]            : Roughness length above canyon for heat (1/10 of Z0C)
-!  ZDC [m]             : Zero plane displacement height (1/5 of ZR)
-!  SVF [-]             : sky view factor. Calculated again in urban_param_init
-!  R   [-]             : building coverage ratio
-!  RW  [-]             : = 1 - R
-!  HGT [-]             : normalized building height
-!  CDS [-]             : drag coefficient by buildings
-!  AS  [1/m]           : buildings volumetric parameter
-!  AH  [cal/cm/cm]     : anthropogenic heat
-!  BETR [-]            : minimum moisture availability of roof
-!  BETB [-]            : minimum moisture availability of building wall
-!  BETG [-]            : minimum moisture availability of road
-!  CAPR[cal/cm/cm/cm/degC]: heat capacity of roof
-!  CAPB[cal/cm/cm/cm/degC]: heat capacity of building wall
-!  CAPG[cal/cm/cm/cm/degC]: heat capacity of road
-!  AKSR [cal/cm/sec/degC] : thermal conductivity of roof
-!  AKSB [cal/cm/sec/degC] : thermal conductivity of building wall
-!  AKSG [cal/cm/sec/degC] : thermal conductivity of road
+!  AH  [ W m{-2} ]        : anthropogenic heat  ( W m{-2} in the table, converted internally to cal cm{-2} )
+!  CAPR[ J m{-3} K{-1} ]  : heat capacity of roof ( units converted in code to [ cal cm{-3} deg{-1} ] )
+!  CAPB[ J m{-3} K{-1} ]  : heat capacity of building wall ( units converted in code to [ cal cm{-3} deg{-1} ] )
+!  CAPG[ J m{-3} K{-1} ]  : heat capacity of road ( units converted in code to [ cal cm{-3} deg{-1} ] )
+!  AKSR [ J m{-1} s{-1} K{-1} ] : thermal conductivity of roof ( units converted in code to [ cal cm{-1} s{-1} deg{-1} ] )
+!  AKSB [ J m{-1} s{-1} K{-1} ] : thermal conductivity of building wall ( units converted in code to [ cal cm{-1} s{-1} deg{-1} ] )
+!  AKSG [ J m{-1} s{-1} K{-1} ] : thermal conductivity of road ( units converted in code to [ cal cm{-1} s{-1} deg{-1} ] )
 !  ALBR [-]               : surface albedo of roof
 !  ALBB [-]               : surface albedo of building wall
 !  ALBG [-]               : surface albedo of road
@@ -187,6 +206,27 @@ MODULE module_sf_urban
 !  TS_SCHEME [integer 1 or 2] : Scheme for computing surface temperature (for roof, wall, and road)
 !                         [1: 4-layer model,  2: Force-Restore method]
 !
+!for BEP
+!  numdir [ - ]             : Number of street directions defined for a particular urban category
+!  street_direction [ deg ] : Direction of streets for a particular urban category and a particular street direction
+!  street_width [ m ]       : Width of street for a particular urban category and a particular street direction
+!  building_width [ m ]     : Width of buildings for a particular urban category and a particular street direction
+!  numhgt [ - ]             : Number of building height levels defined for a particular urban category
+!  height_bin [ m ]         : Building height bins defined for a particular urban category.
+!  hpercent_bin [ % ]       : Percentage of a particular urban category populated by buildings of particular height bins
+!end BEP
+! Moved from urban_param.tbl
+!
+!  BETR [-]            : minimum moisture availability of roof
+!  BETB [-]            : minimum moisture availability of building wall
+!  BETG [-]            : minimum moisture availability of road
+!  Z0HR [m]               : roughness length for heat of roof
+!  Z0HB [m]               : roughness length for heat of building wall (only for CH_SCHEME = 1)
+!  Z0HG [m]               : roughness length for heat of road
+!  num_roof_layers        : number of layers within roof
+!  num_wall_layers        : number of layers within building walls
+!  num_road_layers        : number of layers within below road surface
+!   NOTE: for now, these layers are defined as same as the number of soil layers in namelist.input
 !
 ! References:
 !     Kusaka and Kimura (2004) J.Appl.Meteor., vol.43, p1899-1910
@@ -260,7 +300,8 @@ MODULE module_sf_urban
 ! I: input variables from LSM to Urban
 !-------------------------------------------------------------------------------
 
-   INTEGER, INTENT(IN) :: UTYPE ! urban type [urban=1, suburban=2, rural=3]
+   INTEGER, INTENT(IN) :: UTYPE ! urban type [1=Commercial/Industrial, 2=High-intensity residential, 
+                                ! 3=low-intensity residential]
 
    REAL, INTENT(IN)    :: TA   ! potential temp at 1st atmospheric level [K]
    REAL, INTENT(IN)    :: QA   ! mixing ratio at 1st atmospheric level  [kg/kg]
@@ -338,7 +379,7 @@ MODULE module_sf_urban
 ! L:  Local variables from read_param
 !-------------------------------------------------------------------------------
 
-   REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, CDS, AS, AH
+   REAL :: ZR, Z0C, Z0HC, ZDC, SVF, R, RW, HGT, AH
    REAL :: CAPR, CAPB, CAPG, AKSR, AKSB, AKSG, ALBR, ALBB, ALBG 
    REAL :: EPSR, EPSB, EPSG, Z0R,  Z0B,  Z0G,  Z0HR, Z0HB, Z0HG
    REAL :: TRLEND,TBLEND,TGLEND
@@ -350,6 +391,15 @@ MODULE module_sf_urban
 
    LOGICAL :: SHADOW  ! [true=consider svf and shadow effects, false=consider svf effect only]
 
+!for BEP
+   INTEGER                        :: NUMDIR
+   REAL,    DIMENSION ( MAXDIRS ) :: STREET_DIRECTION
+   REAL,    DIMENSION ( MAXDIRS ) :: STREET_WIDTH
+   REAL,    DIMENSION ( MAXDIRS ) :: BUILDING_WIDTH
+   INTEGER                        :: NUMHGT
+   REAL,    DIMENSION ( MAXHGTS ) :: HEIGHT_BIN
+   REAL,    DIMENSION ( MAXHGTS ) :: HPERCENT_BIN
+!end BEP
 !-------------------------------------------------------------------------------
 ! L: Local variables
 !-------------------------------------------------------------------------------
@@ -413,10 +463,15 @@ MODULE module_sf_urban
      if(tloc==0) tloc=24
    endif
 
-   CALL read_param(UTYPE,ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,CDS,AS,AH,  &
+   CALL read_param(UTYPE,ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,         &
                    CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG,  &
                    EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,     &
                    BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,           &
+!for BEP
+                   NUMDIR, STREET_DIRECTION, STREET_WIDTH,        & 
+                   BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,            & 
+                   HPERCENT_BIN,                                  & 
+!end BEP
                    BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME)
 
 ! Miao, 2007/01/17, cal. ah
@@ -449,7 +504,7 @@ MODULE module_sf_urban
 
    SX=(SSGD+SSGQ)/697.7/60.  ! downward short wave radition [ly/min]
    SD=SSGD/697.7/60.         ! downward direct short wave radiation
-   SQ=SSGQ/697.7/60.         ! downward diffiusion short wave radiation
+   SQ=SSGQ/697.7/60.         ! downward diffuse short wave radiation
    RX=LLG/697.7/60.          ! downward long wave radiation
    RHO=RHOO*0.001            ! air density at first atmospheric level
 
@@ -469,12 +524,11 @@ MODULE module_sf_urban
    IF ( ZR + 2. < ZA ) THEN
      UR=UA*LOG((ZR-ZDC)/Z0C)/LOG((ZA-ZDC)/Z0C)
      ZC=0.7*ZR
-!     ZC=0.5*ZR
      XLB=0.4*(ZR-ZDC)
-     BB=ZR*(CDS*AS/(2.*XLB**2.))**(1./3.)
+     ! BB formulation from Inoue (1963)
+     BB = 0.4 * ZR / ( XLB * alog( ( ZR - ZDC ) / Z0C ) )
      UC=UR*EXP(-BB*(1.-ZC/ZR))
    ELSE
-     print *,'ZR=',ZR, 'ZA=',ZA
      PRINT *, 'Warning ZR + 2m  is larger than the 1st WRF level' 
      ZC=ZA/2.
      UC=UA/2.
@@ -535,6 +589,12 @@ MODULE module_sf_urban
        IF(SLX8 > RW) SLX8=RW
 
        SLX=(SLX1+SLX2+SLX3+SLX4+SLX5+SLX6+SLX7+SLX8)/8.
+
+       SR1=SD*(1.-ALBR)+SQ*(1.-ALBR)
+       SG1=SD*(RW-SLX)/RW*(1.-ALBG)+SQ*VFGS*(1.-ALBG)
+       SB1=SD*SLX/W*(1.-ALBB)+SQ*VFWS*(1.-ALBB)
+       SG2=SB1*ALBB/(1.-ALBB)*VFGW*(1.-ALBG)
+       SB2=SG1*ALBG/(1.-ALBG)*VFWG*(1.-ALBB)
 
      END IF
 
@@ -879,7 +939,7 @@ MODULE module_sf_urban
    FLXHUMG=ELEG/RHO/EL/100.
 
 !-------------------------------------------------------------------------------
-! Total Fulxes from Urban Canopy
+! Total Fluxes from Urban Canopy
 !-------------------------------------------------------------------------------
 
    FLXUV  = ( R*CDR + RW*CDC )*UA*UA
@@ -1173,9 +1233,19 @@ MODULE module_sf_urban
 
    IMPLICIT NONE
 
-   REAL, INTENT(IN)                   :: G0, CAP, AKS, DELT,TSLEND
+   REAL, INTENT(IN)                   :: G0
 
-   INTEGER, INTENT(IN)                :: KM, BOUND
+   REAL, INTENT(IN)                   :: CAP
+
+   REAL, INTENT(IN)                   :: AKS
+
+   REAL, INTENT(IN)                   :: DELT      ! Time step [ s ]
+
+   REAL, INTENT(IN)                   :: TSLEND
+
+   INTEGER, INTENT(IN)                :: KM
+
+   INTEGER, INTENT(IN)                :: BOUND
 
    REAL, DIMENSION(KM), INTENT(IN)    :: DZ
 
@@ -1241,18 +1311,32 @@ MODULE module_sf_urban
 !
 !===============================================================================
    SUBROUTINE read_param(UTYPE,                                        & ! in
-                         ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,CDS,AS,AH,       & ! out
+                         ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,              & ! out
                          CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, & ! out
                          EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,    & ! out
                          BETR,BETB,BETG,TRLEND,TBLEND,TGLEND,          & ! out
+!for BEP
+                         NUMDIR, STREET_DIRECTION, STREET_WIDTH,       & ! out
+                         BUILDING_WIDTH, NUMHGT, HEIGHT_BIN,           & ! out
+                         HPERCENT_BIN,                                 & ! out
+!end BEP
                          BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME)       ! out
 
    INTEGER, INTENT(IN)  :: UTYPE 
 
-   REAL, INTENT(OUT)    :: ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,CDS,AS,AH,       &
+   REAL, INTENT(OUT)    :: ZR,Z0C,Z0HC,ZDC,SVF,R,RW,HGT,AH,              &
                            CAPR,CAPB,CAPG,AKSR,AKSB,AKSG,ALBR,ALBB,ALBG, &
                            EPSR,EPSB,EPSG,Z0R,Z0B,Z0G,Z0HR,Z0HB,Z0HG,    &
                            BETR,BETB,BETG,TRLEND,TBLEND,TGLEND
+!for BEP
+   INTEGER,                     INTENT(OUT) :: NUMDIR
+   REAL,    DIMENSION(MAXDIRS), INTENT(OUT) :: STREET_DIRECTION
+   REAL,    DIMENSION(MAXDIRS), INTENT(OUT) :: STREET_WIDTH
+   REAL,    DIMENSION(MAXDIRS), INTENT(OUT) :: BUILDING_WIDTH
+   INTEGER,                     INTENT(OUT) :: NUMHGT
+   REAL,    DIMENSION(MAXHGTS), INTENT(OUT) :: HEIGHT_BIN
+   REAL,    DIMENSION(MAXHGTS), INTENT(OUT) :: HPERCENT_BIN
+!end BEP
 
    INTEGER, INTENT(OUT) :: BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME
 
@@ -1264,8 +1348,6 @@ MODULE module_sf_urban
    R=       R_TBL(UTYPE)
    RW=      RW_TBL(UTYPE)
    HGT=     HGT_TBL(UTYPE)
-   CDS=     CDS_TBL(UTYPE)
-   AS=      AS_TBL(UTYPE)
    AH=      AH_TBL(UTYPE)
    BETR=    BETR_TBL(UTYPE)
    BETB=    BETB_TBL(UTYPE)
@@ -1273,33 +1355,50 @@ MODULE module_sf_urban
 
 !m   FRC_URB= FRC_URB_TBL(UTYPE)
 
-   CAPR=    CAPR_DATA
-   CAPB=    CAPB_DATA
-   CAPG=    CAPG_DATA
-   AKSR=    AKSR_DATA
-   AKSB=    AKSB_DATA
-   AKSG=    AKSG_DATA
-   ALBR=    ALBR_DATA
-   ALBB=    ALBB_DATA
-   ALBG=    ALBG_DATA
-   EPSR=    EPSR_DATA
-   EPSB=    EPSB_DATA
-   EPSG=    EPSG_DATA
-   Z0R=     Z0R_DATA
-   Z0B=     Z0B_DATA
-   Z0G=     Z0G_DATA
-   Z0HR=    Z0HR_DATA
-   Z0HB=    Z0HB_DATA
-   Z0HG=    Z0HG_DATA
-   TRLEND=  TRLEND_DATA
-   TBLEND=  TBLEND_DATA
-   TGLEND=  TGLEND_DATA
+   CAPR=    CAPR_TBL(UTYPE)
+   CAPB=    CAPB_TBL(UTYPE)
+   CAPG=    CAPG_TBL(UTYPE)
+   AKSR=    AKSR_TBL(UTYPE)
+   AKSB=    AKSB_TBL(UTYPE)
+   AKSG=    AKSG_TBL(UTYPE)
+   ALBR=    ALBR_TBL(UTYPE)
+   ALBB=    ALBB_TBL(UTYPE)
+   ALBG=    ALBG_TBL(UTYPE)
+   EPSR=    EPSR_TBL(UTYPE)
+   EPSB=    EPSB_TBL(UTYPE)
+   EPSG=    EPSG_TBL(UTYPE)
+   Z0R=     Z0R_TBL(UTYPE)
+   Z0B=     Z0B_TBL(UTYPE)
+   Z0G=     Z0G_TBL(UTYPE)
+   Z0HR=    Z0HR_TBL(UTYPE)
+   Z0HB=    Z0HB_TBL(UTYPE)
+   Z0HG=    Z0HG_TBL(UTYPE)
+   TRLEND=  TRLEND_TBL(UTYPE)
+   TBLEND=  TBLEND_TBL(UTYPE)
+   TGLEND=  TGLEND_TBL(UTYPE)
    BOUNDR=  BOUNDR_DATA
    BOUNDB=  BOUNDB_DATA
    BOUNDG=  BOUNDG_DATA
    CH_SCHEME = CH_SCHEME_DATA
    TS_SCHEME = TS_SCHEME_DATA
 
+!for BEP
+
+   STREET_DIRECTION = -1.E36
+   STREET_WIDTH     = -1.E36
+   BUILDING_WIDTH   = -1.E36
+   HEIGHT_BIN       = -1.E36
+   HPERCENT_BIN     = -1.E36
+
+   NUMDIR                     = NUMDIR_TBL ( UTYPE )
+   STREET_DIRECTION(1:NUMDIR) = STREET_DIRECTION_TBL( 1:NUMDIR, UTYPE )
+   STREET_WIDTH    (1:NUMDIR) = STREET_WIDTH_TBL    ( 1:NUMDIR, UTYPE )
+   BUILDING_WIDTH  (1:NUMDIR) = BUILDING_WIDTH_TBL  ( 1:NUMDIR, UTYPE )
+   NUMHGT                     = NUMHGT_TBL ( UTYPE )
+   HEIGHT_BIN      (1:NUMHGT) = HEIGHT_BIN_TBL   ( 1:NUMHGT , UTYPE )
+   HPERCENT_BIN    (1:NUMHGT) = HPERCENT_BIN_TBL ( 1:NUMHGT , UTYPE )
+
+!end BEP
    RETURN
    END SUBROUTINE read_param
 !===============================================================================
@@ -1330,6 +1429,35 @@ MODULE module_sf_urban
    INTEGER :: dummy 
    REAL    :: DHGT, HGT, VFWS, VFGS
 
+   REAL, allocatable, dimension(:) :: ROOF_WIDTH
+   REAL, allocatable, dimension(:) :: ROAD_WIDTH
+
+   character(len=512) :: string
+   character(len=128) :: name
+   character(len=80)  :: text
+   integer :: indx
+
+   real, parameter :: VonK = 0.4
+   real :: lambda_p
+   real :: lambda_f
+   real :: Cd
+   real :: alpha_macd
+   real :: beta_macd
+
+
+!for BEP
+   real :: dummy_hgt
+   real :: dummy_pct
+   real :: pctsum
+!end BEP
+   num_roof_layers = num_soil_layers
+   num_wall_layers = num_soil_layers
+   num_road_layers = num_soil_layers
+
+   call wrf_message("Before open table.")
+
+   ICATE=0
+
    OPEN (UNIT=11,                &
          FILE='urban_param.tbl', &
          ACCESS='SEQUENTIAL',    &
@@ -1340,168 +1468,302 @@ MODULE module_sf_urban
 
    IF (IOSTATUS > 0) STOP 'ERROR OPEN urban_param.tbl'
 
-   READ(11,*)
-   READ(11,'(A4)') LU_DATA_TYPE
+   call wrf_message("Before table readloop.")
+   READLOOP : do 
+      read(11,'(A512)', iostat=iostatus) string
+      if (iostatus /= 0) exit READLOOP
+      if (string(1:1) == "#") cycle READLOOP
+      if (trim(string) == "") cycle READLOOP
+      indx = index(string,":")
+      if (indx <= 0) cycle READLOOP
+      name = trim(adjustl(string(1:indx-1)))
+      
+      ! Here are the variables we expect to be defined in the urban_param.tbl:
+      if (name == "Number of urban categories") then
+         read(string(indx+1:),*) icate
+         IF (.not. ALLOCATED(ZR_TBL)) then
+            ALLOCATE( ZR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating ZR_TBL in urban_param_init'
+            ALLOCATE( Z0C_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0C_TBL in urban_param_init'
+            ALLOCATE( Z0HC_TBL(ICATE), stat=allocate_status ) 
+            if(allocate_status /= 0) stop 'Error allocating Z0HC_TBL in urban_param_init'
+            ALLOCATE( ZDC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating ZDC_TBL in urban_param_init'
+            ALLOCATE( SVF_TBL(ICATE), stat=allocate_status ) 
+            if(allocate_status /= 0) stop 'Error allocating SVF_TBL in urban_param_init'
+            ALLOCATE( R_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating R_TBL in urban_param_init'
+            ALLOCATE( RW_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating RW_TBL in urban_param_init'
+            ALLOCATE( HGT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating HGT_TBL in urban_param_init'
+            ALLOCATE( AH_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating AH_TBL in urban_param_init'
+            ALLOCATE( BETR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating BETR_TBL in urban_param_init'
+            ALLOCATE( BETB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating BETB_TBL in urban_param_init'
+            ALLOCATE( BETG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating BETG_TBL in urban_param_init'
+            ALLOCATE( CAPR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating CAPR_TBL in urban_param_init'
+            ALLOCATE( CAPB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating CAPB_TBL in urban_param_init'
+            ALLOCATE( CAPG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating CAPG_TBL in urban_param_init'
+            ALLOCATE( AKSR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating AKSR_TBL in urban_param_init'
+            ALLOCATE( AKSB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating AKSB_TBL in urban_param_init'
+            ALLOCATE( AKSG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating AKSG_TBL in urban_param_init'
+            ALLOCATE( ALBR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating ALBR_TBL in urban_param_init'
+            ALLOCATE( ALBB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating ALBB_TBL in urban_param_init'
+            ALLOCATE( ALBG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating ALBG_TBL in urban_param_init'
+            ALLOCATE( EPSR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating EPSR_TBL in urban_param_init'
+            ALLOCATE( EPSB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating EPSB_TBL in urban_param_init'
+            ALLOCATE( EPSG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating EPSG_TBL in urban_param_init'
+            ALLOCATE( Z0R_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0R_TBL in urban_param_init'
+            ALLOCATE( Z0B_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0B_TBL in urban_param_init'
+            ALLOCATE( Z0G_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0G_TBL in urban_param_init'
+            ALLOCATE( Z0HR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0HR_TBL in urban_param_init'
+            ALLOCATE( Z0HB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0HB_TBL in urban_param_init'
+            ALLOCATE( Z0HG_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating Z0HG_TBL in urban_param_init'
+            ALLOCATE( TRLEND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TRLEND_TBL in urban_param_init'
+            ALLOCATE( TBLEND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TBLEND_TBL in urban_param_init'
+            ALLOCATE( TGLEND_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating TGLEND_TBL in urban_param_init'
+            ALLOCATE( FRC_URB_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating FRC_URB_TBL in urban_param_init'
+            ! ALLOCATE( ROOF_WIDTH(ICATE), stat=allocate_status )
+            ! if(allocate_status /= 0) stop 'Error allocating ROOF_WIDTH in urban_param_init'
+            ! ALLOCATE( ROAD_WIDTH(ICATE), stat=allocate_status )
+            ! if(allocate_status /= 0) stop 'Error allocating ROAD_WIDTH in urban_param_init'
+            !for BEP
+            ALLOCATE( NUMDIR_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating NUMDIR_TBL in urban_param_init'
+            ALLOCATE( STREET_DIRECTION_TBL(MAXDIRS , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating STREET_DIRECTION_TBL in urban_param_init'
+            ALLOCATE( STREET_WIDTH_TBL(MAXDIRS , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating STREET_WIDTH_TBL in urban_param_init'
+            ALLOCATE( BUILDING_WIDTH_TBL(MAXDIRS , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating BUILDING_WIDTH_TBL in urban_param_init'
+            ALLOCATE( NUMHGT_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating NUMHGT_TBL in urban_param_init'
+            ALLOCATE( HEIGHT_BIN_TBL(MAXHGTS , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating HEIGHT_BIN_TBL in urban_param_init'
+            ALLOCATE( HPERCENT_BIN_TBL(MAXHGTS , ICATE), stat=allocate_status )
+            if(allocate_status /= 0) stop 'Error allocating HPERCENT_BIN_TBL in urban_param_init'
+         endif
+         numdir_tbl = 0
+         street_direction_tbl = -1.E36
+         street_width_tbl = 0
+         building_width_tbl = 0
+         numhgt_tbl = 0
+         height_bin_tbl = -1.E36
+         hpercent_bin_tbl = -1.E36
+!end BEP
 
-   READ(11,*) ICATE
-   ALLOCATE( ZR_TBL(ICATE), stat=allocate_status )
-   if(allocate_status == 0) THEN
-   ALLOCATE( Z0C_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate Z0C_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( Z0HC_TBL ) ) &
-   ALLOCATE( Z0HC_TBL(ICATE), stat=allocate_status ) 
-    if(allocate_status /= 0) stop 'error allocate Z0HC_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( ZDC_TBL ) ) &
-   ALLOCATE( ZDC_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate ZDC_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( SVF_TBL ) ) &
-   ALLOCATE( SVF_TBL(ICATE), stat=allocate_status ) 
-    if(allocate_status /= 0) stop 'error allocate SVF_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( R_TBL ) ) &
-   ALLOCATE( R_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate R_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( RW_TBL ) ) &
-   ALLOCATE( RW_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate RW_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( HGT_TBL ) ) &
-   ALLOCATE( HGT_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate HGT_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( CDS_TBL ) ) &
-   ALLOCATE( CDS_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate CDS_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( AS_TBL ) ) &
-   ALLOCATE( AS_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate AS_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( AH_TBL ) ) &
-   ALLOCATE( AH_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate AH_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( BETR_TBL ) ) &
-   ALLOCATE( BETR_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate BETR_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( BETB_TBL ) ) &
-   ALLOCATE( BETB_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate BETB_TBL in urban_param_init'
-   IF( .NOT. ALLOCATED( BETG_TBL ) ) &
-   ALLOCATE( BETG_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate BETG_TBL in urban_param_init'
-   ALLOCATE( FRC_URB_TBL(ICATE), stat=allocate_status )
-    if(allocate_status /= 0) stop 'error allocate FRC_URB_TBL in urban_param_init'
+      else if (name == "ZR") then
+         read(string(indx+1:),*) zr_tbl(1:icate)
+      else if (name == "ROOF_WIDTH") then
+         ALLOCATE( ROOF_WIDTH(ICATE), stat=allocate_status )
+         if(allocate_status /= 0) stop 'Error allocating ROOF_WIDTH in urban_param_init'
 
-ENDIF
+         read(string(indx+1:),*) roof_width(1:icate)
+      else if (name == "ROAD_WIDTH") then
+         ALLOCATE( ROAD_WIDTH(ICATE), stat=allocate_status )
+         if(allocate_status /= 0) stop 'Error allocating ROAD_WIDTH in urban_param_init'
+         read(string(indx+1:),*) road_width(1:icate)
+      else if (name == "AH") then
+         read(string(indx+1:),*) ah_tbl(1:icate)
+      else if (name == "FRC_URB") then
+         read(string(indx+1:),*) frc_urb_tbl(1:icate)
+      else if (name == "CAPR") then
+         read(string(indx+1:),*) capr_tbl(1:icate)
+         ! Convert CAPR_TBL from J m{-3} K{-1} to cal cm{-3} deg{-1}
+         capr_tbl = capr_tbl * ( 1.0 / 4.1868 ) * 1.E-6
+      else if (name == "CAPB") then
+         read(string(indx+1:),*) capb_tbl(1:icate)
+         ! Convert CABR_TBL from J m{-3} K{-1} to cal cm{-3} deg{-1}
+         capb_tbl = capb_tbl * ( 1.0 / 4.1868 ) * 1.E-6
+      else if (name == "CAPG") then
+         read(string(indx+1:),*) capg_tbl(1:icate)
+         ! Convert CABG_TBL from J m{-3} K{-1} to cal cm{-3} deg{-1}
+         capg_tbl = capg_tbl * ( 1.0 / 4.1868 ) * 1.E-6
+      else if (name == "AKSR") then
+         read(string(indx+1:),*) aksr_tbl(1:icate)
+         ! Convert AKSR_TBL from J m{-1} s{-1} K{-1} to cal cm{-1} s{-1} deg{-1}
+         AKSR_TBL = AKSR_TBL * ( 1.0 / 4.1868 ) * 1.E-2
+      else if (name == "AKSB") then
+         read(string(indx+1:),*) aksb_tbl(1:icate)
+         ! Convert AKSB_TBL from J m{-1} s{-1} K{-1} to cal cm{-1} s{-1} deg{-1}
+         AKSB_TBL = AKSB_TBL * ( 1.0 / 4.1868 ) * 1.E-2
+      else if (name == "AKSG") then
+         read(string(indx+1:),*) aksg_tbl(1:icate)
+         ! Convert AKSG_TBL from J m{-1} s{-1} K{-1} to cal cm{-1} s{-1} deg{-1}
+         AKSG_TBL = AKSG_TBL * ( 1.0 / 4.1868 ) * 1.E-2
+      else if (name == "ALBR") then
+         read(string(indx+1:),*) albr_tbl(1:icate)
+      else if (name == "ALBB") then
+         read(string(indx+1:),*) albb_tbl(1:icate)
+      else if (name == "ALBG") then
+         read(string(indx+1:),*) albg_tbl(1:icate)
+      else if (name == "EPSR") then
+         read(string(indx+1:),*) epsr_tbl(1:icate)
+      else if (name == "EPSB") then
+         read(string(indx+1:),*) epsb_tbl(1:icate)
+      else if (name == "EPSG") then
+         read(string(indx+1:),*) epsg_tbl(1:icate)
+      else if (name == "Z0R") then
+         read(string(indx+1:),*) z0r_tbl(1:icate)
+      else if (name == "Z0B") then
+         read(string(indx+1:),*) z0b_tbl(1:icate)
+      else if (name == "Z0G") then
+         read(string(indx+1:),*) z0g_tbl(1:icate)
+      else if (name == "DDZR") then
+         read(string(indx+1:),*) dzr(1:num_roof_layers)
+         ! Convert thicknesses from m to cm
+         dzr = dzr * 100.0
+      else if (name == "DDZB") then
+         read(string(indx+1:),*) dzb(1:num_wall_layers)
+         ! Convert thicknesses from m to cm
+         dzb = dzb * 100.0
+      else if (name == "DDZG") then
+         read(string(indx+1:),*) dzg(1:num_road_layers)
+         ! Convert thicknesses from m to cm
+         dzg = dzg * 100.0
+      else if (name == "BOUNDR") then
+         read(string(indx+1:),*) boundr_data
+      else if (name == "BOUNDB") then
+         read(string(indx+1:),*) boundb_data
+      else if (name == "BOUNDG") then
+         read(string(indx+1:),*) boundg_data
+      else if (name == "TRLEND") then
+         read(string(indx+1:),*) trlend_tbl(1:icate)
+      else if (name == "TBLEND") then
+         read(string(indx+1:),*) tblend_tbl(1:icate)
+      else if (name == "TGLEND") then
+         read(string(indx+1:),*) tglend_tbl(1:icate)
+      else if (name == "CH_SCHEME") then
+         read(string(indx+1:),*) ch_scheme_data
+      else if (name == "TS_SCHEME") then
+         read(string(indx+1:),*) ts_scheme_data
+      else if (name == "AHOPTION") then
+         read(string(indx+1:),*) ahoption
+      else if (name == "AHDIUPRF") then
+         read(string(indx+1:),*) ahdiuprf(1:24)
+!for BEP
+      else if (name == "STREET PARAMETERS") then
 
-   DO LC = 1, ICATE
-      READ(11,*) INDEX,        &
-                 ZR_TBL(LC),   &
-                 Z0C_TBL(LC),  &
-                 Z0HC_TBL(LC), &
-                 ZDC_TBL(LC),  &
-                 SVF_TBL(LC),  &
-                 R_TBL(LC),    &
-                 RW_TBL(LC),   &
-                 HGT_TBL(LC),  &
-                 CDS_TBL(LC),  &
-                 AS_TBL(LC),   &
-                 AH_TBL(LC),   &
-                 BETR_TBL(LC), &
-                 BETB_TBL(LC), &
-                 BETG_TBL(LC), &
-                 FRC_URB_TBL(LC)  
-   END DO
+         STREETLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle STREETLOOP
+            if (trim(string) == "") cycle STREETLOOP
+            if (string == "END STREET PARAMETERS") exit STREETLOOP
+            read(string, *) k ! , dirst, ws, bs
+            numdir_tbl(k) = numdir_tbl(k) + 1
+            read(string, *) k, street_direction_tbl(numdir_tbl(k),k), &
+                               street_width_tbl(numdir_tbl(k),k), &
+                               building_width_tbl(numdir_tbl(k),k)
+         enddo STREETLOOP
 
-   READ(11,*)
-   READ(11,*) CAPR_DATA
-   READ(11,*)
-   READ(11,*) CAPB_DATA
-   READ(11,*)
-   READ(11,*) CAPG_DATA
-   READ(11,*)
-   READ(11,*) AKSR_DATA
-   READ(11,*)
-   READ(11,*) AKSB_DATA
-   READ(11,*)
-   READ(11,*) AKSG_DATA
-   READ(11,*)
-   READ(11,*) ALBR_DATA
-   READ(11,*)
-   READ(11,*) ALBB_DATA
-   READ(11,*)
-   READ(11,*) ALBG_DATA
-   READ(11,*)
-   READ(11,*) EPSR_DATA
-   READ(11,*)
-   READ(11,*) EPSB_DATA
-   READ(11,*)
-   READ(11,*) EPSG_DATA
-   READ(11,*)
-   READ(11,*) Z0R_DATA
-   READ(11,*)
-   READ(11,*) Z0B_DATA
-   READ(11,*)
-   READ(11,*) Z0G_DATA
-   READ(11,*)
-   READ(11,*) Z0HR_DATA
-   READ(11,*)
-   READ(11,*) Z0HB_DATA
-   READ(11,*)
-   READ(11,*) Z0HG_DATA
-   READ(11,*)
-!   READ(11,*) num_roof_layers
-   READ(11,*) dummy 
-   READ(11,*)
-!   READ(11,*) num_wall_layers
-   READ(11,*) dummy 
-   READ(11,*)
-!   READ(11,*) num_road_layers
-   READ(11,*) dummy 
+      else if (name == "BUILDING HEIGHTS") then
 
-   num_roof_layers = num_soil_layers
-   num_wall_layers = num_soil_layers
-   num_road_layers = num_soil_layers
+         read(string(indx+1:),*) k
+         HEIGHTLOOP : do
+            read(11,'(A512)', iostat=iostatus) string
+            if (string(1:1) == "#") cycle HEIGHTLOOP
+            if (trim(string) == "") cycle HEIGHTLOOP
+            if (string == "END BUILDING HEIGHTS") exit HEIGHTLOOP
+            read(string,*) dummy_hgt, dummy_pct
+            numhgt_tbl(k) = numhgt_tbl(k) + 1
+            height_bin_tbl(numhgt_tbl(k), k) = dummy_hgt
+            hpercent_bin_tbl(numhgt_tbl(k),k) = dummy_pct
+            
+         enddo HEIGHTLOOP
+         pctsum = sum ( hpercent_bin_tbl(:,k) , mask=(hpercent_bin_tbl(:,k)>-1.E25 ) )
+         if ( pctsum /= 100.) then
+            write (*,'(//,"Building height percentages for category ", I2, " must sum to 100.0")') k
+            write (*,'("Currently, they sum to ", F6.2,/)') pctsum
+            stop
+         endif
+!end BEP         
+      else
+         print*, 'name = "'//trim(name)//'"'
+         stop
+      endif
+   enddo READLOOP
 
-   DO K=1,num_roof_layers
-      READ(11,*)
-      READ(11,*) DZR(K)
-   END DO
-
-   DO K=1,num_wall_layers
-      READ(11,*)
-      READ(11,*) DZB(K)
-   END DO
-
-   DO K=1,num_road_layers
-      READ(11,*)
-      READ(11,*) DZG(K)
-   END DO
-
-   READ(11,*)
-   READ(11,*) BOUNDR_DATA
-   READ(11,*)
-   READ(11,*) BOUNDB_DATA
-   READ(11,*)
-   READ(11,*) BOUNDG_DATA
-   READ(11,*)
-   READ(11,*) TRLEND_DATA
-   READ(11,*)
-   READ(11,*) TBLEND_DATA
-   READ(11,*)
-   READ(11,*) TGLEND_DATA
-   READ(11,*)
-   READ(11,*) CH_SCHEME_DATA
-   READ(11,*)
-   READ(11,*) TS_SCHEME_DATA
-! Miao, 2007/01/17, cal. ah
-   READ(11,*)
-   READ(11,*) ahoption
-   if(ahoption==1) then
-     READ(11,*)
-     READ(11,*) (ahdiuprf(k),k=1,24)
-   endif
+   write(text,'("After table readloop:  ICATE = ", I10)') icate
+   call wrf_message(text)
 
    CLOSE(11)
 
-! Calculate Sky View Factor
+   ! Assign a few table values that do not need to come from urban_param.tbl
+
+   Z0HR_TBL = 0.1 * Z0R_TBL
+   Z0HB_TBL = 0.1 * Z0B_TBL
+   Z0HG_TBL = 0.1 * Z0G_TBL
 
    DO LC = 1, ICATE
+      write(text,'("In loop:  LC, ICATE = ", I10, I10)') LC, icate
+
+      ! HGT:  Normalized height
+      HGT_TBL(LC) = ZR_TBL(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
+
+      ! R:  Normalized Roof Width (a.k.a. "building coverage ratio")
+      R_TBL(LC)  = ROOF_WIDTH(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )
+
+      RW_TBL(LC) = 1.0 - R_TBL(LC)
+      BETR_TBL(LC) = 0.0
+      BETB_TBL(LC) = 0.0
+      BETG_TBL(LC) = 0.0
+
+      ! The following urban canyon geometry parameters are following Macdonald's (1998) formulations
+      
+      ! Lambda_P :: Plan areal fraction, which corresponds to R for a 2-d canyon.
+      ! Lambda_F :: Frontal area index, which corresponds to HGT for a 2-d canyon
+      ! Cd       :: Drag coefficient ( 1.2 from Grimmond and Oke, 1998 )
+      ! Alpha_macd :: Emperical coefficient ( 4.43 from Macdonald et al., 1998 )
+      ! Beta_macd  :: Correction factor for the drag coefficient ( 1.0 from Macdonald et al., 1998 )
+
+      Lambda_P = R_TBL(LC)
+      Lambda_F = HGT_TBL(LC)
+      Cd         = 1.2
+      alpha_macd = 4.43 
+      beta_macd  = 1.0
+
+
+      ZDC_TBL(LC) = ZR_TBL(LC) * ( 1.0 + ( alpha_macd ** ( -Lambda_P ) )  * ( Lambda_P - 1.0 ) )
+
+      Z0C_TBL(LC) = ZR_TBL(LC) * ( 1.0 - ZDC_TBL(LC)/ZR_TBL(LC) ) * &
+           exp (-(0.5 * beta_macd * Cd / (VonK**2) * ( 1.0-ZDC_TBL(LC)/ZR_TBL(LC) ) * Lambda_F )**(-0.5))
+
+      !
+      ! Z0HC still one-tenth of Z0C, as before ?
+      !
+
+      Z0HC_TBL(LC) = 0.1 * Z0C_TBL(LC)
+
+      !
+      ! Calculate Sky View Factor:
+      !
       DHGT=HGT_TBL(LC)/100.
       HGT=0.
       VFWS=0.
@@ -1518,6 +1780,10 @@ ENDIF
      SVF_TBL(LC)=VFGS
    END DO
 
+   deallocate(roof_width)
+   deallocate(road_width)
+   call wrf_message("At end of urban_param_init")
+
    END SUBROUTINE urban_param_init
 !===========================================================================
 !
@@ -1525,17 +1791,26 @@ ENDIF
 !
 !===========================================================================
    SUBROUTINE urban_var_init(TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,     & ! in
-                             ims,ime,jms,jme,num_soil_layers,                 & ! in
+                             ims,ime,jms,jme,kms,kme,num_soil_layers,         & ! in
 !                             num_roof_layers,num_wall_layers,num_road_layers, & ! in
                              restart,                                      & !in
                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,  & ! inout
                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & ! inout
                              TRL_URB3D,TBL_URB3D,TGL_URB3D,                & ! inout
                              SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D,           & ! inout
-                             TS_URB2D, FRC_URB2D, UTYPE_URB2D)               ! inout
+                             TS_URB2D,                                     & ! inout
+                             num_urban_layers,                             & ! in
+                             TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,      & ! inout
+                             SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,    & ! inout
+                             A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
+                             A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
+                             B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
+                             DL_U_BEP,SF_BEP,VL_BEP,                       & ! inout multi-layer urban
+                             FRC_URB2D, UTYPE_URB2D)                         ! inout
    IMPLICIT NONE
 
-   INTEGER, INTENT(IN) :: ims,ime,jms,jme,num_soil_layers
+   INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
+   INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
 !   INTEGER, INTENT(IN) :: num_roof_layers, num_wall_layers, num_road_layers
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)                    :: TSURFACE0_URB
@@ -1566,6 +1841,30 @@ ENDIF
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: G_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: RN_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D
+
+! multi-layer UCM variables
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TRB_URB4D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TGB_URB4D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFG_URB3D
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_Q_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_E_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: B_U_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: B_V_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: B_T_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: B_Q_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: B_E_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: VL_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP
+   REAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
 !
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D
    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D
@@ -1585,23 +1884,24 @@ ENDIF
       LH_URB2D(I,J)=0.
       G_URB2D(I,J)=0.
       RN_URB2D(I,J)=0.
+      
 !m
       FRC_URB2D(I,J)=0.
       UTYPE_URB2D(I,J)=0.
 
             IF( IVGTYP(I,J) == 1)  THEN
-               UTYPE_URB2D(I,J) = 2  ! for default. high-density
-               UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-density
+               UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
+               UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-intensity
                FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
             ENDIF
             IF( IVGTYP(I,J) == 31) THEN
-               UTYPE_URB2D(I,J) = 3  ! low-density residential
-               UTYPE_URB = UTYPE_URB2D(I,J)  ! low-density residential
+               UTYPE_URB2D(I,J) = 3  ! low-intensity residential
+               UTYPE_URB = UTYPE_URB2D(I,J)  ! low-intensity residential
                FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB) 
             ENDIF
             IF( IVGTYP(I,J) == 32) THEN
-               UTYPE_URB2D(I,J) = 2  ! high-density
-               UTYPE_URB = UTYPE_URB2D(I,J)  ! high-density
+               UTYPE_URB2D(I,J) = 2  ! high-intensity
+               UTYPE_URB = UTYPE_URB2D(I,J)  ! high-intensity
                FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB) 
             ENDIF
             IF( IVGTYP(I,J) == 33) THEN
@@ -1652,17 +1952,47 @@ ENDIF
         TBL_URB3D(I,2,J)=0.5*(TLAYER0_URB(I,1,J)+TLAYER0_URB(I,2,J))
         TBL_URB3D(I,3,J)=TLAYER0_URB(I,2,J)+0.
         TBL_URB3D(I,4,J)=TLAYER0_URB(I,2,J)+(TLAYER0_URB(I,3,J)-TLAYER0_URB(I,2,J))*0.29
+
 !      END DO
 
 !      DO K=1,num_road_layers
       DO K=1,num_soil_layers
         TGL_URB3D(I,K,J)=TLAYER0_URB(I,K,J)+0.
       END DO
-
+      
+! multi-layer urban
+!       write(*,*)i,j,TSURFACE0_URB(i,j),TLAYER0_URB(i,1,j),TLAYER0_URB(i,4,j)
+      DO k=1,num_urban_layers
+!        TRB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
+!        TW1_URB4D(I,k,J)=TSURFACE0_URB(I,J)
+!        TW2_URB4D(I,k,J)=TSURFACE0_URB(I,J)
+!        TGB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
+        TRB_URB4D(I,k,J)=tlayer0_urb(I,1,J)
+        TW1_URB4D(I,k,J)=tlayer0_urb(I,1,J)
+        TW2_URB4D(I,k,J)=tlayer0_urb(I,1,J)
+        TGB_URB4D(I,k,J)=tlayer0_urb(I,1,J)
+        SFW1_URB3D(I,k,J)=0.
+        SFW2_URB3D(I,k,J)=0.
+        SFR_URB3D(I,k,J)=0.
+        SFG_URB3D(I,k,J)=0.
+      ENDDO
+      DO K= KMS,KME
+          SF_BEP(I,K,J)=1.
+          VL_BEP(I,K,J)=1.
+          A_U_BEP(I,K,J)=0.
+          A_V_BEP(I,K,J)=0.
+          A_T_BEP(I,K,J)=0.
+          A_E_BEP(I,K,J)=0.
+          B_U_BEP(I,K,J)=0.
+          B_V_BEP(I,K,J)=0.
+          B_T_BEP(I,K,J)=0.
+          B_E_BEP(I,K,J)=0.
+          DLG_BEP(I,K,J)=0.
+          DL_U_BEP(I,K,J)=0.
+      END DO
      ENDIF        !restart
     END DO
    END DO
-
    RETURN
    END SUBROUTINE urban_var_init
 !===========================================================================

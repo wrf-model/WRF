@@ -815,7 +815,7 @@
 !***
 !-----------------------------------------------------------------------
       INTEGER :: I,I_M,IDUMMY,IEND,ISFFLX,ISTAT,ISTR,J,K,KOUNT_ALL      &
-     &          ,LENGTH_ROW,LLIJ,LLYR,N,SST_UPDATE,UCMCALL
+     &          ,LENGTH_ROW,LLIJ,LLYR,N,SST_UPDATE,SF_URBAN_PHYSICS,NUM_URBAN_LAYERS
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
 !
@@ -872,7 +872,12 @@
 !
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
 !
-      UCMCALL=CONFIG_FLAGS%UCMCALL
+      SF_URBAN_PHYSICS=CONFIG_FLAGS%SF_URBAN_PHYSICS
+
+      if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
+         call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
+      endif
+      
       FRACTIONAL_SEAICE = CONFIG_FLAGS%FRACTIONAL_SEAICE
       IF ( FRACTIONAL_SEAICE == 1 ) THEN
          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1.")
@@ -1200,8 +1205,10 @@
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
-     &          ,UCMCALL=UCMCALL                                        &
      &          ,LAI=GRID%LAI                                           &
+     &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
+!     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
+     &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
      &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &
@@ -1312,7 +1319,8 @@
      &               ,QR_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR &
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
-     &               ,HOL=HOL)
+     &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
+     &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1

@@ -10,6 +10,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
 ! single-value constants
 
    nest%p_top   = parent%p_top
+   nest%save_topo_from_real   = parent%save_topo_from_real
    nest%cfn     = parent%cfn
    nest%cfn1    = parent%cfn1
    nest%rdx     = 1./nest%dx

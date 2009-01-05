@@ -459,7 +459,13 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                       ' from an input file. ***'
        CALL wrf_debug ( 0 , message )
 
-! store horizontally interpolated terrain-based fields in temp location
+! Store horizontally interpolated terrain-based fields in temp location if the input
+! data is from a pristine, un-cycled model input file.  For the original topo from
+! the real program, we will need to adjust the terrain (and a couple of other base-
+! state fields) so reflect the smoothing and matching between the parent and child
+! domains.  For cycled forecasts, the topo has already been adjusted, and we skip
+! over this step.
+
        IF ( nest%save_topo_from_real == 1 ) THEN
           CALL  copy_3d_field ( nest%ht_int  , nest%ht , &
                                 ids , ide , jds , jde , 1   , 1   , &

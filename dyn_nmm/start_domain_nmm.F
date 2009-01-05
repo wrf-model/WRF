@@ -143,6 +143,7 @@
       integer :: i_v=49,j_v=475,n_v=07
       integer :: num_ozmixm, num_aerosolc
       real :: cen_lat,cen_lon,dtphs   ! GWD
+      integer :: num_urban_layers
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
@@ -1604,6 +1605,7 @@
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
+     &             ,NUM_URBAN_LAYERS                                    &
      &                )
 
 !-----------------------------------------------------------------------

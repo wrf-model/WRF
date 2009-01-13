@@ -10,6 +10,8 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
    type (y_type),  intent(out)   :: ob          ! Observation structure.
    type (iv_type), intent(inout) :: iv          ! O-B structure.
 
+#ifdef BUFR
+
    character(len=filename_len) :: filename
    integer                     :: n,i,j
 
@@ -151,6 +153,10 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
    call da_fill_obs_structures(iv, ob)
 
    iv%time = 1
+
+#else
+   call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/)) 
+#endif
 
    if (trace_use) call da_trace_exit("da_setup_obs_structures_bufr")
 

@@ -4,8 +4,11 @@ module da_radiance1
    ! Purpose: module for radiance data assimilation. 
    !---------------------------------------------------------------------------
 
-   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name, &
-      CRTM_Planck_Radiance
+#if defined(RTTOV) || defined(CRTM)
+   use module_radiance, only : satinfo,q2ppmv,rttov_inst_name
+#ifdef CRTM
+   use module_radiance, only : CRTM_Planck_Radiance
+#endif
 #ifdef RTTOV
    use module_radiance, only : coefs
 #endif
@@ -30,13 +33,9 @@ module da_radiance1
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace_int_sort
 
 #if defined(RTTOV) || defined(CRTM)
-   use da_control, only : rtminit_sensor
-   use da_reporting, only : da_warning
-#endif
-#ifdef RTTOV
-   use da_control, only : write_profile,num_procs,tovs_min_transfer
+   use da_control, only : rtminit_sensor,write_profile,num_procs,tovs_min_transfer
+   use da_reporting, only : da_warning, da_message
    use da_tracing, only : da_trace
-   use da_reporting, only : da_message
 #endif
 
    implicit none
@@ -226,6 +225,8 @@ contains
 #include "da_oi_stats_rad.inc"
 #include "da_print_stats_rad.inc"
 #include "da_qc_rad.inc"
+
+#endif
 
 end module da_radiance1
 

@@ -193,6 +193,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call da_setup_firstguess(xbx, grid, config_flags)
    end if
 
+   close(qcstat_conv_unit)
+   call da_free_unit(qcstat_conv_unit)
+
    if (trace_use) call da_trace_exit("da_get_innov_vector")
 
 end subroutine da_get_innov_vector

@@ -4,10 +4,11 @@ module da_crtm
    ! Purpose: module for CRTM radiance data assimilation. 
    !---------------------------------------------------------------------------
 
+#ifdef CRTM
+
    use module_domain, only : x_type, domain
    use da_define_structures, only : y_type, iv_type
 
-#ifdef CRTM
    use module_radiance, only : CRTM_RTSolution_type,CRTM_ChannelInfo_type, &
       CRTM_Atmosphere_type, CRTM_Surface_type,CRTM_GeometryInfo_type, &
       CRTM_Adjoint,CRTM_Forward,CRTM_Tangent_Linear, &
@@ -43,7 +44,6 @@ module da_crtm
    use da_tracing, only : da_trace_entry, da_trace_exit
 
     TYPE (CRTM_ChannelInfo_type), allocatable, save :: ChannelInfo(:)
-#endif
 
 contains
 
@@ -56,6 +56,8 @@ contains
 #include "da_crtm_ad.inc"
 #include "da_crtm_init.inc"
 #include "da_crtm_sensor_descriptor.inc"
+
+#endif
 
 end module da_crtm
 

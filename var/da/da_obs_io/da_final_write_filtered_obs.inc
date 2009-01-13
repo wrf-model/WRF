@@ -41,8 +41,8 @@ subroutine da_final_write_filtered_obs
                       platform%info%elv,         &
                       platform%info%id
          if (iost /= 0) then
-             write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
-             write (0,'(/A,I9)') ' iostat:          ',iost
+            !write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
+            !write (0,'(/A,I9)') ' iostat:          ',iost
             exit reports
          end if
          write(filtered_obs_unit, fmt = fmt_info)           &

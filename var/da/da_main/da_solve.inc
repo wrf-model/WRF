@@ -161,7 +161,6 @@
       allocate (cvt(1:cv_size))
       allocate (xhat(1:cv_size))
       call da_initialize_cv (cv_size, cvt)
-      call da_initialize_cv (cv_size, xhat)
       
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
@@ -220,6 +219,8 @@
 
    j_grad_norm_target = 1.0
    do it = 1, max_ext_its
+
+      call da_initialize_cv (cv_size, xhat)
 
       ! [8.1] Calculate nonlinear model trajectory 
 
@@ -511,7 +512,6 @@
               end if
             end if
 
-            deallocate(iv%instid(i)%cv_index)
          end if
 #ifdef RTTOV
          if (rtm_option == rtm_option_rttov) then

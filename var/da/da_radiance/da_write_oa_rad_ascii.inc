@@ -116,6 +116,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
             if (write_profile) then
                nlevelss  = iv%instid(i)%nlevels
                if ( rtm_option == rtm_option_rttov ) then
+#ifdef RTTOV
                   ! first, write RTTOV levels
                   write(unit=oma_rad_unit,fmt=*) 'RTM_level pres(mb) T(k) Q(ppmv)'
                   do k = 1, nlevelss
@@ -137,9 +138,11 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
                         iv%instid(i)%qcw(k,n)*1000.0, &
                         iv%instid(i)%qrn(k,n)*1000.0
                   end do   ! end loop WRF model levels
+#endif
                end if  ! end if rtm_option_rttov
 
                if ( rtm_option == rtm_option_crtm ) then
+#ifdef CRTM
                   write(unit=oma_rad_unit,fmt=*) &
                      'level fullp(mb) halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                   if (crtm_cloud) then
@@ -179,6 +182,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
                            0.0
                      end do ! end loop profile
                   end if ! end if crtm_cloud
+#endif
                end if  ! end if crtm_option
 
             end if   ! end if write_profile

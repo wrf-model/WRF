@@ -82,6 +82,8 @@ subroutine da_setup_obs_structures_madis( ob, iv)
    TYPE ( y_type), INTENT(OUT)  :: ob          ! Observation structure.
    TYPE (iv_type), INTENT(OUT)  :: iv          ! O-B structure.
 
+#ifdef MADIS
+
 ! LOCAL:
 
 ! Primarily used by DA routines:
@@ -2083,10 +2085,15 @@ subroutine da_setup_obs_structures_madis( ob, iv)
 
    return
 
+#else
+   call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a MADIS library"/))
+#endif
+
    if (trace_use) CALL da_trace_exit("da_setup_obs_structures_madis")
 
 END SUBROUTINE da_setup_obs_structures_madis
 
+#ifdef MADIS
 
 SUBROUTINE PROCESS_DATASET(nsta,nlev,fm,keep,lat,lon,elev,timeob, &
                            slp,pw,stanam,p,q,t,dd,ff,z, &
@@ -2932,3 +2939,5 @@ SUBROUTINE FILL_IV_INFO(obs_index,iv_index,platform,ntotal,nlevels,iv)
    return
 
 END SUBROUTINE FILL_IV_INFO
+
+#endif

@@ -42,8 +42,8 @@ subroutine da_minimise_cg(grid, config_flags,            &
    real                              :: j_grad(1:cv_size)      ! grad_v j (local-grid)
    real                              :: fhat(1:cv_size)        ! cv copy.
    real                              :: ghat(1:cv_size)        ! cv copy.
-   real                              :: qhat(1:cv_size, 0:ntmax)  ! cv copy.
    real                              :: phat(1:cv_size)        ! cv copy.
+   real, allocatable                 :: qhat(:,:)              ! cv copy.
    real                              :: apdotp,step,rrmold,rrmnew,ratio 
    real                              :: ob_grad, rrmnew_norm, gdot
    real                              :: j_estim
@@ -69,7 +69,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /)
    sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
    
-   if ( .not. anal_type_randomcv ) xhat = 0.0
    fhat = 0.0
 
    call da_calculate_j(it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &
@@ -106,11 +105,17 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    rrmold = da_dot_cv(cv_size, cv_size_domain, -phat, ghat, grid, mz, use_varbc)
 
-   if (j%total == 0.0) go to 1004
+   if (j%total == 0.0) then
+      cv = cv + xhat
+      return
+   end if
 
    if (it == 1) j_grad_norm_target = sqrt (rrmold)
 
-   qhat(:,0) = ghat / rrmold
+   if (orthonorm_gradient) then
+      allocate(qhat(1:cv_size, 0:ntmax))
+      qhat(:,0) = ghat / rrmold
+   end if
 
    write(unit=stdout,fmt='("Starting outer iteration : ",i3)') it
    write(unit=stdout,fmt=11) j_grad_norm_target,eps(it)*j_grad_norm_target, &
@@ -132,7 +137,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
 
    do iter=1, ntmax
-      if (rrmold == 0.0) go to 1002
+      if (rrmold == 0.0) exit
 
       call da_calculate_gradj(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
                               xbx, be, iv, y, phat, cv, fhat, grid, config_flags  )
@@ -158,37 +163,31 @@ subroutine da_minimise_cg(grid, config_flags,            &
 			  
       rrmnew_norm = sqrt(rrmnew)
 
-      if (rrmnew_norm  < eps(it) * j_grad_norm_target) go to 1002
-      ratio = 0.0
-      if (rrmold .gt. 0.0) ratio = rrmnew/rrmold
-
-      qhat(:,iter) = ghat / rrmnew_norm
-      phat         = - precon * ghat       + ratio * phat
-
-      rrmold=rrmnew
       if (calculate_cg_cost_fn) then
          j_estim = j%total + 0.5 * da_dot_cv(cv_size, cv_size_domain, &
 	              SQRT(precon) * j_grad, xhat, grid, mz, use_varbc)
-         write(unit=stdout,fmt=12)iter, j%total, ob_grad, step
+         write(unit=stdout,fmt=12)iter, j_estim, rrmnew_norm, step
       else
          write(unit=stdout,fmt=14)iter, rrmnew_norm , step
       end if
 12    format(i3,5x,1PD15.8,5x,1PD15.8,5x,1PD15.8)
 14    format(i3,5x,1PD15.8,5x,1PD15.8)
+
+      if (rrmnew_norm  < eps(it) * j_grad_norm_target) exit
+      ratio = 0.0
+      if (rrmold .gt. 0.0) ratio = rrmnew/rrmold
+
+      if (orthonorm_gradient) qhat(:,iter) = ghat / rrmnew_norm
+      phat         = - precon * ghat       + ratio * phat
+
+      rrmold=rrmnew
    end do
 
    !-------------------------------------------------------------------------
    ! End of the minimization of cost function
    !-------------------------------------------------------------------------
-   iter = iter -1
-   go to 1003
-1002 continue
-   if (calculate_cg_cost_fn) then
-      write(unit=stdout,fmt=12)iter, j%total, ob_grad, step
-   else
-      write(unit=stdout,fmt=14)iter, rrmnew_norm , step
-   end if
-1003 continue
+   iter = MIN(iter, ntmax)
+   if (orthonorm_gradient) deallocate(qhat)
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
    write(unit=stdout,fmt='(A)') " "
@@ -210,7 +209,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
 15  format('Final: ',I3,' iter, J=',1PD15.8,', g=',1PD15.8)
     write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
-1004 continue
 
    cv = cv + xhat
 

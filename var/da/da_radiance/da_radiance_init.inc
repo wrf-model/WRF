@@ -161,21 +161,24 @@ subroutine da_radiance_init(iv,ob)
     if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
        call da_rttov_init(iv,ob,nsensor,nchanl)
+#else
+       call da_error(__FILE__,__LINE__, &
+          (/"Must compile with $RTTOV option for radiances"/))
 #endif
     end if
 
     if (rtm_option == rtm_option_crtm) then
 #ifdef CRTM
        call da_crtm_init(iv,ob,nsensor)
+#else
+       call da_error(__FILE__,__LINE__, &
+          (/"Must compile with $CRTM option for radiances"/))
 #endif
     end if
 
 !-------------------------------------------------------
 !  4.0 read bias correction coefs files
 !-------------------------------------------------------
-
-
-
 
  loop_sensor2: do n = 1, nsensor
 

@@ -67,7 +67,6 @@ subroutine da_minimise_lz(grid, config_flags,            &
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /)
-   if ( .not. anal_type_randomcv ) xhat = 0.0
    call da_calculate_j(it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &
                         be % cv % size_jp, xbx, be, iv, xhat, cv, &
                         re, y, j_cost, fhat, grid, config_flags)

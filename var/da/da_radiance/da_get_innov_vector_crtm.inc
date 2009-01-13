@@ -262,7 +262,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             Atmosphere(1)%Absorber(kte-k+1,1)  = 1000.0 * a(1)  ! in g/kg
 
             ! NOTE: WRF high-level q values seems too big, replaced by constants
-            if (p(1) < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001
+            if (p(1)*0.01 < 75.0) Atmosphere(1)%Absorber(kte-k+1,1) = 0.001
 
             call da_interp_lin_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
             

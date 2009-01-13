@@ -66,8 +66,8 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
          vp % v5(its:ite,jts:jte,kts:kts) = 0.0
       end if
 
-      size_inv = 1.0 / ( (ite-its+1) * ( jte-jts+1) * be % ne )
       if (be % ne > 0) then
+         size_inv = 1.0 / ( (ite-its+1) * ( jte-jts+1) * be % ne )
          do m = 1, be % ne
             do j = jts, jte
                vp % alpha(its:ite,j,m) = vv % alpha(its:ite,j,m) * be % alpha % val(j,m)

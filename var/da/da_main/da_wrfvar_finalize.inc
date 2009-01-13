@@ -75,8 +75,6 @@ subroutine da_wrfvar_finalize
       end if
    end do
 
-   call da_message ((/"SUCCESS COMPLETE WRFVAR"/))
-
    if (trace_use) call da_trace_exit ("da_wrfvar_finalize")
 
 end subroutine da_wrfvar_finalize

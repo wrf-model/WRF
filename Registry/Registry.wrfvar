@@ -1312,7 +1312,7 @@ rconfig   integer   pseudo_rad_senid        namelist,wrfvar14  1  3        - "ps
 rconfig   integer   pseudo_rad_ichan        namelist,wrfvar14  1  6        - "pseudo_rad_ichan"        ""  ""
 rconfig   real      pseudo_rad_lat          namelist,wrfvar14  1  35.0     - "pseudo_rad_lat"          ""  ""
 rconfig   real      pseudo_rad_lon          namelist,wrfvar14  1 130.0     - "pseudo_rad_lon"          ""  ""
-rconfig   real      pseudo_rad_inv          namelist,wrfvar14  1 258.0     - "pseudo_rad_tb"           ""  ""
+rconfig   real      pseudo_rad_inv          namelist,wrfvar14  1 258.0     - "pseudo_rad_inv"          ""  ""
 rconfig   real      pseudo_rad_err          namelist,wrfvar14  1 1.0       - "pseudo_rad_err"          ""  ""
 rconfig   logical   use_simulated_rad       namelist,wrfvar14  1  .false.  - "use_simulated_rad"       ""  ""
 rconfig   logical   simulated_rad_io        namelist,wrfvar14  1  .false.  - "simulated_rad_io"        ""  ""

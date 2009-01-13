@@ -5,11 +5,11 @@ module da_rttov
    ! Purpose: module for radiance data assimilation. 
    !---------------------------------------------------------------------------
 
+#ifdef RTTOV
    use da_define_structures, only : iv_type, y_type, x_type
    use module_domain, only : domain
    use da_reporting, only : da_error
 
-#ifdef RTTOV
    use module_radiance, only : satinfo, coefs_scatt_instname, &
        i_kind,r_kind, r_double, &
        one, zero, three,deg2rad, n_scatt_coef,q2ppmv, gsi_emiss
@@ -49,14 +49,11 @@ module da_rttov
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
    use da_wrf_interfaces, only : wrf_dm_bcast_integer
    use da_reporting, only : da_warning
-#endif
 
    implicit none
 
-#ifdef RTTOV
 #include "rttov_setupchan.interface"
 #include "rttov_setupindex.interface"
-#endif
    
 contains
 
@@ -68,6 +65,8 @@ contains
 #include "da_rttov_direct.inc"
 #include "da_rttov_tl.inc"
 #include "da_rttov_ad.inc"
+
+#endif
 
 end module da_rttov
 

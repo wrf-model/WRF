@@ -4,20 +4,22 @@ module da_radiance
    ! Purpose: module for radiance data assimilation. 
    !---------------------------------------------------------------------------
 
+#if defined(RTTOV) || defined(CRTM)
+
    use module_domain, only : xb_type, domain
    use module_radiance, only : satinfo, coefs_scatt_instname, &
       i_kind,r_kind, r_double, &
        one, zero, three,deg2rad,rad2deg, &
       n_scatt_coef,q2ppmv, &
-      init_constants_derived, gsi_emiss
+      init_constants_derived, gsi_emiss, &
+      rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
    use module_radiance, only : coefs,coefs_scatt,profile_type,radiance_type, &
-      rttov_coef,sensor_descriptor,rttov_platform_name,rttov_inst_name, &
+      rttov_coef,sensor_descriptor, &
       transmission_type,errorstatus_success,gas_id_watervapour
 #endif
 #ifdef CRTM
-   use module_radiance, only : crtm_channelinfo_type, crtm_platform_name, &
-      crtm_sensor_name, crtm_init
+   use module_radiance, only : crtm_channelinfo_type, crtm_platform_name, crtm_init
 #endif
 
 #ifdef DM_PARALLEL
@@ -50,7 +52,7 @@ module da_radiance
       pseudo_rad_err, use_simulated_rad, use_crtm_kmatrix , &
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
-      ips, ipe, jps, jpe, simulated_rad_ngrid
+      ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
@@ -110,6 +112,8 @@ contains
 #include "da_radiance_init.inc"
 #include "da_get_innov_vector_radiance.inc"
 #include "da_read_pseudo_rad.inc"
+
+#endif
 
 end module da_radiance
 

@@ -49,7 +49,6 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
    real                           :: rad_clr, rad_cld   ! RT clear/cloudy radiances
    real, allocatable              :: rad_ovc(:)         ! RT overcast radiances
    real                           :: rad_tl, tb_tl
-   integer                        :: lev_75hPa(1)
 
    ! Initializations for AIRS (MMR) Cloud Detection
    integer                        :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
@@ -353,10 +352,12 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
     ! Important: adjoint variables must be initialized
     call CRTM_Zero_Atmosphere( Atmosphere_TL )
     call CRTM_Zero_Surface( Surface_TL )
-       
-    lev_75hPa = MAXLOC(iv%instid(inst)%pm(:,n), mask = iv%instid(inst)%pm(kte-k+1,n) >= 75.0)	     
-    Atmosphere_TL(1)%Absorber(kte-lev_75hPa(1)+1:kte,1)        = 1000.0 * absorber(kts+1:kte,n) ! in g/kg    ! Zero Jacobian for top level(s)
-    Atmosphere_TL(1)%Temperature(kts+1:kte)                    = temperature(kts+1:kte,n)                    ! Zero Jacobian for top level
+
+    do k = kts, kte
+       if ( iv%instid(inst)%pm(k,n) < 75.0 ) absorber(k,n) = 0.0
+    end do
+    Atmosphere_TL(1)%Absorber(kts+1:kte,1)  = 1000.0 * absorber(kts+1:kte,n) ! in g/kg  Zero Jacobian for top level(s)
+    Atmosphere_TL(1)%Temperature(kts+1:kte) = temperature(kts+1:kte,n)       ! Zero Jacobian for top level
     Atmosphere_TL(1)%Level_Pressure(Atmosphere_TL(1)%n_Layers) = 0.01 * psfc(n)
 
      if (crtm_cloud) then
@@ -435,8 +436,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       !-------------------------------------------------------------------
       ! [1.7] assign Hdx :
       !-------------------------------------------------------------------
-         y%instid(inst)%tb(:,n) = y%instid(inst)%tb(:,n) + &
-	                          RTSolution_TL(:,1)%brightness_temperature
+         y%instid(inst)%tb(:,n) = RTSolution_TL(:,1)%brightness_temperature
 	 
          Error_Status = CRTM_Destroy_Atmosphere( Atmosphere_TL )
          if ( Error_Status /= 0 ) then

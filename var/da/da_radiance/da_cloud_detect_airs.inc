@@ -251,13 +251,15 @@ REAL :: ZHOOK_HANDLE
     end do   
     
     if (rtm_option == rtm_option_rttov) then
+#ifdef RTTOV
        iv%instid(isensor)%clwp(n) = coefs(isensor)%ref_prfl_p(cldtoplevel)
+#endif
     elseif (rtm_option == rtm_option_crtm) then
+#ifdef CRTM
        iv%instid(isensor)%clwp(n) = iv%instid(isensor)%pm(cldtoplevel,n)
+#endif
     end if  	    
     
- print*,'999999 ',zf_clr,zf
-
 ! print*,'ACD_CTP',iv%instid(isensor)%info%lon(1,n), iv%instid(isensor)%info%lat(1,n),&
 !                  iv%instid(isensor)%clwp(n), cldtoplevel, SUM(px(1:ndim-1)), &
 !		  zf/zf_clr, nit, IMODE

@@ -32,9 +32,11 @@ subroutine da_biascorr ( i, ob, iv)
       ! get airmass predictors
       !-------------------------
         if (rtm_option==rtm_option_rttov) then
+#ifdef RTTOV
          q(1:43) = iv%instid(i)%mr(1:43,n)/q2ppmv
          call da_predictor_rttov(pred(1:npred), npred, iv%instid(i)%t(1:43,n), &
             q(1:43), iv%instid(i)%ts(n))
+#endif
         else if (rtm_option==rtm_option_crtm) then
 #ifdef CRTM
 ! FIX? problems with IBM AIX COMPILER

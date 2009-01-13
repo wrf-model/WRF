@@ -16,11 +16,10 @@ subroutine da_read_obs_bufr (iv, filename)
    integer, parameter           :: mxr8lv = 255     ! max number of BUFR levels
    integer, parameter           :: mxr8vn = 10      ! max number of BUFR events
    logical                      :: match, end_of_file
-   character(len=8)             :: subst2, csid, csid2
+   character(len=8)             :: subst2
    integer                      :: idate2, nlevels2, lv1, lv2, idate_save
    real                         :: hdr2(7), hdr_save(7)
-   real                         :: r8sid, r8sid2, pob1, pob2
-   equivalence                  (r8sid, csid), (r8sid2, csid2)
+   real                         :: pob1, pob2
    real                         :: obs2(9,255), obs_save(9,255)
    real                         :: qms2(9,255), qms_save(9,255)
    real                         :: oes2(9,255), oes_save(9,255)
@@ -41,7 +40,6 @@ subroutine da_read_obs_bufr (iv, filename)
    character(len=80)     :: date, dmn, obs_date
    real                  :: hdr(7)
    real                  :: pmo(2,1)
-   ! real :: drf9,255)
    real                  :: obs(9,255),qms(9,255),oes(9,255)
    real                  :: obs_time,woe,qob,toe,qoe,poe,pob,tob,zob,rob,roe
    integer               :: iyear, imonth, iday, ihour, imin
@@ -98,6 +96,7 @@ subroutine da_read_obs_bufr (iv, filename)
    rewind(iunit)
 
    match = .true.
+   outside_all = .false.
    end_of_file = .false.
    report = 0 ! report number in file
    reports: do while ( .not. end_of_file )
@@ -125,8 +124,8 @@ subroutine da_read_obs_bufr (iv, filename)
 
       ! Put a check on Lon and Lat
       if ( platform%info%lon >= 180.0 ) platform%info%lon = platform%info%lon - 360.0
-      platform%info%lat = max(platform%info%lat, -89.95)
-      platform%info%lat = min(platform%info%lat,  89.95)
+      !platform%info%lat = max(platform%info%lat, -89.95)
+      !platform%info%lat = min(platform%info%lat,  89.95)
       ! Fix funny wind direction at Poles
       if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
          platform%info%lon = 0.0
@@ -192,13 +191,7 @@ subroutine da_read_obs_bufr (iv, filename)
             match = .false.
             exit match_check
          end if
-         r8sid  = hdr(1)
-         r8sid2 = hdr2(1)
-         if ( csid /= csid2 ) then
-            match = .false.
-            exit match_check
-         end if
-         do i = 2, 4   ! check XOB, YOB, DHR
+         do i = 1, 4   ! check SID, XOB, YOB, DHR
             if ( hdr(i) /= hdr2(i) ) then
                match = .false.
                exit match_check
@@ -326,14 +319,14 @@ subroutine da_read_obs_bufr (iv, filename)
       write(unit=platform%info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
          iyear, '-', imonth, '-', iday, '_', ihour, ':', imin, ':', 0
 
-      platform  % info % levels   =nlevels
+      platform % info % levels    = nlevels
 
-      platform % loc % slp %inv  = missing_r     
-      platform % loc % slp %qc   = missing_data
-      platform % loc % slp %error=200.0           
-      platform % loc % pw %inv  = missing_r     
-      platform % loc % pw %qc   = missing_data
-      platform % loc % pw %error=0.2             
+      platform % loc % slp %inv   = missing_r     
+      platform % loc % slp %qc    = missing_data
+      platform % loc % slp %error = 200.0           
+      platform % loc % pw %inv    = missing_r     
+      platform % loc % pw %qc     = missing_data
+      platform % loc % pw %error  = 0.2             
 
       do i=1,max_ob_levels
          platform % each (i) % height  = missing_r
@@ -1219,51 +1212,53 @@ subroutine da_read_obs_bufr (iv, filename)
    end do reports
 
    ! thinning check
-   do n = 1, num_ob_indexes
+   if ( thin_conv ) then
+      do n = 1, num_ob_indexes
 
-      if ( thin_conv .and. ntotal(n)>0 ) then
+         if ( ntotal(n)>0 ) then
 
 #ifdef DM_PARALLEL
-         ! Get minimum crit and associated processor index.
-         allocate ( in  (thinning_grid_conv(n)%itxmax) )
-         allocate ( out (thinning_grid_conv(n)%itxmax) )
-         do i = 1, thinning_grid_conv(n)%itxmax
-            in(i) = thinning_grid_conv(n)%score_crit(i)
-         end do
-
-         call mpi_reduce(in, out, thinning_grid_conv(n)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
-         call wrf_dm_bcast_real (out, thinning_grid_conv(n)%itxmax)
-
-         do i = 1, thinning_grid_conv(n)%itxmax
-            if ( abs(out(i)-thinning_grid_conv(n)%score_crit(i)) > 1.0E-10 ) then
-               thinning_grid_conv(n)%ibest_obs(i) = 0
-            end if
-         end do
-
-         deallocate( in  )
-         deallocate( out )
-#endif
-
-         do j = 1, nlocal(n)
-            found = .false.
+            ! Get minimum crit and associated processor index.
+            allocate ( in  (thinning_grid_conv(n)%itxmax) )
+            allocate ( out (thinning_grid_conv(n)%itxmax) )
             do i = 1, thinning_grid_conv(n)%itxmax
-               if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
-                    thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) then
-                  found = .true.
-                  exit
+               in(i) = thinning_grid_conv(n)%score_crit(i)
+            end do
+
+            call mpi_reduce(in, out, thinning_grid_conv(n)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
+            call wrf_dm_bcast_real (out, thinning_grid_conv(n)%itxmax)
+
+            do i = 1, thinning_grid_conv(n)%itxmax
+               if ( abs(out(i)-thinning_grid_conv(n)%score_crit(i)) > 1.0E-10 ) then
+                  thinning_grid_conv(n)%ibest_obs(i) = 0
                end if
             end do
-            if ( .not. found ) then
-               ! iv%info(n)%proc_domain(:,j) = .false.
-               ! hcl this is a quick and dirty way to flag thinned obs to be not-used.
-               ! hcl need to figure out a better solution in the future.
-               iv%info(n)%i(:,j) = ite + 1
-               iv%info(n)%j(:,j) = jte + 1
-            end if
-         end do
-      end if ! thin_conv
 
-   end do
+            deallocate( in  )
+            deallocate( out )
+#endif
+
+            do j = 1, nlocal(n)
+               found = .false.
+               do i = 1, thinning_grid_conv(n)%itxmax
+                  if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
+                       thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) then
+                     found = .true.
+                     exit
+                  end if
+               end do
+               if ( .not. found ) then
+                  ! iv%info(n)%proc_domain(:,j) = .false.
+                  ! hcl this is a quick and dirty way to flag thinned obs to be not-used.
+                  ! hcl need to figure out a better solution in the future.
+                  iv%info(n)%i(:,j) = ite + 1
+                  iv%info(n)%j(:,j) = jte + 1
+               end if
+            end do
+         end if
+
+      end do
+   end if  ! thin_conv
 
    call closbf(iunit)
    close(iunit)

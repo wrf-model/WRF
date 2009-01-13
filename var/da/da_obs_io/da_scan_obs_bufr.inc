@@ -16,12 +16,11 @@ subroutine da_scan_obs_bufr (iv, filename)
    integer, parameter           :: mxr8lv = 255     ! max number of BUFR levels
    integer, parameter           :: mxr8vn = 10      ! max number of BUFR events
    logical                      :: match, end_of_file
-   character(len=8)             :: subst2, csid, csid2
+   character(len=8)             :: subst2
    integer                      :: idate2, nlevels2, lv1, lv2, idate_save
-   real                         :: hdr2(7), hdr_save(7)
-   real                         :: r8sid, r8sid2, pob1, pob2
-   equivalence                  (r8sid, csid), (r8sid2, csid2)
-   real                         :: obs2(9,255), obs_save(9,255)
+   real                         :: hdr2(7)
+   real                         :: pob1, pob2
+   real                         :: obs2(9,255)
    ! for thinning
    real                         :: tdiff                       ! DHR
    real                         :: dlat_earth,dlon_earth,crit
@@ -37,12 +36,12 @@ subroutine da_scan_obs_bufr (iv, filename)
    character(len=80)     :: date, dmn, obs_date
    real                  :: hdr(7)
    real                  :: pmo(2,1)
-   real                  :: obs(9,255),qms(9,255),oes(9,255)
-   real                  :: obs_time,woe,qob,toe,qoe,poe,pob,tob,zob,rob,roe
+   real                  :: obs(9,255)
+   real                  :: obs_time
    integer               :: iyear, imonth, iday, ihour, imin
 
    integer               :: iost, ndup, n, i, j, k, surface_level, report
-   integer               :: iret, idate, kx, nlevels, t29, jx, ix
+   integer               :: iret, idate, kx, nlevels, t29
    integer               :: iunit, fm, obs_index
 
    if (trace_use) call da_trace_entry("da_scan_obs_bufr")
@@ -82,6 +81,7 @@ subroutine da_scan_obs_bufr (iv, filename)
    rewind(iunit)
 
    match = .true.
+   outside_all = .false.
    end_of_file = .false.
    report = 0 ! report number in file
    reports: do while ( .not. end_of_file )
@@ -108,8 +108,8 @@ subroutine da_scan_obs_bufr (iv, filename)
 
       ! Put a check on Lon and Lat
       if ( platform%info%lon >= 180.0) platform%info%lon = platform%info%lon -360.0
-      platform%info%lat = max(platform%info%lat, -89.95)
-      platform%info%lat = min(platform%info%lat,  89.95)
+      !platform%info%lat = max(platform%info%lat, -89.95)
+      !platform%info%lat = min(platform%info%lat,  89.95)
       ! Fix funny wind direction at Poles
       if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
          platform%info%lon = 0.0
@@ -154,13 +154,7 @@ subroutine da_scan_obs_bufr (iv, filename)
             match = .false.
             exit match_check
          end if
-         r8sid  = hdr(1)
-         r8sid2 = hdr2(1)
-         if ( csid /= csid2 ) then
-            match = .false.
-            exit match_check
-         end if
-         do i = 2, 4   ! check XOB, YOB, DHR
+         do i = 1, 4   ! check SID, XOB, YOB, DHR
             if ( hdr(i) /= hdr2(i) ) then
                match = .false.
                exit match_check
@@ -476,6 +470,8 @@ subroutine da_scan_obs_bufr (iv, filename)
    call da_free_unit(iunit)
 
    if (trace_use) call da_trace_exit("da_scan_obs_bufr")
+#else
+   call da_error(__FILE__,__LINE__,(/"must compile with BUFR library"/))
 #endif
 
 end subroutine da_scan_obs_bufr

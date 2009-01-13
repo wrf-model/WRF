@@ -53,14 +53,18 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             platform%info%elv,         &
             platform%info%id
          if (iost /= 0) then
-            write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
-            write (0,'(/A,I9)') ' iostat:          ',iost
+            !write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
+            !write (0,'(/A,I9)') ' iostat:          ',iost
             exit reports
          end if
 
          ! Read surface Info
 
-         read (iunit, fmt = fmt_srfc) platform%loc%slp, platform%loc%pw
+         read (iunit, fmt = fmt_srfc)  &
+            platform%loc%slp%inv, platform%loc%slp%qc, &
+            platform%loc%slp%error,                    &
+            platform%loc%pw%inv, platform%loc%pw%qc,   &
+            platform%loc%pw%error
 
          ! levels < 1 and not GPSPW, go back to reports
 
@@ -83,15 +87,16 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
                field_type(missing_r, missing, missing_r, missing, missing_r))  ! speed 
 
             read (unit = iunit, fmt = trim (fmt_each)) &
-               platform%each (i)%p,            &
-               platform%each (i)%speed,        &
-               platform%each (i)%v,            &
-               platform%each (i)%height,       &
-               platform%each (i)%height_qc,    &
-               height_error,                   &
-               platform%each (i)%t,            &
-               platform%each (i)%td,           &
-               platform%each (i)%rh
+               platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+               platform%each(i)%speed%inv, platform%each(i)%speed%qc,                   &
+               platform%each(i)%speed%error,                                            &
+               platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+               platform%each(i)%height,                                                 &
+               platform%each(i)%height_qc,                                              &
+               height_error,                                                            &
+               platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+               platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+               platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
          end do
 
          if (platform%info%levels < 1) then

@@ -209,7 +209,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
          else
             ob_name = obs_names(j)
          endif
-         write(unit=stdout, fmt='(6x,a,i6,a,i6,a)') &
+         write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
             ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
             iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
       end do

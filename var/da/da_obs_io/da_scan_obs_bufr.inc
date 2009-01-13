@@ -83,6 +83,7 @@ subroutine da_scan_obs_bufr (iv, filename)
    match = .true.
    outside_all = .false.
    end_of_file = .false.
+   outside_all = .false.
    report = 0 ! report number in file
    reports: do while ( .not. end_of_file )
       report = report+1
@@ -114,6 +115,8 @@ subroutine da_scan_obs_bufr (iv, filename)
       if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
          platform%info%lon = 0.0
       end if
+      platform%info%lat = max(platform%info%lat, -89.95)
+      platform%info%lat = min(platform%info%lat,  89.95)
 
       ! Restrict to a range of reports, useful for debugging
 

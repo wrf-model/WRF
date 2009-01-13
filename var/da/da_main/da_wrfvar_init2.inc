@@ -34,12 +34,10 @@ subroutine da_wrfvar_init2
    end if
 
    if (fg_format==fg_format_kma_global .or. fg_format==fg_format_wrf_arw_global) then
-   global=.true.
-     if( nproc_x /= 1 ) then
-      call da_error(__FILE__,__LINE__, (/'For global WRF-Var set nproc_x = 1'/))
-     end if
+      global = .true.
+      nproc_x = 1
    else
-   global = .false.
+      global = .false.
    end if
 
    !<DESCRIPTION>

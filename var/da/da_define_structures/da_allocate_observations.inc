@@ -64,11 +64,11 @@ subroutine da_allocate_observations (iv)
          allocate (iv%info(i)%dz (iv%info(i)%max_lev,iv%info(i)%nlocal))  
          allocate (iv%info(i)%dzm(iv%info(i)%max_lev,iv%info(i)%nlocal)) 
          allocate (iv%info(i)%zk (iv%info(i)%max_lev,iv%info(i)%nlocal)) 
+         iv%info(i)%zk(:,:)           = missing_r
          allocate (iv%info(i)%proc_domain(iv%info(i)%max_lev,iv%info(i)%nlocal)) 
+         iv%info(i)%proc_domain(:,:)  = .false.
          allocate (iv%info(i)%obs_global_index(iv%info(i)%nlocal)) 
 
-         iv%info(i)%proc_domain(:,:)  = .false.
-         iv%info(i)%zk(:,:)           = missing_r
       end if
    end do
 

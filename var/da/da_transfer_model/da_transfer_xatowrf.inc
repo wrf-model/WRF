@@ -97,7 +97,7 @@ subroutine da_transfer_xatowrf(grid)
          qvf1   = 0.5*(q_cgrid(i,j,k)+q_cgrid(i,j,k))
          qvf1_b = 0.5*(grid%moist(i,j,k,P_QV)+grid%moist(i,j,k,P_QV))
          qvf2   = - qvf1 / ((1.0+qvf1_b)*(1.0+qvf1_b))
-         qvf2_b = 1.0/(1.0+qvf1)
+         qvf2_b = 1.0/(1.0+qvf1_b)
          qvf1   = qvf1*qvf2_b + qvf1_b*qvf2
          qvf1_b = qvf1_b*qvf2_b
          grid%xa%p(i,j,k) = (-0.5/grid%rdnw(k)) * &

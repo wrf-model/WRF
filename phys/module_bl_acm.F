@@ -671,7 +671,7 @@ CONTAINS
               EDDYZ(I,K) = kzo + SQRT(SS * (1.0 - 25.0 * RI)) * SQL
             ENDIF
 	  
-          IF(EDYZ.GT.EDDYZ(I,K)) THEN
+          IF(ZOVL.LT.0.0.AND.EDYZ.GT.EDDYZ(I,K)) THEN
             EDDYZ(I,K) = EDYZ
           ENDIF
 

@@ -295,7 +295,7 @@ SUBROUTINE microphysics_driver(                                          &
 !
 
    LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt &
-                                   ,f_qns,f_qnr,f_qng,f_qng,f_qnn,f_qnc
+                                   ,f_qns,f_qnr,f_qng,f_qnn,f_qnc
 
 ! LOCAL  VAR
 

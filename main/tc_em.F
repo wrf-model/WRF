@@ -525,7 +525,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
 
   IMPLICIT NONE 
   TYPE(domain)                 :: grid
-  integer ew,ns,nz,ns,ew
+  integer ew,ns,nz
   integer nproj
   integer num_storm,nstrm
   real :: centerlat,stdlon,conef,truelat1,truelat2,dsm,dx

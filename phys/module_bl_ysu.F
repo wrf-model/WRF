@@ -153,22 +153,22 @@ contains
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(in   )   ::                                          qv3d, &
-                                         			         qc3d, &
- 				                                         qi3d, &
-                                        		                  p3d, &
-		                                        	         pi3d, &
-				                                         th3d, &
-		                    		                          t3d, &
-				                                         dz8w, &
-							                    z
+                                         			                     qc3d, &
+ 				                                                         qi3d, &
+                                   		                                  p3d, &
+            		                                        	         pi3d, &
+		                      	                                         th3d, &
+		                                		                          t3d, &
+				                                                         dz8w, &
+							                                                z
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(in   )   ::                                          p3di
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(inout)   ::                                       rublten, &
-                                        			      rvblten, &
-                                             			     rthblten, &
-                                             		             rqvblten, &
+                                                     			      rvblten, &
+                                                       			     rthblten, &
+                                                		             rqvblten, &
                                                                      rqcblten
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
@@ -179,7 +179,7 @@ contains
 !
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   )   ::                                         xland, &
-     			                                                  hfx, &
+     			                                                          hfx, &
                                                                           qfx, &
                                                                          psim, &
                                                                          psih, &
@@ -202,7 +202,7 @@ contains
 !
   integer,   dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
-  logical, intent(in)        :: flag_qi
+  logical, intent(in)        ::                                       flag_qi
 !optional
    real,     dimension( ims:ime, jms:jme )                                   , &
              optional                                                        , &
@@ -321,11 +321,11 @@ contains
    real,parameter    ::  gamcrt = 3.,gamcrq = 2.e-3
    real,parameter    ::  xka = 2.4e-5
 !
-   integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde,                &
-                                     ims,ime, jms,jme, kms,kme,                &
-                                     its,ite, jts,jte, kts,kte, j
+   integer,  intent(in   )   ::     ids,ide, jds,jde, kds,kde,                 &
+                                    ims,ime, jms,jme, kms,kme,                 &
+                                    its,ite, jts,jte, kts,kte, j
 !
-   real,     intent(in   )   ::      dt,dtmin,cp,g,rovcp,rovg,rd,xlv,rv
+   real,     intent(in   )   ::     dt,dtmin,cp,g,rovcp,rovg,rd,xlv,rv
 !
    real,     intent(in )     ::     svp1,svp2,svp3,svpt0
    real,     intent(in )     ::     ep1,ep2,karman,eomeg,stbolt
@@ -337,8 +337,8 @@ contains
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(in   )   ::                                            tx, &
                                                                            qx, &
-			               			  	          qcx, &
- 		 		               		                  qix, &
+			               	                        		  	          qcx, &
+ 		 		               		                                      qix, &
                                                                          pi2d
    real,     dimension( its:ite, kts:kte+1 )                                 , &
              intent(in   )   ::                                          p2di
@@ -351,10 +351,10 @@ contains
 !
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(inout)   ::                                          utnp, &
-                						         vtnp, &
-	               			        		         ttnp, &
-		               	        			         qtnp, &
-			               				        qctnp
+                                        						         vtnp, &
+	               	                    		        		         ttnp, &
+		               	        	                    		         qtnp, &
+			                                                            qctnp
 !
    real,     dimension( ims:ime )                                            , &
              intent(inout)   ::                                           hol, &
@@ -390,38 +390,38 @@ contains
 !
    real,     dimension( its:ite, kts:kte+1 ) ::                            zq
 !
-   real,     dimension( its:ite, kts:kte )   ::                		       &
-                              				             thx,thvx, &
-               	                              		  	          del, &
-               	                              		  	          dza, &
-               	                              		  	          dzq, &
-			                                                   za, &
-			                                                  tvx, &
-                                        		              uxs,vxs, &
-                                             		             thxs,qxs, &
-                			                            qcxs,qixs
+   real,     dimension( its:ite, kts:kte )   ::                    		       &
+                                        				             thx,thvx, &
+               	                              	        	  	          del, &
+               	                                    		  	          dza, &
+               	                                    		  	          dzq, &
+			                                                               za, &
+			                                                              tvx, &
+                                                   		              uxs,vxs, &
+                                             	     	             thxs,qxs, &
+                			                                        qcxs,qixs
 !
    real,    dimension( its:ite )             ::                    qixsv,rhox, &
-    				                                       govrth, &
-						                        thxsv, &
-                                                            	    uxsv,vxsv, &
-               			                                   qxsv,qcxsv, &
-               			                                 qgh,tgdsa,ps
+                				                                       govrth, &
+		                        				                        thxsv, &
+                                                               	    uxsv,vxsv, &
+               			                                           qxsv,qcxsv, &
+                    			                                 qgh,tgdsa,ps
 !
    real,    dimension( its:ite )             ::                                &
                                                                   zl1,thermal, &
-                                             			 wscale,hgamt, &
+                                                    			 wscale,hgamt, &
                                                                    hgamq,brdn, &
-                                            			    brup,phim, &
-                                             			     phih,cpm, &
-		                                                  dusfc,dvsfc, &
-                                             			  dtsfc,dqsfc, &
+                                                    			    brup,phim, &
+                                                     			     phih,cpm, &
+		                                                          dusfc,dvsfc, &
+                                                     			  dtsfc,dqsfc, &
                                                                    thgb,prpbl, &
                                                                         wspd1
 !
    real,    dimension( its:ite, kts:kte )    ::                     xkzm,xkzh, &
-                                             			        f1,f2, &
-                                             			        r1,r2, &
+                                                     			        f1,f2, &
+                                                     			        r1,r2, &
                                                                         ad,au, &
                                                                            cu, &
                                                                            al, &
@@ -441,13 +441,13 @@ contains
    real,    dimension( its:ite, kts:kte, ncloud)  ::                    r3,f3
 !
    logical, dimension( its:ite )             ::                        pblflg, &
-					                               sfcflg, &
-                              					       stable
+					                                                   sfcflg, &
+                                            					       stable
 !
    integer ::  n,i,k,l,nzol,imvdif,ic
    integer ::  klpbl
 !
-   integer, dimension( its:ite )             ::      kpbl
+   integer, dimension( its:ite )             ::                          kpbl
 !
    real    ::  zoln,x,y,tvcon,e1,dtstep
    real    ::  zl,tskv,dthvdz,dthvm,vconv,rzol

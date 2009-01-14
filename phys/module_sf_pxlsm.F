@@ -1,7 +1,6 @@
 MODULE module_sf_pxlsm
  
   USE module_model_constants
-  USE module_wrf_error
 
   INTEGER, PARAMETER   :: NSOLD=20
   REAL, PARAMETER      :: RD     = 287.04,   CPD   = 1004.67,             &
@@ -215,7 +214,7 @@ CONTAINS
 
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(IN) ::                            PSFC, GSW, GLW, RAINBL,   &                
-                                                     EMISS, XLAND, SNOALB,     &
+                                                     EMISS, SNOALB,            &
                                                      ALBBCK, SHDMIN, SHDMAX,   &
                                                      PBLH, RMOL, SNOWNCV,      &
                                                      UST, MAVAIL
@@ -229,7 +228,7 @@ CONTAINS
    REAL,    DIMENSION( ims:ime, jms:jme ),                                     &
             INTENT(INOUT) ::           CAPG,CANWAT, QFX, HFX, LH,              &
                                        PSIH,VEGFRA, VEGF_PX, SNOW,             &
-                                       SNOWH, SNOWC, ALBEDO
+                                       SNOWH, SNOWC, ALBEDO, XLAND
 
 
    LOGICAL :: radiation
@@ -245,7 +244,9 @@ CONTAINS
 
 !... Real
 
-      REAL,     DIMENSION( ims:ime, jms:jme ) :: XLAI, XLAIMN, RSTMIN, XVEG, XVEGMN, XSNUP
+      REAL,     DIMENSION( ims:ime, jms:jme ) :: XLAI, XLAIMN, RSTMIN, &
+                                                 XVEG, XVEGMN, XSNUP, &
+                                                 XALB
                                                   
       REAL,     DIMENSION( ims:ime, jms:jme ) :: RADNET, EG, ER, ETR, QST
 
@@ -277,6 +278,7 @@ CONTAINS
          CALL VEGELAND(LANDUSEF, VEGFRA, SHDMIN, SHDMAX,                &
                        SOILCTOP, SOILCBOT, NLCAT, NSCAT,                &
                        ZNT,XLAI,XLAIMN,RSTMIN,XVEG,XVEGMN,XSNUP,	&
+                       XLAND, XALB,                                     &
                        ids,ide, jds,jde, kds,kde,			&
                        ims,ime, jms,jme, kms,kme,			&
                        its,ite, jts,jte, kts,kte)
@@ -368,7 +370,7 @@ CONTAINS
           
           ! Compute fractional snow area and snow albedo
           CALL PXSNOW (ITIMESTEP, SNOBS, SNOWNCV(I,J), SNOW(I,J),  &
-                       SNOWH(I,J), XSNUP(I,J),  ALBBCK(i,j),       &
+                       SNOWH(I,J), XSNUP(I,J),  XALB(i,j),         &
                        SNOALB(I,J),VEGF_PX(I,J), SHDMIN(I,J),      &
                        HC_SNOW, SNOW_FRA, SNOWC(I,J),  ALBEDO(I,J) ) 
 
@@ -445,7 +447,7 @@ CONTAINS
                             shdmin, shdmax,                             &                          
                             soilctop, soilcbot, nlcat, nscat,           &
                             znt,  xlai, xlaimn, rstmin, xveg, xvegmn,	&
-                            xsnup,                                      &
+                            xsnup, xland, xalb,                         &
                             ids,ide, jds,jde, kds,kde,			&
                             ims,ime, jms,jme, kms,kme,			&
                             its,ite, jts,jte, kts,kte			)
@@ -481,14 +483,14 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ZNT
 
-      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: XLAI, XLAIMN, RSTMIN, &
-                                                              XVEG, XVEGMN, XSNUP 
+      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: XLAI, XLAIMN, RSTMIN, XALB, &
+                                                              XVEG, XVEGMN, XSNUP, XLAND 
                                      
 !... local variables
 
       INTEGER :: itf, jtf, k, j, i
       REAL    :: SUMLAI, SUMLMN, SUMRSI, SUMLZ0, SUMVEG, SUMVMN, ALAI, VEGF, SUMSNUP
-      REAL    :: VFMX, VFMN, VSEAS, FAREA, FWAT, ZNOTC
+      REAL    :: VFMX, VFMN, VSEAS, FAREA, FWAT, ZNOTC, SUMALB
       REAL,   DIMENSION( NLCAT )  :: LAIMX, LAIMN, Z0, VEG, VEGMN, SNUP
       REAL, PARAMETER      :: ZNOTCMN = 5.0  ! CM, MIN Zo FOR CROPS
       REAL, PARAMETER      :: ZNOTCMX = 15.0 ! CM, MAX Zo FOR CROPS
@@ -523,7 +525,8 @@ CONTAINS
 ! 24  SnwIc  300.    5.   5.  02.  0.1  0.1  Perennial Snowfields or Glaciers
 !-----------------------------------------------------------------------------
 
-      REAL, DIMENSION(24)  :: RSMIN, Z00, VEG0, VEGMN0, LAI0, LAIMN0, SNUP0
+      REAL, DIMENSION(24)  :: RSMIN, Z00, VEG0, VEGMN0, &
+                              LAI0, LAIMN0, SNUP0, ALBF
 
       DATA RSMIN /150.0,  70.0,  60.0,  70.0,  80.0, 180.0, 100.0, 200.0,   &
                   150.0, 120.0, 200.0, 175.0, 120.0, 175.0, 200.0,9999.0,   &
@@ -546,23 +549,22 @@ CONTAINS
       DATA SNUP0/   0.04,  0.04,  0.04,  0.04,   0.04,  0.04,  0.04,  0.03,   &
                    0.035,   0.04, 0.08,  0.08,   0.08,  0.08,  0.08, 0.01,   &
                    0.01,  0.01,  0.02, 0.02, 0.025, 0.025, 0.025,  0.02/
+      DATA ALBF/   15.0,  17.0,  18.0,  18.0,  18.0,  16.0,  19.0,  22.0,   &
+                   20.0,  20.0,  16.0,  14.0,  12.0,  12.0,  13.0,   8.0,   &
+                   14.0,  14.0,  25.0,  15.0,  15.0,  15.0,  25.0,  55.0/
 
       !---- INITIALIZE PARAMETERS
 
       INTEGER :: KWAT
       DATA KWAT / 16/
       
-! This routine expects 24 landuse categories. Stop if NLCAT is different.
-      IF(NLCAT .NE. 24)CALL wrf_error_fatal('in PXLSM - num_land_cat must be 24 for this option ')
-
       !--------------------------------------------------------------------
       !-- Initialize 2 and 3-D veg parameters to be cacluated
-
       DO K=1,NLCAT                                                               
         LAIMX(K) = LAI0(K)                                                       
         LAIMN(K) = LAIMN0(K)                                                   
-        Z0(K) = Z00(K)                                                   
-        VEG(K) = VEG0(K)                                              
+        Z0(K)    = Z00(K)                                                   
+        VEG(K)   = VEG0(K)                                              
         VEGMN(K) = VEGMN0(K)
         SNUP(K)  =  SNUP0(K)                                            
       ENDDO                                              
@@ -575,6 +577,7 @@ CONTAINS
         XVEG(I,J)   = 0.0                                                       
         XVEGMN(I,J) = 0.0
         XSNUP(I,J)  = 0.0                                                            
+        XALB(I,J)   = 0.0                                                            
       ENDDO		! END LOOP THROUGH GRID CELLS
       ENDDO		! END LOOP THROUGH GRID CELLS
       !--------------------------------------------------------------------
@@ -591,11 +594,19 @@ CONTAINS
         SUMVMN = 0.0
         ALAI   = 0.0
         SUMSNUP= 0.0
+        SUMALB = 0.0
 
        !--   ESTIMATE CROP EMERGANCE DATE FROM VEGFRAC
         VFMX   = SHDMAX(I,J) + 0.001
         VFMN   = SHDMIN(I,J)
         VEGF   = VEGFRA(I,J) 
+        
+        !-- Consistency check for unknown
+          IF(VFMX*VFMN .LE. 0.001 .AND. VEGF .GT. 0.0) THEN
+            VFMX = VEGF
+            VFMN = VEGF
+          ENDIF
+        
         !-- Computations for VEGETATION CELLS ONLY
         IF(VFMX.GT.0.0.AND.LANDUSEF(I,KWAT,J).LT.1.00) THEN
            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -604,7 +615,7 @@ CONTAINS
           ELSE
             VSEAS = ((VEGF-VFMN)/(VFMX-VFMN))
           ENDIF
-          ! print *,I,J,VSEAS,VEGF-VFMN,VFMX-VFMN
+          ! print *,I,J,VSEAS,VEGF,VFMX-VFMN
           IF(VSEAS.GT.1.0.OR.VSEAS.LT.0.0) THEN
              print *,' VSEAS NOT BETWEEN 0 AND 1, STOP',  &
                      ' VSEAS=',VSEAS,VEGF,VFMX,VFMN
@@ -612,16 +623,19 @@ CONTAINS
           ENDIF
           ZNOTC = ZNOTCMN * (1-VSEAS) + ZNOTCMX * VSEAS  ! Zo FOR CROPS
           DO K = 1, NLCAT
-            LAIMX(K) = LAIMN0(K) * (1-VSEAS) + LAI0(K) * VSEAS
-            LAIMN(K) = LAIMX(K)
-            VEG(K)   = VEGMN0(K) * (1-VSEAS) + VEG0(K) * VSEAS
-            VEGMN(K) = VEG(K)
+        !-- USE THE VEGFRAC DATA ONLY FOR CROPS 
+            IF (K .GE. 2 .AND. K .LE. 6) THEN
+              LAIMX(K) = LAIMN0(K) * (1-VSEAS) + LAI0(K) * VSEAS
+              LAIMN(K) = LAIMX(K)
+              VEG(K)   = VEGMN0(K) * (1-VSEAS) + VEG0(K) * VSEAS
+              VEGMN(K) = VEG(K)
         !-- SEASONALLY VARY Zo FOR DryCrop (k=2) OR Irigated Crop (k=3) OR  Mix Crop (k=4) 
-            IF (K .GE. 2 .AND. K .LE. 4) THEN
+              IF (K .GE. 2 .AND. K .LE. 4) THEN
                 Z0(K)  = ZNOTC
               !-- CrGrM (k=5) or CrWdM (k=6) USE AVG WITH GRASS AND FOREST
-            ELSE IF (K .GE.5 .AND. K .LE. 6) THEN
+              ELSE IF (K .GE.5 .AND. K .LE. 6) THEN
                 Z0(K)  = 0.5 * (ZNOTC + Z00(K))
+              ENDIF
             ENDIF
           ENDDO
            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -639,6 +653,7 @@ CONTAINS
           SUMVEG = SUMVEG + FAREA * VEG(K)
           SUMVMN = SUMVMN + FAREA * VEGMN(K)
           SUMSNUP= SUMSNUP+ FAREA * SNUP(K)
+          SUMALB = SUMALB + FAREA * ALBF(K)
         ENDDO
 
         !-- CHECK FOR WATER
@@ -651,6 +666,7 @@ CONTAINS
           XVEG(I,J)   = VEG(KWAT)
           XVEGMN(I,J) = VEGMN(KWAT)
           XSNUP(I,J)  = SNUP(KWAT)
+          XALB(I,J)   = ALBF(KWAT)
         ELSE
           IF (FWAT .GT. 0.10) THEN
             ALAI   = ALAI - FWAT
@@ -663,15 +679,19 @@ CONTAINS
           XVEG(I,J)   = SUMVEG / ALAI
           XVEGMN(I,J) = SUMVMN / ALAI
           XSNUP(I,J)  = SUMSNUP/ALAI
+          XALB(I,J)   = SUMALB/ALAI
         ENDIF
 
         IF (FWAT .GT. 0.50) THEN
            ZNT(I,J) = Z0(KWAT)
+          XALB(I,J) = ALBF(KWAT)
         ENDIF
 
         ZNT(I,J)    = ZNT(I,J) * 0.01           !CONVERT TO M
         XVEG(I,J)   = XVEG(I,J) * 0.01          !CONVERT TO FRAC
         XVEGMN(I,J) = XVEGMN(I,J) * 0.01
+        XLAND(I,J)  = 1.0 + FWAT
+        XALB(I,J)   = XALB(I,J) * 0.01
 
       ENDDO		! END LOOP THROUGH GRID CELLS
       ENDDO		! END LOOP THROUGH GRID CELLS

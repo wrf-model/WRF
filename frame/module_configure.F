@@ -348,7 +348,7 @@ CONTAINS
    SUBROUTINE wrf_alt_nml_dynamics (nml_read_unit, nml_name)
 !
 !<DESCRIPTION>
-! If there is an error reading the dynamics namelist, this routine is
+! If there is an error reading the DYNAMICS namelist, this routine is
 ! called to check for namelist variables that have been removed by the 
 ! developers and are still in user's namelists.
 !</DESCRIPTION>
@@ -379,13 +379,87 @@ CONTAINS
      READ   ( UNIT = nml_read_unit , NML = dynamics , iostat=nml_error )
 
      IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-        CALL wrf_error_fatal("Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
+        CALL wrf_debug(0, "Are pd_moist, pd_chem, pd_tke, or pd_scalar still in your "// &
                               TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Replace them with moist_adv_opt, chem_adv_opt, tke_adv_opt"// &
+                             " and scalar_adv_opt, respectively.")
      ELSE     ! Still failed
         return
      ENDIF
 
    END SUBROUTINE wrf_alt_nml_dynamics
+
+   SUBROUTINE wrf_alt_nml_physics (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the PHYSICS namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     integer , DIMENSION(max_domains) :: ucmcall
+     NAMELIST /physics/ ucmcall
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = physics , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_debug(0,"Is ucmcall still in your "// TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Replace it with sf_urban_physics")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrf_alt_nml_physics
+
+   SUBROUTINE wrf_alt_nml_fdda (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the FDDA namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     integer , DIMENSION(max_domains) :: obs_nobs_prt
+     NAMELIST /fdda/ obs_nobs_prt
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = fdda , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_debug(0,"Is obs_nobs_prt still in your "// TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Replace it with obs_prt_max")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrf_alt_nml_fdda
 
 END MODULE module_configure
 

@@ -47,6 +47,7 @@ dimspec    j      3     standard_domain              y          south_north
 dimspec    k      2     standard_domain              z          bottom_top
 dimspec    l      2     namelist=num_soil_layers     z          soil_layers
 dimspec    %      2     namelist=num_urban_layers    z          urban_layers
+dimspec    lin    2     namelist=num_soil_layers_in  z          soil_layers_in
 dimspec    u      2     namelist=num_land_cat        z          land_cat
 dimspec    s      2     namelist=num_soil_cat        z          soil_cat
 dimspec    |      2     namelist=num_force_layers    z          force_layers
@@ -455,6 +456,11 @@ state    real   dtbc            -        misc     -         -      ir       "dtb
 # SI - start variables from netCDF format from Standard Initialization, most eventually for use in LSM schemes
 #-------------------------------------------------------------------------------------------------------------------------------------------
 
+state   real   soil_layers    i{lin}j    misc          1     Z     i1      "SOIL_LAYERS"   "SOIL LAYERS"         "cm"
+state   real   soil_levels    i{lin}j    misc          1     Z     i1      "SOIL_LEVELS"   "SOIL LEVELS"         "cm"
+state   real   st             i{lin}j    misc          1     Z     i1      "ST"            "SOIL TEMPERATURES"   "K"
+state   real   sm             i{lin}j    misc          1     Z     i1      "SM"            "SOIL MOISTURES"      "m3 m-3"
+state   real   sw             i{lin}j    misc          1     Z     i1      "SW"            "SOIL LIQUIDS"        "m3 m-3"
 state   real   sm000007            ij    misc          1     -     i1      "SM000007"      "LAYER SOIL MOISTURE" "m3 m-3"
 state   real   sm007028            ij    misc          1     -     i1      "SM007028"      "LAYER SOIL MOISTURE" "m3 m-3"
 state   real   sm028100            ij    misc          1     -     i1      "SM028100"      "LAYER SOIL MOISTURE" "m3 m-3"
@@ -1225,6 +1231,7 @@ rconfig   integer e_sn                    namelist,domains	max_domains    32    
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
 rconfig   integer num_metgrid_levels      namelist,domains	1              27      irh    "num_metgrid_levels"                ""      ""
+rconfig   integer num_soil_layers_in      namelist,domains	1             4        irh    "num_soil_layers_in"               "number of input levels or layers in 3D sm, st, sw arrays"      ""
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
@@ -1599,7 +1606,7 @@ package   mynnsfcscheme  sf_sfclay_physics==5        -             state:regime
 package   pxsfcscheme    sf_sfclay_physics==7        -             state:regime
 
 package   noahucmscheme  sf_urban_physics==1         -             -
-package   bepscheme      sf_urban_physics==2         -             -
+package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -

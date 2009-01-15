@@ -40,7 +40,8 @@ MODULE module_bl_mynn
        &c4  =  0.0, &
        &c5  =  0.2, &
        &a1  = b1*( 1.0-3.0*g1 )/6.0, &
-       &c1  = g1 -1.0/( 3.0*a1*b1**(1.0/3.0) ), &
+!      &c1  = g1 -1.0/( 3.0*a1*b1**(1.0/3.0) ), &
+       &c1  = g1 -1.0/( 3.0*a1*2.88449914061481660), &
        &a2  = a1*( g1-c1 )/( g1*pr ), &
        &g2  = b2/b1*( 1.0-c3 ) +2.0*a1/b1*( 3.0-2.0*c2 )
 
@@ -58,7 +59,9 @@ MODULE module_bl_mynn
        &alp1=0.23, alp2=1.0, alp3=5.0, alp4=100.0
 
 ! Constants for gravitational settling
-  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
+! REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.)
+  REAL, PARAMETER :: gno=4.64158883361278196
+  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8
 
   REAL, PARAMETER :: rr2=0.7071068, rrp=0.3989423
 

@@ -342,7 +342,7 @@ real::t1,t2,t3,t4
          CALL init_module_optional_input ( grid , config_flags )
       END IF
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
-      CALL  optional_input ( grid , idsi )
+      CALL  optional_input ( grid , idsi , config_flags )
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 

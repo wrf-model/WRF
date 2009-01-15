@@ -419,11 +419,13 @@ print *,'WATER CHANGE = ',change_water
 
    END SUBROUTINE process_percent_cat_new
 
-   SUBROUTINE process_soil_real ( tsk , tmn , &
-                                landmask , sst , &
-                                st_input , sm_input , sw_input , st_levels_input , sm_levels_input , sw_levels_input , &
+   SUBROUTINE process_soil_real ( tsk , tmn , tavgsfc, &
+                                landmask , sst , ht, toposoil, &
+                                st_input , sm_input , sw_input , &
+                                st_levels_input , sm_levels_input , sw_levels_input , &
                                 zs , dzs , tslb , smois , sh2o , &
-                                flag_sst , flag_soilt000, flag_soilm000, &
+                                flag_sst , flag_tavgsfc, flag_soilhgt, &
+                                flag_soil_layers, flag_soil_levels, &
                                 ids , ide , jds , jde , kds , kde , &
                                 ims , ime , jms , jme , kms , kme , &
                                 its , ite , jts , jte , kts , kte , &
@@ -440,7 +442,8 @@ print *,'WATER CHANGE = ',change_water
                               num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                               num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
 
-      INTEGER , INTENT(IN) :: flag_sst, flag_soilt000, flag_soilm000
+      INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc
+      INTEGER , INTENT(IN) :: flag_soil_layers, flag_soil_levels, flag_soilhgt
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
 
@@ -453,14 +456,150 @@ print *,'WATER CHANGE = ',change_water
 
       REAL, DIMENSION(1:num_soil_layers), INTENT(OUT)  ::  zs,dzs
       REAL , DIMENSION(ims:ime,num_soil_layers,jms:jme) , INTENT(OUT) :: tslb , smois , sh2o
-      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: tmn
-      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tsk
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: tavgsfc, ht, toposoil
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tsk, tmn
 
-      INTEGER :: i , j , l , dominant_index , num_soil_cat , num_veg_cat
-      REAL :: dominant_value
+      INTEGER :: i , j , k, l , dominant_index , num_soil_cat , num_veg_cat, closest_layer
+      REAL :: dominant_value, closest_depth, diff_cm
+      REAL , ALLOCATABLE , DIMENSION(:) :: depth     ! Soil layer thicknesses (cm)
+      REAL, PARAMETER :: get_temp_closest_to = 30.   ! use soil temperature closest to this depth (cm)
+      REAL, PARAMETER :: something_big = 1.e6        ! Initialize closest depth as something big (cm)
+      INTEGER :: something_far = 1000                ! Soil array index far away
+      CHARACTER (LEN=132) :: message
+
+      !  Case statement for tmn initialization
+      !  Need to have a reasonable default value for annual mean deeeeep soil temperature
+      !  For sf_surface_physics = 1, we want to use close to a 30 cm value
+      !  for the bottom level of the soil temps.
+      ! NOTE:  We are assuming that soil_layers are the same for each grid point
+
+      fix_bottom_level_for_temp : SELECT CASE ( sf_surface_physics )
+         CASE (SLABSCHEME)
+            IF ( flag_tavgsfc  .EQ. 1 ) THEN
+               CALL wrf_debug ( 0 , 'Using average surface temperature for tmn')
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     tmn(i,j) = tavgsfc(i,j)
+                  END DO
+               END DO
+            ELSE
+            ! Look for soil temp close to 30 cm
+               closest_layer = something_far
+               closest_depth = something_big
+               DO k = 1, num_st_levels_input
+                  diff_cm = abs( st_levels_input(k) - get_temp_closest_to )
+                  IF ( diff_cm < closest_depth ) THEN
+                     closest_depth = diff_cm
+                     closest_layer = k
+                  END IF
+               END DO
+               IF ( closest_layer == something_far ) THEN
+                  CALL wrf_debug ( 0 , 'No soil temperature data for grid%tmn near 30 cm')
+                  CALL wrf_debug ( 0 , 'Using 1 degree static annual mean temps' )
+               ELSE
+                  write(message, FMT='(A,F7.2,A,I3)')&
+                     'Soil temperature closest to ',get_temp_closest_to, &
+                     ' at level ',st_levels_input(closest_layer)
+                  CALL wrf_debug ( 0 , message )
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        tmn(i,j) = st_input(i,closest_layer+1,j)
+                     END DO
+                  END DO
+               END IF
+            END IF
+
+         CASE (LSMSCHEME)
+
+         CASE (RUCLSMSCHEME)
+
+         CASE (PXLSMSCHEME)
+! When the input data from met_em is in layers, there is an additional level added to the beginning
+! of the array to define the surface, which is why we add the extra value (closest_layer+1)
+            IF ( flag_tavgsfc  .EQ. 1 ) THEN
+               CALL wrf_debug ( 0 , 'Using average surface temperature for tmn')
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     tmn(i,j) = tavgsfc(i,j)
+                  END DO
+               END DO
+            ELSE
+            ! Look for soil temp close to 30 cm
+               closest_layer = num_st_levels_input+1
+               closest_depth = something_big
+               DO k = 1, num_st_levels_input
+                  diff_cm = abs( st_levels_input(k) - get_temp_closest_to )
+                  IF ( diff_cm < closest_depth ) THEN
+                     closest_depth = diff_cm
+                     closest_layer = k
+                  END IF
+               END DO
+               IF ( closest_layer == num_st_levels_input + 1 ) THEN
+                  CALL wrf_debug ( 0 , 'No soil temperature data for grid%tmn near 30 cm')
+                  CALL wrf_debug ( 0 , 'Using 1 degree static annual mean temps' )
+               ELSE
+                  write(message, FMT='(A,F7.2,A,I3)')&
+                     'Soil temperature closest to ',get_temp_closest_to, &
+                     ' at level ',st_levels_input(closest_layer)
+                  CALL wrf_debug ( 0 , message )
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        tmn(i,j) = st_input(i,closest_layer+1,j)
+                     END DO
+                  END DO
+               END IF
+            END IF
+
+#if 0
+            ! Loop over layers and do a weighted mean
+            IF ( ALLOCATED ( depth ) ) DEALLOCATE ( depth )
+            ALLOCATE ( depth(num_st_levels_input) )
+            IF ( flag_soil_layers == 1 ) THEN
+               DO k = num_st_levels_input, 2, -1
+                  depth(k) = st_levels_input(k) - st_levels_input(k-1)
+               END DO
+               depth(1) = st_levels_input(1)
+            ELSE IF ( flag_soil_levels == 1 ) THEN
+               DO k = 2, num_st_levels_input
+                  depth(k) = st_levels_input(k) - st_levels_input(k-1)
+               END DO
+               depth(1) = 0.
+            END IF
+
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  tmn(i,j) = 0.
+                  DO k = 1, num_st_levels_input
+                     tmn(i,j) = tmn(i,j) + depth(k) * st_input(i,k,j)
+                  END DO
+               END DO
+            END DO
+            DEALLOCATE ( depth )
+
+#endif
+
+      END SELECT fix_bottom_level_for_temp
+
+      !  Adjust the various soil temperature values depending on the difference in
+      !  elevation between the current model's elevation and the incoming data's
+      !  orography.
+
+      adjust_soil : SELECT CASE ( sf_surface_physics )
+
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
+            CALL adjust_soil_temp_new ( tmn , sf_surface_physics , tsk , ht ,            &
+                                        toposoil , landmask , st_input, st_levels_input, &
+                                        flag_soilhgt , flag_tavgsfc ,                    &
+                                        flag_soil_layers , flag_soil_levels,             &
+                                        num_st_levels_input, num_st_levels_alloc,        &
+                                        ids , ide , jds , jde , kds , kde ,              &
+                                        ims , ime , jms , jme , kms , kme ,              &
+                                        its , ite , jts , jte , kts , kte )
+
+      END SELECT adjust_soil
 
       !  Initialize the soil depth, and the soil temperature and moisture.
-
+   
       IF      ( ( sf_surface_physics .EQ. 1 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_1 ( zs , dzs , num_soil_layers )
          CALL init_soil_1_real ( tsk , tmn , tslb , zs , dzs , num_soil_layers , real_data_init_type , &
@@ -477,20 +616,10 @@ print *,'WATER CHANGE = ',change_water
                                  st_levels_input , sm_levels_input , sw_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
-                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
-!        CALL init_soil_old ( tsk , tmn , &
-!                             smois , tslb , zs , dzs , num_soil_layers , &
-!                             st000010_input , st010040_input , st040100_input , st100200_input , &
-!                             st010200_input , &
-!                             sm000010_input , sm010040_input , sm040100_input , sm100200_input , &
-!                             sm010200_input , &
-!                             landmask_input , sst_input , &
-!                             ids , ide , jds , jde , kds , kde , &
-!                             ims , ime , jms , jme , kms , kme , &
-!                             its , ite , jts , jte , kts , kte )
       ELSE IF ( ( sf_surface_physics .EQ. 3 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
          CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
@@ -499,7 +628,7 @@ print *,'WATER CHANGE = ',change_water
                                  st_levels_input , sm_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , &
-                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
@@ -511,11 +640,13 @@ print *,'WATER CHANGE = ',change_water
                                  st_levels_input , sm_levels_input , sw_levels_input, &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
-                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
       END IF
+      write(6,*) "T After init_soil_m", tslb(29,:,34)
+      write (6,*) "M After init_soil ", smois(29,:,34)
 
    END SUBROUTINE process_soil_real
 
@@ -573,36 +704,31 @@ print *,'WATER CHANGE = ',change_water
 
    END SUBROUTINE process_soil_ideal
 
-   SUBROUTINE adjust_soil_temp_new ( tmn , sf_surface_physics , &
-                                 tsk , ter , toposoil , landmask , flag_toposoil , flag_tavgsfc , &
-                                      st000010 ,      st010040 ,      st040100 ,      st100200 ,      st010200 , &
-                                 flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
-                                      st000007 ,      st007028 ,      st028100 ,      st100255 , &
-                                 flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
-                                      soilt000 ,      soilt005 ,      soilt020 ,      soilt040 ,      soilt160 ,      soilt300 , &
-                                 flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , flag_soilt160 , flag_soilt300 , &
-                                 ids , ide , jds , jde , kds , kde , &
-                                 ims , ime , jms , jme , kms , kme , &
-                                 its , ite , jts , jte , kts , kte )
+   SUBROUTINE adjust_soil_temp_new ( tmn , sf_surface_physics , tsk , ter ,            &
+                                     toposoil , landmask , st_input , st_levels_input, &
+                                     flag_toposoil , flag_tavgsfc ,                    &
+                                     flag_soil_layers , flag_soil_levels,              &
+                                     num_st_levels_input, num_st_levels_alloc,         &
+                                     ids , ide , jds , jde , kds , kde ,               &
+                                     ims , ime , jms , jme , kms , kme ,               &
+                                     its , ite , jts , jte , kts , kte )
 
       IMPLICIT NONE
 
       INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
                               ims , ime , jms , jme , kms , kme , &
-                              its , ite , jts , jte , kts , kte
+                              its , ite , jts , jte , kts , kte 
+      INTEGER , INTENT(IN) :: num_st_levels_input, num_st_levels_alloc
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)    :: ter , toposoil , landmask
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tmn , tsk
-      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: st000010 , st010040 , st040100 , st100200 , st010200
-      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: st000007 , st007028 , st028100 , st100255
-      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: soilt000 , soilt005 , soilt020 , soilt040 , soilt160 , soilt300
+      REAL , DIMENSION(ims:ime,1:num_st_levels_alloc,jms:jme) , INTENT(INOUT) :: st_input
+      INTEGER , DIMENSION(1:num_st_levels_input) , INTENT(IN) :: st_levels_input
 
-      INTEGER , INTENT(IN) :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200
-      INTEGER , INTENT(IN) :: flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255
-      INTEGER , INTENT(IN) :: flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , flag_soilt160 , flag_soilt300
       INTEGER , INTENT(IN) :: sf_surface_physics , flag_toposoil , flag_tavgsfc
-
-      INTEGER :: i , j
+      INTEGER , INTENT(IN) :: flag_soil_layers , flag_soil_levels
+ 
+      INTEGER :: i , j, k , st_near_sfc
 
       REAL :: soil_elev_min_val ,  soil_elev_max_val , soil_elev_min_dif , soil_elev_max_dif
 
@@ -685,13 +811,14 @@ cycle
                !  are not at a water point.
 
                IF (landmask(i,j) .GT. 0.5 ) THEN
-
                   IF ( sf_surface_physics .EQ. SLABSCHEME ) THEN
-                     IF ( ( flag_tavgsfc  .EQ. 1 ) .OR. &
-                          ( flag_st010040 .EQ. 1 ) .OR. &
-                          ( flag_st000010 .EQ. 1 ) .OR. &
-                          ( flag_soilt020 .EQ. 1 ) .OR. &
-                          ( flag_st007028 .EQ. 1 ) ) THEN
+                     st_near_sfc = 0                             ! Check if there is a soil layer above 40 cm
+                     DO k = 1, num_st_levels_input
+                        IF ( st_levels_input(k) .LE. 40 ) THEN
+                           st_near_sfc = 1
+                        END IF
+                     END DO
+                     IF ( ( flag_tavgsfc  == 1 ) .OR. ( st_near_sfc == 1 ) ) THEN
                         tmn(i,j) = tmn(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
                      ELSE
                         tmn(i,j) = tmn(i,j) - 0.0065 * ter(i,j)
@@ -699,53 +826,15 @@ cycle
                   END IF
 
                   tsk(i,j) = tsk(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-
-                  IF ( flag_st000010 .EQ. 1 ) THEN
-                     st000010(i,j) = st000010(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st010040 .EQ. 1 ) THEN
-                     st010040(i,j) = st010040(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st040100 .EQ. 1 ) THEN
-                     st040100(i,j) = st040100(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st100200 .EQ. 1 ) THEN
-                     st100200(i,j) = st100200(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st010200 .EQ. 1 ) THEN
-                     st010200(i,j) = st010200(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-
-                  IF ( flag_st000007 .EQ. 1 ) THEN
-                     st000007(i,j) = st000007(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st007028 .EQ. 1 ) THEN
-                     st007028(i,j) = st007028(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st028100 .EQ. 1 ) THEN
-                     st028100(i,j) = st028100(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_st100255 .EQ. 1 ) THEN
-                     st100255(i,j) = st100255(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-
-                  IF ( flag_soilt000 .EQ. 1 ) THEN
-                     soilt000(i,j) = soilt000(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_soilt005 .EQ. 1 ) THEN
-                     soilt005(i,j) = soilt005(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_soilt020 .EQ. 1 ) THEN
-                     soilt020(i,j) = soilt020(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_soilt040 .EQ. 1 ) THEN
-                     soilt040(i,j) = soilt040(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_soilt160 .EQ. 1 ) THEN
-                     soilt160(i,j) = soilt160(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
-                  END IF
-                  IF ( flag_soilt300 .EQ. 1 ) THEN
-                     soilt300(i,j) = soilt300(i,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+      
+                  IF ( flag_soil_layers == 1 ) THEN
+                     DO k = 2, num_st_levels_input+1
+                        st_input(i,k,j) = st_input(i,k,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                     END DO
+                  ELSE
+                     DO k = 1, num_st_levels_input
+                        st_input(i,k,j) = st_input(i,k,j) - 0.0065 * ( ter(i,j) - toposoil(i,j) )
+                     END DO
                   END IF
 
                END IF
@@ -996,7 +1085,7 @@ cycle
                                  st_levels_input , sm_levels_input , sw_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input ,  num_sw_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc ,  num_sw_levels_alloc , &
-                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
@@ -1010,7 +1099,7 @@ cycle
                               ims , ime , jms , jme , kms , kme , &
                               its , ite , jts , jte , kts , kte
 
-      INTEGER , INTENT(IN) :: flag_sst, flag_soilt000, flag_soilm000
+      INTEGER , INTENT(IN) :: flag_sst, flag_soil_layers, flag_soil_levels
 
       INTEGER , DIMENSION(1:num_st_levels_input) , INTENT(INOUT) :: st_levels_input
       INTEGER , DIMENSION(1:num_sm_levels_input) , INTENT(INOUT) :: sm_levels_input
@@ -1044,7 +1133,7 @@ cycle
          !  Ordered levels that we have data for.
 
 !tgs add option to initialize from RUCLSM
-         IF ( flag_soilt000 .eq. 1 ) THEN
+         IF ( flag_soil_levels == 1 ) THEN
            write(message, FMT='(A)') ' Assume RUC LSM 6-level input'
            CALL wrf_message ( message )
            ALLOCATE ( zhave( MAX(num_st_levels_input,num_sm_levels_input,num_sw_levels_input)  ) )
@@ -1074,7 +1163,7 @@ cycle
             END DO innert
          END DO outert
 !tgs add IF
-      IF ( flag_soilt000 .NE. 1 ) THEN
+      IF ( flag_soil_layers == 1 ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                st_input(i,1,j) = tsk(i,j)
@@ -1102,7 +1191,7 @@ cycle
             END DO innerm
          END DO outerm
 !tgs add IF
-      IF ( flag_soilm000 .NE. 1 ) THEN
+      IF ( flag_soil_layers == 1 ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                sm_input(i,1,j) = sm_input(i,2,j)
@@ -1155,7 +1244,7 @@ cycle
 
          !tgs:  Here are the levels that we have from the input for temperature.
 
-         IF ( flag_soilt000 .EQ. 1 ) THEN
+         IF ( flag_soil_levels == 1 ) THEN
             DO l = 1 , num_st_levels_input
                zhave(l) = st_levels_input(l) / 100.
             END DO
@@ -1210,7 +1299,7 @@ cycle
       END IF
 
 !tgs:
-      IF ( flag_soilm000 .EQ. 1 ) THEN
+      IF ( flag_soil_levels == 1 ) THEN
          DO l = 1 , num_sm_levels_input
             zhave(l) = sm_levels_input(l) / 100.
          END DO
@@ -1386,7 +1475,7 @@ cycle
                                  st_levels_input , sm_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input ,  &
                                  num_st_levels_alloc , num_sm_levels_alloc , &
-                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
@@ -1400,7 +1489,7 @@ cycle
                               ims , ime , jms , jme , kms , kme , &
                               its , ite , jts , jte , kts , kte
 
-      INTEGER , INTENT(IN) :: flag_sst, flag_soilt000, flag_soilm000
+      INTEGER , INTENT(IN) :: flag_sst, flag_soil_layers, flag_soil_levels
 
       INTEGER , DIMENSION(1:num_st_levels_input) , INTENT(INOUT) :: st_levels_input
       INTEGER , DIMENSION(1:num_sm_levels_input) , INTENT(INOUT) :: sm_levels_input
@@ -1430,7 +1519,7 @@ cycle
 'No input soil level data (either temperature or moisture, or both are missing).  Required for RUC LSM.'
          CALL wrf_error_fatal ( message )
       ELSE
-         IF ( flag_soilt000 .eq. 1 ) THEN
+         IF ( flag_soil_levels == 1 ) THEN
            write(message, FMT='(A)') ' Assume RUC LSM 6-level input'
            CALL wrf_message ( message )
            ALLOCATE ( zhave( MAX(num_st_levels_input,num_sm_levels_input)  ) )
@@ -1460,7 +1549,7 @@ cycle
          END DO innert
       END DO outert
 
-      IF ( flag_soilt000 .NE. 1 ) THEN
+      IF ( flag_soil_layers == 1 ) THEN
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
             st_input(i,1,j) = tsk(i,j)
@@ -1488,7 +1577,7 @@ cycle
          END DO innerm
       END DO outerm
 
-      IF ( flag_soilm000 .NE. 1 ) THEN
+      IF ( flag_soil_layers == 1 ) THEN
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
             sm_input(i,1,j) = (sm_input(i,2,j)-sm_input(i,3,j))/   &
@@ -1502,7 +1591,7 @@ cycle
 
       !  Here are the levels that we have from the input for temperature.
 
-      IF ( flag_soilt000 .EQ. 1 ) THEN
+      IF ( flag_soil_levels == 1 ) THEN
          DO l = 1 , num_st_levels_input
             zhave(l) = st_levels_input(l) / 100.
          END DO
@@ -1556,7 +1645,7 @@ cycle
 
       !  Here are the levels that we have from the input for moisture.
 
-      IF ( flag_soilm000 .EQ. 1 ) THEN
+      IF ( flag_soil_levels .EQ. 1 ) THEN
          DO l = 1 , num_sm_levels_input
             zhave(l) = sm_levels_input(l) / 100.
          END DO
@@ -1643,7 +1732,7 @@ cycle
                                  num_sm_levels_input ,  num_sw_levels_input ,          &
                                  num_st_levels_alloc , num_sm_levels_alloc ,           &
                                  num_sw_levels_alloc ,                                 &
-                                 flag_sst , flag_soilt000 , flag_soilmt000 ,           &
+                                 flag_sst , flag_soil_layers , flag_soil_levels ,      &
                                  ids , ide , jds , jde , kds , kde ,                   &
                                  ims , ime , jms , jme , kms , kme ,                   &
                                  its , ite , jts , jte , kts , kte )
@@ -1659,7 +1748,7 @@ cycle
                               ims , ime , jms , jme , kms , kme , &
                               its , ite , jts , jte , kts , kte
 
-      INTEGER , INTENT(IN) :: flag_sst, flag_soilt000, flag_soilmt000
+      INTEGER , INTENT(IN) :: flag_sst, flag_soil_layers, flag_soil_levels
 
       INTEGER , DIMENSION(1:num_st_levels_input) , INTENT(INOUT) :: st_levels_input
       INTEGER , DIMENSION(1:num_sm_levels_input) , INTENT(INOUT) :: sm_levels_input

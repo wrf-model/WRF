@@ -142,6 +142,8 @@ Additional settings when running WRFVAR:
 
 Namelist variables specifically for the WPS input for real:
 
+ num_soil_layers_in                  = 4        ; number of vertical soil levels or layers input
+                                                ; from WPS metgrid program
  num_metgrid_levels                  = 27       ; number of vertical levels of 3d meteorological fields coming 
                                                 ; from WPS metgrid program
  interp_type                         = 2        ; vertical interpolation

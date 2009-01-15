@@ -403,7 +403,7 @@ real::t1,t2,t3,t4
          CALL init_module_optional_input ( grid , config_flags )
       END IF
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
-      CALL  optional_input ( grid , idsi )
+      CALL optional_input ( grid , idsi , config_flags )
 
       !  Initialize the mother domain for this time period with input data.
 

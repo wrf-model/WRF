@@ -6,6 +6,8 @@ MODULE module_optional_input
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
               flag_qg       , flag_qni
 
+   INTEGER :: flag_soil_levels, flag_soil_layers
+
    INTEGER :: flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
               flag_sm000010 , flag_sm010040 , flag_sm040100 , flag_sm100200 , flag_sm010200 , &
               flag_sw000010 , flag_sw010040 , flag_sw040100 , flag_sw100200 , flag_sw010200
@@ -19,6 +21,7 @@ MODULE module_optional_input
 
    INTEGER :: flag_sst      , flag_toposoil
 
+   INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
    INTEGER                  :: num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
    INTEGER , DIMENSION(100) ::     st_levels_input ,     sm_levels_input ,     sw_levels_input
@@ -96,19 +99,24 @@ CONTAINS
 #if (DA_CORE != 1)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE optional_input ( grid , fid )
+   SUBROUTINE optional_input ( grid , fid, config_flags )
 
+      USE module_io_domain
       USE module_configure      
       USE module_domain
 
       IMPLICIT NONE 
 
       TYPE ( domain ) :: grid
+      TYPE (grid_config_rec_type) :: config_flags
       INTEGER , INTENT(IN) :: fid
 
       INTEGER :: ids, ide, jds, jde, kds, kde, &
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr, fid, num_layers
+      CHARACTER (LEN=132) :: message
 
       !  Get the various indices, assume XYZ & XZY ordering.
 #if (NMM_CORE==1)
@@ -168,6 +176,42 @@ CONTAINS
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
+
+      flag_soil_levels = 0 
+      flag_soil_layers = 0 
+
+      !  How many soil levels have we found?  Well, right now, none.
+
+      num_st_levels_input = 0
+      num_sm_levels_input = 0
+      num_sw_levels_input = 0
+
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_SOIL_LEVELS', itmp, 1, icnt, ierr ) 
+
+      IF ( ierr .EQ. 0 ) THEN
+         flag_soil_levels = itmp
+         write (message,'(A50,I3)') 'flag_soil_levels read from met_em file is',flag_soil_levels
+         CALL wrf_debug(0,message)
+      END IF
+
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_SOIL_LAYERS', itmp, 1, icnt, ierr ) 
+
+      IF ( ierr .EQ. 0 ) THEN
+         flag_soil_layers = itmp
+         write (message,'(A50,I3)') 'flag_soil_layers read from met_em file is',flag_soil_layers
+         CALL wrf_debug(0,message)
+      END IF
+
+#if (EM_CORE == 1)
+      IF ( ( flag_soil_levels == 1 ) .OR. ( flag_soil_layers == 1 ) ) THEN
+
+         num_st_levels_input   = config_flags%num_soil_layers_in
+         num_sm_levels_input   = config_flags%num_soil_layers_in
+         num_sw_levels_input   = config_flags%num_soil_layers_in
+         num_soil_levels_input = config_flags%num_soil_layers_in
+
+      END IF
+#endif
 
       IF (  ( model_config_rec%sf_surface_physics(grid%id) .EQ. 1 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 2 ) .OR. &
@@ -466,8 +510,8 @@ USE module_io_domain
 
       USE module_io_wrf
       USE module_domain
-USE module_configure
-USE module_io_domain
+      USE module_configure
+      USE module_io_domain
 
       IMPLICIT NONE 
 
@@ -478,7 +522,9 @@ USE module_io_domain
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
 
-      INTEGER :: itmp , icnt , ierr , i , j
+      INTEGER :: itmp , icnt , ierr , i , j , k
+      INTEGER :: level_above
+      CHARACTER (LEN=132) :: message
     
       !  Initialize the soil temp and moisture flags to "field not found".
 
@@ -531,507 +577,596 @@ USE module_io_domain
       flag_soilw160 = 0 
       flag_soilw300 = 0 
 
-      !  How many soil levels have we found?  Well, right now, none.
-
-      num_st_levels_input = 0
-      num_sm_levels_input = 0
-      num_sw_levels_input = 0
       st_levels_input = -1
       sm_levels_input = -1
       sw_levels_input = -1
 
-      flag_name(1:8) = 'ST000010'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st000010 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st000010(i,j)
-            END DO
+#if (EM_CORE==1)
+!-------------------------------------------------------------------------
+! NOTE:  We are assuming that soil_layers are the same for each grid point
+!-------------------------------------------------------------------------
+      IF ( flag_soil_levels == 1 ) THEN
+
+         PRINT '(A)','flag_soil_levels = 1 in met_em file.  Soil levels has net been tested.'
+         CALL wrf_error_fatal ( 'Soil levels has not been tested' )
+
+         DO k = 1, num_st_levels_input
+            st_levels_input(k) = grid%soil_levels(its,num_st_levels_input + 1 - k,jts)
+            sm_levels_input(k) = grid%soil_levels(its,num_st_levels_input + 1 - k,jts)
+            sw_levels_input(k) = grid%soil_levels(its,num_st_levels_input + 1 - k,jts)
          END DO
       END IF
-      flag_name(1:8) = 'ST010040'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st010040 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st010040(i,j)
-            END DO
+
+      IF ( flag_soil_layers == 1 ) THEN
+         level_above = 0
+         DO k = 1, num_st_levels_input
+            !----------------------------------------------------
+            ! Calculate mid-point of each layer and set to st_levels_input
+            ! Flip the input soil depths upside down to make k=1 closest to the sfc
+            !----------------------------------------------------
+            st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
+            level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
          END DO
       END IF
-      flag_name(1:8) = 'ST040100'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st040100 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+#endif
+
+      IF ( ( flag_soil_levels == 1 ) .OR. ( flag_soil_layers == 1 ) ) THEN
+
+#if (EM_CORE==1)
          DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st040100(i,j)
+            DO k = 1, num_st_levels_input
+               DO i = its , MIN(ide-1,ite)
+                 !----------------------------------------------------
+                 ! Flip the input soil temperature/moisture/water 
+                 ! profiles upside down to make k=1 closest to the sfc
+                 !----------------------------------------------------
+                  st_input(i,k+1,j) = grid%st(i,num_st_levels_input + 1 - k,j)
+                  sm_input(i,k+1,j) = grid%sm(i,num_st_levels_input + 1 - k,j)
+                  sw_input(i,k+1,j) = grid%sw(i,num_st_levels_input + 1 - k,j)
+               END DO
             END DO
          END DO
-      END IF
-      flag_name(1:8) = 'ST100200'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st100200 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st100200(i,j)
+#endif
+
+      ELSE       ! Legacy code
+
+         flag_name(1:8) = 'ST000010'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st000010 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st000010(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'ST010200'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st010200 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st010200(i,j)
+         END IF
+         flag_name(1:8) = 'ST010040'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st010040 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st010040(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM000010'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm000010 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm000010(i,j)
+         END IF
+         flag_name(1:8) = 'ST040100'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st040100 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st040100(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM010040'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm010040 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm010040(i,j)
+         END IF
+         flag_name(1:8) = 'ST100200'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st100200 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st100200(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM040100'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm040100 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm040100(i,j)
+         END IF
+         flag_name(1:8) = 'ST010200'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st010200 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st010200(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM100200'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm100200 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm100200(i,j)
+         END IF
+         flag_name(1:8) = 'ST000007'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st000007 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st000007(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM010200'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm010200 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm010200(i,j)
+         END IF
+         flag_name(1:8) = 'ST007028'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st007028 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st007028(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SW000010'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sw000010 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input + 1,j) = grid%sw000010(i,j)
+         END IF
+         flag_name(1:8) = 'ST028100'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st028100 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st028100(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SW010040'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sw010040 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input + 1,j) = grid%sw010040(i,j)
+         END IF
+         flag_name(1:8) = 'ST100255'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_st100255 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input + 1,j) = grid%st100255(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SW040100'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sw040100 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input + 1,j) = grid%sw040100(i,j)
+         END IF
+         flag_name(1:8) = 'SOILT000'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilt000 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input ,j) = grid%soilt000(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SW100200'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sw100200 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input + 1,j) = grid%sw100200(i,j)
+         END IF
+         flag_name(1:8) = 'SOILT005'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilt005 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input ,j) = grid%soilt005(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SW010200'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sw010200 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input + 1,j) = grid%sw010200(i,j)
+         END IF
+         flag_name(1:8) = 'SOILT020'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilt020 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input ,j) = grid%soilt020(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'ST000007'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st000007 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st000007(i,j)
+         END IF
+         flag_name(1:8) = 'SOILT040'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilt040 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input ,j) = grid%soilt040(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'ST007028'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st007028 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st007028(i,j)
+         END IF
+         flag_name(1:8) = 'SOILT160'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilt160 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input ,j) = grid%soilt160(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'ST028100'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st028100 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st028100(i,j)
+         END IF
+         flag_name(1:8) = 'SOILT300'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilt300 = itmp
+            num_st_levels_input = num_st_levels_input + 1
+            st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,num_st_levels_input ,j) = grid%soilt300(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'ST100255'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_st100255 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input + 1,j) = grid%st100255(i,j)
+         END IF
+
+         flag_name(1:8) = 'SM000010'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm000010 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm000010(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM000007'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm000007 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm000007(i,j)
+         END IF
+         flag_name(1:8) = 'SM010040'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm010040 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm010040(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM007028'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm007028 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm007028(i,j)
+         END IF
+         flag_name(1:8) = 'SM040100'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm040100 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm040100(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM028100'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm028100 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm028100(i,j)
+         END IF
+         flag_name(1:8) = 'SM100200'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm100200 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm100200(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SM100255'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_sm100255 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input + 1,j) = grid%sm100255(i,j)
+         END IF
+         flag_name(1:8) = 'SM010200'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm010200 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm010200(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILT000'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilt000 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input ,j) = grid%soilt000(i,j)
+         END IF
+         flag_name(1:8) = 'SM000007'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm000007 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm000007(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILT005'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilt005 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input ,j) = grid%soilt005(i,j)
+         END IF
+         flag_name(1:8) = 'SM007028'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm007028 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm007028(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILT020'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilt020 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input ,j) = grid%soilt020(i,j)
+         END IF
+         flag_name(1:8) = 'SM028100'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm028100 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm028100(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILT040'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilt040 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input ,j) = grid%soilt040(i,j)
+         END IF
+         flag_name(1:8) = 'SM100255'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sm100255 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input + 1,j) = grid%sm100255(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILT160'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilt160 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input ,j) = grid%soilt160(i,j)
+         END IF
+         flag_name(1:8) = 'SOILM000'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilm000 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input ,j) = grid%soilm000(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILT300'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilt300 = itmp
-         num_st_levels_input = num_st_levels_input + 1
-         st_levels_input(num_st_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               st_input(i,num_st_levels_input ,j) = grid%soilt300(i,j)
+         END IF
+         flag_name(1:8) = 'SOILM005'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilm005 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input ,j) = grid%soilm005(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILM000'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilm000 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input ,j) = grid%soilm000(i,j)
+         END IF
+         flag_name(1:8) = 'SOILM020'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilm020 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input ,j) = grid%soilm020(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILM005'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilm005 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input ,j) = grid%soilm005(i,j)
+         END IF
+         flag_name(1:8) = 'SOILM040'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilm040 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input ,j) = grid%soilm040(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILM020'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilm020 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input ,j) = grid%soilm020(i,j)
+         END IF
+         flag_name(1:8) = 'SOILM160'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilm160 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input ,j) = grid%soilm160(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILM040'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilm040 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input ,j) = grid%soilm040(i,j)
+         END IF
+         flag_name(1:8) = 'SOILM300'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilm300 = itmp
+            num_sm_levels_input = num_sm_levels_input + 1
+            sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sm_input(i,num_sm_levels_input ,j) = grid%soilm300(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILM160'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilm160 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input ,j) = grid%soilm160(i,j)
+         END IF
+
+         flag_name(1:8) = 'SW000010'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sw000010 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input + 1,j) = grid%sw000010(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILM300'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilm300 = itmp
-         num_sm_levels_input = num_sm_levels_input + 1
-         sm_levels_input(num_sm_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sm_input(i,num_sm_levels_input ,j) = grid%soilm300(i,j)
+         END IF
+         flag_name(1:8) = 'SW010040'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sw010040 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input + 1,j) = grid%sw010040(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILW000'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilw000 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input ,j) = grid%soilw000(i,j)
+         END IF
+         flag_name(1:8) = 'SW040100'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sw040100 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input + 1,j) = grid%sw040100(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILW005'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilw005 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input ,j) = grid%soilw005(i,j)
+         END IF
+         flag_name(1:8) = 'SW100200'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sw100200 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input + 1,j) = grid%sw100200(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILW020'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilw020 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input ,j) = grid%soilw020(i,j)
+         END IF
+         flag_name(1:8) = 'SW010200'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_sw010200 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int2(flag_name(3:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input + 1,j) = grid%sw010200(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILW040'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilw040 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input ,j) = grid%soilw040(i,j)
+         END IF
+         flag_name(1:8) = 'SOILW000'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilw000 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input ,j) = grid%soilw000(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILW160'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilw160 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input ,j) = grid%soilw160(i,j)
+         END IF
+         flag_name(1:8) = 'SOILW005'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilw005 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input ,j) = grid%soilw005(i,j)
+               END DO
             END DO
-         END DO
-      END IF
-      flag_name(1:8) = 'SOILW300'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
-      IF ( ierr .EQ. 0 ) THEN
-         flag_soilw300 = itmp
-         num_sw_levels_input = num_sw_levels_input + 1
-         sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               sw_input(i,num_sw_levels_input ,j) = grid%soilw300(i,j)
+         END IF
+         flag_name(1:8) = 'SOILW020'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilw020 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input ,j) = grid%soilw020(i,j)
+               END DO
             END DO
-         END DO
+         END IF
+         flag_name(1:8) = 'SOILW040'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilw040 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input ,j) = grid%soilw040(i,j)
+               END DO
+            END DO
+         END IF
+         flag_name(1:8) = 'SOILW160'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilw160 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input ,j) = grid%soilw160(i,j)
+               END DO
+            END DO
+         END IF
+         flag_name(1:8) = 'SOILW300'
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            flag_soilw300 = itmp
+            num_sw_levels_input = num_sw_levels_input + 1
+            sw_levels_input(num_sw_levels_input) = char2int1(flag_name(6:8))
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  sw_input(i,num_sw_levels_input ,j) = grid%soilw300(i,j)
+               END DO
+            END DO
+         END IF
+
+      END IF       ! End of legacy code for temperature and moisture
+
+! The flags flag_st*, flag_sm*, flag_sw*, flag_soilt*, flag_soilm*, flag_soilw* are no longer used.
+! If the new flags flag_soil_layers or flag_soil_levels are not set in met_em, and some legacy
+! flags are, reset the new flags
+    
+      IF ( ( flag_soil_levels == 0 ) .AND. ( flag_soil_layers == 0 ) ) THEN
+         IF ( flag_st000010 == 1 .OR. flag_st010040 == 1 .OR. flag_st040100 == 1 .OR. &
+              flag_st100200 == 1 .OR. flag_st010200 == 1 .OR. &
+              flag_sm000010 == 1 .OR. flag_sm010040 == 1 .OR. flag_sm040100 == 1 .OR. &
+              flag_sm100200 == 1 .OR. flag_sm010200 == 1 .OR. &
+              flag_sw000010 == 1 .OR. flag_sw010040 == 1 .OR. flag_sw040100 == 1 .OR. &
+              flag_sw100200 == 1 .OR. flag_sw010200 == 1 .OR. &
+              flag_st000007 == 1 .OR. flag_st007028 == 1 .OR. flag_st028100 == 1 .OR. &
+              flag_st100255 == 1 .OR. &
+              flag_sm000007 == 1 .OR. flag_sm007028 == 1 .OR. flag_sm028100 == 1 .OR. &
+              flag_sm100255 == 1 ) THEN
+            flag_soil_layers=1
+         END IF
+         IF ( flag_soilt000 == 1 .OR. flag_soilt005 == 1 .OR. flag_soilt020 == 1 .OR. &
+              flag_soilt040 == 1 .OR. flag_soilt160 == 1 .OR. flag_soilt300 == 1 .OR. &
+              flag_soilm000 == 1 .OR. flag_soilm005 == 1 .OR. flag_soilm020 == 1 .OR. &
+              flag_soilm040 == 1 .OR. flag_soilm160 == 1 .OR. flag_soilm300 == 1 .OR. &
+              flag_soilw000 == 1 .OR. flag_soilw005 == 1 .OR. flag_soilw020 == 1 .OR. &
+              flag_soilw040 == 1 .OR. flag_soilw160 == 1 .OR. flag_soilw300 == 1 ) THEN
+            flag_soil_levels=1
+         END IF
       END IF
+
+      write (message,'(A,I3)') 'flag_soil_layers at end of optional_lsm_levels is',flag_soil_layers
+      CALL wrf_debug(0,message)
+      write (message,'(A,I3)') 'flag_soil_levels at end of optional_lsm_levels is',flag_soil_levels
+      CALL wrf_debug(0,message)
+
+      write (message,'(A,10(i3,1x)') 'st_levels_input = ', (st_levels_input(k), k=1,num_st_levels_input)
+      CALL wrf_debug(0,message)
+      write (message,'(A,10(i3,1x)') 'sm_levels_input = ', (sm_levels_input(k), k=1,num_st_levels_input)
+      CALL wrf_debug(0,message)
+      write (message,'(A,10(i3,1x)') 'sw_levels_input = ', (sw_levels_input(k), k=1,num_st_levels_input)
+      CALL wrf_debug(0,message)
 
       !  OK, let's do a quick sanity check.
  

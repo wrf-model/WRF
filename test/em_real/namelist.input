@@ -39,7 +39,8 @@
  e_sn                                = 61,    97,    91,
  s_vert                              = 1,     1,     1,
  e_vert                              = 28,    28,    28,
- num_metgrid_levels                  = 27
+ num_metgrid_levels                  = 27,
+ num_soil_layers_in                  = 4,
  dx                                  = 30000, 10000,  3333.33,
  dy                                  = 30000, 10000,  3333.33,
  grid_id                             = 1,     2,     3,

@@ -950,92 +950,26 @@ integer::oops1,oops2
 
       END SELECT enough_data
 
-      !  For sf_surface_physics = 1, we want to use close to a 30 cm value
-      !  for the bottom level of the soil temps.
+      interpolate_soil_tmw : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-      fix_bottom_level_for_temp : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
+            CALL process_soil_real ( grid%tsk , grid%tmn , grid%tavgsfc,  &
+                                  grid%landmask , grid%sst , grid%ht, grid%toposoil, &
+                                  st_input , sm_input , sw_input , &
+                                  st_levels_input , sm_levels_input , sw_levels_input , &
+                                  grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
+                                  flag_sst , flag_tavgsfc, &
+                                  flag_soilhgt, flag_soil_layers, flag_soil_levels, &
+                                  ids , ide , jds , jde , kds , kde , &
+                                  ims , ime , jms , jme , kms , kme , &
+                                  its , ite , jts , jte , kts , kte , &
+                                  model_config_rec%sf_surface_physics(grid%id) , &
+                                  model_config_rec%num_soil_layers , &
+                                  model_config_rec%real_data_init_type , &
+                                  num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                                  num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc )
 
-         CASE (SLABSCHEME)
-            IF      ( flag_tavgsfc  .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%tavgsfc(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_st010040 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%st010040(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_st000010 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%st000010(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_soilt020 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%soilt020(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_st007028 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%st007028(i,j)
-                  END DO
-               END DO
-            ELSE
-               CALL wrf_debug ( 0 , 'No 10-40 cm, 0-10 cm, 7-28, or 20 cm soil temperature data for grid%tmn')
-               CALL wrf_debug ( 0 , 'Using 1 degree static annual mean temps' )
-            END IF
-
-         CASE (LSMSCHEME)
-
-         CASE (RUCLSMSCHEME)
-
-         CASE (PXLSMSCHEME)
-
-            IF      ( flag_tavgsfc  .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%tavgsfc(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_st010040 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%st010040(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_st040100 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%st040100(i,j)
-                  END DO
-               END DO
-            ELSE IF ( flag_st100200 .EQ. 1 ) THEN
-               DO j = jts , MIN(jde-1,jte)
-                  DO i = its , MIN(ide-1,ite)
-                     grid%tmn(i,j) = grid%st100200(i,j)
-                  END DO
-               END DO
-            ELSE
-               CALL wrf_debug ( 0 , 'No 10-40 cm or 40-100 cm soil temperature data for grid%em_tmn')
-               CALL wrf_debug ( 0 , 'Using 1 degree static annual mean temps' )
-            END IF
-            DO j = jts , MIN(jde-1,jte)
-               DO i = its , MIN(ide-1,ite)
-                   grid%tmn(i,j) =(10 * grid%st000010(i,j) + 30 * grid%st010040(i,j) +    &
-                                   60 * grid%st040100(i,j) + 100* grid%st100200(i,j) )/200
-                  grid%tmn(i,j) = grid%st010040(i,j)
-                  !grid%tmn(i,j) = grid%st040100(i,j)
-                  !grid%tmn(i,j) = grid%st100200(i,j)
-               END DO
-            END DO
-
-      END SELECT fix_bottom_level_for_temp
+      END SELECT interpolate_soil_tmw
 
       !  Adjustments for the seaice field PRIOR to the grid%tslb computations.  This is
       !  is for the 5-layer scheme.
@@ -1129,29 +1063,6 @@ integer::oops1,oops2
          END DO
       END DO
 
-      !  Adjust the various soil temperature values depending on the difference in
-      !  in elevation between the current model's elevation and the incoming data's
-      !  orography.
-
-      adjust_soil : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
-
-         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
-            CALL adjust_soil_temp_new ( grid%tmn , model_config_rec%sf_surface_physics(grid%id) , &
-                                        grid%tsk , grid%ht , grid%toposoil , grid%landmask , flag_soilhgt , flag_tavgsfc , &
-                                        grid%st000010 , grid%st010040 , grid%st040100 , grid%st100200 , grid%st010200 , &
-                                        flag_st000010 , flag_st010040 , flag_st040100 , flag_st100200 , flag_st010200 , &
-                                        grid%st000007 , grid%st007028 , grid%st028100 , grid%st100255 , &
-                                        flag_st000007 , flag_st007028 , flag_st028100 , flag_st100255 , &
-                                        grid%soilt000 , grid%soilt005 , grid%soilt020 , grid%soilt040 , grid%soilt160 , &
-                                        grid%soilt300 , &
-                                        flag_soilt000 , flag_soilt005 , flag_soilt020 , flag_soilt040 , &
-                                        flag_soilt160 , flag_soilt300 , &
-                                        ids , ide , jds , jde , kds , kde , &
-                                        ims , ime , jms , jme , kms , kme , &
-                                        its , ite , jts , jte , kts , kte )
-
-      END SELECT adjust_soil
-
       !  Fix grid%tmn and grid%tsk.
 
       fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
@@ -1223,25 +1134,7 @@ integer::oops1,oops2
             END IF
          END DO
       END DO
-
-      interpolate_soil_tmw : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
-
-         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
-            CALL process_soil_real ( grid%tsk , grid%tmn , &
-                                  grid%landmask , grid%sst , &
-                                  st_input , sm_input , sw_input , st_levels_input , sm_levels_input , sw_levels_input , &
-                                  grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                                  flag_sst , flag_soilt000, flag_soilm000, &
-                                  ids , ide , jds , jde , kds , kde , &
-                                  ims , ime , jms , jme , kms , kme , &
-                                  its , ite , jts , jte , kts , kte , &
-                                  model_config_rec%sf_surface_physics(grid%id) , &
-                                  model_config_rec%num_soil_layers , &
-                                  model_config_rec%real_data_init_type , &
-                                  num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
-                                  num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc )
-
-      END SELECT interpolate_soil_tmw
+   
 
       !  Minimum soil values, residual, from RUC LSM scheme.  For input from Noah or EC, and using
       !  RUC LSM scheme, this must be subtracted from the input total soil moisture.  For
@@ -1262,7 +1155,7 @@ integer::oops1,oops2
 
             CASE ( LSMSCHEME )
                iicount = 0
-               IF      ( ( FLAG_SM000010 .EQ. 1 ) .OR. ( FLAG_SM000007 .EQ. 1 ) ) THEN
+               IF      ( flag_soil_layers == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
@@ -1276,7 +1169,7 @@ integer::oops1,oops2
                   IF ( iicount .GT. 0 ) THEN
                      print *,'Noah -> Noah: total number of small soil moisture locations = ',iicount
                   END IF
-               ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
+               ELSE IF ( flag_soil_levels == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         grid%smois(i,:,j) = grid%smois(i,:,j) + lqmi(grid%isltyp(i,j))
@@ -1299,25 +1192,25 @@ integer::oops1,oops2
 
             CASE ( RUCLSMSCHEME )
                iicount = 0
-               IF      ( ( FLAG_SM000010 .EQ. 1 ) .OR. ( FLAG_SM000007 .EQ. 1 ) ) THEN
+               IF      ( flag_soil_layers == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0. )
                      END DO
                   END DO
-               ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
+               ELSE IF ( flag_soil_levels == 1 ) THEN
                   ! no op
                END IF
 
              CASE ( PXLSMSCHEME )
                iicount = 0
-               IF      ( FLAG_SM000010 .EQ. 1 ) THEN
+               IF      ( flag_soil_layers == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0. )
                      END DO
                   END DO
-               ELSE IF ( FLAG_SOILM000 .EQ. 1 ) THEN
+               ELSE IF ( flag_soil_levels == 1 ) THEN
                   ! no op
                END IF
 

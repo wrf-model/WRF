@@ -267,15 +267,18 @@ CONTAINS
       grid%sst = tsk_input
       grid%tmn = tmn_input
 
-      flag_soilt000 = 0 ! go ahead and put skin temp in
-      flag_soilm000 = 0 ! go ahead and put skin moisture in
-      flag_sst      = 0 ! don't modify for ocean
+      flag_soil_layers  = 0 ! go ahead and put skin temp in
+      flag_soil_levels  = 0 ! go ahead and put skin moisture in
+      flag_sst          = 0 ! don't modify for ocean
+      flag_tavgsfc      = 0 
+      flag_soilhgt      = 0 
 
-      CALL process_soil_real ( grid%tsk , grid%tmn , &
-                   grid%landmask , grid%sst , &
-                   st_input , sm_input , sw_input , st_levels_input , sm_levels_input , sw_levels_input , &
+      CALL process_soil_real ( grid%tsk , grid%tmn , grid%tavgsfc, &
+                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
+                   st_input , sm_input , sw_input , &
+                   st_levels_input , sm_levels_input , sw_levels_input , &
                    grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                   flag_sst , flag_soilt000, flag_soilm000, &
+                   flag_sst , flag_tavgsfc, flag_soilhgt, flag_soil_layers, flag_soil_levels,  &
                    ids , ide , jds , jde , kds , kde , &
                    ims , ime , jms , jme , kms , kme , &
                    its , ite , jts , jte , kts , kte , &

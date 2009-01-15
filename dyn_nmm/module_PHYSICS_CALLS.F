@@ -2227,6 +2227,9 @@
         ENDDO
         ENDDO
       ENDDO
+
+
+      CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 #ifdef HWRF
 !
 !-----------------------------------------------------------------------
@@ -2281,7 +2284,6 @@
         ENDDO
         ENDDO
         ENDDO
-     
 #endif
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &

@@ -1589,12 +1589,12 @@ package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
-package   sfclayscheme   sf_sfclay_physics==1        -             state:regime
+package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
-package   mynnsfcscheme  sf_sfclay_physics==5        -             state:regime
-package   pxsfcscheme    sf_sfclay_physics==7        -             state:regime
+package   mynnsfcscheme  sf_sfclay_physics==5        -             -
+package   pxsfcscheme    sf_sfclay_physics==7        -             -
 
 package   noahucmscheme  sf_urban_physics==1         -             -
 package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
@@ -1604,15 +1604,15 @@ package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
 package   pxlsmscheme    sf_surface_physics==7       -             sfdda2d:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
-package   ysuscheme      bl_pbl_physics==1           -             state:regime
+package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             -
-package   mynnpblscheme2 bl_pbl_physics==5           -             state:regime
-package   mynnpblscheme3 bl_pbl_physics==6           -             state:regime
-package   acmpblscheme   bl_pbl_physics==7           -             state:regime
-package   boulacscheme   bl_pbl_physics==8
-package   mrfscheme      bl_pbl_physics==99          -             state:regime
+package   mynnpblscheme2 bl_pbl_physics==5           -             -
+package   mynnpblscheme3 bl_pbl_physics==6           -             -
+package   acmpblscheme   bl_pbl_physics==7           -             -
+package   boulacscheme   bl_pbl_physics==8           -             -
+package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

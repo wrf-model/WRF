@@ -77,7 +77,9 @@ CONTAINS
 !
       q=qo/(rhow*cw)
       sw=swo/(rhow*cw)
-      f1=1.-0.28*exp(-71.5*z1)-0.27*exp(-2.8*z1)-0.45*exp(-0.07*z1)
+! TEMPORARY KLUDGE
+!     f1=1.-0.28*exp(-71.5*z1)-0.27*exp(-2.8*z1)-0.45*exp(-0.07*z1)
+      f1=1.                   -0.27*exp(-2.8*z1)-0.45*exp(-0.07*z1)
 ! cool skin
       dtc=0.0
 ! tb in C

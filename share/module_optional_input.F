@@ -115,7 +115,7 @@ CONTAINS
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
 
-      INTEGER :: itmp , icnt , ierr, fid, num_layers
+      INTEGER :: itmp , icnt , ierr, num_layers
       CHARACTER (LEN=132) :: message
 
       !  Get the various indices, assume XYZ & XZY ordering.

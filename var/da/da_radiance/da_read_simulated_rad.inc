@@ -99,7 +99,7 @@ subroutine da_read_simulated_rad (iv)
 	    if ((i<ips-simulated_rad_ngrid).or.(i>ipe+simulated_rad_ngrid).or. &
 	        (j<jps-simulated_rad_ngrid).or.(j>jpe+simulated_rad_ngrid)) cycle
 	    k = k + 1
-            call da_xyll(map_info, float(i), float(j), p%info%lat, p%info%lon)
+            call da_xyll(map_info, i*1.0, j*1.0, p%info%lat, p%info%lon)
 	    p%loc%x   = float(i)
 	    p%loc%y   = float(j)
 	    p%loc%i   = i

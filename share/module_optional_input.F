@@ -1161,11 +1161,11 @@ USE module_io_domain
       write (message,'(A,I3)') 'flag_soil_levels at end of optional_lsm_levels is',flag_soil_levels
       CALL wrf_debug(0,message)
 
-      write (message,'(A,10(i3,1x)') 'st_levels_input = ', (st_levels_input(k), k=1,num_st_levels_input)
+      write (message,'(A,10(i3,1x))') 'st_levels_input = ', (st_levels_input(k), k=1,num_st_levels_input)
       CALL wrf_debug(0,message)
-      write (message,'(A,10(i3,1x)') 'sm_levels_input = ', (sm_levels_input(k), k=1,num_st_levels_input)
+      write (message,'(A,10(i3,1x))') 'sm_levels_input = ', (sm_levels_input(k), k=1,num_st_levels_input)
       CALL wrf_debug(0,message)
-      write (message,'(A,10(i3,1x)') 'sw_levels_input = ', (sw_levels_input(k), k=1,num_st_levels_input)
+      write (message,'(A,10(i3,1x))') 'sw_levels_input = ', (sw_levels_input(k), k=1,num_st_levels_input)
       CALL wrf_debug(0,message)
 
       !  OK, let's do a quick sanity check.

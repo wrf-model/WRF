@@ -33,9 +33,8 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
-#if ( EM_CORE==1)
+            !  Optional mynn
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
-#endif
             !  Optional urban
      &          ,declin_urb,cosz_urb2d,omg_urb2d,xlat_urb2d           & !I urban
      &          ,num_roof_layers, num_wall_layers                     & !I urban

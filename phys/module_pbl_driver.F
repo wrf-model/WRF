@@ -22,6 +22,9 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
+#ifdef HWRF
+                 ,DISHEAT                                          &
+#endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -219,7 +222,9 @@ CONTAINS
                INTENT(IN   )    ::                        LOWLYR
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
-
+#ifdef HWRF
+   LOGICAL,      INTENT(IN   )    ::   DISHEAT ! ('s doing)
+#endif
    REAL,       DIMENSION( kms:kme ),                              &
                OPTIONAL, INTENT(IN   )    ::               znu,   &
                                                            znw
@@ -608,6 +613,9 @@ CONTAINS
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br                                      &
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
+#ifdef HWRF
+              ,DISHEAT=DISHEAT                                      &
+#endif
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

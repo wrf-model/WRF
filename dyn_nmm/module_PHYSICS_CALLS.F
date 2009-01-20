@@ -653,6 +653,9 @@
      &                ,CROT,SROT                                        & ! GWD
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
+#ifdef HWRF
+     &                ,DISHEAT                                          &
+#endif
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -694,6 +697,9 @@
 !
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF 
+      LOGICAL,INTENT(IN) ::  DISHEAT                       !  hwrf's doing
+#endif
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
@@ -1298,6 +1304,9 @@
      &               ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+#ifdef HWRF
+     &               ,DISHEAT=DISHEAT                                 &
+#endif
                 ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2737,6 +2746,9 @@
      &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+#ifdef HWRF
+     &                 ,gridid=GRID%ID                                     &
+#endif                                           
                                                                         )
 
 !$omp parallel do                                                       &

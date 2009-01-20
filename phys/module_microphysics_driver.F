@@ -35,6 +35,9 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainnc, rainncv                                   &
                       ,snownc, snowncv                                   &
                       ,graupelnc, graupelncv                             &
+#ifdef HWRF
+                      ,gridid                                               &
+#endif
                                                                          )
 ! Framework
    USE module_state_description, ONLY :                                  &
@@ -137,6 +140,9 @@ SUBROUTINE microphysics_driver(                                          &
 !-- SR            one time step mass ratio of snow to total precip
 !-- z             Height above sea level   (m)
 !-- dt            Time step              (s)
+#ifdef HWRF
+!-- gridid        Grid id (used in Ferrier Microphysics)
+#endif
 !-- G             acceleration due to gravity  (m/s^2)
 !-- CP            heat capacity at constant pressure for dry air (J/kg/K)
 !-- R_d           gas constant for dry air (J/kg/K)
@@ -205,6 +211,9 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
    INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
+#ifdef HWRF
+   INTEGER,      INTENT(IN   )    ::     gridid                   ! gopal's doing
+#endif
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
@@ -731,6 +740,21 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( mp_restart_state )                  .AND. &
                   PRESENT( tbpvs_state )                      .AND. &
                   PRESENT( tbpvs0_state )                       ) THEN
+#ifdef HWRF
+               CALL ETAMP_NEW(                                      &
+                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=gridid &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,LOWLYR=LOWLYR,SR=SR                               &
+                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
+                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+#else
                CALL ETAMP_NEW(                                      &
                   ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy             &
                  ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
@@ -749,6 +773,7 @@ SUBROUTINE microphysics_driver(                                          &
                  ,MP_RESTART_STATE=mp_restart_state                 &
                  ,TBPVS_STATE=tbpvs_state,TBPVS0_STATE=tbpvs0_state &
                                                                     )
+#endif
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF

@@ -65,25 +65,63 @@ MODULE module_mp_etanew
 ! ======================================================================
       REAL, PUBLIC,PARAMETER ::                                         &
      &  RHgrd=1.                                                        &
+#ifdef HWRF
+     & ,RHgrd_in=1.                                                     &  !GFDL
+     & ,RHgrd_out=0.975                                                 &  !GFDL
+     & ,T_ICE=-40.                                                      &  !GFDL
+!GFDL     & ,T_ICE=-30.                                                 &
+#else
      & ,T_ICE=-40.                                                      &
+#endif
      & ,T_ICEK=T0C+T_ICE                                                &
+#ifdef HWRF
+     & ,T_ICE_init=-5.                                                  &
+#else
      & ,T_ICE_init=-15.                                                 &
+#endif
      & ,NLImax=5.E3                                                     &
      & ,NLImin=1.E3                                                     &
      & ,N0r0=8.E6                                                       &
      & ,N0rmin=1.E4                                                     &
+#ifdef HWRF
+     & ,NCW=60.E6                                                       &  !GFDL
+!HWRF     & ,NCW=100.E6                                                 &
+#else
      & ,NCW=100.E6                                                      &
+#endif
      & ,FLARGE1=1.                                                      &
      & ,FLARGE2=.2
 !--- Other public variables passed to other routines:
       REAL,PUBLIC,SAVE ::  QAUT0
       REAL, PUBLIC,DIMENSION(MDImin:MDImax) :: MASSI
+#ifdef HWRF
+     LOGICAL, PARAMETER :: PRINT_err=.TRUE.    !GFDL** => eventually set this to .false.
+#endif
 !
 !
       CONTAINS
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+
+#ifdef HWRF
+      SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,GID,RAINNC,RAINNCV,    & !GID
+     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,   & !gopal's doing
+     &                      LOWLYR,SR,                                &
+     &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,         &
+     &                      ids,ide, jds,jde, kds,kde,                &
+     &                      ims,ime, jms,jme, kms,kme,                &
+     &                      its,ite, jts,jte, kts,kte                 )
+!HWRF      SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,                         &
+!HWRF     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,     &
+!HWRF     &                      LOWLYR,SR,                                  &
+!HWRF     &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
+!HWRF     &                      mp_restart_state,tbpvs_state,tbpvs0_state,  &
+!HWRF     &                      RAINNC,RAINNCV,                             &
+!HWRF     &                      ids,ide, jds,jde, kds,kde,		        &
+!HWRF     &                      ims,ime, jms,jme, kms,kme,		        &
+!HWRF     &                      its,ite, jts,jte, kts,kte )
+#else
       SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,                         &
      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,     &
      &                      LOWLYR,SR,                                  &
@@ -94,6 +132,7 @@ MODULE module_mp_etanew
      &                      ids,ide, jds,jde, kds,kde,		        &
      &                      ims,ime, jms,jme, kms,kme,		        &
      &                      its,ite, jts,jte, kts,kte )
+#endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -102,24 +141,37 @@ MODULE module_mp_etanew
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
+#ifdef HWRF
+     &                     ,ITIMESTEP,GID  ! GID gopal's doing
+#else
      &                     ,ITIMESTEP
+#endif
 
       REAL, INTENT(IN) 	    :: DT,DX,DY
       REAL, INTENT(IN),     DIMENSION(ims:ime, kms:kme, jms:jme)::      &
      &                      dz8w,p_phy,pi_phy,rho_phy
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
+#ifdef HWRF
+     &                      th_phy,qv,qc
+#else
      &                      th_phy,qv,qt
-      REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
-     &                      qc,qr,qs
+#endif
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+
+#ifndef HWRF
+      REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
+     &                      qc,qr,qs
+#endif
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)           ::     &
      &                                                   RAINNC,RAINNCV
       REAL, INTENT(OUT),    DIMENSION(ims:ime,jms:jme):: SR
-!
+#ifndef HWRF
       REAL,DIMENSION(*),INTENT(INOUT) :: MP_RESTART_STATE
-!
       REAL,DIMENSION(nx),INTENT(INOUT) :: TBPVS_STATE,TBPVS0_STATE
+#endif
+!
+!HWRF      REAL,DIMENSION(nx),INTENT(INOUT) :: TBPVS_STATE,TBPVS0_STATE
 !
       INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
 
@@ -147,12 +199,15 @@ MODULE module_mp_etanew
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
       INTEGER :: I,J,K,KFLIP
+#ifndef HWRF
       REAL :: WC
+#endif
 !
 !-----------------------------------------------------------------------
 !**********************************************************************
 !-----------------------------------------------------------------------
 !
+#ifndef HWRF
       MY_GROWTH(MY_T1:MY_T2)=MP_RESTART_STATE(MY_T1:MY_T2)
 !
       C1XPVS0=MP_RESTART_STATE(MY_T2+1)
@@ -167,6 +222,8 @@ MODULE module_mp_etanew
       TBPVS(1:NX) =TBPVS_STATE(1:NX)
       TBPVS0(1:NX)=TBPVS0_STATE(1:NX)
 !
+#endif
+
       DO j = jts,jte
       DO k = kts,kte
       DO i = its,ite
@@ -218,7 +275,15 @@ MODULE module_mp_etanew
       ENDDO
 
 !-----------------------------------------------------------------------
-
+#ifdef HWRF
+      CALL EGCP01DRV(GID,DT,LOWLYR,                                     &
+     &               APREC,PREC,ACPREC,SR,NSTATS,QMAX,QTOT,	        &
+     &               dz8w,rho_phy,qc,t_phy,qv,F_ICE_PHY,P_PHY,          &
+     &               F_RAIN_PHY,F_RIMEF_PHY,TLATGS_PHY,TRAIN_PHY,       &
+     &               ids,ide, jds,jde, kds,kde,		                &
+     &               ims,ime, jms,jme, kms,kme,		                &
+     &               its,ite, jts,jte, kts,kte		          )
+#else
       CALL EGCP01DRV(DT,LOWLYR,                                         &
      &               APREC,PREC,ACPREC,SR,NSTATS,QMAX,QTOT,	        &
      &               dz8w,rho_phy,qt,t_phy,qv,F_ICE_PHY,P_PHY,          &
@@ -227,12 +292,13 @@ MODULE module_mp_etanew
      &               ims,ime, jms,jme, kms,kme,		                &
      &               its,ite, jts,jte, kts,kte		          )
 !-----------------------------------------------------------------------
-
+#endif
      DO j = jts,jte
         DO k = kts,kte
 	DO i = its,ite
   	   th_phy(i,k,j) = t_phy(i,k,j)/pi_phy(i,k,j)
            qv(i,k,j)=qv(i,k,j)/(1.-qv(i,k,j))  !Convert to mixing ratio
+#ifndef HWRF
            WC=qt(I,K,J)
            QS(I,K,J)=0.
            QR(I,K,J)=0.
@@ -255,6 +321,7 @@ MODULE module_mp_etanew
                QC(I,K,J)=QC(I,K,J)-QR(I,K,J)
              ENDIF
            ENDIF
+#endif
 	ENDDO
         ENDDO
      ENDDO
@@ -267,7 +334,7 @@ MODULE module_mp_etanew
           RAINNCV(i,j)=APREC(i,j)*1000.
        ENDDO
        ENDDO
-!
+#ifndef HWRF
      MP_RESTART_STATE(MY_T1:MY_T2)=MY_GROWTH(MY_T1:MY_T2)
      MP_RESTART_STATE(MY_T2+1)=C1XPVS0
      MP_RESTART_STATE(MY_T2+2)=C2XPVS0
@@ -280,13 +347,22 @@ MODULE module_mp_etanew
 !
      TBPVS_STATE(1:NX) =TBPVS(1:NX)
      TBPVS0_STATE(1:NX)=TBPVS0(1:NX)
-
+#endif
 !-----------------------------------------------------------------------
 
   END SUBROUTINE ETAMP_NEW
 
 !-----------------------------------------------------------------------
-
+#ifdef HWRF
+      SUBROUTINE EGCP01DRV(GID,                            & !GID gopal's doing
+     &  DTPH,LOWLYR,APREC,PREC,ACPREC,SR,                  &
+     &  NSTATS,QMAX,QTOT,                                  &
+     &  dz8w,RHO_PHY,CWM_PHY,T_PHY,Q_PHY,F_ICE_PHY,P_PHY,  &
+     &  F_RAIN_PHY,F_RIMEF_PHY,TLATGS_PHY,TRAIN_PHY,       &
+     &  ids,ide, jds,jde, kds,kde,                         &
+     &  ims,ime, jms,jme, kms,kme,                         &
+     &  its,ite, jts,jte, kts,kte)
+#else
       SUBROUTINE EGCP01DRV(                                             &
      &  DTPH,LOWLYR,APREC,PREC,ACPREC,SR,                               &
      &  NSTATS,QMAX,QTOT,                                               &
@@ -295,9 +371,14 @@ MODULE module_mp_etanew
      &  ids,ide, jds,jde, kds,kde,                                      &
      &  ims,ime, jms,jme, kms,kme,                                      &
      &  its,ite, jts,jte, kts,kte)
+#endif
 !-----------------------------------------------------------------------
 ! DTPH           Physics time step (s)
+#ifdef HWRF
+! CWM_PHY (qc)   Mixing ratio of the total condensate. kg/kg
+#else
 ! CWM_PHY (qt)   Mixing ratio of the total condensate. kg/kg
+#endif
 ! Q_PHY          Mixing ratio of water vapor. kg/kg
 ! F_RAIN_PHY     Fraction of rain. 
 ! F_ICE_PHY      Fraction of ice.
@@ -320,11 +401,16 @@ MODULE module_mp_etanew
 !-----------------------------------------------------------------------
 !
       INTEGER, PARAMETER :: ITLO=-60, ITHI=40
-      LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
+#ifndef HWRF
+       LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
+#endif
 !     VARIABLES PASSED IN/OUT
       INTEGER,INTENT(IN ) :: ids,ide, jds,jde, kds,kde                  &
      &                      ,ims,ime, jms,jme, kms,kme                  &
      &                      ,its,ite, jts,jte, kts,kte
+#ifdef HWRF
+      INTEGER,INTENT(IN ) :: GID     ! grid%id gopal's doing
+#endif
       REAL,INTENT(IN) :: DTPH
       INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
       INTEGER,DIMENSION(ITLO:ITHI,4),INTENT(INOUT) :: NSTATS
@@ -343,6 +429,20 @@ MODULE module_mp_etanew
 !LOCAL VARIABLES
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+!HWRF - Below are directives in the operational code that have been removed,
+!       where "TEMP_DEX" has been replaced with "I,J,L" and "TEMP_DIMS" has
+!       been replaced with "its:ite,jts:jte,kts:kte"
+!HWRF#define CACHE_FRIENDLY_MP_ETANEW
+!HWRF#ifdef CACHE_FRIENDLY_MP_ETANEW
+!HWRF#  define TEMP_DIMS  kts:kte,its:ite,jts:jte
+!HWRF#  define TEMP_DEX   L,I,J
+!HWRF#else
+!HWRF#  define TEMP_DIMS  its:ite,jts:jte,kts:kte
+!HWRF#  define TEMP_DEX   I,J,L
+!HWRF#endif
+!HWRF!
+#else
 #define CACHE_FRIENDLY_MP_ETANEW
 #ifdef CACHE_FRIENDLY_MP_ETANEW
 #  define TEMP_DIMS  kts:kte,its:ite,jts:jte
@@ -352,13 +452,24 @@ MODULE module_mp_etanew
 #  define TEMP_DEX   I,J,L
 #endif
 !
+#endif 
       INTEGER :: LSFC,I,J,I_index,J_index,L,K,KFLIP
-      REAL,DIMENSION(TEMP_DIMS) :: CWM,T,Q,TRAIN,TLATGS,P
+!HWRF      REAL,DIMENSION(TEMP_DIMS) :: CWM,T,Q,TRAIN,TLATGS,P
+#ifdef HWRF
+      REAL,DIMENSION(its:ite,jts:jte,kts:kte) ::                        &
+     &   CWM,T,Q,TRAIN,TLATGS,P
+#else
+       REAL,DIMENSION(TEMP_DIMS) :: CWM,T,Q,TRAIN,TLATGS,P
+#endif
       REAL,DIMENSION(kts:kte,its:ite,jts:jte) :: F_ice,F_rain,F_RimeF       
       INTEGER,DIMENSION(its:ite,jts:jte) :: LMH
       REAL :: TC,WC,QI,QR,QW,Fice,Frain,DUM,ASNOW,ARAIN
       REAL,DIMENSION(kts:kte) :: P_col,Q_col,T_col,QV_col,WC_col,       &
+#ifdef HWRF
+         RimeF_col,QI_col,QR_col,QW_col, THICK_col, RHC_col, DPCOL    !GFDL
+#else
          RimeF_col,QI_col,QR_col,QW_col, THICK_col,DPCOL 
+#endif
       REAL,DIMENSION(2) :: PRECtot,PRECmax
 !-----------------------------------------------------------------------
 !
@@ -372,12 +483,21 @@ MODULE module_mp_etanew
         DO 98  I=ITS,ITE  
            DO L=KTS,KTE
              KFLIP=KTE+1-L
+#ifdef HWRF
+             CWM(I,J,L)=CWM_PHY(I,KFLIP,J)
+             T(I,J,L)=T_PHY(I,KFLIP,J)
+             Q(I,J,L)=Q_PHY(I,KFLIP,J)
+             P(I,J,L)=P_PHY(I,KFLIP,J)
+             TLATGS(I,J,L)=TLATGS_PHY(I,KFLIP,J)
+             TRAIN(I,J,L)=TRAIN_PHY(I,KFLIP,J)
+#else
              CWM(TEMP_DEX)=CWM_PHY(I,KFLIP,J)
              T(TEMP_DEX)=T_PHY(I,KFLIP,J)
              Q(TEMP_DEX)=Q_PHY(I,KFLIP,J)
              P(TEMP_DEX)=P_PHY(I,KFLIP,J)
              TLATGS(TEMP_DEX)=TLATGS_PHY(I,KFLIP,J)
              TRAIN(TEMP_DEX)=TRAIN_PHY(I,KFLIP,J)
+#endif
              F_ice(L,I,J)=F_ice_PHY(I,KFLIP,J)
              F_rain(L,I,J)=F_rain_PHY(I,KFLIP,J)
              F_RimeF(L,I,J)=F_RimeF_PHY(I,KFLIP,J)
@@ -396,8 +516,12 @@ MODULE module_mp_etanew
    !
    !--- Initialize column data (1D arrays)
    !
+#ifdef HWRF
+          IF (CWM(I,J,1) .LE. EPSQ) CWM(I,J,1)=EPSQ
+#else
         L=1
         IF (CWM(TEMP_DEX) .LE. EPSQ) CWM(TEMP_DEX)=EPSQ
+#endif
           F_ice(1,I,J)=1.
           F_rain(1,I,J)=0.
           F_RimeF(1,I,J)=1.
@@ -405,15 +529,28 @@ MODULE module_mp_etanew
       !
       !--- Pressure (Pa) = (Psfc-Ptop)*(ETA/ETA_sfc)+Ptop
       !
+#ifdef HWRF
+            P_col(L)=P(I,J,L)
+#else
             P_col(L)=P(TEMP_DEX)
+#endif
       !
       !--- Layer thickness = RHO*DZ = -DP/G = (Psfc-Ptop)*D_ETA/(G*ETA_sfc)
       !
             THICK_col(L)=DPCOL(L)*RGRAV
+#ifdef HWRF
+            T_col(L)=T(I,J,L)
+#else
             T_col(L)=T(TEMP_DEX)
+#endif
             TC=T_col(L)-T0C
+#ifdef HWRF
+            QV_col(L)=max(EPSQ, Q(I,J,L))
+            IF (CWM(I,J,L) .LE. EPSQ1) THEN
+#else
             QV_col(L)=max(EPSQ, Q(TEMP_DEX))
             IF (CWM(TEMP_DEX) .LE. EPSQ1) THEN
+#endif
               WC_col(L)=0.
               IF (TC .LT. T_ICE) THEN
                 F_ice(L,I,J)=1.
@@ -423,7 +560,11 @@ MODULE module_mp_etanew
               F_rain(L,I,J)=0.
               F_RimeF(L,I,J)=1.
             ELSE
-              WC_col(L)=CWM(TEMP_DEX)
+#ifdef HWRF
+              WC_col(L)=CWM(I,J,L)
+#else
+             WC_col(L)=CWM(TEMP_DEX)
+#endif
             ENDIF
       !
       !--- Determine composition of condensate in terms of 
@@ -452,11 +593,26 @@ MODULE module_mp_etanew
                 QW=QW-QR
               ENDIF
             ENDIF
+#ifdef HWRF
+            RimeF_col(L)=F_RimeF(L,I,J)
+#else
             IF (QI .LE. 0.) F_RimeF(L,I,J)=1.
             RimeF_col(L)=F_RimeF(L,I,J)               ! (real)
+#endif
             QI_col(L)=QI
             QR_col(L)=QR
             QW_col(L)=QW
+#ifdef HWRF
+!GFDL => New.  Added RHC_col to allow for height- and grid-dependent values for
+!GFDL          the relative humidity threshold for condensation ("RHgrd")
+!------------------------------------------------------------
+            IF(GID .EQ. 1 .AND. L .LE. 10)THEN  ! gopal's doing based on GFDL
+              RHC_col(L)=RHgrd_out        
+            ELSE
+              RHC_col(L)=RHgrd_in       
+            ENDIF
+!------------------------------------------------------------
+#endif
           ENDDO
 !
 !#######################################################################
@@ -465,9 +621,15 @@ MODULE module_mp_etanew
    !
           I_index=I
           J_index=J
+#ifdef HWRF
+       CALL EGCP01COLUMN ( ARAIN, ASNOW, DTPH, I_index, J_index, LSFC,  &
+     & P_col, QI_col, QR_col, QV_col, QW_col, RimeF_col, T_col,         &
+     & THICK_col, WC_col, RHC_col, KTS,KTE,NSTATS,QMAX,QTOT )   !GFDL
+#else
        CALL EGCP01COLUMN ( ARAIN, ASNOW, DTPH, I_index, J_index, LSFC,  &
      & P_col, QI_col, QR_col, QV_col, QW_col, RimeF_col, T_col,         &
      & THICK_col, WC_col,KTS,KTE,NSTATS,QMAX,QTOT )
+#endif
 
 
    !
@@ -477,21 +639,36 @@ MODULE module_mp_etanew
    !--- Update storage arrays
    !
           DO L=1,LSFC
+#ifdef HWRF
+            TRAIN(I,J,L)=(T_col(L)-T(I,J,L))/DTPH
+            TLATGS(I,J,L)=T_col(L)-T(I,J,L)
+            T(I,J,L)=T_col(L)
+            Q(I,J,L)=QV_col(L)
+            CWM(I,J,L)=WC_col(L)
+#else
             TRAIN(TEMP_DEX)=(T_col(L)-T(TEMP_DEX))/DTPH
             TLATGS(TEMP_DEX)=T_col(L)-T(TEMP_DEX)
             T(TEMP_DEX)=T_col(L)
             Q(TEMP_DEX)=QV_col(L)
             CWM(TEMP_DEX)=WC_col(L)
+#endif
       !
       !--- REAL*4 array storage
       !
+#ifdef HWRF
+            F_RimeF(L,I,J)=MAX(1., RimeF_col(L))
+#endif
             IF (QI_col(L) .LE. EPSQ) THEN
               F_ice(L,I,J)=0.
               IF (T_col(L) .LT. T_ICEK) F_ice(L,I,J)=1.
+#ifndef HWRF
               F_RimeF(L,I,J)=1.
+#endif
             ELSE
               F_ice(L,I,J)=MAX( 0., MIN(1., QI_col(L)/WC_col(L)) )
+#ifndef HWRF
               F_RimeF(L,I,J)=MAX(1., RimeF_col(L))
+#endif
             ENDIF
             IF (QR_col(L) .LE. EPSQ) THEN
               DUM=0
@@ -515,6 +692,7 @@ MODULE module_mp_etanew
         ELSE
           SR(I,J)=RRHOL*ASNOW/APREC(I,J)
         ENDIF
+#ifndef HWRF
    !
    !--- Debug statistics 
    !
@@ -524,7 +702,7 @@ MODULE module_mp_etanew
           PRECmax(1)=MAX(PRECmax(1), ARAIN)
           PRECmax(2)=MAX(PRECmax(2), ASNOW)
         ENDIF
-
+#endif
 
 !#######################################################################
 !#######################################################################
@@ -534,11 +712,19 @@ MODULE module_mp_etanew
         DO 101 I=ITS,ITE  
            DO L=KTS,KTE
               KFLIP=KTE+1-L
+#ifdef HWRF
+             CWM_PHY(I,KFLIP,J)=CWM(I,J,L)
+             T_PHY(I,KFLIP,J)=T(I,J,L)
+             Q_PHY(I,KFLIP,J)=Q(I,J,L)
+             TLATGS_PHY(I,KFLIP,J)=TLATGS(I,J,L)
+             TRAIN_PHY(I,KFLIP,J)=TRAIN(I,J,L)
+#else
              CWM_PHY(I,KFLIP,J)=CWM(TEMP_DEX)
              T_PHY(I,KFLIP,J)=T(TEMP_DEX)
              Q_PHY(I,KFLIP,J)=Q(TEMP_DEX)
              TLATGS_PHY(I,KFLIP,J)=TLATGS(TEMP_DEX)
              TRAIN_PHY(I,KFLIP,J)=TRAIN(TEMP_DEX)
+#endif
              F_ice_PHY(I,KFLIP,J)=F_ice(L,I,J)
              F_rain_PHY(I,KFLIP,J)=F_rain(L,I,J)
              F_RimeF_PHY(I,KFLIP,J)=F_RimeF(L,I,J)
@@ -600,7 +786,11 @@ MODULE module_mp_etanew
 !
       SUBROUTINE EGCP01COLUMN ( ARAIN, ASNOW, DTPH, I_index, J_index,   &
      & LSFC, P_col, QI_col, QR_col, QV_col, QW_col, RimeF_col, T_col,   &
-     & THICK_col, WC_col ,KTS,KTE,NSTATS,QMAX,QTOT)                          
+#ifdef HWRF
+     & THICK_col, WC_col, RHC_col, KTS,KTE,NSTATS,QMAX,QTOT)   !GFDL
+#else
+     & THICK_col, WC_col ,KTS,KTE,NSTATS,QMAX,QTOT)    
+#endif
 !
 !###############################################################################
 !###############################################################################
@@ -641,6 +831,9 @@ MODULE module_mp_etanew
 !   T_col      - vertical column of model temperature (deg K)
 !   THICK_col  - vertical column of model mass thickness (density*height increment)
 !   WC_col     - vertical column of model mixing ratio of total condensate (kg/kg)
+#ifdef HWRF
+!   RHC_col    - vertical column of threshold relative humidity for onset of condensation (ratio)   !GFDL
+#endif
 !   
 !
 ! OUTPUT ARGUMENT LIST: 
@@ -695,7 +888,11 @@ MODULE module_mp_etanew
       INTEGER,INTENT(IN) :: KTS,KTE,I_index, J_index, LSFC
       REAL,INTENT(INOUT) ::  ARAIN, ASNOW
       REAL,DIMENSION(KTS:KTE),INTENT(INOUT) ::  P_col, QI_col,QR_col    &
+#ifdef HWRF
+     & ,QV_col ,QW_col, RimeF_col, T_col, THICK_col, WC_col, RHC_col   !GFDL
+#else
      & ,QV_col ,QW_col, RimeF_col, T_col, THICK_col,WC_col
+#endif
 !
 !------------------------------------------------------------------------- 
 !-------------- Common blocks for microphysical statistics ---------------
@@ -765,15 +962,21 @@ MODULE module_mp_etanew
 !
       REAL, PARAMETER :: BLEND=1.
 !
+#ifndef HWRF
 !--- This variable is for debugging purposes (if .true.)
 !
       LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
 !
+#endif
 !-----------------------------------------------------------------------
 !--- Local variables
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+      REAL EMAIRI, N0r, NLICE, NSmICE, RHgrd   !GFDL
+#else
       REAL EMAIRI, N0r, NLICE, NSmICE
+#endif
       LOGICAL CLEAR, ICE_logical, DBG_logical, RAIN_logical
       INTEGER :: IDR,INDEX_MY,INDEXR,INDEXR1,INDEXS,IPASS,ITDX,IXRF,    &
      &           IXS,LBEF,L
@@ -825,6 +1028,9 @@ MODULE module_mp_etanew
           QV=QV_col(L)        ! Specific humidity of water vapor (kg/kg)
           WV=QV/(1.-QV)       ! Water vapor mixing ratio (kg/kg)
           WC=WC_col(L)        ! Grid-scale mixing ratio of total condensate (water or ice; kg/kg)
+#ifdef HWRF
+          RHgrd=RHC_col(L)    ! Threshold relative humidity for the onset of condensation
+#endif
 !
 !-----------------------------------------------------------------------
 !--- Moisture variables below are mixing ratios & not specifc humidities
@@ -941,8 +1147,14 @@ MODULE module_mp_etanew
           XLV1=XLV*RCP               ! Lv/Cp
           XLF1=XLF*RCP               ! Lf/Cp
           TK2=1./(TK*TK)             ! 1./TK**2
+!GFDL          XLV2=XLV*XLV*QSW*TK2/RV    ! Lv**2*Qsw/(Rv*TK**2)
+#ifdef HWRF
+          XLV2=XLV*XLV*QSWgrd*TK2/RV    ! Lv**2*QSWgrd/(Rv*TK**2)   !GFDL
+          DENOMW=1.+XLV2*RCP         ! Denominator term, Clausius-Clapeyron correction
+#else
           XLV2=XLV*XLV*QSW*TK2/RV    ! Lv**2*Qsw/(Rv*TK**2)
           DENOMW=1.+XLV2*RCP         ! Denominator term, Clausius-Clapeyron correction
+#endif
 !
 !--- Basic thermodynamic quantities
 !      * DYNVIS - dynamic viscosity  [ kg/(m*s) ]
@@ -969,8 +1181,9 @@ MODULE module_mp_etanew
 !
 !--- Determine if conditions supporting ice are present
 !
-          IF (TC.LT.0. .OR. QI.GT. EPSQ .OR. ASNOW.GT.CLIMIT) THEN
-            ICE_logical=.TRUE.
+
+          IF (TC.LT.0. .OR. QI.GT.EPSQ .OR. ASNOW.GT.CLIMIT) THEN
+          ICE_logical=.TRUE.
           ELSE
             ICE_logical=.FALSE.
             QLICE=0.
@@ -1034,6 +1247,9 @@ MODULE module_mp_etanew
               IF (TC.GE.-8. .AND. TC.LE.-3.) FLARGE=.5*FLARGE
 !
             ENDIF            ! End IF (TC.GE.0. .OR. WVQW.LT.QSIgrd)
+#ifdef HWRF
+!GFDL  => turned on in GFDL code, but not here =>           FLARGE=1.0
+#endif
             FSMALL=(1.-FLARGE)/FLARGE
             XSIMASS=RRHO*MASSI(MDImin)*FSMALL
             IF (QI.LE.EPSQ .AND. ASNOW.LE.CLIMIT) THEN
@@ -1095,6 +1311,7 @@ MODULE module_mp_etanew
      &                .OR. IPASS.EQ.1) THEN
                   EXIT
                 ELSE
+#ifndef HWRF
                   IF (TC < 0) THEN
                     XLI=RHO*(QTICE/DUM-XSIMASS)/RimeF1
                     IF (XLI .LE. MASSI(MDImin) ) THEN
@@ -1109,12 +1326,14 @@ MODULE module_mp_etanew
                       INDEXS=MDImax
                     ENDIF             ! End IF (XLI .LE. MASSI(MDImin) )
                   ENDIF               ! End IF (TC < 0)
+#endif
         !
         !--- Reduce excessive accumulation of ice at upper levels
         !    associated with strong grid-resolved ascent
         !
         !--- Force NLICE to be between NLImin and NLImax
         !
+#ifndef HWRF
         !
         !--- 8/22/01: Increase density of large ice if maximum limits 
         !    are reached for number concentration (NLImax) and mean size 
@@ -1123,6 +1342,28 @@ MODULE module_mp_etanew
                   DUM=MAX(NLImin, MIN(NLImax, NLICE) )
                   IF (DUM.GE.NLImax .AND. INDEXS.GE.MDImax)             &
      &                RimeF1=RHO*(QTICE/NLImax-XSIMASS)/MASSI(INDEXS)
+#else
+                  DUM=MAX(NLImin, MIN(NLImax, NLICE) )
+                  XLI=RHO*(QTICE/DUM-XSIMASS)/RimeF1
+                  IF (XLI .LE. MASSI(MDImin) ) THEN
+                    INDEXS=MDImin
+                  ELSE IF (XLI .LE. MASSI(450) ) THEN
+                    DLI=9.5885E5*XLI**.42066         ! DLI in microns
+                    INDEXS=MIN(MDImax, MAX(MDImin, INT(DLI) ) )
+                  ELSE IF (XLI .LE. MASSI(MDImax) ) THEN
+                    DLI=3.9751E6*XLI**.49870         ! DLI in microns
+                    INDEXS=MIN(MDImax, MAX(MDImin, INT(DLI) ) )
+                  ELSE 
+                    INDEXS=MDImax
+           !
+           !--- 8/22/01: Increase density of large ice if maximum limits 
+           !    are reached for number concentration (NLImax) and mean size 
+           !    (MDImax).  Done to increase fall out of ice.
+           !
+                    IF (DUM .GE. NLImax)                                &
+     &                RimeF1=RHO*(QTICE/NLImax-XSIMASS)/MASSI(INDEXS)
+                  ENDIF             ! End IF (XLI .LE. MASSI(MDImin) ) 
+#endif
 !            WRITE(6,"(4(a12,g11.4,1x))") 
 !     & '{$ TC=',TC,'P=',.01*PP,'NLICE=',NLICE,'DUM=',DUM,
 !     & '{$ XLI=',XLI,'INDEXS=',FLOAT(INDEXS),'RHO=',RHO,'QTICE=',QTICE,
@@ -1179,7 +1420,11 @@ MODULE module_mp_etanew
             DUM2=WV+QW                         ! Updated (dummy) water vapor mixing ratio
             DUM=1000.*FPVS(DUM1)               ! Updated (dummy) saturation vapor pressure w/r/t ice
             DUM=RHgrd*EPS*DUM/(PP-DUM)         ! Updated (dummy) saturation mixing ratio w/r/t ice
+#ifdef HWRF
+            IF (DUM2 .GT. DUM) PIDEP=DEPOSIT (PP, DUM1, DUM2, RHgrd)  !GFDL
+#else
             IF (DUM2 .GT. DUM) PIDEP=DEPOSIT (PP, DUM1, DUM2)
+#endif
             DWVi=0.    ! Used only for debugging
    !
           ELSE IF (TC .LT. 0.) THEN
@@ -1187,8 +1432,15 @@ MODULE module_mp_etanew
    !--- These quantities are handy for ice deposition/sublimation
    !    PIDEP_max - max deposition or minimum sublimation to ice saturation
    !
+#ifdef HWRF
+!GFDL            DENOMI=1.+XLS2*QSI*TK2
+!GFDL            DWVi=MIN(WVQW,QSW)-QSI
+            DENOMI=1.+XLS2*QSIgrd*TK2   !GFDL
+            DWVi=MIN(WVQW,QSWgrd)-QSIgrd   !GFDL
+#else
             DENOMI=1.+XLS2*QSI*TK2
             DWVi=MIN(WVQW,QSW)-QSI
+#endif
             PIDEP_max=MAX(PILOSS, DWVi/DENOMI)
             IF (QTICE .GT. 0.) THEN
       !
@@ -1199,7 +1451,11 @@ MODULE module_mp_etanew
       !               VENTIL, VENTIS - m**-2 ;  VENTI1 - m ;  
       !               VENTI2 - m**2/s**.5 ; DIDEP - unitless
       !
+#ifdef HWRF
+              SFACTOR=SQRT(VEL_INC)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2   !GFDL
+#else
               SFACTOR=VEL_INC**.5*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2
+#endif
               ABI=1./(RHO*XLS3*QSI*TK2/THERM_COND+1./DIFFUS)
       !
       !--- VENTIL - Number concentration * ventilation factors for large ice
@@ -1223,7 +1479,12 @@ MODULE module_mp_etanew
                 PIDEP=MAX(DWVi*DIDEP, PIDEP_max)
               ENDIF
       !
-            ELSE IF (WVQW.GT.QSI .AND. TC.LE.T_ICE_init) THEN
+#ifdef HWRF
+!GFDL            ELSE IF (WVQW.GT.QSI .AND. TC.LE.T_ICE_init) THEN
+            ELSE IF (WVQW.GT.QSIgrd .AND. TC.LE.T_ICE_init) THEN   !GFDL
+#else
+           ELSE IF (WVQW.GT.QSI .AND. TC.LE.T_ICE_init) THEN
+#endif
       !
       !--- Ice nucleation in near water-saturated conditions.  Ice crystal
       !    growth during time step calculated using Miller & Young (1979, JAS).
@@ -1261,7 +1522,11 @@ MODULE module_mp_etanew
 !
           IF (TC.GE.T_ICE .AND. (QW.GT.EPSQ .OR. WV.GT.QSWgrd)) THEN
             IF (PIACWI.EQ.0. .AND. PIDEP.EQ.0.) THEN
-              PCOND=CONDENSE (PP, QW, TK, WV)
+#ifdef HWRF
+              PCOND=CONDENSE (PP, QW, TK, WV, RHgrd)   !GFDL
+#else
+              PCOND=CONDENSE (PP, QW, TK, WV) 
+#endif
             ELSE
    !
    !--- Modify cloud condensation in response to ice processes
@@ -1300,7 +1565,11 @@ MODULE module_mp_etanew
    !               VENTIL - m**-2 ;  VENTI1 - m ;  
    !               VENTI2 - m**2/s**.5 ; CIEVP - /s
    !
+#ifdef HWRF
+            SFACTOR=SQRT(VEL_INC)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2   !GFDL
+#else
             SFACTOR=VEL_INC**.5*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2
+#endif
             VENTIL=NLICE*(VENTI1(INDEXS)+SFACTOR*VENTI2(INDEXS))
             AIEVP=VENTIL*DIFFUS*DTPH
             IF (AIEVP .LT. Xratio) THEN
@@ -1309,9 +1578,19 @@ MODULE module_mp_etanew
               DIEVP=1.-EXP(-AIEVP)
             ENDIF
             QSW0=EPS*ESW0/(PP-ESW0)
+#ifdef HWRF
+!GFDL            DWV0=MIN(WV,QSW)-QSW0
+            DWV0=MIN(WV,QSWgrd)-QSW0*RHgrd   !GFDL
+#else
             DWV0=MIN(WV,QSW)-QSW0
+#endif
             DUM=QW+PCOND
+#ifdef HWRF
+!GFDL            IF (WV.LT.QSW .AND. DUM.LE.EPSQ) THEN
+            IF (WV.LT.QSWgrd .AND. DUM.LE.EPSQ) THEN   !GFDL
+#else
             IF (WV.LT.QSW .AND. DUM.LE.EPSQ) THEN
+#endif
    !
    !--- Evaporation from melting snow (sink of snow) or shedding
    !    of water condensed onto melting snow (source of rain)
@@ -1452,7 +1731,12 @@ MODULE module_mp_etanew
             IF (TC .LT. T_ICE) THEN
               PIACR=-PRLOSS
             ELSE
+#ifdef HWRF
+!GFDL              DWVr=WV-PCOND-QSW
+              DWVr=WV-PCOND-QSWgrd   !GFDL
+#else
               DWVr=WV-PCOND-QSW
+#endif
               DUM=QW+PCOND
               IF (DWVr.LT.0. .AND. DUM.LE.EPSQ) THEN
       !
@@ -1465,7 +1749,11 @@ MODULE module_mp_etanew
       !             N0r - m**-4 ;  VENTR1 - m**2 ;  VENTR2 - m**3/s**.5 ;
       !             CREVP - unitless
       !
+#ifdef HWRF
+                RFACTOR=SQRT(GAMMAR)*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2   !GFDL
+#else
                 RFACTOR=GAMMAR**.5*(RHO/(DIFFUS*DIFFUS*DYNVIS))**C2
+#endif
                 ABW=1./(RHO*XLV2/THERM_COND+1./DIFFUS)
       !
       !--- Note that VENTR1, VENTR2 lookup tables do not include the 
@@ -1503,7 +1791,11 @@ MODULE module_mp_etanew
             !      large ice, parameterized following eq. (48) on p. 112 of 
             !      Murakami (J. Meteor. Soc. Japan, 1990)
             !
+#ifdef HWRF
+                  DUM2=SQRT(DUM1*DUM1+.04*DUM*VSNOW)    !GFDL
+#else
                   DUM2=(DUM1*DUM1+.04*DUM*VSNOW)**.5
+#endif
                   DUM1=5.E-12*INDEXR*INDEXR+2.E-12*INDEXR*INDEXS        &
      &                 +.5E-12*INDEXS*INDEXS
                   FIR=MIN(1., CIACR*NLICE*DUM1*DUM2)
@@ -1712,20 +2004,29 @@ MODULE module_mp_etanew
 !
 !--- Additional check on budget preservation, accounting for truncation effects
 !
+#ifdef HWRF
+          IF (PRINT_err) THEN
+           DBG_logical=.FALSE.
+           DUM=ABS(BUDGET)
+           IF (DUM .GT. TOLER) THEN
+             DUM=DUM/MIN(QT, QTnew)
+             IF (DUM .GT. TOLER) DBG_logical=.TRUE.
+           ENDIF
+!
+#else
           DBG_logical=.FALSE.
-!          DUM=ABS(BUDGET)
-!          IF (DUM .GT. TOLER) THEN
-!            DUM=DUM/MIN(QT, QTnew)
-!            IF (DUM .GT. TOLER) DBG_logical=.TRUE.
-!          ENDIF
-!!
+#endif
 !          DUM=(RHgrd+.001)*QSInew
-!          IF ( (QWnew.GT.EPSQ) .OR. QRnew.GT.EPSQ .OR. WVnew.GT.DUM)
+!          IF ( (QWnew.GT.EPSQ) .OR. QRnew.GT.EPSQ .OR. WVnew.GT.DUM)    &
 !     &        .AND. TC.LT.T_ICE )  DBG_logical=.TRUE.
 !
 !          IF (TC.GT.5. .AND. QInew.GT.EPSQ) DBG_logical=.TRUE.
 !
+#ifdef HWRF
+           IF (WVnew.LT.EPSQ .OR. DBG_logical) THEN
+#else
           IF ((WVnew.LT.EPSQ .OR. DBG_logical) .AND. PRINT_diag) THEN
+#endif
    !
             WRITE(6,"(/2(a,i4),2(a,i2))") '{} i=',I_index,' j=',J_index,&
      &                                    ' L=',L,' LSFC=',LSFC
@@ -1821,7 +2122,12 @@ MODULE module_mp_etanew
      &   'VENTIL2=',SFACTOR*VENTI2(INDEXS),                                &
      & '{} AIEVP=',AIEVP,'DIEVP=',DIEVP,'QSW0=',QSW0,'DWV0=',DWV0       
    !
+#ifdef HWRF
+          ENDIF      !-- IF (WVnew.LT.EPSQ .OR. DBG_logical) THEN
+          ENDIF      !-- IF (PRINT_err) THEN
+#else
           ENDIF
+#endif
 
 
 !
@@ -1829,6 +2135,7 @@ MODULE module_mp_etanew
 !--------------- Water budget statistics & maximum values --------------
 !-----------------------------------------------------------------------
 !
+#ifndef HWRF
           IF (PRINT_diag) THEN
             ITdx=MAX( ITLO, MIN( INT(Tnew-T0C), ITHI ) )
             IF (QInew .GT. EPSQ) NSTATS(ITdx,1)=NSTATS(ITdx,1)+1
@@ -1869,6 +2176,7 @@ MODULE module_mp_etanew
      &        QTOT(ITdx,22)=QTOT(ITdx,22)+QInew*THICK/RimeF
   !
           ENDIF
+#endif
 !
 !----------------------------------------------------------------------
 !------------------------- Update arrays ------------------------------
@@ -1904,7 +2212,11 @@ MODULE module_mp_etanew
 !--------- Produces accurate calculation of cloud condensation ---------
 !#######################################################################
 !
+#ifdef HWRF
+      REAL FUNCTION CONDENSE (PP, QW, TK, WV, RHgrd)   !GFDL
+#else
       REAL FUNCTION CONDENSE (PP, QW, TK, WV)
+#endif
 !
 !---------------------------------------------------------------------------------
 !------   The Asai (1965) algorithm takes into consideration the release of ------
@@ -1919,7 +2231,11 @@ MODULE module_mp_etanew
      & RHLIMIT=.001, RHLIMIT1=-RHLIMIT
       REAL (KIND=HIGH_PRES) :: COND, SSAT, WCdum
 !
+#ifdef HWRF
+      REAL,INTENT(IN) :: QW,PP,WV,TK,RHgrd   !GFDL
+#else
       REAL,INTENT(IN) :: QW,PP,WV,TK
+#endif
       REAL WVdum,Tdum,XLV2,DWV,WS,ESW,XLV1,XLV
 integer nsteps
 !
@@ -1960,7 +2276,11 @@ nsteps = 0
 !---------------- Calculate ice deposition at T<T_ICE ------------------
 !#######################################################################
 !
+#ifdef HWRF
+      REAL FUNCTION DEPOSIT (PP, Tdum, WVdum, RHgrd)   !GFDL
+#else
       REAL FUNCTION DEPOSIT (PP, Tdum, WVdum)
+#endif
 !
 !--- Also uses the Asai (1965) algorithm, but uses a different target
 !      vapor pressure for the adjustment
@@ -1972,7 +2292,11 @@ nsteps = 0
      & RHLIMIT1=-RHLIMIT
       REAL (KIND=HIGH_PRES) :: DEP, SSAT
 !    
+#ifdef HWRF
+      real,INTENT(IN) ::  PP,RHgrd   !GFDL
+#else
       real,INTENT(IN) ::  PP
+#endif
       real,INTENT(INOUT) ::  WVdum,Tdum
       real ESI,WS,DWV
 !
@@ -2013,7 +2337,9 @@ nsteps = 0
 !-----------------------------------------------------------------------
       SUBROUTINE etanewinit (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
      &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                              &
+#ifndef HWRF
      &   MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE,                     &
+#endif
      &   ALLOWED_TO_READ,                                               &
      &   IDS,IDE,JDS,JDE,KDS,KDE,                                       &
      &   IMS,IME,JMS,JME,KMS,KME,                                       &
@@ -2101,8 +2427,10 @@ nsteps = 0
        INTEGER, DIMENSION(ims:ime,jms:jme),INTENT(INOUT) :: LOWLYR
 !
       real, INTENT(IN) ::  DELX,DELY
+#ifndef HWRF
       real,DIMENSION(*), INTENT(INOUT) :: MP_RESTART_STATE
       real,DIMENSION(NX), INTENT(INOUT) :: TBPVS_STATE,TBPVS0_STATE
+#endif
       real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT) ::          &
      &  F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       INTEGER, PARAMETER :: ITLO=-60, ITHI=40
@@ -2119,7 +2447,10 @@ nsteps = 0
       REAL :: BBFR,DTPH,PI,DX,Thour_print
       INTEGER :: I,IM,J,L,K,JTF,KTF,ITF
       INTEGER :: etampnew_unit1
+#ifndef HWRF
       LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
+#endif
+      LOGICAL :: opened
       LOGICAL :: opened
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
       CHARACTER*80 errmess
@@ -2136,7 +2467,12 @@ nsteps = 0
       ENDDO
       ENDDO
 !    
+#ifdef HWRF
+      IF(.NOT.RESTART .AND. ALLOWED_TO_READ) THEN    !HWRF
+        CALL wrf_debug(1,'WARNING: F_ICE_PHY,F_RAIN_PHY AND F_RIMEF_PHY IS REINITIALIZED')   !HWRF
+#else
       IF(.NOT.RESTART)THEN
+#endif
         DO J = jts,jte
         DO K = kts,kte
         DO I= its,ite
@@ -2152,7 +2488,11 @@ nsteps = 0
       IF(ALLOWED_TO_READ)THEN
 !-----------------------------------------------------------------------
 !
+#ifdef HWRF
+        DX=SQRT((DELX)**2+(DELY)**2)/1000.    ! Model resolution at equator (km)  !GFDL
+#else
         DX=((DELX)**2+(DELY)**2)**.5/1000.    ! Model resolution at equator (km)
+#endif
         DX=MIN(100., MAX(5., DX) )
 !
 !-- Relative humidity threshold for the onset of grid-scale condensation
@@ -2329,6 +2669,7 @@ nsteps = 0
 !       ENDIF
 
 !wrf
+#ifndef HWRF
         IF(.NOT.RESTART)THEN
           MP_RESTART_STATE(MY_T1:MY_T2)=MY_GROWTH(MY_T1:MY_T2)
           MP_RESTART_STATE(MY_T2+1)=C1XPVS0
@@ -2342,7 +2683,7 @@ nsteps = 0
           TBPVS_STATE(1:NX) =TBPVS(1:NX)
           TBPVS0_STATE(1:NX)=TBPVS0(1:NX)
         ENDIF
-
+#endif
       ENDIF  ! Allowed_to_read
 
       RETURN

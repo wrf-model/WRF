@@ -1147,6 +1147,9 @@
      &            ,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX,CROT,SROT     & ! GWD
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
+#ifdef HWRF
+     &            ,GRID%DISHEAT                                             &
+#endif
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)

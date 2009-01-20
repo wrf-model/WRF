@@ -13,6 +13,9 @@ CONTAINS
                   UST,PBL,PSIM,PSIH,                               &
                   HFX,QFX,TSK,GZ1OZ0,WSPD,BR,                      &
                   DT,KPBL2D,EP1,KARMAN,                            &
+#ifdef HWRF                           
+                  DISHEAT,                                         &
+#endif
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte,                       &
@@ -87,7 +90,9 @@ CONTAINS
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
 !-------------------------------------------------------------------
-
+#ifdef HWRF
+      LOGICAL , INTENT(IN)::            DISHEAT                         !  gopal's doing
+#endif
       INTEGER, INTENT(IN) ::            ids,ide, jds,jde, kds,kde,      &
                                         ims,ime, jms,jme, kms,kme,      &
                                         its,ite, jts,jte, kts,kte
@@ -163,6 +168,9 @@ CONTAINS
                                         PRSLK,                          &
                                         T1,                             &
                                         TAU,                            &
+#ifdef HWRF
+                                        dishx,                          &
+#endif
                                         U1,                             &
                                         V1
 
@@ -196,6 +204,9 @@ CONTAINS
 
       REAL     (kind=kind_phys) ::                                      &
                                         CPM,                            &
+#ifdef HWRF
+                                        cpmikj,                         &
+#endif
                                         DELTIM,                         &
                                         FMTMP,                          &
                                         RRHOX
@@ -302,8 +313,26 @@ CONTAINS
                   PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,           &
                   SPD1,KPBL,PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,          &
                   DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ)
+#ifdef HWRF
+!============================================================================
+!    ADD  IN  DISSIPATIVE HEATING .... v*dv. This is Bob's doing
+!============================================================================
 
+      IF(DISHEAT)THEN
+       DO k=kts,kte
+         DO i=its,ite
+          dishx(i,k)=u1(i,k)*du(i,k) + v1(i,k)*dv(i,k)
+          cpmikj=CP*(1.+0.8*QV3D(i,k,j))
+          dishx(i,k)=-dishx(i,k)/cpmikj
+!         IF(k==1)WRITE(0,*)'ADDITIONAL DISSIPATIVE HEATING',tau(i,k),dishx(i,k)
+          tau(i,k)=tau(i,k)+dishx(i,k)
+         ENDDO 
+       ENDDO 
+      ENDIF
 
+!=============================================================================
+
+#endif
       DO k=kts,kte
         DO i=its,ite
           RVBLTEN(I,K,J)=DV(I,K)

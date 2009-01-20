@@ -1676,9 +1676,13 @@ integer myproc
           CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (ETAMPNEW)
          adv_moist_cond = .false.
+
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
                           F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+#ifdef HWRF
+#else
                           mp_restart_state,tbpvs_state,tbpvs0_state,&
+#endif
                           allowed_to_read,                        &
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &

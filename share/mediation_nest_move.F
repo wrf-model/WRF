@@ -114,6 +114,20 @@ SUBROUTINE med_nest_move ( parent, nest )
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION time_for_move
+
+
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+!     LOGICAL FUNCTION nest_roam ( parent , nest , dx , dy )  !REPLACED BY KWON
+!
+     LOGICAL FUNCTION direction_of_move ( parent , nest , dx , dy )
+        USE module_domain
+        TYPE(domain) , POINTER    :: parent , nest
+        INTEGER, INTENT(OUT)      :: dx , dy
+     END FUNCTION direction_of_move
+!
+!     END FUNCTION nest_roam                                  !REPLACED BY KWON
+#endif
+
      SUBROUTINE  input_terrain_rsmas ( grid ,                  &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
@@ -165,7 +179,8 @@ SUBROUTINE med_nest_move ( parent, nest )
 
 ! mask should be defined in nest domain
 
-   check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
+!   check_for_move: IF ( time_for_move ( parent , nest , dx, dy ) ) THEN
+  check_direction_of_move: IF ( direction_of_move ( parent , nest , dx, dy ) ) THEN
 
 #if ( EM_CORE == 1 )
      IF ( (dx .gt. 1 .or. dx .lt. -1 ) .or.  &
@@ -414,7 +429,8 @@ SUBROUTINE med_nest_move ( parent, nest )
       where ( nest%imask_nostag .EQ. 1 ) nest%mu_1(:,:)  = nest%mu_2(:,:)
 #endif
 !
-   ENDIF check_for_move
+!   ENDIF check_for_move
+   ENDIF check_direction_of_move
 #endif
 END SUBROUTINE med_nest_move
 
@@ -1068,3 +1084,186 @@ LOGICAL FUNCTION should_not_move ( id )
   should_not_move = retval
 END FUNCTION
 
+#if (NMM_CORE == 1 && NMM_NEST == 1)
+LOGICAL FUNCTION nest_roam ( parent , grid , move_cd_x, move_cd_y )
+   USE module_domain
+   USE module_configure
+   USE module_dm
+   IMPLICIT NONE
+! arguments
+   TYPE(domain) , POINTER    :: parent, grid
+   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+! local
+   INTEGER     :: coral_dist_x, coral_dist_y
+   INTEGER     :: ntsd
+
+   LOGICAL, SAVE     :: first = .true.
+   INTEGER, SAVE :: x_inc, y_inc
+
+   IF (first) THEN
+      x_inc = 0
+      y_inc = 1
+      first = .FALSE.
+   END IF
+
+   CALL domain_clock_get(parent,advancecount=ntsd)
+   IF ( MOD(ntsd,4) /= 0 ) THEN
+      move_cd_x = 0
+      move_cd_y = 0
+      nest_roam = .FALSE.
+      RETURN
+   END IF
+
+! Simplifying assumption: domains in moving nest simulations have only
+! one parent and only one child.
+   IF   ( grid%num_nests .GT. 1 ) THEN
+     CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
+   ENDIF
+
+   coral_dist_x = grid%ed31/grid%parent_grid_ratio
+   coral_dist_y = grid%ed32/grid%parent_grid_ratio
+
+   IF ( x_inc==1 .AND. (grid%i_parent_start+coral_dist_x) .ge. parent%ed31 - 5)THEN
+     WRITE(0,*)' nest_roam TURN TO NORTH'
+     x_inc = 0
+     y_inc = 1
+   ELSE IF( y_inc==1 .AND. (grid%j_parent_start+coral_dist_y) .ge. parent%ed32 - 5)THEN
+     WRITE(0,*)' nest_roam TURN TO WEST'
+     x_inc = -1
+     y_inc = 0
+   ELSE IF ( x_inc==-1 .AND. grid%i_parent_start .le. 5)THEN
+     WRITE(0,*)' nest_roam TURN TO SOUTH'
+     x_inc = 0
+     y_inc = -1
+   ELSE IF ( y_inc==-1 .AND. grid%j_parent_start .le. 5)THEN
+     WRITE(0,*)' nest_roam TURN TO EAST'
+     x_inc = 1
+     y_inc = 0
+   ENDIF
+
+   move_cd_x = x_inc
+   move_cd_y = y_inc
+   nest_roam = .TRUE.
+
+  RETURN
+
+END FUNCTION nest_roam
+
+
+!ADDED BY YOUNG KWON FOR VORTEX FOLLOWING NEST MOVE
+
+LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
+   USE module_domain
+   USE module_configure
+   USE module_dm
+!!!   USE WRF_ESMF_MOD   !!COMMENTED OUT BY KWON TO FOLLOW DUSAN'S CODING
+   IMPLICIT NONE
+! arguments
+   TYPE(domain) , POINTER    :: parent, grid
+   LOGICAL, EXTERNAL         :: wrf_dm_on_monitor
+   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+! local
+   INTEGER     :: coral_dist, kid
+   INTEGER     :: dw, de, ds, dn, pgr, idum, jdum
+   INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
+                  cims, cime, cjms, cjme, ckms, ckme, &
+                  cips, cipe, cjps, cjpe, ckps, ckpe, &
+                  nids, nide, njds, njde, nkds, nkde, &
+                  nims, nime, njms, njme, nkms, nkme, &
+                  nips, nipe, njps, njpe, nkps, nkpe
+
+! executable
+!
+! Simplifying assumption: domains in moving nest simulations have only
+! one parent and only one child.
+   IF   ( grid%num_nests .GT. 1 ) THEN
+     CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
+   ENDIF
+   kid = 1
+
+   write(0,*) 'grid%ed31  grid%ed32  grid%ed33   ', grid%ed31, grid%ed32,grid%ed33
+
+!  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
+
+   coral_dist=grid%ed31/grid%parent_grid_ratio
+   IF(grid%i_parent_start .le. 5 .or. (grid%i_parent_start+coral_dist) .ge. parent%ed31 - 5)THEN  
+     grid%mvnest=.false.
+     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO EAST/WEST BOUNDARY'
+   ENDIF
+!
+!   coral_dist=grid%ed33/grid%parent_grid_ratio
+   coral_dist=grid%ed32/grid%parent_grid_ratio       !by Kwon for IJK instead of IKJ
+!   IF(grid%j_parent_start .le. 5 .OR. (grid%j_parent_start+coral_dist) .ge. parent%ed33 - 5)THEN
+   IF(grid%j_parent_start .le. 5 .OR. (grid%j_parent_start+coral_dist) .ge. parent%ed32 - 5)THEN    !by Kwon for IJK instead of IKJ
+     grid%mvnest=.false.
+     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO NORTH/SOUTH BOUNDARY'
+   ENDIF
+
+!
+!  DETERMINE AUTOMATICALLY THE DIRECTION OF GRID MOTION
+!
+   IF(grid%num_nests.EQ.0 .AND. grid%num_moves.EQ.-99 .AND. grid%mvnest)THEN 
+      IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
+         move_cd_x  = -1
+         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
+            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH EAST DIRECTION'
+            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
+                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+            move_cd_y  = +1
+         ELSE
+            WRITE(0,*)'HURRICANE IS MOVING IN THE EASTERLY FLOW'
+            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
+                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+            move_cd_y  =  0
+         ENDIF
+         direction_of_move= .TRUE. 
+         grid%moved = .TRUE.
+      ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
+         move_cd_x  = +1 
+         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
+            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH WEST DIRECTION'
+            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,  &
+                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+            move_cd_y  = -1
+         ELSE
+           WRITE(0,*)'HURRICANE IN THE WESTERLY CURRENT'
+           WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,   &
+                     'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+           move_cd_y  =  0
+         ENDIF
+         direction_of_move= .TRUE.
+         grid%moved = .TRUE.
+      ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN 
+        WRITE(0,*)'HURRICANE IS MOVING NORTHWARD'
+        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
+                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+        move_cd_x  = 0 
+        move_cd_y  = 2 
+        direction_of_move= .TRUE.
+        grid%moved = .TRUE.
+      ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
+        WRITE(0,*)'STRANGE: HURRICANE IS MOVING SOUTHWARD, MAY BE DUE TO INITIAL MANUVARE'
+        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
+                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
+        move_cd_x  =  0
+        move_cd_y  = -2 
+        direction_of_move= .TRUE.
+        grid%moved = .TRUE.
+      ELSE
+        move_cd_x  =  0 
+        move_cd_y  =  0 
+        direction_of_move= .FALSE.
+        grid%moved = .FALSE.        
+      ENDIF
+   ELSE
+    move_cd_x  =  0
+    move_cd_y  =  0
+    direction_of_move= .FALSE.
+    grid%moved = .FALSE.      
+   ENDIF
+
+  RETURN
+
+END FUNCTION direction_of_move 
+
+#endif

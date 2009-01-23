@@ -1750,6 +1750,36 @@
       DEALLOCATE(CHEM_TRANS,STAT=ISTAT)
 #endif
 !
+! FOR VORTEX FOLLOWING MOVING NEST
+!
+!-----------------------------------------------------------------------------
+!***  CRITERIA SET FOR GRID MOTION. This is gopal's doing
+!-----------------------------------------------------------------------------
+!
+#ifdef MOVE_NESTS
+   IF(grid%id .NE. 1 .AND. MOD(NTSD,1)==0 .AND. grid%num_moves.EQ.-99)THEN
+!-----------------
+#ifdef DM_PARALLEL
+#    include "HALO_NMM_TRACK.inc"
+#endif
+!-----------------
+
+!Kwon's doing for checking MOVED
+  IF(grid%id==2)WRITE(0,*)'NTSD & ,GRID%MOVED RIGHT BEFORE STATS_FOR MOVE ',NTSD,GRID%MOVED
+
+   CALL STATS_FOR_MOVE (XLOC_2,YLOC_2,PDYN,MSLP,SQWS                   &
+                      ,PINT,T,Q,U,V                                   &
+                      ,FIS,PD,SM,PDTOP,PT                             &
+                      ,DETA1,DETA2                                    &
+                      ,GRID%MOVED,MVNEST,NTSD,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
+                      ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
+                      ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry
+                      ,ITS,ITE,JTS,JTE,KTS,KTE              )           ! FOR NEST:DT=18,NPHS=3
+   CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
+   ENDIF
+#endif
+
+
 #define COPY_OUT
 #include <scalar_derefs.inc>
       Return

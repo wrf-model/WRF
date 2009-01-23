@@ -5,7 +5,7 @@
 thiscmd=$0
 
 FORTRAN_COMPILER_TIMER=""
-opt_level="-f"
+opt_level=""
 print_usage=""
 chemistry=""
 wrf_core=""

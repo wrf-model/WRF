@@ -1649,6 +1649,10 @@
 !
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
+        moist = 0.0
+        F_ICE = F_ICE_PHY
+        F_RIMEF = F_RIMEF_PHY
+        F_RAIN = F_RAIN_PHY
 
       IF (.NOT. RESTRT) THEN
 ! Added by Greg Thompson, NCAR-RAL, for initializing water vapor

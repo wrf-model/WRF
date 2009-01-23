@@ -8,6 +8,9 @@ mediation_feedback_domain.o : mediation_feedback_domain.F
 mediation_force_domain.o : mediation_force_domain.F
 mediation_integrate.o : mediation_integrate.F
 mediation_interp_domain.o : mediation_interp_domain.F
+module_radiation_driver.o : module_radiation_driver.F
+NMM_NEST_UTILS1.o : NMM_NEST_UTILS1.F
+mediation_nest_move.o : mediation_nest_move.F
 module_comm_dm.o : module_comm_dm.F
 module_configure.o : module_configure.F
 module_dm.o : module_dm.F
@@ -104,6 +107,9 @@ mediation_feedback_domain.o \
 mediation_force_domain.o \
 mediation_integrate.o \
 mediation_interp_domain.o \
+module_radiation_driver.o \
+NMM_NEST_UTILS1.o \
+mediation_nest_move.o \
 module_comm_dm.o \
 module_dm.o \
 module_fddaobs_rtfdda.o \

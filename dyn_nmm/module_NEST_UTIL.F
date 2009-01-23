@@ -320,7 +320,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
                           ,PINT,T,Q,U,V                          &
                           ,FIS,PD,SM,PDTOP,PTOP                  &
                           ,DETA1,DETA2                           &
-                          ,MOVED,MVNEST,NTSD,NPHS                &
+                          ,MOVED,MVNEST,NTSD,NPHS,CFREQ          & ! CFREQ*DT*NPHS=540s
                           ,IDS,IDE,JDS,JDE,KDS,KDE               &
                           ,IMS,IME,JMS,JME,KMS,KME               &
                           ,ITS,ITE,JTS,JTE,KTS,KTE               )
@@ -355,7 +355,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       INTEGER,INTENT(IN)                                    :: IDS,IDE,JDS,JDE,KDS,KDE   &
                                                               ,IMS,IME,JMS,JME,KMS,KME   &
                                                               ,ITS,ITE,JTS,JTE,KTS,KTE   &
-                                                              ,NTSD,NPHS
+                                                              ,NTSD,NPHS,CFREQ
 !
       INTEGER, INTENT(OUT)                                  :: XLOC,YLOC
       REAL, DIMENSION(KMS:KME),                 INTENT(IN)  :: DETA1,DETA2
@@ -388,20 +388,25 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
 !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
 
-      IF(MOD(NTSD+1,NPHS)/=0)THEN
+      IF(MOD(NTSD+1,CFREQ*NPHS)/=0)THEN   !FOR FULL COUPLING
+!      IF(MOD(NTSD+1,NPHS)/=0)THEN        !JUST FOR PARENT COUPLING
+!Kwon's doing
+	IF(MOVED) NTIME0=NTSD             !FOR UPDATING NTIM0
+!End of Kwon's doing
         MVNEST=.FALSE.
         RETURN
       ENDIF
 
-      WRITE(0,*)'PHYSICS IN SINK',NTSD,NPHS
+      WRITE(0,*)'PHYSICS IN SYNC WITH OCEAN TIME STEP AS WELL: NTSD+1,NPHS*CFREQ',NTSD,NPHS*CFREQ
 
 !     DETERMINE THE HEIGHTS ON THE PARENT DOMAIN
 
       DO J = JTS, MIN(JTE,JDE)
        DO I = ITS, MIN(ITE,IDE)
-         Z(I,1,J)=FIS(I,J)*GI
+         Z(I,J,1)=FIS(I,J)*GI
        ENDDO
       ENDDO
+      write(0,*) 'test 1 at stats_for_move'
 !
       DO K = KTS,KTE
        DO J = JTS, MIN(JTE,JDE)
@@ -409,10 +414,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
           APELP      = (PINT(I,J,K+1)+PINT(I,J,K))
           RTOPP      = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608)/APELP
           DZ         = RTOPP*(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
-          Z(I,K+1,J) = Z(I,J,K) + DZ
+          Z(I,J,K+1) = Z(I,J,K) + DZ
         ENDDO
        ENDDO
       ENDDO
+      write(0,*) 'test 2 at stats_for_move'
 
 !     DETERMINE THE MEAN SEA LEVEL PRESSURE, THE VERTICALLY AVERAGED WIND
 !     SPEED AT ABOUT LEVELS 9 10 AND 11 AND THE DYNAMIC PRESSURES DEFINED
@@ -429,15 +435,21 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
             PDYN(I,J) =   MSLP(I,J)  + 1.1*SQWS(I,J)/2.0
         ENDDO
       ENDDO
+      write(0,*) 'test 3 at stats_for_move'
 
 !     FILTER OUT PDYN AND STORE THAT IN MIJ. THE MAXIMUM VALUE OF MIJ GIVES THE STORM CENTER
 !     ALSO DO THAT WITHIN A SUB DOMAIN
 
       MAXGBL_PDYN=MAXVAL(PDYN(ITS:ITF,JTS:JTF))
+      write(0,*) 'test 3.0 at stats_for_move'
       CALL WRF_DM_MAXVAL(MAXGBL_PDYN,IDUM,JDUM)
+      write(0,*) 'test 3.2 at stats_for_move'
       MINGBL_PDYN=MINVAL(PDYN(ITS:ITF,JTS:JTF))
+      write(0,*) 'test 3.3 at stats_for_move'
       CALL WRF_DM_MINVAL(MINGBL_PDYN,IDUM,JDUM)
+      write(0,*) 'test 3.4 at stats_for_move'
       PCUT = 0.5*(MAXGBL_PDYN + MINGBL_PDYN)
+      write(0,*) 'test 3.5 at stats_for_move'
 !
       IM=IDE/2 - IDE/6
       IP=IDE/2 + IDE/6
@@ -454,15 +466,18 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
           ENDIF
         ENDDO
       ENDDO
+      write(0,*) 'test 4 at stats_for_move'
 
       DO J = JTS, MIN(JTE,JDE)
         DO I = ITS, MIN(ITE,IDE)
           PDYN(I,J)=MIJ(I,J)
         ENDDO
       ENDDO
+      write(0,*) 'test 5 at stats_for_move'
 
 !     DETERMINE THE LOCATION OF CENTER OF THE CIRCULATION DEFINED BY MIJ AND FIND THE CORRESPONDING MSLP 
 
+      STMP0=MAXGBL_PDYN*100.                 ! define arbitrary maximum
       MINGBL_MIJ=MINVAL(MIJ(ITS:ITF,JTS:JTF))
       DO J = JTS, MIN(JTE,JDE)
         DO I = ITS, MIN(ITE,IDE)
@@ -473,12 +488,14 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
            ENDIF
         ENDDO
       ENDDO
+      write(0,*) 'test 6 at stats_for_move'
 
       CALL WRF_DM_MINVAL(MINGBL_MIJ,XLOC,YLOC)
       CALL WRF_DM_MINVAL(STMP0,IDUM,JDUM)
 
 !     DETERMINE THE MAXIMUM MSLP AT ABOUT 18 GRID POINTS AWAY FROM THE STORM CENTER 
 
+      STMP1=0.0
       DO J = JTS, MIN(JTE,JDE)
         DO I = ITS, MIN(ITE,IDE)
            IF(I .EQ. XLOC+18)THEN
@@ -488,6 +505,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
            ENDIF
         ENDDO
       ENDDO
+      write(0,*) 'test 7 at stats_for_move'
 
       CALL WRF_DM_MAXVAL(STMP1,XR,YR)
 
@@ -501,6 +519,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
          SMSUM = SMSUM + SM(I,J)
        ENDDO
       ENDDO
+      write(0,*) 'test 8 at stats_for_move'
 
       SMOUT=WRF_DM_SUM_REAL(SMSUM)/(IDE*JDE)
 
@@ -512,6 +531,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       YDIFF=ABS(YLOC - JDE/2)
       IF(NTSD==0 .OR. MOVED)NTIME0=NTSD
       DTMOVE=NTSD-NTIME0                    ! TIME INTERVAL SINCE THE PREVIOUS MOVE
+      write(0,*) 'test 9 at stats_for_move'
 !
       IF(DTMOVE .LE. 45 .OR. PGR .LE. 200.)THEN
         WRITE(0,*)'SUSPEND MOTION: SMALL DTMOVE OR WEAK PGF:','DTMOVE=',DTMOVE,'PGR=',PGR

@@ -317,7 +317,7 @@ state    real    z              ijk     dyn_em      1         -     -         " 
 state    real    a_z            ijk     misc        1         Z     -         " " " " " "
 state    real    g_z            ijk     misc        1         Z     -         " " " " " "
 i1       real    mu_3d          ijk     dyn_em      1         -                                          
-i1       real    z_at_w         ijk     dyn_em      1         Z 
+state    real    z_at_w         ijk     dyn_em      1         Z 
 state    real    cfn            -       misc      -         -     irh       "cfn"    "extrapolation constant"  ""
 state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
 state    integer step_number    -       misc      -         -     ir        "step_number"  ""
@@ -1069,31 +1069,30 @@ state    real  T_NDG_OLD         ijkf     fdda3d      1         -      igr      
 state    real  Q_NDG_OLD         ijkf     fdda3d      1         -      igr      "Q_NDG_OLD"               "OLD WATER VAPOR MIX RATIO FOR FDDA GRID NUDGING"  "kg/kg"
 state    real  PH_NDG_OLD        ijkf     fdda3d      1         Z      igr      "PH_NDG_OLD"              "OLD PERT GEOPOTENTIAL FOR FDDA GRID NUDGING"  "kg/kg"
 state    real    -               ijvf     fdda2d      1         Z     -    -
-state    real  MU_NDG_NEW        ijvf     fdda2d      1         Z      igr      "MU_NDG_NEW"              "NEW PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
-state    real  MU_NDG_OLD        ijvf     fdda2d      1         Z      igr      "MU_NDG_OLD"              "OLD PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
-state    real    -               ivjf    sfdda2d      1         -     -    -
-state    real  U10_NDG_OLD       ivjf    sfdda2d      1         X      i9r      "U10_NDG_OLD"             "OLD U10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  U10_NDG_NEW       ivjf    sfdda2d      1         X      i9r      "U10_NDG_NEW"             "NEW U10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  V10_NDG_OLD       ivjf    sfdda2d      1         Y      i9r      "V10_NDG_OLD"             "OLD V10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  V10_NDG_NEW       ivjf    sfdda2d      1         Y      i9r      "V10_NDG_NEW"             "NEW V10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  T2_NDG_OLD        ivjf    sfdda2d      1         -      i9r      "T2_NDG_OLD"              "OLD T2 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  T2_NDG_NEW        ivjf    sfdda2d      1         -      i9r      "T2_NDG_NEW"              "NEW T2 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  TH2_NDG_OLD       ivjf    sfdda2d      1         -      i9r      "TH2_NDG_OLD"             "OLD TH2 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  TH2_NDG_NEW       ivjf    sfdda2d      1         -      i9r      "TH2_NDG_NEW"             "NEW TH2 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  Q2_NDG_OLD        ivjf    sfdda2d      1         -      i9r      "Q2_NDG_OLD"              "OLD Q2 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  Q2_NDG_NEW        ivjf    sfdda2d      1         -      i9r      "Q2_NDG_NEW"              "NEW Q2 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  RH_NDG_OLD        ivjf    sfdda2d      1         -      i9r      "RH_NDG_OLD"              "OLD RH FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  RH_NDG_NEW        ivjf    sfdda2d      1         -      i9r      "RH_NDG_NEW"              "NEW RH FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  PSL_NDG_OLD       ivjf    sfdda2d      1         -      i9r      "PSL_NDG_OLD"             "OLD PSL FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  PSL_NDG_NEW       ivjf    sfdda2d      1         -      i9r      "PSL_NDG_NEW"             "NEW PSL FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  PS_NDG_OLD        ivjf    sfdda2d      1         -      i9r      "PS_NDG_OLD"              "OLD PS FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  PS_NDG_NEW        ivjf    sfdda2d      1         -      i9r      "PS_NDG_NEW"              "NEW PS FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  TOB_NDG_OLD       ivjf    sfdda2d      1         -      i9r      "TOB_NDG_OLD"             "OLD TOB FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  ODIS_NDG_OLD      ivjf    sfdda2d      1         -      i9r      "ODIS_NDG_OLD"            "OLD ODIS FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  TOB_NDG_NEW       ivjf    sfdda2d      1         -      i9r      "TOB_NDG_NEW"             "NEW TOB FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  ODIS_NDG_NEW      ivjf    sfdda2d      1         -      i9r      "ODIS_NDG_NEW"            "NEW ODIS FOR SURFACE FDDA GRID NUDGING"  "m s-1"
-state    real  SN_NDG_NEW        ivjf    sfdda2d      1         -      i9r      "SN_NDG_NEW"               "NEW Snow Depth "  "m"
-state    real  SN_NDG_OLD        ivjf    sfdda2d      1         -      i9r      "SN_NDG_OLD"               "OLD Snow Depth"  "m"
+state    real  MU_NDG_NEW        ivjf     fdda2d      1         -      igr      "MU_NDG_NEW"              "NEW PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+state    real  MU_NDG_OLD        ivjf     fdda2d      1         -      igr      "MU_NDG_OLD"              "OLD PERT COLUMN DRY MASS FOR FDDA GRID NUDGING"  "Pa"
+state    real  U10_NDG_OLD       ij         misc      1         X      i9r      "U10_NDG_OLD"             "OLD U10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
+state    real  U10_NDG_NEW       ij         misc      1         X      i9r      "U10_NDG_NEW"             "NEW U10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
+state    real  V10_NDG_OLD       ij         misc      1         Y      i9r      "V10_NDG_OLD"             "OLD V10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
+state    real  V10_NDG_NEW       ij         misc      1         Y      i9r      "V10_NDG_NEW"             "NEW V10 FOR SURFACE FDDA GRID NUDGING"  "m s-1"
+state    real  T2_NDG_OLD        ij         misc      1         -      i9r      "T2_NDG_OLD"              "OLD T2 FOR SURFACE FDDA GRID NUDGING"  "K"
+state    real  T2_NDG_NEW        ij         misc      1         -      i9r      "T2_NDG_NEW"              "NEW T2 FOR SURFACE FDDA GRID NUDGING"  "K"
+state    real  TH2_NDG_OLD       ij         misc      1         -      i9r      "TH2_NDG_OLD"             "OLD TH2 FOR SURFACE FDDA GRID NUDGING"  "K"
+state    real  TH2_NDG_NEW       ij         misc      1         -      i9r      "TH2_NDG_NEW"             "NEW TH2 FOR SURFACE FDDA GRID NUDGING"  "K"
+state    real  Q2_NDG_OLD        ij         misc      1         -      i9r      "Q2_NDG_OLD"              "OLD Q2 FOR SURFACE FDDA GRID NUDGING"  "kg kg-1"
+state    real  Q2_NDG_NEW        ij         misc      1         -      i9r      "Q2_NDG_NEW"              "NEW Q2 FOR SURFACE FDDA GRID NUDGING"  "kg kg-1"
+state    real  RH_NDG_OLD        ij         misc      1         -      i9r      "RH_NDG_OLD"              "OLD RH FOR SURFACE FDDA GRID NUDGING"  "%"
+state    real  RH_NDG_NEW        ij         misc      1         -      i9r      "RH_NDG_NEW"              "NEW RH FOR SURFACE FDDA GRID NUDGING"  "%"
+state    real  PSL_NDG_OLD       ij         misc      1         -      i9r      "PSL_NDG_OLD"             "OLD PSL FOR SURFACE FDDA GRID NUDGING"  "Pa"
+state    real  PSL_NDG_NEW       ij         misc      1         -      i9r      "PSL_NDG_NEW"             "NEW PSL FOR SURFACE FDDA GRID NUDGING"  "Pa"
+state    real  PS_NDG_OLD        ij         misc      1         -      i9r      "PS_NDG_OLD"              "OLD PS FOR SURFACE FDDA GRID NUDGING"  "Pa"
+state    real  PS_NDG_NEW        ij         misc      1         -      i9r      "PS_NDG_NEW"              "NEW PS FOR SURFACE FDDA GRID NUDGING"  "Pa"
+state    real  TOB_NDG_OLD       ij         misc      1         -      i9r      "TOB_NDG_OLD"             "OLD TOB FOR SURFACE FDDA GRID NUDGING"  ""
+state    real  ODIS_NDG_OLD      ij         misc      1         -      i9r      "ODIS_NDG_OLD"            "OLD ODIS FOR SURFACE FDDA GRID NUDGING"  "km"
+state    real  TOB_NDG_NEW       ij         misc      1         -      i9r      "TOB_NDG_NEW"             "NEW TOB FOR SURFACE FDDA GRID NUDGING"  ""
+state    real  ODIS_NDG_NEW      ij         misc      1         -      i9r      "ODIS_NDG_NEW"            "NEW ODIS FOR SURFACE FDDA GRID NUDGING"  "km"
+state    real  SN_NDG_NEW        ij         misc      1         -      i9r      "SN_NDG_NEW"              "NEW Snow Depth"  "m"
+state    real  SN_NDG_OLD        ij         misc      1         -      i9r      "SN_NDG_OLD"              "OLD Snow Depth"  "m"
 
 # flag for nest movement
 state  logical moved            -       misc        1         -     -          
@@ -1884,7 +1883,7 @@ package   bepscheme      sf_urban_physics==2         -             state:a_u_bep
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
-package   pxlsmscheme    sf_surface_physics==7       -             sfdda2d:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
+package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
@@ -1902,8 +1901,7 @@ package   g3scheme       cu_physics==5               -             state:cugd_qv
 package   kfscheme       cu_physics==99              -             -
 
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
-package   psusfddagd     grid_sfdda==1               -             sfdda2d:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,tob_ndg_old,odis_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_new,odis_ndg_new
-
+package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new
 package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
 
 package   restofwrf      use_wps_input==0            -             -
@@ -1965,7 +1963,7 @@ halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
-halo      HALO_EM_FDDA_SFC dyn_em 4:sfdda2d
+halo      HALO_EM_FDDA_SFC dyn_em 48:z,z_at_w,pblh,regime,znt,odis_ndg_old,odis_ndg_new
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
 halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2

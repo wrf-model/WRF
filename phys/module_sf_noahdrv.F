@@ -549,7 +549,9 @@ CONTAINS
 !*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
           IF((XLAND(I,J)-1.5).GE.0.)THEN
 ! check sea-ice point
+#if 0
             IF( XICE(I,J).GE. XICE_THRESHOLD .and. IPRINT ) PRINT*, ' sea-ice at water point, I=',I,'J=',J
+#endif
 !***   Open Water Case
             SMSTAV(I,J)=1.0
             SMSTOT(I,J)=1.0
@@ -690,8 +692,10 @@ CONTAINS
           IF(VEGTYP.EQ.26) SHDFAC=0.0000
           IF(VEGTYP.EQ.27) SHDFAC=0.0000
           IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN
+#if 0
          IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
          IF(IPRINT)PRINT*,i,j,'RESET SOIL in surfce.F'
+#endif
             SOILTYP=7
           ENDIF
         IF (ICE /= 0) THEN
@@ -769,6 +773,7 @@ CONTAINS
            	 ENDIF
            ENDIF
 
+#if 0
           IF(IPRINT) THEN
 !
        print*, 'BEFORE SFLX, in Noahlsm_driver'
@@ -781,7 +786,7 @@ CONTAINS
          'SHMIN',SHMIN, 'ALBBRD',ALBBRD,'SNOALB1',SNOALB1,'TBOT',&
           TBOT, 'Z0BRD',Z0BRD, 'Z0K',Z0K, 'CMC',CMC, 'T1',T1,'STC',&
           STC, 'SMC',SMC, 'SWC',SWC,'SNOWHK',SNOWHK,'SNEQV',SNEQV,&
-          'ALBEDO',ALBEDO,'CHK',CHK,'ETA',ETA,'SHEAT',SHEAT,      &
+          'ALBEDOK',ALBEDOK,'CHK',CHK,'ETA',ETA,'SHEAT',SHEAT,      &
           'ETA_KINEMATIC',ETA_KINEMATIC, 'FDOWN',FDOWN,'EC',EC,   &
           'EDIR',EDIR,'ET',ET,'ETT',ETT,'ESNOW',ESNOW,'DRIP',DRIP,&
           'DEW',DEW,'BETA',BETA,'ETP',ETP,'SSOIL',SSOIL,'FLX1',FLX1,&
@@ -792,6 +797,7 @@ CONTAINS
           'SOILM',SOILM,'Q1',Q1,'SMCWLT',SMCWLT,'SMCDRY',SMCDRY,&
           'SMCREF',SMCREF,'SMCMAX',SMCMAX,'NROOT',NROOT
            endif
+#endif
 
 
           IF (rdlai2d) THEN
@@ -823,7 +829,7 @@ CONTAINS
 
        lai(i,j) = xlai
 
-
+#if 0
           IF(IPRINT) THEN
 
        print*, 'AFTER SFLX, in Noahlsm_driver'
@@ -836,7 +842,7 @@ CONTAINS
          'SHDMIN',SHMIN, 'ALBBRD',ALBBRD,'SNOALB',SNOALB1,'TBOT',&
           TBOT, 'Z0BRD',Z0BRD, 'Z0K',Z0K, 'CMC',CMC, 'T1',T1,'STC',&
           STC, 'SMC',SMC, 'SWc',SWC,'SNOWHK',SNOWHK,'SNEQV',SNEQV,&
-          'ALBEDO',ALBEDOK,'CHK',CHK,'ETA',ETA,'SHEAT',SHEAT,      &
+          'ALBEDOK',ALBEDOK,'CHK',CHK,'ETA',ETA,'SHEAT',SHEAT,      &
           'ETA_KINEMATIC',ETA_KINEMATIC, 'FDOWN',FDOWN,'EC',EC,   &
           'EDIR',EDIR,'ET',ET,'ETT',ETT,'ESNOW',ESNOW,'DRIP',DRIP,&
           'DEW',DEW,'BETA',BETA,'ETP',ETP,'SSOIL',SSOIL,'FLX1',FLX1,&
@@ -847,6 +853,7 @@ CONTAINS
           'SOILM',SOILM,'Q1',Q1,'SMCWLT',SMCWLT,'SMCDRY',SMCDRY,&
           'SMCREF',SMCREF,'SMCMAX',SMCMAX,'NROOT',NROOT
            endif
+#endif
 
 !***  UPDATE STATE VARIABLES
           CANWAT(I,J)=CMC
@@ -984,7 +991,7 @@ CONTAINS
                        U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
                        UST_URB)                                           !O
 
-
+#if 0
           IF(IPRINT) THEN
 
        print*, 'AFTER CALL URBAN'
@@ -1009,6 +1016,7 @@ CONTAINS
          'U10_URB',U10_URB,'V10_URB',V10_URB,'TH2_URB',TH2_URB,      &
           'Q2_URB',Q2_URB,'CHS_URB',CHS_URB,'CHS2_URB',CHS2_URB
            endif
+#endif
 
             TS_URB2D(I,J) = TS_URB
 
@@ -1021,6 +1029,7 @@ CONTAINS
             TSK(I,J) = FRC_URB2D(I,J)*TS_URB+(1-FRC_URB2D(I,J))*T1            ![K]
             QSFC(I,J)= FRC_URB2D(I,J)*QS_URB+(1-FRC_URB2D(I,J))*Q1            ![-]
 
+#if 0
     IF(IPRINT)THEN
 
     print*, ' FRC_URB2D', FRC_URB2D,                        &
@@ -1034,7 +1043,7 @@ CONTAINS
     'TS_URB',TS_URB,'T1',T1,'TSK(I,J)',TSK(I,J),          &
     'QS_URB',QS_URB,'Q1',Q1,'QSFC(I,J)',QSFC(I,J)
      endif
-
+#endif
 
 
 

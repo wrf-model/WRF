@@ -585,6 +585,7 @@
            ( switch .EQ. aux_hist9_only  ) .OR. &
            ( switch .EQ. aux_hist10_only ) .OR. &
            ( switch .EQ. aux_hist11_only ) .OR. &
+           ( (switch .EQ. model_input_only) .AND. (program_name(1:7) .NE. 'REAL_EM') ) .OR. &
            ( switch .EQ. restart_only    ) ) THEN
 
          ! This flag sets the switch which defines the topography as the original

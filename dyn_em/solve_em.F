@@ -542,7 +542,7 @@ BENCH_END(set_phys_bc_tim)
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
                              , scalar , scalar_tend             &
-                             , fdda3d, fdda2d, sfdda2d          &
+                             , fdda3d, fdda2d                   &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
@@ -554,7 +554,7 @@ BENCH_END(set_phys_bc_tim)
                              , pi_phy , p_phy , t_phy           &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
-                             , z_at_w , mu_3d                   &
+                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -581,7 +581,7 @@ BENCH_END(set_phys_bc_tim)
                              , pi_phy , p_phy , t_phy           &
                              , u_phy , v_phy                    &
                              , dz8w , p8w , t8w , rho_phy , rho &
-                             , z_at_w , mu_3d                   &
+                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -2694,7 +2694,7 @@ BENCH_START(moist_physics_prep_tim)
        CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, rho,                &
                                    grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
                                    grid%ph_2, grid%phb, th_phy, pi_phy, p_phy, &
-                                   grid%z, z_at_w, dz8w,                  &
+                                   grid%z, grid%z_at_w, dz8w,                  &
                                    dtm, grid%h_diabatic,                  &
                                    config_flags,grid%fnm, grid%fnp,            &
                                    ids, ide, jds, jde, kds, kde,     &

@@ -11,7 +11,7 @@ CONTAINS
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
                              , scalar , scalar_tend             &
-                             , fdda3d, fdda2d, sfdda2d          &
+                             , fdda3d, fdda2d                   &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
@@ -21,7 +21,7 @@ CONTAINS
                              , cu_act_flag , hol , th_phy        &
                              , pi_phy , p_phy , t_phy , u_phy , v_phy     &
                              , dz8w , p8w , t8w , rho_phy , rho           &
-                             , z_at_w , mu_3d                   &
+                             , mu_3d                            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -74,7 +74,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
     REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
-    REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_sfdda2d),INTENT(INOUT)      :: sfdda2d
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
@@ -95,7 +94,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: z_at_w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: mu_3d
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
@@ -164,7 +162,6 @@ BENCH_END(init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
 #     include "HALO_EM_PHYS_A.inc"
-#     include "HALO_EM_FDDA_SFC.inc"
 #endif
 
       !$OMP PARALLEL DO   &
@@ -178,7 +175,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         mu_3d, rho,                             &
                         th_phy, p_phy, pi_phy, u_phy, v_phy,    &
-                        p8w, t_phy, t8w, grid%z, z_at_w,             &
+                        p8w, t_phy, t8w, grid%z, grid%z_at_w,             &
                         dz8w, grid%fnm, grid%fnp,                         &
                         grid%rthraten,                               &
                         grid%rthblten, grid%rublten, grid%rvblten,             &
@@ -439,12 +436,12 @@ BENCH_START(surf_driver_tim)
      &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
      &        ,PXLSM_SOIL_NUDGE=config_flags%grid_fdda                    &   ! P-X LSM
            ! Optional PX LSM nudging
-     &        ,t2_ndg_old=sfdda2d(ims,1,jms,P_t2_ndg_old)                  &
-     &        ,q2_ndg_old=sfdda2d(ims,1,jms,P_q2_ndg_old)                  &
-     &        ,t2_ndg_new=sfdda2d(ims,1,jms,P_t2_ndg_new)                  &
-     &        ,q2_ndg_new=sfdda2d(ims,1,jms,P_q2_ndg_new)                  &
-     &        ,sn_ndg_old=sfdda2d(ims,1,jms,P_sn_ndg_old)                  &
-     &        ,sn_ndg_new=sfdda2d(ims,1,jms,P_sn_ndg_new)                  &
+     &        ,t2_ndg_old=grid%t2_ndg_old                  &
+     &        ,q2_ndg_old=grid%q2_ndg_old                  &
+     &        ,t2_ndg_new=grid%t2_ndg_new                  &
+     &        ,q2_ndg_new=grid%q2_ndg_new                  &
+     &        ,sn_ndg_old=grid%sn_ndg_old                  &
+     &        ,sn_ndg_new=grid%sn_ndg_new                  &
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
@@ -567,7 +564,7 @@ BENCH_START(fire_driver_tim)
             ,sids,side, sjds,sjde                        &
             ,sims,sime, sjms,sjme                        &
             ,sips,sipe, sjps,sjpe                        &
-            ,rho,z_at_w,dz8w)
+            ,rho,grid%z_at_w,dz8w)
         endif
 
 BENCH_END(fire_driver_tim)
@@ -668,7 +665,7 @@ BENCH_END(cu_driver_tim)
      &             ,v_upstream_x_tend=grid%v_upstream_x_tend              &
      &             ,v_upstream_y=grid%v_upstream_y                        &
      &             ,v_upstream_y_tend=grid%v_upstream_y_tend              &
-     &             ,z=grid%z,z_at_w=z_at_w                                &
+     &             ,z=grid%z,z_at_w=grid%z_at_w                           &
      &             ,th=th_phy, qv=moist(ims,kms,jms,P_QV)                 &
      &             ,u=u_phy, v=v_phy                                      &
      &             ,thten=grid%rthblten, qvten=grid%rqvblten              &
@@ -679,6 +676,9 @@ BENCH_END(cu_driver_tim)
      &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &
      &              )
 
+#ifdef DM_PARALLEL
+#     include "HALO_EM_FDDA_SFC.inc"
+#endif
       CALL wrf_debug ( 200 , ' call fddagd_driver' )
 
 BENCH_START(fdda_driver_tim)
@@ -702,7 +702,7 @@ BENCH_START(fdda_driver_tim)
                   u3d=grid%u_2,v3d=grid%v_2,th_phy=th_phy,                          &
                   ph=grid%ph_2,rho=rho,moist=moist,                                 &
                   p_phy=p_phy,pi_phy=pi_phy,p8w=p8w,t_phy=t_phy,                    &
-                  dz8w=dz8w,z=grid%z,z_at_w=z_at_w,                                 &
+                  dz8w=dz8w,z=grid%z,z_at_w=grid%z_at_w,                            &
                   grid=grid,config_flags=config_flags,dx=grid%DX,n_moist=num_moist, &
                   STEPFG=grid%STEPFG,                                               &
                   pblh=grid%pblh,ht=grid%ht,REGIME=grid%regime,ZNT=grid%znt         &
@@ -713,26 +713,26 @@ BENCH_START(fdda_driver_tim)
                    ,KTS=k_start, KTE=min(k_end,kde-1)                               &
                    , num_tiles=grid%num_tiles,                                      &
                    u10=grid%u10, v10=grid%v10, th2=grid%th2, q2=grid%q2,            &
-                   u10_ndg_old=sfdda2d(ims,1,jms,P_u10_ndg_old),                    &
-                   v10_ndg_old=sfdda2d(ims,1,jms,P_v10_ndg_old),                    &
-                   t2_ndg_old=sfdda2d(ims,1,jms,P_t2_ndg_old),                      &
-                   th2_ndg_old=sfdda2d(ims,1,jms,P_th2_ndg_old),                    &
-                   q2_ndg_old=sfdda2d(ims,1,jms,P_q2_ndg_old),                      &
-                   rh_ndg_old=sfdda2d(ims,1,jms,P_rh_ndg_old),                      &
-                   psl_ndg_old=sfdda2d(ims,1,jms,P_psl_ndg_old),                    &
-                   ps_ndg_old=sfdda2d(ims,1,jms,P_ps_ndg_old),                      &
-                   tob_ndg_old=sfdda2d(ims,1,jms,P_tob_ndg_old),                    &
-                   odis_ndg_old=sfdda2d(ims,1,jms,P_odis_ndg_old),                  &
-                   u10_ndg_new=sfdda2d(ims,1,jms,P_u10_ndg_new),                    &
-                   v10_ndg_new=sfdda2d(ims,1,jms,P_v10_ndg_new),                    &
-                   t2_ndg_new=sfdda2d(ims,1,jms,P_t2_ndg_new),                      &
-                   th2_ndg_new=sfdda2d(ims,1,jms,P_th2_ndg_New),                    &
-                   q2_ndg_new=sfdda2d(ims,1,jms,P_q2_ndg_new),                      &
-                   rh_ndg_new=sfdda2d(ims,1,jms,P_rh_ndg_new),                      &
-                   psl_ndg_new=sfdda2d(ims,1,jms,P_psl_ndg_new),                    &
-                   ps_ndg_new=sfdda2d(ims,1,jms,P_ps_ndg_new),                      &
-                   tob_ndg_new=sfdda2d(ims,1,jms,P_tob_ndg_new),                    &
-                   odis_ndg_new=sfdda2d(ims,1,jms,P_odis_ndg_new)                   &
+                   u10_ndg_old=grid%u10_ndg_old,                    &
+                   v10_ndg_old=grid%v10_ndg_old,                    &
+                   t2_ndg_old=grid%t2_ndg_old,                      &
+                   th2_ndg_old=grid%th2_ndg_old,                    &
+                   q2_ndg_old=grid%q2_ndg_old,                      &
+                   rh_ndg_old=grid%rh_ndg_old,                      &
+                   psl_ndg_old=grid%psl_ndg_old,                    &
+                   ps_ndg_old=grid%ps_ndg_old,                      &
+                   tob_ndg_old=grid%tob_ndg_old,                                    &
+                   odis_ndg_old=grid%odis_ndg_old,                                  &
+                   u10_ndg_new=grid%u10_ndg_new,                    &
+                   v10_ndg_new=grid%v10_ndg_new,                    &
+                   t2_ndg_new=grid%t2_ndg_new,                      &
+                   th2_ndg_new=grid%th2_ndg_new,                    &
+                   q2_ndg_new=grid%q2_ndg_new,                      &
+                   rh_ndg_new=grid%rh_ndg_new,                      &
+                   psl_ndg_new=grid%psl_ndg_new,                    &
+                   ps_ndg_new=grid%ps_ndg_new,                      &
+                   tob_ndg_new=grid%tob_ndg_new,                                    &
+                   odis_ndg_new=grid%odis_ndg_new                                   &
                    ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe               &
                    ,IMSX=imsx,IMEX=imex,JMSX=jmsx,JMEX=jmex,KMSX=kmsx,KMEX=kmex     &
                    ,IPSX=ipsx,IPEX=ipex,JPSX=jpsx,JPEX=jpex,KPSX=kpsx,KPEX=kpex     &

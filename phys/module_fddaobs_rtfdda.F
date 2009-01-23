@@ -2439,7 +2439,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     do n=1,prt_max
        pnx = obs(n)
        if(pnx.ne.-999) then
-           write(6,'(2x,i7,3f8.3,2f9.3,,2x,f9.3,2x,f9.3,3x,f6.2)')    &
+           write(6,'(2x,i7,3f8.3,2f9.3,2x,f9.3,2x,f9.3,3x,f6.2)')    &
                pnx,rio(pnx)-.5,rjo(pnx)-.5,rko(pnx),lat(n),lon(n),    &
                mlat(n),mlon(n),timeob(pnx)
 

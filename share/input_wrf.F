@@ -491,7 +491,8 @@
 !
       SELECT CASE ( switch )
         CASE ( model_input_only, aux_model_input1_only, aux_model_input2_only,       &
-               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only, aux_model_input10_only )
+               aux_model_input3_only, aux_model_input4_only, aux_model_input5_only,  &
+               aux_model_input9_only, aux_model_input10_only )
 #ifdef WRF_CHEM
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
               ((switch.eq.aux_model_input4_only) .or. (switch.eq.aux_model_input5_only) .or. &

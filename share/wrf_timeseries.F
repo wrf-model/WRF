@@ -269,8 +269,8 @@ SUBROUTINE calc_ts( grid )
             ! Output from the lowest model computational level:
             !
 #if (EM_CORE == 1)
-            earth_u = grid%u_2(ix,1,iy)*grid%cosa(ix,iy)+grid%v_2(ix,1,iy)*grid%sina(ix,iy)
-            earth_v = grid%v_2(ix,1,iy)*grid%cosa(ix,iy)-grid%u_2(ix,1,iy)*grid%sina(ix,iy)
+            earth_u = grid%u_2(ix,1,iy)*grid%cosa(ix,iy)-grid%v_2(ix,1,iy)*grid%sina(ix,iy)
+            earth_v = grid%v_2(ix,1,iy)*grid%cosa(ix,iy)+grid%u_2(ix,1,iy)*grid%sina(ix,iy)
             output_t = grid%t_2(ix,1,iy)
 #else
             earth_u = grid%u(ix,1,iy)
@@ -285,8 +285,8 @@ SUBROUTINE calc_ts( grid )
             ! Output at 2-m and 10-m diagnostic levels:
             !
 #if (EM_CORE == 1)
-            earth_u = grid%u10(ix,iy)*grid%cosa(ix,iy)+grid%v10(ix,iy)*grid%sina(ix,iy)
-            earth_v = grid%v10(ix,iy)*grid%cosa(ix,iy)-grid%u10(ix,iy)*grid%sina(ix,iy)
+            earth_u = grid%u10(ix,iy)*grid%cosa(ix,iy)-grid%v10(ix,iy)*grid%sina(ix,iy)
+            earth_v = grid%v10(ix,iy)*grid%cosa(ix,iy)+grid%u10(ix,iy)*grid%sina(ix,iy)
             output_q = grid%q2(ix,iy)
 #else
             earth_u = grid%u10(ix,iy)

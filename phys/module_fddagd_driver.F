@@ -347,8 +347,8 @@ CONTAINS
          .AND. config_flags%bl_pbl_physics /= 6 &
          .AND. config_flags%bl_pbl_physics /= 7 &
          .AND. config_flags%bl_pbl_physics /= 99 ) THEN
-             DO j=j_start(ij),j_end(ij)
-             DO i=i_start(ij),i_end(ij)
+             DO j=MAX(j_start(ij)-1,jds),j_end(ij)
+             DO i=MAX(i_start(ij)-1,ids),i_end(ij)
                IF( pblh(i,j) > z_at_w(i,1,j)-ht(i,j) ) THEN
                  regime(i,j) = 4.0
                ELSE

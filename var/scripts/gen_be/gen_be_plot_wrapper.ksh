@@ -9,29 +9,21 @@
 #
 #                             Y.-R. Guo  06/16/2008
 #-----------------------------------------------------------------------
-export NCARG_ROOT=/karri/local/ncl-4.2.0.a034
+export NCARG_ROOT=/usr/local/ncarg
 
 #[1] Define job by overriding default environment variables:
 
-#export RUN_GEN_BE_DIAGS=true
-#export RUN_GEN_BE_DIAGS_READ=true
-#export RUN_GEN_BE_MULTICOV=true
-
-export WRFVAR_DIR=/karri/users/xinzhang/support/WRFDA
-export BUILD_DIR=$WRFVAR_DIR/var/da
+export WRFVAR_DIR=/wrfhelp/SOURCE_CODE/WRFDA
 export GEN_BE_PLOT=${WRFVAR_DIR}/var/graphics/ncl/gen_be
 
 export GRAPHIC_WORKS=x11
 
-#CWB 45km:
-
 export NUM_WE=44 # 1 point less than stagger points  45
 export NUM_SN=44 # 1 point less than stagger points  45
 export NUM_LEVELS=27 # 1 point less than stagger points 28
-export REGION=con200
-export EXPT=expt
-export DAT_DIR=/karri/users/xinzhang/support
-export BE_DIR=$DAT_DIR/$REGION/$EXPT/gen_be5/working
+export RESOLUTION=200.0  # km
+export REGION=con200     # only for naming output purpose
+export BE_DIR=/data1/class13/test/gen_be5/working
 export BE_NROW=$NUM_LEVELS
 
 #[2] Plot gen_be

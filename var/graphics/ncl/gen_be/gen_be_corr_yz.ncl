@@ -44,7 +44,7 @@ begin
    ;=================================================;
    ; PLOT 2
    ;=================================================;
-   wks  = gsn_open_wks(works,"gen_be_corr_yz")    ; open a ncgm file
+   wks  = gsn_open_wks(works,"gen_be_corr_yz_"+region)    ; open a ncgm file
    gsn_define_colormap(wks,"gui_default")  ; choose a colormap
 
    res                     = True          ; plot mods desired

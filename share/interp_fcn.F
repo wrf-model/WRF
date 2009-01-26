@@ -53,6 +53,7 @@
      REAL psca(cims:cime,cjms:cjme,nri*nrj)
      LOGICAL icmask( cims:cime, cjms:cjme )
      INTEGER i,j,k
+     INTEGER nrio2, nrjo2
 #endif
 
      ! Iterate over the ND tile and compute the values
@@ -71,6 +72,9 @@
        njoff = nrj
      ENDIF
 
+     nrio2 = nri/2
+     nrjo2 = nrj/2
+
      nfx = nri * nrj
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( i,j,k,ni,nj,ci,cj,ip,jp,nk,ck,nf,icmask,psca )
@@ -78,10 +82,10 @@
         icmask = .FALSE.
         DO nf = 1,nfx
            DO j = cjms,cjme
-              nj = (j-jpos) * nrj + ( nrj / 2 + 1 )  ! j point on nest
+              nj = (j-jpos) * nrj + ( nrjo2 + 1 )  ! j point on nest
               DO i = cims,cime
-                ni = (i-ipos) * nri + ( nri / 2 + 1 )    ! i point on nest
-                if ( ni .ge. nits-nioff-1 .and. ni .le. nite+nioff+1 .and. nj .ge. njts-njoff-1 .and. nj .le. njte+njoff+1 ) then
+                ni = (i-ipos) * nri + ( nrio2 + 1 )    ! i point on nest
+                if ( ni .ge. nits-nioff-nrio2 .and. ni .le. nite+nioff+nrio2 .and. nj .ge. njts-njoff-nrjo2 .and. nj .le. njte+njoff+nrjo2 ) then
 !                 if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
 !                   icmask( i, j ) = .TRUE.
 !                 endif

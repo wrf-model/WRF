@@ -171,7 +171,8 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
   char vdims[MAX_VDIMS][2][80] ;
   char s[NAMELEN], e[NAMELEN] ;
   int vdimcurs ;
-  int maxstenwidth, stenwidth ;
+  int maxstenwidth_int, stenwidth ;
+  char maxstenwidth[NAMELEN] ;
   FILE * fp ;
   FILE * fpcall ;
   FILE * fpsub ;
@@ -235,7 +236,7 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
       continue ; 
     }
     /* get maximum stencil width */
-    maxstenwidth = 0 ;
+    maxstenwidth_int = 0 ;
     strcpy( tmp, p->comm_define ) ;
     t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
     while ( t1 != NULL )
@@ -243,6 +244,11 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
       strcpy( tmp2 , t1 ) ;
       if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
        { fprintf(stderr,"unparseable description for halo %s\n", commname ) ; exit(1) ; }
+if ( !strcmp(t2,"SHW") ) {
+   stenwidth = -99 ;
+   maxstenwidth_int = -99 ;   /* use a run-time computed stencil width based on nest ratio */
+   break ;                /* note that SHW is set internally by gen_shift, it should never be used in a Registry file */
+} else {
       stenwidth = atoi (t2) ;
       if ( stenwidth == 0 )
        { fprintf(stderr,"* unparseable description for halo %s\n", commname ) ; exit(1) ; }
@@ -254,9 +260,17 @@ gen_halos ( char * dirname , char * incname , node_t * halos )
       else if ( stenwidth == 168 ) stenwidth = 6 ;
       else
        { fprintf(stderr,"%s: unknown stenci description or just too big: %d\n", commname, stenwidth ) ; exit(1) ; }
-      if ( stenwidth > maxstenwidth ) maxstenwidth = stenwidth ;
+      if ( stenwidth > maxstenwidth_int ) maxstenwidth_int = stenwidth ;
+}
       t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
     }
+
+    if ( maxstenwidth_int == -99 ) {
+      sprintf(maxstenwidth,"grid%%parent_grid_ratio") ;
+    } else {
+      sprintf(maxstenwidth,"%d",maxstenwidth_int) ;
+    }
+
     print_warning(fp,fname) ;
 
 fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
@@ -373,18 +387,18 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
 
 /* generate the stencil init statement for Y transfer */
 #if 0
-fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxstenwidth,fname) ;
+fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxstenwidth,fname) ;
 #endif
     if ( subgrid != 0 ) {
       fprintf(fp,"IF ( grid%%sr_y .GT. 0 ) THEN\n") ;
     }
 
-    fprintf(fp,"CALL rsl_comm_iter_init(%d,jps,jpe)\n",maxstenwidth) ;
-    fprintf(fp,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %d , &\n", maxstenwidth ) ; 
+    fprintf(fp,"CALL rsl_comm_iter_init(%s,jps,jpe)\n",maxstenwidth) ;
+    fprintf(fp,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %s , &\n", maxstenwidth ) ; 
     fprintf(fp,"                         0 , jds,jde,jps,jpe, grid%%njds, grid%%njde , & \n" ) ;
     fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
     fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
-    fprintf(fp," CALL RSL_LITE_INIT_EXCH ( local_communicator, %d, 0, &\n",maxstenwidth) ;
+    fprintf(fp," CALL RSL_LITE_INIT_EXCH ( local_communicator, %s, 0, &\n",maxstenwidth) ;
     fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
     fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
     if ( n4d > 0 ) {
@@ -420,12 +434,12 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
     fprintf(fp,"ENDDO\n") ; 
 
 /* generate the stencil init statement for X transfer */
-    fprintf(fp,"CALL rsl_comm_iter_init(%d,ips,ipe)\n",maxstenwidth) ;
-    fprintf(fp,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %d , &\n", maxstenwidth ) ; 
+    fprintf(fp,"CALL rsl_comm_iter_init(%s,ips,ipe)\n",maxstenwidth) ;
+    fprintf(fp,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %s , &\n", maxstenwidth ) ; 
     fprintf(fp,"                         1 , ids,ide,ips,ipe, grid%%nids, grid%%nide , & \n" ) ;
     fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
     fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
-    fprintf(fp," CALL RSL_LITE_INIT_EXCH ( local_communicator, %d, 1, &\n",maxstenwidth) ;
+    fprintf(fp," CALL RSL_LITE_INIT_EXCH ( local_communicator, %s, 1, &\n",maxstenwidth) ;
     fprintf(fp,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
     fprintf(fp,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
     if ( n4d > 0 ) {
@@ -476,7 +490,7 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %d for Y %s')\n",maxste
   return(0) ;
 }
 
-gen_packs_halo ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   
+gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   
 {
   node_t * q ;
   node_t * dimd ;
@@ -531,7 +545,7 @@ fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
                 xdex = get_index_for_coord( q , COORD_X ) ;
                 ydex = get_index_for_coord( q , COORD_Y ) ;
 fprintf(fp," IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
-fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace),%d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
+fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace),%s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
                        packname, commname, varref , shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 if ( !strcmp( packname, "RSL_LITE_PACK_SWAP" ) ||
@@ -570,7 +584,7 @@ fprintf(fp,"ENDDO\n") ;
                   char s[256], e[256] ;
 
                   if      ( dimd->len_defined_how == DOMAIN_STANDARD ) {
-                    fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                    fprintf(fp,"CALL %s ( %s,&\n %s, %s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
                         packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     if ( q->subgrid == 0 ) {
@@ -592,7 +606,7 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                       sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
                       sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
                     }
-                    fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                    fprintf(fp,"CALL %s ( %s,&\n %s, %s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
                         packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     if ( q->subgrid == 0 ) {
@@ -607,7 +621,7 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                   }
                   else if ( dimd->len_defined_how == CONSTANT )
                   {
-                    fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                    fprintf(fp,"CALL %s ( %s,&\n %s, %s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
                         packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                     fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                     if ( q->subgrid == 0 ) {
@@ -626,7 +640,7 @@ fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%s
                 xdex = get_index_for_coord( q , COORD_X ) ;
                 ydex = get_index_for_coord( q , COORD_Y ) ;
                 fprintf(fp,"IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
-                fprintf(fp,"CALL %s ( %s,&\n %s, %d,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
+                fprintf(fp,"CALL %s ( %s,&\n %s, %s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n", 
                        packname, commname, varref, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
                 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
                 if ( q->subgrid == 0 ) {
@@ -1540,7 +1554,7 @@ int said_it2 = 0 ;
 
     Shift.next = NULL ;
     sprintf( Shift.use, "" ) ;
-    strcpy( Shift.comm_define, "48:" ) ;
+    strcpy( Shift.comm_define, "SHW:" ) ;
     strcpy( Shift.name , fname ) ;
     for ( p = Domain.fields ; p != NULL ; p = p->next ) {
       if (( p->node_kind & (FIELD | FOURD) ) && p->ndims >= 2 && ! p->boundary_array )

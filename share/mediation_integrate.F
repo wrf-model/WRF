@@ -333,19 +333,22 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
    TYPE (grid_config_rec_type)                :: nest_config_flags
 
-#if (EM_CORE == 1)
   ! Local
+   TYPE(WRFU_Time)        :: strt_time, cur_time
+   CHARACTER * 80         :: rstname , timestr
+   CHARACTER * 256        :: message
+   INTEGER                :: fid
+   INTEGER                :: ierr
+   INTEGER                :: i , j, rc
+   INTEGER                :: ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe
+
+#if (EM_CORE == 1)
 #ifdef MOVE_NESTS
    TYPE (WRFU_TimeInterval) :: interval, TimeSinceStart
    INTEGER :: vortex_interval , n
 #endif
-   INTEGER                                    :: idum1 , idum2 , fid, ierr
-   INTEGER                                    :: i , j, rc
-   INTEGER                                    :: ids , ide , jds , jde , kds , kde , &
-                                                 ims , ime , jms , jme , kms , kme , &
-                                                 ips , ipe , jps , jpe , kps , kpe
-   CHARACTER * 80         :: rstname , timestr
-   CHARACTER * 256        :: message
    INTEGER                :: save_itimestep ! This is a kludge, correct fix will 
                                             ! involve integrating the time-step
                                             ! counting into the time manager.
@@ -359,7 +362,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                          ,save_sfcrunoff          &
                                          ,save_udrunoff
 
-   TYPE(WRFU_Time)        :: strt_time, cur_time
 
    INTERFACE
      SUBROUTINE med_interp_domain ( parent , nest )
@@ -687,11 +689,6 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 !===================================================================================
 !  Added for the NMM core. This is gopal's doing.
 !===================================================================================
-  ! Local
-   INTEGER                  :: i,j,k,idum1 , idum2 , fid, ierr
-   INTEGER                  :: IDS,IDE,JDS,JDE,KDS,KDE   ! gopal
-   INTEGER                  :: IMS,IME,JMS,JME,KMS,KME
-   INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
 
    INTERFACE
 
@@ -712,14 +709,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                     DETA1,DETA2,             &
                                     IDS,IDE,JDS,JDE,KDS,KDE, &
                                     IMS,IME,JMS,JME,KMS,KME, &
-                                    ITS,ITE,JTS,JTE,KTS,KTE  )
+                                    IPS,IPE,JPS,JPE,KPS,KPE  )
 !
 
          USE MODULE_MODEL_CONSTANTS
          IMPLICIT NONE
          INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
          INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
-         INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+         INTEGER,    INTENT(IN   )                            :: IPS,IPE,JPS,JPE,KPS,KPE
          REAL,       INTENT(IN   )                            :: PDTOP,PTOP
          REAL, DIMENSION(KMS:KME),                 INTENT(IN) :: ETA1,ETA2,DETA1,DETA2
          REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN) :: FIS,PD,QSH
@@ -789,12 +786,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     KMS = parent%sm33
     KME = parent%em33
 
-    ITS = parent%sp31
-    ITE = parent%ep31
-    JTS = parent%sp32
-    JTE = parent%ep32
-    KTS = parent%sp33
-    KTE = parent%ep33
+    IPS = parent%sp31
+    IPE = parent%ep31
+    JPS = parent%sp32
+    JPE = parent%ep32
+    KPS = parent%sp33
+    KPE = parent%ep33
 
     CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
                              parent%PINT,parent%T,parent%Q,parent%CWM,      &
@@ -803,7 +800,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                              parent%DETA1,parent%DETA2,                             &
                              IDS,IDE,JDS,JDE,KDS,KDE,                                       &
                              IMS,IME,JMS,JME,KMS,KME,                                       &
-                             ITS,ITE,JTS,JTE,KTS,KTE                                        )
+                             IPS,IPE,JPS,JPE,KPS,KPE                                        )
 
 !  
 !   Set new terrain. Since some terrain adjustment is done within the interpolation calls
@@ -823,12 +820,12 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     KMS = nest%sm33
     KME = nest%em33
 
-    ITS = nest%sp31
-    ITE = nest%ep31
-    JTS = nest%sp32
-    JTE = nest%ep32
-    KTS = nest%sp33
-    KTE = nest%ep33
+    IPS = nest%sp31
+    IPE = nest%ep31
+    JPS = nest%sp32
+    JPE = nest%ep32
+    KPS = nest%sp33
+    KPE = nest%ep33
 
 
     CALL NEST_TERRAIN ( nest, config_flags )
@@ -839,8 +836,8 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     nest%KZMAX=KME
     parent%KZMAX=KME  ! just for safety
 
-    DO J = JTS, MIN(JTE,JDE-1)
-      DO I = ITS, MIN(ITE,IDE-1)
+    DO J = JPS, MIN(JPE,JDE-1)
+      DO I = IPS, MIN(IPE,IDE-1)
        nest%fis(I,J)=nest%hres_fis(I,J)
      ENDDO
     ENDDO
@@ -856,13 +853,35 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     nest%imask_ystag  = 0 
     nest%imask_xystag = 0 
 
-   CALL med_interp_domain( parent, nest )
+    CALL domain_clock_get( parent, start_time=strt_time, current_time=cur_time )
+
+    IF ( .not. ( config_flags%restart .AND. strt_time .EQ. cur_time ) ) THEN
+
+     CALL med_interp_domain( parent, nest )
+
+    ELSE
+
+     CALL domain_clock_get( nest, current_timestr=timestr )
+     CALL construct_filename2a ( rstname , config_flags%rst_inname , nest%id , 2 , timestr )
+
+     WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading'
+     CALL wrf_message ( message )
+     CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
+     CALL open_r_dataset ( fid , TRIM(rstname) , nest , nest_config_flags , "DATASET=RESTART", ierr )
+     IF ( ierr .NE. 0 ) THEN
+       WRITE( message , '("program wrf: error opening ",A32," for reading")') TRIM(rstname)
+       CALL WRF_ERROR_FATAL ( message )
+     ENDIF
+     CALL input_restart ( fid,   nest , nest_config_flags , ierr )
+     CALL close_dataset ( fid , nest_config_flags , "DATASET=RESTART" )
+
+    END IF
 
 !------------------------------------------------------------------------------
 !  set up constants (module_initialize_real.F for nested nmm domain)
 !-----------------------------------------------------------------------------
 
-    CALL med_init_domain_constants_nmm ( parent, nest )    
+    CALL med_init_domain_constants_nmm ( parent, nest )
 
 !--------------------------------------------------------------------------------------
 ! set some other initial fields, fill out halos, etc. 

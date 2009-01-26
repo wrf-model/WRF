@@ -2308,13 +2308,6 @@
          endif
 
 !+---+-----------------------------------------------------------------+
-      if( debug_flag .and. k.lt.32) then
-         if (k.eq.1) write(*,'13x,a') 'pnr_wau,       pnr_rcr,       pnr_rcg,       pnr_rcs,       pnr_rci,       pnr_gml,       pnr_sml,       pnr_rfz,       pnr_rev,       Nr'
-         write(*,'a, 10(1x,e13.6,1x)')                   'TEND-UPDT: ', &
-         pnr_wau(k), -pnr_rcr(k), -pnr_rcg(k), -pnr_rcs(k), -pnr_rci(k),&
-         pnr_gml(k), pnr_sml(k), -pnr_rfz(k), -pnr_rev(k), nr(k)
-      endif
-!+---+-----------------------------------------------------------------+
       enddo
 
 !+---+-----------------------------------------------------------------+

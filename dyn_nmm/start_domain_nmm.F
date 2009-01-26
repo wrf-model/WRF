@@ -129,9 +129,6 @@
       LOGICAL :: START_OF_SIMULATION
       LOGICAL :: LRESTART
 
-#ifndef WRF_NMM_NEST
-      LOGICAL :: MOVED = .FALSE.
-#endif
 
       integer :: jam,retval
       CHARACTER(LEN=255) :: message
@@ -169,6 +166,7 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
      &                       IMS,IME,JMS,JME,KMS,KME,                  &
@@ -1556,6 +1554,9 @@
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
 ! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
+#ifndef WRF_NMM_NEST
+      MOVED = .FALSE.
+#endif
 
       IF (GRID%RESTART) THEN
          LRESTART = GRID%RESTART

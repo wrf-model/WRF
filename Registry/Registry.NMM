@@ -121,6 +121,9 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 dimspec    q      -     constant=2600             c  # a little crude right now
 dimspec    v      -     constant=1             c  # a little crude right now
 
+# flag for nest movement
+state  logical moved       -     misc       1      -     -
+
 #
 # module_MASKS
 #

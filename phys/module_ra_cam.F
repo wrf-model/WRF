@@ -256,9 +256,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    fact1    = (doydatap - doymodel)/deltat
    fact2    = (doymodel - doydatam)/deltat
    co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
-!  print *, 'check ', nyrm,nyrp,doymodel,doydatam,doydatap,co2(nyrm),co2(nyrp),co2vmr,julday,julian,yr,xtime
-   print *, 'check ', julday,julian,yr,xtime,radt,co2vmr,nyrm,nyrp,doymodel,doydatam,doydatap
 
+   co2mmr=co2vmr*mwco2/mwdry
+print *,co2vmr, co2mmr, mwco2, mwdry, ' cam rad co2 calc: co2vmr, co2mmr, mwco2, mwdry'
+print *,yr, nyrm, nyrp, fact1, fact2, ' cam rad co2 calc: yr, nyrm, nyrp, fact1, fact2'
 !
 !===================================================
 ! Radiation computations

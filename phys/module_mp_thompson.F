@@ -27,7 +27,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 02 Nov 2008
+!..Last modified: 30 Jan 2009
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -81,7 +81,7 @@
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
       REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 1.E6
+      REAL, PARAMETER, PRIVATE:: gonv_max = 5.E6
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -161,7 +161,7 @@
       REAL, PARAMETER, PRIVATE:: D0c = 1.E-6
       REAL, PARAMETER, PRIVATE:: D0r = 50.E-6
       REAL, PARAMETER, PRIVATE:: D0s = 200.E-6
-      REAL, PARAMETER, PRIVATE:: D0g = 200.E-6
+      REAL, PARAMETER, PRIVATE:: D0g = 250.E-6
       REAL, PRIVATE:: D0i, xm0s, xm0g
 
 !..Lookup table dimensions
@@ -1341,9 +1341,12 @@
 !+---+-----------------------------------------------------------------+
       N0_min = gonv_max
       do k = kte, kts, -1
-         if (.not. L_qg(k)) CYCLE
-         N0_exp = 100.0*rho(k)/rg(k)
-         N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+!-GT     if (.not. L_qg(k)) CYCLE
+!-GT     N0_exp = 100.0*rho(k)/rg(k)
+!-GT     N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+         N0_exp = (gonv_max-gonv_min)*0.5D0                             &
+                * tanh((0.15E-3-rg(k))/0.15E-3)                         &
+                + (gonv_max+gonv_min)*0.5D0
          N0_min = MIN(N0_exp, N0_min)
          N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -1625,8 +1628,7 @@
                          + tnr_gacr(idx_g,idx_r1,idx_r)
             pnr_rcg(k) = MIN(DBLE(nr(k)*odts), pnr_rcg(k))
            else
-            prr_rcg(k) = tcg_racg(idx_g,idx_r1,idx_r) &
-                         + 0.5*tmg_gacr(idx_g,idx_r1,idx_r)
+            prr_rcg(k) = tcg_racg(idx_g,idx_r1,idx_r)
             prr_rcg(k) = MIN(DBLE(rg(k)*odts), prr_rcg(k))
             prg_rcg(k) = -prr_rcg(k)
            endif
@@ -1801,7 +1803,7 @@
            prr_sml(k) = prr_sml(k) + 4218.*olfus*tempc &
                                    * (prr_rcs(k)+prs_scw(k))
            prr_sml(k) = MIN(DBLE(rs(k)*odts), prr_sml(k))
-           pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.25*tempc)      ! RAIN2M
+           pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.50*tempc)      ! RAIN2M
            pnr_sml(k) = MIN(DBLE(smo0(k)*odts), pnr_sml(k))
 
            if (ssati(k).lt. 0.) then
@@ -1820,7 +1822,7 @@
                                    * (prr_rcg(k)+prg_gcw(k))
            prr_gml(k) = MIN(DBLE(rg(k)*odts), prr_gml(k))
            pnr_gml(k) = (N0_g(k) / (cgg(1)*am_g*N0_g(k)/rg(k))**oge1)   &   ! RAIN2M
-                      / rg(k) * prr_gml(k) * 10.0**(-0.125*tempc)
+                      / rg(k) * prr_gml(k) * 10.0**(-0.35*tempc)
 
            if (ssati(k).lt. 0.) then
             prg_gde(k) = C_cube*t1_subl*diffu(k)*ssati(k)*rvs &
@@ -2193,8 +2195,11 @@
       N0_min = gonv_max
       do k = kte, kts, -1
          if (.not. L_qg(k)) CYCLE
-         N0_exp = 100.0*rho(k)/rg(k)
-         N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+!-GT     N0_exp = 100.0*rho(k)/rg(k)
+!-GT     N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+         N0_exp = (gonv_max-gonv_min)*0.5D0                             &
+                * tanh((0.15E-3-rg(k))/0.15E-3)                         &
+                + (gonv_max+gonv_min)*0.5D0
          N0_min = MIN(N0_exp, N0_min)
          N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
@@ -2307,6 +2312,13 @@
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
 
+!+---+-----------------------------------------------------------------+
+!     if( debug_flag .and. k.lt.32) then
+!        if (k.eq.1) write(*,'13x,a') 'pnr_wau,       pnr_rcr,       pnr_rcg,       pnr_rcs,       pnr_rci,       pnr_gml,       pnr_sml,       pnr_rfz,       pnr_rev,       Nr'
+!        write(*,'(a, 10(1x,e13.6,1x))')                   'TEND-UPDT: ', &
+!        pnr_wau(k), -pnr_rcr(k), -pnr_rcg(k), -pnr_rcs(k), -pnr_rci(k),&
+!        pnr_gml(k), pnr_sml(k), -pnr_rfz(k), -pnr_rev(k), nr(k)
+!     endif
 !+---+-----------------------------------------------------------------+
       enddo
 
@@ -2613,7 +2625,8 @@
            else
             lami = cie(2)/D0s
            endif
-           ni1d(k) = MIN(250.D3, cig(1)*oig2*qi1d(k)/am_i*lami**bm_i)
+           ni1d(k) = MIN(cig(1)*oig2*qi1d(k)/am_i*lami**bm_i,           &
+                         250.D3/rho(k))
          endif
          qr1d(k) = qr1d(k) + qrten(k)*DT
          nr1d(k) = nr1d(k) + nrten(k)*DT
@@ -2685,8 +2698,11 @@
             enddo
 
             do i = 1, ntb_g
-               N0_exp = 100.0d0/r_g(i)
-               N0_exp = DMAX1(gonv_min*1.d0,DMIN1(N0_exp,gonv_max*1.d0))
+!-GT           N0_exp = 100.0d0/r_g(i)
+!-GT           N0_exp = DMAX1(gonv_min*1.d0,DMIN1(N0_exp,gonv_max*1.d0))
+               N0_exp = (gonv_max-gonv_min)*0.5D0                       &
+                      * tanh((0.15E-3-r_g(i))/0.15E-3)                  &
+                      + (gonv_max+gonv_min)*0.5D0
                lam_exp = (N0_exp*am_g*cgg(1)/r_g(i))**oge1
                lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
                N0_g = N0_exp/(cgg(2)*lam_exp) * lamg**cge(2)
@@ -3400,49 +3416,3 @@
 !+---+-----------------------------------------------------------------+
 END MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+
-!
-! MODIFICATIONS TO MAKE IN OTHER MODULES (pre v2.2 code only)
-!
-! Use this new code by changing the "THOMPSON" section of code found
-! in "module_microphysics_driver.F" with this section.  [Of course
-! remove the leading comment character that you see here.]
-!
-!       CASE (THOMPSON)
-!            CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson et al' )
-!            IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-!                 PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-!                 PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
-!                                          PRESENT ( QNI_CURR ).AND.  &
-!                 PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN  
-!            CALL mp_gt_driver(                          &
-!                    QV=qv_curr,                         &
-!                    QC=qc_curr,                         &
-!                    QR=qr_curr,                         &
-!                    QI=qi_curr,                         &
-!                    QS=qs_curr,                         &
-!                    QG=qg_curr,                         &
-!                    NI=qni_curr,                        &
-!                    TH=th,                              &
-!                    PII=pi_phy,                         &
-!                    P=p,                                & 
-!                    DZ=dz8w,                            &
-!                    DT_IN=dt,                           &
-!                    ITIMESTEP=itimestep,                &
-!                    RAINNC=RAINNC,                      &
-!                    RAINNCV=RAINNCV,                    &
-!                    SR=SR                               &
-!                   ,refl_10cm=refl_10cm                 &
-!                   ,grid_clock=grid_clock               &
-!                   ,grid_alarms=grid_alarms             &
-!                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-!                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-!                ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
-!            ELSE
-!               CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
-!            ENDIF
-!
-! Then rename the call from "thomp_init" to "thompson_init" in the file
-! "module_physics_init.F" (seen below):
-!
-!    CASE (THOMPSON)
-!        CALL thompson_init

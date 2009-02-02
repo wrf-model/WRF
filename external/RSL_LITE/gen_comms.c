@@ -11,7 +11,7 @@
 static int parent_type;
 
 /* print actual and dummy arguments and declarations for 4D and i1 arrays */
-int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */ )   
+int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */, int du /* 0=dummy,1=actual */)   
 {
   node_t * q ;
   node_t * dimd ;
@@ -20,11 +20,11 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
   char commuse[NAMELEN] ;
   int maxstenwidth, stenwidth ;
   char * t1, * t2 , *wordsize ;
-  char varref[NAMELEN] ;
+  char varref[NAMELEN], moredims[80] ;
   char * pos1 , * pos2 ;
   char * dimspec ;
   char indices[NAMELEN], post[NAMELEN], memord[NAMELEN] ;
-  int zdex ;
+  int zdex, d ;
 
     set_mark( 0, Domain.fields ) ;
 
@@ -63,13 +63,25 @@ int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration
               zdex = get_index_for_coord( q , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
-                set_mem_order( q->members, memord , NAMELEN) ;
+                set_mem_order( q->members, memord , 3 ) ;
                 if ( ad == 0 ) 
                 /* actual or dummy argument */
                 {
 /* explicit dummy or actual arguments for 4D arrays */
 if ( q->mark == 0 ) {
   fprintf(fp,"  num_%s, &\n",q->name) ;
+  for ( d = 3 ; d < q->ndims ; d++ ) {
+    char *colon, r[80],tx[80] ;
+    strcpy(r,"") ;
+    range_of_dimension(r,tx,d,q,du?"":"config_flags%") ;
+    colon = index(tx,':') ; *colon = '\0' ; 
+    if ( du ) { /* dummy args */
+      fprintf(fp,"%s_sdim%d,%s_edim%d, &\n",q->name,d-2,q->name,d-2) ;
+    } else {
+      fprintf(fp,"%s,%s,&\n",tx,colon+1) ;
+    }
+
+  }
   q->mark = 1 ;
 }
 fprintf(fp,"  %s, &\n",varref) ;
@@ -79,10 +91,22 @@ fprintf(fp,"  %s, &\n",varref) ;
 /* declaration of dummy arguments for 4D arrays */
 if ( q->mark == 0 ) {
   fprintf(fp,"  INTEGER, INTENT(IN) :: num_%s\n",q->name) ;
+  for ( d = 3 ; d < q->ndims ; d++ ) {
+    fprintf(fp,"  INTEGER, INTENT(IN) :: %s_sdim%d,%s_edim%d\n",q->name,d-2,q->name,d-2) ;
+  }
+
   q->mark = 1 ;
 }
-fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33,num_%s)\n",
-                     q->type->name , varref , q->name ) ;
+  strcpy(moredims,"") ;
+  for ( d = 3 ; d < q->ndims ; d++ ) {
+    char temp[80] ;
+    sprintf(temp,",%s_sdim%d:%s_edim%d",q->name,d-2,q->name,d-2) ;
+    strcat(moredims,temp) ;
+  }
+  strcat(moredims,",") ;
+
+fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33%snum_%s)\n",
+                     q->type->name , varref , moredims, q->name ) ;
                 }
               }
               else
@@ -120,7 +144,7 @@ int print_call_or_def( FILE * fp , node_t *p, char * callorsub,
   fprintf(fp,"%s %s_sub ( grid, &\n",callorsub,commname) ;
   if (need_config_flags == 1)
     fprintf(fp,"  config_flags, &\n") ;
-  print_4d_i1_decls( fp, p, 0 );
+  print_4d_i1_decls( fp, p, 0, (!strcmp("CALL",callorsub))?0:1 );
   fprintf(fp,"  %s, &\n",communicator) ;
   fprintf(fp,"  mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
   fprintf(fp,"  ids, ide, jds, jde, kds, kde,       &\n") ;
@@ -139,7 +163,7 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   fprintf(fp,"  TYPE(domain) ,               INTENT(IN) :: grid\n") ;
   if (need_config_flags == 1) 
     fprintf(fp,"  TYPE(grid_config_rec_type) , INTENT(IN) :: config_flags\n") ;
-  print_4d_i1_decls( fp, p, 1 );
+  print_4d_i1_decls( fp, p, 1, 0 );
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: %s\n",communicator) ;
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: mytask, ntasks, ntasks_x, ntasks_y\n") ;
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: ids, ide, jds, jde, kds, kde\n") ;
@@ -356,7 +380,13 @@ fprintf(fp,"CALL wrf_debug(2,'calling %s')\n",fname) ;
 
             if ( q->node_kind & FOURD ) {
               if ( n4d < MAX_4DARRAYS ) {
+                int d ;
+                char temp[80], tx[80], r[10], *colon ;
                 strcpy( name_4d[n4d], q->name ) ;
+                for ( d = 3 ; d < q->ndims ; d++ ) {
+                  sprintf(temp,"*(%s_edim%d-%s_sdim%d+1)",q->name,d-2,q->name,d-2) ;
+                  strcat( name_4d[n4d],temp) ;
+                }
               } else { 
                 fprintf(stderr,"REGISTRY ERROR: too many 4d arrays (> %d).\n", MAX_4DARRAYS ) ;
                 fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_4DARRAYS\n" ) ;
@@ -540,13 +570,28 @@ gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu 
               zdex = get_index_for_coord( q , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
-                set_mem_order( q->members, memord , NAMELEN) ;
+                int d ;
+                char * colon ;
+                char moredims[80], tx[80], temp[10], r[80] ;
+                set_mem_order( q->members, memord , 3 ) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
+                strcpy(moredims,"") ; 
+                for ( d = q->ndims-1 ; d >= 3  ; d-- ) {
+fprintf(fp,"  DO idim%d = %s_sdim%d,%s_edim%d\n",d-2,q->name,d-2,q->name,d-2 ) ;
+                }
+                for ( d = 3 ; d < q->ndims ; d++ ) {
+                  strcpy(r,"") ;
+                  range_of_dimension( r, tx, d, q, "config_flags%" ) ;
+                  colon = index(tx,':') ; if ( colon != NULL ) *colon = ',' ;
+                  sprintf(temp,"idim%d",d-2) ;
+                  strcat(moredims,",") ; strcat(moredims,temp) ;
+                }
+                strcat(moredims,",") ;
                 xdex = get_index_for_coord( q , COORD_X ) ;
                 ydex = get_index_for_coord( q , COORD_Y ) ;
 fprintf(fp," IF ( SIZE(%s,%d)*SIZE(%s,%d) .GT. 1 ) THEN\n",varref,xdex+1,varref,ydex+1 ) ; 
-fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33,itrace),%s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
-                       packname, commname, varref , shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
+fprintf(fp,"  CALL %s ( %s,&\n%s ( grid%%sm31,grid%%sm32,grid%%sm33%sitrace),%s,&\nrsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &\nrsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &\n%s, %d, %d, DATA_ORDER_%s, %d, &\n",
+                       packname, commname, varref , moredims, shw, wordsize, xy, pu, memord, xy?(q->stag_x?1:0):(q->stag_y?1:0) ) ;
 fprintf(fp,"mytask, ntasks, ntasks_x, ntasks_y,       &\n") ;
 if ( !strcmp( packname, "RSL_LITE_PACK_SWAP" ) ||
      !strcmp( packname, "RSL_LITE_PACK_CYCLE" ) ) {
@@ -562,6 +607,10 @@ fprintf(fp,"(ims-1)*grid%%sr_x+1,ime*grid%%sr_x,(jms-1)*grid%%sr_y+1,jme*grid%%s
 fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
 }
 fprintf(fp," ENDIF\n") ;
+               for ( d = 3 ; d < q->ndims ; d++ ) {
+fprintf(fp,"  ENDDO ! idim%d \n",d-2 ) ;
+               }
+
 fprintf(fp,"ENDDO\n") ;
               }
               else
@@ -571,7 +620,7 @@ fprintf(fp,"ENDDO\n") ;
             }
             else
             {
-              set_mem_order( q, memord , NAMELEN) ;
+              set_mem_order( q, memord , 3 ) ;
               if       ( q->ndims == 3 ) {
 
                 dimd = get_dimnode_for_coord( q , COORD_Z ) ;
@@ -714,7 +763,7 @@ gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pa
               zdex = get_index_for_coord( q , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
-                set_mem_order( q->members, memord , NAMELEN) ;
+                set_mem_order( q->members, memord , 3 ) ;
 fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",q->name ) ;
                 xdex = get_index_for_coord( q , COORD_X ) ;
                 ydex = get_index_for_coord( q , COORD_Y ) ;
@@ -745,7 +794,7 @@ fprintf(fp,"ENDDO\n") ;
             }
             else
             {
-              set_mem_order( q, memord , NAMELEN) ;
+              set_mem_order( q, memord , 3 ) ;
               if       ( q->ndims == 3 ) {
 
                 dimd = get_dimnode_for_coord( q , COORD_Z ) ;
@@ -1425,7 +1474,7 @@ gen_xposes ( char * dirname )
 
         t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
       }
-      set_mem_order( q, memord , NAMELEN) ;
+      set_mem_order( q, memord , 3 ) ;
       if        ( !strcmp( *x , "z2x" ) ) {
         fprintf(fp,"  call trans_z2x ( ntasks_x, local_communicator_x, 1, RWORDSIZE, IWORDSIZE, DATA_ORDER_%s , &\n", memord ) ;
         fprintf(fp,"                   %s, &  ! variable in Z decomp\n" , varref_z  ) ;
@@ -1634,43 +1683,57 @@ if ( p->proc_orient == ALL_X_ON_PROC || p->proc_orient == ALL_Y_ON_PROC ) contin
               zdex = get_index_for_coord( p , COORD_Z ) ;
               if ( zdex >=1 && zdex <= 3 )
               {
-                set_mem_order( p->members, memord , NAMELEN) ;
+                int d ; 
+                char r[10], tx[80], temp[80], moredims[80], *colon ;
+                set_mem_order( p->members, memord , 3 ) ;
 fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
+                for ( d = p->ndims-1; d >= 3 ; d-- ) {
+                  strcpy(r,"") ;
+                  range_of_dimension( r, tx, d, p, "config_flags%") ;
+                  colon = index(tx,':') ; *colon = ',' ;
+fprintf(fp, "  DO idim%d = %s\n", d-2, tx ) ;
+                }
+                strcpy(moredims,"") ;
+                for ( d = 3 ; d < p->ndims ; d++ ) {
+                  sprintf(temp,"idim%d",d-2) ;
+                  strcat(moredims,",") ; strcat(moredims,temp) ;
+                }
+                strcat(moredims,",") ;
                 if ( !strcmp( *direction, "x" ) )
                 {
                   char * stag = "" ;
                   stag = p->members->stag_x?"":"-1" ;
-                  if        ( !strcmp( memord , "XYZ" ) ) {
+                  if        ( !strncmp( memord , "XYZ", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,:,itrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,:,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,:%sitrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,:%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "YXZ" ) ) {
+                  } else if ( !strncmp( memord , "YXZ", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe),:,itrace) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px,:,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe),:%sitrace) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px,:%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "XZY" ) ) {
+                  } else if ( !strncmp( memord , "XZY", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),:,jms:jme,itrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,:,jms:jme,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),:,jms:jme%sitrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,:,jms:jme%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "YZX" ) ) {
+                  } else if ( !strncmp( memord , "YZX", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (jms:jme,:,ips:min(ide%s,ipe),itrace) = grid%%%s (jms:jme,:,ips+px:min(ide%s,ipe)+px,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (jms:jme,:,ips:min(ide%s,ipe)%sitrace) = grid%%%s (jms:jme,:,ips+px:min(ide%s,ipe)+px%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "ZXY" ) ) {
+                  } else if ( !strncmp( memord , "ZXY", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (:,ips:min(ide%s,ipe),jms:jme,itrace) = grid%%%s (:,ips+px:min(ide%s,ipe)+px,jms:jme,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (:,ips:min(ide%s,ipe),jms:jme%sitrace) = grid%%%s (:,ips+px:min(ide%s,ipe)+px,jms:jme%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "ZYX" ) ) {
+                  } else if ( !strncmp( memord , "ZYX", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (:,jms:jme,ips:min(ide%s,ipe),itrace) = grid%%%s (:,jms:jme,ips+px:min(ide%s,ipe)+px,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (:,jms:jme,ips:min(ide%s,ipe)%sitrace) = grid%%%s (:,jms:jme,ips+px:min(ide%s,ipe)+px%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "XY" ) ) {
+                  } else if ( !strncmp( memord , "XY", 2 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme,itrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (ips:min(ide%s,ipe),jms:jme%sitrace) = grid%%%s (ips+px:min(ide%s,ipe)+px,jms:jme%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "YX" ) ) {
+                  } else if ( !strncmp( memord , "YX", 2 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-                    fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe),itrace) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px,itrace)\n", vname, stag, vname, stag ) ;
+                    fprintf(fp,"grid%%%s (jms:jme,ips:min(ide%s,ipe)%sitrace) = grid%%%s (jms:jme,ips+px:min(ide%s,ipe)+px%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
                   }
                 }
@@ -1678,39 +1741,42 @@ fprintf(fp, "  DO itrace = PARAM_FIRST_SCALAR, num_%s\n", p->name ) ;
                 {
                   char * stag = "" ;
                   stag = p->members->stag_y?"":"-1" ;
-                  if        ( !strcmp( memord , "XYZ" ) ) {
+                  if        ( !strncmp( memord , "XYZ", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe),:,itrace) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py,:,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe),:%sitrace) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py,:%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "YXZ" ) ) {
+                  } else if ( !strncmp( memord , "YXZ", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime,:,itrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime,:,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime,:%sitrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime,:%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "XZY" ) ) {
+                  } else if ( !strncmp( memord , "XZY", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (ims:ime,:,jps:min(jde%s,jpe),itrace) = grid%%%s (ims:ime,:,jps+py:min(jde%s,jpe)+py,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (ims:ime,:,jps:min(jde%s,jpe)%sitrace) = grid%%%s (ims:ime,:,jps+py:min(jde%s,jpe)+py%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "YZX" ) ) {
+                  } else if ( !strncmp( memord , "YZX", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),:,ims:ime,itrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,:,ims:ime,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),:,ims:ime%sitrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,:,ims:ime%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "ZXY" ) ) {
+                  } else if ( !strncmp( memord , "ZXY", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (:,ims:ime,jps:min(jde%s,jpe),itrace) = grid%%%s (:,ims:ime,jps+py:min(jde%s,jpe)+py,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (:,ims:ime,jps:min(jde%s,jpe)%sitrace) = grid%%%s (:,ims:ime,jps+py:min(jde%s,jpe)+py%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "ZYX" ) ) {
+                  } else if ( !strncmp( memord , "ZYX", 3 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (:,jps:min(jde%s,jpe),ims:ime,itrace) = grid%%%s (:,jps+py:min(jde%s,jpe)+py,ims:ime,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (:,jps:min(jde%s,jpe),ims:ime%sitrace) = grid%%%s (:,jps+py:min(jde%s,jpe)+py,ims:ime%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "XY" ) ) {
+                  } else if ( !strncmp( memord , "XY", 2 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe),itrace) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (ims:ime,jps:min(jde%s,jpe)%sitrace) = grid%%%s (ims:ime,jps+py:min(jde%s,jpe)+py%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
-                  } else if ( !strcmp( memord , "YX" ) ) {
+                  } else if ( !strncmp( memord , "YX", 2 ) ) {
                     fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
-	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime,itrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime,itrace)\n", vname, stag, vname, stag ) ;
+	            fprintf(fp,"grid%%%s (jps:min(jde%s,jpe),ims:ime%sitrace) = grid%%%s (jps+py:min(jde%s,jpe)+py,ims:ime%sitrace)\n", vname, stag, moredims, vname, stag, moredims ) ;
                     fprintf(fp,"ENDIF\n") ;
                   }
+                }
+                for ( d = p->ndims-1; d >= 3 ; d-- ) {
+fprintf(fp, "  ENDDO\n" ) ;
                 }
 fprintf(fp, "  ENDDO\n" ) ;
               }
@@ -1723,7 +1789,7 @@ fprintf(fp, "  ENDDO\n" ) ;
 	    {
               xdex = get_index_for_coord( p , COORD_X ) ;
               ydex = get_index_for_coord( p , COORD_Y ) ;
-              set_mem_order( p, memord , NAMELEN) ;
+              set_mem_order( p, memord , 3 ) ;
               if ( !strcmp( *direction, "x" ) ) {
                 if        ( !strcmp( memord , "XYZ" ) ) {
                   fprintf(fp,"IF ( SIZE(grid%%%s,%d)*SIZE(grid%%%s,%d) .GT. 1 ) THEN\n",vname,xdex+1,vname,ydex+1) ; 
@@ -1848,7 +1914,7 @@ gen_nest_pack ( char * dirname )
   char ddim[3][2][NAMELEN] ;
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
-  char vname[NAMELEN] ; char tag[NAMELEN] ;
+  char vname[NAMELEN] ; char tag[NAMELEN], fourd_names[NAMELEN_LONG] ;
   int d2, d3, sw ;
   char *info_name ;
 
@@ -1868,7 +1934,7 @@ gen_nest_pack ( char * dirname )
       d3 = 0 ;
       node = Domain.fields ;
 
-      count_fields ( node , &d2 , &d3 , down_path[ipath] ) ;
+      count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ) ;
 
       if ( d2 + d3 > 0 ) {
         if ( down_path[ipath] == INTERP_UP )
@@ -1882,7 +1948,7 @@ gen_nest_pack ( char * dirname )
           sw = 1 ;
         }
 
-        fprintf(fp,"msize = %d * nlev + %d\n", d3, d2 ) ;
+        fprintf(fp,"msize = (%d + %s )* nlev + %d\n", d3, fourd_names, d2 ) ;
 
         fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
@@ -1933,7 +1999,7 @@ gen_nest_unpack ( char * dirname )
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
   char *info_name ;
-  char vname[NAMELEN] ; char tag[NAMELEN] ; 
+  char vname[NAMELEN] ; char tag[NAMELEN] ; char fourd_names[NAMELEN_LONG] ;
   int d2, d3 ;
 
   for ( fnp = fnlst , ipath = 0 ; *fnp ; fnp++ , ipath++ )
@@ -1951,9 +2017,9 @@ gen_nest_unpack ( char * dirname )
       if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
       print_warning(fp,fname) ;
 
-      count_fields ( node , &d2 , &d3 , down_path[ipath] ) ;
+      count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ) ;
 
-      if ( d2 + d3 > 0 ) {
+      if ( d2 + d3 > 0 && strlen(fourd_names) > 0 ) {
         if ( down_path[ipath] == INTERP_UP )
         {
           info_name = "rsl_lite_from_child_info" ;
@@ -1977,7 +2043,7 @@ gen_nest_unpack ( char * dirname )
 int
 gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
 {
-  int i ;
+  int i, d1 ;
   node_t *p, *p1, *dim ;
   int d2, d3, xdex, ydex, zdex ;
   int io_mask ;
@@ -1986,6 +2052,7 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
   char mdim[3][2][NAMELEN] ;
   char pdim[3][2][NAMELEN] ;
   char vname[NAMELEN], dexes[NAMELEN] ; char tag[NAMELEN] ; 
+  char tx[80], moredims[80], temp[80], r[10], *colon ;
   char c, d ;
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
@@ -2043,7 +2110,13 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
         /* construct variable name */
         if ( p->node_kind & FOURD )
         {
-          sprintf(vname,"%s%s(%s,itrace)",p->name,tag,dexes) ;
+          strcpy(moredims,"") ;
+          for ( d1 = 3 ; d1 < p->ndims ; d1++ ) {
+             sprintf(temp,"idim%d",d1-2) ;
+             strcat(moredims,",") ; strcat(moredims,temp) ;
+          }
+          strcat(moredims,",") ;
+          sprintf(vname,"%s%s(%s%sitrace)",p->name,tag,dexes,moredims) ;
         }
         else
         {
@@ -2055,6 +2128,12 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
 	{
            grid = "" ;
 fprintf(fp,"DO itrace =  PARAM_FIRST_SCALAR, num_%s\n", p->name) ;
+           for ( d1 = p->ndims-1 ; d1 >= 3 ; d1-- ) {
+             strcpy(r,"") ;
+             range_of_dimension(r, tx, d1, p, "config_flags%" ) ;
+             colon = index( tx, ':' ) ; *colon = ',' ; 
+fprintf(fp,"DO idim%d = %s \n", d1-2, tx) ;
+           }
         } else {
 /* note that in the case if dir != UNPACKIT and down_path == INTERP_UP the data
    structure being used is intermediate_grid, not grid. However, intermediate_grid
@@ -2120,6 +2199,9 @@ fprintf(fp,"xv(1)=%s%s\nCALL rsl_lite_to_child_msg(RWORDSIZE,xv)\n", grid, vname
         }
         if ( p->node_kind & FOURD )
 	{
+           for ( d1 = p->ndims-1 ; d1 >= 3 ; d1-- ) {
+fprintf(fp,"ENDDO\n") ;
+           }
 fprintf(fp,"ENDDO\n") ;
 	}
         else
@@ -2134,17 +2216,37 @@ fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
 
 /*****************/
 
+/* STOPPED HERE -- need to include the extra dimensions in the count */
+
 int
-count_fields ( node_t * node , int * d2 , int * d3 ,  int down_path )
+count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int down_path )
 {
   node_t * p ;
   int zdex ;
+  char temp[80], r[10], tx[80], *colon ;
+  int d ;
+
+  strcpy(fourd_names,"") ;  /* only works if non-recursive, but that is ifdefd out below */
 /* count up the total number of levels from all fields */
   for ( p = node ;  p != NULL ; p = p->next )
   {
     if ( p->node_kind == FOURD ) 
     {
+#if 0
       count_fields( p->members , d2 , d3 , down_path ) ;  /* RECURSE */
+#else
+      if ( strlen(fourd_names) > 0 ) strcat(fourd_names," & \n + ") ;
+      sprintf(temp,"((num_%s - PARAM_FIRST_SCALAR + 1)",p->name) ;
+      strcat(fourd_names,temp) ;
+      for ( d = 3 ; d < p->ndims ; d++ ) {
+        strcpy(r,"") ;
+        range_of_dimension(r,tx,d,p,"config_flags%") ;
+        colon = index(tx,':') ; *colon = '\0' ;
+        sprintf(temp," &\n  *((%s)-(%s)+1)",colon+1,tx) ;
+        strcat(fourd_names,temp) ;
+      }
+      strcat(fourd_names,")") ;
+#endif
     }
     else
     {

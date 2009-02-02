@@ -114,6 +114,8 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char ndexes[NAMELEN] ;
   char *maskstr ;
   char *grid ;
+  char *colon, r[10],tx[80],temp[80],moredims[80] ; 
+  int d ; 
 
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
@@ -145,10 +147,17 @@ if ( ! contains_tok ( halo_define , x , ":," ) ) {
  if ( halo_define[strlen(halo_define)-1] == ':' ) { strcat(halo_define,p->name) ; strcat(halo_define,tag) ; }
  else                                             { strcat(halo_define,",") ; strcat(halo_define,p->name) ; strcat(halo_define,tag) ; }
 }
+          strcpy(moredims,"") ;
+          for ( d = 3 ; d < p->ndims ; d++ ) {
+            sprintf(temp,"idim%d",d-2) ;
+            strcat(moredims,",") ; strcat(moredims,temp) ;
+          }
+          strcat(moredims,",") ;
+
           strcpy(dexes,"grid%sm31,grid%sm32,grid%sm33") ;
-          sprintf(vname,"%s%s(%s,itrace)",p->name,tag,dexes) ;
+          sprintf(vname,"%s%s(%s%sitrace)",p->name,tag,dexes,moredims) ;
           strcpy(ndexes,"ngrid%sm31,ngrid%sm32,ngrid%sm33") ;
-          sprintf(vname2,"%s%s(%s,itrace)",p->name,tag2,ndexes) ;
+          sprintf(vname2,"%s%s(%s%sitrace)",p->name,tag2,ndexes,moredims) ;
 
           if ( down_path & SMOOTH_UP ) {
             strcpy( fcn_name , p->members->next->smoothu_fcn_name ) ;
@@ -217,6 +226,14 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
         if ( p->node_kind & FOURD )
 	{
             fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR, num_%s\n",p->name ) ;
+            for ( d = p->ndims-1 ; d >= 3 ; d-- ) {
+              strcpy(r,"") ;
+              range_of_dimension( r, tx, d, p, "config_flags%" ) ;
+              colon = index(tx,':') ; *colon = ',' ;
+              sprintf(temp,"idim%d",d-2) ;
+              strcat(moredims,",") ; strcat(moredims,temp) ;
+              fprintf(fp,"  DO %s = %s\n",temp,tx) ;
+            }
             fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1 ) THEN \n", p->name,tag,xdex+1,p->name,tag,ydex+1 ) ;
         } else {
           if ( !strcmp( fcn_name, "interp_mask_land_field" ) ||
@@ -330,6 +347,9 @@ fprintf(fp,"                  ) \n") ;
         if ( p->node_kind & FOURD )
         {
 fprintf(fp,"ENDIF\n") ;
+            for ( d = p->ndims-1 ; d >= 3 ; d-- ) {
+fprintf(fp,"ENDDO\n") ;
+            }
 fprintf(fp,"ENDDO\n") ;
         } else {
 fprintf(fp,"ENDIF\n") ; /* in_use_from_config */

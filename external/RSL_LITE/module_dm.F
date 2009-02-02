@@ -3020,6 +3020,7 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -3079,6 +3080,8 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
 
       INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr 
       INTEGER thisdomain_max_halo_width
@@ -3151,6 +3154,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER myproc
       INTEGER ierr
       INTEGER thisdomain_max_halo_width
@@ -3205,6 +3211,8 @@ END
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
 
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER       :: idum1, idum2
 
 
@@ -3246,6 +3254,9 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER local_comm, myproc, nproc, idum1, idum2
       INTEGER thisdomain_max_halo_width
 
@@ -3352,6 +3363,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw, thisdomain_max_halo_width
@@ -3470,6 +3484,8 @@ END
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
 
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
       INTEGER local_comm, myproc, nproc
       INTEGER thisdomain_max_halo_width
@@ -3544,6 +3560,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER myproc
       INTEGER ierr
 
@@ -3612,6 +3631,9 @@ END
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
 #define COPY_IN
 #include <scalar_derefs.inc>
 !
@@ -3665,6 +3687,9 @@ END
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
 integer myproc
 
 #ifdef DEREF_KLUDGE
@@ -3739,6 +3764,8 @@ integer myproc
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
 
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER       :: idum1, idum2
 
 
@@ -3794,6 +3821,9 @@ integer myproc
       INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER local_comm, myproc, nproc, idum1, idum2
 
 #ifdef DEREF_KLUDGE
@@ -3911,6 +3941,9 @@ integer myproc
       INTEGER       ::          ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
       INTEGER icoord, jcoord, idim_cd, jdim_cd
       INTEGER local_comm, myproc, nproc
       INTEGER iparstrt, jparstrt, sw

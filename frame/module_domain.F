@@ -68,7 +68,6 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
-
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )

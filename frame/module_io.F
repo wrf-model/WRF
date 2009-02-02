@@ -37,6 +37,7 @@ MODULE module_io
                                                 ! true is new style decomposed boundary data structs
                                                 ! are_bdys_distributed, bdys_are_distributed and
                                                 ! bdys_not_distributed routines access this flag
+  CHARACTER*256 extradims
 
 !<DESCRIPTION>
 !<PRE>

@@ -246,7 +246,7 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
         strcpy(pdim[i][j],"1") ;
       }
 
-  for ( ii = 0 ; ii < node->ndims ; ii++ )
+  for ( ii = 0 ; ii < ((node->ndims > 3)?3:node->ndims) ; ii++ )
   {
     p = node->dims[ii] ;
     if ( sw_reorder ) { 
@@ -446,7 +446,7 @@ fprintf(fp,"DO itrace = PARAM_FIRST_SCALAR , num_%s\n",p->name ) ;
         strcpy(moredims,"") ; strcpy(formatdims,"") ;
         for ( d = 3 ; d < p->ndims ; d++ ) {
           strcpy(r,""); 
-          range_of_dimension( r, tx , d , p , "model_config_rec%" ) ;
+          range_of_dimension( r, tx , d , p , "config_flags%" ) ;
           colon = index(tx,':') ; if ( colon != NULL ) *colon = ',' ;
           sprintf(temp,"idim%d",d-2) ;
           strcat(moredims,",") ; strcat(moredims,temp) ;

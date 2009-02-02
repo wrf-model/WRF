@@ -11,6 +11,8 @@ MODULE module_comm_dm
    LOGICAL, EXTERNAL :: rsl_comm_iter
 #endif
 
+   INTEGER, PRIVATE :: idim1, idim2, idim3, idim4, idim5, idim6, idim7
+
 
 CONTAINS
 

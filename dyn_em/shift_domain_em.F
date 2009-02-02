@@ -18,6 +18,7 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
+   INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
    TYPE (grid_config_rec_type)  :: config_flags
 
    INTERFACE
@@ -100,6 +101,7 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
+   INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
    TYPE (grid_config_rec_type)  :: config_flags
 
    !  Definitions of dummy arguments to solve

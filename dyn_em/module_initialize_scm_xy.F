@@ -113,6 +113,7 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: dry_sounding
+   character (len=256) :: mminlu2
 
 ! soil input
    INTEGER :: ns_input
@@ -182,7 +183,10 @@ CONTAINS
 
     grid%itimestep=0
 
-    CALL nl_set_mminlu(1, 'USGS')
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
     CALL nl_set_truelat1(1,0.)

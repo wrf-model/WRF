@@ -85,12 +85,9 @@ CONTAINS
                                   its, ite, jts, jte, kts, kte, &
                                   i, j, k
 
-   ! Local data
-
    INTEGER, PARAMETER :: nl_max = 1000
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
    INTEGER :: nl_in
-
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
@@ -106,7 +103,7 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
-
+   character (len=256) :: mminlu2
    
 #ifdef DM_PARALLEL
 #    include <data_calls.inc>
@@ -182,7 +179,10 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
 
-    CALL nl_set_mminlu(1, 'USGS')
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
     CALL nl_set_cen_lat(1,20.)

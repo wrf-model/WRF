@@ -1020,7 +1020,7 @@ rconfig   real    truelat2                derived                  max_domains  
 rconfig   real    moad_cen_lat            derived                  max_domains    0       -        "moad_cen_lat"             "center latitude of the most coarse grid"      "degrees, negative is south"
 rconfig   real    stand_lon               derived                  max_domains    0       -        "stand_lon"             "standard longitude, parallel to j-direction, perpendicular to i-direction "      "degrees, negative is west"
 rconfig   real    bdyfrq                  derived                  max_domains    0       -        "bdyfrq"               "lateral boundary input frequency"      "seconds"
-rconfig   character mminlu                derived                  max_domains    0       -        "mminlu"               "land use dataset"
+rconfig   character mminlu                derived                  max_domains    " "     -        "mminlu"               "land use dataset"
            ""
 rconfig   integer iswater                 derived                  max_domains    0       -        "iswater"              "land use index of water"      "index category"
 rconfig   integer islake                  derived                  max_domains    0       -        "islake"               "land use index of inland lake"      "index category"

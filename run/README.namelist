@@ -426,6 +426,10 @@ Namelist variables for controlling the adaptive time step option:
 
  cudt                                = 0,       ; minutes between cumulus physics calls
 
+ cugd_avedx                          ; number of grid boxes over which subsidence is spread.
+                                     = 1, default, for large grid distances
+                                     = 3, for small grid distances (DX < 5 km)
+
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
                                                 but is overridden by namelist value; cudt will be
@@ -496,7 +500,8 @@ Namelist variables for controlling the adaptive time step option:
  slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
  topo_shading                        = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
- omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes)
+ omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes); works with 
+                                                  sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new)
@@ -615,7 +620,7 @@ The following are for observation nudging:
                                                   0 = without damping
                                                   1 = with diffusive damping, maybe used for real-data cases 
                                                       (dampcoef nondimensional ~0.01-0.1)
-                                                  2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; 
+                                                  2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; idealized case only
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .05; 
                                                       for real-data cases)

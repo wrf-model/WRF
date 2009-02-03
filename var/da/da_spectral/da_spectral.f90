@@ -1,7 +1,7 @@
 module da_spectral
 
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_sum
+!  use mpi, only : mpi_sum
 #endif
 
    use da_control, only : trace_use, its,ite,jts,jte, &
@@ -27,6 +27,10 @@ module da_spectral
    !-----------------------------------------------------------------------
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

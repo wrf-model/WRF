@@ -1,5 +1,5 @@
-#!/bin/ksh
-export CC=cc
+#!/bin/csh -f
+setenv CC cc
 ./configure
 make clean
 make

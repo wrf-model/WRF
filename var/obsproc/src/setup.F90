@@ -242,11 +242,15 @@
               TRUELAT2 = SIGN*TRUELAT2
           ENDIF
 
-          XN = ALOG10 (COS (TRUELAT1 / CONV)) - &
-               ALOG10 (COS (TRUELAT2 / CONV))                                         
+          IF (ABS(TRUELAT1 - TRUELAT2) .GT. 0.1) then
+            XN = ALOG10 (COS (TRUELAT1 / CONV)) - &
+                 ALOG10 (COS (TRUELAT2 / CONV))
 
-          XN = XN/(ALOG10 (TAN ((45.0 - SIGN*TRUELAT1/2.0) / CONV)) - & 
-                   ALOG10 (TAN ((45.0 - SIGN*TRUELAT2/2.0) / CONV)))          
+            XN = XN/(ALOG10 (TAN ((45.0 - SIGN*TRUELAT1/2.0) / CONV)) - &
+                     ALOG10 (TAN ((45.0 - SIGN*TRUELAT2/2.0) / CONV)))
+          ELSE
+            XN = SIGN*SIN(TRUELAT1 / CONV)
+          ENDIF
 
           PSI1 = 90.-SIGN*TRUELAT1
 

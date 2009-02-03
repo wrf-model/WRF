@@ -18,7 +18,7 @@ module da_rttov
       errorstatus_success,gas_id_watervapour,errorstatus_fatal
 
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_integer, mpi_status_size
+!  use mpi, only : mpi_integer, mpi_status_size
 #endif
 
    use da_control, only : max_ob_levels,missing_r, &
@@ -51,6 +51,10 @@ module da_rttov
    use da_reporting, only : da_warning
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 #include "rttov_setupchan.interface"
 #include "rttov_setupindex.interface"

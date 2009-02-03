@@ -185,7 +185,7 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
 	$(RM) $@
 	$(LD) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
         -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) $(BUFR_LIB) \
-        -L$(LAPACK) -llapack -L$(BLAS) -lblas ${MADIS_LIB} $(LIB_BUNDLED) $(LIB_EXTERNAL)
+        -L$(LAPACK) -llapack -L$(BLAS) -lblas ${MADIS_LIB} $(LIB)
 
 da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
 	$(LD) -o $@ $(LDFLAGS) da_wrfvar_esmf.o $(WRFVAR_LIB) \
@@ -193,6 +193,16 @@ da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
 
 da_advance_time.exe : da_advance_time.o
 	$(RM) $@
+	$(SED_FTN) da_advance_time.f90 > da_advance_time.b
+	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
+        if [ $$x = "gfortran" ] ; then \
+           echo removing external declaration of iargc for gfortran ; \
+           $(CPP) $(CPPFLAGS) $(FPPFLAGS) da_advance_time.b | sed '/integer *, *external.*iargc/d' > da_advance_time.f ;\
+        else \
+           $(CPP) $(CPPFLAGS) $(FPPFLAGS) da_advance_time.b > da_advance_time.f ; \
+        fi
+	$(RM) da_advance_time.b
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include da_advance_time.f
 	$(SFC) $(LDFLAGS) -o $@ da_advance_time.o
 
 inc/da_generic_boilerplate.inc: da_generic_boilerplate.m4

@@ -10,7 +10,7 @@ module da_sound
       kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, num_procs, comm, &
       trace_use_dull, sound, sonde_sfc, position_lev_dependant, max_ext_its,qcstat_conv_unit,ob_vars
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_integer, mpi_real8, mpi_max
+!  use mpi, only : mpi_integer, mpi_real8, mpi_max
 #endif
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
@@ -64,6 +64,10 @@ module da_sound
       type (maxmin_sonde_sfc_stats_type)  :: maximum, minimum
       type (residual_sonde_sfc1_type)     :: average, rms_err
    end type stats_sonde_sfc_type
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

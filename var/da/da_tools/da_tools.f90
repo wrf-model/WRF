@@ -24,7 +24,7 @@ module da_tools
       rad_to_deg, deg_to_rad, num_procs, print_detail_obs
 
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_integer
+!  use mpi, only : mpi_integer
 #endif
 
    use da_define_structures, only : info_type, field_type, x_type,  &
@@ -36,6 +36,10 @@ module da_tools
    
    implicit none
    
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
+
    ! Code copied from SI, see header below
 #include "da_map_utils_defines.inc"
 

@@ -13,7 +13,7 @@ module da_test
       ntasks, data_order_xy
    use module_comm_dm, only : halo_psichi_uv_adj_sub, halo_xa_sub, &
       halo_sfc_xa_sub, halo_ssmi_xa_sub
-   use mpi, only : mpi_sum
+!  use mpi, only : mpi_sum
 #endif
 
    use da_control, only : num_procs                                
@@ -78,6 +78,10 @@ module da_test
       da_transform_xtoxa_adj
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

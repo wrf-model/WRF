@@ -43,13 +43,17 @@ module da_obs_io
    use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
 #ifdef DM_PARALLEL
    use da_control, only : root
-   use mpi, only : mpi_min
+!  use mpi, only : mpi_min
    use da_par_util, only : true_mpi_real
 #endif
 #endif
    use da_reporting, only : message, da_message
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

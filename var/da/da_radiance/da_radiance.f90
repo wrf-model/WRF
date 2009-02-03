@@ -23,8 +23,8 @@ module da_radiance
 #endif
 
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_integer, mpi_status_size, mpi_min, mpi_max, mpi_minloc, &
-       mpi_2double_precision
+!  use mpi, only : mpi_integer, mpi_status_size, mpi_min, mpi_max, mpi_minloc, &
+!      mpi_2double_precision
 #endif
 
    use da_control, only : max_ob_levels,missing_r, &
@@ -94,6 +94,10 @@ module da_radiance
                             destroygrids
                             
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
    
 contains
 

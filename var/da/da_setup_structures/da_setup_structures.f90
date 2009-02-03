@@ -71,12 +71,16 @@ module da_setup_structures
                             dlat_grid,dlon_grid,thinning_grid_conv, &
                             make3grids, destroygrids_conv
 #ifdef DM_PARALLEL
-   use mpi, only : mpi_min, mpi_max
+!  use mpi, only : mpi_min, mpi_max
    use da_par_util, only : true_mpi_real
 #endif
 #endif
 
    implicit none
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
 contains
 

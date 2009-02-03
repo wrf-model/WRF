@@ -84,7 +84,7 @@ superclean : clean1
 .f90.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $*.f
 

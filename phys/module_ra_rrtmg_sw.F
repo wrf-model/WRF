@@ -2376,7 +2376,7 @@
       hvrrft = '$Revision: 1.3 $'
 
       zsr3=sqrt(3._rb)
-      zwcrit=0.9995_rb
+      zwcrit=0.9999995_rb
       kmodts=2
 
       do jk=1, nlayers
@@ -10290,6 +10290,8 @@ IMPLICIT NONE
       call sw_kgb27(rrtmg_unit)
       call sw_kgb28(rrtmg_unit)
       call sw_kgb29(rrtmg_unit)
+
+     IF ( wrf_dm_on_monitor() ) CLOSE (rrtmg_unit)
 
      RETURN
 9009 CONTINUE

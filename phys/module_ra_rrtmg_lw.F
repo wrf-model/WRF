@@ -12262,6 +12262,8 @@ IMPLICIT NONE
       call lw_kgb15(rrtmg_unit)
       call lw_kgb16(rrtmg_unit)
 
+     IF ( wrf_dm_on_monitor() ) CLOSE (rrtmg_unit)
+
      RETURN
 9009 CONTINUE
      WRITE( errmess , '(A,I4)' ) 'module_ra_rrtmg_lw: error opening RRTMG_LW_DATA on unit ',rrtmg_unit

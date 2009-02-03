@@ -56,6 +56,7 @@ MODULES = \
 	module_sf_ruclsm.o \
 	module_sf_sfcdiags.o \
 	module_sf_sstskin.o \
+	module_sf_tmnupdate.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
 	module_sf_mynn.o \
@@ -327,6 +328,7 @@ module_surface_driver.o: \
 		module_sf_mynn.o                \
 		module_sf_sfcdiags.o		\
 		module_sf_sstskin.o		\
+		module_sf_tmnupdate.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  \

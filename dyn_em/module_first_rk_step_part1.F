@@ -199,7 +199,6 @@ BENCH_END(phy_prep_tim)
      CALL domain_clock_get( grid, current_time=currentTime, &
                             current_timestr=mesg )
      CALL WRFU_TimeGet( currentTime, YY=yr, dayOfYear=day, H=hr, M=minute, S=sec, rc=rc)
-!         print *, 'current year', yr, day, rc
          IF( rc/= WRFU_SUCCESS)THEN
          CALL wrf_error_fatal('WRFU_TimeGet failed')
          ENDIF
@@ -374,7 +373,7 @@ BENCH_START(surf_driver_tim)
      &        ,TMN=grid%tmn            ,TSHLTR=grid%tshltr      ,TSK=grid%tsk            &
      &        ,TYR=grid%tyr            ,TYRA=grid%tyra          ,TDLY=grid%tdly          &
      &        ,TLAG=grid%tlag          ,LAGDAY=config_flags%lagday      ,NYEAR=grid%nyear        &
-     &        ,NDAY=grid%nday          ,TMN_UPDATE=grid%tmn_update             &
+     &        ,NDAY=grid%nday          ,TMN_UPDATE=grid%tmn_update      ,YR=yr            &
      &        ,TSLB=grid%tslb          ,T_PHY=t_phy        ,U10=grid%u10            &
      &        ,URATX=grid%uratx        ,VRATX=grid%vratx   ,TRATX=grid%tratx        &
      &        ,UDRUNOFF=grid%udrunoff  ,UST=grid%ust       ,UZ0=grid%uz0            &

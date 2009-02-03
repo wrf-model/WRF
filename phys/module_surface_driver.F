@@ -19,7 +19,7 @@ CONTAINS
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
-     &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update      &
+     &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
 #if (NMM_CORE==1)
@@ -142,7 +142,7 @@ CONTAINS
 !
    USE module_sf_sfcdiags
    USE module_sf_sstskin
-!   USE module_sf_tmnupdate
+   USE module_sf_tmnupdate
 !
 
    !  This driver calls subroutines for the surface parameterizations.
@@ -344,6 +344,7 @@ CONTAINS
    LOGICAL, INTENT(IN )::   WARM_RAIN
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NYEAR
    INTEGER, INTENT(INOUT ),OPTIONAL ::   NDAY
+   INTEGER, INTENT(IN ),OPTIONAL ::   YR
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
 #if (NMM_CORE==1)
@@ -795,87 +796,13 @@ CONTAINS
     !$OMP END PARALLEL DO
   ENDIF
   IF(PRESENT(TMN_UPDATE))THEN
-! Update deep soil temperature
-  yrday=365.      ! number of days in a non-leap year
-  tconst=0.6      ! a constant based on Salathe et al. (2007)
   IF (tmn_update .EQ. 1) THEN
-! print *, 'check tmn', nyear, nday
-! if it is the end of a day, update variables
-    deltat=(julian_in-int(julian_in))*24.*3600.
-    if(nint(deltat).lt.dt) then
-!   IF(MOD(itimestep,NINT(86400./dt)) .eq. 1)THEN
-! no leap year when coupled with CCSM
-!   if(mod(yr,4).eq.0) yrday=366.
-    julian=(julian_in-1.)+(dt/(60.*60.*24.))
-    print *, 'check day', itimestep, nyear, nday, julian, julian_in, deltat
-!   print *, 'end of day', itimestep, julian_in, yr, nday, nyear
-!   print *, 'check', julian, yrday, lagday
-    !$OMP PARALLEL DO   &
-    !$OMP PRIVATE ( ij, i, j, k )
-    DO ij = 1 , num_tiles
-      DO j=j_start(ij),j_end(ij)
-      DO i=i_start(ij),i_end(ij)
-!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
-! update tmn
-             tprior=0.0
-             do n=1,lagday
-             tprior=tprior+tlag(i,n,j)
-             if(i.eq.10.and.j.eq.10)print *, 'tprior',i,j,tprior,tlag(i,n,j),lagday,n
-             end do
-             tprior=tprior/lagday
-             tmn(i,j)=tconst*tyr(i,j)+(1.-tconst)*tprior
-! update tlag and tyra
-             do n=1,lagday-1
-             tlag(i,n,j)=tlag(i,n+1,j)
-             end do
-             tlag(i,lagday,j)=tdly(i,j)/nday
-             if(i.eq.10.and.j.eq.10)print *, 'xland',i,j,nday,tyr(i,j),tprior,tmn(i,j),tyra(i,j),tdly(i,j),tlag(i,lagday,j)
-             tdly(i,j)=0.0
-!        endif
-      ENDDO
-      ENDDO
-    ENDDO
-    nday=0
-! update tyr if it is the end of a year
-    if((yrday-julian).le.1.) then
-    DO ij = 1 , num_tiles
-      DO j=j_start(ij),j_end(ij)
-      DO i=i_start(ij),i_end(ij)
-!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
-            tyr(i,j)=tyra(i,j)/nyear
-            tyra(i,j)=0.0
-!        endif
-      ENDDO
-      ENDDO
-    ENDDO
-    nyear=0
-    else
-    DO ij = 1 , num_tiles
-      DO j=j_start(ij),j_end(ij)
-      DO i=i_start(ij),i_end(ij)
-!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
-            tyra(i,j)=tyra(i,j)+tlag(i,lagday,j)
-!        endif
-      ENDDO
-      ENDDO
-    ENDDO
-    nyear=nyear+1
-    endif
-    ELSE
-! accumulate tsk of current day
-    !$OMP PARALLEL DO   &
-    !$OMP PRIVATE ( ij, i, j, k )
-    DO ij = 1 , num_tiles
-      DO j=j_start(ij),j_end(ij)
-      DO i=i_start(ij),i_end(ij)
-!        if((xland(i,j)-1.5).lt.0..and.xice(i,j).le.0.) then
-             tdly(i,j)=tdly(i,j)+tsk(i,j)
-!        endif
-      ENDDO
-      ENDDO
-    ENDDO
-    nday=nday+1
-    ENDIF
+      CALL tmnupdate(tsk,tmn,tlag,tyr,tyra,tdly,nday,nyear,lagday, &
+                julian_in, dt, yr,                                  &
+                ids, ide, jds, jde, kds, kde,                       &
+                ims, ime, jms, jme, kms, kme,                       &
+                i_start,i_end, j_start,j_end, kts,kte, num_tiles   )
+
   ENDIF
   ENDIF
 

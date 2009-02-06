@@ -1436,7 +1436,8 @@ cycle
 
       REAL, DIMENSION( ims:ime, num_soil_layers, jms:jme ) , INTENT(OUT) :: smois, tslb
 
-      REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT)  :: xland, snow, canwat, xice, vegfra, tmn
+      REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(IN)   :: xland
+      REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT)  :: snow, canwat, xice, vegfra, tmn
 
       INTEGER, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT) :: ivgtyp, isltyp
 

@@ -750,7 +750,7 @@
                            its , ite , jts , jte , &
                            its , ite , jts , jte   )
 
-   IF ( .not. config_flags%restart ) THEN
+   IF ( start_of_simulation ) THEN
    CALL set_w_surface(  config_flags, grid%znw,                         &
                         grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
                         grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &

@@ -677,7 +677,7 @@
                           pii, p, dz
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
                           RAINNC, RAINNCV, SR
-      REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
 
 !     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &
@@ -767,8 +767,12 @@
          pptgraul = 0.
          pptice = 0.
          RAINNCV(i,j) = 0.
+         IF ( PRESENT (snowncv) ) THEN
          SNOWNCV(i,j) = 0.
+         ENDIF
+         IF ( PRESENT (graupelncv) ) THEN
          GRAUPELNCV(i,j) = 0.
+         ENDIF
          SR(i,j) = 0.
 
          do k = kts, kte
@@ -796,10 +800,14 @@
          pcp_ic(i,j) = pptice
          RAINNCV(i,j) = pptrain + pptsnow + pptgraul + pptice
          RAINNC(i,j) = RAINNC(i,j) + pptrain + pptsnow + pptgraul + pptice
+         IF ( PRESENT (snowncv) .AND. PRESENT (snownc) ) THEN
          SNOWNCV(i,j) = pptsnow + pptice
          SNOWNC(i,j) = SNOWNC(i,j) + pptsnow + pptice
+         ENDIF
+         IF ( PRESENT (graupelncv) .AND. PRESENT (graupelnc) ) THEN
          GRAUPELNCV(i,j) = pptgraul
          GRAUPELNC(i,j) = GRAUPELNC(i,j) + pptgraul
+         ENDIF
          SR(i,j) = (pptsnow + pptgraul + pptice)/(RAINNCV(i,j)+1.e-12)
 
          do k = kts, kte

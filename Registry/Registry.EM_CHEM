@@ -662,8 +662,8 @@ i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1O
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
 # MYJ PBL variables
-state    real   tke_myj        ikj     misc        1         -      r        "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"      "m2 s-2"
-state    real   EL_MYJ          ikj     misc        1         -     -        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
+state    real   tke_myj        ikj     misc        1         -      rh       "tke_myj"               "TKE FROM MELLOR-YAMADA-JANJIC"      "m2 s-2"
+state    real   EL_MYJ          ikj     misc        1         -     h        "el_myj"                "MIXING LENGTH FROM MELLOR-YAMADA-JANJIC"     "m"
 state    real   EXCH_H          ikj     misc        1         -     r          "EXCH_H"               "EXCHANGE COEFFICIENTS "
 state    real   EXCH_M          ikj     misc        1         -     r          "EXCH_M"               "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
@@ -728,16 +728,16 @@ state    real    HBOTR           ij     misc        1         -      r        "H
 state    real    CUTOP           ij     misc        1         -      r        "CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
 state    real    CUBOT           ij     misc        1         -      r        "CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
 state    REAL      CUPPT         ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
-state  real   rswtoa    ij    misc        1    -    i
-state  real   rlwtoa    ij    misc        1    -    i
-state  real   czmean    ij    misc      1    -     i
-state  real   cfracl    ij    misc      1    -     i
-state  real   cfracm    ij    misc      1    -     i
-state  real   cfrach    ij    misc      1    -     i
-state  real   acfrst    ij    misc        1    -    i
-state integer ncfrst    ij    misc        1    -    i
-state  real   acfrcv    ij    misc        1    -    i
-state integer ncfrcv    ij    misc        1    -    i
+state    real   rswtoa           ij     misc        1         -      -
+state    real   rlwtoa           ij     misc        1         -      -
+state    real   czmean           ij     misc        1         -      -
+state    real   cfracl           ij     misc        1         -      -
+state    real   cfracm           ij     misc        1         -      -
+state    real   cfrach           ij     misc        1         -      -
+state    real   acfrst           ij     misc        1         -      -
+state integer   ncfrst           ij     misc        1         -      -
+state    real   acfrcv           ij     misc        1         -      -
+state integer   ncfrcv           ij     misc        1         -      -
 
 # cam radiation variables
 state  real    -       iqjf ozmixm      1    -   -     -
@@ -1613,9 +1613,9 @@ package   ruclsmscheme   sf_surface_physics==3       -             -
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
 package   ysuscheme      bl_pbl_physics==1           -             -
-package   myjpblscheme   bl_pbl_physics==2           -             -
+package   myjpblscheme   bl_pbl_physics==2           -             state:tke_myj,el_myj
 package   gfsscheme      bl_pbl_physics==3           -             -
-package   qnsepblscheme  bl_pbl_physics==4           -             -
+package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_myj,el_myj
 package   mynnpblscheme2   bl_pbl_physics==5           -           -
 package   mynnpblscheme3   bl_pbl_physics==6           -           -
 package   acmpblscheme   bl_pbl_physics==7           -             -

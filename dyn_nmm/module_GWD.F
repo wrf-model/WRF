@@ -286,6 +286,8 @@ real :: hzmaxmin,hzmaxmax,hanglmin,hanglmax,hslopmin,hslopmax,hanismin,hanismax 
 ,hstdvmin,hstdvmax,hcnvxmin,hcnvxmax,hasywmin,hasywmax,hasysmin,hasysmax  &
 ,hasyswmin,hasyswmax,hasynwmin,hasynwmax,hlenwmin,hlenwmax,hlensmin,hlensmax  &
 ,hlenswmin,hlenswmax,hlennwmin,hlennwmax,zsmin,zsmax,delu,delv
+! Added this declaration
+real :: helvmin,helvmax
 !dbg
 
 !
@@ -328,6 +330,9 @@ if (itime <= 1) then
   hlennwmax=-1.e6
   zsmin=1.e6
   zsmax=-1.e6
+! Added initialization of helvmin and helvmax
+  helvmin=1.e6
+  helvmax=-1.e6
   do j=jts,jte
     do i=its,ite
       kpblmin=min(kpblmin,kpbl(i,j))

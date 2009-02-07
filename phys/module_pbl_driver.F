@@ -532,6 +532,9 @@ CONTAINS
 !!Alberto. If idiff=1, then compute the tendencies at the end in the routine diff3d
 !!Alberto. If idiff=0, then compute the tendencies in each PBL routine (standard version).
        idiff=0
+#else
+! Added this else clause so that idiff is always initialized regardless of which core we are using
+       idiff=0
 #endif
 ! SAVE OLD VALUES
 

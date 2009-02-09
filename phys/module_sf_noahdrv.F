@@ -230,7 +230,6 @@ CONTAINS
                                                           T3D
    REAL,     DIMENSION( ims:ime, jms:jme )                    , &
              INTENT(IN   )               ::               QGH,  &
-                                                          CHS,   &
                                                           CPM
 
    INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
@@ -258,6 +257,7 @@ CONTAINS
                                                         GRDFLX, &
                                                           QSFC,&
                                                           CQS2,&
+                                                          CHS,   &
                                                           CHS2,&
                                                           SNOW, &
                                                          SNOWC, &
@@ -933,7 +933,7 @@ CONTAINS
             SSG_URB   = SOLDN            ! [W/m/m]
             SSGD_URB  = 0.8*SOLDN        ! [W/m/m]
             SSGQ_URB  = SSG_URB-SSGD_URB ! [W/m/m]
-            LLG_URB   = LWDN             ! [W/m/m]
+            LLG_URB   = GLW(I,J)         ! [W/m/m]
             RAIN_URB  = RAINBL(I,J)      ! [mm]
             RHOO_URB  = SFCPRS / (287.04 * SFCTMP * (1.0+ 0.61 * Q2K)) ![kg/m/m/m]
             ZA_URB    = ZLVL             ! [m]
@@ -967,10 +967,21 @@ CONTAINS
             XXXG_URB = XXXG_URB2D(I,J)
             XXXC_URB = XXXC_URB2D(I,J)
 !
+!
+!      Limits to avoid dividing by small number
+            if (CHS(I,J) < 1.0E-02) then
+               CHS(I,J)  = 1.0E-02
+            endif
+            if (CHS2(I,J) < 1.0E-02) then
+               CHS2(I,J)  = 1.0E-02
+            endif
+            if (CQS2(I,J) < 1.0E-02) then
+               CQS2(I,J)  = 1.0E-02
+            endif
+!
             CHS_URB  = CHS(I,J)
             CHS2_URB = CHS2(I,J)
 !
-
 ! Call urban
 
 

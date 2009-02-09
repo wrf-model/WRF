@@ -161,7 +161,7 @@ PROGRAM main_3dvar_obs
       nsatems = 0; nsatobs = 0; naireps = 0; ngpspws = 0; namdars = 0;
       nssmt1s = 0; nssmt2s = 0; nssmis  = 0; ntovss  = 0; nqscats = 0;
       nothers = 0; nprofls = 0; nbuoyss = 0; ngpsztd = 0; ngpsref = 0;
-      nboguss = 0; nairss  = 0; ngpseph = 0;
+      nboguss = 0; nairss  = 0; ngpseph = 0; ntamdar = 0;
  
 ! 3.2 Reset the total number of ingested obs
 !     --------------------------------------
@@ -471,6 +471,7 @@ PROGRAM main_3dvar_obs
              (.not.write_satem .and.  fm_code==86)                    .or. &
              (.not.write_satob .and.  fm_code==88)                    .or. &
              (.not.write_airep .and. (fm_code==96  .or. fm_code==97)) .or. &
+             (.not.write_tamdar.and.  fm_code==101)                   .or. &
              (.not.write_gpspw .and.  fm_code==111)                   .or. &
              (.not.write_gpsztd.and.  fm_code==114)                   .or. &
              (.not.write_gpsref.and.  fm_code==116)                   .or. &
@@ -520,7 +521,7 @@ PROGRAM main_3dvar_obs
                           nssmt1s (icor), nssmt2s (icor), nssmis  (icor), &
                           ntovss  (icor), nothers (icor), namdars (icor), &
                           nqscats (icor), nprofls (icor), nbuoyss (icor), &
-                          nboguss (icor), nairss (icor), &
+                          nboguss (icor), nairss  (icor), ntamdar (icor), &
                           SLOT_TITLE)
 
 ! 8.11 Determine output type
@@ -558,7 +559,7 @@ PROGRAM main_3dvar_obs
                           nssmt1s (icor), nssmt2s (icor), nssmis  (icor), &
                           ntovss  (icor), nothers (icor), namdars (icor), &
                           nqscats (icor), nprofls (icor), nbuoyss (icor), &
-                          nboguss (icor), nairss (icor), missing_flag, time_fg)
+                          nboguss (icor), nairss  (icor), ntamdar(icor), missing_flag, time_fg)
 
       CALL output_ssmi_31 (max_number_of_obs, obs, number_of_obs, index, &
                            nssmis  (icor), &

@@ -29,6 +29,9 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
    !   Profiler 132         'PROFI'
    !   Buoy     18,19       'BUOY '
    !   other      Any other code
+! not WMO
+   !   MTGIRS  161          'MTGIRS'
+   !   TAMDAR   91          'TAMDAR'
    !----------------------------------------------------------------------------
 
     implicit none
@@ -41,7 +44,7 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
                                             ssmi_retrieval, ssmi_tb,&
                                             ssmt1, ssmt2, qscat, &
                                             profiler, buoy, gpsref, mtgirs,&
-                                            other
+                                            tamdar, other
 
    if (trace_use_frequent) call da_trace_entry("da_fm_decoder")
 
@@ -112,8 +115,6 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
 
       !  Upper-level pressure, temperature, humidity and wind report 
       !  from a sea station
-      case (161) ; platform = 'MTGIRS'
-         if (present (mtgirs)) mtgirs = mtgirs + 1
 
       case (36) ; platform = 'TEMP SHIP'
          if (present (sound)) sound = sound + 1
@@ -341,6 +342,12 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
       case (132) ; platform = 'PROFI'
          if (present (profiler)) profiler = profiler + 1
       !  Others
+
+      case (101) ; platform = 'TAMDAR'
+         if (present (tamdar)) tamdar = tamdar + 1
+
+      case (161) ; platform = 'MTGIRS'
+         if (present (mtgirs)) mtgirs = mtgirs + 1
 
       case default;
                    platform = 'UNKNOWN'

@@ -67,7 +67,7 @@ MODULE MODULE_NAMELIST
                       write_satob, write_airep, write_gpspw, write_gpsztd,&
                       write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
                       write_ssmi , write_tovs , write_qscat, write_profl, &
-                      write_bogus, write_airs 
+                      write_bogus, write_airs ,  write_tamdar 
 
 #ifdef BKG
    INTEGER                   :: time_earlier, time_later
@@ -115,7 +115,7 @@ MODULE MODULE_NAMELIST
                       write_satob, write_airep, write_gpspw, write_gpsztd,&
                       write_gpsref,write_gpseph,write_ssmt1, write_ssmt2, &
                       write_ssmi , write_tovs , write_qscat, write_profl, &
-                      write_bogus, write_airs 
+                      write_bogus, write_airs , write_tamdar 
    
    CONTAINS
 
@@ -198,6 +198,7 @@ MODULE MODULE_NAMELIST
    write_profl = .true.
    write_bogus = .true.
    write_airs  = .true.
+   write_tamdar= .true.
 
    READ  ( UNIT = iunit , NML = record1 , IOSTAT = nml_read_errors(1) )
    WRITE ( UNIT = 0 ,     NML = record1 )

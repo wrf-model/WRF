@@ -3,7 +3,7 @@ SUBROUTINE sort_platform (nobs_max, obs, number_of_obs,  &
                           nsatems, nsatobs, naireps, ngpspws, ngpsztd, &
                           ngpsref, ngpseph, nssmt1s,                   &
                           nssmt2s, nssmis,  ntovss,  nothers, namdars, &
-                          nqscats, nprofls, nbuoyss, nboguss, nairss ,title)
+                          nqscats, nprofls, nbuoyss, nboguss, nairss ,ntamdar, title)
 
 !------------------------------------------------------------------------------
 ! Count observations per type
@@ -43,7 +43,7 @@ SUBROUTINE sort_platform (nobs_max, obs, number_of_obs,  &
                                                                nbuoyss,nothers,&
                                                                nboguss,nairss, &
                                                                ngpsztd,ngpsref,&
-                                                               ngpseph
+                                                               ngpseph,ntamdar
 
   TYPE (measurement ) ,POINTER                              :: current
   INTEGER                                                   :: loop_index
@@ -79,6 +79,7 @@ SUBROUTINE sort_platform (nobs_max, obs, number_of_obs,  &
       namdars = 0
       nsatems = 0
       nsatobs = 0
+      ntamdar = 0
       naireps = 0
       ngpspws = 0
       ngpsztd = 0
@@ -137,7 +138,7 @@ stations_valid: &
                          ssmt1=nssmt1s, ssmt2=nssmt2s, ssmi =nssmis,  &
                          tovs =ntovss,  amdar=namdars, qscat=nqscats, &
                          profl=nprofls, buoy =nbuoyss, bogus=nboguss, &
-                         airs=nairss, other=nothers )
+                         airs=nairss, tamdar=ntamdar, other=nothers )
 
 ! 1.4 Initialise pointer to surface level
 !     -----------------------------------
@@ -209,6 +210,7 @@ levels: DO WHILE (ASSOCIATED (current))
       WRITE (0, '(A,I6)') ' SATEM reports:',nsatems
       WRITE (0, '(A,I6)') ' SATOB reports:',nsatobs
       WRITE (0, '(A,I6)') ' AIREP reports:',naireps
+      WRITE (0, '(A,I6)') 'TAMDAR reports:',ntamdar
       WRITE (0, '(A,I6)') ' GPSPW reports:',ngpspws
       WRITE (0, '(A,I6)') ' GPSZD reports:',ngpsztd
       WRITE (0, '(A,I6)') ' GPSRF reports:',ngpsref
@@ -229,7 +231,7 @@ levels: DO WHILE (ASSOCIATED (current))
                                             nboguss+&
                                             nssmt1s+nssmt2s+nssmis +&
                                             ntovss +namdars+nqscats+&
-                                            nprofls+nbuoyss+nairss+nothers, &
+                                            nprofls+nbuoyss+nairss+ntamdar+nothers, &
       " = ",nsingls," single + ",nmultis," multi-level reports."
 
 

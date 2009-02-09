@@ -83,7 +83,6 @@ subroutine da_scan_obs_bufr (iv, filename)
    match = .true.
    outside_all = .false.
    end_of_file = .false.
-   outside_all = .false.
    report = 0 ! report number in file
    reports: do while ( .not. end_of_file )
       report = report+1

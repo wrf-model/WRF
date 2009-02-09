@@ -1365,7 +1365,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
    if (iv%info(mtgirs)%nlocal > 0) then
       if (print_detail_f_obs) then
          write(unit=stdout,fmt='(A,I5)') &
-            ' writing filtered obs for airep  ',iv%info(mtgirs)%nlocal
+            ' writing filtered obs for mtgirs  ',iv%info(mtgirs)%nlocal
       end if
 
       do n = 1, iv%info(mtgirs)%nlocal
@@ -1428,6 +1428,145 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
       end do    
    end if
 
+   !--------------------------------------------------------------------------
+   ! Write tamdar
+   !--------------------------------------------------------------------------
+
+   if (iv%info(tamdar)%nlocal > 0) then
+      if (print_detail_f_obs) then
+         write(unit=stdout,fmt='(A,I5)') &
+            ' writing filtered obs for tamdar  ',iv%info(tamdar)%nlocal
+      end if
+
+      do n = 1, iv%info(tamdar)%nlocal
+         if (.not. iv%info(tamdar)%proc_domain(1,n)) cycle
+
+         write(ounit, fmt = fmt_info, iostat = iost) &
+            iv%info(tamdar)%platform(n),    &
+            iv%info(tamdar)%date_char(n),   &
+            iv%info(tamdar)%name(n),        &
+            iv%info(tamdar)%levels(n),      &
+            iv%info(tamdar)%lat(1,n),         &
+            iv%info(tamdar)%lon(1,n),         &
+            iv%info(tamdar)%elv(n),         &
+            iv%info(tamdar)%id(n)
+         write(ounit, fmt = fmt_srfc) &
+            iv%info(tamdar)%slp(n)%inv, iv%info(tamdar)%slp(n)%qc, iv%info(tamdar)%slp(n)%error, &
+            iv%info(tamdar)%pw(n)%inv,  iv%info(tamdar)%pw(n)%qc,  iv%info(tamdar)%pw(n)%error
+            ! First write surface level information
+            ! get speed and direction
+            if (iv%tamdar_sfc(n)%u%qc >= obs_qc_pointer .and. &
+                iv%tamdar_sfc(n)%v%qc >= obs_qc_pointer) then
+               uu = ob%tamdar_sfc(n)%u
+               vv = ob%tamdar_sfc(n)%v
+               call da_ffdduv(speed, dir, uu, vv, iv%info(tamdar)%lon(1,n), &
+                  convert_uv2fd)
+               speed_qc  = iv%tamdar_sfc(n)%u%qc
+               dir_qc    = speed_qc
+               speed_err = iv%tamdar_sfc(n)%u%error
+            else
+               speed     = missing_r
+               speed_qc    = missing_data
+               dir       = missing_r
+               dir_qc    = missing_data
+               speed_err = xmiss
+            end if
+            t     =  ob%tamdar_sfc(n)%t
+            t_qc  =  iv%tamdar_sfc(n)%t%qc
+            t_err =  iv%tamdar_sfc(n)%t%error
+            if (iv%tamdar_sfc(n)%t%qc <= fails_error_max) then
+               t_qc  = missing_data
+               t     = missing_r
+               t_err = xmiss
+            end if
+
+            ! get RH from Q & T
+            p     = ob%tamdar_sfc(n)%p
+            p_qc  = iv%tamdar_sfc(n)%p%qc
+            p_err = iv%tamdar_sfc(n)%p%error
+            if (iv%tamdar_sfc(n)%p%qc <= fails_error_max) then
+               p_qc  = missing_data
+               p     = missing_r
+               p_err   = pr_error
+               rh    = missing_r
+               rh_qc = missing_data
+               rh_error= xmiss
+            else
+              if (iv%tamdar_sfc(n)%q%qc >= obs_qc_pointer .and.  &
+               iv%tamdar_sfc(n)%q%error > 0.001.and.  &
+               iv%tamdar_sfc(n)%t%qc > fails_error_max ) then
+!               print*,ob%tamdar_sfc(n)%t, ob%tamdar_sfc(n)%p, es, qs
+               call da_tp_to_qs(ob%tamdar_sfc(n)%t, ob%tamdar_sfc(n)%p, es, qs)
+               rh = (ob%tamdar_sfc(n)%q/qs) * 100.
+               rh_qc = iv%tamdar_sfc(n)%q%qc
+               if (rh_qc < 0) rh_qc = missing_data
+              endif
+            end if
+
+            if(p.ne.missing_r)then
+            write(ounit, fmt = trim (fmt_each))           &
+               p,  p_qc,   p_err,                         &
+               speed,speed_qc, speed_err ,                &
+               dir  , dir_qc,  dir_err ,                  &
+               iv%tamdar_sfc(n)%h, zero, elv_error,        &
+               t, t_qc, t_err,                            &
+               td, td_qc, td_error,                       &
+               rh, rh_qc,  rh_error
+           endif
+! write high level information
+         do k = 1, iv%info(tamdar)%levels(n)
+            ! get speed and direction
+            if (iv%tamdar(n)%u(k)%qc >= obs_qc_pointer .and. &
+                iv%tamdar(n)%v(k)%qc >= obs_qc_pointer) then
+               uu = ob%tamdar(n)%u(k)
+               vv = ob%tamdar(n)%v(k)
+               call da_ffdduv(speed, dir, uu, vv, iv%info(tamdar)%lon(k,n), convert_uv2fd)
+               speed_qc  = iv%tamdar(n)%u(k)%qc
+               dir_qc    = speed_qc
+               speed_err = iv%tamdar(n)%u(k)%error
+            else
+               speed     = missing_r
+               speed_qc    = missing_data
+               dir       = missing_r
+               dir_qc    = missing_data
+               speed_err = xmiss
+            end if
+               ! get RH from Q & T
+               if (iv%tamdar(n)%q(k)%qc >= obs_qc_pointer .and.  &
+                   abs(iv%tamdar(n)%q(k)%error - missing_r) > 1. .and.  &
+                   abs(ob%tamdar(n)%t(k)       - missing_r) > 1. .and.  &
+                   abs(iv%tamdar(n)%p(k)       - missing_r) > 1.   ) then
+                  call da_tp_to_qs(ob%tamdar(n)%t(k), iv%tamdar(n)%p(k), es, qs)
+                  rh = (ob%tamdar(n)%q(k)/qs) * 100.
+                  rh_qc = iv%tamdar(n)%q(k)%qc
+               else
+                  rh    = missing_r
+                  rh_qc = missing_data
+                  rh_error= xmiss
+               end if
+               if (rh_qc < 0) rh_qc = missing_data
+
+               t    =  ob%tamdar(n)%t(k)
+               t_qc =  iv%tamdar(n)%t(k)%qc
+               t_err= iv%tamdar(n)%t(k)%error
+               if (iv%tamdar(n)%t(k)%qc <= fails_error_max) then
+                  t_qc = missing_data
+                  t   = missing_r
+                  t_err= xmiss
+               end if
+            if(iv%tamdar(n)%p(k).ne.missing_r)then
+            write(ounit, fmt = trim (fmt_each))       &
+               iv%tamdar(n)%p(k),zero , pr_error,      &
+               speed, speed_qc, speed_err,            &
+               dir  , dir_qc, dir_error,              &
+               iv%tamdar(n)%h(k), zero, elv_error,         &
+                   t,  t_qc, t_err,                           &
+               missing_r, missing_data, xmiss,        &
+                  rh, rh_qc,  rh_error
+            endif
+         end do
+      end do
+   end if
 
    if (iv%info(ssmi_tb)%nlocal > 0) then
       call da_warning(__FILE__,__LINE__, &     

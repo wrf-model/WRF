@@ -135,6 +135,28 @@ subroutine da_allocate_y (iv, y)
       end do
    end if
 
+   if (y % nlocal(tamdar) > 0) then
+      allocate (y % tamdar(1:y % nlocal(tamdar)))
+      do n = 1, y % nlocal(tamdar)
+         nlevels = max(1,iv%info(tamdar)%levels(n))
+         allocate (y % tamdar(n)%u(1:nlevels))
+         allocate (y % tamdar(n)%v(1:nlevels))
+         allocate (y % tamdar(n)%t(1:nlevels))
+         allocate (y % tamdar(n)%q(1:nlevels))
+         y % tamdar(n) % u(1:nlevels) = 0.0
+         y % tamdar(n) % v(1:nlevels) = 0.0
+         y % tamdar(n) % t(1:nlevels) = 0.0
+         y % tamdar(n) % q(1:nlevels) = 0.0
+      end do
+      allocate (y % tamdar_sfc(1:y % nlocal(tamdar_sfc)))
+
+      y % tamdar_sfc(1:y % nlocal(tamdar_sfc)) % u = 0.0
+      y % tamdar_sfc(1:y % nlocal(tamdar_sfc)) % v = 0.0
+      y % tamdar_sfc(1:y % nlocal(tamdar_sfc)) % t = 0.0
+      y % tamdar_sfc(1:y % nlocal(tamdar_sfc)) % p = 0.0
+      y % tamdar_sfc(1:y % nlocal(tamdar_sfc)) % q = 0.
+   end if
+
    if (y % nlocal(pilot) > 0) then
       allocate (y % pilot(1:y % nlocal(pilot)))
       do n = 1, y % nlocal(pilot)

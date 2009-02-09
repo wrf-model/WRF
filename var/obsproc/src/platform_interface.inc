@@ -5,7 +5,7 @@
                                          gpszd, gpsrf, gpsep, &
                                          ssmt1, ssmt2, ssmi , &
                                          tovs , other, amdar, &
-                                         qscat, profl, buoy, bogus, airs )
+                                         qscat, profl, buoy, bogus, airs, tamdar )
     IMPLICIT NONE
     INTEGER,              INTENT (in)    :: fm
     CHARACTER (LEN = 40), INTENT (out)   :: platform
@@ -16,7 +16,7 @@
                                                       bogus, &
                                                       ssmt1, ssmt2, ssmi,  &
                                                       tovs,  amdar, qscat, &
-                                                      profl, buoy, airs, other
+                                                      profl, buoy, airs, tamdar, other
     END SUBROUTINE fm_decoder
   END INTERFACE
 

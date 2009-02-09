@@ -103,6 +103,17 @@ subroutine da_fill_obs_structures(iv, ob)
    iv % mtgirs_ef_t = 1.0
    iv % mtgirs_ef_q = 1.0
 
+   iv % tamdar_ef_u = 1.0
+   iv % tamdar_ef_v = 1.0
+   iv % tamdar_ef_t = 1.0
+   iv % tamdar_ef_q = 1.0
+
+   iv % tamdar_sfc_ef_u = 1.0
+   iv % tamdar_sfc_ef_v = 1.0
+   iv % tamdar_sfc_ef_t = 1.0
+   iv % tamdar_sfc_ef_p = 1.0
+   iv % tamdar_sfc_ef_q = 1.0
+
    !----------------------------------------------------------------------
    ! [1.0] Allocate innovation vector and observation structures:
    !----------------------------------------------------------------------
@@ -481,6 +492,61 @@ subroutine da_fill_obs_structures(iv, ob)
          if (iv%mtgirs(n)% q(k) % error == missing_r) &
             iv%mtgirs(n)% q(k) % qc = missing_data
          end do
+      end do
+   end if
+
+   if (iv%info(tamdar)%nlocal > 0) then
+      do n = 1, iv%info(tamdar)%nlocal
+         do k = 1, iv%info(tamdar)%levels(n)
+            ob % tamdar(n) % u(k) = iv % tamdar(n) % u(k) % inv
+            ob % tamdar(n) % v(k) = iv % tamdar(n) % v(k) % inv
+            ob % tamdar(n) % t(k) = iv % tamdar(n) % t(k) % inv
+            ob % tamdar(n) % q(k) = iv % tamdar(n) % q(k) % inv
+
+         if (iv%tamdar(n)% u(k) % error == missing_r) &
+            iv%tamdar(n)% u(k) % qc = missing_data
+         if (iv%tamdar(n)% v(k) % error == missing_r) &
+            iv%tamdar(n)% v(k) % qc = missing_data
+         if (iv%tamdar(n)% t(k) % error == missing_r) &
+            iv%tamdar(n)% t(k) % qc = missing_data
+
+            ! Calculate q error from rh error:
+
+            rh_error = iv%tamdar(n)%q(k)%error ! q error is rh at this stage!
+            call da_get_q_error(iv % tamdar(n) % p(k), &
+                                ob % tamdar(n) % t(k), &
+                                ob % tamdar(n) % q(k), &
+                                iv % tamdar(n) % t(k) % error, &
+                                rh_error, q_error)
+
+            iv % tamdar(n) % q(k) % error = q_error
+
+         if (iv%tamdar(n)% q(k) % error == missing_r) &
+            iv%tamdar(n)% q(k) % qc = missing_data
+         end do
+         ob % tamdar_sfc(n) % u = iv % tamdar_sfc(n) % u % inv
+         ob % tamdar_sfc(n) % v = iv % tamdar_sfc(n) % v % inv
+         ob % tamdar_sfc(n) % t = iv % tamdar_sfc(n) % t % inv
+         ob % tamdar_sfc(n) % q = iv % tamdar_sfc(n) % q % inv
+         ob % tamdar_sfc(n) % p = iv % tamdar_sfc(n) % p % inv
+
+         if (iv%tamdar_sfc(n)% u % error == missing_r) &
+            iv%tamdar_sfc(n)% u % qc = missing_data
+         if (iv%tamdar_sfc(n)% v % error == missing_r) &
+            iv%tamdar_sfc(n)% v % qc = missing_data
+         if (iv%tamdar_sfc(n)% t % error == missing_r) &
+            iv%tamdar_sfc(n)% t % qc = missing_data
+
+         ! Calculate q error from rh error:
+
+         rh_error = iv%tamdar_sfc(n)%q%error ! q error is rh at this stage!
+         call da_get_q_error(iv % tamdar_sfc(n) % p % inv, &
+                              ob % tamdar_sfc(n) % t, &
+                              ob % tamdar_sfc(n) % q, &
+                              iv % tamdar_sfc(n) % t % error, &
+                              rh_error, iv % tamdar_sfc(n) % q % error)
+         if (iv%tamdar_sfc(n)% q % error == missing_r) &
+            iv%tamdar_sfc(n)% q % qc = missing_data
       end do
    end if
 

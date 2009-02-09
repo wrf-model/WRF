@@ -349,6 +349,32 @@ subroutine da_random_omb_all(iv, ob)
       end do
     end if
 
+   if (iv%info(tamdar)%nlocal > 0) then
+      do n = 1, iv%info(tamdar)%nlocal
+         do k = 1, iv%info(tamdar)%levels(n)
+            call da_random_omb(iv % tamdar(n) % u(k) % error, ob %  tamdar(n) % u(k), &
+                              iv %  tamdar(n) % u(k) % qc, iv %  tamdar(n) % u(k) % inv)
+            call da_random_omb(iv %  tamdar(n) % v(k) % error, ob %  tamdar(n) % v(k), &
+                              iv %  tamdar(n) % v(k) % qc, iv %  tamdar(n) % v(k) % inv)
+            call da_random_omb(iv %  tamdar(n) % t(k) % error, ob %  tamdar(n) % t(k), &
+                              iv %  tamdar(n) % t(k) % qc, iv %  tamdar(n) % t(k) % inv)
+            call da_random_omb(iv %  tamdar(n) % q(k) % error, ob %  tamdar(n) % q(k), &
+                              iv %  tamdar(n) % q(k) % qc, iv %  tamdar(n) % q(k) % inv)
+         end do
+         call da_random_omb(iv % tamdar_sfc(n) % u % error, ob % tamdar_sfc(n) % u, &
+                             iv % tamdar_sfc(n) % u % qc, iv % tamdar_sfc(n) % u % inv)
+         call da_random_omb(iv % tamdar_sfc(n) % v % error, ob % tamdar_sfc(n) % v, &
+                             iv % tamdar_sfc(n) % v % qc, iv % tamdar_sfc(n) % v % inv)
+         call da_random_omb(iv % tamdar_sfc(n) % t % error, ob % tamdar_sfc(n) % t, &
+                             iv % tamdar_sfc(n) % t % qc, iv % tamdar_sfc(n) % t % inv )
+         call da_random_omb(iv % tamdar_sfc(n) % p % error, ob % tamdar_sfc(n) % p, &
+                             iv % tamdar_sfc(n) % p % qc, iv % tamdar_sfc(n) % p % inv)
+         call da_random_omb(iv % tamdar_sfc(n) % q % error, ob % tamdar_sfc(n) % q, &
+                             iv % tamdar_sfc(n) % q % qc, iv % tamdar_sfc(n) % q % inv)
+
+      end do
+    end if
+
    if (trace_use) call da_trace_exit("da_random_omb_all")
 
 end subroutine da_random_omb_all

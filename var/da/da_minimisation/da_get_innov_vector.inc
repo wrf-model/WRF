@@ -64,6 +64,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       end if
       if (iv%info(mtgirs)%nlocal    > 0) &
          call da_get_innov_vector_mtgirs    (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(tamdar)%nlocal    > 0) &
+         call da_get_innov_vector_tamdar    (it, num_qcstat_conv, grid, ob, iv)
+      if (iv%info(tamdar_sfc)%nlocal> 0) &
+         call da_get_innov_vector_tamdar_sfc(it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(synop)%nlocal     > 0) &
          call da_get_innov_vector_synop     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(geoamv)%nlocal    > 0) &

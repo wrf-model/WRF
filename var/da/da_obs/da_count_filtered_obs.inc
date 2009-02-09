@@ -52,6 +52,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             platform%info%lon,         &
             platform%info%elv,         &
             platform%info%id
+
          if (iost /= 0) then
             !write (0,'(/A,I9)') ' end OF OBS unit: ',iunit
             !write (0,'(/A,I9)') ' iostat:          ',iost
@@ -65,7 +66,6 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             platform%loc%slp%error,                    &
             platform%loc%pw%inv, platform%loc%pw%qc,   &
             platform%loc%pw%error
-
          ! levels < 1 and not GPSPW, go back to reports
 
          if ((platform%info%levels < 1) .AND.            &
@@ -163,6 +163,10 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
             if (.not.use_airepobs) cycle reports
             nlocal(airep) = nlocal(airep) + 1
 
+         case (101) ;
+            if (.not.use_tamdarobs) cycle reports
+            nlocal(tamdar) = nlocal(tamdar) + 1
+
          case (111) ;
          
             if (.not.use_gpspwobs) cycle reports
@@ -230,7 +234,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       nlocal(buoy) + nlocal(sound) + nlocal(airep) + nlocal(pilot) + &
       nlocal(geoamv) + nlocal(polaramv) + nlocal(gpspw) + nlocal(gpsref) + &
       nlocal(profiler) + nlocal(qscat) + nlocal(ssmt1) + nlocal(ssmt2) +  &
-      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + num_others
+      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + nlocal(tamdar) + num_others
 
    write  (unit = filtered_obs_unit, fmt = '(A,I7,A,F8.0,A)')    &
       "TOTAL =",total_obs, ", MISS. =",missing_r,","  
@@ -257,6 +261,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       "BOGUS =",nlocal(bogus),", ", &
       "AIRSR =",nlocal(airsr),", ", &
       "MTGIRS=",nlocal(mtgirs),", ", &
+      "TAMDAR=",nlocal(tamdar),", ", &
       "OTHER =",num_others,", "
 
    ! write reference state info

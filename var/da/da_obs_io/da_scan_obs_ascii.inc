@@ -214,6 +214,13 @@ subroutine da_scan_obs_ascii (iv, filename)
             if (outside) cycle reports
             iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
             iv%info(sonde_sfc)%nlocal = iv%info(sonde_sfc)%nlocal + 1
+         case (101) ;
+            if (.not.use_tamdarobs .or. iv%info(tamdar)%ntotal == max_tamdar_input) cycle reports
+            if (n==1) iv%info(tamdar)%ntotal     = iv%info(tamdar)%ntotal + 1
+            if (n==1) iv%info(tamdar_sfc)%ntotal     = iv%info(tamdar_sfc)%ntotal + 1
+            if (outside) cycle reports
+            iv%info(tamdar)%nlocal         = iv%info(tamdar)%nlocal + 1
+            iv%info(tamdar_sfc)%nlocal     = iv%info(tamdar_sfc)%nlocal + 1
          case (161) ;
             if (.not.use_mtgirsobs .or. iv%info(mtgirs)%ntotal == max_mtgirs_input) cycle reports
             if (n==1) iv%info(mtgirs)%ntotal     = iv%info(mtgirs)%ntotal + 1
@@ -324,7 +331,7 @@ subroutine da_scan_obs_ascii (iv, filename)
    end do reports
 
    iv%info(sonde_sfc)%max_lev=1
-
+   iv%info(tamdar_sfc)%max_lev=1
    close(iunit)
 
    call da_free_unit(iunit)

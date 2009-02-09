@@ -354,6 +354,34 @@ subroutine da_use_obs_errfac(iv)
       end do
    end if
 
+   ! Transfer tamdar obs:
+
+   if (iv%info(tamdar)%nlocal > 0) then
+      call da_read_errfac('tamdar', iv % tamdar_ef_u, iv % tamdar_ef_v, &
+                           iv % tamdar_ef_t, iv % tamdar_ef_q, d1)
+
+      do n = 1, iv%info(tamdar)%nlocal
+         do k = 1, iv%info(tamdar)%levels(n)
+            iv % tamdar(n) % u(k) % error = iv % tamdar(n) % u(k) % error * &
+                                           iv % tamdar_ef_u
+            iv % tamdar(n) % v(k) % error = iv % tamdar(n) % v(k) % error * &
+                                           iv % tamdar_ef_v
+            iv % tamdar(n) % t(k) % error = iv % tamdar(n) % t(k) % error * &
+                                           iv % tamdar_ef_t
+            iv % tamdar(n) % q(k) % error = iv % tamdar(n) % q(k) % error * &
+                                           iv % tamdar_ef_q
+
+         end do
+         iv % tamdar_sfc(n) % u % error = iv % tamdar_sfc(n) % u % error * iv % tamdar_sfc_ef_u
+         iv % tamdar_sfc(n) % v % error = iv % tamdar_sfc(n) % v % error * iv % tamdar_sfc_ef_v
+         iv % tamdar_sfc(n) % t % error = iv % tamdar_sfc(n) % t % error * iv % tamdar_sfc_ef_t
+         iv % tamdar_sfc(n) % p % error = iv % tamdar_sfc(n) % p % error * iv % tamdar_sfc_ef_p
+         iv % tamdar_sfc(n) % q % error = iv % tamdar_sfc(n) % q % error * iv % tamdar_sfc_ef_q
+
+      end do
+   end if
+
+
    if (trace_use) call da_trace_exit("da_use_obs_errfac")
 
 end subroutine da_use_obs_errfac

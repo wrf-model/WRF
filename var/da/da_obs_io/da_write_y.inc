@@ -613,6 +613,55 @@ subroutine da_write_y (iv, y)
       end if
    end if
 
+   ! Transfer tamdar obs:
+
+   if (iv%info(tamdar)%nlocal > 0) then
+      num_obs = 0
+      do n = 1, iv%info(tamdar)%nlocal
+         if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+      if (num_obs > 0) then
+         write(ounit,'(a20,i8)')'tamdar', num_obs
+         num_obs = 0
+         do n = 1, iv%info(tamdar)%nlocal
+            if (iv%info(tamdar)%proc_domain(1,n)) then
+               num_obs = num_obs + 1
+               write(ounit,'(i8)')iv%info(tamdar)%levels(n)
+               do k = 1, iv%info(tamdar)%levels(n)
+                  call da_check_missing(iv%tamdar(n)%u(k)%qc, y%tamdar(n)%u(k), f1)
+                  call da_check_missing(iv%tamdar(n)%v(k)%qc, y%tamdar(n)%v(k), f2)
+                  call da_check_missing(iv%tamdar(n)%t(k)%qc, y%tamdar(n)%t(k), f3)
+                  call da_check_missing(iv%tamdar(n)%q(k)%qc, y%tamdar(n)%q(k), f4)
+                  write(ounit,'(2i8,7e15.7)')num_obs, k, f1, f2, f3, f4, dum, &
+                     dum,dum
+               end do
+            end if
+         end do
+      end if
+      num_obs = 0
+      do n = 1, iv%info(tamdar)%nlocal
+         if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+      if (num_obs > 0) then
+         write(ounit,'(a20,i8)')'sonde_sfc', num_obs
+         num_obs = 0
+         do n = 1, iv%info(tamdar)%nlocal
+            if (iv%info(tamdar)%proc_domain(1,n)) then
+               num_obs = num_obs + 1
+               write(ounit,'(i8)')  1
+               call da_check_missing(iv%tamdar_sfc(n)%u%qc, y%tamdar_sfc(n)%u, f1)
+               call da_check_missing(iv%tamdar_sfc(n)%v%qc, y%tamdar_sfc(n)%v, f2)
+               call da_check_missing(iv%tamdar_sfc(n)%t%qc, y%tamdar_sfc(n)%t, f3)
+               call da_check_missing(iv%tamdar_sfc(n)%p%qc, y%tamdar_sfc(n)%p, f4)
+               call da_check_missing(iv%tamdar_sfc(n)%q%qc, y%tamdar_sfc(n)%q, f5)
+               write(ounit,'(2i8,7e15.7)')num_obs, 1, f1, f2, f3, f4, f5, &
+                  dum,dum
+            end if
+         end do
+      end if
+   end if
+
+
    close (ounit)
    call da_free_unit(ounit)
 

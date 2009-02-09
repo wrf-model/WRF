@@ -12,7 +12,7 @@ subroutine da_get_var_diagnostics( iv, j)
    integer                      :: num_stats_tot
    integer                      :: i,k
    real                         :: jo_radiance
-   real                         :: temp(67)
+   real                         :: temp(76)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
 
@@ -89,6 +89,15 @@ subroutine da_get_var_diagnostics( iv, j)
    temp(65) = j % jo % mtgirs_q
    temp(66) = j % jo % mtgirs_u
    temp(67) = j % jo % mtgirs_v
+   temp(68) = j % jo % tamdar_t
+   temp(69) = j % jo % tamdar_q
+   temp(70) = j % jo % tamdar_u
+   temp(71) = j % jo % tamdar_v
+   temp(72) = j % jo % tamdar_sfc_u
+   temp(73) = j % jo % tamdar_sfc_v
+   temp(74) = j % jo % tamdar_sfc_t
+   temp(75) = j % jo % tamdar_sfc_p
+   temp(76) = j % jo % tamdar_sfc_q
 
 
    call da_proc_sum_real(temp(:))
@@ -161,6 +170,16 @@ subroutine da_get_var_diagnostics( iv, j)
    j % jo % mtgirs_q        = temp(65)
    j % jo % mtgirs_u        = temp(66)
    j % jo % mtgirs_v        = temp(67)
+
+   j % jo % tamdar_t        = temp(68)
+   j % jo % tamdar_q        = temp(69)
+   j % jo % tamdar_u        = temp(70)
+   j % jo % tamdar_v        = temp(71)
+   j % jo % tamdar_sfc_u    = temp(72)
+   j % jo % tamdar_sfc_v    = temp(73)
+   j % jo % tamdar_sfc_t    = temp(74)
+   j % jo % tamdar_sfc_p    = temp(75)
+   j % jo % tamdar_sfc_q    = temp(76)
 
    if (use_rad) then
       jo_radiance = 0.0
@@ -299,6 +318,22 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % mtgirs_v, iv % mtgirs_ef_v, &
                                j % jo % mtgirs_t, iv % mtgirs_ef_t, &
                                j % jo % mtgirs_q, iv % mtgirs_ef_q, 0.0, 1.0
+      end if
+
+      if (iv%info(tamdar)%ntotal > 0) then
+         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'   tamdar obs, Jo(actual)  = ', &
+                               iv%info(tamdar)%ntotal, iv%nstats(tamdar), &
+                               j % jo % tamdar_u, iv % tamdar_ef_u, &
+                               j % jo % tamdar_v, iv % tamdar_ef_v, &
+                               j % jo % tamdar_t, iv % tamdar_ef_t, &
+                               j % jo % tamdar_q, iv % tamdar_ef_q, 0.0, 1.0
+         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'tamdar sfc obs,Jo(actual)  = ', &
+                               iv%info(tamdar)%ntotal, iv%nstats(tamdar), &
+                               j % jo % tamdar_sfc_u, iv % tamdar_sfc_ef_u, &
+                               j % jo % tamdar_sfc_v, iv % tamdar_sfc_ef_v, &
+                               j % jo % tamdar_sfc_t, iv % tamdar_sfc_ef_t, &
+                               j % jo % tamdar_sfc_p, iv % tamdar_sfc_ef_p, &
+                               j % jo % tamdar_sfc_q, iv % tamdar_sfc_ef_q
       end if
 
       if (iv%info(airep)%ntotal > 0) then

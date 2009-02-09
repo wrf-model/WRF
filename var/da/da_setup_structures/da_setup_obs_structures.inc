@@ -22,7 +22,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    if (use_synopobs .OR. use_shipsobs .OR. use_metarobs .OR. use_pilotobs .OR. &
       use_profilerobs .OR. use_buoyobs .OR. use_soundobs .OR. use_mtgirsobs .OR. use_bogusobs .OR. &
       use_radarobs .OR. use_radar_rv .OR. use_radar_rf .OR. use_satemobs .OR. &
-      use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. &
+      use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .or. &
       use_airsretobs ) then
@@ -96,6 +96,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_metarobs         = .false.
       use_soundobs         = .false.
       use_mtgirsobs        = .false.
+      use_tamdarobs        = .false.
       use_bogusobs         = .false.
       use_pilotobs         = .false.
       use_airepobs         = .false.
@@ -204,6 +205,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
    do i=1,num_fgat_time
       write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
       do j=1,num_ob_indexes
+         if(j.eq.27)cycle
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else

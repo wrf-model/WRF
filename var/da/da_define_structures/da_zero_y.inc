@@ -125,6 +125,26 @@ subroutine da_zero_y( iv, y )
       end do
    end if
 
+   if ( y % nlocal(tamdar) > 0 ) then
+      do n = 1, y % nlocal(tamdar)
+         nlevels = iv%info(tamdar)%levels(n)
+
+         y % tamdar(n) % u(1:nlevels) = 0.0
+         y % tamdar(n) % v(1:nlevels) = 0.0
+         y % tamdar(n) % t(1:nlevels) = 0.0
+         y % tamdar(n) % q(1:nlevels) = 0.0
+         ! Initialize tamdar_sfc
+
+         y % tamdar_sfc(n) % u = 0.0
+         y % tamdar_sfc(n) % v = 0.0
+         y % tamdar_sfc(n) % t = 0.0
+         y % tamdar_sfc(n) % p = 0.0
+         y % tamdar_sfc(n) % q = 0.0
+
+      end do
+   end if
+
+
    if ( y % nlocal(bogus) > 0 ) then
       do n = 1, y % nlocal(bogus)
          nlevels = iv % bogus(n) % info % levels

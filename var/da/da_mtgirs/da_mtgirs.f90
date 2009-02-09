@@ -15,8 +15,6 @@ module da_mtgirs
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_max_error_qc, da_residual, da_convert_zk, da_get_print_lvl
    use da_par_util, only : da_proc_stats_combine
-!, &
-!     da_deallocate_global_mtgirs, da_to_global_mtgirs
    use da_par_util1, only : da_proc_sum_int
    use da_tracing, only : da_trace_entry, da_trace_exit
 

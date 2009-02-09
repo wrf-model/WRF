@@ -50,6 +50,19 @@ subroutine da_deallocate_y(y)
 
    end if
 
+   if (y % nlocal(tamdar) > 0) then
+      do n = 1, y % nlocal(tamdar)
+         deallocate (y % tamdar(n)%u)
+         deallocate (y % tamdar(n)%v)
+         deallocate (y % tamdar(n)%t)
+         deallocate (y % tamdar(n)%q)
+      end do
+
+      deallocate (y % tamdar)
+      deallocate (y % tamdar_sfc)
+   end if
+
+
    if (y % nlocal(pilot) > 0) then
       do n = 1, y % nlocal(pilot)
          deallocate (y % pilot(n)%u)

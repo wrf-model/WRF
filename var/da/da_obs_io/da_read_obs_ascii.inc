@@ -483,6 +483,97 @@ subroutine da_read_obs_ascii (iv, filename)
             end if
 
 !            iv%sound(nlocal(sound))%info%levels = nlevels
+         case (101) ;
+            if (.not. use_tamdarobs) cycle reports
+            if (n==1) ntotal(tamdar) = ntotal(tamdar) + 1
+            if (n==1) ntotal(tamdar_sfc) = ntotal(tamdar_sfc) + 1
+            if (outside) cycle reports
+            nlocal(tamdar) = nlocal(tamdar) + 1
+            nlocal(tamdar_sfc) = nlocal(tamdar_sfc) + 1
+            if (nlocal(tamdar) > iv%info(tamdar)%nlocal) cycle reports
+            ! Search to see if we have surface obs.
+
+            surface_level = 0
+
+            do i = 1, nlevels
+               ! if (elevation and height are the same, it is surface.)
+               if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                  surface_level = i
+
+                  ! Save surface pressure.
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%h = platform%each(i)%height
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%u = platform%each(i)%u
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%v = platform%each(i)%v
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%t = platform%each(i)%t
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%q = platform%each(i)%q
+                  iv%tamdar_sfc(nlocal(tamdar_sfc))%p = platform%each(i)%p
+                  exit
+               end if
+            end do
+            ! processing the tamdar_sfc data:
+
+            old_nlevels = nlevels
+
+           if (surface_level > 0) then
+               nlevels = nlevels - 1
+            else
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%h = missing_r
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%inv   = missing_r
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%qc    = missing
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%error = abs(missing_r)
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%v = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%t = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%p = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+               iv%tamdar_sfc(nlocal(tamdar_sfc))%q = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
+            end if
+
+            if (nlevels > 0) then
+
+               allocate (iv%tamdar(nlocal(tamdar))%h (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%p (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%u (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%v (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%t (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%q (1:nlevels))
+
+               j = 0
+               do i = 1, nlevels
+
+                  j=j+1
+
+                  iv%tamdar(nlocal(tamdar))%h(j) = platform%each(i)%height
+                  iv%tamdar(nlocal(tamdar))%p(j) = platform%each(i)%p%inv
+                  iv%tamdar(nlocal(tamdar))%u(j) = platform%each(i)%u
+                  iv%tamdar(nlocal(tamdar))%v(j) = platform%each(i)%v
+                  iv%tamdar(nlocal(tamdar))%t(j) = platform%each(i)%t
+                  iv%tamdar(nlocal(tamdar))%q(j) = platform%each(i)%q
+                 if(iv%tamdar(nlocal(tamdar))%q(j)%inv.ne.missing_r)then
+                 iv%tamdar(nlocal(tamdar))%q(j)%inv = iv%tamdar(nlocal(tamdar))%q(j)%inv
+                 endif
+                 if(iv%tamdar(nlocal(tamdar))%q(j)%error.ne.missing_r)then
+                 iv%tamdar(nlocal(tamdar))%q(j)%error = iv%tamdar(nlocal(tamdar))%q(j)%error
+                 endif
+
+               end do
+            else
+               nlevels = 1
+               allocate (iv%tamdar(nlocal(tamdar))%h (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%p (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%u (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%v (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%t (1:nlevels))
+               allocate (iv%tamdar(nlocal(tamdar))%q (1:nlevels))
+               j=1
+               iv%tamdar(nlocal(tamdar))%h = missing_r
+               iv%tamdar(nlocal(tamdar))%p = missing_r
+               iv%tamdar(nlocal(tamdar))%u%inv   = missing_r
+               iv%tamdar(nlocal(tamdar))%u%qc    = missing
+               iv%tamdar(nlocal(tamdar))%u%error = abs(missing_r)
+               iv%tamdar(nlocal(tamdar))%v = iv%tamdar(nlocal(tamdar))%u
+               iv%tamdar(nlocal(tamdar))%t = iv%tamdar(nlocal(tamdar))%u
+               iv%tamdar(nlocal(tamdar))%q = iv%tamdar(nlocal(tamdar))%u
+
+            end if
       
          case (161) ;
             if (.not. use_mtgirsobs) cycle reports
@@ -876,6 +967,32 @@ subroutine da_read_obs_ascii (iv, filename)
             iv%info(sonde_sfc)%proc_domain(:,nlocal(sonde_sfc)) = platform%loc%proc_domain
 
             iv%info(sonde_sfc)%obs_global_index(nlocal(sonde_sfc)) = ntotal(sonde_sfc)
+         end if
+
+         if (obs_index == tamdar) then
+            iv%info(tamdar_sfc)%name(nlocal(tamdar_sfc))      = platform%info%name
+            iv%info(tamdar_sfc)%platform(nlocal(tamdar_sfc))  = platform%info%platform
+            iv%info(tamdar_sfc)%id(nlocal(tamdar_sfc))        = platform%info%id
+            iv%info(tamdar_sfc)%date_char(nlocal(tamdar_sfc)) = platform%info%date_char
+            iv%info(tamdar_sfc)%levels(nlocal(tamdar_sfc))    = 1
+            iv%info(tamdar_sfc)%lat(:,nlocal(tamdar_sfc))     = platform%info%lat
+            iv%info(tamdar_sfc)%lon(:,nlocal(tamdar_sfc))     = platform%info%lon
+            iv%info(tamdar_sfc)%elv(nlocal(tamdar_sfc))       = platform%info%elv
+            iv%info(tamdar_sfc)%pstar(nlocal(tamdar_sfc))     = platform%info%pstar
+
+            iv%info(tamdar_sfc)%slp(nlocal(tamdar_sfc))           = platform%loc%slp
+            iv%info(tamdar_sfc)%pw(nlocal(tamdar_sfc))            = platform%loc%pw
+            iv%info(tamdar_sfc)%x(:,nlocal(tamdar_sfc))           = platform%loc%x
+            iv%info(tamdar_sfc)%y(:,nlocal(tamdar_sfc))           = platform%loc%y
+            iv%info(tamdar_sfc)%i(:,nlocal(tamdar_sfc))           = platform%loc%i
+            iv%info(tamdar_sfc)%j(:,nlocal(tamdar_sfc))           = platform%loc%j
+            iv%info(tamdar_sfc)%dx(:,nlocal(tamdar_sfc))          = platform%loc%dx
+            iv%info(tamdar_sfc)%dxm(:,nlocal(tamdar_sfc))         = platform%loc%dxm
+            iv%info(tamdar_sfc)%dy(:,nlocal(tamdar_sfc))          = platform%loc%dy
+            iv%info(tamdar_sfc)%dym(:,nlocal(tamdar_sfc))         = platform%loc%dym
+            iv%info(tamdar_sfc)%proc_domain(:,nlocal(tamdar_sfc)) = platform%loc%proc_domain
+
+            iv%info(tamdar_sfc)%obs_global_index(nlocal(tamdar_sfc)) = ntotal(tamdar_sfc)
          end if
 
          if (global .and. n < 2) then

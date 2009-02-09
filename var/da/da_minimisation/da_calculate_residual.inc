@@ -31,6 +31,10 @@ subroutine da_calculate_residual(iv, y, re)
    if (iv%info(mtgirs)%nlocal > 0) & 
       call da_residual_mtgirs(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
+   if (iv%info(tamdar)%nlocal > 0) then 
+      call da_residual_tamdar(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+      call da_residual_tamdar_sfc(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+   end if
    if (iv%info(synop)%nlocal > 0) &
       call da_residual_synop(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 

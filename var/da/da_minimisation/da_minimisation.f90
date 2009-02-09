@@ -36,7 +36,7 @@ module da_minimisation
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, &
       cv_size_domain_je,cv_size_domain_jb, num_pseudo, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_crtm_kmatrix, &
       precondition_cg, precondition_factor, cv_size_domain_jp, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
@@ -82,8 +82,15 @@ module da_minimisation
    use da_mtgirs, only : da_calculate_grady_mtgirs, &
       da_ao_stats_mtgirs, da_oi_stats_mtgirs,da_oi_stats_mtgirs, &
       da_get_innov_vector_mtgirs, &
-      da_jo_and_grady_mtgirs, da_residual_mtgirs, &
-      da_jo_and_grady_mtgirs
+      da_jo_and_grady_mtgirs, da_residual_mtgirs
+   use da_tamdar, only : da_calculate_grady_tamdar, &
+      da_ao_stats_tamdar, da_oi_stats_tamdar,da_oi_stats_tamdar, &
+      da_get_innov_vector_tamdar, &
+      da_jo_and_grady_tamdar, da_residual_tamdar, &
+      da_calculate_grady_tamdar_sfc, &
+      da_ao_stats_tamdar_sfc, da_oi_stats_tamdar_sfc,da_oi_stats_tamdar_sfc, &
+      da_get_innov_vector_tamdar_sfc, &
+      da_jo_and_grady_tamdar_sfc, da_residual_tamdar_sfc
 
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_calculate_grady_rad, da_write_filtered_rad, &

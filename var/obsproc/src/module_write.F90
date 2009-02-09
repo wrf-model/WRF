@@ -472,7 +472,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                          nsatobs, naireps, ngpspws, ngpsztd, ngpsref,  &
                          ngpseph, nssmt1s, nssmt2s, nssmis,  ntovss,   &
                          nothers, namdars, nqscats, nprofls,nbuoyss,   &
-                         nboguss, nairss, missing_r, time_analysis)
+                         nboguss, nairss, ntamdar, missing_r, time_analysis)
 
 !-------------------------------------------------------------------------------
 ! Write observation at MM5 3D-VAR SYSTEM VERSION 2.0
@@ -501,7 +501,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                                                                nprofls,nbuoyss,&
                                                                ngpsztd,ngpsref,&
                                                                ngpseph,nboguss,&
-                                                               nairss
+                                                               nairss,ntamdar
 
   TYPE (measurement ) , POINTER :: current
   INTEGER                       :: loop_index
@@ -532,7 +532,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
                  nssmt1s + nssmt2s + ntovss  + &
                  namdars + nqscats + nprofls + &
                  nbuoyss + nothers + ngpsztd + &
-                 ngpsref + ngpseph + nboguss + nairss
+                 ngpsref + ngpseph + nboguss + nairss + ntamdar
 
 !------------------------------------------------------------------------------!
 !     B. PRINT OBS USING THE NEW STRUCTURE
@@ -619,6 +619,7 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
       "TEMP  =",nsounds,", ", &
       "AMDAR =",namdars,", ", &
       "AIREP =",naireps,", ", &
+      "TAMDAR=",ntamdar,", ", &
       "PILOT =",npilots,", ", &
       "SATEM =",nsatems,", ", &
       "SATOB =",nsatobs,", ", &

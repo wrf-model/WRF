@@ -39,6 +39,7 @@ MODULE module_err_afwa
         TYPE (field_type) :: buoys
         TYPE (field_type) :: metar
         TYPE (field_type) :: airep
+        TYPE (field_type) :: tamdar
         TYPE (field_type) :: pilot
         TYPE (field_type) :: profl
         TYPE (field_type) :: sound
@@ -943,7 +944,7 @@ upper_level: DO WHILE (ASSOCIATED (current))
 ! 4.9 Airep
 !     -----
 
-      CASE  ('AIREP','AMDAR')
+      CASE  ('AIREP','AMDAR','TAMDAR')
 
           !  Wind
 

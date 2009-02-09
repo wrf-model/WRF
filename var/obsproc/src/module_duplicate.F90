@@ -90,7 +90,7 @@ SUBROUTINE check_duplicate_loc(obs, index, num_obs, total_dups, time_analysis,&
                            ntovsb,  notherb, namdarb, &
                            nqscatb, nproflb, ngpsepb, nbuoysb, &
                            ngpszdb, ngpsrfb, nbogusb, &
-                           nairsb
+                           nairsb,  ntamdarb
    INTEGER              :: nsynopa, nmetara, nshipsa, &
                            nsounda, npilota, nairepa, &
                            nsatema, nsatoba, ngpspwa, &
@@ -98,7 +98,7 @@ SUBROUTINE check_duplicate_loc(obs, index, num_obs, total_dups, time_analysis,&
                            ntovsa,  nothera, namdara, &
                            nqscata, nprofla, ngpsepa, nbuoysa, &
                            ngpszda, ngpsrfa, nbogusa, &
-                           nairsa
+                           nairsa,  ntamdara
 
    INCLUDE 'platform_interface.inc'
 
@@ -151,7 +151,7 @@ SUBROUTINE check_duplicate_loc(obs, index, num_obs, total_dups, time_analysis,&
    ngpszda = 0; ngpszdb = 0; nbogusa = 0;
    ngpsrfa = 0; ngpsrfb = 0; nbogusb = 0;
    ngpsepa = 0; ngpsepb = 0
-
+   ntamdara= 0; ntamdarb= 0
    !  Count obs per type before merging
 
 count_before:&
@@ -178,7 +178,7 @@ count_before:&
                        ssmt1=nssmt1b, ssmt2=nssmt2b, ssmi =nssmib, &
                        tovs =ntovsb,  other=notherb, amdar=namdarb,&
                        qscat=nqscatb, profl=nproflb, buoy = nbuoysb,&
-                       airs=nairsb)
+                       airs=nairsb,tamdar=ntamdarb)
 
    ENDDO count_before
 
@@ -314,7 +314,7 @@ count_after:&
                        ssmt1=nssmt1a, ssmt2=nssmt2a, ssmi =nssmia, &
                        tovs =ntovsa,  other=nothera, amdar=namdara,&
                        qscat=nqscata, profl=nprofla, buoy = nbuoysa, &
-                       airs=nairsa)
+                       airs=nairsa, tamdar=ntamdara)
 
    ENDDO count_after
 
@@ -325,6 +325,7 @@ count_after:&
    namdars (icor) = namdarb - namdara
    npilots (icor) = npilotb - npilota
    naireps (icor) = nairepb - nairepa  
+   ntamdar (icor) = ntamdarb- ntamdara
    nsatems (icor) = nsatemb - nsatema
    nsatobs (icor) = nsatobb - nsatoba
    ngpspws (icor) = ngpspwb - ngpspwa
@@ -613,7 +614,7 @@ time_different: IF (abs(itfirst) .LT. abs(itsecond)) THEN
                               tovs =ntovss  (icor), other=nothers (icor), &
                               amdar=namdars (icor), qscat=nqscats (icor), &
                               profl=nprofls (icor), buoy =nbuoyss (icor), &
-                              airs =nairss (icor)  )
+                              airs =nairss (icor) , tamdar=ntamdar(icor)  )
 
              obs (second)%info%discard  = .true.
              obs (first)%info%num_dups  = obs (first)%info%num_dups + 1
@@ -645,7 +646,7 @@ time_different: IF (abs(itfirst) .LT. abs(itsecond)) THEN
                               tovs =ntovss  (icor), other=nothers (icor), &
                               amdar=namdars (icor), qscat=nqscats (icor), &
                               profl=nprofls (icor), buoy =nbuoyss (icor), &
-                              airs =nairss (icor)  )
+                              airs =nairss (icor),  tamdar=ntamdar(icor)  )
 
              obs (first)%info%discard    = .true.
              obs (second)%info%num_dups  = obs (second)%info%num_dups + 1

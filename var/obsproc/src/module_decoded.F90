@@ -761,7 +761,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                           tovs =ntovss  (icor), other=nothers (icor), &
                           amdar=namdars (icor), qscat=nqscats (icor), &
                           profl=nprofls (icor), buoy =nbuoyss (icor), &
-                          bogus=nboguss (icor), airs = nairss(icor) )
+                          bogus=nboguss (icor), airs = nairss(icor),tamdar=ntamdar(icor) )
 
          !  Since no I/O errors, read 1 or more measurements.
          !  Note that obs(obs_num)%surface is pointer to first node in linked 
@@ -884,7 +884,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                              tovs =ntovss  (icor+1), other=nothers (icor+1), &
                              amdar=namdars (icor+1), qscat=nqscats (icor+1), &
                              profl=nprofls (icor+1), buoy =nbuoyss (icor+1), &
-                             bogus=nboguss (icor+1), airs =nairss  (icor+1)  )
+                             bogus=nboguss (icor+1), airs =nairss  (icor+1), tamdar =ntamdar (icor+1)  )
 
             IF ( ASSOCIATED (obs(obs_num)%surface)) THEN
                !  dealloc entire linked list if it exists
@@ -926,7 +926,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
                              tovs =ntovss  (icor+2), other=nothers (icor+2), &
                              amdar=namdars (icor+2), qscat=nqscats (icor+2), &
                              profl=nprofls (icor+2), buoy =nbuoyss (icor+2), &
-                             bogus=nboguss (icor+2), airs =nairss  (icor+2)  )
+                             bogus=nboguss (icor+2), airs =nairss  (icor+2),tamdar =ntamdar (icor+2) )
 
             IF ( ASSOCIATED (obs(obs_num)%surface)) THEN
                !  dealloc entire linked list if it exists
@@ -1125,6 +1125,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSRF reports:',ngpsref (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' GPSEP reports:',ngpseph (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' AIREP reports:',naireps (0)
+   WRITE (UNIT = 0, FMT = '(A,I6)') 'TAMDAR reports:',ntamdar (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMT1 reports:',nssmt1s (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMT2 reports:',nssmt2s (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' SSMI  reports:',nssmis  (0)
@@ -1135,7 +1136,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' OTHER reports:',nothers (0)
    WRITE (UNIT = 0, FMT = '(A,I6)') ' Total reports:', &
           nsynops (0) + nshipss (0) + nmetars (0) + npilots (0) + nsounds (0)+&
-          nsatems (0) + nsatobs (0) + naireps (0) + ngpspws (0) + ngpsztd (0)+&
+          nsatems (0) + nsatobs (0) + naireps (0) +  ntamdar (0)+ ngpspws (0) + ngpsztd (0)+&
           ngpsref (0) + ngpseph (0) + &
           nssmt1s (0) + nssmt2s (0) + nssmis  (0) + ntovss  (0) + nboguss (0)+&
           nothers (0) + namdars (0) + nqscats (0) + nprofls(0)  + nbuoyss(0) +&

@@ -11,7 +11,7 @@ module da_obs
    use da_control, only : use_shipsobs, use_synopobs, use_ssmt2obs, &
       use_soundobs,use_mtgirsobs,use_satemobs, use_profilerobs, use_pilotobs, &
       use_qscatobs,use_metarobs, use_polaramvobs, use_geoamvobs, &
-      use_bogusobs,use_buoyobs, use_airsretobs, trace_use, num_procs, &
+      use_bogusobs,use_buoyobs, use_airsretobs, use_tamdarobs, trace_use, num_procs, &
       missing_r, missing, use_airepobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs, &
       use_ssmt1obs,filtered_obs_unit,fmt_each,fmt_info,fmt_srfc, ide, jde, &
       pseudo_x, fg_format, fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
@@ -21,7 +21,7 @@ module da_obs
       ob_format,ob_format_ascii,filename_len, trace_use_dull, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
-      bogus, buoy, qscat,pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids
+      bogus, buoy, qscat, tamdar, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids
    ! use_crtm_kmatrix,use_crtm_kmatrix_fast
 #ifdef CRTM
    use da_crtm, only : da_transform_xtoy_crtm, da_transform_xtoy_crtm_adj
@@ -49,6 +49,8 @@ module da_obs
    use da_sound,     only : da_transform_xtoy_sound, da_transform_xtoy_sonde_sfc, &
       da_transform_xtoy_sound_adj, da_transform_xtoy_sonde_sfc_adj
    use da_mtgirs,    only : da_transform_xtoy_mtgirs, da_transform_xtoy_mtgirs_adj
+  use da_tamdar,    only : da_transform_xtoy_tamdar, da_transform_xtoy_tamdar_adj, &
+                            da_transform_xtoy_tamdar_sfc, da_transform_xtoy_tamdar_sfc_adj
    use da_ssmi,      only : da_transform_xtoy_ssmt1, da_transform_xtoy_ssmt2, &
       da_transform_xtoy_ssmi_tb, da_transform_xtoy_ssmi_rv, &
       da_transform_xtoy_ssmi_tb_adj, da_transform_xtoy_ssmi_rv_adj, &

@@ -13,7 +13,7 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      mtgirs, pseudo, radar, radiance, airsr, sonde_sfc, trace_use_dull,comm
+      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, trace_use_dull,comm
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -317,6 +317,16 @@ module da_define_structures
       type (field_type)     , pointer :: q        (:) ! q.
    end type mtgirs_type
 
+   type tamdar_type
+      real                  , pointer :: h        (:) ! Height in m
+      real                  , pointer :: p        (:) ! pressure.
+
+      type (field_type)     , pointer :: u        (:) ! u-wind.
+      type (field_type)     , pointer :: v        (:) ! v-wind.
+      type (field_type)     , pointer :: t        (:) ! temperature.
+      type (field_type)     , pointer :: q        (:) ! q.
+   end type tamdar_type
+
    type airsr_type
       real                  , pointer :: h        (:) ! Height in m
       real                  , pointer :: p        (:) ! pressure.
@@ -326,7 +336,7 @@ module da_define_structures
 
    type gpspw_type
       type (field_type)       :: tpw  ! Toatl precipitable water cm from GPS
-   end type gpspw_type
+  end type gpspw_type
 
    type ssmi_rv_type
       type (field_type)       :: Speed          ! Wind speed in m/s
@@ -512,6 +522,8 @@ module da_define_structures
       real    :: gpspw_ef_tpw
       real    :: sound_ef_u, sound_ef_v, sound_ef_t, sound_ef_q
       real    :: mtgirs_ef_u, mtgirs_ef_v, mtgirs_ef_t, mtgirs_ef_q
+      real    :: tamdar_ef_u, tamdar_ef_v, tamdar_ef_t, tamdar_ef_q
+      real    :: tamdar_sfc_ef_u, tamdar_sfc_ef_v, tamdar_sfc_ef_t, tamdar_sfc_ef_p, tamdar_sfc_ef_q
       real    :: airep_ef_u, airep_ef_v, airep_ef_t
       real    :: pilot_ef_u, pilot_ef_v
       real    :: ssmir_ef_speed, ssmir_ef_tpw
@@ -551,6 +563,9 @@ module da_define_structures
       type (radar_type)    , pointer :: radar(:)
       type (instid_type)   , pointer :: instid(:)
       type (mtgirs_type)   , pointer :: mtgirs(:)
+      type (tamdar_type)   , pointer :: tamdar(:)
+      type (synop_type)    , pointer :: tamdar_sfc(:)
+
       real :: missing
       real :: ptop
    end type iv_type
@@ -635,6 +650,13 @@ module da_define_structures
       real, pointer :: t(:)                     ! temperature.
       real, pointer :: q(:)                     ! specific humidity.
    end type residual_mtgirs_type
+
+   type residual_tamdar_type
+      real, pointer :: u(:)                     ! u-wind.
+      real, pointer :: v(:)                     ! v-wind.
+      real, pointer :: t(:)                     ! temperature.
+      real, pointer :: q(:)                     ! specific humidity.
+   end type residual_tamdar_type
 
    type residual_airsr_type
       real, pointer :: t(:)                     ! temperature.
@@ -729,6 +751,8 @@ module da_define_structures
       type (residual_gpsref_type),   pointer :: gpsref(:)
       type (residual_sound_type),    pointer :: sound(:)
       type (residual_mtgirs_type),   pointer :: mtgirs(:)
+      type (residual_tamdar_type),   pointer :: tamdar(:)
+      type (residual_synop_type),    pointer :: tamdar_sfc(:)
       type (residual_airsr_type),    pointer :: airsr(:)
       type (residual_bogus_type),    pointer :: bogus(:)
       type (residual_synop_type),    pointer :: sonde_sfc(:) ! Same as synop type
@@ -779,6 +803,9 @@ module da_define_structures
       real                :: sonde_sfc_u, sonde_sfc_v, sonde_sfc_t, &
                              sonde_sfc_p, sonde_sfc_q
       real                :: mtgirs_u, mtgirs_v, mtgirs_t, mtgirs_q
+      real                :: tamdar_u, tamdar_v, tamdar_t, tamdar_q
+      real                :: tamdar_sfc_u, tamdar_sfc_v, tamdar_sfc_t, &
+                             tamdar_sfc_p, tamdar_sfc_q
       real                :: airep_u, airep_v, airep_t
       real                :: pilot_u, pilot_v
       real                :: ssmir_speed, ssmir_tpw

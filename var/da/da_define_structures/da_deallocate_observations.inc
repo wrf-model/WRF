@@ -48,6 +48,21 @@ subroutine da_deallocate_observations (iv)
 
    end if
 
+   if (iv%info(tamdar)%nlocal > 0) then
+      do n = 1, iv%info(tamdar)%nlocal
+         if (iv%info(tamdar)%levels(n) > 0) then
+            deallocate (iv%tamdar (n) % h)
+            deallocate (iv%tamdar (n) % p)
+            deallocate (iv%tamdar (n) % u)
+            deallocate (iv%tamdar (n) % v)
+            deallocate (iv%tamdar (n) % t)
+            deallocate (iv%tamdar (n) % q)
+         end if
+      end do
+
+      deallocate (iv%tamdar)
+      deallocate (iv%tamdar_sfc)
+   end if
    if (iv%info(synop)%nlocal > 0) deallocate (iv%synop)
 
    if (iv%info(airep)%nlocal > 0) then

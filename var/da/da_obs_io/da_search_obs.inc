@@ -180,6 +180,60 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
    enddo
    found_flag = .false.
 
+   CASE ('tamdar')
+
+   do n = 1, num_obs
+      read(unit_in,'(2i8,a5,2E22.13)') n_dummy, levels, stn_id, lat, lon
+      if ( iv%info(tamdar)%id(nth)  == stn_id .and.  &
+           iv%info(tamdar)%lat(1,nth) == lat    .and.  &
+           iv%info(tamdar)%lon(1,nth) == lon ) then
+
+         do k = 1, levels
+           read(unit_in,'(2E22.13,4(E22.13,i8,E22.13))')&
+                 iv % tamdar(nth) % h(k), &
+                 iv % tamdar(nth) % p(k), &             ! Obs Pressure
+                 iv%tamdar(nth)%u(k), &! O-B u
+                 iv%tamdar(nth)%v(k), &! O-B v
+                 iv%tamdar(nth)%t(k), &! O-B t
+                 iv%tamdar(nth)%q(k)   ! O-B q
+         enddo
+         found_flag = .true.
+         rewind (unit_in)
+         read(unit_in,*)
+         return
+      else
+         do k = 1, levels
+           read(unit_in,*)
+         enddo
+      endif
+   enddo
+   found_flag = .false.
+
+   CASE ('tamdar_sfc')
+
+   do n = 1, num_obs
+      read(unit_in,'(i8,a5,2E22.13)') n_dummy, stn_id, lat, lon
+      if ( iv%info(tamdar_sfc)%id(nth)  == stn_id .and.  &
+           iv%info(tamdar_sfc)%lat(1,nth) == lat    .and.  &
+           iv%info(tamdar_sfc)%lon(1,nth) == lon ) then
+
+           read(unit_in,'(E22.13,5(E22.13,i8,E22.13))')&
+                  iv%tamdar_sfc(nth)%h, &
+                  iv%tamdar_sfc(nth)%u, &!  O-B u
+                  iv%tamdar_sfc(nth)%v, &!  O-B v
+                  iv%tamdar_sfc(nth)%t, &!  O-B t
+                  iv%tamdar_sfc(nth)%p, &!  O-B p
+                  iv%tamdar_sfc(nth)%q  !  O-B q
+           found_flag = .true.
+           rewind (unit_in)
+           read(unit_in,*)
+           return
+      else
+           read(unit_in,*)
+      endif
+   enddo
+   found_flag = .false.
+
    CASE ('buoy')
 
    do n = 1, num_obs

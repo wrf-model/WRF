@@ -495,3 +495,10 @@ if test -n $NETCDF ; then
 fi
 echo "  "
 
+if [ $wrf_core = DA_CORE ]; then
+  if [ `grep '^SFC' configure.wrf | cut -d= -f2` = gfortran ]; then
+    echo "WRFDA using gfortran needs realsize=8"
+    sed -e '/^PROMOTION/s/# -fdefault-real-8/-fdefault-real-8/g' ./configure.wrf > foo ;/bin/mv foo configure.wrf
+  fi
+fi
+

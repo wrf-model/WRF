@@ -28,7 +28,8 @@ module da_obs_io
       radar_multi_level_type, y_type, field_type, each_level_type, &
       radar_each_level_type
    use da_grid_definitions, only : da_ffdduv
-   use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station
+   use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station, &
+      da_set_obs_missing
    use da_par_util1, only : da_proc_sum_int
    use da_physics, only : da_tp_to_qs
    use da_reporting, only : da_warning, message, da_error

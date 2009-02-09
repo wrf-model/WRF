@@ -629,6 +629,5 @@ module da_control
                       299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
 
    real, allocatable :: time_slots(:)
-   logical           :: thin_conv = .true.  ! hardwired for PREPBUFR obs
 
 end module da_control

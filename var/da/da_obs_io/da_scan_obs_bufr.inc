@@ -16,11 +16,12 @@ subroutine da_scan_obs_bufr (iv, filename)
    integer, parameter           :: mxr8lv = 255     ! max number of BUFR levels
    integer, parameter           :: mxr8vn = 10      ! max number of BUFR events
    logical                      :: match, end_of_file
-   character(len=8)             :: subst2
-   integer                      :: idate2, nlevels2, lv1, lv2, idate_save
-   real                         :: hdr2(7)
+   character(len=8)             :: subst2, csid, csid2
+   integer                      :: idate2, nlevels2, lv1, lv2
+   real                         :: hdr2(7), r8sid, r8sid2
    real                         :: pob1, pob2
    real                         :: obs2(9,255)
+   equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
    real                         :: tdiff                       ! DHR
    real                         :: dlat_earth,dlon_earth,crit
@@ -29,7 +30,7 @@ subroutine da_scan_obs_bufr (iv, filename)
    
 
    type (multi_level_type)      :: platform
-   logical                      :: outside, outside_all
+   logical                      :: outside, outside_all, outside_time
 
    character(len=40)     :: obstr,hdstr
    character(len=8)      :: subset
@@ -53,16 +54,17 @@ subroutine da_scan_obs_bufr (iv, filename)
       open(unit   = iunit, FILE   = trim(filename), &
          iostat =  iost, form = 'unformatted', STATUS = 'OLD')
       if (iost /= 0) then
-         write(unit=stdout, fmt='(/A,I3,3(2X,A)/)') &
-              'error in obs input file unit ',iunit, &
-              'obs filename:', trim(filename), &
-              'for gts observations cannot be found or cannot be opened'
+         write(unit=message(1),fmt='(A,I5,A)') &
+            "Error",iost," opening PREPBUFR obs file "//trim(filename)
+         call da_warning(__FILE__,__LINE__,message(1:1))
+         call da_free_unit(iunit)
+         if (trace_use) call da_trace_exit("da_scan_obs_bufr")
          return
       end if
    end if
 
    hdstr='SID XOB YOB DHR TYP ELV T29     '
-   obstr='POB QOB TOB ZOB UOB VOB PWO ROB CAT '
+   obstr='POB QOB TOB ZOB UOB VOB PWO CAT '
 
    !--------------------------------
    ! open bufr file then check date
@@ -72,27 +74,30 @@ subroutine da_scan_obs_bufr (iv, filename)
    call openbf(iunit,'IN',iunit)
    call readns(iunit,subset,idate,iret)  ! read in the next subset
    if ( iret /= 0 ) then
-      write(unit=stdout, fmt='(a, i4)') &
-         'return code from readns:', iret, &
-         'Reach the end of obs unit: ', iunit
-      call da_error(__FILE__,__LINE__, &
-         (/"No BUFR observations"/))
+      write(unit=message(1),fmt='(A,I5,A)') &
+         "Error",iret," reading PREPBUFR obs file "//trim(filename)
+      call da_warning(__FILE__,__LINE__,message(1:1))
+      call closbf(iunit)
+      call da_free_unit(iunit)
+      if (trace_use) call da_trace_exit("da_scan_obs_bufr")
+      return
    end if
    rewind(iunit)
 
    match = .true.
-   outside_all = .false.
    end_of_file = .false.
+   outside_time = .false.
    report = 0 ! report number in file
    reports: do while ( .not. end_of_file )
       report = report+1
 
-      if ( match .or. outside_all ) then
+      if ( match .or. outside_all .or. outside_time ) then
          call readns(iunit,subset,idate,iret)  ! read in the next subset
          if ( iret /= 0 ) then
-            write(unit=stdout, fmt='(a, i4)') &
-                 'return code from readns:', iret, &
-                 'Reach the end of obs unit: ', iunit
+            write(unit=message(1),fmt='(A,I3,A,I3)') & 
+               "return code from readns",iret,       &
+               "reach the end of PREPBUFR obs unit",iunit
+            ! call da_warning(__FILE__,__LINE__,message(1:1))
             exit reports
          end if
       end if
@@ -108,12 +113,10 @@ subroutine da_scan_obs_bufr (iv, filename)
 
       ! Put a check on Lon and Lat
       if ( platform%info%lon >= 180.0) platform%info%lon = platform%info%lon -360.0
-      !platform%info%lat = max(platform%info%lat, -89.95)
-      !platform%info%lat = min(platform%info%lat,  89.95)
       ! Fix funny wind direction at Poles
-      if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
-         platform%info%lon = 0.0
-      end if
+      !if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
+      !   platform%info%lon = 0.0
+      !end if
       platform%info%lat = max(platform%info%lat, -89.95)
       platform%info%lat = min(platform%info%lat,  89.95)
 
@@ -125,6 +128,25 @@ subroutine da_scan_obs_bufr (iv, filename)
       call da_llxy (platform%info, platform%loc, outside, outside_all)
 
       if (outside_all) cycle reports
+
+      ! check date
+      write(date,'(i10)') idate
+      write(dmn,'(i4,a1)') int(platform%info%dhr*60.0), 'm'
+      call da_advance_time (date, trim(dmn), obs_date)
+      if ( len_trim(obs_date) == 12 ) then
+         read (obs_date,'(i4,4i2)') iyear, imonth, iday, ihour, imin
+      else if ( len_trim(obs_date) == 10 ) then
+         imin = 0
+         read (obs_date,'(i4,3i2)') iyear, imonth, iday, ihour
+      end if
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if (obs_time < time_slots(0) .or.  &
+         obs_time >= time_slots(num_fgat_time)) then
+         outside_time = .true.
+         cycle reports       
+      else
+         outside_time = .false.
+      end if
 
       t29 = int(0.1 + hdr(7))
       kx=int(0.1+hdr(5))
@@ -142,7 +164,6 @@ subroutine da_scan_obs_bufr (iv, filename)
       call ufbint(iunit,obs,9,255,nlevels,obstr)
       if (nlevels > max_ob_levels) nlevels = max_ob_levels
 
-      !hcl begin
       call readns(iunit,subst2,idate2,iret)
       match_check: do
          if ( iret /= 0 ) then
@@ -150,13 +171,19 @@ subroutine da_scan_obs_bufr (iv, filename)
             exit match_check
          end if
          call ufbint(iunit,hdr2,7,1,iret,hdstr)
-         !hcl check if this subset and the previous one are matching mass and wind
+         ! check if this subset and the previous one are matching mass and wind
          match = .true.
          if ( subset /= subst2 ) then
             match = .false.
             exit match_check
          end if
-         do i = 1, 4   ! check SID, XOB, YOB, DHR
+         r8sid  = hdr(1)
+         r8sid2 = hdr2(1)
+         if ( csid /= csid2 ) then   ! check SID
+            match = .false.
+            exit match_check
+         end if
+         do i = 2, 4   ! check XOB, YOB, DHR
             if ( hdr(i) /= hdr2(i) ) then
                match = .false.
                exit match_check
@@ -183,7 +210,6 @@ subroutine da_scan_obs_bufr (iv, filename)
          exit match_check
       end do match_check
 
-      idate_save = idate
       if ( .not. match ) then
          subset = subst2
          idate  = idate2
@@ -192,27 +218,8 @@ subroutine da_scan_obs_bufr (iv, filename)
       ! skip some types
       !  61: Satellite soundings/retrievals/radiances
       !  66: SSM/I rain rate product
-      if ( t29 == 61 .or. t29 == 66 ) then
-         if ( end_of_file ) then
-            exit reports        
-         else                   
-            cycle reports       
-         end if                 
-      end if
-
-      ! check date
-      write(date,'(i10)') idate_save
-      write(dmn,'(i4,a1)') int(platform%info%dhr*60.0), 'm'
-      call da_advance_time (date, trim(dmn), obs_date)
-      if ( len_trim(obs_date) == 12 ) then
-         read (obs_date,'(i4,4i2)') iyear, imonth, iday, ihour, imin
-      else if ( len_trim(obs_date) == 10 ) then
-         imin = 0
-         read (obs_date,'(i4,3i2)') iyear, imonth, iday, ihour
-      end if
-      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
-      if (obs_time < time_slots(0) .or.  &
-         obs_time >= time_slots(num_fgat_time)) then
+      !  72: NEXTRAD VAD winds
+      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) then
          if ( end_of_file ) then
             exit reports        
          else                   
@@ -227,7 +234,6 @@ subroutine da_scan_obs_bufr (iv, filename)
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
-      !hcl end
 
       if ( nlevels < 1 ) then
          if ( (kx /= 164) .and. (kx /= 174) .and.   &
@@ -283,6 +289,8 @@ subroutine da_scan_obs_bufr (iv, filename)
                   iv%info(pilot)%nlocal = iv%info(pilot)%nlocal + 1
                end if
                fm = 32
+            case default
+               exit dup_loop
             end select
 
          case (41)
@@ -367,7 +375,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                end if
                fm = 88
 
-         case (582)
+         case (582, 583)      ! QuikSCAT 582 and WindSat 583
                if (.not.use_qscatobs .or. iv%info(qscat)%ntotal == max_qscat_input) cycle reports
                if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
                if (outside) cycle reports
@@ -380,7 +388,6 @@ subroutine da_scan_obs_bufr (iv, filename)
                end if
                fm = 281
 
-         !hcl case (583)       ! GPS PW
          case (74)       ! GPS PW
                if (.not.use_gpspwobs .or. iv%info(gpspw)%ntotal == max_gpspw_input) cycle reports
                if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
@@ -394,21 +401,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                end if
                fm = 111
 
-         case (584)       ! GPS REF
-               if (.not.use_gpsrefobs .or. iv%info(gpsref)%ntotal == max_gpsref_input) cycle reports
-               if (n==1) iv%info(gpsref)%ntotal = iv%info(gpsref)%ntotal + 1
-               if (outside) cycle reports
-               if ( thin_conv ) then
-                  crit = tdiff
-                  call map2grids_conv(gpsref,dlat_earth,dlon_earth,crit,iv%info(gpsref)%nlocal,itx,1,itt,iout,iuse)
-                  if ( .not. iuse ) cycle reports
-               else
-                  iv%info(gpsref)%nlocal = iv%info(gpsref)%nlocal + 1
-               end if
-               fm = 116
-
-         !hcl case (71, 72)
-         case (71, 72, 73, 75, 76)    ! Profiler and VADWND
+         case (71, 73, 75, 76, 77)    ! Profiler
                if (.not.use_profilerobs .or. iv%info(profiler)%ntotal == max_profiler_input) cycle reports
                if (n==1) iv%info(profiler)%ntotal = iv%info(profiler)%ntotal + 1
                if (outside) cycle reports
@@ -452,6 +445,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                write(unit=message(1), fmt='(a, 2i12)') &
                   'unsaved obs found with kx & t29= ',kx,t29
                call da_warning(__FILE__,__LINE__,message(1:1))
+               exit dup_loop
             end select
          end select
          obs_index=fm_index(fm)

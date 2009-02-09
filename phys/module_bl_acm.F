@@ -299,6 +299,9 @@ CONTAINS
            USTM(I)    = UST(I) * WS1 / wspd(i)
            THV1         = TMPVTCON * THETA(I,1) 
            TSTV(I)      = TST(I)*TMPVTCON + THV1*EP1*QST(I)
+           IF(ABS(TSTV(I)).LT.1.0E-6) THEN
+             TSTV(I) = SIGN(1.0E-6,TSTV(I))
+           ENDIF
            MOL(I) = THV1 * UST(i)**2/(KARMAN*G*TSTV(I))
            WST(I) = UST(I) * (PBL(I)/(KARMAN*ABS(MOL(I)))) ** 0.333333       
            PSTAR(I)   =  MUT(I)/1000.                        ! P* in cb 

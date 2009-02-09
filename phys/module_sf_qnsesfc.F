@@ -505,8 +505,7 @@ CONTAINS
             RZST=ZSLT/ZT
 !
             RLOGU=LOG(RZSU)
-!           RLOGT=LOG(RZST)
-            RLOGT=LOG(RZST)/1.4     !The factor 1.4 accounts for neutral value of Pr=0.7
+            RLOGT=LOG(RZST)
 !
 !----------------------------------------------------------------------
 !***  1./MONIN-OBUKHOV LENGTH
@@ -558,7 +557,12 @@ CONTAINS
             K=MAX(K,0)
             PSHZL=(PSIH1(K+2)-PSIH1(K+1))*RDZT+PSIH1(K+1)
 !
-            SIMH=(PSHZL-PSHZ+RLOGT)*FH01
+            IF(RLMO.LE.0.)THEN
+              SIMH=(PSHZL-PSHZ+RLOGT)*FH01
+            ELSE
+! Pr=0.7 used in stable case
+              SIMH=(PSHZL-PSHZ+RLOGT/1.4)*FH01
+            ENDIF
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHS)
@@ -655,8 +659,7 @@ CONTAINS
             ZT=MAX(ZT,ZU*ZTFC)               !Quick fix by S. Sukoriansky
 !
             RZST=ZSLT/ZT
-!           RLOGT=LOG(RZST)
-            RLOGT=LOG(RZST)/1.4             !To account for Pr0=0.7
+            RLOGT=LOG(RZST)
 !
 !----------------------------------------------------------------------
 !***  1./MONIN-OBUKHOV LENGTH-SCALE
@@ -707,7 +710,12 @@ CONTAINS
             K=MAX(K,0)
             PSHZL=(PSIH2(K+2)-PSIH2(K+1))*RDZT+PSIH2(K+1)
 !
-            SIMH=(PSHZL-PSHZ+RLOGT)*FH02
+            IF(RLMO.LE.0.)THEN
+              SIMH=(PSHZL-PSHZ+RLOGT)*FH02
+            ELSE
+! Pr=0.7 used in stable case
+              SIMH=(PSHZL-PSHZ+RLOGT/1.4)*FH02
+            ENDIF
 !----------------------------------------------------------------------
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHL)

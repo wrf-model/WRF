@@ -11,6 +11,12 @@ begin
 ; plot options
 ;*******************************************************************************
  
+   plot_histo = False
+   plot_scatt = True
+   plot_emiss = False
+   plot_sflag = False
+   write_txt  = False
+
    plot_stats_only = False
 
    plot_ch_all = True                ; True to plot all channels
@@ -233,6 +239,21 @@ begin
       else
          plot_stats_only = False
       end if
+      if ( getenv("PLOT_SCATT").eq."true" .or. getenv("PLOT_SCATT").eq."True" ) then
+         plot_scatt = True
+      else
+         plot_scatt = False
+      end if
+      if ( getenv("PLOT_HISTO").eq."true" .or. getenv("PLOT_HISTO").eq."True" ) then
+         plot_histo = True
+      else
+         plot_histo = False
+      end if
+      if ( getenv("PLOT_EMISS").eq."true" .or. getenv("PLOT_EMISS").eq."True" ) then
+         plot_emiss = True
+      else
+         plot_emiss = False
+      end if
    end if
 
    inst = systemfunc("echo "+instrument+" | cut -f3 -d-")
@@ -337,6 +358,7 @@ begin
          isflg = infile->isflg
          ; elev  = infile->elev
          clwp  = infile->clwp
+         ems   = infile->ems
          obs   = infile->tb_obs
          bak   = infile->tb_bak
          oma   = infile->tb_oma
@@ -347,18 +369,21 @@ begin
          qc    = infile->tb_qc
          if ( num(.not.ismissing(oma)) .gt. 0 ) then
             got_oma = True
-            np = 5   ; number of distribution plots
+            np = 6   ; number of distribution plots
             ns = 3   ; number of scatter plots
             nh = 3   ; number of histogram plots
          else
             got_oma = False
-            np = 4   ; number of distribution plots
+            np = 5   ; number of distribution plots
             ns = 2   ; number of scatter plots
             nh = 2   ; number of histogram plots
          end if
          ;
          ; define named dimensions
          ;
+         ems!0     = "pixel"
+         ems!1     = "chan"
+         ems&chan = ichan
          obs!0     = "pixel"
          obs!1     = "chan"
          obs&chan = ichan
@@ -446,25 +471,32 @@ begin
             maxval(ich) = max((/max(obs(pixel|:, {chan|plot_ch(ich)})), max(bak(pixel|:, {chan|plot_ch(ich)}))/))
             minval(ich) = min((/min(obs(pixel|:, {chan|plot_ch(ich)})), min(bak(pixel|:, {chan|plot_ch(ich)}))/))
 
-            do ip = 1, np   ; loop for plotting obs, bak, omb_nobc, omb_bc, oma, this is ip_loop
+            do ip = 1, np   ; loop for plotting ems, obs, bak, omb_nobc, omb_bc, oma, this is ip_loop
 
                if ( ip .eq. 1 ) then
+                  if ( .not. plot_emiss ) then
+                     continue
+                  end if
+                  subname = "ems"
+                  data = ems(pixel|:, {chan|plot_ch(ich)})
+               end if
+               if ( ip .eq. 2 ) then
                   subname = "obs"
                   data = obs(pixel|:, {chan|plot_ch(ich)})
                end if
-               if ( ip .eq. 2 ) then
+               if ( ip .eq. 3 ) then
                   subname = "bak"
                   data = bak(pixel|:, {chan|plot_ch(ich)})
                end if
-               if ( ip .eq. 3 ) then
+               if ( ip .eq. 4 ) then
                   subname = "omb_nobc"
                   data = omb_nobc(pixel|:, {chan|plot_ch(ich)})
                end if
-               if ( ip .eq. 4 ) then
+               if ( ip .eq. 5 ) then
                   subname = "omb_bc"
                   data = omb_bc(pixel|:, {chan|plot_ch(ich)})
                end if
-               if ( ip .eq. 5 ) then
+               if ( ip .eq. 6 ) then
                   subname = "oma"
                   data = oma(pixel|:, {chan|plot_ch(ich)})
                end if
@@ -532,14 +564,18 @@ begin
                end if
 
                if ( ip .eq. 1 ) then
-                  title = info + "  OBS  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                  title = info + "  Emissivity  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   stats_info = " "
                end if
                if ( ip .eq. 2 ) then
-                  title = info + "  BAK  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                  title = info + "  OBS  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   stats_info = " "
                end if
                if ( ip .eq. 3 ) then
+                  title = info + "  BAK  " + npts_sele(ich,itime) + " / " + npts(ich,itime)
+                  stats_info = " "
+               end if
+               if ( ip .eq. 4 ) then
                   title = info + "  OMB  no  BC " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   if ( npts_sele(ich,itime) .gt. 0 ) then
                      xnum(0,ich,itime) = (/ npts_sele(ich,itime) /)
@@ -552,7 +588,7 @@ begin
                      stats_info = " "
                   end if
                end if
-               if ( ip .eq. 4 ) then
+               if ( ip .eq. 5 ) then
                   title = info + "  OMB with BC " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   if ( npts_sele(ich,itime) .gt. 0 ) then
                      xnum(1,ich,itime) = (/ npts_sele(ich,itime) /)
@@ -565,7 +601,7 @@ begin
                      stats_info = " "
                   end if
                end if
-               if ( ip .eq. 5 ) then
+               if ( ip .eq. 6 ) then
                   title = info + "  OMA with BC " + npts_sele(ich,itime) + " / " + npts(ich,itime)
                   if ( npts_sele(ich,itime) .gt. 0 ) then
                      xnum(2,ich,itime) = (/ npts_sele(ich,itime) /)
@@ -581,12 +617,16 @@ begin
 
 if ( .not. plot_stats_only ) then
 
-               if ( ip .eq. 1 .or. ip .eq. 2 ) then
+               if ( ip .eq. 2 .or. ip .eq. 3 ) then
                   plot_min_val = minval(ich)
                   plot_max_val = maxval(ich)
                else
                   plot_min_val = min(data)
                   plot_max_val = max(data)
+               end if
+               if ( ip .eq. 1 ) then
+                  plot_min_val = 0.0
+                  plot_max_val = 1.0
                end if
   
                data_range = plot_max_val - plot_min_val
@@ -749,6 +789,7 @@ end if
             end do  ; end loop for plotting obs, bak, omb_nobc, omb_bc, oma, end do ip_loop
 
             if ( (.not. plot_stats_only) .and. npts(ich,itime) .gt. 1 .and. npts_sele(ich,itime) .gt. 1 ) then
+             if ( plot_scatt ) then
                ;
                ; scatter plot (BAK vs OBS)
                ;
@@ -870,6 +911,9 @@ end if
                if ( plot_split ) then
                   destroy(wks)
                end if
+               delete(plot)
+             end if  ; end of if plot_scatt
+             if ( plot_histo ) then
                ;
                ; histogram
                ;
@@ -966,10 +1010,11 @@ end if
                end if
 
                delete(plot)
+             end if  ; end of if plot_histo
 
             end if   ; end of npts and npts_sele if check for scatter plot and histogram
 
-            if ( (.not. plot_stats_only) .and. ich .eq. (nchan-1) .and. npts_sele(ich,itime) .gt. 0 ) then
+            if ( plot_sflag .and. (.not. plot_stats_only) .and. ich .eq. (nchan-1) .and. npts_sele(ich,itime) .gt. 0 ) then
                ;
                ; surface type isflg plot
                ;
@@ -1037,6 +1082,7 @@ end if
          delete(ichan)
          delete(lat)
          delete(lon)
+         delete(ems)
          delete(obs)
          delete(bak)
          delete(oma)
@@ -1147,6 +1193,12 @@ end if
       do ich = 0, nchan-1  ; this is nchan_loop2
 
          if ( num(.not.ismissing(xmean(0,ich,:))) .gt. 0 ) then
+
+            if ( write_txt ) then
+               asciiwrite ("./"+instrument+"_omb_nb_"+sprinti("%0.4i",ich+1)+".txt" , date(:)+"  "+sprinti("%8.0i",xnum(0,ich,:))+"  "+sprintf("%8.3f", xmean(0,ich,:))+"  "+sprintf("%8.3f",xstd(0,ich,:))+"  "+sprintf("%8.3f",xrms(0,ich,:)))
+               asciiwrite ("./"+instrument+"_omb_wb_"+sprinti("%0.4i",ich+1)+".txt" , date(:)+"  "+sprinti("%8.0i",xnum(1,ich,:))+"  "+sprintf("%8.3f", xmean(1,ich,:))+"  "+sprintf("%8.3f",xstd(1,ich,:))+"  "+sprintf("%8.3f",xrms(1,ich,:)))
+               asciiwrite ("./"+instrument+"_oma_"+sprinti("%0.4i",ich+1)+".txt" , date(:)+"  "+sprinti("%8.0i",xnum(2,ich,:))+"  "+sprintf("%8.3f", xmean(2,ich,:))+"  "+sprintf("%8.3f",xstd(2,ich,:))+"  "+sprintf("%8.3f",xrms(2,ich,:)))
+            end if
 
             plot = new(3,graphic)
             res_stats                        = True

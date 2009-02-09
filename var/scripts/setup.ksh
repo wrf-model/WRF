@@ -63,8 +63,11 @@ fi
 if test -d ${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}; then
    export RTTOV=${EXT_DIR}/rttov/rttov87/${COMPILER}_${PROCESSOR}
 fi
-if test -d ${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}; then
-   export CRTM=${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}
+#if test -d ${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}; then
+#   export CRTM=${EXT_DIR}/crtm/CRTM_02-29-08/${COMPILER}_${PROCESSOR}
+#fi
+if test -d ${EXT_DIR}/crtm/CRTM_02_03_09_REL_1_2/${COMPILER}_${PROCESSOR}; then
+   export CRTM=${EXT_DIR}/crtm/CRTM_02_03_09_REL_1_2/${COMPILER}_${PROCESSOR}
 fi
 if test -d ${EXT_DIR}/mpi/mpich-1.2.7p1/${COMPILER}_${PROCESSOR}; then
    export MPIHOME=${EXT_DIR}/mpi/mpich-1.2.7p1/${COMPILER}_${PROCESSOR}

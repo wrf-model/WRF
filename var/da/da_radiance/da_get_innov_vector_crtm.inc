@@ -408,7 +408,11 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
          if (nchanl > 0) then
             Surface(1)%SensorData%n_channels = nchanl
-            Surface(1)%SensorData%Sensor_ID  = wmo_sensor_id 
+#ifdef CRTM_1_1
+            Surface(1)%SensorData%Sensor_Id  = wmo_sensor_id             ! CRTM_1.1
+#else
+            Surface(1)%SensorData%Select_WMO_Sensor_Id  = wmo_sensor_id  ! CRTM_1.2
+#endif
             Surface(1)%SensorData%Tb(1:nchanl) = ob%instid(inst)%tb(1:nchanl,n)
          end if
 	 

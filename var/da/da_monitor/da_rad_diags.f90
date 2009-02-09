@@ -142,7 +142,7 @@ ntime_loop: do itime = 1, ntime
 
       nproc_loop_1: do iproc = 0, nproc - 1   ! loop for first getting number of pixels from each proc
 
-         write(unit=inpname(iproc), fmt='(a,i2.2)')  &
+         write(unit=inpname(iproc), fmt='(a,i4.4)')  &
             trim(datestr1(itime))//'/'//file_prefix//'_'//trim(instid(iinst))//'.', iproc
          iunit(iproc) = 101 + iproc
          inquire(file=trim(inpname(iproc)), exist=isfile)

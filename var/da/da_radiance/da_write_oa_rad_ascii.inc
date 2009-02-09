@@ -34,7 +34,7 @@ subroutine da_write_oa_rad_ascii ( ob, iv, re )
       end do
       if (ndomain < 1) cycle
 
-      write(unit=filename, fmt='(a,i2.2)') 'oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
+      write(unit=filename, fmt='(a,i4.4)') 'oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
       call da_get_unit(oma_rad_unit)
       open(unit=oma_rad_unit,file=trim(filename),form='formatted',iostat=ios)

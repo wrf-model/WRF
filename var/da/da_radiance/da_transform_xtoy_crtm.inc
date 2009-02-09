@@ -328,7 +328,11 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
        !Surface(1)%Ice_Roughness=0.0               ! NO Table offered, single egrid%xample is ZERO
      end if
      Surface(1)%SensorData%n_channels = nchanl
-     Surface(1)%SensorData%Sensor_ID  = wmo_sensor_id
+#ifdef CRTM_1_1
+     Surface(1)%SensorData%Sensor_Id  = wmo_sensor_id             ! CRTM_1.1
+#else
+     Surface(1)%SensorData%Select_WMO_Sensor_Id  = wmo_sensor_id  ! CRTM_1.2
+#endif
      Surface(1)%SensorData%Tb(1:nchanl) = iv%instid(inst)%tb_inv(1:nchanl,n) + &
                                            iv%instid(inst)%tb_xb(1:nchanl,n)
 

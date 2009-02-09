@@ -70,6 +70,9 @@ export OUT_TYPE=ncgm            # ncgm, pdf (pdf will be much slower than ncgm a
 export PLOT_STATS_ONLY=false
 export PLOT_OPT=sea_only        # all, sea_only, land_only
 export PLOT_QCED=true           # true, false.
+export PLOT_HISTO=false         # true, false. switch for histogram plot
+export PLOT_SCATT=true          # true, false. switch for scatter plot
+export PLOT_EMISS=false         # true, false. switch for emissivity plot
 export PLOT_SPLIT=false         # true, false. Set true to plot one frame in one file.
 export PLOT_CLOUDY=false        # true, false. If plotting cloudy points.
                                 # cloudy points are defined by the following 

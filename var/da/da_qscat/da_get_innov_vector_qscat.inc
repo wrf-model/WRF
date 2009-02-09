@@ -98,6 +98,9 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
 
     call da_check_max_iv_qscat(iv, it, num_qcstat_conv)       
 
+    deallocate (model_u)
+    deallocate (model_v)
+
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_qscat")
 
 end subroutine da_get_innov_vector_qscat

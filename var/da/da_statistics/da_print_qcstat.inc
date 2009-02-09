@@ -95,6 +95,7 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
   call da_free_unit(ounit)
   end if
 
+   deallocate (count)
    if (trace_use) call da_trace_exit("da_print_qcstat")
 
 end subroutine da_print_qcstat

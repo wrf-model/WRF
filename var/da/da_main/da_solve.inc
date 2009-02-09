@@ -366,13 +366,11 @@
          deallocate (satinfo(i) % error)
          deallocate (satinfo(i) % polar)
 
-         if (read_biascoef) then
-            deallocate (satinfo(i) % scanbias)
-            deallocate (satinfo(i) % scanbias_b)
-            deallocate (satinfo(i) % bcoef)
-            deallocate (satinfo(i) % bcoef0)
-            deallocate (satinfo(i) % error_std)
-         end if
+         deallocate (satinfo(i) % scanbias)
+         deallocate (satinfo(i) % scanbias_b)
+         deallocate (satinfo(i) % bcoef)
+         deallocate (satinfo(i) % bcoef0)
+         deallocate (satinfo(i) % error_std)
 
          deallocate (ob%instid(i) % ichan)
          deallocate (iv%instid(i)%ichan)
@@ -459,29 +457,12 @@
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
 
-	    if ( (use_varbc).or.(freeze_varbc) ) then
-               deallocate (iv%instid(i)%varbc_info%pred)
-               deallocate (iv%instid(i)%varbc_info%pred_mean)
-               deallocate (iv%instid(i)%varbc_info%pred_std)
-               deallocate (iv%instid(i)%varbc_info%nbgerr)
-	       do ichan = 1, iv%instid(i)%nchan
-	         if (iv%instid(i)%varbc(ichan)%npred <= 0) cycle	 
-		 deallocate (iv%instid(i)%varbc(ichan)%pred_use)
-		 deallocate (iv%instid(i)%varbc(ichan)%ipred)
-		 deallocate (iv%instid(i)%varbc(ichan)%index)
-		 deallocate (iv%instid(i)%varbc(ichan)%param)
-    	         deallocate (iv%instid(i)%varbc(ichan)%bgerr)
-		 deallocate (iv%instid(i)%varbc(ichan)%vtox)
-	       end do
-   	       deallocate (iv%instid(i)%varbc)
-	    end if
-
-           if (use_satcv) then
-              do n = 1,iv%instid(i)%num_rad
-                 deallocate (iv%instid(i)%cv_index(n)%cc)
-              end do
-              deallocate (iv%instid(i)%cv_index)  
-           end if
+            if (use_satcv) then
+               do n = 1,iv%instid(i)%num_rad
+                  deallocate (iv%instid(i)%cv_index(n)%cc)
+               end do
+               deallocate (iv%instid(i)%cv_index)  
+            end if
 
             if (rtm_option == rtm_option_crtm) then
                deallocate(iv%instid(i)%water_coverage)
@@ -513,6 +494,24 @@
             end if
 
          end if
+
+	  if ( (use_varbc).or.(freeze_varbc) ) then
+             deallocate (iv%instid(i)%varbc_info%pred)
+             deallocate (iv%instid(i)%varbc_info%pred_mean)
+             deallocate (iv%instid(i)%varbc_info%pred_std)
+             deallocate (iv%instid(i)%varbc_info%nbgerr)
+	     do ichan = 1, iv%instid(i)%nchan
+	        if (iv%instid(i)%varbc(ichan)%npred <= 0) cycle	 
+	        deallocate (iv%instid(i)%varbc(ichan)%pred_use)
+	        deallocate (iv%instid(i)%varbc(ichan)%ipred)
+	        deallocate (iv%instid(i)%varbc(ichan)%index)
+	        deallocate (iv%instid(i)%varbc(ichan)%param)
+    	        deallocate (iv%instid(i)%varbc(ichan)%bgerr)
+	        deallocate (iv%instid(i)%varbc(ichan)%vtox)
+	     end do
+   	     deallocate (iv%instid(i)%varbc)
+	  end if
+
 #ifdef RTTOV
          if (rtm_option == rtm_option_rttov) then
             call rttov_dealloc_coef (ierr,coefs(i))

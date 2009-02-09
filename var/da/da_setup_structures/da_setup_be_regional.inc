@@ -474,6 +474,12 @@ subroutine da_setup_be_regional(xb, be)
    deallocate (be4_eval_loc)
    deallocate (be5_eval_loc)
 
+   deallocate (be1_rf_lengthscale)
+   deallocate (be2_rf_lengthscale)
+   deallocate (be3_rf_lengthscale)
+   deallocate (be4_rf_lengthscale)
+   deallocate (be5_rf_lengthscale)
+
    if (vert_corr == vert_corr_2) then
       deallocate (be1_eval_glo)
       deallocate (be2_eval_glo)

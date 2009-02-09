@@ -161,6 +161,11 @@ subroutine da_get_innov_vector_bogus(it,num_qcstat_conv, grid, ob, iv)
 
     call da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
 
+    deallocate (model_u)
+    deallocate (model_v)
+    deallocate (model_t)
+    deallocate (model_q)
+
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_bogus")
 
 end subroutine da_get_innov_vector_bogus

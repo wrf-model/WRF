@@ -206,6 +206,36 @@ subroutine da_deallocate_observations (iv)
       deallocate (iv%airsr)
    end if
 
+   do n = 1, num_ob_indexes
+      if (n .ne. radiance .and. iv%info(n)%nlocal > 0) then
+         deallocate (iv%info(n)%name)
+         deallocate (iv%info(n)%platform)
+         deallocate (iv%info(n)%id)
+         deallocate (iv%info(n)%date_char)
+         deallocate (iv%info(n)%levels)
+         deallocate (iv%info(n)%lat)
+         deallocate (iv%info(n)%lon)
+         deallocate (iv%info(n)%elv)
+         deallocate (iv%info(n)%pstar)
+         deallocate (iv%info(n)%slp)
+         deallocate (iv%info(n)%pw)
+         deallocate (iv%info(n)%x)
+         deallocate (iv%info(n)%y)
+         deallocate (iv%info(n)%i)
+         deallocate (iv%info(n)%j)
+         deallocate (iv%info(n)%dx)
+         deallocate (iv%info(n)%dxm)
+         deallocate (iv%info(n)%dy)
+         deallocate (iv%info(n)%dym)
+         deallocate (iv%info(n)%k)
+         deallocate (iv%info(n)%dz)
+         deallocate (iv%info(n)%dzm)
+         deallocate (iv%info(n)%zk)
+         deallocate (iv%info(n)%proc_domain)
+         deallocate (iv%info(n)%obs_global_index)
+      end if
+   end do
+
    if (trace_use) call da_trace_exit("da_deallocate_observations")
 
 end subroutine da_deallocate_observations

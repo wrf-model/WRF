@@ -93,7 +93,7 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
 
             if (iv%info(tamdar_sfc)%zk(1,n) < 0.0 .and. .not. anal_type_verify) then
                iv % tamdar_sfc(n) % p % inv = missing_r
-               iv % tamdar_sfc(n) % p % qc  = missing
+               iv % tamdar_sfc(n) % p % qc  = missing_data
                iv%info(tamdar_sfc)%zk(:,n) = 1.0+1.0e-6
             end if
          end if
@@ -102,11 +102,11 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
       if (.not.anal_type_verify ) then
          do n=iv%info(tamdar_sfc)%n1,iv%info(tamdar_sfc)%n2
             if (iv%info(tamdar_sfc)%zk(1,n) < 0.0) then
-               iv % tamdar_sfc(n) % u % qc = missing
-               iv % tamdar_sfc(n) % v % qc = missing
-               iv % tamdar_sfc(n) % t % qc = missing
-               iv % tamdar_sfc(n) % q % qc = missing
-               iv % tamdar_sfc(n) % p % qc = missing
+               iv % tamdar_sfc(n) % u % qc = missing_data
+               iv % tamdar_sfc(n) % v % qc = missing_data
+               iv % tamdar_sfc(n) % t % qc = missing_data
+               iv % tamdar_sfc(n) % q % qc = missing_data
+               iv % tamdar_sfc(n) % p % qc = missing_data
             end if
          end do
       end if

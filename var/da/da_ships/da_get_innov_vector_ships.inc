@@ -97,7 +97,7 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
 
             if (iv%info(ships)%zk(1,n) < 0.0 .and.  .not.anal_type_verify) then
                iv % ships(n) % p % inv = missing_r
-               iv % ships(n) % p % qc  = missing
+               iv % ships(n) % p % qc  = missing_data
                iv%info(ships)%zk(:,n) = 1.0+1.0e-6
             end if
          end if
@@ -108,11 +108,11 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
       if (.not.anal_type_verify) then
          do n=iv%info(ships)%n1,iv%info(ships)%n2
             if (iv%info(ships)%zk(1,n) < 0.0) then
-               iv % ships(n) % u % qc = missing
-               iv % ships(n) % v % qc = missing
-               iv % ships(n) % t % qc = missing
-               iv % ships(n) % q % qc = missing
-               iv % ships(n) % p % qc = missing
+               iv % ships(n) % u % qc = missing_data
+               iv % ships(n) % v % qc = missing_data
+               iv % ships(n) % t % qc = missing_data
+               iv % ships(n) % q % qc = missing_data
+               iv % ships(n) % p % qc = missing_data
             end if
          end do
       end if

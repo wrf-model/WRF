@@ -95,7 +95,7 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
             call da_to_zk(ob % synop(n) % p, v_p, v_interp_p, iv%info(synop)%zk(1,n))
             if (iv%info(synop)%zk(1,n) < 0.0 .and. .not.anal_type_verify ) then
                iv % synop(n) % p % inv = missing_r
-               iv % synop(n) % p % qc  = missing
+               iv % synop(n) % p % qc  = missing_data
                iv%info(synop)%zk(:,n) = 1.0+1.0e-6
             end if
          end if
@@ -106,11 +106,11 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       if (.not.anal_type_verify ) then
          do n=iv%info(synop)%n1,iv%info(synop)%n2
             if (iv%info(synop)%zk(1,n) < 0.0) then
-               iv % synop(n) % u % qc = missing
-               iv % synop(n) % v % qc = missing
-               iv % synop(n) % t % qc = missing
-               iv % synop(n) % q % qc = missing
-               iv % synop(n) % p % qc = missing
+               iv % synop(n) % u % qc = missing_data
+               iv % synop(n) % v % qc = missing_data
+               iv % synop(n) % t % qc = missing_data
+               iv % synop(n) % q % qc = missing_data
+               iv % synop(n) % p % qc = missing_data
             end if
          end do
       end if

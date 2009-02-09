@@ -53,8 +53,8 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
          end if
 
          if (iv%info(pilot)%zk(k,n) < 0.0 .and.  .not.anal_type_verify) then
-            iv % pilot(n) % u(k) % qc = missing
-            iv % pilot(n) % v(k) % qc = missing
+            iv % pilot(n) % u(k) % qc = missing_data
+            iv % pilot(n) % v(k) % qc = missing_data
          end if
       end do
    end do

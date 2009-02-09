@@ -2,7 +2,7 @@ module da_tamdar
 
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, &
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
-      check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
+      check_max_iv, missing_data, max_error_uv, max_error_t, rootproc, &
       max_error_p,max_error_q, sfc_assi_options, &
 !, no_buddies, fails_error_max, &
 !      fails_buddy_check, check_buddy, check_buddy_print, check_buddy_unit, &

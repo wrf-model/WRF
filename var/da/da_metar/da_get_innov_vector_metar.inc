@@ -97,7 +97,7 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
 
             if (iv%info(metar)%zk(1,n) < 0.0 .and.  .not.anal_type_verify) then
                iv % metar(n) % p % inv = missing_r
-               iv % metar(n) % p % qc  = missing
+               iv % metar(n) % p % qc  = missing_data
                iv%info(metar)%zk(:,n) = 1.0+1.0e-6
             end if
          end if
@@ -112,11 +112,11 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
       if (.not.anal_type_verify ) then
          do n=iv%info(metar)%n1,iv%info(metar)%n2
             if (iv%info(metar)%zk(1,n) < 0.0) then
-               iv % metar(n) % u % qc = missing
-               iv % metar(n) % v % qc = missing
-               iv % metar(n) % t % qc = missing
-               iv % metar(n) % q % qc = missing
-               iv % metar(n) % p % qc = missing
+               iv % metar(n) % u % qc = missing_data
+               iv % metar(n) % v % qc = missing_data
+               iv % metar(n) % t % qc = missing_data
+               iv % metar(n) % q % qc = missing_data
+               iv % metar(n) % p % qc = missing_data
             end if
          end do
       end if

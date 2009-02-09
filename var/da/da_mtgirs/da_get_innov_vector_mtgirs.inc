@@ -91,10 +91,10 @@ subroutine da_get_innov_vector_mtgirs (it, num_qcstat_conv, grid, ob, iv)
       do n=iv%info(mtgirs)%n1,iv%info(mtgirs)%n2
          do k=1, iv%info(mtgirs)%levels(n)
             if (iv%info(mtgirs)%zk(k,n) < 0.0) then
-               iv%mtgirs(n)%u(k)%qc = missing
-               iv%mtgirs(n)%v(k)%qc = missing
-               iv%mtgirs(n)%t(k)%qc = missing
-               iv%mtgirs(n)%q(k)%qc = missing
+               iv%mtgirs(n)%u(k)%qc = missing_data
+               iv%mtgirs(n)%v(k)%qc = missing_data
+               iv%mtgirs(n)%t(k)%qc = missing_data
+               iv%mtgirs(n)%q(k)%qc = missing_data
             end if
          end do
       end do

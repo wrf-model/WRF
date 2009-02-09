@@ -88,10 +88,10 @@ subroutine da_get_innov_vector_tamdar (it, num_qcstat_conv, grid, ob, iv)
       do n=iv%info(tamdar)%n1,iv%info(tamdar)%n2
          do k=1, iv%info(tamdar)%levels(n)
             if (iv%info(tamdar)%zk(k,n) < 0.0) then
-               iv%tamdar(n)%u(k)%qc = missing
-               iv%tamdar(n)%v(k)%qc = missing
-               iv%tamdar(n)%t(k)%qc = missing
-               iv%tamdar(n)%q(k)%qc = missing
+               iv%tamdar(n)%u(k)%qc = missing_data
+               iv%tamdar(n)%v(k)%qc = missing_data
+               iv%tamdar(n)%t(k)%qc = missing_data
+               iv%tamdar(n)%q(k)%qc = missing_data
             end if
          end do
       end do

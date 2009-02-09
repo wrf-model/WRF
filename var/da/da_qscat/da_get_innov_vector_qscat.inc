@@ -57,8 +57,8 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
    if (.not. anal_type_verify) then
       do n=iv%info(qscat)%n1,iv%info(qscat)%n2
          if (iv%info(qscat)%zk(1,n) < 0.0) then
-            iv%qscat(n)%u%qc = missing
-            iv%qscat(n)%v%qc = missing
+            iv%qscat(n)%u%qc = missing_data
+            iv%qscat(n)%v%qc = missing_data
          end if
       end do
    end if

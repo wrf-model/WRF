@@ -799,7 +799,8 @@
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
-                 emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,numgas,              &
+                 emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,                     &
+                 config_flags%sf_urban_physics,numgas,                                &
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)

@@ -2,101 +2,126 @@ MODULE module_vertmx_wrf
 
 CONTAINS
 
-    SUBROUTINE vertmx(dt,phi,kt_turb,zsigma,zsigma_half,vd,kts,kte)
-!  !! to calculate change in time of phi due to vertical mixing
+!-----------------------------------------------------------------------
+    SUBROUTINE vertmx( dt, phi, kt_turb, dryrho,  &
+       zsigma, zsigma_half, vd, kts, ktem1 )
+!  !! purpose - calculate change in time of phi due to vertical mixing
+!  !!     and dry deposition (for 1 species, 1 vertical column, 1 time step)
 !  !! Mariusz Pagowski, March 2001
 !  !! conventions used:
 !  !! input is lower case
 !  !! output is upper case
+!
+!  !! modifications by R Easter, May 2006 
+!  !!    added dryrho so this routine conserves column mass burde
+!  !!       when dry deposition velocity is zero
+!  !!    changed "kte" to "ktem1" for consistency with the kte in WRF
+!
+! ARGUMENTS
+!
+! dt = time step (s)
+! phi = initial/final (at input/output) species mixing ratios at "T" points
+! kt_turb = turbulent exchange coefficients (m^2/s) at "W" points
+! dryrho = dry air density (kg/m^3) at "T" points
+! zsigma = heights (m) at "W" points
+! zsigma_half = heights (m) at "T" points
+! vd = dry deposition velocity (m/s)
+! kts, ktem1 = vertical indices of bottom and top "T" points
+!
+      IMPLICIT NONE 
+
 ! .. Scalar Arguments ..
-      REAL :: dt, vd
-      INTEGER :: kts,kte
+      INTEGER, INTENT(IN) :: kts,ktem1
+      REAL, INTENT(IN) :: dt, vd
 ! ..
 ! .. Array Arguments ..
-      REAL, DIMENSION (kts:kte+1) :: kt_turb, zsigma
-      REAL, DIMENSION (kts:kte) :: phi, zsigma_half
+      REAL, INTENT(IN), DIMENSION (kts:ktem1+1) :: kt_turb, zsigma
+      REAL, INTENT(IN), DIMENSION (kts:ktem1) :: dryrho, zsigma_half
+      REAL, INTENT(INOUT), DIMENSION (kts:ktem1) :: phi
 ! ..
 ! .. Local Scalars ..
       INTEGER :: k
 ! ..
 ! .. Local Arrays ..
-      REAL, DIMENSION (kts:kte+1) :: a_coeff
-      REAL, DIMENSION (kts:kte) :: b_coeff, lhs1, lhs2, lhs3, rhs
+      REAL, DIMENSION (kts+1:ktem1) :: a_coeff
+      REAL, DIMENSION (kts:ktem1) :: b_coeff, lhs1, lhs2, lhs3, rhs
 ! ..
 ! .. External Subroutines ..
 !     EXTERNAL coeffs, rlhside, tridiag
 ! ..
-      CALL coeffs(kts,kte+1,zsigma,zsigma_half,a_coeff,b_coeff)
+      CALL coeffs( kts, ktem1, dryrho, zsigma, zsigma_half, a_coeff, b_coeff )
 
-      CALL rlhside(kts,kte+1,kt_turb,a_coeff,b_coeff,phi,dt,vd,rhs,lhs1,lhs2,lhs3)
+      CALL rlhside( kts, ktem1, kt_turb, dryrho, a_coeff, b_coeff, &
+        phi, dt, vd, rhs, lhs1, lhs2, lhs3 )
 
-      CALL tridiag(kts,kte,lhs1,lhs2,lhs3,rhs)
+      CALL tridiag( kts, ktem1, lhs1, lhs2, lhs3, rhs )
 
-      DO k = kts,kte
+      DO k = kts,ktem1
         phi(k) = rhs(k)
       END DO
 
     END SUBROUTINE vertmx
-    SUBROUTINE rlhside(kts,kte,k_turb,a_coeff,b_coeff,phi,dt,vd,rhs,lhs1,lhs2,lhs3)
+
+
+!-----------------------------------------------------------------------
+    SUBROUTINE rlhside( kts, ktem1, k_turb, dryrho, a_coeff, b_coeff, &
+      phi, dt, vd, rhs, lhs1, lhs2, lhs3 )
   !! to calculate right and left hand sides in diffusion equation
   !! for the tridiagonal solver
   !! Mariusz Pagowski, March 2001
   !! conventions used:
   !! input is lower case
   !! output is upper case
+      IMPLICIT NONE 
+
 ! .. Scalar Arguments ..
-      REAL :: dt, vd
-      INTEGER :: kts,kte
+      INTEGER, INTENT(IN) :: kts,ktem1
+      REAL, INTENT(IN) :: dt, vd
 ! ..
 ! .. Array Arguments ..
-      REAL, DIMENSION (kts:kte) :: a_coeff, k_turb
-      REAL, DIMENSION (kts:kte-1) :: b_coeff, lhs1, lhs2, lhs3, phi, rhs
+      REAL, INTENT(IN), DIMENSION (kts:ktem1+1) :: k_turb
+      REAL, INTENT(IN), DIMENSION (kts+1:ktem1) :: a_coeff
+      REAL, INTENT(IN), DIMENSION (kts:ktem1) :: b_coeff, dryrho
+      REAL, INTENT(OUT), DIMENSION (kts:ktem1) :: lhs1, lhs2, lhs3, phi, rhs
 ! ..
 ! .. Local Scalars ..
       REAL :: a1, a2, alfa_explicit = .25, beta_implicit = .75
       INTEGER :: i
-! ..
-!     rhs(1)=phi(1) !! this should be really the n+1 step
-      rhs(1) = 0.
-      rhs(1) = (1./(dt*b_coeff(1))-alfa_explicit*(a_coeff(2)*k_turb(2)+vd))* &
-        phi(1) + alfa_explicit*a_coeff(2)*k_turb(2)*phi(2)
-      lhs1(1) = 0.
-!     lhs2(1)=1.
-!     lhs3(1)=0.
-!     lhs3(1)=-1.
-      lhs2(1) = 1./(dt*b_coeff(1)) + beta_implicit*(a_coeff(2)*k_turb(2)+vd)
-      lhs3(1) = -beta_implicit*a_coeff(2)*k_turb(2)
 
-      DO i = kts+1, kte - 2
+! ..
+      i = kts
+      a2 = a_coeff(i+1)*k_turb(i+1)
+      rhs(i) = (1./(dt*b_coeff(i)) - alfa_explicit*(vd*dryrho(i)+a2))*phi(i) + &
+        alfa_explicit*(a2*phi(i+1))
+      lhs1(i) = 0.
+      lhs2(i) = 1./(dt*b_coeff(i)) + beta_implicit*(vd*dryrho(i)+a2)
+      lhs3(i) = -beta_implicit*a2
+
+      DO i = kts+1, ktem1-1
         a1 = a_coeff(i)*k_turb(i)
         a2 = a_coeff(i+1)*k_turb(i+1)
-        rhs(i) = (1./(dt*b_coeff(i))-alfa_explicit*(a1+a2))*phi(i) + &
-          alfa_explicit*(a1*phi(i-1)+a2*phi(i+1))
+
+        rhs(i) = (1./(dt*b_coeff(i)) - alfa_explicit*(a1+a2))*phi(i) + &
+          alfa_explicit*(a1*phi(i-1) + a2*phi(i+1))
 
         lhs1(i) = -beta_implicit*a1
         lhs2(i) = 1./(dt*b_coeff(i)) + beta_implicit*(a1+a2)
         lhs3(i) = -beta_implicit*a2
       END DO
 
-      !! zero flux at the top
-
-      rhs(kte-1) = 0.
-      lhs1(kte-1) = 1.
-      lhs2(kte-1) = -1.
-      lhs3(kte-1) = 0.
+      i = ktem1
+      a1 = a_coeff(i)*k_turb(i)
+      rhs(i) = (1./(dt*b_coeff(i)) - alfa_explicit*(a1   ))*phi(i) + &
+        alfa_explicit*(a1*phi(i-1))
+      lhs1(i) = -beta_implicit*a1
+      lhs2(i) = 1./(dt*b_coeff(i)) + beta_implicit*(a1   )
+      lhs3(i) = 0.
 
     END SUBROUTINE rlhside
 
 
-
-
-
-
-
-
-
-
-    SUBROUTINE tridiag(kts,kte,a,b,c,f)
+!-----------------------------------------------------------------------
+    SUBROUTINE tridiag( kts, ktem1, a, b, c, f )
   !! to solve system of linear eqs on tridiagonal matrix n times n
   !! after Peaceman and Rachford, 1955
   !! a,b,c,F - are vectors of order n
@@ -106,69 +131,71 @@ CONTAINS
   !! conventions used:
   !! input is lower case
   !! output is upper case
+      IMPLICIT NONE 
+
 ! .. Scalar Arguments ..
-      INTEGER :: kts,kte
+      INTEGER, INTENT(IN) :: kts,ktem1
 ! ..
 ! .. Array Arguments ..
-      REAL, DIMENSION (kts:kte) :: a, b, c, f
+      REAL, INTENT(IN), DIMENSION (kts:ktem1) :: a, b, c
+      REAL, INTENT(INOUT), DIMENSION (kts:ktem1) :: f
 ! ..
 ! .. Local Scalars ..
       REAL :: p
       INTEGER :: i
 ! ..
 ! .. Local Arrays ..
-      REAL, DIMENSION (kts:kte) :: q
+      REAL, DIMENSION (kts:ktem1) :: q
 ! ..
-      c(kte) = 0.
-      q(1) = -c(1)/b(1)
-      f(1) = f(1)/b(1)
+      q(kts) = -c(kts)/b(kts)
+      f(kts) = f(kts)/b(kts)
 
-      DO i = kts+1, kte
+      DO i = kts+1, ktem1
         p = 1./(b(i)+a(i)*q(i-1))
         q(i) = -c(i)*p
         f(i) = (f(i)-a(i)*f(i-1))*p
       END DO
 
-      DO i = kte - 1, kts, -1
+      DO i = ktem1 - 1, kts, -1
         f(i) = f(i) + q(i)*f(i+1)
       END DO
 
     END SUBROUTINE tridiag
 
 
-
-
-
-
-
-    SUBROUTINE coeffs(kts,kte,z_sigma,z_sigma_half,a_coeff,b_coeff)
+!-----------------------------------------------------------------------
+    SUBROUTINE coeffs( kts, ktem1, dryrho, &
+      z_sigma, z_sigma_half, a_coeff, b_coeff )
 ! !! to calculate coefficients in diffusion equation
 ! !! Mariusz Pagowski, March 2001
 ! !! conventions used:
 ! !! input is lower case
 ! !! output is upper case
 ! .. Scalar Arguments ..
-      INTEGER :: kts,kte
+      IMPLICIT NONE 
+
+      INTEGER, INTENT(IN) :: kts,ktem1
 ! ..
 ! .. Array Arguments ..
-      REAL, DIMENSION (kts:kte) :: a_coeff, z_sigma
-      REAL, DIMENSION (kts:kte-1) :: b_coeff, z_sigma_half
+      REAL, INTENT(IN), DIMENSION (kts:ktem1+1) :: z_sigma
+      REAL, INTENT(IN), DIMENSION (kts:ktem1) :: z_sigma_half, dryrho
+      REAL, INTENT(OUT), DIMENSION (kts+1:ktem1) :: a_coeff
+      REAL, INTENT(OUT), DIMENSION (kts:ktem1) :: b_coeff
 ! ..
 ! .. Local Scalars ..
-      REAL :: any
       INTEGER :: i
+      REAL :: dryrho_at_w
 ! ..
-      any = 1.
-
-      a_coeff(1) = any
-      b_coeff(1) = 1./(z_sigma(2)-z_sigma(1))
-
-      DO i = kts+1, kte - 1
-        a_coeff(i) = 1./(z_sigma_half(i)-z_sigma_half(i-1))
-        b_coeff(i) = 1./(z_sigma(i+1)-z_sigma(i))
+      DO i = kts, ktem1
+        b_coeff(i) = 1./(dryrho(i)*(z_sigma(i+1)-z_sigma(i)))
       END DO
 
-      a_coeff(kte) = any
+      DO i = kts+1, ktem1
+        dryrho_at_w = 0.5*(dryrho(i)+dryrho(i-1))
+        a_coeff(i) = dryrho_at_w/(z_sigma_half(i)-z_sigma_half(i-1))
+      END DO
 
     END SUBROUTINE coeffs
+
+!-----------------------------------------------------------------------
 END MODULE module_vertmx_wrf

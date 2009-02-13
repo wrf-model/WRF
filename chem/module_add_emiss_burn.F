@@ -184,7 +184,7 @@ CONTAINS
           do i=its,ite
            do k=kts+1,kte
         conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60./dz8w(i,k,j)
-            if(i.eq.56.and.j.eq.132)write(0,*)k,ebu_co(i,k,j),conv_rho,r_q,dtstep
+
         chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2)                        &
                          +ebu_so2(i,k,j)*conv_rho
         chem(i,k,j,p_sulf)  =  chem(i,k,j,p_sulf)                        &

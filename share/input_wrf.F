@@ -495,8 +495,8 @@
                aux_model_input9_only, aux_model_input10_only )
 #ifdef WRF_CHEM
            IF( (config_flags%io_style_emissions .eq. 1) .and.                                &
-              ((switch.eq.aux_model_input4_only) .or. (switch.eq.aux_model_input5_only) .or. &
-               (switch.eq.aux_model_input7_only)) ) then
+              ((switch.eq.aux_model_input5_only) .or. (switch.eq.aux_model_input6_only) .or. &
+               (switch.eq.aux_model_input7_only) .or. (switch.eq.aux_model_input8_only)) ) then
                CALL wrf_message( "**WARNING** Time in input file not being checked **WARNING**" )
            ELSE
 #endif

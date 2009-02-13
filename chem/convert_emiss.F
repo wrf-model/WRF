@@ -415,7 +415,7 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 00, message )
 
    CALL construct_filename1( inpname , 'wrfchemi_gocart_bg' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input9 , "DATASET=AUXINPUT9", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input8 , "DATASET=AUXINPUT8", ierr )
    write(message,FMT='(A,A)') '  GOCART BACKGROUND DATA file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    
@@ -486,9 +486,9 @@ PROGRAM convert_emissions
      enddo
    ENDIF ! chem_opt gocart_simple or gocartracm
 
-   CALL output_aux_model_input9 ( id1 , grid , config_flags , ierr )
+   CALL output_aux_model_input8 ( id1 , grid , config_flags , ierr )
 
-   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT9" )
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT8" )
 
    ENDIF ! chem_opt gocart_simple,dmsgocart,dustgocart
 
@@ -2273,7 +2273,7 @@ PROGRAM convert_emissions
    CALL  wrf_debug ( 100, message )
 
    CALL construct_filename1( inpname , 'wrfbiochemi' , grid%id , 2 )
-   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input4 , "DATASET=AUXINPUT4", ierr )
+   CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_aux_model_input6 , "DATASET=AUXINPUT6", ierr )
    write(message,FMT='(A,A)') ' BIOGENIC EMISSIONS file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
 
@@ -2284,9 +2284,9 @@ PROGRAM convert_emissions
    write(message,FMT='(A)') ' WRITE BIOGENIC EMISSIONS WRF file '
    CALL  wrf_debug ( 100, message )
 
-   CALL output_aux_model_input4 ( id1 , grid , config_flags , ierr )
+   CALL output_aux_model_input6 ( id1 , grid , config_flags , ierr )
 
-   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT4" )
+   CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT6" )
 
     endif  !    BIO_EMIS_OPT = BEIS313
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -2224,12 +2224,12 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
       WRITE(message,*)'mediation_integrate: med_read_wrf_chem_bioemissions: Open file ',TRIM(inpname)
       CALL wrf_message( TRIM(message) )
 
-     if( grid%auxinput4_oid .NE. 0 ) then
-       CALL close_dataset ( grid%auxinput4_oid , config_flags , "DATASET=AUXINPUT4" )
+     if( grid%auxinput6_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput6_oid , config_flags , "DATASET=AUXINPUT6" )
      endif
 
-      CALL open_r_dataset ( grid%auxinput4_oid, TRIM(inpname) , grid , config_flags, &
-                              "DATASET=AUXINPUT4", ierr )
+      CALL open_r_dataset ( grid%auxinput6_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT6", ierr )
         IF ( ierr .NE. 0 ) THEN
            WRITE( message , * ) 'med_read_wrf_chem_bioemissions: error opening ', TRIM( inpname )
            CALL wrf_error_fatal( TRIM( message ) )
@@ -2239,10 +2239,10 @@ SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input4' )
-         CALL input_aux_model_input4 ( grid%auxinput4_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input6' )
+         CALL input_aux_model_input6 ( grid%auxinput6_oid, grid , config_flags , ierr )
 
-         CALL close_dataset ( grid%auxinput4_oid , config_flags , "DATASET=AUXINPUT4" )
+         CALL close_dataset ( grid%auxinput6_oid , config_flags , "DATASET=AUXINPUT6" )
 
 !  ENDIF
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_bioemissions: exit' )
@@ -2288,12 +2288,12 @@ SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
       WRITE(message,*)'mediation_integrate: med_read_wrf_chem_gocartbg: Open file ',TRIM(inpname)
       CALL wrf_message( TRIM(message) )
 
-     if( grid%auxinput9_oid .NE. 0 ) then
-       CALL close_dataset ( grid%auxinput9_oid , config_flags , "DATASET=AUXINPUT9" )
+     if( grid%auxinput8_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
      endif
 
-      CALL open_r_dataset ( grid%auxinput9_oid, TRIM(inpname) , grid , config_flags, &
-                              "DATASET=AUXINPUT9", ierr )
+      CALL open_r_dataset ( grid%auxinput8_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT8", ierr )
         IF ( ierr .NE. 0 ) THEN
            WRITE( message , * ) 'med_read_wrf_chem_gocartbg error opening ', TRIM( inpname )
            CALL wrf_error_fatal( TRIM( message ) )
@@ -2303,10 +2303,10 @@ SUBROUTINE med_read_wrf_chem_gocartbg ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input9' )
-         CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input8' )
+         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
 
-         CALL close_dataset ( grid%auxinput9_oid , config_flags , "DATASET=AUXINPUT9" )
+         CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
 
 !  ENDIF
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_gocartbg: exit' )
@@ -2806,12 +2806,12 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
       WRITE(message,*)'mediation_integrate: med_read_wrf_chem_gocart_bg: Open file ',TRIM(inpname)
       CALL wrf_message( TRIM(message) )
 
-     if( grid%auxinput9_oid .NE. 0 ) then
-       CALL close_dataset ( grid%auxinput9_oid , config_flags , "DATASET=AUXINPUT9" )
+     if( grid%auxinput8_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
      endif
 
-      CALL open_r_dataset ( grid%auxinput9_oid, TRIM(inpname) , grid , config_flags, &
-                              "DATASET=AUXINPUT9", ierr )
+      CALL open_r_dataset ( grid%auxinput8_oid, TRIM(inpname) , grid , config_flags, &
+                              "DATASET=AUXINPUT8", ierr )
         IF ( ierr .NE. 0 ) THEN
            WRITE( message , * ) 'med_read_wrf_chem_gocart_bg: error opening ', TRIM( inpname )
            CALL wrf_error_fatal( TRIM( message ) )
@@ -2821,10 +2821,10 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
          TRIM(current_date_char)
          CALL wrf_message( TRIM(message) )
 
-         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input9' )
-         CALL input_aux_model_input9 ( grid%auxinput9_oid, grid , config_flags , ierr )
+         CALL wrf_debug (100 , 'mediation_integrate: calling input_aux_model_input8' )
+         CALL input_aux_model_input8 ( grid%auxinput8_oid, grid , config_flags , ierr )
 
-         CALL close_dataset ( grid%auxinput9_oid , config_flags , "DATASET=AUXINPUT9" )
+         CALL close_dataset ( grid%auxinput8_oid , config_flags , "DATASET=AUXINPUT8" )
 
 !
 !         CALL wrf_global_to_patch_real ( backg_no3_io , grid%backg_no3 , grid%domdesc, ' ' , 'xyz' ,         &

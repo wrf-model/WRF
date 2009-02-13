@@ -64,7 +64,6 @@ CONTAINS
                tprior=0.0
                do n=1,lagday
                  tprior=tprior+tlag(i,n,j)
-             if(i.eq.10.and.j.eq.10)print *, 'tprior',i,j,tprior,tlag(i,n,j),lagday,n
                end do
                tprior=tprior/lagday
                tmn(i,j)=tconst*tyr(i,j)+(1.-tconst)*tprior
@@ -73,7 +72,6 @@ CONTAINS
                  tlag(i,n,j)=tlag(i,n+1,j)
                end do
                tlag(i,lagday,j)=tdly(i,j)/nday
-             if(i.eq.10.and.j.eq.10)print *, 'xland',i,j,nday,tyr(i,j),tprior,tmn(i,j),tyra(i,j),tdly(i,j),tlag(i,lagday,j)
                tdly(i,j)=0.0
         ENDDO
         ENDDO
@@ -108,7 +106,6 @@ CONTAINS
         DO j=j_start(ij),j_end(ij)
         DO i=i_start(ij),i_end(ij)
                tdly(i,j)=tdly(i,j)+tsk(i,j)
-          if(i.eq.10.and.j.eq.10)print *,'tdly ',tdly(i,j),tsk(i,j)
         ENDDO
         ENDDO
       ENDDO

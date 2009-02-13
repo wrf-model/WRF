@@ -287,7 +287,7 @@ MODULE module_bl_boulac
          do iz= kts,kte
           a_e(ix,iz,iy)=a_e1D(iz)
           b_e(ix,iz,iy)=b_e1D(iz)
-          dlg_bep(ix,iz,iy)=dlg1D(iz)
+          if(sf_urban_physics.eq.2)dlg_bep(ix,iz,iy)=dlg1D(iz)
           tke(ix,iz,iy)=tke1D(iz)
           sh(ix,iz,iy)=sh1D(iz)
           bu(ix,iz,iy)=bu1D(iz)

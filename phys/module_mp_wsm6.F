@@ -179,8 +179,8 @@ CONTAINS
                     ,ids,ide, jds,jde, kds,kde                     &
                     ,ims,ime, jms,jme, kms,kme                     &
                     ,its,ite, jts,jte, kts,kte                     &
-                    ,snow(ims,j),snowncv(ims,j)                    &
-                    ,graupel(ims,j),graupelncv(ims,j)              &
+                    ,snow,snowncv                                  &
+                    ,graupel,graupelncv                            &
                                                                    )
 
          DO K=kts,kte
@@ -257,11 +257,11 @@ CONTAINS
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
                                                               sr
-  REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
+  REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                  &
         INTENT(INOUT) ::                                    snow, &
                                                          snowncv
 
-  REAL, DIMENSION( ims:ime ),     OPTIONAL,                       &
+  REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                  &
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 ! LOCAL VAR
@@ -718,17 +718,17 @@ CONTAINS
           rain(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rain(i)
         endif
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-        snowncv(i) = 0.
+        snowncv(i,lat) = 0.
         if(fallsum_qsi.gt.0.) then
-          snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
-          snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
+          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.
+          snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
         endif
         ENDIF
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
-        graupelncv(i) = 0.
+        graupelncv(i,lat) = 0.
         if(fallsum_qg.gt.0.) then
-          graupelncv(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.
-          graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)
+          graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.
+          graupel(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i,lat)
         endif
         ENDIF
         sr(i) = 0.

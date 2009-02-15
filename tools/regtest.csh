@@ -210,11 +210,17 @@ set start = ( `date` )
 #	is a bit special.  It can only run on machines that have the WRF RSL_LITE-but-no-MPI
 #	option available.
 
-set NESTED = TRUE
-set NESTED = FALSE
+set NESTED1 = TRUE
+set NESTED1 = FALSE
 
-if ( $NESTED == TRUE ) then
+set NESTED2 = TRUE
+set NESTED2 = FALSE
+
+if ( ( $NESTED1 == TRUE ) || ( $NESTED2 == TRUE ) ) then
 	echo DOING a NESTED TEST
+	set NESTED = TRUE
+else
+	set NESTED = FALSE
 endif
 
 #	Use the adaptive time step option
@@ -424,8 +430,10 @@ set IO_FORM_WHICH =( IO     IO        IO       IO       O        )
 #	esmf_lib: cannot test NMM
 #	grib output: cannot test NMM
 
-if      ( $NESTED == TRUE ) then
-	set CORES = ( em_real em_b_wave em_quarter_ss          )
+if      ( $NESTED1 == TRUE ) then
+	set CORES = ( em_real                                  )
+else if ( $NESTED2 == TRUE ) then
+	set CORES = (         em_b_wave em_quarter_ss          )
 else if ( $NESTED != TRUE ) then
 	set CORES = ( em_real em_b_wave em_quarter_ss nmm_real )
 	if ( $CHEM == TRUE ) then
@@ -799,11 +807,11 @@ cat >! phys_real_4 << EOF
  bl_pbl_physics                      = 2,     2,     2,
  bldt                                = 0,     0,     0,
  cu_physics                          = 5,     5,     0,
- cudt                                = 5,     5,     5,
+ cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
- sf_urban_physics                    = 1,     1,     1,
+ sf_urban_physics                    = 2,     2,     2,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0,
@@ -2254,7 +2262,7 @@ EOF
 				else if ( $CHEM == TRUE ) then
 					if ( ( $KPP == TRUE ) && ( $phys_option >= 3 ) ) then
 						sed -e '/dyn_opt/d' \
-						    -e 's/^ chem_opt *= [0-9]/ chem_opt = '${CHEM_OPT}'/' \
+						    -e 's/^ chem_opt *= [0-9][0-9]*/ chem_opt = '${CHEM_OPT}'/' \
 						    namelist.input.chem_test_${phys_option} >! namelist.input
 					else
 						sed -e '/dyn_opt/d' \

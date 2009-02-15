@@ -44,19 +44,20 @@ endif
 #       What these tests do, must be a single string.
 
 set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  	1	\
-                 "Moving_Nest"          "NESTED=FALSE"        "NESTED=TRUE"         "NONE"  	2	\
-                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	3	\
-                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	4	\
-                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	5	\
-                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	6	\
-                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	7	\
-                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	8	\
-                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"  	9 	\
-                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	10	\
-                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	11	\
-                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  12    	\
-                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      13      \
-                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      14      \
+                 "Moving_Nest1"         "NESTED1=FALSE"       "NESTED1=TRUE"        "NONE"  	2	\
+                 "Moving_Nest2"         "NESTED2=FALSE"       "NESTED2=TRUE"        "NONE"  	3	\
+                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	4	\
+                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	5	\
+                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	6	\
+                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	7	\
+                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	8	\
+                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	9	\
+                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"	10 	\
+                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	11	\
+                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	12	\
+                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  13    	\
+                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      14      \
+                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      15      \
                )
 
 #	Where are we located.
@@ -90,7 +91,7 @@ if ( ! $?TAG ) then
 		set initials = XX
 	endif
 	echo the TAG is NOT defined
-	echo Please define an environment variable that is the WRFV2 tag
+	echo Please define an environment variable that is the WRFV3 tag
 	echo Something such as: setenv TAG trunk_${date}_${initials}
 	echo " " 
 	exit ( 1 )
@@ -231,7 +232,7 @@ FINISHED_TEST_LIST:
 
 if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 	if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+	                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if   ( `uname` == AIX ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
@@ -318,7 +319,7 @@ FOUND_SELECTED_TEST:
 
 		if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 			if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-			                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+			                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else if   ( `uname` == AIX ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
@@ -396,7 +397,7 @@ EOF
 			end
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm llsub.out llq.report
-		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == bl ) ) ) then
+		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) ) then
 			bsub < reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! bsub.out
 			set ok = 0
 			set in_already = 0
@@ -412,7 +413,7 @@ EOF
 			cp /ptmp/$USER/wrf_regression.$joe_id/wrftest.output wrftest.output.$TEST_NUM[$count_test].$tests[$count_test]
 			rm bsub.out bjobs.report
 		else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-		                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+		                                  ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 			llsubmit reg.foo.$TEST_NUM[$count_test].$tests[$count_test] >&! llsub.out
 			set ok = 0
 			set in_already = 0
@@ -445,7 +446,7 @@ EOF
 end
 
 if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
-                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != bl ) ) ) then
+                             ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 	echo no web page building, stopping
 	exit
 endif
@@ -453,7 +454,7 @@ endif
 PASSFAIL:
 
 #	Build the html page.  We only need the middle portion.  It's
-#	a table with 5 columns: Date of test, WRFV2 tag, Developer
+#	a table with 5 columns: Date of test, WRFV3 tag, Developer
 #	who conducted the test, machine the test was run on, and the
 #	pass/fail status of the all_reg.csh script when compared
 #	to the benchmark results (usually a released code).

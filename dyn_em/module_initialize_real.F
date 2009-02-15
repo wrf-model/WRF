@@ -531,7 +531,8 @@ integer::oops1,oops2
          !  Compute the mixing ratio from the input relative humidity.
 
          IF ( flag_qv .NE. 1 ) THEN
-            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc , .TRUE. , &
+            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc , &
+                              config_flags%rh2qv_wrt_liquid , &
                               ids , ide , jds , jde , 1   , num_metgrid_levels , &
                               ims , ime , jms , jme , 1   , num_metgrid_levels , &
                               its , ite , jts , jte , 1   , num_metgrid_levels )
@@ -3855,9 +3856,9 @@ print *,'p sfc = ',psfc(i,j)
 
                   es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
                   IF (es .ge. p(i,k,j)/100.)THEN
-                    q(i,k,j)=1.0
+                    q(i,k,j)=0.0
                     print *,'warning: vapor pressure exceeds total pressure '
-                    print *,'setting mixing ratio to 1'
+                    print *,'setting mixing ratio to 0'
                   ELSE
                     q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
                   ENDIF
@@ -4633,6 +4634,16 @@ print *,'namelist p_top (Pa) = ',p_top
       DO j = jts , MIN(jde-1,jte)
          DO i = its , MIN(ide-1,ite)
 
+            !  Special cases
+
+            IF      ( ( height(i,1,j) .LT. 0 ) .OR. ( ter(i,j) .LT. 0 ) ) THEN
+               psfc(i,j) = slp(i,j) + ( p(i,2,j)-p(i,3,j) ) / ( height(i,2,j)-height(i,3,j) ) * ter(i,j)
+               CYCLE
+            ELSE IF ( ( height(i,1,j) .LT. 1 ) .OR. ( ter(i,j) .LT. 1 ) ) THEN
+               psfc(i,j) = slp(i,j)
+               CYCLE
+            END IF
+
             !  Find the trapping levels
 
             found_loc = .FALSE.
@@ -4660,14 +4671,14 @@ print *,'namelist p_top (Pa) = ',p_top
             IF ( .NOT. found_loc ) THEN
                IF ( slp(i,j) .GE. p(i,2,j) ) THEN
                   zl = 0.
-                  zu = height(i,2  ,j)
+                  zu = height(i,3,j)
                   zm = ter(i,j)
                   pl = slp(i,j)
-                  pu = p(i,2  ,j)
+                  pu = p(i,3,j)
                   psfc(i,j) = EXP ( ( LOG(pl) * ( zm - zu ) + LOG(pu) * ( zl - zm ) ) / ( zl - zu ) )
                   found_loc = .TRUE.
                ELSE
-                  found_slp_loc : DO k = kts+1 , kte-2
+                  found_slp_loc : DO k = kts+1 , kte-3
                      IF ( ( slp(i,j) .GE. p(i,k+1,j) ) .AND. &
                           ( slp(i,j) .LT. p(i,k  ,j) ) ) THEN
                         zl = 0.

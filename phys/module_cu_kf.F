@@ -1921,8 +1921,7 @@ CONTAINS
 !...TIMEC, ALLOW FEEDBACK TO OCCUR ONLY DURING TADVEC...                 
 !                                                                       
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)                  
-!       NCA(I,J)=FLOAT(NIC)                                                  
-        NCA(I,J)=TADVEC
+        NCA(I,J)=FLOAT(NIC)*DT
         DO 320 K=1,KX                                                
 !         IF(IMOIST.NE.2)THEN
 !                                                                            

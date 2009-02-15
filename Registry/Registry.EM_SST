@@ -46,7 +46,7 @@ dimspec    i      1     standard_domain              x          west_east
 dimspec    j      3     standard_domain              y          south_north
 dimspec    k      2     standard_domain              z          bottom_top
 dimspec    l      2     namelist=num_soil_layers     z          soil_layers
-dimspec    %      2     namelist=num_urban_layers    z          urban_layers
+dimspec    ulay   2     namelist=num_urban_layers    z          urban_layers
 dimspec    lin    2     namelist=num_soil_layers_in  z          soil_layers_in
 dimspec    u      2     namelist=num_land_cat        z          land_cat
 dimspec    s      2     namelist=num_soil_cat        z          soil_cat
@@ -632,14 +632,14 @@ state    real   RN_URB2D        ij    misc        1         -     r       "RN_UR
 state    real   TS_URB2D        ij    misc        1         -     r       "TS_URB"  "SKIN TEMPERATURE"          "K"
 state    real   FRC_URB2D       ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB"  "URBAN FRACTION"         "dimensionless"
 state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
-state    real   TRB_URB4D        i%j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
-state    real   TW1_URB4D       i%j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
-state    real   TW2_URB4D       i%j    misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
-state    real   TGB_URB4D        i%j    misc       1         Z    r      "TGB_URB4D" "ROAD LAYER TEMPERATURE"          "K"
-state    real   SFW1_URB3D      i%j    misc       1         Z     r       "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFW2_URB3D      i%j    misc       1         Z     r       "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFR_URB3D       i%j    misc       1         Z     r       "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFG_URB3D       i%j    misc       1         Z     r       "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
+state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
+state    real   TW2_URB4D       i{ulay}j    misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
+state    real   TGB_URB4D       i{ulay}j    misc       1         Z     r      "TGB_URB4D" "ROAD LAYER TEMPERATURE"          "K"
+state    real   SFW1_URB3D      i{ulay}j    misc       1         Z     r      "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFW2_URB3D      i{ulay}j    misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFR_URB3D       i{ulay}j    misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFG_URB3D       i{ulay}j    misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 
 
 # urban variables from radiation model
@@ -1235,6 +1235,7 @@ rconfig   real    zap_close_levels        namelist,domains	1              500   
 rconfig   logical sfcp_to_sfcp            namelist,domains	1              .false. irh    "sfcp_to_sfcp"   "T/F use incoming sfc pres to compute new sfc pres"      "flag"
 rconfig   logical adjust_heights          namelist,domains	1              .false. irh    "adjust_heights"   "T/F adjust pressure level input to match 500 mb height"      "flag"
 rconfig   logical smooth_cg_topo          namelist,domains	1              .false. irh    "smooth_cg_topo"   "T/F smooth CG topo on boundarries" "flag"
+rconfig   logical rh2qv_wrt_liquid        namelist,domains	1              .true.  irh    "rh2qv_wrt_liquid" "T = rh=>Qv assumes RH wrt liquid water, F = allows ice"
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""

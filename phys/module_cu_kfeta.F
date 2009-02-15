@@ -2187,7 +2187,7 @@ iter:     DO NCOUNT=1,10
 !...TIMEC, ALLOW FEEDBACK TO OCCUR ONLY DURING TADVEC...
 !     
         IF(TADVEC.LT.TIMEC)NIC=NINT(TADVEC/DT)
-        NCA(I,J) = TADVEC
+        NCA(I,J) = REAL(NIC)*DT
         IF(ISHALL.EQ.1)THEN
            TIMEC = 2400.
            NCA(I,J) = CUDT*60.

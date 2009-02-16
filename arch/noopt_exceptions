@@ -104,7 +104,6 @@ mediation_feedback_domain.o \
 mediation_force_domain.o \
 mediation_integrate.o \
 mediation_interp_domain.o \
-module_comm_dm.o \
 module_dm.o \
 module_fddaobs_rtfdda.o \
 module_initialize.o \
@@ -126,7 +125,6 @@ start_domain.o \
 start_domain_nmm.o \
 start_em.o \
 wrf_fddaobs_in.o \
-module_alloc_space.o \
 wrf_tsin.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
@@ -216,6 +214,8 @@ nl_set_0_routines.o \
 nl_set_1_routines.o \
 nl_get_0_routines.o \
 nl_get_1_routines.o \
+module_alloc_space.o \
+module_comm_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

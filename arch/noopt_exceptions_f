@@ -101,9 +101,7 @@ nl_set_1_routines.o : nl_set_1_routines.F
 
 convert_nmm.o \
 init_modules_em.o \
-module_comm_dm.o \
 module_dm.o \
-module_alloc_space.o \
 module_fddaobs_rtfdda.o \
 module_initialize.o \
 module_initialize_b_wave.o \
@@ -213,6 +211,8 @@ nl_set_0_routines.o \
 nl_set_1_routines.o \
 nl_get_0_routines.o \
 nl_get_1_routines.o \
+module_alloc_space.o \
+module_comm_dm.o \
 module_configure.o :
 	$(RM) $@
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb

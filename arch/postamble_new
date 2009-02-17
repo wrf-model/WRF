@@ -1,5 +1,7 @@
 ######################
 
+FGREP = fgrep -iq
+
 ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=4 \
                      $(ARCH_LOCAL) \
                      $(DA_ARCHFLAGS) \
@@ -159,7 +161,7 @@ wrfio_esmf :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	$(RM) $*.b $*.bb
-	if fgrep -q '!$$OMP' $*.f90 ; then \
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90 ; \
         else \

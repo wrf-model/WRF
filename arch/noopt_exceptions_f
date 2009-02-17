@@ -127,7 +127,7 @@ wrf_tsin.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	if fgrep -q '!$$OMP' $*.f90 ; then \
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
         else \
@@ -150,7 +150,7 @@ module_sf_ruclsm.o module_cu_kf.o :
 	$(SED_FTN) $*.F > $*.b 
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
-	if fgrep -q '!$$OMP' $*.f90 ; then \
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
           echo COMPILING $*.F WITH OMP ; \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \

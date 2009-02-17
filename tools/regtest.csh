@@ -2063,9 +2063,10 @@ cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 	
 		#	Fix the OpenMP default for IBM regression testing - noopt required for bit-wise comparison.
 
-		if ( ( $compopt == $COMPOPTS[2] ) && ( `uname` == AIX ) ) then
-			sed -e '/^OMP/s/-qsmp=noauto/-qsmp=noauto:noopt/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
-		endif
+# this should not be needed any more, with changes to have only OMP modules compiled with -qsmp=noauto.  JM 20090217
+#		if ( ( $compopt == $COMPOPTS[2] ) && ( `uname` == AIX ) ) then
+#			sed -e '/^OMP/s/-qsmp=noauto/-qsmp=noauto:noopt/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
+#		endif
 
 		#	Save the configure file.
 

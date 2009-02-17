@@ -1448,8 +1448,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   IF ( (config_flags%open_ys) .and. jts == jds ) j_start = jts+1
-   IF ( (config_flags%open_ye) .and. jte == jde ) jtf = jtf-1
+   IF ( (config_flags%open_ys .or. specified) .and. jts == jds ) j_start = jts+1
+   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jtf-2
 
    DO j = j_start, jtf
 
@@ -1481,8 +1481,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   IF ( (config_flags%open_xs) .and. its == ids ) i_start = its+1
-   IF ( (config_flags%open_xe) .and. ite == ide ) itf = itf-1
+   IF ( (config_flags%open_xs .or. specified) .and. its == ids ) i_start = its+1
+   IF ( (config_flags%open_xe .or. specified) .and. ite == ide ) itf = itf-2
 
    DO j = j_start, jtf
 
@@ -1516,8 +1516,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   IF ( (config_flags%open_ys) .and. jts == jds ) j_start = jts+1
-   IF ( (config_flags%open_ye) .and. jte == jde ) jtf = jtf-1
+   IF ( (config_flags%open_ys .or. specified) .and. jts == jds ) j_start = jts+2
+   IF ( (config_flags%open_ye .or. specified) .and. jte == jde ) jtf = jtf-3
 
    DO j = j_start, jtf
 
@@ -1549,6 +1549,55 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    ENDDO
 
+!  pick up near boundary rows using 2nd order stencil for open and specified conditions
+
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+1 )  THEN
+
+     j = jds+1
+     DO k = 2, kte-1
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                  (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
+     ENDDO
+     ENDDO
+
+     k = kte
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
+                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
+                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
+     ENDDO
+
+   END IF
+
+   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-2 )  THEN
+
+     j = jde-2
+     DO k = 2, kte-1
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                  (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
+     ENDDO
+     ENDDO
+
+     k = kte
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
+                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
+                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
+     ENDDO
+
+   END IF
 
 !  x (u) advection
 
@@ -1557,8 +1606,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   IF ( (config_flags%open_xs) .and. its == ids ) i_start = its+1
-   IF ( (config_flags%open_xe) .and. ite == ide ) itf = itf-1
+   IF ( (config_flags%open_xs) .and. its == ids ) i_start = its+2
+   IF ( (config_flags%open_xe) .and. ite == ide ) itf = itf-3
 
    DO j = j_start, jtf
 
@@ -1587,6 +1636,59 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    ENDDO
 
+!  pick up near boundary rows using 2nd order stencil for open and specified conditions
+
+   IF ( (config_flags%open_xs .or. specified) .and. its <= ids+1 ) THEN
+
+     i = ids + 1
+
+     DO j = j_start, jtf
+     DO k = 2, kte-1
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                  (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
+                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
+     ENDDO
+     ENDDO
+ 
+     k = kte
+     DO j = j_start, jtf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
+                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
+                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
+     ENDDO
+
+   END IF
+
+   IF ( (config_flags%open_xe .or. specified) .and. ite >= ide-2 ) THEN
+
+     i = ide-2
+     DO j = j_start, jtf
+     DO k = 2, kte-1
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                  (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
+                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
+     ENDDO
+     ENDDO
+ 
+     k = kte
+     DO j = j_start, jtf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
+                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
+                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
+     ENDDO
+
+   END IF
+
+!--------------------------
+
    ELSE IF (advective_order <= 6) THEN
 
 !  y (v) advection
@@ -1596,11 +1698,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-!   IF ( (config_flags%open_ys) .and. jts == jds ) j_start = jts+1
-!   IF ( (config_flags%open_ye) .and. jte == jde ) jtf = jtf-1
-
-   IF (config_flags%open_ys .or. specified ) j_start = max(jts,jds+2)
-   IF (config_flags%open_ye .or. specified ) jtf     = min(jtf,jde-3)
+   IF (config_flags%open_ys .or. specified ) j_start = max(jts,jds+3)
+   IF (config_flags%open_ye .or. specified ) jtf     = min(jtf,jde-4)
 
    DO j = j_start, jtf
 
@@ -1636,13 +1735,11 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    ENDDO
 
+!  4th order stencil for open or specified conditions two in form the boundary
 
-!  pick up near boundary rows using 4th order stencil 
-!  (open bc copy only goes out to jds-1 and jde, hence 4rth is ok but 6th is too big)
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+2 )  THEN
 
-   IF ( (config_flags%open_ys) .and. jts <= jds+1 )  THEN
-
-     j = jds+1
+     j = jds+2
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                     &
@@ -1671,9 +1768,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
-   IF ( (config_flags%open_ye) .and. jte >= jde-2 )  THEN
+   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-3 )  THEN
 
-     j = jde-2
+     j = jde-3
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                  &
@@ -1702,6 +1799,56 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    END IF
 
+!  2nd order stencil for open and specified conditions one row in from boundary
+
+   IF ( (config_flags%open_ys .or. specified) .and. jts <= jds+1 )  THEN
+
+     j = jds+1
+     DO k = 2, kte-1
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                  (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
+     ENDDO
+     ENDDO
+
+     k = kte
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
+                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
+                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
+     ENDDO
+
+   END IF
+
+   IF ( (config_flags%open_ye .or. specified) .and. jte >= jde-2 )  THEN
+
+     j = jde-2
+     DO k = 2, kte-1
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
+                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                  (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
+                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
+     ENDDO
+     ENDDO
+
+     k = kte
+     DO i = i_start, itf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
+                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
+                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
+     ENDDO
+
+   END IF
+
 !  x (u) advection
 
    i_start = its
@@ -1709,10 +1856,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
 
-   IF (config_flags%open_xs .or. specified ) i_start = max(its,ids+2)
-   IF (config_flags%open_xe .or. specified ) itf     = min(itf,ide-3)
-   IF ( config_flags%periodic_x ) i_start = its
-   IF ( config_flags%periodic_x ) itf=MIN(ite,ide-1)
+   IF (config_flags%open_xs .or. specified ) i_start = max(its,ids+3)
+   IF (config_flags%open_xe .or. specified ) itf     = min(itf,ide-4)
 
    DO j = j_start, jtf
 
@@ -1745,8 +1890,10 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    ENDDO
 
-   IF ( (config_flags%open_xs) .and. its <= ids+1 ) THEN
-     i = ids + 1
+!  4th order stencil two in from the boundary for open and specified conditions
+
+   IF ( (config_flags%open_xs) .and. its <= ids+2 ) THEN
+     i = ids + 2
      DO j = j_start, jtf
        DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
@@ -1769,31 +1916,82 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      ENDDO
    END IF
 
-   IF ( (config_flags%open_xe) .and. ite >= ide-2 ) THEN
+   IF ( (config_flags%open_xe) .and. ite >= ide-3 ) THEN
+     i = ide-3
+     DO j = j_start, jtf
+       DO k = 2, kte-1
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
+                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
+                      -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
+                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
+                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
+       ENDDO
+       k = kte
+       ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
+                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
+                   8.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
+                     -(ph(i+2,k,j)-ph(i-2,k,j))                                           &
+                  +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
+                     -(phb(i+2,k,j)-phb(i-2,k,j))  )     )
+
+     ENDDO
+   END IF
+
+!  2nd order stencil for open and specified conditions one in from the boundary
+
+   IF ( (config_flags%open_xs .or. specified) .and. its <= ids+1 ) THEN
+
+     i = ids + 1
+
+     DO j = j_start, jtf
+     DO k = 2, kte-1
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                  (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
+                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
+     ENDDO
+     ENDDO
+ 
+     k = kte
+     DO j = j_start, jtf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
+                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
+                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
+     ENDDO
+
+   END IF
+
+   IF ( (config_flags%open_xe .or. specified) .and. ite >= ide-2 ) THEN
+
      i = ide-2
      DO j = j_start, jtf
-       DO k = 2, kte-1
-        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
-                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
-                      -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
-                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
-                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
-       ENDDO
-       k = kte
-       ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
-                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
-                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
-                   8.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
-                     -(ph(i+2,k,j)-ph(i-2,k,j))                                           &
-                  +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
-                     -(phb(i+2,k,j)-phb(i-2,k,j))  )     )
-
+     DO k = 2, kte-1
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
+                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                  (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
+                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
-   END IF
+     ENDDO
+ 
+     k = kte
+     DO j = j_start, jtf
+        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
+                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
+                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
+     ENDDO
 
    END IF
+
+   END IF  ! 6th order advection
 
 !  lateral open boundary conditions,
 !  start with north and south (y) boundaries

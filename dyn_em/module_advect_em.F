@@ -242,16 +242,16 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
       IF( config_flags%periodic_x   .or. &
           config_flags%symmetric_xs .or. &
-          (its > ids+2)                ) degrade_xs = .false.
+          (its > ids+3)                ) degrade_xs = .false.
       IF( config_flags%periodic_x   .or. &
           config_flags%symmetric_xe .or. &
           (ite < ide-2)                ) degrade_xe = .false.
       IF( config_flags%periodic_y   .or. &
           config_flags%symmetric_ys .or. &
-          (jts > jds+2)                ) degrade_ys = .false.
+          (jts > jds+3)                ) degrade_ys = .false.
       IF( config_flags%periodic_y   .or. &
           config_flags%symmetric_ye .or. &
-          (jte < jde-3)                ) degrade_ye = .false.
+          (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -522,16 +522,16 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -611,7 +611,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
             ENDDO
             ENDDO
 
-     ELSE IF ( j == jde-2 ) THEN  ! 3rd or 4th order flux 2 in from north boundary
+     ELSE IF ( j == jde-2 ) THEN  ! 3rd order flux 2 in from north boundary
 
             DO k=kts,ktf
             DO i = i_start, i_end
@@ -778,16 +778,16 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-1)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !--------------- x - advection first
 
@@ -984,16 +984,16 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-1)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !--------------- x - advection first
 
@@ -1668,16 +1668,16 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       IF( config_flags%periodic_x   .or. &
           config_flags%symmetric_xs .or. &
-          (its > ids+2)                ) degrade_xs = .false.
+          (its > ids+3)                ) degrade_xs = .false.
       IF( config_flags%periodic_x   .or. &
           config_flags%symmetric_xe .or. &
           (ite < ide-3)                ) degrade_xe = .false.
       IF( config_flags%periodic_y   .or. &
           config_flags%symmetric_ys .or. &
-          (jts > jds+2)                ) degrade_ys = .false.
+          (jts > jds+3)                ) degrade_ys = .false.
       IF( config_flags%periodic_y   .or. &
           config_flags%symmetric_ye .or. &
-          (jte < jde-2)                ) degrade_ye = .false.
+          (jte < jde-3)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -1930,16 +1930,16 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -2092,7 +2092,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       IF(degrade_xs) then
         i_start = MAX(ids+1,its)
-        i_start_f = i_start+2
+        i_start_f = MIN(i_start+2,ids+3)
       ENDIF
 
       IF(degrade_xe) then
@@ -2120,40 +2120,48 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
         IF( degrade_xs ) THEN
 
-          IF( i_start == ids+1 ) THEN ! second order flux next to the boundary
-            i = ids+1
-            DO k=kts,ktf
-            fqx(i,k) = 0.25*(ru(i,k,j)+ru(i,k,j-1)) &
-                   *(v(i,k,j)+v(i-1,k,j))
-            ENDDO
-         ENDIF
+          DO i=i_start,i_start_f-1
 
-          i = ids+2
-          DO k=kts,ktf
-            vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-            fqx( i,k ) = vel*flux3( v(i-2,k,j), v(i-1,k,j),  &
-                                          v(i  ,k,j), v(i+1,k,j),  &
-                                          vel                     )
+            IF(i == ids+1) THEN ! second order
+              DO k=kts,ktf
+                fqx(i,k) = 0.25*(ru(i,k,j)+ru(i,k,j-1)) &
+                                *(v(i,k,j)+v(i-1,k,j))
+              ENDDO
+            ENDIF
+
+            IF(i == ids+2) THEN  ! third order
+              DO k=kts,ktf
+                vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
+                fqx( i,k ) = vel*flux3( v(i-2,k,j), v(i-1,k,j),  &
+                                        v(i  ,k,j), v(i+1,k,j),  &
+                                        vel                     )
+              ENDDO
+            ENDIF
+
           ENDDO
 
         ENDIF
 
         IF( degrade_xe ) THEN
 
-          IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
-            i = ide-1
-            DO k=kts,ktf
-              fqx(i,k) = 0.25*(ru(i_end+1,k,j)+ru(i_end+1,k,j-1))      &
-                              *(v(i_end+1,k,j)+v(i_end,k,j))
-            ENDDO
-          ENDIF
+          DO i = i_end_f+1, i_end+1
 
-          i = ide-2
-          DO k=kts,ktf
-          vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-          fqx( i,k ) = vel*flux3( v(i-2,k,j), v(i-1,k,j),  &
+            IF( i == ide-1 ) THEN ! second order flux next to the boundary
+              DO k=kts,ktf
+                fqx(i,k) = 0.25*(ru(i_end+1,k,j)+ru(i_end+1,k,j-1))      &
+                                *(v(i_end+1,k,j)+v(i_end,k,j))
+              ENDDO
+            ENDIF
+
+            IF( i == ide-2 ) THEN ! third order flux one in from the boundary
+              DO k=kts,ktf
+                vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
+                fqx( i,k ) = vel*flux3( v(i-2,k,j), v(i-1,k,j),  &
                                         v(i  ,k,j), v(i+1,k,j),  &
                                         vel                     )
+              ENDDO
+            ENDIF
+
           ENDDO
 
         ENDIF
@@ -2185,16 +2193,16 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-1)                ) degrade_ye = .false.
+       (jte < jde-2)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -2386,16 +2394,16 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-1)                ) degrade_ye = .false.
+       (jte < jde-2)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -3145,16 +3153,16 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -3393,16 +3401,16 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -3447,6 +3455,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
                   field(i,k,j  ), field(i,k,j+1), field(i,k,j+2),  vel )
         ENDDO
         ENDDO
+
 
       ELSE IF ( j == jds+1 ) THEN   ! 2nd order flux next to south boundary
 
@@ -3547,7 +3556,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       IF(degrade_xs) then
         i_start = MAX(ids+1,its)
-        i_start_f = i_start+2
+        i_start_f = MIN(i_start+2,ids+3)
       ENDIF
 
       IF(degrade_xe) then
@@ -3575,44 +3584,51 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
         IF( degrade_xs ) THEN
 
-          IF( i_start == ids+1 ) THEN ! second order flux next to the boundary
-            i = ids+1
-            DO k=kts,ktf
-              fqx(i,k) = 0.5*(ru(i,k,j)) &
-                     *(field(i,k,j)+field(i-1,k,j))
+          DO i=i_start,i_start_f-1
 
-            ENDDO
-          ENDIF
+            IF(i == ids+1) THEN ! second order
+              DO k=kts,ktf
+                fqx(i,k) = 0.5*(ru(i,k,j)) &
+                       *(field(i,k,j)+field(i-1,k,j))
+              ENDDO
+            ENDIF
 
-          i = ids+2
-          DO k=kts,ktf
-            vel = ru(i,k,j)
-            fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
-                                          field(i  ,k,j), field(i+1,k,j),  &
-                                          vel                     )
+            IF(i == ids+2) THEN  ! third order
+              DO k=kts,ktf
+                vel = ru(i,k,j)
+                fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+                                              field(i  ,k,j), field(i+1,k,j),  &
+                                              vel                     )
+              ENDDO
+            END IF
+
           ENDDO
 
         ENDIF
 
         IF( degrade_xe ) THEN
 
-          IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
-            i = ide-1
-            DO k=kts,ktf
-              fqx(i,k) = 0.5*(ru(i,k,j))      &
-                     *(field(i,k,j)+field(i-1,k,j))
-            ENDDO
-         ENDIF
+          DO i = i_end_f+1, i_end+1
 
-          i = ide-2
-          DO k=kts,ktf
-            vel = ru(i,k,j)
-            fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
-                                          field(i  ,k,j), field(i+1,k,j),  &
-                                          vel                             )
-          ENDDO
+            IF( i == ide-1 ) THEN ! second order flux next to the boundary
+              DO k=kts,ktf
+                fqx(i,k) = 0.5*(ru(i,k,j))      &
+                       *(field(i,k,j)+field(i-1,k,j))
+              ENDDO
+           ENDIF
 
-        ENDIF
+           IF( i == ide-2 ) THEN ! third order flux one in from the boundary
+             DO k=kts,ktf
+               vel = ru(i,k,j)
+               fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+                                       field(i  ,k,j), field(i+1,k,j),  &
+                                       vel                             )
+             ENDDO
+           ENDIF
+
+         ENDDO
+
+       ENDIF
 
 !  x flux-divergence into tendency
 
@@ -3635,16 +3651,16 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !  begin flux computations
 !  start with x flux divergence
@@ -3824,16 +3840,16 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !  begin flux computations
 !  start with x flux divergence
@@ -4309,7 +4325,6 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       ENDDO
 
-
    ELSE IF (vert_order == 2) THEN    
 
   DO j = j_start, j_end
@@ -4457,16 +4472,16 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -4763,16 +4778,16 @@ ELSE IF (horz_order == 5 ) THEN
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -4950,7 +4965,7 @@ ELSE IF (horz_order == 5 ) THEN
 
       IF(degrade_xs) then
         i_start = MAX(ids+1,its)
-        i_start_f = i_start+2
+        i_start_f = MIN(i_start+2,ids+3)
       ENDIF
 
       IF(degrade_xe) then
@@ -4970,7 +4985,7 @@ ELSE IF (horz_order == 5 ) THEN
           fqx( i,k ) = vel*flux5( w(i-3,k,j), w(i-2,k,j),  &
                                   w(i-1,k,j), w(i  ,k,j),  &
                                   w(i+1,k,j), w(i+2,k,j),  &
-                          vel                             )
+                                  vel                     )
         ENDDO
         ENDDO
 
@@ -4980,64 +4995,73 @@ ELSE IF (horz_order == 5 ) THEN
           fqx( i,k ) = vel*flux5( w(i-3,k,j), w(i-2,k,j),  &
                                   w(i-1,k,j), w(i  ,k,j),  &
                                   w(i+1,k,j), w(i+2,k,j),  &
-                          vel                             )
+                                  vel                     )
         ENDDO
 
 !  lower order fluxes close to boundaries (if not periodic or symmetric)
 
         IF( degrade_xs ) THEN
 
-          IF( i_start == ids+1 ) THEN ! second order flux next to the boundary
-            i = ids+1
-            DO k=kts+1,ktf
-              fqx(i,k) = 0.5*(fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)) &
-                     *(w(i,k,j)+w(i-1,k,j))
-            ENDDO
+          DO i=i_start,i_start_f-1
+
+            IF(i == ids+1) THEN ! second order
+              DO k=kts+1,ktf
+                fqx(i,k) = 0.5*(fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)) &
+                                *(w(i,k,j)+w(i-1,k,j))
+              ENDDO
               k = ktf+1
               fqx(i,k) = 0.5*((2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)) &
                      *(w(i,k,j)+w(i-1,k,j))
-          ENDIF
+            ENDIF
 
-          i = i_start+1
-          DO k=kts+1,ktf
-            vel = fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)
-            fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
-                                    w(i  ,k,j), w(i+1,k,j),  &
-                                          vel                     )
+            IF(i == ids+2) THEN  ! third order
+              DO k=kts+1,ktf
+                vel = fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)
+                fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
+                                        w(i  ,k,j), w(i+1,k,j),  &
+                                        vel                     )
+              ENDDO
+              k = ktf+1
+              vel = (2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)
+              fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
+                                      w(i  ,k,j), w(i+1,k,j),  &
+                                      vel                     )
+            END IF
+
           ENDDO
-            k = ktf+1
-            vel = (2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)
-            fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
-                                    w(i  ,k,j), w(i+1,k,j),  &
-                                          vel                     )
 
         ENDIF
 
         IF( degrade_xe ) THEN
 
-          IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
-            i = ide-1
-            DO k=kts+1,ktf
-              fqx(i,k) = 0.5*(fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j))      &
-                     *(w(i,k,j)+w(i-1,k,j))
-            ENDDO
+          DO i = i_end_f+1, i_end+1
+
+            IF( i == ide-1 ) THEN ! second order flux next to the boundary
+              DO k=kts+1,ktf
+                fqx(i,k) = 0.5*(fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j))      &
+                                  *(w(i,k,j)+w(i-1,k,j))
+              ENDDO
               k = ktf+1
               fqx(i,k) = 0.5*((2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j))      &
                      *(w(i,k,j)+w(i-1,k,j))
-          ENDIF
+            ENDIF
 
-          i = ide-2
-          DO k=kts+1,ktf
-            vel = fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)
-            fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
-                                          w(i  ,k,j), w(i+1,k,j),  &
-                                          vel                             )
+            IF( i == ide-2 ) THEN ! third order flux one in from the boundary
+              DO k=kts+1,ktf
+                vel = fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)
+                fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
+                                        w(i  ,k,j), w(i+1,k,j),  &
+                                        vel                     )
+              ENDDO
+              k = ktf+1
+              vel = (2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)
+              fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
+                                      w(i  ,k,j), w(i+1,k,j),  &
+                                      vel                     )
+            ENDIF
+
           ENDDO
-            k = ktf+1
-            vel = (2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)
-            fqx( i,k ) = vel*flux3( w(i-2,k,j), w(i-1,k,j),  &
-                                          w(i  ,k,j), w(i+1,k,j),  &
-                                          vel                             )
+
         ENDIF
 
 !  x flux-divergence into tendency
@@ -5060,16 +5084,16 @@ ELSE IF ( horz_order == 4 ) THEN
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !  begin flux computations
 !  start with x flux divergence
@@ -5292,16 +5316,16 @@ ELSE IF ( horz_order == 3 ) THEN
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !  begin flux computations
 !  start with x flux divergence
@@ -6169,16 +6193,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
-       (ite < ide-3)                ) degrade_xe = .false.
+       (ite < ide-4)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -6440,16 +6464,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
-       (ite < ide-3)                ) degrade_xe = .false.
+       (ite < ide-4)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -6465,16 +6489,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
 !--  modify loop bounds if open or specified
 
-      IF(degrade_xs) i_start = its
-      IF(degrade_xe) i_end   = MIN(ite,ide-1)
+      IF(degrade_xs) i_start = MAX(its-1,ids)
+      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
 
       IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
+        j_start = MAX(jts-1,jds+1)
         j_start_f = jds+3
       ENDIF
 
       IF(degrade_ye) then
-        j_end = MIN(jte,jde-2)
+        j_end = MIN(jte+1,jde-2)
         j_end_f = jde-3
       ENDIF
 
@@ -6594,16 +6618,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
 !--  modify loop bounds for open and specified b.c
 
-      IF(degrade_ys) j_start = jts
-      IF(degrade_ye) j_end   = MIN(jte,jde-1)
+      IF(degrade_ys) j_start = MAX(jts-1,jds)
+      IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
 
       IF(degrade_xs) then
-        i_start = MAX(ids+1,its)
-        i_start_f = i_start+2
+        i_start = MAX(ids+1,its-1)
+        i_start_f = ids+3
       ENDIF
 
       IF(degrade_xe) then
-        i_end = MIN(ide-2,ite)
+        i_end = MIN(ide-2,ite+1)
         i_end_f = ide-3
       ENDIF
 
@@ -6635,35 +6659,34 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
         IF( degrade_xs ) THEN
 
-          IF( i_start == ids+1 ) THEN ! second order flux next to the boundary
-            i = ids+1
-            DO k=kts,ktf
+          DO i=i_start,i_start_f-1
 
-              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-              mu = 0.5*(mut(i,j)+mut(i-1,j))
-              vel = ru(i,k,j)/mu
-              cr = vel*dt/dx
-              fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+            IF(i == ids+1) THEN ! second order
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)/mu
+                cr = vel*dt/dx
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx(i,k,j) = 0.5*(ru(i,k,j)) &
+                       *(field(i,k,j)+field(i-1,k,j))
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
 
-              fqx(i,k,j) = 0.5*(ru(i,k,j)) &
-                     *(field(i,k,j)+field(i-1,k,j))
-
-              fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
-
-            ENDDO
-          ENDIF
-
-          i = ids+2
-          DO k=kts,ktf
-            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-            mu = 0.5*(mut(i,j)+mut(i-1,j))
-            vel = ru(i,k,j)
-            cr = vel*dt/dx/mu
-            fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-            fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+            IF(i == ids+2) THEN  ! third order
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)
+                cr = vel*dt/dx/mu
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
                                           field(i  ,k,j), field(i+1,k,j),  &
-                                          vel                     )
-            fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+                                          vel                             )
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
 
           ENDDO
 
@@ -6671,33 +6694,35 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
         IF( degrade_xe ) THEN
 
-          IF( i_end == ide-2 ) THEN ! second order flux next to the boundary
-            i = ide-1
-            DO k=kts,ktf
-              dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-              mu = 0.5*(mut(i,j)+mut(i-1,j))
-              vel = ru(i,k,j)
-              cr = vel*dt/dx/mu
-              fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-              fqx(i,k,j) = 0.5*(ru(i,k,j))      &
-                     *(field(i,k,j)+field(i-1,k,j))
-              fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+          DO i = i_end_f+1, i_end+1
 
-            ENDDO
-          ENDIF
+            IF( i == ide-1 ) THEN ! second order flux next to the boundary
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)
+                cr = vel*dt/dx/mu
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx(i,k,j) = 0.5*(ru(i,k,j))      &
+                       *(field(i,k,j)+field(i-1,k,j))
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
 
-          i = ide-2
-          DO k=kts,ktf
 
-            dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-            mu = 0.5*(mut(i,j)+mut(i-1,j))
-            vel = ru(i,k,j)
-            cr = vel*dt/dx/mu
-            fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
-            fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+            IF( i == ide-2 ) THEN ! third order flux one in from the boundary
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)
+                cr = vel*dt/dx/mu
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
                                           field(i  ,k,j), field(i+1,k,j),  &
                                           vel                             )
-            fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
 
           ENDDO
 
@@ -6909,16 +6934,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
-       (ite < ide-2)                ) degrade_xe = .false.
+       (ite < ide-1)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-1)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -7109,16 +7134,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids)                ) degrade_xs = .false.
+       (its > ids+1)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
-       (ite < ide-1)                ) degrade_xe = .false.
+       (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds)                ) degrade_ys = .false.
+       (jts > jds+1)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-1)                ) degrade_ye = .false.
+       (jte < jde-2)                ) degrade_ye = .false.
 
 !--  y flux compute; these bounds are for periodic and sym b.c.
 
@@ -7301,10 +7326,10 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
 !-- loop bounds for open or specified conditions
 
-    IF(degrade_xs) i_start = its
-    IF(degrade_xe) i_end   = MIN(ite,ide-1)
-    IF(degrade_ys) j_start = jts
-    IF(degrade_ye) j_end   = MIN(jte,jde-1)
+    IF(degrade_xs) i_start = MAX(its-1,ids)
+    IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
+    IF(degrade_ys) j_start = MAX(jts-1,jds)
+    IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
 
     vert_order_test : IF (vert_order == 6) THEN    
 
@@ -7599,29 +7624,29 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
 !-- loop bounds for open or specified conditions
 
-   IF(degrade_xs) i_start = its
-   IF(degrade_xe) i_end   = MIN(ite,ide-1)
-   IF(degrade_ys) j_start = jts
-   IF(degrade_ye) j_end   = MIN(jte,jde-1)
+   IF(degrade_xs) i_start = MAX(its-1,ids)
+   IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
+   IF(degrade_ys) j_start = MAX(jts-1,jds)
+   IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
 
    IF(config_flags%specified .or. config_flags%nested) THEN
-     IF (degrade_xs) i_start = MAX(its,ids+1)
-     IF (degrade_xe) i_end   = MIN(ite,ide-2)
-     IF (degrade_ys) j_start = MAX(jts,jds+1)
-     IF (degrade_ye) j_end   = MIN(jte,jde-2)
+     IF (degrade_xs) i_start = MAX(its-1,ids+1)
+     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
+     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
+     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
    END IF
 
    IF(config_flags%open_xs) THEN
-     IF (degrade_xs) i_start = MAX(its,ids+1)
+     IF (degrade_xs) i_start = MAX(its-1,ids+1)
    END IF
    IF(config_flags%open_xe) THEN
-     IF (degrade_xe) i_end   = MIN(ite,ide-2)
+     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
    END IF
    IF(config_flags%open_ys) THEN
-     IF (degrade_ys) j_start = MAX(jts,jds+1)
+     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
    END IF
    IF(config_flags%open_ye) THEN
-     IF (degrade_ye) j_end   = MIN(jte,jde-2)
+     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
    END IF
    ! ADT note:
    ! We don't want to change j_start and j_end
@@ -7690,8 +7715,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
 ! x flux divergence
 !
-  IF(degrade_xs) i_start = i_start + 1
-  IF(degrade_xe) i_end   = i_end   - 1
+  IF(degrade_xs) i_start = MAX(its,ids+1)
+  IF(degrade_xe) i_end   = MIN(ite,ide-2)
 
   DO j = j_start, j_end
   DO k = kts, ktf
@@ -7710,8 +7735,8 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 !
   i_start = its
   i_end   = MIN(ite,ide-1)
-  IF(degrade_ys) j_start = j_start + 1
-  IF(degrade_ye) j_end   = j_end   - 1
+  IF(degrade_ys) j_start = MAX(jts,jds+1)
+  IF(degrade_ye) j_end   = MIN(jte,jde-2)
 
   DO j = j_start, j_end
   DO k = kts, ktf
@@ -7847,8 +7872,6 @@ SUBROUTINE advect_scalar_pd_test   ( field, field_old, tendency,    &
 
 ! set order for the advection schemes
 
-!  write(6,*) ' in pd advection routine '
-
     ! Empty arrays just in case:
     IF (config_flags%polar) THEN
        fqx(:,:,:)  = 0.
@@ -7883,16 +7906,16 @@ SUBROUTINE advect_scalar_pd_test   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -8125,16 +8148,16 @@ SUBROUTINE advect_scalar_pd_test   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -8366,16 +8389,16 @@ SUBROUTINE advect_scalar_pd_test   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -8547,16 +8570,16 @@ SUBROUTINE advect_scalar_pd_test   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+1)                ) degrade_xs = .false.
+       (its > ids+2)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-2)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+1)                ) degrade_ys = .false.
+       (jts > jds+2)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
+       (jte < jde-3)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 
@@ -8729,16 +8752,16 @@ SUBROUTINE advect_scalar_pd_test   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids)                ) degrade_xs = .false.
+       (its > ids+1)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-1)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds)                ) degrade_ys = .false.
+       (jts > jds+1)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-1)                ) degrade_ye = .false.
+       (jte < jde-2)                ) degrade_ye = .false.
 
 !--  y flux compute; these bounds are for periodic and sym b.c.
 
@@ -9450,16 +9473,16 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
+       (its > ids+3)                ) degrade_xs = .false.
    IF( config_flags%periodic_x   .or. &
        config_flags%symmetric_xe .or. &
        (ite < ide-3)                ) degrade_xe = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
+       (jts > jds+3)                ) degrade_ys = .false.
    IF( config_flags%periodic_y   .or. &
        config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
+       (jte < jde-4)                ) degrade_ye = .false.
 
 !--------------- y - advection first
 

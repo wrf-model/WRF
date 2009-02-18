@@ -26,6 +26,7 @@ MODULES = \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
+        module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_thompson07.o \
 	module_mp_gsfcgce.o \
@@ -220,6 +221,7 @@ module_physics_init.o : \
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
+                module_mp_HWRF.o                \
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
 		module_fddaobs_rtfdda.o		\
@@ -241,6 +243,7 @@ module_microphysics_driver.o: \
 		module_mp_kessler.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
+                module_mp_HWRF.o \
 		module_mp_thompson.o            \
 		module_mp_thompson07.o          \
 		module_mp_gsfcgce.o 		\

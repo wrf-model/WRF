@@ -35,14 +35,12 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainnc, rainncv                                   &
                       ,snownc, snowncv                                   &
                       ,graupelnc, graupelncv                             &
-#ifdef HWRF
-                      ,gridid                                               &
-#endif
+                      ,gridid                                            &
                                                                          )
 ! Framework
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, THOMPSON07
 
 ! Model Layer
@@ -63,7 +61,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_morr_two_moment 
    USE module_mp_wdm5
    USE module_mp_wdm6
-
+   USE module_mp_etanew_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 !----------------------------------------------------------------------
@@ -140,9 +138,7 @@ SUBROUTINE microphysics_driver(                                          &
 !-- SR            one time step mass ratio of snow to total precip
 !-- z             Height above sea level   (m)
 !-- dt            Time step              (s)
-#ifdef HWRF
 !-- gridid        Grid id (used in Ferrier Microphysics)
-#endif
 !-- G             acceleration due to gravity  (m/s^2)
 !-- CP            heat capacity at constant pressure for dry air (J/kg/K)
 !-- R_d           gas constant for dry air (J/kg/K)
@@ -211,9 +207,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
    INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
-#ifdef HWRF
    INTEGER,      INTENT(IN   )    ::     gridid                   ! gopal's doing
-#endif
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
 
@@ -730,6 +724,31 @@ SUBROUTINE microphysics_driver(                                          &
                                                                     )
              ELSE
                CALL wrf_error_fatal ( 'arguments not present for calling wdm6')
+             ENDIF
+        CASE (etamp_HWRF)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew_HWRF')
+
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( mp_restart_state )                  .AND. &
+                  PRESENT( tbpvs_state )                      .AND. &
+                  PRESENT( tbpvs0_state )                       ) THEN
+
+               CALL ETAMP_NEW_HWRF(                                      &
+                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=gridid &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,LOWLYR=LOWLYR,SR=SR                               &
+                 ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
+                 ,F_RIMEF_PHY=F_RIMEF_PHY                           &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF
 
         CASE (ETAMPNEW)

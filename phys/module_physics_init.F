@@ -1622,6 +1622,7 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_etanew_HWRF
    USE module_mp_thompson
    USE module_mp_thompson07
    USE module_mp_morr_two_moment
@@ -1687,6 +1688,14 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+     CASE (etamp_HWRF)
+         CALL etanewinit_HWRF (MPDT,DT,DX,DY,LOWLYR,restart,           &
+                          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          allowed_to_read,                        &
+                          ids, ide, jds, jde, kds, kde,           &
+                          ims, ime, jms, jme, kms, kme,           &
+                          its, ite, jts, jte, kts, kte            )
+        
      CASE (THOMPSON)
          IF(start_of_simulation.or.restart)CALL thompson_init
 

@@ -40,7 +40,7 @@ MODULE module_bl_mynn
        &c4  =  0.0, &
        &c5  =  0.2, &
        &a1  = b1*( 1.0-3.0*g1 )/6.0, &
-!      &c1  = g1 -1.0/( 3.0*a1*b1**(1.0/3.0) ), &
+!       &c1  = g1 -1.0/( 3.0*a1*b1**(1.0/3.0) ), &
        &c1  = g1 -1.0/( 3.0*a1*2.88449914061481660), &
        &a2  = a1*( g1-c1 )/( g1*pr ), &
        &g2  = b2/b1*( 1.0-c3 ) +2.0*a1/b1*( 3.0-2.0*c2 )
@@ -59,9 +59,10 @@ MODULE module_bl_mynn
        &alp1=0.23, alp2=1.0, alp3=5.0, alp4=100.0
 
 ! Constants for gravitational settling
-! REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.)
+!  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
   REAL, PARAMETER :: gno=4.64158883361278196
-  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8
+  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8,qkemin=(1.e-8)**(3./2.)
+
 
   REAL, PARAMETER :: rr2=0.7071068, rrp=0.3989423
 
@@ -220,7 +221,7 @@ CONTAINS
          &ql,el,pdk,pdt,pdq,pdc,dtl,dqw,dtv,&
          &gm,gh,sm,sh,qkw,vt,vq
     INTEGER :: k,l,lmax
-    REAL :: phm,vkz,elq,elv,b1l,b2l,pmz=1.,phh=1.,flt=0.,flq=0.
+    REAL :: phm,vkz,elq,elv,b1l,b2l,pmz=1.,phh=1.,flt=0.,flq=0.,tmpq
 
 
 !   **  At first ql, vt and vq are set to zero.  **
@@ -256,9 +257,9 @@ CONTAINS
        cov(k) = 0.0
     END DO
 !
-!   **  Initialization with an iterative manner         **
-!   **  lmax is the iteration time. This is arbitrary.  **
-    lmax = kte +3
+!   **  Initialization with an iterative manner          **
+!   **  lmax is the iteration count. This is arbitrary.  **
+    lmax = 5  !!kte +3
 !
     DO l = 1,lmax
 !
@@ -293,8 +294,10 @@ CONTAINS
 !
        DO k = kts+1,kte-1
           b1l = b1*0.25*( el(k+1)+el(k) )
-          qke(k) = &
-               &( b1l*( pdk(k+1)+pdk(k) ) )**(2.0/3.0)
+          tmpq=MAX(b1l*( pdk(k+1)+pdk(k) ),qkemin)
+!          PRINT *,'tmpqqqqq',tmpq,pdk(k+1),pdk(k)
+          qke(k) = tmpq**(2.0/3.0)
+
 !
           IF ( qke(k) .LE. 0.0 ) THEN
              b2l = 0.0
@@ -506,8 +509,8 @@ CONTAINS
                &  *( 1.0 - alp4*    zwk*rmo         )**0.2
        END IF
 !
-!       el(k) =      MIN(elb/( elb/elt+elb/els+1.0 ),elf)
-       el(k) =      elb/( elb/elt+elb/els+1.0 )
+       el(k) =      MIN(elb/( elb/elt+elb/els+1.0 ),elf)
+!!       el(k) =      elb/( elb/elt+elb/els+1.0 )
 
     END DO
 !
@@ -696,45 +699,33 @@ CONTAINS
 !  Modified: Dec/22/2005, up to here
 !
           e6c  = 3.0*a2*cc3*gtr * dlsq/elsq
-
-          IF ( c3sq .GT. c2sq ) THEN
-             enum = qdiv*e6c*( t3sq-t2sq )
-             gamt =-e1  *enum    /eden
-
-             enum = qdiv*e6c*( r3sq-r2sq )
-             gamq =-e1  *enum    /eden
-
-             enum = qdiv*e6c*( c3sq-c2sq )
-             smd  = dlsq*enum*gtr/eden * qdiv**2 * (e3c+e4c)*a1/a2
-             gamv = e1  *enum*gtr/eden
-
-          ELSE
-             gamt = 0.0
-             gamq = 0.0
-             smd  = 0.0
-             gamv = 0.0
-          END IF
-
 !
 !     **  for Gamma_theta  **
-!          enum = qdiv*e6c*( t3sq-t2sq )
-!          enum = MAX( qdiv*e6c*( t3sq-t2sq ), 0.0 )
+!!          enum = qdiv*e6c*( t3sq-t2sq )
+          IF ( t2sq .GE. 0.0 ) THEN
+             enum = MAX( qdiv*e6c*( t3sq-t2sq ), 0.0d0 )
+          ELSE
+             enum = MIN( qdiv*e6c*( t3sq-t2sq ), 0.0d0 )
+          ENDIF
 
-
-!          gamt =-e1  *enum    /eden
+          gamt =-e1  *enum    /eden
 !
 !     **  for Gamma_q  **
-!          enum = qdiv*e6c*( r3sq-r2sq )
-!          enum = MAX( qdiv*e6c*( r3sq-r2sq ), 0.0 )
+!!          enum = qdiv*e6c*( r3sq-r2sq )
+          IF ( r2sq .GE. 0.0 ) THEN
+             enum = MAX( qdiv*e6c*( r3sq-r2sq ), 0.0d0 )
+          ELSE
+             enum = MIN( qdiv*e6c*( r3sq-r2sq ), 0.0d0 )
+          ENDIF
 
-!          gamq =-e1  *enum    /eden
+          gamq =-e1  *enum    /eden
 !
 !     **  for Sm' and Sh'd(Theta_V)/dz  **
-!          enum = qdiv*e6c*( c3sq-c2sq )
-!          enum = MAX( qdiv*e6c*( c3sq-c2sq ), 0.0 )
+!!          enum = qdiv*e6c*( c3sq-c2sq )
+          enum = MAX( qdiv*e6c*( c3sq-c2sq ), 0.0d0)
 
-!          smd  = dlsq*enum*gtr/eden * qdiv**2 * (e3c+e4c)*a1/a2
-!          gamv = e1  *enum*gtr/eden
+          smd  = dlsq*enum*gtr/eden * qdiv**2 * (e3c+e4c)*a1/a2
+          gamv = e1  *enum*gtr/eden
 !
 
           sm(k) = sm(k) +smd
@@ -778,6 +769,9 @@ CONTAINS
     dfq(kts) = 0.0
     tcd(kts) = 0.0
     qcd(kts) = 0.0
+
+    tcd(kte) = 0.0
+    qcd(kte) = 0.0
 
 !
     DO k = kts,kte-1
@@ -883,9 +877,13 @@ CONTAINS
 !
 !   **  pdk(i,j,1)+pdk(i,j,2) corresponds to pdk1.  **
     pdk(kts) = pdk1 -pdk(kts+1)
-    pdt(kts) = pdt1 -pdt(kts+1)
-    pdq(kts) = pdq1 -pdq(kts+1)
-    pdc(kts) = pdc1 -pdc(kts+1)
+
+!!    pdt(kts) = pdt1 -pdt(kts+1)
+!!    pdq(kts) = pdq1 -pdq(kts+1)
+!!    pdc(kts) = pdc1 -pdc(kts+1)
+    pdt(kts) = pdt(kts+1)
+    pdq(kts) = pdq(kts+1)
+    pdc(kts) = pdc(kts+1)
 !
 !   **  Prediction of twice the turbulent kinetic energy  **
 !!    DO k = kts+1,kte-1
@@ -1144,8 +1142,7 @@ CONTAINS
 
 ! Note: kte needs to be larger than kts, i.e., kte >= kts+1.
 
-!!    DO k = kts,kte-1
-    DO k = kts,kte
+    DO k = kts,kte-1
        p2a = exner(k)
        t  = thl(k)*p2a 
 
@@ -1161,7 +1158,7 @@ CONTAINS
        esl=svp11*EXP(svp2*(t-svpt0)/(t-svp3))
        qsl=ep_2*esl/(p(k)-ep_3*esl)
 !       qsl  = 3.8*EXP( a*ct/( b+ct ) ) / ( 1000.0*p2a**rk )
-       dqsl = qsl*SVP11*ev/( rd*t**2 )
+       dqsl = qsl*ep_2*ev/( rd*t**2 )
 !
        qmq(k) = qw(k) -qsl
 
@@ -1176,12 +1173,6 @@ CONTAINS
        r3sq = r3sq +bet(k)**2*t3sq -2.0*bet(k)*c3sq
        sgm(k) = SQRT( MAX( r3sq, 1.0d-10 ) )
     END DO
-!
-
-    IF ( levflag .NE. 3 ) THEN
-!   **  For some reason, sgm(i,j,1)=sgm(i,j,2) seems to be better.  **
-       sgm(kts) = sgm(kts+1)
-    END IF
 !
     DO k = kts,kte-1
        q1   = qmq(k) / sgm(k)
@@ -1375,12 +1366,20 @@ CONTAINS
 ! if qcg not used then assume constant flux in the surface layer
 
     IF (qcg < qcgmin) THEN
-       gfluxm=grav_settling*gno*sqc(k)**gpw
+       IF (sqc(k) > qcgmin) THEN
+          gfluxm=grav_settling*gno*sqc(k)**gpw
+       ELSE
+          gfluxm=0.
+       ENDIF
     ELSE
        gfluxm=grav_settling*gno*(qcg/(1.+qcg))**gpw
     ENDIF
 
-    gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+       gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+    ELSE
+       gfluxp=0.
+    ENDIF
 
     rhs=-xlvcp/exner(k)&
          &*( &
@@ -1394,8 +1393,19 @@ CONTAINS
        a(kk)=-dtz(k)*dfh(k)
        b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1)) 
        c(kk)=-dtz(k)*dfh(k+1)
-       gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-       gfluxm=grav_settling*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
+
+       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+          gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+       ELSE
+          gfluxp=0.
+       ENDIF
+       
+       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
+          gfluxm=grav_settling*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
+       ELSE
+          gfluxm=0.
+       ENDIF
+
        rhs=-xlvcp/exner(k)&
             &*( &
             &(gfluxp - gfluxm)/dz(k)&
@@ -1684,7 +1694,7 @@ CONTAINS
              IF (k==kts) THEN
                 zw(k)=0.
              ELSE
-                zw(k)=zw(k-1)+dz(i,k,j)
+                zw(k)=zw(k-1)+dz(i,k-1,j)
              ENDIF
           ENDDO
 

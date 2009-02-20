@@ -151,7 +151,7 @@ CONTAINS
    !      1. sfclay
    !      2. myjsfc
    !      7. Pleim surface layer
-   !      8. MYNN surface layer
+   !      5. MYNN surface layer
    !  surface: ground temp/lsm scheme:
    !      1. slab
    !      2. Noah LSM
@@ -938,6 +938,15 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                ustm,ck,cka,cd,cda,isftcflx                         )
+#if ( EM_CORE==1)
+           DO j = j_start(ij),j_end(ij)
+           DO i = i_start(ij),i_end(ij)
+             ch(i,j) = chs (i,j)
+!!             ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
+           end do
+           end do
+#endif
+
          ENDIF
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
@@ -1031,6 +1040,16 @@ CONTAINS
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+#if ( EM_CORE==1)
+         DO j = j_start(ij),j_end(ij)
+            DO i = i_start(ij),i_end(ij)
+               wspd(i,j) = MAX(SQRT(u_phy(i,kts,j)**2+v_phy(i,kts,j)**2),0.001)
+               ch(i,j) = chs (i,j)
+!!           ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
+            END DO
+         END DO
+#endif         
+
         ENDIF
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')

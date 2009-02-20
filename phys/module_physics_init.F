@@ -1147,6 +1147,11 @@ integer myproc
    USE module_bl_myjurb
    USE module_bl_boulac
    USE module_bl_qnsepbl
+#if ( EM_CORE == 1 )
+   USE module_bl_mynn
+   USE module_sf_mynn
+#endif
+
 #if (NMM_CORE == 1)
    USE module_sf_lsm_nmm
 #endif
@@ -1290,6 +1295,12 @@ integer myproc
    LOGICAL,  INTENT(IN) :: start_of_simulation
    INTEGER :: i,j
 
+
+#if ( EM_CORE == 1 )
+!local mynn 
+   INTEGER :: mynn_closure_level
+#endif
+
 !-- calculate pbl time step
 
    STEPBL = nint(BLDT*60./DT)
@@ -1376,6 +1387,28 @@ integer myproc
            isfc = 1
 #endif
 
+#if ( EM_CORE == 1 )
+!mynn 
+
+        CASE (MYNNSFCSCHEME)
+
+           SELECT CASE(config_flags%bl_pbl_physics)
+
+           CASE(MYNNPBLSCHEME2)
+              mynn_closure_level=2
+              
+           CASE(MYNNPBLSCHEME3)
+              mynn_closure_level=3
+
+           CASE DEFAULT
+              
+
+           END SELECT
+
+           CALL mynn_sf_init_driver(allowed_to_read,mynn_closure_level)
+           isfc=3
+
+#endif
 
       CASE DEFAULT
 
@@ -1576,6 +1609,26 @@ integer myproc
                          ims, ime, jms, jme, kms, kme,         &
                          its, ite, jts, jte, kts, kte          )
 #endif
+
+#if ( EM_CORE == 1 )
+
+!mynn 
+           
+        CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+!           IF(isfc .NE. 3)CALL wrf_error_fatal &
+           IF(isfc .NE. 3 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
+                ( 'module_physics_init: use mynn sfc scheme or &
+                &sfclay scheme for this pbl option')
+           
+           CALL mynn_bl_init_driver(&
+                &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&
+                &,restart,allowed_to_read,mynn_closure_level &
+                &,IDS,IDE,JDS,JDE,KDS,KDE                    &
+                &,IMS,IME,JMS,JME,KMS,KME                    &
+                &,ITS,ITE,JTS,JTE,KTS,KTE)
+
+#endif
+
       CASE DEFAULT
 
    END SELECT pbl_select

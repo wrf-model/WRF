@@ -2746,7 +2746,7 @@
      &                 ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
-     &                 ,gridid=GRID%ID                                  &
+     &                 ,ID=grid%id                                      &
                                                                         )
 
 !$omp parallel do                                                       &

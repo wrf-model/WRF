@@ -818,6 +818,9 @@ integer myproc
    USE module_ra_sw
    USE module_ra_gsfcsw
    USE module_ra_gfdleta
+#if(NMM_CORE==1)
+   USE module_ra_hwrf
+#endif
    USE module_ra_hs
    USE module_domain
 !---------------------------------------------------------------------
@@ -867,6 +870,7 @@ integer myproc
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
    LOGICAL :: etalw = .false.
+   LOGICAL :: hwrflw= .false.
    LOGICAL :: camlw = .false.
    LOGICAL :: etamp = .false.
    integer :: month,iday
@@ -968,6 +972,15 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              etalw = .true.
+#if(NMM_CORE==1)
+        CASE (HWRFLWSCHEME)
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
+             CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+                           allowed_to_read ,                         &
+                           kds, kde, kms, kme, kts, kte     )
+             hwrflw = .true.
+#endif
         CASE (HELDSUAREZ)
              CALL hsinit(RTHRATEN,restart,             &
                          ids, ide, jds, jde, kds, kde, &
@@ -1024,7 +1037,16 @@ integer myproc
                               ims, ime, jms, jme, kms, kme, &
                               its, ite, jts, jte, kts, kte  )
              ENDIF
-
+#if(NMM_CORE==1)
+        CASE (HWRFSWSCHEME)
+             IF(.not.hwrflw)THEN
+             CALL nl_get_start_month(id,month)
+             CALL nl_get_start_day(id,iday)
+             CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
+                           allowed_to_read,                          &
+                           kds, kde, kms, kme, kts, kte     )
+             ENDIF
+#endif
         CASE DEFAULT
 
    END SELECT swrad_select
@@ -1688,6 +1710,7 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+#if(NMM_CORE==1)
      CASE (etamp_HWRF)
          CALL etanewinit_HWRF (MPDT,DT,DX,DY,LOWLYR,restart,           &
                           F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
@@ -1695,7 +1718,7 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
-        
+#endif        
      CASE (THOMPSON)
          IF(start_of_simulation.or.restart)CALL thompson_init
 

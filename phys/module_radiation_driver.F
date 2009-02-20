@@ -56,11 +56,19 @@ CONTAINS
 !-------------------------------------------------------------------------
 
 ! !USES:
+#if(NMM_CORE==1)
+   USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
+                                       ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
+                                       ,SWRADSCHEME, GSFCSWSCHEME       &
+                                       ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
+                                       ,HELDSUAREZ, HWRFSWSCHEME, HWRFLWSCHEME
+#else
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ
+#endif
    USE module_model_constants
    USE module_wrf_error
 
@@ -73,6 +81,9 @@ CONTAINS
    USE module_ra_rrtmg_sw
    USE module_ra_cam
    USE module_ra_gfdleta
+#if(NMM_CORE==1)
+   USE module_ra_hwrf
+#endif
    USE module_ra_hs
 
    !  This driver calls subroutines for the radiation parameterizations.
@@ -747,7 +758,30 @@ CONTAINS
              ELSE
                CALL wrf_error_fatal('Can not call ETARA (1b). Missing moisture fields.')
              ENDIF
+#if(NMM_CORE==1)
+       CASE (HWRFLWSCHEME)
 
+             CALL wrf_debug (100, 'CALL hwrflw')
+
+             gfdl_lw  = .true.
+
+               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+                        XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
+                        QV=qv,QW=qc_temp,QI=Qi,                      &
+                        TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
+                        TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
+                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,ALBEDO=albedo,CUPPT=cuppt,            &
+                        VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
+                        NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
+                        julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
+                        CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach,                        & !Added
+                        ACFRST=acfrst,NCFRST=ncfrst,ACFRCV=acfrcv,NCFRCV=ncfrcv,                 & !Added
+                        ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                   &
+                        ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                   &
+                        its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte                    )
+
+
+#endif
         CASE (CAMLWSCHEME)
 
              CALL wrf_debug(100, 'CALL camrad lw')
@@ -1103,6 +1137,28 @@ CONTAINS
              ELSE
                CALL wrf_error_fatal('Can not call ETARA (2b). Missing moisture fields.')
              ENDIF
+#if(NMM_CORE==1) 
+      CASE (HWRFSWSCHEME)
+
+             CALL wrf_debug (100, 'CALL hwrfsw')
+
+             gfdl_sw = .true.
+               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+                        XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
+                        QV=qv,QW=qc_temp,QI=Qi,                      &
+                        TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
+                        TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
+                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,ALBEDO=albedo,CUPPT=cuppt,            &
+                        VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
+                        NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
+                        julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
+                        CFRACL=cfracl,CFRACM=cfracm,CFRACH=cfrach,                        & !Added
+                        ACFRST=acfrst,NCFRST=ncfrst,ACFRCV=acfrcv,NCFRCV=ncfrcv,                 & !Added
+                        ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,                   &
+                        ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,                   &
+                        its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte                    )
+#endif
+
 
         CASE (0)
 

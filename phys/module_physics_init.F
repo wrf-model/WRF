@@ -1101,6 +1101,7 @@ integer myproc
    USE module_bl_qnsepbl
 #if (NMM_CORE == 1)
    USE module_sf_lsm_nmm
+   USE module_bl_HWRF
 #endif
 !--------------------------------------------------------------------
    IMPLICIT NONE
@@ -1443,6 +1444,20 @@ integer myproc
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+#if(NMM_CORE==1)
+      CASE (HWRFBLSCHEME)
+           if(isfc .ne. 1)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+           CALL HWRFinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,                   &
+                        restart,                              &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+
+#endif
       CASE (GFSSCHEME)
            if(isfc .ne. 1)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay scheme for this pbl option' )

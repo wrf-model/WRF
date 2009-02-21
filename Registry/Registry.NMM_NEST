@@ -1100,6 +1100,7 @@ package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
+package   hwrfblscheme   bl_pbl_physics==98
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

@@ -656,6 +656,7 @@
 #ifdef HWRF
      &                ,DISHEAT                                          &
 #endif
+     &                ,DISHEAT                                          &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -700,6 +701,7 @@
 #ifdef HWRF 
       LOGICAL,INTENT(IN) ::  DISHEAT                       !  hwrf's doing
 #endif
+      LOGICAL,INTENT(IN) ::  DISHEAT                       !  hwrf's doing
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
@@ -1307,6 +1309,7 @@
 #ifdef HWRF
      &               ,DISHEAT=DISHEAT                                 &
 #endif
+     &               ,DISHEAT=DISHEAT                                 &
                 ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &

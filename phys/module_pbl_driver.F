@@ -25,6 +25,9 @@ CONTAINS
 #ifdef HWRF
                  ,DISHEAT                                          &
 #endif
+#if (NMM_CORE==1)
+                 ,DISHEAT                                          &
+#endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -49,7 +52,8 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3
 #else
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
+                   ,QNSEPBLSCHEME, HWRFBLSCHEME, p_qi,param_first_scalar
 #endif
 
    USE module_model_constants
@@ -66,7 +70,9 @@ CONTAINS
 #if (EM_CORE==1)
    USE module_bl_mynn
 #endif
-
+#if (NMM_CORE==1)
+   USE module_bl_HWRF
+#endif
    !  This driver calls subroutines for the PBL parameterizations.
    !
    !  pbl scheme:
@@ -224,6 +230,9 @@ CONTAINS
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 #ifdef HWRF
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! ('s doing)
+#endif
+#if (NMM_CORE==1)
+   LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
 #endif
    REAL,       DIMENSION( kms:kme ),                              &
                OPTIONAL, INTENT(IN   )    ::               znu,   &
@@ -623,6 +632,24 @@ CONTAINS
            ELSE
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
+#if (NMM_CORE==1)
+      CASE (HWRFBLSCHEME)
+        CALL wrf_debug(100,'in HWRF BL')
+           CALL BL_HWRF(u_phytmp,v_phytmp,th_phy,t_phy,              &
+               qv_curr,qc_curr,qi_curr,                              &                
+               p_phy,pi_phy,                                        &
+               RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN, &
+               CP,G,RCP,R_d,ROVG,P_QI,PARAM_FIRST_SCALAR,           &
+               dz8w,z,PSFC,                                         &
+               UST,PBLH,PSIM,PSIH,                                  &
+               HFX,QFX,TSKOLD,GZ1OZ0,WSPD,BR,                       &
+               DTBL,KPBL,EP_1,KARMAN,                               &
+               DISHEAT,                                             &
+               ids,ide, jds,jde, kds,kde,                           &
+               ims,ime, jms,jme, kms,kme,                           &
+               its,ite,jts,jte,kts,kte                              &
+                                                                    )
+#endif
 
       CASE (MYJPBLSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &

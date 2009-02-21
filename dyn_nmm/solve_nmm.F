@@ -1150,6 +1150,7 @@
 #ifdef HWRF
      &            ,GRID%DISHEAT                                             &
 #endif
+     &            ,GRID%DISHEAT                                             &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)

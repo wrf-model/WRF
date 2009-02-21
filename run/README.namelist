@@ -50,6 +50,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  frames_per_outfile (max_dom)        = 1, 	; output times per history output file, used to split output files 
                                                   into smaller pieces
  restart                             = F,	; whether this run is a restart run
+ cycling                             = F,      ; whether this run is a cycling run (initialized with wrfout file)
  restart_interval		     = 1440,	; restart output file interval in minutes
  reset_simulation_start              = F,       ; whether to overwrite simulation_start_date with forecast start time
  io_form_history                     = 2,       ; 2 = netCDF 
@@ -142,7 +143,7 @@ Additional settings when running WRFVAR:
 
 Namelist variables specifically for the WPS input for real:
 
- num_soil_layers_in                  = 4        ; number of vertical soil levels or layers input
+ num_metgrid_soil_levels             = 4        ; number of vertical soil levels or layers input
                                                 ; from WPS metgrid program
  num_metgrid_levels                  = 27       ; number of vertical levels of 3d meteorological fields coming 
                                                 ; from WPS metgrid program

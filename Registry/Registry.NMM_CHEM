@@ -792,6 +792,7 @@ rconfig   logical adjust_output_times     namelist,time_control         1       
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
 rconfig   real    tstart                  namelist,time_control     max_domains       0       rh   "tstart"  "forecast hour at the start of the NMM integration"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
+rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 
 # Domains
 rconfig   integer time_step               namelist,domains	1             -       ih   "time_step"     

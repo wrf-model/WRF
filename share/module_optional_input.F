@@ -205,10 +205,10 @@ CONTAINS
 #if (EM_CORE == 1)
       IF ( ( flag_soil_levels == 1 ) .OR. ( flag_soil_layers == 1 ) ) THEN
 
-         num_st_levels_input   = config_flags%num_soil_layers_in
-         num_sm_levels_input   = config_flags%num_soil_layers_in
-         num_sw_levels_input   = config_flags%num_soil_layers_in
-         num_soil_levels_input = config_flags%num_soil_layers_in
+         num_st_levels_input   = config_flags%num_metgrid_soil_levels
+         num_sm_levels_input   = config_flags%num_metgrid_soil_levels
+         num_sw_levels_input   = config_flags%num_metgrid_soil_levels
+         num_soil_levels_input = config_flags%num_metgrid_soil_levels
 
       END IF
 #endif

@@ -1865,10 +1865,12 @@ integer myproc
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
      CASE (THOMPSON)
-         IF(start_of_simulation.or.restart)CALL thompson_init
+! Cycling the WRF forecast with moving nests will cause this initialization to be
+! called for each nest move. This is potentially very computationally expensive.
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)CALL thompson_init
 
      CASE (THOMPSON07)
-         IF(start_of_simulation.or.restart)CALL thompson07_init
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)CALL thompson07_init
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init

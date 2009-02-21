@@ -47,7 +47,7 @@ dimspec    j      2     standard_domain              y          south_north
 dimspec    k      3     standard_domain              z          bottom_top
 dimspec    l      3     namelist=num_soil_layers     z          soil_layers
 dimspec    ulay   2     namelist=num_urban_layers    z          urban_layers
-dimspec    lin    2     namelist=num_soil_layers_in  z          soil_layers_in
+dimspec    lin    2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
 dimspec    u      3     namelist=num_land_cat        z          land_cat
 dimspec    s      3     namelist=num_soil_cat        z          soil_cat
 dimspec    |      2     namelist=num_force_layers    z          force_layers
@@ -1450,6 +1450,7 @@ rconfig   logical adjust_input_times      namelist,time_control         1       
 
 rconfig   integer diag_print              namelist,time_control         1              0      -    "print out time series of model diagnostics"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
+rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                ""      ""
@@ -1492,7 +1493,7 @@ rconfig   integer e_sn                    namelist,domains	max_domains    32    
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
 rconfig   integer num_metgrid_levels      namelist,domains	1              27      irh    "num_metgrid_levels"                ""      ""
-rconfig   integer num_soil_layers_in      namelist,domains	1             4        irh    "num_soil_layers_in"               "number of input levels or layers in 3D sm, st, sw arrays"      ""
+rconfig   integer num_metgrid_soil_levels namelist,domains	1             4        irh    "num_metgrid_soil_levels"               "number of input levels or layers in 3D sm, st, sw arrays"      ""
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""

@@ -877,6 +877,7 @@ USE module_timing
                   nids, nide, njds, njde, nkds, nkde, &
                   nims, nime, njms, njme, nkms, nkme, &
                   nips, nipe, njps, njpe, nkps, nkpe
+   REAL        :: xtime, time_to_move
 ! interface
    INTERFACE
      LOGICAL FUNCTION time_for_move2 ( parent , nest , dx , dy )
@@ -895,6 +896,17 @@ USE module_timing
      CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
    ENDIF
    kid = 1
+
+!  Check if it is time to move the nest
+     xtime = grid%xtime
+     CALL nl_get_time_to_move ( grid%id , time_to_move )
+     if ( xtime .lt. time_to_move ) then
+        time_for_move = .FALSE.
+        move_cd_x = 0
+        move_cd_y = 0
+!       write(0,*) 'it is not the time to move ', xtime, time_to_move
+        return
+     endif
 !
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN

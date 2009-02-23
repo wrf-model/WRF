@@ -226,6 +226,7 @@ Namelist variables for controling the automatic moving nest:
  corral_dist(max_dom)                = 8        ; how many coarse grid cells the moving nest is allowed to get
                                                   near the mother domain boundary
  track_level                         = 50000    ; pressure value in Pa where the vortex is tracked
+ time_to_move(max_dom)               = 0.       ; time (in minutes) to start the moving nests     
 
  tile_sz_x                           = 0,       ; number of points in tile x direction
  tile_sz_y                           = 0,       ; number of points in tile y direction
@@ -584,7 +585,6 @@ The following are for observation nudging:
  num_force_layers                    = 8        ; number of SCM forcing layers
  scm_lu_index                        = 2        ; SCM landuse category (2 is dryland, cropland and pasture)
  scm_isltyp                          = 4        ; SCM soil category (4 is silt loam)
- scm_ivgtyp                          = 2        ; SCM landuse category
  scm_vegfra                          = 0.5      ; SCM vegetation fraction
  scm_canwat                          = 0.0      ; SCM canopy water
  scm_lat                             = 37.600   ; SCM latitude

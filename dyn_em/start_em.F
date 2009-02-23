@@ -324,10 +324,27 @@
          CALL wrf_error_fatal ( 'start_domain: Idealized case cannot have a separate nested input file' )
       END IF
 
+      IF ( config_flags%use_baseparam_fr_nml ) then
       CALL nl_get_base_pres  ( 1 , p00 )
       CALL nl_get_base_temp  ( 1 , t00 )
       CALL nl_get_base_lapse ( 1 , a   )
       CALL nl_get_iso_temp   ( 1 , tiso )
+
+      ELSE
+      ! get these constants from model data
+
+      t00  = grid%t00
+      p00  = grid%p00
+      a    = grid%tlp
+      tiso = grid%tiso
+
+      IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
+      WRITE(wrf_err_message,*)&
+      'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
+      CALL wrf_error_fatal(TRIM(wrf_err_message))
+      ENDIF
+
+      ENDIF
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -819,11 +836,11 @@
                            ims , ime , jms , jme ,  &
                            its , ite , jts , jte ,  &
                            its , ite , jts , jte   )
-   CALL set_physical_bc2d( grid%mu0 , 't' , config_flags ,   &
-                           ids , ide , jds , jde ,  &
-                           ims , ime , jms , jme ,  &
-                           its , ite , jts , jte ,  &
-                           its , ite , jts , jte   )
+!  CALL set_physical_bc2d( grid%mu0 , 't' , config_flags ,   &
+!                          ids , ide , jds , jde ,  &
+!                          ims , ime , jms , jme ,  &
+!                          its , ite , jts , jte ,  &
+!                          its , ite , jts , jte   )
 
 
    CALL set_physical_bc3d( grid%phb , 'W' , config_flags ,                 &

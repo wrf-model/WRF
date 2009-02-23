@@ -285,7 +285,7 @@ state    real   alb            ijk     dyn_em      1         -      rdus      "a
 state    real   zx             ijk     dyn_em      1         X      -         " "  " "  " "    
 state    real   zy             ijk     dyn_em      1         Y      -         " "  " "  " "   
 state    real   rdz            ijk     dyn_em      1         Z      -         " "  " "  " "   
-state    real   rdzw           ijk     dyn_em      1         Z       -        " "  " "  " "   
+state    real   rdzw           ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   pb             ijk     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
 
 #                                               
@@ -706,6 +706,17 @@ state   real   PSHLTR           ij     misc        1         -      r        "PS
 state   real   TH10             ij     misc        1         -      r        "TH10"                  "10-M THETA FROM MYJ"                          "K"
 state   real   Q10              ij     misc        1         -      r        "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
+
+# MYNN PBL variables
+state   real   qke             ikj     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
+state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
+state   real   qsq             ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
+state   real   cov             ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
+nce"      "K kg/kg"
+state   real   ch               ij      misc        1         -     -         "ch"                    "drag coeff for heat"    ""
+#state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
+#state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
+#state   real   K_q             ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
 
 # Additional for gravity wave drag
 state   real   DUSFCG           ij     misc        1         -     -         "DUSFCG"                "COLUMN U STRESS DIAGOSTIC"   ""   ""
@@ -1557,6 +1568,7 @@ rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  
 rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
 rconfig   integer   track_level     namelist,domains    1                50000
+rconfig   real      time_to_move    namelist,domains    max_domains      0.  -  "" "" "minutes"
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0

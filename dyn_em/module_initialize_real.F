@@ -163,6 +163,13 @@ integer::oops1,oops2
    
       CALL const_module_initialize ( p00 , t00 , a , tiso ) 
 
+      !  Save these constants to write out in model output file
+
+      grid%t00  = t00
+      grid%p00  = p00
+      grid%tlp  = a
+      grid%tiso = tiso
+
       !  Fix the snow (water equivalent depth, kg/m^2) and the snowh (physical snow
       !  depth, m) fields.
 

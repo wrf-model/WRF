@@ -234,7 +234,7 @@ state    real   mu              ijb     dyn_em      2         -     \
 state    real   mub             ij     dyn_em      1         -     irhdus       "mub" "base state dry air mass in column" "Pa"
 state    real   mub_fine        ij     dyn_em      1         -      -           "mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
 state    real   mub_save        ij     dyn_em      1         -      -           "mub_save" "nest temp, holds orig fine grid mub" "Pa"
-state    real   mu0             ij     dyn_em      1         -     i01rdu       "mu0" "initial dry mass in column" "Pa"
+state    real   mu0             ij     dyn_em      1         -      -           "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
 state    real   muu             ij     dyn_em      1          -                 "muu"
 i1       real   muus            ij     dyn_em      1          -     
@@ -257,27 +257,16 @@ state    real   ht_coarse       ij     misc        1   -     r                - 
 state    real   tke            ikj     dyn_em      2         -       r        "tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
 i1       real   tke_tend       ikj     dyn_em      1         -      
 
-# MYNN PBL variables
-state    real   qke        ikj     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
-state    real   tsq        ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
-state    real   qsq        ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
-state    real   cov        ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
-nce"      "K kg/kg"
-state    real   ch           ij      misc        1         -     -         "ch"                    "drag coeff for heat"    ""
-#state    real   K_m          ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
-#state    real   K_h          ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
-#state    real   K_q          ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
-
 # Pressure and Density
-state    real   p              ikj     dyn_em      1         -      rh        "p"           "perturbation pressure"         "Pa"
+state    real   p              ikj     dyn_em      1         -      irh       "p"           "perturbation pressure"         "Pa"
 state    real   al             ikj     dyn_em      1         -      r         "al"          "inverse perturbation density"  "m3 kg-1"
 state    real   alt            ikj     dyn_em      1         -      r         "alt"         "inverse density"               "m3 kg-1"
 state    real   alb            ikj     dyn_em      1         -      rdus      "alb"         "inverse base density"          "m3 kg-1"
 state    real   zx             ikj     dyn_em      1         X      -         " "  " "  " "    
 state    real   zy             ikj     dyn_em      1         Y      -         " "  " "  " "   
 state    real   rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
-state    real   rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
-state    real   pb             ikj     dyn_em      1         -      rhdus     "pb"          "BASE STATE PRESSURE "          "Pa"
+state    real   rdzw           ikj     dyn_em      1         Z      -         " "  " "  " "   
+state    real   pb             ikj     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
 
 #                                               
 # Other dyn                                             
@@ -689,6 +678,17 @@ state   real   TH10             ij     misc        1         -      r        "TH
 state   real   Q10              ij     misc        1         -      r        "Q10"                   "10-M SPECIFIC HUMIDITY FROM MYJ"              "kg kg-1"
 i1      real   CHKLOWQ          ij     misc        1         -     -         "CHKLOWQ"               "SURFACE SATURATION FLAG"        ""
 
+# MYNN PBL variables
+state   real   qke             ikj     misc        1         -      rh       "qke"               "twice TKE FROM MYNN"      "m2 s-2"
+state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
+state   real   qsq             ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
+state   real   cov             ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
+nce"      "K kg/kg"
+state   real   ch               ij      misc        1         -     -         "ch"                    "drag coeff for heat"    ""
+#state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
+#state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
+#state   real   K_q             ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
+
 # Additional for gravity wave drag
 state   real   DUSFCG           ij     misc        1         -     -         "DUSFCG"                "COLUMN U STRESS DIAGOSTIC"   ""   ""
 state   real   DVSFCG           ij     misc        1         -     -         "DVSFCG"                "COLUMN V STRESS DIAGOSTIC"   ""   ""
@@ -827,6 +827,10 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
+state   real    t00            -       misc         -         -     irh       "t00"                   "BASE STATE TEMPERATURE   "  "K"
+state   real    p00            -       misc         -         -     irh       "p00"                   "BASE STATE PRESURE"         "Pa"
+state   real    tlp            -       misc         -         -     irh       "tlp"                   "BASE STATE LAPSE RATE    "  ""
+state   real    tiso           -       misc         -         -     irh       "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
                                                 
@@ -1267,6 +1271,7 @@ rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  
 rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
 rconfig   integer   track_level     namelist,domains    1                50000
+rconfig   real      time_to_move    namelist,domains    max_domains      0.  -  "" "" "minutes"
 rconfig   integer   move_id         namelist,domains    max_moves        0
 rconfig   integer   move_interval   namelist,domains    max_moves        999999999
 rconfig   integer   move_cd_x       namelist,domains    max_moves        0
@@ -1481,7 +1486,8 @@ rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .fa
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
-rconfig   real    iso_temp                namelist,dynamics	1               0.     h    "iso_temp" "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    iso_temp                namelist,dynamics	1               0.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   logical use_baseparam_fr_nml    namelist,dynamics     1            .false.  irh   "use_baseparam_fr_nml"    ""   ""
 rconfig   real    fft_filter_lat          namelist,dynamics     1              45.     h    "fft_filter_lat"   ""   "grid latitude to start polar filter"
 rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""
 rconfig   logical do_coriolis             namelist,dynamics	max_domains  .true.   irh  "do_coriolis"    ""   ""

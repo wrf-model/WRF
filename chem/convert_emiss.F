@@ -25,7 +25,6 @@ PROGRAM convert_emissions
    USE module_configure
    USE module_timing
    USE module_utility
-   USE module_input_gocart_background
    USE module_initialize_real
 #ifdef DM_PARALLEL
    USE module_dm

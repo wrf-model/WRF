@@ -60,7 +60,6 @@ MODULES =                           \
   module_input_chem_data.o          \
   module_input_chem_bioemiss.o      \
   module_input_dust_errosion.o      \
-  module_input_gocart_background.o  \
   module_input_gocart_dms.o         \
   module_fastj_data.o               \
   module_fastj_mie.o                \
@@ -175,8 +174,6 @@ module_input_chem_emissopt3.o:
 module_input_chem_bioemiss.o: 
 
 module_input_dust_errosion.o:
-
-module_input_gocart_background.o:
 
 module_input_gocart_dms.o:
 

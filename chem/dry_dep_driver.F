@@ -19,7 +19,7 @@ CONTAINS
     subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
                p_phy,chem,rho_phy,dz8w,exch_h,hfx,dx,                     &
-               cldfra, cldfra_old,                                        &
+               cldfra, cldfra_old,raincv,                                 &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                xland,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,                &
@@ -93,7 +93,7 @@ CONTAINS
                                                      hfx,       &
                                                      xlat,      &
                                                      xlong,     &
-                                                   xland,znt
+                                          xland,znt,raincv
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(INOUT ) ::                                     &
                     cldfra,     & ! cloud fraction current timestep
@@ -170,7 +170,7 @@ CONTAINS
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
@@ -180,7 +180,7 @@ CONTAINS
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &
@@ -205,7 +205,7 @@ CONTAINS
 !
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,                                              &
-               gmt,julday,t_phy,moist,p8w,t8w,                            &
+               gmt,julday,t_phy,moist,p8w,t8w,raincv,                     &
                p_phy,chem,rho_phy,dz8w,ddvel,aer_res,                     &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
                numgas,                                                    &

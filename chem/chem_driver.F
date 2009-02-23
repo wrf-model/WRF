@@ -791,7 +791,7 @@
                  grid%gmt,grid%julday,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
                  rri,p_phy,chem,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,                &
-                 grid%cldfra, grid%cldfra_old,                                        &
+                 grid%cldfra, grid%cldfra_old,grid%raincv_b,                          &
 	             grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
                  grid%rmol,grid%ust,grid%znt,grid%xlat,grid%xlong,                    &

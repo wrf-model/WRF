@@ -44,7 +44,11 @@ CONTAINS
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
     USE module_big_step_utilities_em, ONLY : phy_prep
+#ifdef DM_PARALLEL
+    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
+#else
     USE module_dm
+#endif
     USE module_utility
 ! jm debug
     USE module_fr_sfire_util

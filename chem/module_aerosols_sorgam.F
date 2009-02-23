@@ -573,7 +573,7 @@ CONTAINS
          vgsa
    REAL, DIMENSION( its:ite, jts:jte ),                       &
          INTENT(INOUT ) ::                                             &
-         aer_res, rmol, pbl, znt
+         aer_res
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(INOUT ) ::                                             &
@@ -590,7 +590,7 @@ CONTAINS
                                                     rho_phy
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,    &
           INTENT(IN   ) ::                                      &
-                                                     ust
+               ust,rmol, pbl, znt
       REAL,      INTENT(IN   ) ::                               &
                              dtstep
                                                                                                
@@ -787,6 +787,9 @@ CONTAINS
       BLKTA(BLKSIZE)   = T(K)         ! temperature in K
       USTAR(BLKSIZE) = max(1.e-1,UST(i,j))
       WSTAR(BLKSIZE) = 0.
+      pblh(blksize) = pbl(i,j)
+      zntt(blksize) = znt(i,j)
+      rmolm(blksize)= rmol(i,j)
       convfac2=1./alt(i,k,j)
       BLKDENS(BLKSIZE)=convfac2
       cblk(1,vsulf) = max(epsilc,vsulf_in)
@@ -7269,6 +7272,22 @@ END SUBROUTINE VDVG_2
         pm2_5_water(its:ite, kts:kte-1, jts:jte)  = 0.
         pm2_5_dry_ec(its:ite, kts:kte-1, jts:jte) = 0.
 
+!SAM 10/08 Add in Gaussian quadrature points and weights - Use 7 points = NGAUSdv
+
+        Y_GQ(1)=-2.651961356835233
+        WGAUS(1)=0.0009717812450995
+        Y_GQ(2)=-1.673551628767471
+        WGAUS(2)=0.05451558281913
+        Y_GQ(3)=-0.816287882858965
+        WGAUS(3)=0.4256072526101
+        Y_GQ(4)=-0.0
+        WGAUS(4)=0.8102646175568
+        Y_GQ(5)=0.816287882858965
+        WGAUS(5)=WGAUS(3)
+        Y_GQ(6)=1.673551628767471
+        WGAUS(6)=WGAUS(2)
+        Y_GQ(7)=2.651961356835233
+        WGAUS(7)=WGAUS(1)
 !
 !
 !  IF USING OLD SIMULATION, DO NOT REINITIALIZE!
@@ -7348,22 +7367,6 @@ END SUBROUTINE VDVG_2
       enddo
       enddo
 
-!SAM 10/08 Add in Gaussian quadrature points and weights - Use 7 points = NGAUSdv
-
-        Y_GQ(1)=-2.651961356835233
-        WGAUS(1)=0.0009717812450995
-        Y_GQ(2)=-1.673551628767471
-        WGAUS(2)=0.05451558281913
-        Y_GQ(3)=-0.816287882858965
-        WGAUS(3)=0.4256072526101
-        Y_GQ(4)=-0.0
-        WGAUS(4)=0.8102646175568
-        Y_GQ(5)=0.816287882858965
-        WGAUS(5)=WGAUS(3)
-        Y_GQ(6)=1.673551628767471
-        WGAUS(6)=WGAUS(2)
-        Y_GQ(7)=2.651961356835233
-        WGAUS(7)=WGAUS(1)
 
     return
     END SUBROUTINE aerosols_sorgam_init

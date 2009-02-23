@@ -125,7 +125,7 @@
             return
         end if
 
-	print 93010, 'entering sorgam_cloudchem_driver - ktau =', ktau
+!       print 93010, 'entering sorgam_cloudchem_driver - ktau =', ktau
 
 	icase = 0
 
@@ -199,8 +199,8 @@
 3910	continue
 3920	continue
 
-	print 93010, 'leaving  sorgam_cloudchem_driver - ktau =', ktau, icase
-93010	format( a, 8(1x,i6) )
+!	print 93010, 'leaving  sorgam_cloudchem_driver - ktau =', ktau, icase
+!93010	format( a, 8(1x,i6) )
 
 	return
 	end subroutine sorgam_cloudchem_driver

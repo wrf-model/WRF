@@ -29,7 +29,7 @@ module da_transfer_model
       print_detail_xb,test_dm_exact,base_lapse,base_temp,vertical_ip,ptop, &
       use_gpsztdobs, use_ssmitbobs, dt_cloud_model, cp, use_ssmiretrievalobs, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
-      t_kelvin, num_fgat_time, num_pseudo, &
+      t_kelvin, num_fgat_time, num_pseudo, iso_temp, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe   
    use da_define_structures, only : xbx_type

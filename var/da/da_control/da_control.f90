@@ -371,24 +371,6 @@ module da_control
    real, parameter :: err_p(0:jperr+1) = &
                       (/ 100.0,100.0, 100.0, 100.0, 100.0, 100.0,100.0,100.0 /)
 
-   ! Maximum error check factors:  inV > (Obs_error*factor) --> fails_error_max
-
-   real, parameter :: max_error_t              = 5.0, &
-                      max_error_uv             = 5.0, &
-                      max_error_pw             = 5.0, &
-                      max_error_ref            = 5.0, &
-                      max_error_rh             = 5.0, &
-                      max_error_q              = 5.0, &
-                      max_error_p              = 5.0, &
-                      max_error_tb             = 5.0, &
-                      max_error_thickness      = 5.0, &
-                      max_error_rv             = 5.0, &
-                      max_error_rf             = 5.0, &
-                      max_error_buv            = 500.0, &
-                      max_error_bt             = 500.0, &
-                      max_error_bq             = 500.0, &
-                      max_error_slp            = 500.0
-
    ! Buddy check parameters (YRG, 10/3/2008):
 
    real, parameter :: max_buddy_t             =     8.0, &

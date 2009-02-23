@@ -35,6 +35,23 @@
    call mpi_barrier(comm,ierr)
 #endif
 
+   if ( config_flags%use_baseparam_fr_nml ) then
+      call nl_get_base_pres  ( 1 , base_pres )
+      call nl_get_base_temp  ( 1 , base_temp )
+      call nl_get_base_lapse ( 1 , base_lapse )
+      call nl_get_iso_temp   ( 1 , iso_temp )
+   else
+      base_pres  = grid%p00
+      base_temp  = grid%t00
+      base_lapse = grid%tlp
+      iso_temp   = grid%tiso
+      if ( base_temp < 100.0 .or. base_pres < 10000.0 ) then
+         write(unit=message(1),fmt='(A)') &
+         'did not find base state parameters in fg. Add use_baseparam_fr_nml = .t. in &dynamics and rerun '
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+   end if
+
    !---------------------------------------------------------------------------
    ! If it is verification run set check_max_iv as .false.
    !---------------------------------------------------------------------------

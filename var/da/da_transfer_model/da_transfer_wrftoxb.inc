@@ -29,7 +29,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    real, dimension(kms:kme) :: DDT
 
-   real   :: qvf1, cvpm, cpovcv, ppb, ttb, albn, aln, height
+   real   :: qvf1, cvpm, cpovcv, ppb, ttb, albn, aln, height, temp
    real, allocatable :: arrayglobal(:,:)
 #ifdef A2C
    real   :: uu, vv
@@ -348,8 +348,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          do i=its,ite
             ! The base specific volume (from real.init.code)
             ppb  = grid%znu(k) * grid%mub(i,j) + ptop
-            ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
-               (base_pres/ppb)**kappa
+            temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+            ttb  = temp * (base_pres/ppb)**kappa
+            ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
+            !   (base_pres/ppb)**kappa
             albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
 
             qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv

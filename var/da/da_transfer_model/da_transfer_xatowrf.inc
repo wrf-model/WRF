@@ -10,7 +10,6 @@ subroutine da_transfer_xatowrf(grid)
    !    grid%v_2
    !    grid%w_2
    !    grid%mu_2
-   !    grid%mu0    (NOTE:  not clear that this is needed.)  
    !    grid%ph_2
    !    grid%t_2
    !    grid%moist
@@ -337,7 +336,6 @@ subroutine da_transfer_xatowrf(grid)
    do j=jts,jte
       do i=its,ite
          grid%mu_2(i,j) = grid%mu_2(i,j) + mu_cgrid(i,j)
-         grid%mu0(i,j) = grid%mub(i,j) + grid%mu_2(i,j)
          grid%w_2(i,j,kte+1)=  grid%w_2(i,j,kte+1) + grid%xa%w(i,j,kte+1)
       end do
 

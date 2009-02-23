@@ -107,6 +107,7 @@ program da_rad_diags
 !
 ! find out how many dates to process
 !
+   ntime = 0
    valid_date = start_date
    do while ( valid_date <= end_date )
       ntime = ntime + 1

@@ -200,6 +200,7 @@ subroutine da_radiance_init(iv,ob)
 
   if (read_biascoef) then
   !  new bias coefs files
+  !  use o-b standard deviation statistics from Harris and Kelly method as obs errors
   !----------------------------------
     call da_read_biascoef(iv%instid(n)%rttovid_string, &
                       nchanl(n),nscan(n),18,4,global, &
@@ -208,7 +209,9 @@ subroutine da_radiance_init(iv,ob)
                       satinfo(n)%bcoef, &
                       satinfo(n)%bcoef0, &
                       satinfo(n)%error_std)
- 
+  else
+    ! use values specified in radiance_info files as obs errors
+    satinfo(n)%error_std = satinfo(n)%error
   end if
  end do loop_sensor2
 

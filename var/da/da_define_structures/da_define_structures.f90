@@ -238,14 +238,15 @@ module da_define_structures
 
    type airep_type
       real                  , pointer :: h        (:) ! Height in m
-      real                  , pointer :: p        (:) ! Height QC
+      real                  , pointer :: p        (:) ! pressure
       type (field_type)     , pointer :: u        (:) ! u-wind.
       type (field_type)     , pointer :: v        (:) ! v-wind.
       type (field_type)     , pointer :: t        (:) ! temperature.
    end type airep_type
 
    type pilot_type
-      real                  , pointer :: p        (:) ! Height in m
+      real                  , pointer :: h        (:) ! Height in m
+      real                  , pointer :: p        (:) ! pressure
       type (field_type)     , pointer :: u        (:) ! u-wind.
       type (field_type)     , pointer :: v        (:) ! v-wind.
    end type pilot_type

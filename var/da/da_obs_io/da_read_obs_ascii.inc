@@ -400,11 +400,13 @@ subroutine da_read_obs_ascii (iv, filename)
             nlocal(pilot) = nlocal(pilot) + 1
             if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
 
+            allocate (iv%pilot(nlocal(pilot))%h (1:nlevels))
             allocate (iv%pilot(nlocal(pilot))%p (1:nlevels))
             allocate (iv%pilot(nlocal(pilot))%u (1:nlevels))
             allocate (iv%pilot(nlocal(pilot))%v (1:nlevels))
 
             do i = 1, nlevels
+              iv%pilot(nlocal(pilot))%h(i) = platform%each(i)%height
               iv%pilot(nlocal(pilot))%p(i) = platform%each(i)%p%inv
               iv%pilot(nlocal(pilot))%u(i) = platform%each(i)%u
               iv%pilot(nlocal(pilot))%v(i) = platform%each(i)%v
@@ -818,11 +820,13 @@ subroutine da_read_obs_ascii (iv, filename)
             nlocal(profiler) = nlocal(profiler) + 1
             if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
 
+            allocate (iv%profiler(nlocal(profiler))%h (1:nlevels))
             allocate (iv%profiler(nlocal(profiler))%p (1:nlevels))
             allocate (iv%profiler(nlocal(profiler))%u (1:nlevels))
             allocate (iv%profiler(nlocal(profiler))%v (1:nlevels))
 
             do i = 1, nlevels
+               iv%profiler(nlocal(profiler))%h(i) = platform%each(i)%height
                iv%profiler(nlocal(profiler))%p(i) = platform%each(i)%p%inv
                iv%profiler(nlocal(profiler))%u(i) = platform%each(i)%u
                iv%profiler(nlocal(profiler))%v(i) = platform%each(i)%v

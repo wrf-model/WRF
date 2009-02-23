@@ -220,18 +220,7 @@ if [[ -d $DA_CRTM_COEFFS ]]; then
    ln -fs $DA_CRTM_COEFFS crtm_coeffs
 fi
 
-ln -fs $WRFVAR_DIR/run/gribmap.txt .
-ln -fs $WRFVAR_DIR/run/*.TBL .
-if $DOUBLE; then
-   ln -fs $WRFVAR_DIR/run/RRTM_DATA_DBL RRTM_DATA
-   ln -fs $WRFVAR_DIR/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA
-else
-   ln -fs $WRFVAR_DIR/run/RRTM_DATA .
-   ln -fs $WRFVAR_DIR/run/ETAMPNEW_DATA .
-fi
-ln -fs $WRFVAR_DIR/run/CAM_ABS_DATA .
-ln -fs $WRFVAR_DIR/run/CAM_AEROPT_DATA .
-ln -fs $WRFVAR_DIR/var/run/gmao_airs_bufr.tbl .
+ln -fs $WRFVAR_DIR/run/LANDUSE.TBL .
 ln -fs $BUILD_DIR/da_wrfvar.exe .
 export PATH=$WRFVAR_DIR/var/scripts:$PATH
 
@@ -244,7 +233,6 @@ ln -fs $DA_FIRST_GUESS ${FILE_TYPE}_d01
 if [[ $NL_ANALYSIS_TYPE != "VERIFY" ]] ; then
   ln -fs $DA_BACK_ERRORS be.dat
 fi
-
 
 for FILE in $DAT_DIR/*.inv; do
    if [[ -f $FILE ]]; then
@@ -755,6 +743,70 @@ else
    if [[ -f ob.etkf.000 ]]; then
       cp ob.etkf.000 $RUN_DIR
    fi
+
+   if (ls qcstat_* 2>/dev/null); then
+      cp qcstat_* $RUN_DIR
+   fi
+
+   if [[ -f VARBC.in ]]; then
+      cp VARBC.in $RUN_DIR
+   fi
+
+   if [[ -f VARBC.out ]]; then
+      cp VARBC.out $RUN_DIR
+   fi
+
+   if (ls biasprep* 2>/dev/null); then
+      mkdir $RUN_DIR/biasprep
+      mv $RUN_DIR/working/biasprep* $RUN_DIR/biasprep
+   fi
+
+# convert ASCII radiance inv output to NETCDF format
+#---------------------------------------------------
+   if (ls inv* 2>/dev/null); then
+      mkdir  $RUN_DIR/$DATE; cd $RUN_DIR
+      ln -sf $RUN_DIR/working/inv_* $RUN_DIR/$DATE
+      cat > namelist.da_rad_diags << EOF
+&record1
+nproc = ${NUM_PROCS}
+instid = 'noaa-15-amsua','noaa-15-amsub','noaa-16-amsua','noaa-16-amsub','noaa-17-amsub','noaa-18-amsua','noaa-18-mhs',
+ 'metop-2-amsua',  'metop-2-mhs','dmsp-16-ssmis','eos-2-airs','eos-2-amsua',
+file_prefix = 'inv'
+start_date = '$DATE'
+end_date   = '$DATE'
+cycle_period  = 6
+/
+EOF
+     ${BUILD_DIR}/da_rad_diags.exe
+     rm -rf $RUN_DIR/$DATE
+     rm -f namelist.da_rad_diags da_rad_diags.exe
+     rm -f $RUN_DIR/working/inv_*
+     cd $RUN_DIR/working
+   fi
+#----------------------------------
+# convert ASCII radiance oma output to NETCDF format
+#---------------------------------------------------
+   if (ls oma* 2>/dev/null); then
+      mkdir  $RUN_DIR/$DATE; cd $RUN_DIR
+      ln -sf $RUN_DIR/working/oma_* $RUN_DIR/$DATE
+      cat > namelist.da_rad_diags << EOF
+&record1
+nproc = ${NUM_PROCS}
+instid = 'noaa-15-amsua','noaa-15-amsub','noaa-16-amsua','noaa-16-amsub','noaa-17-amsub','noaa-18-amsua','noaa-18-mhs',
+ 'metop-2-amsua',  'metop-2-mhs','dmsp-16-ssmis','eos-2-airs','eos-2-amsua',
+file_prefix = 'oma'
+start_date = '$DATE'
+end_date   = '$DATE'
+cycle_period  = 6
+/
+EOF
+     ${BUILD_DIR}/da_rad_diags.exe
+     rm -rf $RUN_DIR/$DATE
+     rm -f namelist.da_rad_diags da_rad_diags.exe
+     rm -f $RUN_DIR/working/oma_*
+     cd $RUN_DIR/working
+   fi
+#----------------------------------
 
 # remove intermediate output files
 

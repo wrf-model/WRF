@@ -43,7 +43,7 @@ export ID=${ID:-test}
 export CLEAN=${CLEAN:-false}
 export DOUBLE=${DOUBLE:-false}
 export CYCLING=${CYCLING:-false}                       # Cold start (false), cycle (true).
-export CHECK_SVNVERSION=${CHECK_SVNVERSION:-true}
+export CHECK_SVNVERSION=${CHECK_SVNVERSION:-false}
 # Combination of cold start and cycling runs for AFWA projects: cold start (for 00,12) cycling (for 06,18)
 export FG_TYPE=${FG_TYPE:-GFS}
 
@@ -128,6 +128,7 @@ export LBC_FREQ=${LBC_FREQ:-06}
 export LBC_FREQ_SS=`echo $LBC_FREQ \* 3600 |bc -l`
 export NL_INTERVAL_SECONDS=$LBC_FREQ_SS
 export CYCLE_PERIOD=${CYCLE_PERIOD:-12}                # Assimilation frequency.
+export VARBC_CYCLE_PERIOD=${VARBC_CYCLE_PERIOD:-$CYCLE_PERIOD} # VarBC assimilation frequency.
 export FCST_RANGE=${FCST_RANGE:-$CYCLE_PERIOD}
 export NL_RUN_HOURS=${NL_RUN_HOURS:-$FCST_RANGE}
 export CYCLE_NUMBER=${CYCLE_NUMBER:-0}

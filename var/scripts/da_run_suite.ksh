@@ -62,6 +62,7 @@ echo "NUM_PROCS    $NUM_PROCS"
 echo "INITIAL_DATE $INITIAL_DATE"
 echo "FINAL_DATE   $FINAL_DATE"
 echo "CYCLE_PERIOD $CYCLE_PERIOD"
+echo "VARBC_CYCLE_PERIOD $VARBC_CYCLE_PERIOD"
 echo "LBC_FREQ     $LBC_FREQ"
 echo "OBS_FREQ     $OBS_FREQ"
 echo "WINDOW_START $WINDOW_START"
@@ -83,6 +84,7 @@ RC=0
 
 while [[ $DATE -le $FINAL_DATE ]] ; do 
    export PREV_DATE=$($BUILD_DIR/da_advance_time.exe $DATE -$CYCLE_PERIOD 2>/dev/null)
+   export VARBC_PREV_DATE=$($BUILD_DIR/da_advance_time.exe $DATE -$VARBC_CYCLE_PERIOD 2>/dev/null)
    export HOUR=$(echo $DATE | cut -c9-10)
 
    if [[ ! -d $FC_DIR/$DATE ]]; then mkdir -p $FC_DIR/$DATE; fi
@@ -244,8 +246,8 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
       if [[ ${DA_VARBC_IN:+1} = 1 ]]; then
          if [[ -f $DA_VARBC_IN ]]; then
 #            if $CYCLING; then
-               if  [[ -s ${SUITE_DIR}/${PREV_DATE}/wrfvar/working/VARBC.out ]]; then
-	          export DA_VARBC_IN=${SUITE_DIR}/${PREV_DATE}/wrfvar/working/VARBC.out
+               if  [[ -f ${SUITE_DIR}/${VARBC_PREV_DATE}/wrfvar/VARBC.out ]]; then
+	          export DA_VARBC_IN=${SUITE_DIR}/${VARBC_PREV_DATE}/wrfvar/VARBC.out
 	       fi
 #	    fi
          fi

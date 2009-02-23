@@ -78,6 +78,31 @@ else
       fi
    fi
 
+#-----------------------------------------------------------------------
+#    [DATC] Run application-specific ungrib/metgrid:
+#-----------------------------------------------------------------------
+#     AFWA application uses AGRMET, NAVYSST, and 1/2 degree GFS GRIB data:
+
+      if $RUN_UNGRIB_METGRID_AFWA; then
+         export WORK_DIR=$RUN_DIR/working    
+         rm -rf $WORK_DIR; mkdir -p $WORK_DIR; cd $WORK_DIR
+	 	
+         ${SCRIPTS_DIR}/da_run_ungrib_metgrid_afwa.ksh > run_ungrib_metgrid_afwa.log 2>&1
+         RC=$?
+         if test $RC != 0; then
+            echo `date` "${ERR}Failed with error $RC$END"
+            exit 1
+	   else
+	   echo `date` "ungrib and metgrid runs are done."
+	    exit 0 
+         fi
+      fi
+#-----------------------------------------------------------------------
+#   End of  [DATC] Run application-specific ungrib/metgrid....
+#   Note that once the specific version of wps is run, it exits 
+#   and does not come back to this script.
+#-----------------------------------------------------------------------
+
    # Run ungrib:
    ln -fs $VTABLE_DIR/Vtable.${VTABLE_TYPE} Vtable
    LOCAL_DATE=$DATE

@@ -249,19 +249,19 @@ da_update_bc.exe : da_update_bc.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfi
            da_module_couple_uv.o -lnetcdf 
 
 da_bias_airmass.exe : da_bias_airmass.o  rad_bias.o pythag.o tqli.o tred2.o regress_one.o
-	$(FC) -o  da_bias_airmass.exe da_bias_airmass.o rad_bias.o pythag.o tqli.o tred2.o regress_one.o
+	$(SFC) -o  da_bias_airmass.exe da_bias_airmass.o rad_bias.o pythag.o tqli.o tred2.o regress_one.o
 
 da_bias_sele.exe : da_bias_sele.o rad_bias.o
-	$(FC) -o da_bias_sele.exe da_bias_sele.o rad_bias.o
+	$(SFC) -o da_bias_sele.exe da_bias_sele.o rad_bias.o
 
 da_bias_scan.exe : da_bias_scan.o rad_bias.o
-	$(FC) -o da_bias_scan.exe da_bias_scan.o rad_bias.o
+	$(SFC) -o da_bias_scan.exe da_bias_scan.o rad_bias.o
 
 da_bias_verif.exe : da_bias_verif.o rad_bias.o
-	$(FC) -o da_bias_verif.exe da_bias_verif.o rad_bias.o
+	$(SFC) -o da_bias_verif.exe da_bias_verif.o rad_bias.o
 
 da_rad_diags.exe : da_rad_diags.o 
-	$(FC) -o da_rad_diags.exe da_rad_diags.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
+	$(SFC) -o da_rad_diags.exe da_rad_diags.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
 
 
 # Special cases, either needing special include files or too big to 

@@ -42,7 +42,7 @@ export REGION=amps60
 export EXPT=test1
 export NUM_PROCS=1
 export WRFVAR_DIR=/sausage/hclin/code/WRFVAR/trunk
-export BUILD_DIR=${WRFVAR_DIR}/build
+export BUILD_DIR=${WRFVAR_DIR}/var/da
 export EXP_DIR=/sausage/hclin/exps/$REGION/$EXPT
 export VAR_RUN_DIR1=$EXP_DIR/run
 export VAR_RUN_DIR2=wrfvar/working
@@ -153,7 +153,7 @@ if $LINK_DATA; then
       else
          ln -sf $VAR_RUN_DIR1/$DATE/$VAR_RUN_DIR2/$FILE_PREFIX* .
       fi
-      DATE=$($WRFVAR_DIR/build/da_advance_time.exe $DATE $CYCLE_PERIOD)
+      DATE=$($BUILD_DIR/da_advance_time.exe $DATE $CYCLE_PERIOD)
    done
 fi
 
@@ -164,7 +164,7 @@ cd $DIAG_RUN_DIR
 #---------------------------------------------------------------------
 #
 if $PROC_DATA; then
-   ln -sf $WRFVAR_DIR/build/da_rad_diags.exe ./da_rad_diags.exe
+   ln -sf $BUILD_DIR/da_rad_diags.exe ./da_rad_diags.exe
 #
 # create namelist
 #
@@ -199,8 +199,8 @@ fi
 # plot
 #---------------------------------------------------------------------
 #
-ln -sf $WRFVAR_DIR/graphics/ncl/advance_cymdh.ncl ./advance_cymdh.ncl
-cp -p $WRFVAR_DIR/graphics/ncl/plot_rad_diags.ncl ./plot_rad_diags.ncl
+ln -sf $WRFVAR_DIR/var/graphics/ncl/advance_cymdh.ncl ./advance_cymdh.ncl
+cp -p $WRFVAR_DIR/var/graphics/ncl/plot_rad_diags.ncl ./plot_rad_diags.ncl
 
 if $PROC_PLOT; then
    if $MAPINFO_FROM_FILE; then

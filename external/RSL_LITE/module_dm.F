@@ -3915,7 +3915,9 @@ integer myproc
       USE module_state_description
       USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_grid
       USE module_configure, ONLY : grid_config_rec_type
-      USE module_dm, ONLY : get_dm_max_halo_width
+      USE module_dm, ONLY : halo_interp_up_sub, get_dm_max_halo_width, ips_save, ipe_save, &
+                            jps_save, jpe_save, ntasks, mytask, ntasks_x, ntasks_y, &
+                            local_communicator, itrace
       USE module_utility
       IMPLICIT NONE
 

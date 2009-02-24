@@ -49,6 +49,7 @@ CONTAINS
 #else
     USE module_dm
 #endif
+    USE module_comm_dm
     USE module_utility
 ! jm debug
     USE module_fr_sfire_util

@@ -46,18 +46,19 @@ endif
 set NAME     = ( "Standard"             "NESTED=FALSE"        "NESTED=FALSE"        "NONE"  	1	\
                  "Moving_Nest1"         "NESTED1=FALSE"       "NESTED1=TRUE"        "NONE"  	2	\
                  "Moving_Nest2"         "NESTED2=FALSE"       "NESTED2=TRUE"        "NONE"  	3	\
-                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	4	\
-                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	5	\
-                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	6	\
-                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	7	\
-                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	8	\
-                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	9	\
-                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"	10 	\
-                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	11	\
-                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	12	\
-                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  13    	\
-                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      14      \
-                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      15      \
+                 "NMM_Nest"             "NESTED2=FALSE"       "NESTED2=FALSE"       "NONE"  	4	\
+                 "Full_Optimization"    "REG_TYPE=BIT4BIT"    "REG_TYPE=OPTIMIZED"  "NONE"  	5	\
+                 "Chemistry"            "CHEM=FALSE"          "CHEM=TRUE"           "NONE"  	6	\
+                 "Chemistry2"           "KPP=FALSE"           "KPP=TRUE"            "NONE"  	7	\
+                 "Quilting"             "QUILT=FALSE"         "QUILT=TRUE"          "NONE"  	8	\
+                 "Binary_IO"            "IO_FORM=2"           "IO_FORM=1"           "NONE"  	9	\
+                 "GriB1_Output"         "IO_FORM=2"           "IO_FORM=5"           "NONE"  	10	\
+                 "REAL8_Floats"         "REAL8=FALSE"         "REAL8=TRUE"          "NONE"	11 	\
+                 "FDDA"                 "FDDA=FALSE"          "FDDA=TRUE"           "NONE"  	12	\
+                 "FDDA2"                "FDDA2=FALSE"         "FDDA2=TRUE"          "NONE"  	13	\
+                 "ESMF_Library"         "ESMF_LIB=FALSE"      "ESMF_LIB=TRUE"       "ONLY_AIX"  14    	\
+                 "Global"               "GLOBAL=FALSE"        "GLOBAL=TRUE"         "NONE"      15      \
+                 "Adaptive"             "ADAPTIVE=FALSE"      "ADAPTIVE=TRUE"       "NONE"      16      \
                )
 
 #	Where are we located.
@@ -351,31 +352,35 @@ FOUND_SELECTED_TEST:
                 set OLDT = `echo $OLD_TEXT[$count_test] | sed 's/=/ = /'`
                 set NEWT = `echo $NEW_TEXT[$count_test] | sed 's/=/ = /'`
 
-		if      ( ( $BASELINE == RUN_ONLY ) || ( $tests[$count_test] == Full_Optimization ) ) then
-			if ( -e ed.in ) rm ed.in
-			cat >! ed_in << EOF
+                if ( $tests[$count_test] == "NMM_Nest" ) then
+			cp regtest_nmmnest.csh reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
+		else
+			if      ( ( $BASELINE == RUN_ONLY ) || ( $tests[$count_test] == Full_Optimization ) ) then
+				if ( -e ed.in ) rm ed.in
+				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
-		else if ( $BASELINE == GENERATE ) then
-			if ( -e ed.in ) rm ed.in
-			cat >! ed_in << EOF
+			else if ( $BASELINE == GENERATE ) then
+				if ( -e ed.in ) rm ed.in
+				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
 ,s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
-		else if ( $BASELINE == COMPARE  ) then
-			if ( -e ed.in ) rm ed.in
-			cat >! ed_in << EOF
+			else if ( $BASELINE == COMPARE  ) then
+				if ( -e ed.in ) rm ed.in
+				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
 ,s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
+			endif
+			ed regtest.csh < ed_in >& /dev/null
 		endif
-		ed regtest.csh < ed_in >& /dev/null
 		chmod +x reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 
 		#	On AIX, we submit jobs to the load leveler queue for bluesky and to the LSF queue for 

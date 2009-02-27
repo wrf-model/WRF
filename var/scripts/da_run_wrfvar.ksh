@@ -220,6 +220,12 @@ if [[ -d $DA_CRTM_COEFFS ]]; then
    ln -fs $DA_CRTM_COEFFS crtm_coeffs
 fi
 
+if [[ $DATE -lt 2007081412 ]]; then
+   ln -fs $WRFVAR_DIR/var/run/gmao_airs_bufr.tbl ./gmao_airs_bufr.tbl
+else
+   ln -fs $WRFVAR_DIR/var/run/gmao_airs_bufr.tbl_new ./gmao_airs_bufr.tbl
+fi
+
 ln -fs $WRFVAR_DIR/run/LANDUSE.TBL .
 ln -fs $BUILD_DIR/da_wrfvar.exe .
 export PATH=$WRFVAR_DIR/var/scripts:$PATH

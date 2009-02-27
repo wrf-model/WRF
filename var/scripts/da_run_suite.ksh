@@ -245,11 +245,15 @@ while [[ $DATE -le $FINAL_DATE ]] ; do
       
       if [[ ${DA_VARBC_IN:+1} = 1 ]]; then
          if [[ -f $DA_VARBC_IN ]]; then
-#            if $CYCLING; then
                if  [[ -f ${SUITE_DIR}/${VARBC_PREV_DATE}/wrfvar/VARBC.out ]]; then
 	          export DA_VARBC_IN=${SUITE_DIR}/${VARBC_PREV_DATE}/wrfvar/VARBC.out
+               else
+                  if [[ $CYCLE_NUMBER -gt 0 ]]; then
+                     echo $(date) "VARBC failed to find VARBC.in file"
+                     echo varbc > FAIL
+                     break
+                  fi
 	       fi
-#	    fi
          fi
       fi
 

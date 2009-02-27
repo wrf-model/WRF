@@ -1154,6 +1154,7 @@ integer myproc
 
 #if (NMM_CORE == 1)
    USE module_sf_lsm_nmm
+   USE module_sf_gfdl
 #endif
 !--------------------------------------------------------------------
    IMPLICIT NONE
@@ -1442,7 +1443,7 @@ integer myproc
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
      CASE (GFDLSLAB)
-           CALL nmmlsminit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
+           CALL hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   &
                      TMN,                                          &

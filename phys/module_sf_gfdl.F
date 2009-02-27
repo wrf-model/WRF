@@ -1513,5 +1513,83 @@ CONTAINS
 
       return
       end subroutine MFLUX2
+  SUBROUTINE hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC,CANWAT,SMSTAV,       &
+                        SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,       &
+                        ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,     & !  STEMP
+                        TMN,                                            &
+                        num_soil_layers,                                &
+                        allowed_to_read,                                &
+                        ids,ide, jds,jde, kds,kde,                      &
+                        ims,ime, jms,jme, kms,kme,                      &
+                        its,ite, jts,jte, kts,kte                     )
+
+   IMPLICIT NONE 
+
+! Arguments
+   INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
+                                    ims,ime, jms,jme, kms,kme,  &
+                                    its,ite, jts,jte, kts,kte
+
+   INTEGER, INTENT(IN)       ::     num_soil_layers
+
+   REAL,    DIMENSION( num_soil_layers), INTENT(IN) :: DZS
+
+   REAL,    DIMENSION( ims:ime, num_soil_layers, jms:jme )    , &
+            INTENT(INOUT)    ::                          SMOIS, & 
+                                                         TSLB      !STEMP
+
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)    ::                           SNOW, & 
+                                                         SNOWC, & 
+                                                        CANWAT, &
+                                                        SMSTAV, &
+                                                        SMSTOT, &
+                                                     SFCRUNOFF, &
+                                                      UDRUNOFF, &
+                                                        SFCEVP, &
+                                                        GRDFLX, &
+                                                        ACSNOW, &
+                                                          XICE, &
+                                                        VEGFRA, &
+                                                        TMN, &
+                                                        ACSNOM
+
+   INTEGER, DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)    ::                         IVGTYP, &
+                                                        ISLTYP
+
+!
+
+  INTEGER, INTENT(IN) :: isn
+  LOGICAL, INTENT(IN) :: allowed_to_read
+! Local
+  INTEGER             :: iseason
+  INTEGER :: icm,jcm,itf,jtf
+  INTEGER ::  I,J,L
+
+
+   itf=min0(ite,ide-1)
+   jtf=min0(jte,jde-1)
+
+   icm = ide/2
+   jcm = jde/2
+
+   iseason=isn
+
+   DO J=jts,jtf
+       DO I=its,itf
+!      SNOW(i,j)=0.
+       SNOWC(i,j)=0.
+!      SMSTAV(i,j)=
+!      SMSTOT(i,j)=
+!      SFCRUNOFF(i,j)=
+!      UDRUNOFF(i,j)=
+!      GRDFLX(i,j)=
+!      ACSNOW(i,j)=
+!      ACSNOM(i,j)=
+    ENDDO
+   ENDDO
+
+  END SUBROUTINE hwrfsfcinit
 
 END MODULE module_sf_gfdl

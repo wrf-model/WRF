@@ -220,15 +220,16 @@ subroutine da_read_obs_ascii (iv, filename)
          if (print_detail_obs) then
             write(unit=stdout, fmt = '(a, i6)') 'i=', i
             write(unit=stdout, fmt = trim (fmt_each)) &
-               platform%each (i)%p,            &
-               platform%each (i)%speed,        &
-               platform%each (i)%v,            &
-               platform%each (i)%height,       &
-               platform%each (i)%height_qc,    &
-               height_error,                   &
-               platform%each (i)%t,            &
-               platform%each (i)%td,           &
-               platform%each (i)%rh
+               platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
+               platform%each(i)%speed%inv, platform%each(i)%speed%qc, &
+               platform%each(i)%speed%error,  &
+               platform%each(i)%v%inv, platform%each(i)%v%qc, platform%each(i)%v%error, &
+               platform%each(i)%height,       &
+               platform%each(i)%height_qc,    &
+               height_error,                  &
+               platform%each(i)%t%inv, platform%each(i)%t%qc, platform%each(i)%t%error, &
+               platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
+               platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
          end if
 
          ! Uncomment the following if errors in reported heights (test later):             

@@ -41,8 +41,8 @@ export EXP_LINES_COLORS=${EXP_LINES_COLORS:-'(/"blue","green", "orange"/)'}
 
 export NUM3D=${NUM3D:-4}
 export VAR3D=${VAR3D:-'"U", "V", "TK", "QVAPOR"'}
-export NUM2D=${NUM2D:-1}
-export VAR2D=${VAR2D:-' "SLP"'}
+export NUM2D=${NUM2D:-6}
+export VAR2D=${VAR2D:-' "SLP", "PSFC", "U10M", "V10M", "T2M", "Q2M"'}
 #--------------------------------------------------------------------------------------
 #=========================================================
 # BELOW THIS LINE NO CHABGES ARE REQUIRED                 
@@ -147,18 +147,31 @@ iexp=$((iexp + 1))
 done
 #-----------------
 #declare -a ob_fnames
+rm -f $WORK_DIR/tmp_sfc 
 rm -f $WORK_DIR/tmp_upr 
-num_upr=`ls ${pdat_dirs[0]}/*${DIAG_VAR} |wc -l`
-
+#rizvi TBD
+# fix num_upr and introduce num_sfc
+num_upr=`ls ${pdat_dirs[0]}/U_${DIAG_VAR} ${pdat_dirs[0]}/V_${DIAG_VAR} \
+            ${pdat_dirs[0]}/TK_${DIAG_VAR} ${pdat_dirs[0]}/QVAPOR_${DIAG_VAR} \
+            |wc -l`
+num_sfc=`ls ${pdat_dirs[0]}/SLP_${DIAG_VAR} ${pdat_dirs[0]}/PSFC_${DIAG_VAR} \
+            ${pdat_dirs[0]}/U10M_${DIAG_VAR} ${pdat_dirs[0]}/V10M_${DIAG_VAR} \
+            ${pdat_dirs[0]}/T2M_${DIAG_VAR} ${pdat_dirs[0]}/Q2M_${DIAG_VAR} \
+            |wc -l`
 OLDPWD=$PWD
 cd ${pdat_dirs[0]}
 for vn in U V TK QVAPOR; do
-  ls ${vn}*${DIAG_VAR} >> $WORK_DIR/tmp_upr
+  ls ${vn}_${DIAG_VAR} >> $WORK_DIR/tmp_upr
+done
+for vn in SLP PSFC U10M V10M T2M Q2M ; do
+  ls ${vn}_${DIAG_VAR} >> $WORK_DIR/tmp_sfc
 done
 
 cd $OLDPWD
  
+ 
 #----------------
+
 if [ "$num_upr" -lt 4 ]; then
    echo "All upper-air files are not generated"
    echo "Check your data and selected observation types"
@@ -173,6 +186,7 @@ else
    echo $ncol >> $WORK_DIR/fnames_upr     
    while read ob_fname
    do
+echo "Rizvi from $WORK_DIR/tmp_upr read ob_fname: "$ob_fname
      if [[ "$ob_fname" = "TK_time_series_${VERIFY_HOUR}" ]]; then
         ob_unit='T (Degree)'
      elif [[ "$ob_fname" = "U_time_series_${VERIFY_HOUR}" ]]; then
@@ -188,6 +202,39 @@ else
      echo "${ob_unit}" >> $WORK_DIR/fnames_upr
    done < $WORK_DIR/tmp_upr
 fi
+#----------------
+
+   echo "fnames_sfc" >> header_main    
+   anyfile=`head -1 "$WORK_DIR/tmp_sfc"`
+   ncol=`head -1 ${pdat_dirs[0]}/$anyfile |wc -w`
+   nrow=`cat ${pdat_dirs[0]}/$anyfile |wc -l`
+   echo $nrow > $WORK_DIR/fnames_sfc     
+   echo $ncol >> $WORK_DIR/fnames_sfc     
+   echo "rizvi fixed nrow= "$nrow 
+   echo "rizvi fixed ncol= "$ncol 
+   while read ob_fname
+   do
+echo "Rizvi from $WORK_DIR/tmp_sfc read sfcob_fname: "$ob_fname
+     if [[ "$ob_fname" = "SLP_time_series_${VERIFY_HOUR}" ]]; then
+        ob_unit='SLP (Pascal)'
+     elif [[ "$ob_fname" = "PSFC_time_series_${VERIFY_HOUR}" ]]; then
+        ob_unit='PSFC (Pascal)'
+     elif [[ "$ob_fname" = "U10M_time_series_${VERIFY_HOUR}" ]]; then
+        ob_unit='U10M (m/s)' 
+     elif [[ "$ob_fname" = "V10M_time_series_${VERIFY_HOUR}" ]]; then
+        ob_unit='V10M (m/s)' 
+     elif [[ "$ob_fname" = "T2M_time_series_${VERIFY_HOUR}" ]]; then
+        ob_unit='T2M (Kelvin)' 
+     elif [[ "$ob_fname" = "Q2M_time_series_${VERIFY_HOUR}" ]]; then
+        ob_unit='Q2M (gm/Kg)' 
+     else
+        echo "Unknown sfc-air variable:-Don't know what to do??"
+     fi
+     echo "${ob_fname}" >> $WORK_DIR/fnames_sfc
+     echo "${ob_unit}" >> $WORK_DIR/fnames_sfc
+   done < $WORK_DIR/tmp_sfc
+
+
 #ob_fnames = ( `cat "$tmp_file"` )
 #rm -f $WORK_DIR/tmp_upr tmp_sfc
 #-----------------------------------------------------------------------------------------------------------------------

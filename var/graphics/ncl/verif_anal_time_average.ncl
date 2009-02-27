@@ -114,7 +114,11 @@ begin
       end do
    ;----------------------------------------------------------
    if (first) then
+     if( iob .eq. 1 ) then
      wks   = gsn_open_wks (wksdev,plot_dir+out_name+select_scores(idtype-1)+"-"+select_levs(idlev-1)+"-hr"+verify_hour)   ; open workstation
+     else   
+     wks   = gsn_open_wks (wksdev,plot_dir+out_name+select_scores(idtype-1)+"-hr"+verify_hour)   ; open workstation
+     end if
      first = False
    end if
    ;----------------------------------------------------------
@@ -196,14 +200,19 @@ begin
    resP@gsnFrame         = False                   ; don't advance the frame
    resP@gsnPanelXWhiteSpacePercent = 4.	 	  ; increase spacing along Y-axis between panel plots
    resP@gsnPanelYWhiteSpacePercent = 4.	 	  ; increase spacing along Y-axis between panel plots
-   resP@gsnPanelRowSpec  = True                    ; specify 1 top, 2 lower level
+   resP@gsnPanelRowSpec  = False                   ; specify 1 top, 2 lower level
    resP@gsnPanelBottom   = 0.25			  ; shrink panel plot by setting bottom edge of plot
    resP@gsnPanelTop      = 1.00  		  ; shrink panel plot by setting top edge of plot
    resP@gsnPaperOrientation = "portrait"
 
    resP@txString   = plevel+"  "+diag_name
 
+   if( iob .eq. 1) then
    gsn_panel(wks,plts,(/nv-2,2/),resP)                ; now draw as one plot
+   else
+   gsn_panel(wks,plts,(/3,2/),resP)                   ; now draw as one plot
+   end if
+
    ;-------------------------------------------------------------------------------------
 
    ;  LabelBar = create "LabelBar" labelBarClass wks

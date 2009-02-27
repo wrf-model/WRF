@@ -29,8 +29,10 @@ module da_verif_anal_control
   integer, parameter                     :: grads_ctl_unit = 50
   integer, parameter                     :: out_dat_unit = 60
 !-----------------------------------------------------------------
-  character (len=512)                    :: profile_time_series
-  character (len=512)                    :: profile_time_average
+  character (len=512)                    :: profile_time_series_3d
+  character (len=512)                    :: profile_time_average_3d
+  character (len=512)                    :: time_series_2d
+  character (len=512)                    :: time_average_2d
   character (len=50)                     :: filename
 !-----------------------------------------------------------------
   integer                                :: stime(6), etime(6)

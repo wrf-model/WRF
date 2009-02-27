@@ -1,8 +1,9 @@
 ;===========================================================================================;
 ;  verif_anal_time_series.ncl
-; Author: Syed RH Rizvi  MMM/NCAR
-;         Hui Shao       NCAR/RAL/DATC:
-; Date  : 10/12/2007
+; Author : Syed RH Rizvi  MMM/NCAR   Date: 12/25/2008
+; Purpose: Generates desired plots for verification for
+;          surface parametrs (PSfc, U10, V10, T2 & Q2)
+;          desired Upper levels (U, V , T & Q)
 ;=========================================================;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"   
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"   
@@ -39,7 +40,7 @@ begin
    nrow = stringtointeger(varheads(0))
    ncol = stringtointeger(varheads(1))
    varnames = (/varheads(2 : :)/) 
-
+   
    num_vars = dimsizes(varnames)/2
    varfiles = new((/num_vars/),"string")
    varunits = new((/num_vars/),"string")
@@ -54,10 +55,17 @@ begin
    dates = stringtofloat(systemfunc("cut -c8-9 " + dfile)) 
    nxx = dimsizes(dates)
    ;----------------------------------------------------------
+   if( iob .eq. 1) then
     nlev = 15
+    q_levels = 8
     out_name="Time_Series_UPA_"
+   end if
+   if( iob .eq. 2) then
+    nlev = 1
+    q_levels = 1
+    out_name="Time_Series_SFC_"
+   end if
    ;--------------------------------------------
-   q_levels = 8
    nv = num_vars
    nexp = num_expt
    ;
@@ -97,19 +105,28 @@ begin
    ;----------------------------------------------------------
    first = True
    do idlev = 1, num_d_levs 
+     plevel = "SFC"
+     level=1     
+     if( iob .eq. 1 ) then
       do ll = 1, nlev
         if ( select_levs(idlev-1) .eq. plevels(ll-1) ) then
            ilev = ll
+           level=ilev
+           plevel = plevels(level-1)+" hPa  "
         end if
-   end do
+      end do
+     end if
    ;----------------------------------------------------------
    if (first) then
+     if( iob .eq. 1 ) then
      wks   = gsn_open_wks (wksdev,plot_dir+out_name+select_scores(idtype-1)+"-"+select_levs(idlev-1)+"-hr"+verify_hour)   ; open workstation
+     end if
+     if( iob .eq. 2 ) then
+     wks   = gsn_open_wks (wksdev,plot_dir+out_name+select_scores(idtype-1)+"-hr"+verify_hour)   ; open workstation
+     end if
      first = False
    end if
    ;----------------------------------------------------------
-      level=ilev
-      plevel = plevels(level-1)+" hPa  "
    
    ;----------------------------------------------------------
     plts                      = new (nv,"graphic")   ; define number of panels
@@ -122,7 +139,7 @@ begin
    do iv = 1, nv
       do iexp = 1, nexp
           do irow = 1, nrow
-          if (iv-1 .eq. 4) then
+          if( (iob.eq.1.and.(iv-1).eq.4) .or. (iob.eq.2.and.(iv-1).eq.6) ) then
           y(iv-1,iexp-1,irow-1) = 1000.0*data(iv-1,iexp-1,irow-1,1+(level-1)*4+Type)
           else
           y(iv-1,iexp-1,irow-1) = data(iv-1,iexp-1,irow-1,1+(level-1)*4+Type)
@@ -183,15 +200,19 @@ begin
    resP@gsnFrame         = False                   ; don't advance the frame
    resP@gsnPanelXWhiteSpacePercent = 4.	 	  ; increase spacing along Y-axis between panel plots
    resP@gsnPanelYWhiteSpacePercent = 4.	 	  ; increase spacing along Y-axis between panel plots
-   resP@gsnPanelRowSpec  = True                    ; specify 1 top, 2 lower level
+   resP@gsnPanelRowSpec  = False                   ; specify 1 top, 2 lower level
    resP@lbLabelFontHeightF = 0.008		  ; set font height of Label Bar labels
    resP@gsnPanelBottom   = 0.25			  ; shrink panel plot by setting bottom edge of plot
    resP@gsnPanelTop      = 1.00  		  ; shrink panel plot by setting top edge of plot
    resP@gsnPaperOrientation = "portrait"
  
    resP@txString   = plevel+"  "+diag_name
- 
+   if( iob .eq. 1) then
    gsn_panel(wks,plts,(/nv-2,2/),resP)                ; now draw as one plot
+   else
+   gsn_panel(wks,plts,(/3,2/),resP)                ; now draw as one plot
+   end if
+   ;-------------------------------------------------------------------------------------
    ;-------------------------------------------------------------------------------------
    legend = create "Legend" legendClass wks
     "vpXF"                     : 0.20                    ; position on virtual page
@@ -209,6 +230,7 @@ begin
     "lgLineColors"             : legend_line_cols
     "lgMonoLineLabelFontColor" : True                    ; one label color
    end create
+   ;-------------------------------------------------------------------------------------
    draw(legend)
    ;-------------------------------------------------------------------------------------
 
@@ -227,6 +249,6 @@ begin
    delete(data)
    delete(plts)
 
-   end do
+   end do                            ; iob  loop over
 
    end

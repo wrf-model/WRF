@@ -1,7 +1,8 @@
 ;
 ; Author: Hui-Chuan Lin   MMM/NCAR
 ;
-; Purpose: to read in gts_omb_oma (from WRF-Var V2.2) and 
+; Purpose: to read in gts_omb_oma (from WRF-Var V2.2) or 
+;          gts_omb_oma_01 (from WRF-Var V3.1) to
 ;          plot geographical distributions (before and after QC),
 ;               OBS vs BAK scatter plots (before and after QC), 
 ;               OBS vs ANA scatter plots
@@ -13,39 +14,61 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
 ; plot options
 ;==============================================================================
 ;
-plot_gts      = True
-plot_radar    = False
-
+plotscatter  = True
 out_type     = "pdf"    ; or ncgm
-plotdir      = "/sausage/hclin/exps/amps60/test/plotobs/"
-datdir1      = "/sausage/hclin/exps/amps60/test/"          ; the path before DATE
-datdir2      = "/wrfvar/working/"                          ; the path after DATE
-filename_gts   = "gts_omb_oma"
-prefix_radar   = "oma_radar"
-start_date   = "2008012912"
-end_date     = "2008012912"
-cycle_period = 06
-fname = "/sausage/hclin/exps/amps60/test/008012912/fg01"  ; for retrieving mapping info
+plotdir      = "/ptmp/hclin/con200/plot/"
+datdir1      = "/ptmp/hclin/con200/var/"        ; the path before DATE
+datdir2      = "/working/"                      ; the path after  DATE
+filename_gts   = "gts_omb_oma_01"
+; NOTE: actual file to read is gts_fullname
+; gts_fullname = datdir1+date+datdir2+filename_gts will be defined later in the main script
+; search for gts_fullname and modify it for your own directory structure
+fname = "/ptmp/hclin/con200/rc/2007010200/wrfinput_d01"  ; for retrieving mapping info
+start_date   = "2007010200"
+end_date     = "2007010200"
+cycle_period = 12
 ;
 ; set pressure levels for plotting AIREP, GEOAMV, POLARAMV, PILOT, PROFILER, SOUND, BOGUS, AIRSR
 ; method 1: set a 2-D array of bounded pressure levels in hPa
-; plevs  = (/ (/1005.,995./),(/930.,920./),(/855.,845/),(/705.,695./),(/505.,495./),(/405.,395./),\
-;             (/305.,295./),(/255.,245./),(/205.,195./),(/155.,145./),(/105.,95./),(/75.,65./), \
+  plevs  = (/ (/1005.,995./),(/855.,845/),(/705.,695./),(/505.,495./),\
+              (/305.,295./),(/205.,195./),(/105.,95./), \
+             (/55.,45./), (/45.,0./)  /)
+;  plevs  = (/ (/1005.,995./),(/930.,920./),(/855.,845/),(/705.,695./),(/505.,495./),(/405.,395./),\
+;              (/305.,295./),(/255.,245./),(/205.,195./),(/155.,145./),(/105.,95./),(/75.,65./), \
 ;             (/55.,45./), (/45.,0./)  /)
- plevs    = (/ (/1050.,0./),(/-999.,-999./) /)   ; a (/-999.,-999./) pair is required if only
+; plevs    = (/ (/1050.,0./),(/-999.,-999./) /)   ; a (/-999.,-999./) pair is required if only
                                                   ; one bounded pair is desired
 ;
 ; method 2: set a 1-D array of fixed pressure levels in hPa
-; plevs  = (/ 1000., 925., 850., 700., 500., 400., 300., 250., 200., 150., 100., 70., 50. /)
+; plevs  = (/ 1000., 925., 850., 700., 500., 400., 300., 250., 200., 150., 100., 70., 50., 30., 10. /)
+; plevs  = (/ 850., 700., 500., 200., 100., 50., 20. /)
 ;
 ; set height levels for plotting RADAR and GPSREF
 ; method 1: set a 2-D array of bounded height levels in meters. Recommended for GPSREF
-;hlevs  = (/ (/2000., 5000./), (/5000., 8500./) /)
-hlevs  = (/ (/0., 25000./), (/-999., -999./) /)  ; (/-999.,-999./) pair is required if only
+hlevs  = (/ (/2000., 5000./), (/5000., 8500./) /)
+;hlevs  = (/ (/0., 25000./), (/-999., -999./) /)  ; (/-999.,-999./) pair is required if only
                                                   ; one bounded pair is desired
 ;
 ; method 2: set a 1-D array of fixed height levels in meters
-; hlevs  = (/ 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 10000. /)
+;  hlevs  = (/ 1000., 2000., 3000., 4000., 5000., 6000., 7000., 8000., 10000. /)
+
+proc_synop     = True
+proc_metar     = True
+proc_ships     = True
+proc_buoy      = True
+proc_sonde_sfc = True
+proc_geoamv    = True
+proc_polaramv  = True
+proc_gpspw     = True
+proc_sound     = True
+proc_airep     = True
+proc_pilot     = True
+proc_profiler  = True
+proc_ssmir     = True
+proc_qscat     = True
+proc_bogus     = True
+proc_airsr     = True
+proc_gpsref    = True
 
 ; mapinfo_from_file = False
   mapinfo_from_file = True
@@ -115,7 +138,9 @@ if ( .not. ismissing(getenv("INITIAL_DATE")) ) then
 end if
 
 plotwnd = False
-colormap = "rainbow+gray"
+; colormap = "rainbow+gray"
+; colormap = "gui_default"
+colormap = "BkBlAqGrYeOrReViWh200"
 
 if ( mapinfo_from_file .and. isfilepresent(fname) ) then
    wrf_file=addfile(fname+".nc","r")
@@ -192,6 +217,15 @@ if ( colormap .eq. "gui_default" ) then
       colors(i) = colors(0) + i
    end do
 end if
+if ( colormap .eq. "BkBlAqGrYeOrReViWh200" ) then
+   num_bins = 200       ; BlAqGrYeOrReVi200 colormap has 202 colors, use 2-201
+   colors = new(num_bins,integer)
+   colors(0) = 2
+   colors(num_bins-1) = 201
+   do i = 1, num_bins-2
+      colors(i) = colors(0) + i
+   end do
+end if
 ; set label bar RGB color triplets
 labelbarcolors        = new((/num_bins,3/),float)
 do n = 0, num_bins-1
@@ -199,7 +233,6 @@ do n = 0, num_bins-1
 end do
 destroy(wks)
 system("\rm -f tmp.ncgm")
-;
 ;---------------------------------------------------------------------------
 ; functions and procedures
 ;---------------------------------------------------------------------------
@@ -248,9 +281,14 @@ begin
    mpres@tmXBMajorLengthF        = 0
    mpres@tmYRMajorLengthF        = 0
    mpres@mpOutlineBoundarySets   = "GeophysicalAndUSStates" ; state boundaries
+   ; mpres@mpFillOn = False
+   mpres@mpFillOn = True
+   mpres@mpLandFillColor = "gray"
    mpres@tfDoNDCOverlay          = True
 
-   mpres@mpGeophysicalLineColor  = "Navy"
+   mpres@mpUSStateLineColor = "gray"
+   mpres@mpNationalLineColor = "gray"
+   mpres@mpGeophysicalLineColor  = "gray"
    mpres@mpGridAndLimbOn         = True
    mpres@mpGridLineDashPattern   = 2
    mpres@mpGridLineDashSegLenF   = 0.06            ; default 0.15
@@ -300,6 +338,89 @@ begin
    return(scres)
 end
 
+undef("do_invplot")
+function do_invplot(wks,data,lat,lon,subdomain,mpres)
+local data,xmax,xmin,lat,lon,colors,lbcolors,nbin,subdomain,mpres,gsres,lbres
+begin
+;   colors = (/ 15, 35, 50, 80, 95, 110, 160, 175, 185, 190, 200, 210, 35, 15, 2/)
+;   colors = (/ 201, 194, 5, 20, 30, 85, 95, 100, 120, 140, 150, 170, 194, 201, 0/)
+   colors = (/ 180, 175, 15, 20, 35, 75, 90, 110, 120, 140, 160, 170, 175, 180, 2/)
+   lbdata = (/ -10.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0 /)
+   nbin = dimsizes(lbdata)+1
+   labels = new(nbin+1,string)  ; Labels for legend, extra one for x=0.0
+   legends = new(nbin+1,string)  ; Labels for legend, extra one for x=0.0
+   lat_new = new((/nbin+1,dimsizes(data)/),float,-999)
+   lon_new = new((/nbin+1,dimsizes(data)/),float,-999)
+   indexes = ind(data.eq.0.0)
+   labels(nbin) = "x=0  "+dimsizes(indexes)
+   legends(nbin) = "x=0"
+   if (.not.any(ismissing(indexes))) then
+      npts_range = dimsizes(indexes)   ; # of points in this range.
+      lat_new(nbin,0:npts_range-1) = lat(indexes)
+      lon_new(nbin,0:npts_range-1) = lon(indexes)
+   end if
+   delete(indexes)
+   do i = 0, nbin-1
+      if ( i .eq. 0 ) then
+         indexes = ind(data.lt.lbdata(i))
+         labels(i) = "x<"+lbdata(i)+"  "+dimsizes(indexes)
+         legends(i) = "x<"+lbdata(i)
+      end if
+      if ( i .eq. nbin-1 ) then
+         indexes = ind(data.ge.max(lbdata))
+         labels(i) = "x>="+max(lbdata)+"  "+dimsizes(indexes)
+         legends(i) = "x>="+max(lbdata)
+      end if
+      if ( i.gt.0 .and. i.lt.nbin-1 ) then
+         indexes = ind(data.ge.lbdata(i-1).and.data.lt.lbdata(i).and.data.ne.0.0)
+         labels(i) = lbdata(i-1)+"<=x<"+lbdata(i)+"  "+dimsizes(indexes)
+         legends(i) = lbdata(i-1)+"<=x<"+lbdata(i)
+      end if
+      if (.not.any(ismissing(indexes))) then
+         npts_range = dimsizes(indexes)   ; # of points in this range.
+         lat_new(i,0:npts_range-1) = lat(indexes)
+         lon_new(i,0:npts_range-1) = lon(indexes)
+      end if
+      delete(indexes)
+   end do
+   ; mpres@gsnMaximize             = True                ; Maximize plot in frame.
+   if ( subdomain )
+      plot = gsn_csm_map_ce(wks,mpres)
+   else
+      plot = gsn_csm_map(wks,mpres)
+   end if
+   gsres               = True
+   gsres@gsMarkerIndex = 16                    ; Use filled dots for markers.
+   txres               = True
+   txres@txFontHeightF = 0.015
+   xleg = (/0.16,0.16,0.16,0.30,0.30,0.30,0.46,0.46,0.46,0.60,0.60,0.60,0.74,0.74,0.74/)
+   xtxt = (/0.22,0.22,0.22,0.36,0.36,0.36,0.52,0.52,0.52,0.66,0.66,0.66,0.80,0.80,0.80/)
+   yleg = (/0.05,0.03,0.01,0.05,0.03,0.01,0.05,0.03,0.01,0.05,0.03,0.01,0.05,0.03,0.01/)
+   ytxt = (/0.05,0.03,0.01,0.05,0.03,0.01,0.05,0.03,0.01,0.05,0.03,0.01,0.05,0.03,0.01/)
+;   xleg = (/0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88,0.88/)
+;   xtxt = (/0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93,0.93/)
+;   yleg = (/0.96,0.94,0.92,0.90,0.88,0.86,0.84,0.82,0.80,0.78,0.76,0.74,0.72,0.70,0.68/)
+;   ytxt = (/0.96,0.94,0.92,0.90,0.88,0.86,0.84,0.82,0.80,0.78,0.76,0.74,0.72,0.70,0.68/)
+   do i = 0, nbin
+      if (.not.ismissing(lat_new(i,0)))
+         gsres@gsMarkerColor  = colors(i)
+         gsres@gsMarkerSizeF  = 0.003          ; default 0.007
+         str = unique_string("polymarker")
+         plot@$str$ = gsn_add_polymarker(wks,plot,lon_new(i,:),lat_new(i,:),gsres)
+         ; gsn_polymarker(wks,map,lon_new(i,:),lat_new(i,:),gsres)
+         ; Add marker and text for the legend.
+         gsres@gsMarkerSizeF  = 0.010          ; default 0.007
+         gsn_polymarker_ndc(wks,xleg(i),yleg(i),gsres)
+         gsn_text_ndc(wks,legends(i),xtxt(i),ytxt(i),txres)
+      end if
+   end do
+   return(plot)
+   delete(lat_new)
+   delete(lon_new)
+   delete(labels)
+   delete(legends)
+end
+
 undef("do_valueplot")
 function do_valueplot(wks,data,lat,lon,lbdata,binwidth,colors,nbin,subdomain,mpres)
 local data,xmax,xmin,lat,lon,colors,lbcolors,nbin,subdomain,mpres,gsres,lbres
@@ -330,7 +451,7 @@ begin
    do i = 0, nbin-1
       if (.not.ismissing(lat_new(i,0)))
          gsres@gsMarkerColor  = colors(i)
-         gsres@gsMarkerSizeF  = 0.001          ; default 0.007
+         gsres@gsMarkerSizeF  = 0.003          ; default 0.007
          str = unique_string("polymarker")
          plot@$str$ = gsn_add_polymarker(wks,plot,lon_new(i,:),lat_new(i,:),gsres)
          ; gsn_polymarker(wks,map,lon_new(i,:),lat_new(i,:),gsres)
@@ -472,17 +593,8 @@ begin  ; begin of procedure plot_sfc
          ; plot distribution for each variable
          ;
          plot = new(4,graphic)
-         dummy = new(4,graphic)
          title = otype+" U (All: "+num_u_all+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(0) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(0) = gsn_csm_map(wks,mpres)
-         end if
-         gsres               = True
-         gsres@gsMarkerIndex = 16                    ; Use filled dots for markers.
-         gsres@gsMarkerColor  = "blue"
          if ( otype .eq. "QSCAT" ) then
             gsres@gsMarkerSizeF  = markersize2          ; default 0.007
          else
@@ -490,178 +602,123 @@ begin  ; begin of procedure plot_sfc
          end if
          plon = mask(lon(:),.not.ismissing(u(:,0)),True)
          plat = mask(lat(:),.not.ismissing(u(:,0)),True)
-         ; txres = True
-         ; txres@txFontHeightF = 0.008
-         ; txres@txFontColor   = "black"
-         ; text = gsn_add_text(wks,plot(0),sprintf("%5.1f",u(:,0)),plon,plat+0.1,txres)
-         dummy(0) = gsn_add_polymarker(wks,plot(0),plon(:),plat(:),gsres)
+         pdata = mask(u(:,1),.not.ismissing(u(:,0)),True)
+         plot(0) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          ;
-         title = otype+" U (QCed: "+num_u_qc+")"
+         title = otype+" U (Used: "+num_u_qc+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(1) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(1) = gsn_csm_map(wks,mpres)
-         end if
          plon = mask(lon(:),u(:,2).ge.0,True)
          plat = mask(lat(:),u(:,2).ge.0,True)
-         ; txres = True
-         ; txres@txFontHeightF = 0.008
-         ; txres@txFontColor   = "black"
-         ; text = gsn_add_text(wks,plot(1),sprintf("%5.1f",u(:,0)),plon,plat+0.1,txres)
-         gsres@gsMarkerColor  = "red"
-         dummy(1) = gsn_add_polymarker(wks,plot(1),plon,plat,gsres)
+         pdata = mask(u(:,1),u(:,2).ge.0,True)
+         plot(1) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          ;
          title = otype+" V (All: "+num_v_all+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(2) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(2) = gsn_csm_map(wks,mpres)
-         end if
          plon = mask(lon(:),.not.ismissing(v(:,0)),True)
          plat = mask(lat(:),.not.ismissing(v(:,0)),True)
-         ; txres = True
-         ; txres@txFontHeightF = 0.008
-         ; txres@txFontColor   = "black"
-         ; text = gsn_add_text(wks,plot(2),sprintf("%5.1f",v(:,0)),plon,plat+0.1,txres)
-         gsres@gsMarkerColor  = "blue"
-         dummy(2) = gsn_add_polymarker(wks,plot(2),plon(:),plat(:),gsres)
+         pdata = mask(v(:,1),.not.ismissing(v(:,0)),True)
+         plot(2) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          ;
-         title = otype+" V (QCed: "+num_v_qc+")"
+         title = otype+" V (Used: "+num_v_qc+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(3) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(3) = gsn_csm_map(wks,mpres)
-         end if
          plon = mask(lon(:),v(:,2).ge.0,True)
          plat = mask(lat(:),v(:,2).ge.0,True)
-         ; txres = True
-         ; txres@txFontHeightF = 0.008
-         ; txres@txFontColor   = "black"
-         ; text = gsn_add_text(wks,plot(3),sprintf("%5.1f",v(:,0)),plon,plat+0.1,txres)
-         gsres@gsMarkerColor  = "red"
-         dummy(3) = gsn_add_polymarker(wks,plot(3),plon,plat,gsres)
+         pdata = mask(v(:,1),v(:,2).ge.0,True)
+         plot(3) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          pnres = True
-         pnres@gsnPanelBottom = 0.03              ; add some space at bottom 
+         pnres@gsnPanelBottom = 0.06              ; add some space at bottom 
          pnres@txString = date+"    "+otype+"    "+nobs+" / "+num_qc
          gsn_panel(wks,plot,(/2,2/),pnres)
-         delete(dummy)
          delete(plot)
          ;
          if ( otype.ne."QSCAT" ) then
             plot = new(4,graphic)
-            dummy = new(4,graphic)
             ;
             title = otype+" T (All: "+num_t_all+")"
             mpres = setmpres(title,"","")
-            if ( subdomain ) then
-               plot(0) = gsn_csm_map_ce(wks,mpres)
-            else
-               plot(0) = gsn_csm_map(wks,mpres)
-            end if
             plon = mask(lon(:),.not.ismissing(t(:,0)),True)
             plat = mask(lat(:),.not.ismissing(t(:,0)),True)
-            gsres@gsMarkerColor  = "blue"
-            dummy(0) = gsn_add_polymarker(wks,plot(0),plon(:),plat(:),gsres)
+            pdata = mask(t(:,1),.not.ismissing(t(:,0)),True)
+            plot(0) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
             delete(plon)
             delete(plat)
+            delete(pdata)
             ;
-            title = otype+" T (QCed: "+num_t_qc+")"
+            title = otype+" T (Used: "+num_t_qc+")"
             mpres = setmpres(title,"","")
-            if ( subdomain ) then
-               plot(1) = gsn_csm_map_ce(wks,mpres)
-            else
-               plot(1) = gsn_csm_map(wks,mpres)
-            end if
             plon = mask(lon(:),t(:,2).ge.0,True)
             plat = mask(lat(:),t(:,2).ge.0,True)
-            gsres@gsMarkerColor  = "red"
-            dummy(1) = gsn_add_polymarker(wks,plot(1),plon,plat,gsres)
+            pdata = mask(t(:,1),t(:,2).ge.0,True)
+            plot(1) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
             delete(plon)
             delete(plat)
+            delete(pdata)
             ;
             title = otype+" Q (All: "+num_q_all+")"
             mpres = setmpres(title,"","")
-            if ( subdomain ) then
-               plot(2) = gsn_csm_map_ce(wks,mpres)
-            else
-               plot(2) = gsn_csm_map(wks,mpres)
-            end if
             plon = mask(lon(:),.not.ismissing(q(:,0)),True)
             plat = mask(lat(:),.not.ismissing(q(:,0)),True)
-            gsres@gsMarkerColor  = "blue"
-            dummy(2) = gsn_add_polymarker(wks,plot(2),plon(:),plat(:),gsres)
+            pdata = mask(q(:,1)*1000.0,.not.ismissing(q(:,0)),True)
+            plot(2) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
             delete(plon)
             delete(plat)
+            delete(pdata)
             ;
-            title = otype+" Q (QCed: "+num_q_qc+")"
+            title = otype+" Q (Used: "+num_q_qc+")"
             mpres = setmpres(title,"","")
-            if ( subdomain ) then
-               plot(3) = gsn_csm_map_ce(wks,mpres)
-            else
-               plot(3) = gsn_csm_map(wks,mpres)
-            end if
             plon = mask(lon(:),q(:,2).ge.0,True)
             plat = mask(lat(:),q(:,2).ge.0,True)
-            gsres@gsMarkerColor  = "red"
-            dummy(3) = gsn_add_polymarker(wks,plot(3),plon,plat,gsres)
+            pdata = mask(q(:,1)*1000.0,q(:,2).ge.0,True)
+            plot(3) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
             delete(plon)
             delete(plat)
+            delete(pdata)
             pnres@txString = date+"    "+otype+"    "+nobs+" / "+num_qc
             gsn_panel(wks,plot,(/2,2/),pnres)
-            delete(dummy)
             delete(plot)
             ;
             plot = new(4,graphic)
-            dummy = new(4,graphic)
             ;
             title = otype+" P (All: "+num_p_all+")"
             mpres = setmpres(title,"","")
-            if ( subdomain ) then
-               plot(0) = gsn_csm_map_ce(wks,mpres)
-            else
-               plot(0) = gsn_csm_map(wks,mpres)
-            end if
             plon = mask(lon(:),.not.ismissing(p(:,0)),True)
             plat = mask(lat(:),.not.ismissing(p(:,0)),True)
-            gsres@gsMarkerColor  = "blue"
-            dummy(0) = gsn_add_polymarker(wks,plot(0),plon(:),plat(:),gsres)
+            pdata = mask(p(:,1)*0.01,.not.ismissing(p(:,0)),True)
+            plot(0) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
             delete(plon)
             delete(plat)
+            delete(pdata)
             ;
-            title = otype+" P (QCed: "+num_p_qc+")"
+            title = otype+" P (Used: "+num_p_qc+")"
             mpres = setmpres(title,"","")
-            if ( subdomain ) then
-               plot(1) = gsn_csm_map_ce(wks,mpres)
-            else
-               plot(1) = gsn_csm_map(wks,mpres)
-            end if
             plon = mask(lon(:),p(:,2).ge.0,True)
             plat = mask(lat(:),p(:,2).ge.0,True)
-            gsres@gsMarkerColor  = "red"
-            dummy(1) = gsn_add_polymarker(wks,plot(1),plon,plat,gsres)
+            pdata = mask(p(:,1)*0.01,p(:,2).ge.0,True)
+            plot(1) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
             delete(plon)
             delete(plat)
+            delete(pdata)
             pnres@txString = date+"    "+otype+"    "+nobs+" / "+num_qc
             gsn_panel(wks,plot,(/2,2/),pnres)
-            delete(dummy)
             delete(plot)
 
          end if  ; end of if otype .ne. QSCAT
          ;
          ; scatter plots
          ;
-         if ( num_u_all.gt.1 .and. num_u_qc.gt.1 .and. num_v_all.gt.1 .and. num_v_qc.gt.1 ) then
+         if ( plotscatter .and. num_u_all.gt.1 .and. num_u_qc.gt.1 .and. num_v_all.gt.1 .and. num_v_qc.gt.1 ) then
             ;
             ; OBS and BAK(Background) scatter plots
             ;
@@ -676,7 +733,7 @@ begin  ; begin of procedure plot_sfc
             data1 = mask(u(:,0),u(:,2).ge.0,True)               ; OBS
             data2 = mask(u(:,0)-u(:,1),u(:,2).ge.0,True)        ; BAK
             ombplot(1) =  do_scatterplot(wks, data1, data2, "OBS U  (m/s)", "BAK U",  \
-                             "QCed  "+num(.not.ismissing(data2)),              \
+                             "Used  "+num(.not.ismissing(data2)),              \
                              markertype1, markersize1, markercolor2, linesize, linecolor)
             delete(data1)
             delete(data2)
@@ -690,7 +747,7 @@ begin  ; begin of procedure plot_sfc
             data1 = mask(v(:,0),v(:,2).ge.0,True)               ; OBS
             data2 = mask(v(:,0)-v(:,1),v(:,2).ge.0,True)        ; BAK
             ombplot(3) =  do_scatterplot(wks, data1, data2, "OBS V  (m/s)", "BAK V",  \
-                             "QCed  "+num(.not.ismissing(data2)),              \
+                             "Used  "+num(.not.ismissing(data2)),              \
                              markertype1, markersize1, markercolor2, linesize, linecolor)
             delete(data1)
             delete(data2)
@@ -704,7 +761,7 @@ begin  ; begin of procedure plot_sfc
             data1 = mask(u(:,0),u(:,2).ge.0,True)               ; OBS
             data2 = mask(u(:,0)-u(:,4),u(:,2).ge.0,True)        ; ANA = OBS - OMA
             omaplot(1) =  do_scatterplot(wks, data1, data2, "OBS U  (m/s)", "ANA U",  \
-                             "QCed  "+num(.not.ismissing(data2)),              \
+                             "Used  "+num(.not.ismissing(data2)),              \
                              markertype1, markersize1, markercolor3, linesize, linecolor)
             delete(data1)
             delete(data2)
@@ -712,7 +769,7 @@ begin  ; begin of procedure plot_sfc
             data1 = mask(v(:,0),v(:,2).ge.0,True)               ; OBS
             data2 = mask(v(:,0)-v(:,4),v(:,2).ge.0,True)        ; ANA = OBS - OMA
             omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS V  (m/s)", "ANA V",  \
-                             "QCed  "+num(.not.ismissing(data2)),              \
+                             "Used  "+num(.not.ismissing(data2)),              \
                              markertype1, markersize1, markercolor3, linesize, linecolor)
             delete(data1)
             delete(data2)
@@ -726,7 +783,7 @@ begin  ; begin of procedure plot_sfc
             ;
             ; OBS and BAK(Background) scatter plots
             ;
-            if ( num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
+            if ( plotscatter .and. num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
                ombplot = new(4,graphic)
                data1 = t(:,0)               ; OBS
                data2 = t(:,0)-t(:,1)        ; BAK
@@ -738,27 +795,27 @@ begin  ; begin of procedure plot_sfc
                data1 = mask(t(:,0),t(:,2).ge.0,True)               ; OBS
                data2 = mask(t(:,0)-t(:,1),t(:,2).ge.0,True)        ; BAK
                ombplot(1) =  do_scatterplot(wks, data1, data2, "OBS T  (degree K)", "BAK T",  \
-                                "QCed  "+num(.not.ismissing(data2)),              \
+                                "Used  "+num(.not.ismissing(data2)),              \
                                 markertype1, markersize1, markercolor2, linesize, linecolor)
                delete(data1)
                delete(data2)
             end if
 
-            if ( num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
+            if ( plotscatter .and. num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
                if ( .not.isvar("ombplot") ) then
                   ombplot = new(4,graphic)
                end if
-               data1 = q(:,0)               ; OBS
-               data2 = q(:,0)-q(:,1)        ; BAK
-               ombplot(2) =  do_scatterplot(wks, data1, data2, "OBS Q  (kg/kg)", "BAK Q",  \
+               data1 = 1000.0*q(:,0)               ; OBS
+               data2 = 1000.0*(q(:,0)-q(:,1))      ; BAK
+               ombplot(2) =  do_scatterplot(wks, data1, data2, "OBS Q  (g/kg)", "BAK Q",  \
                                 "All  "+num(.not.ismissing(data2)),               \
                                 markertype1, markersize1, markercolor1, linesize, linecolor)
                delete(data1)
                delete(data2)
-               data1 = mask(q(:,0),q(:,2).ge.0,True)               ; OBS
-               data2 = mask(q(:,0)-q(:,1),q(:,2).ge.0,True)        ; BAK
-               ombplot(3) =  do_scatterplot(wks, data1, data2, "OBS Q  (kg/kg)", "BAK Q",  \
-                                "QCed  "+num(.not.ismissing(data2)),              \
+               data1 = mask(1000.0*q(:,0),q(:,2).ge.0,True)               ; OBS
+               data2 = mask(1000.0*(q(:,0)-q(:,1)),q(:,2).ge.0,True)      ; BAK
+               ombplot(3) =  do_scatterplot(wks, data1, data2, "OBS Q  (g/kg)", "BAK Q",  \
+                                "Used  "+num(.not.ismissing(data2)),              \
                                 markertype1, markersize1, markercolor2, linesize, linecolor)
                delete(data1)
                delete(data2)
@@ -771,27 +828,27 @@ begin  ; begin of procedure plot_sfc
             ;
             ; OBS and ANA(Analysis) scatter plots
             ;
-            if ( num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
+            if ( plotscatter .and. num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
                omaplot = new(4,graphic)
                omaplot(0) = ombplot(1)
                data1 = mask(t(:,0),t(:,2).ge.0,True)               ; OBS
                data2 = mask(t(:,0)-t(:,4),t(:,2).ge.0,True)        ; ANA = OBS - OMA
                omaplot(1) =  do_scatterplot(wks, data1, data2, "OBS T  (degree K)", "ANA T",  \
-                                "QCed  "+num(.not.ismissing(data2)),              \
+                                "Used  "+num(.not.ismissing(data2)),              \
                                 markertype1, markersize1, markercolor3, linesize, linecolor)
                delete(data1)
                delete(data2)
             end if
 
-            if ( num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
+            if ( plotscatter .and. num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
                if ( .not.isvar("omaplot") )  then
                   omaplot = new(4,graphic)
                end if
                omaplot(2) = ombplot(3)
-               data1 = mask(q(:,0),q(:,2).ge.0,True)               ; OBS
-               data2 = mask(q(:,0)-q(:,4),q(:,2).ge.0,True)        ; ANA = OBS - OMA
-               omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS Q  (kg/kg)", "ANA Q",  \
-                                "QCed  "+num(.not.ismissing(data2)),              \
+               data1 = mask(1000.0*q(:,0),q(:,2).ge.0,True)               ; OBS
+               data2 = mask(1000.0*(q(:,0)-q(:,4)),q(:,2).ge.0,True)      ; ANA = OBS - OMA
+               omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS Q  (g/kg)", "ANA Q",  \
+                                "Used  "+num(.not.ismissing(data2)),              \
                                 markertype1, markersize1, markercolor3, linesize, linecolor)
                delete(data1)
                delete(data2)
@@ -806,7 +863,7 @@ begin  ; begin of procedure plot_sfc
 
          end if  ; end of if otype .ne. QSCAT
          ;
-         if ( otype .ne. "QSCAT" .and. num_p_all.gt.1 .and. num_p_qc.gt.1 ) then
+         if ( plotscatter .and. otype .ne. "QSCAT" .and. num_p_all.gt.1 .and. num_p_qc.gt.1 ) then
             plot = new(4,graphic)
             data1 = 0.01*p(:,0)               ; OBS
             data2 = 0.01*(p(:,0)-p(:,1))      ; BAK
@@ -818,14 +875,14 @@ begin  ; begin of procedure plot_sfc
             data1 = 0.01*(mask(p(:,0),p(:,2).ge.0,True))              ; OBS
             data2 = 0.01*(mask(p(:,0)-p(:,1),p(:,2).ge.0,True))       ; BAK
             plot(1) =  do_scatterplot(wks, data1, data2, "OBS P  (hPa)", "BAK P",  \
-                          "QCed  "+num(.not.ismissing(data2)),              \
+                          "Used  "+num(.not.ismissing(data2)),              \
                           markertype1, markersize1, markercolor2, linesize, linecolor)
             delete(data1)
             delete(data2)
             data1 = 0.01*mask(p(:,0),p(:,2).ge.0,True)               ; OBS
             data2 = 0.01*mask(p(:,0)-p(:,4),p(:,2).ge.0,True)        ; ANA = OBS - OMA
             plot(3) =  do_scatterplot(wks, data1, data2, "OBS P  (hPa)", "ANA P",  \
-                          "QCed  "+num(.not.ismissing(data2)),              \
+                          "Used  "+num(.not.ismissing(data2)),              \
                           markertype1, markersize1, markercolor3, linesize, linecolor)
             delete(data1)
             delete(data2)
@@ -869,7 +926,7 @@ begin  ; begin of procedure plot_sfc
          delete(plon)
          delete(plat)
          ;
-         title = otype+" TPW (QCed: "+num_tpw_qc+")"
+         title = otype+" TPW (Used: "+num_tpw_qc+")"
          mpres = setmpres(title,"","")
          if ( subdomain ) then
             plot(1) = gsn_csm_map_ce(wks,mpres)
@@ -889,7 +946,7 @@ begin  ; begin of procedure plot_sfc
          delete(plot)
          delete(dummy)
 
-         if ( num_tpw_all .gt. 1 .and. num_tpw_qc .gt. 1  ) then
+         if ( plotscatter .and. num_tpw_all .gt. 1 .and. num_tpw_qc .gt. 1  ) then
             plot = new(4,graphic)
             data1 = tpw(:,0)               ; OBS
             data2 = tpw(:,0)-tpw(:,1)      ; BAK
@@ -901,14 +958,14 @@ begin  ; begin of procedure plot_sfc
             data1 = mask(tpw(:,0),tpw(:,2).ge.0,True)               ; OBS
             data2 = mask(tpw(:,0)-tpw(:,1),tpw(:,2).ge.0,True)      ; BAK
             plot(1) = do_scatterplot(wks, data1, data2, "OBS TPW  (cm)", "BAK TPW",  \
-                         "QCed  "+num(.not.ismissing(data2)),                  \
+                         "Used  "+num(.not.ismissing(data2)),                  \
                          markertype1, markersize2, markercolor2, linesize, linecolor)
             delete(data1)
             delete(data2)
             data1 = mask(tpw(:,0),tpw(:,2).ge.0,True)               ; OBS
             data2 = mask(tpw(:,0)-tpw(:,4),tpw(:,2).ge.0,True)      ; ANA
             plot(3) = do_scatterplot(wks, data1, data2, "OBS TPW  (cm)", "ANA TPW",  \
-                         "QCed  "+num(.not.ismissing(data2)),                  \
+                         "Used  "+num(.not.ismissing(data2)),                  \
                          markertype1, markersize2, markercolor3, linesize, linecolor)
             delete(data1)
             delete(data2)
@@ -1138,153 +1195,112 @@ begin
          ; plot distribution for each variable
          ;
          plot = new(4,graphic)
-         dummy = new(4,graphic)
          ;
          title = otype+" U (All: "+num_u_all+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(0) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(0) = gsn_csm_map(wks,mpres)
-         end if
-         gsres               = True
-         gsres@gsMarkerIndex = 16                    ; Use filled dots for markers.
-         gsres@gsMarkerColor  = "blue"
-         gsres@gsMarkerSizeF  = markersize3          ; default 0.007
          plon = mask(lon(:),.not.ismissing(pu(:,0)),True)
          plat = mask(lat(:),.not.ismissing(pu(:,0)),True)
-         dummy(0) = gsn_add_polymarker(wks,plot(0),plon(:),plat(:),gsres)
+         pdata = mask(pu(:,1),.not.ismissing(pu(:,0)),True)
+         plot(0) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          ;
-         title = otype+" U (QCed: "+num_u_qc+")"
+         title = otype+" U (Used: "+num_u_qc+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(1) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(1) = gsn_csm_map(wks,mpres)
-         end if
          plon = mask(lon(:),pu(:,2).ge.0,True)
          plat = mask(lat(:),pu(:,2).ge.0,True)
-         gsres@gsMarkerColor  = "red"
-         dummy(1) = gsn_add_polymarker(wks,plot(1),plon,plat,gsres)
+         pdata = mask(pu(:,1),pu(:,2).ge.0,True)
+         plot(1) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          ; wmsetp("col", 2)    ; Draw in red.
          ; wmsetp("wbs", .01)  ; Increase the size of the barb.
          ; wmbarbmap(wks, plat, plon,  mask(pu(:,0),pu(:,2).ge.0,True), mask(pv(:,0),pv(:,2).ge.0,True))
          delete(plon)
          delete(plat)
+         delete(pdata)
          ;
          title = otype+" V (All: "+num_v_all+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(2) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(2) = gsn_csm_map(wks,mpres)
-         end if
          plon = mask(lon(:),.not.ismissing(pv(:,0)),True)
          plat = mask(lat(:),.not.ismissing(pv(:,0)),True)
-         gsres@gsMarkerColor  = "blue"
-         dummy(2) = gsn_add_polymarker(wks,plot(2),plon(:),plat(:),gsres)
+         pdata = mask(pv(:,1),.not.ismissing(pv(:,0)),True)
+         plot(2) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          ;
-         title = otype+" V (QCed: "+num_v_qc+")"
+         title = otype+" V (Used: "+num_v_qc+")"
          mpres = setmpres(title,"","")
-         if ( subdomain ) then
-            plot(3) = gsn_csm_map_ce(wks,mpres)
-         else
-            plot(3) = gsn_csm_map(wks,mpres)
-         end if
          plon = mask(lon(:),pv(:,2).ge.0,True)
          plat = mask(lat(:),pv(:,2).ge.0,True)
-         gsres@gsMarkerColor  = "red"
-         dummy(3) = gsn_add_polymarker(wks,plot(3),plon,plat,gsres)
+         pdata = mask(pv(:,1),pv(:,2).ge.0,True)
+         plot(3) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
          delete(plon)
          delete(plat)
+         delete(pdata)
          pnres = True
-         pnres@gsnPanelBottom = 0.03              ; add some space at bottom 
+         pnres@gsnPanelBottom = 0.06              ; add some space at bottom 
          ; pnres@txString = date+"    "+otype+"    "+nobs+" / "+num_qc
          pnres@txString = date+"    "+otype+"    "+info
          gsn_panel(wks,plot,(/2,2/),pnres)
-         delete(dummy)
          delete(plot)
 
          if ( otype.eq. "AIREP" .or. otype.eq."SOUND" .or. otype.eq."AIRSR" ) then
             plot = new(4,graphic)
-            dummy = new(4,graphic)
             ;
             if ( num_t_all.gt.0 .or. num_t_qc.gt.0 ) then
                title = otype+" T (All: "+num_t_all+")"
                mpres = setmpres(title,"","")
-               if ( subdomain ) then
-                  plot(0) = gsn_csm_map_ce(wks,mpres)
-               else
-                  plot(0) = gsn_csm_map(wks,mpres)
-               end if
                plon = mask(lon(:),.not.ismissing(pt(:,0)),True)
                plat = mask(lat(:),.not.ismissing(pt(:,0)),True)
-               gsres = True
-               gsres@gsMarkerIndex = 16                    ; Use filled dots for markers.
+               pdata = mask(pt(:,1),.not.ismissing(pt(:,0)),True)
+               plot(0) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
                if ( otype .eq. "AIRSR" ) then
                   gsres@gsMarkerSizeF  = markersize2          ; default 0.007
                else
                   gsres@gsMarkerSizeF  = markersize3          ; default 0.007
                end if
-               gsres@gsMarkerColor  = "blue"
-               dummy(0) = gsn_add_polymarker(wks,plot(0),plon(:),plat(:),gsres)
                delete(plon)
                delete(plat)
+               delete(pdata)
                ;
-               title = otype+" T (QCed: "+num_t_qc+")"
+               title = otype+" T (Used: "+num_t_qc+")"
                mpres = setmpres(title,"","")
-               if ( subdomain ) then
-                  plot(1) = gsn_csm_map_ce(wks,mpres)
-               else
-                  plot(1) = gsn_csm_map(wks,mpres)
-               end if
                plon = mask(lon(:),pt(:,2).ge.0,True)
                plat = mask(lat(:),pt(:,2).ge.0,True)
-               gsres@gsMarkerColor  = "red"
-               dummy(1) = gsn_add_polymarker(wks,plot(1),plon,plat,gsres)
+               pdata = mask(pt(:,1),pt(:,2).ge.0,True)
+               plot(1) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
                delete(plon)
                delete(plat)
+               delete(pdata)
                ;
                if ( otype.eq."SOUND" .or. otype.eq."AIRSR" ) then
                   if ( num_q_all.gt.0 .or. num_q_qc.gt.0 ) then
                      title = otype+" Q (All: "+num_q_all+")"
                      mpres = setmpres(title,"","")
-                     if ( subdomain ) then
-                        plot(2) = gsn_csm_map_ce(wks,mpres)
-                     else
-                        plot(2) = gsn_csm_map(wks,mpres)
-                     end if
                      plon = mask(lon(:),.not.ismissing(pq(:,0)),True)
                      plat = mask(lat(:),.not.ismissing(pq(:,0)),True)
-                     gsres@gsMarkerColor  = "blue"
-                     dummy(2) = gsn_add_polymarker(wks,plot(2),plon(:),plat(:),gsres)
+                     pdata = mask(pq(:,1)*1000.0,.not.ismissing(pq(:,0)),True)
+                     plot(2) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
                      delete(plon)
                      delete(plat)
+                     delete(pdata)
                      ;
-                     title = otype+" Q (QCed: "+num_q_qc+")"
+                     title = otype+" Q (Used: "+num_q_qc+")"
                      mpres = setmpres(title,"","")
-                     if ( subdomain ) then
-                        plot(3) = gsn_csm_map_ce(wks,mpres)
-                     else
-                        plot(3) = gsn_csm_map(wks,mpres)
-                     end if
                      plon = mask(lon(:),pq(:,2).ge.0,True)
                      plat = mask(lat(:),pq(:,2).ge.0,True)
-                     gsres@gsMarkerColor  = "red"
-                     dummy(3) = gsn_add_polymarker(wks,plot(3),plon,plat,gsres)
+                     pdata = mask(pq(:,1)*1000.0,pq(:,2).ge.0,True)
+                     plot(3) = do_invplot(wks,pdata,plat,plon,subdomain,mpres)
                      delete(plon)
                      delete(plat)
+                     delete(pdata)
                   end if
                end if
                pnres = True
                ; pnres@txString = date+"    "+otype+"    "+nobs+" / "+num_qc
                pnres@txString = date+"    "+otype+"    "+info
                gsn_panel(wks,plot,(/2,2/),pnres)
-               delete(dummy)
                delete(plot)
             end if
          end if
@@ -1292,7 +1308,7 @@ begin
       ;
       ; scatter plot
       ;
-      if ( otype .eq. "BOGUS" .and. num_slp_all.gt.1 .and. num_slp_qc.gt.1 ) then
+      if ( plotscatter .and. otype .eq. "BOGUS" .and. num_slp_all.gt.1 .and. num_slp_qc.gt.1 ) then
          plot = new(4,graphic)
          data1 = pslp(:,0)               ; OBS
          data2 = pslp(:,0)-pslp(:,1)     ; BAK
@@ -1304,14 +1320,14 @@ begin
          data1 = mask(pslp_qc(:,0),pslp_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(pslp_qc(:,0)-pslp_qc(:,1),pslp_qc(:,2).ge.0,True)  ; BAK
          plot(1) = do_scatterplot(wks, data1, data2, "OBS SLP  (hPa)", "BAK SLP",  \
-                      "QCed  "+num(.not.ismissing(data2)),                  \
+                      "Used  "+num(.not.ismissing(data2)),                  \
                       markertype1, markersize2, markercolor2, linesize, linecolor)
          delete(data1)
          delete(data2)
          data1 = mask(pslp(:,0),pslp(:,2).ge.0,True)               ; OBS
          data2 = mask(pslp(:,0)-pslp(:,4),pslp(:,2).ge.0,True)     ; ANA
          plot(3) = do_scatterplot(wks, data1, data2, "OBS SLP  (hPa)", "ANA SLP",  \
-                      "QCed  "+num(.not.ismissing(data2)),                  \
+                      "Used  "+num(.not.ismissing(data2)),                  \
                       markertype1, markersize2, markercolor3, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1322,7 +1338,7 @@ begin
          delete(plot)
       end if
 
-      if ( num_u_all.gt.1 .and. num_u_qc.gt.1 .and. num_v_all.gt.1 .and. num_v_qc.gt.1 ) then
+      if ( plotscatter .and. num_u_all.gt.1 .and. num_u_qc.gt.1 .and. num_v_all.gt.1 .and. num_v_qc.gt.1 ) then
          ;
          ; OBS and BAK(Background) scatter plot
          ;
@@ -1338,7 +1354,7 @@ begin
          data1 = mask(pu_qc(:,0),pu_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(pu_qc(:,0)-pu_qc(:,1),pu_qc(:,2).ge.0,True)    ; BAK
          ombplot(1) = do_scatterplot(wks, data1, data2, "OBS U  (m/s)", "BAK U",  \
-                         "QCed  "+num(.not.ismissing(data2)),              \
+                         "Used  "+num(.not.ismissing(data2)),              \
                          markertype1, markersize2, markercolor2, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1352,7 +1368,7 @@ begin
          data1 = mask(pv_qc(:,0),pv_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(pv_qc(:,0)-pv_qc(:,1),pv_qc(:,2).ge.0,True)    ; BAK
          ombplot(3) = do_scatterplot(wks, data1, data2, "OBS V  (m/s)", "BAK V",  \
-                         "QCed  "+num(.not.ismissing(data2)),              \
+                         "Used  "+num(.not.ismissing(data2)),              \
                          markertype1, markersize2, markercolor2, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1367,7 +1383,7 @@ begin
          data1 = mask(pu_qc(:,0),pu_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(pu_qc(:,0)-pu_qc(:,4),pu_qc(:,2).ge.0,True)    ; ANA = OBS - OMA
          omaplot(1) =  do_scatterplot(wks, data1, data2, "OBS U  (m/s)", "ANA U",  \
-                          "QCed  "+num(.not.ismissing(data2)),              \
+                          "Used  "+num(.not.ismissing(data2)),              \
                           markertype1, markersize1, markercolor3, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1375,7 +1391,7 @@ begin
          data1 = mask(pv_qc(:,0),pv_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(pv_qc(:,0)-pv_qc(:,4),pv_qc(:,2).ge.0,True)    ; ANA = OBS - OMA
          omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS V  (m/s)", "ANA V",  \
-                          "QCed  "+num(.not.ismissing(data2)),              \
+                          "Used  "+num(.not.ismissing(data2)),              \
                           markertype1, markersize1, markercolor3, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1390,7 +1406,7 @@ begin
          ;
          ; OBS and BAK(Background) scatter plot
          ;
-         if ( num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
+         if ( plotscatter .and. num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
             ombplot = new(4,graphic)
             data1 = pt(:,0)               ; OBS
             data2 = pt(:,0)-pt(:,1)       ; BAK
@@ -1409,11 +1425,11 @@ begin
             data2 = mask(pt_qc(:,0)-pt_qc(:,1),pt_qc(:,2).ge.0,True)    ; BAK
             if ( otype .eq. "AIRSR" ) then
                ombplot(1) = do_scatterplot(wks, data1, data2, "OBS T  (degree K)", "BAK T",  \
-                               "QCed  "+num(.not.ismissing(data2)), \
+                               "Used  "+num(.not.ismissing(data2)), \
                                markertype1, markersize1, markercolor2, linesize, linecolor)
             else
                ombplot(1) = do_scatterplot(wks, data1, data2, "OBS T  (degree K)", "BAK T",  \
-                               "QCed  "+num(.not.ismissing(data2)),              \
+                               "Used  "+num(.not.ismissing(data2)),              \
                                markertype1, markersize2, markercolor2, linesize, linecolor)
             end if
             delete(data1)
@@ -1421,21 +1437,21 @@ begin
          end if
 
          if ( otype.eq."SOUND" .or. otype.eq."AIRSR" ) then
-            if ( num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
+            if ( plotscatter .and. num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
                if ( .not.isvar("ombplot") ) then
                   ombplot = new(4,graphic)
                end if
-               data1 = pq(:,0)               ; OBS
-               data2 = pq(:,0)-pq(:,1)       ; BAK
-               ombplot(2) = do_scatterplot(wks, data1, data2, "OBS Q  (kg/kg)", "BAK Q", \
+               data1 = 1000.0*pq(:,0)               ; OBS
+               data2 = 1000.0*(pq(:,0)-pq(:,1))     ; BAK
+               ombplot(2) = do_scatterplot(wks, data1, data2, "OBS Q  (g/kg)", "BAK Q", \
                                "All  "+num(.not.ismissing(data2)),              \
                                markertype1, markersize1, markercolor1, linesize, linecolor)
                delete(data1)
                delete(data2)
-               data1 = mask(pq_qc(:,0),pq_qc(:,2).ge.0,True)               ; OBS
-               data2 = mask(pq_qc(:,0)-pq_qc(:,1),pq_qc(:,2).ge.0,True)    ; BAK
-               ombplot(3) = do_scatterplot(wks, data1, data2, "OBS Q  (kg/kg)", "BAK Q", \
-                               "QCed  "+num(.not.ismissing(data2)),             \
+               data1 = mask(1000.0*pq_qc(:,0),pq_qc(:,2).ge.0,True)               ; OBS
+               data2 = mask(1000.0*(pq_qc(:,0)-pq_qc(:,1)),pq_qc(:,2).ge.0,True)    ; BAK
+               ombplot(3) = do_scatterplot(wks, data1, data2, "OBS Q  (g/kg)", "BAK Q", \
+                               "Used  "+num(.not.ismissing(data2)),             \
                                markertype1, markersize1, markercolor2, linesize, linecolor)
                delete(data1)
                delete(data2)
@@ -1450,28 +1466,28 @@ begin
          ;
          ; OBS and ANA(Analysis) scatter plot
          ;
-         if ( num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
+         if ( plotscatter .and. num_t_all.gt.1 .and. num_t_qc.gt.1 ) then
             omaplot = new(4,graphic)
             omaplot(0) = ombplot(1)
             data1 = mask(pt_qc(:,0),pt_qc(:,2).ge.0,True)               ; OBS
             data2 = mask(pt_qc(:,0)-pt_qc(:,4),pt_qc(:,2).ge.0,True)    ; ANA = OBS - OMA
             omaplot(1) =  do_scatterplot(wks, data1, data2, "OBS T  (degree K)", "ANA T", \
-                             "QCed  "+num(.not.ismissing(data2)),             \
+                             "Used  "+num(.not.ismissing(data2)),             \
                              markertype1, markersize1, markercolor3, linesize, linecolor)
             delete(data1)
             delete(data2)
          end if
 
          if ( otype.eq."SOUND" .or. otype.eq."AIRSR" ) then
-            if ( num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
+            if ( plotscatter .and. num_q_all.gt.1 .and. num_q_qc.gt.1 ) then
                if ( .not.isvar("omaplot") ) then
                   omaplot = new(4,graphic)
                end if
                omaplot(2) = ombplot(3)
-               data1 = mask(pq_qc(:,0),pq_qc(:,2).ge.0,True)               ; OBS
-               data2 = mask(pq_qc(:,0)-pq_qc(:,4),pq_qc(:,2).ge.0,True)    ; ANA = OBS - OMA
-               omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS Q  (kg/kg)", "ANA Q", \
-                                "QCed  "+num(.not.ismissing(data2)),             \
+               data1 = mask(1000.0*pq_qc(:,0),pq_qc(:,2).ge.0,True)               ; OBS
+               data2 = mask(1000.0*(pq_qc(:,0)-pq_qc(:,4)),pq_qc(:,2).ge.0,True)  ; ANA = OBS - OMA
+               omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS Q  (g/kg)", "ANA Q", \
+                                "Used  "+num(.not.ismissing(data2)),             \
                                 markertype1, markersize1, markercolor3, linesize, linecolor)
                delete(data1)
                delete(data2)
@@ -1572,7 +1588,7 @@ begin
       delete(plon)
       delete(plat)
       ;
-      title = otype+" RV (QCed: "+num_rv_qc+")"
+      title = otype+" RV (Used: "+num_rv_qc+")"
       mpres = setmpres(title,"","")
       if ( subdomain ) then
          plot(1) = gsn_csm_map_ce(wks,mpres)
@@ -1600,7 +1616,7 @@ begin
       delete(plon)
       delete(plat)
       ;
-      title = otype+" RF (QCed: "+num_rf_qc+")"
+      title = otype+" RF (Used: "+num_rf_qc+")"
       mpres = setmpres(title,"","")
       if ( subdomain ) then
          plot(3) = gsn_csm_map_ce(wks,mpres)
@@ -1748,7 +1764,7 @@ begin
          data1 = mask(prv_qc(:,0),prv_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(prv_qc(:,0)-prv_qc(:,1),prv_qc(:,2).ge.0,True)    ; BAK
          ombplot(1) = do_scatterplot(wks, data1, data2, "OBS RV", "BAK RV",  \
-                         "QCed  "+num(.not.ismissing(data2)),                \
+                         "Used  "+num(.not.ismissing(data2)),                \
                          markertype1, markersize2, markercolor2, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1768,7 +1784,7 @@ begin
          data1 = mask(prf_qc(:,0),prf_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(prf_qc(:,0)-prf_qc(:,1),prf_qc(:,2).ge.0,True)    ; BAK
          ombplot(3) = do_scatterplot(wks, data1, data2, "OBS RF", "BAK RF",  \
-                         "QCed  "+num(.not.ismissing(data2)),                \
+                         "Used  "+num(.not.ismissing(data2)),                \
                          markertype1, markersize2, markercolor2, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1788,7 +1804,7 @@ begin
          data1 = mask(prv_qc(:,0),prv_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(prv_qc(:,0)-prv_qc(:,4),prv_qc(:,2).ge.0,True)    ; ANA = OBS - OMA
          omaplot(1) =  do_scatterplot(wks, data1, data2, "OBS RV", "ANA RV",  \
-                          "QCed  "+num(.not.ismissing(data2)),                \
+                          "Used  "+num(.not.ismissing(data2)),                \
                           markertype1, markersize1, markercolor3, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1802,7 +1818,7 @@ begin
          data1 = mask(prf_qc(:,0),prf_qc(:,2).ge.0,True)               ; OBS
          data2 = mask(prf_qc(:,0)-prf_qc(:,4),prf_qc(:,2).ge.0,True)    ; ANA = OBS - OMA
          omaplot(3) =  do_scatterplot(wks, data1, data2, "OBS RF", "ANA RF",  \
-                          "QCed  "+num(.not.ismissing(data2)),                \
+                          "Used  "+num(.not.ismissing(data2)),                \
                           markertype1, markersize1, markercolor3, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -1869,7 +1885,7 @@ begin
       delete(plon)
       delete(plat)
 
-      title = otype+" REF (QCed: "+num_ref_qc+")"
+      title = otype+" REF (Used: "+num_ref_qc+")"
       mpres = setmpres(title,"","")
       if ( subdomain ) then
         plot(1) = gsn_csm_map_ce(wks,mpres)
@@ -1905,14 +1921,14 @@ begin
          data1 = mask(pref(:,0),pref(:,2).ge.0,True)               ; OBS
          data2 = mask(pref(:,0)-pref(:,1),pref(:,2).ge.0,True)      ; BAK
          plot(1) = do_scatterplot(wks, data1, data2, "OBS REF", "BAK REF",  \
-                      "QCed  "+num(.not.ismissing(data2)),                  \
+                      "Used  "+num(.not.ismissing(data2)),                  \
                       markertype1, markersize2, markercolor2, linesize, linecolor)
          delete(data1)
          delete(data2)
          data1 = mask(pref(:,0),pref(:,2).ge.0,True)               ; OBS
          data2 = mask(pref(:,0)-pref(:,4),pref(:,2).ge.0,True)      ; ANA
          plot(3) = do_scatterplot(wks, data1, data2, "OBS REF", "ANA REF",  \
-                      "QCed  "+num(.not.ismissing(data2)),                  \
+                      "Used  "+num(.not.ismissing(data2)),                  \
                       markertype1, markersize2, markercolor3, linesize, linecolor)
          delete(data1)
          delete(data2)
@@ -2173,6 +2189,9 @@ begin
    newdatestr = sprinti("%0.8i",newday) + sprinti("%0.2i",hh)
    return(newdatestr)
 end
+plot_gts = True
+plot_radar = False
+prefix_radar   = "oma_radar"
 ;---------------------------------------------------------------------------
 ; main script
 ;---------------------------------------------------------------------------
@@ -2204,13 +2223,13 @@ begin;  begin of the main script
             system("\rm -f "+plotdir+"tmp.oma_radar")
             print("Collecting oma_radar files, this may take a while...")
             do i = 0, dimsizes(radar_files)-1
-               fullname = datdir1+date+datdir2+radar_files(i)
-               if ( stringtointeger(systemfunc("wc -l "+fullname)) .gt. 0 ) then
+               radar_fullname = datdir1+date+datdir2+radar_files(i)
+               if ( stringtointeger(systemfunc("wc -l "+radar_fullname)) .gt. 0 ) then
                   system("touch "+plotdir+"tmp.oma_radar")
-                  nradar = nradar + stringtointeger(systemfunc("head -1 "+fullname+" | cut -c21-28"))
-                  data  = asciiread(fullname, -1, "string")
+                  nradar = nradar + stringtointeger(systemfunc("head -1 "+radar_fullname+" | cut -c21-28"))
+                  data  = asciiread(radar_fullname, -1, "string")
                   nline = dimsizes(data)-1
-                  system("tail -"+nline+" "+fullname+" >> "+plotdir+"tmp.oma_radar")
+                  system("tail -"+nline+" "+radar_fullname+" >> "+plotdir+"tmp.oma_radar")
                   delete(data)
                end if
             end do
@@ -2269,16 +2288,16 @@ begin;  begin of the main script
       end if   ; end of if plot_radar
 
       if ( plot_gts ) then
-         fullname = datdir1+date+datdir2+filename_gts
-         if ( .not. isfilepresent(fullname) ) then
-            print("Can not find the file "+fullname+"  Will skip it")
+         gts_fullname = datdir1+date+datdir2+filename_gts
+         if ( .not. isfilepresent(gts_fullname) ) then
+            print("Can not find the file "+gts_fullname+"  Will skip it")
          else
-            if ( stringtointeger(systemfunc("wc -l "+fullname)) .eq. 0 ) then
-               print("no data found in "+fullname+"  Will skip it")
+            if ( stringtointeger(systemfunc("wc -l "+gts_fullname)) .eq. 0 ) then
+               print("no data found in "+gts_fullname+"  Will skip it")
             else
-               print("Reading data from "+fullname)
+               print("Reading data from "+gts_fullname)
                print("This may take a while......")
-               data  = asciiread(fullname, -1, "string")    ; -1 means read all rows.
+               data  = asciiread(gts_fullname, -1, "string")    ; -1 means read all rows.
                cdata = stringtochar(data)
                nline = dimsizes(cdata(:,0))
 
@@ -2523,7 +2542,7 @@ begin;  begin of the main script
                   end if
                end do  ; end loop of parsing the file line by line
 
-               if ( nsynop .gt. 0 ) then
+               if ( proc_synop .and. nsynop .gt. 0 ) then
                   synop_id  = read_info(nsynop, isynop, cdata, nlevel_synop, ilevel_synop, "id")
                   synop_lat = read_info(nsynop, isynop, cdata, nlevel_synop, ilevel_synop, "lat")
                   synop_lon = read_info(nsynop, isynop, cdata, nlevel_synop, ilevel_synop, "lon")
@@ -2534,6 +2553,8 @@ begin;  begin of the main script
                   synop_p   = read_data(nsynop, isynop, cdata, nlevel_synop, ilevel_synop, "synop", "p")
                   synop_q   = read_data(nsynop, isynop, cdata, nlevel_synop, ilevel_synop, "synop", "q")
                   wks = gsn_open_wks(out_type,plotdir+"synop_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = synop_u
                   plot_sfc("SYNOP",wks,nsynop,date,synop_lat,synop_lon,synop_u,synop_v,synop_t,synop_p,synop_q,dum,dum)
                   delete(dum)
@@ -2551,7 +2572,7 @@ begin;  begin of the main script
                   delete(synop_q)
                end if  ; end of nsynop check
 ;
-               if ( nmetar .gt. 0 ) then
+               if ( proc_metar .and. nmetar .gt. 0 ) then
                   metar_id  = read_info(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "id")
                   metar_lat = read_info(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "lat")
                   metar_lon = read_info(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "lon")
@@ -2562,6 +2583,8 @@ begin;  begin of the main script
                   metar_p   = read_data(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "metar", "p")
                   metar_q   = read_data(nmetar, imetar, cdata, nlevel_metar, ilevel_metar, "metar", "q")
                   wks = gsn_open_wks(out_type,plotdir+"metar_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = metar_u
                   plot_sfc("METAR",wks,nmetar,date,metar_lat,metar_lon,metar_u,metar_v,metar_t,metar_p,metar_q,dum,dum)
                   delete(dum)
@@ -2579,7 +2602,7 @@ begin;  begin of the main script
                   delete(metar_q)
                end if   ; end of nmetar check
 
-               if ( nships .gt. 0 ) then
+               if ( proc_ships .and. nships .gt. 0 ) then
                   ships_id  = read_info(nships, iships, cdata, nlevel_ships, ilevel_ships, "id")
                   ships_lat = read_info(nships, iships, cdata, nlevel_ships, ilevel_ships, "lat")
                   ships_lon = read_info(nships, iships, cdata, nlevel_ships, ilevel_ships, "lon")
@@ -2590,6 +2613,8 @@ begin;  begin of the main script
                   ships_p   = read_data(nships, iships, cdata, nlevel_ships, ilevel_ships, "ships", "p")
                   ships_q   = read_data(nships, iships, cdata, nlevel_ships, ilevel_ships, "ships", "q")
                   wks = gsn_open_wks(out_type,plotdir+"ships_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = ships_u
                   plot_sfc("SHIPS",wks,nships,date,ships_lat,ships_lon,ships_u,ships_v,ships_t,ships_p,ships_q,dum,dum)
                   delete(dum)
@@ -2607,7 +2632,7 @@ begin;  begin of the main script
                   delete(ships_q)
                end if  ; end of nships check
 
-               if ( nbuoy .gt. 0 ) then
+               if ( proc_buoy .and. nbuoy .gt. 0 ) then
                   buoy_id  = read_info(nbuoy, ibuoy, cdata, nlevel_buoy, ilevel_buoy, "id")
                   buoy_lat = read_info(nbuoy, ibuoy, cdata, nlevel_buoy, ilevel_buoy, "lat")
                   buoy_lon = read_info(nbuoy, ibuoy, cdata, nlevel_buoy, ilevel_buoy, "lon")
@@ -2618,6 +2643,8 @@ begin;  begin of the main script
                   buoy_p   = read_data(nbuoy, ibuoy, cdata, nlevel_buoy, ilevel_buoy, "buoy", "p")
                   buoy_q   = read_data(nbuoy, ibuoy, cdata, nlevel_buoy, ilevel_buoy, "buoy", "q")
                   wks = gsn_open_wks(out_type,plotdir+"buoy_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = buoy_u
                   plot_sfc("BUOY",wks,nbuoy,date,buoy_lat,buoy_lon,buoy_u,buoy_v,buoy_t,buoy_p,buoy_q,dum,dum)
                   delete(dum)
@@ -2635,7 +2662,7 @@ begin;  begin of the main script
                   delete(buoy_q)
                end if   ; end of nbuoy check
 
-               if ( nsonde_sfc .gt. 0 ) then
+               if ( proc_sonde_sfc .and. nsonde_sfc .gt. 0 ) then
                   sonde_sfc_id  = read_info(nsonde_sfc, isonde_sfc, cdata, nlevel_sonde_sfc, ilevel_sonde_sfc, "id")
                   sonde_sfc_lat = read_info(nsonde_sfc, isonde_sfc, cdata, nlevel_sonde_sfc, ilevel_sonde_sfc, "lat")
                   sonde_sfc_lon = read_info(nsonde_sfc, isonde_sfc, cdata, nlevel_sonde_sfc, ilevel_sonde_sfc, "lon")
@@ -2646,6 +2673,8 @@ begin;  begin of the main script
                   sonde_sfc_p   = read_data(nsonde_sfc, isonde_sfc, cdata, nlevel_sonde_sfc, ilevel_sonde_sfc, "sonde_sfc", "p")
                   sonde_sfc_q   = read_data(nsonde_sfc, isonde_sfc, cdata, nlevel_sonde_sfc, ilevel_sonde_sfc, "sonde_sfc", "q")
                   wks = gsn_open_wks(out_type,plotdir+"sonde_sfc_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = sonde_sfc_u
                   plot_sfc("SONDE_SFC",wks,nsonde_sfc,date,sonde_sfc_lat,sonde_sfc_lon,\
                                        sonde_sfc_u,sonde_sfc_v,sonde_sfc_t,sonde_sfc_p,sonde_sfc_q,dum,dum)
@@ -2664,7 +2693,7 @@ begin;  begin of the main script
                   delete(sonde_sfc_q)
                end if   ; end of nsonde_sfc check
 
-               if ( ngeoamv .gt. 0 ) then
+               if ( proc_geoamv .and. ngeoamv .gt. 0 ) then
                   geoamv_id  = read_info(ngeoamv, igeoamv, cdata, nlevel_geoamv, ilevel_geoamv, "id")
                   geoamv_lat = read_info(ngeoamv, igeoamv, cdata, nlevel_geoamv, ilevel_geoamv, "lat")
                   geoamv_lon = read_info(ngeoamv, igeoamv, cdata, nlevel_geoamv, ilevel_geoamv, "lon")
@@ -2672,6 +2701,8 @@ begin;  begin of the main script
                   geoamv_u   = read_data(ngeoamv, igeoamv, cdata, nlevel_geoamv, ilevel_geoamv, "geoamv", "u")
                   geoamv_v   = read_data(ngeoamv, igeoamv, cdata, nlevel_geoamv, ilevel_geoamv, "geoamv", "v")
                   wks = gsn_open_wks(out_type,plotdir+"geoamv_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = geoamv_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2699,7 +2730,7 @@ begin;  begin of the main script
                   delete(geoamv_v)
                end if   ; end of ngeoamv check
 
-               if ( npolaramv .gt. 0 ) then
+               if ( proc_polaramv .and. npolaramv .gt. 0 ) then
                   polaramv_id  = read_info(npolaramv, ipolaramv, cdata, nlevel_polaramv, ilevel_polaramv, "id")
                   polaramv_lat = read_info(npolaramv, ipolaramv, cdata, nlevel_polaramv, ilevel_polaramv, "lat")
                   polaramv_lon = read_info(npolaramv, ipolaramv, cdata, nlevel_polaramv, ilevel_polaramv, "lon")
@@ -2707,6 +2738,8 @@ begin;  begin of the main script
                   polaramv_u   = read_data(npolaramv, ipolaramv, cdata, nlevel_polaramv, ilevel_polaramv, "polaramv", "u")
                   polaramv_v   = read_data(npolaramv, ipolaramv, cdata, nlevel_polaramv, ilevel_polaramv, "polaramv", "v")
                   wks = gsn_open_wks(out_type,plotdir+"polaramv_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = polaramv_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2734,7 +2767,7 @@ begin;  begin of the main script
                   delete(polaramv_v)
                end if   ; end of npolaramv check
 
-               if ( ngpspw .gt. 0 ) then
+               if ( proc_gpspw .and. ngpspw .gt. 0 ) then
                   gpspw_id  = read_info(ngpspw, igpspw, cdata, nlevel_gpspw, ilevel_gpspw, "id")
                   gpspw_lat = read_info(ngpspw, igpspw, cdata, nlevel_gpspw, ilevel_gpspw, "lat")
                   gpspw_lon = read_info(ngpspw, igpspw, cdata, nlevel_gpspw, ilevel_gpspw, "lon")
@@ -2743,6 +2776,8 @@ begin;  begin of the main script
                   ngpspw_tpw_qc  = num(.not.ismissing(mask(gpspw_tpw(:,0),gpspw_tpw(:,2).ge.0,True)))
                   ngpspw_qc      = ngpspw_tpw_qc
                   wks = gsn_open_wks(out_type,plotdir+"gpspw_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = gpspw_tpw
                   plot_sfc("GPSPW",wks,ngpspw,date,gpspw_lat,gpspw_lon,dum,dum,dum,dum,dum,gpspw_tpw,dum)
                   delete(dum)
@@ -2755,7 +2790,7 @@ begin;  begin of the main script
                   delete(gpspw_tpw)
                end if   ; end of ngpspw check
 
-               if ( nsound .gt. 0 ) then
+               if ( proc_sound .and. nsound .gt. 0 ) then
                   sound_id  = read_info(nsound, isound, cdata, nlevel_sound, ilevel_sound, "id")
                   sound_lat = read_info(nsound, isound, cdata, nlevel_sound, ilevel_sound, "lat")
                   sound_lon = read_info(nsound, isound, cdata, nlevel_sound, ilevel_sound, "lon")
@@ -2765,6 +2800,8 @@ begin;  begin of the main script
                   sound_t   = read_data(nsound, isound, cdata, nlevel_sound, ilevel_sound, "sound", "t")
                   sound_q   = read_data(nsound, isound, cdata, nlevel_sound, ilevel_sound, "sound", "q")
                   wks = gsn_open_wks(out_type,plotdir+"sound_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = sound_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2794,7 +2831,7 @@ begin;  begin of the main script
                   delete(sound_q)
                end if   ; end of nsound check
 
-               if ( nairep .gt. 0 ) then
+               if ( proc_airep .and.  nairep .gt. 0 ) then
                   airep_id  = read_info(nairep, iairep, cdata, nlevel_airep, ilevel_airep, "id")
                   airep_lat = read_info(nairep, iairep, cdata, nlevel_airep, ilevel_airep, "lat")
                   airep_lon = read_info(nairep, iairep, cdata, nlevel_airep, ilevel_airep, "lon")
@@ -2803,6 +2840,8 @@ begin;  begin of the main script
                   airep_v   = read_data(nairep, iairep, cdata, nlevel_airep, ilevel_airep, "airep", "v")
                   airep_t   = read_data(nairep, iairep, cdata, nlevel_airep, ilevel_airep, "airep", "t")
                   wks = gsn_open_wks(out_type,plotdir+"airep_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = airep_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2831,7 +2870,7 @@ begin;  begin of the main script
                   delete(airep_t)
                end if   ; end of nairep check
 
-               if ( npilot .gt. 0 ) then
+               if ( proc_pilot .and. npilot .gt. 0 ) then
                   pilot_id  = read_info(npilot, ipilot, cdata, nlevel_pilot, ilevel_pilot, "id")
                   pilot_lat = read_info(npilot, ipilot, cdata, nlevel_pilot, ilevel_pilot, "lat")
                   pilot_lon = read_info(npilot, ipilot, cdata, nlevel_pilot, ilevel_pilot, "lon")
@@ -2839,6 +2878,8 @@ begin;  begin of the main script
                   pilot_u   = read_data(npilot, ipilot, cdata, nlevel_pilot, ilevel_pilot, "pilot", "u")
                   pilot_v   = read_data(npilot, ipilot, cdata, nlevel_pilot, ilevel_pilot, "pilot", "v")
                   wks = gsn_open_wks(out_type,plotdir+"pilot_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = pilot_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2866,7 +2907,7 @@ begin;  begin of the main script
                   delete(pilot_v)
                end if   ; end of npilot check
 
-               if ( nprofiler .gt. 0 ) then
+               if ( proc_profiler .and. nprofiler .gt. 0 ) then
                   profiler_id  = read_info(nprofiler, iprofiler, cdata, nlevel_profiler, ilevel_profiler, "id")
                   profiler_lat = read_info(nprofiler, iprofiler, cdata, nlevel_profiler, ilevel_profiler, "lat")
                   profiler_lon = read_info(nprofiler, iprofiler, cdata, nlevel_profiler, ilevel_profiler, "lon")
@@ -2874,6 +2915,8 @@ begin;  begin of the main script
                   profiler_u   = read_data(nprofiler, iprofiler, cdata, nlevel_profiler, ilevel_profiler, "profiler", "u")
                   profiler_v   = read_data(nprofiler, iprofiler, cdata, nlevel_profiler, ilevel_profiler, "profiler", "v")
                   wks = gsn_open_wks(out_type,plotdir+"profiler_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = profiler_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2901,7 +2944,7 @@ begin;  begin of the main script
                   delete(profiler_v)
                end if   ; end of nprofiler check
 
-               if ( nssmir .gt. 0 ) then
+               if ( proc_ssmir .and. nssmir .gt. 0 ) then
                   ssmir_id  = read_info(nssmir, issmir, cdata, nlevel_ssmir, ilevel_ssmir, "id")
                   ssmir_lat = read_info(nssmir, issmir, cdata, nlevel_ssmir, ilevel_ssmir, "lat")
                   ssmir_lon = read_info(nssmir, issmir, cdata, nlevel_ssmir, ilevel_ssmir, "lon")
@@ -2910,6 +2953,8 @@ begin;  begin of the main script
                   nssmir_spd_qc  = num(.not.ismissing(mask(ssmir_spd(:,0),ssmir_spd(:,2).ge.0,True)))
                   nssmir_qc      = nssmir_spd_qc
                   wks = gsn_open_wks(out_type,plotdir+"ssmir_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = ssmir_spd
                   plot_sfc("SSMIR",wks,nssmir,date,ssmir_lat,ssmir_lon,dum,dum,dum,dum,dum,dum,ssmir_spd)
                   delete(dum)
@@ -2922,7 +2967,7 @@ begin;  begin of the main script
                   delete(ssmir_spd)
                end if   ; end of nssmir check
 
-               if ( nqscat .gt. 0 ) then
+               if ( proc_qscat .and. nqscat .gt. 0 ) then
                   qscat_id  = read_info(nqscat, iqscat, cdata, nlevel_qscat, ilevel_qscat, "id")
                   qscat_lat = read_info(nqscat, iqscat, cdata, nlevel_qscat, ilevel_qscat, "lat")
                   qscat_lon = read_info(nqscat, iqscat, cdata, nlevel_qscat, ilevel_qscat, "lon")
@@ -2930,6 +2975,8 @@ begin;  begin of the main script
                   qscat_u   = read_data(nqscat, iqscat, cdata, nlevel_qscat, ilevel_qscat, "qscat", "u")
                   qscat_v   = read_data(nqscat, iqscat, cdata, nlevel_qscat, ilevel_qscat, "qscat", "v")
                   wks = gsn_open_wks(out_type,plotdir+"qscat_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = qscat_u
                   plot_sfc("QSCAT",wks,nqscat,date,qscat_lat,qscat_lon,qscat_u,qscat_v,dum,dum,dum,dum,dum)
                   delete(dum)
@@ -2944,7 +2991,7 @@ begin;  begin of the main script
                   delete(qscat_v)
                end if   ; end of nqscat check
 
-               if ( nbogus .gt. 0 ) then
+               if ( proc_bogus .and. nbogus .gt. 0 ) then
                   ; bogus_id  = read_info(nbogus, ibogus, cdata, nlevel_bogus, ilevel_bogus, "id")
                   bogus_lat = read_info(nbogus, ibogus, cdata, nlevel_bogus, ilevel_bogus, "lat")
                   bogus_lon = read_info(nbogus, ibogus, cdata, nlevel_bogus, ilevel_bogus, "lon")
@@ -2953,6 +3000,8 @@ begin;  begin of the main script
                   bogus_u   = read_data(nbogus, ibogus, cdata, nlevel_bogus, ilevel_bogus, "bogus", "u")
                   bogus_v   = read_data(nbogus, ibogus, cdata, nlevel_bogus, ilevel_bogus, "bogus", "v")
                   wks = gsn_open_wks(out_type,plotdir+"bogus_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = bogus_u
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -2981,7 +3030,7 @@ begin;  begin of the main script
                   delete(bogus_v)
                end if   ; end of nbogus check
 
-               if ( nairsr .gt. 0 ) then
+               if ( proc_airsr .and. nairsr .gt. 0 ) then
                   airsr_id  = read_info(nairsr, iairsr, cdata, nlevel_airsr, ilevel_airsr, "id")
                   airsr_lat = read_info(nairsr, iairsr, cdata, nlevel_airsr, ilevel_airsr, "lat")
                   airsr_lon = read_info(nairsr, iairsr, cdata, nlevel_airsr, ilevel_airsr, "lon")
@@ -2989,6 +3038,8 @@ begin;  begin of the main script
                   airsr_t   = read_data(nairsr, iairsr, cdata, nlevel_airsr, ilevel_airsr, "airsr", "t")
                   airsr_q   = read_data(nairsr, iairsr, cdata, nlevel_airsr, ilevel_airsr, "airsr", "q")
                   wks = gsn_open_wks(out_type,plotdir+"airsr_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = airsr_t
                   if ( rank_plevs .eq. 1 ) then
                      do k = 0, nplevs(0)-1
@@ -3016,13 +3067,15 @@ begin;  begin of the main script
                   delete(airsr_q)
                end if   ; end of nairsr check
 
-               if ( ngpsref .gt. 0 ) then
+               if ( proc_gpsref .and. ngpsref .gt. 0 ) then
                   gpsref_id  = read_info(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "id")
                   gpsref_lat = read_info(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "lat")
                   gpsref_lon = read_info(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "lon")
                   gpsref_hgt = read_info(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "hgt")
                   gpsref_ref = read_data(ngpsref, igpsref, cdata, nlevel_gpsref, ilevel_gpsref, "gpsref", "ref")
                   wks = gsn_open_wks(out_type,plotdir+"gpsref_"+date)
+                  gsn_define_colormap(wks,colormap)
+                  nc1 = NhlNewColor(wks,.8,.8,.8)  ; add light gray to colormap
                   dum = gpsref_ref
                   if ( rank_hlevs .eq. 1 ) then
                      do k = 0, nhlevs(0)-1

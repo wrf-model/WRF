@@ -910,20 +910,6 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                       ims, ime, jms, jme, kms, kme,       &
                                       its, ite, jts, jte, kts, kte     )
 
-      ELSE IF( (rk_step == 3) .and. (adv_opt == -1) ) THEN
-
-        CALL advect_scalar_pd_test       ( scalar(ims,kms,jms,im),             &
-                                           scalar_old(ims,kms,jms,im),         &
-                                           advect_tend(ims,kms,jms),           &
-                                           ru, rv, ww, mut, mub, mu_old,       &
-                                           config_flags,                       &
-                                           msfux, msfuy, msfvx, msfvy,         &
-                                           msftx, msfty, fnm, fnp,             &
-                                           rdx, rdy, rdnw,dt,                  &
-                                           ids, ide, jds, jde, kds, kde,       &
-                                           ims, ime, jms, jme, kms, kme,       &
-                                           its, ite, jts, jte, kts, kte     )
- 
       ELSE IF( (rk_step == 3) .and. (adv_opt == MONOTONIC) ) THEN
 
         CALL advect_scalar_mono       ( scalar(ims,kms,jms,im),             &

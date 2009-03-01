@@ -689,8 +689,8 @@ CONTAINS
 
 ! local data
 
-    real p1000mb,cv,cp,r,cvpm,g
-    parameter (p1000mb = 1.e+05, r = 287, cp = 1003., cv = cp-r, cvpm = -cv/cp, g=9.81 )
+    real r
+    parameter (r = r_d)
     integer k, it, nl
     real qvf, qvf1, dz
 
@@ -824,10 +824,6 @@ CONTAINS
 !  some local stuff
 
   real :: tmppi, es, qvs, temperature
-  real, parameter :: p1000mb=1.e+05, rcp=287./1004.5, svpt0=273.15, &
-                     svp3 = 29.65, ep_2=287./461.6, r_d = 287., &
-                     cpovcv = 1004./(1004.-287.),               &
-                     svp1 = 0.6112, svp2 = 17.67
 
 !  get sounding from column jp
 

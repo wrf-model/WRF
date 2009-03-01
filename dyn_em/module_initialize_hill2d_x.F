@@ -580,8 +580,8 @@ CONTAINS
 
 ! local data
 
-      real p1000mb,cv,cp,r,cvpm,g
-      parameter (p1000mb = 1.e+05, r = 287, cp = 1003., cv = cp-r, cvpm = -cv/cp, g=9.81 )
+      real r
+      parameter (r = r_d)
       integer k, it, nl
       real qvf, qvf1, dz
 

@@ -1180,7 +1180,7 @@ integer::oops1,oops2
                ELSE IF ( flag_soil_levels == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
-                        grid%smois(i,:,j) = grid%smois(i,:,j) + lqmi(grid%isltyp(i,j))
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
                   DO j = jts, MIN(jde-1,jte)
@@ -1203,7 +1203,7 @@ integer::oops1,oops2
                IF      ( flag_soil_layers == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
-                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0. )
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
                ELSE IF ( flag_soil_levels == 1 ) THEN
@@ -1212,14 +1212,14 @@ integer::oops1,oops2
 
              CASE ( PXLSMSCHEME )
                iicount = 0
-               IF      ( flag_soil_layers == 1 ) THEN
+               IF ( flag_soil_layers == 1 ) THEN
+                  ! no op
+               ELSE IF ( flag_soil_levels == 1 ) THEN
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
-                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0. )
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
-               ELSE IF ( flag_soil_levels == 1 ) THEN
-                  ! no op
                END IF
 
          END SELECT account_for_zero_soil_moisture
@@ -3213,7 +3213,7 @@ print *,'VERT EXTRAP = ', vert_extrap
 
       REAL :: temp_1 , temp_2 , temp_3 , temp_y
       REAL :: depth_of_extrap_in_p , avg_of_extrap_p , temp_extrap_starting_point , dhdp , dh , dt
-      REAL , PARAMETER :: RovCp      = 287. / 1004.
+      REAL , PARAMETER :: RovCp      = rcp
       REAL , PARAMETER :: CRC_const1 = 11880.516      ! m
       REAL , PARAMETER :: CRC_const2 =     0.1902632  !
       REAL , PARAMETER :: CRC_const3 =     0.0065     ! K/km
@@ -3517,8 +3517,7 @@ print *,'p target= ',target_x
 
       INTEGER :: i , j , k
 
-      REAL , PARAMETER :: Rd = 287.
-      REAL , PARAMETER :: g  =   9.8
+      REAL , PARAMETER :: Rd = r_d
 
       DO j = jts , MIN ( jde-1 , jte )
          DO i = its , MIN (ide-1 , ite )
@@ -3600,8 +3599,7 @@ print *,'p target= ',target_x
 
       INTEGER :: i , j , k
 
-      REAL , PARAMETER :: Rd = 287.
-      REAL , PARAMETER :: Cp = 1004.
+      REAL , PARAMETER :: Rd = r_d
 
       DO j = jts , MIN ( jde-1 , jte )
          DO k = kts , kte
@@ -3646,8 +3644,7 @@ print *,'p target= ',target_x
 
       LOGICAL :: upside_down
 
-      REAL , PARAMETER :: Rd = 287.
-      REAL , PARAMETER :: g  =   9.8
+      REAL , PARAMETER :: Rd = r_d
 
       !  Get a surface value, always the first level of a 3d field.
 
@@ -4270,11 +4267,10 @@ print *,'namelist p_top (Pa) = ',p_top
 
       IMPLICIT NONE
 
-      REAL, PARAMETER    :: g         = 9.8
       REAL, PARAMETER    :: gamma     = 6.5E-3
       REAL, PARAMETER    :: pconst    = 10000.0
-      REAL, PARAMETER    :: Rd        = 287.
-      REAL, PARAMETER    :: TC        = 273.15 + 17.5
+      REAL, PARAMETER    :: Rd        = r_d
+      REAL, PARAMETER    :: TC        = svpt0 + 17.5
 
       REAL, PARAMETER    :: gammarg   = gamma * Rd / g
       REAL, PARAMETER    :: rov2      = Rd / 2.
@@ -4563,8 +4559,7 @@ print *,'namelist p_top (Pa) = ',p_top
 
       IMPLICIT NONE
 
-      REAL, PARAMETER    :: g         = 9.8
-      REAL, PARAMETER    :: Rd        = 287.
+      REAL, PARAMETER    :: Rd        = r_d
 
       INTEGER , INTENT(IN) ::  ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &

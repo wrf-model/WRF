@@ -499,6 +499,8 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; auxinput4_inname = "wrflowinp_d<domain>"
  usemonalb                           = .true.   ; use monthly albedo map instead of LANDUSE.TBL value
                                                 ; (must be used for NMM and recommended for sst_update=1)
+ bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
+ bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
  topo_shading                        = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1

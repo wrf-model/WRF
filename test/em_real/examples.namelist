@@ -197,6 +197,11 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
  cam_abs_dim2                        = 28
  (cam_abs_dim2 should be the same as e_vert)
 
+** Using bucket accumulations for multi-year simulations (guideline: mean monthly accumulation)
+
+ bucket_mm                           = 100.
+ bucket_J                            = 1.e9
+
 ** Using implicit gravity-wave damping option (add these in namelist record &dynamics):
 
  damp_opt                            = 3,

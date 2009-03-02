@@ -991,7 +991,7 @@ contains
        al(i,k)   = -dtodsu*dsdz2
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
-       exch_hx(i,k) = xkzh(i,k)
+       exch_hx(i,k+1) = xkzh(i,k)
      enddo
    enddo
 !

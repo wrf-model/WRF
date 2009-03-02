@@ -2881,6 +2881,31 @@ contains
 
       implicit none
 
+      real(kind=rb) :: wtdiff, rec_6
+      real(kind=rb) :: a0(nbndlw),a1(nbndlw),a2(nbndlw)! diffusivity angle adjustment coefficients
+
+! This secant and weight corresponds to the standard diffusivity 
+! angle.  This initial value is redefined below for some bands.
+      data wtdiff /0.5_rb/
+      data rec_6 /0.166667_rb/
+
+! Reset diffusivity angle for Bands 2-3 and 5-9 to vary (between 1.50
+! and 1.80) as a function of total column water vapor.  The function
+! has been defined to minimize flux and cooling rate errors in these bands
+! over a wide range of precipitable water values.
+      data a0 / 1.66_rb,  1.55_rb,  1.58_rb,  1.66_rb, &
+                1.54_rb, 1.454_rb,  1.89_rb,  1.33_rb, &
+               1.668_rb,  1.66_rb,  1.66_rb,  1.66_rb, &
+                1.66_rb,  1.66_rb,  1.66_rb,  1.66_rb /
+      data a1 / 0.00_rb,  0.25_rb,  0.22_rb,  0.00_rb, &
+                0.13_rb, 0.446_rb, -0.10_rb,  0.40_rb, &
+              -0.006_rb,  0.00_rb,  0.00_rb,  0.00_rb, &
+                0.00_rb,  0.00_rb,  0.00_rb,  0.00_rb /
+      data a2 / 0.00_rb, -12.0_rb, -11.7_rb,  0.00_rb, &
+               -0.72_rb,-0.243_rb,  0.19_rb,-0.062_rb, &
+               0.414_rb,  0.00_rb,  0.00_rb,  0.00_rb, &
+                0.00_rb,  0.00_rb,  0.00_rb,  0.00_rb /
+
       contains
 
 !-----------------------------------------------------------------------------
@@ -2979,8 +3004,6 @@ contains
 
 
       real(kind=rb) :: secdiff(nbndlw)                 ! secant of diffusivity angle
-      real(kind=rb) :: a0(nbndlw),a1(nbndlw),a2(nbndlw)! diffusivity angle adjustment coefficients
-      real(kind=rb) :: wtdiff, rec_6
       real(kind=rb) :: transcld, radld, radclrd, plfrac, blay, dplankup, dplankdn
       real(kind=rb) :: odepth, odtot, odepth_rec, odtot_rec, gassrc
       real(kind=rb) :: tblind, tfactot, bbd, bbdtot, tfacgas, transc, tausfac
@@ -3051,28 +3074,6 @@ contains
 !    fnetc                        ! clear sky net longwave flux (w/m2)
 !    htrc                         ! clear sky longwave heating rate (k/day)
 
-
-! This secant and weight corresponds to the standard diffusivity 
-! angle.  This initial value is redefined below for some bands.
-      data wtdiff /0.5_rb/
-      data rec_6 /0.166667_rb/
-
-! Reset diffusivity angle for Bands 2-3 and 5-9 to vary (between 1.50
-! and 1.80) as a function of total column water vapor.  The function
-! has been defined to minimize flux and cooling rate errors in these bands
-! over a wide range of precipitable water values.
-      data a0 / 1.66_rb,  1.55_rb,  1.58_rb,  1.66_rb, &
-                1.54_rb, 1.454_rb,  1.89_rb,  1.33_rb, &
-               1.668_rb,  1.66_rb,  1.66_rb,  1.66_rb, &
-                1.66_rb,  1.66_rb,  1.66_rb,  1.66_rb /
-      data a1 / 0.00_rb,  0.25_rb,  0.22_rb,  0.00_rb, &
-                0.13_rb, 0.446_rb, -0.10_rb,  0.40_rb, &
-              -0.006_rb,  0.00_rb,  0.00_rb,  0.00_rb, &
-                0.00_rb,  0.00_rb,  0.00_rb,  0.00_rb /
-      data a2 / 0.00_rb, -12.0_rb, -11.7_rb,  0.00_rb, &
-               -0.72_rb,-0.243_rb,  0.19_rb,-0.062_rb, &
-               0.414_rb,  0.00_rb,  0.00_rb,  0.00_rb, &
-                0.00_rb,  0.00_rb,  0.00_rb,  0.00_rb /
 
       hvrrtc = '$Revision: 1.5 $'
 
@@ -11427,6 +11428,27 @@ use rrtmg_lw_init, only: rrtmg_lw_ini
 use rrtmg_lw_rad, only: rrtmg_lw
 use mcica_subcol_gen_lw, only: mcica_subcol_lw
 
+    real retab(95)
+    data retab / 						&
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	&
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
+    !
+    save retab
+
 CONTAINS
 
 !------------------------------------------------------------------
@@ -13802,7 +13824,6 @@ IMPLICIT NONE
     integer, intent(in) :: ncol, pcols, pver
     real, intent(out) :: re(pcols,pver)
     real, intent(in) :: t(pcols,pver)
-    real retab(95)
     real corr
     integer i
     integer k
@@ -13811,25 +13832,6 @@ IMPLICIT NONE
     !       Tabulated values of re(T) in the temperature interval
     !       180 K -- 274 K; hexagonal columns assumed:
     !
-    data retab / 						&
-         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,	&
-         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,	&
-         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319, 	&
-         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,	&
-         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,	&
-         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943, 	&
-         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601, 	&
-         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,	&
-         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,	&
-         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,	&
-         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,	&
-         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,	&
-         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
-         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
-         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
-    !
-    save retab
     !
     do k=1,pver
        do i=1,ncol

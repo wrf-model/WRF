@@ -1,7 +1,190 @@
 MODULE module_ra_cam
   use module_ra_cam_support
   implicit none
+! 
+! A. Slingo's data for cloud particle radiative properties (from 'A GCM
+! Parameterization for the Shortwave Properties of Water Clouds' JAS
+! vol. 46 may 1989 pp 1419-1427)
+! 
+   real(r8) abarl(4)         ! A coefficient for extinction optical depth
+   real(r8) bbarl(4)         ! B coefficient for extinction optical depth
+   real(r8) cbarl(4)         ! C coefficient for single scat albedo
+   real(r8) dbarl(4)         ! D coefficient for single  scat albedo
+   real(r8) ebarl(4)         ! E coefficient for asymmetry parameter
+   real(r8) fbarl(4)         ! F coefficient for asymmetry parameter
 
+   save abarl, bbarl, cbarl, dbarl, ebarl, fbarl
+
+   data abarl/ 2.817e-02, 2.682e-02,2.264e-02,1.281e-02/
+   data bbarl/ 1.305    , 1.346    ,1.454    ,1.641    /
+   data cbarl/-5.62e-08 ,-6.94e-06 ,4.64e-04 ,0.201    /
+   data dbarl/ 1.63e-07 , 2.35e-05 ,1.24e-03 ,7.56e-03 /
+   data ebarl/ 0.829    , 0.794    ,0.754    ,0.826    /
+   data fbarl/ 2.482e-03, 4.226e-03,6.560e-03,4.353e-03/
+
+   real(r8) abarli           ! A coefficient for current spectral band
+   real(r8) bbarli           ! B coefficient for current spectral band
+   real(r8) cbarli           ! C coefficient for current spectral band
+   real(r8) dbarli           ! D coefficient for current spectral band
+   real(r8) ebarli           ! E coefficient for current spectral band
+   real(r8) fbarli           ! F coefficient for current spectral band
+! 
+! Caution... A. Slingo recommends no less than 4.0 micro-meters nor
+! greater than 20 micro-meters
+! 
+! ice water coefficients (Ebert and Curry,1992, JGR, 97, 3831-3836)
+! 
+   real(r8) abari(4)         ! a coefficient for extinction optical depth
+   real(r8) bbari(4)         ! b coefficient for extinction optical depth
+   real(r8) cbari(4)         ! c coefficient for single scat albedo
+   real(r8) dbari(4)         ! d coefficient for single scat albedo
+   real(r8) ebari(4)         ! e coefficient for asymmetry parameter
+   real(r8) fbari(4)         ! f coefficient for asymmetry parameter
+
+   save abari, bbari, cbari, dbari, ebari, fbari
+
+   data abari/ 3.448e-03, 3.448e-03,3.448e-03,3.448e-03/
+   data bbari/ 2.431    , 2.431    ,2.431    ,2.431    /
+   data cbari/ 1.00e-05 , 1.10e-04 ,1.861e-02,.46658   /
+   data dbari/ 0.0      , 1.405e-05,8.328e-04,2.05e-05 /
+   data ebari/ 0.7661   , 0.7730   ,0.794    ,0.9595   /
+   data fbari/ 5.851e-04, 5.665e-04,7.267e-04,1.076e-04/
+
+   real(r8) abarii           ! A coefficient for current spectral band
+   real(r8) bbarii           ! B coefficient for current spectral band
+   real(r8) cbarii           ! C coefficient for current spectral band
+   real(r8) dbarii           ! D coefficient for current spectral band
+   real(r8) ebarii           ! E coefficient for current spectral band
+   real(r8) fbarii           ! F coefficient for current spectral band
+! 
+   real(r8) delta            ! Pressure (in atm) for stratos. h2o limit
+   real(r8) o2mmr            ! O2 mass mixing ratio:
+
+   save delta, o2mmr
+
+!
+! UPDATE TO H2O NEAR-IR: Delta optimized for Hitran 2K and CKD 2.4
+!
+   data delta / 0.0014257179260883 /
+!
+! END UPDATE
+!
+   data o2mmr / .23143 /
+
+! Next series depends on spectral interval
+! 
+   real(r8) frcsol(nspint)   ! Fraction of solar flux in spectral interval
+   real(r8) wavmin(nspint)   ! Min wavelength (micro-meters) of interval
+   real(r8) wavmax(nspint)   ! Max wavelength (micro-meters) of interval
+   real(r8) raytau(nspint)   ! Rayleigh scattering optical depth
+   real(r8) abh2o(nspint)    ! Absorption coefficiant for h2o (cm2/g)
+   real(r8) abo3 (nspint)    ! Absorption coefficiant for o3  (cm2/g)
+   real(r8) abco2(nspint)    ! Absorption coefficiant for co2 (cm2/g)
+   real(r8) abo2 (nspint)    ! Absorption coefficiant for o2  (cm2/g)
+   real(r8) ph2o(nspint)     ! Weight of h2o in spectral interval
+   real(r8) pco2(nspint)     ! Weight of co2 in spectral interval
+   real(r8) po2 (nspint)     ! Weight of o2  in spectral interval
+   real(r8) nirwgt(nspint)   ! Spectral Weights to simulate Nimbus-7 filter
+   save frcsol ,wavmin ,wavmax ,raytau ,abh2o ,abo3 , &
+        abco2  ,abo2   ,ph2o   ,pco2   ,po2   ,nirwgt
+
+   data frcsol / .001488, .001389, .001290, .001686, .002877, &
+                 .003869, .026336, .360739, .065392, .526861, &
+                 .526861, .526861, .526861, .526861, .526861, &
+                 .526861, .006239, .001834, .001834/
+! 
+! weight for 0.64 - 0.7 microns  appropriate to clear skies over oceans
+! 
+   data nirwgt /  0.0,   0.0,   0.0,      0.0,   0.0, &
+                  0.0,   0.0,   0.0, 0.320518,   1.0,  1.0, &
+                  1.0,   1.0,   1.0,      1.0,   1.0, &
+                  1.0,   1.0,   1.0 /
+
+   data wavmin / .200,  .245,  .265,  .275,  .285, &
+                 .295,  .305,  .350,  .640,  .700,  .701, &
+                 .701,  .701,  .701,  .702,  .702, &
+                 2.630, 4.160, 4.160/
+
+   data wavmax / .245,  .265,  .275,  .285,  .295, &
+                 .305,  .350,  .640,  .700, 5.000, 5.000, &
+                 5.000, 5.000, 5.000, 5.000, 5.000, &
+                 2.860, 4.550, 4.550/
+
+!
+! UPDATE TO H2O NEAR-IR: Rayleigh scattering optimized for Hitran 2K & CKD 2.4
+!
+   real(r8) v_raytau_35
+   real(r8) v_raytau_64
+   real(r8) v_abo3_35
+   real(r8) v_abo3_64
+   parameter( &
+        v_raytau_35 = 0.155208, &
+        v_raytau_64 = 0.0392, &
+        v_abo3_35 = 2.4058030e+01, &  
+        v_abo3_64 = 2.210e+01 &
+        )
+
+   data raytau / 4.020, 2.180, 1.700, 1.450, 1.250, &
+                  1.085, 0.730, v_raytau_35, v_raytau_64, &
+                  0.02899756, 0.01356763, 0.00537341, &
+                  0.00228515, 0.00105028, 0.00046631, &
+                  0.00025734, &
+                 .0001, .0001, .0001/
+!
+! END UPDATE
+!
+
+! 
+! Absorption coefficients
+! 
+!
+! UPDATE TO H2O NEAR-IR: abh2o optimized for Hitran 2K and CKD 2.4
+!
+   data abh2o /    .000,     .000,    .000,    .000,    .000, &
+                   .000,     .000,    .000,    .000,    &
+                   0.00256608,  0.06310504,   0.42287445, 2.45397941, &
+                  11.20070807, 47.66091389, 240.19010243, &
+                   .000,    .000,    .000/
+!
+! END UPDATE
+!
+
+   data abo3  /5.370e+04, 13.080e+04,  9.292e+04, 4.530e+04, 1.616e+04, &
+               4.441e+03,  1.775e+02, v_abo3_35, v_abo3_64,      .000, &
+               .000,   .000    ,   .000   ,   .000   ,      .000, &
+               .000,   .000    ,   .000   ,   .000    /
+
+   data abco2  /   .000,     .000,    .000,    .000,    .000, &
+                   .000,     .000,    .000,    .000,    .000, &
+                   .000,     .000,    .000,    .000,    .000, &
+                   .000,     .094,    .196,   1.963/
+
+   data abo2  /    .000,     .000,    .000,    .000,    .000, &
+                   .000,     .000,    .000,1.11e-05,6.69e-05, &
+                   .000,     .000,    .000,    .000,    .000, &  
+                   .000,     .000,    .000,    .000/
+! 
+! Spectral interval weights
+! 
+   data ph2o  /    .000,     .000,    .000,    .000,    .000, &
+        .000,     .000,    .000,    .000,    .505,     &
+        .210,     .120,    .070,    .048,    .029,     &
+        .018,     .000,    .000,    .000/
+
+   data pco2  /    .000,     .000,    .000,    .000,    .000, &
+        .000,     .000,    .000,    .000,    .000,     &
+        .000,     .000,    .000,    .000,    .000,     &
+        .000,    1.000,    .640,    .360/
+
+   data po2   /    .000,     .000,    .000,    .000,    .000, &
+        .000,     .000,    .000,   1.000,   1.000,     &
+        .000,     .000,    .000,    .000,    .000,     &
+        .000,     .000,    .000,    .000/
+
+   real(r8) amo                 ! Molecular weight of ozone (g/mol)
+   save     amo
+
+   data amo   /  48.0000   /
 
 contains
 subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
@@ -258,8 +441,6 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    co2vmr = (co2(nyrm)*fact1 + co2(nyrp)*fact2)*1.e-06
 
    co2mmr=co2vmr*mwco2/mwdry
-print *,co2vmr, co2mmr, mwco2, mwdry, ' cam rad co2 calc: co2vmr, co2mmr, mwco2, mwdry'
-print *,yr, nyrm, nyrp, fact1, fact2, ' cam rad co2 calc: yr, nyrm, nyrp, fact1, fact2'
 !
 !===================================================
 ! Radiation computations
@@ -5364,17 +5545,6 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    parameter ( nspint = 19 )
    parameter ( naer_groups = 7 )    ! current groupings are sul, sslt, all carbons, all dust, and all aerosols
 !-----------------------Constants for new band (640-700 nm)-------------
-   real(r8) v_raytau_35
-   real(r8) v_raytau_64
-   real(r8) v_abo3_35
-   real(r8) v_abo3_64
-   parameter( &
-        v_raytau_35 = 0.155208, &
-        v_raytau_64 = 0.0392, &
-        v_abo3_35 = 2.4058030e+01, &  
-        v_abo3_64 = 2.210e+01 &
-        )
-
 
 !-------------Parameters for accelerating max-random solution-------------
 ! 
@@ -5641,179 +5811,11 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) wrh              ! weight for linear interpolation between lut points
    real(r8) :: rhtrunc       ! rh, truncated for the purposes of extrapolating
                              ! aerosol optical properties 
-! 
-! A. Slingo's data for cloud particle radiative properties (from 'A GCM
-! Parameterization for the Shortwave Properties of Water Clouds' JAS
-! vol. 46 may 1989 pp 1419-1427)
-! 
-   real(r8) abarl(4)         ! A coefficient for extinction optical depth
-   real(r8) bbarl(4)         ! B coefficient for extinction optical depth
-   real(r8) cbarl(4)         ! C coefficient for single scat albedo
-   real(r8) dbarl(4)         ! D coefficient for single  scat albedo
-   real(r8) ebarl(4)         ! E coefficient for asymmetry parameter
-   real(r8) fbarl(4)         ! F coefficient for asymmetry parameter
-
-   save abarl, bbarl, cbarl, dbarl, ebarl, fbarl
-
-   data abarl/ 2.817e-02, 2.682e-02,2.264e-02,1.281e-02/
-   data bbarl/ 1.305    , 1.346    ,1.454    ,1.641    /
-   data cbarl/-5.62e-08 ,-6.94e-06 ,4.64e-04 ,0.201    /
-   data dbarl/ 1.63e-07 , 2.35e-05 ,1.24e-03 ,7.56e-03 /
-   data ebarl/ 0.829    , 0.794    ,0.754    ,0.826    /
-   data fbarl/ 2.482e-03, 4.226e-03,6.560e-03,4.353e-03/
-
-   real(r8) abarli           ! A coefficient for current spectral band
-   real(r8) bbarli           ! B coefficient for current spectral band
-   real(r8) cbarli           ! C coefficient for current spectral band
-   real(r8) dbarli           ! D coefficient for current spectral band
-   real(r8) ebarli           ! E coefficient for current spectral band
-   real(r8) fbarli           ! F coefficient for current spectral band
-! 
-! Caution... A. Slingo recommends no less than 4.0 micro-meters nor
-! greater than 20 micro-meters
-! 
-! ice water coefficients (Ebert and Curry,1992, JGR, 97, 3831-3836)
-! 
-   real(r8) abari(4)         ! a coefficient for extinction optical depth
-   real(r8) bbari(4)         ! b coefficient for extinction optical depth
-   real(r8) cbari(4)         ! c coefficient for single scat albedo
-   real(r8) dbari(4)         ! d coefficient for single scat albedo
-   real(r8) ebari(4)         ! e coefficient for asymmetry parameter
-   real(r8) fbari(4)         ! f coefficient for asymmetry parameter
-
-   save abari, bbari, cbari, dbari, ebari, fbari
-
-   data abari/ 3.448e-03, 3.448e-03,3.448e-03,3.448e-03/
-   data bbari/ 2.431    , 2.431    ,2.431    ,2.431    /
-   data cbari/ 1.00e-05 , 1.10e-04 ,1.861e-02,.46658   /
-   data dbari/ 0.0      , 1.405e-05,8.328e-04,2.05e-05 /
-   data ebari/ 0.7661   , 0.7730   ,0.794    ,0.9595   /
-   data fbari/ 5.851e-04, 5.665e-04,7.267e-04,1.076e-04/
-
-   real(r8) abarii           ! A coefficient for current spectral band
-   real(r8) bbarii           ! B coefficient for current spectral band
-   real(r8) cbarii           ! C coefficient for current spectral band
-   real(r8) dbarii           ! D coefficient for current spectral band
-   real(r8) ebarii           ! E coefficient for current spectral band
-   real(r8) fbarii           ! F coefficient for current spectral band
-! 
-   real(r8) delta            ! Pressure (in atm) for stratos. h2o limit
-   real(r8) o2mmr            ! O2 mass mixing ratio:
-
-   save delta, o2mmr
-
-!
-! UPDATE TO H2O NEAR-IR: Delta optimized for Hitran 2K and CKD 2.4
-!
-   data delta / 0.0014257179260883 /
-!
-! END UPDATE
-!
-   data o2mmr / .23143 /
-
    real(r8) albdir(pcols,nspint) ! Current spc intrvl srf alb to direct rad
    real(r8) albdif(pcols,nspint) ! Current spc intrvl srf alb to diffuse rad
 ! 
-! Next series depends on spectral interval
-! 
-   real(r8) frcsol(nspint)   ! Fraction of solar flux in spectral interval
-   real(r8) wavmin(nspint)   ! Min wavelength (micro-meters) of interval
-   real(r8) wavmax(nspint)   ! Max wavelength (micro-meters) of interval
-   real(r8) raytau(nspint)   ! Rayleigh scattering optical depth
-   real(r8) abh2o(nspint)    ! Absorption coefficiant for h2o (cm2/g)
-   real(r8) abo3 (nspint)    ! Absorption coefficiant for o3  (cm2/g)
-   real(r8) abco2(nspint)    ! Absorption coefficiant for co2 (cm2/g)
-   real(r8) abo2 (nspint)    ! Absorption coefficiant for o2  (cm2/g)
-   real(r8) ph2o(nspint)     ! Weight of h2o in spectral interval
-   real(r8) pco2(nspint)     ! Weight of co2 in spectral interval
-   real(r8) po2 (nspint)     ! Weight of o2  in spectral interval
-   real(r8) nirwgt(nspint)   ! Spectral Weights to simulate Nimbus-7 filter
    real(r8) wgtint           ! Weight for specific spectral interval
 
-   save frcsol ,wavmin ,wavmax ,raytau ,abh2o ,abo3 , &
-        abco2  ,abo2   ,ph2o   ,pco2   ,po2   ,nirwgt
-
-   data frcsol / .001488, .001389, .001290, .001686, .002877, &
-                 .003869, .026336, .360739, .065392, .526861, &
-                 .526861, .526861, .526861, .526861, .526861, &
-                 .526861, .006239, .001834, .001834/
-! 
-! weight for 0.64 - 0.7 microns  appropriate to clear skies over oceans
-! 
-   data nirwgt /  0.0,   0.0,   0.0,      0.0,   0.0, &
-                  0.0,   0.0,   0.0, 0.320518,   1.0,  1.0, &
-                  1.0,   1.0,   1.0,      1.0,   1.0, &
-                  1.0,   1.0,   1.0 /
-
-   data wavmin / .200,  .245,  .265,  .275,  .285, &
-                 .295,  .305,  .350,  .640,  .700,  .701, &
-                 .701,  .701,  .701,  .702,  .702, &
-                 2.630, 4.160, 4.160/
-
-   data wavmax / .245,  .265,  .275,  .285,  .295, &
-                 .305,  .350,  .640,  .700, 5.000, 5.000, &
-                 5.000, 5.000, 5.000, 5.000, 5.000, &
-                 2.860, 4.550, 4.550/
-
-!
-! UPDATE TO H2O NEAR-IR: Rayleigh scattering optimized for Hitran 2K & CKD 2.4
-!
-   data raytau / 4.020, 2.180, 1.700, 1.450, 1.250, &
-                  1.085, 0.730, v_raytau_35, v_raytau_64, &
-                  0.02899756, 0.01356763, 0.00537341, &
-                  0.00228515, 0.00105028, 0.00046631, &
-                  0.00025734, &
-                 .0001, .0001, .0001/
-!
-! END UPDATE
-!
-
-! 
-! Absorption coefficients
-! 
-!
-! UPDATE TO H2O NEAR-IR: abh2o optimized for Hitran 2K and CKD 2.4
-!
-   data abh2o /    .000,     .000,    .000,    .000,    .000, &
-                   .000,     .000,    .000,    .000,    &
-                   0.00256608,  0.06310504,   0.42287445, 2.45397941, &
-                  11.20070807, 47.66091389, 240.19010243, &
-                   .000,    .000,    .000/
-!
-! END UPDATE
-!
-
-   data abo3  /5.370e+04, 13.080e+04,  9.292e+04, 4.530e+04, 1.616e+04, &
-               4.441e+03,  1.775e+02, v_abo3_35, v_abo3_64,      .000, &
-               .000,   .000    ,   .000   ,   .000   ,      .000, &
-               .000,   .000    ,   .000   ,   .000    /
-
-   data abco2  /   .000,     .000,    .000,    .000,    .000, &
-                   .000,     .000,    .000,    .000,    .000, &
-                   .000,     .000,    .000,    .000,    .000, &
-                   .000,     .094,    .196,   1.963/
-
-   data abo2  /    .000,     .000,    .000,    .000,    .000, &
-                   .000,     .000,    .000,1.11e-05,6.69e-05, &
-                   .000,     .000,    .000,    .000,    .000, &  
-                   .000,     .000,    .000,    .000/
-! 
-! Spectral interval weights
-! 
-   data ph2o  /    .000,     .000,    .000,    .000,    .000, &
-        .000,     .000,    .000,    .000,    .505,     &
-        .210,     .120,    .070,    .048,    .029,     &
-        .018,     .000,    .000,    .000/
-
-   data pco2  /    .000,     .000,    .000,    .000,    .000, &
-        .000,     .000,    .000,    .000,    .000,     &
-        .000,     .000,    .000,    .000,    .000,     &
-        .000,    1.000,    .640,    .360/
-
-   data po2   /    .000,     .000,    .000,    .000,    .000, &
-        .000,     .000,    .000,   1.000,   1.000,     &
-        .000,     .000,    .000,    .000,    .000,     &
-        .000,     .000,    .000,    .000/
 ! 
 ! Diagnostic and accumulation arrays; note that sfltot, fswup, and
 ! fswdn are not used in the computation,but are retained for future use.
@@ -7590,15 +7592,9 @@ subroutine radinp(lchnk   ,ncol    , pcols, pver, pverp,     &
    integer k                ! Vertical loop index
 
    real(r8) :: calday           ! current calendar day
-   real(r8) amd                 ! Effective molecular weight of dry air (g/mol)
-   real(r8) amo                 ! Molecular weight of ozone (g/mol)
    real(r8) vmmr                ! Ozone volume mixing ratio
    real(r8) delta               ! Solar declination angle
 
-   save     amd   ,amo
-
-   data amd   /  28.9644   /
-   data amo   /  48.0000   /
 !
 !-----------------------------------------------------------------------
 !

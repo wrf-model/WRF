@@ -40,6 +40,7 @@
   USE module_phot_mad
   USE module_aerosols_sorgam
   USE module_chem_utilities
+  USE module_gocart_so2so4
   USE module_ctrans_grell
   USE module_convtrans_prep
   USE module_dry_dep_driver
@@ -919,6 +920,18 @@ CALL kpp_mechanism_driver (chem,                                                
        chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
 !      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
    endif
+   so2so4_select: SELECT CASE(config_flags%chem_opt)
+     CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
+       CALL wrf_debug(15,'gocart so2-so4 conversion')
+          call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,P_QI,T_PHY,MOIST,      &
+         grid%gd_cloud_b,grid%gd_cloud2_b,                                  &
+         NUM_CHEM,NUM_MOIST,                                                &
+         ids,ide, jds,jde, kds,kde,                                         &
+         ims,ime, jms,jme, kms,kme,                                         &
+         its,ite, jts,jte, kts,kte                                          )
+     CASE DEFAULT
+       CALL wrf_debug(15,'no gocart so2-so4 conversion')
+   END SELECT so2so4_select                              
 
 
 

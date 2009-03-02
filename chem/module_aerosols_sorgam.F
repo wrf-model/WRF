@@ -6953,11 +6953,11 @@ END SUBROUTINE VDVG
       PARAMETER( BHAT =  1.246 ) ! Constant from Binkowski-Shankar approx to Cunningham slip correction.
       REAL COLCTR_BIGD,COLCTR_SMALD
       PARAMETER( COLCTR_BIGD=2.E-3,COLCTR_SMALD=20.E-6)  ! Collector diameters in Stokes number and Interception Efficiency (Needleleaf Forest)
-      REAL SUM0, SUM3, DQ, KNQ, CUNQ, VSEDQ, SCQ, STQ, RSURFQ
+      REAL SUM0, SUM3, DQ, KNQ, CUNQ, VSEDQ, SCQ, STQ, RSURFQ, vdplim
       REAL Eff_dif, Eff_imp, Eff_int, RBcor
       INTEGER ISTOPvd0,IdoWesCor
       PARAMETER (ISTOPvd0 = 0)  ! ISTOPvd0 = 1 means dont call VDVG, particle dep. velocities are set = 0; ISTOPvd0 = 0 means do depvel calcs.
-      PARAMETER (IdoWesCor = 1) ! IdoWesCor = 1 means do Wesley (85) convective correction to PM dry dep velocities; 0 means dont do correction
+      PARAMETER (IdoWesCor = 0) ! IdoWesCor = 1 means do Wesley (85) convective correction to PM dry dep velocities; 0 means dont do correction
       IF (ISTOPvd0.EQ.1)THEN
       RETURN
       ENDIF
@@ -6989,6 +6989,7 @@ END SUBROUTINE VDVG
          UTSCALE=1.+(-300.*RMOLM(LCELL))**0.6667
          ENDIF
          ENDIF
+        ENDIF   ! end of (IdoWesCor.EQ.1) test
          UTSCALE = USTAR(LCELL)*UTSCALE
       IF(iprnt.eq.1)THEN
       print *,'NGAUSdv,xxlsga,USTAR,UTSCALE'
@@ -6996,7 +6997,6 @@ END SUBROUTINE VDVG
       print *,'DCONST2,PDENSA,DGACC,GRAV,AMU'
       print *,DCONST2,PDENSA(LCELL),DGACC(LCELL),GRAV,AMU(LCELL)
       endif
-        ENDIF   ! end of (IdoWesCor.EQ.1) test
       
 ! *** nuclei mode 
       
@@ -7014,7 +7014,15 @@ END SUBROUTINE VDVG
 !       Eff_int=0.3*DQ/(COLCTR_SMALD+DQ) ! Slinn (1982) Interception term, 0.3 prefac insures .2 cm/s at .2 micron diam.
         Eff_int=(0.00116+0.0061*ZNTT(LCELL))*DQ/1.414E-7 ! McKeen(2008) Intercptn trm, val of .00421 @ ustr=0.475, diam=.1414 micrn, stable, needleleaf evergreen
         RBcor=1. ! Rebound correction factor
-        RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+        vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
+!       vdplim=.002*UTSCALE
+        vdplim=min(vdplim,.02)
+        RSURFQ=RA(LCELL)+1./vdplim
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!
+!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!
+!       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
         SUM3=SUM3+WGAUS(N)*(VSEDQ + 1./RSURFQ)*DQ**3  ! Quadrature sum for 3rd moment
         ENDDO
@@ -7037,7 +7045,14 @@ END SUBROUTINE VDVG
 !       Eff_int=0.3*DQ/(COLCTR_SMALD+DQ) ! Slinn (1982) Interception term, 0.3 prefac insures .2 cm/s at .2 micron diam.
         Eff_int=(0.00116+0.0061*ZNTT(LCELL))*DQ/1.414E-7 ! McKeen(2008) Intercptn term, val of .00421 @ ustr=0.475, diam=.1414 micrn, stable, needleleaf evergreen
         RBcor=1. ! Rebound correction factor
-        RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+        vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
+        vdplim=min(vdplim,.02)
+        RSURFQ=RA(LCELL)+1./vdplim
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!
+!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!
+!       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
         SUM3=SUM3+WGAUS(N)*(VSEDQ + 1./RSURFQ)*DQ**3  ! Quadrature sum for 3rd moment
       IF(iprnt.eq.1)THEN
@@ -7067,7 +7082,14 @@ END SUBROUTINE VDVG
         Eff_int=(0.00116+0.0061*ZNTT(LCELL))*DQ/1.414E-7 ! McKeen(2008) Intercptn term, val of .00421 @ ustr=0.475, diam=.1414 micrn, stable, needleleaf evergreen
         EFF_int=min(1.,EFF_int)
         RBcor=exp(-2.0*(STQ**0.5)) ! Rebound correction factor used in Slinn (1982)
-        RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+        vdplim=UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor
+        vdplim=min(vdplim,.02)
+        RSURFQ=RA(LCELL)+1./vdplim
+!       RSURFQ=RA(LCELL)+1./(UTSCALE*(Eff_dif+Eff_imp+Eff_int)*RBcor) ! Total surface resistence
+!
+!   limit this here to be consisten with the gocart routine, which bases this on Walcek et al. 1986
+!
+!       RSURFQ=max(RSURFQ,50.)
         SUM0=SUM0+WGAUS(N)*(VSEDQ + 1./RSURFQ)  ! Quadrature sum for 0 moment
         SUM3=SUM3+WGAUS(N)*(VSEDQ + 1./RSURFQ)*DQ**3  ! Quadrature sum for 3rd moment
         ENDDO

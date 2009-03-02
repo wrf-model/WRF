@@ -183,6 +183,12 @@ CONTAINS
           i_acswupbc(i,j) = 0
           i_acswdnb(i,j) = 0
           i_acswdnbc(i,j) = 0
+        ENDDO      
+        ENDDO
+      ENDIF
+      IF (xtime .eq. 0.0 .and. PRESENT(ACLWUPT))THEN
+        DO j=j_start(ij),j_end(ij)
+        DO i=i_start(ij),i_end(ij)
           i_aclwupt(i,j) = 0
           i_aclwuptc(i,j) = 0
           i_aclwdnt(i,j) = 0
@@ -194,6 +200,7 @@ CONTAINS
         ENDDO      
         ENDDO
       ENDIF
+      IF (PRESENT(ACSWUPT))THEN
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
         IF(acswupt(i,j) .gt. bucket_J)THEN
@@ -228,6 +235,12 @@ CONTAINS
           acswdnbc(i,j) = acswdnbc(i,j) - bucket_J
           i_acswdnbc(i,j) =  i_acswdnbc(i,j) + 1
         ENDIF
+      ENDDO      
+      ENDDO
+      ENDIF
+      IF (PRESENT(ACLWUPT))THEN
+      DO j=j_start(ij),j_end(ij)
+      DO i=i_start(ij),i_end(ij)
         IF(aclwupt(i,j) .gt. bucket_J)THEN
           aclwupt(i,j) = aclwupt(i,j) - bucket_J
           i_aclwupt(i,j) =  i_aclwupt(i,j) + 1
@@ -262,6 +275,7 @@ CONTAINS
         ENDIF
       ENDDO      
       ENDDO
+      ENDIF
    ENDDO
 !  !$OMP END PARALLEL DO
    ENDIF

@@ -61,7 +61,7 @@ MODULE module_bl_mynn
 ! Constants for gravitational settling
 !  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
   REAL, PARAMETER :: gno=4.64158883361278196
-  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8,qkemin=(1.e-8)**(3./2.)
+  REAL, PARAMETER :: gpw=5./3., qcgmin=1.e-8,qkemin=1.e-12
 
 
   REAL, PARAMETER :: rr2=0.7071068, rrp=0.3989423

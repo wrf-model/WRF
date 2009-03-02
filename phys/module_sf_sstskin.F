@@ -127,7 +127,6 @@ CONTAINS
       skinmin=amin1(skinmin,ts-tb)
       sstsk(i,j)=ts+273.15      ! convert ts (in C) to sstsk (in K)
       dtw1(i,j)=dtw              ! dtw always in C
-if(i.eq.5.and.j.eq.5)print *,'sstsk tsk',i,j,sstsk(i,j),tsk(i,j)
       endif
 !
       end do

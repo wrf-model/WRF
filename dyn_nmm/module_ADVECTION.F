@@ -1038,6 +1038,7 @@
      &       ,DWP,E00,E4P,EP,EP0,HADDT,HBM2IJ                           &
      &       ,Q00,Q4P,QP,QP0                                            &
      &       ,rdpdn,rdpup,sfacek,sfacqk,sfacwk,RFC,RR                   &
+     &       ,rfacqk,rfacwk,rfacek,top,bot,dpdn,dpup                    &
      &       ,SUMNE,SUMNQ,SUMNW,SUMPE,SUMPQ,SUMPW                       &
      &       ,W00,W4P,WP,WP0
 !

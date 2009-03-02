@@ -567,6 +567,7 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j)
+!if (config_flags%ra_sw_physics/=hwrfswscheme.and.config_flags%ra_lw_physics/=hwrflwscheme)then
       DO J=MYJS2,MYJE2
         IENDX=MYIE1
         IF(MOD(J,2)==0.AND.ITE==IDE)IENDX=IENDX-1
@@ -576,6 +577,7 @@
           CUPPT(I,J)=CUPPTR(I,J)
         ENDDO
       ENDDO
+!endif
 !
 !-----------------------------------------------------------------------
 !***  ZERO OUT BOUNDARY ROWS.
@@ -1836,7 +1838,10 @@
      &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      &
 #ifdef HWRF
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &
-#endif                       
+#endif 
+#if (NMM_CORE==1)    
+     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
+#endif
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -1903,6 +1908,9 @@
 #ifdef HWRF
      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand 
 #endif
+#if (NMM_CORE==1)
+     REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand 
+#endif
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
@@ -1919,6 +1927,12 @@
       REAL,DIMENSION(IDS:IDE,JDS:JDE),INTENT(INOUT) :: DATA1 
       LOGICAL, EXTERNAL::wrf_dm_on_monitor
 #endif    
+#if (NMM_CORE==1)
+      REAL, INTENT(INOUT)::MOMMIX
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
+      REAL,DIMENSION(IDS:IDE,JDS:JDE),INTENT(INOUT) :: DATA1 
+      LOGICAL, EXTERNAL::wrf_dm_on_monitor
+#endif
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
      &                                                        ,OMGALF   &
      &                                                        ,Q,T      &
@@ -1995,7 +2009,10 @@
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
 #endif
-
+#if (NMM_CORE==1)
+      INTEGER                    :: IDT                
+      REAL,   DIMENSION(2)       :: RND1 
+#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -2021,6 +2038,9 @@
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME)RETURN
+      
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
 !
@@ -2242,7 +2262,8 @@
 
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
-#ifdef HWRF
+#if (NMM_CORE==1)
+!#ifdef HWRF
 !
 !-----------------------------------------------------------------------
 !
@@ -2251,7 +2272,7 @@
 !     CUMULUS DRIVER. THIS IS gopal's doing
 !
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+      IF(CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME)THEN
 !
           IF(GRID%ID .EQ. 1)THEN   ! Both parent and nest set to 5 minutes for random number calls 
            IDT=MOD(NTSD,NCNVC)    
@@ -2296,6 +2317,7 @@
         ENDDO
         ENDDO
         ENDDO
+!#endif
 #endif
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
@@ -2333,6 +2355,10 @@
      &                 ,RTHBLTEN=RTHBLTEN,RQVBLTEN=RQVBLTEN             &
      &                 ,RTHRATEN=RTHRATEN                               &
 #ifdef HWRF
+     &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
+                       ,store_rand=store_rand                           &
+#endif
+#if (NMM_CORE==1)
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #endif

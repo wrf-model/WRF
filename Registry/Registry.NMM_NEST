@@ -1066,7 +1066,7 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   thompson07    mp_physics==98               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni
-package   etamp_hwrf    mp_physics==99               -             moist:qv,qc,qr,qi
+package   etamp_hwrf    mp_physics==99               -             moist:qv,qc,qr,qi,qs
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
@@ -1108,6 +1108,7 @@ package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             -
 package   kfscheme       cu_physics==99              -             -
+package   hwrfsasscheme  cu_physics==98              -             -
 
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -

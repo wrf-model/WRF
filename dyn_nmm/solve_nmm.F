@@ -1224,15 +1224,15 @@
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
         cltend_tim=cltend_tim+timef()-btimx
-      ENDIF
+     ENDIF
 !
 !----------------------------------------------------------------------
 !***  CONVECTIVE PRECIPITATION
 !----------------------------------------------------------------------
 !
       IF(MOD(NTSD,GRID%NCNVC)==0.AND.                                  &
-     &   CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME .or.                     &
-     &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN                       ! Kwon's doing for SAS
+     &   (CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME .or.                     &
+     &   CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME))THEN                       ! Kwon's doing for SAS
 !
         btimx=timef()
 !-----------------
@@ -1245,7 +1245,7 @@
 !       call mpi_allreduce(this_tim,et_max,1,mpi_real,mpi_max          &
 !    &                    ,mpi_comm_comp,irtn)
 !       exch_tim_max=exch_tim_max+et_max
-      ENDIF
+     ENDIF
 !
       convection: IF(CONFIG_FLAGS%CU_PHYSICS/=0)THEN
         btimx=timef()
@@ -1274,7 +1274,7 @@
      &                     ,IDS,IDF,JDS,JDF,KDS,KDE                    &
      &                     ,IMS,IME,JMS,JME,KMS,KME                    &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE)
-        ENDIF
+       ENDIF
 !
 !----------------------------------------------------------------------
         CALL CUCNVC(NTSD,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
@@ -1300,7 +1300,10 @@
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
 #ifdef HWRF
      &                 ,DUCUDT, DVCUDT, GRID%MOMMIX, store_rand             &
-#endif                       
+#endif     
+#if (NMM_CORE==1)                  
+     &                 ,DUCUDT, DVCUDT, GRID%MOMMIX, store_rand             &
+#endif
      &             ,AVCNVC,ACUTIM,IHE,IHW                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
@@ -1313,12 +1316,12 @@
 !
 
 
-
-#ifdef HWRF
+#if (NMM_CORE==1)
+!#ifdef HWRF
 !-------------------------------------------------------------------------------------
-!       This is gopal's doing for SAS
+!       This is gopal's doing for HWRFSAS
 
-        IF(CONFIG_FLAGS%CU_PHYSICS.EQ.SASSCHEME)THEN
+        IF(MOD(NTSD,GRID%NCNVC).eq.0.and.CONFIG_FLAGS%CU_PHYSICS.EQ.HWRFSASSCHEME)THEN
 !
         btimx=timef()
 !-----------------
@@ -1344,11 +1347,12 @@
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
         uv_htov_tim=uv_htov_tim+timef()-btimx
 
-        ENDIF ! for SAS only 
+     ENDIF ! for SAS only 
+!#endif
 #endif
 !--------------------------------------------------------------------------------
 !
-      ENDIF convection
+  ENDIF convection
 !
 !----------------------------------------------------------------------
 !***  GRIDSCALE MICROPHYSICS (CONDENSATION & PRECIPITATION)

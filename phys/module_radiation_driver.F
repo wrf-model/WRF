@@ -770,7 +770,7 @@ CONTAINS
                         QV=qv,QW=qc_temp,QI=Qi,                      &
                         TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
                         TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
-                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,ALBEDO=albedo,CUPPT=cuppt,            &
+                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,htopr=htopr,hbotr=hbotr,ALBEDO=albedo,CUPPT=cuppt,&
                         VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
                         NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
                         julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &
@@ -1148,7 +1148,7 @@ CONTAINS
                         QV=qv,QW=qc_temp,QI=Qi,                      &
                         TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
                         TOTSWDN=swdown,TOTLWDN=glw,RSWTOA=rswtoa,RLWTOA=rlwtoa,CZMEAN=czmean,        & !Added
-                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,ALBEDO=albedo,CUPPT=cuppt,            &
+                        GLAT=glat,GLON=glon,HTOP=htop,HBOT=hbot,htopr=htopr,hbotr=hbotr,ALBEDO=albedo,CUPPT=cuppt,            &
                         VEGFRA=vegfra,SNOW=snow,G=g,GMT=gmt,                           & !Modified
                         NSTEPRA=stepra,NPHS=nphs,itimestep=itimestep,                       & !Modified
                         julyr=julyr,julday=julday,gfdl_lw=gfdl_lw,gfdl_sw=gfdl_sw,                &

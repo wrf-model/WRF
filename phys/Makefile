@@ -21,6 +21,7 @@ MODULES = \
 	module_cu_kfeta.o \
 	module_cu_gd.o \
 	module_cu_sas.o \
+        module_cu_HWRF.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
 	module_mp_wsm3.o \
@@ -148,6 +149,9 @@ module_cu_sas.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
 		 module_gfs_physcons.o
 
+module_cu_HWRF.o: module_gfs_machine.o \
+		 module_gfs_funcphys.o \
+		 module_gfs_physcons.o
 module_ra_gfdleta.o:  ../frame/module_dm.o
 
 module_ra_HWRF:   ../frame/module_dm.o
@@ -225,6 +229,7 @@ module_physics_init.o : \
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
 		module_cu_sas.o			\
+                module_cu_HWRF.o                \
 		module_mp_wsm3.o		\
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
@@ -270,6 +275,7 @@ module_cumulus_driver.o: \
 		module_cu_bmj.o \
 		module_cu_gd.o \
 		module_cu_sas.o \
+                module_cu_HWRF.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o

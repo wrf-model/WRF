@@ -110,7 +110,7 @@ CONTAINS
      &                ,QV,QW,QI                                         & 
      &                ,TSK2D,GLW,GSW                                    &
      &                ,TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN             & 
-     &                ,GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT                 &
+     &                ,GLAT,GLON,HTOP,HBOT,htopr,hbotr,ALBEDO,CUPPT                 &
      &                ,VEGFRA,SNOW,G,GMT                                &
      &                ,NSTEPRA,NPHS,ITIMESTEP                           &
      &                ,JULYR,JULDAY,GFDL_LW,GFDL_SW                     &
@@ -142,7 +142,7 @@ CONTAINS
      &                                                TSK2D,VEGFRA,     &
      &                                                XLAND
       REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: GLAT,GLON
-      REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,CUPPT
+      REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,htopr,hbotr,CUPPT
       REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: RSWTOA,        & !Added
      &                                                   RLWTOA,        & !Added
      &                                                   ACFRST,        & !Added
@@ -212,6 +212,13 @@ CONTAINS
         ENDDO
       ENDDO
 !
+      DO J=JTS,JTE
+      DO I=ITS,ITE
+        HBOTR(I,J)=HBOT(I,J)
+        HTOPR(I,J)=HTOP(I,J)        
+      ENDDO
+      ENDDO
+
       DO J=JTS,JTE
       DO I=ITS,ITE
         HBOT(I,J)=KTE+1-HBOT(I,J)

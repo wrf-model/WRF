@@ -44,16 +44,27 @@ CONTAINS
 #ifdef HWRF
                      ,rucuten,rvcuten,mommix,store_rand               &
 #endif
+#if (NMM_CORE==1)
+                     ,rucuten,rvcuten,mommix,store_rand               &
+#endif
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
+#if (NMM_CORE==1)
+   USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
+                                          ,KFETASCHEME,GDSCHEME       &
+                                          ,G3SCHEME                   &
+                                          ,SASSCHEME,HWRFSASSCHEME    &
+                                          ,P_QC,P_QI,Param_FIRST_SCALAR
+#else
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
                                           ,G3SCHEME                   &
                                           ,SASSCHEME
+#endif
 
 ! *** add new modules of schemes here
 
@@ -65,7 +76,9 @@ CONTAINS
    USE module_cu_gd, ONLY : GRELLDRV
    USE module_cu_g3, ONLY : G3DRV,CONV_GRELL_SPREAD3D
    USE module_cu_sas
-
+#if (NMM_CORE==1)
+   USE module_cu_HWRF
+#endif
    !  This driver calls subroutines for the cumulus parameterizations.
    !
    !  1. Kain & Fritsch (1993)
@@ -314,7 +327,13 @@ CONTAINS
                     INTENT(IN) ::  STORE_RAND 
 
 #endif
-
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
+         OPTIONAL, INTENT(INOUT) :: rucuten,rvcuten                          
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+                    INTENT(IN) ::  STORE_RAND 
+   REAL, INTENT(INOUT) :: mommix
+#endif
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     OPTIONAL,                                    &
@@ -331,6 +350,7 @@ CONTAINS
 #ifdef HWRF
    REAL, INTENT(INOUT) :: mommix
 #endif
+
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -545,7 +565,25 @@ CONTAINS
                ,RQVBLTEN=RQVBLTEN                               &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
-                                                                )
+                                                                )                
+#if (NMM_CORE==1)                                               
+     CASE (HWRFSASSCHEME)
+
+         CALL wrf_debug(100,'in cu_hwrf')
+
+            CALL CU_HWRF(DT,itimestep,STEPCU,                          &
+                 RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,                 &
+                 RUCUTEN,RVCUTEN,                                     & ! gopal's doing for SAS           
+                 RAINCV,HTOP,HBOT,u,v,w,t,                &
+                 qv_curr,qc_curr,     &
+                 qi_curr,pi,rho,              &
+                 dz8w,p,p8w,XLAND,CU_ACT_FLAG,STORE_RAND,MOMMIX,  & ! gopal's doing                   
+                 P_QC,P_QI,PARAM_FIRST_SCALAR,                        &
+                 ids,ide, jds,jde, kds,kde,                           &
+                 ims,ime, jms,jme, kms,kme,                           &
+                 its,ite, jts,jte, kts,kte                            )
+#endif
+
      CASE (SASSCHEME)
                                                                                                                                            
           IF ( adapt_step_flag_pass ) THEN

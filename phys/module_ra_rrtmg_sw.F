@@ -10201,6 +10201,19 @@ CONTAINS
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
+      else
+         if (present(swupt)) then 
+! Output up and down toa fluxes for total and clear sky
+            swupt(i,j)     = 0.
+            swuptc(i,j)    = 0.
+            swdnt(i,j)     = 0.
+            swdntc(i,j)    = 0.
+! Output up and down surface fluxes for total and clear sky
+            swupb(i,j)     = 0.
+            swupbc(i,j)    = 0.
+            swdnb(i,j)     = 0.
+            swdnbc(i,j)    = 0.
+         endif
 
       endif
 !

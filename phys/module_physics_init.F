@@ -331,6 +331,7 @@ CONTAINS
    CHARACTER*256 :: MMINLU_loc
    CHARACTER*80 :: message
    INTEGER :: ISWATER
+   INTEGER :: ISURBAN
    INTEGER :: sf_urban_physics
    INTEGER :: omlcall
    REAL    :: oml_hml0
@@ -378,6 +379,7 @@ integer myproc
    CALL nl_get_cen_lat(id,cen_lat)
    CALL wrf_debug(100,'calling nl_get_iswater, nl_get_mminlu_loc')
    CALL nl_get_iswater(id,iswater)
+   CALL nl_get_isurban(id,isurban)
    CALL nl_get_mminlu( 1, mminlu_loc )
    CALL wrf_debug(100,'after nl_get_iswater, nl_get_mminlu_loc')
 
@@ -512,7 +514,7 @@ integer myproc
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
-                IVGTYP,ISLTYP,SMOIS,SMFR3D,MAVAIL,              &
+                IVGTYP,ISLTYP,ISURBAN,SMOIS,SMFR3D,MAVAIL,      &
                 SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if (NMM_CORE == 1)
                 Z0,XLAND,XICE,                                  &
@@ -711,8 +713,12 @@ integer myproc
       ELSE IF(MMINLU.EQ.'LW12')THEN
 !       ISWATER=15
         ISICE=3
+      ELSE IF (MMINLU .EQ. 'MODIFIED_IGBP_MODIS_NOAH') THEN
+        ISICE = 15
+      ELSE
+         call wrf_error_fatal ("INPUT LandUse not found: "//TRIM(MMINLU))
       ENDIF
-      call wrf_message ( 'INPUT LandUse = "' // MMINLU // '"' )
+      call wrf_message ( 'INPUT LandUse = "' // TRIM(MMINLU) // '"' )
       FOUND_LU = .FALSE.
       end_of_file = .FALSE.
 !!! BEGINNING OF 1999 LOOP
@@ -846,7 +852,6 @@ integer myproc
       ENDDO
     ENDDO
 
-    RETURN
 
    END SUBROUTINE landuse_init
 
@@ -1095,7 +1100,7 @@ integer myproc
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
-                IVGTYP,ISLTYP,SMOIS,SMFR3D,mavail,              &
+                IVGTYP,ISLTYP,ISURBAN,SMOIS,SMFR3D,mavail,      &
                 SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if  ( NMM_CORE == 1 )
                 Z0,XLAND,XICE,                                  &
@@ -1229,6 +1234,7 @@ integer myproc
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
    CHARACTER(LEN=*), INTENT(IN)   :: MMINLU
    LOGICAL,  INTENT(IN)           :: allowed_to_read
+   INTEGER,  INTENT(IN)           :: ISURBAN
    INTEGER :: isn, isfc
    INTEGER :: k
 
@@ -1471,15 +1477,13 @@ integer myproc
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
 
-                call wrf_message("Before call to urban_param_init")
 
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
                                 )
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
 
-                call wrf_message("After call to urban_param_init, before urban_var_init")
 
-                CALL urban_var_init(TSK,TSLB,TMN,IVGTYP,                             & !urban
+                CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
 !                              num_roof_layers,num_wall_layers,num_road_layers, & !urban
                               restart,                                         & !urban
@@ -1495,7 +1499,6 @@ integer myproc
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
                               DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
                               FRC_URB2D, UTYPE_URB2D)                            !urban
-                call wrf_message("After call to urban_var_init")
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
@@ -1633,6 +1636,7 @@ integer myproc
       CASE DEFAULT
 
    END SELECT pbl_select
+
 
    END SUBROUTINE bl_init
 

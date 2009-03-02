@@ -501,8 +501,8 @@ CONTAINS
    REAL, DIMENSION(ims:ime,jms:jme) :: RL_UP_URB
    REAL, DIMENSION(ims:ime,jms:jme) ::RS_ABS_URB
    REAL, DIMENSION(ims:ime,jms:jme) ::GRDFLX_URB
-   REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM,hfx_test
-   REAL :: hfx_test1,hfx_test2,r1,r2,r3
+   REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
+   REAL :: r1,r2,r3
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
@@ -511,6 +511,7 @@ CONTAINS
   REAL :: APELM,APES,SFCTH2,PSFC
 
   real, intent(in) :: xice_threshold
+  character(len=80) :: message_text
 
 !  PRINT *,'THIS IS UNIFIED NOAH LSM'
 
@@ -698,14 +699,7 @@ CONTAINS
 #endif
             SOILTYP=7
           ENDIF
-        IF (ICE /= 0) THEN
-           ! kmh 06/28/2006 set SNOALB1 = 0.8 instead of 0.7
-           ! winter value        SNOALB1=0.80
-           SNOALB1=0.70        ! summer value
-           ! SNOALB1=0.80        ! winter value
-        ELSE
-           SNOALB1 = SNOALB(I,J)
-        ENDIF
+          SNOALB1 = SNOALB(I,J)
           CMC=CANWAT(I,J)
 
 !-------------------------------------------
@@ -716,15 +710,9 @@ CONTAINS
 !         ELSE
 !           SNOALB=MAXALB(IVGTPK)*0.01
 !         ENDIF
-!         IF(RDBRDALB) THEN
-!           ALBBRD=ALBEDO(I,J)*0.01
-!         ELSE
-!           ALBBRD=ALBD(IVGTPK,ISN)*0.01
-!         ENDIF
 
 !        SNOALB1=0.80
 !        SHMIN=0.00
-        ALBBRD=ALBBCK(I,J)
         Z0BRD=Z0(I,J)
         EMBRD=EMBCK(I,J)
         SNOTIME1 = SNOTIME(I,J)
@@ -751,7 +739,6 @@ CONTAINS
 		 VEGTYP = NATURAL
                  SHDFAC = SHDTBL(NATURAL)
                  ALBEDOK =0.2         !  0.2
-                 ALBBRD  =0.2         !0.2
                  EMISSI = 0.98                                 !for VEGTYP=5
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
@@ -783,7 +770,7 @@ CONTAINS
         'SFCPRS',SFCPRS, 'PRCP',PRCP,'SFCTMP',SFCTMP,'Q2K',Q2K,   &
          'TH2',TH2,'Q2SAT',Q2SAT,'DQSDT2',DQSDT2,'VEGTYP', VEGTYP,&
          'SOILTYP',SOILTYP, 'SLOPETYP',SLOPETYP, 'SHDFAC',SHDFAC,&
-         'SHMIN',SHMIN, 'ALBBRD',ALBBRD,'SNOALB1',SNOALB1,'TBOT',&
+         'SHMIN',SHMIN, 'SNOALB1',SNOALB1,'TBOT',                 &
           TBOT, 'Z0BRD',Z0BRD, 'Z0K',Z0K, 'CMC',CMC, 'T1',T1,'STC',&
           STC, 'SMC',SMC, 'SWC',SWC,'SNOWHK',SNOWHK,'SNEQV',SNEQV,&
           'ALBEDOK',ALBEDOK,'CHK',CHK,'ETA',ETA,'SHEAT',SHEAT,      &
@@ -983,7 +970,6 @@ CONTAINS
             CHS2_URB = CHS2(I,J)
 !
 ! Call urban
-
 
             CALL urban(LSOLAR_URB,                                      & ! I
                        num_roof_layers,num_wall_layers,num_road_layers, & ! C

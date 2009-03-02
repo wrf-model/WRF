@@ -82,7 +82,7 @@ MODULE module_sf_urban
 !            |- read_param
 !            |- mos or jurges
 !            |- multi_layer or force_restore
-!       |- urban_param_init <-- urban_param.tbl
+!       |- urban_param_init <-- URBPARM.TBL
 !       |- urban_var_init
 !
 ! Input Data from WRF [MKS unit]:
@@ -150,7 +150,7 @@ MODULE module_sf_urban
 ! Important parameters:
 !
 ! Morphology of the urban canyon:
-! These parameters assigned in the urban_param.tbl
+! These parameters assigned in the URBPARM.TBL
 !
 !    ZR  [m]             : roof level (building height)
 !    ROOF_WIDTH [m]      : roof (i.e., building) width
@@ -167,7 +167,7 @@ MODULE module_sf_urban
 !    Z0HC [m]            : Roughness length above canyon for heat (1/10 of Z0C)
 !    ZDC [m]             : Zero plane displacement height (1/5 of ZR)
 !
-! Following parameter are assigned in run/urban_param.tbl
+! Following parameter are assigned in run/URBPARM.TBL
 !
 !  AH  [ W m{-2} ]        : anthropogenic heat  ( W m{-2} in the table, converted internally to cal cm{-2} )
 !  CAPR[ J m{-3} K{-1} ]  : heat capacity of roof ( units converted in code to [ cal cm{-3} deg{-1} ] )
@@ -215,7 +215,7 @@ MODULE module_sf_urban
 !  height_bin [ m ]         : Building height bins defined for a particular urban category.
 !  hpercent_bin [ % ]       : Percentage of a particular urban category populated by buildings of particular height bins
 !end BEP
-! Moved from urban_param.tbl
+! Moved from URBPARM.TBL
 !
 !  BETR [-]            : minimum moisture availability of roof
 !  BETB [-]            : minimum moisture availability of building wall
@@ -933,6 +933,7 @@ MODULE module_sf_urban
 
    END IF
 
+
    FLXTHB=HB/RHO/CP/100.
    FLXHUMB=ELEB/RHO/EL/100.
    FLXTHG=HG/RHO/CP/100.
@@ -1057,8 +1058,6 @@ MODULE module_sf_urban
    Q2 = QS + (QA-QS)*(PSIT2/PSIT)    ! humidity at 2 m       [-]
 
 !   TS = (LW/SIG_SI/0.88)**0.25       ! Radiative temperature [K]
-
-   RETURN
 
    END SUBROUTINE urban
 !===============================================================================
@@ -1399,11 +1398,10 @@ MODULE module_sf_urban
    HPERCENT_BIN    (1:NUMHGT) = HPERCENT_BIN_TBL ( 1:NUMHGT , UTYPE )
 
 !end BEP
-   RETURN
    END SUBROUTINE read_param
 !===============================================================================
 !
-! subroutine urban_param_init: Read parameters from urban_param.tbl
+! subroutine urban_param_init: Read parameters from URBPARM.TBL
 !
 !===============================================================================
    SUBROUTINE urban_param_init(DZR,DZB,DZG,num_soil_layers &
@@ -1454,21 +1452,19 @@ MODULE module_sf_urban
    num_wall_layers = num_soil_layers
    num_road_layers = num_soil_layers
 
-   call wrf_message("Before open table.")
 
    ICATE=0
 
    OPEN (UNIT=11,                &
-         FILE='urban_param.tbl', &
+         FILE='URBPARM.TBL', &
          ACCESS='SEQUENTIAL',    &
          STATUS='OLD',           &
          ACTION='READ',          &
          POSITION='REWIND',      &
          IOSTAT=IOSTATUS)
 
-   IF (IOSTATUS > 0) STOP 'ERROR OPEN urban_param.tbl'
+   IF (IOSTATUS > 0) STOP 'ERROR OPEN URBPARM.TBL'
 
-   call wrf_message("Before table readloop.")
    READLOOP : do 
       read(11,'(A512)', iostat=iostatus) string
       if (iostatus /= 0) exit READLOOP
@@ -1478,7 +1474,7 @@ MODULE module_sf_urban
       if (indx <= 0) cycle READLOOP
       name = trim(adjustl(string(1:indx-1)))
       
-      ! Here are the variables we expect to be defined in the urban_param.tbl:
+      ! Here are the variables we expect to be defined in the URBPARM.TBL:
       if (name == "Number of urban categories") then
          read(string(indx+1:),*) icate
          IF (.not. ALLOCATED(ZR_TBL)) then
@@ -1581,6 +1577,7 @@ MODULE module_sf_urban
 
       else if (name == "ZR") then
          read(string(indx+1:),*) zr_tbl(1:icate)
+!         print*, 'zr_tbl = ', zr_tbl(1:icate)
       else if (name == "ROOF_WIDTH") then
          ALLOCATE( ROOF_WIDTH(ICATE), stat=allocate_status )
          if(allocate_status /= 0) stop 'Error allocating ROOF_WIDTH in urban_param_init'
@@ -1715,7 +1712,7 @@ MODULE module_sf_urban
 
    CLOSE(11)
 
-   ! Assign a few table values that do not need to come from urban_param.tbl
+   ! Assign a few table values that do not need to come from URBPARM.TBL
 
    Z0HR_TBL = 0.1 * Z0R_TBL
    Z0HB_TBL = 0.1 * Z0B_TBL
@@ -1782,7 +1779,6 @@ MODULE module_sf_urban
 
    deallocate(roof_width)
    deallocate(road_width)
-   call wrf_message("At end of urban_param_init")
 
    END SUBROUTINE urban_param_init
 !===========================================================================
@@ -1790,7 +1786,7 @@ MODULE module_sf_urban
 ! subroutine urban_var_init: initialization of urban state variables
 !
 !===========================================================================
-   SUBROUTINE urban_var_init(TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,     & ! in
+   SUBROUTINE urban_var_init(ISURBAN, TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,  & ! in
                              ims,ime,jms,jme,kms,kme,num_soil_layers,         & ! in
 !                             num_roof_layers,num_wall_layers,num_road_layers, & ! in
                              restart,                                      & !in
@@ -1809,6 +1805,7 @@ MODULE module_sf_urban
                              FRC_URB2D, UTYPE_URB2D)                         ! inout
    IMPLICIT NONE
 
+   INTEGER, INTENT(IN) :: ISURBAN
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
    INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
 !   INTEGER, INTENT(IN) :: num_roof_layers, num_wall_layers, num_road_layers
@@ -1889,7 +1886,7 @@ MODULE module_sf_urban
       FRC_URB2D(I,J)=0.
       UTYPE_URB2D(I,J)=0.
 
-            IF( IVGTYP(I,J) == 1)  THEN
+            IF( IVGTYP(I,J) == ISURBAN)  THEN
                UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
                UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-intensity
                FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)

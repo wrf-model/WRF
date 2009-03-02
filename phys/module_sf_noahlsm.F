@@ -1813,8 +1813,8 @@ CONTAINS
           ZMD = 0.5 * (ZSOIL(K)+ZSOIL(K-1))
           ! For the land-ice case
 ! kmh 09/03/2006 use Yen (1981)'s values for Antarctic snow firn
-!         IF ( K .eq. 2 ) HCPCT = 0.855108E5
-!         IF ( K .eq. 3 ) HCPCT = 0.922906E5
+!         IF ( K .eq. 2 ) HCPCT = 0.855108E6
+!         IF ( K .eq. 3 ) HCPCT = 0.922906E6
 !         IF ( K .eq. 4 ) HCPCT = 1.009986E6
 
           ! Least squares fit to the four points supplied by Keith Hines

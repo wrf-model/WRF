@@ -65,13 +65,11 @@ wrf : framework_only
 	  ( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
 
-# The "da" target is a subset of the "be" target, so all_wrfvar need only build "be"
-all_wrfvar : be
-
-be : 
+all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
-	( cd var/da; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
+	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
+	( cd var/obsproc; $(MAKE) FC="$(SFC)" )
 
 ### 3.a.  rules to build the framework and then the experimental core
 

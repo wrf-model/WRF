@@ -1,3 +1,11 @@
+Updated Makefile to support more compilers.  Mar 5 2009
+
+1, to compile, add compiler choice in the make command line, for example,
+   make FC="pgf90"
+   make FC="ifort"     # for Linux only
+   make FC="gfortran"  # for Linux only
+   make FC="g95"       # for Mac only
+
 Updated by Y.-R. Guo, 7 May 2008
 
 1, To correct the "0 obs" ascii output file writing

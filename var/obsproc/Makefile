@@ -18,11 +18,6 @@ default:	make_rules
 		( $(CD) src ; $(MAKE) 3dvar_obs.exe )
 		( $(RM) 3dvar_obs.exe ;   $(LN) src/3dvar_obs.exe . )
 
-mac_g95	:	Mac_g95
-		( $(CD) lib ; $(MAKE) all )
-		( $(CD) src ; $(MAKE) 3dvar_obs.exe )
-		( $(RM) 3dvar_obs.exe ;   $(LN) src/3dvar_obs.exe . )
-
 all:		make_rules
 		find . -name \*.f -exec rm {} \;
 		( $(CD) src ; $(MAKE) all )
@@ -33,39 +28,17 @@ tar:
 		( $(CD) src ; $(MAKE) tar )
 
 clean:
-	-@if [ -d MAP_plot ]; then $(CD) MAP_plot ; $(MAKE) clean ; fi
-	$(RM) core
+#	-@if [ -d MAP_plot ]; then $(CD) MAP_plot ; $(MAKE) clean ; fi
+	$(RM) core .tmpfile compiler_macros
 	$(RM) *.exe
 	$(RM) *.out
 	$(RM) fort.*
 	$(RM) obs_gts.ascii.* *.diag
 	$(RM) HEIGHT.txt PRES.txt TEMP.txt RH.txt WIND.txt
 	$(RM) obs_ssmi*.3dvar obs_gts*.3dvar
-	($(CD) src ; $(MAKE) clean "RM = $(RM)" )
-	($(CD) lib/ncep ; $(MAKE) clean "RM = $(RM)" )
-	($(CD) lib/cwordsh ; $(MAKE) clean "RM = $(RM)" )
-
-Mac_g95	:
-	echo "CPP		=	/usr/bin/cpp"			>  compiler_macros	; \
-	echo "CPPFLAGS		=	-I. -C -P -xassembler-with-cpp -DMac"	>> compiler_macros	; \
-	echo "FC		=	g95"				>> compiler_macros	; \
-	echo "FCFLAGS		=	-ftrace=full -ffree-form -fno-underscoring -fno-second-underscore -O0 "	>> compiler_macros	; \
-	echo "FFLAGS		=	-ftrace=full -fno-underscoring -fno-second-underscore -O0  \
-                                                "	>> compiler_macros	; \
-	echo "LDFLAGS		=	" 		>> compiler_macros	; \
-	echo "CCFLAGS		=	-DMac -I."			>> compiler_macros	; \
-	echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a -lSystemStubs"		>> compiler_macros	; \
-	echo "RANLIB		=	ranlib"				>> compiler_macros	; \
-	echo "SYSLIB		=	-lSystemStubs"				>> compiler_macros
-
-	echo "AR		=	$(AR)"		>> compiler_macros
-	echo "RM		=	$(RM)"		>> compiler_macros
-	echo "RM_LIST		=	$(RM_LIST)"	>> compiler_macros
-	echo "CD		=	$(CD)"		>> compiler_macros
-	echo "LN		=	$(LN)"		>> compiler_macros
-	echo "MAKE		=	$(MAKE)"	>> compiler_macros
-	echo "SHELL		=	/bin/sh"	>> compiler_macros
-	echo "TOUCH		=	touch"		>> compiler_macros
+	($(CD) src ; $(RM) *.o *.f core *.kmo ctmi* *.mod *.lst *_out_* output *.out 3dvar_obs.exe )
+	($(CD) lib/ncep ; $(RM) *.o *.a *.lst *.prm )
+	($(CD) lib/cwordsh ; $(RM) *.o *.exe *.lst )
 
 make_rules:
 	uname -a > .tmpfile
@@ -131,17 +104,44 @@ make_rules:
 		echo "SYSLIB		=	"				>> compiler_macros	; \
 	else grep Darwin .tmpfile									; \
 	if [ $$? = 0 ] ; then echo "Compiling for Mac"						; \
-		echo "CPP		=	/usr/bin/cpp"			>  compiler_macros	; \
-		echo "CPPFLAGS		=	-I. -C -P -xassembler-with-cpp -DMac"	>> compiler_macros	; \
-		echo "FC		=	xlf90_r"				>> compiler_macros	; \
-		echo "FCFLAGS		=	-w -qfree=90 -qspill=20000 -O0 -qarch=auto -qsource -qmaxmem=32767"	>> compiler_macros	; \
-		echo "FFLAGS		=	-w -qfixed=72 -qspill=20000 -O0 -qarch=auto -qmaxmem=32767 -qstrict \
-                                                -qnosave -qintsize=4 -qrealsize=4 -qxlf77=leadzero"	>> compiler_macros	; \
-		echo "LDFLAGS		=	-O0 -Wl,-stack_size,10000000,-stack_addr,0xc0000000" 		>> compiler_macros	; \
-		echo "CCFLAGS		=	-DMac -I."			>> compiler_macros	; \
-		echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a -lSystemStubs"		>> compiler_macros	; \
-		echo "RANLIB		=	ranlib"				>> compiler_macros	; \
-		echo "SYSLIB		=	-lSystemStubs"				>> compiler_macros	; \
+		if [ $$FC = "xlf90_r" ] ; then echo "Compiling with xlf90_r"			; \
+			echo "CPP		=	/usr/bin/cpp"			>  compiler_macros	; \
+			echo "CPPFLAGS		=	-I. -C -P -xassembler-with-cpp -DMac"	>> compiler_macros	; \
+			echo "FC		=	xlf90_r"				>> compiler_macros	; \
+			echo "FCFLAGS		=	-w -qfree=90 -qspill=20000 -O0 -qarch=auto -qsource -qmaxmem=32767"	>> compiler_macros	; \
+			echo "FFLAGS		=	-w -qfixed=72 -qspill=20000 -O0 -qarch=auto -qmaxmem=32767 -qstrict \
+				-qnosave -qintsize=4 -qrealsize=4 -qxlf77=leadzero"	>> compiler_macros	; \
+			echo "LDFLAGS		=	-O0 -Wl,-stack_size,10000000,-stack_addr,0xc0000000" 		>> compiler_macros	; \
+			echo "CCFLAGS		=	-DMac -I."			>> compiler_macros	; \
+			echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a -lSystemStubs"		>> compiler_macros	; \
+			echo "RANLIB		=	ranlib"				>> compiler_macros	; \
+			echo "SYSLIB		=	-lSystemStubs"				>> compiler_macros	; \
+		fi ;														\
+		if [ $$FC = "g95" ] ; then echo "Compiling with g95"				; \
+			echo "CPP		=	/usr/bin/cpp"			>  compiler_macros	; \
+			echo "CPPFLAGS		=	-I. -C -P -xassembler-with-cpp -DMac"	>> compiler_macros	; \
+			echo "FC		=	g95"				>> compiler_macros	; \
+			echo "FCFLAGS		=	-ftrace=full -ffree-form -fno-underscoring -fno-second-underscore -O0 "	>> compiler_macros	; \
+			echo "FFLAGS		=	-ftrace=full -fno-underscoring -fno-second-underscore -O0 "	>> compiler_macros	; \
+			echo "LDFLAGS		=	" 		>> compiler_macros	; \
+			echo "CCFLAGS		=	-DMac -I."			>> compiler_macros	; \
+			echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a -lSystemStubs"		>> compiler_macros	; \
+			echo "RANLIB		=	ranlib"				>> compiler_macros	; \
+			echo "SYSLIB		=	-lSystemStubs"				>> compiler_macros ; \
+		fi ;														\
+		if [ $$FC = "pgf90" ] ; then echo "Compiling with pgf90"			; \
+			echo "CPP			=	cpp"			>  compiler_macros	; \
+			echo "CPPFLAGS		=	-I. -C -P -DLINUX -DUNDERSCORE -traditional -Dlinux "	>> compiler_macros	; \
+			echo "FC			=	pgf90"				>> compiler_macros	; \
+			echo "FCFLAGS		=	-Mfreeform -byteswapio "		>> compiler_macros	; \
+			echo "FFLAGS		=	"			>> compiler_macros	; \
+			echo "CWFLAGS		=	"		>> compiler_macros	; \
+			echo "LDFLAGS		=	" 				>> compiler_macros	; \
+			echo "CCFLAGS		=	-DLINUX -DUNDERSCORE -I."	>> compiler_macros	; \
+			echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a"		>> compiler_macros	; \
+			echo "RANLIB		=	echo"				>> compiler_macros	; \
+			echo "SYSLIB		=	"				>> compiler_macros	; \
+		fi ;												\
 	else grep IRIX .tmpfile									; \
 	if [ $$? = 0 ] ; then echo "Compiling for SGI"						; \
 		echo "CPP		=	/lib/cpp"			>  compiler_macros	; \
@@ -167,17 +167,45 @@ make_rules:
 		echo "SYSLIB		=	"				>> compiler_macros	; \
 	else grep Linux .tmpfile								; \
 	if [ $$? = 0 ] ; then echo "Compiling for Linux"					; \
-		echo "CPP		=	/lib/cpp"			>  compiler_macros	; \
-		echo "CPPFLAGS		=	-I. -C -P -DLINUX -DUNDERSCORE -traditional -Dlinux "	>> compiler_macros	; \
-		echo "FC		=	pgf90"				>> compiler_macros	; \
-		echo "FCFLAGS		=	-Mfreeform -pc 32 "		>> compiler_macros	; \
-		echo "FFLAGS		=	"		>> compiler_macros	; \
-		echo "CWFLAGS		=	"		>> compiler_macros	; \
-		echo "LDFLAGS		=	" 				>> compiler_macros	; \
-		echo "CCFLAGS		=	-DLINUX -DUNDERSCORE -I."	>> compiler_macros	; \
-		echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a"		>> compiler_macros	; \
-		echo "RANLIB		=	echo"				>> compiler_macros	; \
-		echo "SYSLIB		=	"				>> compiler_macros	; \
+		if [ $$FC = "pgf90" ] ; then echo "Compiling with pgf90"			; \
+			echo "CPP		=	/lib/cpp"			>  compiler_macros	; \
+			echo "CPPFLAGS		=	-I. -C -P -DLINUX -DUNDERSCORE -traditional -Dlinux "	>> compiler_macros	; \
+			echo "FC		=	pgf90"				>> compiler_macros	; \
+			echo "FCFLAGS		=	-Mfree -byteswapio "		>> compiler_macros	; \
+			echo "FFLAGS		=	"		>> compiler_macros	; \
+			echo "CWFLAGS		=	"		>> compiler_macros	; \
+			echo "LDFLAGS		=	" 				>> compiler_macros	; \
+			echo "CCFLAGS		=	-DLINUX -DUNDERSCORE -I."	>> compiler_macros	; \
+			echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a"		>> compiler_macros	; \
+			echo "RANLIB		=	echo"				>> compiler_macros	; \
+			echo "SYSLIB		=	"				>> compiler_macros	; \
+		fi ;												\
+		if [ $$FC = "gfortran" ] ; then echo "Compiling with gfortran"			; \
+			echo "CPP		=	/lib/cpp"			>  compiler_macros	; \
+			echo "CPPFLAGS		=	-I. -C -P -DLINUX -DUNDERSCORE -traditional -Dlinux "	>> compiler_macros	; \
+			echo "FC		=	gfortran"				>> compiler_macros	; \
+			echo "FCFLAGS		=	-ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4"		>> compiler_macros	; \
+			echo "FFLAGS		=	"		>> compiler_macros	; \
+			echo "CWFLAGS		=	"		>> compiler_macros	; \
+			echo "LDFLAGS		=	" 				>> compiler_macros	; \
+			echo "CCFLAGS		=	-DLINUX -DUNDERSCORE -I."	>> compiler_macros	; \
+			echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a"		>> compiler_macros	; \
+			echo "RANLIB		=	echo"				>> compiler_macros	; \
+			echo "SYSLIB		=	"				>> compiler_macros	; \
+		fi ;												\
+		if [ $$FC = "ifort" ] ; then echo "Compiling with ifort"			; \
+			echo "CPP		=	/lib/cpp"			>  compiler_macros	; \
+			echo "CPPFLAGS		=	-I. -C -P -DLINUX -DUNDERSCORE -traditional -Dlinux "	>> compiler_macros	; \
+			echo "FC		=	ifort"				>> compiler_macros	; \
+			echo "FCFLAGS		=	-w -ftz -FR -convert big_endian"		>> compiler_macros	; \
+			echo "FFLAGS		=	"		>> compiler_macros	; \
+			echo "CWFLAGS		=	"		>> compiler_macros	; \
+			echo "LDFLAGS		=	" 				>> compiler_macros	; \
+			echo "CCFLAGS		=	-DLINUX -DUNDERSCORE -I."	>> compiler_macros	; \
+			echo "LOCAL_LIBRARIES	=	../lib/ncep/lib_bufr.a"		>> compiler_macros	; \
+			echo "RANLIB		=	echo"				>> compiler_macros	; \
+			echo "SYSLIB		=	"				>> compiler_macros	; \
+		fi ;												\
 	else grep SX-5 .tmpfile									; \
 	if [ $$? = 0 ] ; then echo "Compiling for NEC SX5"					; \
                 cat SX-5.Makefile                                                >  src/Makefile        ; \

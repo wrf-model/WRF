@@ -232,5 +232,5 @@ $(OBJS): bufrlib.prm
 	$(FC) -c $(FFLAGS) $*.f
 
 $(COBJS): bufrlib.h
-	$(CC) -c $(CCFLAGS) $*.c
+	cc -c $(CCFLAGS) $*.c
 

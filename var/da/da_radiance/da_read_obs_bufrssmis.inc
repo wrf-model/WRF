@@ -254,14 +254,6 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
          num_ssmis_used = num_ssmis_used + 1
          nread(inst) = nread(inst) + 1
 
-         if (num_ssmis_used > max_ssmis_input) then
-            write(unit=message(1),fmt='(A,I10,A)') &
-               "Max number of ssmis",max_ssmis_input," reached"
-            call da_warning(__FILE__,__LINE__,message(1:1))
-            num_ssmis_used = num_ssmis_used - 1
-            exit read_loop
-         end if
-
          ! 3.4 extract satellite and solar angle
    
          ! 3.5 extract surface information

@@ -263,7 +263,7 @@ subroutine da_scan_obs_bufr (iv, filename)
          case (11, 12, 13, 22, 23, 31)
             select case (kx)
             case (120, 122, 132, 220, 222, 232) ;         ! Sound
-               if (.not.use_soundobs .or. iv%info(sound)%ntotal == max_sound_input) cycle reports
+               if (.not.use_soundobs) cycle reports
                if (n==1) iv%info(sound)%ntotal     = iv%info(sound)%ntotal + 1
                if (n==1) iv%info(sonde_sfc)%ntotal = iv%info(sonde_sfc)%ntotal + 1
                if (outside) cycle reports
@@ -278,7 +278,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                end if
                fm = 35
             case (221) ;                   ! Pilot
-               if (.not.use_pilotobs .or. iv%info(pilot)%ntotal == max_pilot_input) cycle reports
+               if (.not.use_pilotobs) cycle reports
                if (n==1) iv%info(pilot)%ntotal = iv%info(pilot)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -295,7 +295,7 @@ subroutine da_scan_obs_bufr (iv, filename)
 
          case (41)
             ! case (130:131, 133, 230:231, 233) ; ! Airep
-               if (.not.use_airepobs .or. iv%info(airep)%ntotal == max_airep_input) cycle reports
+               if (.not.use_airepobs) cycle reports
                if (n==1) iv%info(airep)%ntotal = iv%info(airep)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -308,7 +308,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                fm = 42
 
          case (522, 523);        ! Ships
-               if (.not.use_shipsobs .or. iv%info(ships)%ntotal == max_ships_input) cycle reports
+               if (.not.use_shipsobs) cycle reports
                if (n==1) iv%info(ships)%ntotal = iv%info(ships)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -321,7 +321,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                fm = 13
 
          case (531, 532, 561, 562) ;          ! Buoy  
-               if (.not.use_buoyobs .or. iv%info(buoy)%ntotal == max_buoy_input) cycle reports
+               if (.not.use_buoyobs) cycle reports
                if (n==1) iv%info(buoy)%ntotal = iv%info(buoy)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -335,7 +335,7 @@ subroutine da_scan_obs_bufr (iv, filename)
 
          case (511, 514)
             ! case (181, 281) ;                   ! Synop
-               if (.not.use_synopobs .or. iv%info(synop)%ntotal == max_synop_input) cycle reports
+               if (.not.use_synopobs) cycle reports
                if (n==1) iv%info(synop)%ntotal = iv%info(synop)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -349,7 +349,7 @@ subroutine da_scan_obs_bufr (iv, filename)
 
          case (512)
             ! case (187, 287) ;                        ! Metar
-               if (.not.use_metarobs .or. iv%info(metar)%ntotal == max_metar_input) cycle reports
+               if (.not.use_metarobs) cycle reports
                if (n==1) iv%info(metar)%ntotal = iv%info(metar)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -363,7 +363,7 @@ subroutine da_scan_obs_bufr (iv, filename)
 
          case (63)
             ! case (242:246, 252:253, 255) ;         ! Geo. CMVs
-               if (.not.use_geoamvobs .or. iv%info(geoamv)%ntotal == max_geoamv_input) cycle reports
+               if (.not.use_geoamvobs) cycle reports
                if (n==1) iv%info(geoamv)%ntotal = iv%info(geoamv)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -376,7 +376,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                fm = 88
 
          case (582, 583)      ! QuikSCAT 582 and WindSat 583
-               if (.not.use_qscatobs .or. iv%info(qscat)%ntotal == max_qscat_input) cycle reports
+               if (.not.use_qscatobs) cycle reports
                if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -389,7 +389,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                fm = 281
 
          case (74)       ! GPS PW
-               if (.not.use_gpspwobs .or. iv%info(gpspw)%ntotal == max_gpspw_input) cycle reports
+               if (.not.use_gpspwobs) cycle reports
                if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -402,7 +402,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                fm = 111
 
          case (71, 73, 75, 76, 77)    ! Profiler
-               if (.not.use_profilerobs .or. iv%info(profiler)%ntotal == max_profiler_input) cycle reports
+               if (.not.use_profilerobs) cycle reports
                if (n==1) iv%info(profiler)%ntotal = iv%info(profiler)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -414,7 +414,7 @@ subroutine da_scan_obs_bufr (iv, filename)
                end if
                fm = 132
          case (571, 65)
-              if (.not. use_ssmiretrievalobs .or. iv%info(ssmi_rv)%ntotal == max_ssmi_rv_input) cycle reports
+              if (.not. use_ssmiretrievalobs) cycle reports
                if (n==1) iv%info(ssmi_rv)%ntotal = iv%info(ssmi_rv)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then
@@ -429,7 +429,7 @@ subroutine da_scan_obs_bufr (iv, filename)
             select case (kx)
             case (111 , 210)    ;         !  Tropical Cyclone Bogus
                ! Note Tropical cyclone Bougus is given type 135 in Obs-ascii
-               if (.not.use_bogusobs .or. iv%info(bogus)%ntotal == max_bogus_input) cycle reports
+               if (.not.use_bogusobs) cycle reports
                if (n==1) iv%info(bogus)%ntotal = iv%info(bogus)%ntotal + 1
                if (outside) cycle reports
                if ( thin_conv ) then

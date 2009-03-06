@@ -9,16 +9,11 @@ module da_obs_io
       use_metarobs,use_profilerobs,use_pilotobs,use_buoyobs,use_shipsobs, &
       use_synopobs,use_soundobs,use_mtgirsobs,use_tamdarobs,use_qscatobs,test_transforms, use_ssmiretrievalobs, report_start, &
       report_end, global, print_detail_obs, stdout, t_kelvin, stderr, &
-      max_ob_levels, missing_data, max_bogus_input, myproc,convert_uv2fd, &
+      max_ob_levels, missing_data, myproc,convert_uv2fd, &
       fails_error_max,standard_atmosphere,zero_t_td,print_detail_f_obs, &
       print_detail_radar,use_satemobs,use_polaramvobs,use_ssmt1obs, &
       use_ssmt2obs, use_airsretobs,convert_fd2uv,anal_type_qcobs,gravity, &
-      filename_len, t0, max_airep_input, max_bogus_input, max_ssmi_rv_input, &
-      max_buoy_input, max_gpsref_input, max_gpspw_input, max_geoamv_input, &
-      max_airsr_input, max_polaramv_input, max_radar_input, &
-      max_profiler_input, max_sound_input, max_mtgirs_input, max_tamdar_input, max_ships_input, &
-      max_satem_input,max_pilot_input, max_metar_input, max_ssmt1_input, &
-      max_synop_input,max_ssmt2_input,  max_qscat_input, &
+      filename_len, t0, &
       obs_names, num_ob_indexes, fm_index, ids,ide, ite, jte, &
       sound, mtgirs,synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       tamdar, tamdar_sfc, metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, pseudo, &

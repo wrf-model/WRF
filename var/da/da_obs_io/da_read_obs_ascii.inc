@@ -840,12 +840,6 @@ subroutine da_read_obs_ascii (iv, filename)
             nlocal(bogus) = nlocal(bogus) + 1
             if (nlocal(bogus) > iv%info(bogus)%nlocal) cycle reports
 
-            if (nlocal(bogus) > max_bogus_input) then
-               write(unit=message(1),fmt='(A,I6,A,I6)') &
-                  'Bogus #=', nlocal(bogus), ' > max_bogus_input=', max_bogus_input
-               call da_error(__FILE__,__LINE__,message(1:1))
-            end if
-
             allocate (iv%bogus(nlocal(bogus))%h (1:nlevels))
             allocate (iv%bogus(nlocal(bogus))%p (1:nlevels))
             allocate (iv%bogus(nlocal(bogus))%u (1:nlevels))

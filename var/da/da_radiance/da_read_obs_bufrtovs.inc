@@ -326,16 +326,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
          num_tovs_selected = num_tovs_selected + 1
  
-         if (num_tovs_selected > max_tovs_input) then
-            write(unit=message(1),fmt='(A,I10,A)') &
-               "Max number of tovs",max_tovs_input," reached"
-            call da_warning(__FILE__,__LINE__,message(1:1))
-            num_tovs_selected = num_tovs_selected-1
-            num_tovs_global   = num_tovs_global-1
-            ptotal(ifgat) = ptotal(ifgat) - 1
-            exit obs
-         end if
-
          if (outside) cycle ! No good for this PE
          num_tovs_local = num_tovs_local + 1
 

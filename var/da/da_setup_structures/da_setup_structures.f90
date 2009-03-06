@@ -19,7 +19,7 @@ module da_setup_structures
       num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, &
       use_airepobs, use_tamdarobs, test_dm_exact, use_amsuaobs, use_amsubobs, &
       use_airsobs, use_bogusobs, sfc_assi_options, use_eos_amsuaobs, &
-      use_filtered_rad, use_eos_radobs, use_gpsrefobs, use_hirs2obs, &
+      use_filtered_rad, use_gpsrefobs, use_hirs2obs, &
       use_hsbobs,use_hirs3obs, use_gpspwobs, use_gpsztdobs, use_metarobs, use_msuobs, &
       use_kma1dvar,use_pilotobs, use_polaramvobs, use_rad, crtm_cloud, use_soundobs,use_mtgirsobs, &
       use_ssmt1obs,use_ssmt2obs, use_shipsobs, use_satemobs, use_synopobs, &

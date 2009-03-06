@@ -13,7 +13,7 @@ module da_ssmi
       max_error_bt, max_error_buv, max_error_thickness, mkz, &
       max_error_rh,max_error_tb, max_error_pw, trace_use_dull, &
       test_transforms,stdout, use_ssmiretrievalobs, use_ssmitbobs, &
-      global, print_detail_obs, max_ssmi_rv_input, max_ssmi_tb_input, &
+      global, print_detail_obs, &
       its,ite,jts,jte,kts,kte,kms,kme,ids,ide,jds,jde,fails_error_max, &
       ssmi_tb, ssmi_rv, num_ob_indexes, ssmt1, ssmt2, ob_vars,qcstat_conv_unit
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &

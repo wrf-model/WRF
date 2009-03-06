@@ -151,12 +151,6 @@ subroutine da_scan_obs_radar (iv, filename)
             case (128)
                iv%info(radar)%nlocal = iv%info(radar)%nlocal + 1
 
-               if (iv%info(radar)%nlocal > max_radar_input) then
-                  write(unit=message(1),fmt='(A,I6,A,I6)') &
-                     ' radar #= ',iv%info(radar)%nlocal, ' > max_radar_input = ', max_radar_input
-                  call da_error(__FILE__,__LINE__,message(1:1))
-               end if
-
             case default;
                write(unit=stdout, fmt='(a)') 'Warning: unsaved obs found:'
 

@@ -1036,11 +1036,6 @@ subroutine da_read_obs_bufr (iv, filename)
 
                platform  % info % platform ='FM-135 TCBOG'
                fm = 135
-               if (nlocal(bogus) > max_bogus_input) then
-                 write(unit=message(1),fmt='(A,I6,A,I6)') &
-                   'Bogus #=', nlocal(bogus), ' > max_bogus_input=', max_bogus_input
-                 call da_error(__FILE__,__LINE__,message(1:1))
-               end if
 
                nullify  (iv%bogus(ilocal(bogus))%h)
                nullify  (iv%bogus(ilocal(bogus))%p)

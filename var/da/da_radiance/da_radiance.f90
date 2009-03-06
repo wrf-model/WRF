@@ -44,7 +44,7 @@ module da_radiance
       rad_monitoring, monitor_on, kts, kte, kms,kme,&
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
-      bufr_landsea_mask,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
+      bufr_landsea_mask,tovs_end, bufr_satzen, nchan_mhs, &
       nchan_msu, nchan_amsua,nchan_hirs2, nchan_hirs3, nchan_hirs4, nchan_airs, &
       bufr_lon, bufr_satellite_id, bufr_ifov,nchan_amsub, tovs_start, bufr_lat, &
       use_pseudo_rad, pseudo_rad_platid,pseudo_rad_satid, pseudo_rad_senid, &

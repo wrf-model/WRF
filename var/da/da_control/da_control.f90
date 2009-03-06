@@ -612,4 +612,6 @@ module da_control
 
    real, allocatable :: time_slots(:)
 
+   logical :: global
+
 end module da_control

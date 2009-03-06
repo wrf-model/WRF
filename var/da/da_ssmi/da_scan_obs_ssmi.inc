@@ -120,7 +120,7 @@ subroutine da_scan_obs_ssmi (iv, filename)
 
       select case(fm)
       case (125) ;
-         if (.not. use_ssmiretrievalobs .or. iv%info(ssmi_rv)%ntotal == max_ssmi_rv_input) cycle reports
+         if (.not. use_ssmiretrievalobs) cycle reports
 
          ! Check if at least one field is present
          if ((tpw % qc == missing) .AND. (speed % qc == missing)) then
@@ -132,7 +132,7 @@ subroutine da_scan_obs_ssmi (iv, filename)
          iv%info(ssmi_rv)%nlocal = iv%info(ssmi_rv)%nlocal + 1
 
       case (126) ;
-         if (.not. use_ssmitbobs .or. iv%info(ssmi_tb)%ntotal == max_ssmi_tb_input) cycle reports
+         if (.not. use_ssmitbobs) cycle reports
 
          ! Check if at least one field is present
 

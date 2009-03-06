@@ -1238,6 +1238,7 @@
      &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
      &        ,SNOTIME = grid%SNOTIME &
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
+     &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
      &                                                          )
 !

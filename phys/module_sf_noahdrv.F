@@ -32,7 +32,7 @@ CONTAINS
                   SNOPCX,                                       & !O
                   POTEVP,                                       & !O
                   XICE_THRESHOLD,                               &
-                  RDLAI2D,                                      &
+                  RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
                   NOAHRES,                                      &
                   ids,ide, jds,jde, kds,kde,                    &
@@ -368,6 +368,7 @@ CONTAINS
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UST
 
      LOGICAL, intent(in) :: rdlai2d
+     LOGICAL, intent(in) :: USEMONALB
 
 ! input variables lsm --> urban
      INTEGER :: UTYPE_URB ! urban type [urban=1, suburban=2, rural=3]
@@ -713,6 +714,7 @@ CONTAINS
 
 !        SNOALB1=0.80
 !        SHMIN=0.00
+        ALBBRD=ALBBCK(I,J)
         Z0BRD=Z0(I,J)
         EMBRD=EMBCK(I,J)
         SNOTIME1 = SNOTIME(I,J)
@@ -739,6 +741,7 @@ CONTAINS
 		 VEGTYP = NATURAL
                  SHDFAC = SHDTBL(NATURAL)
                  ALBEDOK =0.2         !  0.2
+                 ALBBRD  =0.2         !0.2
                  EMISSI = 0.98                                 !for VEGTYP=5
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
@@ -770,7 +773,7 @@ CONTAINS
         'SFCPRS',SFCPRS, 'PRCP',PRCP,'SFCTMP',SFCTMP,'Q2K',Q2K,   &
          'TH2',TH2,'Q2SAT',Q2SAT,'DQSDT2',DQSDT2,'VEGTYP', VEGTYP,&
          'SOILTYP',SOILTYP, 'SLOPETYP',SLOPETYP, 'SHDFAC',SHDFAC,&
-         'SHMIN',SHMIN, 'SNOALB1',SNOALB1,'TBOT',                 &
+         'SHMIN',SHMIN, 'ALBBRD',ALBBRD,'SNOALB1',SNOALB1,'TBOT',&
           TBOT, 'Z0BRD',Z0BRD, 'Z0K',Z0K, 'CMC',CMC, 'T1',T1,'STC',&
           STC, 'SMC',SMC, 'SWC',SWC,'SNOWHK',SNOWHK,'SNEQV',SNEQV,&
           'ALBEDOK',ALBEDOK,'CHK',CHK,'ETA',ETA,'SHEAT',SHEAT,      &
@@ -808,7 +811,7 @@ CONTAINS
                  RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                  RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                  SOILW,SOILM,Q1,                                  &    !D
-                 RDLAI2D,                                         &
+                 RDLAI2D,USEMONALB,                               &
                  SNOTIME1,                                        &
                  RIBB,                                            &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)

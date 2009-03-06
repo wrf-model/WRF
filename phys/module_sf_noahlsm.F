@@ -65,7 +65,7 @@ CONTAINS
                        RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
                        SOILW,SOILM,Q1,                                  &    !D
-                       RDLAI2D,                                         &
+                       RDLAI2D,USEMONALB,                               &
                        SNOTIME1,                                        &
                        RIBB,                                            &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)                    !P
@@ -282,16 +282,17 @@ CONTAINS
 ! 2. LOGICAL:
 ! ----------------------------------------------------------------------
       LOGICAL, INTENT(IN) :: RDLAI2D
+      LOGICAL, INTENT(IN) :: USEMONALB
 
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
                             SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
                             FFROZP
       REAL, INTENT(OUT)  :: EMBRD
-      REAL, INTENT(OUT)  :: ALBEDO, ALB
+      REAL, INTENT(OUT)  :: ALBEDO
       REAL, INTENT(INOUT):: COSZ, SOLARDIRECT,CH,CM,                        &
                             CMC,SNEQV,SNCOVR,SNOWH,T1,XLAI,SHDFAC,Z0BRD,    &
-                            EMISSI
+                            EMISSI, ALB
       REAL, INTENT(INOUT):: SNOTIME1
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: SLDPTH
@@ -385,14 +386,18 @@ CONTAINS
             IF (.NOT. RDLAI2D) THEN
                XLAI  = LAIMAX
             ENDIF
-            ALB   = ALBEDOMAX
+            IF (.NOT. USEMONALB) THEN
+               ALB   = ALBEDOMAX
+            ENDIF
             Z0BRD = Z0MAX
          ELSE IF ( SHDFAC <= SHDMIN ) THEN
             EMBRD = EMISSMIN
             IF(.NOT. RDLAI2D) THEN
                XLAI  = LAIMIN
             ENDIF
-            ALB   = ALBEDOMIN
+            IF(.NOT. USEMONALB) then
+               ALB   = ALBEDOMIN
+            ENDIF
             Z0BRD = Z0MIN
          ELSE
 
@@ -407,7 +412,9 @@ CONTAINS
                IF (.NOT. RDLAI2D) THEN
                   XLAI  = ( ( 1.0 - INTERP_FRACTION ) * LAIMIN    ) + ( INTERP_FRACTION * LAIMAX    )
                ENDIF
-               ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMIN ) + ( INTERP_FRACTION * ALBEDOMAX )
+               if (.not. USEMONALB) then
+                  ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMIN ) + ( INTERP_FRACTION * ALBEDOMAX )
+               endif
                Z0BRD = ( ( 1.0 - INTERP_FRACTION ) * Z0MIN     ) + ( INTERP_FRACTION * Z0MAX     )
 
             ELSE
@@ -416,7 +423,9 @@ CONTAINS
                IF (.NOT. RDLAI2D) THEN
                   XLAI  = 0.5 * LAIMIN    + 0.5 * LAIMAX
                ENDIF
-               ALB   = 0.5 * ALBEDOMIN + 0.5 * ALBEDOMAX
+               if (.not. USEMONALB) then
+                  ALB   = 0.5 * ALBEDOMIN + 0.5 * ALBEDOMAX
+               endif
                Z0BRD = 0.5 * Z0MIN     + 0.5 * Z0MAX
 
             ENDIF
@@ -976,6 +985,7 @@ CONTAINS
                 ENDIF
           ENDIF
 !
+           SNOALB2 = MAX ( SNOALB2, ALB )
            ALBEDO = ALB + SNCOVR*(SNOALB2-ALB)
            IF (ALBEDO .GT. SNOALB2) ALBEDO=SNOALB2
 

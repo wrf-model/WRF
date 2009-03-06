@@ -1,6 +1,0 @@
-#!/bin/ksh
-export M4=/usr/local/bin/m4
-export CC=xlc
-./configure
-make clean
-make

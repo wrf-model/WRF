@@ -1,6 +1,0 @@
-export AR="ar -ru"
-export FC=xlf_r
-export FCFLAGS="-O2 -qflttrap=zerodivide:invalid:nanq:enable -qsigtrap=xl__trce"
-rm -f *.o *.a
-$FC -c $FCFLAGS *.f
-$AR libblas.a *.o

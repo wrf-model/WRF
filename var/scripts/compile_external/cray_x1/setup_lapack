@@ -1,3 +1,0 @@
-# Use Cray's own lapack in libsci. To satify configuration program, LAPACK
-# still needs to be set to some arbitrary value
-export LAPACK=$HOME

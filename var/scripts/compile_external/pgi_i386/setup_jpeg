@@ -1,9 +1,0 @@
-#!/bin/ksh
-export CC=pgcc
-make clean
-./configure
-make
-mkdir -p lib include
-mv libjpeg.a lib
-cp *.h include
-ranlib lib/libjpeg.a

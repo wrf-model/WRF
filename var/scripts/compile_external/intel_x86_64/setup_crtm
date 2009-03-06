@@ -1,7 +1,0 @@
-#!/bin/ksh
-cd src
-make clean
-rm -f *.a
-make intel
-cp *.mod ../include
-cp libCRTM.a ../libcrtm.a

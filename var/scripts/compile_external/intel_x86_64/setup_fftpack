@@ -1,3 +1,0 @@
-#!/bin/ksh
-make clean
-make library FC=ifort LD=ar LDFLAGS=ru FFLAGS="-O3 -r8" TARGET="libfftpack.a"

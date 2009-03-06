@@ -69,21 +69,6 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
       end if
       end if
 
-      if( iv%buoy(n)%q%qc == fails_error_max  .and. it > 1)iv%buoy(n)%q%qc =0
-      if( iv%buoy(n)%q%qc >= obs_qc_pointer ) then
-      failed=.false.
-      if( check_max_iv) &
-      call da_max_error_qc (it, iv%info(buoy), n, iv%buoy(n)%q, max_error_q , failed)
-      if( iv%info(buoy)%proc_domain(1,n) ) then
-      num_qcstat_conv(1,buoy,4,1)= num_qcstat_conv(1,buoy,4,1) + 1
-      if(failed) then
-      num_qcstat_conv(2,buoy,4,1)= num_qcstat_conv(2,buoy,4,1) + 1
-      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-           'buoy',ob_vars(4),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
-      end if
-      end if
-      end if
-
       if( iv%buoy(n)%p%qc == fails_error_max .and. it > 1 )iv%buoy(n)%p%qc =0
       if( iv%buoy(n)%p%qc >= obs_qc_pointer ) then
       failed=.false.
@@ -95,6 +80,27 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(2,buoy,5,1)= num_qcstat_conv(2,buoy,5,1) + 1
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'buoy',ob_vars(5),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+      end if
+      end if
+      end if
+
+      if( iv%buoy(n)%q%qc == fails_error_max  .and. it > 1)iv%buoy(n)%q%qc =0
+      if( iv%buoy(n)%q%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( iv%buoy(n)%t%qc == fails_error_max .or. iv%buoy(n)%p%qc == fails_error_max) then
+      failed=.true.
+      iv%buoy(n)%q%qc  = fails_error_max
+      iv%buoy(n)%q%inv = 0.0
+      else
+      if( check_max_iv) &
+      call da_max_error_qc (it, iv%info(buoy), n, iv%buoy(n)%q, max_error_q , failed)
+      endif
+      if( iv%info(buoy)%proc_domain(1,n) ) then
+      num_qcstat_conv(1,buoy,4,1)= num_qcstat_conv(1,buoy,4,1) + 1
+      if(failed) then
+      num_qcstat_conv(2,buoy,4,1)= num_qcstat_conv(2,buoy,4,1) + 1
+      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'buoy',ob_vars(4),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
       end if
       end if
       end if

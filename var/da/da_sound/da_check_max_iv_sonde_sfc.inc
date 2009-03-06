@@ -68,21 +68,6 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
       end if
       end if 
 
-      if( iv%sonde_sfc(n)%q%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%q%qc =0
-      if( iv%sonde_sfc(n)%q%qc >= obs_qc_pointer ) then
-      failed=.false.
-      if( check_max_iv) &
-      call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%q, max_error_q , failed)
-      if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
-      num_qcstat_conv(1,sonde_sfc,4,1)= num_qcstat_conv(1,sonde_sfc,4,1) + 1
-      if(failed) then
-      num_qcstat_conv(2,sonde_sfc,4,1)= num_qcstat_conv(2,sonde_sfc,4,1) + 1
-      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-           'sonde_sfc',ob_vars(4),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
-      end if
-      end if
-      end if 
-
       if( iv%sonde_sfc(n)%p%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%p%qc =0
       if( iv%sonde_sfc(n)%p%qc >= obs_qc_pointer ) then
       failed=.false.
@@ -94,6 +79,27 @@ subroutine da_check_max_iv_sonde_sfc(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(2,sonde_sfc,5,1)= num_qcstat_conv(2,sonde_sfc,5,1) + 1
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'sonde_sfc',ob_vars(5),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
+      end if
+      end if
+      end if 
+
+      if( iv%sonde_sfc(n)%q%qc == fails_error_max .and. it > 1 )iv%sonde_sfc(n)%q%qc =0
+      if( iv%sonde_sfc(n)%q%qc >= obs_qc_pointer ) then
+      failed=.false.
+      if( iv%sonde_sfc(n)%t%qc == fails_error_max .or. iv%sonde_sfc(n)%p%qc == fails_error_max) then
+      failed=.true.
+      iv%sonde_sfc(n)%q%qc  = fails_error_max
+      iv%sonde_sfc(n)%q%inv = 0.0
+      else
+      if( check_max_iv) &
+      call da_max_error_qc (it, iv%info(sonde_sfc), n, iv%sonde_sfc(n)%q, max_error_q , failed)
+      endif
+      if( iv%info(sonde_sfc)%proc_domain(1,n) ) then
+      num_qcstat_conv(1,sonde_sfc,4,1)= num_qcstat_conv(1,sonde_sfc,4,1) + 1
+      if(failed) then
+      num_qcstat_conv(2,sonde_sfc,4,1)= num_qcstat_conv(2,sonde_sfc,4,1) + 1
+      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'sonde_sfc',ob_vars(4),iv%info(sonde_sfc)%lat(1,n),iv%info(sonde_sfc)%lon(1,n),0.01*ob%sonde_sfc(n)%p
       end if
       end if
       end if 

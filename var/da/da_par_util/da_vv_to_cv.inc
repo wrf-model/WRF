@@ -32,6 +32,9 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
    ix = ie-is+1
    jy = je-js+1
    cv_e = 0
+#ifdef NORESHAPE
+   ijk=0
+#endif
 
    ! Store v1
    mz = mzs(1)
@@ -40,7 +43,6 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
 #ifdef NORESHAPE
-      ijk = 0
       do k=1,mz
          do j=js,je
             do i=is,ie

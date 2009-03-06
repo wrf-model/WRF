@@ -76,8 +76,14 @@ subroutine da_check_max_iv_bogus(iv,ob, it, num_qcstat_conv)
         if( iv%bogus(n)%q(k)%qc == fails_error_max .and. it > 1 )iv%bogus(n)%q(k)%qc =0
         if( iv%bogus(n)%q(k)%qc >= obs_qc_pointer ) then
          failed=.false.
+         if( iv%bogus(n)%t(k)%qc == fails_error_max ) then
+         failed=.true.  
+         iv%bogus(n)%q(k)%qc  = fails_error_max 
+         iv%bogus(n)%q(k)%inv = 0.             
+         else
          if( check_max_iv) &
          call da_max_error_qc (it,iv%info(bogus), n, iv%bogus(n)%q(k), max_error_bq ,failed)
+         endif
         if( iv%info(bogus)%proc_domain(k,n) ) then
                     num_qcstat_conv(1,bogus,4,ipr) = num_qcstat_conv(1,bogus,4,ipr) + 1
          if(failed)then

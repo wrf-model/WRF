@@ -1,12 +1,11 @@
 module da_interpolation
 
-   use da_control, only : trace_use, trace_use_frequent, missing_r, &
+   use da_control, only : stdout, trace_use, trace_use_frequent, missing_r, &
       anal_type_verify, v_interp_h, v_interp_p,ims,ime,jms,jme,kms,kme, &
       kts,kte, trace_use_dull, interp_option
    use da_define_structures, only : infa_type
    use da_tools, only : da_togrid
    use da_tracing, only : da_trace_entry, da_trace_exit
-   use da_netcdf_interface, only : stdout
    use da_reporting, only: da_error
 
    implicit none

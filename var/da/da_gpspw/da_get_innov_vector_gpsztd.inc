@@ -212,15 +212,6 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 !        [5.0] Perform optional maximum error check:
 !------------------------------------------------------------------------
       call da_check_max_iv_gpspw(iv, it, num_qcstat_conv)
-
-      if (rootproc .and. check_max_iv_print) then
-         write(unit = check_max_iv_unit, fmt ='(A,i5,A)')'For outer iteration ',it, &
-                   ', Total Rejections for Gpspw follows:'
-         write(unit = check_max_iv_unit, fmt = '(/,10(2(A,I6),/))') &
-            'Number of failed TPW-observations:     ',ittpwf, ' on ',ittpw, &
-            'Finally all Gpspw rejections ',ittpwf,' on ',ittpw
-      end if
-
    end if
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsztd")

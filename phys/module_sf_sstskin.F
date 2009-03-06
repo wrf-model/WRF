@@ -68,7 +68,7 @@ CONTAINS
       do j=jts,jte
 !
       if(xland(i,j).ge.1.5) then
-      qo=glw(i,j)-emiss(i,j)*stbolt*(sstsk(i,j)**4)-qfx(i,j)-hfx(i,j)
+      qo=glw(i,j)-emiss(i,j)*stbolt*(sstsk(i,j)**4)-2.5e6*qfx(i,j)-hfx(i,j)
       swo=gsw(i,j)
       us=MAX(ust(i,j), 0.01)
       tb=tsk(i,j)-273.15

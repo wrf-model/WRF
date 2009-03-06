@@ -1619,10 +1619,8 @@ integer myproc
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
-!           IF(isfc .NE. 3)CALL wrf_error_fatal &
            IF(isfc .NE. 3 .AND. isfc .NE. 1 .AND. isfc .NE. 2) CALL wrf_error_fatal &
-                ( 'module_physics_init: use mynn sfc scheme or &
-                &sfclay scheme for this pbl option')
+                ( 'module_physics_init: use mynn sfc scheme or sfclay scheme for this pbl option')
            
            CALL mynn_bl_init_driver(&
                 &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN&

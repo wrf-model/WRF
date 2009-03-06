@@ -243,7 +243,7 @@
      &   CONFIG_FLAGS%SF_SFCLAY_PHYSICS==MYJSFCSCHEME.AND.              &
      &   CONFIG_FLAGS%BL_PBL_PHYSICS   ==MYJPBLSCHEME.AND.              &
      &   CONFIG_FLAGS%CU_PHYSICS       ==BMJSCHEME.AND.                 &
-     &   CONFIG_FLAGS%MP_PHYSICS       ==ETAMPNEW)THEN
+     &   (CONFIG_FLAGS%MP_PHYSICS       ==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf))THEN
 !
         OPERATIONAL_PHYSICS=.TRUE.
 !
@@ -473,7 +473,7 @@
 !
 !-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif
@@ -683,7 +683,7 @@
       IF(MOD(NTSD,GRID%IDTAD)==0)THEN
         btimx=timef()
 !
-        vad2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+        vad2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf)THEN
           CALL VAD2(NTSD,GRID%DT,GRID%IDTAD,DX_NMM,DY_NMM               &
      &             ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP,HBM2             &
      &             ,Q,Q2,CWM,PETDT                                      &
@@ -799,7 +799,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
 #    include "HALO_NMM_I_3.inc"
         ENDIF
 #endif
@@ -814,7 +814,7 @@
         btimx=timef()
 !
 !-----------------------------------------------------------------------
-        had2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+        had2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf)THEN
 !-----------------------------------------------------------------------
 !
           CALL HAD2(                                                   &
@@ -1147,9 +1147,6 @@
      &            ,HLENSW,HLENNW,HANGL,HANIS,HSLOP,HZMAX,CROT,SROT     & ! GWD
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,IHE,IHW,IVE,IVW                                     &
-#ifdef HWRF
-     &            ,GRID%DISHEAT                                             &
-#endif
      &            ,GRID%DISHEAT                                             &
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
@@ -1198,7 +1195,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
 #    include "HALO_NMM_J_3.inc"
         ENDIF
 #endif
@@ -1232,7 +1229,8 @@
 !
       IF(MOD(NTSD,GRID%NCNVC)==0.AND.                                  &
      &   (CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME .or.                     &
-     &   CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME))THEN                       ! Kwon's doing for SAS
+     &   CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME.or.                     &
+         CONFIG_FLAGS%CU_PHYSICS==SASSCHEME))THEN                       ! Kwon's doing for SAS
 !
         btimx=timef()
 !-----------------
@@ -1298,9 +1296,6 @@
      &             ,SM,HBM2,LPBL,CNVBOT,CNVTOP                         &
      &             ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS                  &
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
-#ifdef HWRF
-     &                 ,DUCUDT, DVCUDT, GRID%MOMMIX, store_rand             &
-#endif     
 #if (NMM_CORE==1)                  
      &                 ,DUCUDT, DVCUDT, GRID%MOMMIX, store_rand             &
 #endif
@@ -1321,7 +1316,8 @@
 !-------------------------------------------------------------------------------------
 !       This is gopal's doing for HWRFSAS
 
-        IF(MOD(NTSD,GRID%NCNVC).eq.0.and.CONFIG_FLAGS%CU_PHYSICS.EQ.HWRFSASSCHEME)THEN
+        IF(MOD(NTSD,GRID%NCNVC).eq.0.and.(CONFIG_FLAGS%CU_PHYSICS.EQ.HWRFSASSCHEME &
+                                    .or. CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
 !
         btimx=timef()
 !-----------------
@@ -1540,7 +1536,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif

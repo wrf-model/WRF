@@ -33,8 +33,8 @@ MODULE module_mp_etanew_HWRF
 !
       INTEGER,PARAMETER :: NX=7501
       REAL, PARAMETER :: XMIN=180.0,XMAX=330.0
-      REAL, DIMENSION(NX),PRIVATE,SAVE :: TBPVS,TBPVS0
-      REAL, PRIVATE,SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
+      REAL, DIMENSION(NX),SAVE :: TBPVS,TBPVS0
+      REAL, SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
 !
       REAL, PRIVATE,PARAMETER ::                                        &
 !--- Physical constants follow:
@@ -73,8 +73,8 @@ MODULE module_mp_etanew_HWRF
 !  * PRINT_err - for run-time prints when water budgets are not conserved (for debugging)
 ! ======================================================================
       REAL, PUBLIC,PARAMETER ::                                         &
-!GFDL     &  RHgrd=1.                                                        &
-     &  RHgrd_in=1.                                                     &  !GFDL
+     &  RHgrd=1.                                                        &
+     & , RHgrd_in=1.                                                     &  !GFDL
      & ,RHgrd_out=0.975                                                 &  !GFDL
      & ,T_ICE=-40.                                                      &  !GFDL
 !GFDL     & ,T_ICE=-30.                                                 &

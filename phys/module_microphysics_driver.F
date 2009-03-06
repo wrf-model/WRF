@@ -730,7 +730,7 @@ SUBROUTINE microphysics_driver(                                          &
                CALL wrf_error_fatal ( 'arguments not present for calling wdm6')
              ENDIF
 #if(NMM_CORE==1)
-        CASE (etamp_HWRF)
+        CASE (ETAMP_HWRF)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew_HWRF')
 
              IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &

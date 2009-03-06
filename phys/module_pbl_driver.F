@@ -22,9 +22,6 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
-#ifdef HWRF
-                 ,DISHEAT                                          &
-#endif
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
 #endif
@@ -228,9 +225,6 @@ CONTAINS
                INTENT(IN   )    ::                        LOWLYR
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
-#ifdef HWRF
-   LOGICAL,      INTENT(IN   )    ::   DISHEAT ! ('s doing)
-#endif
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
 #endif

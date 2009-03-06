@@ -655,9 +655,6 @@
      &                ,CROT,SROT                                        & ! GWD
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
-#ifdef HWRF
-     &                ,DISHEAT                                          &
-#endif
      &                ,DISHEAT                                          &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -700,10 +697,9 @@
 !
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF 
+#if (NMM_CORE==1)    
       LOGICAL,INTENT(IN) ::  DISHEAT                       !  hwrf's doing
 #endif
-      LOGICAL,INTENT(IN) ::  DISHEAT                       !  hwrf's doing
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
@@ -1272,7 +1268,7 @@
 !BSF: Logical FQ_I index PQ_I are set to values associated with snow
 !     for the ETAMPNEW scheme so that they can be mixed by the PBL schemes.
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==etamp_hwrf)THEN
          FQ_I=F_QS
          PQ_I=P_QS
       ELSE
@@ -1308,10 +1304,9 @@
      &               ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
-#ifdef HWRF
+#if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT                                 &
 #endif
-     &               ,DISHEAT=DISHEAT                                 &
                 ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -1607,7 +1602,7 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+          IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=etamp_hwrf)THEN
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
@@ -1836,9 +1831,6 @@
      &                 ,SM,HBM2,LPBL,CNVBOT,CNVTOP                      &
      &                 ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS               &
      &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      &
-#ifdef HWRF
-     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &
-#endif 
 #if (NMM_CORE==1)    
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
 #endif
@@ -1905,9 +1897,6 @@
      &                 ,APR_ST,APR_AS,APR_CAPMA                         &
      &                 ,APR_CAPME,APR_CAPMI                             &
      &                 ,GSW,MASS_FLUX
-#ifdef HWRF
-     REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand 
-#endif
 #if (NMM_CORE==1)
      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand 
 #endif
@@ -1921,12 +1910,6 @@
      &                                                        ,RTHRATEN &
      &                                                        ,TTEN
 !
-#ifdef HWRF
-      REAL, INTENT(INOUT)::MOMMIX
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
-      REAL,DIMENSION(IDS:IDE,JDS:JDE),INTENT(INOUT) :: DATA1 
-      LOGICAL, EXTERNAL::wrf_dm_on_monitor
-#endif    
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
@@ -2005,10 +1988,6 @@
 !-----------------------------------------------------------------------
       INTEGER :: DTEMP_CHECK=2.0
       REAL :: TCHANGE
-#ifdef HWRF
-      INTEGER                    :: IDT                
-      REAL,   DIMENSION(2)       :: RND1 
-#endif
 #if (NMM_CORE==1)
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
@@ -2272,7 +2251,7 @@
 !     CUMULUS DRIVER. THIS IS gopal's doing
 !
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME)THEN
+      IF(CONFIG_FLAGS%CU_PHYSICS==HWRFSASSCHEME.or.CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
 !
           IF(GRID%ID .EQ. 1)THEN   ! Both parent and nest set to 5 minutes for random number calls 
            IDT=MOD(NTSD,NCNVC)    
@@ -2354,10 +2333,6 @@
      &                 ,RQICUTEN=RQICUTEN,RQSCUTEN=RQSCUTEN             &
      &                 ,RTHBLTEN=RTHBLTEN,RQVBLTEN=RQVBLTEN             &
      &                 ,RTHRATEN=RTHRATEN                               &
-#ifdef HWRF
-     &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
-                       ,store_rand=store_rand                           &
-#endif
 #if (NMM_CORE==1)
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
@@ -2479,7 +2454,7 @@
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
           CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME)
-            IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+            IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf)THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE
               MOIST_TRANS(I,K,J,P_QI)=MAX(0.,MOIST_TRANS(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)
@@ -2655,7 +2630,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
         DO N=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2671,7 +2646,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf)THEN
         QT_PRESENT=.TRUE.
       ELSE
         QT_PRESENT=.FALSE.
@@ -2852,7 +2827,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
         DO N=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)

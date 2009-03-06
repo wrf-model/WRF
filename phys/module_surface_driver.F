@@ -75,6 +75,7 @@ CONTAINS
      &         ,isurban, mminlu                                       &
      &          ,snotime                                              &
      &           ,rdlai2d                                             &
+     &          ,usemonalb                                            &
      &          ,noahres                                              &
              !  Optional adaptive time step
      &          ,bldt,curr_secs,adapt_step_flag                       &
@@ -596,6 +597,7 @@ CONTAINS
    INTEGER :: gfdl_ntsflg
    LOGICAL :: radiation, myj, frpcpn
    LOGICAL, INTENT(in), OPTIONAL :: rdlai2d
+   LOGICAL, INTENT(in), OPTIONAL :: usemonalb
    REAL    :: julian
    REAL    :: total_depth,mid_point_depth
    REAL    :: tconst,tprior,tnew,yrday,deltat
@@ -920,7 +922,7 @@ CONTAINS
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
                  HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,ZNT_SEA,                            &
-                 ITIMESTEP,                                                         &
+                 ITIMESTEP,XICE_THRESHOLD,                                          &
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -969,7 +971,7 @@ CONTAINS
                  u10,v10,                                            &
                  gz1oz0,wspd,br,isfflx,dx,                           &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
-                 XICE, SST, ITIMESTEP,                                              &
+                 XICE, SST, ITIMESTEP, XICE_THRESHOLD,                              &
                  CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,FLHC_SEA,FLQC_SEA,            &
                  HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                  ids,ide, jds,jde, kds,kde,                          &
@@ -1009,6 +1011,7 @@ CONTAINS
                 tsk,qsfc,thz0,qz0,uz0,vz0,                           &
                 lowlyr,                                              &
                 xland,                                               &
+                XICE_THRESHOLD,                                      & ! Extra for wrapper.
                 XICE, SST,                                           & ! Extra for wrapper.
                 CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,            &
                 FLHC_SEA, FLQC_SEA, QSFC_SEA, &
@@ -1089,6 +1092,7 @@ CONTAINS
                QGH,QSFC,U10,V10,                                   &
                GZ1OZ0,WSPD,BR,ISFFLX,                              &
                EP_1,EP_2,KARMAN,itimestep,                         &
+               XICE_THRESHOLD,                              &
                CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,        &
                FLHC_SEA, FLQC_SEA,                          &
                HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, &
@@ -1317,7 +1321,7 @@ CONTAINS
                !
                DO j = j_start(ij) , j_end(ij)
                   DO i = i_start(ij) , i_end(ij)
-                     IF ( ( XICE(I,J) .GE.0.02 ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
                         IF ( SST(i,j) .LT. 271.4 ) THEN
                            SST(i,j) = 271.4
                         ENDIF
@@ -1357,7 +1361,7 @@ CONTAINS
                 snopcx,                                         & !o
                 potevp,                                         & !o
                 xice_threshold,                                 &
-                rdlai2d,                                        &
+                rdlai2d,usemonalb,                              &
                 br,                                             & !?
                   NOAHRES,                                      &
                 ids,ide, jds,jde, kds,kde,                      &
@@ -1392,7 +1396,7 @@ CONTAINS
             IF ( isisfc .EQ. 1 ) THEN
                DO j=j_start(ij),j_end(ij)
                   DO i=i_start(ij),i_end(ij)
-                     IF ( ( XICE(I,J) .GE. 0.02) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
                         !  Weighted average of fields between ice-cover values and open-water values.
                         flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flhc_sea(i,j) )
                         flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flqc_sea(i,j) )
@@ -1413,7 +1417,7 @@ CONTAINS
             ELSE
                DO j = j_start(ij) , j_end(ij)
                   DO i = i_start(ij) , i_end(ij)
-                     IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
                         ! Compute TSK as the open-water and ice-cover average
                         tsk(i,j) = ( tsk(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j) )
                      ENDIF
@@ -1495,7 +1499,7 @@ CONTAINS
                  !
                  DO j = j_start(ij) , j_end(ij)
                     DO i = i_start(ij) , i_end(ij)
-                       IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                       IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
                           TSK_SEA(i,j) = SST(i,j)
                           IF ( SST(i,j) .LT. 271. ) THEN
                              SST(i,j) = 271.4
@@ -1541,7 +1545,7 @@ CONTAINS
                  !
                  DO j=j_start(ij),j_end(ij)
                     DO i=i_start(ij),i_end(ij)
-                       IF ( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                       IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
                           flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.-XICE(i,j)) * flhc_sea(i,j) )
                           flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.-XICE(i,j)) * flqc_sea(i,j) )
                           cpm(i,j)  = ( cpm(i,j)  * XICE(i,j) ) + ( (1.-XICE(i,j)) * cpm_sea(i,j)  )
@@ -1563,7 +1567,7 @@ CONTAINS
                  !
                  DO j = j_start(ij) , j_end(ij)
                     DO i = i_start(ij) , i_end(ij)
-                       IF ( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                       IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
                           tsk(i,j) = ( tsk(i,j) * XICE(i,j) ) + ( (1.-XICE(i,j)) * TSK_SEA(i,j) )
                        ENDIF
                     ENDDO
@@ -1607,7 +1611,7 @@ CONTAINS
                 !
                 DO j = j_start(ij) , j_end(ij)
                    DO i=i_start(ij) , i_end(ij)
-                      IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
                          TSK_SEA(i,j) = SST(i,j)
                          IF ( SST(i,j) .LT. 271. ) THEN
                             SST(i,j) = 271.4
@@ -1652,7 +1656,7 @@ CONTAINS
                 !
                 DO j = j_start(ij) , j_end(ij)
                    DO i = i_start(ij) , i_end(ij)
-                      IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
                          flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flhc_sea(i,j) )
                          flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flqc_sea(i,j) )
                          cpm(i,j)  = ( cpm(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cpm_sea(i,j)  )
@@ -1678,7 +1682,7 @@ CONTAINS
                 !
                 DO j=j_start(ij),j_end(ij)
                    DO i=i_start(ij),i_end(ij)
-                      IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
                          tsk(i,j)=tsk(i,j)*XICE(i,j)+(1.0-XICE(i,j))*TSK_SEA(i,j)
                       ENDIF
                    ENDDO
@@ -1738,6 +1742,7 @@ CONTAINS
         &     PMID,PINT,TH,T,QV,QC,U,V,Q2,                &
         &     TSK,QSFC,THZ0,QZ0,UZ0,VZ0,                  &
         &     LOWLYR,XLAND,                               &
+        &     XICE_THRESHOLD,                             &  ! Extra for wrapper
         &     XICE,SST,                                   &  ! Extra for wrapper
         &     CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,       &  ! Extra for wrapper
         &     FLHC_SEA, FLQC_SEA, QSFC_SEA,               &  ! Extra for wrapper
@@ -1828,6 +1833,7 @@ CONTAINS
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: Q10
      REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: PSHLTR
      REAL,                                   INTENT(IN)    :: P1000
+     REAL,                                   INTENT(IN)    :: XICE_THRESHOLD
      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,       &
           &                IMS,IME,JMS,JME,KMS,KME,       &
           &                ITS,ITE,JTS,JTE,KTS,KTE
@@ -1872,6 +1878,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_HOLD
      REAL, DIMENSION( ims:ime, jms:jme ) :: AKHS_HOLD
      REAL, DIMENSION( ims:ime, jms:jme ) :: AKMS_HOLD
+     REAL :: PSFC
 
      ! Set things up for the frozen-surface call to myjsfc
      ! Is SST local here, or are the changes to be fed back to the calling routines?
@@ -1879,7 +1886,7 @@ CONTAINS
      ! We want a TSK valid for the ice-covered regions of the grid cell.
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1. ) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
 
               TSK_SEA(i,j) = SST(i,j)
 
@@ -1919,6 +1926,12 @@ CONTAINS
               IF (XICE(i,j).lt.0.1 .and. TSK(i,j).lt.263.15) THEN
                  TSK(i,j) = 263.15
               ENDIF
+
+              ! Over fractional sea-ice points, back out an ice portion of QSFC as well.
+              ! QSFC_SEA calculation as done in myjsfc for open water points
+              PSFC = PINT(I,LOWLYR(I,J),J)
+              QSFC_SEA(i,j) = PQ0SEA/PSFC*EXP(A2S*(TSK(i,j)-A3S)/(TSK(i,j)-A4S))
+              QSFC(i,j) = QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j) / XICE(i,j)
 !
               HFX_SEA(i,j)  = HFX(i,j)
               QFX_SEA(i,j)  = QFX(i,j)
@@ -2013,7 +2026,7 @@ CONTAINS
      ! Set up things for the open ocean call.
      DO j = JTS, JTE
         DO i = ITS, ITE
-           IF ( ( XICE(I,J).GE.0.02 ) .AND. ( XICE(i,j).LE.1. ) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
               XLAND_SEA(i,j)=2.
               MAVAIL_SEA(I,J)  = 1.
               ZNT_SEA(I,J) = 0.0001
@@ -2022,6 +2035,8 @@ CONTAINS
                  SST(i,j) = 271.4
               ENDIF
               TSK_SEA(i,j) = SST(i,j)
+              PSFC = PINT(I,LOWLYR(I,J),J)
+              QSFC_SEA(I,J) = PQ0SEA/PSFC*EXP(A2S*(TSK_SEA(i,j)-A3S)/(TSK_SEA(i,j)-A4S))
            ELSE
               ! This should be a land point or a true open water point
               XLAND_SEA(i,j)=xland(i,j)
@@ -2029,10 +2044,11 @@ CONTAINS
               ZNT_SEA(I,J)    = ZNT_HOLD(I,J)
               Z0BASE_SEA(I,J) = Z0BASE(I,J)
               TSK_SEA(i,j)  = TSK(i,j)
+              QSFC_SEA(i,j) = QSFC_HOLD(i,j)
            ENDIF
         ENDDO
      ENDDO
-     QSFC_SEA = QSFC_HOLD
+
      QZ0_SEA  = QZ0_HOLD
      THZ0_SEA = THZ0_HOLD
      UZ0_SEA  = UZ0_HOLD
@@ -2067,7 +2083,7 @@ CONTAINS
 
      DO j = JTS, JTE
         DO i = ITS, ITE
-           IF ( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1. ) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
               ! Over sea-ice points, blend the results.
 
               ! INTENT(OUT) from MYJSFC
@@ -2125,6 +2141,7 @@ CONTAINS
                      QGH,QSFC,U10,V10,                           &
                      GZ1OZ0,WSPD,BR,ISFFLX,                      &
                      EP1,EP2,KARMAN,itimestep,                   &
+                     XICE_THRESHOLD,                             &
                      CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA,       &
                      FLHC_SEA, FLQC_SEA,                         &
                      HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA,&
@@ -2204,6 +2221,9 @@ CONTAINS
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::               &
                                         SST
 
+      REAL,                              INTENT(IN)    ::               &
+                                        XICE_THRESHOLD
+
 !-------------------------------------------------------------------------
 !   Local
 !-------------------------------------------------------------------------
@@ -2226,7 +2246,7 @@ CONTAINS
 
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(i,j) .GE. 0.02 ) .and. ( XICE(I,J) .LE. 1.0 ) ) THEN
+           IF ( ( XICE(i,j) .GE. XICE_THRESHOLD ) .and. ( XICE(I,J) .LE. 1.0 ) ) THEN
               ! Sea-ice point
 
               IF ( SST(i,j) .LT. 271.4 ) THEN
@@ -2337,7 +2357,7 @@ CONTAINS
 
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(I,J).GE.0.02 ) .and. ( XICE(i,j).LE.1.0 ) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
               ! Sets up things for open ocean fraction of sea-ice points
               XLAND_SEA(i,j)=2.
               ZNT_SEA(I,J) = 0.0001
@@ -2374,7 +2394,7 @@ CONTAINS
         DO i = ITS , ITE
            ! Over sea-ice points, weight the results.  Otherwise, just take the results from the
            ! first call to SF_GFS_
-           IF ( ( XICE(I,J).GE.0.02 ) .and. ( XICE(i,j).LE.1.0) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
               ! Weight a number of fields (between open-water results
               ! and full ice results) by sea-ice fraction.
 
@@ -2420,7 +2440,7 @@ CONTAINS
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,ZNT_SEA,                            &
-ITIMESTEP,                                                         &
+ITIMESTEP,XICE_THRESHOLD,                                          &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -2502,6 +2522,7 @@ ITIMESTEP,                                                         &
 !    New for wrapper
 !--------------------------------------------------------------------
      INTEGER,  INTENT(IN)               ::      ITIMESTEP
+     REAL,     INTENT(IN)               ::      XICE_THRESHOLD
      REAL,     DIMENSION( ims:ime, jms:jme ),                     &
                INTENT(IN)               ::      XICE
      REAL,     DIMENSION( ims:ime, jms:jme ),                     &
@@ -2592,7 +2613,7 @@ ITIMESTEP,                                                         &
 
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
 
               IF ( SST(i,j) .LT. 271.4 ) THEN
                  SST(i,j) = 271.4
@@ -2683,7 +2704,7 @@ ITIMESTEP,                                                         &
      ! Set up for open-water call
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
               XLAND_SEA(i,j)=2.
               MAVAIL_SEA(I,J)  =1.
               ZNT_SEA(I,J) = 0.0001
@@ -2747,7 +2768,7 @@ ITIMESTEP,                                                         &
 
      DO j = JTS , JTE
         DO i = ITS, ITE
-           IF ( ( XICE(I,J) .GE. 0.02 )  .and.( XICE(i,j) .LE. 1.0) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD )  .and.( XICE(i,j) .LE. 1.0 ) ) THEN
               ! weighted average for sea ice points
               br(i,j)     = ( br(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * br_sea(i,j)     )
               ! CHS2 -- wait
@@ -2809,7 +2830,7 @@ ITIMESTEP,                                                         &
                      U10,V10,                                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
-XICE, SST, ITIMESTEP,                                              &
+XICE, SST, ITIMESTEP, XICE_THRESHOLD,                              &
 CHS_SEA, CHS2_SEA, CPM_SEA, CQS2_SEA, FLHC_SEA, FLQC_SEA,          &
 HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -2882,6 +2903,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 !--------------------------------------------------------------------
 
      INTEGER,  INTENT(IN)                           :: ITIMESTEP
+     REAL,     INTENT(IN)                           :: XICE_THRESHOLD
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN)                           ::      XICE
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -2947,7 +2969,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. 0.02 ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) )  THEN
 
               IF ( SST(i,j) .LT. 271.4 ) THEN
                  SST(i,j) = 271.4
@@ -3025,7 +3047,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 
      DO j = JTS , JTE
         DO i= ITS , ITE
-           IF( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+           IF( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
               ! Sets up things for open ocean.
               XLAND_SEA(i,j)=2.
               MAVAIL_SEA(I,J)  =1.
@@ -3083,7 +3105,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 
      DO j = JTS , JTE
         DO i = ITS , ITE
-           IF ( ( XICE(I,J) .GE. 0.02 ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
               ! INTENT (INOUT) for PXSFCLAY:
               br(i,j)     = ( br(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * br_sea(i,j)     )
               gz1oz0(i,j) = ( gz1oz0(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * gz1oz0_sea(i,j) )

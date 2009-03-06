@@ -187,24 +187,16 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
 	$(LD) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
         -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) $(BUFR_LIB) \
         -L$(LAPACK) -llapack -L$(BLAS) -lblas ${MADIS_LIB} $(LIB)
+	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
 	$(LD) -o $@ $(LDFLAGS) da_wrfvar_esmf.o $(WRFVAR_LIB) \
           da_wrfvar_esmf_super.o
+	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_advance_time.exe : da_advance_time.o
-	$(RM) $@
-	$(SED_FTN) da_advance_time.f90 > da_advance_time.b
-	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
-        if [ $$x = "gfortran" ] ; then \
-           echo removing external declaration of iargc for gfortran ; \
-           $(CPP) $(CPPFLAGS) $(FPPFLAGS) da_advance_time.b | sed '/integer *, *external.*iargc/d' > da_advance_time.f ;\
-        else \
-           $(CPP) $(CPPFLAGS) $(FPPFLAGS) da_advance_time.b > da_advance_time.f ; \
-        fi
-	$(RM) da_advance_time.b
-	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include da_advance_time.f
 	$(SFC) $(LDFLAGS) -o $@ da_advance_time.o
+	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 inc/da_generic_boilerplate.inc: da_generic_boilerplate.m4
 	@ $(RM) inc/da_generic_boilerplate.inc
@@ -227,41 +219,52 @@ da_utils : setup \
 
 da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
 	$(SFC) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_verif_anal.exe : da_verif_anal.o da_verif_anal_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
 	$(SFC) $(LDFLAGS) -o $@ da_verif_anal.o da_netcdf_interface.o \
            da_verif_anal_control.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_hollingsworth1.exe: da_tune_obs_hollingsworth1.o
 	$(SFC) -o $@ da_tune_obs_hollingsworth1.o da_control.o \
 	   module_driver_constants.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_hollingsworth2.exe: da_tune_obs_hollingsworth2.o
 	$(SFC) -o $@ da_tune_obs_hollingsworth2.o da_control.o \
 	    module_driver_constants.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_desroziers.exe: da_tune_obs_desroziers.o
 	$(SFC) -o $@ da_tune_obs_desroziers.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_update_bc.exe : da_update_bc.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
 	$(SFC) $(LDFLAGS) -L$(NETCDF)/lib -o $@ da_update_bc.o \
            da_netcdf_interface.o \
            da_module_couple_uv.o -lnetcdf 
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_airmass.exe : da_bias_airmass.o  rad_bias.o pythag.o tqli.o tred2.o regress_one.o
-	$(SFC) -o  da_bias_airmass.exe da_bias_airmass.o rad_bias.o pythag.o tqli.o tred2.o regress_one.o
+	$(SFC) -o  $@ da_bias_airmass.o rad_bias.o pythag.o tqli.o tred2.o regress_one.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_sele.exe : da_bias_sele.o rad_bias.o
-	$(SFC) -o da_bias_sele.exe da_bias_sele.o rad_bias.o
+	$(SFC) -o $@ da_bias_sele.o rad_bias.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_scan.exe : da_bias_scan.o rad_bias.o
-	$(SFC) -o da_bias_scan.exe da_bias_scan.o rad_bias.o
+	$(SFC) -o $@ da_bias_scan.o rad_bias.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_verif.exe : da_bias_verif.o rad_bias.o
-	$(SFC) -o da_bias_verif.exe da_bias_verif.o rad_bias.o
+	$(SFC) -o $@ da_bias_verif.o rad_bias.o
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_rad_diags.exe : da_rad_diags.o 
-	$(SFC) -o da_rad_diags.exe da_rad_diags.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
+	$(SFC) -o $@ da_rad_diags.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
+	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 
 # Special cases, either needing special include files or too big to 
@@ -290,28 +293,24 @@ init_modules.o :
 	$(SED_FTN) $*.F > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I../../external/io_int $*.f
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I../../external/io_int $*.f
 
-da_rad_diags.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
-
+da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
+da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \
+da_verif_obs_control.o da_verif_obs_init.o da_verif_anal_control.o \
 da_verif_anal.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
-da_update_bc.o :
+rad_bias.o pythag.o tqli.o tred2.o regress_one.o da_update_bc.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
 da_netcdf_interface.o da_module_couple_uv.o gen_be_etkf.o netcdf_interface.o :
 	$(RM) $@
@@ -445,3 +444,30 @@ da_spectral.o da_be_spectral.o :
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(PROMOTION) -I../../external/fftpack/fftpack5  $*.f
+
+da_advance_time.o :
+	$(RM) $@
+	$(SED_FTN) $*.f90 > $*.b
+	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
+        if [ $$x = "gfortran" ] ; then \
+           echo removing external declaration of iargc for gfortran ; \
+           $(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b | sed '/integer *, *external.*iargc/d' > $*.f ;\
+        else \
+           $(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b > $*.f ; \
+        fi
+	$(RM) $*.b
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
+
+input_wrf.o :
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b | sed -e '/Must be old WPS data, assuming 24 levels for NUM_LAND_CAT/d' -e '/wrf_message("mminlu =/d' > $*.f90
+	$(RM) $*.b
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi
+

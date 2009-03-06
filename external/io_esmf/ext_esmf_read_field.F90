@@ -65,8 +65,8 @@ SUBROUTINE ext_esmf_read_field ( DataHandle , DateStr , VarName , Field , FieldT
     CALL wrf_error_fatal("ext_esmf_read_field: DataHandle not opened for read" )
   ENDIF
 
-write(mess,*)'ext_esmf_read_field ',DataHandle, TRIM(DateStr), TRIM(VarName)
-call wrf_debug( 300, TRIM(mess) )
+  write(mess,*)'ext_esmf_read_field ',DataHandle, TRIM(DateStr), TRIM(VarName)
+  call wrf_debug( 300, TRIM(mess) )
 
   IF      ( FieldType .EQ. WRF_REAL ) THEN
     esmf_kind = ESMF_KIND_R4
@@ -122,8 +122,8 @@ call wrf_debug( 300, TRIM(mess) )
   IF ( .NOT. okay_to_read( DataHandle ) )  THEN
 
     ! Training:  build the ESMF import state
-write(mess,*) ' ext_esmf_read_field: TRAINING READ:  DataHandle = ', DataHandle
-call wrf_debug( 300, TRIM(mess) )
+    write(mess,*) ' ext_esmf_read_field: TRAINING READ:  DataHandle = ', DataHandle
+    call wrf_debug( 300, TRIM(mess) )
 
     ! First, build the ESMF_Grid for this DataHandle, if it does not 
     ! already exist
@@ -206,7 +206,9 @@ write(0,*)__FILE__,__LINE__,'ext_esmf_read_field PatchEnd  ', PatchEnd(1:esmf_ra
 !TODO:  Add code for other data types here...  
 !    ALLOCATE( tmp_esmf_r4_ptr(ips:ipefull,jps:jpefull) )
     ALLOCATE( tmp_esmf_r4_ptr(ips:ipe,jps:jpe) )
-    CALL wrf_debug ( 100, 'ext_esmf_read_field: calling ESMF_FieldCreate' )
+    write(mess,*)'ext_esmf_read_field: calling ESMF_FieldCreate field=',trim(varname)
+    CALL wrf_debug ( 100, mess )
+
     tmpField = ESMF_FieldCreate(         &
                  grid( DataHandle )%ptr, &
                  tmp_esmf_r4_ptr,        &

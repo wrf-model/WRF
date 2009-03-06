@@ -68,6 +68,7 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
+
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -472,7 +473,6 @@ CONTAINS
                                          sp3y , ep3y , sm3y , em3y , &
                              bdx , bdy )
 
-# if 0
    SELECT CASE ( model_data_order )
       CASE ( DATA_ORDER_XYZ )
    bdy_mask( P_XSB ) = ( sp1 <= sd1 .AND. sd1 <= ep1 .AND. sp1 <= sd1+spec_bdy_width-1 .AND. sd1+spec_bdy_width-1 <= ep1 )
@@ -505,40 +505,6 @@ CONTAINS
    bdy_mask( P_XEB ) = ( sp3 <= ed3 .AND. ed3 <= ep3 .AND. sp3 <= ed3-spec_bdy_width-1 .AND. ed3-spec_bdy_width-1 <= ep3 )
    bdy_mask( P_YEB ) = ( sp1 <= ed1 .AND. ed1 <= ep1 .AND. sp1 <= ed1-spec_bdy_width-1 .AND. ed1-spec_bdy_width-1 <= ep1 )
    END SELECT
-# else
-   SELECT CASE ( model_data_order )
-      CASE ( DATA_ORDER_XYZ )
-   bdy_mask( P_XSB ) = ( sd1                  <= sp1 .AND. sp1 <= sd1+spec_bdy_width-1 )
-   bdy_mask( P_YSB ) = ( sd2                  <= sp2 .AND. sp2 <= sd2+spec_bdy_width-1 )
-   bdy_mask( P_XEB ) = ( ed1-spec_bdy_width-1 <= ep1 .AND. ep1 <= ed1                  )
-   bdy_mask( P_YEB ) = ( ed2-spec_bdy_width-1 <= ep2 .AND. ep2 <= ed2                  )
-      CASE ( DATA_ORDER_YXZ )
-   bdy_mask( P_XSB ) = ( sd2                  <= sp2 .AND. sp2 <= sd2+spec_bdy_width-1 )
-   bdy_mask( P_YSB ) = ( sd1                  <= sp1 .AND. sp1 <= sd1+spec_bdy_width-1 )
-   bdy_mask( P_XEB ) = ( ed2-spec_bdy_width-1 <= ep2 .AND. ep2 <= ed2                  )
-   bdy_mask( P_YEB ) = ( ed1-spec_bdy_width-1 <= ep1 .AND. ep1 <= ed1                  )
-      CASE ( DATA_ORDER_ZXY )
-   bdy_mask( P_XSB ) = ( sd2                  <= sp2 .AND. sp2 <= sd2+spec_bdy_width-1 )
-   bdy_mask( P_YSB ) = ( sd3                  <= sp3 .AND. sp3 <= sd3+spec_bdy_width-1 )
-   bdy_mask( P_XEB ) = ( ed2-spec_bdy_width-1 <= ep2 .AND. ep2 <= ed2                  )
-   bdy_mask( P_YEB ) = ( ed3-spec_bdy_width-1 <= ep3 .AND. ep3 <= ed3                  )
-      CASE ( DATA_ORDER_ZYX )
-   bdy_mask( P_XSB ) = ( sd3                  <= sp3 .AND. sp3 <= sd3+spec_bdy_width-1 )
-   bdy_mask( P_YSB ) = ( sd2                  <= sp2 .AND. sp2 <= sd2+spec_bdy_width-1 )
-   bdy_mask( P_XEB ) = ( ed3-spec_bdy_width-1 <= ep3 .AND. ep3 <= ed3                  )
-   bdy_mask( P_YEB ) = ( ed2-spec_bdy_width-1 <= ep2 .AND. ep2 <= ed2                  )
-      CASE ( DATA_ORDER_XZY )
-   bdy_mask( P_XSB ) = ( sd1                  <= sp1 .AND. sp1 <= sd1+spec_bdy_width-1 )
-   bdy_mask( P_YSB ) = ( sd3                  <= sp3 .AND. sp3 <= sd3+spec_bdy_width-1 )
-   bdy_mask( P_XEB ) = ( ed1-spec_bdy_width-1 <= ep1 .AND. ep1 <= ed1                  )
-   bdy_mask( P_YEB ) = ( ed3-spec_bdy_width-1 <= ep3 .AND. ep3 <= ed3                  )
-      CASE ( DATA_ORDER_YZX )
-   bdy_mask( P_XSB ) = ( sd3                  <= sp3 .AND. sp3 <= sd3+spec_bdy_width-1 )
-   bdy_mask( P_YSB ) = ( sd1                  <= sp1 .AND. sp1 <= sd1+spec_bdy_width-1 )
-   bdy_mask( P_XEB ) = ( ed3-spec_bdy_width-1 <= ep3 .AND. ep3 <= ed3                  )
-   bdy_mask( P_YEB ) = ( ed1-spec_bdy_width-1 <= ep1 .AND. ep1 <= ed1                  )
-   END SELECT
-# endif
 
 #endif
 
@@ -730,7 +696,6 @@ CONTAINS
         new_grid%alarms_created( i ) = .FALSE.
       ENDDO
       new_grid%time_set = .FALSE.
-      new_grid%is_intermediate = .FALSE.
 
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation
@@ -1812,6 +1777,11 @@ CONTAINS
         IF ( rc /= WRFU_SUCCESS ) THEN
           CALL wrf_error_fatal ( &
             'domain_alarm_create:  WRFU_AlarmCreate() failed' )
+        ENDIF
+        CALL WRFU_AlarmRingerOff( grid%alarms( alarm_id ) , rc=rc )
+        IF ( rc /= WRFU_SUCCESS ) THEN
+          CALL wrf_error_fatal ( &
+            'domain_alarm_create:  WRFU_AlarmRingerOff() failed' )
         ENDIF
         grid%alarms_created( alarm_id ) = .TRUE.
       END SUBROUTINE domain_alarm_create

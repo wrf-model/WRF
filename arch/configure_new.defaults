@@ -742,16 +742,19 @@ PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DLANDREAD_STUB
 CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB 
 LDFLAGS_LOCAL   =
+# module load libfast 
+LIB_LOCAL       =       -lfast_mv
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # PGI recommended
 #FCOPTIM         =       -O3 -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed 
-FCOPTIM         =       -O3 -fastsse 
+FCOPTIM         =       -O3 -fast
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 OPTERON_TYPE    =
 # Use this for AMD Opteron quad-core
 #OPTERON_TYPE    =      -tp barcelona-64
+#OPTERON_TYPE    =      -tp shanghai-64
 FCDEBUG         =       # -g $(FCNOOPT)
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
@@ -789,6 +792,8 @@ PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DLANDREAD_STUB
 CFLAGS_LOCAL    =       -w -O3 -DLANDREAD_STUB 
 LDFLAGS_LOCAL   =
+# module load libfast
+LIB_LOCAL       =       -lfast_mv
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 -OPT:Ofast

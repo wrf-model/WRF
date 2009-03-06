@@ -508,68 +508,6 @@ ENDDO
 WRITE( msg,* ) 'DEBUG WRF:  name = ', TRIM(gridname)
 CALL wrf_debug ( 5 , TRIM(msg) )
 
-#if 0
-      esmfgrid = ESMF_GridCreateHorzXY(                     &
-                   coord1=coordX, coord2=coordY,            &
-                   horzstagger=ESMF_GRID_HORZ_STAGGER_C_SW, &
-!TODO:  use this for 3D Grids once it is stable
-!                  coordorder=ESMF_COORD_ORDER_XZY,         &
-                   name=TRIM(gridname), rc=rc )
-#else
-! based on example in 3.1 ref man sec 23.2.5, Creating an Irregularly 
-! Distributed Rectilinear Grid with a Non-Distributed Vertical Dimension
-      !esmfgrid = ESMF_GridCreateShapeTile(  &
-write(0,*)'calling ESMF_GridCreateShapeTile ',allXCount,allYCount
-      esmfgrid = ESMF_GridCreateShapeTile(  &
-                 countsPerDEDim1=allXCount , &
-                 countsPerDEDim2=allYCount , &
-                 coordDep1=(/1/) , &
-                 coordDep2=(/2/) , &
-                 indexflag=ESMF_INDEX_GLOBAL, & ! use global indices
-                 name=TRIM(gridname), &
-                 rc = rc )
-write(0,*)'calling ESMF_GridAddCoord 1 ', rc
-! Note that we are putting the values on CENTER points for now
-!TODO: update for WRF velocities, which go on faces of Ara. C grid
-      CALL ESMF_GridAddCoord(esmfgrid, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER, &
-                 rc=rc)
-write(0,*)'calling ESMF_GridAddCoord 2 ', rc
-      CALL ESMF_GridAddCoord(esmfgrid, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER, &
-                 rc=rc)
-write(0,*)'calling ESMF_GridGetCoord x', rc
-      CALL ESMF_GridGetCoord(esmfgrid,coordDim=1,localDE=0, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER, &
-                 computationalLBound=lbnd,computationalUBound=ubnd, &
-                 fptr=coordX2d, &
-                 rc=rc)
-write(0,*)'back from ESMF_GridGetCoord x', rc
-      DO i=lbnd(1),ubnd(1)
-        coordX2d(i) = (i-1)*1.0
-write(0,*)'coordX2d ',i,coordX2d(i)
-      ENDDO
-      CALL ESMF_GridGetCoord(esmfgrid,coordDim=2,localDE=0, &
-                 staggerloc=ESMF_STAGGERLOC_CENTER, &
-                 computationalLBound=lbnd,computationalUBound=ubnd, &
-                 fptr=coordY2d,                             &
-                 rc=rc)
-write(0,*)'back from ESMF_GridGetCoord ', rc
-      DO i=lbnd(1),ubnd(1)
-        coordY2d(i) = (i-1)*1.0
-write(0,*)'coordY2d ',i,coordY2d(i)
-      ENDDO
-                 
-                 
-#endif
-      IF ( rc /= ESMF_SUCCESS ) THEN
-        WRITE( msg,* ) 'Error in ESMF_GridCreate', &
-                       __FILE__ ,                        &
-                       ', line',                         &
-                       __LINE__
-        CALL wrf_error_fatal ( msg )
-      ENDIF
-CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreate' )
       ! distribute the ESMF_Grid
       ! ignore repeated values
       is_min = MINVAL(allXStart)
@@ -617,6 +555,63 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreate' )
       WRITE( msg,* ) 'DEBUG:  j = ',j,'  dimYCount = ',dimYCount
       CALL wrf_debug ( 5 , TRIM(msg) )
 
+#if 0
+      esmfgrid = ESMF_GridCreateHorzXY(                     &
+                   coord1=coordX, coord2=coordY,            &
+                   horzstagger=ESMF_GRID_HORZ_STAGGER_C_SW, &
+!TODO:  use this for 3D Grids once it is stable
+!                  coordorder=ESMF_COORD_ORDER_XZY,         &
+                   name=TRIM(gridname), rc=rc )
+#else
+! based on example in 3.1 ref man sec 23.2.5, Creating an Irregularly 
+! Distributed Rectilinear Grid with a Non-Distributed Vertical Dimension
+      !esmfgrid = ESMF_GridCreateShapeTile(  &
+!write(0,*)'calling ESMF_GridCreateShapeTile for grid named ',trim(gridname)
+!write(0,*)'calling ESMF_GridCreateShapeTile dimXCount ',dimXCount
+!write(0,*)'calling ESMF_GridCreateShapeTile dimYCount ',dimYCount
+      esmfgrid = ESMF_GridCreateShapeTile(  &
+                 countsPerDEDim1=dimXCount , &
+                 countsPerDEDim2=dimYcount , &
+                 coordDep1=(/1/) , &
+                 coordDep2=(/2/) , &
+                 indexflag=ESMF_INDEX_GLOBAL, & ! use global indices
+                 name=TRIM(gridname), &
+                 rc = rc )
+
+      CALL ESMF_GridAddCoord(esmfgrid, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
+                 rc=rc)
+
+
+      CALL ESMF_GridGetCoord(esmfgrid,coordDim=1,localDE=0, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
+                 computationalLBound=lbnd,computationalUBound=ubnd, &
+                 fptr=coordX2d, &
+                 rc=rc)
+
+      DO i=lbnd(1),ubnd(1)
+        coordX2d(i) = (i-1)*1.0
+      ENDDO
+      CALL ESMF_GridGetCoord(esmfgrid,coordDim=2,localDE=0, &
+                 staggerloc=ESMF_STAGGERLOC_CENTER, &
+                 computationalLBound=lbnd,computationalUBound=ubnd, &
+                 fptr=coordY2d,                             &
+                 rc=rc)
+      DO i=lbnd(1),ubnd(1)
+        coordY2d(i) = (i-1)*1.0
+      ENDDO
+                 
+                 
+#endif
+      IF ( rc /= ESMF_SUCCESS ) THEN
+        WRITE( msg,* ) 'Error in ESMF_GridCreate', &
+                       __FILE__ ,                        &
+                       ', line',                         &
+                       __LINE__
+        CALL wrf_error_fatal ( msg )
+      ENDIF
+CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridCreate' )
+
       CALL wrf_debug ( 5 , 'DEBUG ioesmf_create_grid_int:  calling ESMF_DELayoutPrint 2' )
       IF ( 5 .LE. debug_level ) THEN
         CALL ESMF_DELayoutPrint( taskLayout, rc=rc )
@@ -648,6 +643,7 @@ CALL wrf_debug ( 5 , 'DEBUG WRF:  Calling ESMF_GridValidate()' )
                        ', error code = ',rc
         CALL wrf_error_fatal ( msg )
       ENDIF
+
 CALL wrf_debug ( 5 , 'DEBUG WRF:  back OK from ESMF_GridValidate()' )
       DEALLOCATE( allXStart, allXCount, allYStart, allYCount, &
                   dimXCount, dimYCount, coordX, coordY )

@@ -1,11 +1,13 @@
-!**********************************************************************************  
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute,
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for references and terms of use
-!**********************************************************************************  
+! MOSAIC module: see module_mosaic_driver.F for references and terms of
+! use
+!************************************************************************
       module module_mosaic_therm
 
 
@@ -23,7 +25,9 @@
 
 
 
-!   zz01aerchemistry.f (mosaic.22.0)
+!   zz01aerchemistry.f (mosaic.28.0)
+!   11/13/2008 raz - updated calculation of "epercent" variable
+!   6/25/2008  raz - updated nh4no3 and nh4cl condensation algorithm
 !   30-apr-07 raz - made about a dozen changes/bug fixes. search for "raz-30apr07" to see the changes
 !   05-feb-07 wig - converted to double
 !   10-jan-07 raz - contains major revisions and updates. new module ASTEM replaces ASTEEM.
@@ -121,10 +125,6 @@
         mclm_aer = m
 
         do 100 k = kclm_aer_calcbgn, kclm_aer_calcend
-
-!      epercent(:,:,:) = Z'FFF8000000000000' !NaN in r8... temporary hack
-      epercent(:,:,:) = 0. !temporary hack that does not core dump
-
           kclm_aer = k
           if (afracsubarea(k,m) .lt. 1.e-4) goto 100
 
@@ -492,6 +492,9 @@
           electrolyte(je,jtotal,ibin)  = 0.0
           electrolyte(je,jsolid,ibin)  = 0.0
           electrolyte(je,jliquid,ibin) = 0.0
+          epercent(je,jtotal,ibin)     = 0.0	! raz update 11/13/2008
+          epercent(je,jsolid,ibin)     = 0.0	! raz update 11/13/2008
+          epercent(je,jliquid,ibin)    = 0.0	! raz update 11/13/2008
           activity(je,ibin)            = 0.0
           gam(je,ibin)                 = 0.0
         enddo
@@ -1509,7 +1512,7 @@
 
       rel_err = abs( (ah2o_a_new - ah2o_a(ibin))/ah2o_a(ibin))
 
-      if(rel_err .gt. kelvin_toler .and. iter_kelvin.le.20)then
+      if(rel_err .gt. kelvin_toler .and. iter_kelvin.le.10)then
         ah2o_a(ibin) = ah2o_a_new
         goto 10
       endif
@@ -1588,11 +1591,25 @@
       integer ibin
 
 ! local variables
-      integer idissolved, j_index, jdum, js
+      integer idissolved, j_index, jdum, js, je		! raz update 11/13/2008
       real(kind=8) crh, solids, sum_soluble, sum_insoluble, xt
 !     real(kind=8) aerosol_water				! mosaic func
 !     real(kind=8) drh_mutual					! mosaic func
-      real(kind=8) h_ion
+      real(kind=8) h_ion, sum_dum				! raz update 11/13/2008
+
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do je = 1, nelectrolyte
+        sum_dum = sum_dum + electrolyte(je,jtotal,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      do je = 1, nelectrolyte
+        epercent(je,jtotal,ibin) = 100.*electrolyte(je,jtotal,ibin)/sum_dum
+      enddo
 
 
       call calculate_xt(ibin,jtotal,xt)
@@ -1845,11 +1862,11 @@
       integer ibin
 ! local variables
       integer iaer, iconverge, iconverge_flux, iconverge_mass,   &
-           idissolved, itdum, js, je, jp
+           idissolved, itdum, js, je, jp			! raz update 11/13/2008
       real(kind=8) tau_p(nsalt), tau_d(nsalt)
       real(kind=8) frac_solid, sumflux, hsalt_min, alpha, xt, dumdum,   &
            h_ion
-      real(kind=8) phi_prod, alpha_fac, sum_dum
+      real(kind=8) phi_prod, alpha_fac, sum_dum		! raz update 11/13/2008
       real(kind=8) aer_H
 ! function
 !     real(kind=8) aerosol_water
@@ -1870,6 +1887,20 @@
       enddo
 
 
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do je = 1, nelectrolyte
+        sum_dum = sum_dum + electrolyte(je,jtotal,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      do je = 1, nelectrolyte
+        epercent(je,jtotal,ibin) = 100.*electrolyte(je,jtotal,ibin)/sum_dum
+      enddo
+
+
+
       do js = 1, nsalt
         jsalt_present(js) = 0			! default value - salt absent
         if(epercent(js,jtotal,ibin) .gt. 1.0)then
@@ -1888,6 +1919,7 @@
               (2.*aer(ica_a,jtotal,ibin)  +  &
                   aer(ina_a,jtotal,ibin)  +  &
                   aer(inh4_a,jtotal,ibin))
+      aer_H = max(aer_H, 0.0d0)		! raz update 11/13/2008
 
       do iaer = 1, naer
        mass_dry_a(ibin) = mass_dry_a(ibin) +  &
@@ -1906,15 +1938,6 @@
         mass_dry_salt(ibin) = mass_dry_salt(ibin) +  &
               electrolyte(je,jtotal,ibin)*mw_electrolyte(je)*1.e-15	! g/cc(air)
       enddo
-
-!      call mesa_check_complete_dissolution(ibin,          &
-!                                           mdissolved,    &
-!                                           iconverge_flux)
-!      if (istat_mosaic_fe1 .lt. 0) return
-!      if(mdissolved .eq. myes .or. iconverge_flux .eq. myes)then
-!        return
-!      endif
-
 
       nmesa_call = nmesa_call + 1
 
@@ -2083,114 +2106,6 @@
 
 
 !***********************************************************************
-! part of mesa: checks if particle is completely deliquesced at the
-! current rh
-!
-! author: rahul a. zaveri
-! update: feb 2005
-!-----------------------------------------------------------------------
-      subroutine mesa_check_complete_dissolution(ibin,          &
-                                                 mdissolved,    &
-                                                 iconverge_flux)
-!     implicit none
-!     include 'mosaic.h'
-! subr arguments
-      integer ibin, mdissolved, iconverge_flux, je, js, iaer
-! local variables
-      real(kind=8) sumflux, aer_sav(naer,3,nbin_a),   &
-           electrolyte_sav(nelectrolyte,3,nbin_a), crustal_solids
-
-
-! save current solid-liquid arrays
-      do je = 1, nelectrolyte
-        electrolyte_sav(je,jsolid,ibin) =electrolyte(je,jsolid,ibin)
-        electrolyte_sav(je,jliquid,ibin)=electrolyte(je,jliquid,ibin)
-      enddo
-
-      do iaer = 1, naer
-        aer_sav(iaer,jsolid,ibin) =aer(iaer,jsolid,ibin)
-        aer_sav(iaer,jliquid,ibin)=aer(iaer,jliquid,ibin)
-      enddo
-
-      call do_full_deliquescence(ibin)
-
-      do js = 1, nsalt
-        sat_ratio(js) = 0.0
-        phi_salt(js)  = 0.0
-        flux_sl(js)   = 0.0
-      enddo
-
-
-! compute new salt fluxes
-      call mesa_flux_salt(ibin)
-      if (istat_mosaic_fe1 .lt. 0) return
-
-
-! check if all the fluxes are zero
-      sumflux = 0.0
-      do js = 1, nsalt
-        sumflux = sumflux + abs(flux_sl(js))
-      enddo
-
-      crustal_solids = electrolyte(jcaco3,jsolid,ibin) +  &
-                       electrolyte(jcaso4,jsolid,ibin) +  &
-                       aer(ioin_a,jsolid,ibin)
-      if(sumflux .eq. 0.0 .and. crustal_solids.eq.0.)then ! it is completely dissolved
-
-        jaerosolstate(ibin) = all_liquid
-        jphase(ibin)        = jliquid
-        mdissolved          = myes
-        iconverge_flux      = myes
-
-        mass_wet_a(ibin)    = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
-        vol_wet_a(ibin)     = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
-        growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)		! mass growth factor
-
-      elseif(sumflux .eq. 0.0)then
-
-        jaerosolstate(ibin) = mixed
-        jphase(ibin)        = jliquid
-        iconverge_flux      = myes
-        mdissolved          = mno
-        jhyst_leg(ibin)     = jhyst_lo
-        mass_wet_a(ibin)    = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
-        vol_wet_a(ibin)     = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
-        growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)		! mass growth factor
-
-      else ! restore saved solid-liquid arrays
-
-        do je = 1, nelectrolyte
-          electrolyte(je,jsolid,ibin) =electrolyte_sav(je,jsolid,ibin)
-          electrolyte(je,jliquid,ibin)=electrolyte_sav(je,jliquid,ibin)
-        enddo
-        do iaer = 1, naer
-          aer(iaer,jsolid,ibin) =aer_sav(iaer,jsolid,ibin)
-          aer(iaer,jliquid,ibin)=aer_sav(iaer,jliquid,ibin)
-        enddo
-        mdissolved     = mno
-        iconverge_flux = mno
-
-      endif
-
-
-      return
-      end subroutine mesa_check_complete_dissolution
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-!***********************************************************************
 ! part of mesa: calculates solid-liquid fluxes of soluble salts
 !
 ! author: rahul a. zaveri
@@ -2202,8 +2117,8 @@
 ! subr arguments
       integer ibin
 ! local variables
-      integer js
-      real(kind=8) xt, calcium, sum_salt
+      integer js, je						! raz update 11/13/2008
+      real(kind=8) xt, calcium, sum_salt, sum_dum	! raz update 11/13/2008
 
 
 ! compute activities and water content
@@ -2223,6 +2138,21 @@
       call mesa_estimate_eleliquid(ibin,xt)
 
       calcium = aer(ica_a,jliquid,ibin)
+
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do je = 1, nelectrolyte
+        sum_dum = sum_dum + electrolyte(je,jliquid,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      do je = 1, nelectrolyte
+        epercent(je,jliquid,ibin) = 100.*electrolyte(je,jliquid,ibin)/sum_dum
+      enddo
+
 
 
 ! calculate % electrolyte composition in the solid and liquid phases
@@ -2599,22 +2529,8 @@
 
       endif
 !---------------------------------------------------------
-!
-! calculate % composition
-10    sum_dum = 0.0
-      do je = 1, nelectrolyte
-        sum_dum = sum_dum + eleliquid(je)
-      enddo
 
-      electrolyte_sum(jp,ibin) = sum_dum
-
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*eleliquid(je)/sum_dum
-      enddo
-
-
-      return
+10    return
       end subroutine mesa_estimate_eleliquid
 
 
@@ -3656,6 +3572,7 @@
 ! update: jan 2005
 !-----------------------------------------------------------------------
       subroutine ASTEM_calculate_dtmax(dtchem, dtmax)
+       use module_data_mosaic_other, only:  lunerr
 !      implicit none
 !      include 'mosaic.h'
 ! subr arguments
@@ -3667,7 +3584,7 @@
            sum_kg_phi, sumflux_s
 
 
-      h_sub_max = 100.0	! sec  raz-30apr07
+      h_sub_max = 100.0	! sec  raz update 4/30/2007
 
 
 ! gas-side
@@ -3801,7 +3718,7 @@
         write(67,*)' dtmax = ', dtmax
         call print_input
         iprint_input = mNO
-         stop
+        call peg_error_fatal( lunerr, " " )
       endif
 
       return
@@ -3834,9 +3751,22 @@
 ! subr arguments
       integer ibin
 ! local variables
-      integer jdum, js, j_index
-      real(kind=8) XT
+      integer jdum, js, j_index, je	! raz update 11/13/2008
+      real(kind=8) XT, sum_dum	! raz update 11/13/2008
       
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do je = 1, nelectrolyte
+        sum_dum = sum_dum + electrolyte(je,jtotal,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      do je = 1, nelectrolyte
+        epercent(je,jtotal,ibin) = 100.*electrolyte(je,jtotal,ibin)/sum_dum
+      enddo
 
 
 ! calculate overall sulfate ratio      
@@ -3913,6 +3843,7 @@
 ! update: Jan 2007
 !-----------------------------------------------------------------------
       subroutine ASTEM_flux_wet(ibin)
+      use module_data_mosaic_other, only:  lunerr
 !      implicit none
 !      include 'mosaic.h'
 ! subr arguments
@@ -3928,8 +3859,7 @@
 
       if(water_a(ibin) .eq. 0.0)then
 	write(6,*)'Water is zero in liquid phase'
-	write(6,*)'Stopping in ASTEM_flux_wet'
-        stop
+        call peg_error_fatal( lunerr, "Stopping in ASTEM_flux_wet" )
       endif
 
 !-------------------------------------------------------------------
@@ -4669,8 +4599,10 @@
      
         call ASTEM_flux_dry_case3a(ibin)
 
-        prod_nh4cl = max( (gas(inh3_g)*gas(ihcl_g)-Keq_sg(2)), 0.0D0) + &
-                     electrolyte(jnh4cl, jsolid,ibin)
+        Keq_nh4cl_0  = min(Kp_nh4cl_0,  Keq_sg(2))	! raz update 6/25/2008
+
+        prod_nh4cl = max( (gas(inh3_g)*gas(ihcl_g)-Keq_nh4cl_0), 0.0d0) +   &
+                     electrolyte(jnh4cl, jsolid,ibin)	! raz update 6/25/2008
 
         if(prod_nh4cl .gt. 0.0)then
           call ASTEM_flux_dry_case3b(ibin)
@@ -4682,10 +4614,13 @@
 !-----------------------------------------------------------------
 ! CASE 4: nh4no3 or nh4cl or both may be active
 
-      prod_nh4no3 = max( (gas(inh3_g)*gas(ihno3_g)-Keq_sg(1)),0.D0) + & 
-                    electrolyte(jnh4no3,jsolid,ibin)
-      prod_nh4cl  = max( (gas(inh3_g)*gas(ihcl_g) -Keq_sg(2)),0.D0) + & 
-                    electrolyte(jnh4cl, jsolid,ibin)
+      Keq_nh4no3_0 = min(Kp_nh4no3_0, Keq_sg(1))	! raz update 6/25/2008
+      Keq_nh4cl_0  = min(Kp_nh4cl_0,  Keq_sg(2))	! raz update 6/25/2008
+
+      prod_nh4no3 = max( (gas(inh3_g)*gas(ihno3_g)-Keq_nh4no3_0), 0.0d0) +   &
+                    electrolyte(jnh4no3,jsolid,ibin)	! raz update 6/25/2008
+      prod_nh4cl  = max( (gas(inh3_g)*gas(ihcl_g) -Keq_nh4cl_0), 0.0d0) +   &
+                    electrolyte(jnh4cl, jsolid,ibin)	! raz update 6/25/2008
 
       if(prod_nh4no3 .gt. 0.0 .or. prod_nh4cl .gt. 0.0)then
         call ASTEM_flux_dry_case4(ibin)
@@ -4822,10 +4757,23 @@
 ! subr arguments
       integer ibin
 ! local variables
-      integer iactive_nh4cl
-      real(kind=8) a, b, c
+      integer iactive_nh4cl, js	! raz update 11/13/2008
+      real(kind=8) a, b, c, sum_dum	! raz update 11/13/2008
 ! function
 !      real(kind=8) quadratic
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do js = 1, nsalt
+        sum_dum = sum_dum + electrolyte(js,jsolid,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      epercent(jnh4cl,jsolid,ibin) = 100.*electrolyte(jnh4cl,jsolid,ibin)/sum_dum
+
+
 
 
 !-------------------
@@ -4905,10 +4853,24 @@
 ! subr arguments
       integer ibin
 ! local variables
-      integer iactive_nh4no3, iactive_nh4cl, iactive
-      real(kind=8) a, b, c
+      integer iactive_nh4no3, iactive_nh4cl, iactive, js	! raz update 11/13/2008
+      real(kind=8) a, b, c, sum_dum					! raz update 11/13/2008
 ! function
 !      real(kind=8) quadratic
+
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do js = 1, nsalt
+        sum_dum = sum_dum + electrolyte(js,jsolid,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      epercent(jnh4no3,jsolid,ibin) = 100.*electrolyte(jnh4no3,jsolid,ibin)/sum_dum
+      epercent(jnh4cl, jsolid,ibin) = 100.*electrolyte(jnh4cl, jsolid,ibin)/sum_dum
+
 
 
 !-------------------
@@ -5006,10 +4968,10 @@
       a =   kg(inh3_g,ibin)
       b = - kg(inh3_g,ibin)*gas(inh3_g)  &
           + kg(ihno3_g,ibin)*gas(ihno3_g) 
-      c = -(kg(ihno3_g,ibin)*Keq_sg(1))
+      c = -(kg(ihno3_g,ibin)*Keq_nh4no3_0)	! raz update 6/25/2008
 
       sfc_a(inh3_g)  = quadratic(a,b,c)
-      sfc_a(ihno3_g) = Keq_sg(1)/sfc_a(inh3_g)
+      sfc_a(ihno3_g) = Keq_nh4no3_0/sfc_a(inh3_g) ! raz update 6/25/2008
 
       integrate(ihno3_g,jsolid,ibin) = mYES
       integrate(inh3_g,jsolid,ibin)  = mYES
@@ -5048,10 +5010,10 @@
       a =   kg(inh3_g,ibin)
       b = - kg(inh3_g,ibin)*gas(inh3_g) &
           + kg(ihcl_g,ibin)*gas(ihcl_g)  
-      c = -(kg(ihcl_g,ibin)*Keq_sg(2))
+      c = -(kg(ihcl_g,ibin)*Keq_nh4cl_0)	! raz update 6/25/2008
         
       sfc_a(inh3_g) = quadratic(a,b,c)
-      sfc_a(ihcl_g) = Keq_sg(2) /sfc_a(inh3_g)
+      sfc_a(ihcl_g) = Keq_nh4cl_0 /sfc_a(inh3_g)	! raz update 6/25/2008
 
       integrate(ihcl_g,jsolid,ibin) = mYES
       integrate(inh3_g,jsolid,ibin) = mYES
@@ -5154,16 +5116,17 @@
 !-----------------------------------------------------------------------
 
       subroutine ASTEM_flux_mix(ibin)
+      use module_data_mosaic_other, only:  lunerr
 !      implicit none
 !      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer iv, iadjust, iadjust_intermed
+      integer iv, iadjust, iadjust_intermed, js		! raz update 11/13/2008
       real(kind=8) XT, g_nh3_hno3, g_nh3_hcl, &
            a_nh4_no3, a_nh4_cl, a_no3, a_cl, &
            prod_nh4no3, prod_nh4cl
-      real(kind=8) volatile_cl
+      real(kind=8) volatile_cl, sum_dum			! raz update 11/13/2008
      
 
       call ions_to_electrolytes(jliquid,ibin,XT)  	! for water content calculation
@@ -5171,14 +5134,28 @@
 
       if(water_a(ibin) .eq. 0.0)then
 	write(6,*)'Water is zero in liquid phase'
-	write(6,*)'Stopping in ASTEM_flux_wet'
-        stop
+        call peg_error_fatal( lunerr, "Stopping in ASTEM_flux_wet" )
       endif
       
 
 
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do js = 1, nsalt
+        sum_dum = sum_dum + electrolyte(js,jsolid,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      epercent(jcaco3,jsolid,ibin) = 100.*electrolyte(jcaco3,jsolid,ibin)/sum_dum
+
+
+! reset
+	Keq_nh4no3_0 = Keq_sg(1)	! raz update 6/25/2008
+	Keq_nh4cl_0  = Keq_sg(2)	! raz update 6/25/2008
+
 !-----------------------------------------------------------------
-! CASE 1:  caco3 > 0 absorb all acids (and indirectly degas co2)
+! MIXED CASE 1:  caco3 > 0 absorb all acids (and indirectly degas co2)
 
       if(epercent(jcaco3,jsolid,ibin) .gt. 0.0)then
         jphase(ibin) = jliquid
@@ -5187,7 +5164,7 @@
       endif
 
 !-----------------------------------------------------------------
-! CASE 2: Sulfate-Rich Domain
+! MIXED CASE 2: Sulfate-Rich Domain
 
       if(XT.lt.1.9999 .and. XT.ge.0.)then	! excess sulfate (acidic)
         jphase(ibin) = jliquid
@@ -5196,7 +5173,30 @@
       endif
 
 !-------------------------------------------------------------------
-! CASE 3: nh4no3 or nh4cl or both may be active
+! MIXED CASE 3: hno3 and hcl exchange may happen here and nh4cl may form/evaporate
+
+      volatile_cl  = electrolyte(jnacl,jsolid,ibin) +   &
+                     electrolyte(jcacl2,jsolid,ibin)
+
+
+      if(volatile_cl .gt. 0.0 .and. gas(ihno3_g).gt. 0.0 )then
+
+        call ASTEM_flux_dry_case3a(ibin)
+
+        prod_nh4cl = max( (gas(inh3_g)*gas(ihcl_g)-Keq_sg(2)), 0.0d0) +   &
+                     electrolyte(jnh4cl, jsolid,ibin)
+
+        if(prod_nh4cl .gt. 0.0)then
+          call ASTEM_flux_dry_case3b(ibin)
+        endif
+
+        jphase(ibin) = jsolid
+
+        return
+      endif
+
+!-------------------------------------------------------------------
+! MIXED CASE 4: nh4no3 or nh4cl or both may be active
 
       if( electrolyte(jnh4no3,jsolid,ibin).gt.0. .and. &
           electrolyte(jnh4cl,jsolid,ibin) .gt.0. )then
@@ -5230,11 +5230,11 @@
         endif
     
         if(iadjust .eq. mYES)then
-          call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+          call ions_to_electrolytes(jliquid,ibin,XT)  ! update after adjustments
           call compute_activities(ibin)			! update after adjustments
         endif
 
-        call ASTEM_flux_mix_case3a(ibin)	! nh4no3 solid + nh4cl aq
+        call ASTEM_flux_mix_case4a(ibin)	! nh4no3 solid + nh4cl aq
         jphase(ibin) = jtotal
         return
 
@@ -5260,10 +5260,113 @@
         kelvin_nh4no3 = kel(inh3_g,ibin)*kel(ihno3_g,ibin)
         Keq_nh4no3 = kelvin_nh4no3*activity(jnh4no3,ibin)*Kp_nh4no3	! = [NH3]s * [HNO3]s
 
-        call ASTEM_flux_mix_case3b(ibin)	! nh4cl solid + nh4no3 aq
+        call ASTEM_flux_mix_case4b(ibin)	! nh4cl solid + nh4no3 aq
         jphase(ibin) = jtotal
         return
       endif
+
+
+!-------------------------------------------------------------------
+
+      if( (gas(inh3_g)+aer(inh4_a,jliquid,ibin)) .lt. 1.e-25)goto 10  ! no ammonia in the system
+
+!-------------------------------------------------------------------
+! MIXED CASE 5: liquid nh4no3 and/or nh4cl maybe active
+! do some small adjustments (if needed) before deciding case 3
+
+      iadjust = mNO		! default
+      iadjust_intermed = mNO	! default
+
+! nh4no3
+      g_nh3_hno3 = gas(inh3_g)*gas(ihno3_g)
+      a_nh4_no3  = aer(inh4_a,jliquid,ibin)*aer(ino3_a,jliquid,ibin)
+
+      if(g_nh3_hno3 .gt. 0. .and. a_nh4_no3 .eq. 0.)then
+        call absorb_tiny_nh4no3(ibin)
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+        iadjust_intermed = mNO	! reset
+      endif
+
+! nh4cl
+      g_nh3_hcl = gas(inh3_g)*gas(ihcl_g)
+      a_nh4_cl  = aer(inh4_a,jliquid,ibin)*aer(icl_a,jliquid,ibin)
+
+      if(g_nh3_hcl .gt. 0. .and. a_nh4_cl .eq. 0.)then
+        call absorb_tiny_nh4cl(ibin)
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+      endif
+
+      if(iadjust .eq. mYES)then
+        call compute_activities(ibin)			! update after adjustments
+      endif
+
+
+! all adjustments done...
+
+!--------
+      kelvin_nh4no3 = kel(inh3_g,ibin)*kel(ihno3_g,ibin)
+      Keq_nh4no3 = kelvin_nh4no3*activity(jnh4no3,ibin)*Kp_nh4no3	! = [NH3]s * [HNO3]s
+
+      kelvin_nh4cl = kel(inh3_g,ibin)*kel(ihcl_g,ibin)
+      Keq_nh4cl = kelvin_nh4cl*activity(jnh4cl,ibin)*Kp_nh4cl	! = [NH3]s * [HCl]s
+
+      call ASTEM_flux_wet_case3(ibin)
+      jphase(ibin) = jliquid
+
+      return
+
+
+!-------------------------------------------------------------------
+! MIXED CASE 6: ammonia = 0. liquid hno3 and hcl exchange may happen here
+! do small adjustments (if needed) before deciding case 4
+
+10    iadjust = mNO		! default
+      iadjust_intermed = mNO	! default
+
+! hno3
+      if(gas(ihno3_g).gt.0. .and. aer(ino3_a,jliquid,ibin).eq.0. .and.   &
+         aer(icl_a,jliquid,ibin) .gt. 0.0)then
+        call absorb_tiny_hno3(ibin)	! and degas tiny hcl
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+        iadjust_intermed = mNO	! reset
+      endif
+
+! hcl
+      if(gas(ihcl_g).gt.0. .and. aer(icl_a,jliquid,ibin) .eq. 0. .and.   &
+         aer(ino3_a,jliquid,ibin) .gt. 0.0)then
+        call absorb_tiny_hcl(ibin)			! and degas tiny hno3
+        iadjust = mYES
+        iadjust_intermed = mYES
+      endif
+
+      if(iadjust_intermed .eq. mYES)then
+        call ions_to_electrolytes(jliquid,ibin,XT)  	! update after adjustments
+      endif
+
+      if(iadjust .eq. mYES)then
+        call compute_activities(ibin)			! update after adjustments
+      endif
+
+! all adjustments done...
+
+      call ASTEM_flux_wet_case4(ibin)
+      jphase(ibin) = jliquid
+
      
 
       return
@@ -5279,20 +5382,33 @@
 
 
 !------------------------------------------------------------------
-! Mix Case 3a: NH4NO3 solid maybe active. NH4Cl aq maybe active
+! Mix Case 4a: NH4NO3 solid maybe active. NH4Cl aq maybe active
 
-      subroutine ASTEM_flux_mix_case3a(ibin)	! TOUCH
+      subroutine ASTEM_flux_mix_case4a(ibin)	! TOUCH
 !      implicit none
 !      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer iactive_nh4no3, iactive_nh4cl
+      integer iactive_nh4no3, iactive_nh4cl, js	! raz update 11/13/2008
+      real(kind=8) sum_dum				! raz update 11/13/2008
 
 
 ! set default values for flags
       iactive_nh4no3 = mYES
       iactive_nh4cl  = mYES
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do js = 1, nsalt
+        sum_dum = sum_dum + electrolyte(js,jsolid,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      epercent(jnh4no3,jsolid,ibin) = 100.*electrolyte(jnh4no3,jsolid,ibin)/sum_dum
+
 
 
 ! nh4no3 (solid)
@@ -5364,7 +5480,7 @@
 
             
       return
-      end subroutine ASTEM_flux_mix_case3a
+      end subroutine ASTEM_flux_mix_case4a
 
 
 
@@ -5374,20 +5490,33 @@
 
 
 !------------------------------------------------------------------
-! Mix Case 3b: NH4Cl solid maybe active. NH4NO3 aq may or maybe active
+! Mix Case 4b: NH4Cl solid maybe active. NH4NO3 aq may or maybe active
 
-      subroutine ASTEM_flux_mix_case3b(ibin)	! TOUCH
+      subroutine ASTEM_flux_mix_case4b(ibin)	! TOUCH
 !      implicit none
 !      include 'mosaic.h'
 ! subr arguments
       integer ibin
 ! local variables
-      integer iactive_nh4no3, iactive_nh4cl
+      integer iactive_nh4no3, iactive_nh4cl, js	! raz update 11/13/2008
+	real(kind=8) sum_dum				! raz update 11/13/2008
 
 
 ! set default values for flags
       iactive_nh4cl  = mYES
       iactive_nh4no3 = mYES
+
+
+! calculate percent composition	! raz update 11/13/2008
+      sum_dum = 0.0
+      do js = 1, nsalt
+        sum_dum = sum_dum + electrolyte(js,jsolid,ibin)
+      enddo
+
+      if(sum_dum .eq. 0.)sum_dum = 1.0
+
+      epercent(jnh4cl,jsolid,ibin) = 100.*electrolyte(jnh4cl,jsolid,ibin)/sum_dum
+
 
 
 ! nh4cl (solid)
@@ -5459,7 +5588,7 @@
                  
 
       return
-      end subroutine ASTEM_flux_mix_case3b
+      end subroutine ASTEM_flux_mix_case4b
 
 
 
@@ -5605,14 +5734,14 @@
           delta_nh4(ibin)=min( (2.*delta_so4(ibin)+delta_msa(ibin)), &
                                 delta_nh3_max(ibin) )
      
-          aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin) + &	! update aer-phase
+          aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin) +        &	! update aer-phase
                                     delta_nh4(ibin)
 
           gas(inh3_g) = gas(inh3_g) - delta_nh4(ibin)		! update gas-phase
 
         else
 
-          delta_nh4(ibin)     = 0.0
+          delta_nh4(ibin) = 0.0
 
         endif
 
@@ -6877,8 +7006,6 @@
 !     include 'mosaic.h'
 ! subr arguments
       integer jp, ibin
-! local variables
-      real(kind=8) sum_dum
 
 
       aer(iso4_a,jp,ibin) = electrolyte(jcaso4,jp,ibin)  +   &
@@ -6926,28 +7053,6 @@
                          3.*electrolyte(jlvcite,jp,ibin) +   &
                             electrolyte(jnh4hso4,jp,ibin)+   &
                             electrolyte(jnh4msa,jp,ibin)
-
-
-      sum_dum = aer(ica_a,jp,ibin) +   &
-                aer(ina_a,jp,ibin) +   &
-                aer(inh4_a,jp,ibin)+   &
-                aer(iso4_a,jp,ibin)+   &
-                aer(ino3_a,jp,ibin)+   &
-                aer(icl_a,jp,ibin) +   &
-                aer(imsa_a,jp,ibin)+   &
-                aer(ico3_a,jp,ibin)
-
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      aer_sum(jp,ibin) = sum_dum
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
-      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
 
 
       return
@@ -7277,42 +7382,19 @@
 !---------------------------------------------------------
 !
 ! calculate % composition
-10    sum_dum = 0.0
-      do je = 1, nelectrolyte
-        sum_dum = sum_dum + electrolyte(je,jp,ibin)
-      enddo
+!! 10    sum_dum = 0.0
+!!      do je = 1, nelectrolyte
+!!        sum_dum = sum_dum + electrolyte(je,jp,ibin)
+!!      enddo
+!!
+!!      if(sum_dum .eq. 0.)sum_dum = 1.0
+!!      electrolyte_sum(jp,ibin) = sum_dum
+!!
+!!      do je = 1, nelectrolyte
+!!        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
+!!      enddo
 
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      electrolyte_sum(jp,ibin) = sum_dum
-
-      do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
-      enddo
-
-      sum_dum = aer(ica_a,jp,ibin) +   &
-                aer(ina_a,jp,ibin) +   &
-                aer(inh4_a,jp,ibin)+   &
-                aer(iso4_a,jp,ibin)+   &
-                aer(ino3_a,jp,ibin)+   &
-                aer(icl_a,jp,ibin) +   &
-                aer(imsa_a,jp,ibin)+   &
-                aer(ico3_a,jp,ibin)
-
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      aer_sum(jp,ibin) = sum_dum
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
-      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
-
-
-
-      return
+10    return
       end subroutine ions_to_electrolytes
 
 
@@ -7463,40 +7545,18 @@
 !---------------------------------------------------------
 !
 ! calculate % composition
-      sum_dum = 0.0
-      do je = 1, nelectrolyte
-        electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
-        sum_dum = sum_dum + electrolyte(je,jp,ibin)
-      enddo
+!!      sum_dum = 0.0
+!!      do je = 1, nelectrolyte
+!!        electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
+!!        sum_dum = sum_dum + electrolyte(je,jp,ibin)
+!!      enddo
 
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      electrolyte_sum(jp,ibin) = sum_dum
+!!      if(sum_dum .eq. 0.)sum_dum = 1.0
+!!      electrolyte_sum(jp,ibin) = sum_dum
 
-      do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
-      enddo
-
-
-      sum_dum = aer(ica_a,jp,ibin) +   &
-                aer(ina_a,jp,ibin) +   &
-                aer(inh4_a,jp,ibin)+   &
-                aer(iso4_a,jp,ibin)+   &
-                aer(ino3_a,jp,ibin)+   &
-                aer(icl_a,jp,ibin) +   &
-                aer(imsa_a,jp,ibin)+   &
-                aer(ico3_a,jp,ibin)
-
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      aer_sum(jp,ibin) = sum_dum
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
-      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
+!!      do je = 1, nelectrolyte
+!!        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
+!!      enddo
 
       return
       end subroutine conform_electrolytes
@@ -7647,39 +7707,18 @@
 !---------------------------------------------------------
 !
 ! calculate % composition
-      sum_dum = 0.0
-      do je = 1, nelectrolyte
-        electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
-        sum_dum = sum_dum + electrolyte(je,jp,ibin)
-      enddo
-
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      electrolyte_sum(jp,ibin) = sum_dum
-
-      do je = 1, nelectrolyte
-        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
-      enddo
-
-      sum_dum = aer(ica_a,jp,ibin) +   &
-                aer(ina_a,jp,ibin) +   &
-                aer(inh4_a,jp,ibin)+   &
-                aer(iso4_a,jp,ibin)+   &
-                aer(ino3_a,jp,ibin)+   &
-                aer(icl_a,jp,ibin) +   &
-                aer(imsa_a,jp,ibin)+   &
-                aer(ico3_a,jp,ibin)
-
-      if(sum_dum .eq. 0.)sum_dum = 1.0
-      aer_sum(jp,ibin) = sum_dum
-
-      aer_percent(ica_a,jp,ibin) = 100.*aer(ica_a,jp,ibin)/sum_dum
-      aer_percent(ina_a,jp,ibin) = 100.*aer(ina_a,jp,ibin)/sum_dum
-      aer_percent(inh4_a,jp,ibin)= 100.*aer(inh4_a,jp,ibin)/sum_dum
-      aer_percent(iso4_a,jp,ibin)= 100.*aer(iso4_a,jp,ibin)/sum_dum
-      aer_percent(ino3_a,jp,ibin)= 100.*aer(ino3_a,jp,ibin)/sum_dum
-      aer_percent(icl_a,jp,ibin) = 100.*aer(icl_a,jp,ibin)/sum_dum
-      aer_percent(imsa_a,jp,ibin)= 100.*aer(imsa_a,jp,ibin)/sum_dum
-      aer_percent(ico3_a,jp,ibin)= 100.*aer(ico3_a,jp,ibin)/sum_dum
+!!      sum_dum = 0.0
+!!      do je = 1, nelectrolyte
+!!        electrolyte(je,jp,ibin) = max(0.D0,electrolyte(je,jp,ibin)) ! remove -ve
+!!        sum_dum = sum_dum + electrolyte(je,jp,ibin)
+!!      enddo
+!!
+!!      if(sum_dum .eq. 0.)sum_dum = 1.0
+!!      electrolyte_sum(jp,ibin) = sum_dum
+!!
+!!      do je = 1, nelectrolyte
+!!        epercent(je,jp,ibin) = 100.*electrolyte(je,jp,ibin)/sum_dum
+!!      enddo
 
       return
       end subroutine form_electrolytes
@@ -8404,6 +8443,16 @@
       integer ibin
 ! local variables
       real(kind=8) small_aer, small_gas, small_amt
+      integer je					! raz update 11/13/2008
+
+
+
+      electrolyte_sum(jtotal,ibin) = 0.0	! raz update 11/13/2008
+      do je = 1, nelectrolyte
+        electrolyte_sum(jtotal,ibin) = electrolyte_sum(jtotal,ibin) + &
+                                       electrolyte(je,jtotal,ibin)
+      enddo
+
 
       small_gas = 0.01 * min(gas(inh3_g), gas(ihno3_g))
       small_aer = 0.01 * electrolyte_sum(jtotal,ibin)
@@ -8441,6 +8490,16 @@
       integer ibin
 ! local variables
       real(kind=8) small_aer, small_gas, small_amt
+	integer je					! raz update 11/13/2008
+
+
+
+      electrolyte_sum(jtotal,ibin) = 0.0	! raz update 11/13/2008
+      do je = 1, nelectrolyte
+        electrolyte_sum(jtotal,ibin) = electrolyte_sum(jtotal,ibin) + &
+                                       electrolyte(je,jtotal,ibin)
+      enddo
+
 
       small_gas = 0.01 * min(gas(inh3_g), gas(ihcl_g))
       small_aer = 0.01 * electrolyte_sum(jtotal,ibin)
@@ -11834,9 +11893,10 @@
 !     include 'mosaic.h'
 ! local variables
       integer iv, j_index, ibin, je
-      real(kind=8) tr, rt, term
+      real(kind=8) :: tr, rt, term
+      real(kind=8) :: gam_nh4no3_0, gam_nh4cl_0, m_nh4no3_0, m_nh4cl_0  ! raz update 6/25/2008
 ! function
-!     real(kind=8) fn_keq, fn_po, drh_mutual, bin_molality
+!     real(kind=8) :: fn_keq, fn_po, drh_mutual, bin_molality, molality_0
 
 
       tr = 298.15			! reference temperature
@@ -11912,6 +11972,18 @@
       enddo
 
       call mtem_compute_log_gamz		! function of ah2o and t
+
+! raz update 6/25/2008 - start
+      gam_nh4no3_0 = 10.**log_gamZ(jnh4no3,jnh4no3)
+      gam_nh4cl_0  = 10.**log_gamZ(jnh4cl,jnh4cl)
+
+      m_nh4no3_0   = molality_0(jnh4no3)
+      m_nh4cl_0    = molality_0(jnh4cl)
+
+      Kp_nh4no3_0  = Kp_nh4no3*(m_nh4no3_0*gam_nh4no3_0)**2
+      Kp_nh4cl_0   = Kp_nh4cl *(m_nh4cl_0 *gam_nh4cl_0 )**2
+! raz update 6/25/2008 - end
+
 
 
       return
@@ -12162,7 +12234,42 @@
 !----------------------------------------------------------
 
 
+!----------------------------------------------------------
+! raz update 6/25/2008 - start
+      real(kind=8) function molality_0(je)
+!      implicit none
+! subr. arguments
+      integer je
+! local variables
+      real(kind=8) :: aw, xm
 
+
+      aw = max(ah2o, aw_min(je))
+      aw = min(aw, 0.999999d0)
+
+
+      if(aw .lt. 0.97)then
+
+        xm =     a_zsr(1,je) +   &
+             aw*(a_zsr(2,je) +   &
+             aw*(a_zsr(3,je) +   &
+             aw*(a_zsr(4,je) +   &
+             aw*(a_zsr(5,je) +   &
+             aw* a_zsr(6,je) ))))
+
+        molality_0 = 55.509*xm/(1. - xm)
+
+      else
+
+        molality_0 = -b_zsr(je)*log(aw)
+
+      endif
+
+
+      return
+      end function molality_0
+! raz update 6/25/2008 - end
+!----------------------------------------------------------
 
 
 !----------------------------------------------------------

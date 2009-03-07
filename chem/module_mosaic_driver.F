@@ -1,21 +1,15 @@
-!**********************************************************************************  
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute,
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! Aerosol Option:  MOSAIC (Model for Simulating Aerosol Interactions & Chemistry)
+! Aerosol Option:  MOSAIC (Model for Simulating Aerosol Interactions &
+! Chemistry)
 ! * Primary investigator: Rahul A. Zaveri
 ! * Co-investigator: Richard C. Easter, William I. Gustafson Jr.
-! Last update: September 2005
-!
-! Contains:
-! ASTEEM (Adaptive Step Time-split Explicit Euler Method): Solves the dynamic
-!   dynamic partitioning of semi-volatile species between gas and particle phases.
-! MESA (Multicomponent Equilibrium Solver for Aerosols): Solves the multi-
-!   component solid-liquid equilibria within the aerosol phase.
-! MTEM (Multicomponent Taylor Expansion Method): Computes the multicomponent 
-!   activity coefficients of electrolytes in aqueous atmospheric aerosols.
+! Last update: February 2009
 !
 ! Contacts:
 ! Rahul A. Zaveri, PhD                    Jerome D. Fast, PhD
@@ -26,69 +20,73 @@
 ! Phone: (509) 372-6159                   Phone: (509) 372-6116
 ! Email: Rahul.Zaveri@pnl.gov             Email: Jerome.Fast@pnl.gov
 !
-! Please report any bugs or problems to Rahul Zaveri, the primary author of the
-! code, or Jerome Fast, the WRF-chem implementation team leader for PNNL
+! Please report any bugs or problems to Rahul Zaveri, the primary author
+! of the code, or Jerome Fast, the WRF-chem implementation team leader
+! for PNNL.
 !
 ! Terms of Use:
-! 1) Users are requested to consult the primary author prior to modifying the
-!   MOSAIC code or incorporating it or its submodules in another code. This is 
-!   meant to ensure that the any linkages and/or assumptions will not adversely
-!   affect the operation of MOSAIC.
-! 2) The MOSAIC source code is intended for research and educational purposes.
-!   Users are requested to contact the primary author regarding the use of
-!   MOSAIC code for any commercial application.
-! 3) Users preparing publications resulting from the usage of MOSAIC are requested
-!   to cite one or more of the references below (depending on the application) 
-!   for proper acknowledgement.
+!  1) Users are requested to consult the primary author prior to
+!     modifying the MOSAIC code or incorporating it or its submodules in
+!     another code. This is meant to ensure that the any linkages and/or
+!     assumptions will not adversely affect the operation of MOSAIC.
+!  2) The MOSAIC source code is intended for research and educational
+!     purposes. Users are requested to contact the primary author
+!     regarding the use of MOSAIC code for any commercial application.
+!  3) Users preparing publications resulting from the usage of MOSAIC are
+!     requested to cite one or more of the references below (depending on
+!     the application) for proper acknowledgement.
 !
 ! References for MOSAIC (The first one is the primary MOSAIC reference):
-! * Zaveri R.A., R.C. Easter, J.D. Fast, and L.K. Peters (2008), Model for
-!   simulating aerosol interactions and chemistry (MOSAIC), J. Geophys. Res.,
-!   113, D13204, doi:10.1029/2007JD008782.
-! * Zaveri R.A., R.C. Easter, and A.S. Wexler (2005), A new method for multi-
-!   component activity coefficients of electrolytes in aqueous atmospheric
-!   aerosols, J. Geophys. Res., 110, D02201, doi:10.1029/2004JD004681.
-! * Zaveri R.A., R.C. Easter, and L.K. Peters (2005), A computationally efficient
-!   multicomponent equilibrium solver for aerosols (MESA), J. Geophys. Res.,
-!   110, D24203, doi:24203, doi:10.1029/2004JD005618.
+! * Zaveri R.A., R.C. Easter, J.D. Fast, and L.K. Peters (2008), Model
+!   for Simulating Aerosol Interactions and Chemistry (MOSAIC), J.
+!   Geophys. Res., 113, D13204, doi:10.1029/2007JD008782.
+! * Zaveri R.A., R.C. Easter, and A.S. Wexler (2005), A new method for
+!   multi-component activity coefficients of electrolytes in aqueous
+!   atmospheric aerosols, J. Geophys. Res., 110, D02201,
+!   doi:10.1029/2004JD004681.
+! * Zaveri R.A., R.C. Easter, and L.K. Peters (2005), A computationally
+!   efficient multicomponent equilibrium solver for aerosols (MESA), J.
+!   Geophys. Res., 110, D24203, doi:24203, doi:10.1029/2004JD005618.
 !
-! References for implementation of the aerosol optical properties and direct
-! effect in WRF-Chem:
-! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
-!   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone,
-!   particulates, and aerosol direct radiative forcing in the vicinity of
-!   Houston using a fully-coupled meteorology-chemistry-aerosol model, J.
-!   Geophys. Res., 111, D21305, doi:10.1029/2005JD006721.
-! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
-!   Closure on the single scattering albedo in the WRF-Chem framework using
-!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
-
-! References for implementation of the aerosol-cloud interactions and indirect
-! effects in WRF-Chem:
-! * Gustafson, W. I., E. G. Chapman, S. J. Ghan, R. C. Easter, and J. D. Fast
-!   (2007), Impact on modeled cloud characteristics due to simplified treatment
-!   of uniform cloud condensation nuclei during NEAQS 2004, Geophys. Res. Lett.,
-!   34, L19809, L19809, doi:10.1029/2007GL0300321.
-! * Chapman, E.G., W.I. Gustafson, R.C. Easter, J.C. Barnard, S.J. Ghan, M.S.
-!   Pekour, and J.D. Fast (2008), Coupling aerosol-cloud-radiative processes in
-!   the WRF-Chem model: Investigating the radiative impact of elevated point
-!   sources, Atmos. Chem. Phys., submitted.
+! References for implementation of the aerosol optical properties and
+! direct effect in WRF-Chem:
+! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C.
+!   Barnard, E.G. Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution
+!   of ozone, particulates, and aerosol direct radiative forcing in the
+!   vicinity of Houston using a fully-coupled meteorology-chemistry-
+!   aerosol model, J. Geophys. Res., 111, D21305,
+!   doi:10.1029/2005JD006721.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al.
+!   (2009), Closure on the single scattering albedo in the WRF-Chem
+!   framework using data from the MILAGRO campaign, Atmos. Chem. Phys.,
+!   submitted.
 !
-! Contact Jerome Fast for updates on the status of manuscripts under review.
+! References for implementation of the aerosol-cloud interactions and
+! indirect effects in WRF-Chem:
+! * Gustafson, W. I., E. G. Chapman, S. J. Ghan, R. C. Easter, and J. D.
+!   Fast (2007), Impact on modeled cloud characteristics due to
+!   simplified treatment of uniform cloud condensation nuclei during
+!   NEAQS 2004, Geophys. Res. Lett., 34, L19809, L19809,
+!   doi:10.1029/2007GL0300321.
+! * Chapman, E.G., W. I. Gustafson Jr., R. C. Easter, J. C. Barnard,
+!   S. J. Ghan, M. S. Pekour, and J. D. Fast (2009): Coupling aerosol-
+!   cloud-radiative processes in the WRF-Chem model: Investigating the
+!   radiative impact of elevated point sources, Atmos. Chem. Phys., 9,
+!   945-964, www.atmos-chem-phys.net/9/945/2009/.
 !
-! Note that the version of MESA currently in WRF-chem does not contain some of 
-! the code associated with the numerical speed described in the second paper - 
-! a revised version of MESA will be included in the next release of MOSAIC.
+! Contact Jerome Fast for updates on the status of manuscripts under
+! review.
 !
 ! Additional information:
 ! * www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support: 
-! Funding for developing and evaluating MOSAIC was provided by the U.S. Department
-! of Energy under the auspices of Atmospheric Science Program of the Office of
-! Biological and Environmental Research, the NASA Earth Sciences Enterprise under
-! grant NAGW 3367, and PNNL Laboratory Directed Research and Development program.
-!**********************************************************************************  
+! Funding for developing and evaluating MOSAIC was provided by the U.S.
+! Department of Energy under the auspices of Atmospheric Science Program
+! of the Office of Biological and Environmental Research, the NASA Earth
+! Sciences Enterprise under grant NAGW 3367, and PNNL Laboratory Directed
+! Research and Development program.
+!************************************************************************
 	module module_mosaic_driver
 
 

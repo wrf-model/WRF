@@ -862,10 +862,8 @@ end subroutine aerimpactscav
 
 	nnfit = nnfit + 1
 	if (nnfit .gt. nnfit_maxd) then
-	    write(lunerr,9110)
-	    call exit(1)
+	    call wrf_error_fatal('*** subr. aerosol_impact_setup -- nnfit too big')
 	end if
-9110	format( '*** subr. aerosol_impact_setup -- nnfit too big' )
 
 	xxfitnum(1,nnfit) = 1.
 	xxfitnum(2,nnfit) = log( temp )
@@ -956,10 +954,8 @@ end subroutine aerimpactscav
 	dr = 0.005
 	nr = 1 + nint( (rhi-rlo)/dr )
 	if (nr .gt. nrainsvmax) then
-	    write(lunerr,9110)
-	    call exit(1)
+	    call wrf_error_fatal('*** subr. calc_1_impact_rate -- nr > nrainsvmax')
 	end if
-9110	format( '*** subr. calc_1_impact_rate -- nr > nrainsvmax' )
 
 	precipmmhr = 1.0
 	precip = precipmmhr/36000. ! cm/s
@@ -979,10 +975,8 @@ end subroutine aerimpactscav
 
 	na = 1 + nint( (xhi-xlo)/dx )
 	if (na .gt. naerosvmax) then
-	    write(lunerr,9120)
-	    call exit(1)
+	    call wrf_error_fatal('*** subr. calc_1_impact_rate -- na > naerosvmax')
 	end if
-9120	format( '*** subr. calc_1_impact_rate -- na > naerosvmax' )
 
 !   air molar density
 	cair = press/(8.31436e7*temp)

@@ -1,13 +1,14 @@
-!**********************************************************************************  
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute,
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
 ! Photolysis Option:  Fast-J
 ! * Primary investigators: Elaine G. Chapman and James C. Barnard
 ! * Co-investigators: Jerome D. Fast, William I. Gustafson Jr.
-! Last update: September 2005
+! Last update: February 2009
 !
 ! Contact:
 ! Jerome D. Fast, PhD
@@ -18,39 +19,46 @@
 ! Phone: (509) 372-6116
 ! Email: Jerome.Fast@pnl.gov
 !
-! The original Fast-J code was provided by Oliver Wild (Univ. of Calif. Irvine); 
-! however, substantial modifications were necessary to make it compatible with
-! WRF-chem and to include the effect of prognostic aerosols on photolysis rates.
+! The original Fast-J code was provided by Oliver Wild (Univ. of Calif.
+! Irvine); however, substantial modifications were necessary to make it
+! compatible with WRF-Chem and to include the effect of prognostic
+! aerosols on photolysis rates.
 !
-! Please report any bugs or problems to Jerome Fast, the WRF-chem implmentation
-! team leader for PNNL
+! Please report any bugs or problems to Jerome Fast, the WRF-chem
+! implmentation team leader for PNNL.
 !
 ! References: 
-! * Wild, O., X. Zhu, M.J. Prather, (2000), Accurate simulation of in- and below
-!   cloud photolysis in tropospheric chemical models, J. Atmos. Chem., 37, 245-282.
-! * Barnard, J.C., E.G. Chapman, J.D. Fast, J.R. Schmelzer, J.R. Schulsser, and 
-!   R.E. Shetter (2004), An evaluation of the FAST-J photolysis model for 
-!   predicting nitrogen dioxide photolysis rates under clear and cloudy sky 
-!   conditions, Atmos. Environ., 38, 3393-3403.
-! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C. Barnard, E.G.
-!   Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution of ozone, particulates,
-!   and aerosol direct radiative forcing in the vicinity of Houston using a fully- 
-!   coupled meteorology-chemistry-aerosol model, Submitted to J. Geophys. Res.
-! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al. (2009),
-!   Closure on the single scattering albedo in the WRF-Chem framework using
-!   data from the MILAGRO campaign, Atmos. Chem. Phys., to be submitted.
+! * Wild, O., X. Zhu, M.J. Prather, (2000), Accurate simulation of in-
+!   and below cloud photolysis in tropospheric chemical models, J. Atmos.
+!   Chem., 37, 245-282.
+! * Barnard, J.C., E.G. Chapman, J.D. Fast, J.R. Schmelzer, J.R.
+!   Schulsser, and R.E. Shetter (2004), An evaluation of the FAST-J
+!   photolysis model for predicting nitrogen dioxide photolysis rates
+!   under clear and cloudy sky conditions, Atmos. Environ., 38,
+!   3393-3403.
+! * Fast, J.D., W.I. Gustafson Jr., R.C. Easter, R.A. Zaveri, J.C.
+!   Barnard, E.G. Chapman, G.A. Grell, and S.E. Peckham (2005), Evolution
+!   of ozone, particulates, and aerosol direct radiative forcing in the
+!   vicinity of Houston using a fully-coupled meteorology-chemistry-
+!   aerosol model, J. Geophys. Res., 111, D21305,
+!   doi:10.1029/2005JD006721.
+! * Barnard, J.C., J.D. Fast, G. Paredes-Miranda, W.P. Arnott, et al.
+!   (2009), Closure on the single scattering albedo in the WRF-Chem
+!   framework using data from the MILAGRO campaign, Atmos. Chem. Phys.,
+!   submitted.
 !
-! Contact Jerome Fast for updates on the status of manuscripts under review.  
+! Contact Jerome Fast for updates on the status of manuscripts under
+! review.
 !
 ! Additional information:
 ! *  www.pnl.gov/atmospheric/research/wrf-chem
 !
 ! Support:
-! Funding for adapting Fast-J was provided by the U.S. Department of Energy
-! under the auspices of Atmospheric Science Program of the Office of Biological
-! and Environmental Research the PNNL Laboratory Research and Directed Research
-! and Development program.
-!**********************************************************************************  
+! Funding for adapting Fast-J was provided by the U.S. Department of
+! Energy under the auspices of Atmospheric Science Program of the Office
+! of Biological and Environmental Research the PNNL Laboratory Research
+! and Directed Research and Development program.
+!************************************************************************
 
 !WRF:MODEL_LAYER:CHEMISTRY
 !

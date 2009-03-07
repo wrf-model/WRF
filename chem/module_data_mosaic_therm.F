@@ -1,11 +1,13 @@
-!**********************************************************************************  
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute,
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see module_mosaic_driver.F for references and terms of use
-!**********************************************************************************  
+! MOSAIC module: see module_mosaic_driver.F for references and terms of
+! use
+!************************************************************************
       module module_data_mosaic_therm
 
 
@@ -164,7 +166,7 @@
                        ! when a serious error occurs
 
 
-      real(kind=8), save ::			&
+      real(kind=8), save ::		&
       	num_a(nbin_a_maxd),		&  ! #/cc(air)
       	dpgn_a(nbin_a_maxd),		&  ! cm
       	dp_dry_a(nbin_a_maxd),		&  ! cm
@@ -219,7 +221,7 @@
 	integrate(ngas_volatile,3,nbin_a_maxd)  ! mYES, mNO
 
 
-      real(kind=8), save ::				&
+      real(kind=8), save ::			&
 	po_soa(ngas_volatile),			&  ! pascal
 	sat_soa(ngas_volatile),			&  ! nmol/m^3(air)
 	x_soa(naer),				&  ! soa mole fraction
@@ -240,6 +242,8 @@
 	delta_hcl_max(nbin_a_maxd),		&  ! nmol/m^3
 	keq_nh4no3,				&  ! -
 	keq_nh4cl,				&  ! -
+	Keq_nh4no3_0,				&  ! -
+	Keq_nh4cl_0,				&  ! -
 	volatile_s(ngas_volatile,nbin_a_maxd), 	&  ! nmol/m^3
 	phi_volatile_s(ngas_volatile,nbin_a_maxd),	&  ! relative dr. force = (g-g*)/g
 	phi_volatile_l(ngas_volatile,nbin_a_maxd),	&  ! relative dr. force = (g-g*)/g
@@ -270,7 +274,7 @@
       	niter_mesa_max
 
 
-      real(kind=8), save ::   			&
+      real(kind=8), save ::   		&
 	eleliquid(nelectrolyte),	&
 	flux_sl(nsalt),			&
 	phi_salt(nsalt),		&
@@ -329,7 +333,9 @@
 	keq_sl(nrxn_aer_sl), 		&  ! solid-liq eqblm const
 	kp_nh3, 			&  !
 	kp_nh4no3, 			&  !
-	kp_nh4cl			   !
+	kp_nh4no3_0, 			&  !
+	kp_nh4cl,	                &  !
+	kp_nh4cl_0			   !
 
 
       complex, save ::			&
@@ -340,7 +346,7 @@
 !----------------------------------------------------------------------
 ! mosaic activity coefficient models parameters
 
-      real(kind=8), save ::				&
+      real(kind=8), save ::			&
 	mc(ncation,nbin_a_maxd),		&  ! mol/kg(water)
 	ma(nanion,nbin_a_maxd),			&  ! mol/kg(water)
 	msulf,					&  ! 
@@ -358,7 +364,7 @@
 	a_zsr(6,nelectrolyte),			&  ! binary molality polynomial coeffs
 	b_zsr(nelectrolyte),			&  ! binary molality coeff
 	aw_min(nelectrolyte),			&  ! minimum frh at which molality polynomial can be used
-	b_mtem(6,nelectrolyte,nelectrolyte)	! mtem poly coeffs
+	b_mtem(6,nelectrolyte,nelectrolyte)	   ! mtem poly coeffs
 
 
 !----------------------------------------------------------------------

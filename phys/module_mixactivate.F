@@ -1,11 +1,13 @@
-!**********************************************************************************
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+!************************************************************************
+! This computer software was prepared by Battelle Memorial Institute, 
+! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
+! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+! LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
-! MOSAIC module: see chem/module_mosaic_driver.F for references and terms of use
-!**********************************************************************************
+! MOSAIC module: see chem/module_mosaic_driver.F for references and terms
+! of use
+!************************************************************************
 
 MODULE module_mixactivate
 PRIVATE
@@ -149,7 +151,7 @@ CONTAINS
           ptr=ptr+1
 	     if(ptr.gt.max_chem)then
 	        write(6,*)'ptr,max_chem=',ptr,max_chem,' in prescribe_aerosol_mixactivate'
-	        call exit(1)
+	        call wrf_error_fatal("1")
 	     endif
 	     massptr_aer(l, m, n, p)=ptr
 ! maer is ug/kg-air;  naer is #/kg-air;  dgnum is cm;  dens_aer is g/cm3
@@ -170,7 +172,7 @@ CONTAINS
           ptr=ptr+1
 	  if(ptr.gt.max_chem)then
 	     write(6,*)'ptr,max_chem=',ptr,max_chem,' in prescribe_aerosol_mixactivate'
-	     call exit(1)
+	     call wrf_error_fatal("1")
 	  endif
 !wig	  waterptr_aer(m, n)=ptr
 	  waterptr_aer(m, n)=-1
@@ -301,9 +303,8 @@ subroutine mixactivate(  msectional,            &
   real :: wtke(kms:kme)        ! turbulent vertical velocity at base of layer k (m2/s)
   real zn(kms:kme)             ! g/pdel (m2/g) for layer
   real zs(kms:kme)             ! inverse of distance between levels (m)
-  real zkmin,zkmax
-  data zkmin/0.01/,zkmax/100./
-  save zkmin,zkmax
+  real, parameter :: zkmin = 0.01
+  real, parameter :: zkmax = 100.
   real cs(kms:kme)             ! air density (kg/m3) at layer center
   real csbot(kms:kme)          ! air density (kg/m3) at layer bottom
   real csbot_cscen(kms:kme)    ! csbot(k)/cs(k)
@@ -317,17 +318,11 @@ subroutine mixactivate(  msectional,            &
   real :: ekd(kms:kme)         ! diffusivity for droplets (m2/s)
   real :: ekk(kms:kme)         ! density*diffusivity for droplets (kg/m3 m2/s)
   real :: srcn(kms:kme)        ! droplet source rate (/s)
-  real, save :: sq2pi
-  data sq2pi/2.5066282746/
+  real, parameter :: sq2pi = 2.5066282746
   real dtinv
 
-  logical top        ! true if cloud top, false if cloud base or new cloud
-  logical, save :: first
-  data first/.true./
   integer km1,kp1
   real wbar,wmix,wmin,wmax
-  real, save :: cmincld
-  data cmincld/1.e-12/
   real dum
   real tmpa, tmpb, tmpc, tmpc1, tmpc2, tmpd, tmpe, tmpf
   real tmpcourno
@@ -349,7 +344,7 @@ subroutine mixactivate(  msectional,            &
   integer nnew,nsav,ntemp
   real :: overlapp(kms:kme),overlapm(kms:kme) ! cloud overlap
   real ::  ekkp(kms:kme),ekkm(kms:kme) ! zn*zs*density*diffusivity
-  integer, save :: count_submix(100)=0 ! wig: Note that this is a no-no for tile threads with OMP
+!  integer, save :: count_submix(100)=0 ! wig: Note that this is a no-no for tile threads with OMP
 
   integer lnum,lnumcw,l,lmass,lmasscw,lsfc,lsfccw,ltype,lsig,lwater
   integer :: ntype(maxd_asize)
@@ -391,8 +386,7 @@ subroutine mixactivate(  msectional,            &
   real, parameter :: supersat(psat)= &! supersaturation (%) to determine ccn concentration
        (/0.02,0.05,0.1,0.2,0.5,1.0/)
   real super(psat) ! supersaturation
-  real,save :: surften       ! surface tension of water w/respect to air (N/m)
-  data surften/0.076/
+  real, parameter :: surften = 0.076 ! surface tension of water w/respect to air (N/m)
   real :: ccnfact(psat,maxd_asize, maxd_atype)
   real :: amcube(maxd_asize, maxd_atype) ! cube of dry mode radius (m)
   real :: argfactor(maxd_asize, maxd_atype)
@@ -400,6 +394,18 @@ subroutine mixactivate(  msectional,            &
   real t0 ! reference temperature
   real sm ! critical supersaturation
   real arg
+
+  integer,parameter :: icheck_colmass = 0
+           ! icheck_colmass > 0 turns on mass/number conservation checking
+           ! values of 1, 10, 100 produce less to more diagnostics
+  integer :: colmass_worst_ij( 2, 0:maxd_acomp, maxd_asize, maxd_atype )
+  integer :: colmass_maxworst_i(3)
+  real :: colmass_bgn( 0:maxd_acomp, maxd_asize, maxd_atype, maxd_aphase )
+  real :: colmass_end( 0:maxd_acomp, maxd_asize, maxd_atype, maxd_aphase )
+  real :: colmass_sfc( 0:maxd_acomp, maxd_asize, maxd_atype, maxd_aphase )
+  real :: colmass_worst( 0:maxd_acomp, maxd_asize, maxd_atype )
+  real :: colmass_maxworst_r
+  real :: rhodz( kts:kte ), rhodzsum
 
 !!$#if (defined AIX)
 !!$#define ERF erf
@@ -414,17 +420,19 @@ subroutine mixactivate(  msectional,            &
   character*8, parameter :: ccn_name(psat)=(/'CCN1','CCN2','CCN3','CCN4','CCN5','CCN6'/)
 
 
+  colmass_worst(:,:,:) = 0.0
+  colmass_worst_ij(:,:,:,:) = -1
+
+
   arg = 1.0
   if (abs(0.8427-ERF_ALT(arg))/0.8427>0.001) then
      write (6,*) 'erf_alt(1.0) = ',ERF_ALT(arg)
-     write (6,*) 'dropmixnuc: Error function error'
-     call exit
+     call wrf_error_fatal('dropmixnuc: Error function error')
   endif
   arg = 0.0
   if (ERF_ALT(arg) /= 0.0) then
      write (6,*) 'erf_alt(0.0) = ',ERF_ALT(arg)
-     write (6,*) 'dropmixnuc: Error function error'
-     call exit
+     call wrf_error_fatal('dropmixnuc: Error function error')
   endif
 
   pi = 4.*atan(1.0)
@@ -444,7 +452,7 @@ subroutine mixactivate(  msectional,            &
         npv(m,n)=6./(pi*(0.01*dgnum_aer(m,n))**3*exp(4.5*alogsig(m,n)*alogsig(m,n)))
      end do
   end do
-  t0=273.
+  t0=273.15   !wig, 1-Mar-2009: Added .15
   aten=2.*surften/(r_v*t0*rhowater)
   super(:)=0.01*supersat(:)
   do n=1,ntype_aer
@@ -481,7 +489,7 @@ OVERALL_MAIN_I_LOOP: do i=its,ite
 
      do k=kts,kte
 !!$	    if(qndrop3d(i,k,j).lt.-10.e6.or.qndrop3d(i,k,j).gt.1.E20)then
-!!$!	       call exit(1)
+!!$!	       call wrf_error_fatal("1")
 !!$	    endif
         if(f_qi)then
            qcld=qc(i,k,j)+qi(i,k,j)
@@ -490,7 +498,7 @@ OVERALL_MAIN_I_LOOP: do i=its,ite
         endif
         if(qcld.lt.-1..or.qcld.gt.1.)then
            write(6,'(a,g12.2,a,3i5)')'qcld=',qcld,' for i,k,j=',i,k,j
-           call exit(1)
+           call wrf_error_fatal("1")
         endif
         if(qcld.gt.1.e-20)then
            lcldfra(k)=cldfra(i,k,j)*qc(i,k,j)/qcld
@@ -586,6 +594,34 @@ OVERALL_MAIN_I_LOOP: do i=its,ite
            endif
         enddo ! size
      enddo ! type
+
+
+! mass conservation checking
+     if (icheck_colmass > 0) then
+
+! calc initial column burdens
+        colmass_bgn(:,:,:,:) = 0.0
+        colmass_end(:,:,:,:) = 0.0
+        colmass_sfc(:,:,:,:) = 0.0
+        rhodz(kts:kte) = 1.0/zn(kts:kte)
+        rhodzsum = sum( rhodz(kts:kte) )
+        do n=1,ntype_aer
+           do m=1,nsize_aer(n)
+              lnum=numptr_aer(m,n,ai_phase)
+              lnumcw=numptr_aer(m,n,cw_phase)
+              if(lnum>0)then
+                 colmass_bgn(0,m,n,1) = sum( chem(i,kts:kte,j,lnum  )*rhodz(kts:kte) )
+                 colmass_bgn(0,m,n,2) = sum( chem(i,kts:kte,j,lnumcw)*rhodz(kts:kte) )
+              endif
+              do l=1,ncomp(n)
+                 lmass=massptr_aer(l,m,n,ai_phase)
+                 lmasscw=massptr_aer(l,m,n,cw_phase)
+                 colmass_bgn(l,m,n,1) = sum( chem(i,kts:kte,j,lmass  )*rhodz(kts:kte) )
+                 colmass_bgn(l,m,n,2) = sum( chem(i,kts:kte,j,lmasscw)*rhodz(kts:kte) )
+              enddo
+           enddo ! size
+        enddo ! type
+     endif ! (icheck_colmass > 0)
 
 
 !        droplet nucleation/aerosol activation
@@ -754,7 +790,6 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
 !               wbar=wtke(k) ! single updraft
 ! 06-nov-2005 rce - increase wmax from 10 to 50 (deep convective clouds)
                  wmax=50.
-                 top=.false.
                  ekd(k)=wtke(k)*dz(k)/sq2pi
                  alogarg=max(1.e-20,1/lcldfra(k)-1.)
                  wmin=wbar+wmix*0.25*sq2pi*alog(alogarg)
@@ -909,7 +944,7 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
      else
         nsubmix_bnd=nsubmix
      endif
-     count_submix(nsubmix_bnd)=count_submix(nsubmix_bnd)+1
+!     count_submix(nsubmix_bnd)=count_submix(nsubmix_bnd)+1
      dtmix=dtstep/nsubmix
      fac_srflx = -1.0/(zn(1)*nsubmix)
      
@@ -972,6 +1007,13 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                       raercol(kts,lnum,nsav)*surfrate(lnum)
                  qsrflx(i,j,lnumcw) = qsrflx(i,j,lnumcw) + fac_srflx*        &
                       raercol(kts,lnumcw,nsav)*surfrate(lnumcw)
+                 if (icheck_colmass > 0) then
+                    tmpf = dtmix*rhodz(kts)
+                    colmass_sfc(0,m,n,1) = colmass_sfc(0,m,n,1) &
+                          + raercol(kts,lnum  ,nsav)*surfrate(lnum  )*tmpf
+                    colmass_sfc(0,m,n,2) = colmass_sfc(0,m,n,2) &
+                          + raercol(kts,lnumcw,nsav)*surfrate(lnumcw)*tmpf
+                 endif
               endif
               do l=1,ncomp(n)
                  lmass=massptr_aer(l,m,n,ai_phase)
@@ -991,6 +1033,19 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                       raercol(kts,lmass,nsav)*surfrate(lmass)
                  qsrflx(i,j,lmasscw) = qsrflx(i,j,lmasscw) + fac_srflx*      &
                       raercol(kts,lmasscw,nsav)*surfrate(lmasscw)
+                 if (icheck_colmass > 0) then
+                    ! colmass_sfc calculation
+                    !    colmass_bgn/end = bgn/end column burden = sum.over.k.of{ rho(k)*dz(k)*chem(k,l) }
+                    !    colmass_sfc = surface loss over dtstep
+                    !       = sum.over.nsubmix.substeps{ depvel(l)*rho(kts)*chem(kts,l)*dtmix }
+                    !    surfrate(l) = depvel(l)/dz(kts) so need to multiply by dz(kts)
+                    !    for mass, raercol(k,l) = chem(k,l)*1.0e-9, so need to multiply by 1.0e9
+                    tmpf = dtmix*rhodz(kts)*1.0e9
+                    colmass_sfc(l,m,n,1) = colmass_sfc(l,m,n,1) &
+                          + raercol(kts,lmass  ,nsav)*surfrate(lmass  )*tmpf
+                    colmass_sfc(l,m,n,2) = colmass_sfc(l,m,n,2) &
+                          + raercol(kts,lmasscw,nsav)*surfrate(lmasscw)*tmpf
+                 endif
               enddo
               lwater=waterptr_aer(m,n)  ! aerosol water
               if(lwater>0)then
@@ -1044,26 +1099,24 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 !       endif
         if(qndrop(k).lt.-10.e6.or.qndrop(k).gt.1.e12)then
            write(6,'(a,g12.2,a,3i5)')'after qndrop=',qndrop(k),' for i,k,j=',i,k,j
-!          call exit(1)
         endif
 
         qndrop3d(i,k,j) = max(qndrop(k),1.e-6)
 
         if(qndrop3d(i,k,j).lt.-10.e6.or.qndrop3d(i,k,j).gt.1.E20)then
            write(6,'(a,g12.2,a,3i5)')'after qndrop=',qndrop3d(i,k,j),' for i,k,j=',i,k,j
-!          call exit(1)
         endif
         if(qc(i,k,j).lt.-1..or.qc(i,k,j).gt.1.)then
            write(6,'(a,g12.2,a,3i5)')'qc=',qc(i,k,j),' for i,k,j=',i,k,j
-           call exit(1)
+           call wrf_error_fatal("1")
         endif
         if(qi(i,k,j).lt.-1..or.qi(i,k,j).gt.1.)then
            write(6,'(a,g12.2,a,3i5)')'qi=',qi(i,k,j),' for i,k,j=',i,k,j
-           call exit(1)
+           call wrf_error_fatal("1")
         endif
         if(qv(i,k,j).lt.-1..or.qv(i,k,j).gt.1.)then
            write(6,'(a,g12.2,a,3i5)')'qv=',qv(i,k,j),' for i,k,j=',i,k,j
-           call exit(1)
+           call wrf_error_fatal("1")
         endif
         cldfra_old(i,k,j) = cldfra(i,k,j)
 !       if(k.gt.6.and.k.lt.11)cldfra_old(i,k,j)=1.
@@ -1124,8 +1177,89 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
         if(l.eq.6)ccn6(i,kts:kte,j)=ccn(:,l)
      end do
 
+! mass conservation checking
+     if (icheck_colmass > 0) then
+! calc final column burdens
+        do n=1,ntype_aer
+        do m=1,nsize_aer(n)
+           lnum=numptr_aer(m,n,ai_phase)
+           lnumcw=numptr_aer(m,n,cw_phase)
+           if(lnum>0)then
+              colmass_end(0,m,n,1) = sum( chem(i,kts:kte,j,lnum  )*rhodz(kts:kte) )
+              colmass_end(0,m,n,2) = sum( chem(i,kts:kte,j,lnumcw)*rhodz(kts:kte) )
+           endif
+           do l=1,ncomp(n)
+              lmass=massptr_aer(l,m,n,ai_phase)
+              lmasscw=massptr_aer(l,m,n,cw_phase)
+              colmass_end(l,m,n,1) = sum( chem(i,kts:kte,j,lmass  )*rhodz(kts:kte) )
+              colmass_end(l,m,n,2) = sum( chem(i,kts:kte,j,lmasscw)*rhodz(kts:kte) )
+           enddo
+        enddo ! size
+        enddo ! type
+! calc burden change errors for each interstitial/activated pair
+        do n=1,ntype_aer
+        do m=1,nsize_aer(n)
+           do l=0,ncomp(n)
+              ! tmpa & tmpb = beginning & ending column burden divided by rhodzsum,
+              !             = beginning & ending column-mean mixing ratios
+              ! tmpc = loss to surface divided by rhodzsum,
+              tmpa = ( colmass_bgn(l,m,n,1) + colmass_bgn(l,m,n,2) )/rhodzsum
+              tmpb = ( colmass_end(l,m,n,1) + colmass_end(l,m,n,2) )/rhodzsum
+              tmpc = ( colmass_sfc(l,m,n,1) + colmass_sfc(l,m,n,2) )/rhodzsum
+
+              ! tmpd = ((final burden) + (sfc loss)) - (initial burden)
+              !      = burden change error
+              tmpd = (tmpb + tmpc) - tmpa
+              tmpe = max( tmpa, 1.0e-20 )
+
+              ! tmpf = (burden change error) / (initial burden)
+              if (abs(tmpd) < 1.0e5*tmpe) then
+                 tmpf = tmpd/tmpe
+              else if (tmpf < 0.0) then
+                 tmpf = -1.0e5
+              else
+                 tmpf = 1.0e5
+              end if
+              if (abs(tmpf) > abs(colmass_worst(l,m,n))) then
+                 colmass_worst(l,m,n) = tmpf
+                 colmass_worst_ij(1,l,m,n) = i
+                 colmass_worst_ij(2,l,m,n) = j
+              endif
+           enddo
+        enddo ! size
+        enddo ! type
+     endif ! (icheck_colmass > 0)
+
+
      enddo OVERALL_MAIN_I_LOOP ! end of main loop over i
      enddo OVERALL_MAIN_J_LOOP ! end of main loop over j
+
+
+! mass conservation checking
+     if (icheck_colmass > 0) then
+        if (icheck_colmass >= 100) write(*,'(a)') &
+             'mixactivate colmass worst errors bgn - type, size, comp, err, i, j'
+        colmass_maxworst_r = 0.0
+        colmass_maxworst_i(:) = -1
+        do n=1,ntype_aer
+        do m=1,nsize_aer(n)
+           do l=0,ncomp(n)
+              if (icheck_colmass >= 100) &
+                 write(*,'(3i3,1p,e10.2,2i4)') n, m, l, &
+                 colmass_worst(l,m,n), colmass_worst_ij(1:2,l,m,n) 
+              if (abs(colmass_worst(l,m,n)) > abs(colmass_maxworst_r)) then
+                 colmass_maxworst_r = colmass_worst(l,m,n) 
+                 colmass_maxworst_i(1) = n
+                 colmass_maxworst_i(2) = m
+                 colmass_maxworst_i(3) = l
+              end if
+           enddo
+        enddo ! size
+        enddo ! type
+        if ((icheck_colmass >= 10) .or. (abs(colmass_maxworst_r) >= 1.0e-6)) &
+             write(*,'(a,3i3,1p,e10.2)') 'mixactivate colmass maxworst', &
+             colmass_maxworst_i(1:3), colmass_maxworst_r
+     endif ! (icheck_colmass > 0)
 
 
      return
@@ -1270,11 +1404,9 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       integer, parameter:: nx=200
       integer iquasisect_option, isectional
       real integ,integf
-      real, save :: surften       ! surface tension of water w/respect to air (N/m)
-      data surften/0.076/
-      real, save :: p0     ! reference pressure (Pa)
-      real, save :: t0     ! reference temperature (K)
-      data p0/1013.25e2/,t0/273.15/
+      real, parameter :: surften = 0.076 ! surface tension of water w/respect to air (N/m)
+      real, parameter :: p0 = 1013.25e2  ! reference pressure (Pa)
+      real, parameter :: t0 = 273.15     ! reference temperature (K)
       real ylo(maxd_asize,maxd_atype),yhi(maxd_asize,maxd_atype) ! 1-particle volume at section interfaces
       real ymean(maxd_asize,maxd_atype) ! 1-particle volume at r=rmean
       real ycut, lnycut, betayy, betayy2, gammayy, phiyy
@@ -1303,8 +1435,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       real gamma
       real beta
       real gaus
-      logical, save :: top        ! true if cloud top, false if cloud base or new cloud
-      data top/.false./
+      logical :: top        ! true if cloud top, false if cloud base or new cloud
       real asub(maxd_asize,maxd_atype),bsub(maxd_asize,maxd_atype) ! coefficients of submode size distribution N=a+bx
       real totn(maxd_atype) ! total aerosol number concentration
       real aten ! surface tension parameter
@@ -1343,24 +1474,19 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       integer m,n,nw,nwmax
 
 !      numerical integration parameters
-      real, save :: eps,fmax,sds
-      data eps/0.3/,fmax/0.99/,sds/3./
+      real, parameter :: eps = 0.3
+      real, parameter :: fmax = 0.99
+      real, parameter :: sds = 3.
 
 !      mathematical constants
       real third, twothird, sixth, zero, one, two, three
-! 04-nov-2005 rce - make this more precise
-!     data third/0.333333/, twothird/0.66666667/, sixth/0.166666667/,zero/0./,one/1./,two/2./,three/3./
-!     data third/0.33333333333/, twothird/0.66666666667/, sixth/0.16666666667/
-!     data zero/0./,one/1./,two/2./,three/3./
-!     save third, sixth,twothird,zero,one,two,three
 
-      real, save :: sq2, sqpi, pi
-! 04-nov-2005 rce - make this more precise
-!     data sq2/1.4142136/, sqpi/1.7724539/,pi/3.14159/
-      data sq2/1.4142135624/, sqpi/1.7724538509/,pi/3.1415926536/
+      real, parameter :: sq2  = 1.4142135624
+      real, parameter :: sqpi = 1.7724538509
+      real, parameter :: pi   = 3.1415926536
 
-      integer, save :: ndist(nx)  ! accumulates frequency distribution of integration bins required
-      data ndist/nx*0/
+!      integer, save :: ndist(nx)  ! accumulates frequency distribution of integration bins required
+!      data ndist/nx*0/
 
 !     for nsize_aer>7, a sectional approach is used and isectional = iquasisect_option
 !     activation fractions (fn,fs,fm) are computed as follows
@@ -1384,6 +1510,12 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 
       integer idiagaa, ipass_nwloop
       integer idiag_dndy_neg, idiag_fnsm_prob
+
+! The flag for cloud top is no longer used so set it to false. This is an
+! antiquated feature related to radiation enhancing mass fluxes at cloud
+! top. It is currently, as of Feb. 2009, set to false in the CAM version
+! as well.
+      top = .false.
 
 !.......................................................................
 !
@@ -1422,7 +1554,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
       two = 2.0
       three = 3.0
       third = 1.0/3.0
-      twothird = 2.0/6.0
+      twothird = 2.0/3.0 !wig, 1-Mar-2009: Corrected value from 2/6
       sixth = 1.0/6.0
 
       pres=r_d*rhoair*tair
@@ -1647,8 +1779,6 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                     print *,'asub+bsub*ylo=',   &
                              (asub(m,n)+bsub(m,n)*ylo(m,n))
                     print *,'subr activate error 11 - i,j,k =', ii, jj, kk
-! 07-nov-2005 rce - don't stop for this, it's not fatal
-!                   stop
                   endif
                 endif
                 if ( asub(m,n)+bsub(m,n)*yhi(m,n) .lt. 0. ) then
@@ -1664,7 +1794,6 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                     print *,'asub+bsub*yhi=',   &
                              (asub(m,n)+bsub(m,n)*yhi(m,n))
                     print *,'subr activate error 12 - i,j,k =', ii, jj, kk
-!                   stop
                   endif
                 endif
 
@@ -2032,12 +2161,12 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
              idiagaa = 2
              goto 40000
          end if
-         stop
+         call wrf_error_fatal("STOP: activate before 48000")
 
 48000    continue
 
 
-         ndist(n)=ndist(n)+1
+!         ndist(n)=ndist(n)+1
          if(.not.top.and.w.lt.wmaxf)then
 
 !            contribution from all updrafts stronger than wmax
@@ -2085,7 +2214,6 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                print *,'w,m,n,na,am=',w,m,n,na(m,n),am(m,n)
                print *,'integ,sumfn,sigw=',integ,sumfn(m,n),sigw
                print *,'subr activate error - i,j,k =', ii, jj, kk
-!              call exit
              endif
              fluxn(m,n) = fluxn(m,n)/fn(m,n)
             endif
@@ -2387,8 +2515,6 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 
       real :: g1, g2
       real thesum
-      real, save :: twothird
-      data twothird/0.66666666667/
       integer m ! size index
       integer n ! type index
 
@@ -2516,8 +2642,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
        integer lnum,lnumcw,l,ltype,lmass,lmasscw,lsfc,lsfccw
        real num_at_dhi, num_at_dlo
        real npv_at_dhi, npv_at_dlo
-       real, save :: pi
-       data pi/3.1415926526/
+       real, parameter :: pi = 3.1415926526
        real specvol ! inverse aerosol material density (m3/kg)
 
           lnum=numptr_aer

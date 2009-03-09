@@ -280,7 +280,7 @@
                        +WNS(I,J-1)           +WNS(I,J+1)                &
                        +WNE(I+IHW(J),J-1)    +WNE(I,J)                  &
                        +WSE(I,J)             +WSE(I+IHW(J),J+1))        &
-                       *FAD(I,J)*HBM3(I,J)/(DPDE*DT)                    &
+                       *FAD(I,J)*2.0*HBM3(I,J)/(DPDE*DT)                &
                        +DWDT(I,J,K)
         ENDDO
         ENDDO
@@ -927,7 +927,7 @@
                     +ZNS(I,J-1)       +ZNS(I,J+1)                       &
                     +ZNE(I+IHW(J),J-1)+ZNE(I,J)                         &
                     +ZSE(I,J)         +ZSE(I+IHW(J),J+1))               &
-                    *FAD(I,J)*HBM2(I,J)/(DPDE(I,J)*DT)                  &
+                    *FAD(I,J)*2.0*HBM2(I,J)/(DPDE(I,J)*DT)              &
                     +W(I,J,K)
         ENDDO
         ENDDO

@@ -1380,7 +1380,7 @@ CONTAINS
 
           account_for_zero_soil_moisture : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-             CASE ( LSMSCHEME , NMMLSMSCHEME)
+             CASE ( LSMSCHEME )
                 iicount = 0
                 IF      ( FLAG_SM000010 .EQ. 1 ) THEN
                    DO j = jts, MIN(jde-1,jte)

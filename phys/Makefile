@@ -51,7 +51,6 @@ MODULES = \
 	module_sf_noahlsm.o  \
         module_sf_urban.o  \
         module_sf_bep.o  \
-	module_sf_lsm_nmm.o  \
 	module_sf_pxlsm.o \
 	module_sf_ruclsm.o \
 	module_sf_sfcdiags.o \
@@ -164,9 +163,6 @@ module_ra_cam.o: module_ra_cam_support.o \
 
 module_mp_lin.o : ../frame/module_wrf_error.o
 
-module_sf_lsm_nmm.o: ../share/module_model_constants.o \
-		../share/module_MPP.o
-
 module_sf_myjsfc.o: ../share/module_model_constants.o 
 module_sf_qnsesfc.o: ../share/module_model_constants.o 
 
@@ -247,8 +243,7 @@ module_physics_init.o : \
 		../frame/module_configure.o \
 		../frame/module_wrf_error.o \
 		../frame/module_dm.o \
-		../share/module_model_constants.o \
-		module_sf_lsm_nmm.o	
+		../share/module_model_constants.o 
 
 module_microphysics_driver.o: \
 		module_mixactivate.o \
@@ -331,8 +326,7 @@ module_surface_driver.o: \
 		module_sf_tmnupdate.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
-		../share/module_model_constants.o  \
-		module_sf_lsm_nmm.o
+		../share/module_model_constants.o  
 
 module_diagnostics.o: ../frame/module_dm.o
 

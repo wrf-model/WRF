@@ -826,8 +826,8 @@
      &       ,ROG,RWMSK,SDEPTH,SNO_FACTR,TL,TLMH,TLMH4,TNEW,TSFC2       &
      &       ,U_FRAME,V_FRAME,XLVRW
 !
-      REAL :: APES,CKLQ,EXNER,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX,RLIVWV   &
-     &       ,THBOT,DPL
+      REAL :: APES,CAPA,CKLQ,EXNER,FACTOR,FFS,PQ0X,Q2SAT,QFC1,QLOWX     &
+     &       ,RLIVWV,THBOT,DPL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: BR,CHKLOWQ,CT,CWMLOW,ELFLX     &
      &                                  ,EXNSFC,FACTRS,FLHC,FLQC,GZ1OZ0 &
@@ -888,6 +888,7 @@
       G_INV=1./G
       ROG=R_D*G_INV
       FACTOR=-XLV*RHOWATER/DTPHS
+      CAPA=R_D/CP
 !
       U_FRAME=0.
       V_FRAME=0.
@@ -1238,7 +1239,6 @@
      &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
      &        ,SNOTIME = grid%SNOTIME &
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
-     &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
      &                                                          )
 !

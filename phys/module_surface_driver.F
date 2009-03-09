@@ -110,7 +110,6 @@ CONTAINS
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,SLABSCHEME                &
-                                       ,NMMLSMSCHEME              &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
@@ -135,7 +134,6 @@ CONTAINS
 #endif
 
 #if ( NMM_CORE == 1 )
-   USE module_sf_lsm_nmm
    USE module_sf_gfdl
 #endif
 
@@ -158,7 +156,6 @@ CONTAINS
    !      2. Noah LSM
    !      7. Pleim-Xiu LSM
 
-   !      99. NMM LSM (NMM core only)
    !  surface: ground temp/lsm scheme for urban:
    !      2.  BEP
 !------------------------------------------------------------------
@@ -1256,36 +1253,6 @@ CONTAINS
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
        ENDIF
-
-#if ( NMM_CORE == 1 )
-     CASE (NMMLSMSCHEME)
-       IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)  .AND.    &
-           PRESENT(potevp)     .AND.  PRESENT(snopcx)  .AND.    &
-           PRESENT(soiltb)     .AND.  PRESENT(sr)      .AND.    &
-                                                      .TRUE. ) THEN
-           IF ( FRACTIONAL_SEAICE == 1 ) THEN
-              CALL wrf_error_fatal('NMMLSM scheme cannot be used with fractional seaice')
-           ENDIF
-           CALL wrf_debug(100,'in NMM LSM')
-           CALL nmmlsm(dz8w,qv_curr,p8w,rho,                    &
-                t_phy,th_phy,tsk,chs,                           &
-                hfx,qfx,qgh,swdown,glw,lh,rmol,                 &
-                smstav,smstot,sfcrunoff,                        &
-                udrunoff,ivgtyp,isltyp,vegfra,sfcevp,potevp,    &
-                grdflx,sfcexc,acsnow,acsnom,snopcx,             &
-                albbck,tmn,xland,xice,qz0,                      &
-                th2,q2,snowc,cqs2,qsfc,soiltb,chklowq,rainbl,   &
-                num_soil_layers,dtbl,dzs,itimestep,             &
-                smois,tslb,snow,canwat,cpm,rcp,sr,              &    !tslb
-                albedo,snoalb,sh2o,snowh,                       &
-                ids,ide, jds,jde, kds,kde,                      &
-                ims,ime, jms,jme, kms,kme,                      &
-                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
-          CALL wrf_debug(100,'back from NMM LSM')
-       ELSE
-         CALL wrf_error_fatal('Lacking arguments for NMMLSM in surface driver')
-       ENDIF
-#endif
 
      CASE (LSMSCHEME)
 

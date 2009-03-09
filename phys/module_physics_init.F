@@ -1158,7 +1158,6 @@ integer myproc
 #endif
 
 #if (NMM_CORE == 1)
-   USE module_sf_lsm_nmm
    USE module_sf_gfdl
 #endif
 !--------------------------------------------------------------------
@@ -1438,16 +1437,6 @@ integer myproc
                          tml, t0ml, hml, h0ml, huml, hvml      )
 
 #if (NMM_CORE == 1)
-      CASE (NMMLSMSCHEME)
-           CALL nmmlsminit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
-                     SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &
-                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,DZS,SFCEVP,   &
-                     TMN,                                          &
-                     num_soil_layers,                              &
-                     allowed_to_read ,                             &
-                     ids,ide, jds,jde, kds,kde,                    &
-                     ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     )
      CASE (GFDLSLAB)
            CALL hwrfsfcinit(isn,XICE,VEGFRA,SNOW,SNOWC, CANWAT,SMSTAV, &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,GRDFLX,ACSNOW,     &

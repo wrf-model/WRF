@@ -187,10 +187,11 @@ CONTAINS
    DO J = jts,jte  
       DO K=kts,kte
          DO I= its,ite
-            SCR1=-5.0E-4*G*rho(I,K,J)*(w(I,K,J)+w(I,K+1,J))
-            TV=T(I,K,J)*(1.+EP1*QV(I,K,J))
-            RHOE=Pcps(I,K,J)/(R*TV)
-            W0=-101.9368*SCR1/RHOE
+!           SCR1=-5.0E-4*G*rho(I,K,J)*(w(I,K,J)+w(I,K+1,J))
+!           TV=T(I,K,J)*(1.+EP1*QV(I,K,J))
+!           RHOE=Pcps(I,K,J)/(R*TV)
+!           W0=-101.9368*SCR1/RHOE
+            W0=0.5*(w(I,K,J)+w(I,K+1,J))
 
 !           Old:
 !

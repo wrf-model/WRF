@@ -682,7 +682,7 @@ state   real   tsq             ikj     misc        1         -      r        "ts
 state   real   qsq             ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
 state   real   cov             ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\
 nce"      "K kg/kg"
-state   real   ch               ij      misc        1         -     -         "ch"                    "drag coeff for heat"    ""
+state   real   ch               ij     misc        1         -      -        "ch"                "drag coeff for heat"    ""
 #state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
 #state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
 #state   real   K_q             ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
@@ -717,12 +717,12 @@ state    real    dl_u_bep      ikj     misc        1         Z      -        "dl
 state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
 # BOULAC PBL variables
-state    real   tke_boulac        ikj     misc        1         -      r        "tke_boulac"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
+state    real   tke_boulac     ikj     misc        1         -      rh       "tke_boulac"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
 # Diagnostic PBL variables
-state    real   wu_tur        ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
-state    real   wv_tur        ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
-state    real   wt_tur        ikj     misc        1         -      r        "wt_tur"               "Turbulent flux of temperature"      "K m s-1"
-state    real   wq_tur        ikj     misc        1         -      r        "wq_tur"               "Turbulent flux of water vapor"      "- m s-1"
+state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
+state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
+state    real   wt_tur         ikj     misc        1         -      r        "wt_tur"               "Turbulent flux of temperature"      "K m s-1"
+state    real   wq_tur         ikj     misc        1         -      r        "wq_tur"               "Turbulent flux of water vapor"      "- m s-1"
 
 # gfdl (eta) radiation State Variables
 state    real    HTOP            ij     misc        1         -      r        "HTOP"                 "TOP OF CONVECTION LEVEL"         ""
@@ -776,9 +776,9 @@ state  real   m_hybi    d     misc      1    -   -     "m_hybi"         "MATCH h
 
 
 # new eta microphpysics State Variables
-state    real    F_ICE_PHY       ikj    misc        1         -      rdu      "F_ICE_PHY"            "FRACTION OF ICE"         ""
-state    real    F_RAIN_PHY      ikj    misc        1         -      rdu      "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
-state    real    F_RIMEF_PHY     ikj    misc        1         -      rdu      "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
+state    real    F_ICE_PHY       ikj    misc        1         -      rhdu     "F_ICE_PHY"            "FRACTION OF ICE"         ""
+state    real    F_RAIN_PHY      ikj    misc        1         -      rhdu     "F_RAIN_PHY"           "FRACTION OF RAIN "         ""
+state    real    F_RIMEF_PHY     ikj    misc        1         -      rhdu     "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
 
 state    real    ccn1            ikj    misc        1         -      h        "ccn1"                 "CCN concentration at S=0.02%"  "#/cm3"
 state    real    ccn2            ikj    misc        1         -      h        "ccn2"                 "CCN concentration at S=0.05%"  "#/cm3"
@@ -1571,7 +1571,7 @@ package   kesslerscheme mp_physics==1                -             moist:qv,qc,q
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
 package   wsm3scheme    mp_physics==3                -             moist:qv,qc,qr
 package   wsm5scheme    mp_physics==4                -             moist:qv,qc,qr,qi,qs
-package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg;scalar:qt
+package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qi,qs,qg;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
@@ -1613,25 +1613,25 @@ package   sfclayscheme   sf_sfclay_physics==1        -             -
 package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
-package   mynnsfcscheme  sf_sfclay_physics==5        -             -
+package   mynnsfcscheme  sf_sfclay_physics==5        -             state:qke,tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 
-package   noahucmscheme  sf_urban_physics==1         -             -
-package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
+package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
+package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
-package   ruclsmscheme   sf_surface_physics==3       -             -
+package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_myj,el_myj
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_myj,el_myj
-package   mynnpblscheme2   bl_pbl_physics==5           -           -
-package   mynnpblscheme3   bl_pbl_physics==6           -           -
+package   mynnpblscheme2 bl_pbl_physics==5           -             state:qke,tsq,qsq,cov
+package   mynnpblscheme3 bl_pbl_physics==6           -             state:qke,tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
-package   boulacscheme   bl_pbl_physics==8           -             -
+package   boulacscheme   bl_pbl_physics==8           -             state:tke_boulac,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   kfetascheme    cu_physics==1               -             -

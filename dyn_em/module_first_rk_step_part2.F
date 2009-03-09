@@ -576,7 +576,7 @@ BENCH_END(hor_diff_tim)
                    p_phy, t_tendf, t0,                                  &
                    grid%u_2, grid%v_2, grid%t_2,               &
                    moist(ims,kms,jms,P_QV),                                   &
-                   grid%pb, grid%p_top, grid%p,                   &
+                   grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
                    grid%uratx, grid%vratx, grid%tratx,                  &
                    ru_tendf, rv_tendf,                                  &
                    moist_tend(ims,kms,jms,P_QV), grid%obs_savwt,           &

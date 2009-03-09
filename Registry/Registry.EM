@@ -1518,7 +1518,7 @@ rconfig   integer production_status       namelist,grib2 	        1     255    r
 rconfig   integer compression             namelist,grib2 	        1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
 
 # NAMELIST DERIVED
-rconfig   integer nobs_ndg_vars           derived                       1         5       -        "num_ndg_vars"         "Number of nudging variables"          ""
+rconfig   integer nobs_ndg_vars           derived                       1         6       -        "num_ndg_vars"         "Number of nudging variables"          ""
 rconfig   integer nobs_err_flds           derived                       1         9       -        "num_err_flds"         "Number of error fields"               ""
 rconfig   real    cen_lat                 derived                  max_domains    0       -        "cen_lat"              "center latitude"      "degrees, negative is south"
 rconfig   real    cen_lon                 derived                  max_domains    0       -        "cen_lon"              "central longitude"      "degrees, negative is west"
@@ -1753,7 +1753,7 @@ period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,
 #halo      em_shift_halo_x  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
 
 # For observational nudging
-halo      HALO_OBS_NUDGE dyn_em 24:pb,p,uratx,vratx,tratx
+halo      HALO_OBS_NUDGE dyn_em 24:ph_2,p,uratx,vratx,tratx
 
 # Periodic Boundary Communications
 

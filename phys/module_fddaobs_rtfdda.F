@@ -95,6 +95,7 @@ CONTAINS
   real               :: xn1
   real               :: known_lat       ! Latitude of domain point (i,j)=(1,1)
   real               :: known_lon       ! Longitude of domain point (i,j)=(1,1) 
+  character(len=200) :: msg             ! Argument to wrf_message
 
 #if ( EM_CORE == 1 ) 
 
@@ -117,10 +118,13 @@ CONTAINS
         fdob%datend = fdaend(inest)
      endif
      if(iprt) then
-        print*,' '
-        print*,' *** DYNAMIC-INITIALIZATION OPTION FOR INEST = ',inest, ' ***'
-        print*,' FDAEND,DATEND,DTRAMP: ',fdaend(inest),fdob%datend,dtramp
-        print*,' '
+        call wrf_message("")
+        write(msg,'(a,i3,a)')                                              &
+          ' *** DYNAMIC-INITIALIZATION OPTION FOR INEST = ', inest, ' ***'
+        call wrf_message(msg)
+        write(msg,*) ' FDAEND,DATEND,DTRAMP: ',fdaend(inest),fdob%datend,dtramp
+        call wrf_message(msg)
+        call wrf_message("")
      endif
   endif
 ! *** end dynamic initialization section ***
@@ -132,16 +136,24 @@ CONTAINS
   if(inest.eq.1) then
     if(obs_twindo .eq. 0.) then
       if(iprt) then
-        write(6,'(/a)') '*** WARNING: TWINDO=0 on the coarse domain.'
-        write(6,'(a/)') '*** Did you forget to set twindo in the fdda namelist?'
+        call wrf_message("")
+        write(msg,*) '*** WARNING: TWINDO=0 on the coarse domain.'
+        call wrf_message(msg)
+        write(msg,*) '*** Did you forget to set twindo in the fdda namelist?'
+        call wrf_message(msg)
+        call wrf_message("")
       endif
     endif
   else        ! nest
     if(obs_twindo .eq. 0.) then
       fdob%window = obs_twindo_cg
       if(iprt) then
-        write(6,'(/a,i2)') 'WARNING: TWINDO=0. for nest ',inest
-        write(6,'(a,f12.5,a/)') 'Default to coarse-grid value of ', obs_twindo_cg,' hrs'
+        call wrf_message("")
+        write(msg,'(a,i2)') 'WARNING: TWINDO=0. for nest ',inest
+        call wrf_message(msg)
+        write(msg,'(a,f12.5,a)') 'Default to coarse-grid value of ', obs_twindo_cg,' hrs'
+        call wrf_message(msg)
+        call wrf_message("")
       endif
     endif
   endif
@@ -212,6 +224,7 @@ CONTAINS
 #if ( EM_CORE == 1 )
 !-----------------------------------------------------------------------
 SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
+                 phb, ph, g,                                    &
                  uratx, vratx, tratx,                           &
                  nndgv, nerrf, niobf, maxdom,                   &
                  levidn, parid, nstat, nstaw,                   &
@@ -249,7 +262,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !              08/28/2006 - Conversion from F77 to F90         Al Bourgeois
 !------------------------------------------------------------------------------
 
-! THE STORAGE ORDER IN VAROBS AND ERRF IS AS FOLLOWS:
+! THE STORAGE ORDER IN ERRF IS AS FOLLOWS:
 !        IVAR                VARIABLE TYPE(TAU-1)
 !        ----                --------------------
 !         1                    U error
@@ -305,6 +318,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL,   INTENT(IN) :: pbase( ims:ime, kms:kme, jms:jme )
   REAL,   INTENT(IN) :: pp( ims:ime, kms:kme, jms:jme ) ! Press. perturbation (Pa)
   REAL,   INTENT(IN)  :: rovcp
+  REAL,   INTENT(IN) :: phb( ims:ime, kms:kme, jms:jme ) ! geopotential (base)
+  REAL,   INTENT(IN) :: ph( ims:ime, kms:kme, jms:jme )  ! geopotential (perturbation) 
+  REAL,   INTENT(IN) :: g                                ! gravity constant
   REAL,   INTENT(IN) :: uratx( ims:ime, jms:jme ) ! U to U10 ratio on mass points.
   REAL,   INTENT(IN) :: vratx( ims:ime, jms:jme ) ! V to V10 ratio on mass points.
   REAL,   INTENT(IN) :: tratx( ims:ime, jms:jme ) ! T to TH2 ratio on mass points.
@@ -334,6 +350,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real :: uratio( ims:ime, jms:jme )   ! U to U10 ratio on momentum points.
   real :: vratio( ims:ime, jms:jme )   ! V to V10 ratio on momentum points.
   real :: pug1,pug2,pvg1,pvg2
+  character(len=200) :: msg            ! Argument to wrf_message
 
 ! Define staggers for U, V, and T grids, referenced from non-staggered grid.
   real, parameter :: gridx_t = 0.5     ! Mass-point x stagger
@@ -361,6 +378,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
   real gridx,gridy,dxob,dyob,dzob,dxob_ms,dyob_ms
   real pob
+  real hob
   real grfacx,grfacy,uratiob,vratiob,tratiob,tratxob,fnpf
   real stagx                       ! For x correction to mass-point stagger
   real stagy                       ! For y correction to mass-point stagger
@@ -382,8 +400,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! ITYP=1 FOR U-POINTS, ITYP=2 for V-POINTS, and ITYP=3 FOR MASS POINTS
 
   if (iprt) then
-    write(6,'(a,i5,a,i2,a,i5,a)') '++++++CALL ERROB AT KTAU = ', &
+    write(msg,'(a,i5,a,i2,a,i5,a)') '++++++CALL ERROB AT KTAU = ', &
             KTAU,' AND INEST = ',INEST,':  NSTA = ',NSTAW,' ++++++'
+    call wrf_message(msg)
   endif
 
   ERRF = 0.0    ! Zero out errf array
@@ -476,7 +495,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS) ) +    &
                    DYOB_MS* ( (1.-DXOB_MS)*pp(IOB_MS,K,JOB_MS+1) +      &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS+1) ) )  
-
 !     write(6,'(a,i2,2(a,f9.3)') ' k= ',k,' pbbo= ',pbbo(k),' ppbo= ',ppbo(k)
           enddo
 
@@ -486,9 +504,17 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !ajb                case rko! This is necessary for bit-for-bit reproducability
 !ajb                with the parallel run.   (coarse mesh)
 
-
           if(abs(rko(n)+99).lt.1.)then
             pob = varobs(5,n)
+
+            if(pob .eq.-888888.) then
+               hob = varobs(6,n)
+               if(hob .gt. -800000. ) then
+                 pob = ht_to_p( hob, ppbo, pbbo, phb, ph, g, iob_ms, job_ms, &
+                                dxob_ms, dyob_ms, k_start, k_end, kds,kde,   &
+                                ims,ime, jms,jme, kms,kme )
+               endif
+            endif
 
             if(pob .gt.-800000.)then
               do k=k_end-1,1,-1
@@ -601,6 +627,15 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
           if(abs(rko(n)+99).lt.1.)then
             pob = varobs(5,n)
+
+            if(pob .eq.-888888.) then
+               hob = varobs(6,n)
+               if(hob .gt. -800000. ) then
+                 pob = ht_to_p( hob, ppbo, pbbo, phb, ph, g, iob_ms, job_ms, &
+                                dxob_ms, dyob_ms, k_start, k_end, kds,kde,   &
+                                ims,ime, jms,jme, kms,kme )
+               endif
+            endif
 
             if(pob .gt.-800000.)then
               do k=k_end-1,1,-1
@@ -939,18 +974,18 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
             if(abs(tratxob) .lt. 1.0E-3) tratxob=1.
 
 !ajb        testing only
-            if(iprt .and. n.eq.81)  then
-              write(6,*) 'POTENTIAL TEMP FOR N=81:'
-              write(6,*)
-              write(6,*) '            K      THETA       TEMPERATURE', &
-                         '       PBASE'
-              write(6,*)
-              do k=k_end,1,-1
-                press = pbase(iob,k,job)+pp(iob,k,job)
-                ttemp = (t0+tb(iob,k,job)) / (100000./press)**.2857143
-                write(6,*) k,t0+TB(IOB,k,JOB),ttemp,pbase(iob,k,job)
-              enddo
-            endif
+!           if(iprt .and. n.eq.81)  then
+!             write(6,*) 'POTENTIAL TEMP FOR N=81:'
+!             write(6,*)
+!             write(6,*) '            K      THETA       TEMPERATURE', &
+!                        '       PBASE'
+!             write(6,*)
+!             do k=k_end,1,-1
+!               press = pbase(iob,k,job)+pp(iob,k,job)
+!               ttemp = (t0+tb(iob,k,job)) / (100000./press)**.2857143
+!               write(6,*) k,t0+TB(IOB,k,JOB),ttemp,pbase(iob,k,job)
+!             enddo
+!           endif
 !ajb        end testing only
 
 !           TEMPERATURE ERROR
@@ -1005,17 +1040,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                       ((1.-DyOB)*((1.-DxOB)*pbase(IOB,1,JOB)+DxOB*      &
                       pbase(IOB+1,1,JOB))+DyOB*((1.-DxOB)*              &
                       pbase(IOB,1,JOB+1)+DxOB*pbase(IOB+1,1,JOB+1) ))
- 
-      if(iprt .and. n.eq.81) then
-       write(6,*) 'ERRF(6,81) calculation:'
-       write(6,*) 'iob,job = ',iob,job
-       write(6,*) 'pbase(iob,1,job) = ',pbase(iob,1,job)
-       write(6,*) 'pbase(iob+1,1,job) = ',pbase(iob+1,1,job)
-       write(6,*) 'pbase(iob,1,job+1) = ',pbase(iob,1,job+1)
-       write(6,*) 'pbase(iob+1,1,job+1) = ',pbase(iob+1,1,job+1)
-       write(6,*) 'ERRF(6,81) = ',errf(6,n)
-!      call flush(6)
-      endif
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
           ENDIF       ! end IF( MP_LOCAL_COBMASK(N) )
@@ -1023,47 +1047,34 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         ENDDO     ! END T and QV LOOP OVER OBS
 
       ENDIF   !end if(istemp.eq.1 .or. ismois.eq.1)
-
-!**********************************************************
-!     PROCESS SURFACE PRESSURE CROSS-POINT FIELD, IVAR=5,
-!     USING BILINEAR FOUR-POINT 2-D INTERPOLATION
-!**********************************************************
-      IF(ISPSTR.EQ.1) THEN 
-        DO N=1,NSTA
-          IOB=MAX0(1,IA(N))
-          IOB=MIN0(IOB,ide-1)
-          JOB=MAX0(1,IB(N))
-          JOB=MIN0(JOB,jde-1)
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-          IF(MP_LOCAL_COBMASK(N)) THEN    ! Do if obs on this processor
-#endif
-            DXOB=RA(N)
-            DYOB=RB(N)
-!ajb        fix this (put in correct pressure calc for IOB,JOB here)
-            ERRF(5,N)=ERRF(5,N)+VAROBS(5,N)-((1.-DyOB)*((1.-DxOB)*      &
-               pbase(IOB,1,JOB)+DxOB*pbase(IOB+1,1,JOB))+DyOB*          &
-               ((1.-DxOB)*pbase(IOB,1,JOB+1)+DxOB*                      &
-               pbase(IOB+1,1,JOB+1)))
-
-      if(n.eq.81) then
-       write(6,*) 'ERRF(5,81) calculation:'
-       write(6,*) 'iob,job = ',iob,job
-       write(6,*) 'pbase(iob,1,job) = ',pbase(iob,1,job)
-       write(6,*) 'pbase(iob+1,1,job) = ',pbase(iob+1,1,job)
-       write(6,*) 'pbase(iob,1,job+1) = ',pbase(iob,1,job+1)
-       write(6,*) 'pbase(iob+1,1,job+1) = ',pbase(iob+1,1,job+1)
-       write(6,*) 'errf(5,81) = ',errf(5,n)
-!      call flush(6)
-      endif
-
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-          ENDIF       ! end IF( MP_LOCAL_COBMASK(N) )
-#endif
-
-        ENDDO
-
-      ENDIF   ! end if(ispstr.eq.1)
-
+!ajb 01062008 - ISPSTR is not used 
+!!**********************************************************
+!!     PROCESS SURFACE PRESSURE CROSS-POINT FIELD, IVAR=5,
+!!     USING BILINEAR FOUR-POINT 2-D INTERPOLATION
+!!**********************************************************
+!      IF(ISPSTR.EQ.1) THEN 
+!        DO N=1,NSTA
+!          IOB=MAX0(1,IA(N))
+!          IOB=MIN0(IOB,ide-1)
+!          JOB=MAX0(1,IB(N))
+!          JOB=MIN0(JOB,jde-1)
+!#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+!          IF(MP_LOCAL_COBMASK(N)) THEN    ! Do if obs on this processor
+!#endif
+!            DXOB=RA(N)
+!            DYOB=RB(N)
+!!ajb        fix this (put in correct pressure calc for IOB,JOB here)
+!            ERRF(5,N)=ERRF(5,N)+VAROBS(5,N)-((1.-DyOB)*((1.-DxOB)*      &
+!               pbase(IOB,1,JOB)+DxOB*pbase(IOB+1,1,JOB))+DyOB*          &
+!               ((1.-DxOB)*pbase(IOB,1,JOB+1)+DxOB*                      &
+!               pbase(IOB+1,1,JOB+1)))
+!
+!#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+!          ENDIF       ! end IF( MP_LOCAL_COBMASK(N) )
+!#endif
+!        ENDDO
+!      ENDIF   ! end if(ispstr.eq.1)
+!!**********************************************************
     ENDIF   ! end if(ityp.eq.3)
 
   ENDDO   ! END BIG LOOP
@@ -1367,6 +1378,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real :: reserf(100)
   character*40 name
   character*3 chr_hr
+  character(len=200) :: msg            ! Argument to wrf_message
 
 !***  DECLARATIONS FOR IMPLICIT NONE
   integer :: i,k,iplo,icut,ipl,inpf,infr,jjjn
@@ -1391,8 +1403,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !       if(NSCAN.ne.0 .and. NSCAN.ne.1)  stop
 ! ajb note: Will need to increase memory for SAVWT if NSCAN=1:
   if(NSCAN.ne.0) then
-    IF (iprt) write(6,*) 'SAVWT must be resized for NSCAN=1'
-    stop
+    IF (iprt) then
+        write(msg,*) 'SAVWT must be resized for NSCAN=1'
+        call wrf_message(msg)
+    ENDIF
+    call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob' )
   endif
   IPLO=0  + NSCAN*4
   GFACTOR=1. +  NSCAN*(-1. + 0.33333) 
@@ -1472,7 +1487,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   IF(MOD(KTAU,INFR).NE.0)GOTO 126
 5 CONTINUE
   IF (iprt) THEN
-   IF(J.EQ.10) write(6,6) INEST,J,KTAU,XTIME,IVAR,IPL,rindx
+   IF(J.EQ.10) then
+       write(msg,6) INEST,J,KTAU,XTIME,IVAR,IPL,rindx
+       call wrf_message(msg)
+   ENDIF
   ENDIF
 6 FORMAT(1X,'OBS NUDGING FOR IN,J,KTAU,XTIME,',                    &
             'IVAR,IPL: ',I2,1X,I2,1X,I5,1X,F8.2,1X,I2,1X,I2,       &
@@ -1491,19 +1509,21 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   ENDDO
 
 ! OUTPUT OBS PER GRID EVERY HOUR
+
   if ( mod(xtime,60.).gt.56. .and. ivar.eq.3 .and. j.eq.10) then
-    IF (iprt) print *,'outputting obs number on grid ',    &
-                 inest,' at time=',xtime
-    write(chr_hr(1:3),'(i3)')nint(xtime/60.)
-    if(chr_hr(1:1).eq.' ')chr_hr(1:1)='0'
-    if(chr_hr(2:2).eq.' ')chr_hr(2:2)='0'
-    IF (iprt) print *,'chr_hr=',chr_hr(1:3),nint(xtime/60.)
-    open(91,file=                                             &
-        'obs_g'//char(inest+ichar('0'))//'_'//chr_hr(1:3),    &
-        form='FORMATted',status='unknown')
-    write(91,911)nstat
-    write(6,911)nstat
-911 FORMAT('total obs=',i8)
+!   IF (iprt) print *,'outputting obs number on grid ',    &
+!                inest,' at time=',xtime
+!   write(chr_hr(1:3),'(i3)')nint(xtime/60.)
+!   if(chr_hr(1:1).eq.' ')chr_hr(1:1)='0'
+!   if(chr_hr(2:2).eq.' ')chr_hr(2:2)='0'
+!   IF (iprt) print *,'chr_hr=',chr_hr(1:3),nint(xtime/60.)
+!    open(91,file=                                             &
+!        'obs_g'//char(inest+ichar('0'))//'_'//chr_hr(1:3),    &
+!        form='FORMATted',status='unknown')
+!    write(91,911)nstat
+!    write(msg,911)nstat
+!    call wrf_message(msg)
+!911 FORMAT('total obs=',i8)
     nsthis=0
     nsmetar=0
     nsspeci=0
@@ -1549,37 +1569,47 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         if(plfo(jjjn).eq.9..and.lev_in_ob(jjjn).eq.1.) nsprofs=nsprofs+1
       endif
     enddo
-    write(91,912)nsthis
-    write(6,912)nsthis
-912 FORMAT('total obs on this grid=',i8)
-    write(91,921)nsmetar
-    write(6,921)nsmetar
-921 FORMAT('total metar obs on this grid=',i8)
-    write(91,922)nsspeci
-    write(6,922)nsspeci
-922 FORMAT('total special obs on this grid=',i8)
-    write(91,923)nsship
-    write(6,923)nsship
-923 FORMAT('total ship obs on this grid=',i8)
-    write(91,924)nssynop
-    write(6,924)nssynop
-924 FORMAT('total synop obs on this grid=',i8)
-    write(91,925)nstemp
-    write(6,925)nstemp
-925 FORMAT('total temp obs on this grid=',i8)
-    write(91,926)nspilot
-    write(6,926)nspilot
-926 FORMAT('total pilot obs on this grid=',i8)
-    write(91,927)nssatwnds
-    write(6,927)nssatwnds
-927 FORMAT('total sat-wind obs on this grid=',i8)
-    write(91,928)nssams
-    write(6,928)nssams
-928 FORMAT('total sams obs on this grid=',i8)
-    write(91,929)nsprofs
-    write(6,929)nsprofs
-929 FORMAT('total profiler obs on this grid=',i8)
-    close(91)
+!    write(91,912)nsthis
+!    write(msg,912)nsthis
+!    call wrf_message(msg)
+!912 FORMAT('total obs on this grid=',i8)
+!    write(91,921)nsmetar
+!    write(msg,921)nsmetar
+!    call wrf_message(msg)
+!921 FORMAT('total metar obs on this grid=',i8)
+!    write(91,922)nsspeci
+!    write(msg,922)nsspeci
+!    call wrf_message(msg)
+!922 FORMAT('total special obs on this grid=',i8)
+!    write(91,923)nsship
+!    write(msg,923)nsship
+!    call wrf_message(msg)
+!923 FORMAT('total ship obs on this grid=',i8)
+!    write(91,924)nssynop
+!    write(msg,924)nssynop
+!    call wrf_message(msg)
+!924 FORMAT('total synop obs on this grid=',i8)
+!    write(91,925)nstemp
+!    write(msg,925)nstemp
+!    call wrf_message(msg)
+!925 FORMAT('total temp obs on this grid=',i8)
+!    write(91,926)nspilot
+!    write(msg,926)nspilot
+!    call wrf_message(msg)
+!926 FORMAT('total pilot obs on this grid=',i8)
+!    write(91,927)nssatwnds
+!    write(msg,927)nssatwnds
+!    call wrf_message(msg)
+!927 FORMAT('total sat-wind obs on this grid=',i8)
+!    write(91,928)nssams
+!    write(msg,928)nssams
+!    call wrf_message(msg)
+!928 FORMAT('total sams obs on this grid=',i8)
+!    write(91,929)nsprofs
+!    write(msg,929)nsprofs
+!    call wrf_message(msg)
+!929 FORMAT('total profiler obs on this grid=',i8)
+!    close(91)
   endif  ! END OUTPUT OBS PER GRID EVERY HOUR
 
 
@@ -1777,8 +1807,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! jc arbitrary check here
             IF (iprt) THEN
               if (kpblt(i).gt.25 .and. ktau.ne.0)                         &
-                                     write(6,552)inest,i,j,kpblt(i)
+                                     write(msg,552)inest,i,j,kpblt(i)
 552           FORMAT('kpblt is gt 25, inest,i,j,kpblt=',4i4)
+              call wrf_message(msg)
             ENDIF
 
             if(kpblt(i).gt.25) komax=3
@@ -1995,13 +2026,15 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !                  ,nlevs_ob(n+nsndlev-1),lev_in_ob(n+nsndlev-1) 
               if(nlevs_ob(n+nsndlev-1).ne.lev_in_ob(n+nsndlev-1)) then
                 IF (iprt) THEN
-                  print *, "n = ",n,"nsndlev = ",nsndlev 
-                  print *, "nlevs_ob,lev_in_ob",                          &
+                  write(msg,*) "n = ",n,"nsndlev = ",nsndlev 
+                  call wrf_message(msg)
+                  write(msg,*) "nlevs_ob,lev_in_ob",                          &
                            nlevs_ob(n+nsndlev-1),lev_in_ob(n+nsndlev-1)
-                  print *, "in nudobs.F: sounding level messed up, stopping"
+                  call wrf_message(msg)
+                  call wrf_message("in nudobs.F: sounding level messed up, stopping")
                 ENDIF
-                stop
-              endif       
+                call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob' )
+             endif       
 !yliu end
 ! This is for a multi-level observation
 ! The trick here is that the sounding is "one ob". You don't
@@ -2418,19 +2451,27 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! Local variables
   integer :: n                    ! Loop counter over obs
   integer :: pnx                  ! Obs index for printout
+  character(len=200) :: msg       ! Argument to wrf_message
 
   if(iprt) then
     if(prt_max.gt.0) then
 
       if(obs(1).ne.-999) then
-        write(6,'(/a36,i4,a10,f8.1,a8)')                                   &
-              'REPORTING OBS MASS-PT LOCS FOR NEST ',inest,                &
-              ' AT XTIME=',xtime,' MINUTES'
-        write(6,'(a5,i4,a5,i5,a48/)')                                      &
-              'FREQ=',prt_freq,', MAX=',prt_max,                           &
-              ' LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC'
-        write(6,'(a42,a44)') '    OBS#     I       J       K     OBS LAT', &
-                '  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)'
+
+        call wrf_message("")
+        write(msg,'(a,i4,a,f8.1,a)') 'REPORTING OBS MASS-PT LOCS FOR NEST ',  &
+                                     inest,' AT XTIME=',xtime,' MINUTES'
+        call wrf_message(msg)
+
+        write(msg,'(a,i4,a,i5,a)') 'FREQ=',prt_freq,', MAX=',prt_max,         &
+                           ' LOCS, NEWLY READ OBS ONLY, -999 => OBS OFF PROC'
+        call wrf_message(msg)
+        call wrf_message("")
+
+        write(msg,'(a,a)') '    OBS#     I       J       K     OBS LAT',      &
+                           '  OBS LON   XLAT(I,J)  XLONG(I,J)  TIME(hrs)'
+        call wrf_message(msg)
+
       endif
     endif
 
@@ -2439,16 +2480,137 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     do n=1,prt_max
        pnx = obs(n)
        if(pnx.ne.-999) then
-           write(6,'(2x,i7,3f8.3,2f9.3,2x,f9.3,2x,f9.3,3x,f6.2)')    &
-               pnx,rio(pnx)-.5,rjo(pnx)-.5,rko(pnx),lat(n),lon(n),    &
+           write(msg,'(2x,i7,3f8.3,2f9.3,2x,f9.3,2x,f9.3,3x,f6.2)')           &
+               pnx,rio(pnx)-.5,rjo(pnx)-.5,rko(pnx),lat(n),lon(n),            &
                mlat(n),mlon(n),timeob(pnx)
-
-!         write(6,'(2x,i4,3f8.3)') pnx,ra(pnx),rb(pnx),rc(pnx)
+        call wrf_message(msg)
        endif
     enddo
-    if(obs(1).ne.-999) write(6,*)
+    if(obs(1).ne.-999) call wrf_message("")
   endif
   END SUBROUTINE print_obs_info
+
+  REAL FUNCTION ht_to_p( h, pbbc, ppbc, phb, ph, g, ic, jc, dx, dy,           &
+                         k_start, k_end, kds,kde, ims,ime, jms,jme, kms,kme )
+
+!*************************************************************************
+! Purpose: Interpolate pressure at a specific x, y, height coordinate.
+!          The input pressure column (base and perturbation) is already
+!          horizontally interpolated to the x, y position. The input
+!          geopotential field (base: phb, pert: ph) is 3d, and must be
+!          horizontally interpolated (to iob, job) to get a height column (z_at_p)
+!          before p is vertically interpolated.
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  REAL,    INTENT(IN)  :: h                                ! height value (m)
+  INTEGER, INTENT(IN)  :: k_start, k_end                   ! loop bounds  
+  INTEGER, INTENT(IN)  :: kds,kde                          ! vertical dim.
+  INTEGER, INTENT(IN)  :: ims,ime, jms,jme, kms,kme        ! memory dims.
+  REAL,    INTENT(IN)  :: pbbc(kds:kde)                    ! column base pressure (cb)
+  REAL,    INTENT(IN)  :: ppbc(kds:kde)                    ! column pressure perturbation (cb)
+  REAL,    INTENT(IN)  :: phb( ims:ime, kms:kme, jms:jme ) ! geopotential (base)
+  REAL,    INTENT(IN)  :: ph( ims:ime, kms:kme, jms:jme )  ! geopotential (perturbation) 
+  REAL,    INTENT(IN)  :: g                                ! gravity constant
+  INTEGER, INTENT(IN)  :: ic                               ! i-coord of desired p
+  INTEGER, INTENT(IN)  :: jc                               ! j-coord of desired p
+  REAL,    INTENT(IN)  :: dx                               ! interp. fraction (x dir)
+  REAL,    INTENT(IN)  :: dy                               ! interp. fraction (y dir)
+
+! Local variables
+  INTEGER :: k               ! loop counter
+  INTEGER :: klo             ! lower k bound
+  REAL :: zlo                ! lower z bound for h
+  REAL :: zhi                ! upper z bound for h
+  REAL :: p                  ! interpolated pressure value
+  REAL :: ln_p               ! log p
+  REAL :: ln_plo             ! log plo
+  REAL :: ln_phi             ! log phi
+  REAL :: z_at_p( kms:kme )  ! height at p levels
+
+! Calculate z at p levels.
+  call get_height_column(phb, ph, g, ic, jc, dx, dy, z_at_p,          &
+                         k_start, k_end, kds,kde,                     &
+                         ims,ime, jms,jme, kms,kme )
+
+! Now we have pbbc, ppbc, z_at_p, so compute p at h. First, find
+! bounding layers klo and khi so that z_at_p(klo) <= h <= z_at_p(khi)
+
+    ZLEVS: do k = k_start+1, k_end
+      klo = k-1
+      if(h .le. z_at_p(k)) then
+         EXIT ZLEVS
+      endif
+    enddo ZLEVS
+
+    zlo = z_at_p(klo)
+    zhi = z_at_p(klo+1)
+
+! Interpolate natural log of pressure
+    ln_plo = log( pbbc(klo+1) + ppbc(klo+1) )
+    ln_phi = log( pbbc(klo) + ppbc(klo) )
+    if(h.le.zlo) then
+      ln_p = ln_phi     ! set to k=1 pressure 
+    else if (h.ge.zhi) then
+      ln_p = ln_plo     ! set to k=k_end pressure 
+    else
+      ln_p = ln_plo + (ln_phi-ln_plo)*((zhi-h)/(zhi-zlo)) 
+    endif
+
+! Return pressure
+    p = exp(ln_p)
+    ht_to_p = p
+  RETURN
+  END FUNCTION ht_to_p
+
+  SUBROUTINE get_height_column( phb, ph, g, ic, jc, dx, dy, z_at_p,   &
+                                k_start, k_end, kds,kde,                    &
+                                ims,ime, jms,jme, kms,kme )
+!*************************************************************************
+! Purpose: Compute column height at ic, jc location on p levels
+!*************************************************************************
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT(IN)  :: k_start, k_end                   ! Loop bounds  
+  INTEGER, INTENT(IN)  :: kds,kde                          ! vertical dim.
+  INTEGER, INTENT(IN)  :: ims,ime, jms,jme, kms,kme        ! memory dims.
+  REAL,    INTENT(IN)  :: phb( ims:ime, kms:kme, jms:jme ) ! geopotential (base)
+  REAL,    INTENT(IN)  :: ph( ims:ime, kms:kme, jms:jme )  ! geopotential (perturbation) 
+  REAL,    INTENT(IN)  :: g                                ! gravity constant
+  INTEGER, INTENT(IN)  :: ic                               ! i-coord of desired p
+  INTEGER, INTENT(IN)  :: jc                               ! j-coord of desired p
+  REAL,    INTENT(IN)  :: dx                               ! interp. fraction (x dir)
+  REAL,    INTENT(IN)  :: dy                               ! interp. fraction (y dir)
+  REAL,    INTENT(OUT) :: z_at_p( kms:kme )                ! column height at p levels
+
+! Local variables
+  INTEGER :: k             ! loop counter
+  REAL :: phbc(kds:kde)    ! column geopotential (base)
+  REAL :: phc(kds:kde)     ! column geopotential (perturbation)
+  REAL :: z_at_w(kds:kde)  ! column height at w levels
+
+
+  do k = kds, kde
+      phbc(k) =                                     & 
+         (1.-DY)*( (1.-DX)*phb(IC,K,JC) +           &
+                            DX *phb(IC+1,K,JC) ) +  &
+             DY* ( (1.-DX)*phb(IC,K,JC+1) +         &
+                            DX *phb(IC+1,K,JC+1) )
+      phc(k) =                                      & 
+         (1.-DY)*( (1.-DX)*ph(IC,K,JC) +            &
+                            DX *ph(IC+1,K,JC) ) +   &
+             DY* ( (1.-DX)*ph(IC,K,JC+1) +          &
+                            DX *ph(IC+1,K,JC+1) )
+
+      z_at_w(k) = (phbc(k)+phc(k))/g
+  enddo
+
+  do k = k_start, k_end
+      z_at_p(k) = 0.5*(z_at_w(k) +z_at_w(k+1))
+  enddo
+  END SUBROUTINE get_height_column
 #endif
 
 END MODULE module_fddaobs_rtfdda

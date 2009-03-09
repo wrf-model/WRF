@@ -53,7 +53,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                nobs_err_flds, nstat, varobs, errf, dx,           &
                KPBL, HT, mut, muu, muv,                          &
                msftx, msfty, msfux, msfuy, msfvx, msfvy, p_phy, t_tendf, t0,             &
-               ub, vb, tb, qvb, pbase, ptop, pp,                 &
+               ub, vb, tb, qvb, pbase, ptop, pp, phb, ph,        &
                uratx, vratx, tratx, ru_tendf, rv_tendf,          &
                moist_tend, savwt,                                &
                ids,ide, jds,jde, kds,kde,                        & ! domain dims
@@ -63,7 +63,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !-----------------------------------------------------------------------
   USE module_domain
   USE module_bc
-  USE module_model_constants, ONLY : rovg, rcp
+  USE module_model_constants, ONLY : g, rcp
   USE module_fddaobs_rtfdda
 
 ! This driver calls subroutines for fdda obs-nudging and
@@ -154,6 +154,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL,   INTENT(IN) :: pbase( ims:ime, kms:kme, jms:jme ) ! Base press. (Pa)
   REAL,   INTENT(IN) :: ptop
   REAL,   INTENT(IN) :: pp( ims:ime, kms:kme, jms:jme )  ! Press. pert. (Pa)
+  REAL,   INTENT(IN) :: phb( ims:ime, kms:kme, jms:jme ) ! Base geopotential
+  REAL,   INTENT(IN) :: ph( ims:ime, kms:kme, jms:jme )  ! Perturbation geopotential
   REAL,   INTENT(IN) :: uratx( ims:ime, jms:jme )     ! On mass points
   REAL,   INTENT(IN) :: vratx( ims:ime, jms:jme )     !       "
   REAL,   INTENT(IN) :: tratx( ims:ime, jms:jme )     !       "
@@ -212,6 +214,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
     IF( MOD(ktau,infr).EQ.0 .OR. idarst.EQ.1) THEN
 
         CALL errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
+                   phb, ph, g,                                       &
                    uratx, vratx, tratx,                              &
                    nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,    &
                    fdob%levidn, parid, fdob%nstat, fdob%nstaw,       &

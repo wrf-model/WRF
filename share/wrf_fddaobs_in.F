@@ -181,13 +181,14 @@
 !       extent, not south-north as for MM5. RIO and RJO have
 !       the opposite orientation here as for MM5. -ajb 06/10/2004
 
-! NOTE - IN4DOB IS CALLED ONLY FOR THE COARSE MESH TIMES                         IN4DOB.10
-!      - VAROBS(IVAR,N) HOLDS THE OBSERVATIONS.                                  IN4DOB.11
-!        IVAR=1   UOBS                                                           IN4DOB.12
-!        IVAR=2   VOBS                                                           IN4DOB.13
-!        IVAR=3   TOBS                                                           IN4DOB.14
-!        IVAR=4   QOBS                                                           IN4DOB.15
-!        IVAR=5   PSOBS (CROSS)                                                  IN4DOB.16
+! NOTE - IN4DOB IS CALLED ONLY FOR THE COARSE MESH TIMES
+!      - VAROBS(IVAR,N) HOLDS THE OBSERVATIONS.
+!        IVAR=1   OBS U
+!        IVAR=2   OBS V
+!        IVAR=3   OBS T
+!        IVAR=4   OBS Q
+!        IVAR=5   OBS Pressure
+!        IVAR=6   OBS Height
 
   INTEGER, intent(in) :: niobf          ! maximum number of observations
   INTEGER, intent(in) :: nndgv          ! number of nudge variables
@@ -285,6 +286,7 @@
   character*14 date_char
   character*40 platform,source,id,namef
   character*2 fonc
+  character(len=200) :: msg       ! Argument to wrf_message
   real latitude,longitude
   real :: plat_prt=0.0        ! Previous obs latitude in read loop (used for printout)
   real :: plon_prt=0.0        ! Previous obs longitude in read loop (used for printout)
@@ -297,11 +299,11 @@
   integer :: nmove, nvola
   DATA NMOVE/0/,NVOLA/61/
 
-  if(ieof(inest).eq.2.and.fdob%nstat.eq.0)then
-    IF (iprt) print *,'returning from in4dob'
-    return
-  endif
-  IF (iprt) print *,'start in4dob ',inest,xtime
+! if(ieof(inest).eq.2.and.fdob%nstat.eq.0)then
+!   IF (iprt) print *,'returning from in4dob'
+!   return
+! endif
+! IF (iprt) print *,'start in4dob ',inest,xtime
   IF(nudge_opt.NE.1)RETURN
 
 ! Initialize obs for printout
@@ -326,7 +328,10 @@
   TBACK=XHOUR-fdob%WINDOW
   TFORWD=XHOUR+fdob%WINDOW
 
-      if (iprt) write(6,*) 'TBACK = ',tback,' TFORWD = ',tforwd
+  IF (iprt) then
+     write(msg,*) 'TBACK = ',tback,' TFORWD = ',tforwd
+     call wrf_message(msg)
+  ENDIF
 
   IF(NSTA.NE.0) THEN
     NDUM=0
@@ -339,7 +344,7 @@
     ENDDO t_window
 
 ! REMOVE OLD OBS DENOTED BY 99999. AT THE FRONT OF TIMEOB ARRAY
-    IF (iprt) print *,'ndum at 20=',ndum
+!   IF (iprt) print *,'ndum at 20=',ndum
     NDUM=ABS(NDUM)
     NMOVE=NIOBF-NDUM
     IF(NMOVE.GT.0 .AND. NDUM.NE.0 ) THEN  
@@ -407,16 +412,18 @@
               ,EXIST=exist)
       if(exist)then
         IF (iprt) THEN
-          print *,'opening first fdda obs file, fonc=',              &
-                   fonc,' inest=',inest
-          print *,'ifon=',ifon(inest)
+          write(msg,*) 'opening first fdda obs file, fonc=',              &
+                       fonc,' inest=',inest
+          call wrf_message(msg)
+          write(msg,*) 'ifon=',ifon(inest)
+          call wrf_message(msg)
         ENDIF
         OPEN(NVOLA+INEST-1,                                          &
         FILE='OBS_DOMAIN'//CHAR(INEST+ICHAR('0'))//fonc(1:2),        &
               FORM='FORMATTED',STATUS='OLD')
       else
 ! no first file to open
-        IF (iprt) print *,'there are no fdda obs files to open'
+        IF (iprt) call wrf_message("there are no fdda obs files to open")
         return
       endif
 
@@ -497,10 +504,12 @@
 !     print *,'read in ob ',n,timeob(n),rtimob
       IF(IDYNIN.EQ.1.AND.TIMEOB(N)*60..GT.fdob%DATEND) THEN
         IF (iprt) THEN
-          PRINT*,' IN4DOB: FOR INEST = ',INEST,' AT XTIME = ',XTIME,    &
-          ' TIMEOB = ',TIMEOB(N)*60.,' AND DATEND = ',fdob%DATEND,' :'
-          PRINT*,'         END-OF-DATA FLAG SET FOR OBS-NUDGING',       &
-          ' DYNAMIC INITIALIZATION'
+          write(msg,*) ' IN4DOB: FOR INEST = ',INEST,' AT XTIME = ',XTIME,    &
+                       ' TIMEOB = ',TIMEOB(N)*60.,' AND DATEND = ',fdob%DATEND,' :'
+          call wrf_message(msg)
+          write(msg,*) '         END-OF-DATA FLAG SET FOR OBS-NUDGING',       &
+                       ' DYNAMIC INITIALIZATION'
+          call wrf_message(msg)
         ENDIF
         fdob%IEODI=1
         TIMEOB(N)=99999.
@@ -579,7 +588,10 @@
       if(platform(7:11).eq.'ACARS')plfo(n)=7.
 ! yliu: end
       if(plfo(n).eq.99.) then
-         IF (iprt) print *,'n=',n,' unknown ob of type',platform
+         IF (iprt) then
+           write(msg,*) 'n=',n,' unknown ob of type',platform
+           call wrf_message(msg)
+         ENDIF
       endif
 
 !======================================================================
@@ -696,11 +708,6 @@
               varobs(3,n) =                                             &
                   temperature_data*(100000./pressure_data)**RCP - t0
 
-!      write(6,*) 'reading data for N = ',n,' RCP = ',rcp
-!      write(6,*) 'temperature_data = ',temperature_data
-!      write(6,*) 'pressure_data = ',pressure_data
-!      write(6,*) 'varobs(3,n) = ',varobs(3,n)
-
             else
               varobs(3,n)=-888888.
             endif
@@ -709,14 +716,22 @@
             varobs(3,n)=-888888.
           endif
 
+!ajb Store obs height
+          if(height_qc.ge.0..and.height_qc.lt.30000.)then
+            varobs(6,n)=height_data
+          else
+            varobs(6,n)=-888888.
+          endif
+
           if(pressure_qc.ge.0..and.pressure_qc.lt.30000.)then
 !           if(pressure_qc.ge.0.)then
             varobs(5,n)=pressure_data
           else
             varobs(5,n)=-888888.
             IF (iprt) THEN
-              print *,'********** PROBLEM *************'
-              print *,'sounding, p undefined',latitude,longitude
+              call wrf_message("********** PROBLEM *************")
+              write(msg,*) 'sounding, p undefined',latitude,longitude
+              call wrf_message(msg)
             ENDIF
           endif 
           if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
@@ -811,7 +826,7 @@
               (slp_data.gt.90000.))then
           tbar=temperature_data+0.5*elevation*.0065
           psfc_data=slp_data*exp(-elevation/(rovg*tbar))
-          varobs(5,n)=psfc_data*1.e-3
+          varobs(5,n)=psfc_data
           psfc_qc=0.
         endif
 
@@ -825,7 +840,7 @@
           (temperature_qc.ge.0..and.temperature_qc.lt.30000.))then
           tbar=temperature_data+0.5*elevation*.0065
           psfc_data=100000.*exp(-elevation/(rovg*tbar))
-          varobs(5,n)=psfc_data*1.e-3
+          varobs(5,n)=psfc_data
           psfc_qc=0.
         endif
 
@@ -835,6 +850,7 @@
         else
           varobs(5,n)=-888888.
         endif
+
         if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
 
 !Lilie
@@ -895,8 +911,8 @@
         varobs(4,n)=r_data
       ELSE
         IF (iprt) THEN
-           print *,' ======  '
-           print *,' NO Data Found '
+           call wrf_message(" ======  ")
+           call wrf_message(" NO Data Found ")
         ENDIF
       ENDIF   !end if(is_sound)
 ! END OF SFC OBS INPUT SECTION
@@ -904,7 +920,7 @@
 !======================================================================
 ! check if ob time is too early (only applies to beginning)
       IF(RTIMOB.LT.TBACK-fdob%WINDOW)then
-        IF (iprt) print *,'ob too early'
+        IF (iprt) call wrf_message("ob too early")
         n=n-1
         GOTO 110
       ENDIF
@@ -963,14 +979,16 @@
                     ( (plfo(njc).eq.6.).and.                               &
                       (nlevs_ob(n).ge.nlevs_ob(njc)) ) ) )then
               IF (iprt) THEN
-                print *,'duplicate sounding - eliminate first occurrence', &
-                                  n,inest,meas_count,nlevs_ob(njc),        &
-                                  latitude,longitude,plfo(njc)
+                write(msg,*) 'duplicate sounding - eliminate first occurrence', &
+                                       n,inest,meas_count,nlevs_ob(njc),        &
+                                       latitude,longitude,plfo(njc)
+                call wrf_message(msg)
               ENDIF
               if(lev_in_ob(njc).ne.1.) then
                 IF (iprt) THEN
-                  print *, 'problem ******* - dup sndg ',                  &
-                           lev_in_ob(njc),nlevs_ob(njc)
+                  write(msg,*) 'problem ******* - dup sndg ',                   &
+                               lev_in_ob(njc),nlevs_ob(njc)
+                  call wrf_message(msg)
                 ENDIF
               endif
 !             n=n-meas_count
@@ -989,15 +1007,17 @@
                     (plfo(njc).eq.6.).and.                                 &
                     (nlevs_ob(n).lt.nlevs_ob(njc)) )then
               IF (iprt) THEN
-                print *,                                                   &
+                write(msg,*)                                               &
                  'duplicate pilot sounding - eliminate second occurrence', &
                                  n,inest,meas_count,nlevs_ob(njc),         &
                                  latitude,longitude,plfo(njc)
+                call wrf_message(msg)
               ENDIF
               if(lev_in_ob(njc).ne.1.) then
                 IF (iprt) THEN
-                  print *, 'problem ******* - dup sndg ',                  &
+                  write(msg,*) 'problem ******* - dup sndg ',              &
                            lev_in_ob(njc),nlevs_ob(njc)
+                  call wrf_message(msg)
                 ENDIF
               endif
               n=n-meas_count
@@ -1013,9 +1033,12 @@
                     (nlevs_ob(n).eq.1.).and.                               &
                     (varobs(5,njc).eq.varobs(5,n)).and.                    &
                     (plfo(njc).eq.7.).and.(plfo(n).eq.7.) ) then
-              IF (iprt) print *,                                        &
+              IF (iprt) then
+                write(msg,*)                                               &
                 'duplicate single lev sat-wind ob - replace first',n,      &
                                  inest,meas_count,varobs(5,n)
+                call wrf_message(msg)
+              ENDIF
 ! this is the single ua ob replacement part
               VAROBS(1,njc)=VAROBS(1,n)
               VAROBS(2,njc)=VAROBS(2,n)
@@ -1035,9 +1058,10 @@
               goto 100
             else
               IF (iprt) THEN
-                print *,'duplicate location, but no match otherwise',n,njc,  &
-                        plfo(n),varobs(5,n),nlevs_ob(n),lev_in_ob(n),        &
-                        plfo(njc),varobs(5,njc),nlevs_ob(njc),lev_in_ob(njc)
+                write(msg,*) 'duplicate location, but no match otherwise',n,njc,  &
+                             plfo(n),varobs(5,n),nlevs_ob(n),lev_in_ob(n),        &
+                             plfo(njc),varobs(5,njc),nlevs_ob(njc),lev_in_ob(njc)
+                call wrf_message(msg)
               ENDIF
             endif
           endif
@@ -1090,11 +1114,12 @@
 !
       IF(TIMEOB(N).LT.fdob%RTLAST) THEN
         IF (iprt) THEN
-          PRINT *,'2 OBS ARE NOT IN CHRONOLOGICAL ORDER'
-          PRINT *,'NEW YEAR?'
-          print *,'timeob,rtlast,n=',timeob(n),fdob%rtlast,n
+          call wrf_message("2 OBS ARE NOT IN CHRONOLOGICAL ORDER")
+          call wrf_message("NEW YEAR?")
+          write(msg,*) 'timeob,rtlast,n=',timeob(n),fdob%rtlast,n
+          call wrf_message(msg)
         ENDIF
-        STOP 111
+        call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 111' )
       ELSE
         fdob%RTLAST=TIMEOB(N)
       ENDIF
@@ -1104,11 +1129,17 @@
 !       --------------   END BIG 100 LOOP OVER N  --------------
 !**********************************************************************
 
-      IF (iprt) write(6,5403) NVOL,XTIME
+      if (iprt) then
+        write(msg,5403) NVOL,XTIME
+        call wrf_message(msg)
+      endif
       IEOF(inest)=1
 
       close(NVOLA+INEST-1)
-      IF (iprt) print *,'closed fdda file for inest=',inest,nsta
+      IF (iprt) then
+         write(msg,*) 'closed fdda file for inest=',inest,nsta
+         call wrf_message(msg)
+      ENDIF
 
 !     if(nsta.eq.1.and.timeob(1).gt.9.e4)nsta=0
   goto 1001
@@ -1119,12 +1150,14 @@
 ! get here if too many obs
 120 CONTINUE
   IF (iprt) THEN
-    write(6,121) N,NIOBF
-    write(6,122)
+    write(msg,121) N,NIOBF
+    call wrf_message(msg)
+    write(msg,122)
+    call wrf_message(msg)
   ENDIF
-  STOP 122
+  call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 122' )
   fdob%WINDOW=fdob%WINDOW-0.1*TWINDO
-  IF(TWINDO.LT.0)STOP 120
+  IF(TWINDO.LT.0) call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 120' )
 ! IF THE WINDOW BECOMES NEGATIVE, THE INCOMING DATA IS
 ! PROBABLY GARBLED. STOP.
   GOTO 10
@@ -1147,7 +1180,10 @@
 !  its a sounding, in which case it looks like many obs)
       IF(TIMEOB(N).GT.9.e4) EXIT keep_obs
       if(timeob(n).gt.tforwd) then
-        if(iprt) write(6,951)inest,n,timeob(n),tforwd
+        if(iprt) then
+           write(msg,951)inest,n,timeob(n),tforwd
+           call wrf_message(msg)
+        endif
  951    FORMAT('saving ob beyond window,inest,n,timeob,tforwd=',   &
                2i5,2f13.4) 
       endif
@@ -1168,7 +1204,8 @@
 
 ! REMOVE OLD OBS DENOTED BY 99999. AT THE FRONT OF TIMEOB ARRAY
     IF (iprt) THEN
-      print *,'after 190 ndum=',ndum,nsta
+      write(msg,*) 'after 190 ndum=',ndum,nsta
+      call wrf_message(msg)
     ENDIF
     NDUM=ABS(NDUM)
     NMOVE=NIOBF-NDUM
@@ -1224,39 +1261,70 @@
                        plat_prt,plon_prt,xtime,                            &
                        ims,ime,jms,jme,its,ite,jts,jte)
 
-  IF (iprt) write(6,160) KTAU,XTIME,NSTAW
+  IF (iprt) then
+      write(msg,160) KTAU,XTIME,NSTAW
+      call wrf_message(msg)
+  ENDIF
   IF(KTAU.EQ.KTAUR)THEN
     IF(nudge_opt.EQ.1)THEN
       TWDOP=TWINDO*60.
       IF (iprt) THEN
-        write(6,1449) INEST,RINXY,RINSIG,TWDOP
-        IF(ISWIND.EQ.1) write(6,1450) GIV
-        IF(ISTEMP.EQ.1) write(6,1451) GIT
-        IF(ISMOIS.EQ.1) write(6,1452) GIQ
-        IF(ISPSTR.EQ.1) write(6,1453) GIP
+        write(msg,1449) INEST,RINXY,RINSIG,TWDOP
+        call wrf_message(msg)
+        IF(ISWIND.EQ.1) then
+          write(msg,1450) GIV
+          call wrf_message(msg)
+        ENDIF
+        IF(ISTEMP.EQ.1) then
+          write(msg,1451) GIT
+          call wrf_message(msg)
+        ENDIF
+        IF(ISMOIS.EQ.1) then
+          write(msg,1452) GIQ
+          call wrf_message(msg)
+        ENDIF
+        IF(ISPSTR.EQ.1) then
+          write(msg,1453) GIP
+          call wrf_message(msg)
+        ENDIF
       ENDIF
     ENDIF
   ENDIF
   IF(KTAU.EQ.KTAUR)THEN
     IF (iprt) THEN
-      write(6,553)
-      write(6,554)
+      write(msg,553)
+      call wrf_message(msg)
+      write(msg,554)
+      call wrf_message(msg)
     ENDIF
     IF(fdob%IWTSIG.NE.1)THEN
       IF (iprt) THEN
-        write(6,555)
-        write(6,556) fdob%RINFMN*RINXY,fdob%RINFMX*RINXY,fdob%PFREE*10.
+        write(msg,555)
+        call wrf_message(msg)
+        write(msg,556) fdob%RINFMN*RINXY,fdob%RINFMX*RINXY,fdob%PFREE*10.
+        call wrf_message(msg)
       ENDIF
-      IF(fdob%RINFMN.GT.fdob%RINFMX)STOP 556
+      IF(fdob%RINFMN.GT.fdob%RINFMX) then
+         call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 556' )
+      ENDIF
 ! IS MINIMUM GREATER THAN MAXIMUM?
-      IF (iprt) write(6,557) fdob%DPSMX*10.,fdob%DCON
-      IF(fdob%DPSMX.GT.10.)STOP 557
+      IF (iprt) then
+        write(msg,557) fdob%DPSMX*10.,fdob%DCON
+        call wrf_message(msg)
+      ENDIF
+      IF(fdob%DPSMX.GT.10.) then
+         call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 557' )
+      ENDIF
     ENDIF
   ENDIF
 ! IS DPSMX IN CB?
  
   IF(KTAU.EQ.KTAUR)THEN
-    IF (iprt) write(6,601) INEST,IONF
+    IF (iprt) then
+      write(msg,601) INEST,IONF
+      call wrf_message(msg)
+      call wrf_message("")
+    ENDIF
   ENDIF
   fdob%NSTAT=NSTA
   fdob%NSTAW=NSTAW
@@ -1269,7 +1337,7 @@
       'DPSMX = ',F7.2,' MB WITH DCON = ',E11.3,                          &
       ' - SEE SUBROUTINE NUDOB')
 601   FORMAT('0','FOR EFFICIENCY, THE OBS NUDGING FREQUENCY ',           &
-        'FOR MESH #',I2,' IS ',1I2,' CGM TIMESTEPS ',/)
+        'FOR MESH #',I2,' IS ',1I2,' CGM TIMESTEPS ')
 121   FORMAT('0','  WARNING: NOBS  = ',I4,' IS GREATER THAN NIOBF = ',   &
       I4,': INCREASE PARAMETER NIOBF')
 5403  FORMAT(1H0,'-------------EOF REACHED FOR NVOL = ',I3,              &
@@ -1437,6 +1505,7 @@
 !***  DECLARATIONS FOR IMPLICIT NONE                                    
       real eps, e0, eslcon1, eslcon2, esicon1, esicon2, t0, rh1
       real esat, rsat
+      character(len=200) :: msg       ! Argument to wrf_message
 
       eps=0.622
       e0=6.112
@@ -1446,7 +1515,8 @@
       esicon2=6.15e3
       t0=273.15
  
-      print *,'rh2r input=',rh,t,p
+      write(msg,*) 'rh2r input=',rh,t,p
+      call wrf_message(msg)
       rh1=rh*.01
  
       if(iice.eq.1.and.t.le.t0)then
@@ -1458,7 +1528,9 @@
 !     print *,'rsat,esat=',rsat,esat
       r=rh1*eps*rsat/(eps+rsat*(1.-rh1))
  
-      print *,'rh2r rh,t,p,r=',rh1,t,p,r
+      write(msg,*) 'rh2r rh,t,p,r=',rh1,t,p,r
+      call wrf_message(msg)
+      rh1=rh*.01
  
       return
 END SUBROUTINE rh2rb
@@ -1655,6 +1727,7 @@ END SUBROUTINE rh2rb
   integer :: iend, jend           ! Upper i, j index for interpolation
   real    :: dxob, dyob           ! Grid fractions for interp
   logical :: llsave               ! Save lat/lon values if true
+  character(len=200) :: msg       ! Argument to wrf_message
 
   if(newpass) then          ! No action on first pass 
     iref = n-1
@@ -1667,9 +1740,11 @@ END SUBROUTINE rh2rb
     if(prt_freq.gt.0) then
        ndx = (nprev-1-iref)/prt_freq + 1
     else
-       write(6,*) 'STOP! OBS NAMELIST INPUT obs_prt_freq MUST BE GREATER THAN ZERO.'
-       write(6,*) 'THE NAMELIST VALUE IS',prt_freq,' FOR NEST ',inest
-       STOP
+       write(msg,*) 'STOP! OBS NAMELIST INPUT obs_prt_freq MUST BE GREATER THAN ZERO.'
+       call wrf_message(msg)
+       write(msg,*) 'THE NAMELIST VALUE IS',prt_freq,' FOR NEST ',inest
+       call wrf_message(msg)
+       call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP' )
     endif
 
     if(ndx .le. prt_max) then
@@ -1756,35 +1831,42 @@ END SUBROUTINE rh2rb
 ! Local variables
   integer :: n                    ! Loop counter over obs
   integer :: lastobs              ! Last obs collected for printout
+  integer :: lastn                ! Value of n for last obs(n) entry
   integer :: igap                 ! Gap between last obs read and last saved 
   integer :: ndx                  ! Index into printout arrays
+  integer :: iobs                 ! Obs gap indices between lastobs and nstaw 
 
   if(iprt) then
 
 ! Find the last obs index whose lat&lon info was collected.
     lastobs = 0
+    lastn   = 0
     do n=1,prt_max
        if(obs(n).ne.-999) then
           lastobs = obs(n)
+          lastn   = n
        endif
     enddo
 
-! There could be one more obs to collect.
+! There could be more obs to collect.
     igap = (nstaw-lastobs)/prt_freq
-    if(igap.eq.1) then
-!      write(6,*) 'We need to collect the last obs for printout.'
-       ndx = (nstaw-1-iref)/prt_freq + 1
+
+    do n = 1, igap
+       ndx  = lastn + n
+       iobs = lastobs + n*prt_freq
+       if(ndx.le.prt_max) then
 
 ! Compute and collect model lat&lon at obs point.
-       CALL get_model_latlon(nstaw,niobf,rio,rjo,xlat,xlong,e_we,e_sn, &
-                             ims,ime,jms,jme,its,ite,jts,jte,          &
-                             mlat(ndx),mlon(ndx))
+         CALL get_model_latlon(iobs,niobf,rio,rjo,xlat,xlong,e_we,e_sn,  &
+                               ims,ime,jms,jme,its,ite,jts,jte,          &
+                               mlat(ndx),mlon(ndx))
 
 ! Collect obs index and lat&lon.
-       obs(ndx) = nstaw
-       lat(ndx) = plat
-       lon(ndx) = plon
-    endif
+         obs(ndx) = iobs
+         lat(ndx) = plat
+         lon(ndx) = plon
+       endif
+    enddo
 
   endif
   END SUBROUTINE finish_obs_info

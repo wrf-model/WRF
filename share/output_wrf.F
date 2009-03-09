@@ -34,7 +34,7 @@
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics
-    REAL    khdif, kvdif, swrad_scat
+    REAL    khdif, kvdif, swrad_scat, dampcoef
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
 #if (EM_CORE == 1)
     INTEGER grid_id , parent_id , i_parent_start , j_parent_start , parent_grid_ratio
@@ -160,6 +160,7 @@
     call nl_get_diff_opt      ( 1, diff_opt                      )
     call nl_get_km_opt        ( 1, km_opt                        )
     call nl_get_damp_opt      ( 1, damp_opt                      )
+    call nl_get_dampcoef      ( grid%id,  dampcoef            )
     call nl_get_khdif         ( grid%id,  khdif               )
     call nl_get_kvdif         ( grid%id,  kvdif               )
     call nl_get_mp_physics    ( grid%id,  mp_physics          )
@@ -346,6 +347,8 @@
     CALL wrf_put_dom_ti_integer ( fid , 'KM_OPT' ,  ibuf , 1 , ierr )
     ibuf(1) = damp_opt
     CALL wrf_put_dom_ti_integer ( fid , 'DAMP_OPT' ,  ibuf , 1 , ierr )
+    rbuf(1) = dampcoef
+    CALL wrf_put_dom_ti_real    ( fid , 'DAMPCOEF' ,  rbuf , 1 , ierr )
     rbuf(1) = khdif
     CALL wrf_put_dom_ti_real    ( fid , 'KHDIF' ,  rbuf , 1 , ierr )
     rbuf(1) = kvdif
@@ -507,7 +510,7 @@
     CALL wrf_put_dom_ti_real ( fid , 'TRUELAT2',  config_flags%truelat2, 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'MOAD_CEN_LAT',  config_flags%moad_cen_lat, 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'STAND_LON',  config_flags%stand_lon, 1 , ierr )
-    IF ( switch .NE. boundary_only ) THEN
+    IF ( switch .NE. boundary_only .AND. switch .NE. aux_model_input9_only .AND. switch .NE. aux_model_input10_only ) THEN
 #ifdef PLANET
       ! When writing to restart files, use the values of the instantaneous
       ! time for determining the values of JULYR, JULDAY, and GMT.  If the

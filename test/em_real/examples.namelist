@@ -202,6 +202,10 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
  bucket_mm                           = 100.
  bucket_J                            = 1.e9
 
+** Optional gravitational settling of fog/cloud droplets (MYNN PBL only)
+
+ grav_settling                       = 1,       ; default 0
+
 ** Using implicit gravity-wave damping option (add these in namelist record &dynamics):
 
  damp_opt                            = 3,

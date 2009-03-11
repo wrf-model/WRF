@@ -709,6 +709,20 @@ The following are for observation nudging:
                                                   (v=0 at polarward-most v-point)
 
 
+
+ &tc                                            ; controls for tc_em.exe ONLY, no impact on real, ndown, or model
+
+ insert_bogus_storm                  = .false.  ; T/F for inserting a bogus typhoon
+ remove_storm                        = .false.  ; T/F for only removing the original typhoon
+ num_storm                           = 1        ; Number of bogus typhoons
+ latc_loc                            = -999.    ; center latitude of the bogus tyhoon
+ lonc_loc                            = -999.    ; center longitude of the bogus tyhoon
+ vmax_meters_per_second              = -999.    ; vmax of bogus storm in meters per second
+ rmax                                = -999.    ; maximum radius outward from storm center
+ vmax_ratio                          = -999.    ; vmax_ratio
+
+
+
  &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 
 
  nio_tasks_per_group                 = 0,        default value is 0: no quilting; > 0 quilting I/O

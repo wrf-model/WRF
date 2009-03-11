@@ -78,6 +78,8 @@ real::t1,t2
      END SUBROUTINE Setup_Timekeeping
    END INTERFACE
 
+   LOGICAL :: ok_so_far
+
 #include "version_decl"
 
    !  Define the name of this program (program_name defined in module_domain)
@@ -214,6 +216,20 @@ real::t1,t2
 
          CALL       wrf_debug ( 100 , 'real_em: calling model_to_grid_config_rec ' )
          CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+         !  Some simple checks.
+         
+         ok_so_far = .TRUE.
+
+         DO loop = 2 , model_config_rec%max_dom
+            IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
+               CALL  wrf_message ( 'e_vert must be the same for each domain' )
+               ok_so_far = .FALSE.
+            END IF
+         END DO
+         IF ( .NOT. ok_so_far ) THEN
+            CALL wrf_error_fatal( 'fix namelist.input settings' )
+         END IF
 
          !  Initialize the WRF IO: open files, init file handles, etc.
 

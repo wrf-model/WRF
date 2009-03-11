@@ -274,7 +274,7 @@
     ELSE
        mminlu = " "
     END IF
-    call wrf_message("mminlu = '" // mminlu // "'")
+    call wrf_debug( 1 , "mminlu = '" // mminlu // "'")
     if (index(mminlu, char(0)) > 0) mminlu(index(mminlu, char(0)):) = " "
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_char for MMINLU returns ' // TRIM(mminlu)
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -284,6 +284,7 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
+    num_land_cat_compare = -1
     call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
     if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
        call wrf_message("Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")

@@ -1542,6 +1542,7 @@ rconfig   real      max_dz          namelist,domains    1               1000.
 
 # TC (tropical cyclone bogusing)
 rconfig   logical insert_bogus_storm   namelist,tc     	1              .false. irh    "insert_bogus_storm"   "T/F for inserting a bogus typhoon"      "flag"
+rconfig   logical remove_storm         namelist,tc     	1              .false. irh    "remove_storm"  "T/F for only removing the original typhoon"  "flag"
 rconfig   integer num_storm            namelist,tc     	1              1       irh    "num_storm"     "Number of bogus typhoons"  ""
 rconfig   real    latc_loc             namelist,tc     	1              -999.   irh    "latc_loc"      "center latitude of the bogus tyhoon"  "DEGREES"
 rconfig   real    lonc_loc             namelist,tc     	1              -999.   irh    "lonc_loc"      "center longitude of the bogus tyhoon"  "DEGREES"

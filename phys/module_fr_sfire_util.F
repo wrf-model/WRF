@@ -1033,7 +1033,6 @@ end subroutine write_array_m
 subroutine write_array_m3(its,ite,kts,kte,jts,jte,           &
                          ims,ime,kms,kme,jms,jme,               &
                          a,name,id)
-use module_dm
 
 implicit none
 ! debug

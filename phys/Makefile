@@ -386,9 +386,6 @@ module_fr_sfire_phys.o: \
                 fr_sfire_params_decl.h \
 		module_fr_sfire_util.o 
 
-module_fr_sfire_util.o: \
-                ../frame/module_dm.o 
-
 module_fire_debug_output.o: \
 	        ../frame/module_domain.o \
 	        ../frame/module_configure.o \

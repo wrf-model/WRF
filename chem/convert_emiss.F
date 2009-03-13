@@ -32,8 +32,10 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !new for bc
    USE module_bc
-   USE module_big_step_utilities_em
    USE module_get_file_names
+#if (EM_CORE ==1)
+   USE module_big_step_utilities_em
+#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    IMPLICIT NONE
@@ -94,6 +96,10 @@ PROGRAM convert_emissions
    REAL, ALLOCATABLE :: dumc1(:,:)
    real mmax
 
+#if (NMM_CORE == 1)
+   REAL, ALLOCATABLE :: plvl(:,:,:)
+   REAL, ALLOCATABLE :: pdsl(:,:)
+#endif
 
    CHARACTER (LEN=80)     :: message
 
@@ -150,7 +156,7 @@ PROGRAM convert_emissions
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   program_name = "WRF V3 EMISSIONS PREPROCESSOR"
+   program_name = "WRF-CHEM " // TRIM(release_version) // " EMISSIONS PREPROCESSOR"
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -454,6 +460,8 @@ PROGRAM convert_emissions
      a=50.
 !    p00=100000.
 !    p_top=5000.
+
+#if (EM_CORE == 1) 
      do j=jps,jpe
      do i=ips,ipe
         p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
@@ -483,6 +491,64 @@ PROGRAM convert_emissions
 
      enddo
      enddo
+#endif
+#if ( NMM_CORE == 1 )
+
+   ! Get scalar grid point heights
+   ALLOCATE(  plvl(ips:ipe,kps:kpe,jps:jpe) )
+   ALLOCATE(  pdsl(ips:ipe,jps:jpe) )
+
+       IF(grid%sigma.EQ. 1)THEN
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=grid%pd(i,j)
+         ENDDO
+         ENDDO
+       ELSE
+         do j=jps,jpe
+         do i=ips,ipe
+           pdsl(i,j)=grid%res(i,j)*grid%pd(i,j)
+         enddo
+         enddO
+       ENDIF
+
+      do j=jps,jpe
+        do k=kps,kpe
+        do i=ips,ipe
+          plvl(i,k,j)=grid%eta1(k)*grid%pdtop+grid%eta2(k)*pdsl(i,j)+grid%pt
+        ENDDO
+        ENDDO
+      ENDDO
+
+     do j=jps,jpe
+     do i=ips,ipe
+
+      do kw=kpe-1,kps,-1
+       do kg=iklev-1,1,-1
+          if( p_g(kg) <= log10(.01*plvl(i,kw,j)) ) then
+             kbot = max(1,kg-1)
+             ktop = max(min(kg,iklev-1),2)
+          endif
+       enddo ! kg loop
+
+       fac= (tmp_no3(i  ,j  ,ktop)-tmp_no3(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+       grid%backg_no3(i, kw, j) = tmp_no3(i  ,j  ,kbot)+fac*(log10(.01*plvl(i,kw,j))-p_g(kbot))
+
+! OH
+       fac= (tmp_oh(i  ,j  ,ktop)-tmp_oh(i  ,j  ,kbot))/ (p_g(ktop) - p_g(kbot))
+       grid%backg_oh(i, kw, j) = tmp_oh(i  ,j  ,kbot)+fac*(log10(.01*plvl(i,kw,j))-p_g(kbot))
+
+! H2O2
+       fac= (tmp_h2o2(i  ,j  ,ktop)-tmp_h2o2(i  ,j  ,kbot) )/(p_g(ktop) - p_g(kbot))
+       grid%backg_h2o2(i, kw, j) = tmp_h2o2(i  ,j  ,kbot)+fac*(log10(.01*plvl(i,kw,j))-p_g(kbot))
+
+      enddo  ! kw loop
+
+     enddo
+     enddo
+
+#endif
+
    ENDIF ! chem_opt gocart_simple or gocartracm
 
    CALL output_aux_model_input8 ( id1 , grid , config_flags , ierr )

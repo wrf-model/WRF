@@ -1451,12 +1451,20 @@ CONTAINS
     c(1)=-dtz(k)*dfh(k+1)
     
     IF (qcg < qcgmin) THEN
-       gfluxm=grav_settling*gno*sqc(k)**gpw
+       IF (sqc(k) > qcgmin) THEN
+          gfluxm=grav_settling*gno*sqc(k)**gpw
+       ELSE
+          gfluxm=0.
+       ENDIF
     ELSE
        gfluxm=grav_settling*gno*(qcg/(1.+qcg))**gpw
     ENDIF
     
-    gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+    IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+       gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+    ELSE
+       gfluxp=0.
+    ENDIF
 
     rhs=&
          &( &
@@ -1470,8 +1478,18 @@ CONTAINS
        a(kk)=-dtz(k)*dfh(k)
        b(kk)=1.+dtz(k)*(dfh(k)+dfh(k+1)) 
        c(kk)=-dtz(k)*dfh(k+1)
-       gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
-       gfluxm=grav_settling*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
+
+       IF (.5*(sqc(k+1)+sqc(k)) > qcgmin) THEN
+          gfluxp=grav_settling*gno*(.5*(sqc(k+1)+sqc(k)))**gpw
+       ELSE
+          gfluxp=0.
+       ENDIF
+
+       IF (.5*(sqc(k-1)+sqc(k)) > qcgmin) THEN
+          gfluxm=grav_settling*gno*(.5*(sqc(k-1)+sqc(k)))**gpw
+       ELSE
+          gfluxm=0.
+       ENDIF
 
        rhs=&
             &( &

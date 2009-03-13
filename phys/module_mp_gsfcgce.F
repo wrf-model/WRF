@@ -2603,6 +2603,7 @@ CONTAINS
 !JJS         DO 275 I=3,ILES
 
             psdep(i,j)=0.0
+            pgdep(i,j)=0.0
             pssub(i,j)=0.0
             pgsub(i,j)=0.0
             tair(i,j)=(pt(i,j)+tb0)*pi0

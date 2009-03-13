@@ -1,6 +1,6 @@
 !wrf:model_layer:physics
 !
-!
+! Code contributed by Gonzalo Miguez-Macho, Univ. de Santiago de Compostela, Galicia, Spain
 !
 MODULE module_fdda_spnudging
 

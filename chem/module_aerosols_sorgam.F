@@ -1488,7 +1488,7 @@ END SUBROUTINE sorgam_depdriver
         orgbio2rat,orgbio3rat,orgbio4rat,drog,ldrog,ncv,nacv,dgnuc,dgacc, &
         fconcn,fconca,fconcn_org,fconca_org,dmdt,dndt,deltaso4a,cgrn3,cgra3)
 
-        if(dndt(1).lt.-10.)print*,'dndt in aeroproc',dndt
+!       if(dndt(1).lt.-10.)print*,'dndt in aeroproc',dndt
         
 ! *** advance forward in time  DT seconds:
       CALL aerostep(layer,blksize,nspcsda,numcells,cblk,dt,so4rat,orgaro1rat, &
@@ -4437,7 +4437,7 @@ END SUBROUTINE sorgam_depdriver
 
 
 !       CALL klpnuc(blkta(1),blkrh(1),vapor1,dndt(1),dmdt(1),so4rat(1))
-        if(dndt(1).lt.-10.)print *,'after klpnuc',dndt(1),dmdt(1)
+!       if(dndt(1).lt.-10.)print *,'after klpnuc',dndt(1),dmdt(1)
         IF (dndt(1)==0.) dmdt(1) = 0.
         IF (dmdt(1)==0.) dndt(1) = 0.
 !       IF (firstime) THEN

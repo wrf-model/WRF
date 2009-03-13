@@ -1710,7 +1710,7 @@
   integer(kind=im), parameter :: blockSize = 624,         &
                         M         = 397,         &
                         MATRIX_A  = -1727483681, & ! constant vector a         (0x9908b0dfUL)
-                        UMASK     = -2147483648, & ! most significant w-r bits (0x80000000UL)
+                        UMASK     = -2147483647-1, & ! most significant w-r bits (0x80000000UL)
                         LMASK     =  2147483647    ! least significant r bits  (0x7fffffffUL)
   ! Tempering parameters
   integer(kind=im), parameter :: TMASKB= -1658038656, & ! (0x9d2c5680UL)

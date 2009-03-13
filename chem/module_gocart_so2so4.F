@@ -2,13 +2,13 @@ MODULE module_gocart_so2so4
 
 CONTAINS
 
-  subroutine so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,P_QI,T_PHY,MOIST,gd,gd2, &
+  subroutine so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,gd,          &
           NUM_CHEM,NUM_MOIST,                                              &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
    INTEGER,      INTENT(IN   ) :: num_chem,num_moist,                      &
-                          p_so2,p_sulf,p_h2o2,p_QC,P_QI,                   &
+                          p_so2,p_sulf,p_h2o2,p_QC,                        &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
                                   its,ite, jts,jte, kts,kte
@@ -17,7 +17,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
-          INTENT(IN   ) ::                     t_phy,gd,gd2
+          INTENT(IN   ) ::                     t_phy,gd
 
    integer :: i,k,j
    real :: tc2,tc3,h2o2,cldf
@@ -25,11 +25,10 @@ CONTAINS
           do k=kts,kte
           do i=its,ite
           cldf=0.
-          if(p_qi.gt.1)then
-          if(moist(i,k,j,p_qc).gt.0.or.moist(i,k,j,p_qi).gt.0 .or.   &
-            gd(i,k,j).gt.0 .or. gd2(i,k,j).gt.0.)cldf=1.
-          elseif(p_qc.gt.1)then
-          if(moist(i,k,j,p_qc).gt.0  .or. gd(i,k,j).gt.0.)cldf=1.
+          if(p_qc.gt.1)then
+             if(moist(i,k,j,p_qc).gt.0  .or. gd(i,k,j).gt.0.)cldf=1.
+          else
+             if(gd(i,k,j).gt.0.)cldf=1.
           endif
           tc2=chem(i,k,j,p_so2)
           IF (cldf > 0.0 .AND. tc2 > 0.0 .AND. t_phy(i,k,j) > 258.0) THEN

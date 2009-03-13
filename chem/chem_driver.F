@@ -923,8 +923,8 @@ CALL kpp_mechanism_driver (chem,                                                
    so2so4_select: SELECT CASE(config_flags%chem_opt)
      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
        CALL wrf_debug(15,'gocart so2-so4 conversion')
-          call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,P_QI,T_PHY,MOIST,      &
-         grid%gd_cloud_b,grid%gd_cloud2_b,                                  &
+          call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+         grid%gd_cloud_b,                                                   &
          NUM_CHEM,NUM_MOIST,                                                &
          ids,ide, jds,jde, kds,kde,                                         &
          ims,ime, jms,jme, kms,kme,                                         &

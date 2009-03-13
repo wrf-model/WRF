@@ -1768,6 +1768,12 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 ! Longwave radiation computation
 !
    if (dolw) then
+
+      call get_int_scales(scales)
+
+      call get_aerosol(lchnk, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosoljp, aerosoljn, &
+             m_hybi, paerlev, naer, pint, pcols, pver, pverp, pverr, pverrp, aerosol, scales)
+
 !
 ! Convert upward longwave flux units to CGS
 !

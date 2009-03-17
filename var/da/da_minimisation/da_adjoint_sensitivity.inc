@@ -13,32 +13,51 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
 
    implicit none
 
-   type(domain), intent(inout)       :: grid
+   type(domain),   intent(inout)     :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
-   integer, intent(in)               :: cv_size                ! Total cv size
+   integer,        intent(in)        :: cv_size                ! Total cv size
    type (xbx_type),intent(in)        :: xbx                    ! Header & non-gridded vars.
    type (be_type), intent(in)        :: be                     ! background error structure.
    type (iv_type), intent(inout)     :: iv                     ! ob. increment vector.
-   real, intent(in)                  :: xhat(1:cv_size)        ! control variable (local).
-   real, intent(in)                  :: cv(1:cv_size)          ! control variable (local).
-   type (y_type), intent(inout)      :: y                      ! y = H(x_inc) structure.
-   real, intent(out)                 :: shat(1:cv_size)        ! control variable (local).
+   real,           intent(in)        :: xhat(1:cv_size)        ! control variable (local).
+   real,           intent(in)        :: cv(1:cv_size)          ! control variable (local).
+   type (y_type),  intent(inout)     :: y                      ! y = H(x_inc) structure.
+   real,           intent(out)       :: shat(1:cv_size)        ! control variable (local).
    
+   type (y_type)                     :: y1, re
    integer                           :: ix, jy, cvs, cve, var
    integer                           :: ibs, ibe, jbs, jbe
-   integer                           :: i, j, mz(6), it, iter
-   integer                           :: Adjoint_sensitivity_option
+   integer                           :: i, j, mz(6)
+   real                              :: value
 
    if (trace_use) call da_trace_entry("da_adjoint_sensitivity")
    
-   Adjoint_sensitivity_option = 1
    shat = 0.0
 
-   select case(Adjoint_sensitivity_option) 
+   select case(sensitivity_option) 
    case(0); 
 !--------------------------------------------------------
 ! Read Initial Sensitivity from WRF-Adjoint (NetCDF file)
-!--------------------------------------------------------
+!--------------------------------------------------------        
+         call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+         call da_transform_xtoxa_adj(grid)
+        
+	 ! Temporary removal of lateral boundary conditions (bug in WRF_AD code)
+         do i = its, ite
+            do j = jts, jte
+               if ( i <= ids+5 .or. i >= ide+5 .or. j <= jds+5 .or. j >= jde+5 ) then
+                  grid%xa%u(i,j,:)   = 0.0
+                  grid%xa%v(i,j,:)   = 0.0
+                  grid%xa%t(i,j,:)   = 0.0
+                  grid%xa%p(i,j,:)   = 0.0
+                  grid%xa%q(i,j,:)   = 0.0
+                  grid%xa%rho(i,j,:) = 0.0
+                  grid%xa%psfc(i,j ) = 0.0
+	       end if
+            end do 
+         end do	 
+      
+         call da_transform_vtox_adj (grid, cv_size, xbx, be, grid%ep, grid%vp, grid%vv, shat)
 
 !---------------------------
 ! Define Initial Sensitivity
@@ -92,12 +111,19 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
    case(5); 
     ! Jo for all observations
     !------------------------
-    it   = 1
-    iter = 1
-   call da_calculate_gradj(it,iter,cv_size,0,0,0,xbx,be,iv,y,xhat,cv,shat,grid,config_flags)
-!   call da_calculate_gradj(it,iter,cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-!                           xbx,be,iv,y,xhat,cv,shat,grid,config_flags)
+      call da_calculate_gradj(-1,1,cv_size,0,0,0,xbx,be,iv,xhat,cv,re,y,shat,grid,config_flags)
+!     call da_calculate_gradj(-1,1,cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+!                           xbx,be,iv,xhat,cv,shat,re,y,shat,grid,config_flags)
 			   
+   case(6);
+    ! Degrees of Freedom for Signal (DFS)
+    !------------------------------------
+      value = 1.0    ! Initialize y1 to 1.0
+      call da_allocate_y  (iv, y1)
+      call da_zero_y      (iv, y1, value)
+      call da_transform_vtoy_adj(1, cv_size, be, grid%ep, shat, iv, grid%vp, grid%vv, xbx, y1, grid, config_flags, .true.)
+      call da_deallocate_y(y1)
+ 
    case default;
    end select
    if (trace_use) call da_trace_exit("da_adjoint_sensitivity")

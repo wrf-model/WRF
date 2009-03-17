@@ -13,7 +13,8 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, trace_use_dull,comm
+      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, &
+      trace_use_dull,comm, num_pseudo
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -408,7 +409,9 @@ module da_define_structures
    type cv_index_type
       integer              :: ts
       integer              :: nclouds
+      integer              :: ncv
       integer, pointer     :: cc(:)
+      real, pointer        :: vtox(:,:)
    end type cv_index_type
 
    type instid_type
@@ -830,6 +833,7 @@ module da_define_structures
       real             :: jc
       real             :: je
       real             :: jp
+      real             :: js
       type (jo_type)   :: jo
    end type j_type
 
@@ -908,6 +912,7 @@ contains
 #include "da_deallocate_observations.inc"
 #include "da_deallocate_y.inc"
 #include "da_zero_x.inc"
+#include "da_zero_y.inc"
 #include "da_zero_vp_type.inc"
 #include "da_initialize_cv.inc"
 #include "da_random_seed.inc"

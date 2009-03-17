@@ -1273,6 +1273,8 @@ rconfig   integer   write_interval          namelist,wrfvar6  1  5        - "wri
 rconfig   real      eps                     namelist,wrfvar6  max_outer_iterations 0.01     - "eps"                      ""  ""
 rconfig   logical   precondition_cg         namelist,wrfvar6  1  .false.  -  "precondition_cg"         ""  ""
 rconfig   real      precondition_factor     namelist,wrfvar6  1  1.0      -  "precondition_factor"     ""  ""
+rconfig   logical   use_lanczos             namelist,wrfvar6  1  .false.  - "use_lanczos"              ""  ""
+rconfig   logical   orthonorm_gradient      namelist,wrfvar6  1  .false.  - "orthonorm_gradient"       ""  ""
 
 rconfig   integer   rf_passes               namelist,wrfvar7  1  6        - "rf_passes"                ""  ""
 rconfig   real      var_scaling1            namelist,wrfvar7  1  1.0      - "var_scaling1"             ""  ""
@@ -1382,10 +1384,8 @@ rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "va
 rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "use_airs_mmr"            ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
 rconfig   integer   crtm_atmosphere         namelist,wrfvar14  1  0        - "crtm_atmosphere"         ""  ""
-rconfig   logical   use_satcv               namelist,wrfvar14  1  .false.  - "use_satcv"               ""  ""
+rconfig   logical   use_satcv               namelist,wrfvar14  2  .false.  - "use_satcv"               ""  ""
 rconfig   integer   interp_option           namelist,wrfvar14  1  1        - "interp_option"           ""  ""
-rconfig   logical   orthonorm_gradient      namelist,wrfvar14  1  .false.  - "orthonorm_gradient"      ""  ""
-rconfig   logical   use_lanczos             namelist,wrfvar14  1  .false.  - "use_lanczos"             ""  ""
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   
 rconfig   real      pseudo_x                namelist,wrfvar15  1  1.0      - "pseudo_x"                ""  ""   
 rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "pseudo_y"                ""  ""   
@@ -1401,6 +1401,7 @@ rconfig   real      alpha_corr_scale        namelist,wrfvar16  1  1500.0   - "al
 rconfig   real      alpha_std_dev           namelist,wrfvar16  1  1.0      - "alpha_std_dev"           ""  ""
 
 rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR"                   -  "analysis_type"      ""  ""
+rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
 
 rconfig   character analysis_date           namelist,wrfvar18  1  "2002-08-03_00:00:00.0000" -  "analysis_date"      ""  "" 
 

@@ -13,18 +13,23 @@
    type (be_type)               :: be          ! Background error structure.
    real, allocatable            :: cvt(:)      ! Control variable structure.
    real, allocatable            :: xhat(:)     ! Control variable structure.
+   real, allocatable            :: qhat(:,:)   ! Control variable structure.
+   real, allocatable            :: eignvec(:,:)
+   real, allocatable            :: eignval(:)   
+!   real, allocatable            :: full_eignvec(:)   
    type (y_type)                :: ob          ! Observation structure.
    type (iv_type)               :: iv          ! Obs. increment structure.
    type (y_type)                :: re          ! Residual (o-a) structure.
    type (y_type)                :: y           ! y = H(x_inc) structure.
    integer                      :: it          ! External loop counter.
+   integer                      :: neign       
    type (j_type)                :: j           ! Cost function.
 
-   integer                      :: cv_size, i, ichan, k
+   integer                      :: cv_size, i, ichan, k, n
    real                         :: j_grad_norm_target ! Target j norm.
 
-   integer                      :: n, size_js, js_start, nclouds, kts_100hPa(1)
-
+   character (len=3)            :: ci
+   
 #ifdef DM_PARALLEL
    integer                      :: wrf_done_unit
 #endif
@@ -53,13 +58,8 @@
    end if
 
    !---------------------------------------------------------------------------
-   ! If it is verification run set check_max_iv as .false.
+   ! [1.0] Initial checks
    !---------------------------------------------------------------------------
-
-   if (anal_type_verify) then
-      check_max_iv = .false.
-      ntmax=0
-   end if
 
    if (cv_options_hum /= cv_options_hum_specific_humidity .and. &
        cv_options_hum /= cv_options_hum_relative_humidity) then
@@ -107,6 +107,7 @@
    ! [4.0] Set up observations (ob):
    !---------------------------------------------------------------------------
    call da_setup_obs_structures (grid, ob, iv)
+   
    if (use_rad) then
       allocate (j % jo % rad(1:iv%num_inst))
       do i=1,iv%num_inst
@@ -115,18 +116,35 @@
       end do
    end if
 
+   if (anal_type_verify) then
+      check_max_iv = .false.
+      ntmax=0
+      it = 1
+      num_qcstat_conv=0
+
+#if defined(RTTOV) || defined(CRTM)
+      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
+#endif
+      call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
+      call da_allocate_y (iv, re)
+ 
+      ! write out O-B statistics
+      call da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
+      call da_deallocate_y(re)
+      call da_deallocate_observations (iv)
+      return   
+   end if
+   
    !---------------------------------------------------------------------------
    ! [5.0] Set up background errors (be):
    !---------------------------------------------------------------------------
 
-   if( .not. anal_type_verify) then
       call da_setup_background_errors (grid%xb, be)
 
    !---------------------------------------------------------------------------
    ! [5.1] Set up observation bias correction (Varbc):
    !---------------------------------------------------------------------------
 
-      be % cv % size_jp = 0.0
 #if defined(RTTOV) || defined(CRTM)
       if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
 #endif
@@ -135,31 +153,10 @@
    ! [5.2] Set up satellite control variable:
    !---------------------------------------------------------------------------
 
-   if (use_satcv) then  
-      be % cv % size_js = 0.0
-      size_js  = 0                        
-      js_start = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
-      
-      do i= 1, iv % num_inst
-         allocate(iv%instid(i)%cv_index(iv%instid(i)%num_rad))
-         do n = 1,iv%instid(i)%num_rad
-           kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
-                        MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
-           nclouds = kte - kts_100hPa(1) + 1
-           allocate(iv%instid(i)%cv_index(n)%cc(nclouds))
-            iv%instid(i)%cv_index(n)%ts    = js_start + size_js + 1
-           iv%instid(i)%cv_index(n)%cc(:) = (/ (js_start + size_js + 1 + k, k=1,nclouds) /)  
-           iv%instid(i)%cv_index(n)%nclouds = nclouds
-           size_js =  size_js + nclouds + 1
-        end do
-      end do
-      
-      be % cv % size_js = size_js
-      be % cv % size    = be % cv % size + be % cv % size_js               
-      cv_size_domain_js = be % cv % size_js
-      cv_size_domain    = cv_size_domain + cv_size_domain_js
-   end if   
-
+#if defined(RTTOV) || defined(CRTM)
+   if (ANY(use_satcv)) call da_setup_satcv(iv, be)
+#endif
+   
    cv_size = be % cv % size
 
    !---------------------------------------------------------------------------
@@ -177,59 +174,18 @@
 
       allocate (cvt(1:cv_size))
       allocate (xhat(1:cv_size))
+      if (use_lanczos) then
+         allocate (qhat(1:cv_size, 0:ntmax))
+         allocate (eignvec(ntmax, ntmax))
+	 allocate (eignval(ntmax))
+!	 allocate (full_eignvec(cv_size))
+      end if	 
+      
       call da_initialize_cv (cv_size, cvt)
       
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
 
-   else      ! anal_type_verify
-      it = 1
-      num_qcstat_conv=0
-#if defined(RTTOV) || defined(CRTM)
-      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
-#endif
-      call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
-      call da_allocate_y (iv, re)
- 
-      ! write out O-B statistics
-      iv%nstats(:) = 0
-      if (iv%info(sound)%ntotal > 0) then
-         call da_oi_stats_sound     (stats_unit, iv)
-         call da_oi_stats_sonde_sfc (stats_unit, iv)
-      end if
-      if (iv%info(mtgirs)%ntotal   > 0) call da_oi_stats_mtgirs   (stats_unit, iv)
-      if (iv%info(synop)%ntotal    > 0) call da_oi_stats_synop    (stats_unit, iv)
-      if (iv%info(geoamv)%ntotal   > 0) call da_oi_stats_geoamv   (stats_unit, iv)
-      if (iv%info(polaramv)%ntotal > 0) call da_oi_stats_polaramv (stats_unit, iv)
-      if (iv%info(airep)%ntotal    > 0) call da_oi_stats_airep    (stats_unit, iv)
-      if (iv%info(pilot)%ntotal    > 0) call da_oi_stats_pilot    (stats_unit, iv)
-      if (iv%info(metar)%ntotal    > 0) call da_oi_stats_metar    (stats_unit, iv)
-      if (iv%info(ships)%ntotal    > 0) call da_oi_stats_ships    (stats_unit, iv)
-      if (iv%info(gpspw)%ntotal    > 0) call da_oi_stats_gpspw    (stats_unit, iv)
-      if (iv%info(gpsref)%ntotal   > 0) call da_oi_stats_gpsref   (stats_unit, iv)
-      if (iv%info(ssmi_tb)%ntotal  > 0) call da_oi_stats_ssmi_tb  (stats_unit, iv)
-      if (iv%info(ssmi_rv)%ntotal  > 0) call da_oi_stats_ssmi_rv  (stats_unit, iv)
-      if (iv%info(satem)%ntotal    > 0) call da_oi_stats_satem    (stats_unit, iv)
-      if (iv%info(ssmt1)%ntotal    > 0) call da_oi_stats_ssmt1    (stats_unit, iv)
-      if (iv%info(ssmt2)%ntotal    > 0) call da_oi_stats_ssmt2    (stats_unit, iv)
-      if (iv%info(qscat)%ntotal    > 0) call da_oi_stats_qscat    (stats_unit, iv)
-      if (iv%info(profiler)%ntotal > 0) call da_oi_stats_profiler (stats_unit, iv)
-      if (iv%info(buoy)%ntotal     > 0) call da_oi_stats_buoy     (stats_unit, iv)
-      if (iv%info(radar)%ntotal    > 0) call da_oi_stats_radar    (stats_unit, iv)
-      if (iv%info(bogus)%ntotal    > 0) call da_oi_stats_bogus    (stats_unit, iv)
-      if (iv%info(airsr)%ntotal    > 0) call da_oi_stats_airsr    (stats_unit, iv)
-#if defined(RTTOV) || defined(CRTM)
-      if (iv%num_inst > 0) call da_oi_stats_rad (stats_unit, iv)
-#endif
-
-      call da_write_obs(it, ob, iv, re)
-      call da_write_obs_etkf(ob, iv, re)
-      call da_final_write_obs(it, iv)
-      call da_deallocate_y(re)
-      call da_deallocate_observations (iv)
-      return
-
-   endif
    !---------------------------------------------------------------------------
    ! [8] Outerloop
    !---------------------------------------------------------------------------
@@ -299,7 +255,16 @@
 
       if (use_lanczos) then
          call da_minimise_lz( grid, config_flags, it, be % cv % size, & 
-            xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)  
+            xbx, be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign)  
+	 
+!	 do i = 1, neign
+!	    full_eignvec = SQRT(eignval(i)) * MATMUL(qhat(1:cv_size,1:neign), eignvec(1:neign,i))
+!            call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,full_eignvec,grid%vv,grid%vp)
+!            call da_transform_xtoxa (grid)   
+!            call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+!            write(UNIT=ci,FMT='(i2.2)') i
+!            call da_med_initialdata_output(grid, config_flags, 'wrfvar_output.e'//trim(ci))	    
+!	 end do   	    
       else
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
             xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
@@ -372,6 +337,12 @@
 
    deallocate (cvt)
    deallocate (xhat)
+   if (use_lanczos) then
+      deallocate (qhat)
+      deallocate (eignvec)
+      deallocate (eignval)
+!      deallocate (full_eignvec)
+   end if
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
@@ -474,12 +445,15 @@
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
 
-            if (use_satcv) then
-               do n = 1,iv%instid(i)%num_rad
-                  deallocate (iv%instid(i)%cv_index(n)%cc)
-               end do
-               deallocate (iv%instid(i)%cv_index)  
-            end if
+           if (ANY(use_satcv)) then
+	      if (use_satcv(2)) then
+                 do n = 1,iv%instid(i)%num_rad
+                    deallocate (iv%instid(i)%cv_index(n)%cc)
+                    deallocate (iv%instid(i)%cv_index(n)%vtox)
+                 end do
+	      end if
+              deallocate (iv%instid(i)%cv_index)  
+           end if
 
             if (rtm_option == rtm_option_crtm) then
                deallocate(iv%instid(i)%water_coverage)
@@ -513,10 +487,12 @@
          end if
 
 	  if ( (use_varbc).or.(freeze_varbc) ) then
-             deallocate (iv%instid(i)%varbc_info%pred)
-             deallocate (iv%instid(i)%varbc_info%pred_mean)
-             deallocate (iv%instid(i)%varbc_info%pred_std)
-             deallocate (iv%instid(i)%varbc_info%nbgerr)
+	     if (iv%instid(i)%varbc_info%npredmax > 0) then
+                deallocate (iv%instid(i)%varbc_info%pred)
+                deallocate (iv%instid(i)%varbc_info%pred_mean)
+                deallocate (iv%instid(i)%varbc_info%pred_std)
+                deallocate (iv%instid(i)%varbc_info%nbgerr)
+	     end if
 	     do ichan = 1, iv%instid(i)%nchan
 	        if (iv%instid(i)%varbc(ichan)%npred <= 0) cycle	 
 	        deallocate (iv%instid(i)%varbc(ichan)%pred_use)

@@ -17,6 +17,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    type (y_type),     intent(inout) :: ob       ! Observation structure.
    type (iv_type),    intent(inout) :: iv       ! O-B structure.
 
+   integer, parameter             :: AIRS_Max_Channels = 281
+
    integer :: n, icld  ! Loop counter.
    integer :: i, j, k  ! Index dimension.
    integer :: l        ! Index dimension.
@@ -69,6 +71,60 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 !! for crtm cloud
    real :: qcw(1),qrn(1), qci(1),qsn(1),qgr(1)
    
+   ! Initializations for AIRS (MMR) Cloud Detection
+   integer           :: ilev, jlev, nclouds
+   real, allocatable :: hessian(:,:), eignvec(:,:), eignval(:)
+   real              :: rad_clr, rad_ovc_ilev, rad_ovc_jlev
+   
+   integer           :: Band_Size(5), Bands(AIRS_Max_Channels,5) 
+  
+      Band_Size(1:5) = (/86, 0, 0, 16, 0 /)
+      Bands(:,:)     = 0  
+      Bands(1:Band_Size(1),1) = &
+&    (/                                                 &              !&      1,   6,   7,  10,  11,  15,  16,  17,  20,  21, &
+&                                                       &              !&     22,  24,  27,  28,  30,  36,  39,  40,  42,  51, &
+&                                                       &              !&     52,  54,  55,  56,  59,  62,  63,  68,  69,  71, &
+&                                                       &              !&     72,  73,  74,  75,  76,  77,  78,  79,  80,  82, &
+&                     92,  93,  98,  99, 101, 104, 105, &              !&     83,  84,  86,  92,  93,  98,  99, 101, 104, 105, &
+&     108, 110, 111, 113, 116, 117, 123, 124, 128, 129, &
+&     138, 139, 144, 145, 150, 151, 156, 157, 159, 162, &
+&     165, 168, 169, 170, 172, 173, 174, 175, 177, 179, &
+&     180, 182, 185, 186, 190, 192,      198, 201, 204, &              !&     180, 182, 185, 186, 190, 192, 193, 198, 201, 204, &
+&     207, 210,      215, 216,      221,      226, 227, &              !&     207, 210, 213, 215, 216, 218, 221, 224, 226, 227, &
+&     232,                     252, 253, 256, 257, 261, &              !&     232, 239, 248, 250, 251, 252, 253, 256, 257, 261, &
+&     262, 267, 272, 295, 299,      305,           310, &              !&     262, 267, 272, 295, 299, 300, 305, 308, 309, 310, &
+&          321, 325, 333, 338, 355, 362, 375, 453, 475, &              !&     318, 321, 325, 333, 338, 355, 362, 375, 453, 475, &
+&     484, 497, 528, 587, 672, 787, 791, 843, 870, 914, &
+&     950 /)
+
+!      Bands(1:Band_Size(2),2) = &
+!&    (/ 1003, 1012, 1019, 1024, 1030, 1038, 1048, 1069, 1079, 1082,  &
+!&       1083, 1088, 1090, 1092, 1095, 1104, 1111, 1115, 1116, 1119,  &
+!&       1120, 1123, 1130, 1138, 1142, 1178, 1199, 1206, 1221, 1237,  &
+!&       1252, 1260, 1263, 1266, 1278, 1285 /)
+
+!      Bands(1:Band_Size(3),3) = &
+!&    (/       1301, 1304, 1329, 1371, 1382, 1415, 1424, 1449, 1455, &  !&    1290, 1301, 1304, 1329, 1371, 1382, 1415, 1424, 1449, 1455, &  
+!&       1466,       1477,             1500, 1519,       1538, 1545, &  !&    1466, 1471, 1477, 1479, 1488, 1500, 1519, 1520, 1538, 1545, &  
+!&       1565, 1574, 1583, 1593,       1627, 1636,       1652, 1669, &  !&    1565, 1574, 1583, 1593, 1614, 1627, 1636, 1644, 1652, 1669, & 
+!&                   1694, 1708,       1723, 1740, 1748,       1756, &  !&    1674, 1681, 1694, 1708, 1717, 1723, 1740, 1748, 1751, 1756, &
+!&             1766, 1771, 1777,       1783, 1794, 1800,       1806, &  !&    1763, 1766, 1771, 1777, 1780, 1783, 1794, 1800, 1803, 1806, &
+!&             1826, 1843  /)                                           !&    1812, 1826, 1843  /)
+
+      Bands(1:Band_Size(4),4) = &
+&    (/ 1852, 1865, 1866,       1868, 1869, 1872, 1873,       1876, &  !&    1852, 1865, 1866, 1867, 1868, 1869, 1872, 1873, 1875, 1876, 
+&             1881, 1882, 1883,                   1911, 1917, 1918, &  !&    1877, 1881, 1882, 1883, 1884, 1897, 1901, 1911, 1917, 1918, &
+&                   1924, 1928        /)                               !&    1921, 1923, 1924, 1928, 1937  /)   
+
+!      Bands(1:Band_Size(5),5) = &
+!&    (/ 1938, 1939, 1941, 1946, 1947, 1948, 1958, 1971, 1973, 1988, &
+!&       1995, 2084, 2085, 2097, 2098, 2099, 2100, 2101, 2103, 2104, &
+!&       2106, 2107, 2108, 2109, 2110, 2111, 2112, 2113, 2114, 2115, &
+!&       2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2128, 2134, &
+!&       2141, 2145, 2149, 2153, 2164, 2189, 2197, 2209, 2226, 2234, &
+!&       2280, 2318, 2321, 2325, 2328, 2333, 2339, 2348, 2353, 2355, &
+!&       2363, 2370, 2371, 2377  /)  
+
    ! WHY? use argument it
    if (it==0) then; write(unit=stdout,fmt='(A)') "WHY? have argument it to"//__FILE__; end if
 
@@ -482,6 +538,46 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 	 end if   
 #endif
 	
+   !---------------------------------------------------------------------------
+   ! Precondition satellite control variable (Cloud Cover(s)):
+   !---------------------------------------------------------------------------
+         if (.false.) then  
+!         if (use_satcv(2)) then  
+            nclouds = iv%instid(inst)%cv_index(n)%nclouds
+	    allocate (hessian(nclouds,nclouds))
+	    allocate (eignvec(nclouds,nclouds))
+	    allocate (eignval(nclouds))
+            hessian(:,:)= 0.0      
+            do ilev=1, nclouds
+               do jlev=ilev, nclouds
+	          do k = 1, nchanl
+                     if (ALL(iv%instid(inst)%ichan(k) /=  Bands(:,1))) cycle   ! Only Channels in Band 1 	       
+                        rad_clr      = iv%instid(inst)%rad_xb(k,n)             
+                        rad_ovc_ilev = iv%instid(inst)%rad_ovc(k,kte-nclouds+ilev,n)
+                        rad_ovc_jlev = iv%instid(inst)%rad_ovc(k,kte-nclouds+jlev,n)
+                        hessian(ilev,jlev) = hessian(ilev,jlev) + (rad_ovc_ilev-rad_clr) * (rad_ovc_jlev-rad_clr)
+      	          end do			     	 
+                 hessian(jlev,ilev) = hessian(ilev,jlev)   
+               end do
+            end do  
+	      
+            call da_eof_decomposition(nclouds, hessian, eignvec, eignval)
+	      
+!	    if (ANY(eignval <= 0)) write(unit=stdout,fmt='(3A,I4,A,100F18.5)')      &
+!	       'SATCV: non-positive Hessian for ', trim(iv%instid(inst)%rttovid_string), ' ,pixel ',n,'--> Eigenvalues =',eignval 
+ 	      
+	    do ilev = 1, nclouds
+	       do jlev = ilev, nclouds
+                  iv%instid(inst)%cv_index(n)%vtox(ilev,jlev) = &
+		     sum( eignvec(ilev,:) * sqrt(1.0/eignval(:)) * eignvec(jlev,:), mask = eignval >0 )
+		       
+		  iv%instid(inst)%cv_index(n)%vtox(jlev,ilev) = iv%instid(inst)%cv_index(n)%vtox(ilev,jlev) 
+               end do
+	    end do
+	      	 
+            deallocate(hessian,eignvec,eignval)
+         end if   
+
          !----------------------------------------------------------------
          ! [2.0] calculate components of innovation vector:
          !----------------------------------------------------------------

@@ -59,6 +59,9 @@ subroutine da_setup_cv(be)
          be % cv % size_je = be % cv % size_alphac
       end if
    end if
+   
+   be % cv % size_jp = 0.0   ! Set up VarBC later
+   be % cv % size_js = 0.0   ! Set up SatCV later
 
    be % cv % size = be % cv % size_jb +  be % cv % size_je
 

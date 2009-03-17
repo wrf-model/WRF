@@ -57,9 +57,6 @@
 	 if (npred <= 0) cycle                                         !! VarBC channels only
 	 if (ALL(iv%instid(inst)%varbc(k)%pred_use /= 0)) cycle        !! Coldstart channels only
 	 
-         write(unit=stdout,fmt='(A,A,I5)') 'VARBC: Cold-starting ', &
-               trim(adjustl(iv%instid(inst)%rttovid_string)),iv%instid(inst)%ichan(k)
-			       	
 	 where (iv%instid(inst)%varbc(k)%pred_use(ipred(1:npred)) == 0) &
 	        iv%instid(inst)%varbc(k)%param(1:npred) = 0.0
 

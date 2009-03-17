@@ -1,7 +1,7 @@
 subroutine da_minimise_cg(grid, config_flags,            &
                            it, cv_size, xbx, be, iv, &
                            j_grad_norm_target, xhat, cv, &
-                           re, y, j)
+                           re, y, j_cost)
 
    !-------------------------------------------------------------------------
    ! Purpose:         Main Conjugate Gradient minimisation routine 
@@ -30,7 +30,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    type (y_type), intent(inout)      :: re    ! residual (o-a) structure.
    type (y_type), intent(inout)      :: y     ! y = H(x_inc) structure.
 
-   type (j_type), intent(out)        :: j                      ! cost function
+   type (j_type), intent(out)        :: j_cost                 ! cost function
 
    type(domain), intent(inout)       :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
@@ -39,14 +39,14 @@ subroutine da_minimise_cg(grid, config_flags,            &
    integer                           :: je_start, je_end       ! Start/end indices of Je.
    integer                           :: cv_size_jb             ! end indices of Jb.
    integer                           :: mz(6)
-   real                              :: j_grad(1:cv_size)      ! grad_v j (local-grid)
    real                              :: fhat(1:cv_size)        ! cv copy.
    real                              :: ghat(1:cv_size)        ! cv copy.
+   real                              :: ghat0(1:cv_size)       ! cv copy.
    real                              :: phat(1:cv_size)        ! cv copy.
    real, allocatable                 :: qhat(:,:)              ! cv copy.
    real                              :: apdotp,step,rrmold,rrmnew,ratio 
    real                              :: ob_grad, rrmnew_norm, gdot
-   real                              :: j_estim
+   real                              :: j_total    
  
    ! Variables for Conjugate Gradient preconditioning
    real                              :: precon(1:cv_size)      ! cv copy.
@@ -65,19 +65,19 @@ subroutine da_minimise_cg(grid, config_flags,            &
    end if
    write(unit=stdout,fmt=*) ' '
 
-   ! Initialize temporary cv structures:
+   !-------------------------------------------------------------------------
+   ! [1.0] Initialization:
+   !-------------------------------------------------------------------------
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /)
    sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
    
-   fhat = 0.0
-
    call da_calculate_j(it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &
-                        be % cv % size_jp, &
-			xbx, be, iv, xhat, cv, &
-                        re, y, j, j_grad,         &
-                        grid, config_flags                       )
+                        be % cv % size_jp, xbx, be, iv, xhat, cv, &
+                        re, y, j_cost, grid, config_flags)
 
-   ghat  = j_grad
+   call da_calculate_gradj(-it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &
+                        be % cv % size_jp, xbx, be, iv,  xhat, cv, re, y, ghat, grid, config_flags)
+   ghat0 = ghat
    
    ! [1.1] Preconditioning:
    !-----------------------
@@ -93,10 +93,10 @@ subroutine da_minimise_cg(grid, config_flags,            &
             istart     = iend + 1
             iend       = istart + nn - 1
 	    g_partial  = da_dot(nn, ghat(istart:iend), ghat(istart:iend))
-            jo_partial = j%total / SUM(mz(1:5))
+            jo_partial = j_cost%total / SUM(mz(1:5))
 
 	    precon(istart:iend)=  1 / &
-	       (1 + precondition_factor*(g_partial/g_total)/(jo_partial/j%total)) 
+	       (1 + precondition_factor*(g_partial/g_total)/(jo_partial/j_cost%total)) 
 	 end do
       end do
    end if
@@ -105,10 +105,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    rrmold = da_dot_cv(cv_size, cv_size_domain, -phat, ghat, grid, mz, use_varbc)
 
-   if (j%total == 0.0) then
-      cv = cv + xhat
-      return
-   end if
+   if (j_cost%total == 0.0) return
 
    if (it == 1) j_grad_norm_target = sqrt (rrmold)
 
@@ -118,11 +115,9 @@ subroutine da_minimise_cg(grid, config_flags,            &
    end if
 
    write(unit=stdout,fmt='("Starting outer iteration : ",i3)') it
-   write(unit=stdout,fmt=11) j_grad_norm_target,eps(it)*j_grad_norm_target, &
-              j%total, sqrt(rrmold)
-11 format('Original gradient is ',1PD15.8,/,&
-          'For this outer iteration gradient target is ',1PD15.8,/,&
-          'Starting cost function: ' ,1PD15.8,' gradient= ',1PD15.8)
+   write(unit=stdout,fmt=11) j_cost%total, sqrt(rrmold), eps(it)*j_grad_norm_target
+11 format('Starting cost function: ' ,1PD15.8,', Gradient= ',1PD15.8,/,&
+          'For this outer iteration gradient target is:       ',1PD15.8)
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
    if (calculate_cg_cost_fn) then
@@ -140,7 +135,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
       if (rrmold == 0.0) exit
 
       call da_calculate_gradj(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                              xbx, be, iv, y, phat, cv, fhat, grid, config_flags  )
+                              xbx, be, iv, phat, cv, re, y, fhat, grid, config_flags  )				 
       
       apdotp = da_dot_cv(cv_size, cv_size_domain, fhat, phat, grid, mz, use_varbc)
 
@@ -163,16 +158,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
 			  
       rrmnew_norm = sqrt(rrmnew)
 
-      if (calculate_cg_cost_fn) then
-         j_estim = j%total + 0.5 * da_dot_cv(cv_size, cv_size_domain, &
-	              SQRT(precon) * j_grad, xhat, grid, mz, use_varbc)
-         write(unit=stdout,fmt=12)iter, j_estim, rrmnew_norm, step
-      else
-         write(unit=stdout,fmt=14)iter, rrmnew_norm , step
-      end if
-12    format(i3,5x,1PD15.8,5x,1PD15.8,5x,1PD15.8)
-14    format(i3,5x,1PD15.8,5x,1PD15.8)
-
       if (rrmnew_norm  < eps(it) * j_grad_norm_target) exit
       ratio = 0.0
       if (rrmold .gt. 0.0) ratio = rrmnew/rrmold
@@ -181,6 +166,25 @@ subroutine da_minimise_cg(grid, config_flags,            &
       phat         = - precon * ghat       + ratio * phat
 
       rrmold=rrmnew
+
+    ! Print Gradient (and Cost Function)
+    !-----------------------------------
+      if (print_detail_grad) then
+         call da_calculate_j(it, iter, cv_size, be % cv % size_jb, be % cv % size_je, &
+                             be % cv % size_jp, xbx, be, iv, xhat, cv, &
+                             re, y, j_cost, grid, config_flags)
+         call da_calculate_gradj(-it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+                                 xbx, be, iv, xhat, cv, re, y, fhat, grid, config_flags  )				 
+         write(unit=stdout,fmt=12)iter, j_cost%total, rrmnew_norm, step
+      elseif (calculate_cg_cost_fn) then      		 
+         j_total = j_cost%total + 0.5 * da_dot_cv(cv_size,cv_size_domain,ghat0,xhat,grid,mz,use_varbc)
+         write(unit=stdout,fmt=12)iter, j_total, rrmnew_norm, step         	 
+      else
+         write(unit=stdout,fmt=14)iter, rrmnew_norm , step
+      end if
+
+12    format(i3,5x,1PD15.8,5x,1PD15.8,5x,1PD15.8)
+14    format(i3,5x,1PD15.8,5x,1PD15.8)
    end do
 
    !-------------------------------------------------------------------------
@@ -188,6 +192,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
    iter = MIN(iter, ntmax)
    if (orthonorm_gradient) deallocate(qhat)
+   
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
    write(unit=stdout,fmt='(A)') " "
@@ -196,16 +201,16 @@ subroutine da_minimise_cg(grid, config_flags,            &
    write(unit=stdout,fmt='(A)') " "
 
    call da_calculate_j(it, iter, cv_size, be % cv % size_jb, &
-      be % cv % size_je, be % cv % size_jp, &
-      xbx, be, iv, xhat, cv, &
-      re, y, j, j_grad,         &
-      grid, config_flags                       )
+         be % cv % size_je, be % cv % size_jp, xbx, be, iv, xhat, cv, &
+	 re, y, j_cost,grid, config_flags)
 
-   rrmnew_norm = da_dot_cv(cv_size, cv_size_domain, j_grad, j_grad, grid, &
-                            mz, use_varbc)
-   rrmnew_norm = sqrt(rrmnew_norm)
+   call da_calculate_gradj(-it, iter, cv_size, be % cv % size_jb, be % cv % size_je, &
+                           be % cv % size_jp, xbx, be, iv,  xhat, cv, &
+			   re, y, ghat, grid, config_flags)
+	
+   rrmnew_norm = SQRT(da_dot_cv(cv_size,cv_size_domain,ghat,ghat,grid,mz,use_varbc))
 
-    write(unit=stdout,fmt=15) iter, j%total , rrmnew_norm
+    write(unit=stdout,fmt=15) iter, j_cost%total , rrmnew_norm
 15  format('Final: ',I3,' iter, J=',1PD15.8,', g=',1PD15.8)
     write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
@@ -215,5 +220,3 @@ subroutine da_minimise_cg(grid, config_flags,            &
    if (trace_use) call da_trace_exit("da_minimise_cg")
 
 end subroutine da_minimise_cg
-
-

@@ -26,7 +26,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    
 #ifdef CRTM
 
-   integer                        :: icld 
+   integer                        :: icld, jcld
    integer                        :: k  ! Index dimension.
    integer                        :: num_rad  ! Number of radiance obs
    integer                        :: inst, nchanl, n
@@ -57,9 +57,9 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    type (CRTM_Options_type )      :: Options(1)
    
    integer                        :: ts_index
-   integer                        :: nclouds
-   integer, allocatable           :: cc_index(:)
-   real                           :: rad_clr, rad_cld   ! RT clear/cloudy radiances
+   integer                        :: nclouds, ncv
+   real, allocatable              :: cc_ad(:)
+   real                           :: rad_clr            ! RT clear/cloudy radiances
    real, allocatable              :: rad_ovc(:)         ! RT overcast radiances
    real                           :: rad_ad, tb_ad
 
@@ -352,8 +352,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
    !     GeometryInfo(1)%Sensor_Zenith_Angle=
    !     GeometryInfo(1)%Sensor_Scan_Angle=
    !     GeometryInfo(1)%Source_Zenith_Angle=
-
-
+	 
       ! [1.3] assign tb = R^-1 Re :
 
          RTSolution_AD(:,1)%brightness_temperature = jo_grad_y%instid(inst)%tb(:,n)
@@ -370,6 +369,45 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
                             Surface_AD,   &
                             RTSolution,   &
                             Options)
+
+      ! Skin Temperature
+      !-----------------
+	 if (use_satcv(1)) then
+            ts_index = iv%instid(inst)%cv_index(n)%ts 	       
+  	    if (Surface(1)%Land_Coverage  > 0.0) cv(ts_index) = Surface_AD(1)%Land_Temperature
+            if (Surface(1)%Water_Coverage > 0.0) cv(ts_index) = Surface_AD(1)%Water_Temperature
+            if (Surface(1)%Snow_Coverage  > 0.0) cv(ts_index) = Surface_AD(1)%Snow_Temperature
+            if (Surface(1)%Ice_Coverage   > 0.0) cv(ts_index) = Surface_AD(1)%Ice_Temperature
+	 end if 
+
+      ! Cloud cover(s)
+      !---------------
+	 if (use_satcv(2)) then
+	    nclouds = iv%instid(inst)%cv_index(n)%nclouds
+	    ncv     = iv%instid(inst)%cv_index(n)%ncv
+	    allocate (rad_ovc (nclouds))
+	    allocate (cc_ad   (ncv))
+	    do k = 1, nchanl
+               if (ALL(iv%instid(inst)%ichan(k) /= Bands(:,1))) cycle   ! Only Channels in Band 1 	       
+               rad_clr      = iv%instid(inst)%rad_xb(k,n)             
+               rad_ovc(:)   = iv%instid(inst)%rad_ovc(k,kte-nclouds+1:kte,n)
+	       rad_ad       = 0.0
+	       tb_ad        = jo_grad_y%instid(inst)%tb(k,n)
+	       call CRTM_Planck_Temperature_AD(inst,k,rad_clr,tb_ad,rad_ad)
+
+	       cc_ad        = rad_ad * (rad_ovc(:)-rad_clr)
+!	       !---------------------------------------------------------------
+!              ! Change of variable (preconditioning) 
+!              !---------------------------------------------------------------
+!	       do icld = 1, ncv
+!	          cc_ad(icld) = SUM(rad_ad * (rad_ovc(:)-rad_clr) * &
+!		                iv%instid(inst)%cv_index(n)%vtox(icld,:) )
+!	       end do
+
+	       cv(iv%instid(inst)%cv_index(n)%cc) = cv(iv%instid(inst)%cv_index(n)%cc) + cc_ad
+	    end do	
+	    deallocate(rad_ovc, cc_ad)
+	 end if 
 
       ! [1.5] Scale transformation and fill zero for no-control variable
 
@@ -402,34 +440,6 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             end do
 
             p_ad(n) = Atmosphere_AD(1)%Level_Pressure(atmosphere(1)%n_layers) * 0.01   ! in hPa
-
-	    if (use_satcv) then
-	    ! Skin Temperature
-	    !-----------------
-	       ts_index = iv%instid(inst)%cv_index(n)%ts 	       
-!  	       if (Surface(1)%Land_Coverage  > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Land_Temperature
-!               if (Surface(1)%Water_Coverage > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Water_Temperature
-!               if (Surface(1)%Snow_Coverage  > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Snow_Temperature
-!               if (Surface(1)%Ice_Coverage   > 0.0) cv(ts_index) = cv(ts_index) + Surface_AD(1)%Ice_Temperature
-	 
-	    ! Cloud cover(s)
-	    !---------------
-	       nclouds       = iv%instid(inst)%cv_index(n)%nclouds
-	       allocate (cc_index(nclouds))
-	       allocate (rad_ovc (nclouds))
-	       cc_index(:)   = iv%instid(inst)%cv_index(n)%cc(:)
-	       do k = 1, nchanl
-                  if (ALL(iv%instid(inst)%ichan(k) /= Bands(:,1))) cycle   ! Only Channels in Band 1 	       
-                  rad_clr    = iv%instid(inst)%rad_xb(k,n)             
-                  rad_ovc(:) = iv%instid(inst)%rad_ovc(k,kte-nclouds+1:kte,n)
-		  rad_cld    = SUM(cv(cc_index)*rad_ovc) + (1.0 - SUM(cv(cc_index)))*rad_clr
-		  rad_ad     = 0.0
-	          tb_ad      = jo_grad_y%instid(inst)%tb(k,n)
-	          call CRTM_Planck_Temperature_AD(inst,k,rad_clr,tb_ad,rad_ad)
-	          cv(cc_index) = cv(cc_index) + rad_ad*(rad_ovc - rad_clr)
-	       end do			     
-	       deallocate(cc_index, rad_ovc)
-	    end if 
 
             Error_Status = CRTM_Destroy_Atmosphere( Atmosphere_AD )
             if ( Error_Status /= 0 ) then

@@ -47,15 +47,15 @@ module da_wrfvar_top
    use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims
    use da_physics, only : da_uvprho_to_w_lin
 #if defined (CRTM) || defined (RTTOV)
-   use da_radiance1, only : da_write_oa_rad_ascii
    use da_radiance1, only : num_tovs_before, tovs_recv_pe,tovs_copy_count, &
       tovs_send_pe,tovs_send_count,tovs_recv_start, num_tovs_after, &
-      tovs_send_start
+      tovs_send_start, da_oi_stats_rad, da_write_oa_rad_ascii, da_setup_satcv
    use da_varbc, only : da_varbc_init,da_varbc_update
 #endif
    use da_reporting, only : message, da_warning, da_error, da_message
    use da_setup_structures, only : da_setup_obs_structures, &
-      da_setup_background_errors,da_setup_flow_predictors
+      da_setup_background_errors,da_setup_flow_predictors, &
+      da_setup_cv
    use da_test, only : da_check
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
@@ -88,11 +88,7 @@ module da_wrfvar_top
    use da_ships, only : da_oi_stats_ships
    use da_sound, only : da_oi_stats_sound, da_oi_stats_sonde_sfc
    use da_ssmi, only : da_oi_stats_ssmt1, da_oi_stats_ssmt2, da_oi_stats_ssmi_tb, da_oi_stats_ssmi_rv
-   use da_synop, only : da_oi_stats_synop
-#if defined(RTTOV) || defined(CRTM)
-   use da_radiance1, only : da_oi_stats_rad
-#endif
-   
+   use da_synop, only : da_oi_stats_synop  
 
    use da_wrf_interfaces
 

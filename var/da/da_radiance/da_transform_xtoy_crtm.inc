@@ -44,8 +44,8 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
    type( CRTM_Options_type )      :: Options(1)
    
    integer                        :: ts_index
-   integer                        :: nclouds
-   integer, allocatable           :: cc_index(:)
+   integer                        :: nclouds, ncv
+   real, allocatable              :: cc_tl(:)
    real                           :: rad_clr, rad_cld   ! RT clear/cloudy radiances
    real, allocatable              :: rad_ovc(:)         ! RT overcast radiances
    real                           :: rad_tl, tb_tl
@@ -386,38 +386,47 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          enddo
       end if
 
-      if (use_satcv) then
       ! Skin Temperature
       !-----------------
+      if (use_satcv(1)) then
          ts_index = iv%instid(inst)%cv_index(n)%ts 	 
-!  	 if (Surface(1)%Land_Coverage  > 0.0) Surface_TL(1)%Land_Temperature  = cv(ts_index)
-!         if (Surface(1)%Water_Coverage > 0.0) Surface_TL(1)%Water_Temperature = cv(ts_index)
-!         if (Surface(1)%Snow_Coverage  > 0.0) Surface_TL(1)%Snow_Temperature  = cv(ts_index)
-!         if (Surface(1)%Ice_Coverage   > 0.0) Surface_TL(1)%Ice_Temperature   = cv(ts_index)
+  	 if (Surface(1)%Land_Coverage  > 0.0) Surface_TL(1)%Land_Temperature  = cv(ts_index)
+         if (Surface(1)%Water_Coverage > 0.0) Surface_TL(1)%Water_Temperature = cv(ts_index)
+         if (Surface(1)%Snow_Coverage  > 0.0) Surface_TL(1)%Snow_Temperature  = cv(ts_index)
+         if (Surface(1)%Ice_Coverage   > 0.0) Surface_TL(1)%Ice_Temperature   = cv(ts_index)	 
+      end if 
 	 
-	 iv%instid(inst)%tb_xb(1,n) = cv(ts_index) !!! Super-TMP dump of Tskin increment for plotting purposes	 
-
       ! Cloud cover(s)
       !---------------
-	 nclouds       = iv%instid(inst)%cv_index(n)%nclouds
-	 allocate (cc_index(nclouds))
-	 allocate (rad_ovc (nclouds))
-	 cc_index(:)   = iv%instid(inst)%cv_index(n)%cc(:) 
-	 do k = 1, nchanl
-            if (ALL(iv%instid(inst)%ichan(k) /=  Bands(:,1))) cycle   ! Only Channels in Band 1 	       
-            rad_clr    = iv%instid(inst)%rad_xb(k,n)             
-            rad_ovc(:) = iv%instid(inst)%rad_ovc(k,kte-nclouds+1:kte,n)
-            rad_cld    = SUM(cv(cc_index)*rad_ovc) + (1.0 - SUM(cv(cc_index)))*rad_clr
-	    rad_tl     = SUM(cv(cc_index)*(rad_ovc - rad_clr))
- 	    call CRTM_Planck_Temperature_TL(inst,k,rad_clr,rad_tl,tb_tl)
-	    y%instid(inst)%tb(k,n) = tb_tl	          
-	 end do			     
-	 
-	 print*, n,cv(cc_index)*100
-	 iv%instid(inst)%tb_xb(2,n) = SUM(cv(cc_index))*100.0 !!! Super-TMP dump of Cloud Cover increment for plotting purposes	 
+         if (use_satcv(2)) then
+	    nclouds = iv%instid(inst)%cv_index(n)%nclouds
+	    ncv     = iv%instid(inst)%cv_index(n)%ncv
+	    allocate (rad_ovc (nclouds))
+	    allocate (cc_tl   (nclouds))
 
-	 deallocate(cc_index, rad_ovc)
-      end if 
+            cc_tl(:) = cv(iv%instid(inst)%cv_index(n)%cc(:))
+!	    !---------------------------------------------------------------
+!           ! Change of variable (preconditioning) 
+!           !---------------------------------------------------------------
+!	    do icld = 1, nclouds
+!    	       cc_tl(icld) = SUM( cv(iv%instid(inst)%cv_index(n)%cc) * &
+!	                             iv%instid(inst)%cv_index(n)%vtox(icld,1:ncv) )
+!	    end do
+	    	
+	    do k = 1, nchanl
+               if (ALL(iv%instid(inst)%ichan(k) /=  Bands(:,1))) cycle   ! Only Channels in Band 1 	       
+               rad_clr    = iv%instid(inst)%rad_xb(k,n)             
+               rad_ovc(:) = iv%instid(inst)%rad_ovc(k,kte-nclouds+1:kte,n)
+               rad_cld    = SUM(cc_tl*rad_ovc) + (1.0 - SUM(cc_tl))*rad_clr
+	       rad_tl     = SUM(cc_tl*(rad_ovc-rad_clr))
+ 	       call CRTM_Planck_Temperature_TL(inst,k,rad_clr,rad_tl,tb_tl)
+	       y%instid(inst)%tb(k,n) = y%instid(inst)%tb(k,n) + tb_tl	          
+   	    end do			     	 
+
+	    deallocate(cc_tl, rad_ovc)
+	 else
+	    y%instid(inst)%tb(:,n) = 0.0  
+         end if 
 
       ! [1.5] CRTM GeometryInfo Structure
         GeometryInfo(1)%Sensor_Zenith_Angle=iv%instid(inst)%satzen(n)
@@ -444,7 +453,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       !-------------------------------------------------------------------
       ! [1.7] assign Hdx :
       !-------------------------------------------------------------------
-         y%instid(inst)%tb(:,n) = RTSolution_TL(:,1)%brightness_temperature
+         y%instid(inst)%tb(:,n) = y%instid(inst)%tb(:,n) + RTSolution_TL(:,1)%brightness_temperature
 	 
          Error_Status = CRTM_Destroy_Atmosphere( Atmosphere_TL )
          if ( Error_Status /= 0 ) then

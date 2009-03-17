@@ -259,6 +259,7 @@
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for MAP_PROJ returns ',config_flags%map_proj
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_map_proj ( grid%id , config_flags%map_proj )
+    grid%map_proj = config_flags%map_proj
 
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) THEN

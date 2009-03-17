@@ -329,6 +329,66 @@
     END IF
 #endif
 
+#if (EM_CORE == 1)
+!added the following for tc bogusing
+    if((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) then
+       print *,"we have confirmed that insert or remove is true"
+       ibuf(1) = 1
+       CALL wrf_put_dom_ti_integer ( fid , 'FLAG_METGRID' ,  ibuf , 1 , ierr )
+       if( grid%flag_snow .eq. 1) then
+           CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SNOW' ,  ibuf , 1 , ierr )
+       end if
+       if( grid%flag_mf_xy .eq. 1) then
+           CALL wrf_put_dom_ti_integer ( fid , 'FLAG_MF_XY' ,  ibuf , 1 , ierr )
+       end if   
+       if(grid%flag_psfc .eq. 1) then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_PSFC' ,  ibuf , 1 , ierr ) 
+       end if    
+
+       if(grid%flag_slp .eq. 1) then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SLP' ,  ibuf , 1 , ierr ) 
+       end if 
+
+       if(grid%flag_sm000010 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM000010' ,  ibuf , 1 , ierr ) 
+       end if
+       if(grid%flag_sm010040 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM010040' ,  ibuf , 1 , ierr ) 
+       end if
+        if(grid%flag_sm040100 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM040100' ,  ibuf , 1 , ierr ) 
+       end if
+        if(grid%flag_sm100200 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM100200' ,  ibuf , 1 , ierr ) 
+       end if 
+
+       if(grid%flag_st000010 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST000010' ,  ibuf , 1 , ierr ) 
+       end if
+       if(grid%flag_st010040 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST010040' ,  ibuf , 1 , ierr ) 
+       end if
+        if(grid%flag_st040100 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST040100' ,  ibuf , 1 , ierr ) 
+       end if
+        if(grid%flag_st100200 .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr ) 
+       end if 
+
+       ibuf(1) = grid%num_metgrid_levels
+       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+
+       CALL wrf_put_dom_ti_integer ( fid , 'num_metgrid_levels' , ibuf , 1 , ierr )
+
+       print *,start_date
+       CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
+
+       WRITE( message , * ) "OUTPUT FROM TC BOGUS"
+       CALL wrf_put_dom_ti_char ( fid , 'TITLE' , TRIM(message) , ierr )
+    end if
+#endif
+
+
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
 #if (NMM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'E' , ierr )

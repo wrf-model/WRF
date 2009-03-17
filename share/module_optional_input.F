@@ -337,6 +337,8 @@ USE module_io_domain
          flag_mf_xy    = itmp
       END IF
     
+      grid%flag_metgrid = flag_metgrid
+      grid%flag_mf_xy   = flag_mf_xy
    END SUBROUTINE optional_metgrid
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -444,7 +446,8 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_snow     = itmp
       END IF
-    
+      grid%flag_snow = flag_snow
+
    END SUBROUTINE optional_snowh
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -499,6 +502,9 @@ USE module_io_domain
          flag_slp      = itmp
       END IF
     
+      grid%flag_soilhgt = flag_soilhgt
+      grid%flag_slp     = flag_slp 
+      grid%flag_psfc    = flag_psfc
    END SUBROUTINE optional_sfc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

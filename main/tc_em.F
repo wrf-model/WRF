@@ -67,6 +67,7 @@ PROGRAM tc_data
 
    program_name = "TC_EM " // TRIM(release_version) // " PREPROCESSOR"
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
 !  The TC bogus algorithm assumes that the user defines a central point, and then
 !  allows the program to remove a typhoon based on a distance in km.  This is
 !  implemented on a single processor only.
@@ -76,6 +77,11 @@ PROGRAM tc_data
       CALL wrf_error_fatal( 'TC bogus must run with a single processor only, re-run with num procs set to 1' )
    END IF
 #endif
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+   program_name = "REAL_EM " // TRIM(release_version) // " PREPROCESSOR"
+=======
+   program_name = "TC_BOGUS" // TRIM(release_version) // " PREPROCESSOR"
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -185,7 +191,7 @@ PROGRAM tc_data
 
    !  We are done.
 
-   CALL       wrf_debug (   0 , 'real_em: SUCCESS COMPLETE REAL_EM INIT' )
+   CALL       wrf_debug (   0 , 'real_em: SUCCESS COMPLETE TC BOGUS' )
 
    CALL wrf_shutdown
 
@@ -348,7 +354,7 @@ real::t1,t2,t3,t4
 
 
       CALL cpu_time ( t3 )
-      print *,"before assemble output"
+
 
       CALL assemble_output ( grid , config_flags , loop , time_loop_max, current_date_char )
       CALL cpu_time ( t4 )
@@ -417,7 +423,13 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: ijds , ijde , spec_bdy_width
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
    INTEGER :: i , j , k , idts
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+   INTEGER :: i , j , k , idts,map_proj
+=======
+   INTEGER :: i , j , k , idts,map_proj,remove_only
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
@@ -476,9 +488,31 @@ real::t1,t2
    vmax       = config_flags%vmax_meters_per_second
    vmax_ratio = config_flags%vmax_ratio
    rmax       = config_flags%rmax
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
    call tc_bogus(grid%cen_lat,grid%stand_lon,grid%map_proj,grid%truelat1,grid%truelat2, &
                  grid%dx,ipe,jpe,grid%num_metgrid_levels,latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
    stop
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+   ptop_in_pa = config_flags%p_top_requested
+
+   call tc_bogus(cen_lat,stand_lon,map_proj,grid%truelat1,grid%truelat2, &
+                 grid%dx,ipe,jpe,grid%num_metgrid_levels,ptop_in_pa, &
+                 latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
+
+
+=======
+   ptop_in_pa = config_flags%p_top_requested
+   remove_only = 0
+   if(config_flags%remove_storm) then
+      remove_only = 1
+   end if
+
+   call tc_bogus(cen_lat,stand_lon,map_proj,grid%truelat1,grid%truelat2, &
+                 grid%dx,ipe,jpe,grid%num_metgrid_levels,ptop_in_pa, &
+                 latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
+
+
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 !Notes jps is the starting y. Usally 1
 !      jpe is the ending y position on the staggered grid north south or ny
 !      ipe is the ending x postiion on the staggered grid east west of nx
@@ -500,8 +534,16 @@ END SUBROUTINE assemble_output
 
 !----------------------------------------------------------------------------------------------
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
 SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
                     latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_in_pa, &
+                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
+=======
+SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_in_pa, &
+                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
       
 !center  lat is the center latitude from the global attributes 
 !stdlon  is the center longitude from the global attributes 
@@ -531,11 +573,13 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
   real :: centerlat,stdlon,conef,truelat1,truelat2,dsm,dx
   real :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax
   
-  real :: press(ns,ew,nz),p(nz), rhmx(nz), vwgt(nz)
+  real :: press(ns,ew,nz),rhmx(nz), vwgt(nz)
   real, dimension(:,:,:) , allocatable :: u11,v11,t11,rh11,phi11
   real, dimension(:,:,:) , allocatable :: umass,vmass
   real, dimension(:,:,:) , allocatable :: u1 , v1 , t1 , rh1 , phi1
   real, dimension(ns,ew) :: mfx,mfd,lond,terrain,cor,xlat,pslx
+  real, dimension(ns-1,ew) :: mfsu
+  real, dimension(ns,ew-1) :: mfsv
 
 
   CHARACTER*2  jproj
@@ -546,10 +590,10 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
 !and hard code them.
   real :: r_search,r_vor,beta,devps,humidity_max
   real :: devpc,const,r_vor2,cnst,alphar,epsilon,vormx , rad , sum_q 
-  real :: avg_q ,q_old,ror,q_new,sum_rh,avg_rh,rh_min,rhbkg,rhbog,dph
+  real :: avg_q ,q_old,ror,q_new,sum_rh,avg_rh,rh_min,rhbkg,rhbog,dph,dphx0
   real :: rh_max,min_RH_value,r_ratio,ps
   integer :: vert_variation
-  integer :: i,k,j,jx,ix,kx
+  integer :: i,k,j,jx,ix,kx,remove_only
   integer :: k00,kfrm ,kto ,k85,n_iter,i_mvc,j_mvc,nct,itr
   integer :: strmci(nz), strmcj(nz)
   real :: disx,disy,alpha,degran,pie,rovcp,cp
@@ -669,13 +713,18 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
    END IF
 
 
-!  Put the vertical column of pressures into hPa from Pa.  The first level is defined as the surface.
+!  Press(level 1) = surface pressure.  Pressure is a three dimensional array in this case.
 !  The second level is usually 1000 mb.  The last level, kx, is defined as ptop. These come in from 
-!  the namelist
-   kx = nz
-   DO k=1,kx
-      p(k) = grid%p_gc(1,k,1)*0.01
-   END DO
+!  the namelist.   
+ kx = nz
+ do i = 1,ns
+    do j = 1,ew
+       do k = 1,nz
+           press(i,j,k) = grid%p_gc(j,k,i)*0.01
+       end do
+    end do
+ end do
+
 
 !  Initialize the vertical profiles for humidity and weighting.
 !The ptop variable will be read in from the namelist
@@ -687,18 +736,18 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
 
  IF ( vert_variation .EQ. 1 ) THEN
     DO k=1,kx
-       IF ( p(k) .GT. 400. ) THEN
+       IF ( press(1,1,k) .GT. 400. ) THEN
                rhmx(k) = humidity_max
        ELSE
-               rhmx(k) = humidity_max * MAX( 0.1 , (p(k) - ptop_in_pa/100.)/(400.-ptop_in_pa/100.) )
+               rhmx(k) = humidity_max * MAX( 0.1 , (press(1,1,k) - ptop_in_pa/100.)/(400.-ptop_in_pa/100.) )
        END IF
 
-        IF ( p(k) .GT. 600. ) THEN
+        IF ( press(1,1,k) .GT. 600. ) THEN
              vwgt(k) = 1.0
-        ELSE IF ( p(k) .LE. 100. ) THEN
+        ELSE IF ( press(1,1,k) .LE. 100. ) THEN
              vwgt(k) = 0.0001
         ELSE
-             vwgt(k) = MAX ( 0.0001 , (p(k)-ptop_in_pa/100.)/(600.-ptop_in_pa/100.) )
+             vwgt(k) = MAX ( 0.0001 , (press(1,1,k)-ptop_in_pa/100.)/(600.-ptop_in_pa/100.) )
         END IF
       END DO
 
@@ -716,15 +765,33 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
          END IF
  END IF
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
  ns = ns
  ew = ew
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+=======
+!Remember that ns = the north south staggered.
+!              ew = the east west staggered.
+
+
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 !Put the U and V into the new arrays.
+!The u and v are read in destaggered and then put on MM5 dot points UGH!!
  allocate(u11  (1:ns, 1:ew, 1:nz))
  allocate(v11  (1:ns, 1:ew, 1:nz))
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
  allocate(umass(1:ew, 1:nz, 1:ns))
  allocate(vmass(1:ew, 1:nz, 1:ns))
 
 !first U
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+
+!reorder the wind fields and then put on mass points.
+!first put U on MM5 grid
+=======
+!reorder the wind fields and then put on mass points.
+!first U put on MM5 grid
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
  do i = 1,ns-1
     do j = 1,ew
        do k = 1,nz
@@ -734,6 +801,30 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
  end do
 
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+!Destagger U to mass points
+ do i = 1,ns-1
+    do j = 1,ew-1
+       do k = 1,nz
+          u11(i,j,k) = 0.5 * (u11(i,j,k) + u11(i,j+1,k))
+       end do
+    end do
+ end do
+
+
+=======
+!Destagger U to mass points
+ do i = 1,ns-1
+    do j = 1,ew-1
+       do k = 1,nz
+          u11(i,j,k) = 0.5 * (u11(i,j,k) + u11(i,j+1,k))
+       end do
+    end do
+ end do
+ call xtodot(u11,ns,ew)
+
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 !now V
  do i = 1,ns
@@ -749,6 +840,28 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
  end do
  stop
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+!Destagger V to mass points
+ do i = 1,ns-1
+    do j = 1,ew-1
+       do k = 1,nz
+          v11(i,j,k) = 0.5 * (v11(i,j,k) + v11(i+1,j,k))
+       end do
+    end do
+ end do
+=======
+!Destagger V to mass points
+ do i = 1,ns-1
+    do j = 1,ew-1
+       do k = 1,nz
+          v11(i,j,k) = 0.5 * (v11(i,j,k) + v11(i+1,j,k))
+       end do
+    end do
+ end do
+ call xtodot(v11,ns,ew)
+!we now have u and v on MM5 dot points.
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 ! do i = 1,ew
 !    do k = 1,nz
@@ -806,6 +919,7 @@ stop
 
 
 
+
 !  Save initial fields.
  allocate(u1  (1:ns, 1:ew, 1:nz))
  allocate(v1  (1:ns, 1:ew, 1:nz))
@@ -822,20 +936,40 @@ stop
   phi1   = phi11 * 9.81
 
 !The two d fields
+!The terrain soil height is from ght at level 1
  do i = 1,ns
     do j = 1,ew
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
 !       pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
 !       cor(i,j)     = grid%f(j,i)  !coreolous
 !       lond(i,j)    = grid%xlong_gc(j,i)
        terrain(i,j) = grid%ht_gc(j,i)
        xlat(i,j)    = grid%xlat_gc(1,1)
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+       pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
+       cor(i,j)     = grid%f(j,i)  !coreolous
+       lond(i,j)    = grid%xlong_gc(j,i)
+       terrain(i,j) = grid%ht_gc(j,i)
+=======
+       pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
+       cor(i,j)     = grid%f(j,i)  !coreolous
+       lond(i,j)    = grid%xlong_gc(j,i)
+       terrain(i,j) = grid%ght_gc(j,1,i)
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
     end do
  end do
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
  cor  = transpose(grid%f)
  pslx = transpose(grid%pslv_gc) 
  pslx = pslx * 0.01
  lond = transpose(grid%xlong_gc)
  call crs2dot(lond,ns,ew)
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+ call crs2dot(lond,ns,ew)
+=======
+!longitude on dot points
+ call xtodot(lond,ns,ew)
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 
  DO k=1,kx
@@ -854,7 +988,7 @@ stop
 
  kto  = kfrm
  DO k=kfrm+1,kx
-     IF ( p(k) .GE. p85 ) THEN
+     IF ( press(1,1,k) .GE. p85 ) THEN
            kto = kto + 1
      END IF
  END DO
@@ -899,7 +1033,7 @@ stop
 
 !  Start computing.
 
- PRINT '(/,A,I3,A,A,A)'     ,'---> TC: Processing storm number= ',nstrm,' for date= simlaku'
+ PRINT '(/,A,I3,A,A,A)'     ,'---> TC: Processing storm number= 1'
  PRINT '(A,F6.2,A,F7.2,A)'  ,'         Storm center lat= ',latc_loc,' lon= ',lonc_loc,'.'
  PRINT '(A,2F6.2,A)'        ,'         Storm center grid position (x,y)= ',xjcn,xicn,'.'
  PRINT '(A,F5.2,F9.2,A)'    ,'         Storm max wind (m/s) and max radius (m)= ',vmx,rmax,'.'
@@ -915,6 +1049,8 @@ stop
  
 !  Define complete field of bogus storm
 !Note dx is spacing in meters
+!ns = ns stag
+!ew = ew stag
   DO i=1,ns
      DO j=1,ew
         disx = REAL(j) - xjcn
@@ -932,9 +1068,18 @@ stop
 
 ! Rotate wind to map proj
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
   DO i=1,ns-1
      DO j=1,ew-1
 !i don't think we want xlong_gc here check with dave.
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+  DO i=1,ns
+     DO j=1,ew
+!i don't think we want xlong_gc here check with dave.
+=======
+  DO i=1,ns
+     DO j=1,ew
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
         xlo = stdlon-lond(i,j)
 !        print *,xlo
         IF ( xlo .GT. 180.)xlo = xlo-360.
@@ -976,14 +1121,32 @@ stop
        vtcr(ns,ew,k) = vtcr(ns-1,ew-1,k)
    END DO
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
 !This is the map scale factor on cross points.
     do i = 1,ns
       do j = 1,ew
          mfx(i,j) = grid%msft(j,i)
          mfd(i,j) = grid%msft(j,i)
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+!This is the map scale factor on cross points.
+    do i = 1,ns-1
+      do j = 1,ew-1
+         mfx(i,j) = grid%msft(j,i)
+         mfd(i,j) = grid%msft(j,i)
+=======
+
+
+!This is the map scale factor on cross points and dot points
+    do i = 1,ns-1
+      do j = 1,ew-1
+         mfx(i,j)  = grid%msft(j,i)
+         mfd(i,j)  = grid%msft(j,i)
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
       end do
    end do
-   call crs2dot(mfd,ns,ew)
+
+   call xtodot(mfd,ns,ew)
+!we now have a map scale factor on dot points.
 
 
 !  Compute vorticity of FG 
@@ -991,11 +1154,11 @@ stop
 
 
 !  Compute divergence of FG
-   CALL diverg(u1,v1,mfd,mfx,ns,ew,kx,dx,div) 
+   CALL diverg(u1,v1,mfd,mfx,ns,ew,kx,dx,div)
 
 
 !  Compute mixing ratio of FG
-   CALL mxratprs(rh1,t1,p*100.,ns,ew,kx,q1,min_RH_value)
+   CALL mxratprs(rh1,t1,press*100.,ns,ew,kx,q1,min_RH_value)
    q1(:,:,1) = q1(:,:,2)
 
    DO k=1,kx
@@ -1216,7 +1379,11 @@ stop
    
     END DO
 
+
+
 !  Background u, v fields.
+!  Subtract the first quess wind field original winds.
+    
      DO k=1,kx
         DO i=1,ns
            DO j=1,ew
@@ -1225,6 +1392,35 @@ stop
            END DO
         END DO
      END DO
+     
+
+!Here we have the background u and v winds with the vortex
+!removed so if we only want to remove the strorm we can
+!now remove it from the winds.  So here we take the winds
+!which are on MMM5 dot points put them on mass points and
+!then restagger them to the C-grid.
+    if(remove_only .eq. 1) then
+       call dot2crs(u0,ns,ew)
+       call dot2crs(v0,ns,ew) 
+       call mass2_Ustag(u0,ns-1,ew,nz)
+       call mass2_Vstag(v0,ns,ew-1,nz)
+       do i = 1,ns-1
+          do j = 1,ew
+             do k = 1,nz
+                grid%u_gc(j,k,i)   = u0(i,j,k)
+             end do
+         end do
+      end do
+
+       do i = 1,ns
+          do j = 1,ew-1
+             do k = 1,nz
+                grid%v_gc(j,k,i)   = v0(i,j,k)
+             end do
+         end do
+      end do
+
+     end if
 
 
 !  Geostrophic vorticity.
@@ -1273,33 +1469,94 @@ stop
          END DO
      END DO
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
      print *,"the background temperature"
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+=======
+
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
      !  Background temperature
      DO k=k00,kx 
         DO i=1,ns
            DO j=1,ew
               IF( k .EQ.  2 ) THEN
-                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k  ))/LOG(p(k+1)/p(k  ))
+                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k  ))/LOG(press(i,j,k+1)/press(i,j,k))
               ELSE IF ( k .EQ. kx ) THEN
-                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k  )-phip(i,j,k-1))/LOG(p(k  )/p(k-1))
+                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k  )-phip(i,j,k-1))/LOG(press(i,j,k)/press(i,j,k-1))
               ELSE
-                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k-1))/LOG(p(k+1)/p(k-1))
+                  tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k-1))/LOG(press(i,j,k+1)/press(i,j,k-1))
               END IF
 
               t0(i,j,k) = t1(i,j,k)-tpos(i,j,k)
               t00(i,j,k) = t0(i,j,k)
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+              if(t0(i,j,k) .gt. 400) then
+                 print *,"interesting temperature ",t0(i,j,k)," at ",i,j,k
+              end if
+=======
+              if(t0(i,j,k) .gt. 400) then
+                 print *,"interesting temperature ",t0(i,j,k)," at ",i,j,k
+                 stop
+              end if
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
            END DO
         END DO
      END DO
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
      print *,"the background rh"
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+=======
+
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
      !  Background RH.
-     CALL qvtorh (q0,t0,p*100.,k00,ix,jx,kx,rh0,min_RH_value)
+     CALL qvtorh (q0,t0,press*100.,k00,ix,jx,kx,rh0,min_RH_value)
 
      DO k=k00,kx
         CALL expand ( rh0(1,1,k) , ix-1 , jx-1 , ix , jx )
      END DO
-   
+
+!Note: here we test for the remove storm only for the temperature 
+!and height fields.  At the surface (k=1) we just assign the 
+!terrain field to the height.
+    if(remove_only .eq. 1) then
+       do i = 1,ns-1
+          do j = 1,ew-1
+             do k = 1,nz
+                if(k .eq. 1) then
+                   grid%ght_gc(j,k,i) = terrain(i,j)
+                   grid%t_gc(j,k,i)   = t1(i,j,k)
+                   grid%rh_gc(j,k,i)  = rh1(i,j,k)
+                else
+                   grid%ght_gc(j,k,i) = phi0(i,j,k)/9.8
+                   grid%t_gc(j,k,i)   = t0(i,j,k)
+                   grid%rh_gc(j,k,i)  = rh0(i,j,k)
+                end if
+             end do
+         end do
+      end do
+
+
+!  Now remove the storm from the surface pressure.
+      DO i=1,ns
+         DO j=1,ew
+            dphx0 = phi0(i,j,k00) - phi1(i,j,k00)
+            delpx(i,j) = rho*dphx0*0.01
+            pslx(i,j) = pslx(i,j) + delpx(i,j) 
+            if(abs(grid%ht(j,i)) .lt. 1) then
+                  grid%p_gc(j,1,i) = pslx(i,j) * 100.
+            else
+                  grid%p_gc(j,1,i)  = grid%p_gc(j,1,i) + (pslx(i,j) * 100. - grid%pslv_gc(j,i))
+            end if
+            grid%pslv_gc(j,i) = pslx(i,j) * 100.
+         END DO
+      END DO
+
+      return
+  end if  
+!*****************
+
      DO k=k00,kx
         rh_max= rhmx(k)
         i_mvc = strmci(k)
@@ -1335,7 +1592,7 @@ stop
      DO k=k00,kx
         DO i=1,ns
            DO j=1,ew
-              theta(i,j,k) = t1(i,j,k)*(1000./p(k))**rovcp
+              theta(i,j,k) = t1(i,j,k)*(1000./press(i,j,k))**rovcp
            END DO
         END DO
      END DO
@@ -1349,13 +1606,14 @@ stop
            DO j=1,ew
               rad = SQRT(REAL(i-i_mvc)**2.+REAL(j-j_mvc)**2.)*dx
               IF ( rad .LT. r_vor2 ) THEN
-                  t_reduce(i,j,k) = theta(i,j,k85)-0.03*(p(k)-p(k85))
-                  t0(i,j,k) = t00(i,j,k)*(rad/r_vor2) + (((p(k)/1000.)**rovcp)*t_reduce(i,j,k))*(1.-(rad/r_vor2))
+                  t_reduce(i,j,k) = theta(i,j,k85)-0.03*(press(i,j,k)-press(i,j,k85))
+                  t0(i,j,k) = t00(i,j,k)*(rad/r_vor2) + (((press(i,j,k)/1000.)**rovcp)*t_reduce(i,j,k))*(1.-(rad/r_vor2))
               END IF
            END DO
         END DO
      END DO
 
+!-------------------------------------------------------------------
      !  New RH.
      DO k=k00,kx
         DO i=1,ns
@@ -1429,11 +1687,11 @@ stop
        DO i=1,ns
           DO j=1,ew
              IF( k .EQ.  2 ) THEN
-                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k  ))/LOG(p(k+1)/p(k  ))
+                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k  ))/LOG(press(i,j,k+1)/press(i,j,k))
              ELSE IF ( k .EQ. kx ) THEN
-                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k  )-phiptc(i,j,k-1))/LOG(p(k  )/p(k-1))
+                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k  )-phiptc(i,j,k-1))/LOG(press(i,j,k)/press(i,j,k-1))
              ELSE
-                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k-1))/LOG(p(k+1)/p(k-1))
+                 tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k-1))/LOG(press(i,j,k+1)/press(i,j,k-1))
              END IF
              t2(i,j,k) = t0(i,j,k) + tptc(i,j,k)
              print *,i,j,k,t2(i,j,k)
@@ -1449,21 +1707,14 @@ stop
             delpx(i,j) = rho*dph*0.01
          END DO
       END DO
- 
+
+
     !  New SLP.
       DO i=1,ns
          DO j=1,ew
             pslx(i,j) = pslx(i,j)+delpx(i,j)
          END DO
       END DO
-
-!     tmp1=delpx
-!    CALL crs2dot(tmp1,ix,jx)
-!      DO i=1,ix
-!         DO j=1,jx
-!            psld(i,j) = psld(i,j)+tmp1(i,j)
-!         END DO
-!      END DO
 
 
   !  Set new geopotential at surface to terrain elevation.
@@ -1491,9 +1742,28 @@ stop
      print *,"surface temperature"
      DO i=1,ns
         DO j=1,ew
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
            ps = pslx(i,j)
            t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
            print *,i,j,t2(i,j,1),ps
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+           ps = pslx(i,j)
+           t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
+           if(t2(i,j,1) .gt. 400) then
+              print *,"Interesting surface temperature"
+              print *,t2(i,j,1),t2(i,j,k00),ps,i,j
+              stop
+           end if
+=======
+!           ps = pslx(i,j)
+!           t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
+            t2(i,j,1) = t11(i,j,1)
+           if(t2(i,j,1) .gt. 400) then
+              print *,"Interesting surface temperature"
+              print *,t2(i,j,1),t2(i,j,k00),ps,i,j
+              stop
+           end if
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
         END DO
      END DO
      stop
@@ -1520,16 +1790,74 @@ stop
  deallocate(rh1)
  deallocate(phi1)
 
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
 
  do i = 1,ns
     do j = 1,ew
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+ call crs2dot(u2,ns-1,ew)
+ call crs2dot(v2,ns,ew-1)
+ do i = 1,ns-1
+    do j = 1,ew-1
+=======
+!Interpolate the U and V from mass points
+!back to the staggered grid.
+ call dot2crs(u0,ns,ew)
+ call dot2crs(v0,ns,ew) 
+ call mass2_Ustag(u2,ns-1,ew,nz)
+ call mass2_Vstag(v2,ns,ew-1,nz)
+
+
+ do i = 1,ns-1
+    do j = 1,ew
        do k = 1,nz
+          grid%u_gc(j,k,i)   = u2(i,j,k)
+       end do
+    end do
+ end do
+
+ do i = 1,ns
+    do j = 1,ew-1
+       do k = 1,nz
+          grid%v_gc(j,k,i)   = v2(i,j,k)
+        end do
+    end do
+ end do
+
+
+ do i = 1,ns-1
+    do j = 1,ew-1
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
+       do k = 1,nz
+<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
              grid%u_gc(j,k,i) = u2(i,j,k)
              grid%v_gc(j,k,i) = v2(i,j,k)
              grid%t_gc(j,k,i) = t2(i,j,k)
              print *,i,j,k,t2(i,j,k)
             grid%rh_gc(j,k,i) = rh2(i,j,k)
            grid%ght_gc(j,k,i) = z2(i,j,k)
+||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
+             grid%u_gc(j,k,i)   = u2(i,j,k)
+             grid%v_gc(j,k,i)   = v2(i,j,k)
+             grid%t_gc(j,k,i)   = t2(i,j,k)
+             grid%rh_gc(j,k,i)  = rh2(i,j,k)
+             grid%ght_gc(j,k,i) = z2(i,j,k)
+             if(k .eq. 1) then
+                grid%pslv_gc(j,i) = pslx(i,j) * 100.
+             end if
+=======
+             grid%t_gc(j,k,i)   = t2(i,j,k)
+             grid%rh_gc(j,k,i)  = rh2(i,j,k)
+             grid%ght_gc(j,k,i) = z2(i,j,k)
+             if(k .eq. 1) then
+                if(abs(grid%ht(j,i)) .lt. 1) then
+                   grid%p_gc(j,k,i) = pslx(i,j) * 100.
+                else
+                   grid%p_gc(j,k,i)  = grid%p_gc(j,k,i) + (pslx(i,j) * 100. - grid%pslv_gc(j,i))
+                end if
+                grid%pslv_gc(j,i) = pslx(i,j) * 100.
+             end if
+>>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
        end do
     end do
  end do
@@ -1640,7 +1968,6 @@ END SUBROUTINE tc_bogus
    END SUBROUTINE rankine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
    SUBROUTINE vor(u,v,dmf,xmf,i1,j1,k1,ds,vort)
 
       !  Compute k component of del cross velocity
@@ -1685,7 +2012,6 @@ END SUBROUTINE tc_bogus
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
    SUBROUTINE diverg(u,v,dmf,xmf,i1,j1,k1,ds,div)
 
    !  Computes divergence
@@ -1720,6 +2046,7 @@ END SUBROUTINE tc_bogus
             END DO
          END DO
       END DO
+
    END SUBROUTINE diverg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1734,8 +2061,8 @@ END SUBROUTINE tc_bogus
 
 
       REAL      :: min_RH_value
-      REAL      :: ppa(kx)
-      REAL      :: p( KX )
+      REAL      :: ppa(ix,jx,kx)
+      REAL      :: p( ix,jx,KX )
       REAL      :: q (ix,jx,kx),rh(ix,jx,kx),t(ix,jx,kx)
 
       REAL      :: es
@@ -1774,7 +2101,7 @@ END SUBROUTINE tc_bogus
          DO j = 1, jx
             DO i = 1, ix
                es = svp1 * 10. * EXP(svp2 * (t(i,j,k) - celkel ) / (t(i,j,k) - svp3 ))
-               qs = eps * es / (p(k) - es)
+               qs = eps * es / (p(i,j,k) - es)
                q(i,j,k) = MAX(0.01 * rh(i,j,k) * qs,0.0)
             END DO
          END DO
@@ -1825,6 +2152,45 @@ END SUBROUTINE tc_bogus
    END SUBROUTINE fillit
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE mass2_Ustag(field,dim1,dim2,dim3)
+
+   IMPLICIT NONE
+
+   INTEGER :: dim1 , dim2 , dim3
+   REAL , DIMENSION(dim1,dim2,dim3) :: field,dummy
+
+   dummy = 0.0
+   dummy(:,2:dim2-1,:)         = ( field(:,1:dim2-2,:) + &
+                                   field(:,2:dim2-1,:) ) * 0.5
+   dummy(:,1,:)                = field(:,1,:)
+   dummy(:,dim2,:)             = field(:,dim2-1,:)
+
+   field                       =   dummy
+
+END SUBROUTINE mass2_Ustag
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE mass2_Vstag(field,dim1,dim2,dim3)
+
+   IMPLICIT NONE
+
+   INTEGER :: dim1 , dim2 , dim3
+   REAL , DIMENSION(dim1,dim2,dim3) :: field,dummy
+
+   dummy = 0.0
+   dummy(2:dim1-1,:,:)         = ( field(1:dim1-2,:,:) + &
+                                   field(2:dim1-1,:,:) ) * 0.5
+   dummy(1,:,:)                = field(1,:,:)
+   dummy(dim1,:,:)             = field(dim1-1,:,:)
+
+   field                       =   dummy
+
+END SUBROUTINE mass2_Vstag
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    SUBROUTINE crs2dot(field,dim1,dim2)
    
       IMPLICIT NONE
@@ -1833,17 +2199,23 @@ END SUBROUTINE tc_bogus
       REAL , DIMENSION(dim1,dim2) :: field,dummy
       INTEGER :: i , j 
       
+
+!This fills in the middle of the array.
       dummy(2:dim1-1,2:dim2-1)           = ( field(1:dim1-2,1:dim2-2) + &
                                              field(1:dim1-2,2:dim2-1) + &
                                              field(2:dim1-1,1:dim2-2) + &
                                              field(2:dim1-1,2:dim2-1) ) * 0.25
    
+!This fills in the bottom and top of the array
       dummy(2:dim1-1,1:dim2:dim2-1)      = ( field(1:dim1-2,1:dim2-1:dim2-2) + &
                                              field(2:dim1-1,1:dim2-1:dim2-2) ) * 0.5
    
+!This fills in the left and right side of the array.
       dummy(1:dim1:dim1-1,2:dim2-1)      = ( field(1:dim1-1:dim1-2,1:dim2-2) + &
                                              field(1:dim1-1:dim1-2,2:dim2-1) ) * 0.5
    
+
+!This takes care of the cornors.(  0,0    0,ew,  ns,0  ns,ew)
       dummy(1:dim1:dim1-1,1:dim2:dim2-1) =   field(1:dim1-1:dim1-2,1:dim2-1:dim2-2)
    
       field                              =   dummy
@@ -2080,9 +2452,7 @@ END SUBROUTINE tc_bogus
       IMPLICIT NONE
 
       INTEGER , INTENT(IN) :: imx , jmx , kxs , k00
-      REAL , INTENT(IN) , DIMENSION(imx,jmx,kxs) :: q , t
-      REAL , INTENT(IN) , DIMENSION(kxs) :: p
-
+      REAL , INTENT(IN) , DIMENSION(imx,jmx,kxs) :: q ,t, p
       REAL , INTENT(OUT) , DIMENSION(imx,jmx,kxs) :: rh
 
       real    min_RH_value
@@ -2106,10 +2476,159 @@ END SUBROUTINE tc_bogus
          DO j = 1 , jmx - 1
             DO i = 1 , imx - 1
                es = svp1 * 10. * EXP(svp2 * (t(i,j,k) - celkel ) / (t(i,j,k) - svp3 ))
-               qs = eps*es/(0.01*p(k) - es)
+               qs = eps*es/(0.01*p(i,j,k) - es)
                rh(i,j,k) = MIN ( 100. , MAX ( 100.*q(i,j,k)/qs , min_RH_value ) )
             END DO
          END DO
       END DO
 
    END SUBROUTINE qvtorh
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine utodot(slab,maxiy,maxjx)
+!
+!   This routine converts data that is on the C-grid u-velocity
+!   staggered grid to the B-grid velocity staggered grid (known in
+!   MM5 lingo as "dot points") 
+!
+      dimension slab(maxiy,maxjx),bot(2000)
+!
+!   Extrapolate out to top and bottom edges.
+!
+      do j=1,maxjx
+         bot(j)=(3.*slab(1,j)-slab(2,j))/2.
+         slab(maxiy,j)=(3.*slab(maxiy-1,j)-slab(maxiy-2,j))/2.
+      enddo
+!
+!   Interpolate in the interior.
+!
+      do j=maxjx,1,-1
+      do i=maxiy-1,2,-1
+         slab(i,j)=.5*(slab(i-1,j)+slab(i,j))
+      enddo
+      enddo
+!
+!   Put "bot" values into slab.
+!
+      do j=1,maxjx
+         slab(1,j)=bot(j)
+      enddo
+!
+      return
+      end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine vtodot(slab,maxiy,maxjx)
+!
+!   This routine converts data that is on the C-grid v-velocity
+!   staggered grid to the B-grid velocity staggered grid (known in
+!   MM5 lingo as "dot points") 
+!
+      dimension slab(maxiy,maxjx),rleft(2000)
+!
+!   Extrapolate out to left and right edges.
+!
+      do i=1,maxiy
+         rleft(i)=(3.*slab(i,1)-slab(i,2))/2.
+         slab(i,maxjx)=(3.*slab(i,maxjx-1)-slab(i,maxjx-2))/2.
+      enddo
+!
+!   Interpolate in the interior.
+!
+      do j=maxjx-1,2,-1
+      do i=maxiy,1,-1
+         slab(i,j)=.5*(slab(i,j-1)+slab(i,j))
+      enddo
+      enddo
+!
+!   Put "rleft" values into slab.
+!
+      do i=1,maxiy
+         slab(i,1)=rleft(i)
+      enddo
+!
+      return
+      end
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine fillarray(array,ndim,val)
+      dimension array(ndim)
+      do 10 i=1,ndim
+         array(i)=val
+   10 continue
+
+      return
+      end
+         
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine xtodot(slab,maxiy,maxjx)
+!
+!     This routine converts data that is on the B-grid mass grid (known
+!     in MM5 lingo as "cross points") to the B-grid velocity staggered
+!     grid (known in MM5 lingo as "dot points")
+!
+      dimension slab(maxiy,maxjx),bot(10000),rleft(10000)
+!
+!   Extrapolate out to top and bottom edges.
+!
+      do 200 j=2,maxjx-1
+         bot(j)=(3.*(slab(1,j-1)+slab(1,j))- (slab(2,j-1)+slab(2,j)))/4.
+         slab(maxiy,j)=(3.*(slab(maxiy-1,j-1)+slab(maxiy-1,j))- (slab(maxiy-2,j-1)+slab(maxiy-2,j)))/4.
+  200 continue
+!
+!   Extrapolate out to left and right edges.
+!
+      do 300 i=2,maxiy-1
+         rleft(i)=(3.*(slab(i-1,1)+slab(i,1))-(slab(i-1,2)+slab(i,2)))/4.
+         slab(i,maxjx)=(3.*(slab(i-1,maxjx-1)+slab(i,maxjx-1))-(slab(i-1,maxjx-2)+slab(i,maxjx-2)))/4.
+  300 continue
+!
+!   Extrapolate out to corners.
+!
+      rleft(1)=(3.*slab(1,1)-slab(2,2))/2.
+      rleft(maxiy)=(3.*slab(maxiy-1,1)-slab(maxiy-2,2))/2.
+      bot(maxjx)=(3.*slab(1,maxjx-1)-slab(2,maxjx-2))/2.
+      slab(maxiy,maxjx)=(3.*slab(maxiy-1,maxjx-1)-slab(maxiy-2,maxjx-2))/2.
+!
+!   Interpolate in the interior.
+!
+      do 100 j=maxjx-1,2,-1
+      do 100 i=maxiy-1,2,-1
+         slab(i,j)=.25*(slab(i-1,j-1)+slab(i,j-1)+slab(i-1,j)+slab(i,j))
+  100    continue
+!
+!   Put "bot" and "rleft" values into slab.
+!
+      do j=2,maxjx
+         slab(1,j)=bot(j)
+      enddo
+      do i=1,maxiy
+         slab(i,1)=rleft(i)
+      enddo
+!
+      return
+      end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE dot2crs(field,dim1,dim2)
+
+      IMPLICIT NONE
+
+      INTEGER :: dim1 , dim2
+      REAL , DIMENSION(dim1,dim2) :: field
+
+      INTEGER :: i , j 
+
+      DO j = 1 , dim2 - 1
+         DO i = 1 , dim1 - 1
+            field(i,j) = ( field(i  ,j  ) + & 
+                           field(i+1,j  ) + & 
+                           field(i  ,j+1) + & 
+                           field(i+1,j+1) ) * 0.25
+         END DO
+      END DO
+
+   END SUBROUTINE dot2crs

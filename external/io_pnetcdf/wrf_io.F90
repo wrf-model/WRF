@@ -1202,6 +1202,9 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  ! JPE added for performance
+  stat = NFMPI_SET_FILL(DH%NCID, NF_NOFILL, i)
+
   DH%FileStatus  = WRF_FILE_OPENED_NOT_COMMITTED
   DH%FileName    = FileName
   stat = NFMPI_DEF_DIM(DH%NCID,DH%DimUnlimName,i2offset(NF_UNLIMITED),DH%DimUnlimID)

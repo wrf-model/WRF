@@ -353,11 +353,11 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_buoy = 0.0
    end if
 
+   jo_radiance = 0.0
 #if defined(CRTM) || defined(RTTOV)
    if (iv%num_inst > 0) then
       call da_jo_and_grady_rad (iv, re, jo, jo_grad_y)
 
-      jo_radiance = 0.0 
       if (use_rad) then
          do i=1,iv%num_inst
             do k=1,iv%instid(i)%nchan
@@ -373,8 +373,6 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
                trim('   jo_'//iv%instid(i)%rttovid_string), sum(jo%rad(i)%jo_ichan(:))
          end do
       end if
-   else
-      jo_radiance = 0.0
    end if
 #endif
 

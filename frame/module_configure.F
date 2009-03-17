@@ -461,6 +461,182 @@ CONTAINS
 
    END SUBROUTINE wrf_alt_nml_fdda
 
+   SUBROUTINE wrfvar_alt_nml_wrfvar1 (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the wrfvar1 namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     LOGICAL :: global
+     LOGICAL :: print_detail_airep
+     LOGICAL :: print_detail_timing
+     NAMELIST /wrfvar1/ global
+     NAMELIST /wrfvar1/ print_detail_airep
+     NAMELIST /wrfvar1/ print_detail_timing
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = wrfvar1 , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_debug(0,"Are global, print_detail_airep, print_detail_timing still in your "// &
+                         TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Remove global, print_detail_airep, print_detail_timing "// &
+                             "from wrfvar1 namelist as they are obsolete.")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrfvar_alt_nml_wrfvar1
+
+   SUBROUTINE wrfvar_alt_nml_wrfvar2 (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the wrfvar2 namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     LOGICAL :: write_qcw
+     LOGICAL :: write_qrn
+     LOGICAL :: write_qci
+     LOGICAL :: write_qsn
+     LOGICAL :: write_qgr
+     LOGICAL :: write_filtered_obs
+     NAMELIST /wrfvar2/ write_qcw
+     NAMELIST /wrfvar2/ write_qrn
+     NAMELIST /wrfvar2/ write_qci
+     NAMELIST /wrfvar2/ write_qsn
+     NAMELIST /wrfvar2/ write_qgr
+     NAMELIST /wrfvar2/ write_filtered_obs
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = wrfvar2 , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_debug(0,"Are write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
+                         "write_filtered_obs still in your "// &
+                         TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Remove write_qcw, write_qrn, write_qci, write_qsn, write_qgr, "// &
+                             "write_filtered_obs as they are obsolete.")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrfvar_alt_nml_wrfvar2
+
+   SUBROUTINE wrfvar_alt_nml_wrfvar4 (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the wrfvar4 namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     LOGICAL :: use_eos_radobs
+     NAMELIST /wrfvar4/ use_eos_radobs
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_debug(0,"Is use_eos_radobs still in your "// &
+                         TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Remove use_eos_radobs as it is obsolete.")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrfvar_alt_nml_wrfvar4
+
+   SUBROUTINE wrfvar_alt_nml_wrfvar14 (nml_read_unit, nml_name)
+!
+!<DESCRIPTION>
+! If there is an error reading the wrfvar14 namelist, this routine is
+! called to check for namelist variables that have been removed by the 
+! developers and are still in user's namelists.
+!</DESCRIPTION>
+!
+     IMPLICIT NONE
+     INTEGER, INTENT(IN)       :: nml_read_unit
+     CHARACTER*(*), INTENT(IN) :: nml_name
+     INTEGER                   :: nml_error
+
+#include <namelist_defines.inc>
+#include <namelist_statements.inc>
+
+! These are the variables that have been removed
+     LOGICAL             :: use_crtm_kmatrix_fast
+     CHARACTER (LEN=256) :: spccoeff_file
+     CHARACTER (LEN=256) :: taucoeff_file
+     CHARACTER (LEN=256) :: aerosolcoeff_file
+     CHARACTER (LEN=256) :: cloudcoeff_file
+     CHARACTER (LEN=256) :: emiscoeff_file
+     NAMELIST /wrfvar14/ use_crtm_kmatrix_fast
+     NAMELIST /wrfvar14/ spccoeff_file
+     NAMELIST /wrfvar14/ taucoeff_file
+     NAMELIST /wrfvar14/ aerosolcoeff_file
+     NAMELIST /wrfvar14/ cloudcoeff_file
+     NAMELIST /wrfvar14/ emiscoeff_file
+
+! Read the namelist again, if it succeeds after adding the above variables,
+! it probably failed these are still in the namelist.  If it fails again, we
+! will return.
+
+     REWIND ( UNIT = nml_read_unit )
+     READ   ( UNIT = nml_read_unit , NML = wrfvar14 , iostat=nml_error )
+
+     IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
+        CALL wrf_debug(0,"Are use_crtm_kmatrix_fast, spccoeff_file, taucoeff_file, "// &
+                         "aerosolcoeff_file, cloudcoeff_file, emiscoeff_file still in your "// &
+                         TRIM(nml_name)//" namelist?")
+        CALL wrf_error_fatal("Remove them as they are obsolete.")
+     ELSE     ! Still failed
+        return
+     ENDIF
+
+   END SUBROUTINE wrfvar_alt_nml_wrfvar14
+
 END MODULE module_configure
 
 

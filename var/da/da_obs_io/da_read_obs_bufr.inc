@@ -23,7 +23,7 @@ subroutine da_read_obs_bufr (iv, filename)
    real                         :: obs2(9,255), obs_save(9,255)
    real                         :: qms2(9,255), qms_save(9,255)
    real                         :: oes2(9,255), oes_save(9,255)
-   real                         :: pmo2(2,1), temp(9)
+   real                         :: pmo2(2,1), pmo_save(2,1), temp(9)
    equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
    real                         :: tdiff                       ! DHR
@@ -42,7 +42,7 @@ subroutine da_read_obs_bufr (iv, filename)
    real                  :: hdr(7)
    real                  :: pmo(2,1)
    real                  :: obs(9,255),qms(9,255),oes(9,255)
-   real                  :: obs_time,woe,qob,toe,qoe,poe,pob,tob,zob
+   real                  :: obs_time,woe,toe,qoe,poe,pob
    integer               :: iyear, imonth, iday, ihour, imin
 
    integer               :: iost, ndup, n, i, j, k, surface_level, report, i1, i2
@@ -233,7 +233,10 @@ subroutine da_read_obs_bufr (iv, filename)
          ! If this is a surface report, the wind subset precedes the
          ! mass subset - switch the subsets around in order to combine
          ! the surface pressure properly
-         if ( nint(hdr(5)) >= 280 ) then
+         if ( nint(hdr(5)) >= 280 .and. nint(hdr(5)) <= 282 ) then
+            pmo_save = pmo2
+            pmo2 = pmo
+            pmo = pmo_save
             obs_save = obs2
             obs2 = obs
             obs = obs_save
@@ -248,6 +251,11 @@ subroutine da_read_obs_bufr (iv, filename)
             oes = oes_save
          end if
          ! combine the two matching subsets
+         do i = 1, 2
+            if ( pmo(i,1) > r8bfms ) then
+               pmo(i,1) = pmo2(i,1)
+            end if
+         end do
          lev_loop: do lv2 = 1, nlevels2
             do lv1 = 1, nlevels
                pob1 = obs(1,lv1)
@@ -256,8 +264,6 @@ subroutine da_read_obs_bufr (iv, filename)
                   do i = 1, 7   ! skip the CAT
                      if ( obs(i,lv1) > r8bfms ) then
                         obs(i,lv1) = obs2(i,lv2)
-                        qms(i,lv1) = qms2(i,lv2)
-                        oes(i,lv1) = oes2(i,lv2)
                         if ( obs2(i,lv2) <= r8bfms ) then
                            obs(8,lv1) = obs2(8,lv2)  ! rewrite CAT
                         end if
@@ -312,13 +318,7 @@ subroutine da_read_obs_bufr (iv, filename)
       !  61: Satellite soundings/retrievals/radiances
       !  66: SSM/I rain rate product
       !  72: NEXTRAD VAD winds
-      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) then
-         if ( end_of_file ) then
-            exit reports        
-         else                   
-            cycle reports       
-         end if                 
-      end if
+      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) cycle reports       
 
       platform % info % levels    = nlevels
 
@@ -358,7 +358,7 @@ subroutine da_read_obs_bufr (iv, filename)
          pob=obs(1,k)
          ! scale q and compute t from tv and set units to Kelvin, if they aren't missing
 
-         if (obs(2,k) > 0.0 .and. obs(2,k) < 1e9) then   
+         if (obs(2,k) > 0.0 .and. obs(2,k) < r8bfms) then   
             obs(2,k) = obs(2,k)*1e-6
             if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
                obs(3,k) = (obs(3,k)+t_kelvin) / (1.0 + 0.608 * obs(2,k))
@@ -368,9 +368,6 @@ subroutine da_read_obs_bufr (iv, filename)
                obs(3,k) = obs(3,k) + t_kelvin
            end if
          end if
-         qob=obs(2,k)
-         tob=obs(3,k)
-         zob=obs(4,k)
          pqm=nint(qms(1,k))
          qqm=nint(qms(2,k))
          tqm=nint(qms(3,k))
@@ -424,7 +421,7 @@ subroutine da_read_obs_bufr (iv, filename)
             end if
          end if
 
-         if (qqm<qflag .and. obs(2,k)<1.0e9) then
+         if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
             qoe = min(2.0, oes(2,k))
             platform % each (k) % q % inv =obs(2,k)
             platform % each (k) % q % qc  =qqm
@@ -432,7 +429,7 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
 
          if (zqm < qflag .and. zqm >= 0)then
-            platform % each (k) % height  =zob
+            platform % each (k) % height  = obs(4,k)
             platform % each (k) % height_qc =zqm
          end if
 
@@ -674,14 +671,17 @@ subroutine da_read_obs_bufr (iv, filename)
                platform  % info % platform ='FM-32 PILOT '
                if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
                fm = 32
+               nullify  (iv%pilot(ilocal(pilot))%h)
                nullify  (iv%pilot(ilocal(pilot))%p)
                nullify  (iv%pilot(ilocal(pilot))%u)
                nullify  (iv%pilot(ilocal(pilot))%v)
+               allocate (iv%pilot(ilocal(pilot))%h(1:nlevels))
                allocate (iv%pilot(ilocal(pilot))%p(1:nlevels))
                allocate (iv%pilot(ilocal(pilot))%u(1:nlevels))
                allocate (iv%pilot(ilocal(pilot))%v(1:nlevels))
 
                do i = 1, nlevels
+                  iv%pilot(ilocal(pilot))%h(i) = platform%each(i)%height
                   iv%pilot(ilocal(pilot))%p(i) = platform%each(i)%p%inv
                   iv%pilot(ilocal(pilot))%u(i) = platform%each(i)%u
                   iv%pilot(ilocal(pilot))%v(i) = platform%each(i)%v
@@ -805,19 +805,6 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-12 SYNOP '
             if (nlocal(synop) > iv%info(synop)%nlocal) cycle reports
             fm = 12
-            ! assign u,v,t obs errors
-            if ( platform%each(1)%u%qc == 9 ) then
-               platform%each(1)%u%qc = 88
-               platform%each(1)%u%error = 1.1
-            end if
-            if ( platform%each(1)%v%qc == 9 ) then
-               platform%each(1)%v%qc = 88
-               platform%each(1)%v%error = 1.1
-            end if
-            if ( platform%each(1)%t%qc == 9 ) then
-               platform%each(1)%t%qc = 88
-               platform%each(1)%t%error = 2.0
-            end if
             iv % synop (ilocal(synop)) % h = platform % each(1) % height
             iv % synop (ilocal(synop)) % u = platform % each(1) % u
             iv % synop (ilocal(synop)) % v = platform % each(1) % v
@@ -964,14 +951,17 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-132 PRFLR'
             if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
             fm = 132
+            nullify  (iv%profiler(ilocal(profiler))%h)
             nullify  (iv%profiler(ilocal(profiler))%p)
             nullify  (iv%profiler(ilocal(profiler))%u)
             nullify  (iv%profiler(ilocal(profiler))%v)
+            allocate (iv%profiler(ilocal(profiler))%h (1:nlevels))
             allocate (iv%profiler(ilocal(profiler))%p (1:nlevels))
             allocate (iv%profiler(ilocal(profiler))%u (1:nlevels))
             allocate (iv%profiler(ilocal(profiler))%v (1:nlevels))
 
             do i = 1, nlevels
+               iv%profiler(ilocal(profiler))%h(i) = platform%each(i)%height
                iv%profiler(ilocal(profiler))%p(i) = platform%each(i)%p%inv
                iv%profiler(ilocal(profiler))%u(i) = platform%each(i)%u
                iv%profiler(ilocal(profiler))%v(i) = platform%each(i)%v
@@ -1088,7 +1078,7 @@ subroutine da_read_obs_bufr (iv, filename)
          iv%info(obs_index)%dxm(:,ilocal(obs_index))         = platform%loc%dxm
          iv%info(obs_index)%dy(:,ilocal(obs_index))          = platform%loc%dy
          iv%info(obs_index)%dym(:,ilocal(obs_index))         = platform%loc%dym
-         iv%info(obs_index)%proc_domain(:,ilocal(obs_index)) = .true.
+         iv%info(obs_index)%proc_domain(:,ilocal(obs_index)) = platform%loc%proc_domain
 
          iv%info(obs_index)%obs_global_index(ilocal(obs_index)) = ntotal(obs_index)
          ! special case for sonde_sfc, duplicate sound info
@@ -1114,7 +1104,7 @@ subroutine da_read_obs_bufr (iv, filename)
             iv%info(sonde_sfc)%dxm(:,ilocal(sonde_sfc))         = platform%loc%dxm
             iv%info(sonde_sfc)%dy(:,ilocal(sonde_sfc))          = platform%loc%dy
             iv%info(sonde_sfc)%dym(:,ilocal(sonde_sfc))         = platform%loc%dym
-            iv%info(sonde_sfc)%proc_domain(:,ilocal(sonde_sfc)) = .true.
+            iv%info(sonde_sfc)%proc_domain(:,ilocal(sonde_sfc)) = platform%loc%proc_domain
 
             iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) = ntotal(sonde_sfc)
          end if
@@ -1129,7 +1119,6 @@ subroutine da_read_obs_bufr (iv, filename)
             platform%loc%proc_domain = .not. platform%loc%proc_domain
          end if
       end do dup_loop   
-      if ( end_of_file ) exit reports
    end do reports
 
    ! thinning check
@@ -1169,12 +1158,15 @@ subroutine da_read_obs_bufr (iv, filename)
                   end if
                end do
                if ( .not. found ) then
-                  iv%info(n)%proc_domain(:,j) = .false.
+                  iv%info(n)%thinned(:,j) = .true.
                end if
             end do
-            call da_set_obs_missing(iv)  ! assign missing values to those proc_domain=false data
-         end if
 
+            !if ( ANY(iv%info(n)%thinned(:,:)) ) then
+            !   call da_set_obs_missing(iv,n)  ! assign missing values to those thinned=true data
+            !end if
+
+         end if
       end do
    end if  ! thin_conv
 

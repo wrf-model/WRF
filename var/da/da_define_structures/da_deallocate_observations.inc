@@ -110,6 +110,7 @@ subroutine da_deallocate_observations (iv)
 
    if (iv%info(pilot)%nlocal > 0) then
       do n = 1, iv%info(pilot)%nlocal
+         deallocate (iv%pilot (n) % h)
          deallocate (iv%pilot (n) % p)
          deallocate (iv%pilot (n) % u)
          deallocate (iv%pilot (n) % v)
@@ -185,6 +186,7 @@ subroutine da_deallocate_observations (iv)
 
    if (iv%info(profiler)%nlocal > 0) then
       do n = 1, iv%info(profiler)%nlocal
+         deallocate (iv%profiler(n)%h)
          deallocate (iv%profiler(n)%p)
          deallocate (iv%profiler(n)%u)
          deallocate (iv%profiler(n)%v)
@@ -232,6 +234,7 @@ subroutine da_deallocate_observations (iv)
          deallocate (iv%info(n)%dzm)
          deallocate (iv%info(n)%zk)
          deallocate (iv%info(n)%proc_domain)
+         deallocate (iv%info(n)%thinned)
          deallocate (iv%info(n)%obs_global_index)
       end if
    end do

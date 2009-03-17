@@ -179,6 +179,7 @@ module da_define_structures
       real, allocatable       :: dzm(:,:)
       real, allocatable       :: zk(:,:)
       logical, allocatable    :: proc_domain(:,:)
+      logical, allocatable    :: thinned(:,:)
       ! obs_global_index is the original index of this obs in the serial 
       ! code.  It is used to reassemble obs in serial-code-order to replicate 
       ! summation order for bitwise-exact testing of distributed-memory 

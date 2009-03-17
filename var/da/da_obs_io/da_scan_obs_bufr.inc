@@ -11,16 +11,15 @@ subroutine da_scan_obs_bufr (iv, filename)
 
 #ifdef BUFR
 
-   real, parameter              :: r8bfms = 9.0D08  ! BUFR missing value threshold
    integer, parameter           :: mxr8pm = 9       ! max number of BUFR parameters
    integer, parameter           :: mxr8lv = 255     ! max number of BUFR levels
    integer, parameter           :: mxr8vn = 10      ! max number of BUFR events
    logical                      :: match, end_of_file
    character(len=8)             :: subst2, csid, csid2
    integer                      :: idate2, nlevels2, lv1, lv2
-   real                         :: hdr2(7), r8sid, r8sid2
+   real                         :: hdr2(7), hdr_save(7), r8sid, r8sid2
    real                         :: pob1, pob2
-   real                         :: obs2(9,255)
+   real                         :: obs2(9,255), obs_save(9,255)
    equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
    real                         :: tdiff                       ! DHR
@@ -195,6 +194,17 @@ subroutine da_scan_obs_bufr (iv, filename)
          end if
          ! match found, merge two reports and find out the merged nlevel
          call ufbint(iunit,obs2,9,255,nlevels2,obstr)
+         ! If this is a surface report, the wind subset precedes the
+         ! mass subset - switch the subsets around in order to combine
+         ! the surface pressure properly
+         if ( nint(hdr(5)) >= 280 .and. nint(hdr(5)) <= 282 ) then
+            obs_save = obs2
+            obs2 = obs
+            obs = obs_save
+            hdr_save = hdr2
+            hdr2 = hdr
+            hdr = hdr_save
+         end if
          lev_loop: do lv2 = 1, nlevels2
             do lv1 = 1, nlevels
                pob1 = obs(1,lv1)
@@ -219,12 +229,11 @@ subroutine da_scan_obs_bufr (iv, filename)
       !  61: Satellite soundings/retrievals/radiances
       !  66: SSM/I rain rate product
       !  72: NEXTRAD VAD winds
-      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) then
-         if ( end_of_file ) then
-            exit reports        
-         else                   
-            cycle reports       
-         end if                 
+      if ( t29 == 61 .or. t29 == 66 .or. t29 == 72 ) cycle reports       
+
+      if ( nlevels < 1 ) then
+         if ( (kx /= 164) .and. (kx /= 174) .and.   &
+              (kx /= 165) .and. (kx /= 175) .and. (kx /= 74) ) cycle reports
       end if
 
       tdiff = abs(platform%info%dhr-0.1)
@@ -234,11 +243,6 @@ subroutine da_scan_obs_bufr (iv, filename)
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
-
-      if ( nlevels < 1 ) then
-         if ( (kx /= 164) .and. (kx /= 174) .and.   &
-              (kx /= 165) .and. (kx /= 175) .and. (kx /= 74) ) cycle reports
-      end if
 
       !---------------------------------------------------------------------------
       ! This is basically converting  rh to q i
@@ -451,7 +455,6 @@ subroutine da_scan_obs_bufr (iv, filename)
          obs_index=fm_index(fm)
          iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, nlevels)
       end do dup_loop   
-      if ( end_of_file ) exit reports
    end do reports
    iv%info(sonde_sfc)%max_lev=1
 

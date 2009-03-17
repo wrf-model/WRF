@@ -23,7 +23,7 @@ subroutine da_write_filtered_rad(ob, iv)
       if (iv%instid(i)%num_rad < 1) cycle
 
 #ifdef DM_PARALLEL
-      write(unit=filename, fmt='(a,i2.2)') &
+      write(unit=filename, fmt='(a,i4.4)') &
          'filtered_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 #else
       write(unit=filename, fmt='(a)') &

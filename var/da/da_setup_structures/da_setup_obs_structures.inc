@@ -125,7 +125,7 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       use_obsgts           = .true.
       use_rad              = .false.
       use_airsretobs       = .false.
-      ob_format = 2
+      ob_format = ob_format_ascii
    end if
 
    if ( use_pseudo_rad ) then
@@ -188,14 +188,16 @@ subroutine da_setup_obs_structures( grid, ob, iv)
       end if
    end if
 
-#if defined(CRTM) || defined(RTTOV)
-   ! Radiance files can only be in BUFR
 
    if (use_rad) then
+#if defined(CRTM) || defined(RTTOV)
+      ! Radiance files can only be in BUFR
       call da_message((/'Using NCEP BUFR radiance 1b input'/))
       call da_setup_radiance_structures(grid, ob, iv)
-   end if
+#else
+      call da_error(__FILE__,__LINE__,(/"options to use radiance data are turned on in wrfvar4 namelist, the code needs to be compiled with CRTM or RTTOV library"/))
 #endif
+   end if
 
    ! Summarize observations 
 

@@ -24,7 +24,7 @@ subroutine da_biasprep(inst,ob,iv)
    if (trace_use) call da_trace_entry("da_biasprep")
 
 #ifdef DM_PARALLEL
-   write(filename, '(a,i2.2)') 'biasprep_'//trim(iv%instid(inst)%rttovid_string)//'.', myproc
+   write(filename, '(a,i4.4)') 'biasprep_'//trim(iv%instid(inst)%rttovid_string)//'.', myproc
 #else
    write(filename, '(a)') 'biasprep_'//trim(iv%instid(inst)%rttovid_string)
 #endif

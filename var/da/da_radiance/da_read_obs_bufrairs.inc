@@ -635,7 +635,8 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
    end if
 
    if (trace_use_dull) call da_trace_exit("da_read_obs_bufrairs")
-
+#else
+   call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/))
 #endif
 
 end subroutine da_read_obs_bufrairs

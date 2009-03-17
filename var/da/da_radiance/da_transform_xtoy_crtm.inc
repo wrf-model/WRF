@@ -171,6 +171,10 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          wmo_sensor_id=WMO_AMSRE
       elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='ssmi') then
          wmo_sensor_id=WMO_SSMI
+#ifndef CRTM_1_1
+      elseif (trim(crtm_sensor_name(rtminit_sensor(inst))) =='ssmis') then
+         wmo_sensor_id=WMO_SSMIS   ! available since CRTM_1_2
+#endif
       else
          wmo_sensor_id=INVALID_WMO_SENSOR_ID
       end if

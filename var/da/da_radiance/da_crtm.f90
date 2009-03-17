@@ -23,6 +23,9 @@ module da_crtm
       crtm_platform_name, crtm_init, &
       rttov_inst_name,rttov_platform_name, climatology_model_name, &
       crtm_options_type, crtm_allocate_options, crtm_destroy_options
+#ifndef CRTM_1_1
+   use module_radiance, only : WMO_SSMIS    ! available since CRTM_1_2
+#endif
 
    use da_control, only : trace_use, crtm_cloud, gravity,stdout, biascorr, &
       biasprep, qc_rad,missing_r,rtminit_sensor,rtminit_nsensor, filename_len, &

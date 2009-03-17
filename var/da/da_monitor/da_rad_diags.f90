@@ -571,6 +571,7 @@ ntime_loop: do itime = 1, ntime
       ios = NF_DEF_VAR(ncid, 'v10',          NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'ps',           NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'ts',           NF_FLOAT, 1, ishape(1), varid)
+      ios = NF_DEF_VAR(ncid, 'tslb',         NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'smois',        NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'snowh',        NF_FLOAT, 1, ishape(1), varid)
       ios = NF_DEF_VAR(ncid, 'isflg',        NF_INT,   1, ishape(1), varid)

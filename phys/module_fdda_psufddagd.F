@@ -38,8 +38,8 @@ CONTAINS
 !-------------------------------------------------------------------
 !
 !   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted 
-!   and released in December 2006.  The surface analysis nudging capability was inititially added in
-!   December 2008.
+!   and released in December 2006.  The surface analysis nudging capability was added and 
+!   released in March 2009 with WRFV3.1.
 !
 !-- u3d         3d u-velocity staggered on u points
 !-- v3d         3d v-velocity staggered on v points
@@ -575,8 +575,8 @@ CONTAINS
 !-------------------------------------------------------------------
 !  
 !   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted
-!   and released in December 2006.  The surface analysis nudging capability was inititially added in
-!   December 2008.
+!   and released in December 2006.  The surface analysis nudging capability was added and
+!   released in March 2009 with WRFV3.1.
 !
 !-- u3d         3d u-velocity staggered on u points
 !-- v3d         3d v-velocity staggered on v points
@@ -961,7 +961,7 @@ CONTAINS
            i0 = (ite-its)/2+its
            j0 = (jte-jts)/2+jts
            WRITE(message,'(a,i1,a,2i4,4(a,f10.4))') &
-             '    D0',id,' sample blw values at i,k,j=', i0, j0, &
+             '    D0',id,' sample blw values at i,j=', i0, j0, &
              ' odis_ndg_old=', odis_ndg_old(i0,j0), ' km odis_ndg_new=', odis_ndg_new(i0,j0), &
              ' km  blw_old=', blw_old(i0,j0), ' blw_new=', blw_new(i0,j0)
            CALL wrf_message( TRIM(message) )

@@ -719,7 +719,8 @@ state    real    dl_u_bep      ikj     misc        1         Z      -        "dl
 state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
 # BOULAC PBL variables
-state    real   tke_boulac     ikj     misc        1         -      rh       "tke_boulac"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
+state    real   tke_pbl        ikj     misc        1         -      rh        "tke_pbl"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
+state    real   el_pbl        ikj     misc        1         -       h        "el_pbl"               "Length scale FROM Bougeault and Lacarrere"      "m"
 # Diagnostic PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
@@ -1613,7 +1614,7 @@ package   rrtmg_swscheme  ra_sw_physics==4           -             state:acswupt
 package   gfdlswscheme  ra_sw_physics==99            -             -
 
 package   sfclayscheme   sf_sfclay_physics==1        -             -
-package   myjsfcscheme   sf_sfclay_physics==2        -             -
+package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_myj
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             state:qke,tsq,qsq,cov
@@ -1634,7 +1635,7 @@ package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_myj
 package   mynnpblscheme2 bl_pbl_physics==5           -             state:qke,tsq,qsq,cov
 package   mynnpblscheme3 bl_pbl_physics==6           -             state:qke,tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
-package   boulacscheme   bl_pbl_physics==8           -             state:tke_boulac,wu_tur,wv_tur,wt_tur,wq_tur
+package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   kfetascheme    cu_physics==1               -             -

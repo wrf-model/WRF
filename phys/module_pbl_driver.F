@@ -46,7 +46,7 @@ CONTAINS
                ,sf_bep,vl_bep                              &
                ,sf_sfclay_physics,sf_urban_physics         &
 #if (NMM_CORE != 1)
-               ,tke_boulac,wu_tur,wv_tur,wt_tur,wq_tur    &
+               ,tke_pbl,el_pbl,wu_tur,wv_tur,wt_tur,wq_tur &
 #endif
                ,a_e_bep,b_e_bep,dlg_bep                              &
                ,dl_u_bep                                             &
@@ -55,10 +55,12 @@ CONTAINS
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
-                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME
+                   QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
+                   BEPSCHEME,MYJSFCSCHEME
 #else
    USE module_state_description, ONLY :                            &
-                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME
+                   YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,QNSEPBLSCHEME,&
+                   MYJSFCSCHEME
 #endif
 
    USE module_model_constants
@@ -165,7 +167,8 @@ CONTAINS
 !-- el_myj        mixing length from Mellor-Yamada-Janjic (MYJ) (m)
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
 !-- akms          sfc exchange coefficient of momentum from MYJ
-!-- tke_boulac       turbulence kinetic energy from Bougeault and Lacarrere (BOULAC) (m^2/s^2)
+!-- tke_pbl       turbulence kinetic energy from Bougeault and Lacarrere (BOULAC) (m^2/s^2)
+!-- el_pbl        length scale from Bougeault and Lacarrere (BOULAC) (m)
 !-- wu_tur        turbulent flux of momentum (x) (m^2/s^2)
 !-- wv_tur        turbulent flux of momentum (y) (m^2/s^2)
 !-- wt_tur        turbulent flux of potential temperature  (K m/s)
@@ -303,7 +306,7 @@ CONTAINS
                                                   EXCH_H,EXCH_M,TKE_MYJ
 #if (NMM_CORE != 1)
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
-               INTENT(INOUT)    ::                       TKE_BOULAC
+               INTENT(INOUT)    ::                 tke_pbl,el_pbl
  REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(OUT)    ::                       WU_TUR,WV_TUR,WT_TUR,WQ_TUR
 !
@@ -445,6 +448,8 @@ CONTAINS
 
    INTEGER :: i,J,K,NK,jj,ij,its,ite,jts,jte
    LOGICAL :: radiation
+   LOGICAL :: flag_bep
+   LOGICAL :: flag_myjsfc
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
    CHARACTER*256 :: message
    REAL    :: next_bl_time
@@ -455,7 +460,22 @@ CONTAINS
 
 !------------------------------------------------------------------
 !
-
+!!!!!!!if using BEP set flag_bep to true
+    SELECT CASE(sf_urban_physics)
+#if (NMM_CORE != 1)
+      CASE (BEPSCHEME)
+      flag_bep=.true.
+#endif
+      CASE DEFAULT
+      flag_bep=.false.
+    End Select
+    SELECT CASE(sf_sfclay_physics)
+    CASE (MYJSFCSCHEME)
+       flag_myjsfc=.true.
+    CASE DEFAULT
+       flag_myjsfc=.false.
+    END SELECT
+!
   flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
   flag_qc = .FALSE. ; IF ( PRESENT( F_QC ) ) flag_qc = F_QC
   flag_qr = .FALSE. ; IF ( PRESENT( F_QR ) ) flag_qr = F_QR
@@ -594,9 +614,27 @@ CONTAINS
 ! preparing the a, b, sf, and vl terms
          
          
-         IF (sf_urban_physics .ne. 2) THEN    
+         IF (flag_bep) THEN    
            do j=j_start(ij),j_end(ij)
            do i=i_start(ij),i_end(ij)            
+           do k=kts,kte
+             a_u(i,k,j)=a_u_bep(i,k,j)
+             a_v(i,k,j)=a_v_bep(i,k,j)
+             a_t(i,k,j)=a_t_bep(i,k,j)
+             a_q(i,k,j)=a_q_bep(i,k,j)
+             b_u(i,k,j)=b_u_bep(i,k,j)
+             b_v(i,k,j)=b_v_bep(i,k,j)
+             b_t(i,k,j)=b_t_bep(i,k,j)
+             b_q(i,k,j)=b_q_bep(i,k,j)
+             vl(i,k,j)=vl_bep(i,k,j)
+             sf(i,k,j)=sf_bep(i,k,j)
+           enddo
+           sf(i,kte+1,j)=1.
+           enddo
+           enddo
+         else
+           do j=j_start(ij),j_end(ij)
+           do i=i_start(ij),i_end(ij)
            do k=kts,kte
              a_u(i,k,j)=0.
              a_v(i,k,j)=0.
@@ -605,7 +643,7 @@ CONTAINS
              b_u(i,k,j)=0.
              b_v(i,k,j)=0.
              b_t(i,k,j)=0.
-             b_q(i,k,j)=0. 
+             b_q(i,k,j)=0.
              vl(i,k,j)=1.
              sf(i,k,j)=1.
            enddo
@@ -627,27 +665,6 @@ CONTAINS
            enddo
            enddo
            
-         else
-      
-! modifying the a, and b terms for BEP
-           do j=j_start(ij),j_end(ij)
-           do i=i_start(ij),i_end(ij)
-           
-            do k=kts,kte
-             a_u(i,k,j)=a_u_bep(i,k,j)
-             a_v(i,k,j)=a_v_bep(i,k,j)
-             a_t(i,k,j)=a_t_bep(i,k,j)
-             a_q(i,k,j)=a_q_bep(i,k,j)
-             b_u(i,k,j)=b_u_bep(i,k,j)
-             b_v(i,k,j)=b_v_bep(i,k,j)
-             b_t(i,k,j)=b_t_bep(i,k,j)
-             b_q(i,k,j)=b_q_bep(i,k,j)
-             vl(i,k,j)=vl_bep(i,k,j)
-             sf(i,k,j)=sf_bep(i,k,j)
-            enddo
-            sf(i,kte+1,j)=1.
-           enddo
-           enddo
          endif
 
         endif      
@@ -778,7 +795,7 @@ CONTAINS
                                                         .TRUE.  ) THEN
 
              CALL wrf_debug(100,'in MYJPBL')
-            IF ( SF_URBAN_PHYSICS .NE. 2 .and. idiff.ne.1) THEN
+            IF ( .not.flag_bep .and. idiff.ne.1) THEN
              CALL myjpbl(DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w          &
               ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
               ,QV=qv_curr,QCW=qc_curr,QCI=qi_curr,QCS=qs_curr       & !BSF
@@ -802,8 +819,8 @@ CONTAINS
             ELSE !(SF_URBAN_PHYSICS.EQ.2)
 ! Bep changes begin
 
-             CALL myjurb(IDIFF=idiff                                &
-              ,DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
+             CALL myjurb(IDIFF=idiff,FLAG_BEP=flag_bep              &
+              ,DT=dtbl,STEPBL=stepbl,HT=ht,DZ=dz8w                  &
               ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
               ,QV=qv_curr, CWM=qc_curr                              &
               ,U=u_phy,V=v_phy,RHO=rho                              &
@@ -935,14 +952,14 @@ CONTAINS
 
              CALL wrf_debug(100,'in boulac')
 
-             CALL BOULAC(FRC_URB2D=frc_urb2d,IDIFF=idiff,SF_URBAN_PHYSICS=sf_urban_physics         &
+             CALL BOULAC(FRC_URB2D=frc_urb2d,IDIFF=idiff,FLAG_BEP=flag_bep     &
               ,DZ8W=dz8w,DT=dt,U_PHY=u_phytmp                                  &
               ,V_PHY=v_phytmp,TH_PHY=th_phy                                    &
               ,RHO=rho,QV_CURR=qv_curr,HFX=hfx                                 &
               ,QFX=qfx,USTAR=ust,CP=cp,G=g                                     &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten               &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqvblten                             &
-              ,TKE=tke_boulac, WU=wu_tur, WV=wv_tur, WT=wt_tur, WQ=wq_tur      &
+              ,TKE=tke_pbl,DLK=el_pbl,WU=wu_tur,WV=wv_tur,WT=wt_tur,WQ=wq_tur  &
               ,EXCH_H=exch_h,EXCH_M=exch_m                                     &
               ,A_U_BEP=a_u_bep,A_V_BEP=a_v_bep,A_T_BEP=a_t_bep                 &
               ,A_Q_BEP=a_q_bep                                                 &
@@ -954,6 +971,9 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                 &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )
 
+              if(flag_myjsfc)then
+               tke_myj(its:ite,kts:kte,jts:jte)=tke_pbl(its:ite,kts:kte,jts:jte)
+              endif
 
 #endif
 
@@ -1000,7 +1020,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
             
-          CALL diff3d  (DT=dt,CP=cp,DZ=dz8w,TH=th_phy,QV=qv_curr,QC=qc_curr,T=t_phy            &
+          CALL diff3d  (DT=dtbl,CP=cp,DZ=dz8w,TH=th_phy,QV=qv_curr,QC=qc_curr,T=t_phy  &
               ,U=u_phy,V=v_phy,RHO=rho,EXCH_H=exch_h                  &
               ,EXCH_M=exch_m                                          &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten      &
@@ -1169,8 +1189,8 @@ CONTAINS
        enddo
        sf1d(kte+1)=1. 
        do k=kts,kte    
-        exch_h1d(k+1)=exch_h(i,k,j)
-        exch_m1d(k+1)=exch_m(i,k,j)
+        exch_h1d(k)=exch_h(i,k,j)
+        exch_m1d(k)=exch_m(i,k,j)
        enddo
        exch_h1d(kts)=0.
 !       exch_h1d(kte+1)=0  
@@ -1260,7 +1280,7 @@ CONTAINS
         real dt,dzv
         real co(kms:kme),cd(kms:kme),dz(kms:kme)
         real da(kms:kme),daz(kms:kme)
-        real cddz(kms:kme+1),fc(kms:kme),df(kms:kme)
+        real cddz(kms:kme),fc(kms:kme),df(kms:kme)
         real a(kms:kme,3),c(kms:kme)
         real sf(kms:kme),vl(kms:kme)
         real aa(kms:kme),bb(kms:kme)

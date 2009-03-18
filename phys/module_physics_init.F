@@ -49,7 +49,7 @@ CONTAINS
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_MYJ,  &
 #if (NMM_CORE != 1)
-                         TKE_BOULAC,  &
+                         TKE_PBL,  &
 #endif
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
@@ -223,7 +223,7 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_MYJ
 #if (NMM_CORE != 1)
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_BOULAC
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    TKE_PBL
 #endif 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
@@ -509,7 +509,7 @@ integer myproc
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_MYJ,                        &
 #if (NMM_CORE != 1)
-                TKE_BOULAC,                                     &
+                TKE_PBL,                                     &
 #endif
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
@@ -574,9 +574,6 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
-
-   write(message,*)'STEPRA,STEPCU,STEPBL',STEPRA,STEPCU,STEPBL
-   CALL wrf_message( message )
 
 #if  ( EM_CORE == 1 )
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to fg_init' )
@@ -1095,7 +1092,7 @@ integer myproc
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_MYJ,                        &
 #if (NMM_CORE != 1)
-                TKE_BOULAC,                                     &
+                TKE_PBL,                                     &
 #endif
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
@@ -1227,7 +1224,7 @@ integer myproc
                                                           TKE_MYJ
 #if (NMM_CORE != 1)
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          TKE_BOULAC
+                                                          TKE_PBL
 #endif
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
@@ -1466,11 +1463,9 @@ integer myproc
 
              IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
 
-
                 CALL urban_param_init(DZR,DZB,DZG,num_soil_layers                    & !urban
                                 )
 !                                num_roof_layers,num_wall_layers,road_soil_layers)   !urban
-
 
                 CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,                     & !urban
                               ims,ime,jms,jme,kms,kme,num_soil_layers,               & !urban
@@ -1596,7 +1591,7 @@ integer myproc
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)
            CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                         TKE_BOULAC,EXCH_H,restart,               &
+                         TKE_PBL,EXCH_H,restart,               &
                          allowed_to_read ,                     &
                          ids, ide, jds, jde, kds, kde,         &
                          ims, ime, jms, jme, kms, kme,         &

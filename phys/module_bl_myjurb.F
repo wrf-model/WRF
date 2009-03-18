@@ -127,7 +127,7 @@
       CONTAINS
 !
 !----------------------------------------------------------------------
-      SUBROUTINE MYJURB(IDIFF,DT,STEPBL,HT,DZ                                &
+      SUBROUTINE MYJURB(IDIFF,FLAG_BEP,DT,STEPBL,HT,DZ                                &
      &                 ,PMID,PINT,TH,T,EXNER,QV,CWM,U,V,RHO            &
      &                 ,TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0              &
      &                 ,LOWLYR,XLAND,SICE,SNOW                         &
@@ -140,7 +140,7 @@
      &                 ,A_E_BEP,B_U_BEP,B_V_BEP                        &
      &                 ,B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP                &
      &                 ,DL_U_BEP,SF_BEP,VL_BEP                         &
-! Mulit-layer UCM end
+! Multi-layer UCM end
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -198,6 +198,7 @@
      &                                                ,UZ0,VZ0,ZNT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: CHKLOWQ,ELFLX
+      LOGICAL,    INTENT(IN   )    ::     FLAG_BEP
 !
 !----------------------------------------------------------------------
 !***
@@ -252,6 +253,7 @@
 !
 !***  MAKE PREPARATIONS
 !
+     
 !----------------------------------------------------------------------
       DTTURBL=DT*STEPBL
       RDTTURBL=1./DTTURBL
@@ -332,15 +334,10 @@
             PK(K)=PMID(I,KFLIP,J)
             UK(K)=U(I,KFLIP,J)
             VK(K)=V(I,KFLIP,J)
-! Multi-layer UCM
+
             DZ_KFLIP(K)=DZ(I,KFLIP,J)
-            B_E(K)=B_E_BEP(I,KFLIP,J)
-            A_E(K)=A_E_BEP(I,KFLIP,J)
-            SFK(K)=SF_BEP(I,KFLIP,J)
-            VLK(K)=VL_BEP(I,KFLIP,J)
-            B_E_FACE(K)=0.
-            DL_U(K)=DL_U_BEP(I,KFLIP,J)
-!UCM end
+ 
+
 
 !
 !***  TKE=0.5*(q**2) ==> q**2=2.*TKE
@@ -353,17 +350,43 @@
           ENDDO
 
           ZHK(KTE+1)=HT(I,J)          ! Z at bottom of lowest sigma layer
+! Multi-layer UCM
+          if(flag_bep)then
+           DO K=KTE,KTS,-1
+            KFLIP=KTE+1-K
+            B_E(K)=B_E_BEP(I,KFLIP,J)
+            A_E(K)=A_E_BEP(I,KFLIP,J)
+            SFK(K)=SF_BEP(I,KFLIP,J)
+            VLK(K)=VL_BEP(I,KFLIP,J)
+            B_E_FACE(K)=0.
+            DL_U(K)=DL_U_BEP(I,KFLIP,J)
+           enddo
+          else
+           DO K=KTE,KTS,-1
+            B_E(K)=0.
+            A_E(K)=0.
+            SFK(K)=1.
+            VLK(K)=1.
+            B_E_FACE(K)=0.
+            DL_U(K)=0.
+           enddo
+          endif
+!UCM end
 ! Multi-layer UCM - caculate B_E at grid faces
 !          SFK(1)=1
+         IF (FLAG_BEP) THEN
           DO K=KTE,KTS,-1
              IF (K==KTE) THEN
                 B_E_FACE(K)=0.0
+             ELSEIF ( K == KTS ) THEN
+                B_E_FACE(K) = 0.0
              ELSE
                 SLOPE=(B_E(K-1)-B_E(K))/0.5/(DZ_KFLIP(K-1)+DZ_KFLIP(K))
                 ICEPT=B_E(K)-SLOPE*(ZHK(K)-0.5*DZ_KFLIP(K))
                 B_E_FACE(K)=2.*(SLOPE*ZHK(K)+ICEPT)                         !*2 accounts for Q2K=2.*TKE_MYJ
              ENDIF
           ENDDO
+         ENDIF
 !
 !***  Begin debugging
 !         IF(I==IMD.AND.J==JMD)THEN
@@ -400,8 +423,10 @@
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 ! Multi-layer UCM
+         IF (FLAG_BEP) THEN
             Q2K(LMH)=Q2K(LMH)*(1-FRC_URB2D(I,J))+(B_E_FACE(LMH)*       &
                  &         0.5*EL(LMH-1)/11.788/2.)**(2./3.)
+         ENDIF
 !UCM end
 !
 !----------------------------------------------------------------------
@@ -429,9 +454,9 @@
             AKH(I,K,J)=AKHK(K)
             AKM(I,K,J)=AKMK(K)
             DELTAZ=0.5*(ZHK(KFLIP)-ZHK(KFLIP+2))
-! Mulit-layer UCM
-            EXCH_H(I,K,J)=AKHK(KFLIP)*DELTAZ
-            EXCH_M(I,K,J)=AKMK(KFLIP)*DELTAZ
+! Multi-layer UCM
+            EXCH_H(I,K+1,J)=AKHK(KFLIP)*DELTAZ
+            EXCH_M(I,K+1,J)=AKMK(KFLIP)*DELTAZ
 ! UCM end
           ENDDO
 !----------------------------------------------------------------------
@@ -442,7 +467,7 @@
 !
 
           CALL VDIFQ(LMH,DTDIF,Q2K,EL,ZHK                             &
-! Mulit-layer UCM
+! Multi-layer UCM
      &              ,A_E,B_E_FACE,SFK,VLK                              &
 ! UCM end
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                           &
@@ -463,7 +488,7 @@
 !----------------------------------------------------------------------
       ENDDO setup_integration
 !----------------------------------------------------------------------
-! Mulit-layer UCM - if idiff=1 then integration in PBL driver
+! Multi-layer UCM - if idiff=1 then integration in PBL driver
       IF(IDIFF.NE.1)then 
 ! UCM end
 !
@@ -497,16 +522,32 @@
             ZHK(K)=ZINT(I,K,J)
             RHOK(K,I)=PMID(I,KFLIP,J)/(R_D*T(I,KFLIP,J)*               &
      &                                (1.+P608*QK(K)-CWMK(K)))
-! Mulit-layer UCM
-            A_Q(K)=A_Q_BEP(I,KFLIP,J)
-            B_Q(K)=B_Q_BEP(I,KFLIP,J)
-            A_T(K)=A_T_BEP(I,KFLIP,J)
-            B_T(K)=B_T_BEP(I,KFLIP,J)
-            SFK(K)=SF_BEP(I,KFLIP,J)
-            VLK(K)=VL_BEP(I,KFLIP,J)
+
           ENDDO
 !            SFK(1)=1.
+          if(flag_bep)then
+           ! Multi-layer UCM
+           
+            DO K=KTE,KTS,-1
+             KFLIP=KTE+1-K
+             A_Q(K)=A_Q_BEP(I,KFLIP,J)
+             B_Q(K)=B_Q_BEP(I,KFLIP,J)
+             A_T(K)=A_T_BEP(I,KFLIP,J)
+             B_T(K)=B_T_BEP(I,KFLIP,J)
+             SFK(K)=SF_BEP(I,KFLIP,J)
+             VLK(K)=VL_BEP(I,KFLIP,J)             
+            ENDDO
 ! UCM end
+          else
+           DO K=KTE,KTS,-1
+             A_Q(K)=0.
+             B_Q(K)=0.
+             A_T(K)=0.
+             B_T(K)=0.
+             SFK(K)=1.
+             VLK(K)=1.
+            ENDDO
+          endif           
 !
 !***  COUNTING DOWNWARD FROM THE TOP, THE EXCHANGE COEFFICIENTS AKH
 !***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  THESE COEFFICIENTS
@@ -554,6 +595,7 @@
 !***  TEMPERATURE AND WATER VAPOR
 !----------------------------------------------------------------------
 !
+         
           CALL VDIFH(DTDIF,LMH,THZ0(I,J),QZ0(I,J)                      &
      &              ,AKHS_DENS,CHKLOWQ(I,J),CT(I,J)                    &
      &              ,THEK,QK,CWMK,AKHK,ZHK,RHOK(KTS,I)                 &
@@ -581,6 +623,7 @@
             RQCBLTEN(I,K,J)=DCDT
           ENDDO
 !
+          
 !*** Begin debugging
 !         IF(I==IMD.AND.J==JMD)THEN
 !           PRINT_DIAG=0
@@ -662,16 +705,32 @@
             UK(K)=U(I,KFLIP,J)
             VK(K)=V(I,KFLIP,J)
             ZHK(K)=ZINT(I,K,J)
-! Multi-layer UCM
+
+          ENDDO            
+!         SFK(1)=1.
+          if(flag_bep)then
+! Multi-layer UCM           
+           DO K=KTE,KTS,-1
+            KFLIP=KTE+1-K            
             A_U(K)=A_U_BEP(I,KFLIP,J)
             A_V(K)=A_V_BEP(I,KFLIP,J)
             B_U(K)=B_U_BEP(I,KFLIP,J)
             B_V(K)=B_V_BEP(I,KFLIP,J)
             SFK(K)=SF_BEP(I,KFLIP,J)
             VLK(K)=VL_BEP(I,KFLIP,J)
-          ENDDO            
-!         SFK(1)=1.
+           ENDDO
 ! UCM end
+         else
+           DO K=KTE,KTS,-1            
+            A_U(K)=0.
+            A_V(K)=0.
+            B_U(K)=0.
+            B_V(K)=0.
+            SFK(K)=1.
+            VLK(K)=1.
+           ENDDO
+          endif
+
           ZHK(KTE+1)=ZINT(I,KTE+1,J)
 !
 !----------------------------------------------------------------------
@@ -1463,7 +1522,7 @@
         RSC(K)=-RSC(K-1)*CF+CWM(K)*RHO(K)
       ENDDO
 !
-      DTOZS=DTDIF/Z(LMH)/VLK(LMH)                   !Bep
+      DTOZS=DTDIF/(Z(LMH)-Z(LMH+1))/VLK(LMH)                   !Bep
       RKHH=RKH(LMH-1)                            
 !
       CF=-DTOZS*RKHH/CM(LMH-1)
@@ -1497,6 +1556,8 @@
       ENDDO
 !----------------------------------------------------------------------
 !
+
+   
       END SUBROUTINE VDIFH
 !
 !----------------------------------------------------------------------
@@ -1664,7 +1725,7 @@
       ENDDO
 !----------------------------------------------------------------------
 ! Bep: change lower BC from value UZ0 at LMH+1 to flux derived BC: Z(LMH+1)=0.
-      DTOZS=DTDIF/Z(LMH)/VLK(LMH)           !Bep
+      DTOZS=DTDIF/(Z(LMH)-Z(LMH+1))/VLK(LMH)           !Bep
       RKMH=RKM(LMH-1)                       !Bep
 !
       CFU=-DTOZS*RKMH/CMU(LMH-1)
@@ -1672,6 +1733,7 @@
       RHOK=RHO(LMH)
       RCMVBU=1./(RKMH*DTOZS-CR(LMH-1)*CFU+RHOK*(1.-DTDIF*A_UK(LMH)))   !Bep
       RCMVBV=1./(RKMH*DTOZS-CR(LMH-1)*CFV+RHOK*(1.-DTDIF*A_VK(LMH)))   !Bep
+     
 !----------------------------------------------------------------------
        U(LMH)=(-RSU(LMH-1)*CFU+RHOK*(U(LMH)+DTDIF*B_UK(LMH)))*RCMVBU  !Bep
        V(LMH)=(-RSV(LMH-1)*CFV+RHOK*(V(LMH)+DTDIF*B_VK(LMH)))*RCMVBV  !Bep
@@ -1684,6 +1746,7 @@
       ENDDO
 !----------------------------------------------------------------------
 !
+      
       END SUBROUTINE VDIFV
 !
 !-----------------------------------------------------------------------

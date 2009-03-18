@@ -514,8 +514,6 @@ CONTAINS
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
 
-!  PRINT *,'THIS IS UNIFIED NOAH LSM'
-
 ! MEK MAY 2007
       FDTLIW=DT/ROWLIW
 ! MEK JUL2007
@@ -1162,10 +1160,10 @@ CONTAINS
             b_e_bep(i,k,j)=b_e_bep(i,k,j)*frc_urb2d(i,j)
             HFX_URB(I,J)=HFX_URB(I,J)+B_T_BEP(I,K,J)*RHO(I,K,J)*CP*                &
                           DZ8W(I,K,J)*VL_BEP(I,K,J)
-            UMOM_URB(I,J)=UMOM_URB(I,J)+ A_U_BEP(I,K,J)*U_PHY(I,K,J)+              &
-                          B_U_BEP(I,K,J)*DZ8W(I,K,J)*VL_BEP(I,K,J)
-            VMOM_URB(I,J)=VMOM_URB(I,J)+ A_V_BEP(I,K,J)*V_PHY(I,K,J)+              &
-                          B_V_BEP(I,K,J)*DZ8W(I,K,J)*VL_BEP(I,K,J)
+            UMOM_URB(I,J)=UMOM_URB(I,J)+ (A_U_BEP(I,K,J)*U_PHY(I,K,J)+             &
+                          B_U_BEP(I,K,J))*DZ8W(I,K,J)*VL_BEP(I,K,J)
+            VMOM_URB(I,J)=VMOM_URB(I,J)+ (A_V_BEP(I,K,J)*V_PHY(I,K,J)+             &
+                          B_V_BEP(I,K,J))*DZ8W(I,K,J)*VL_BEP(I,K,J)
             vl_bep(i,k,j)=(1.-frc_urb2d(i,j))+vl_bep(i,k,j)*frc_urb2d(i,j)
             sf_bep(i,k,j)=(1.-frc_urb2d(i,j))+sf_bep(i,k,j)*frc_urb2d(i,j)
          end do
@@ -1181,7 +1179,6 @@ CONTAINS
             vmom=(1.-frc_urb2d(i,j))*ust(i,j)*ust(i,j)*v_phy(i,1,j)/               &
                          ((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)+vmom_urb(i,j)
             sf_bep(i,1,j)=1.
-         ust(i,j)=(umom**2.+vmom**2.)**.5
            
 ! compute upward longwave radiation from the rural part and total
 !           rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emiss_rural(i,j))*glw(i,j)
@@ -1209,9 +1206,9 @@ CONTAINS
             LH_URB2D(I,J)    = 0.
             G_URB2D(I,J)     = grdflx_urb(i,j)
             RN_URB2D(I,J)    = rs_abs_urb(i,j)+emiss_urb(i,j)*glw(i,j)-rl_up_urb(i,j)
-         ust(i,j)=(umom**2.+vmom**2.)**.5
-          if(tsk(i,j).gt.350)write(*,*)'tsk too big!',i,j,tsk(i,j)
-          if(tsk(i,j).lt.260)write(*,*)'tsk too small!',i,j,tsk(i,j),rl_up_tot,rl_up_urb(i,j),rl_up_rural
+         ust(i,j)=(umom**2.+vmom**2.)**.25
+!          if(tsk(i,j).gt.350)write(*,*)'tsk too big!',i,j,tsk(i,j)
+!          if(tsk(i,j).lt.260)write(*,*)'tsk too small!',i,j,tsk(i,j),rl_up_tot,rl_up_urb(i,j),rl_up_rural
 !                    print*,'ivgtyp,i,j,sigma_sb',ivgtyp(i,j),i,j,sigma_sb
 !                    print*,'hfx,lh,qfx,grdflx,ts_urb2d',hfx(i,j),lh(i,j),qfx(i,j),grdflx(i,j),ts_urb2d(i,j)
 !                    print*,'tsk,albedo,emiss',tsk(i,j),albedo(i,j),emiss(i,j)

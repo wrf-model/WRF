@@ -32,12 +32,12 @@ MODULE module_bl_boulac
 
    CONTAINS
  
-      subroutine boulac(frc_urb2d,idiff,sf_urban_physics,dz8w,dt,u_phy,v_phy   & 
+      subroutine boulac(frc_urb2d,idiff,flag_bep,dz8w,dt,u_phy,v_phy   & 
                       ,th_phy,rho,qv_curr,hfx                                  &
                       ,qfx,ustar,cp,g                                          &
                       ,rublten,rvblten,rthblten                                &
                       ,rqvblten,rqcblten                        & 
-                      ,tke,wu,wv,wt,wq,exch_h,exch_m            &
+                      ,tke,dlk,wu,wv,wt,wq,exch_h,exch_m        &
                       ,a_u_bep,a_v_bep,a_t_bep,a_q_bep          &
                       ,a_e_bep,b_u_bep,b_v_bep                  &
                       ,b_t_bep,b_q_bep,b_e_bep,dlg_bep          &
@@ -57,7 +57,7 @@ MODULE module_bl_boulac
                                     ims,ime, jms,jme, kms,kme,  &
                                     its,ite, jts,jte, kts,kte
  
-   integer idiff,sf_urban_physics
+   integer idiff
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   DZ8W      !vertical resolution       
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   qv_curr   !moisture  
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   RHO       !air density
@@ -89,6 +89,7 @@ MODULE module_bl_boulac
 ! urban surface and volumes        
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::sf_bep           ! surface of the urban grid cells
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::vl_bep             ! volume of the urban grid cells
+   LOGICAL, INTENT(IN) :: flag_bep                                             !flag for BEP
                                                            
 !
 !-----------------------------------------------------------------------
@@ -107,6 +108,7 @@ MODULE module_bl_boulac
         real, dimension( ims:ime, kms:kme, jms:jme ), INTENT(OUT   )    ::  wv  ! Turbulent flux of momentum (y) 
         real, dimension( ims:ime, kms:kme, jms:jme ), INTENT(OUT   )    ::  wt  ! Turbulent flux of temperature
         real, dimension( ims:ime, kms:kme, jms:jme ), INTENT(OUT   )    ::  wq  ! Turbulent flux of water vapor
+        real, dimension( ims:ime, kms:kme, jms:jme ), INTENT(OUT   )    ::  dlk  ! Turbulent flux of water vapor
 ! only if idiff not equal 1:
         REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT   )    ::   RUBLTEN  !tendency for U_phy
         REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT   )    ::   RVBLTEN  !tendency for V_phy
@@ -252,7 +254,7 @@ MODULE module_bl_boulac
          rhoz1D(iz)=(rho1D(iz)*dz1D(iz-1)+rho1D(iz-1)*dz1D(iz))/(dz1D(iz-1)+dz1D(iz))
         enddo
         rhoz1D(kte+1)=rho1D(kte)
-        if(sf_urban_physics.eq.2)then
+        if(flag_bep)then
          do iz=kts,kte          
           a_e1D(iz)=a_e_bep(ix,iz,iy)
           b_e1D(iz)=b_e_bep(ix,iz,iy)
@@ -276,30 +278,35 @@ MODULE module_bl_boulac
          ufrac_int=0.
          sf1D(kte+1)=1.
         endif
-! call the routine that will solve the turbulence in 1D for scalars
+! call the routine that will solve the turbulence in 1D for tke
+
          call boulac1D(ix,iy,ufrac_int,kms,kme,kts,kte,dz1d,z1D,dt,u1D,v1D,th1D,rho1D,rhoz1D,q1D,th01D,&
                    tke1D,ustar(ix,iy),hfx(ix,iy),qfx(ix,iy),cp,g,        & 
                    a_e1D,b_e1D,                              & 
                    dlg1D,dl_u1D,sf1D,vl1D,dlk1D,dls1D,exch1D,sh1D,bu1D)                    
+
 
 ! store turbulent exchange coefficients, TKE, and other variables
          
          do iz= kts,kte
           a_e(ix,iz,iy)=a_e1D(iz)
           b_e(ix,iz,iy)=b_e1D(iz)
-          if(sf_urban_physics.eq.2)dlg_bep(ix,iz,iy)=dlg1D(iz)
+          if(flag_bep)then
+          dlg_bep(ix,iz,iy)=dlg1D(iz)
+          endif
           tke(ix,iz,iy)=tke1D(iz)
+          dlk(ix,iz,iy)=dlk1D(iz)
           sh(ix,iz,iy)=sh1D(iz)
           bu(ix,iz,iy)=bu1D(iz)
-          exch_h(ix,iz,iy)=exch1D(iz+1)
-          exch_m(ix,iz,iy)=exch1D(iz+1)
+          exch_h(ix,iz,iy)=exch1D(iz)
+          exch_m(ix,iz,iy)=exch1D(iz)
          enddo
 
          if(idiff.ne.1)then
 
 ! estimate the tendencies
 
-        if(sf_urban_physics.eq.2)then         
+        if(flag_bep)then         
          do iz=kts,kte          
           a_t1D(iz)=a_t_bep(ix,iz,iy)
           b_t1D(iz)=b_t_bep(ix,iz,iy)
@@ -336,7 +343,7 @@ MODULE module_bl_boulac
 ! solve diffusion equation for potential temperature        
        call diff(kms,kme,kts,kte,1,1,dt,th1D,rho1D,rhoz1D,exch1D,a_t1D,b_t1D,sf1D,vl1D,dz1D,wt1D)
 
-! solve diffusion equation for water vaporr miwing ratio     
+! solve diffusion equation for water vapor mixing ratio     
        call diff(kms,kme,kts,kte,1,1,dt,q1D,rho1D,rhoz1D,exch1D,a_q1D,b_q1D,sf1D,vl1D,dz1D,wq1D)
 
 ! compute the tendencies
@@ -822,7 +829,7 @@ MODULE module_bl_boulac
 
 ! ===6=8===============================================================72
       SUBROUTINE BOULACINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
-     &                      TKE_BOULAC,EXCH_H,RESTART,ALLOWED_TO_READ,     &
+     &                      TKE_PBL,EXCH_H,RESTART,ALLOWED_TO_READ,     &
      &                      IDS,IDE,JDS,JDE,KDS,KDE,                    &
      &                      IMS,IME,JMS,JME,KMS,KME,                    &
      &                      ITS,ITE,JTS,JTE,KTS,KTE                 )
@@ -839,7 +846,7 @@ MODULE module_bl_boulac
      &                                                         RVBLTEN, &
      &                                                        RTHBLTEN, &
      &                                                        RQVBLTEN, &
-     &                                                      TKE_BOULAC
+     &                                                         TKE_PBL
       INTEGER :: I,J,K,ITF,JTF,KTF
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -852,7 +859,7 @@ MODULE module_bl_boulac
         DO J=JTS,JTF
         DO K=KTS,KTF
         DO I=ITS,ITF
-          TKE_BOULAC(I,K,J)=0.0001
+          TKE_PBL(I,K,J)=0.0001
           RUBLTEN(I,K,J)=0.
           RVBLTEN(I,K,J)=0.
           RTHBLTEN(I,K,J)=0.

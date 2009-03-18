@@ -114,11 +114,11 @@ MODULE module_sf_bep
 !      real zr(ims:ime,jms:jme)                ! Solar zenith angle
 !      real deltar(ims:ime,jms:jme)            ! Declination of the sun
 !      real ah(ims:ime,jms:jme)                ! Hour angle
-      real rs(ims:ime,jms:jme)                ! Solar radiation
+!      real rs(ims:ime,jms:jme)                ! Solar radiation
 !------------------------------------------------------------------------
 !     Output
 !------------------------------------------------------------------------ 
-      real tsk(ims:ime,jms:jme)           ! Average of surface temperatures (roads and roofs)
+!      real tsk(ims:ime,jms:jme)           ! Average of surface temperatures (roads and roofs)
 !
 !    Implicit and explicit components of the source and sink terms at each levels,
 !     the fluxes can be computed as follow: FX = A*X + B   example: t_fluxes = a_t * pt + b_t
@@ -300,11 +300,9 @@ MODULE module_sf_bep
       enddo
 
       if (first) then                           ! True only on first call
-         call wrf_message("KWM:  Before init_para")
          call init_para(alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,&
                 twini_u,trini_u,tgini_u,albg_u,albw_u,albr_u,emg_u,emw_u,&
                 emr_u,z0g_u,z0r_u,nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b)
-         call wrf_message("KWM:  After init_para")
 
 !      Initialisation of the urban parameters and calculation of the view factors
        call icBEP(alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,          & 
@@ -314,7 +312,6 @@ MODULE module_sf_bep
                  nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u,   & 
                  nz_u,z_u,                                         & 
                  twini_u,trini_u)                                  
-         call wrf_message("KWM:  After icBEP")
 
        first=.false.
 
@@ -469,7 +466,7 @@ MODULE module_sf_bep
           dl_u(ix,iz,iy)=dl_u1D(iz)
          enddo
          sf(ix,kte+1,iy)=sf1D(kte+1)
-         tsk(ix,iy)=tsk1D
+!         tsk(ix,iy)=tsk1D
 !
          endif ! FRC_URB2D
    

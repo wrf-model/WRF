@@ -1417,10 +1417,10 @@ CONTAINS
 !             TH2(I,J)  = TH2_URB2D(I,J)                       !urban
 !             T2(I,J)   = TH2_URB2D(I,J)/(1.E5/PSFC(I,J))**RCP !urban
 !m             T2(I,J)   = TH2_URB2D(I,J)                       !urban
-             T2(I,J)   = FRC_URB2D(i,j)*TH2_URB2D(I,J) + (1-FRC_URB2D(i,j))*T2(I,J) !urban
-             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP                               !urban
+!             T2(I,J)   = FRC_URB2D(i,j)*TH2_URB2D(I,J) + (1-FRC_URB2D(i,j))*T2(I,J) !urban
+!             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP                               !urban
 !m             Q2(I,J)   = Q2_URB2D(I,J)                                            !urban
-             Q2(I,J)   = FRC_URB2D(i,j)*Q2_URB2D(I,J) +(1-FRC_URB2D(i,j))* Q2(I,J)  !urban
+!             Q2(I,J)   = FRC_URB2D(i,j)*Q2_URB2D(I,J) +(1-FRC_URB2D(i,j))* Q2(I,J)  !urban
              U10(I,J)  = U10_URB2D(I,J)                       !urban
              V10(I,J)  = V10_URB2D(I,J)                       !urban
              PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
@@ -1433,6 +1433,22 @@ CONTAINS
          ENDDO                                                !urban
        ENDDO                                                  !urban
      ENDIF
+! urban BEP
+     IF(SF_URBAN_PHYSICS.eq.2) THEN
+       DO j=j_start(ij),j_end(ij)                             !urban
+         DO i=i_start(ij),i_end(ij)                           !urban
+          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
+              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
+            T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
+            TH2(I,J) = TH_PHY(i,1,j) !urban
+            Q2(I,J)   = qv_curr(i,1,j)  !urban
+            U10(I,J)  = U_phy(I,1,J)                       !urban
+            V10(I,J)  = V_phy(I,1,J)                       !urban
+           END IF                                             !urban
+         ENDDO                                                !urban
+       ENDDO                                                  !urban
+     ENDIF
+
 !------------------------------------------------------------------
 
        ELSE

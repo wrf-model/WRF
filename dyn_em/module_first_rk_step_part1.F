@@ -519,9 +519,9 @@ BENCH_START(pbl_driver_tim)
      &          ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
      &          ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics                          &
 ! Bep changes end
-! add tke_boulac, and turbulent fluxes
-     &          ,TKE_BOULAC=grid%tke_boulac,WU_TUR=grid%wu_tur,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur   &
-! end add tke_boulac, and turbulent fluxes
+! add tke_pbl, and turbulent fluxes
+     &          ,TKE_PBL=grid%tke_pbl,EL_PBL=grid%el_pbl,WU_TUR=grid%wu_tur,WV_tur=grid%wv_tur,WT_tur=grid%wt_tur,WQ_tur=grid%wq_tur   &
+! end add tke_pbl, and turbulent fluxes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
      &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)          &

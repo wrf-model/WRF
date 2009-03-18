@@ -387,7 +387,7 @@ CONTAINS
                XLAI  = LAIMAX
             ENDIF
             IF (.NOT. USEMONALB) THEN
-               ALB   = ALBEDOMAX
+               ALB   = ALBEDOMIN
             ENDIF
             Z0BRD = Z0MAX
          ELSE IF ( SHDFAC <= SHDMIN ) THEN
@@ -396,7 +396,7 @@ CONTAINS
                XLAI  = LAIMIN
             ENDIF
             IF(.NOT. USEMONALB) then
-               ALB   = ALBEDOMIN
+               ALB   = ALBEDOMAX
             ENDIF
             Z0BRD = Z0MIN
          ELSE
@@ -413,7 +413,7 @@ CONTAINS
                   XLAI  = ( ( 1.0 - INTERP_FRACTION ) * LAIMIN    ) + ( INTERP_FRACTION * LAIMAX    )
                ENDIF
                if (.not. USEMONALB) then
-                  ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMIN ) + ( INTERP_FRACTION * ALBEDOMAX )
+                  ALB   = ( ( 1.0 - INTERP_FRACTION ) * ALBEDOMAX ) + ( INTERP_FRACTION * ALBEDOMIN )
                endif
                Z0BRD = ( ( 1.0 - INTERP_FRACTION ) * Z0MIN     ) + ( INTERP_FRACTION * Z0MAX     )
 
@@ -955,7 +955,6 @@ CONTAINS
 !            ENDIF
 !          ENDIF
 !
-!!print *, 'MUKUL PRINTS in ALCALC'
 !!               print*,'SNOALB2',SNOALB2,'ALBEDO',ALBEDO,'DT',DT
 !          ALBEDO = ALB + SNCOVR*(SNOALB2-ALB)
 !          IF (ALBEDO .GT. SNOALB2) ALBEDO=SNOALB2

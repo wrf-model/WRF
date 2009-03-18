@@ -1432,7 +1432,6 @@ MODULE module_sf_urban
 
    character(len=512) :: string
    character(len=128) :: name
-   character(len=80)  :: text
    integer :: indx
 
    real, parameter :: VonK = 0.4
@@ -1707,9 +1706,6 @@ MODULE module_sf_urban
       endif
    enddo READLOOP
 
-   write(text,'("After table readloop:  ICATE = ", I10)') icate
-   call wrf_message(text)
-
    CLOSE(11)
 
    ! Assign a few table values that do not need to come from URBPARM.TBL
@@ -1719,7 +1715,6 @@ MODULE module_sf_urban
    Z0HG_TBL = 0.1 * Z0G_TBL
 
    DO LC = 1, ICATE
-      write(text,'("In loop:  LC, ICATE = ", I10, I10)') LC, icate
 
       ! HGT:  Normalized height
       HGT_TBL(LC) = ZR_TBL(LC) / ( ROAD_WIDTH(LC) + ROOF_WIDTH(LC) )

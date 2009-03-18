@@ -122,7 +122,7 @@ EPSG: 0.95, 0.95, 0.95
 # Z0R:  Roughness length for momentum, over roof [ m ]
 #
 
-Z0R: 0.0001, 0.0001, 0.0001
+Z0R: 0.01, 0.01, 0.01
 
 #
 # Z0B:  Roughness length for momentum, over building wall [ m ]
@@ -136,7 +136,7 @@ Z0B: 0.0001, 0.0001, 0.0001
 #       Only active for CH_SCHEME == 1
 #
 
-Z0G: 0.0001, 0.0001, 0.0001 
+Z0G: 0.01, 0.01, 0.01 
 
 #ifdef _FOR_ALBERTO_
 STREET PARAMETERS:
@@ -149,8 +149,8 @@ STREET PARAMETERS:
     1        90.0          15.0       15.0
     2         0.0          15.0       15.0
     2        90.0          15.0       15.0
-    3         0.0          19.0       23.0
-    3        90.0          19.0       23.0
+    3         0.0          15.0       15.0
+    3        90.0          15.0       15.0
 
 END STREET PARAMETERS
 

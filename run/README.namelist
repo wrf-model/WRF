@@ -402,6 +402,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, thermal diffusion scheme
                                      = 2, Unified Noah land-surface model
                                      = 3, RUC land-surface model
+                                     = 5, MYNN surface layer
                                      = 7, Pleim-Xiu LSM (ARW)
 
  bl_pbl_physics (max_dom)            boundary-layer option
@@ -410,8 +411,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
                                      = 4, Quasi-Normal Scale Elimination PBL by  
-                                     = 5, MYNN 2.5 level TKE scheme (by M. Pagowski of NOAA)
-                                     = 6, MYNN 3rd level TKE scheme (by M. Pagowski of NOAA)
+                                     = 5, MYNN 2.5 level TKE scheme (by M. Pagowski of NOAA), works with
+                                          sf_sfclay_physics=1 or 2 as well as 5
+                                     = 6, MYNN 3rd level TKE scheme (by M. Pagowski of NOAA), works only
+                                          MYNNSFC or sf_sfclay_physics = 5
                                      = 7, ACM2 (Pleim) PBL (ARW)
                                      = 8, Bougeault and Lacarrere (BouLac) PBL (by B. Galperin of U of South Florida)
                                      = 99, MRF scheme (to be removed)

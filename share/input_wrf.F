@@ -80,6 +80,23 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
+! If this was not a training read (dry run) check for erroneous values.
+    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+    IF ( ierr /= 0 ) THEN
+      WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
+      CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
+
+    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
+    CALL wrf_debug( 300 , wrf_err_message )
+
+    dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
+
+    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
+    CALL wrf_debug( 300 , wrf_err_message )
+
+    check_if_dryrun : IF ( .NOT. dryrun ) THEN
+
 ! simulation start time is a Singleton maintained by head_grid
     IF ( ( switch .EQ.     model_input_only  ) .OR. &
          ( switch .EQ.          restart_only ) ) THEN
@@ -275,7 +292,7 @@
     ELSE
        mminlu = " "
     END IF
-    call wrf_debug( 1 , "mminlu = '" // mminlu // "'")
+    call wrf_debug( 1 , "mminlu = '" // TRIM(mminlu) // "'")
     if (index(mminlu, char(0)) > 0) mminlu(index(mminlu, char(0)):) = " "
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_char for MMINLU returns ' // TRIM(mminlu)
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -285,10 +302,9 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
-    num_land_cat_compare = -1
     call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
     if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
-       call wrf_message("Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
+       call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
        num_land_cat_compare = 24
 !      call wrf_error_fatal("Error trying to find global attribute 'NUM_LAND_CAT'")
     endif
@@ -372,23 +388,6 @@
       CALL nl_set_j_parent_start ( grid%id , config_flags%j_parent_start )
     ENDIF
 #endif
-
-! If this was not a training read (dry run) check for erroneous values.
-    CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
-    IF ( ierr /= 0 ) THEN
-      WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
-      CALL wrf_error_fatal( wrf_err_message )
-    ENDIF
-
-    WRITE(wrf_err_message,*)'input_wrf: fid,filestate = ',fid,filestate
-    CALL wrf_debug( 300 , wrf_err_message )
-
-    dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
-
-    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
-    CALL wrf_debug( 300 , wrf_err_message )
-
-    check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 #if (EM_CORE == 1)
 

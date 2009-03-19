@@ -39,43 +39,7 @@
 # here.
 #
 
-# Available characters for dimspec: 0123456789@%+=|?.!&[{}]
-
-#<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
-dimspec    i      1     standard_domain              x          west_east
-dimspec    j      3     standard_domain              y          south_north
-dimspec    k      2     standard_domain              z          bottom_top
-dimspec    l      2     namelist=num_soil_layers     z          soil_layers
-dimspec    ulay   2     namelist=num_urban_layers    z          urban_layers
-dimspec    lin    2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
-dimspec    u      2     namelist=num_land_cat        z          land_cat
-dimspec    s      2     namelist=num_soil_cat        z          soil_cat
-dimspec    |      2     namelist=num_force_layers    z          force_layers
-dimspec    p      -     constant=7501                c          microphysics_rstrt_state
-dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
-dimspec    e      3     namelist=ensdim              z          ensemble dimension
-dimspec    n      1     namelist=dfi_time_dim        c          dfi time dimension
-dimspec    z      -     namelist=max_obs          c          max_obs
-dimspec    h      -     namelist=nobs_err_flds    c          nobs_err_flds
-dimspec    r      -     namelist=nobs_ndg_vars    c          nobs_ndg_vars
-dimspec    [      -     namelist=obs_prt_max      c          obs_prt_max
-dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
-dimspec    m      2     constant=12                  z          months_per_year
-dimspec    o      3     namelist=ne_area             z          bio_emissions_dimension
-dimspec    +      2     namelist=kemit               z          emissions_zdim
-dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
-dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
-dimspec    q      2     namelist=levsiz           z          levsiz
-dimspec    d      2     namelist=paerlev          z          paerlev
-dimspec    @      -     namelist=ts_buf_size      c          ts_buf_size
-dimspec    !      -     namelist=max_ts_locs      c          max_ts_locs
-dimspec    v      -     constant=1                z          one
-dimspec    =      -     constant=4                c          num_bands
-dimspec    ?      2     namelist=nmegan           z          megan_species
-dimspec    %      2     namelist=kfuture          z          klevs_for_dust
-dimspec    .      3     namelist=errosion_dim     z          dust_errosion_dimension
-dimspec    &      2     namelist=lagday           z          lagday
-
+include registry.dimspec
 
 ################################################################################
 ################################################################################
@@ -519,21 +483,21 @@ state   real   vegcat              ij    misc          1     -     i12     "VEGC
 state    real   TSLB           ilj       misc      1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)           "TSLB"     "SOIL TEMPERATURE"   "K"
 
 # Time series variables
-state    real   ts_hour         @!       misc      -         -      r        "TS_HOUR"        "Model integration time, hours"
-state    real   ts_u            @!       misc      -         -      r        "TS_U"           "Surface wind U-component, earth-relative"
-state    real   ts_v            @!       misc      -         -      r        "TS_V"           "Surface wind V-component, earth-relative"
-state    real   ts_q            @!       misc      -         -      r        "TS_Q"           "Surface mixing ratio"
-state    real   ts_t            @!       misc      -         -      r        "TS_T"           "Surface temperature"
-state    real   ts_psfc         @!       misc      -         -      r        "TS_PSFC"        "Surface pressure"
-state    real   ts_glw          @!       misc      -         -      r        "TS_GLW"         "Downward long wave flux at surface"
-state    real   ts_gsw          @!       misc      -         -      r        "TS_GSW"         "Net short wave flux at surface"
-state    real   ts_hfx          @!       misc      -         -      r        "TS_HFX"         "Upward heat flux at surface"
-state    real   ts_lh           @!       misc      -         -      r        "TS_LH"          "Upward moisture flux at surface"
-state    real   ts_tsk          @!       misc      -         -      r        "TS_TSK"         "Skin temperature"
-state    real   ts_tslb         @!       misc      -         -      r        "TS_TSLB"        "Soil temperature"
-state    real   ts_clw          @!       misc      -         -      r        "TS_CLW"         "Column integrated cloud water"
-state    real   ts_rainc        @!       misc      -         -      r        "TS_RAINC"       "Cumulus precip"
-state    real   ts_rainnc       @!       misc      -         -      r        "TS_RAINNC"      "Grid-scale precip"
+state    real   ts_hour         ?!       misc      -         -      r        "TS_HOUR"        "Model integration time, hours"
+state    real   ts_u            ?!       misc      -         -      r        "TS_U"           "Surface wind U-component, earth-relative"
+state    real   ts_v            ?!       misc      -         -      r        "TS_V"           "Surface wind V-component, earth-relative"
+state    real   ts_q            ?!       misc      -         -      r        "TS_Q"           "Surface mixing ratio"
+state    real   ts_t            ?!       misc      -         -      r        "TS_T"           "Surface temperature"
+state    real   ts_psfc         ?!       misc      -         -      r        "TS_PSFC"        "Surface pressure"
+state    real   ts_glw          ?!       misc      -         -      r        "TS_GLW"         "Downward long wave flux at surface"
+state    real   ts_gsw          ?!       misc      -         -      r        "TS_GSW"         "Net short wave flux at surface"
+state    real   ts_hfx          ?!       misc      -         -      r        "TS_HFX"         "Upward heat flux at surface"
+state    real   ts_lh           ?!       misc      -         -      r        "TS_LH"          "Upward moisture flux at surface"
+state    real   ts_tsk          ?!       misc      -         -      r        "TS_TSK"         "Skin temperature"
+state    real   ts_tslb         ?!       misc      -         -      r        "TS_TSLB"        "Soil temperature"
+state    real   ts_clw          ?!       misc      -         -      r        "TS_CLW"         "Column integrated cloud water"
+state    real   ts_rainc        ?!       misc      -         -      r        "TS_RAINC"       "Cumulus precip"
+state    real   ts_rainnc       ?!       misc      -         -      r        "TS_RAINNC"      "Grid-scale precip"
 
 # urban model variables
 state    real   DZR             l        em      -            Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
@@ -573,7 +537,7 @@ state    real   SSTSK            ij     misc        1         -     rhd=(interp_
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 
 # DFI variables
-state   real   hcoeff           n    misc        1         -     -    "HCOEFF"               "initialization weights"
+state   real   hcoeff      {ndfi}    misc        1         -     -    "HCOEFF"               "initialization weights"
 state   real   hcoeff_tot       -    misc        1         -     -    "HCOEFF_TOT"               "initialization weights"
 state   real   dfi_p           ikj   misc        1         -     r    "P_DFI"           "perturbation pressure"         "Pa"
 state   real   dfi_al          ikj   misc        1         -     r    "AL_DFI"          "inverse perturbation density"  "m3 kg-1"
@@ -745,20 +709,20 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # cam radiation variables
-state  real    -       iqjf ozmixm      1    -   -     -
-state  real   mth01    iqjf ozmixm      1    -   -     -
-state  real   mth02    iqjf ozmixm      1    -   -     -
-state  real   mth03    iqjf ozmixm      1    -   -     -
-state  real   mth04    iqjf ozmixm      1    -   -     -
-state  real   mth05    iqjf ozmixm      1    -   -     -
-state  real   mth06    iqjf ozmixm      1    -   -     -
-state  real   mth07    iqjf ozmixm      1    -   -     -
-state  real   mth08    iqjf ozmixm      1    -   -     -
-state  real   mth09    iqjf ozmixm      1    -   -     -
-state  real   mth10    iqjf ozmixm      1    -   -     -
-state  real   mth11    iqjf ozmixm      1    -   -     -
-state  real   mth12    iqjf ozmixm      1    -   -     -
-state  real   pin       q     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
+state  real    -       i{ls}jf ozmixm      1    -   -     -
+state  real   mth01    i{ls}jf ozmixm      1    -   -     -
+state  real   mth02    i{ls}jf ozmixm      1    -   -     -
+state  real   mth03    i{ls}jf ozmixm      1    -   -     -
+state  real   mth04    i{ls}jf ozmixm      1    -   -     -
+state  real   mth05    i{ls}jf ozmixm      1    -   -     -
+state  real   mth06    i{ls}jf ozmixm      1    -   -     -
+state  real   mth07    i{ls}jf ozmixm      1    -   -     -
+state  real   mth08    i{ls}jf ozmixm      1    -   -     -
+state  real   mth09    i{ls}jf ozmixm      1    -   -     -
+state  real   mth10    i{ls}jf ozmixm      1    -   -     -
+state  real   mth11    i{ls}jf ozmixm      1    -   -     -
+state  real   mth12    i{ls}jf ozmixm      1    -   -     -
+state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 state  real   m_ps       ij   misc      2    -   -      "m_ps"            "PS from MATCH on WRF grids"
 state  real    -       idjf aerosolc    2    -   -       -
 state  real   SUL      idjf aerosolc    2    -   -     "SUL"        "SUL aerosol concentration"
@@ -1455,6 +1419,7 @@ rconfig   logical scm_vert_adv            namelist,scm  1       .true.      rh  
 
 # Dynamics
 # dynamics option (see package definitions, below)
+rconfig   integer dyn_opt                 namelist,dynamics	1             - 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -1633,8 +1598,8 @@ package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             state:qke,tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 
-package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
-package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
+package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
+package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
@@ -1847,16 +1812,16 @@ typedef fdob_type real    KNOWN_LON    # Longitude of origin point (i,j)=(1,1)
 # table entries are of the form
 #      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #Grid variables
-typedef fdob_type real    varobs               rz       -         1        -       -       "varobs"          "observational values in each variable"
-typedef fdob_type real    errf                 hz       -         1        -       -       "errf"            "errors between model and obs values"
-typedef fdob_type real    timeob               z        -         1        -       -       "timeob"          "model times for each observation"          "hours"
-typedef fdob_type real    nlevs_ob             z        -         1        -       -       "nlevs_ob"        "numbers of levels in sounding obs"
-typedef fdob_type real    lev_in_ob            z        -         1        -       -       "lev_in_ob"       "level in sounding-type obs"
-typedef fdob_type real    plfo                 z        -         1        -       -       "plfo"            "index for type of obs-platform"
-typedef fdob_type real    elevob               z        -         1        -       -       "elevob"          "elevation of observation"                  "meters"
-typedef fdob_type real    rio                  z        -         1        -       -       "rio"             "west-east grid coordinate"
-typedef fdob_type real    rjo                  z        -         1        -       -       "rjo"             "south-north grid coordinate"
-typedef fdob_type real    rko                  z        -         1        -       -       "rko"             "vertical grid coordinate"
+typedef fdob_type real    varobs       {nndgvar}{obs}   -         1        -       -       "varobs"          "observational values in each variable"
+typedef fdob_type real    errf                 h{obs}   -         1        -       -       "errf"            "errors between model and obs values"
+typedef fdob_type real    timeob               {obs}    -         1        -       -       "timeob"          "model times for each observation"          "hours"
+typedef fdob_type real    nlevs_ob             {obs}    -         1        -       -       "nlevs_ob"        "numbers of levels in sounding obs"
+typedef fdob_type real    lev_in_ob            {obs}    -         1        -       -       "lev_in_ob"       "level in sounding-type obs"
+typedef fdob_type real    plfo                 {obs}    -         1        -       -       "plfo"            "index for type of obs-platform"
+typedef fdob_type real    elevob               {obs}    -         1        -       -       "elevob"          "elevation of observation"                  "meters"
+typedef fdob_type real    rio                  {obs}    -         1        -       -       "rio"             "west-east grid coordinate"
+typedef fdob_type real    rjo                  {obs}    -         1        -       -       "rjo"             "south-north grid coordinate"
+typedef fdob_type real    rko                  {obs}    -         1        -       -       "rko"             "vertical grid coordinate"
 typedef fdob_type integer obsprt               [        -         1        -       -       "obsprt"          "obs index for diagnostic printout"
 typedef fdob_type real    latprt               [        -         1        -       -       "latprt"          "obs latitude for diagnostic printout"
 typedef fdob_type real    lonprt               [        -         1        -       -       "lonprt"          "obs longitude for diagnostic printout"

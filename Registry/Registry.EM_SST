@@ -39,37 +39,7 @@
 # here.
 #
 
-# Available characters for dimspec: 0123456789@%+=|?.!&[{}]
-
-#<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
-dimspec    i      1     standard_domain              x          west_east
-dimspec    j      3     standard_domain              y          south_north
-dimspec    k      2     standard_domain              z          bottom_top
-dimspec    l      2     namelist=num_soil_layers     z          soil_layers
-dimspec    ulay   2     namelist=num_urban_layers    z          urban_layers
-dimspec    lin    2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
-dimspec    u      2     namelist=num_land_cat        z          land_cat
-dimspec    s      2     namelist=num_soil_cat        z          soil_cat
-dimspec    |      2     namelist=num_force_layers    z          force_layers
-dimspec    p      -     constant=7501                c          microphysics_rstrt_state
-dimspec    w      -     namelist=spec_bdy_width      c          spec_bdy_width
-dimspec    e      3     namelist=ensdim              z          ensemble dimension
-dimspec    n      1     namelist=dfi_time_dim        c          dfi time dimension
-dimspec    z      -     namelist=max_obs          c          max_obs
-dimspec    h      -     namelist=nobs_err_flds    c          nobs_err_flds
-dimspec    r      -     namelist=nobs_ndg_vars    c          nobs_ndg_vars
-dimspec    [      -     namelist=obs_prt_max      c          obs_prt_max
-dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
-dimspec    m      2     constant=12                  z          months_per_year
-dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
-dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
-dimspec    q      2     namelist=levsiz           z          levsiz
-dimspec    d      2     namelist=paerlev          z          paerlev
-dimspec    ?      -     namelist=ts_buf_size      c          ts_buf_size
-dimspec    !      -     namelist=max_ts_locs      c          max_ts_locs
-dimspec    v      -     constant=1                z          one
-dimspec    &      2     namelist=lagday           z          lagday
-
+include registry.dimspec
 
 ################################################################################
 ################################################################################
@@ -574,8 +544,8 @@ state    real   SSTSK            ij     misc        1         -     rhd=(interp_
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 
 # DFI variables
-state   real   hcoeff           n    misc        1         -     -    "HCOEFF"               "initialization weights"
-state   real   hcoeff_tot       -    misc        1         -     -    "HCOEFF_TOT"               "initialization weights"
+state   real   hcoeff         {ndfi} misc        1         -     -    "HCOEFF"               "initialization weights"
+state   real   hcoeff_tot       -    misc        1         -     -    "HCOEFF_TOT"           "initialization weights"
 state   real   dfi_p           ikj   misc        1         -     r    "P_DFI"           "perturbation pressure"         "Pa"
 state   real   dfi_al          ikj   misc        1         -     r    "AL_DFI"          "inverse perturbation density"  "m3 kg-1"
 state   real   dfi_mu          ij    misc        1         -     r    "MU_DFI"  "perturbation dry air mass in column" "Pa"
@@ -747,20 +717,20 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # cam radiation variables
-state  real    -       iqjf ozmixm      1    -   -     -
-state  real   mth01    iqjf ozmixm      1    -   -     -
-state  real   mth02    iqjf ozmixm      1    -   -     -
-state  real   mth03    iqjf ozmixm      1    -   -     -
-state  real   mth04    iqjf ozmixm      1    -   -     -
-state  real   mth05    iqjf ozmixm      1    -   -     -
-state  real   mth06    iqjf ozmixm      1    -   -     -
-state  real   mth07    iqjf ozmixm      1    -   -     -
-state  real   mth08    iqjf ozmixm      1    -   -     -
-state  real   mth09    iqjf ozmixm      1    -   -     -
-state  real   mth10    iqjf ozmixm      1    -   -     -
-state  real   mth11    iqjf ozmixm      1    -   -     -
-state  real   mth12    iqjf ozmixm      1    -   -     -
-state  real   pin       q     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
+state  real    -       i{ls}jf ozmixm      1    -   -     -
+state  real   mth01    i{ls}jf ozmixm      1    -   -     -
+state  real   mth02    i{ls}jf ozmixm      1    -   -     -
+state  real   mth03    i{ls}jf ozmixm      1    -   -     -
+state  real   mth04    i{ls}jf ozmixm      1    -   -     -
+state  real   mth05    i{ls}jf ozmixm      1    -   -     -
+state  real   mth06    i{ls}jf ozmixm      1    -   -     -
+state  real   mth07    i{ls}jf ozmixm      1    -   -     -
+state  real   mth08    i{ls}jf ozmixm      1    -   -     -
+state  real   mth09    i{ls}jf ozmixm      1    -   -     -
+state  real   mth10    i{ls}jf ozmixm      1    -   -     -
+state  real   mth11    i{ls}jf ozmixm      1    -   -     -
+state  real   mth12    i{ls}jf ozmixm      1    -   -     -
+state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 state  real   m_ps       ij   misc      2    -   -      "m_ps"            "PS from MATCH on WRF grids"
 state  real    -       idjf aerosolc    2    -   -       -
 state  real   SUL      idjf aerosolc    2    -   -     "SUL"        "SUL aerosol concentration"
@@ -1443,6 +1413,7 @@ rconfig   logical scm_vert_adv            namelist,scm  1       .true.      rh  
 
 # Dynamics
 # dynamics option (see package definitions, below)
+rconfig   integer dyn_opt                 namelist,dynamics	1             - 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new
@@ -1836,16 +1807,16 @@ typedef fdob_type real    KNOWN_LON    # Longitude of origin point (i,j)=(1,1)
 # table entries are of the form
 #      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #Grid variables
-typedef fdob_type real    varobs               rz       -         1        -       -       "varobs"          "observational values in each variable"
-typedef fdob_type real    errf                 hz       -         1        -       -       "errf"            "errors between model and obs values"
-typedef fdob_type real    timeob               z        -         1        -       -       "timeob"          "model times for each observation"          "hours"
-typedef fdob_type real    nlevs_ob             z        -         1        -       -       "nlevs_ob"        "numbers of levels in sounding obs"
-typedef fdob_type real    lev_in_ob            z        -         1        -       -       "lev_in_ob"       "level in sounding-type obs"
-typedef fdob_type real    plfo                 z        -         1        -       -       "plfo"            "index for type of obs-platform"
-typedef fdob_type real    elevob               z        -         1        -       -       "elevob"          "elevation of observation"                  "meters"
-typedef fdob_type real    rio                  z        -         1        -       -       "rio"             "west-east grid coordinate"
-typedef fdob_type real    rjo                  z        -         1        -       -       "rjo"             "south-north grid coordinate"
-typedef fdob_type real    rko                  z        -         1        -       -       "rko"             "vertical grid coordinate"
+typedef fdob_type real    varobs         {nndgvar}{obs} -         1        -       -       "varobs"          "observational values in each variable"
+typedef fdob_type real    errf              h{obs}      -         1        -       -       "errf"            "errors between model and obs values"
+typedef fdob_type real    timeob             {obs}      -         1        -       -       "timeob"          "model times for each observation"          "hours"
+typedef fdob_type real    nlevs_ob           {obs}      -         1        -       -       "nlevs_ob"        "numbers of levels in sounding obs"
+typedef fdob_type real    lev_in_ob          {obs}      -         1        -       -       "lev_in_ob"       "level in sounding-type obs"
+typedef fdob_type real    plfo               {obs}      -         1        -       -       "plfo"            "index for type of obs-platform"
+typedef fdob_type real    elevob             {obs}      -         1        -       -       "elevob"          "elevation of observation"                  "meters"
+typedef fdob_type real    rio                {obs}      -         1        -       -       "rio"             "west-east grid coordinate"
+typedef fdob_type real    rjo                {obs}      -         1        -       -       "rjo"             "south-north grid coordinate"
+typedef fdob_type real    rko                {obs}      -         1        -       -       "rko"             "vertical grid coordinate"
 typedef fdob_type integer obsprt               [        -         1        -       -       "obsprt"          "obs index for diagnostic printout"
 typedef fdob_type real    latprt               [        -         1        -       -       "latprt"          "obs latitude for diagnostic printout"
 typedef fdob_type real    lonprt               [        -         1        -       -       "lonprt"          "obs longitude for diagnostic printout"

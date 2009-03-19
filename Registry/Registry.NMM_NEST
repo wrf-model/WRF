@@ -39,26 +39,7 @@
 # here.
 #
 
-#<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
-dimspec    i      1     standard_domain           x          west_east
-dimspec    j      2     standard_domain           y          south_north
-dimspec    k      3     standard_domain           z          bottom_top
-dimspec    l      2     namelist=num_soil_layers  z          soil_layers
-dimspec    %      2     namelist=num_urban_layers    z       urban_layers
-dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
-dimspec    u      2     namelist=num_land_cat     z          land_cat
-dimspec    s      2     namelist=num_soil_cat     z          soil_cat
-dimspec    e      3     namelist=ensdim           z          gd ensemble dimension
-dimspec    p      -     constant=7501             c          microphysics_rstrt_state
-dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
-dimspec    m      2     constant=12                  z          months_per_year
-dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
-dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
-dimspec    o      2     namelist=levsiz           z          levsiz
-dimspec    d      2     namelist=paerlev          z          paerlev
-dimspec    ?      -     namelist=ts_buf_size      c          ts_buf_size
-dimspec    !      -     namelist=max_ts_locs      c          max_ts_locs
-
+include registry.dimspec
 
 #### 7. Edit the Registry file and create the state data assocaited with this
 ####    solver.  Single entry:
@@ -117,9 +98,6 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 # module_BC
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
-#definitions for NMM slab arrays
-dimspec    q      -     constant=2600             c  # a little crude right now
-dimspec    v      -     constant=1             c  # a little crude right now
 
 # The following arrays were added to avoid using _b and _bt arrays for nesting.
 # This is gopal' doing:
@@ -182,9 +160,9 @@ rconfig  real sbd0    derived   max_domains    0       - "sbd0"                 
 
 state  real   PSTD      k      dyn_nmm     1      Z      -
 state  integer KZMAX    -      dyn_nmm     -      -      r
-state  real   Z3D       ijk    dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
-state  real   T3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
-state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Z3D       ijkb   dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
+state  real   T3D       ijkb   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Q3D       ijkb   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
 
 #
@@ -462,10 +440,7 @@ state integer iheg      q    dyn_nmm     1    -    -
 state integer ihwg      q    dyn_nmm     1    -    -
 state integer iveg      q    dyn_nmm     1    -    -
 state integer ivwg      q    dyn_nmm     1    -    -
-dimspec    r      -     constant=2000             c  # a little crude right now
 state integer iradg     r    dyn_nmm     1    -    -
-dimspec    z      -     constant=(-3:3)            c
-dimspec    n      -     constant=(0:6)             c
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
 state integer n_iup_adh j    dyn_nmm     1    -    -      "N_IUP_ADH"  "# mass points in each row of upstream advection"  ""
@@ -956,6 +931,7 @@ rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .f
 
 # Dynamics
 # dynamics option (see package definitions, below)
+rconfig   integer dyn_opt                 namelist,dynamics	1             - 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new

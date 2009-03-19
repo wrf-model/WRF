@@ -62,7 +62,7 @@ clean:
 	@ echo 'use the clean script'
 
 module_state_description.F : ../Registry/$(REGISTRY)
-		  ( cd .. ; tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
+		  ( cd .. ; tools/registry $(ARCHFLAGS) $(ENVCOMPDEFS) -DNEW_BDYS Registry/$(REGISTRY) ) ; 
 
 md_calls.inc : md_calls.m4
 	if [ "$(M4)" = NA ] ; then \

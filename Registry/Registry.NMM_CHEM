@@ -39,29 +39,7 @@
 # here.
 #
 
-#<Table>  <Dim>  <Order> <How defined>         <Coord-axis>  <Dimname in Datasets>
-dimspec    i      1     standard_domain           x          west_east
-dimspec    j      2     standard_domain           y          south_north
-dimspec    k      3     standard_domain           z          bottom_top
-dimspec    l      2     namelist=num_soil_layers  z          soil_layers
-dimspec    %      2     namelist=num_urban_layers z          urban_layers
-dimspec    w      -     namelist=spec_bdy_width   c          spec_bdy_width
-dimspec    u      2     namelist=num_land_cat     z          land_cat
-dimspec    s      2     namelist=num_soil_cat     z          soil_cat
-dimspec    e      3     namelist=ensdim           z          gd ensemble dimension
-dimspec    p      -     constant=7501             c          microphysics_rstrt_state
-dimspec    g      2     namelist=num_metgrid_levels  z          num_metgrid_levels
-dimspec    m      2     constant=12                  z          months_per_year
-dimspec    o      3     namelist=ne_area          z          emissions dimension
-dimspec    +      2     namelist=kemit            z          emissions_zdim
-dimspec    a      -     namelist=cam_abs_dim1     c          cam_abs_dim1
-dimspec    c      -     namelist=cam_abs_dim2     z          cam_abs_dim2
-dimspec    d      2     namelist=paerlev          z          paerlev
-dimspec    =      -     constant=4                c          num_bands
-dimspec    ?      2     namelist=nmegan           z          megan_species
-dimspec    @      -     namelist=ts_buf_size      c          ts_buf_size
-dimspec    !      -     namelist=max_ts_locs      c          max_ts_locs
-
+include registry.dimspec
 
 #### 7. Edit the Registry file and create the state data assocaited with this
 ####    solver.  Single entry:
@@ -119,9 +97,6 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 # module_BC
 #
 # pdb is only 2d but registry doesn't support 2d bdy arrays right now...
-#definitions for NMM slab arrays
-dimspec    q      -     constant=2600             c  # a little crude right now
-dimspec    v      -     constant=1             c  # a little crude right now
 
 # flag for nest movement
 state  logical moved       -     misc       1      -     -
@@ -329,7 +304,7 @@ state  real   hzmax     ij    dyn_nmm   1    -     i01rh      "HZMAX"     "Maxim
 state  real   crot      ij    dyn_nmm   1    -      -       "CROT"      "Cosine of angle between model and earth coordinates"    ""
 state  real   srot      ij    dyn_nmm   1    -      -       "SROT"      "Sine of angle between model and earth coordinates"    ""
 state  real   UGWDsfc   ij    dyn_nmm   1    -      h       "UGWDsfc"   "Surface zonal wind stress due to gravity wave drag"    "N m-2"
-state  real   VGWDsfc   ij    dyn_nmm   1    -      h       "VGWDsfc"   "Surface meridional wind stress due to gravity wave drag"    "N m-2
+state  real   VGWDsfc   ij    dyn_nmm   1    -      h       "VGWDsfc"   "Surface meridional wind stress due to gravity wave drag"    "N m-2"
 #
 # module_NHYDRO.F
 #
@@ -408,10 +383,7 @@ state integer iheg      q    dyn_nmm     1    -    -
 state integer ihwg      q    dyn_nmm     1    -    -
 state integer iveg      q    dyn_nmm     1    -    -
 state integer ivwg      q    dyn_nmm     1    -    -
-dimspec    r      -     constant=2000             c  # a little crude right now
 state integer iradg     r    dyn_nmm     1    -    -
-dimspec    z      -     constant=(-3:3)            c
-dimspec    n      -     constant=(0:6)             c
 state integer indx3_wrk zqn  dyn_nmm     1    -    -      "INDX3_WRK"  "Array of 3rd (J) indices for local arrays"  ""
 state integer n_iup_h   j    dyn_nmm     1    -    -      "N_IUP_H"    "# mass points needed in each row for upstream advection"  ""
 state integer n_iup_v   j    dyn_nmm     1    -    -      "N_IUP_V"    "# velocity points needed in each row for upstream advection"  ""
@@ -495,15 +467,15 @@ state   real   soilcbot            isj   misc          1     Z     -      "SOILC
 #-------------------------------------------------------------------------------------------------------------------------------
 
 # Time series variables
-state    real   ts_hour         @!       misc      -         -      r        "TS_HOUR"        "Model integration time, hours"
-state    real   ts_u            @!       misc      -         -      r        "TS_U"           "Surface wind U-component, earth-relative"
-state    real   ts_v            @!       misc      -         -      r        "TS_V"           "Surface wind V-component, earth-relative"
-state    real   ts_q            @!       misc      -         -      r        "TS_Q"           "Surface mixing ratio"
-state    real   ts_t            @!       misc      -         -      r        "TS_T"           "Surface temperature"
-state    real   ts_psfc         @!       misc      -         -      r        "TS_PSFC"        "Surface pressure"
-state    real   ts_tsk          @!       misc      -         -      r        "TS_TSK"         "Skin temperature"
-state    real   ts_tslb         @!       misc      -         -      r        "TS_TSLB"        "Soil temperature"
-state    real   ts_clw          @!       misc      -         -      r        "TS_CLW"         "Column integrated cloud water"
+state    real   ts_hour         ?!       misc      -         -      r        "TS_HOUR"        "Model integration time, hours"
+state    real   ts_u            ?!       misc      -         -      r        "TS_U"           "Surface wind U-component, earth-relative"
+state    real   ts_v            ?!       misc      -         -      r        "TS_V"           "Surface wind V-component, earth-relative"
+state    real   ts_q            ?!       misc      -         -      r        "TS_Q"           "Surface mixing ratio"
+state    real   ts_t            ?!       misc      -         -      r        "TS_T"           "Surface temperature"
+state    real   ts_psfc         ?!       misc      -         -      r        "TS_PSFC"        "Surface pressure"
+state    real   ts_tsk          ?!       misc      -         -      r        "TS_TSK"         "Skin temperature"
+state    real   ts_tslb         ?!       misc      -         -      r        "TS_TSLB"        "Soil temperature"
+state    real   ts_clw          ?!       misc      -         -      r        "TS_CLW"         "Column integrated cloud water"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -515,12 +487,12 @@ state    real   ts_clw          @!       misc      -         -      r        "TS
 # dry code will will still link properly)                                               
 #                                               
 state   real    -              ijkft   moist       1         -     -    -                                       
-state   real    qv             ijkft   moist       1         h     i01rhusdf=(bdy_interp:dt)       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ijkft   moist       1         h     i01rhusdf=(bdy_interp:dt)       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ijkft   moist       1         h     i01rhusdf=(bdy_interp:dt)       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ijkft   moist       1         h     i01rhusdf=(bdy_interp:dt)       "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ijkft   moist       1         h     i01rhusdf=(bdy_interp:dt)       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ijkft   moist       1         h     i01rhusdf=(bdy_interp:dt)       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qv             ijkft   moist       1         h     rh       "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkft   moist       1         h     rh       "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkft   moist       1         h     rh       "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkft   moist       1         h     rh       "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkft   moist       1         h     rh       "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkft   moist       1         h     rh       "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -
@@ -911,6 +883,7 @@ rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .f
 
 # Dynamics
 # dynamics option (see package definitions, below)
+rconfig   integer dyn_opt                 namelist,dynamics	1             - 
 rconfig   integer rk_ord                  namelist,dynamics	1             3       irh   "rk_order"               ""      ""
 rconfig   integer w_damping               namelist,dynamics	1             0       irh    "w_damping"             ""      ""
 # diff_opt 1=old diffusion, 2=new

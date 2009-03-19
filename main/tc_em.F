@@ -67,7 +67,6 @@ PROGRAM tc_data
 
    program_name = "TC_EM " // TRIM(release_version) // " PREPROCESSOR"
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
 !  The TC bogus algorithm assumes that the user defines a central point, and then
 !  allows the program to remove a typhoon based on a distance in km.  This is
 !  implemented on a single processor only.
@@ -77,11 +76,6 @@ PROGRAM tc_data
       CALL wrf_error_fatal( 'TC bogus must run with a single processor only, re-run with num procs set to 1' )
    END IF
 #endif
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-   program_name = "REAL_EM " // TRIM(release_version) // " PREPROCESSOR"
-=======
-   program_name = "TC_BOGUS" // TRIM(release_version) // " PREPROCESSOR"
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 #ifdef DM_PARALLEL
    CALL disable_quilting
@@ -240,7 +234,7 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
    INTEGER :: time_loop_max , loop, rc
    INTEGER :: julyr , julday 
    REAL :: gmt
-real::t1,t2,t3,t4
+   real::t1,t2,t3,t4
 
    grid%input_from_file = .true.
    grid%input_from_file = .false.
@@ -283,7 +277,6 @@ real::t1,t2,t3,t4
 
    CALL nl_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
 
-   !!!!!!!  Loop over each time period to process.
 
    CALL cpu_time ( t1 )
    DO loop = 1 , time_loop_max
@@ -341,12 +334,13 @@ real::t1,t2,t3,t4
       print *,"the out name ",config_flags%auxinput1_outname
 
       !  Possible optional SI input.  This sets flags used by init_domain.
+      !  We need to call the optional input routines to get the flags that 
+      !  are in the metgrid output file so they can be put in the tc bogus 
+      !  output file for real to read.
       CALL cpu_time ( t3 )
-      IF ( loop .EQ. 1 ) THEN
-         already_been_here = .FALSE.
-         CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_input' )
-         CALL init_module_optional_input ( grid , config_flags )
-      END IF
+      CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_input' )
+      CALL init_module_optional_input ( grid , config_flags )
+      already_been_here = .FALSE.
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
       CALL  optional_input ( grid , idsi , config_flags )
 
@@ -416,20 +410,14 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_
 
 !These values are in the name list and are avaiable from
 !from the config_flags.
-   real    :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax
+   real    :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax,stand_lon,cen_lat,ptop_in_pa
 
 
    INTEGER :: ids , ide , jds , jde , kds , kde
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: ijds , ijde , spec_bdy_width
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-   INTEGER :: i , j , k , idts
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-   INTEGER :: i , j , k , idts,map_proj
-=======
    INTEGER :: i , j , k , idts,map_proj,remove_only
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
@@ -476,31 +464,16 @@ real::t1,t2
    grid_fdda = model_config_rec%grid_fdda(grid%id)
 
 
-!  here we are going to call the temp subroutine.
-   print *,"here before temp sub"
-   grid%stand_lon = 141.
-   grid%cen_lat = 26.99999
-   grid%map_proj = 3
-   
+   stand_lon = config_flags%stand_lon
+   cen_lat   = config_flags%cen_lat
+   map_proj  = config_flags%map_proj
+
 
    latc_loc   = config_flags%latc_loc
    lonc_loc   = config_flags%lonc_loc
    vmax       = config_flags%vmax_meters_per_second
    vmax_ratio = config_flags%vmax_ratio
    rmax       = config_flags%rmax
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-   call tc_bogus(grid%cen_lat,grid%stand_lon,grid%map_proj,grid%truelat1,grid%truelat2, &
-                 grid%dx,ipe,jpe,grid%num_metgrid_levels,latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
-   stop
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-   ptop_in_pa = config_flags%p_top_requested
-
-   call tc_bogus(cen_lat,stand_lon,map_proj,grid%truelat1,grid%truelat2, &
-                 grid%dx,ipe,jpe,grid%num_metgrid_levels,ptop_in_pa, &
-                 latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
-
-
-=======
    ptop_in_pa = config_flags%p_top_requested
    remove_only = 0
    if(config_flags%remove_storm) then
@@ -512,7 +485,6 @@ real::t1,t2
                  latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
 
 
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 !Notes jps is the starting y. Usally 1
 !      jpe is the ending y position on the staggered grid north south or ny
 !      ipe is the ending x postiion on the staggered grid east west of nx
@@ -534,29 +506,21 @@ END SUBROUTINE assemble_output
 
 !----------------------------------------------------------------------------------------------
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz, &
-                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_in_pa, &
-                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,grid)
-=======
 SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_in_pa, &
                     latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
       
-!center  lat is the center latitude from the global attributes 
-!stdlon  is the center longitude from the global attributes 
-!nproj   is the map projection from the global attributes
-!dsm     is the spacing in meters from the global attributes
-!ew      is the west_east_stag from the dimensions. We want the full domain.
-!ns      is the south_north_stag from the dimensions. We want the full domain.
-!nz      is the number of metgrid levels from the dimensions
+!center   lat is the center latitude from the global attributes 
+!stdlon   is the center longitude from the global attributes 
+!nproj    is the map projection from the global attributes
+!dsm      is the spacing in meters from the global attributes
+!ew       is the west_east_stag from the dimensions. We want the full domain.
+!ns       is the south_north_stag from the dimensions. We want the full domain.
+!nz       is the number of metgrid levels from the dimensions
 !latc_loc is the center latitude of the bogus strorm.  It comes from the namelist entry
 !lonc_loc is the center longitude of the bogus strorm.  It comes from the namelist entry
-!vmax    is the max vortex it comes from the namelist entry
-!vmax_ratio
-!rmax    
+!vmax     is the max vortex it comes from the namelist entry
+!vmax_ratio  this comes from the namelist entry
+!rmax        this comes from the namelist entry
 
 !module_llxy resides in the share directory.
   USE module_llxy
@@ -575,7 +539,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
   
   real :: press(ns,ew,nz),rhmx(nz), vwgt(nz)
   real, dimension(:,:,:) , allocatable :: u11,v11,t11,rh11,phi11
-  real, dimension(:,:,:) , allocatable :: umass,vmass
   real, dimension(:,:,:) , allocatable :: u1 , v1 , t1 , rh1 , phi1
   real, dimension(ns,ew) :: mfx,mfd,lond,terrain,cor,xlat,pslx
   real, dimension(ns-1,ew) :: mfsu
@@ -585,9 +548,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
   CHARACTER*2  jproj
   LOGICAL :: l_tcbogus
 
-!These values are hard coded in the procedure proc_namelist.F
-!Since we don't include this module we will declare them here
-!and hard code them.
+
   real :: r_search,r_vor,beta,devps,humidity_max
   real :: devpc,const,r_vor2,cnst,alphar,epsilon,vormx , rad , sum_q 
   real :: avg_q ,q_old,ror,q_new,sum_rh,avg_rh,rh_min,rhbkg,rhbog,dph,dphx0
@@ -650,7 +611,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
         z2(ns,ew,nz),  phi2(ns,ew,nz),                        &
         rh2(ns,ew,nz), q2(ns,ew,nz)
       
-
    print *,"the dimensions: north-south = ",ns," east-west =",ew
    IF (nproj .EQ. 1) THEN
         jproj = 'LC'
@@ -663,8 +623,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
    END IF
    num_storm = 1
 
-!NOTE: the ptop in the namelist is not in pa
-  ptop_in_pa = 10000
   knowni = 1.
   knownj = 1.
   pie     = 3.141592653589793
@@ -765,33 +723,16 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
          END IF
  END IF
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
- ns = ns
- ew = ew
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-=======
 !Remember that ns = the north south staggered.
 !              ew = the east west staggered.
 
 
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 !Put the U and V into the new arrays.
 !The u and v are read in destaggered and then put on MM5 dot points UGH!!
  allocate(u11  (1:ns, 1:ew, 1:nz))
  allocate(v11  (1:ns, 1:ew, 1:nz))
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
- allocate(umass(1:ew, 1:nz, 1:ns))
- allocate(vmass(1:ew, 1:nz, 1:ns))
-
-!first U
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-
-!reorder the wind fields and then put on mass points.
-!first put U on MM5 grid
-=======
 !reorder the wind fields and then put on mass points.
 !first U put on MM5 grid
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
  do i = 1,ns-1
     do j = 1,ew
        do k = 1,nz
@@ -801,19 +742,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  end do
 
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-!Destagger U to mass points
- do i = 1,ns-1
-    do j = 1,ew-1
-       do k = 1,nz
-          u11(i,j,k) = 0.5 * (u11(i,j,k) + u11(i,j+1,k))
-       end do
-    end do
- end do
-
-
-=======
 !Destagger U to mass points
  do i = 1,ns-1
     do j = 1,ew-1
@@ -824,7 +752,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  end do
  call xtodot(u11,ns,ew)
 
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 !now V
  do i = 1,ns
@@ -835,22 +762,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
     end do
  end do
  
- do i = 1,ns
-    print *,v11(i,1,1)
- end do
- stop
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-!Destagger V to mass points
- do i = 1,ns-1
-    do j = 1,ew-1
-       do k = 1,nz
-          v11(i,j,k) = 0.5 * (v11(i,j,k) + v11(i+1,j,k))
-       end do
-    end do
- end do
-=======
 !Destagger V to mass points
  do i = 1,ns-1
     do j = 1,ew-1
@@ -861,62 +773,25 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  end do
  call xtodot(v11,ns,ew)
 !we now have u and v on MM5 dot points.
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
-! do i = 1,ew
-!    do k = 1,nz
-!       do j = 1,ns-1
-!          umass(i,k,j) = 0.5 * (grid%u_gc(i,k,j) + grid%u_gc(i + 1,k,j))
-!       end do
-!    end do
-! end do
-
-
-! do i = 1,ew-1
-!    do k = 1,nz
-!       do j = 1,ns
-!          vmass(i,k,j) = 0.5 * (grid%v_gc(i,k,j) + grid%v_gc(i,k,j+1))
-!       end do
-!    end do
-! end do
 
 
 !here we need to transpose the level(k) and the ns direction
 !So the ordering will be j,i,k - ns,ew,level
 !we want MM5 ordering
- allocate(u11  (1:ns, 1:ew, 1:nz))
- allocate(v11  (1:ns, 1:ew, 1:nz))
  allocate(t11  (1:ns, 1:ew, 1:nz))
  allocate(rh11 (1:ns, 1:ew, 1:nz))
  allocate(phi11(1:ns, 1:ew, 1:nz))
 
- do i = 1,ns-1
-    do j = 1,ew
-       do k = 1,nz
-          u11(i,j,k) = grid%u_gc(j,k,i)
-       end do
-    end do
- end do
-
-do i = 1,ns-1
-   print *,i,u11(i,1,1)
-end do
-
-stop
  do i = 1,ns
     do j = 1,ew
        do k = 1,nz
-           u11(i,j,k)   = umass(j,k,i)
-           v11(i,j,k)   = vmass(j,k,i)
            t11(i,j,k)   = grid%t_gc(j,k,i)
            rh11(i,j,k)  = grid%rh_gc(j,k,i)
            phi11(i,j,k) = grid%ght_gc(j,k,i)
        end do
     end do
  end do
- deallocate(umass)
- deallocate(vmass) 
-
 
 
 
@@ -939,37 +814,14 @@ stop
 !The terrain soil height is from ght at level 1
  do i = 1,ns
     do j = 1,ew
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-!       pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
-!       cor(i,j)     = grid%f(j,i)  !coreolous
-!       lond(i,j)    = grid%xlong_gc(j,i)
-       terrain(i,j) = grid%ht_gc(j,i)
-       xlat(i,j)    = grid%xlat_gc(1,1)
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-       pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
-       cor(i,j)     = grid%f(j,i)  !coreolous
-       lond(i,j)    = grid%xlong_gc(j,i)
-       terrain(i,j) = grid%ht_gc(j,i)
-=======
        pslx(i,j)    = grid%pslv_gc(j,i)  * 0.01
        cor(i,j)     = grid%f(j,i)  !coreolous
        lond(i,j)    = grid%xlong_gc(j,i)
        terrain(i,j) = grid%ght_gc(j,1,i)
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
     end do
  end do
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
- cor  = transpose(grid%f)
- pslx = transpose(grid%pslv_gc) 
- pslx = pslx * 0.01
- lond = transpose(grid%xlong_gc)
- call crs2dot(lond,ns,ew)
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
- call crs2dot(lond,ns,ew)
-=======
 !longitude on dot points
  call xtodot(lond,ns,ew)
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
 
 
  DO k=1,kx
@@ -1000,9 +852,7 @@ stop
  pprm = devpc*100.
  phip0= pprm/rho 
 
-!latc_loc and lonc_loc will come in from the namelist.  Hard code
-!them for now.
-
+!latc_loc and lonc_loc come in from the namelist. 
  CALL latlon_to_ij ( proj , latc_loc , lonc_loc , x0 , y0 )
  IF ( ( x0 .LT. 1. ) .OR. ( x0 .GT. REAL(jx-1) ) .OR. &
               ( y0 .LT. 1. ) .OR. ( y0 .GT. REAL(ix-1) ) ) THEN
@@ -1014,7 +864,6 @@ stop
  l_tcbogus = .TRUE.
 !  Bogus vortex specifications, vmax (m/s); rmax (m);
  vmx = vmax  * vmax_ratio
- print *,"the vmx  ",vmax,vmax_ratio,vmx
 
  IF (  latc_loc .LT. 0.  ) THEN
        vmx = -vmx
@@ -1049,8 +898,6 @@ stop
  
 !  Define complete field of bogus storm
 !Note dx is spacing in meters
-!ns = ns stag
-!ew = ew stag
   DO i=1,ns
      DO j=1,ew
         disx = REAL(j) - xjcn
@@ -1068,18 +915,8 @@ stop
 
 ! Rotate wind to map proj
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-  DO i=1,ns-1
-     DO j=1,ew-1
-!i don't think we want xlong_gc here check with dave.
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
   DO i=1,ns
      DO j=1,ew
-!i don't think we want xlong_gc here check with dave.
-=======
-  DO i=1,ns
-     DO j=1,ew
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
         xlo = stdlon-lond(i,j)
 !        print *,xlo
         IF ( xlo .GT. 180.)xlo = xlo-360.
@@ -1103,11 +940,11 @@ stop
  
 
    DO k=1,kx
-      DO i=1,ns-1
+      DO i=1,ns
          utcr(i,ew,k) = utcr(i,ew-1,k)
          vtcr(i,ew,k) = vtcr(i,ew-1,k)
       END DO
-      DO j=1,ew-1
+      DO j=1,ew
           utcr(ns,j,k) = utcr(ns-1,j,k)
           vtcr(ns,j,k) = vtcr(ns-1,j,k)
       END DO
@@ -1121,19 +958,6 @@ stop
        vtcr(ns,ew,k) = vtcr(ns-1,ew-1,k)
    END DO
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-!This is the map scale factor on cross points.
-    do i = 1,ns
-      do j = 1,ew
-         mfx(i,j) = grid%msft(j,i)
-         mfd(i,j) = grid%msft(j,i)
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-!This is the map scale factor on cross points.
-    do i = 1,ns-1
-      do j = 1,ew-1
-         mfx(i,j) = grid%msft(j,i)
-         mfd(i,j) = grid%msft(j,i)
-=======
 
 
 !This is the map scale factor on cross points and dot points
@@ -1141,7 +965,6 @@ stop
       do j = 1,ew-1
          mfx(i,j)  = grid%msft(j,i)
          mfd(i,j)  = grid%msft(j,i)
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
       end do
    end do
 
@@ -1151,7 +974,7 @@ stop
 
 !  Compute vorticity of FG 
    CALL vor(u1,v1,mfd,mfx,ns,ew,kx,dx,vort)
-
+   
 
 !  Compute divergence of FG
    CALL diverg(u1,v1,mfd,mfx,ns,ew,kx,dx,div)
@@ -1186,7 +1009,7 @@ stop
          END DO
       END DO
    END DO
-   print *,"after relax one"
+
    
    DO k=1,kx  !start of the k loop
       IF ( latc_loc .GE. 0. ) THEN
@@ -1379,8 +1202,6 @@ stop
    
     END DO
 
-
-
 !  Background u, v fields.
 !  Subtract the first quess wind field original winds.
     
@@ -1458,23 +1279,17 @@ stop
          END DO
      END DO
 
-     print *,"the background geopotential"
+
      !  Background geopotential.
      DO k=k00,kx
          DO i=1,ns
             DO j=1,ew
                phi0(i,j,k)   = phi1(i,j,k) - phip(i,j,k)
-!               print *,i,j,k,phi0(i,j,k)
             END DO
          END DO
      END DO
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-     print *,"the background temperature"
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-=======
 
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
      !  Background temperature
      DO k=k00,kx 
         DO i=1,ns
@@ -1486,30 +1301,17 @@ stop
               ELSE
                   tpos(i,j,k) = (-1./rconst)*(phip(i,j,k+1)-phip(i,j,k-1))/LOG(press(i,j,k+1)/press(i,j,k-1))
               END IF
-
               t0(i,j,k) = t1(i,j,k)-tpos(i,j,k)
               t00(i,j,k) = t0(i,j,k)
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-              if(t0(i,j,k) .gt. 400) then
-                 print *,"interesting temperature ",t0(i,j,k)," at ",i,j,k
-              end if
-=======
               if(t0(i,j,k) .gt. 400) then
                  print *,"interesting temperature ",t0(i,j,k)," at ",i,j,k
                  stop
               end if
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
            END DO
         END DO
      END DO
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-     print *,"the background rh"
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-=======
 
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
      !  Background RH.
      CALL qvtorh (q0,t0,press*100.,k00,ix,jx,kx,rh0,min_RH_value)
 
@@ -1613,7 +1415,6 @@ stop
         END DO
      END DO
 
-!-------------------------------------------------------------------
      !  New RH.
      DO k=k00,kx
         DO i=1,ns
@@ -1651,27 +1452,22 @@ stop
               tmp1(i,j)=psitc(i,j,k)
           END DO
        END DO
-!       print *,"before balance ",dx
        CALL balance(cor,tmp1,ns,ew,dx,outold)
        DO i=1,ns
           DO j=1,ew
              ff(i,j)=outold(i,j)
-             print *,"ff ",i,j,k,ff(i,j)
              tmp1(i,j)=0.0
           END DO
        END DO
        epsilon = 1.e-3
        CALL relax (tmp1,ff,rd,ns,ew,dx,epsilon,alphar)
-       print *,"after the geop relax",k
        DO i=1,ns
           DO j=1,ew
              phiptc(i,j,k) = tmp1(i,j)
-             print *,i,j,phiptc(i,j,k)
           END DO
        END DO
     END DO
-    print *,"after the geopotential perturbation"
-    stop
+
    !  New geopotential field.
    DO k=1,kx
       DO i=1,ns
@@ -1681,7 +1477,7 @@ stop
       END DO
    END DO
 
-   print *,"new temperature field"
+  
    !  New temperature field.
     DO k=k00,kx
        DO i=1,ns
@@ -1694,7 +1490,11 @@ stop
                  tptc(i,j,k)=(-1./rconst)*(phiptc(i,j,k+1)-phiptc(i,j,k-1))/LOG(press(i,j,k+1)/press(i,j,k-1))
              END IF
              t2(i,j,k) = t0(i,j,k) + tptc(i,j,k)
-             print *,i,j,k,t2(i,j,k)
+             if(t2(i,j,k) .gt. 400) then
+                print *,"interesting temperatrue "
+                print *,t2(i,j,k),t0(i,j,k),tptc(i,j,k),i,j,k
+                stop
+             end if
            END DO
         END DO
     END DO
@@ -1712,7 +1512,7 @@ stop
     !  New SLP.
       DO i=1,ns
          DO j=1,ew
-            pslx(i,j) = pslx(i,j)+delpx(i,j)
+            pslx(i,j) = pslx(i,j)+delpx(i,j) 
          END DO
       END DO
 
@@ -1739,22 +1539,8 @@ stop
      
 
      !  New surface temperature, assuming same theta as from 1000 mb.
-     print *,"surface temperature"
      DO i=1,ns
         DO j=1,ew
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-           ps = pslx(i,j)
-           t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
-           print *,i,j,t2(i,j,1),ps
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-           ps = pslx(i,j)
-           t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
-           if(t2(i,j,1) .gt. 400) then
-              print *,"Interesting surface temperature"
-              print *,t2(i,j,1),t2(i,j,k00),ps,i,j
-              stop
-           end if
-=======
 !           ps = pslx(i,j)
 !           t2(i,j,1) = t2(i,j,k00)*((ps/1000.)**rovcp)
             t2(i,j,1) = t11(i,j,1)
@@ -1763,10 +1549,9 @@ stop
               print *,t2(i,j,1),t2(i,j,k00),ps,i,j
               stop
            end if
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
         END DO
      END DO
-     stop
+
 
      !  Set surface RH to the value from 1000 mb.
      DO i=1,ns
@@ -1790,16 +1575,6 @@ stop
  deallocate(rh1)
  deallocate(phi1)
 
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-
- do i = 1,ns
-    do j = 1,ew
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
- call crs2dot(u2,ns-1,ew)
- call crs2dot(v2,ns,ew-1)
- do i = 1,ns-1
-    do j = 1,ew-1
-=======
 !Interpolate the U and V from mass points
 !back to the staggered grid.
  call dot2crs(u0,ns,ew)
@@ -1827,25 +1602,7 @@ stop
 
  do i = 1,ns-1
     do j = 1,ew-1
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
        do k = 1,nz
-<<<<<<< WRFV3_3734+sherrie/main/./.#tc_em.F.19282
-             grid%u_gc(j,k,i) = u2(i,j,k)
-             grid%v_gc(j,k,i) = v2(i,j,k)
-             grid%t_gc(j,k,i) = t2(i,j,k)
-             print *,i,j,k,t2(i,j,k)
-            grid%rh_gc(j,k,i) = rh2(i,j,k)
-           grid%ght_gc(j,k,i) = z2(i,j,k)
-||||||| WRFV3_3734+sherrie/main/tc_em.F.old.19282
-             grid%u_gc(j,k,i)   = u2(i,j,k)
-             grid%v_gc(j,k,i)   = v2(i,j,k)
-             grid%t_gc(j,k,i)   = t2(i,j,k)
-             grid%rh_gc(j,k,i)  = rh2(i,j,k)
-             grid%ght_gc(j,k,i) = z2(i,j,k)
-             if(k .eq. 1) then
-                grid%pslv_gc(j,i) = pslx(i,j) * 100.
-             end if
-=======
              grid%t_gc(j,k,i)   = t2(i,j,k)
              grid%rh_gc(j,k,i)  = rh2(i,j,k)
              grid%ght_gc(j,k,i) = z2(i,j,k)
@@ -1857,7 +1614,6 @@ stop
                 end if
                 grid%pslv_gc(j,i) = pslx(i,j) * 100.
              end if
->>>>>>> WRFV3_3734+sherrie/main/tc_em.F.new.19282
        end do
     end do
  end do
@@ -1968,6 +1724,7 @@ END SUBROUTINE tc_bogus
    END SUBROUTINE rankine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
    SUBROUTINE vor(u,v,dmf,xmf,i1,j1,k1,ds,vort)
 
       !  Compute k component of del cross velocity
@@ -2001,7 +1758,6 @@ END SUBROUTINE tc_bogus
                v3=v(i  ,j+1,k)/dmf(i  ,j+1)
                v4=v(i+1,j+1,k)/dmf(i+1,j+1)
                vort(i,j,k)=xmf(i,j)*xmf(i,j)*ds2r*((v4-v2+v3-v1)-(u2-u1+u4-u3))
-               print *,i,j,k,vort(i,j,k)
             END DO
          END DO
       END DO
@@ -2012,6 +1768,7 @@ END SUBROUTINE tc_bogus
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
    SUBROUTINE diverg(u,v,dmf,xmf,i1,j1,k1,ds,div)
 
    !  Computes divergence

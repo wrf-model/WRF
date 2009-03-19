@@ -667,7 +667,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=32767 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap
+FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=32767 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
 CPP             =       /lib/cpp -C -P

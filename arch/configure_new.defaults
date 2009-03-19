@@ -652,9 +652,9 @@ CC              =       CONFIGURE_CC
 LD		=	$(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV
 CFLAGS_LOCAL    =       -DNOUNDERSCORE
-LDFLAGS_LOCAL   =       
+LDFLAGS_LOCAL   =       -lmass -lmassv
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 # -qhot commented out in 3.0.1.1 release because of reported problems with 

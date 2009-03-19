@@ -117,7 +117,7 @@ integer::oops1,oops2
       INTEGER :: force_sfc_in_vinterp
       INTEGER :: interp_type , lagrange_order , extrap_type , t_extrap_type
       LOGICAL :: lowest_lev_from_sfc , use_levels_below_ground , use_surface
-      LOGICAL :: we_have_tavgsfc
+      LOGICAL :: we_have_tavgsfc , we_have_tsk
 
       INTEGER :: lev500 , loop_count
       REAL    :: zl , zu , pl , pu , z500 , dz500 , tvsfc , dpmu
@@ -255,10 +255,36 @@ integer::oops1,oops2
          CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
 
+      !  Check to see what available surface temperatures we have.
+
       IF ( flag_tavgsfc .EQ. 1 ) THEN
          we_have_tavgsfc = .TRUE.
       ELSE
          we_have_tavgsfc = .FALSE.
+      END IF
+
+      IF ( flag_tsk     .EQ. 1 ) THEN
+         we_have_tsk     = .TRUE.
+      ELSE
+         we_have_tsk     = .FALSE.
+      END IF
+   
+      IF ( config_flags%use_tavg_for_tsk ) THEN
+         IF ( we_have_tsk .OR. we_have_tavgsfc ) THEN
+           !  we are OK
+         ELSE
+            CALL wrf_error_fatal ( 'We either need TSK or TAVGSFC, verify these fields are coming from WPS' )
+         END IF
+   
+         !  Since we require a skin temperature in the model, we can use the average 2-m temperature if provided.
+   
+         IF ( we_have_tavgsfc ) THEN
+            DO j=jts,min(jde,jte)
+               DO i=its,min(ide-1,ite)
+                  grid%tsk(i,j) = grid%tavgsfc(i,j)
+               END DO
+            END DO
+         END IF
       END IF
 
       !  Is there any vertical interpolation to do?  The "old" data comes in on the correct
@@ -398,6 +424,46 @@ integer::oops1,oops2
            END DO
          END IF
 
+         !  Some data sets do not provide a surface RH field.
+
+         IF ( ABS(grid%rh_gc(its,kts,jts)) .LT. 1.e-5 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%rh_gc(i,1,j) = grid%rh_gc(i,2,j)
+               END DO
+            END DO
+         END IF
+
+         !  The number of vertical levels in the input data.  There is no staggering for
+         !  different variables.
+
+         num_metgrid_levels = grid%num_metgrid_levels
+
+         !  Compute the mixing ratio from the input relative humidity.
+
+         IF ( flag_qv .NE. 1 ) THEN
+            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc , &
+                              config_flags%rh2qv_wrt_liquid , &
+                              ids , ide , jds , jde , 1   , num_metgrid_levels , &
+                              ims , ime , jms , jme , 1   , num_metgrid_levels , &
+                              its , ite , jts , jte , 1   , num_metgrid_levels )
+         END IF
+
+         !  Some data sets do not provide a 3d geopotential height field.  
+
+         IF ( grid%ght_gc(its,grid%num_metgrid_levels/2,jts) .LT. 1 ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO k = kts+1 , grid%num_metgrid_levels
+                  DO i = its, MIN(ite,ide-1)
+                     grid%ght_gc(i,k,j) = grid%ght_gc(i,k-1,j) - &
+                        R_d / g * 0.5 * ( grid%t_gc(i,k  ,j) * ( 1 + 0.608 * grid%qv_gc(i,k  ,j) ) +   &
+                                          grid%t_gc(i,k-1,j) * ( 1 + 0.608 * grid%qv_gc(i,k-1,j) ) ) * &
+                        LOG ( grid%p_gc(i,k,j) / grid%p_gc(i,k-1,j) )
+                  END DO
+               END DO
+            END DO
+         END IF
+
          !  Assign surface fields with original input values.  If this is hybrid data,
          !  the values are not exactly representative.  However - this is only for
          !  plotting purposes and such at the 0h of the forecast, so we are not all that
@@ -428,11 +494,6 @@ integer::oops1,oops2
                END DO
             END DO
          END IF
-
-         !  The number of vertical levels in the input data.  There is no staggering for
-         !  different variables.
-
-         num_metgrid_levels = grid%num_metgrid_levels
 
          !  The requested ptop for real data cases.
 
@@ -534,16 +595,6 @@ integer::oops1,oops2
               END IF
            END DO
          END DO
-
-         !  Compute the mixing ratio from the input relative humidity.
-
-         IF ( flag_qv .NE. 1 ) THEN
-            CALL rh_to_mxrat (grid%rh_gc, grid%t_gc, grid%p_gc, grid%qv_gc , &
-                              config_flags%rh2qv_wrt_liquid , &
-                              ids , ide , jds , jde , 1   , num_metgrid_levels , &
-                              ims , ime , jms , jme , 1   , num_metgrid_levels , &
-                              its , ite , jts , jte , 1   , num_metgrid_levels )
-         END IF
 
          !  Two ways to get the surface pressure.  1) If we have the low-res input surface
          !  pressure and the low-res topography, then we can do a simple hydrostatic

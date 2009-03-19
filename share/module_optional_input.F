@@ -1,7 +1,7 @@
 MODULE module_optional_input
 
    INTEGER :: flag_metgrid  , flag_tavgsfc  , flag_psfc     , flag_soilhgt  , flag_mf_xy , flag_slp , &
-              flag_snow     , flag_snowh
+              flag_snow     , flag_snowh    , flag_tsk
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
               flag_qg       , flag_qni
@@ -145,6 +145,11 @@ CONTAINS
       kts = grid%sp32 ; kte = grid%ep32 ;   ! note that tile is entire patch
       jts = grid%sp33 ; jte = grid%ep33 ;   ! note that tile is entire patch
 #endif
+
+      CALL optional_tsk        ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
 
       CALL optional_tavgsfc    ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &
@@ -374,6 +379,38 @@ USE module_io_domain
     
    END SUBROUTINE optional_sst
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   SUBROUTINE optional_tsk     ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
+
+      USE module_io_wrf
+      USE module_domain
+USE module_configure
+USE module_io_domain
+
+      IMPLICIT NONE 
+
+      TYPE ( domain ) :: grid
+      INTEGER , INTENT(IN) :: fid
+
+      INTEGER :: ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte
+
+      INTEGER :: itmp , icnt , ierr
+
+      flag_tsk      = 0 
+
+      flag_name(1:8) = 'TSK     '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_tsk      = itmp
+      END IF
+    
+   END SUBROUTINE optional_tsk
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

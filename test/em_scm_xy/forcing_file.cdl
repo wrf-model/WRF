@@ -150,8 +150,8 @@ variables:
 
 // global attributes:
 		:TITLE = "AUXILIARY FORCING FOR SCM" ;
-		:START_DATE = "2003-05-03_12:00:00" ;
-		:SIMULATION_START_DATE = "2003-05-03_12:00:00" ;
+		:START_DATE = "1999-10-22_19:00:00" ;
+		:SIMULATION_START_DATE = "1999-10-22_19:00:00" ;
 		:DX = 4000.f ;
 		:DY = 4000.f ;
 		:GRID_ID = 1 ;

@@ -1,18 +1,14 @@
 
 ;-----------------------------------------------------------------------------
-; Readme for the namelist of the 3DVAR observation processor (3dvar_obs).
-; To create the namelist.3dvar_obs file by edit namelist.3dvar_obs.sample
-; or namelist.3dvar_obs.sample1.
+; Readme for the namelist of the 3/4DVAR observation processor (obsproc).
+; To create the namelist.obsproc file by edit namelist.obsproc.wrfvar-tut
 ;
 ; The meanings for the namelist records are explained below.
 ;
+;                                                  Updated for V3.1 Mar. 17 2009
+
 ;                                                  Yong-Run Guo June 4 2003
 ;
-; Added the capability of applying for WRF domain.
-;
-; For WRF application, must use namelist.3dvar_obs.sample1.
-
-;                                              Yong-Run Guo, November 11, 2004
 ;-----------------------------------------------------------------------------
 
 &record1
@@ -23,13 +19,11 @@
 /
 
 &record2
-; time_earlier : time difference between the ealier time edge and analysis
-;                time in minute, a negative integer value;
-; time_analysis: Ananlysis time as ccyy-mm-dd_hh:mn:ss
-; time_later   : time difference between the later time edge and analysis 
-;                time in minute, a positive integer value;
+;time_window_min = '2007-01-01_23:00:00',: The earliest time edge as ccyy-mm-dd_hh:mn:ss
+;time_analysis = '2007-01-02_00:00:00', : The analysis time as ccyy-mm-dd_hh:mn:ss
+;time_window_max = '2007-01-02_11:00:00',: The latest time edge as ccyy-mm-dd_hh:mn:ss
 ; Only observations between 
-;       [time_analysis+time_earlier,time_analysis+time_later] will kept.
+;       [time_window_min,time_window_max] will kept.
 ; 
 ; When no first guess as input file:
 ; time_window_min: Beginning of time window (included) as ccyy-mm-dd_hh:mn:ss

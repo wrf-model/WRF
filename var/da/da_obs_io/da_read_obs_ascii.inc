@@ -37,7 +37,7 @@ subroutine da_read_obs_ascii (iv, filename)
 
    character (len = 160)        :: info_string
 
-   character (len = 160)        :: fmt_info, fmt_loc, fmt_each
+!   character (len = 160)        :: fmt_info, fmt_srfc, fmt_each
 
    integer                      :: i, j, iost, nlevels, old_nlevels, fm,iunit
 
@@ -99,7 +99,7 @@ subroutine da_read_obs_ascii (iv, filename)
 
    read (iunit, fmt = '(A,1X,A)', iostat = iost) &
       fmt_name, fmt_info, &
-      fmt_name, fmt_loc,  &
+      fmt_name, fmt_srfc,  &
       fmt_name, fmt_each
 
    if (iost /= 0) then
@@ -112,7 +112,7 @@ subroutine da_read_obs_ascii (iv, filename)
    if (print_detail_obs) then
       write(unit=stdout, fmt='(2a)') &
          'fmt_info=', fmt_info, &
-         'fmt_loc =', fmt_loc,  &
+         'fmt_srfc =', fmt_srfc,  &
          'fmt_each=', fmt_each
    end if
 
@@ -178,7 +178,7 @@ subroutine da_read_obs_ascii (iv, filename)
       ! read model location
       ! =========================
 
-      read (iunit, fmt = fmt_loc)  &
+      read (iunit, fmt = fmt_srfc)  &
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
@@ -219,6 +219,7 @@ subroutine da_read_obs_ascii (iv, filename)
 
          if (print_detail_obs) then
             write(unit=stdout, fmt = '(a, i6)') 'i=', i
+! because now the field_type included: inv, qc, error, sens, and imp (YRG, 02/23/2009):              
             write(unit=stdout, fmt = trim (fmt_each)) &
                platform%each(i)%p%inv, platform%each(i)%p%qc, platform%each(i)%p%error, &
                platform%each(i)%speed%inv, platform%each(i)%speed%qc, &

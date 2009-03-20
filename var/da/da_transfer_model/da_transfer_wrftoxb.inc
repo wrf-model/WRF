@@ -175,7 +175,6 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
       write(unit=stdout, fmt=*) '  grid%p_top=', grid%p_top
       write(unit=stdout, fmt=*) '  grid%znu(kts)=', grid%znu(kts)
-      write(unit=stdout, fmt=*) '  grid%mu0(its,jts)=', grid%mu0(its,jts)
       write(unit=stdout, fmt=*) '  grid%mub(its,jts)=', grid%mub(its,jts)
       write(unit=stdout, fmt=*) '  grid%mu_2(its,jts)=', &
          grid%mu_2(its,jts)

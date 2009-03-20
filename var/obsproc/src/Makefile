@@ -1,4 +1,4 @@
-#	Lower level Makefile for 3dvar_obs
+#	Lower level Makefile for obsproc
 
 # Compilation macros
 
@@ -49,24 +49,24 @@ OBJS    	=	error_handler.o \
 cray dec hp ibm sgi sun default:	default
 #		@echo "you need to be up a directory and then enter: 'make your_platform'"
 
-default:		3dvar_obs.exe
+default:		obsproc.exe
 
-all:			3dvar_obs.exe
+all:			obsproc.exe
 
-3dvar_obs.exe:		$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
+obsproc.exe:		$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(MODULES_GTS) \
 			$(OBJS) \
-			3dvar_obs.o \
+			obsproc.o \
 			Makefile ../Makefile
 			$(FC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(MODULES_GTS) \
 			$(OBJS) \
-			3dvar_obs.o $(LDFLAGS) $(LOCAL_LIBRARIES)
+			obsproc.o $(LDFLAGS) $(LOCAL_LIBRARIES)
 
 #------------------------------------------------------------------------------
 
-3dvar_obs.o:		module_namelist.o module_date.o \
+obsproc.o:		module_namelist.o module_date.o \
 			module_decoded.o \
 			module_type.o \
 			module_per_type.o \
@@ -224,4 +224,4 @@ module_thin_ob.:	module_mm5.o \
 clean:
 			$(RM) *.o *.f core *.kmo ctmi* *.mod *.lst \
 			*_out_* output *.out \
-			3dvar_obs.exe
+			obsproc.exe

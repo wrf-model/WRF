@@ -991,16 +991,22 @@ time_window_min, time_window_max, map_projection , missing_flag)
          !  to ok.  This is the only way to get SHIP data into the surface 
          !  analysis.  Since we are at sea level, we also set the pressure 
          !  to equal to the sea level pressure.
+         !
+         ! This is necessary for NCAR archived LITTLE_R files.
+         ! All of the station pressure for SHIP (FM-13) were filled with a 
+         ! fake value of 101301 Pa with the quality flag = 0 (means good);
 
-!        IF ((obs (obs_num)%info%platform(1:10) .EQ. 'FM-13 SHIP' ) .AND. &
-!            (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
+        IF ((obs (obs_num)%info%platform(1:10) .EQ. 'FM-13 SHIP' ) .AND. &
+             obs(obs_num)%info%elevation == 0.0   .and.  &
+            (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
 !             obs(obs_num)%info%elevation             = 0.01
-!             obs(obs_num)%surface%meas%height%data   = 0.01
-!             obs(obs_num)%surface%meas%height%qc     = 0
-!             obs(obs_num)%surface%meas%pressure%data = &
-!             obs(obs_num)%ground%slp%data
-!             obs(obs_num)%surface%meas%pressure%qc   = 0
-!        END IF
+             obs(obs_num)%surface%meas%height%data   = &
+             obs(obs_num)%info%elevation
+             obs(obs_num)%surface%meas%height%qc     = 0
+             obs(obs_num)%surface%meas%pressure%data = &
+             obs(obs_num)%ground%slp%data
+             obs(obs_num)%surface%meas%pressure%qc   = 0
+         END IF
 
          !  This may be wasted print-out, but it is comforting to see.
 

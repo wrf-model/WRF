@@ -7,8 +7,18 @@ dimspec    i       1     standard_domain                   x          west_east
 # Specific dimensional order for EM and NMM
 
 ifdef EM_CORE=1
+
+ifdef DA_CORE=0
 dimspec    j       3     standard_domain                   y     south_north
 dimspec    k       2     standard_domain                   z     bottom_top
+endif
+
+ifdef DA_CORE=1
+dimspec    j       2     standard_domain                   y     south_north
+dimspec    k       3     standard_domain                   z     bottom_top
+dimspec    9       4     namelist=ensdim_alpha             c     alpha ensemble dimension
+endif
+
 dimspec    lin     2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
 dimspec    |       2     namelist=num_force_layers         z     force_layers
 dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
@@ -17,6 +27,7 @@ dimspec    h       -     namelist=nobs_err_flds            c     nobs_err_flds
 dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
 dimspec    &       2     namelist=lagday                   z     lagday
+
 endif
 
 ifdef NMM_CORE=1

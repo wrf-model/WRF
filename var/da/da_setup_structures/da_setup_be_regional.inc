@@ -59,7 +59,7 @@ subroutine da_setup_be_regional(xb, be)
    real, allocatable           :: regcoeff2(:,:)
    real, allocatable           :: regcoeff3(:,:,:)
    real                        :: avg,avg2,avg3
-   integer                     :: be_unit
+   integer                     :: be_unit, ier
 
    if (trace_use) call da_trace_entry("da_setup_be_regional")
 
@@ -92,7 +92,13 @@ subroutine da_setup_be_regional(xb, be)
    open(unit=be_unit,file="be.dat", status="old",form="unformatted")
 
    rewind (be_unit)
-   read (be_unit) ni, nj, nk
+   read (be_unit, iostat=ier) ni, nj, nk
+   if (ier /= 0) then
+      write(unit=*, fmt='(a, i2, a, i3)') &
+           'cv_options:', cv_options,' Reading error in unit=',be_unit
+      call wrf_shutdown
+      stop "Stopped, Please check if CV5 BE file provided correctly."
+   endif
 
    allocate (bin(1:ni,1:nj,1:nk))
    allocate (bin2d(1:ni,1:nj))

@@ -1,4 +1,4 @@
-PROGRAM main_3dvar_obs
+PROGRAM main_obsproc
 
 !-----------------------------------------------------------------------------!
 ! Read decoded observations (output format of the MM5 "gts_decoder" and "fetch"
@@ -90,7 +90,7 @@ PROGRAM main_3dvar_obs
 ! ====================   
 
       iunit = 99
-      nml_filename = 'namelist.3dvar_obs'
+      nml_filename = 'namelist.obsproc'
 
       WRITE (UNIT = 0, FMT = '(/,A,A,/,A)')        &
     ' READ NAMELIST FILE: ',TRIM  (nml_filename),  &
@@ -575,4 +575,4 @@ PROGRAM main_3dvar_obs
       ENDIF
       STOP "99999"
 
-END PROGRAM main_3dvar_obs
+END PROGRAM main_obsproc

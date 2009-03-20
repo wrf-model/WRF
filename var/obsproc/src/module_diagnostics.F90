@@ -150,7 +150,8 @@ SUBROUTINE diagnostics_moist (new)
 
          !  Compute Qv if missing when pressure is not missing
 
-         IF ((.NOT. eps_equal (new%pressure%data, missing_r , 1.)) .AND. &
+!         IF ((.NOT. eps_equal (new%pressure%data, missing_r , 1.)) .AND. &
+         IF ((new%pressure%qc >= 0) .AND. &
              (      eps_equal (new%qv%data,       missing_r , 1.))) THEN
 
                p  = new%pressure%data / 100  ! P in mb

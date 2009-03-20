@@ -139,7 +139,7 @@
    ! [5.0] Set up background errors (be):
    !---------------------------------------------------------------------------
 
-      call da_setup_background_errors (grid%xb, be)
+      call da_setup_background_errors (grid, be)
 
    !---------------------------------------------------------------------------
    ! [5.1] Set up observation bias correction (Varbc):

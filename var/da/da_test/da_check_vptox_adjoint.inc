@@ -1,4 +1,4 @@
-subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
+subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp, cv_size)
 
    !---------------------------------------------------------------------------
    ! Purpose: Test Vp to X routine and adjoint for compatibility.
@@ -13,7 +13,11 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
    integer, intent(in)              :: ne   ! Ensemble size.
    type (be_type), intent(in)       :: be   ! background errors.
    type (ep_type), intent(in)       :: ep   ! Ensemble perturbation type.
-   type (vp_type),intent(inout)     :: vp   ! grdipt/level cv (local).
+   type (vp_type),intent(inout)     :: vp   ! grdipt/level cv (local)
+   integer, intent(in)              :: cv_size
+
+! control variable
+   real                             :: cv(1:cv_size), cv_2(1:cv_size) 
 
    real                             :: adj_par_lhs ! < x, x >
    real                             :: adj_par_rhs ! < v_adj, v >
@@ -94,7 +98,20 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
    ! [2.0] Perform x = U vp transform:
    !-------------------------------------------------------------------------
 
-   call da_transform_vptox(grid, vp, be, ep)
+   if ( cv_options == 3 ) then
+      
+      call random_number(cv(:))
+      cv(:) = cv(:) - 0.5
+      cv_2 = cv
+
+      call da_apply_be( be, cv, vp, grid)
+      call da_transform_bal( vp, be, grid)
+ 
+   else
+
+      call da_transform_vptox(grid, vp, be, ep)
+
+   end if
 
    !-------------------------------------------------------------------------
    ! [3.0] Calculate LHS of adjoint test equation:
@@ -187,7 +204,18 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
 
    call da_zero_vp_type (vp)
 
-   call da_transform_vptox_adj(grid, vp, be, ep)
+   if (cv_options == 3 ) then
+
+      cv = 0.0
+
+      call da_transform_bal_adj( vp, be, grid)
+      call da_apply_be_adj( be, cv, vp, grid)
+
+   else
+
+       call da_transform_vptox_adj(grid, vp, be, ep)
+
+   end if
 
    !-------------------------------------------------------------------------
    ! [6.0] Calculate RHS of adjoint test equation:
@@ -207,6 +235,8 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp)
       adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,:) * &
          vp2_alpha(its:ite,jts:jte,:)) + adj_par_rhs
    end if
+
+   if ( cv_options == 3 ) adj_par_rhs = sum (cv_2*cv)
 
    !-------------------------------------------------------------------------
    ! [7.0] Print output:

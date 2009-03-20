@@ -9,6 +9,7 @@ module da_setup_structures
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, &
       iv_type,da_allocate_background_errors,da_allocate_observations, &
       multi_level_type,each_level_type
+   use da_wrf_interfaces, only : wrf_debug
    use da_control, only : trace_use,vert_evalue,stdout,rootproc, &
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
@@ -45,8 +46,10 @@ module da_setup_structures
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
       sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, &
+      cv_options, cv_size, as1, as2, as3, as4, as5, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
-      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr   
+      its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr, &
+      fmt_info, fmt_srfc, fmt_each   
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr
    use da_obs_io, only : da_scan_obs_bufr,da_read_obs_bufr,da_read_obs_radar, &
@@ -89,6 +92,7 @@ contains
 #include "da_rescale_background_errors.inc"
 #include "da_setup_background_errors.inc"
 #include "da_setup_be_global.inc"
+#include "da_setup_be_ncep_gfs.inc"
 #include "da_setup_be_regional.inc"
 #include "da_setup_be_nmm_regional.inc"
 #include "da_setup_cv.inc"

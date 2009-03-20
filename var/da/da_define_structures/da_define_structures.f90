@@ -9,7 +9,7 @@ module da_define_structures
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
       max_ob_levels, trace_use, num_ob_indexes, kms, kme, &
-      vert_corr_1, vert_corr_2, vert_evalue_global, &
+      vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, &
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
@@ -135,7 +135,7 @@ module da_define_structures
    type info_type
       character (len = 40)   :: name          ! Station name
       character (len = 12)   :: platform      ! Instrument platform
-      character (len =  5)   :: id            ! 5 digit station identifer
+      character (len = 40)   :: id            ! 5 digit station identifer
       character (len = 19)   :: date_char     ! CCYY-MM-DD_HH:MM:SS date
       integer                :: levels        ! number of levels
       real                   :: lat           ! Latitude in degree
@@ -155,7 +155,7 @@ module da_define_structures
       integer                             :: n2
       character (len = 40) , allocatable  :: name(:)       ! Station name
       character (len = 12), allocatable   :: platform(:)   ! Instrument platform
-      character (len =  5), allocatable   :: id(:)         ! 5 digit station identifer
+      character (len = 40), allocatable   :: id(:)         ! 5 digit station identifer
       character (len = 19), allocatable   :: date_char(:)  ! CCYY-MM-DD_HH:MM:SS date
       integer, allocatable                :: levels(:)     ! number of levels
       real, allocatable                   :: lat(:,:)      ! Latitude in degree
@@ -887,6 +887,23 @@ module da_define_structures
       real, pointer     :: reg_chi(:,:)
       real, pointer     :: reg_t  (:,:,:)
       real, pointer     :: reg_ps (:,:)
+
+!-----For cv option 3:
+      INTEGER          :: ndeg,nta
+      REAL             :: swidth
+      REAL, POINTER    :: be(:)
+      REAL, POINTER    :: rate(:)
+      REAL, POINTER    :: table(:,:)
+      REAL, POINTER    :: agvz(:,:,:,:)
+      REAL, POINTER    :: bvz(:,:,:)
+      REAL, POINTER    :: wgvz(:,:,:)
+      REAL, POINTER    :: slix(:,:,:,:)
+      REAL, POINTER    :: slipx(:,:)
+      REAL, POINTER    :: sljy(:,:,:,:)
+      REAL, POINTER    :: sljpy(:,:)
+      REAL, POINTER    :: vz(:,:,:,:)
+      REAL, POINTER    :: corz(:,:,:,:)
+      REAL, POINTER    :: corp(:,:)
    end type be_type
 
    ! Analysis_Stats maximum-minumum structure.

@@ -13,6 +13,7 @@ subroutine da_transfer_xatowrf(grid)
    !    grid%ph_2
    !    grid%t_2
    !    grid%moist
+   !    grid%p
    !
    !---------------------------------------------------------------------------
 
@@ -116,6 +117,16 @@ subroutine da_transfer_xatowrf(grid)
                         -(grid%mu_2(i,j)+qvf1_b*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
          end do
       end do
+   end do
+
+   ! update perturbation pressure
+
+   do k=kts, kte
+     do j=jts,jte
+        do i=its,ite
+           grid%p(i,j,k) = grid%p(i,j,k) + grid%xa%p(i,j,k)
+        end do
+     end do
    end do
 
    ! Adjust grid%xa%q to makte grid%xb%q + grid%xa%q > 0.0

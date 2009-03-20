@@ -55,7 +55,7 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
    ! vptox adjoint test:
    !-------------------------------------------------------------------------
 
-   call da_check_vptox_adjoint(grid,be % ne, be, ep, vp)
+   call da_check_vptox_adjoint(grid,be % ne, be, ep, vp, cv_size)
 
    !-------------------------------------------------------------------------
    ! vtox adjoint test: <x,x> = <v_adj,v>

@@ -162,6 +162,7 @@ module da_control
    ! WRFVAR Minimisation:
 
    integer            :: iter
+   integer            :: cv_size
    integer, parameter :: MP = 6
    integer, parameter :: LP = 6
    integer, parameter :: MAXFEV = 10
@@ -170,7 +171,7 @@ module da_control
    real, parameter    :: XTOL = 1.0E-17
    real, parameter    :: STPMIN = 1.0E-20
    real, parameter    :: STPMAX = 1.0E+20
-
+   
    ! Background errors:
    real, parameter    :: pplow = 1.0e-8       ! Machine lowest number?
    real, parameter    :: pp_umin = 1.0e-2     ! Minimum u back. error (m/s).

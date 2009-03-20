@@ -15,6 +15,12 @@ subroutine da_setup_obs_structures( grid, ob, iv)
 
    if (trace_use) call da_trace_entry("da_setup_obs_structures")
 
+! Default values for fmt_info, fmt_srfc, and fmt_each(YRG, 02/25/2009):
+
+   fmt_info = '(a12,1x,a19,1x,a40,1x,i6,3(f12.3,11x),6x,a40)'
+   fmt_srfc = '(7(:,f12.3,i4,f7.2))'
+   fmt_each = '(3(f12.3,i4,f7.2),11x,3(f12.3,i4,f7.2),11x,1(f12.3,i4,f7.2))'
+
    call da_message((/'Set up observations (ob)'/))
 
    ! Adjust obs switches

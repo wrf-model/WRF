@@ -1,4 +1,4 @@
-subroutine da_setup_background_errors(xb, be)
+subroutine da_setup_background_errors(grid, be)
 
    !---------------------------------------------------------------------------
    ! Purpose: Define and allocate components of background errors.
@@ -7,7 +7,8 @@ subroutine da_setup_background_errors(xb, be)
 
    implicit none
 
-   type (xb_type), intent(in)  :: xb       ! First guess structure.
+   type (domain), intent(in)   :: grid
+!  type (xb_type), intent(in)  :: xb       ! First guess structure.
    type (be_type), intent(out) :: be       ! Back. errors structure.
 
    if (trace_use) call da_trace_entry("da_setup_background_errors")
@@ -35,10 +36,14 @@ subroutine da_setup_background_errors(xb, be)
    if (global) then
       call da_setup_be_global(be)
    else if(fg_format == fg_format_wrf_arw_regional) then    
-            call da_setup_be_regional (xb, be)
+      if (cv_options == 5) then
+            call da_setup_be_regional (grid%xb, be)
+      else if(cv_options == 3 ) then
+            call da_setup_be_ncep_gfs (grid, be)
+      endif
    else if(fg_format == fg_format_wrf_nmm_regional ) then
-!rizvi TBD            call da_setup_be_regional (xb, be)
-            call da_setup_be_nmm_regional (xb, be)
+!rizvi TBD            call da_setup_be_regional (grid%xb, be)
+            call da_setup_be_nmm_regional (grid%xb, be)
    end if
 
    call da_setup_cv (be)

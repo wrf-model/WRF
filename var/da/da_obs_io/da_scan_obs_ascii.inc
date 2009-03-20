@@ -11,9 +11,9 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    character (len =  10)   :: fmt_name
    character (len = 160)   :: info_string
-   character (len = 160)   :: fmt_info
-   character (len = 160)   :: fmt_loc
-   character (len = 160)   :: fmt_each
+!   character (len = 160)   :: fmt_info
+!   character (len = 160)   :: fmt_srfc
+!   character (len = 160)   :: fmt_each
 
    integer                 :: i, iost, fm, report, iunit
    type (multi_level_type) :: platform
@@ -60,7 +60,7 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    read (iunit, fmt = '(A,1X,A)', iostat = iost) &
        fmt_name, fmt_info, &
-       fmt_name, fmt_loc,  &
+       fmt_name, fmt_srfc,  &
        fmt_name, fmt_each
 
    if (iost /= 0) then
@@ -122,7 +122,7 @@ subroutine da_scan_obs_ascii (iv, filename)
       read (platform%info%platform(4:6), '(I3)') fm
 
       ! read model location
-      read (iunit, fmt = fmt_loc)  &
+      read (iunit, fmt = fmt_srfc)  &
          platform%loc%slp%inv, platform%loc%slp%qc, platform%loc%slp%error, &
          platform%loc%pw%inv, platform%loc%pw%qc, platform%loc%pw%error
 
@@ -332,6 +332,10 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    iv%info(sonde_sfc)%max_lev=1
    iv%info(tamdar_sfc)%max_lev=1
+   iv%info(synop)%max_lev=1   ! To prevent some bad observations with more than 1 level, should I add more?
+   iv%info(ships)%max_lev=1   
+   iv%info(qscat)%max_lev=1   
+   iv%info(metar)%max_lev=1   
    close(iunit)
 
    call da_free_unit(iunit)

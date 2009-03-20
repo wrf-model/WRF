@@ -170,7 +170,7 @@ subroutine da_check_buddy_sound(iv, dx, it)
 #endif
 
    do i = 0, num_bins_p
-
+      
       numobs = num(i)
  
       do n = 1, numobs
@@ -205,6 +205,7 @@ subroutine da_check_buddy_sound(iv, dx, it)
 
      if ( num(i) <= 1 ) cycle
 
+
 ! 3.1 Get the Station locations:
    
      ! Pressure level:
@@ -217,7 +218,7 @@ subroutine da_check_buddy_sound(iv, dx, it)
       write (unit = check_buddy_unit, fmt = '(5X,A,I3,2X,A,I6)') &
              'BIN =', i, 'NUMOBS =', numobs
      end if
-!     print *,'SOUND: BIN=', i, '  numobs=',num(i)
+
 
 ! 3.2 U-component buddy check:
 

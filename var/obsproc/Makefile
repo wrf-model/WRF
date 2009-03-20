@@ -15,14 +15,14 @@ RM_LIST	=	*.o *.M core i.* *.kmo *.mod fort.* *.out namelist.* *~ */*~ *.exe
 
 default:	make_rules
 		( $(CD) lib ; $(MAKE) all )
-		( $(CD) src ; $(MAKE) 3dvar_obs.exe )
-		( $(RM) 3dvar_obs.exe ;   $(LN) src/3dvar_obs.exe . )
+		( $(CD) src ; $(MAKE) obsproc.exe )
+		( $(RM) obsproc.exe ;   $(LN) src/obsproc.exe . )
 
 all:		make_rules
 		find . -name \*.f -exec rm {} \;
 		( $(CD) src ; $(MAKE) all )
 		( $(CD) lib ; $(MAKE) all )
-		( $(RM) 3dvar_obs.exe ;   $(LN) src/3dvar_obs.exe . )
+		( $(RM) obsproc.exe ;   $(LN) src/obsproc.exe . )
 
 tar:
 		( $(CD) src ; $(MAKE) tar )
@@ -36,7 +36,7 @@ clean:
 	$(RM) obs_gts.ascii.* *.diag
 	$(RM) HEIGHT.txt PRES.txt TEMP.txt RH.txt WIND.txt
 	$(RM) obs_ssmi*.3dvar obs_gts*.3dvar
-	($(CD) src ; $(RM) *.o *.f core *.kmo ctmi* *.mod *.lst *_out_* output *.out 3dvar_obs.exe )
+	($(CD) src ; $(RM) *.o *.f core *.kmo ctmi* *.mod *.lst *_out_* output *.out obsproc.exe )
 	($(CD) lib/ncep ; $(RM) *.o *.a *.lst *.prm )
 	($(CD) lib/cwordsh ; $(RM) *.o *.exe *.lst )
 

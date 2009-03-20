@@ -65,6 +65,11 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       go to 1111
    end if
 
+   if ( cv_options /= 5 ) then
+      write(unit=stdout, fmt='(/a/)') ' Inverse tests not performed for cv_options=',cv_options
+      go to 1111
+   end if
+
 #ifdef DM_PARALLEL
    write(unit=stdout, fmt='(/a/)') ' Inverse tests will not be done as it is MPP run'
 #else

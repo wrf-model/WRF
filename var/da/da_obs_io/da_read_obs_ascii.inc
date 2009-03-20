@@ -26,6 +26,10 @@ subroutine da_read_obs_ascii (iv, filename)
    !
    !           Satem thickness error should not be divided by gravity because
    !           the unit from obsproc is already meter, not geopotential meter.
+   !
+   !       Date: 03/19/2009 -        Y.-R. Guo
+   !
+   !           Added the time range check when reading in observations.
    !---------------------------------------------------------------------------
 
    implicit none
@@ -51,6 +55,9 @@ subroutine da_read_obs_ascii (iv, filename)
    integer                      :: ntotal(num_ob_indexes)
 
    integer                      :: ndup, n, report, obs_index
+
+   real                  :: obs_time
+   integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_read_obs_ascii")
 
@@ -258,6 +265,28 @@ subroutine da_read_obs_ascii (iv, filename)
             platform%each (i)%v%qc    = missing_data
          end if
       end do
+
+      ! Check if outside of the time range:
+
+      read (platform%info%date_char,'(i4,4(1x,i2))') &
+                                    iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if ( obs_time < time_slots(0) .or. &
+           obs_time >= time_slots(num_fgat_time) ) then
+         if (print_detail_obs) then
+           write(unit=stdout, fmt='(a)') '*** Outside of the time range:'
+           write(unit=stdout, fmt=fmt_info) &
+            platform%info%platform,    &
+            platform%info%date_char,   &
+            platform%info%name,        &
+            platform%info%levels,      &
+            platform%info%lat,         &
+            platform%info%lon,         &
+            platform%info%elv,         &
+            platform%info%id
+         end if
+         cycle
+      endif
 
       ! Restrict to a range of reports, useful for debugging
 

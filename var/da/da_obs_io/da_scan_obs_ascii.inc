@@ -2,6 +2,10 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    !---------------------------------------------------------------------------
    ! Purpose: Scan WRFVAR GTS observation file
+   !
+   !       Date: 03/19/2009 -        Y.-R. Guo
+   !
+   !           Added the time range check when reading in observations.
    !---------------------------------------------------------------------------
 
    implicit none
@@ -20,6 +24,9 @@ subroutine da_scan_obs_ascii (iv, filename)
    logical                 :: outside, outside_all
    real                    :: height_error
    integer                 :: ndup, n, obs_index
+
+   real                  :: obs_time
+   integer               :: iyear, imonth, iday, ihour, imin
 
    if (trace_use) call da_trace_entry("da_scan_obs_ascii")
 
@@ -160,6 +167,16 @@ subroutine da_scan_obs_ascii (iv, filename)
             platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
             platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
       end do
+
+      ! Check if outside of the time range:
+
+      read (platform%info%date_char,'(i4,4(1x,i2))') &
+                                    iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if ( obs_time < time_slots(0) .or. &
+           obs_time >= time_slots(num_fgat_time) ) then
+           cycle
+      endif
 
       ! Restrict to a range of reports, useful for debugging
 
@@ -332,10 +349,6 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    iv%info(sonde_sfc)%max_lev=1
    iv%info(tamdar_sfc)%max_lev=1
-   iv%info(synop)%max_lev=1   ! To prevent some bad observations with more than 1 level, should I add more?
-   iv%info(ships)%max_lev=1   
-   iv%info(qscat)%max_lev=1   
-   iv%info(metar)%max_lev=1   
    close(iunit)
 
    call da_free_unit(iunit)

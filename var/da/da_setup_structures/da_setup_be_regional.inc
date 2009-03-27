@@ -98,6 +98,11 @@ subroutine da_setup_be_regional(xb, be)
            'cv_options:', cv_options,' Reading error in unit=',be_unit
       call wrf_shutdown
       stop "Stopped, Please check if CV5 BE file provided correctly."
+   else
+      if ( nk /= kz ) then
+         call da_error(__FILE__,__LINE__,  &
+            (/"Vertial levels in fg and be.dat do not match."/))
+      end if
    endif
 
    allocate (bin(1:ni,1:nj,1:nk))

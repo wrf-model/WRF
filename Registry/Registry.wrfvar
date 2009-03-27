@@ -1333,6 +1333,7 @@ rconfig   integer   seed_array2             namelist,wrfvar11  1  0        - "se
 rconfig   integer   sfc_assi_options        namelist,wrfvar11  1  1        - "sfc_assi_options"        ""  ""  
 rconfig   logical   calculate_cg_cost_fn    namelist,wrfvar11  1  .false.  - "calculate_cg_cost_fn"    ""  ""  
 rconfig   logical   lat_stats_option        namelist,wrfvar11  1  .false.  - "lat_stats_option"        ""  ""  
+rconfig   integer   interp_option           namelist,wrfvar11  1  1        - "interp_option"           ""  ""
 
 rconfig   integer   balance_type            namelist,wrfvar12  1  1        - "balance_type"            ""  ""  
                                                                                           
@@ -1393,7 +1394,7 @@ rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "us
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
 rconfig   integer   crtm_atmosphere         namelist,wrfvar14  1  0        - "crtm_atmosphere"         ""  ""
 rconfig   logical   use_satcv               namelist,wrfvar14  2  .false.  - "use_satcv"               ""  ""
-rconfig   integer   interp_option           namelist,wrfvar14  1  1        - "interp_option"           ""  ""
+
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   
 rconfig   real      pseudo_x                namelist,wrfvar15  1  1.0      - "pseudo_x"                ""  ""   
 rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "pseudo_y"                ""  ""   

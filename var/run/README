@@ -15,4 +15,4 @@ VARBC.in
   Template input file for radiance Variational Bias Correction.
 
 be.dat.cv3
-  Background error covariance file for cv_option=3.
+  Background error covariance file for cv_options=3.

@@ -10,13 +10,13 @@
 #set echo
  unalias mv rm
 
- set Map_plot = /karri/users/guo/CODE/VAR/trunk/var/obsproc/MAP_plot
+ set Map_plot = /users/noname/WRFDA/var/obsproc/MAP_plot
 
- set TIME_WINDOW_MIN = '2007081221'
- set TIME_ANALYSIS   = '2007081300'
- set TIME_WINDOW_MAX = '2007081303'
+ set TIME_WINDOW_MIN = '2008020511'
+ set TIME_ANALYSIS   = '2008020512'
+ set TIME_WINDOW_MAX = '2008020513'
 
- set OBSDATA  = /karri3/guo/Tutorial/obs_gts_2007-08-13_00:00:00.3DVAR.GPS
+ set OBSDATA  = ../obs_gts_2008-02-05_12:00:00.3DVAR.GPS
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #          ============== END OF CHANGES =================
@@ -78,9 +78,10 @@ cat >! namelist.file << EOF
   skewt_plot = .FALSE.,
  &
 EOF
- ln -sf ${Map_plot}/no_comment.sed    no_comment.sed
- ln -sf ${Map_plot}/mapco.tbl         mapco.tbl
- ln -sf ${Map_plot}/Map.exe           Map.exe
+
+if (! -e no_comment.sed ) ln -sf ${Map_plot}/no_comment.sed    no_comment.sed
+if (! -e mapco.tbl )      ln -sf ${Map_plot}/mapco.tbl         mapco.tbl
+if (! -e Map.exe )        ln -sf ${Map_plot}/Map.exe           Map.exe
 
  sed -f no_comment.sed  namelist.file >! tmp.file
  mv tmp.file  namelist.file

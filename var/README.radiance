@@ -4,6 +4,7 @@ running WRF-Var.
 Then, if you are interested in radiance data assimilation, please read through
 this README.radiance to learn more on the settings and extra input files 
 required for radiance data.
+Please see also Chapter 6 of WRF ARW User's Guide for more details.
 
 RTM (Radiative Transfer Model) that can be used in WRF-Var:
   CRTM REL-1.1

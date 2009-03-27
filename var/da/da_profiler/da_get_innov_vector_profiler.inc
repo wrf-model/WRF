@@ -57,7 +57,7 @@ subroutine da_get_innov_vector_profiler( it,num_qcstat_conv, grid, ob, iv)
       do k=1, iv%info(profiler)%levels(n)
          if (iv % profiler(n) % p(k) > 1.0) then
             call da_to_zk(iv % profiler(n) % p(k), v_p, v_interp_p, iv%info(profiler)%zk(k,n))
-         else if (iv%sound(n) % h(k) > missing_r) then
+         else if (iv % profiler(n) % h(k) > missing_r) then
             call da_to_zk(iv % profiler(n) % h(k), v_h, v_interp_h, iv%info(profiler)%zk(k,n))
          end if
 

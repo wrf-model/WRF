@@ -15,6 +15,9 @@ module da_recursive_filter
       da_transpose_z2x, da_vv_to_cv,da_cv_to_vv
    use da_tracing, only : da_trace_entry, da_trace_exit
 
+   use da_rfz_cv3, only : da_rfz
+   use da_rf_cv3, only : smoothx, smoothy
+
    implicit none
 
    contains

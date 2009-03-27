@@ -141,9 +141,6 @@ subroutine da_minimise_lz(grid, config_flags,            &
       bnds(1:iter) = abs(beta(iter) * eignvec(iter,1:iter))
       neign        = COUNT(bnds(1:iter) <= bndlm)
                
-      rrmnew_norm = SQRT(da_dot_cv(cv_size, cv_size_domain, ghat, ghat, grid, mz, use_varbc))
-      if (rrmnew_norm < eps(it) * j_grad_norm_target) exit
-      
     ! Print Gradient (and Cost Function)
     !-----------------------------------
       if (print_detail_grad) then
@@ -161,14 +158,15 @@ subroutine da_minimise_lz(grid, config_flags,            &
          write(unit=stdout,fmt=14)iter, rrmnew_norm
       end if
 14    format(i3,5x,1PD15.8,5x,1PD15.8)
+
+      rrmnew_norm = SQRT(da_dot_cv(cv_size, cv_size_domain, fhat, fhat, grid, mz, use_varbc))
+      if (rrmnew_norm < eps(it) * j_grad_norm_target) exit      
    end do
 
    !-------------------------------------------------------------------------
    ! End of the minimization of cost function
    !-------------------------------------------------------------------------
    iter = MIN(iter, ntmax)
-   
-   call da_sensitivity(iter,grid,config_flags,cv_size,xbx,be,iv,xhat,qhat,cv,y,eignvec,eignval,shat)
    
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
@@ -196,6 +194,8 @@ subroutine da_minimise_lz(grid, config_flags,            &
 
    cv = cv + xhat
 
+   call da_sensitivity(iter,grid,config_flags,cv_size,xbx,be,iv,xhat,qhat,cv,y,eignvec,eignval,shat)
+   
    if (trace_use) call da_trace_exit("da_minimise_lz")
 
 end subroutine da_minimise_lz

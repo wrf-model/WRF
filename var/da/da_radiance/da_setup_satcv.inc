@@ -6,7 +6,7 @@ subroutine da_setup_satcv(iv, be)
 
    implicit none
    
-   type (iv_type), intent(in)    :: iv          ! Obs. increment structure.
+   type (iv_type), intent(inout) :: iv          ! Obs. increment structure.
    type (be_type), intent(inout) :: be          ! Background error structure.
    
    integer                      :: i, n, k, size_js, js_start, nclouds, ncv, kts_100hPa(1)

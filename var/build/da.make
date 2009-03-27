@@ -39,9 +39,9 @@ WRFVAR_OBJS = da_par_util.o \
    da_tools_serial.o \
    da_wrf_interfaces.o \
    da_rsl_interfaces.o \
-   da_mat.o \
-   da_rf.o \
-   da_rfz.o \
+   da_mat_cv3.o \
+   da_rf_cv3.o \
+   da_rfz_cv3.o \
    da_recursive_filter.o \
    da_interpolation.o \
    da_grid_definitions.o \

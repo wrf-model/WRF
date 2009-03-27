@@ -504,7 +504,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
      ! Recursive filter routie applied in vertical with 
      ! the vertical scale length be%vz: 
             call da_rfz0(vv,kz,kz,be%ndeg,&
-                         be%vz(kts,i,j,n),be%be,be%table,be%nta,be%swidth)
+                         be%vz(kts:kte,i,j,n),be%be,be%table,be%nta,be%swidth)
 
      ! Re-scale the covariance for psi, chi, t, and rh:
             do k=kts,kte

@@ -67,6 +67,8 @@ module da_setup_structures
    use da_tools, only: da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_vtox_transforms, only : da_check_eof_decomposition
+   use da_rfz_cv3, only : da_rfz0
+   use da_rf_cv3, only : RFDPAR1, RFDPAR2, RFDPARV
 #ifdef BUFR
    use da_control, only : thin_conv
    use module_radiance, only : init_constants_derived

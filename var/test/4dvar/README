@@ -1,0 +1,156 @@
+#=======================================================================#
+#         								#
+#  First Time release. April, 2009					#
+#     									#
+#=======================================================================#
+#  The WRF-4DVar was tested on following platforms   			#
+# 									# 
+#  1) IBM AIX: xlfrte 11.1.0.5						#
+#  2) Linux  : pgf90 6.2-5 64-bit target on x86-64 Linux		#
+#  3) Mac OS (intel) : g95 0.91!					#
+#									#
+#  WRF-4DVar doesn't support :						#
+#									#
+#  1) Linux: Intel compiler V9.1 (not sure for higher versions, WRFPLUS #
+#				can not be compiled with old version)   #
+#  2) Linux: gfortran (The behavior of WRFPLUS is strange)              #
+#=======================================================================#
+#  Note:                               					#
+#									#
+#  1) For Linux users, please set following enviornmental variable:     #
+#	setenv PGHPF_ZMEM yes						#
+#=======================================================================#
+
+This is the directory for 4D-Var test.
+
+To run 4D-Var, please follow the steps listed below.
+
+Assume the working shell is C shell.
+
+Assume the directories for WRFDA , WRFNL and WRFPLUS are :
+
+setenv WRFDA_DIR /ptmp/$user/WRFDA 
+setenv WRFNL_DIR /ptmp/$user/WRFNL
+setenv WRFPLUS_DIR /ptmp/$user/WRFPLUS
+
+Assume the analysis date is 2008020512 and the test data directories are:
+
+setenv DATA_DIR /ptmp/$user/DATA
+
+under $DATA_DIR directory , the directory structure should looks like:
+
+ob/2008020512
+ob/2008020513
+ob/2008020514
+ob/2008020515
+ob/2008020516
+ob/2008020517
+ob/2008020518
+rc/2008020512
+be
+
+Assume the working directory is :
+
+setenv WORK_DIR $WRFDA_DIR/var/test/4dvar
+
+1) Link the executables .
+
+cd $WORK_DIR
+ln -fs $WRFDA_DIR/var/da/da_wrfvar.exe .
+cd $WORK_DIR/nl
+ln -fs $WRFNL_DIR/main/wrf.exe .
+cd $WORK_DIR/ad
+ln -fs $WRFPLUS_DIR/main/wrfplus.exe .
+cd $WORK_DIR/tl
+ln -fs $WRFPLUS_DIR/main/wrfplus.exe .
+
+2) Link the observational data, first guess and BE .
+
+cd $WORK_DIR
+ln -fs $DATA_DIR/ob/2008020512/ob.ascii+ ob01.ascii
+ln -fs $DATA_DIR/ob/2008020513/ob.ascii  ob02.ascii
+ln -fs $DATA_DIR/ob/2008020514/ob.ascii  ob03.ascii
+ln -fs $DATA_DIR/ob/2008020515/ob.ascii  ob04.ascii
+ln -fs $DATA_DIR/ob/2008020516/ob.ascii  ob05.ascii
+ln -fs $DATA_DIR/ob/2008020517/ob.ascii  ob06.ascii
+ln -fs $DATA_DIR/ob/2008020518/ob.ascii- ob07.ascii
+
+ln -fs $DATA_DIR/rc/2008020512/wrfinput_d01 .
+ln -fs $DATA_DIR/rc/2008020512/wrfbdy_d01 .
+ln -fs wrfinput_d01 fg
+ln -fs wrfinput_d01 fg01
+
+ln -fs $DATA_DIR/be/be.dat .
+
+3) Establish the miscellaneous links .
+
+cd $WORK_DIR
+ln -fs nl/nl_d01_2008-02-05_13:00:00 fg02
+ln -fs nl/nl_d01_2008-02-05_14:00:00 fg03
+ln -fs nl/nl_d01_2008-02-05_15:00:00 fg04
+ln -fs nl/nl_d01_2008-02-05_16:00:00 fg05
+ln -fs nl/nl_d01_2008-02-05_17:00:00 fg06
+ln -fs nl/nl_d01_2008-02-05_18:00:00 fg07
+
+ln -fs ad/ad_d01_2008-02-05_12:00:00 gr01
+
+ln -fs tl/tl_d01_2008-02-05_13:00:00 tl02
+ln -fs tl/tl_d01_2008-02-05_14:00:00 tl03
+ln -fs tl/tl_d01_2008-02-05_15:00:00 tl04
+ln -fs tl/tl_d01_2008-02-05_16:00:00 tl05
+ln -fs tl/tl_d01_2008-02-05_17:00:00 tl06
+ln -fs tl/tl_d01_2008-02-05_18:00:00 tl07
+
+cd $WORK_DIR/ad
+ln -fs ../af01 auxinput3_d01_2008-02-05_12:00:00
+ln -fs ../af02 auxinput3_d01_2008-02-05_13:00:00
+ln -fs ../af03 auxinput3_d01_2008-02-05_14:00:00
+ln -fs ../af04 auxinput3_d01_2008-02-05_15:00:00
+ln -fs ../af05 auxinput3_d01_2008-02-05_16:00:00
+ln -fs ../af06 auxinput3_d01_2008-02-05_17:00:00
+ln -fs ../af07 auxinput3_d01_2008-02-05_18:00:00
+
+4) Run WRF-4DVar
+
+For serial run:
+cp WORK_DIR/nl/namelist.input.serial WORK_DIR/nl/namelist.input
+cp WORK_DIR/ad/namelist.input.serial WORK_DIR/ad/namelist.input
+cp WORK_DIR/tl/namelist.input.serial WORK_DIR/tl/namelist.input
+For parallel run:
+cp WORK_DIR/nl/namelist.input.parallel WORK_DIR/nl/namelist.input
+cp WORK_DIR/ad/namelist.input.parallel WORK_DIR/ad/namelist.input
+cp WORK_DIR/tl/namelist.input.parallel WORK_DIR/tl/namelist.input
+
+edit $WORK_DIR/namelist.input to match your experiment settings.
+edit $WORK_DIR/nl/namelist.input to matcj your experiment settings.
+edit $WORK_DIR/ad/namelist.input and $WORK_DIR/tl/namelist.input to match your experiment settings, but only change following variables: 
+&time_control
+run_hours=06,
+start_year=2008,
+start_month=02,
+start_day=05,
+start_hour=12,
+end_year=2008,
+end_month=02,
+end_day=05,
+end_hour=18,
+......
+&domains
+time_step=360,   # MUST BE THE SAME WITH WHICH IN $WORK_DIR/nl/namelist.input
+e_we=90,
+e_sn=60,
+e_vert=41,
+dx=60000,
+dy=60000,
+......
+
+cd $WORK_DIR
+
+For serial run:
+setenv NUM_PROCS 1
+./da_wrfvar.exe (serial compilation required)
+
+For parallel run:
+For example, there are 8 processors, 2 will be used to run Var, 2 will be used to run wfnl, and the remain 4 processors will be used to run wrfplus.
+setenv NUM_PROCS 8
+mpirun -np 2 ./da_wrfvar.exe : -np 2 ./nl/wrf.exe : -np 4 ./ad/wrfplus.exe

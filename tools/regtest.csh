@@ -10,7 +10,7 @@
 #BSUB -e reg.err                        # error filename
 #BSUB -J regtest                        # job name
 #BSUB -q share                          # queue
-#BSUB -W 12:00                          # wallclock time
+#BSUB -W 6:00                          # wallclock time
 #BSUB -P 64000400
 
 # QSUB -q ded_4             # submit to 4 proc
@@ -2072,6 +2072,14 @@ cp configure.wrf configure.wrf.core=${core}_build=${compopt}
 
 		if ( $REAL8 == TRUE ) then
 			sed -e '/^RWORDSIZE/s/\$(NATIVE_RWORDSIZE)/8/'  configure.wrf > ! foo ; /bin/mv foo configure.wrf
+		endif
+	
+		#	For AIX, remove the MASSV libs for bit-wise comparisons.
+
+		if ( ( `uname` == AIX ) && ( $REG_TYPE == BIT4BIT ) ) then
+			sed -e '/^LDFLAGS_LOCAL/s/-lmass -lmassv/ /'  \
+			    -e '/^ARCH_LOCAL/s/-DNATIVE_MASSV/ /' \
+			    configure.wrf > ! foo ; /bin/mv foo configure.wrf
 		endif
 	
 		#	Fix the OpenMP default for IBM regression testing - noopt required for bit-wise comparison.

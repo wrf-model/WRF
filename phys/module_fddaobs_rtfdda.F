@@ -1806,11 +1806,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 ! jc arbitrary check here
             IF (iprt) THEN
-              if (kpblt(i).gt.25 .and. ktau.ne.0)                         &
-                                     write(msg,552)inest,i,j,kpblt(i)
-552           FORMAT('kpblt is gt 25, inest,i,j,kpblt=',4i4)
-              call wrf_message(msg)
+              if (kpblt(i).gt.25 .and. ktau.ne.0) then
+                write(msg,552)inest,i,j,kpblt(i)
+                call wrf_message(msg)
+              endif
             ENDIF
+552         FORMAT('kpblt is gt 25, inest,i,j,kpblt=',4i4)
 
             if(kpblt(i).gt.25) komax=3
             komin=1

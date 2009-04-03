@@ -1264,7 +1264,12 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    NOW DO BIG TIMEDEPENDENT EMISSIONS FILE
 !
-    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG) then
+    if(CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
+       write(message, FMT='(A,I10)') ' convert_emiss: error: conversion for all CBMZ emission arrays not available '
+       CALL wrf_error_fatal( TRIM( message ) )
+    endif
+    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG .or.
+       CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
    !  Figure out our loop count for the processing times.
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -2078,7 +2083,7 @@ PROGRAM convert_emissions
      write(message,FMT='(A)') ' DONE WRITING TIME DEPENDENT EMISSIONS FILE'
      CALL  wrf_message ( message )
 
-    endif  !    ERADM .or.ERADMSORG
+    endif  !    ERADM .or.ERADMSORG .or. ECBMZ
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    NOW DO BIOGENIC EMISSIONS FILE

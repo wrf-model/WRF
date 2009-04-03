@@ -342,6 +342,7 @@ subroutine da_scan_obs_ascii (iv, filename)
             write(unit=message(3), fmt='(a, i3)') &
                  'platform%info%levels=', platform%info%levels
             call da_warning(__FILE__,__LINE__,message(1:3))
+            cycle
          end select
          iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, platform%info%levels)
       end do        !  loop over duplicate

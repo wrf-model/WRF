@@ -5,7 +5,7 @@ clean:
 
 superclean :
 	( cd build; /bin/rm -f mpif.h; /bin/rm -f *.inc; /bin/rm -f *.f90 *.c *.m4 *.exe; \
-          /bin/rm -rf *.o *.mod *.b *.a *.f frame/*.F \
+          /bin/rm -rf *.o *.mod *.b *.a *.f frame/*.F diffwrf \
           Registry_tmp* module_state_description.f90 \
           inc/dm_comm_cpp_flags testall.csh *.exe *.f90 *.F90 *.F inc/*.inc *.int *.c *.h *.m4 *.code \
           *.sed qual_threshold.nl rsl_cpp_flags version_decl module_dm_warning \

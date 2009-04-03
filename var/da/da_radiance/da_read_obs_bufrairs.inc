@@ -212,7 +212,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
       open(unit=airs_table_unit,file=table_file,iostat = iost)
       if (iost /= 0) then
          call da_error(__FILE__,__LINE__, &
-            (/"Cannot open file "//trim(table_file)/))
+            (/"Cannot open file "//table_file/))
       end if
   end if
 
@@ -221,7 +221,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   open(unit=lnbufr,file=trim(infile),form='unformatted',iostat = iost)
   if (iost /= 0) then
      call da_warning(__FILE__,__LINE__, &
-        (/"Cannot open file "//trim(infile)/))
+        (/"Cannot open file "//infile/))
      return
   end if
   if ( airstab ) then

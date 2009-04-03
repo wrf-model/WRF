@@ -31,7 +31,7 @@ subroutine da_final_write_obs(it,iv)
        write(unit=file,fmt ='(a,i2.2)')'gts_omb_oma_',it
       open(unit=omb_unit,file=trim(file),form='formatted', status='replace', iostat=ios) 
       if (ios /= 0) call da_error(__FILE__,__LINE__, &
-         (/"Cannot open file "//trim(file)/))
+         (/"Cannot open file "//file/))
    end if
 
    num_obs = 0

@@ -17,14 +17,14 @@ export RUN_GEN_BE_DIAGS=true
 export RUN_GEN_BE_DIAGS_READ=true
 export RUN_GEN_BE_MULTICOV=true
 
-export WRFVAR_DIR=/wrfhelp/SOURCE_CODE/WRFDA
+export WRFVAR_DIR=/ptmp/xinzhang/blueice_ibm_opt/WRFDA
 
-export START_DATE=2007010200  # the first perturbation valid date
-export END_DATE=2007011000    # the last perturbation valid date
-export NUM_LEVELS=27          # e_vert - 1
+export START_DATE=2008020612  # the first perturbation valid date
+export END_DATE=2008020700    # the last perturbation valid date
+export NUM_LEVELS=40          # e_vert - 1
 export BIN_TYPE=5
-export FC_DIR=/wrfhelp/DATA/VAR/Con200/fc   # where wrf forecasts are
-export RUN_DIR=/data1/class13/test/gen_be${BIN_TYPE}
+export FC_DIR=/mmm/mmmtmp/xinzhang/gen_be   # where wrf forecasts are
+export RUN_DIR=/mmm/mmmtmp/xinzhang/gen_be${BIN_TYPE}
 export DOMAIN=01
 export FCST_RANGE1=24
 export FCST_RANGE2=12

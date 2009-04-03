@@ -949,7 +949,7 @@ subroutine da_read_obs_ascii (iv, filename)
             write(unit=message(3), fmt='(a, i3)') &
                'platform%info%levels=', platform%info%levels
             call da_warning(__FILE__,__LINE__,message(1:3))
-
+            cycle
          end select
 	   
          iv%info(obs_index)%name(nlocal(obs_index))      = platform%info%name

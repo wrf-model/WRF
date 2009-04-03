@@ -23,6 +23,7 @@ subroutine da_read_obs_bufr (iv, filename)
    real                         :: obs2(9,255), obs_save(9,255)
    real                         :: qms2(9,255), qms_save(9,255)
    real                         :: oes2(9,255), oes_save(9,255)
+   real                         :: pco2(9,255), pco_save(9,255)
    real                         :: pmo2(2,1), pmo_save(2,1), temp(9)
    equivalence                     (r8sid, csid), (r8sid2, csid2)
    ! for thinning
@@ -36,18 +37,19 @@ subroutine da_read_obs_bufr (iv, filename)
    integer                      :: nlocal(num_ob_indexes), ilocal(num_ob_indexes)
    integer                      :: ntotal(num_ob_indexes)
 
-   character(len=40)     :: obstr,drift,hdstr,qmstr,oestr
+   character(len=40)     :: obstr,drift,hdstr,qmstr,oestr, pcstr
    character(len=8)      :: subset, c8id
    character(len=80)     :: date, dmn, obs_date
    real                  :: hdr(7)
    real                  :: pmo(2,1)
-   real                  :: obs(9,255),qms(9,255),oes(9,255)
+   real                  :: obs(9,255),qms(9,255),oes(9,255),pco(9,255)
    real                  :: obs_time,woe,toe,qoe,poe,pob
    integer               :: iyear, imonth, iday, ihour, imin
 
    integer               :: iost, ndup, n, i, j, k, surface_level, report, i1, i2
-   integer               :: iret, idate, kx, old_nlevels,nlevels, t29, jx, ix
+   integer               :: iret, idate, kx, old_nlevels,nlevels, t29
    integer               :: cat,zqm,pqm,qqm,tqm,wqm,pwq,pmq
+   integer               :: ppc, qpc, tpc, zpc, wpc, pwp
    integer               :: iunit, fm , obs_index
 
    integer, parameter    :: qflag=4         ! Flag for retaining data
@@ -56,11 +58,23 @@ subroutine da_read_obs_bufr (iv, filename)
    real, allocatable     :: in(:), out(:)
    logical               :: found
 
+   logical               :: use_errtable
+   integer               :: junit, itype, ivar
+   real                  :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
+   real                  :: errmin_uv, errmin_t, errmin_p, errmin_q, errmin_pw, coef
+   
+
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
 
    ilocal(:) = 0
    nlocal(:) = 0
    ntotal(:) = 0
+
+   errmin_uv = 10.0 ! m/s
+   errmin_t  = 5.0  ! degree
+   errmin_p  = 100  ! Pa
+   errmin_q  = 1.0  ! RH percent divided by 10
+   errmin_pw = 0.2  ! cm
 
    ! open file
    !  ---------
@@ -78,11 +92,36 @@ subroutine da_read_obs_bufr (iv, filename)
       end if
    end if
 
+   ! open observation error table if provided.
+   call da_get_unit(junit)
+   open (unit=junit, file='obs_errtable', form='formatted', status='old', &
+         iostat=iost)
+   if ( iost /= 0 ) then
+      use_errtable = .false.
+      call da_free_unit(junit)
+   else
+      use_errtable = .true.
+      write(unit=message(1),fmt='(A)') &
+            "obs_errtable file is found. Will use user-provided obs errors."
+      call da_message(message(1:1))
+   end if
+   if ( use_errtable ) then
+      read_loop: do
+         read (junit,'(1x,i3)',iostat=iost) itype
+         if ( iost /=0 ) exit read_loop
+         do k = 1, 33
+            read (junit,'(1x,6e12.5)',iostat=iost) (oetab(itype,k,ivar),ivar=1,6)
+            if ( iost /=0 ) exit read_loop
+         end do
+      end do read_loop
+   end if
+
    hdstr='SID XOB YOB DHR TYP ELV T29     '
-   obstr='POB QOB TOB ZOB UOB VOB PWO CAT '
+   obstr='POB QOB TOB ZOB UOB VOB PWO CAT ' ! observation
    drift='XDR YDR HRDR                    '
-   qmstr='PQM QQM TQM ZQM WQM NUL PWQ PMQ '
-   oestr='POE QOE TOE NUL WOE NUL PWE '
+   qmstr='PQM QQM TQM ZQM WQM NUL PWQ PMQ ' ! quality marker
+   oestr='POE QOE TOE NUL WOE NUL PWE     ' ! observation error
+   pcstr='PPC QPC TPC ZPC WPC PWP         ' ! program code
 
    ! read bufr observation file
    call openbf(iunit,'IN',iunit)
@@ -194,6 +233,24 @@ subroutine da_read_obs_bufr (iv, filename)
       call ufbint(iunit,obs,9,255,nlevels,obstr)
       call ufbint(iunit,qms,9,255,nlevels,qmstr)
       call ufbint(iunit,oes,9,255,nlevels,oestr)
+      call ufbint(iunit,pco,9,255,nlevels,pcstr)
+
+      if ( use_errtable ) then
+         do k = 1, nlevels
+            pob = obs(1,k)
+            do lv1 = 1, 32
+               if ( pob >= oetab(kx,lv1+1,1) .and. pob <= oetab(kx,lv1,1) ) then
+                  coef = (pob-oetab(kx,lv1,1))/(oetab(kx,lv1,1)-oetab(kx,lv1+1,1))
+                  oes(1,k) = (1.0+coef)*oetab(kx,lv1,5)-coef*oetab(kx,lv1+1,5) !p
+                  oes(2,k) = (1.0+coef)*oetab(kx,lv1,3)-coef*oetab(kx,lv1+1,3) !q
+                  oes(3,k) = (1.0+coef)*oetab(kx,lv1,2)-coef*oetab(kx,lv1+1,2) !t
+                  oes(5,k) = (1.0+coef)*oetab(kx,lv1,4)-coef*oetab(kx,lv1+1,4) !uv
+                  oes(7,k) = (1.0+coef)*oetab(kx,lv1,6)-coef*oetab(kx,lv1+1,6) !pw
+                  exit
+               end if
+            end do
+         end do
+      end if
 
       call readns(iunit,subst2,idate2,iret)
       match_check: do
@@ -229,6 +286,25 @@ subroutine da_read_obs_bufr (iv, filename)
          call ufbint(iunit,obs2,9,255,nlevels2,obstr)
          call ufbint(iunit,qms2,9,255,nlevels2,qmstr)
          call ufbint(iunit,oes2,9,255,nlevels2,oestr)
+         call ufbint(iunit,pco2,9,255,nlevels2,pcstr)
+
+         kx=int(0.1+hdr2(5))
+         if ( use_errtable ) then
+            do k = 1, nlevels2
+               pob = obs(1,k)
+               do lv1 = 1, 32
+                  if ( pob >= oetab(kx,lv1+1,1) .and. pob <= oetab(kx,lv1,1) ) then
+                     coef = (pob-oetab(kx,lv1,1))/(oetab(kx,lv1,1)-oetab(kx,lv1+1,1))
+                     oes2(1,k) = (1.0+coef)*oetab(kx,lv1,5)-coef*oetab(kx,lv1+1,5) !p
+                     oes2(2,k) = (1.0+coef)*oetab(kx,lv1,3)-coef*oetab(kx,lv1+1,3) !q
+                     oes2(3,k) = (1.0+coef)*oetab(kx,lv1,2)-coef*oetab(kx,lv1+1,2) !t
+                     oes2(5,k) = (1.0+coef)*oetab(kx,lv1,4)-coef*oetab(kx,lv1+1,4) !uv
+                     oes2(7,k) = (1.0+coef)*oetab(kx,lv1,6)-coef*oetab(kx,lv1+1,6) !pw
+                     exit
+                  end if
+               end do
+            end do
+         end if
 
          ! If this is a surface report, the wind subset precedes the
          ! mass subset - switch the subsets around in order to combine
@@ -249,6 +325,9 @@ subroutine da_read_obs_bufr (iv, filename)
             oes_save = oes2
             oes2 = oes
             oes = oes_save
+            pco_save = pco2
+            pco2 = pco
+            pco = pco_save
          end if
          ! combine the two matching subsets
          do i = 1, 2
@@ -268,15 +347,16 @@ subroutine da_read_obs_bufr (iv, filename)
                            obs(8,lv1) = obs2(8,lv2)  ! rewrite CAT
                         end if
                      end if
+                     if ( oes(i,lv1) > r8bfms ) then
+                        oes(i,lv1) = oes2(i,lv2)
+                     end if
+                     if ( pco(i,lv1) > r8bfms ) then
+                        pco(i,lv1) = pco2(i,lv2)
+                     end if
                   end do
                   do i = 1, 8
                      if ( qms(i,lv1) > r8bfms ) then
                         qms(i,lv1) = qms2(i,lv2)
-                     end if
-                  end do
-                  do i = 1, 7
-                     if ( oes(i,lv1) > r8bfms ) then
-                        oes(i,lv1) = oes2(i,lv2)
                      end if
                   end do
                   cycle lev_loop
@@ -285,6 +365,7 @@ subroutine da_read_obs_bufr (iv, filename)
                   obs(:,nlevels) = obs2(:,lv2)
                   qms(:,nlevels) = qms2(:,lv2)
                   oes(:,nlevels) = oes2(:,lv2)
+                  pco(:,nlevels) = pco2(:,lv2)
                   cycle lev_loop
                end if
             end do
@@ -302,6 +383,9 @@ subroutine da_read_obs_bufr (iv, filename)
                   temp(:) = oes(:,i1)
                   oes(:,i1) = oes(:,i2)
                   oes(:,i2) = temp(:)
+                  temp(:) = pco(:,i1)
+                  pco(:,i1) = pco(:,i2)
+                  pco(:,i2) = temp(:)
                end if
             end do
          end do
@@ -324,10 +408,10 @@ subroutine da_read_obs_bufr (iv, filename)
 
       platform % loc % slp %inv   = missing_r     
       platform % loc % slp %qc    = missing_data
-      platform % loc % slp %error = 200.0           
+      platform % loc % slp %error = errmin_p
       platform % loc % pw %inv    = missing_r     
       platform % loc % pw %qc     = missing_data
-      platform % loc % pw %error  = 0.2             
+      platform % loc % pw %error  = errmin_pw
 
       do i=1,max_ob_levels
          platform % each (i) % height  = missing_r
@@ -337,37 +421,47 @@ subroutine da_read_obs_bufr (iv, filename)
             
          platform % each (i) % u % inv = missing_r
          platform % each (i) % u % qc  = missing_data
-         platform % each (i) % u % error =10.0       
+         platform % each (i) % u % error = errmin_uv
 
          platform % each (i) % v = platform % each (i) % u
 
          platform % each (i) % t % inv = missing_r
          platform % each (i) % t % qc  = missing_data
-         platform % each (i) % t % error =5.0       
+         platform % each (i) % t % error = errmin_t
 
          platform % each (i) % p % inv = missing_r      
          platform % each (i) % p % qc  = missing_data
-         platform % each (i) % p % error =200.0  
+         platform % each (i) % p % error = errmin_p
 
          platform % each (i) % q % inv = missing_r
          platform % each (i) % q % qc  = missing_data
-         platform % each (i) % q % error =0.1      
+         platform % each (i) % q % error = errmin_q
       end do 
 
       do k = 1, platform % info % levels
-         pob=obs(1,k)
-         ! scale q and compute t from tv and set units to Kelvin, if they aren't missing
 
+         ppc = nint(pco(1,k))
+         qpc = nint(pco(2,k))
+         tpc = nint(pco(3,k))
+         zpc = nint(pco(4,k))
+         wpc = nint(pco(5,k))
+         pwp = nint(pco(6,k))
+
+         ! set t units to Kelvin
+         if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
+            obs(3,k) = obs(3,k) + t_kelvin
+         end if
+
+         ! scale q and compute t from tv, if they aren't missing
          if (obs(2,k) > 0.0 .and. obs(2,k) < r8bfms) then   
             obs(2,k) = obs(2,k)*1e-6
-            if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
-               obs(3,k) = (obs(3,k)+t_kelvin) / (1.0 + 0.608 * obs(2,k))
+            if (obs(3,k) > -200.0 .and. obs(3,k) < 350.0) then
+               if ( tpc >= 8 ) then   ! program code 008 VIRTMP
+                  obs(3,k) = obs(3,k) / (1.0 + 0.608 * obs(2,k))
+               end if
             end if
-         else
-            if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
-               obs(3,k) = obs(3,k) + t_kelvin
-           end if
          end if
+
          pqm=nint(qms(1,k))
          qqm=nint(qms(2,k))
          tqm=nint(qms(3,k))
@@ -380,26 +474,26 @@ subroutine da_read_obs_bufr (iv, filename)
          if (pmq < qflag .and. pmq >= 0) then
             platform % loc % slp % inv =pmo(1,1)*100.0
             platform % loc % slp % qc  =pmq
-            platform % loc % slp % error = 200.0
+            platform % loc % slp % error = errmin_p
          end if
 
          if (pwq < qflag .and. pwq >= 0) then
             platform % loc % pw % inv = obs(7,k) * 0.1    ! convert to cm
             platform % loc % pw % qc  =  pwq
-            platform % loc % pw % error = 0.2     ! hardwired to 0.2 cm
+            platform % loc % pw % error = errmin_pw
          end if
 
-         poe=100.0
+         poe = errmin_p
 
          if (tqm < qflag .and. tqm >= 0) then
-            toe = min(5.0, oes(3,k))
+            toe = min(errmin_t, oes(3,k))
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
          if (wqm < qflag .and. wqm >= 0) then
-            woe = min(10.0, oes(5,k))
+            woe = min(errmin_uv, oes(5,k))
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -408,11 +502,15 @@ subroutine da_read_obs_bufr (iv, filename)
             platform % each (k) % v % error =woe
 
             ! Convert earth wind to model wind.
-            if( kx /= 283 .and. kx /= 152)    &     ! skip SSMI speed or TPW
+            ! note on SPSSMI wind: only wspd available (stored in VOB)
+            ! and direction is initially set to to zero and stored in UOB
+            ! in wpc = 1 stage. u and v are computed in program wpc = 10 (OIQC).
+            if ( kx /= 283 .or. ( kx == 283 .and. wpc == 10 ) ) then
                call da_earth_2_model_wind(obs(5,k), obs(6,k), &
                   platform % each (k) % u % inv, &
                   platform % each (k) % v % inv, &
                   platform%info%lon)
+            end if
             if (platform % each (k) % u % inv == 0.0 .and. platform % each (k) % v % inv == 0.0) then
                platform % each (k) % u % inv = missing_r  
                platform % each (k) % v % inv = missing_r  
@@ -422,7 +520,7 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
 
          if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
-            qoe = min(2.0, oes(2,k))
+            qoe = min(errmin_q, oes(2,k))
             platform % each (k) % q % inv =obs(2,k)
             platform % each (k) % q % qc  =qqm
             platform % each (k) % q % error =qoe
@@ -440,41 +538,43 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
       end do
 
-      ! assign u,v,t,q obs errors for synop and metar
-      if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
-         if ( wqm  == 8 .or. wqm  == 9 .or. wqm  == 15) then
-            platform%each(1)%u%qc  = 88
-            platform%each(1)%v%qc  = 88
-            platform%each(1)%u%error = 1.1
-            platform%each(1)%v%error = 1.1
-            ! Convert earth wind to model wind.
-            call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
-               platform%each(1)%u%inv, platform%each(1)%v%inv, &
-               platform%info%lon)
-            if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
-               platform%each(1)%u%inv = missing_r  
-               platform%each(1)%v%inv = missing_r  
-               platform%each(1)%u%qc  = missing_data
-               platform%each(1)%v%qc  = missing_data
+      if ( .not. use_errtable ) then
+         ! assign u,v,t,q obs errors for synop and metar
+         if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
+            if ( wqm  == 8 .or. wqm  == 9 .or. wqm  == 15) then
+               platform%each(1)%u%qc  = 88
+               platform%each(1)%v%qc  = 88
+               platform%each(1)%u%error = 1.1
+               platform%each(1)%v%error = 1.1
+               ! Convert earth wind to model wind.
+               call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
+                  platform%each(1)%u%inv, platform%each(1)%v%inv, &
+                  platform%info%lon)
+               if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
+                  platform%each(1)%u%inv = missing_r  
+                  platform%each(1)%v%inv = missing_r  
+                  platform%each(1)%u%qc  = missing_data
+                  platform%each(1)%v%qc  = missing_data
+               end if
+            end if
+            if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
+               platform%each(1)%t%inv = obs(3,1)
+               platform%each(1)%t%qc  = 88
+               platform%each(1)%t%error = 2.0
+            end if
+            if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
+               platform%each(1)%q%inv = obs(2,1)
+               platform%each(1)%q%qc  = 88
+               platform%each(1)%q%error = 1.0   ! RH percent divided by 10
             end if
          end if
-         if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
-            platform%each(1)%t%inv = obs(3,1)
-            platform%each(1)%t%qc  = 88
-            platform%each(1)%t%error = 2.0
-         end if
-         if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
-            platform%each(1)%q%inv = obs(2,1)
-            platform%each(1)%q%qc  = 88
-            platform%each(1)%q%error = 1.0   ! RH percent divided by 10
-         end if
-      end if
-      ! assign tpw obs errors for gpspw
-      if ( t29 == 74 ) then
-         if ( pwq  == 8 .or. pwq  == 9 .or. pwq  == 15) then
-            platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
-            platform%loc%pw%qc    = 88
-            platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
+         ! assign tpw obs errors for gpspw
+         if ( t29 == 74 ) then
+            if ( pwq  == 8 .or. pwq  == 9 .or. pwq  == 15) then
+               platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
+               platform%loc%pw%qc    = 88
+               platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
+            end if
          end if
       end if
 
@@ -990,10 +1090,13 @@ subroutine da_read_obs_bufr (iv, filename)
             select case (kx)
             case ( 283)  ! wind speed
                do i = 1, nlevels
-                  iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%u
-                  iv%ssmi_rv(ilocal(ssmi_rv))%speed%inv  = sqrt ( &
-                     platform%each(i)%u%inv * platform%each(i)%u%inv + & 
-                     platform%each(i)%v%inv * platform%each(i)%v%inv  )
+                  ! if wpc == 1, UOB is set to zero, VOB is speed
+                  iv%ssmi_rv(ilocal(ssmi_rv))%speed  = platform%each(i)%v
+                  if ( wpc == 10 ) then
+                     iv%ssmi_rv(ilocal(ssmi_rv))%speed%inv  = sqrt ( &
+                        platform%each(i)%u%inv * platform%each(i)%u%inv + & 
+                        platform%each(i)%v%inv * platform%each(i)%v%inv  )
+                  end if
                   iv%ssmi_rv(ilocal(ssmi_rv))%tpw    = platform%loc%pw
                end do
            case ( 152 )  ! tpw
@@ -1173,6 +1276,10 @@ subroutine da_read_obs_bufr (iv, filename)
    call closbf(iunit)
    close(iunit)
    call da_free_unit(iunit)
+   if ( use_errtable ) then
+      close(junit)
+      call da_free_unit(junit)
+   end if
 
    if (trace_use) call da_trace_exit("da_read_obs_bufr")
 #else

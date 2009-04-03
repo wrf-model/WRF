@@ -35,7 +35,7 @@ be : setup \
 	da_advance_time.exe
 
 EN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
-GEN_BE_LIB = -L$(LAPACK) -llapack -L$(BLAS) -lblas -L$(NETCDF)/lib -lnetcdf -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack
+GEN_BE_LIB = -L$(LAPACK) -llapack -L$(BLAS) -lblas $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack
 
 
 GEN_BE_OBJS = ./da_etkf.o ./da_gen_be.o ./da_control.o ./da_be_spectral.o \

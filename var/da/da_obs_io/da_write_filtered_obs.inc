@@ -75,7 +75,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
       status='replace', iostat=iost)
    if (iost /= 0) then
       call da_error(__FILE__,__LINE__, &
-         (/"Cannot open filtered observation file"//trim(filename)/))
+         (/"Cannot open filtered observation file"//filename/))
    end if
 
    zero = 0

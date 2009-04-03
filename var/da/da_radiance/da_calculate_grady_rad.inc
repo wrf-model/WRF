@@ -11,7 +11,7 @@ subroutine da_calculate_grady_rad( iv, re, jo_grad_y )
    implicit none
 
    type (iv_type), intent(in)    :: iv          ! Innovation vector.
-   type (y_type) , intent(in)    :: re          ! Residual vector.
+   type (y_type) , intent(inout) :: re          ! Residual vector.
    type (y_type) , intent(inout) :: jo_grad_y   ! Grad_y(Jo)
 
    integer                       :: n, k, i

@@ -38,7 +38,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.synop',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -67,7 +67,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.metar',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -96,7 +96,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.ships',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -125,7 +125,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.sonde_sfc',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -154,7 +154,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.sound',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -183,7 +183,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.buoy',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -212,7 +212,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.geoamv',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -241,7 +241,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.gpspw',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -270,7 +270,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.ssmir',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -299,7 +299,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.airep',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -328,7 +328,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.polaramv',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -357,7 +357,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.pilot',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -386,7 +386,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.ssmi_tb',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -415,7 +415,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.satem',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -444,7 +444,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.ssmt1',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -473,7 +473,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.ssmt2',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -502,7 +502,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.qscat',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -531,7 +531,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.profiler',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -560,7 +560,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.bogus',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -589,7 +589,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.airsr',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
@@ -618,7 +618,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        open(unit=unit_in,file=trim(filename)//'.gpsref',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
-             (/"Cannot open file"//trim(filename)/))
+             (/"Cannot open file"//filename/))
        end if
 
        read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs

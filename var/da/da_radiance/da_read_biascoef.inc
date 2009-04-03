@@ -20,7 +20,7 @@ subroutine da_read_biascoef(string,nchan,nscan,nband,npred,global, &
    call da_trace_entry("da_read_biascoef")
 
    call da_get_unit(iunit)
-   filename='biascorr/'//adjustl(trim(string))//'.bcor'
+   filename='biascorr/'//trim(adjustl(string))//'.bcor'
    open(unit=iunit,file=filename, form='formatted',iostat = iost, status='old')
    if (iost /= 0) then
       message(1)="Cannot open radiance biascorr file "//adjustl(filename)

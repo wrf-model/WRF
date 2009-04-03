@@ -218,7 +218,8 @@ da_utils : setup \
            da_bias_scan.exe \
            da_bias_scan.exe \
            da_bias_verif.exe \
-           da_rad_diags.exe
+           da_rad_diags.exe \
+           diffwrf
 
 da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
 	$(SFC) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
@@ -226,7 +227,7 @@ da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
 
 da_verif_anal.exe : da_verif_anal.o da_verif_anal_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
 	$(SFC) $(LDFLAGS) -o $@ da_verif_anal.o da_netcdf_interface.o \
-           da_verif_anal_control.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
+           da_verif_anal_control.o $(LIB_EXTERNAL)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_hollingsworth1.exe: da_tune_obs_hollingsworth1.o
@@ -244,9 +245,9 @@ da_tune_obs_desroziers.exe: da_tune_obs_desroziers.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_update_bc.exe : da_update_bc.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
-	$(SFC) $(LDFLAGS) -L$(NETCDF)/lib -o $@ da_update_bc.o \
+	$(SFC) $(LDFLAGS) -o $@ da_update_bc.o \
            da_netcdf_interface.o \
-           da_module_couple_uv.o -lnetcdf 
+           da_module_couple_uv.o $(LIB_EXTERNAL)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_airmass.exe : da_bias_airmass.o  rad_bias.o pythag.o tqli.o tred2.o regress_one.o
@@ -266,9 +267,20 @@ da_bias_verif.exe : da_bias_verif.o rad_bias.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_rad_diags.exe : da_rad_diags.o 
-	$(SFC) -o $@ da_rad_diags.o -L$(WRF_SRC_ROOT_DIR)/external/io_netcdf -lwrfio_nf -L$(NETCDF)/lib -lnetcdf
+	$(SFC) -o $@ da_rad_diags.o $(LIB_EXTERNAL)
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
+diffwrf: ../../external/io_netcdf/diffwrf.F90
+	x=`echo "$(FC)" | awk '{print $$1}'` ; export x ; \
+	if [ $$x = "gfortran" ] ; then \
+           echo removing external declaration of iargc for gfortran ; \
+           $(CPP) -C -P $(TRADFLAG) -I$(NETCDFPATH)/include -I../../external/ioapi_share ../../external/io_netcdf/diffwrf.F90 | sed '/integer *, *external.*iargc/d' > diffwrf.f ;\
+        else \
+           $(CPP) -C -P $(TRADFLAG) -I$(NETCDFPATH)/include -I../../external/ioapi_share ../../external/io_netcdf/diffwrf.F90 > diffwrf.f ; \
+        fi
+	$(SFC) -c $(FCFLAGS) -I$(NETCDFPATH)/include -I../../external/ioapi_share -I../../external/io_netcdf diffwrf.f
+	echo "diffwrf io_netcdf is being built now. " ; \
+	$(SFC) $(FCFLAGS) -I$(NETCDFPATH)/include -I../../external/ioapi_share $(LDFLAGS) -o diffwrf diffwrf.o ../../external/io_netcdf/wrf_io.o ../../external/io_netcdf/field_routines.o ../../external/io_netcdf/module_wrfsi_static.o ../../external/io_netcdf/bitwise_operators.o wrf_debug.o module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIB_EXTERNAL)
 
 # Special cases, either needing special include files or too big to 
 # optimise/debug

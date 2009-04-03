@@ -37,7 +37,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       iostat=ios)
    if (ios /= 0) then
       call da_error(__FILE__,__LINE__, &
-         (/"Cannot open qc observation file"//trim(filename)/))
+         (/"Cannot open qc observation file"//filename/))
    end if
 
 

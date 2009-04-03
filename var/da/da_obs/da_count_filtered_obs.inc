@@ -36,7 +36,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
    do files = 0, num_procs-1
       write(unit=filename, fmt='(a,i3.3)') 'filtered_obs.',files  
       open(unit=iunit, file= trim(filename), form='formatted',iostat=iost)
-      if (iost /= 0) call da_error(__FILE__,__LINE__, (/"Cannot open "//trim(filename)/))
+      if (iost /= 0) call da_error(__FILE__,__LINE__, (/"Cannot open "//filename/))
 
       !  loop over records
 

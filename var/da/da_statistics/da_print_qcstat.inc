@@ -47,7 +47,7 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
       write(unit=file,fmt ='(a,i2.2)')'qcstat_conv_',it
       open(unit=ounit,file=trim(file),form='formatted', status='replace', iostat=ios)
       if (ios /= 0) call da_error(__FILE__,__LINE__, &
-         (/"Cannot open file "//trim(file)/))
+         (/"Cannot open file "//file/))
     num_qcstat_conv = 0
     ii = 0    
         do k = 1, npres_print - 1   

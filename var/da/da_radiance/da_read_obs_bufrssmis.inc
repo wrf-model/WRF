@@ -83,7 +83,7 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
-         (/"Cannot open file "//trim(infile)/))
+         (/"Cannot open file "//infile/))
       return
    end if
 

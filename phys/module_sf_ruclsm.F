@@ -2340,7 +2340,13 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !          snwe=0.
          ENDIF
 
-        SNOM=SNOM+SMELT*DELT
+! 3apr2009
+! temporary fix, comment out following line, only initialized
+! at the start time and this stack variable is not saved, and
+! not assigned to anything
+! better idea is to pass SNOM back up through the argument list
+! into the ACSNOM variable in the grid derived type
+!       SNOM=SNOM+SMELT*DELT
 
 !--- KEEPFR is 1 when the temperature and moisture in soil
 !--- are both increasing. In this case soil ice should not

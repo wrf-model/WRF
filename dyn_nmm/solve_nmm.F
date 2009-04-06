@@ -117,7 +117,7 @@
      &,            radiation_tim,rdtemp_tim,turbl_tim,cltend_tim        &
      &,            cucnvc_tim,gsmdrive_tim,hdiff_tim,bocoh_tim          &
      &,            pfdht_tim,ddamp_tim,bocov_tim,uv_htov_tim,sum_tim    &
-     &,            adjppt_tim
+     &,            adjppt_tim,sst_tim,flux_tim
       real,save :: exch_tim_max
       real :: btim,btimx
       real :: et_max,this_tim
@@ -505,6 +505,18 @@
  2000 CONTINUE
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+! Coupling insertion:->
+!
+      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
+      ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
+                       kds,kde,kts,kte,kms,kme,                  &
+!??  What are KDS etc. for??
+                       HLON,HLAT,VLON,VLAT,SM,                   &
+                       grid%i_parent_start,grid%j_parent_start)
+!     CALL ATM_RECVdtc(NPHS*dt) <-  now called from ATM_TSTEP_INIT with no arg.
+!     CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT) <- now called from ATM_TSTEP_INIT
+!     CALL ATM_SENDSLM(SM)                    <- now called from ATM_TSTEP_INIT
+!<-:oupling insertion
 !
 !-----------------------------------------------------------------------
 !***  PRESSURE TENDENCY, SIGMA DOT, VERTICAL PART OF OMEGA-ALPHA
@@ -873,8 +885,13 @@
 !
               MOIST(I,J,K,P_QC)=QW
               MOIST(I,J,K,P_QR)=QR
-              MOIST(I,J,K,P_QI)=0.
-              MOIST(I,J,K,P_QS)=QI
+              if (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)then
+                 MOIST(I,J,K,P_QI)=0.
+                 MOIST(I,J,K,P_QS)=QI
+              elseif(CONFIG_FLAGS%MP_PHYSICS==ETAMP_hwrf)then
+                 MOIST(I,J,K,P_QI)=QI
+                 MOIST(I,J,K,P_QS)=0.
+              endif
               MOIST(I,J,K,P_QG)=0.
             ENDDO
             ENDDO
@@ -1092,6 +1109,18 @@
 !
       rdtemp_tim=rdtemp_tim+timef()-btimx
 !
+!
+!-------------------------------------------------------------------------------------
+!*** GET SSTs FROM DMITRY's COUPLER ON TO THE PARENT AND NESTED GRID
+!-------------------------------------------------------------------------------------
+! Coupling insertion:->
+        CALL ATM_GETSST(SST,SM)
+!<-:Coupling insertion
+      IF(GRID%ID .EQ. 1 .AND. MOD(NTSD,grid%NPHS)==0)THEN
+        btimx=timef()
+        sst_tim=sst_tim+timef()-btimx
+      ENDIF
+
 !----------------------------------------------------------------------
 !***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
@@ -1157,6 +1186,37 @@
 !                     ***  NOTE  ***
 !
         turbl_tim=turbl_tim+timef()-btimx
+
+
+!------------------------------------------------------------------------------
+!*** ATMOSPHERIC MODEL OUTPUTS FROM PARENT AND NESTED GRID FOR DMITRYs COUPLER
+!------------------------------------------------------------------------------
+!
+!-- TWBS  :  surface sensible heat flux, positive downward (W/m2)
+!-- QWBS  :  surface latent heat flux, positive downward (W/m2)
+!-- RLWIN :  downward long wave flux at ground surface,positive downward (W/m2)
+!-- RSWIN :  downward short wave flux at ground surface, positive downward (W/m2)
+!-- RADOT :  outgoing long wave flux at ground surface, positive upward (W/m2)
+!-- RSWOUT:  outgoing short wave flux at ground surface, positive upward (W/m2)
+!-- TAUX  :  x component of surface stress, u positive Eastward
+!-- TAUY  :  y component of surface stress, v positive Northward
+!-- PINT  :  3d array of interface pressure (pascals)
+!-- PREC  :  prec (m/timestep;timestep on grid1=60 sec)
+
+!
+!
+
+! Coupling insertion:->
+      call ATM_DOFLUXES(TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT, &
+                        TAUX,TAUY,PINT(:,1,:),PREC)
+!<-:Coupling insertion
+!
+
+      IF(GRID%ID .EQ. 1 .AND. MOD(NTSD,grid%NPHS)==0)THEN
+        btimx=timef()
+        flux_tim=flux_tim+timef()-btimx
+      ENDIF
+
 !
         btimx=timef()
 !-----------------
@@ -1783,6 +1843,22 @@
 
 #define COPY_OUT
 #include <scalar_derefs.inc>
+!-----------------------------------------------------------------------
+!*** ACCUMULATED ATMOSPHERIC MODEL FLUXES FOR DMITRYs COUPLER
+!-----------------------------------------------------------------------
+!
+!
+!
+! Coupling insertion:->
+      call ATM_SENDFLUXES
+!<-:Coupling insertion
+!
+! Kwon's doing to check heat flux
+!
+!  IF(grid%id==2)WRITE(0,*)'AFTER ATM_SENDFLUX QWBS TWBS AT 10 10 ',NTSD,QWBS(10,10),TWBS(10,10)
+!
+
+
       Return
 !----------------------------------------------------------------------
 !**********************************************************************

@@ -1059,7 +1059,22 @@ CONTAINS
               CHKLOWQ(I,J)= 1.0
            ENDDO
            ENDDO
+        CALL wrf_debug(100,'in SFCDIAGS')
 
+
+          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+                     PSFC,CP,R_d,RCP,                              &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+           
+           
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+             tshltr(i,j)=th2(i,j)
+             qshltr(i,j)=q2(i,j)
+           enddo
+           enddo
 #endif
      CASE DEFAULT
 

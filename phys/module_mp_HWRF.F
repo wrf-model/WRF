@@ -33,8 +33,8 @@ MODULE module_mp_etanew_HWRF
 !
       INTEGER,PARAMETER :: NX=7501
       REAL, PARAMETER :: XMIN=180.0,XMAX=330.0
-      REAL, DIMENSION(NX),SAVE :: TBPVS,TBPVS0
-      REAL, SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
+      REAL, DIMENSION(NX),PRIVATE,SAVE :: TBPVS,TBPVS0
+      REAL, PRIVATE,SAVE :: C1XPVS0,C2XPVS0,C1XPVS,C2XPVS
 !
       REAL, PRIVATE,PARAMETER ::                                        &
 !--- Physical constants follow:
@@ -51,6 +51,7 @@ MODULE module_mp_etanew_HWRF
      &  ,DMR1=.1E-3, DMR2=.2E-3, DMR3=.32E-3                            &
      &  ,XMR1=1.e6*DMR1, XMR2=1.e6*DMR2, XMR3=1.e6*DMR3
       INTEGER, PARAMETER :: MDR1=XMR1, MDR2=XMR2, MDR3=XMR3
+        REAL:: WC
 !
 ! ======================================================================
 !--- Important tunable parameters that are exported to other modules
@@ -73,8 +74,8 @@ MODULE module_mp_etanew_HWRF
 !  * PRINT_err - for run-time prints when water budgets are not conserved (for debugging)
 ! ======================================================================
       REAL, PUBLIC,PARAMETER ::                                         &
-     &  RHgrd=1.                                                        &
-     & , RHgrd_in=1.                                                     &  !GFDL
+!     &  RHgrd=1.                                                        &
+     &  RHgrd_in=1.                                                     &  !GFDL
      & ,RHgrd_out=0.975                                                 &  !GFDL
      & ,T_ICE=-40.                                                      &  !GFDL
 !GFDL     & ,T_ICE=-30.                                                 &
@@ -100,9 +101,10 @@ MODULE module_mp_etanew_HWRF
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       SUBROUTINE ETAMP_NEW_HWRF (itimestep,DT,DX,DY,GID,RAINNC,RAINNCV,    & !GID
-     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,   & !gopal's doing
+     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,   & !gopal's doing
      &                      LOWLYR,SR,                                &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,         &
+     &                      QC,QR,QI,                                 &
      &                      ids,ide, jds,jde, kds,kde,                &
      &                      ims,ime, jms,jme, kms,kme,                &
      &                      its,ite, jts,jte, kts,kte                 )
@@ -129,7 +131,7 @@ MODULE module_mp_etanew_HWRF
       REAL, INTENT(IN),     DIMENSION(ims:ime, kms:kme, jms:jme)::      &
      &                      dz8w,p_phy,pi_phy,rho_phy
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
-     &                      th_phy,qv,qc
+     &                      th_phy,qv,qt,qc,qr,qi
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)           ::     &
@@ -239,7 +241,7 @@ MODULE module_mp_etanew_HWRF
 
       CALL EGCP01DRV(GID,DT,LOWLYR,                                     &
      &               APREC,PREC,ACPREC,SR,NSTATS,QMAX,QTOT,	        &
-     &               dz8w,rho_phy,qc,t_phy,qv,F_ICE_PHY,P_PHY,          &
+     &               dz8w,rho_phy,qt,t_phy,qv,F_ICE_PHY,P_PHY,          &
      &               F_RAIN_PHY,F_RIMEF_PHY,TLATGS_PHY,TRAIN_PHY,       &
      &               ids,ide, jds,jde, kds,kde,		                &
      &               ims,ime, jms,jme, kms,kme,		                &
@@ -251,6 +253,28 @@ MODULE module_mp_etanew_HWRF
 	DO i = its,ite
   	   th_phy(i,k,j) = t_phy(i,k,j)/pi_phy(i,k,j)
            qv(i,k,j)=qv(i,k,j)/(1.-qv(i,k,j))  !Convert to mixing ratio
+           WC=qt(I,K,J)
+           QI(I,K,J)=0.
+           QR(I,K,J)=0.
+           QC(I,K,J)=0.
+           IF(F_ICE_PHY(I,K,J)>=1.)THEN
+             QI(I,K,J)=WC
+           ELSEIF(F_ICE_PHY(I,K,J)<=0.)THEN
+             QC(I,K,J)=WC
+           ELSE
+             QI(I,K,J)=F_ICE_PHY(I,K,J)*WC
+             QC(I,K,J)=WC-QI(I,K,J)
+           ENDIF
+!
+           IF(QC(I,K,J)>0..AND.F_RAIN_PHY(I,K,J)>0.)THEN
+             IF(F_RAIN_PHY(I,K,J).GE.1.)THEN
+               QR(I,K,J)=QC(I,K,J)
+               QC(I,K,J)=0.
+             ELSE
+               QR(I,K,J)=F_RAIN_PHY(I,K,J)*QC(I,K,J)
+               QC(I,K,J)=QC(I,K,J)-QR(I,K,J)
+             ENDIF
+          endif
 	ENDDO
         ENDDO
      ENDDO
@@ -293,7 +317,7 @@ MODULE module_mp_etanew_HWRF
      &  its,ite, jts,jte, kts,kte)
 !-----------------------------------------------------------------------
 ! DTPH           Physics time step (s)
-! CWM_PHY (qc)   Mixing ratio of the total condensate. kg/kg
+! CWM_PHY (qt)   Mixing ratio of the total condensate. kg/kg
 ! Q_PHY          Mixing ratio of water vapor. kg/kg
 ! F_RAIN_PHY     Fraction of rain. 
 ! F_ICE_PHY      Fraction of ice.

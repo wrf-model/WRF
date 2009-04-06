@@ -93,7 +93,7 @@
      &       ,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
-      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
+      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
       REAL :: TEND
 
 !
@@ -1193,8 +1193,27 @@
         IF(.NOT.RESTRT)THEN
           TH10(I,J)=FAC2*THS(I,J)+FAC1*THLM
           Q10(I,J)=FAC2*QSH(I,J)+FAC1*QLM
-          U10(I,J)=ULM
-          V10(I,J)=VLM
+!          U10(I,J)=ULM
+!          V10(I,J)=VLM
+          IF(SM(I,J).LT.0.5)THEN
+              U10(I,J)=ULM*(log(10./Z0(I,J))/log(DZLM/Z0(I,J)))      ! this is all Qingfu's doing
+              V10(I,J)=VLM*(log(10./Z0(I,J))/log(DZLM/Z0(I,J)))
+              ZOQING=1.944*SQRT(U10(I,J)*U10(I,J)+V10(I,J)*V10(I,J))
+            IF(ZOQING.GT.60.)THEN
+              U10(I,J)=U10(I,J)*(1.12-7.2/ZOQING)
+              V10(I,J)=V10(I,J)*(1.12-7.2/ZOQING)
+             ENDIF
+          ELSE
+             ZOQING=(0.074*SQRT(ULM*ULM+VLM*VLM)-0.58)*1.0e-3
+             ZOQING=MAX(ZOQING,Z0(I,J))          ! for winds greater than 12.5 m/s
+             U10(I,J)=ULM*(log(10./ZOQING))/log(DZLM/ZOQING)      ! this is all Qingfu's doing
+             V10(I,J)=VLM*(log(10./ZOQING))/log(DZLM/ZOQING)
+             ZOQING=1.944*SQRT(U10(I,J)*U10(I,J)+V10(I,J)*V10(I,J))
+           IF(ZOQING.GT.60.)THEN
+              U10(I,J)=U10(I,J)*(1.12-7.2/ZOQING)
+              V10(I,J)=V10(I,J)*(1.12-7.2/ZOQING)
+           END IF
+          ENDIF          
         ENDIF
 !
 !        FAC1=2./DZLM

@@ -21,11 +21,16 @@ MODULES =       module_driver_constants.o  \
                 module_sm.o                \
                 module_io.o                \
                 module_comm_dm.o           \
+                module_PATCH_QUILT.o       \
+                cmpcomm.o                  \
+                atm_comm_pom.o             \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o
 
-OBJS    =       wrf_num_bytes_between.o    \
+OBJS    =       mpi_more.o                 \
+                atm_tiles.o                \
+                wrf_num_bytes_between.o    \
                 wrf_shutdown.o             \
                 wrf_debug.o                \
                 libmassv.o                 \
@@ -79,7 +84,7 @@ module_configure.o: \
                 module_wrf_error.o \
 		module_driver_constants.o 
 
-module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
+module_dm.o: atm_comm_pom.o module_machine.o module_state_description.o module_wrf_error.o \
 		module_domain.o \
 		module_driver_constants.o \
 		module_timing.o \

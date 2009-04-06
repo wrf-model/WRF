@@ -1268,7 +1268,7 @@
 !BSF: Logical FQ_I index PQ_I are set to values associated with snow
 !     for the ETAMPNEW scheme so that they can be mixed by the PBL schemes.
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==etamp_hwrf)THEN
+      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
          FQ_I=F_QS
          PQ_I=P_QS
       ELSE
@@ -1622,6 +1622,7 @@
 !-- Allow vertical mixing to modify cloud ice + snow for ETAMPNEW
 !
             QW=MAX(0.,MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
+            if(CONFIG_FLAGS%MP_PHYSICS.eq.etampnew)then
             QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
 !BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
             QR=MAX(0.,MOIST(I,J,K,P_QR) )
@@ -1629,6 +1630,15 @@
             MOIST(I,J,K,P_QS)=QI
             MOIST(I,J,K,P_QR)=QR
             CWM(I,J,K)=QW+QI+QR
+            elseif(CONFIG_FLAGS%MP_PHYSICS.eq.etamp_hwrf)then
+            QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
+!BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
+            QR=MAX(0.,MOIST(I,J,K,P_QR) )
+            MOIST(I,J,K,P_QC)=QW
+            MOIST(I,J,K,P_QI)=QI
+            MOIST(I,J,K,P_QR)=QR
+            CWM(I,J,K)=QW+QI+QR
+            endif
 !
             IF(QI<=EPSQ)THEN
               F_ICE(I,K,J)=0.

@@ -1,6 +1,12 @@
 !WRF:PACKAGE:RSL 
 !
 MODULE module_dm
+! Coupling insertion->
+   USE ATM_cc, ONLY: MPI_COMM_Atmos
+!     All occurences of MPI_COMM_WORLD in this unit are replaced
+!     by MPI_COMM_Atmos to enable coupling. The value of MPI_COMM_Atmos
+!     is obtained via call ATM_CMP_START
+!<-Coupling insertion
 
    USE module_machine
    USE module_wrf_error
@@ -1286,8 +1292,11 @@ CONTAINS
         ENDIF
 #  else
         CALL mpi_init ( ierr )
+! Coupling insertion->
+        call ATM_CMP_START
+!<-Coupling insertion
 #  endif
-        CALL wrf_set_dm_communicator( MPI_COMM_WORLD )
+        CALL wrf_set_dm_communicator( MPI_COMM_ATMOS )
         CALL wrf_termio_dup
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_here )
@@ -1295,7 +1304,7 @@ CONTAINS
       CALL MPI_Comm_rank ( mpi_comm_here, mytask, ierr ) ;
       CALL mpi_comm_size ( mpi_comm_here, ntasks, ierr ) ;
 #if (DA_CORE == 1)
-      CALL mpi_comm_split( MPI_COMM_WORLD , 4 , 1 , mpi_comm_local, ierr )
+      CALL mpi_comm_split( MPI_COMM_ATMOS , 4 , 1 , mpi_comm_local, ierr )
       CALL wrf_set_dm_communicator( mpi_comm_local )
       CALL wrf_termio_dup
       CALL wrf_get_dm_communicator( mpi_comm_here )
@@ -1348,11 +1357,24 @@ CONTAINS
 	! initialized MPI, so just grab the communicator that
 	! should already be stored and use that.
 	CALL mpi_init ( ierr )
+! Coupling insertion->
+        call ATM_CMP_START
+!<-Coupling insertion
         CALL wrf_termio_dup
-	CALL wrf_set_dm_communicator ( MPI_COMM_WORLD )
+	CALL wrf_set_dm_communicator ( MPI_COMM_ATMOS )
       ENDIF
       CALL wrf_get_dm_communicator( mpi_comm_local )
 #endif
+! Coupling insertion->
+!      call ATM_INIT_CHECK('ATM_CMP_START has not been called before'//
+!     >' exiting init_module_dm. Aborting...')
+
+!!!! Dmitry: is this correct ?; gopal's change
+
+      call ATM_INIT_CHECK('ATM_CMP_START has not been called before exiting init_module_dm. Aborting...')
+
+!<-Coupling insertion
+
    END SUBROUTINE init_module_dm
 
 ! stub
@@ -1723,13 +1745,18 @@ SUBROUTINE wrf_dm_patch_domain ( id  , domdesc , parent_id , parent_domdesc , &
 END SUBROUTINE wrf_dm_patch_domain
 
 SUBROUTINE wrf_termio_dup
+! Coupling insertion->
+   USE ATM_cc, ONLY: MPI_COMM_Atmos
+!     All occurences of MPI_COMM_WORLD in this unit are replaced
+!     by MPI_COMM_Atmos to enable coupling
+!<-Coupling insertion
   IMPLICIT NONE
   INTEGER mytask, ntasks
 #ifndef STUBMPI
   INTEGER ierr
   INCLUDE 'mpif.h'
-  CALL mpi_comm_size(MPI_COMM_WORLD, ntasks, ierr )
-  CALL mpi_comm_rank(MPI_COMM_WORLD, mytask, ierr )
+  CALL mpi_comm_size(MPI_COMM_ATMOS, ntasks, ierr )
+  CALL mpi_comm_rank(MPI_COMM_ATMOS, mytask, ierr )
   write(0,*)'starting wrf task ',mytask,' of ',ntasks
   CALL rsl_error_dup1( mytask )
 #else
@@ -1904,11 +1931,17 @@ SUBROUTINE write_68( grid, v , s , &
 END
 
    SUBROUTINE wrf_abort
-      IMPLICIT NONE
+
+! Coupling insertion->
+   USE ATM_cc, ONLY: MPI_COMM_Atmos
+!     All occurences of MPI_COMM_WORLD in this unit are replaced
+!     by MPI_COMM_Atmos to enable coupling
+!<-Coupling insertion
+    implicit none
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr
-      CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
+      CALL mpi_abort(MPI_COMM_ATMOS,1,ierr)
 #else
       STOP
 #endif

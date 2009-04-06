@@ -99,7 +99,7 @@
 #endif
 
 call wrf_message("*********************************************************************")
-call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.0                         *")
+call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.1                         *")
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
 call wrf_message("*                                                                   *")

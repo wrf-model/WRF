@@ -55,7 +55,8 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  dfi_fwdstop_second                  = 00,
  /
 
-** Using gridded nudging option (note this is a separate namelist record):
+** Using gridded nudging option (note this is a separate namelist record) for
+   upperair, and surface analysis nudging
 
  &fdda
  grid_fdda                           = 1,     1,     1,
@@ -64,8 +65,8 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  gfdda_interval_m                    = 360,   360,   360,
  fgdt                                = 0,     0,     0,
  if_no_pbl_nudging_uv                = 0,     0,     0,
- if_no_pbl_nudging_t                 = 0,     0,     0,
- if_no_pbl_nudging_q                 = 0,     0,     0,
+ if_no_pbl_nudging_t                 = 1,     1,     1,
+ if_no_pbl_nudging_q                 = 1,     1,     1,
  if_zfac_uv                          = 0,     0,     0,
   k_zfac_uv                          = 10,   10,    10,
  if_zfac_t                           = 0,     0,     0,
@@ -78,7 +79,15 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  if_ramping                          = 1,
  dtramp_min                          = 60.0,
  io_form_gfdda                       = 2,
- /
+ grid_sfdda                          = 1,     1,     1,
+ sgfdda_inname                       = "wrffdda_d<domain>",
+ sgfdda_end_h                        = 24,    24,    24,
+ sgfdda_interval_m                   = 360,   360,   360,
+ io_form_sgfdda                      = 2,
+ guv_sfc                             = 0.0003,     0.0003,     0.0003,
+ gt_sfc                              = 0.0003,     0.0003,     0.0003,
+ gq_sfc                              = 0.0003,     0.0003,     0.0003,
+ rinblw                              = 250.,
 
 ** Using observation nudging option (note &fdda is a separate namelist record):
 

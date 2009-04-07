@@ -918,7 +918,7 @@ CONTAINS
                  P1000mb,                                            &
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
-                 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,ZNT_SEA,                            &
+                 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
                  ITIMESTEP,XICE_THRESHOLD,                                          &
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
@@ -1068,6 +1068,7 @@ CONTAINS
               xland,                                               &
               ust,znt,z0,pblh,mavail,rmol,                         &
               akhs,akms,                                           &
+              br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
               u10,v10,tshltr,th10,qshltr,q10,pshltr,               &
               ids,ide, jds,jde, kds,kde,                           &
@@ -2422,7 +2423,7 @@ CONTAINS
                      P1000,                                      &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
-HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,ZNT_SEA,                            &
+HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
 ITIMESTEP,XICE_THRESHOLD,                                          &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -2522,6 +2523,7 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
                                                 LH_SEA,           &
                                                 QFX_SEA,          &
                                                 QGH_SEA,          &
+                                                QSFC_SEA,         &
                                                 ZNT_SEA
 
 !--------------------------------------------------------------------
@@ -2557,7 +2559,6 @@ ITIMESTEP,XICE_THRESHOLD,                                          &
                                                 CK_SEA,           &
                                                 CKA_SEA,          &
                                                 Q2_SEA,           &
-                                                QSFC_SEA,         &
                                                 T2_SEA,           &
                                                 TH2_SEA,          &
                                                 U10_SEA,          &

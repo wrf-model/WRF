@@ -429,6 +429,8 @@ ntime_loop: do itime = 1, ntime
 
          end do npixel_loop
 
+         close(iunit(iproc))
+
       end do nproc_loop_2
 
       write(0,*) 'Writing out data in netCDF format...'
@@ -853,9 +855,6 @@ ntime_loop: do itime = 1, ntime
          deallocate ( mdl_prf_qcw )
          deallocate ( mdl_prf_qrn )
       end if
-      do i = 0, nproc-1
-         close(iunit(i))
-      end do
 
    end do ninst_loop
 

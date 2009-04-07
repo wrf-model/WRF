@@ -147,7 +147,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    CHARACTER ( LEN = 160)               :: error_message
    CHARACTER ( LEN =  14)               :: newstring
    LOGICAL                              :: fatal
-   INTEGER                              :: nlevels, num_unknown, m_miss 
+   INTEGER                              :: nlevels, num_unknown, m_miss, n101301 
    TYPE ( measurement ) , POINTER       :: current
 !-----------------------------------------------------------------------------!
   INCLUDE 'platform_interface.inc'
@@ -175,6 +175,7 @@ time_window_min, time_window_max, map_projection , missing_flag)
    num_empty = 0
    num_outside = 0
    m_miss = 0
+   n101301 = 0
 
    !  Open file for writing diagnostics
    IF (print_gts_read) THEN
@@ -1007,6 +1008,46 @@ time_window_min, time_window_max, map_projection , missing_flag)
              obs(obs_num)%ground%slp%data
              obs(obs_num)%surface%meas%pressure%qc   = 0
          END IF
+
+         ! YRG 04/04/2009
+         ! For SYNOP, if surface%meas%pressure%data = 101301.000 
+         ! (101301.000 is a fake value in NCAR archived LITTLE_R file)
+         ! and the slp is missing (note if SLP is available, WRFVar 
+         ! will use the SLP to derive Psfc and ignore the original Psfc, 
+         ! see da_tools/da_obs_sfc_correction.inc),  
+         ! fill in surface%meas%pressure%data with ground%psfc%data:
+
+         IF ( (obs(obs_num)%info%platform(1:5).EQ.'FM-12') .and.  &
+              (ASSOCIATED (obs (obs_num)%surface ) ) ) THEN
+
+            if ( eps_equal(obs(obs_num)%surface%meas%pressure%data, &
+                                             101301.000, 1.) .and.  &
+                 eps_equal(obs(obs_num)%ground%slp%data,            &
+                                              missing_r, 1.) ) then
+             n101301 = n101301 + 1 
+             print '("num=",i6,1X,A,1X,A,1X,A,1X,2(F8.3,A),A,1X,f11.3,2(a,f13.2,i8))',&
+                    n101301,  &
+            obs(obs_num)%location%id   (1: 5),&
+            obs(obs_num)%location%name (1:20),&
+            obs(obs_num)%info%platform (1: 12),&
+            obs(obs_num)%location%latitude, 'N',&
+            obs(obs_num)%location%longitude,'E ', &
+            obs(obs_num)%valid_time%date_char,    &
+            obs(obs_num)%info % elevation,        &
+            "  pressure:",                        &
+                    obs(obs_num)%surface%meas%pressure%data, &
+                    obs(obs_num)%surface%meas%pressure%qc, &
+            "  Psfc:",                             &
+                    obs(obs_num)%ground%psfc%data, &
+                    obs(obs_num)%ground%psfc%qc
+
+               obs(obs_num)%surface%meas%pressure%data = &
+               obs(obs_num)%ground%psfc%data
+               obs(obs_num)%surface%meas%pressure%qc   = &
+               obs(obs_num)%ground%psfc%qc
+            endif
+
+         ENDIF 
 
          !  This may be wasted print-out, but it is comforting to see.
 

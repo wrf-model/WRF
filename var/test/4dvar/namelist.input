@@ -121,8 +121,6 @@ diff_opt=0,
 km_opt=1,
 dampcoef=0.2,
 time_step_sound=4,
-base_temp=290.0,
-use_baseparam_fr_nml=true,
 /
 &bdy_control
 specified=true,

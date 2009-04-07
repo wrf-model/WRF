@@ -1,11 +1,11 @@
 Updated for Version 3.1 release.  Mar 17 2009
 
 1, rename 3dvar_obs.F90 to obsproc.F90.
-2, rename 4dvar_obs.exe to obsproc.exe.
+2, rename 3dvar_obs.exe to obsproc.exe.
 3, rename namelist.3dvar_obs.wrfvar-tut to namelist.obsproc.wrfvar-tut.
-4, remove some unnecessary files only for development tean internal use only.
+4, remove some unnecessary files only for development team internal use only.
 5, update README and README.namelist
----------------------------------------------------------------------
+
 Updated Makefile to support more compilers.  Mar 5 2009
 
 1, to compile, add compiler choice in the make command line, for example,

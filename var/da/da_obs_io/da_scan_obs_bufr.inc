@@ -85,6 +85,7 @@ subroutine da_scan_obs_bufr (iv, filename)
 
    match = .true.
    end_of_file = .false.
+   outside_all = .false.
    outside_time = .false.
    report = 0 ! report number in file
    reports: do while ( .not. end_of_file )
@@ -103,8 +104,9 @@ subroutine da_scan_obs_bufr (iv, filename)
 
       call ufbint(iunit,hdr,7,1,iret,hdstr)
       
+      r8sid = hdr(1)
       platform % info % name(1:8) = subset
-      platform % info % id        = hdstr(1:5)
+      platform % info % id        = csid(1:5)
       platform % info % dhr       = hdr(4)     ! difference in hour
       platform % info % elv       = hdr(6)
       platform % info % lon       = hdr(2)
@@ -176,7 +178,6 @@ subroutine da_scan_obs_bufr (iv, filename)
             match = .false.
             exit match_check
          end if
-         r8sid  = hdr(1)
          r8sid2 = hdr2(1)
          if ( csid /= csid2 ) then   ! check SID
             match = .false.
@@ -197,7 +198,7 @@ subroutine da_scan_obs_bufr (iv, filename)
          ! If this is a surface report, the wind subset precedes the
          ! mass subset - switch the subsets around in order to combine
          ! the surface pressure properly
-         if ( nint(hdr(5)) >= 280 .and. nint(hdr(5)) <= 282 ) then
+         if ( nint(hdr(5)) >= 280 ) then
             obs_save = obs2
             obs2 = obs
             obs = obs_save

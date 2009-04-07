@@ -38,7 +38,7 @@ subroutine da_read_obs_bufr (iv, filename)
    integer                      :: ntotal(num_ob_indexes)
 
    character(len=40)     :: obstr,drift,hdstr,qmstr,oestr, pcstr
-   character(len=8)      :: subset, c8id
+   character(len=8)      :: subset
    character(len=80)     :: date, dmn, obs_date
    real                  :: hdr(7)
    real                  :: pmo(2,1)
@@ -53,7 +53,6 @@ subroutine da_read_obs_bufr (iv, filename)
    integer               :: iunit, fm , obs_index
 
    integer, parameter    :: qflag=4         ! Flag for retaining data
-   equivalence     (hdr(1), c8id)
 
    real, allocatable     :: in(:), out(:)
    logical               :: found
@@ -61,7 +60,7 @@ subroutine da_read_obs_bufr (iv, filename)
    logical               :: use_errtable
    integer               :: junit, itype, ivar
    real                  :: oetab(300,33,6)  ! 300 ob types, 33 levels (rows), 6 variables (columns)
-   real                  :: errmin_uv, errmin_t, errmin_p, errmin_q, errmin_pw, coef
+   real                  :: err_uv, err_t, err_p, err_q, err_pw, coef
    
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
@@ -70,11 +69,11 @@ subroutine da_read_obs_bufr (iv, filename)
    nlocal(:) = 0
    ntotal(:) = 0
 
-   errmin_uv = 10.0 ! m/s
-   errmin_t  = 5.0  ! degree
-   errmin_p  = 100  ! Pa
-   errmin_q  = 1.0  ! RH percent divided by 10
-   errmin_pw = 0.2  ! cm
+   err_uv = 10.0 ! m/s
+   err_t  = 5.0  ! degree
+   err_p  = 200  ! Pa
+   err_q  = 10   ! RH percent
+   err_pw = 0.2  ! cm
 
    ! open file
    !  ---------
@@ -158,9 +157,10 @@ subroutine da_read_obs_bufr (iv, filename)
 
       call ufbint(iunit,hdr,7,1,iret,hdstr)
       
+      r8sid = hdr(1)
       platform % info % name(1:8)  = subset
       platform % info % name(9:40) = '                                '
-      platform % info % id         = c8id(1:5)
+      platform % info % id         = csid(1:5)
       platform % info % dhr        = hdr(4)    ! difference in hour
       platform % info % elv        = hdr(6)
       platform % info % lon        = hdr(2)
@@ -230,10 +230,10 @@ subroutine da_read_obs_bufr (iv, filename)
       end if
 
       call ufbint(iunit,pmo,2,1,nlevels,'PMO PMQ')
-      call ufbint(iunit,obs,9,255,nlevels,obstr)
       call ufbint(iunit,qms,9,255,nlevels,qmstr)
       call ufbint(iunit,oes,9,255,nlevels,oestr)
       call ufbint(iunit,pco,9,255,nlevels,pcstr)
+      call ufbint(iunit,obs,9,255,nlevels,obstr)
 
       if ( use_errtable ) then
          do k = 1, nlevels
@@ -265,7 +265,6 @@ subroutine da_read_obs_bufr (iv, filename)
             match = .false.
             exit match_check
          end if
-         r8sid  = hdr(1)
          r8sid2 = hdr2(1)
          if ( csid /= csid2 ) then  ! check SID
             match = .false.
@@ -283,15 +282,15 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
          !The two headers match, now read data from the second subset
          call ufbint(iunit,pmo2,2,1,nlevels2,'PMO PMQ')
-         call ufbint(iunit,obs2,9,255,nlevels2,obstr)
          call ufbint(iunit,qms2,9,255,nlevels2,qmstr)
          call ufbint(iunit,oes2,9,255,nlevels2,oestr)
          call ufbint(iunit,pco2,9,255,nlevels2,pcstr)
+         call ufbint(iunit,obs2,9,255,nlevels2,obstr)
 
          kx=int(0.1+hdr2(5))
          if ( use_errtable ) then
             do k = 1, nlevels2
-               pob = obs(1,k)
+               pob = obs2(1,k)
                do lv1 = 1, 32
                   if ( pob >= oetab(kx,lv1+1,1) .and. pob <= oetab(kx,lv1,1) ) then
                      coef = (pob-oetab(kx,lv1,1))/(oetab(kx,lv1,1)-oetab(kx,lv1+1,1))
@@ -309,7 +308,7 @@ subroutine da_read_obs_bufr (iv, filename)
          ! If this is a surface report, the wind subset precedes the
          ! mass subset - switch the subsets around in order to combine
          ! the surface pressure properly
-         if ( nint(hdr(5)) >= 280 .and. nint(hdr(5)) <= 282 ) then
+         if ( nint(hdr(5)) >= 280 ) then
             pmo_save = pmo2
             pmo2 = pmo
             pmo = pmo_save
@@ -329,6 +328,7 @@ subroutine da_read_obs_bufr (iv, filename)
             pco2 = pco
             pco = pco_save
          end if
+
          ! combine the two matching subsets
          do i = 1, 2
             if ( pmo(i,1) > r8bfms ) then
@@ -408,10 +408,10 @@ subroutine da_read_obs_bufr (iv, filename)
 
       platform % loc % slp %inv   = missing_r     
       platform % loc % slp %qc    = missing_data
-      platform % loc % slp %error = errmin_p
+      platform % loc % slp %error = err_p
       platform % loc % pw %inv    = missing_r     
       platform % loc % pw %qc     = missing_data
-      platform % loc % pw %error  = errmin_pw
+      platform % loc % pw %error  = err_pw
 
       do i=1,max_ob_levels
          platform % each (i) % height  = missing_r
@@ -421,21 +421,21 @@ subroutine da_read_obs_bufr (iv, filename)
             
          platform % each (i) % u % inv = missing_r
          platform % each (i) % u % qc  = missing_data
-         platform % each (i) % u % error = errmin_uv
+         platform % each (i) % u % error = err_uv
 
          platform % each (i) % v = platform % each (i) % u
 
          platform % each (i) % t % inv = missing_r
          platform % each (i) % t % qc  = missing_data
-         platform % each (i) % t % error = errmin_t
+         platform % each (i) % t % error = err_t
 
          platform % each (i) % p % inv = missing_r      
          platform % each (i) % p % qc  = missing_data
-         platform % each (i) % p % error = errmin_p
+         platform % each (i) % p % error = err_p
 
          platform % each (i) % q % inv = missing_r
          platform % each (i) % q % qc  = missing_data
-         platform % each (i) % q % error = errmin_q
+         platform % each (i) % q % error = err_q
       end do 
 
       do k = 1, platform % info % levels
@@ -474,26 +474,26 @@ subroutine da_read_obs_bufr (iv, filename)
          if (pmq < qflag .and. pmq >= 0) then
             platform % loc % slp % inv =pmo(1,1)*100.0
             platform % loc % slp % qc  =pmq
-            platform % loc % slp % error = errmin_p
+            platform % loc % slp % error = err_p          ! hardwired
          end if
 
          if (pwq < qflag .and. pwq >= 0) then
             platform % loc % pw % inv = obs(7,k) * 0.1    ! convert to cm
             platform % loc % pw % qc  =  pwq
-            platform % loc % pw % error = errmin_pw
+            platform % loc % pw % error = err_pw          ! hardwired
          end if
 
-         poe = errmin_p
+         poe = err_p
 
          if (tqm < qflag .and. tqm >= 0) then
-            toe = min(errmin_t, oes(3,k))
+            toe = min(err_t, oes(3,k))
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
          if (wqm < qflag .and. wqm >= 0) then
-            woe = min(errmin_uv, oes(5,k))
+            woe = min(err_uv, oes(5,k))
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -520,10 +520,10 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
 
          if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
-            qoe = min(errmin_q, oes(2,k))
+            qoe = min(err_q, oes(2,k))
             platform % each (k) % q % inv =obs(2,k)
             platform % each (k) % q % qc  =qqm
-            platform % each (k) % q % error =qoe
+            platform % each (k) % q % error = qoe * 10.0   ! convert to % from PREPBUFR percent divided by 10
          end if
 
          if (zqm < qflag .and. zqm >= 0)then
@@ -565,7 +565,7 @@ subroutine da_read_obs_bufr (iv, filename)
             if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
                platform%each(1)%q%inv = obs(2,1)
                platform%each(1)%q%qc  = 88
-               platform%each(1)%q%error = 1.0   ! RH percent divided by 10
+               platform%each(1)%q%error = 10   ! RH percent
             end if
          end if
          ! assign tpw obs errors for gpspw
@@ -726,18 +726,14 @@ subroutine da_read_obs_bufr (iv, filename)
                ! if (nlevels < 1) cycle reports
                if (nlevels > 0) then
 
-                  nullify  (iv%sound(ilocal(sound))%h)
-                  nullify  (iv%sound(ilocal(sound))%p)
-                  nullify  (iv%sound(ilocal(sound))%u)
-                  nullify  (iv%sound(ilocal(sound))%v)
-                  nullify  (iv%sound(ilocal(sound))%t)
-                  nullify  (iv%sound(ilocal(sound))%q)
-                  allocate (iv%sound(ilocal(sound))%h(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%p(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%u(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%v(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%t(1:nlevels))
-                  allocate (iv%sound(ilocal(sound))%q(1:nlevels))
+                  if ( ilocal(sound) == nlocal(sound) ) then
+                     allocate (iv%sound(ilocal(sound))%h(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%p(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%u(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%v(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%t(1:iv%info(sound)%max_lev))
+                     allocate (iv%sound(ilocal(sound))%q(1:iv%info(sound)%max_lev))
+                  end if
 
                   j = 0
                   do i = 1, old_nlevels
@@ -771,14 +767,13 @@ subroutine da_read_obs_bufr (iv, filename)
                platform  % info % platform ='FM-32 PILOT '
                if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
                fm = 32
-               nullify  (iv%pilot(ilocal(pilot))%h)
-               nullify  (iv%pilot(ilocal(pilot))%p)
-               nullify  (iv%pilot(ilocal(pilot))%u)
-               nullify  (iv%pilot(ilocal(pilot))%v)
-               allocate (iv%pilot(ilocal(pilot))%h(1:nlevels))
-               allocate (iv%pilot(ilocal(pilot))%p(1:nlevels))
-               allocate (iv%pilot(ilocal(pilot))%u(1:nlevels))
-               allocate (iv%pilot(ilocal(pilot))%v(1:nlevels))
+
+               if ( ilocal(pilot) == nlocal(pilot) ) then
+                  allocate (iv%pilot(ilocal(pilot))%h(1:iv%info(pilot)%max_lev))
+                  allocate (iv%pilot(ilocal(pilot))%p(1:iv%info(pilot)%max_lev))
+                  allocate (iv%pilot(ilocal(pilot))%u(1:iv%info(pilot)%max_lev))
+                  allocate (iv%pilot(ilocal(pilot))%v(1:iv%info(pilot)%max_lev))
+               end if
 
                do i = 1, nlevels
                   iv%pilot(ilocal(pilot))%h(i) = platform%each(i)%height
@@ -810,16 +805,14 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-97 AIREP '
             if (nlocal(airep) > iv%info(airep)%nlocal) cycle reports
             fm = 42
-            nullify  (iv%airep(ilocal(airep))%h)
-            nullify  (iv%airep(ilocal(airep))%p)
-            nullify  (iv%airep(ilocal(airep))%u)
-            nullify  (iv%airep(ilocal(airep))%v)
-            nullify  (iv%airep(ilocal(airep))%t)
-            allocate (iv%airep(ilocal(airep))%h(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%p(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%u(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%v(1:nlevels))
-            allocate (iv%airep(ilocal(airep))%t(1:nlevels))
+
+            if ( ilocal(airep) == nlocal(airep) ) then
+               allocate (iv%airep(ilocal(airep))%h(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%p(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%u(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%v(1:iv%info(airep)%max_lev))
+               allocate (iv%airep(ilocal(airep))%t(1:iv%info(airep)%max_lev))
+            end if
 
             do i = 1, nlevels
                iv % airep (ilocal(airep)) % h(i) = platform % each(i) % height
@@ -966,12 +959,11 @@ subroutine da_read_obs_bufr (iv, filename)
             if (nlocal(geoamv) > iv%info(geoamv)%nlocal) cycle reports
             fm = 88
 
-            nullify  (iv%geoamv(ilocal(geoamv))%p)
-            nullify  (iv%geoamv(ilocal(geoamv))%u)
-            nullify  (iv%geoamv(ilocal(geoamv))%v)
-            allocate (iv%geoamv(ilocal(geoamv))%p (1:nlevels))
-            allocate (iv%geoamv(ilocal(geoamv))%u (1:nlevels))
-            allocate (iv%geoamv(ilocal(geoamv))%v (1:nlevels))
+            if ( ilocal(geoamv) == nlocal(geoamv) ) then
+               allocate (iv%geoamv(ilocal(geoamv))%p(1:iv%info(geoamv)%max_lev))
+               allocate (iv%geoamv(ilocal(geoamv))%u(1:iv%info(geoamv)%max_lev))
+               allocate (iv%geoamv(ilocal(geoamv))%v(1:iv%info(geoamv)%max_lev))
+            end if
 
             do i = 1, nlevels
                iv % geoamv (ilocal(geoamv)) % p(i)  = platform % each(i) % p % inv
@@ -1051,14 +1043,13 @@ subroutine da_read_obs_bufr (iv, filename)
             platform  % info % platform ='FM-132 PRFLR'
             if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
             fm = 132
-            nullify  (iv%profiler(ilocal(profiler))%h)
-            nullify  (iv%profiler(ilocal(profiler))%p)
-            nullify  (iv%profiler(ilocal(profiler))%u)
-            nullify  (iv%profiler(ilocal(profiler))%v)
-            allocate (iv%profiler(ilocal(profiler))%h (1:nlevels))
-            allocate (iv%profiler(ilocal(profiler))%p (1:nlevels))
-            allocate (iv%profiler(ilocal(profiler))%u (1:nlevels))
-            allocate (iv%profiler(ilocal(profiler))%v (1:nlevels))
+
+            if ( ilocal(profiler) == nlocal(profiler) ) then
+               allocate (iv%profiler(ilocal(profiler))%h(1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%p(1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%u(1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%v(1:iv%info(profiler)%max_lev))
+            end if
 
             do i = 1, nlevels
                iv%profiler(ilocal(profiler))%h(i) = platform%each(i)%height
@@ -1130,18 +1121,14 @@ subroutine da_read_obs_bufr (iv, filename)
                platform  % info % platform ='FM-135 TCBOG'
                fm = 135
 
-               nullify  (iv%bogus(ilocal(bogus))%h)
-               nullify  (iv%bogus(ilocal(bogus))%p)
-               nullify  (iv%bogus(ilocal(bogus))%u)
-               nullify  (iv%bogus(ilocal(bogus))%v)
-               nullify  (iv%bogus(ilocal(bogus))%t)
-               nullify  (iv%bogus(ilocal(bogus))%q)
-               allocate (iv%bogus(ilocal(bogus))%h (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%p (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%u (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%v (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%t (1:nlevels))
-               allocate (iv%bogus(ilocal(bogus))%q (1:nlevels))
+               if ( ilocal(bogus) == nlocal(bogus) ) then
+                  allocate (iv%bogus(ilocal(bogus))%h(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%p(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%u(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%v(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%t(1:iv%info(bogus)%max_lev))
+                  allocate (iv%bogus(ilocal(bogus))%q(1:iv%info(bogus)%max_lev))
+               end if
 
                do i = 1, nlevels
                   iv%bogus(ilocal(bogus))%h(i) = platform%each(i)%height
@@ -1265,9 +1252,9 @@ subroutine da_read_obs_bufr (iv, filename)
                end if
             end do
 
-            !if ( ANY(iv%info(n)%thinned(:,:)) ) then
-            !   call da_set_obs_missing(iv,n)  ! assign missing values to those thinned=true data
-            !end if
+            if ( ANY(iv%info(n)%thinned(:,:)) ) then
+               call da_set_obs_missing(iv,n)  ! assign missing values to those thinned=true data
+            end if
 
          end if
       end do

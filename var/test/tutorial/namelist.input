@@ -88,7 +88,6 @@ co2tf=0,
 &scm
 /
 &dynamics
-use_baseparam_fr_nml=true,
 /
 &bdy_control
 /

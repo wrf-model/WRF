@@ -28,7 +28,10 @@ Description of WRF-Var namelist variables
                                     ; is larger than analysis_accu, WRF-Var will issue a
                                     ; warning message ("=======> Wrong xb time found???"), 
                                     ; but won't abort.
-  calc_w_increment        = .false. ; 
+  calc_w_increment        = .false. ; .true.: the increment of the vertical velocity w will be 
+                                    ;         diagnosed based on the increments of other fields.
+                                    ;         If use_radarobs=.true., the w increments are always
+                                    ;         calculated.
   dt_cloud_model          = .false. ;
 /
 &wrfvar3
@@ -123,16 +126,21 @@ Description of WRF-Var namelist variables
 &wrfvar7
   cv_options              = 5         ; 3: NCEP Background Error model
                                       ; 5: NCAR Background Error model (default)
-  as1 (3)                 = 1.0       ; tuning factors for variance, horizontal and vertical scales for 
+  as1 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 1 = stream function. For cv_options=3 only.
-  as2 (3)                 = 1.0       ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; the actual default valuse are 0.25, 1.0, 1.5.
+  as2 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 2 - unbalanced potential velocity. For cv_options=3 only.
-  as3 (3)                 = 1.0       ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; the actual default valuse are 0.25, 1.0, 1.5.
+  as3 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 3 - unbalanced temperature. For cv_options=3 only.
-  as4 (3)                 = 1.0       ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; the actual default valuse are 0.25, 1.0, 1.5.
+  as4 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 4 - pseudo relative humidity. For cv_options=3 only.
-  as5 (3)                 = 1.0       ; tuning factors for variance, horizontal and vertical scales for 
+                                      ; the actual default valuse are 0.25, 1.0, 1.5.
+  as5 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 5 - unbalanced surface pressure. For cv_options=3 only.
+                                      ; the actual default valuse are 0.25, 1.0, 1.5.
   rf_passes               = 6         ; number of passes of recursive filter.
   var_scaling1            = 1.0       ; tuning factor of background error covariance for
                                       ; control variable 1 - stream function. For cv_options=5 only.

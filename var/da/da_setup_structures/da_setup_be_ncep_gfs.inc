@@ -69,6 +69,17 @@ subroutine da_setup_be_ncep_gfs( grid, be )
       stop "Stopped for Wrong CV_OPTION."
    endif
 
+!   If user don't provide, use best tunning factors for cv_options=3, from NCEP Wan-Shu Wu
+
+    if ( ANY(as1(:) == -1.0) .or. ANY(as2(:) == -1.0) .or. ANY(as3(:) == -1.0) .or. &
+         ANY(as4(:) == -1.0) .or. ANY(as5(:) == -1.0) ) then
+       as1(1:3) = (/ 0.25, 1.0, 1.5 /)
+       as2(1:3) = (/ 0.25, 1.0, 1.5 /)
+       as3(1:3) = (/ 0.25, 1.0, 1.5 /)
+       as4(1:3) = (/ 0.25, 1.0, 1.5 /)
+       as5(1:3) = (/ 0.25, 1.0, 1.5 /)
+     endif
+
 !!!!!!!!! cv_options=3
    be % v1 % name = 'psi  '           ! Streamfunction
    be % v2 % name = 'chi_u'           ! Uncorrelated velocity potential.

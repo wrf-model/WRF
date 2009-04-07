@@ -2420,6 +2420,8 @@
            ils2 = 1./(Mrat*Lam1 + fv_s)
            t1_vts = Kap0*csg(4)*ils1**cse(4)
            t2_vts = Kap1*Mrat**mu_s*csg(10)*ils2**cse(10)
+           ils1 = 1./(Mrat*Lam0)
+           ils2 = 1./(Mrat*Lam1)
            t3_vts = Kap0*csg(1)*ils1**cse(1)
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)

@@ -915,6 +915,14 @@ CONTAINS
 !
    IF( idd == 1 ) THEN
 
+     IF( rinblw < 0.001 ) THEN
+       IF ( wrf_dm_on_monitor()) THEN
+         WRITE(message,'(a)') 'Error in rinblw, please specify a reasonable value ***'
+         CALL wrf_message( TRIM(message) )
+       ENDIF
+       CALL wrf_error_fatal('In grid FDDA')
+     ENDIF
+
      rindx = rinblw*1000.0/dx
      m = -0.8*2.0/rindx
 

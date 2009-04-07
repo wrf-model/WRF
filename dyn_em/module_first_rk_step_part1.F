@@ -438,7 +438,7 @@ BENCH_START(surf_driver_tim)
      &        ,VEGF_PX=grid%vegf_px, SNOWNCV=grid%snowncv                 &   ! P-X LSM
      &        ,ANAL_INTERVAL=config_flags%interval_seconds                &   ! P-X LSM
      &        ,PXLSM_SMOIS_INIT=config_flags%pxlsm_smois_init             &   ! P-X LSM
-     &        ,PXLSM_SOIL_NUDGE=config_flags%grid_fdda                    &   ! P-X LSM
+     &        ,PXLSM_SOIL_NUDGE=config_flags%grid_sfdda                   &   ! P-X LSM
            ! Optional PX LSM nudging
      &        ,t2_ndg_old=grid%t2_ndg_old                  &
      &        ,q2_ndg_old=grid%q2_ndg_old                  &

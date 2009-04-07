@@ -225,14 +225,15 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
    TYPE (grid_config_rec_type) :: config_flags
   ! Local
    INTEGER                :: time_step_begin_restart
-   INTEGER                :: idsi , ierr , myproc, internal_time_loop
+   INTEGER                :: idsi , ierr , myproc, internal_time_loop,iflag
    CHARACTER (LEN=80)      :: si_inpname
    CHARACTER (LEN=80)      :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
+   CHARACTER(LEN=8)  :: flag_name
 
-   INTEGER :: time_loop_max , loop, rc
-   INTEGER :: julyr , julday 
+   INTEGER :: time_loop_max , loop, rc,icnt,itmp
+   INTEGER :: julyr , julday ,itmp,icnt
    REAL :: gmt
    real::t1,t2,t3,t4
 
@@ -329,6 +330,78 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
       CALL input_aux_model_input1 ( idsi ,   grid , config_flags , ierr )
       WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for input ',NINT(t4-t3) ,' s.'
       CALL wrf_debug( 0, wrf_err_message )
+
+      !  Possible optional SI input.  This sets flags used by init_domain.
+
+      CALL cpu_time ( t3 )
+      CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_input' )
+      CALL init_module_optional_input ( grid , config_flags )
+      CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
+      CALL optional_input ( grid , idsi , config_flags )
+
+!Here we check the flags yet again.  The flags are checked in optional_input but 
+!the grid% flags are not set.
+      flag_name(1:8) = 'SM000010'
+      CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+          grid%flag_sm000010 = 1
+      end if
+
+       flag_name(1:8) = 'SM010040'
+       CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+       IF ( ierr .EQ. 0 ) THEN
+          grid%flag_sm010040 = 1
+       end if
+
+       flag_name(1:8) = 'SM040100'
+       CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+       IF ( ierr .EQ. 0 ) THEN
+            grid%flag_sm040100 = itmp   
+       end if
+
+
+       flag_name(1:8) = 'SM100200'
+       CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+       IF ( ierr .EQ. 0 ) THEN
+            grid%flag_sm100200 = itmp  
+       end if
+
+!       flag_name(1:8) = 'SM010200'
+!       CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+!       IF ( ierr .EQ. 0 ) THEN
+!            config_flags%flag_sm010200 = itmp 
+!            print *,"found the flag_sm010200 "         
+!       end if
+
+!Now the soil temperature flags
+        flag_name(1:8) = 'ST000010'
+        CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+        IF ( ierr .EQ. 0 ) THEN
+            grid%flag_st000010 = 1
+        END IF
+
+
+         flag_name(1:8) = 'ST010040'
+         CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            grid%flag_st010040 = 1
+         END IF
+
+         flag_name(1:8) = 'ST040100'
+         CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            grid%flag_st040100 = 1
+         END IF
+
+
+         flag_name(1:8) = 'ST100200'
+         CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            grid%flag_st100200 = 1
+         END IF
+
+
+
       CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
       CALL cpu_time ( t4 )
       print *,"the out name ",config_flags%auxinput1_outname
@@ -338,12 +411,7 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
       !  are in the metgrid output file so they can be put in the tc bogus 
       !  output file for real to read.
       CALL cpu_time ( t3 )
-      CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_module_optional_input' )
-      CALL init_module_optional_input ( grid , config_flags )
       already_been_here = .FALSE.
-      CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
-      CALL  optional_input ( grid , idsi , config_flags )
-
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
 
@@ -428,7 +496,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_
 character *19 :: temp19
 character *24 :: temp24 , temp24b
 
-real::t1,t2
+real::t1,t2,truelat1,truelat2
 
    !  Various sizes that we need to be concerned about.
 
@@ -462,12 +530,12 @@ real::t1,t2
    interval_seconds = model_config_rec%interval_seconds
    sst_update = model_config_rec%sst_update
    grid_fdda = model_config_rec%grid_fdda(grid%id)
-
+   truelat1  = config_flags%truelat1
+   truelat2  = config_flags%truelat2
 
    stand_lon = config_flags%stand_lon
    cen_lat   = config_flags%cen_lat
    map_proj  = config_flags%map_proj
-
 
    latc_loc   = config_flags%latc_loc
    lonc_loc   = config_flags%lonc_loc
@@ -480,7 +548,7 @@ real::t1,t2
       remove_only = 1
    end if
 
-   call tc_bogus(cen_lat,stand_lon,map_proj,grid%truelat1,grid%truelat2, &
+   call tc_bogus(cen_lat,stand_lon,map_proj,truelat1,truelat2, &
                  grid%dx,ipe,jpe,grid%num_metgrid_levels,ptop_in_pa, &
                  latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
 
@@ -661,6 +729,10 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
                       latinc,loninc,stdlon , truelat1 , truelat2)
        conef = 0.
    ELSE IF ( jproj .EQ. 'LC' ) THEN
+        if((truelat1 .eq. 0.0)  .and. (truelat2 .eq. 0.0)) then
+            print *,"Truelat1 and Truelat2 are both 0"
+            stop
+         end if
         CALL map_set (proj_lc,proj, lat1, lon1, lat1, lon1, knowni, knownj, dx, &
                        latinc,loninc,stdlon , truelat1 , truelat2)
        conef = proj%cone
@@ -878,7 +950,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  xicn    = xico
  xjcn    = xjco
  n_iter  = 1
-
 
 !  Start computing.
 

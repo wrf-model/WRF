@@ -977,11 +977,11 @@ CONTAINS
              SNOTIME1 = 0.
           ELSE
            SNOTIME1=SNOTIME1+DT
-                IF (TSNOW.LT.273.16) THEN
+!               IF (TSNOW.LT.273.16) THEN
                    SNOALB2=SNOALB1*(SNACCA**((SNOTIME1/86400.0)**SNACCB))
-                ELSE
-                   SNOALB2 =SNOALB1*(SNTHWA**((SNOTIME1/86400.0)**SNTHWB))
-                ENDIF
+!               ELSE
+!                  SNOALB2 =SNOALB1*(SNTHWA**((SNOTIME1/86400.0)**SNTHWB))
+!               ENDIF
           ENDIF
 !
            SNOALB2 = MAX ( SNOALB2, ALB )

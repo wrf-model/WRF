@@ -102,9 +102,18 @@ subroutine da_scan_obs_ssmi (iv, filename)
       select case(fm)
       case (125)    ;
          ! read surface wind speed and precipitable water
-         read (unit=iunit, fmt = fmt_loc) speed, tpw
+         read (unit=iunit, fmt = fmt_loc) &
+               speed%inv, speed%qc, speed%error, &
+               tpw%inv, tpw%qc, tpw%error
       case (126)    ;
-         read (unit=iunit, fmt = fmt_loc) tb19v, tb19h, tb22v, tb37v, tb37h, tb85v, tb85h
+         read (unit=iunit, fmt = fmt_loc)  &
+               tb19v%inv, tb19v%qc, tb19v%error, &
+               tb19h%inv, tb19h%qc, tb19h%error, &
+               tb22v%inv, tb22v%qc, tb22v%error, &
+               tb37v%inv, tb37v%qc, tb37v%error, &
+               tb37h%inv, tb37h%qc, tb37h%error, &
+               tb85v%inv, tb85v%qc, tb85v%error, &
+               tb85h%inv, tb85h%qc, tb85h%error
       case default;
          write(unit=message(1), fmt='(a, i6)') 'unsaved ssmi obs found, fm=', fm
          write(unit=message(2), fmt='(a, 2f12.6)') 'info%(lon,lat)=', info%lon, info%lat

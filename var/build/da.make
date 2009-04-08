@@ -271,7 +271,7 @@ da_rad_diags.exe : da_rad_diags.o
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 diffwrf: ../../external/io_netcdf/diffwrf.F90
-	x=`echo "$(FC)" | awk '{print $$1}'` ; export x ; \
+	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
 	if [ $$x = "gfortran" ] ; then \
            echo removing external declaration of iargc for gfortran ; \
            $(CPP) -C -P $(TRADFLAG) -I$(NETCDFPATH)/include -I../../external/ioapi_share ../../external/io_netcdf/diffwrf.F90 | sed '/integer *, *external.*iargc/d' > diffwrf.f ;\

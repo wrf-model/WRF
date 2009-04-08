@@ -125,8 +125,8 @@ Additional settings when running WRFVAR:
                                                   Note: this refers to full levels including surface and top
                                                   vertical dimensions need to be the same for all nests
                                                   Note: most variables are unstaggered (= staggered dim - 1)
- dx (max_dom)                        = 10000,	; grid length in x direction, unit in meters
- dy (max_dom)                        = 10000,	; grid length in y direction, unit in meters
+ dx (max_dom)                        = 10000,	; grid length in x direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.667)
+ dy (max_dom)                        = 10000,	; grid length in y direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.0658) 
  ztop (max_dom)                      = 19000.	; used in mass model for idealized cases
  grid_id (max_dom)                   = 1,	; domain identifier
  parent_id (max_dom)                 = 0,       ; id of the parent domain
@@ -134,9 +134,9 @@ Additional settings when running WRFVAR:
  j_parent_start (max_dom)            = 0,       ; starting LLC J-indices from the parent domain
  parent_grid_ratio (max_dom)         = 1,       ; parent-to-nest domain grid size ratio: for real-data cases
                                                   the ratio has to be odd; for idealized cases,
-                                                  the ratio can be even if feedback is set to 0.
+                                                  the ratio can be even if feedback is set to 0. (NMM: must be 3)
  parent_time_step_ratio (max_dom)    = 1,       ; parent-to-nest time step ratio; it can be different
-                                                  from the parent_grid_ratio
+                                                  from the parent_grid_ratio (NMM: must be 3)
  feedback                            = 1,       ; feedback from nest to its parent domain; 0 = no feedback
  smooth_option                       = 0        ; smoothing option for parent domain, used only with feedback
                                                   option on. 0: no smoothing; 1: 1-2-1 smoothing; 2: smoothing-desmoothing

@@ -1,5 +1,5 @@
 
-WRF-NMM Model Version 3 (April 2008)
+WRF-NMM Model Version 3 (April 9, 2009)
 
 ----------------------------
 WRF-NMM PUBLIC DOMAIN NOTICE
@@ -38,7 +38,18 @@ This is the main directory for the WRF Version 3 source code release.
 
 For questions, send mail to wrfhelp@ucar.edu
 
-======================================
+Release Notes:
+-------------------
+
+Version 3.1 is released on April 9, 2009.
+
+- For more information on WRF V3.1 release, visit WRF-NMM Users home page
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+- WRF V3 executable will work with V3.0 wrfinput/wrfbdy.  As 
+  always, rerunning the new programs is recommended.
+
+The Online User's Guide has also been updated.
+================================================
 
 The ./compile script at the top level allows for easy selection of 
 NMM and ARW cores of WRF at compile time. 
@@ -98,77 +109,98 @@ How to configure, compile and run?
 
 =============================================================================
 
-What is in WRF-NMM V3.0?
+What is in WRF-NMM V3?
 
 * Dynamics:
 
   - The WRF-NMM model is a fully compressible, non-hydrostatic model with a
     hydrostatic option. 
-  
   - Supports One-way and two-way static nesting.
-
+    - Multiple domains and multiple nest levels
+    - Feedback option
   - The terrain following hybrid pressure sigma vertical coordinate is used. 
-  
   - The grid staggering is the Arakawa E-grid. 
-  
   - The same time step is used for all terms.  
-
   - Time stepping:
      - Horizontally propagating fast-waves: Forward-backward scheme
      - Veryically propagating sound waves: Implicit scheme
-
   - Advection (time):
      T,U,V:
       - Horizontal: The Adams-Bashforth scheme
       - Vertical:   The Crank-Nicholson scheme
      TKE, water species: Forward, flux-corrected (called every two timesteps).
-
   - Advection (space):
      T,U,V:
       - Horizontal: Energy and enstrophy conserving, 
       quadratic conservative,second order
-      
       - Vertical: Quadratic conservative,second order TKE, 
-        
       - Water species: Upstream, flux-corrected, positive definite, conservative
-
   - Horizontal diffusion: Forward, second order "Smagorinsky-type" 
-
   - Vertical Diffusion:
      See "Free atmosphere turbulence above surface layer" section
      in "Physics" section given in below. 
 
 * Physics:
 
-  - Explicit Microphysics (WRF Single Moment 5 and 6 class /
-    Ferrier (Used operationally at NCEP.)/ Thompson [a new version in 2.2])
-
-  - Cumulus parameterization (Kain-Fritsch with shallow convection / 
-    Betts-Miller-Janjic (Used operationally at NCEP.)/ Grell-Devenyi ensemble
-    / Simplified Arakawa-Schubert)
-  
-  - Free atmosphere turbulence above surface layer: Mellor-Yamada-Janjic (Used operationally at NCEP.)
-  
-  - Planetary boundary layer: YSU /  Mellor-Yamada-Janjic (Used operationally at NCEP.)
-    / GFS
-  
-  - Surface layer: Similarity theory scheme with viscous sublayers 
-                   over both solid surfaces and water points (Janjic - Used operatinally at NCEP). 
-    / GFS / YSU
-
-  - Slab soil model: Noah land-surface model (4-level - Used operationally at NCEP) /
-    RUC LSM (6-level) 
-
-  - Radiation:
-    - Longwave radiation: GFDL Scheme  (Fels-Schwarzkopf) (Used operationally at NCEP.) / RRTM
-    - Shortwave radiation: GFDL-scheme (Lacis-Hansen) (Used operationally at NCEP.) / Dudhia
-
-  - Gravity wave drag: none
-
+  - Explicit Microphysics: ( WRF Single Moment 5 and 6 classes / Eta Ferrier  (Used operationally at NCEP) / Thompson )
+  - Cumulus parameterization ( Kain-Fritsch with shallow convection /
+    Betts-Miller-Janjic (Used operationally at NCEP) / 
+    Grell-Devenyi ensemble / Simplified Arakawa-Schubert )
+  - Free atmosphere turbulence above surface layer: Mellor-Yamada-Janjic (used operationally at NCEP)
+  - Planetary boundary layer ( Yosei University / Mellor-Yamada-Janjic (Used operationally
+at NCEP) / GFS / QNSE ) 
+  - Surface Layer ( similarity theory MM5 / Eta / MYJ (Used operationally
+at NCEP) / GFS / QNSE )
+  - Land Surface Model ( Noah land-surface model (4 levels) (Used operationally
+at NCEP) / RUC LSM (6 levels))
+  - Longwave Radiation ( RRTM / GFDL (Fels-Schwarzkopf) (Used operationally
+at NCEP))
+  - Shortwave Radiation ( Dudhia / GFDL (Lacis-Hansen) (Used operationally
+at NCEP))
+  - Gravity wave drag option 
+  - Land-use categories determine surface properties; support for 24 category USGS and
+    20 category MODIS (Noah LSM only in V3.1)
 
 * WRF Software:
 
   - Hierarchical software architecture that insulates scientific code
+    (Model Layer) from computer architecture (Driver Layer)
+  -  Multi-level parallelism supporting distributed-memory (MPI)
+  -  Active data registry: defines and manages model state fields, I/O,
+    nesting, configuration, and numerous other aspects of WRF through a single file,
+    called the Registry
+  - Two-way nesting:
+      Easy to extend: forcing and feedback of new fields specified by
+        editing a single table in the Registry
+      Efficient: 5-8% overhead on 64 processes of IBM
+  - Enhanced I/O options:
+      NetCDF and Parallel HDF5 formats
+      Nine auxiliary input and history output streams separately controllable through the namel
+ist
+      Output file names and time-stamps specifiable through namelist
+  -  Efficient execution on a range of computing platforms:
+      IBM SP systems, (e.g. NCAR "bluevista","blueice","bluefire" Power5-based system)
+      IBM Blue Gene
+      SGI Origin and Altix
+      Linux/Intel
+         IA64 MPP (HP Superdome, SGI Altix, NCSA Teragrid systems)
+         IA64 SMP
+         x86_64 (e.g. TACC's "Ranger", NOAA/GSD "wJet" )
+         PGI, Intel, Pathscale, gfortran, g95 compilers supported
+      Sun Solaris (single threaded and SMP)
+      Cray X1, X1e (vector), XT3/4 (Opteron)
+      Mac Intel/ppc, PGI/ifort/g95
+      NEC SX/8
+      HP-UX
+      Fujitsu VPP 5000
+  - RSL_LITE: communication layer, scalable to very large domains, supports nesting.
+  - I/O: NetCDF, parallel NetCDF (Argonne), HDF5, GRIB, raw binary, Quilting (asynchronous I/O)
+, MCEL (coupling)
+  - ESMF Time Management, including exact arithmetic for fractional
+    time steps (no drift).
+  - ESMF integration - WRF can be run as an ESMF component.
+  -  Improved documentation, both on-line (web based browsing tools) and in-line
+ 
     (Model Layer) from computer architecture (Driver Layer)
   - Multi-level parallelism supporting shared-memory (OpenMP), distributed-memory (MPI), 
     and hybrid share/distributed modes of execution

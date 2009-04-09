@@ -1,4 +1,4 @@
-WRF Model Version 3.0.1 (August 5, 2008)
+WRF Model Version 3.1 (April 9, 2009)
 http://www.mmm.ucar.edu/wrf/users/
 
 ------------------------
@@ -27,42 +27,35 @@ infringement actions.
 This is the main directory for the WRF Version 3 source code release.
 ======================================
 
+V3.1 Release Notes:
+-------------------
+
+Version 3.1 is released on April 9, 2009.
+
+- For more information on WRF V3.1 release, visit WRF Users home page
+  http://www.mmm.ucar.edu/wrf/users/, and read the online User's Guide.
+- WRF V3 executable will work with V3.0 wrfinput/wrfbdy (but requires 
+  inserting a new namelist variable use_baseparam_fr_nml in &dynamics). As
+  always, rerunning the new programs is recommended.
+- WRF V3.1 has changed a number of namelists. For example, ucmcall has
+  become sf_urban_physics, pd_moist(scalar/tke/chem) has become 
+  moist_adv_opt (scalar/tke/chem_adv_opt). Helpful messages will be printed
+  to aid you.
+
+
 V3.0.1.1 Release Notes:
 -----------------------
 
 Version 3.0.1.1 has only limited bug fixes compared to version 3.0.1.
 The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.1.html, and
-for WRF-NMM at http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
-Users only need to get the new version if they are involved with one of more of the following:
-
-ARW or NMM:
-
-1) Over decomposing domains
-2) Using AIX/xlf with the "old" Kain-Fritsch cumulus scheme
-3) Grib edition 2 output
-
-ARW Only:
-
-1) ndown (offline 1-way nesting) with the ifort compiler
-2) 3d sea breeze case (existing sea breeze case is 2d by default)
-3) Multiple time period initialization for a global domain
-4) Observation nudging using either fine grids or with dynamic initialization
-
-NMM Only:
-
-1) Restart capability for single domain forecasts
-2) Noise reduction on eastern boundary in areas of complex topography
-3) Kain-Fritsch cumulus
+http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.1.html.
 
 
 V3.0.1 Release Notes:
-------------------
+---------------------
 
 This is a bug fix release. The detailed updates for WRF-ARW can be found at
-http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.html, and
-for WRF-NMM at
-http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
+http://www.mmm.ucar.edu/wrf/users/wrfv3/updates-3.0.1.html.
 
 Online User's Guides have also been updated.
 
@@ -92,6 +85,9 @@ WRF update history:
 - V2.1.2: Jan 27, 2006
 - V2.2: Dec 21, 2006
 - V2.2.1: Nov 1, 2007
+- V3.0: April 4, 2008
+- V3.0.1: August 5, 2008
+- V3.0.1.1: August 22, 2008
 
 ======================================
 
@@ -120,6 +116,7 @@ How to compile and run?
       compile em_seabreeze2d_x
       compile em_squall2d_x
       compile em_squall2d_y
+      compile em_scm_xy
 
 - If sucessful, this will create either real.exe or ideal.exe and wrf.exe
   in directory main/, and the appropriate executables will be linked into
@@ -171,7 +168,7 @@ What is in WRF V3?
   * divergence damping option and vertical time off-centering
   * external-mode filtering option for mass model
   * hydrostatic option via namelist option
-  * positive-definite advection for moisture, scalar, tke and chemical tracers
+  * positive-definite and monotonic advection for moisture, scalar, tke and chemical tracers
   * global modeling capability on latitude-longitude grid
 
 - Two-way nesting:
@@ -187,25 +184,31 @@ What is in WRF V3?
   * Automatic move using a mid-level vortex-following algorithm
 
 - Physics options:
-  * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 class / Lin et al./
-    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / )
+  * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./
+    Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Mement 5 and 6 classes )
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
     Betts-Miller-Janjic / Grell-Devenyi ensemble / New Grell )
-  * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 )
-  * surface layer (similarity theory MM5 / Eta)
+  * planetary boundary layer (Yosei University / Mellor-Yamada-Janjic / ACM2 / QNSE / MYNN / BouLac )
+  * surface layer (similarity theory MM5 / Eta / QNSE / MYNN )
   * slab soil model (5-layer thermal diffusion / Noah land-surface model (4 levels) /
     RUC LSM (6 levels) / Pleim-Xu (2 levels)
-  * Urban canopy model (works with Noah LSM)
-  * longwave radiation (RRTM, CAM)
-  * shortwave radiation (simple MM5 scheme / Goddard / CAM)
+  * Urban canopy model and BEP multi-layer (works with Noah LSM, BEP also requires MYJ or BouLac)
+  * longwave radiation (RRTM / CAM / RRTMG)
+  * shortwave radiation (simple MM5 scheme / Goddard / CAM / RRTMG )
   * sub-grid turbulence (constant K diffusion/ 2-D Smagorinsky/ predicted TKE /
     2-D, 6th order diffusion)
   * Rayleigh damping for w at the upper boundary layer
-  * land-use categories determine surface properties
+  * gravity wave drag
+  * land-use categories determine surface properties; support for 24 category USGS and 
+    20 category MODIS (Noah LSM only in V3.1)
+  * Options for modifying SST, sea ice, vegetation fraction, albedo, and deep soil temp
+    for long simulations
+  * fractional sea ice option for polar regions; modified snow/ice physics
 
 - Nudging:
-  * three-dimensional analysis nudging 
+  * three-dimensional and surface analysis nudging 
   * observation nudging 
+  * spectral nudging
 
 - Software
 
@@ -242,8 +245,7 @@ What is in WRF V3?
       NEC SX/8
       HP-UX
       Fujitsu VPP 5000
-  * RSL_LITE: communication layer, scalable to very
-    large domains, supports nesting.
+  * RSL_LITE: communication layer, scalable to very large domains, supports nesting.
   * I/O: NetCDF, parallel NetCDF (Argonne), HDF5, GRIB, raw binary, Quilting (asynchronous I/O), MCEL (coupling)
   * ESMF Time Management, including exact arithmetic for fractional
     time steps (no drift).

@@ -210,7 +210,7 @@
   REAL, intent(in)     :: gip           ! coefficient for pressure
   REAL, intent(in)     :: rinxy         ! horizontal radius of influence (km)
   REAL, intent(in)     :: rinsig        ! vertical radius of influence (on sigma)
-  REAL, intent(in)     :: twindo        ! (time window)/2 (min) for nudging
+  REAL, intent(inout)  :: twindo        ! (time window)/2 (min) for nudging
   INTEGER, intent(in)  :: npfi          ! coarse-grid time-step frequency for diagnostics
   INTEGER, intent(in)  :: ionf          ! coarse-grid time-step frequency for obs-nudging calcs
   INTEGER, intent(in)  :: prt_max       ! max number of entries of obs for diagnostic printout
@@ -269,7 +269,7 @@
   integer :: nsta                       ! number of stations held in timeobs array 
   integer :: nstaw                      ! # stations within the actual time window
   integer :: nprev=0                    ! previous n in obs read loop (for printout only)
-  integer :: meas_count, imc, njend, njc, njcc, julob
+  integer :: meas_count, imc, njend, njc, njcc, julob, kn
   real    :: hourob, rjulob
   real    :: xhour, tback, tforwd, rjdate1, timanl1, rtimob
   real    :: rj, ri, elevation, pressure_data
@@ -325,11 +325,12 @@
 10 CONTINUE
 
 ! DEFINE THE MAX LIMITS OF THE WINDOW
-  TBACK=XHOUR-fdob%WINDOW
-  TFORWD=XHOUR+fdob%WINDOW
+  TBACK=XHOUR-TWINDO
+  TFORWD=XHOUR+TWINDO
 
   IF (iprt) then
-     write(msg,*) 'TBACK = ',tback,' TFORWD = ',tforwd
+     write(msg,'2(a,f8.3),a,i2') 'TBACK = ',tback,            &
+                                 ' TFORWD = ',tforwd,'  for nest = ',inest
      call wrf_message(msg)
   ENDIF
 
@@ -349,11 +350,9 @@
     NMOVE=NIOBF-NDUM
     IF(NMOVE.GT.0 .AND. NDUM.NE.0 ) THEN  
       DO N=1,NMOVE
-        VAROBS(1,N)=VAROBS(1,N+NDUM)
-        VAROBS(2,N)=VAROBS(2,N+NDUM)
-        VAROBS(3,N)=VAROBS(3,N+NDUM)
-        VAROBS(4,N)=VAROBS(4,N+NDUM)
-        VAROBS(5,N)=VAROBS(5,N+NDUM)
+        do KN = 1,nndgv
+          VAROBS(KN,N)=VAROBS(KN,N+NDUM)
+        enddo
 ! RIO is the west-east coordinate. RJO is south-north. (ajb)
         RJO(N)=RJO(N+NDUM)
         RIO(N)=RIO(N+NDUM)
@@ -368,11 +367,9 @@
     NOPEN=NMOVE+1
     IF(NOPEN.LE.NIOBF) THEN
       DO N=NOPEN,NIOBF
-        VAROBS(1,N)=99999.
-        VAROBS(2,N)=99999.
-        VAROBS(3,N)=99999.
-        VAROBS(4,N)=99999.
-        VAROBS(5,N)=99999.
+        do KN = 1,nndgv
+          VAROBS(KN,N)=99999.
+        enddo
         RIO(N)=99999.
         RJO(N)=99999.
         RKO(N)=99999.
@@ -519,13 +516,11 @@
  102  FORMAT(2x,2(f7.2,3x))
 
 ! save obs and model latitude and longitude for printout
-      if(iprt) then
       CALL collect_obs_info(newpass,inest,n,latitude,longitude,nprev,niobf,  &
                          refprt(inest),rio,rjo,prt_max,prt_freq,xlat,xlong,  &
                          obs_prt,lat_prt,lon_prt,mlat_prt,mlon_prt,          &
                          plat_prt,plon_prt, e_we,e_sn,                       &
                          ims,ime,jms,jme,its,ite,jts,jte)
-      endif
 
 !     if(ifon.eq.4)print *,'ifon=4',latitude,longitude
 ! this works only for lc projection
@@ -729,9 +724,11 @@
           else
             varobs(5,n)=-888888.
             IF (iprt) THEN
-              call wrf_message("********** PROBLEM *************")
-              write(msg,*) 'sounding, p undefined',latitude,longitude
-              call wrf_message(msg)
+              if(varobs(6,n).eq.-888888.000) then
+                call wrf_message("********** PROBLEM *************")
+                write(msg,*) 'sounding, p and ht undefined',latitude,longitude
+                call wrf_message(msg)
+              endif
             ENDIF
           endif 
           if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
@@ -919,7 +916,7 @@
 !======================================================================
 !======================================================================
 ! check if ob time is too early (only applies to beginning)
-      IF(RTIMOB.LT.TBACK-fdob%WINDOW)then
+      IF(RTIMOB.LT.TBACK-TWINDO)then
         IF (iprt) call wrf_message("ob too early")
         n=n-1
         GOTO 110
@@ -1156,7 +1153,7 @@
     call wrf_message(msg)
   ENDIF
   call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 122' )
-  fdob%WINDOW=fdob%WINDOW-0.1*TWINDO
+  TWINDO=TWINDO-0.1*TWINDO
   IF(TWINDO.LT.0) call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 120' )
 ! IF THE WINDOW BECOMES NEGATIVE, THE INCOMING DATA IS
 ! PROBABLY GARBLED. STOP.
@@ -1211,11 +1208,9 @@
     NMOVE=NIOBF-NDUM
     IF( NMOVE.GT.0 .AND. NDUM.NE.0) THEN
       DO N=1,NMOVE
-        VAROBS(1,N)=VAROBS(1,N+NDUM)
-        VAROBS(2,N)=VAROBS(2,N+NDUM)
-        VAROBS(3,N)=VAROBS(3,N+NDUM)
-        VAROBS(4,N)=VAROBS(4,N+NDUM)
-        VAROBS(5,N)=VAROBS(5,N+NDUM)
+        do KN = 1,nndgv
+          VAROBS(KN,N)=VAROBS(KN,N+NDUM)
+        enddo
         RJO(N)=RJO(N+NDUM)
         RIO(N)=RIO(N+NDUM)
         RKO(N)=RKO(N+NDUM)
@@ -1229,11 +1224,9 @@
     NOPEN=NMOVE+1
     IF(NOPEN.LE.NIOBF) THEN
       DO N=NOPEN,NIOBF
-        VAROBS(1,N)=99999.
-        VAROBS(2,N)=99999.
-        VAROBS(3,N)=99999.
-        VAROBS(4,N)=99999.
-        VAROBS(5,N)=99999.
+        do KN = 1,nndgv
+          VAROBS(KN,N)=99999.
+        enddo
         RIO(N)=99999.
         RJO(N)=99999.
         RKO(N)=99999.
@@ -1679,7 +1672,7 @@ END SUBROUTINE rh2rb
 !          WITHIN THE LOOP FOR READING THE OBServations, (2) observations
 !          can be rejected, and (3) soundings may contain multiple obs
 !          levels (i.e., n jumps by the number of levels in the sounding.
-!          Here, "last" means the last iteration of the read obs loop.
+!          Here, "prev" means the previous iteration of the read obs loop.
 !          NOTE: The lat/lon info for an obs is not actually stored until 
 !                the read of the subsequent obs, because the number of
 !                levels in the obs, or even whether or not the obs has
@@ -1836,8 +1829,6 @@ END SUBROUTINE rh2rb
   integer :: ndx                  ! Index into printout arrays
   integer :: iobs                 ! Obs gap indices between lastobs and nstaw 
 
-  if(iprt) then
-
 ! Find the last obs index whose lat&lon info was collected.
     lastobs = 0
     lastn   = 0
@@ -1849,10 +1840,13 @@ END SUBROUTINE rh2rb
     enddo
 
 ! There could be more obs to collect.
+
+    if(lastn.gt.0) then   ! Do only if at least 1 obs was collected.
     igap = (nstaw-lastobs)/prt_freq
 
     do n = 1, igap
        ndx  = lastn + n
+
        iobs = lastobs + n*prt_freq
        if(ndx.le.prt_max) then
 
@@ -1867,8 +1861,7 @@ END SUBROUTINE rh2rb
          lon(ndx) = plon
        endif
     enddo
-
-  endif
+    endif
   END SUBROUTINE finish_obs_info
 
   SUBROUTINE get_model_latlon(n,niobf,rio,rjo,xlat,xlong,e_we,e_sn,   &

@@ -241,7 +241,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !-----------------------------------------------------------------------
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-  USE module_dm, ONLY : get_full_obs_vector
+  USE module_dm, ONLY : get_full_obs_vector, wrf_dm_sum_real
 #endif
 
 !-----------------------------------------------------------------------
@@ -462,18 +462,16 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         dyob_ms = dyobmg(n)
 
 
-!if(n.eq.1 .and. iprt) then
-!        write(6,*) 'ERROB - COARSE MESH:'
-!        write(6,'(a,i1,a,i1,4(a,f5.2),2(a,i3),2(a,f6.3))') 'OBS= ',n,  &
-!                   '  ityp= ',ityp,                                    &
-!                   '  ra= ',ra(n),'  rb= ',rb(n),                      &
-!                   '  rio= ',rio(n),'  rjo= ',rjo(n),                  &
-!                   '  iob= ',iob,'  job= ',job,                        &
-!                   '  dxob= ',dxob,'  dyob= ',dyob
-!        write(6,'(a,i3,a,i3,a,f5.2,a,f5.2)')                           &
-!                   '  iob_ms= ',iob_ms,'  job_ms= ',job_ms,            &
-!                   '  dxob_ms= ',dxob_ms,'  dyob_ms= ',dyob_ms
-!endif
+! ajb 20090423: BUGFIX TO OBS_IN_HEIGHT OPTION
+! This is tricky: Initialize pob to zero in all procs. Only one proc actually
+! calculates pob. If this is an obs to be converted from height-to-pressure, then
+! by definition, varobs(5,n) will initially have the missing value -888888. After
+! the pob calculation, pob will be zero in all procs except the one that calculated
+! it, and so pob is dm_summed over all procs and stored into varobs(5,n). So on
+! subsequent passes, the dm_sum will not occur because varobs(5,n) will not have a
+! missing value. If this is not an obs-in-height,  
+
+        pob = 0.0
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 !       Set mask for obs to be handled by this processor
@@ -495,7 +493,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS) ) +    &
                    DYOB_MS* ( (1.-DXOB_MS)*pp(IOB_MS,K,JOB_MS+1) +      &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS+1) ) )  
-!     write(6,'(a,i2,2(a,f9.3)') ' k= ',k,' pbbo= ',pbbo(k),' ppbo= ',ppbo(k)
           enddo
 
 !ajb      20040119: Note based on bugfix for dot/cross points split across processors,
@@ -539,6 +536,15 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         ENDIF       !end IF( MP_LOCAL_DUMMASK(N) )                                 !ajb
 #endif
 
+! ajb 20090423: If obs-in-height, varobs(5,n) is sum of pob (see note above).
+        if(varobs(5,n) .eq. -888888. .and. varobs(6,n) .gt. -800000.) then
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+           varobs(5,n) = wrf_dm_sum_real ( pob )
+#else
+           varobs(5,n) = pob
+#endif
+        endif
+
         RC(N)=RKO(N)
 
       ENDDO      ! END COARSE MESH LOOP OVER NSTA 
@@ -581,19 +587,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
           dxob_ms = dxobmg(n)
           dyob_ms = dyobmg(n)
 
-!if(n.eq.1) then
-!        write(6,*) 'ERROB - FINE MESH:'
-!        write(6,*) 'RA = ',ra(n),' RB = ',rb(n)
-!        write(6,'(a,i1,a,i1,4(a,f5.2),2(a,i3),2(a,f6.3))') 'OBS= ',n,  &
-!                   '  ityp= ',ityp,                                    &
-!                   '  ra= ',ra(n),'  rb= ',rb(n),                      &
-!                   '  rio= ',rio(n),'  rjo= ',rjo(n),                  &
-!                   '  iob= ',iob,'  job= ',job,                        &
-!                   '  dxob= ',dxob,'  dyob= ',dyob
-!        write(6,'(a,i3,a,i3,a,f5.2,a,f5.2)')                           &
-!                   '  iob_ms= ',iob_ms,'  job_ms= ',job_ms,            &
-!                   '  dxob_ms= ',dxob_ms,'  dyob_ms= ',dyob_ms
-!endif
+! ajb 20090423: BUGFIX TO OBS_IN_HEIGHT OPTION (see COARSE MESH comments)
+        pob = 0.0
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 !       Set mask for obs to be handled by this processor
@@ -615,8 +610,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS) ) +    &
                    DYOB_MS* ( (1.-DXOB_MS)*pp(IOB_MS,K,JOB_MS+1) +      &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS+1) ) )
-
-!     write(6,'(a,i2,2(a,f9.3)') ' k= ',k,' pbbo= ',pbbo(k),' ppbo= ',ppbo(k)
           enddo
 
 !ajb      20040119: Note based on bugfix for dot/cross points split across processors,
@@ -658,6 +651,15 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
         ENDIF       !end IF( MP_LOCAL_DUMMASK(N) )                                 !ajb
 #endif
+
+! ajb 20090423: If obs-in-height, varobs(5,n) is sum of pob (see note above).
+        if(varobs(5,n) .eq. -888888. .and. varobs(6,n) .gt. -800000.) then
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+           varobs(5,n) = wrf_dm_sum_real ( pob )
+#else
+           varobs(5,n) = pob
+#endif
+        endif
 
         RC(N)=RKO(N)
 
@@ -1388,7 +1390,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   integer :: komin,komax,nn,nhi,nlo,nnjc
   integer :: i_s,i_e
   integer :: istq
-  real :: gfactor,rfactor,gridx,gridy,rindx,schnes,ris
+  real :: gfactor,rfactor,gridx,gridy,rindx,ris
   real :: grfacx,grfacy
   real :: fdtim,tw1,tw2,tconst,timewt,timewt2,ttim,dift,pob
   real :: ri,rj,rx,ry,rsq,wtij,pdfac,erfivr,dk,slope,rinfac
@@ -1461,27 +1463,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! KILOMETERS TO GRID LENGTHS, RINDX
 
   RINDX=RINXY*1000./DX          * RFACTOR   !yliu *RFACTOR
-
-! jc
-! make horizontal radius vary per nest
-!     rindx=rindx/float(inest)
-! yliu test1 -- En 3, 4
-!     rindx=rindx/float(3**(in-1))                                               !YLIU
-! jc
-! make horizontal radius vary per nest
-!     schnes=1/float(inest)                                                      !JC
-! yliu test1 -- En 3, 4                                                          !YLIU
-  schnes=1/float(3**(inest-1))                                                   !JC
-! reduce the Rinf in the nested grid proportionally
-  rindx=rindx*schnes
-! rinfmn =1., rinfmx=2., pfree=50 in param.F
-! yliu test: for upper-air data, use larger influence radii
-!            Essentially increase the slope -- the same radii
-!            at 500mb and above as the coarse mesh and the
-!            same small radii at sfc as that for sfc obs
-  fdob%rinfmx=2. *1.0 /schnes                                                    !YLIU
-!         rinfmx=1.2*1.0 /schnes                                                 !YLIU
-! jc
   RIS=RINDX*RINDX
   IF(IFREST.AND.KTAU.EQ.KTAUR)GOTO 5
   IF(MOD(KTAU,INFR).NE.0)GOTO 126
@@ -1922,7 +1903,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
             RIS=RINDX*RINFAC*RINDX*RINFAC
             RSQ=RX*RX+RY*RY
 ! yliu test: for upper-air data, keep D1 influence radii
-!           RIS=RIS  /schnes /schnes
             WTIJ=(RIS-RSQ)/(RIS+RSQ)
             WTIJ=AMAX1(0.0,WTIJ)
 ! weight ob in vertical with +- 50 mb
@@ -2079,7 +2059,6 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 RSQ=RX*RX+RY*RY               
 
 ! for upper-air data, keep D1 influence radii
-!         RIS=RIS  /schnes /schnes
                 WTIJ=(RIS-RSQ)/(RIS+RSQ)      
                 WTIJ=AMAX1(0.0,WTIJ)
 ! yliu end

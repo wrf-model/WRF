@@ -75,18 +75,18 @@ fi
 if test -d ${EXT_DIR}/mpi/mpich2-1.0.6p1/${COMPILER}_${PROCESSOR}; then
    export MPIHOME=${EXT_DIR}/mpi/mpich2-1.0.6p1/${COMPILER}_${PROCESSOR}
 fi
-if test -d ${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}; then
-   export BLAS=${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}
-fi
-if test -d ${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}; then
-   export LAPACK=${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}
-fi
-if test -d ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}; then
-   export FFTPACK=${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}
-fi
-if test -d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}; then
-   export BUFR=${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
-fi
+#if test -d ${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}; then
+#   export BLAS=${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}
+#fi
+#if test -d ${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}; then
+#   export LAPACK=${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}
+#fi
+#if test -d ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}; then
+#   export FFTPACK=${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}
+#fi
+#if test -d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}; then
+#   export BUFR=${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
+#fi
 if test -d ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}; then
    export ZLIB=${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}
 fi
@@ -140,10 +140,10 @@ echo "MPIHOME         " $MPIHOME
 echo "RTTOV           " $RTTOV
 echo "CRTM            " $CRTM
 echo "NETCDF          " $NETCDF
-echo "BLAS            " $BLAS
-echo "LAPACK          " $LAPACK
-echo "FFTPACK         " $FFTPACK
-echo "BUFR            " $BUFR
+#echo "BLAS            " $BLAS
+#echo "LAPACK          " $LAPACK
+#echo "FFTPACK         " $FFTPACK
+#echo "BUFR            " $BUFR
 echo "ZLIB            " $ZLIB        
 echo "JPEG            " $JPEG        
 echo "HDF4            " $HDF4        

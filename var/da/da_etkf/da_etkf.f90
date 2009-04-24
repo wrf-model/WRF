@@ -8,6 +8,7 @@ module da_etkf
 
    use da_control, only : stdout, trace_use
    use da_gen_be, only : da_trace_entry, da_trace_exit
+   use da_lapack, only : dsyev
 
    implicit none
 

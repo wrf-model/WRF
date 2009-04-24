@@ -1,0 +1,54 @@
+      FUNCTION IUPB(MBAY,NBYT,NBIT)
+
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!
+! SUBPROGRAM:    IUPB
+!   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
+!
+! ABSTRACT: THIS FUNCTION UNPACKS AND RETURNS A BINARY INTEGER WORD
+!   CONTAINED WITHIN NBIT BITS OF A BUFR MESSAGE PACKED INTO THE
+!   INTEGER ARRAY MBAY, STARTING WITH THE FIRST BIT OF BYTE NBYT.
+!
+! PROGRAM HISTORY LOG:
+! 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
+! 2003-11-04  J. ATOR    -- ADDED DOCUMENTATION
+! 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+!                           INTERDEPENDENCIES
+! 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
+!                           DOCUMENTATION
+!
+! USAGE:    IUPB (MBAY, NBYT, NBIT)
+!   INPUT ARGUMENT LIST:
+!     MBAY     - INTEGER: *-WORD PACKED BINARY ARRAY CONTAINING BUFR
+!                MESSAGE
+!     NBYT     - INTEGER: BYTE WITHIN MBAY AT WHOSE FIRST BIT TO BEGIN
+!                UNPACKING
+!     NBIT     - INTEGER: NUMBER OF BITS WITHIN MBAY TO BE UNPACKED
+!
+!   OUTPUT ARGUMENT LIST:
+!     IUPB     - INTEGER: UNPACKED INTEGER WORD
+!
+! REMARKS:
+!    THIS ROUTINE CALLS:        UPB
+!    THIS ROUTINE IS CALLED BY: CKTABA   CPYUPD   DUMPBF   GETLENS
+!                               IUPBS01  IUPBS1   MSGUPD   MSGWRT
+!                               RDMEMS   STNDRD   SUBUPD   UPDS3
+!                               Normally not called by any application
+!                               programs.
+!
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 77
+!   MACHINE:  PORTABLE TO ALL PLATFORMS
+!
+!$$$
+
+      DIMENSION MBAY(*)
+
+!----------------------------------------------------------------------
+!----------------------------------------------------------------------
+
+      MBIT = (NBYT-1)*8
+      CALL UPB(IRET,NBIT,MBAY,MBIT)
+      IUPB = IRET
+      RETURN
+      END FUNCTION IUPB

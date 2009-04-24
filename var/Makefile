@@ -4,7 +4,7 @@ clean:
 	( cd gen_be; /bin/rm -f *.o *.f core *~ )
 
 superclean :
-	( cd build; /bin/rm -f mpif.h; /bin/rm -f *.inc; /bin/rm -f *.f90 *.c *.m4 *.exe; \
+	( cd build; /bin/rm -f mpif.h; /bin/rm -f *.inc *.prm; /bin/rm -f *.f90 *.c *.m4 *.exe; \
           /bin/rm -rf *.o *.mod *.b *.a *.f frame/*.F diffwrf \
           Registry_tmp* module_state_description.f90 \
           inc/dm_comm_cpp_flags testall.csh *.exe *.f90 *.F90 *.F inc/*.inc *.int *.c *.h *.m4 *.code \

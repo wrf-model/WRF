@@ -1,6 +1,8 @@
 # gen_be
 
 GEN_BE_OBJS = da_etkf.o \
+	da_blas.o \
+	da_lapack.o \
 	da_gen_be.o \
 	da_control.o \
 	da_be_spectral.o \
@@ -35,12 +37,7 @@ be : setup \
 	da_advance_time.exe
 
 EN_BE_LIBS = $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
-GEN_BE_LIB = -L$(LAPACK) -llapack -L$(BLAS) -lblas $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack
-
-
-GEN_BE_OBJS = ./da_etkf.o ./da_gen_be.o ./da_control.o ./da_be_spectral.o \
-  ./module_wrf_error.o ./da_reporting.o ./module_ffts.o \
-  ./module_driver_constants.o ./da_memory.o ./da_tools_serial.o
+GEN_BE_LIB = $(LIB_EXTERNAL) -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack
 
 gen_be_stage0_wrf.exe : gen_be_stage0_wrf.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(RM) $@

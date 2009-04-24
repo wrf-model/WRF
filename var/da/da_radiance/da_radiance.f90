@@ -92,6 +92,8 @@ module da_radiance
                             dlat_grid,dlon_grid,thinning_grid, &
                             makegrids,map2grids, &
                             destroygrids
+   use da_bufr, only : openbf, closbf, datelen, ufbint, readns, readmg, &
+                       ireadmg, ireadsb, ufbrep, readsb, ufbseq
                             
    implicit none
 

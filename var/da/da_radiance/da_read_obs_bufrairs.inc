@@ -50,6 +50,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
      real(r_double) :: solazi ! Solar azimuth angle
      real(r_double) :: intms(2,9) ! SATELLITE inSTRUMENT TEMPERATURES
   end type aquaspot_list
+  real(r_double), dimension(1:N_AQUASPOT_LIST) :: aquaspot_list_array
 
 
 ! BUFR format for AIRSSPOT (SITPSEQN)
@@ -69,6 +70,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
      real(r_double) :: bearaz ! Bearing or azimuth
      real(r_double) :: fovn  ! Field of view number
   end type airsspot_list
+  real(r_double), dimension(1:N_AIRSSPOT_LIST) :: airsspot_list_array
 
 
 ! BUFR format for AIRSCHAN (SCBTSEQN)
@@ -80,6 +82,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
      real(r_double) :: acqf    ! Channel quality flags for ATOVS
      real(r_double) :: tmbrst  ! Brightness temperature
   end type airschan_list
+  real(r_double), dimension(1:N_AIRSCHAN_LIST) :: airschan_list_array
   
 ! BUFR talble file sequencial number
   character(len=512)  :: table_file
@@ -122,7 +125,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   integer(i_kind)  :: i, l, n, error, airs_table_unit
   integer          :: iost, lnbufr
   real(r_kind),allocatable,dimension(:,:):: airdata_all
-  integer(i_kind)  :: tocc
+  real(r_kind)  :: tocc(1,1)
 
 ! Set standard parameters
   real(r_kind)     :: POinT001 =   0.001_r_kind
@@ -275,34 +278,59 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 !   3.2 Read AQUASPOT (SPITSEQN)
 !------------------------
      if ( subset == msgtype_airsc ) then
-        call ufbseq(lnbufr,aquaspot,N_AQUASPOT_LIST,1,iret,'AQUASPOT')
+        call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'AQUASPOT')
      else if ( subset == msgtype_airse ) then
-        call ufbseq(lnbufr,aquaspot,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
+        call ufbseq(lnbufr,aquaspot_list_array,N_AQUASPOT_LIST,1,iret,'SPITSEQN')
      end if
+     aquaspot = aquaspot_list( aquaspot_list_array(1), &
+                               aquaspot_list_array(2), &
+                               aquaspot_list_array(3), &
+                               aquaspot_list_array(4), &
+                               aquaspot_list_array(5), &
+                               aquaspot_list_array(6), &
+                               aquaspot_list_array(7), &
+                               RESHAPE(aquaspot_list_array(8:25), (/2,9/)) )
 
 !   3.3 Read AIRSSPOT or AMSUSPOT or HSBSPOT
 !-------------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
         if ( subset == msgtype_airsc ) then
-           call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,'AIRSSPOT')
+           call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'AIRSSPOT')
         else if ( subset == msgtype_airse ) then
-           call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
+           call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,'SITPSEQN')
         end if
      else
-        call ufbseq(lnbufr,airsspot,N_AIRSSPOT_LIST,1,iret,spotname)
+        call ufbseq(lnbufr,airsspot_list_array,N_AIRSSPOT_LIST,1,iret,spotname)
      end if
+     airsspot = airsspot_list( airsspot_list_array(1), &
+                               airsspot_list_array(2), &
+                               airsspot_list_array(3), &
+                               airsspot_list_array(4), &
+                               airsspot_list_array(5), &
+                               airsspot_list_array(6), &
+                               airsspot_list_array(7), &
+                               airsspot_list_array(8), &
+                               airsspot_list_array(9), &
+                               airsspot_list_array(10), &
+                               airsspot_list_array(11), &
+                               airsspot_list_array(12) )
 
 !   3.4 Read AIRSCHAN or AMSUCHAN or HSBCHAN
 !-------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
         if ( subset == msgtype_airsc ) then
-           call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'AIRSCHAN')
+           call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'AIRSCHAN')
         else if ( subset == msgtype_airse ) then
-           call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
+           call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,'SCBTSEQN')
         end if
      else
-        call ufbseq(lnbufr,airschan,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
+        call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
      end if
+     airschan = airschan_list( airschan_list_array(1), &
+                               airschan_list_array(2), & 
+                               airschan_list_array(3), & 
+                               airschan_list_array(4)  )
+
 
      if (iret /= nchanr) then
         write(unit=message(1),fmt=*) &
@@ -614,7 +642,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
    n = n + 1
 
    call da_initialize_rad_iv (inst, n, iv, p)
-   iv%instid(inst)%rain_flag(n) = tocc ! Temporary dumping of AIRS/VISNIR cloud cover
+   iv%instid(inst)%rain_flag(n) = tocc(1,1) ! Temporary dumping of AIRS/VISNIR cloud cover
    
    current => p
    p => p%next

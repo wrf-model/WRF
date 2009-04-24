@@ -98,18 +98,18 @@ endif
 if (-d ${EXT_DIR}/mpi/mpich2-1.0.6p1/${COMPILER}_${PROCESSOR}) then
    setenv MPIHOME ${EXT_DIR}/mpi/mpich2-1.0.6p1/${COMPILER}_${PROCESSOR}
 endif
-if (-d ${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}) then
-   setenv BLAS ${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}
-endif
-if (-d ${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}) then
-   setenv LAPACK ${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}
-endif
-if (-d ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}) then
-   setenv FFTPACK ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}
-endif
-if (-d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}) then
-   setenv BUFR ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
-endif
+#if (-d ${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}) then
+#   setenv BLAS ${EXT_DIR}/blas/blas/${COMPILER}_${PROCESSOR}
+#endif
+#if (-d ${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}) then
+#   setenv LAPACK ${EXT_DIR}/lapack/lapack-3.1.1/${COMPILER}_${PROCESSOR}
+#endif
+#if (-d ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}) then
+#   setenv FFTPACK ${EXT_DIR}/fftpack/fftpack5/${COMPILER}_${PROCESSOR}
+#endif
+#if (-d ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}) then
+#   setenv BUFR ${EXT_DIR}/bufr/bufr_ncep_nco/${COMPILER}_${PROCESSOR}
+#endif
 if (-d ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}) then
    setenv ZLIB ${EXT_DIR}/zlib/zlib-1.2.3/${COMPILER}_${PROCESSOR}
 endif
@@ -177,18 +177,18 @@ endif
 if ($?NETCDF) then
    echo "NETCDF          " $NETCDF
 endif
-if ($?BLAS) then
-   echo "BLAS            " $BLAS
-endif
-if ($?LAPACK) then
-   echo "LAPACK          " $LAPACK
-endif
-if ($?FFTPACK) then
-   echo "FFTPACK         " $FFTPACK
-endif
-if ($?BUFR) then
-   echo "BUFR            " $BUFR
-endif
+#if ($?BLAS) then
+#   echo "BLAS            " $BLAS
+#endif
+#if ($?LAPACK) then
+#   echo "LAPACK          " $LAPACK
+#endif
+#if ($?FFTPACK) then
+#   echo "FFTPACK         " $FFTPACK
+#endif
+#if ($?BUFR) then
+#   echo "BUFR            " $BUFR
+#endif
 if ($?ZLIB) then
    echo "ZLIB            " $ZLIB
 endif

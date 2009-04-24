@@ -131,6 +131,16 @@ CONTAINS
 ! Statements that set the namelist vars to default vals
 #  include <namelist_defaults.inc>
 
+#if (DA_CORE == 1)
+! Override the default values, because we can not assigned a arrary with different values in registry.
+
+      as1(1:3) = (/ 0.25, 1.0, 1.5 /)
+      as2(1:3) = (/ 0.25, 1.0, 1.5 /)
+      as3(1:3) = (/ 0.25, 1.0, 1.5 /)
+      as4(1:3) = (/ 0.25, 1.0, 1.5 /)
+      as5(1:3) = (/ 0.25, 1.0, 1.5 /)
+#endif
+
 ! Statements that read the namelist are in this file
 #  include <config_reads.inc>
 

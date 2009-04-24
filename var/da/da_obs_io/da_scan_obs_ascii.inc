@@ -350,6 +350,11 @@ subroutine da_scan_obs_ascii (iv, filename)
 
    iv%info(sonde_sfc)%max_lev=1
    iv%info(tamdar_sfc)%max_lev=1
+   iv%info(synop)%max_lev=1   ! To prevent some bad observations with more than 1 level, should I add more?
+   iv%info(ships)%max_lev=1   
+   iv%info(qscat)%max_lev=1   
+   iv%info(metar)%max_lev=1   
+
    close(iunit)
 
    call da_free_unit(iunit)

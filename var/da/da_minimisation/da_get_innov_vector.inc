@@ -140,6 +140,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
        call da_system("touch wrf_stop_now")
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
+       if (trace_use) call da_trace_exit("da_get_innov_vector")
        call wrfu_finalize
        call wrf_shutdown
 

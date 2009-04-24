@@ -69,7 +69,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	( cd var/build; touch depend.txt; make links; make depend; $(MAKE) all_wrfvar )
-	( cd var/obsproc; $(MAKE) FC="$(SFC)" )
+	( cd var/obsproc; $(MAKE) BUFR_CPP="$(BUFR_CPP)" )
 
 ### 3.a.  rules to build the framework and then the experimental core
 

@@ -1,6 +1,26 @@
 # da
 
-WRFVAR_OBJS = da_par_util.o \
+WRFVAR_OBJS = \
+   bort2.o \
+   bort.o \
+   irev.o \
+   rjust.o \
+   iupm.o \
+   valx.o \
+   adn30.o \
+   cadn30.o \
+   ifxy.o \
+   istdesc.o \
+   nemtbb.o \
+   numtbd.o \
+   uptdd.o \
+   da_blas.o \
+   da_lapack.o \
+   bort_exit.o \
+   da_bufr.o \
+   wrdesc.o \
+   restd.o \
+   da_par_util.o \
    da_par_util1.o \
    da_setup_structures.o \
    da_transfer_model.o \
@@ -188,8 +208,8 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                 $(WRFVAR_LIBS) da_wrfvar_main.o
 	$(RM) $@
 	$(LD) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
-        -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) $(BUFR_LIB) \
-        -L$(LAPACK) -llapack -L$(BLAS) -lblas ${MADIS_LIB} $(LIB)
+        -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
+        ${MADIS_LIB} $(LIB)
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_wrfvar_esmf.exe : $(WRFVAR_LIBS) da_wrfvar_esmf.o da_wrfvar_esmf_super.o
@@ -327,131 +347,68 @@ rad_bias.o pythag.o tqli.o tred2.o regress_one.o da_update_bc.o :
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
-da_netcdf_interface.o da_module_couple_uv.o gen_be_etkf.o netcdf_interface.o :
+da_netcdf_interface.o da_module_couple_uv.o gen_be_etkf.o netcdf_interface.o \
+da_gen_be.o gen_be_ensmean.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
-da_gen_be.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
-	$(RM) $*.b
-	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(LAPACK) $*.f
-
-da_etkf.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(LAPACK) $*.f
-
-gen_be_ensmean.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include  $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
-
-da_tools.o :
+da_etkf.o da_tools.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
-da_radiance1.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(CRTM)/src -I$(RTTOV)/src  $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-module_radiance.o da_radiance.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(CRTM)/src -I$(RTTOV)/src  $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
+da_radiance1.o \
+module_radiance.o \
+da_radiance.o \
+da_test.o \
+da_minimisation.o \
+da_transfer_model.o \
+da_setup_structures.o \
+da_obs_io.o \
+da_obs.o \
+da_crtm.o \
+da_rttov.o \
+da_varbc.o \
+da_wrfvar_main.o \
 da_wrfvar_top.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
+	$(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC)  $*.f
 
-da_test.o :
+da_blas.o \
+da_lapack.o \
+bort2.o \
+bort.o \
+irev.o \
+rjust.o \
+iupm.o \
+valx.o \
+adn30.o \
+cadn30.o \
+ifxy.o \
+istdesc.o \
+nemtbb.o \
+numtbd.o \
+uptdd.o :
+	$(RM) $@
+	$(SED_FTN) $*.f90 > $*.b
+	$(CPP) $*.b  > $*.f
+	$(RM) $*.b
+	$(FC) -c $(FCFLAGS) $*.f
+
+da_bufr.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_minimisation.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_transfer_model.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_setup_structures.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_obs_io.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_obs.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_crtm.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_varbc.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(CRTM)/src -I$(RTTOV)/src  $*.f
-
-da_wrfvar_main.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(RTTOV)/src  $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(RTTOV)/src  -I$(CRTM)/src $*.f
-
-da_rttov.o :
-	$(RM) $@
-	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(RTTOV)/src  $*.b  > $*.f
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(RTTOV)/src  -I$(CRTM)/src $*.f
+	$(FC) -c $(FCFLAGS) $*.f
 
 da_spectral.o da_be_spectral.o :
 	$(RM) $@

@@ -33,6 +33,7 @@ module da_tools
    use da_tools_serial, only : da_array_print
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_reporting, only : da_error, message, da_warning, da_message
+   use da_lapack, only : dsyev
    
    implicit none
    

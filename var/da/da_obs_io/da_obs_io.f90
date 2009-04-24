@@ -42,6 +42,7 @@ module da_obs_io
    use module_radiance, only : deg2rad
    use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
    use da_obs, only : da_set_obs_missing
+   use da_bufr, only : openbf, closbf, datelen, ufbint, readns
 #ifdef DM_PARALLEL
    use da_control, only : root
 !  use mpi, only : mpi_min

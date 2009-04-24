@@ -15,13 +15,12 @@ subroutine da_advance_time (date_in, dtime, date_out)
 
    implicit none
 
-   character(len=80), intent(in)            :: date_in, dtime
-   character(len=80), intent(out)           :: date_out
+   character(len=*),  intent(in)            :: date_in, dtime
+   character(len=14), intent(out)           :: date_out
   
    integer :: ccyy, mm, dd, hh, nn, ss, dday, dh, dn, ds, gday, gsec
    integer :: i, n
    character(len=14) :: ccyymmddhhnnss
-   character(len=80) :: out_date_format
    integer :: datelen
 
    ccyymmddhhnnss = parsedate(date_in)
@@ -91,11 +90,11 @@ subroutine da_advance_time (date_in, dtime, date_out)
    if (dday /= 0) call change_date ( ccyy, mm, dd, dday)
 
    write(ccyymmddhhnnss(1:14), fmt='(i4, 5i2.2)')  ccyy, mm, dd, hh, nn, ss
-   if (datelen<14) then
-      if(nn /= 0) datelen=12
-      if(ss /= 0) datelen=14
-   endif
-   date_out = ccyymmddhhnnss(1:datelen)
+   !if (datelen<14) then
+   !   if(nn /= 0) datelen=12
+   !   if(ss /= 0) datelen=14
+   !endif
+   date_out = ccyymmddhhnnss
 
 contains
 
@@ -157,7 +156,7 @@ subroutine change_date( ccyy, mm, dd, delta )
 end subroutine change_date
 
 function parsedate(datein)
-   character(len=80), intent(in) :: datein
+   character(len=*), intent(in) :: datein
 
    character(len=14) :: parsedate
    character(len=1 ) :: ch
@@ -180,7 +179,7 @@ function parsedate(datein)
 end function parsedate
 
 subroutine parsedt(dt,dday,dh,dn,ds)
-   character(len=80), intent(in) :: dt
+   character(len=*),  intent(in)    :: dt
    integer,           intent(inout) :: dday, dh, dn, ds
 
    character(len=1 ) :: ch
@@ -224,29 +223,6 @@ subroutine parsedt(dt,dday,dh,dn,ds)
    end do
    if (nounit==1) dh=d*s
 end subroutine parsedt
-
-function formatdate(datein,dateform)
-   character(len=14), intent(in) :: datein
-   character(len=80), intent(in) :: dateform
-   character(len=80) :: formatdate
-   integer :: ic,iy,im,id,ih,in,is
-   ic=index(dateform,'cc')
-   iy=index(dateform,'yy')
-   im=index(dateform,'mm')
-   id=index(dateform,'dd')
-   ih=index(dateform,'hh')
-   in=index(dateform,'nn')
-   is=index(dateform,'ss')
-   formatdate=trim(dateform)
-   if (ic /= 0) formatdate(ic:ic+1) = datein(1:2)
-   if (iy /= 0) formatdate(iy:iy+1) = datein(3:4)
-   if (im /= 0) formatdate(im:im+1) = datein(5:6)
-   if (id /= 0) formatdate(id:id+1) = datein(7:8)
-   if (ih /= 0) formatdate(ih:ih+1) = datein(9:10)
-   if (in /= 0) formatdate(in:in+1) = datein(11:12)
-   if (is /= 0) formatdate(is:is+1) = datein(13:14)
-   return
-end function formatdate
 
 function isleapyear(year)
    ! check if year is leapyear

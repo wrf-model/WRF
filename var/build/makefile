@@ -15,6 +15,7 @@ links :
 	@ if test -e module_dm_stubs.F; then rm -rf module_dm_stubs.F; fi
 	@ $(LN) ../../share/* .
 	@ $(LN) ../da/da*/* .
+	@ $(LN) ../external/*/* .
 	@ $(LN) ../../arch/*.sed .
 	@ $(LN) ../../external/esmf_time_f90/* .
 	@ $(LN) ../convertor/da_module_convert_tool/* .
@@ -31,7 +32,7 @@ WRFVAR_LIBS = libwrfvar.a $(ESMF_TIME_LIBS) $(NETCDF_LIBS) $(PNETCDF_LIBS) \
 WRFVAR_LIB = -L. -lwrfvar $(LAPACK_LIB) $(NETCDF_LIB) $(PNETCDF_LIB) \
         $(GRIB1_LIB) $(GRIB2_LIB) $(GRIB_SHARE_LIB) \
         $(ESMF_TIME_LIB) \
-        $(LAPACK_LIB) $(BLAS_LIB) $(BUFR_LIB) $(FFTPACK_LIB) \
+        $(FFTPACK_LIB) \
         $(RTTOV_LIB) $(CRTM_LIB) $(MPI_LIB) $(LOCAL_LIB)
 
 FPPFLAGS   = -I$(WRF_SRC_ROOT_DIR)/inc

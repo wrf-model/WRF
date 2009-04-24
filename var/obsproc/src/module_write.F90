@@ -26,6 +26,9 @@ MODULE module_write
   USE module_date
   USE module_decoded
   USE module_map
+#ifdef BUFR
+  USE da_bufr, only: openbf, openmb, ufbseq, ufbint, writsb, closbf
+#endif
 
   INCLUDE 'constants.inc'
 
@@ -1061,6 +1064,7 @@ SUBROUTINE output_prep (max_number_of_obs, obs, number_of_obs, windex,&
 
   IMPLICIT NONE
 
+
   INTEGER,                                      INTENT (in) :: max_number_of_obs
   TYPE (report), DIMENSION (max_number_of_obs), INTENT (inout) :: obs
   INTEGER,                                      INTENT (in) :: number_of_obs
@@ -1102,6 +1106,7 @@ SUBROUTINE output_prep (max_number_of_obs, obs, number_of_obs, windex,&
 !---------------------------------------------------------------------
 !  REAL                          :: rew_cross, rns_cross
 
+#ifdef BUFR
 
 ! rew_cross=real(nestjx(idd)-1)
 ! rns_cross=real(nestix(idd)-1)
@@ -1788,6 +1793,8 @@ REF: &
       ENDDO stations
 
       CALL CLOSBF (bfout)
+
+#endif
 
    RETURN
 

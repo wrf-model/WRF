@@ -232,7 +232,7 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
    CHARACTER(LEN=8)  :: flag_name
 
-   INTEGER :: time_loop_max , loop, rc,icnt,itmp
+   INTEGER :: time_loop_max , loop, rc
    INTEGER :: julyr , julday ,itmp,icnt
    REAL :: gmt
    real::t1,t2,t3,t4

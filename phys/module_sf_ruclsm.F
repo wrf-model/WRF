@@ -49,7 +49,7 @@ CONTAINS
                    SOILMOIS,SH2O,SMAVAIL,SMMAX,                  &
                    TSO,SOILT,HFX,QFX,LH,                         &
                    SFCRUNOFF,UDRUNOFF,SFCEXC,                    &
-                   SFCEVP,GRDFLX,ACSNOW,                         &
+                   SFCEVP,GRDFLX,ACSNOW,SNOM,                    &
                    SMFR3D,KEEPFR3DFLAG,                          &
                    myj,                                          &
                    ids,ide, jds,jde, kds,kde,                    &
@@ -195,6 +195,7 @@ CONTAINS
                                                        UDRUNOFF, &
                                                          GRDFLX, &
                                                          ACSNOW, &
+                                                           SNOM, &
                                                             QVG, &
                                                             QCG, &
                                                            QSFC, &
@@ -217,7 +218,6 @@ CONTAINS
                                                           SMELT, &
                                                            SNOH, &
                                                           SNFLX, &
-                                                           SNOM, &
                                                            EDIR, &
                                                              EC, &
                                                             ETT, &
@@ -1149,6 +1149,7 @@ CONTAINS
 
         ELSE
 
+         alb=alb_snow_free
            snheiprint=0.
            snweprint=0.
 
@@ -2340,13 +2341,9 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 !          snwe=0.
          ENDIF
 
-! 3apr2009
-! temporary fix, comment out following line, only initialized
-! at the start time and this stack variable is not saved, and
-! not assigned to anything
-! better idea is to pass SNOM back up through the argument list
-! into the ACSNOM variable in the grid derived type
-!       SNOM=SNOM+SMELT*DELT
+! 21apr2009
+! SNOM goes into the passed-in ACSNOM variable in the grid derived type
+        SNOM=SNOM+SMELT*DELT
 
 !--- KEEPFR is 1 when the temperature and moisture in soil
 !--- are both increasing. In this case soil ice should not

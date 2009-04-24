@@ -1515,7 +1515,7 @@ CONTAINS
                 cp,g,xlv,stbolt,                                &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &
-                sfcevp,grdflx,acsnow,                           &
+                sfcevp,grdflx,acsnow,acsnom,                    &
                 smfr3d,keepfr3dflag,                            &
                 myj,                                            &
                 ids,ide, jds,jde, kds,kde,                      &

@@ -2690,7 +2690,7 @@
 !$omp parallel do                                                       &
 !$omp& private(ij)
       DO IJ=1,GRID%NUM_TILES
-        CALL MICROPHYSICS_ZERO_OUT(                                     &
+        CALL MICROPHYSICS_ZERO_OUTA(                                    &
                      MOIST_TRANS,N_MOIST,CONFIG_FLAGS                   &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &

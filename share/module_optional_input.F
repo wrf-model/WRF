@@ -1206,9 +1206,9 @@ USE module_io_domain
 
       write (message,'(A,10(i3,1x))') 'st_levels_input = ', (st_levels_input(k), k=1,num_st_levels_input)
       CALL wrf_debug(1,message)
-      write (message,'(A,10(i3,1x))') 'sm_levels_input = ', (sm_levels_input(k), k=1,num_st_levels_input)
+      write (message,'(A,10(i3,1x))') 'sm_levels_input = ', (sm_levels_input(k), k=1,num_sm_levels_input)
       CALL wrf_debug(1,message)
-      write (message,'(A,10(i3,1x))') 'sw_levels_input = ', (sw_levels_input(k), k=1,num_st_levels_input)
+      write (message,'(A,10(i3,1x))') 'sw_levels_input = ', (sw_levels_input(k), k=1,num_sw_levels_input)
       CALL wrf_debug(1,message)
 
       !  OK, let's do a quick sanity check.

@@ -54,20 +54,24 @@ SUBROUTINE da_apply_rf( be, vp, grid )
    in=grid%xp%ipex-grid%xp%ipsx
    jn=grid%xp%jpex-grid%xp%jpsx
 
-   call smoothx(in,jn,&
-         grid%xp % v1x(grid%xp%ipsx:grid%xp%ipex,grid%xp%jpsx:grid%xp%jpex,1),&
-         be%slipx(grid%xp%ipsx:grid%xp%ipex,grid%xp%jpsx:grid%xp%jpex),&
-         be%ndeg,be%be,be%nta,be%swidth,be%table)
+   if ( LBOUND(grid%xp%v1x,3) == 1 ) then
+      call smoothx(in,jn,&
+           grid%xp%v1x(grid%xp%ipsx:grid%xp%ipex,grid%xp%jpsx:grid%xp%jpex,1),&
+           be%slipx(grid%xp%ipsx:grid%xp%ipex,grid%xp%jpsx:grid%xp%jpex),&
+           be%ndeg,be%be,be%nta,be%swidth,be%table)
+   endif
 
    call da_transpose_x2y ( grid )
 
    in=grid%xp%ipey-grid%xp%ipsy
    jn=grid%xp%jpey-grid%xp%jpsy
 
-   call smoothy(in,jn, &
-         grid%xp % v1y(grid%xp%ipsy:grid%xp%ipey,grid%xp%jpsy:grid%xp%jpey,1),&
-         be%sljpy(grid%xp%ipsy:grid%xp%ipey,grid%xp%jpsy:grid%xp%jpey),&
-         be%ndeg,be%be,be%nta,be%swidth,be%table)
+   if ( LBOUND(grid%xp%v1y,3) == 1 ) then
+      call smoothy(in,jn, &
+           grid%xp%v1y(grid%xp%ipsy:grid%xp%ipey,grid%xp%jpsy:grid%xp%jpey,1),&
+           be%sljpy(grid%xp%ipsy:grid%xp%ipey,grid%xp%jpsy:grid%xp%jpey),&
+           be%ndeg,be%be,be%nta,be%swidth,be%table)
+   endif
 
    call da_transpose_y2z ( grid )
 

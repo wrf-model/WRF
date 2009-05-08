@@ -197,8 +197,8 @@
 
       ! [8.1] Calculate nonlinear model trajectory 
 
-      if (var4d .and. multi_inc /= 2 ) then
-!     if (var4d) then
+!     if (var4d .and. multi_inc /= 2 ) then
+      if (var4d) then
          call da_trace ("da_solve","Starting da_run_wrf_nl.ksh")
 #ifdef DM_PARALLEL
          if (var4d_coupling == var4d_coupling_disk_simul) then

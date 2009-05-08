@@ -13,7 +13,6 @@ links :
 	@ $(LN) ../../share/* .
 	@ $(LN) ../../frame/* .
 	@ if test -e module_dm_stubs.F; then rm -rf module_dm_stubs.F; fi
-	@ $(LN) ../../share/* .
 	@ $(LN) ../da/da*/* .
 	@ $(LN) ../external/*/* .
 	@ $(LN) ../../arch/*.sed .

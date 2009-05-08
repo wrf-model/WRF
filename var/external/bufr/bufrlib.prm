@@ -2,7 +2,7 @@
 !	Maximum number of BUFR files that can be connected to the
 !	BUFRLIB software (for reading or writing) at any one time.
 
-	PARAMETER ( NFILES = 32 )
+	PARAMETER ( NFILES = 16 )
 !-----------------------------------------------------------------------
 !	Maximum length (in bytes) of a BUFR message that can be
 !	read or written by the BUFRLIB software.
@@ -26,7 +26,7 @@
 !	Maximum number of data values per subset in a compressed
 !	BUFR message.
 
-	PARAMETER ( MXCDV = 3000 )
+	PARAMETER ( MXCDV = 2000 )
 !-----------------------------------------------------------------------
 !	Maximum number of subsets in a compressed BUFR message.
 

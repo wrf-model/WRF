@@ -82,7 +82,7 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
      real(r_double) :: acqf    ! Channel quality flags for ATOVS
      real(r_double) :: tmbrst  ! Brightness temperature
   end type airschan_list
-  real(r_double), dimension(1:N_AIRSCHAN_LIST) :: airschan_list_array
+  real(r_double), dimension(1:N_AIRSCHAN_LIST,1:N_MAXCHAN) :: airschan_list_array
   
 ! BUFR talble file sequencial number
   character(len=512)  :: table_file
@@ -326,11 +326,12 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
      else
         call ufbseq(lnbufr,airschan_list_array,N_AIRSCHAN_LIST,N_MAXCHAN,iret,channame)
      end if
-     airschan = airschan_list( airschan_list_array(1), &
-                               airschan_list_array(2), & 
-                               airschan_list_array(3), & 
-                               airschan_list_array(4)  )
-
+     do l = 1 , N_MAXCHAN
+        airschan(l) = airschan_list( airschan_list_array(1,l), &
+                                     airschan_list_array(2,l), & 
+                                     airschan_list_array(3,l), & 
+                                     airschan_list_array(4,l)  )
+     end do
 
      if (iret /= nchanr) then
         write(unit=message(1),fmt=*) &

@@ -17,9 +17,14 @@ WRFVAR_OBJS = \
    da_blas.o \
    da_lapack.o \
    bort_exit.o \
-   da_bufr.o \
    wrdesc.o \
    restd.o \
+   ccbfl.o \
+   cobfl.o \
+   crbmg.o \
+   cwbmg.o \
+   rbytes.o \
+   da_bufr.o \
    da_par_util.o \
    da_par_util1.o \
    da_setup_structures.o \
@@ -401,14 +406,14 @@ uptdd.o :
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $*.f
+	$(SFC) -c $(FCFLAGS) $*.f
 
 da_bufr.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $*.f
+	$(SFC) -c $(FCFLAGS) $*.f
 
 da_spectral.o da_be_spectral.o :
 	$(RM) $@

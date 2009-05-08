@@ -329,7 +329,7 @@
   TFORWD=XHOUR+TWINDO
 
   IF (iprt) then
-     write(msg,'2(a,f8.3),a,i2') 'TBACK = ',tback,            &
+     write(msg,'(2(a,f8.3),a,i2)') 'TBACK = ',tback,            &
                                  ' TFORWD = ',tforwd,'  for nest = ',inest
      call wrf_message(msg)
   ENDIF

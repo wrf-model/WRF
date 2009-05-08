@@ -367,8 +367,8 @@ END SUBROUTINE calc_ts
 
 SUBROUTINE write_ts( grid )
 
-   USE module_dm
    USE module_domain
+   USE module_dm
 
    IMPLICIT NONE
 

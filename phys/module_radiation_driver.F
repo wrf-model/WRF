@@ -1246,8 +1246,8 @@ CONTAINS
               ,kts, kte                                                   &
               ,num_tiles                                                  )
 
-   USE module_dm
    USE module_domain
+   USE module_dm
    USE module_bc
    USE module_model_constants
 

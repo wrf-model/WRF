@@ -88,7 +88,7 @@
 !
       LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS
 !
-      CHARACTER(80) :: MESSAGE
+      CHARACTER(256) :: MESSAGE
 !
 !***  For precip assimilation:
       INTEGER :: ISTAT

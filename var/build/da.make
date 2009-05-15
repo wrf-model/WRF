@@ -212,7 +212,7 @@ da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                 $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o \
                 $(WRFVAR_LIBS) da_wrfvar_main.o
 	$(RM) $@
-	$(LD) -o da_wrfvar.exe $(FCFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
+	$(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
         -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
         ${MADIS_LIB} $(LIB)
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi

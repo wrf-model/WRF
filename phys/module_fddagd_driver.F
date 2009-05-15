@@ -332,7 +332,7 @@ CONTAINS
    !$OMP END PARALLEL DO
 
 !
-   IF( config_flags%grid_fdda == 1 ) THEN
+   IF( config_flags%grid_fdda /= 0 ) THEN
    fdda_select: SELECT CASE(config_flags%grid_fdda)
 
       CASE (PSUFDDAGD)

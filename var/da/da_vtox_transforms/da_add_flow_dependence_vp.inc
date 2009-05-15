@@ -19,23 +19,23 @@ subroutine da_add_flow_dependence_vp (ne, ep, vp, &
 
          ! psi:
          vp % v1(its:ite,jts:jte,k) = vp % v1(its:ite,jts:jte,k) + &
-                                      vp % alpha(its:ite,jts:jte,n) * &
+                                      vp % alpha(its:ite,jts:jte,k,n) * &
                                       ep % v1(its:ite,jts:jte,k,n)
          ! chi_u:
          vp % v2(its:ite,jts:jte,k) = vp % v2(its:ite,jts:jte,k) + &
-                                      vp % alpha(its:ite,jts:jte,n) * &
+                                      vp % alpha(its:ite,jts:jte,k,n) * &
                                       ep % v2(its:ite,jts:jte,k,n)
          ! t_u:
          vp % v3(its:ite,jts:jte,k) = vp % v3(its:ite,jts:jte,k) + &
-                                      vp % alpha(its:ite,jts:jte,n) * &
+                                      vp % alpha(its:ite,jts:jte,k,n) * &
                                       ep % v3(its:ite,jts:jte,k,n)
          ! rh:
          vp % v4(its:ite,jts:jte,k) = vp % v4(its:ite,jts:jte,k) + &
-                                      vp % alpha(its:ite,jts:jte,n) * &
+                                      vp % alpha(its:ite,jts:jte,k,n) * &
                                       ep % v4(its:ite,jts:jte,k,n)
         ! ps_u
         vp % v5(its:ite,jts:jte,k) = vp % v5(its:ite,jts:jte,k) + &
-                                     vp % alpha(its:ite,jts:jte,n) * &
+                                     vp % alpha(its:ite,jts:jte,k,n) * &
                                      ep % v5(its:ite,jts:jte,k,n)
       end do
    end do

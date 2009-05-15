@@ -1346,6 +1346,7 @@ rconfig   real      max_vert_var2           namelist,wrfvar13  1  99.0     - "ma
 rconfig   real      max_vert_var3           namelist,wrfvar13  1  99.0     - "max_vert_var3"           ""  ""  
 rconfig   real      max_vert_var4           namelist,wrfvar13  1  99.0     - "max_vert_var4"           ""  ""  
 rconfig   real      max_vert_var5           namelist,wrfvar13  1  99.0     - "max_vert_var5"           ""  ""  
+rconfig   real      max_vert_var_alpha      namelist,wrfvar13  1  99.0     - "max_vert_var_alpha"      ""  ""
 
 rconfig   integer   rtminit_print           namelist,wrfvar14  1  1        - "rtminit_print"           ""  ""  
 rconfig   integer   rtminit_nsensor         namelist,wrfvar14  1  1        - "rtminit_nsensor"         ""  ""  
@@ -1409,6 +1410,8 @@ rconfig   integer   alpha_truncation        namelist,wrfvar16  1  0        - "al
 rconfig   integer   alpha_corr_type         namelist,wrfvar16  1  3        - "alpha_corr_type"         ""  ""   
 rconfig   real      alpha_corr_scale        namelist,wrfvar16  1  1500.0   - "alpha_corr_scale"        ""  "km" 
 rconfig   real      alpha_std_dev           namelist,wrfvar16  1  1.0      - "alpha_std_dev"           ""  ""
+rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "alpha_vertloc"           ""  ""
+rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
 
 rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR"                   -  "analysis_type"      ""  ""
 rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
@@ -2146,7 +2149,7 @@ typedef vp_type real    v2                      ijk      -         1        -   
 typedef vp_type real    v3                      ijk      -         1        -       -
 typedef vp_type real    v4                      ijk      -         1        -       -
 typedef vp_type real    v5                      ijk      -         1        -       -
-typedef vp_type real    alpha                   ij9      -         1        -       -
+typedef vp_type real    alpha                   ijk9     -         1        -       -
 # END VP_TYPE DEFINITION
 
 # BEGIN EP_TYPE DEFINITION:

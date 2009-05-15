@@ -26,10 +26,10 @@ module da_setup_structures
       use_ssmt1obs,use_ssmt2obs, use_shipsobs, use_satemobs, use_synopobs, &
       use_radar_rv,use_profilerobs, use_obsgts, use_geoamvobs, use_buoyobs, &
       jb_factor, je_factor, alphacv_method,its,ite,jts,jte,cv_size_domain_jb, &
-      cv_size_domain_je, cv_size_domain,ensdim_alpha, &
+      cv_size_domain_je, cv_size_domain,ensdim_alpha, alpha_vertloc, alpha_hydrometeors, &
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale,len_scaling1, &
       len_scaling2,len_scaling3,len_scaling4,len_scaling5,max_vert_var1, &
-      max_vert_var2,max_vert_var3,max_vert_var4,print_detail_be, &
+      max_vert_var2,max_vert_var3,max_vert_var4,max_vert_var_alpha,print_detail_be, &
       test_statistics, var_scaling1,var_scaling2,var_scaling3,var_scaling4, &
       var_scaling5,vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &

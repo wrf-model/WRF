@@ -1,4 +1,4 @@
-subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp, cv_size)
+subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
 
    !---------------------------------------------------------------------------
    ! Purpose: Test Vp to X routine and adjoint for compatibility.
@@ -28,7 +28,7 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp, cv_size)
    real                             :: vp2_v3(ims:ime,jms:jme,kms:kme)
    real                             :: vp2_v4(ims:ime,jms:jme,kms:kme)
    real                             :: vp2_v5(ims:ime,jms:jme,kms:kme)
-   real                             :: vp2_alpha(ims:ime,jms:jme,1:ne)
+   real                             :: vp2_alpha(ims:ime,jms:jme,kms:kme,1:ne)
 
    if (trace_use) call da_trace_entry("da_check_vptox_adjoint")
 
@@ -92,7 +92,7 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp, cv_size)
    vp2_v3(:,:,:) = vp % v3(:,:,:)
    vp2_v4(:,:,:) = vp % v4(:,:,:)
    vp2_v5(:,:,:) = vp % v5(:,:,:)
-   if (be % ne > 0) vp2_alpha(:,:,:) = vp % alpha(:,:,:)
+   if (be % ne > 0) vp2_alpha(:,:,:,:) = vp % alpha(:,:,:,:)
 
    !-------------------------------------------------------------------------
    ! [2.0] Perform x = U vp transform:
@@ -232,8 +232,8 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp, cv_size)
       adj_par_rhs
 
    if (be % ne > 0) then
-      adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,:) * &
-         vp2_alpha(its:ite,jts:jte,:)) + adj_par_rhs
+      adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,:,:) * &
+         vp2_alpha(its:ite,jts:jte,:,:)) + adj_par_rhs
    end if
 
    if ( cv_options == 3 ) adj_par_rhs = sum (cv_2*cv)
@@ -263,7 +263,7 @@ subroutine da_check_vptox_adjoint(grid,ne, be, ep, vp, cv_size)
    vp % v3(:,:,:) = vp2_v3(:,:,:)
    vp % v4(:,:,:) = vp2_v4(:,:,:)
    vp % v5(:,:,:) = vp2_v5(:,:,:)
-   if (be % ne > 0) vp % alpha(:,:,:) = vp2_alpha(:,:,:)
+   if (be % ne > 0) vp % alpha(:,:,:,:) = vp2_alpha(:,:,:,:)
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vptox_adjoint: Test Finished:'
 

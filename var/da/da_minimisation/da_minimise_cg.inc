@@ -38,7 +38,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    integer                           :: iter            
    integer                           :: je_start, je_end       ! Start/end indices of Je.
    integer                           :: cv_size_jb             ! end indices of Jb.
-   integer                           :: mz(6)
+   integer                           :: mz(7)
    real                              :: fhat(1:cv_size)        ! cv copy.
    real                              :: ghat(1:cv_size)        ! cv copy.
    real                              :: ghat0(1:cv_size)       ! cv copy.
@@ -68,7 +68,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz /)
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
    sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
    
    call da_calculate_j(it, 0, cv_size, be % cv % size_jb, be % cv % size_je, &

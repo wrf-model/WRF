@@ -16,11 +16,13 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
    integer   :: js,je       ! Local grid range in x coordinate.
    integer   :: ix,jy       ! Local grid horizontal dimensions.
    integer   :: mz          ! Max vertical coordinate for v1 through v5 arrays.
+   integer   :: ne          ! Ensemble size.
    integer   :: cv_s,cv_e   ! Starting and ending indices into CV array.
    integer   :: ijm         ! Size of interior of v1 through v5 arrays.
+   integer   :: ijmn        ! Size of interior of alpha cv arrays.
 
 #ifdef NORESHAPE
-   integer   :: i,j,k,ijk
+   integer   :: i,j,k,ijk,m,n
 #endif
 
    if (trace_use) call da_trace_entry("da_vv_to_cv")
@@ -139,21 +141,25 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
 
    ! Store alpha:
    mz = mzs(6)
-   if (mz > 0) then
-      ijm = ix * jy * mz
+   ne = mzs(7)
+
+   if ( ne > 0 ) then
+      ijmn = ix * jy * mz * ne
       cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
+      cv_e = cv_s + ijmn - 1
 #ifdef NORESHAPE
-      do k=1,mz
-         do j=js,je
-            do i=is,ie
-               ijk = ijk + 1
-               rcv(ijk) = vv%alpha(i,j,k)
+      do n = 1, ne
+         do m = 1, mz
+            do j = js, je
+               do i = is, ie
+                  ijk = ijk + 1
+                  rcv(ijk) = vv%alpha(i,j,m,n)
+               end do
             end do
          end do
       end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % alpha(is:ie,js:je,1:mz), (/ijm/))
+      rcv(cv_s:cv_e) = RESHAPE(vv % alpha(is:ie,js:je,1:mz,1:ne), (/ijmn/))
 #endif
    end if
 

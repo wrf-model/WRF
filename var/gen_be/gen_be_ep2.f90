@@ -46,16 +46,22 @@ program gen_be_ep2
    real, allocatable     :: v(:,:,:)                  ! v-wind.
    real, allocatable     :: temp(:,:,:)               ! Temperature.
    real, allocatable     :: q(:,:,:)                  ! Specific humidity.
+   real, allocatable     :: qcloud(:,:,:)             ! Cloud.
+   real, allocatable     :: qrain(:,:,:)              ! Rain.
    real, allocatable     :: psfc(:,:)                 ! Surface pressure.
    real, allocatable     :: u_mean(:,:,:)             ! u-wind.
    real, allocatable     :: v_mean(:,:,:)             ! v-wind.
    real, allocatable     :: temp_mean(:,:,:)          ! Temperature.
    real, allocatable     :: q_mean(:,:,:)             ! Specific humidity.
+   real, allocatable     :: qcloud_mean(:,:,:)        ! Cloud.
+   real, allocatable     :: qrain_mean(:,:,:)         ! Rain.
    real, allocatable     :: psfc_mean(:,:)            ! Surface pressure.
    real, allocatable     :: u_mnsq(:,:,:)             ! u-wind.
    real, allocatable     :: v_mnsq(:,:,:)             ! v-wind.
    real, allocatable     :: temp_mnsq(:,:,:)          ! Temperature.
    real, allocatable     :: q_mnsq(:,:,:)             ! Specific humidity.
+   real, allocatable     :: qcloud_mnsq(:,:,:)        ! Cloud.
+   real, allocatable     :: qrain_mnsq(:,:,:)         ! Rain.
    real, allocatable     :: psfc_mnsq(:,:)            ! Surface pressure.
 
    real, allocatable     :: utmp(:,:)                 ! u-wind.
@@ -101,7 +107,7 @@ program gen_be_ep2
    else
       write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ', date
    end if
-   write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, ps)'
+   write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, qcloud, qrain, ps)'
    write(6,'(a,i4)')' Ensemble Size = ', ne
    write(6,'(a,a)')' Directory = ', trim(directory)
    write(6,'(a,a)')' Filename = ', trim(filename)
@@ -122,26 +128,36 @@ program gen_be_ep2
    allocate( v(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to mass pts for output.
    allocate( temp(1:dim1,1:dim2,1:dim3) )
    allocate( q(1:dim1,1:dim2,1:dim3) )
+   allocate( qcloud(1:dim1,1:dim2,1:dim3) )
+   allocate( qrain(1:dim1,1:dim2,1:dim3) )
    allocate( psfc(1:dim1,1:dim2) )
    allocate( u_mean(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
    allocate( v_mean(1:dim1,1:dim2,1:dim3) )
    allocate( temp_mean(1:dim1,1:dim2,1:dim3) )
    allocate( q_mean(1:dim1,1:dim2,1:dim3) )
+   allocate( qcloud_mean(1:dim1,1:dim2,1:dim3) )
+   allocate( qrain_mean(1:dim1,1:dim2,1:dim3) )
    allocate( psfc_mean(1:dim1,1:dim2) )
    allocate( u_mnsq(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
    allocate( v_mnsq(1:dim1,1:dim2,1:dim3) )
    allocate( temp_mnsq(1:dim1,1:dim2,1:dim3) )
    allocate( q_mnsq(1:dim1,1:dim2,1:dim3) )
+   allocate( qcloud_mnsq(1:dim1,1:dim2,1:dim3) )
+   allocate( qrain_mnsq(1:dim1,1:dim2,1:dim3) )
    allocate( psfc_mnsq(1:dim1,1:dim2) )
    u_mean = 0.0
    v_mean = 0.0
    temp_mean = 0.0
    q_mean = 0.0
+   qcloud_mean = 0.0
+   qrain_mean = 0.0
    psfc_mean = 0.0
    u_mnsq = 0.0
    v_mnsq = 0.0
    temp_mnsq = 0.0
    q_mnsq = 0.0
+   qcloud_mnsq = 0.0
+   qrain_mnsq = 0.0
    psfc_mnsq = 0.0
 
 !  Temporary arrays:
@@ -184,6 +200,14 @@ program gen_be_ep2
          call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
          q(:,:,k) = dummy(:,:) / ( 1.0 + dummy(:,:) )
 
+!        Read hydrometeors (need better method to read all e.g. qsn automatically):
+         var = "QCLOUD"
+         call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+         qcloud(:,:,k) = dummy(:,:)
+         var = "QRAIN"
+         call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
+         qrain(:,:,k) = dummy(:,:)
+
       end do
 
 !     Finally, extract surface pressure:
@@ -198,6 +222,8 @@ program gen_be_ep2
       write(gen_be_ounit)v
       write(gen_be_ounit)temp
       write(gen_be_ounit)q
+      write(gen_be_ounit)qcloud
+      write(gen_be_ounit)qrain
       write(gen_be_ounit)psfc
       close(gen_be_ounit)
 
@@ -207,11 +233,15 @@ program gen_be_ep2
       v_mean = ( real( member-1 ) * v_mean + v ) * member_inv
       temp_mean = ( real( member-1 ) * temp_mean + temp ) * member_inv
       q_mean = ( real( member-1 ) * q_mean + q ) * member_inv
+      qcloud_mean = ( real( member-1 ) * qcloud_mean + qcloud ) * member_inv
+      qrain_mean = ( real( member-1 ) * qrain_mean + qrain ) * member_inv
       psfc_mean = ( real( member-1 ) * psfc_mean + psfc ) * member_inv
       u_mnsq = ( real( member-1 ) * u_mnsq + u * u ) * member_inv
       v_mnsq = ( real( member-1 ) * v_mnsq + v * v ) * member_inv
       temp_mnsq = ( real( member-1 ) * temp_mnsq + temp * temp ) * member_inv
       q_mnsq = ( real( member-1 ) * q_mnsq + q * q ) * member_inv
+      qcloud_mnsq = ( real( member-1 ) * qcloud_mnsq + qcloud * qcloud ) * member_inv
+      qrain_mnsq = ( real( member-1 ) * qrain_mnsq + qrain * qrain ) * member_inv
       psfc_mnsq = ( real( member-1 ) * psfc_mnsq + psfc * psfc ) * member_inv
 
    end do
@@ -242,6 +272,8 @@ program gen_be_ep2
       read(gen_be_iunit)v
       read(gen_be_iunit)temp
       read(gen_be_iunit)q
+      read(gen_be_iunit)qcloud
+      read(gen_be_iunit)qrain
       read(gen_be_iunit)psfc
       close(gen_be_iunit)
 
@@ -250,6 +282,8 @@ program gen_be_ep2
          v = v - v_mean
          temp = temp - temp_mean
          q = q - q_mean
+         qcloud = qcloud - qcloud_mean
+         qrain = qrain - qrain_mean
          psfc = psfc - psfc_mean
       end if
 
@@ -279,6 +313,18 @@ program gen_be_ep2
       write(gen_be_ounit)q
       close(gen_be_ounit)
 
+      output_file = 'qcloud.e'//trim(ce) ! Output qcloud.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qcloud
+      close(gen_be_ounit)
+
+      output_file = 'qrain.e'//trim(ce) ! Output qrain.
+      open (gen_be_ounit, file = output_file, form='unformatted')
+      write(gen_be_ounit)dim1, dim2, dim3
+      write(gen_be_ounit)qrain
+      close(gen_be_ounit)
+
       output_file = 'ps.e'//trim(ce) ! Output ps.
       open (gen_be_ounit, file = output_file, form='unformatted')
       write(gen_be_ounit)dim1, dim2, dim3
@@ -292,6 +338,8 @@ program gen_be_ep2
    v_mnsq = sqrt( v_mnsq - v_mean * v_mean )
    temp_mnsq = sqrt( temp_mnsq - temp_mean * temp_mean )
    q_mnsq = sqrt( q_mnsq - q_mean * q_mean )
+   qcloud_mnsq = sqrt( qcloud_mnsq - qcloud_mean * qcloud_mean )
+   qrain_mnsq = sqrt( qrain_mnsq - qrain_mean * qrain_mean )
    psfc_mnsq = sqrt( psfc_mnsq - psfc_mean * psfc_mean )
 
    output_file = 'u.mean' ! Output u.
@@ -340,6 +388,30 @@ program gen_be_ep2
    open (gen_be_ounit, file = output_file, form='unformatted')
    write(gen_be_ounit)dim1, dim2, dim3
    write(gen_be_ounit)q_mnsq
+   close(gen_be_ounit)
+
+   output_file = 'qcloud.mean' ! Output qcloud.
+   open (gen_be_ounit, file = output_file, form='unformatted')
+   write(gen_be_ounit)dim1, dim2, dim3
+   write(gen_be_ounit)qcloud_mean
+   close(gen_be_ounit)
+
+   output_file = 'qcloud.stdv' ! Output qcloud.
+   open (gen_be_ounit, file = output_file, form='unformatted')
+   write(gen_be_ounit)dim1, dim2, dim3
+   write(gen_be_ounit)qcloud_mnsq
+   close(gen_be_ounit)
+
+   output_file = 'qrain.mean' ! Output qrain.
+   open (gen_be_ounit, file = output_file, form='unformatted')
+   write(gen_be_ounit)dim1, dim2, dim3
+   write(gen_be_ounit)qrain_mean
+   close(gen_be_ounit)
+
+   output_file = 'qrain.stdv' ! Output qrain.
+   open (gen_be_ounit, file = output_file, form='unformatted')
+   write(gen_be_ounit)dim1, dim2, dim3
+   write(gen_be_ounit)qrain_mnsq
    close(gen_be_ounit)
 
    output_file = 'ps.mean' ! Output ps.

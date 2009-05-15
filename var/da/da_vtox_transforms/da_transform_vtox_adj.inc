@@ -50,8 +50,8 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 
    !  Uv for alpha is a null transform:
       if (be % ne > 0) then
-         vv % alpha(its:ite,jts:jte,1:be%ne) = &
-         vp % alpha(its:ite,jts:jte,1:be%ne) 
+         vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
+         vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) 
       end if
    end if
    

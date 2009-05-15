@@ -152,8 +152,6 @@ program gen_be_ensmean
                    var, ' variable is not real type'
                 call da_error(__FILE__,__LINE__,message(1:1))
              end if
-print *, var, ivtype, id_var
-print *, istart, iend(1), iend(2), iend(3)
          end if
 
 !        Calculate accumulating mean and variance:

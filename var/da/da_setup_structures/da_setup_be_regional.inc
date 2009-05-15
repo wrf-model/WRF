@@ -29,6 +29,7 @@ subroutine da_setup_be_regional(xb, be)
    real, allocatable           :: be3_eval_glo(:)       ! Global Eigenvalues.
    real, allocatable           :: be4_eval_glo(:)       ! Global Eigenvalues.
    real, allocatable           :: be5_eval_glo(:)       ! Global Eigenvalues.
+   real, allocatable           :: alpha_val(:)          ! Global Eigenvalues.
 
    real, allocatable           :: be1_evec_loc(:,:,:)   ! Local Eigenvectors.
    real, allocatable           :: be2_evec_loc(:,:,:)   ! Local Eigenvectors.
@@ -41,6 +42,7 @@ subroutine da_setup_be_regional(xb, be)
    real, allocatable           :: be3_evec_glo(:,:)     ! Global Eigenvectors.
    real, allocatable           :: be4_evec_glo(:,:)     ! Global Eigenvectors.
    real, allocatable           :: be5_evec_glo(:,:)     ! Global Eigenvectors.
+   real, allocatable           :: alpha_evec(:,:)       ! Global Eigenvectors.
 
    real, allocatable           :: be1_rf_lengthscale(:) ! RF lengthscale.
    real, allocatable           :: be2_rf_lengthscale(:) ! RF lengthscale.
@@ -48,13 +50,14 @@ subroutine da_setup_be_regional(xb, be)
    real, allocatable           :: be4_rf_lengthscale(:) ! RF lengthscale.
    real, allocatable           :: be5_rf_lengthscale(:)
    real, allocatable           :: alpha_rf_lengthscale(:)
+   real, allocatable           :: alpha_rf_scale_factor(:)
 
    real, allocatable           :: evec_loc(:,:,:)        ! Latitudinally varying eigenvectors.
    real, allocatable           :: eval_loc(:,:)          ! Latitudinally varying eigenvalues.
 
    character*10                :: variable
    integer                     :: ni, nj, nk, nk_2d, b         
-   integer                     :: ix, jy, kz
+   integer                     :: ix, jy, kz, mz
    real, allocatable           :: regcoeff1(:)
    real, allocatable           :: regcoeff2(:,:)
    real, allocatable           :: regcoeff3(:,:,:)
@@ -516,29 +519,51 @@ subroutine da_setup_be_regional(xb, be)
    deallocate (bin2d)
 
    if (be % ne > 0) then
-      be % alpha % mz = be % ne
       be % alpha % name = 'alpha'
+      allocate (alpha_val(1:kz)) ! Not using jy dimension yet.
+      allocate (alpha_evec(1:kz,1:kz)) ! Not using jy dimension yet.
 
-      allocate (be5_eval_loc (1:1,1:num_bins2d))
-      allocate (be5_eval_glo(1:1))
-      allocate (be5_evec_loc(1:1,1:1,1:num_bins2d))
-      allocate (be5_evec_glo(1:1,1:1))
+      if ( alpha_vertloc ) then ! Use vertical localization:
+         call da_get_unit(be_unit)
+         open(unit=be_unit,file='be.vertloc.dat', status='old', form='unformatted')
 
-      ! Transfer the alpha standard deviation to be % alpha:
-      allocate (be % alpha % val(1:jy,1:be % ne))
-      allocate (be % alpha % evec(1:jy,1:kz,1:be % ne))
-      allocate (be % alpha % rf_alpha(1:be % ne))
+         read (be_unit)nk
+         read (be_unit)alpha_val(1:nk)
+         read (be_unit)alpha_evec(1:nk,1:nk)
+         close(be_unit)
 
-      be % alpha % val(1:jy,1:be % ne) = sigma_alpha
-      be % alpha % evec(1:jy,1:kz,1:be % ne) = 1.0
-      be % alpha % rf_alpha(1:be % ne) = 1.0 
+         call da_get_vertical_truncation(max_vert_var_alpha, alpha_val, be % alpha)
+      else
+         be % alpha % mz = 1 ! No vertical localization.
+         alpha_val(1) = 1.0
+         alpha_val(2:kz) = 0.0
+         alpha_evec(:,:) = 1.0
+      end if
+      mz = be % alpha % mz
 
-      ! Include alpha lengthscale info:
-      allocate (alpha_rf_lengthscale(1:be % ne))
-      alpha_rf_lengthscale(:) = 1000.0 * alpha_corr_scale ! Convert km to m.
+!     Alpha eigenvalues and eigenvectors:
+      allocate (be % alpha % val(1:jy,1:mz)) ! Not using jy dimension but here for consistency.
+      allocate (be % alpha % evec(1:jy,1:kz,1:mz))
+      do m = 1, mz
+         be % alpha % val(:,m) = sigma_alpha * alpha_val(m)
+         do k = 1, nk
+            be % alpha % evec(:,k,m) = alpha_evec(k,m)
+         end do
+      end do
 
-      call da_rescale_background_errors(1.0, 1.0, &
-         xb % ds, alpha_rf_lengthscale, be % alpha)
+!     Alpha RF lengthscales and variance scaling factors:
+      allocate (alpha_rf_lengthscale(1:mz))
+      allocate (be % alpha % rf_alpha(1:mz))
+      allocate (alpha_rf_scale_factor(1:mz))
+
+      alpha_rf_lengthscale(1:mz) = 1000.0 * alpha_corr_scale / xb % ds ! Convert km to grid spacings.
+
+      call da_calculate_rf_factors( alpha_rf_lengthscale(:), be % alpha % rf_alpha(:), &
+                                    alpha_rf_scale_factor(:) )
+      do m = 1, mz
+         be % alpha % val(:,m) = alpha_rf_scale_factor(m) * be % alpha % val(:,m)
+      end do
+
    else
       be % alpha % mz = 0
    end if

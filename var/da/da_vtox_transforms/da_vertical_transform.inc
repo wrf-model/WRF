@@ -12,7 +12,7 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
    type (vp_type),   intent(inout) :: vv          ! CV in gridpt/EOF space.
    type (vp_type),   intent(inout) :: vp          ! CV in gridpt/level space.
 
-   integer                         :: j, m        ! Loop counters.
+   integer                         :: j, m, n     ! Loop counters.
    real                            :: alpha_stddev_inv ! 1/ sigma_alpha
    real                            :: size_inv    ! 1 / size.
    real                            :: alpha_me, alpha_ms, alpha_sd ! Alpha statistics.
@@ -66,20 +66,19 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
          vp % v5(its:ite,jts:jte,kts:kts) = 0.0
       end if
 
-      if (be % ne > 0) then
-         size_inv = 1.0 / ( (ite-its+1) * ( jte-jts+1) * be % ne )
-         do m = 1, be % ne
-            do j = jts, jte
-               vp % alpha(its:ite,j,m) = vv % alpha(its:ite,j,m) * be % alpha % val(j,m)
-            end do
+      if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
+         do n = 1, be % ne
+            call da_transform_vvtovp ( be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                       vv % alpha(:,:,:,n), vp % alpha(:,:,:,n), be % alpha % mz, kte)
          end do
 
 !        Calculate alpha standard deviation diagnostic:
-         alpha_me = sum(vp % alpha(its:ite,jts:jte,:)) * size_inv
-         alpha_ms = sum(vp % alpha(its:ite,jts:jte,:) * vp % alpha(its:ite,jts:jte,:)) * &
-                    size_inv
-         alpha_sd = sqrt( alpha_ms - alpha_me * alpha_me )
-         write(6,'(a,f15.5)')' Alpha std. dev = ', alpha_sd
+!         size_inv = 1.0 / ( (ite-its+1) * ( jte-jts+1) * be % ne * be % alpha % mz )
+!         alpha_me = sum(vp % alpha(its:ite,jts:jte,:)) * size_inv
+!         alpha_ms = sum(vp % alpha(its:ite,jts:jte,:) * vp % alpha(its:ite,jts:jte,:)) * &
+!                    size_inv
+!         alpha_sd = sqrt( alpha_ms - alpha_me * alpha_me )
+!         write(6,'(a,f15.5)')' Alpha std. dev = ', alpha_sd
       end if
 
    case ('u_inv');
@@ -122,12 +121,11 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
          end if
       end if
 
-      if (be % ne > 0) then
-         do m = 1, be % ne
-            do j = jts, jte
-               alpha_stddev_inv = 1.0 / be % alpha % val(j,m)
-               vv % alpha(its:ite,j,m) = vp % alpha(its:ite,j,m) * alpha_stddev_inv
-            end do
+      if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
+         do n = 1, be % ne
+            call da_transform_vptovv (be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                      vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kds,kde, &
+                                      ims,ime, jms,jme, kms,kme, its,ite, jts,jte, kts,kte)
          end do
       end if
 
@@ -166,11 +164,10 @@ subroutine da_vertical_transform(string, be, vertical_wgt, vv, vp)
          end if
       end if
 
-      if (be % ne > 0) then
-         do m = 1, be % ne
-            do j = jts, jte
-               vv % alpha(its:ite,j,m) = vp % alpha(its:ite,j,m) * be % alpha % val(j,m)
-            end do
+      if ( be % ne > 0 .and. be % alpha % mz > 0 ) then
+         do n = 1, be % ne
+            call da_transform_vvtovp_adj ( be % alpha % evec, be % alpha % val, vertical_wgt, &
+                                           vp % alpha(:,:,:,n), vv % alpha(:,:,:,n), be % alpha % mz, kte)
          end do
       end if
 

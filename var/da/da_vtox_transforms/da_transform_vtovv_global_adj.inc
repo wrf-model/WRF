@@ -12,7 +12,7 @@ subroutine da_transform_vtovv_global_adj (cv_size, xbx, be, cv, vv)
    real,           intent(out) :: cv(1:cv_size) ! control variables.
    type(vp_type),  intent(in)  :: vv            ! grdipt/eof cv (local).
 
-   integer :: k, m ! Loop counters.
+   integer :: k, m, n ! Loop counters.
    integer :: cv_s ! Counter.
    integer :: cv_e ! Counter.
 
@@ -77,14 +77,16 @@ subroutine da_transform_vtovv_global_adj (cv_size, xbx, be, cv, vv)
    ! [2] Spectral to grid transform for flow-dependent control variables:
    !-------------------------------------------------------------------------
 
-   do m = 1, be % ne
-      cv_e = cv_s + 2 * be % cv % size_alphac - 1
-      call da_vtovv_spectral_adj(be % alpha % max_wave, be % cv % size_alphac, &
-         xbx % lenr, xbx % lenwrk, xbx % lensav, &
-         xbx % inc, xbx % alp_size, xbx % alp, &
-         xbx % wsave, be % alpha % power(0:be%alpha%max_wave,1), &
-         cv(cv_s:cv_e), vv%alpha(its:ite,jts:jte,m))
-      cv_s = cv_e + 1
+   do n = 1, be % ne
+      do m = 1, be % alpha % mz
+         cv_e = cv_s + 2 * be % cv % size_alphac - 1
+         call da_vtovv_spectral_adj(be % alpha % max_wave, be % cv % size_alphac, &
+            xbx % lenr, xbx % lenwrk, xbx % lensav, &
+            xbx % inc, xbx % alp_size, xbx % alp, &
+            xbx % wsave, be % alpha % power(0:be%alpha%max_wave,1), &
+            cv(cv_s:cv_e), vv%alpha(its:ite,jts:jte,m,n))
+         cv_s = cv_e + 1
+      end do
    end do
 
    if (trace_use) call da_trace_exit("da_transform_vtovv_global_adj")

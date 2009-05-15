@@ -49,13 +49,13 @@ subroutine da_setup_cv(be)
 
    be % cv % size_je = 0
 
-   if (ensdim_alpha > 0) then
+   if ( be % ne > 0) then
       if (global) then
          be % cv % size_alphac = (be % alpha % max_wave + 1) * &
                                  (be % alpha % max_wave + 2)  / 2
          be % cv % size_je  = 2 * be % cv % size_alphac * be % alpha % mz
       else
-         be % cv % size_alphac = ij * be % alpha % mz
+         be % cv % size_alphac = ij * be % alpha % mz * be % ne
          be % cv % size_je = be % cv % size_alphac
       end if
    end if
@@ -75,7 +75,7 @@ subroutine da_setup_cv(be)
       ij = iy * jx
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
                                  be % v4 % mz + be % v5 % mz)
-      cv_size_domain_je = ij * be % alpha % mz 
+      cv_size_domain_je = ij * be % alpha % mz * be % ne
    end if
 
    cv_size_domain = cv_size_domain_jb + cv_size_domain_je

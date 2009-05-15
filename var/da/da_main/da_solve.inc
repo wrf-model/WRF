@@ -165,7 +165,8 @@
 
       grid%ep % ne = be % ne
       if (be % ne > 0) then
-         call da_setup_flow_predictors (ide, jde, kde, be % ne, grid%ep )
+         call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
+                                         its, ite, jts, jte, kts, kte )
       end if
 
    !---------------------------------------------------------------------------

@@ -15,8 +15,10 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
    integer   :: js,je       ! Local grid range in x coordinate.
    integer   :: ix,jy       ! Local grid horizontal dimensions.
    integer   :: mz          ! Max vertical coordinate for v1 through v5 arrays.
+   integer   :: ne          ! Ensemble size.
    integer   :: cv_s,cv_e   ! Starting and ending indices into CV array.
    integer   :: ijm         ! Size of interior of v1 through v5 arrays.
+   integer   :: ijmn        ! Size of interior of alpha cv arrays.
 
    if (trace_use) call da_trace_entry("da_cv_to_vv")
 
@@ -82,11 +84,12 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
    !--------------------------------------------------------------------------
 
    mz = mzs(6)
-   if (mz > 0) then
-      ijm = ix * jy * mz
+   ne = mzs(7)
+   if ( ne > 0 ) then
+      ijmn = ix * jy * mz * ne
       cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % alpha(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      cv_e = cv_s + ijmn - 1
+      vv % alpha(is:ie,js:je,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
    end if
 
    if (trace_use) call da_trace_exit("da_cv_to_vv")

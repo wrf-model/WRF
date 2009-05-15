@@ -19,7 +19,7 @@ subroutine da_check_vp_errors(vp1, vp2, ne, &
    real                           :: rms_diff    ! RMS of differnce.
 
    real, dimension(its:ite, jts:jte, kts:kte) :: diff ! Difference
-   real                           :: diff_alpha(its:ite,jts:jte,1:ne)
+   real                           :: diff_alpha(its:ite,jts:jte,kts:kte,1:ne)
 
    if (trace_use) call da_trace_entry("da_check_vp_errors")
 
@@ -128,13 +128,12 @@ subroutine da_check_vp_errors(vp1, vp2, ne, &
  
    if (ne > 0) then
       inv_size = 1.0 / real((ite-its+1) * (jte-jts+1) * ne)
-      diff_alpha(its:ite,jts:jte,1:ne) = vp2 % alpha(its:ite,jts:jte,1:ne) - &
-                                         vp1 % alpha(its:ite,jts:jte,1:ne)
-
-      rms_fild = sqrt(sum(vp1 % alpha(its:ite, jts:jte,1:ne) &
-                          * vp1 % alpha(its:ite, jts:jte,1:ne)) * inv_size)
-      rms_diff = sqrt(sum(diff_alpha(its:ite, jts:jte,1:ne) &
-                          * diff_alpha(its:ite, jts:jte,1:ne)) * inv_size)
+      diff_alpha(its:ite,jts:jte,kts:kte,1:ne) = vp2 % alpha(its:ite,jts:jte,kts:kte,1:ne) - &
+                                         vp1 % alpha(its:ite,jts:jte,kts:kte,1:ne)
+      rms_fild = sqrt(sum(vp1 % alpha(its:ite,jts:jte,kts:kte,1:ne) &
+                          * vp1 % alpha(its:ite,jts:jte,kts:kte,1:ne)) * inv_size)
+      rms_diff = sqrt(sum(diff_alpha(its:ite,jts:jte,kts:kte,1:ne) &
+                          * diff_alpha(its:ite,jts:jte,kts:kte,1:ne)) * inv_size)
      
       if (rms_fild /= 0.0) then
          write(unit=stdout, fmt='(a,1pe10.4)') ' alpha RMS error/RMS field = ',&

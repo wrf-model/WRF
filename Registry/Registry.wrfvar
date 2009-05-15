@@ -174,7 +174,7 @@ state    real   g_ph           ijkb     misc        2         Z     \
 state    real   phb            ijk     dyn_em      1         Z     irhdus "phb"  "base-state geopotential"  "m2 s-2"
 state    real   phb_fine       ijk     dyn_em      1         Z      -     "phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
 state    real   ph0            ijk     dyn_em      1         Z      r     "ph0"  "initial geopotential"     "m2 s-2"
-state    real   php            ijk     dyn_em      1         Z      r     "php"  "geopotential"             "m2 s-2"
+state    real   php            ijk     dyn_em      1         -      r     "php"  "geopotential"             "m2 s-2"
 i1       real   ph_tend        ijk     dyn_em      1         Z 
 i1       real   ph_tendf       ijk     dyn_em      1         Z 
 i1       real   ph_save        ijk     dyn_em      1         Z 

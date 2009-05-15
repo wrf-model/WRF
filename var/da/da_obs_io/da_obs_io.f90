@@ -71,6 +71,7 @@ contains
 #include "da_search_obs.inc"
 #include "da_write_obs_etkf.inc"
 #include "da_write_filtered_obs.inc"
+#include "da_write_modified_filtered_obs.inc"
 #include "da_write_y.inc"
 #include "da_read_obs_bufr.inc"
 #include "da_scan_obs_bufr.inc"
@@ -81,5 +82,6 @@ contains
 #include "da_read_omb_tmp.inc"
 #include "da_write_noise_to_ob.inc"
 #include "da_final_write_filtered_obs.inc"
+#include "da_final_write_modified_filtered_obs.inc"
 
 end module da_obs_io

@@ -1169,6 +1169,7 @@ rconfig   logical   check_buddy_print       namelist,wrfvar1  1  .false.  -  "ch
 rconfig   integer   analysis_accu           namelist,wrfvar2  1  900      -  "analysis_accu"           ""  ""
 rconfig   logical   calc_w_increment        namelist,wrfvar2  1  .false.  -  "calc_w_increment"        ""  ""
 rconfig   logical   dt_cloud_model          namelist,wrfvar2  1  .false.  -  "dt_cloud_model"          ""  ""
+rconfig   logical   write_mod_filtered_obs  namelist,wrfvar2  1  .false.  -  "write_mod_filtered_obs"  ""  ""
 
 rconfig   integer   fg_format               namelist,wrfvar3  1  1        - "fg_format"                ""  "1=WRF, 3=KMA"
 rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_format"                ""  "1=BUFR,2=ASCII"

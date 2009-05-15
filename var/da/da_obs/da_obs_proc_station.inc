@@ -1,4 +1,4 @@
-subroutine da_obs_proc_station(obs,fm)
+subroutine da_obs_proc_station(obs,fm,uvq_direct)
 
    !-----------------------------------------------------------------------
    ! Purpose: Processing obs data read in at a station: 
@@ -12,6 +12,7 @@ subroutine da_obs_proc_station(obs,fm)
                              
    type (multi_level_type), intent(inout) :: obs
 
+   logical,optional :: uvq_direct
    real    :: po, to, rho, es, qs, qvo
    integer :: i,fm
 
@@ -35,7 +36,7 @@ subroutine da_obs_proc_station(obs,fm)
          obs%each(i)%rh%qc  = missing
       end if
      
-     if(fm.ne.161)then
+     if(.not. (present(uvq_direct) .and. uvq_direct) .and. fm.ne.161) then  !cys_change
       po   = obs % each(i) % p  % inv
       to   = obs % each(i) % t  % inv
       rho  = obs % each(i) % rh  % inv

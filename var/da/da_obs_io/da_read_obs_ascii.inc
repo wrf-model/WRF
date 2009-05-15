@@ -1,4 +1,4 @@
-subroutine da_read_obs_ascii (iv, filename)
+subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
    !---------------------------------------------------------------------------
    ! Purpose: Read a GTS observation file
@@ -49,6 +49,7 @@ subroutine da_read_obs_ascii (iv, filename)
 
    logical                      :: outside
    logical                      :: outside_all
+   logical                      :: uvq_direct               ![cys_add]
    integer                      :: surface_level
    real                         :: height_error, u_comp, v_comp
    integer                      :: nlocal(num_ob_indexes)
@@ -126,7 +127,14 @@ subroutine da_read_obs_ascii (iv, filename)
    ! skip line
    ! ----------
 
-   read (iunit, fmt = '(a)') fmt_name
+   ![cys_change]
+   ! read (iunit, fmt = '(a)') fmt_name
+   read (iunit, fmt = '(a)') info_string
+   if (info_string(1:21) == 'MODIFIED FILTERED OBS') then
+      uvq_direct=.true.
+   else
+      uvq_direct=.false.
+   endif
 
    ! loop over records
    ! -----------------
@@ -224,6 +232,16 @@ subroutine da_read_obs_ascii (iv, filename)
             platform%each(i)%td%inv, platform%each(i)%td%qc, platform%each(i)%td%error, &
             platform%each(i)%rh%inv, platform%each(i)%rh%qc, platform%each(i)%rh%error
 
+! cys_add
+         if (uvq_direct) then
+            platform%each (i)%u = platform%each (i)%speed
+            if (platform%each(i)%rh%inv .gt. missing_r)  &
+               platform%each(i)%rh%inv=platform%each(i)%rh%inv / 1e3    !convert back to kg/kg
+            if (platform%each(i)%rh%error .gt. 0.0)  &
+               platform%each(i)%rh%error=platform%each(i)%rh%error / 1e3  !convert back to kg/kg
+         end if
+! cys_add
+
          if (print_detail_obs) then
             write(unit=stdout, fmt = '(a, i6)') 'i=', i
 ! because now the field_type included: inv, qc, error, sens, and imp (YRG, 02/23/2009):              
@@ -248,6 +266,7 @@ subroutine da_read_obs_ascii (iv, filename)
          ! To convert the wind speed and direction to 
          !      the model wind components: u, v
 
+         if (.not. uvq_direct) then   !cys_add
          if (platform%each (i)%speed%qc /= missing_data .and. &
              platform%each (i)%v%qc /= missing_data) then
             call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
@@ -264,6 +283,7 @@ subroutine da_read_obs_ascii (iv, filename)
             platform%each (i)%u%qc    = missing_data
             platform%each (i)%v%qc    = missing_data
          end if
+         end if   !cys_add
       end do
 
       ! Check if outside of the time range:
@@ -346,7 +366,7 @@ subroutine da_read_obs_ascii (iv, filename)
          end if
       end if
 
-      if (fm /= 86) call da_obs_proc_station(platform,fm)
+      if (fm /= 86) call da_obs_proc_station(platform,fm,uvq_direct)  !cys_change
 
       nlevels = platform%info%levels
       ! Loop over duplicating obs for global

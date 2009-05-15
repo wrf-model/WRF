@@ -299,9 +299,14 @@
       ! Write "clean" QCed observations if requested:
       if (anal_type_qcobs) then
          if (it == 1) then
+          if (write_mod_filtered_obs) then    !cys_change
+            call da_write_modified_filtered_obs (grid, ob, iv, &
+               coarse_ix, coarse_jy, start_x, start_y)
+          else
             call da_write_filtered_obs (grid, ob, iv, &
                coarse_ix, coarse_jy, start_x, start_y)
           end if     
+         end if     
       end if
 
       ! [8.3] Interpolate x_g to low resolution grid

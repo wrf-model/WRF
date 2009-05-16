@@ -388,7 +388,13 @@ da_wrfvar_top.o :
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC)  $*.f
 
 da_blas.o \
-da_lapack.o \
+da_lapack.o :
+	$(RM) $@
+	$(SED_FTN) $*.f90 > $*.b
+	$(CPP) $*.b  > $*.f
+	$(RM) $*.b
+	$(SFC) -c $(FCFLAGS) $*.f
+
 bort2.o \
 bort.o \
 irev.o \
@@ -406,14 +412,14 @@ uptdd.o :
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $*.b  > $*.f
 	$(RM) $*.b
-	$(SFC) -c $(FCFLAGS) $*.f
+	$(SFC) -c $(FCDEBUG) $(FORMAT_FREE) $(FCOPTIM) $*.f
 
 da_bufr.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(SFC) -c $(FCFLAGS) $*.f
+	$(SFC) -c $(FCDEBUG) $(FORMAT_FREE) $(FCOPTIM) $*.f
 
 da_spectral.o da_be_spectral.o :
 	$(RM) $@

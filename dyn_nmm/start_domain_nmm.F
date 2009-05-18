@@ -484,13 +484,19 @@
 
           PM1=AETA1(KTS)*PDTOP+AETA2(KTS)*PDSL(I,J)+PT
           APEM1=(1.E5/PM1)**CAPA
+!SBAO_TMP
 
         IF(NMM_TSK(I,J)>=200.)THEN         ! have a specific skin temp, use it
-          THS(I,J)=NMM_TSK(I,J)*APEM1
-          TSFCK=NMM_TSK(I,J)
+!          THS(I,J)=NMM_TSK(I,J)*APEM1
+!          TSFCK=NMM_TSK(I,J)
+          THS(I,J)=NMM_TSK(I,J)*(1.+P608*Q(I,J,KTS+1))*APEM1
+          TSFCK=NMM_TSK(I,J)*(1.+P608*Q(I,J,KTS+1))
+
 	ELSE                               ! use lowest layer as a proxy
-          THS(I,J)=T(I,J,KTS)*APEM1
-          TSFCK=T(I,J,KTS)
+!          THS(I,J)=T(I,J,KTS)*APEM1
+!          TSFCK=T(I,J,KTS)
+          THS(I,J)=T(I,J,KTS)*(1.+P608*Q(I,J,KTS+1))*APEM1
+          TSFCK=T(I,J,KTS)*(1.+P608*Q(I,J,KTS+1))
 	ENDIF
 
           PSFCK=PD(I,J)+PDTOP+PT
@@ -599,7 +605,8 @@
         DO K=KPS,KPE-1
         DO J=JFS,JFE
         DO I=IFS,IFE
-          Q2(I,J,K)=HBM2(I,J)*EPSQ2
+!SBAO_TMP          Q2(I,J,K)=HBM2(I,J)*EPSQ2
+           Q2(I,J,K)=0.
         ENDDO
         ENDDO
         ENDDO
@@ -607,8 +614,10 @@
         DO J=JFS,JFE
         DO I=IFS,IFE
           Q2(I,J,LM)    = 0.
-          Q2(I,J,KTE-2)= HBM2(I,J)*Q2INI
-          Q2(I,J,KTE-1)= HBM2(I,J)*Q2INI
+!          Q2(I,J,KTE-2)= HBM2(I,J)*Q2INI
+!          Q2(I,J,KTE-1)= HBM2(I,J)*Q2INI
+          Q2(I,J,KTE-2)= 0.
+          Q2(I,J,KTE-1)= 0.
         ENDDO
         ENDDO
       ENDIF
@@ -1233,10 +1242,10 @@
             FAC2=0.2
           ENDIF
 
-          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
-!          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
-          QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
-!          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
+!SBAO_TMP          TSHLTR(I,J)=FAC2*THS(I,J)+FAC1*THLM
+          TSHLTR(I,J)=0.2*THS(I,J)+0.8*THLM
+!SBAO_TMP          QSHLTR(I,J)=FAC2*QSH(I,J)+FAC1*QLM
+          QSHLTR(I,J)=0.2*QSH(I,J)+0.8*QLM
         ENDIF
 !***
 !***  NEED TO CONVERT TO THETA IF IS THE RESTART CASE

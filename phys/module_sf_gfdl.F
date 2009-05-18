@@ -759,7 +759,6 @@ CONTAINS
       real,parameter :: g     = 980.6
       real,parameter :: rgas  = 2.87e6
       real,parameter :: og    = 1./g
-
 !
 !     character*10 routine
 !     routine = 'mflux2'

@@ -84,7 +84,7 @@
       INTEGER :: KVH,NTSD_rad,RC
       INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
 !
-      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,SFENTH
+      REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC
 !
       LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS
 !
@@ -1166,7 +1166,7 @@
      &            ,RSWOUT,RSWTOA,RLWTOA                                &
      &            ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA             &
 #if (NMM_CORE==1)
-     &            ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH          & 
+     &            ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,grid%SFENTH          & 
 #else
      &            ,UZ0H,VZ0H,DUDT,DVDT                                 & 
 #endif
@@ -1502,7 +1502,7 @@
 !
       CALL HDIFF(NTSD,GRID%DT,FIS,DY_NMM,HDAC,HDACV                    &
      &          ,HBM2,DETA1,GRID%SIGMA                                 &
-     &          ,T,Q,U,V,Q2,Z,W,SM,SICE                                &
+     &          ,T,Q,U,V,Q2,Z,W,SM,SICE,grid%h_diff                    &
      &          ,IHE,IHW,IVE,IVW                                       &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &

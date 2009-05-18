@@ -25,7 +25,7 @@
 !***********************************************************************
       SUBROUTINE HDIFF(NTSD,DT,FIS,DY,HDAC,HDACV                        &
      &                ,HBM2,DETA1,SIGMA                                 &
-     &                ,T,Q,U,V,Q2,Z,W,SM,SICE                           &
+     &                ,T,Q,U,V,Q2,Z,W,SM,SICE,h_diff                           &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -91,6 +91,7 @@
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: DT,DY
+      REAL,INTENT(IN) :: H_DIFF  
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DETA1
 !
@@ -333,8 +334,8 @@
             T (I,J,K)=T (I,J,K)+TDIF (I,J)
             Q (I,J,K)=Q (I,J,K)+QDIF (I,J)
 !
-            U(I,J,K)=U(I,J,K)+UDIF(I,J)
-            V(I,J,K)=V(I,J,K)+VDIF(I,J)
+            U(I,J,K)=U(I,J,K)+UDIF(I,J)*h_diff
+            V(I,J,K)=V(I,J,K)+VDIF(I,J)*h_diff
           ENDDO
           ENDDO
 !
@@ -411,9 +412,9 @@
           DO J=MYJS2,MYJE2
           DO I=MYIS1,MYIE1
             U(I,J,K)=U(I,J,K)-(UNE(I,J)-UNE(I+IVW(J),J-1)               &
-     &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)
+     &                        +USE(I,J)-USE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
             V(I,J,K)=V(I,J,K)-(VNE(I,J)-VNE(I+IVW(J),J-1)               &
-     &                        +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)
+     &                        +VSE(I,J)-VSE(I+IVW(J),J+1))*HDACV(I,J)*h_diff
           ENDDO
           ENDDO
 !

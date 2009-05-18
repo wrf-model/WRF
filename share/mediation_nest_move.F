@@ -17,6 +17,9 @@ SUBROUTINE med_nest_move ( parent, nest )
                                       ims , ime , jms , jme , kms , kme , &
                                       ips , ipe , jps , jpe , kps , kpe
    INTEGER ierr, fid
+   REAL,PARAMETER           :: con_g       =9.80665e+0! gravity             (m/s2)
+   REAL,PARAMETER           :: con_rd      =2.8705e+2 ! gas constant air    (J/kg/K)
+   REAL                     :: TLAP,TBAR,EPSI
    LOGICAL input_from_hires
    LOGICAL saved_restart_value
    TYPE (grid_config_rec_type)   :: config_flags
@@ -276,6 +279,29 @@ SUBROUTINE med_nest_move ( parent, nest )
                              ids, ide, jds, jde, kds, kde,    &
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
+
+!   adjust pint & pressure depth due to height change in nest_terrain
+!     assume lapse rate of 6.1K/1km
+      TLAP=6.1/(con_g*1000.)
+    DO J = MAX(JPS,JDS-PY), MIN(JPE,JDE-1-PY)
+     DO I = MAX(IPS,IDS-PX), MIN(IPE,IDE-1-PX)
+       if(  nest%fis(I,J).ne.nest%hres_fis(I,J) ) then
+       if( nest%T(I,J,1).gt.150. .and. nest%T(I,J,1).lt.400.) then
+       TBAR=ALOG(1.0+TLAP*(nest%fis(I,J)-nest%hres_fis(I,J)) /nest%T(I,J,1))
+       EPSI=TBAR/(con_rd*TLAP)
+!      recover pint from pressure depth after move, then adjust for diff topo
+       nest%PINT(I,J,1)=nest%PD(I,J)+nest%pdtop+nest%pt
+       nest%PINT(I,J,1)=nest%PINT(I,J,1)*EXP(EPSI)
+       nest%PD(I,J)=nest%PINT(I,J,1)-nest%pdtop-nest%pt  
+!       WRITE(0,*)I,J,nest%nmm_PD(I,J),nest%nmm_PINT(I,1,J),nest%nmm_FIS(I,J),nest%nmm_hres_fis(I,J),nest%nmm_pdtop,nest%nmm_pt, &
+!       'change pd,ptint'
+       endif
+       endif
+     ENDDO
+    ENDDO
+
+
+
 
     DO J = JPS, MIN(JPE,JDE-1)
       DO I = IPS, MIN(IPE,IDE-1)

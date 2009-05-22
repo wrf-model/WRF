@@ -1268,7 +1268,7 @@ PROGRAM convert_emissions
        write(message, FMT='(A,I10)') ' convert_emiss: error: conversion for all CBMZ emission arrays not available '
        CALL wrf_error_fatal( TRIM( message ) )
     endif
-    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG .or.
+    if(CONFIG_FLAGS%EMISS_OPT == ERADM .or. CONFIG_FLAGS%EMISS_OPT == ERADMSORG .or.  &
        CONFIG_FLAGS%EMISS_OPT == ECBMZ_MOSAIC ) then
    !  Figure out our loop count for the processing times.
 #ifdef DM_PARALLEL

@@ -358,9 +358,6 @@ state   real    dfi_qs         ikjftb   dfi_moist       1         -     \
 state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QGRAUP"       "Graupel mixing ratio"          "kg kg-1"
 
-
-include registry.chem
-
 # Other Scalars
 state   real    -              ikjftb  scalar      1         -     -   -
 state   real    qni            ikjftb  scalar      1         -     \
@@ -396,6 +393,8 @@ state   real    dfi_qnn        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
+
+include registry.chem
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 

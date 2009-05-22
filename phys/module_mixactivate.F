@@ -736,7 +736,7 @@ GROW_SHRINK_MAIN_K_LOOP: do k=kts,kte
            qndrop(k)=qndrop(k)*(1.+lcldfra(k)-lcldfra_old(k))
 !                 convert activated aerosol to interstitial in decaying cloud
 
-           tmpc = (lcldfra_old(k)-lcldfra(k))/lcldfra_old(k)
+           tmpc = (lcldfra(k)-lcldfra_old(k))/lcldfra_old(k)
            do n=1,ntype_aer
               do m=1,nsize_aer(n)
                  lnum=numptr_aer(m,n,ai_phase)

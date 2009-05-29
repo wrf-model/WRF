@@ -349,11 +349,14 @@ subroutine da_transform_xtoy_rttov (grid, iv, y )
             call da_rttov_tl (i, nchan, d_num_rad, d_con_vars, &
                d_aux_vars, d_con_vars_tl, d_aux_vars_tl, d_tb)
          else
+            !$OMP PARALLEL DO &
+            !$OMP PRIVATE ( n )
             do n=1,d_num_rad
                call da_rttov_tl (i, nchan, 1, d_con_vars(n:n), &
                   d_aux_vars(n:n), d_con_vars_tl(n:n), d_aux_vars_tl(n:n), &
                   d_tb(:,n:n))
             end do
+            !$OMP END PARALLEL DO 
          end if
       end if
 

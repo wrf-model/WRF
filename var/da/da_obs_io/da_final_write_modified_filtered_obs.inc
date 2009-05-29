@@ -28,7 +28,7 @@ subroutine da_final_write_modified_filtered_obs
       open(unit=iunit, file= trim(filename),form='formatted', &
        status='old', iostat=iost)
       if(iost /= 0) &
-      call da_error(__FILE__,__LINE__, (/"Cannot open "//trim(filename)/))
+      call da_error(__FILE__,__LINE__, (/"Cannot open "//filename/))
 
       !  loop over records
       !  -----------------

@@ -279,7 +279,9 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
 !   7.1 Calculate the interpolation coefficients:
 
-   do j= jds,  jde
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( j, i, m, m1 )
+   do j= jds, jde
       do i= ids,  ide
 
          if (global_lat(i,j).ge.clat_avn(2*nlath)) then
@@ -304,11 +306,16 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
       end do
    end do
+   !$OMP END PARALLEL DO
 
 !   7.2 interpolation of the covariance
 
    ! Psfc:
-   do j=jts,jte
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, j, i, m, m1 )
+   do ij = 1, grid%num_tiles
+
+   do j=grid%j_start(ij), grid%j_end(ij)
       do i=its,ite
          m=mlat(i,j)
          m1=m+1
@@ -316,9 +323,16 @@ subroutine da_setup_be_ncep_gfs( grid, be )
       enddo
    enddo
 
+   enddo
+   !$OMP END PARALLEL DO
+
    ! psi, chi, t, and rh:
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, j, i, k, m, m1 )
+   do ij = 1, grid%num_tiles
+
    do k=kts,kte
-      do j=jts,jte
+      do j=grid%j_start(ij), grid%j_end(ij)
          do i=its,ite
             m=mlat(i,j)
             m1=m+1
@@ -329,6 +343,9 @@ subroutine da_setup_be_ncep_gfs( grid, be )
          end do
       end do
    end do
+
+   end do
+   !$OMP END PARALLEL DO
   
 !   7.3 interpolation of the horizontal scale lengths
 
@@ -492,8 +509,11 @@ subroutine da_setup_be_ncep_gfs( grid, be )
  
 !   9.2 Re-scale the covariance for psi, chi, t, and rh:
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE (ij, n, j, i, vv, k)
+   do ij = 1, grid%num_tiles
    do n=1,4
-      do j=jts,jte
+      do j=grid%j_start(ij), grid%j_end(ij)
          do i=its,ite
 
             vv=0.
@@ -515,6 +535,8 @@ subroutine da_setup_be_ncep_gfs( grid, be )
          enddo
       enddo
    enddo
+   enddo
+   !$OMP END PARALLEL DO
 
 !   9.3 Re-scale the covariance for Psfc:
 

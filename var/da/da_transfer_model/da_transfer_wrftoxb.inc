@@ -13,7 +13,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    type(domain), intent(inout)        :: grid
    type(grid_config_rec_type), intent(in) :: config_flags
 
-   integer :: i, j, k
+   integer :: i, j, k, ij
 
    real    :: theta, tmpvar
 
@@ -289,7 +289,12 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          ' ubound(grid%v_2)=', ubound(grid%v_2)
    end if
 
-   do j=jts,jte
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, i, j, k, cvpm, cpovcv, ppb, temp, ttb ) &
+   !$OMP PRIVATE ( albn, qvf1, aln, theta )
+   do ij = 1 , grid%num_tiles
+
+   do j=grid%j_start(ij), grid%j_end(ij)
       k = kte+1
 
       do i=its,ite
@@ -433,6 +438,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       end do
    end do
 
+   end do
+   !$OMP END PARALLEL DO
 
    grid%xb%ztop = grid%xb%hf(its,jts,kte+1)
 
@@ -525,7 +532,11 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
            'grid%xb % map_factor(its,jts)=', grid%xb % map_factor(its,jts)
    end if
 
-   do j=jts,jte
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, i, j, tmpvar, height, message )
+   do ij = 1 , grid%num_tiles
+
+   do j=grid%j_start(ij),grid%j_end(ij)
       do i=its,ite
          if (grid%xb%ztop < grid%xb%hf(i,j,kte+1)) &
              grid%xb%ztop = grid%xb%hf(i,j,kte+1)
@@ -563,19 +574,27 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       end do
    end do
 
+   end do
+   !$OMP END PARALLEL DO
+
    !---------------------------------------------------------------------------
    ! Calculate saturation vapour pressure and relative humidity:
    !---------------------------------------------------------------------------
 
-   do j=jts,jte
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, k, j, i )
+   do ij = 1 , grid%num_tiles
       do k=kts,kte
-         do i=its,ite
-            call da_tpq_to_rh(grid%xb % t(i,j,k), grid%xb % p(i,j,k), &
-               grid%xb % q(i,j,k), grid%xb %es(i,j,k), grid%xb %qs(i,j,k), &
-               grid%xb %rh(i,j,k))
+         do j=grid%j_start(ij),grid%j_end(ij)
+            do i=its,ite
+               call da_tpq_to_rh(grid%xb % t(i,j,k), grid%xb % p(i,j,k), &
+                  grid%xb % q(i,j,k), grid%xb %es(i,j,k), grid%xb %qs(i,j,k), &
+                  grid%xb %rh(i,j,k))
+            end do
          end do
       end do
    end do
+   !$OMP END PARALLEL DO 
 
    !---------------------------------------------------------------------------
    ! Calculate dew point temperature:

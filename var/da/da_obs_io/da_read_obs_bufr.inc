@@ -544,41 +544,47 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
       end do
 
-      if ( .not. use_errtable ) then
-         ! assign u,v,t,q obs errors for synop and metar
-         if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
-            if ( wqm  == 8 .or. wqm  == 9 .or. wqm  == 15) then
-               platform%each(1)%u%qc  = 88
-               platform%each(1)%v%qc  = 88
+      ! assign u,v,t,q obs errors for synop and metar
+      if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
+         if ( wqm  == 9 .or. wqm  == 15) then
+            platform%each(1)%u%qc  = 88
+            platform%each(1)%v%qc  = 88
+            if ( .not. use_errtable ) then
                platform%each(1)%u%error = 1.1
                platform%each(1)%v%error = 1.1
-               ! Convert earth wind to model wind.
-               call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
-                  platform%each(1)%u%inv, platform%each(1)%v%inv, &
-                  platform%info%lon)
-               if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
-                  platform%each(1)%u%inv = missing_r  
-                  platform%each(1)%v%inv = missing_r  
-                  platform%each(1)%u%qc  = missing_data
-                  platform%each(1)%v%qc  = missing_data
-               end if
             end if
-            if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
-               platform%each(1)%t%inv = obs(3,1)
-               platform%each(1)%t%qc  = 88
+            ! Convert earth wind to model wind.
+            call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
+               platform%each(1)%u%inv, platform%each(1)%v%inv, &
+               platform%info%lon)
+            if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
+               platform%each(1)%u%inv = missing_r  
+               platform%each(1)%v%inv = missing_r  
+               platform%each(1)%u%qc  = missing_data
+               platform%each(1)%v%qc  = missing_data
+            end if
+         end if
+         if ( tqm == 9 .or. tqm == 15 ) then
+            platform%each(1)%t%inv = obs(3,1)
+            platform%each(1)%t%qc  = 88
+            if ( .not. use_errtable ) then
                platform%each(1)%t%error = 2.0
             end if
-            if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
-               platform%each(1)%q%inv = obs(2,1)
-               platform%each(1)%q%qc  = 88
+         end if
+         if ( qqm == 9 .or. qqm == 15 ) then
+            platform%each(1)%q%inv = obs(2,1)
+            platform%each(1)%q%qc  = 88
+            if ( .not. use_errtable ) then
                platform%each(1)%q%error = 10   ! RH percent
             end if
          end if
-         ! assign tpw obs errors for gpspw
-         if ( t29 == 74 ) then
-            if ( pwq  == 8 .or. pwq  == 9 .or. pwq  == 15) then
-               platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
-               platform%loc%pw%qc    = 88
+      end if
+      ! assign tpw obs errors for gpspw
+      if ( t29 == 74 ) then
+         if ( pwq  == 9 .or. pwq  == 15) then
+            platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
+            platform%loc%pw%qc    = 88
+            if ( .not. use_errtable ) then
                platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
             end if
          end if

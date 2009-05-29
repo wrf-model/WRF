@@ -30,6 +30,8 @@ subroutine da_interp_lin_3d(fm3d, info, fo3d)
 
    fo3d(:,:) = 0.0
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( n, fmz, k )
    do n=info%n1,info%n2
       fmz(:)=0.0
 
@@ -78,6 +80,7 @@ subroutine da_interp_lin_3d(fm3d, info, fo3d)
          end if
       end do
    end do
+   !$OMP END PARALLEL DO
 
    if (trace_use) call da_trace_exit("da_interp_lin_3d")
 

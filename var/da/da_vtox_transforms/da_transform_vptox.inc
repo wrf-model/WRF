@@ -14,7 +14,7 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    type (be_type), intent(in), optional :: be  ! Background errors.
    type (ep_type), intent(in), optional :: ep  ! Ensemble perturbations.
 
-   integer :: k, j, k1            ! Loop counters.
+   integer :: i, k, j, k1, ij            ! Loop counters.
 
    if (trace_use) call da_trace_entry("da_transform_vptox") 
 
@@ -30,33 +30,56 @@ subroutine da_transform_vptox(grid, vp, be, ep)
    ! [2] Impose statistical balance constraints:
    !--------------------------------------------------------------------------
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, k1, k, j, i)
+   do ij = 1 , grid%num_tiles
+
    ! Chi:
    do k = kts, kte
-      do j = jts, jte
-         vp%v2(its:ite,j,k) = vp%v2(its:ite,j,k) + be%reg_chi(j,k)* vp%v1(its:ite,j,k)
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            vp%v2(i,j,k) = vp%v2(i,j,k) + be%reg_chi(j,k)* vp%v1(i,j,k)
+         end do
       end do
    end do
   
    ! Temperature:
-   grid%xa%t(its:ite,jts:jte,kts:kte) = vp%v3(its:ite,jts:jte,kts:kte)
+   do k = kts, kte
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            grid%xa%t(i,j,k) = vp%v3(i,j,k)
+         end do
+      end do
+   end do
 
 
    do k1 = kts, kte
       do k = kts, kte
-         do j = jts, jte
-            grid%xa%t(its:ite,j,k) = grid%xa%t(its:ite,j,k) + be%reg_t(j,k,k1)*vp%v1(its:ite,j,k1)
+         do j = grid%j_start(ij), grid%j_end(ij)
+            do i = its, ite
+               grid%xa%t(i,j,k) = grid%xa%t(i,j,k) + be%reg_t(j,k,k1)*vp%v1(i,j,k1)
+            end do
          end do
       end do
    end do
 
    ! Surface Pressure
-   grid%xa%psfc(its:ite,jts:jte) = vp%v5(its:ite,jts:jte,1) 
-   do k = kts,kte
-      do j = jts,jte
-         grid%xa%psfc(its:ite,j) = grid%xa%psfc(its:ite,j) + be%reg_ps(j,k)*vp%v1(its:ite,j,k)
+   do j = grid%j_start(ij), grid%j_end(ij)
+      do i = its, ite
+         grid%xa%psfc(i,j) = vp%v5(i,j,1) 
       end do
    end do
 
+   do k = kts,kte
+      do j = grid%j_start(ij), grid%j_end(ij)
+         do i = its, ite
+            grid%xa%psfc(i,j) = grid%xa%psfc(i,j) + be%reg_ps(j,k)*vp%v1(i,j,k)
+         end do
+      end do
+   end do
+
+   end do
+   !$OMP END PARALLEL DO
    !--------------------------------------------------------------------------
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
@@ -104,8 +127,18 @@ subroutine da_transform_vptox(grid, vp, be, ep)
          grid%xb%qs(its:ite,jts:jte,kts:kte)
    else
       ! Pseudo RH --> Water vapor mixing ratio:
-      grid%xa % q(its:ite,jts:jte,kts:kte) = vp%v4(its:ite,jts:jte,kts:kte) * &
-         grid%xb%qs(its:ite,jts:jte,kts:kte)
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij, i, j, k )
+      do ij = 1 , grid%num_tiles
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                  grid%xa % q(i,j,k) =  vp%v4(i,j,k) * grid%xb%qs(i,j,k)
+               enddo
+            enddo
+         enddo
+      enddo
+      !$OMP END PARALLEL DO
    end if
 
    !---------------------------------------------------------------------------

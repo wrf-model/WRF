@@ -225,12 +225,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
-{
-  @platforms = qw ( serial dmpar ) ;
-} else {
-  @platforms = qw ( serial smpar dmpar dm+sm ) ;
-}
+@platforms = qw ( serial smpar dmpar dm+sm ) ;
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {

@@ -1,4 +1,4 @@
-subroutine da_transform_vvtovp(evec, eval, vertical_wgt, vv, vp, mz, levels)
+subroutine da_transform_vvtovp(grid, evec, eval, vertical_wgt, vv, vp, mz, levels)
 
    !---------------------------------------------------------------------------
    ! Purpose: Transform from fields on vertical EOFS to fields on vertical 
@@ -9,6 +9,7 @@ subroutine da_transform_vvtovp(evec, eval, vertical_wgt, vv, vp, mz, levels)
 
    implicit none
    
+   type (domain), intent(in)  :: grid
    integer, intent(in)  :: mz                         ! # vertical modes.
    integer, intent(in)  :: levels                     ! # no. of levels  
 
@@ -18,7 +19,7 @@ subroutine da_transform_vvtovp(evec, eval, vertical_wgt, vv, vp, mz, levels)
    real,    intent(in)  :: vv(ims:ime,jms:jme,kms:kme)   ! CV in EOF space.
    real,    intent(out) :: vp(ims:ime,jms:jme,kms:kme)! CV in level space.
    
-   integer :: i, j, k, m                 ! Loop counters.
+   integer :: i, j, k, m, ij             ! Loop counters.
    real    :: temp
 
    if (trace_use_dull) call da_trace_entry("da_transform_vvtovp")
@@ -27,18 +28,23 @@ subroutine da_transform_vvtovp(evec, eval, vertical_wgt, vv, vp, mz, levels)
    ! [1.0] Perform vp(i,j,k) = E L^{1/2} vv(i,j,m) transform:
    !------------------------------------------------------------------- 
 
-   vp = 0.0
-   do k = kts, levels
-      do m = 1, mz
-         do j = jts, jte
-            temp = evec(j,k,m) * eval(j,m)
-
-            do i = its, ite
-               vp(i,j,k) = vp(i,j,k) + temp*vv(i,j,m)
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, k, m, j, i, temp )
+   do ij = 1 , grid%num_tiles
+      vp(:,grid%j_start(ij):grid%j_end(ij),:) = 0.0
+      do k = kts, levels
+         do m = 1, mz
+            do j = grid%j_start(ij), grid%j_end(ij)
+               temp = evec(j,k,m) * eval(j,m)
+   
+               do i = its, ite
+                  vp(i,j,k) = vp(i,j,k) + temp*vv(i,j,m)
+               end do
             end do
          end do
       end do
    end do
+   !$OMP END PARALLEL DO
    
    !-------------------------------------------------------------------
    ! [2.0] Apply inner-product weighting if vertical_ip /= vertical_ip_0:

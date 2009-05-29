@@ -43,10 +43,10 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
       rlon_min =  r999
       rlon_max = -r999
 
-      istart=grid%i_start(1)
-      iend  =grid%i_end  (1)
-      jstart=grid%j_start(1)
-      jend  =grid%j_end  (1)
+      istart=MINVAL( grid%i_start(1:grid%num_tiles) )
+      iend  =MAXVAL( grid%i_end  (1:grid%num_tiles) )
+      jstart=MINVAL( grid%j_start(1:grid%num_tiles) )
+      jend  =MAXVAL( grid%j_end  (1:grid%num_tiles) )
 
       do i = istart, iend
          do j = jstart, jend

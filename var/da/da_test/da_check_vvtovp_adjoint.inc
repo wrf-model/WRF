@@ -1,4 +1,4 @@
-subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
+subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
 
    !---------------------------------------------------------------------------
    ! Purpose: Test Vv to Vp routine and adjoint for compatibility.
@@ -8,6 +8,7 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
 
    implicit none
 
+   type (domain), intent(in)         :: grid
    integer, intent(in)               :: ne    ! Ensemble size.
    type (xb_type), intent(in)        :: xb    ! first guess (local).
    type (be_type), intent(in)        :: be    ! background error structure.
@@ -44,7 +45,7 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
    ! [2.0] Perform Vp = U_v Vv transform:
    !----------------------------------------------------------------------
 
-   call da_vertical_transform('u', be, &
+   call da_vertical_transform(grid, 'u', be, &
                                xb % vertical_inner_product, &
                                vv, vp)
 
@@ -97,7 +98,7 @@ subroutine da_check_vvtovp_adjoint(ne, xb, be, vv, vp)
       vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne)
    end if      
 
-   call da_vertical_transform('u_adj', be, &
+   call da_vertical_transform(grid, 'u_adj', be, &
                                xb % vertical_inner_product, &
                                vv, vp)
 

@@ -331,7 +331,7 @@ $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o :
 init_modules.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I../../external/io_int $*.f
 
@@ -341,14 +341,14 @@ da_verif_obs_control.o da_verif_obs_init.o da_verif_anal_control.o \
 da_verif_anal.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
 rad_bias.o pythag.o tqli.o tred2.o regress_one.o da_update_bc.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
@@ -356,14 +356,14 @@ da_netcdf_interface.o da_module_couple_uv.o gen_be_etkf.o netcdf_interface.o \
 da_gen_be.o gen_be_ensmean.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
 da_etkf.o da_tools.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
@@ -383,9 +383,16 @@ da_wrfvar_main.o \
 da_wrfvar_top.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $(RTTOV_SRC) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC)  $*.f
+	if $(FGREP) '!$$OMP' $*.f ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
+	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC)  $*.f ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
+	  $(FC) -c $(FCFLAGS) $(PROMOTION) $ $(CRTM_SRC) $(RTTOV_SRC) $*.f ; \
+        fi
+
 
 da_blas.o \
 da_lapack.o :
@@ -424,7 +431,7 @@ da_bufr.o :
 da_spectral.o da_be_spectral.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
 	$(FC) -c $(FCFLAGS) $(PROMOTION) -I../../external/fftpack/fftpack5  $*.f
 
@@ -434,9 +441,9 @@ da_advance_time.o :
 	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
         if [ $$x = "gfortran" ] ; then \
            echo removing external declaration of iargc for gfortran ; \
-           $(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b | sed '/integer *, *external.*iargc/d' > $*.f ;\
+           $(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b | sed '/integer *, *external.*iargc/d' > $*.f ;\
         else \
-           $(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b > $*.f ; \
+           $(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b > $*.f ; \
         fi
 	$(RM) $*.b
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f

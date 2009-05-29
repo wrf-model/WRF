@@ -60,7 +60,13 @@ libwrfvar.a : $(WRFVAR_OBJS)
 .f90.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
-	$(CPP) $(CPPFLAGS) $(FPPFLAGS) $*.b  > $*.f
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
 	$(RM) $*.b
-	$(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $*.f
+	if $(FGREP) '!$$OMP' $*.f ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
+	  $(FC) -o $@ -c $(FCFLAGS) $(OMP) $(PROMOTION) $*.f ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
+	  $(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $*.f ; \
+        fi
 

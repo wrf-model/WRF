@@ -1419,7 +1419,7 @@ MODULE module_sf_urban
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZB
    REAL, DIMENSION(1:num_soil_layers), INTENT(INOUT) :: DZG
 
-   INTEGER :: INDEX, LC, K
+   INTEGER :: LC, K
    INTEGER :: IOSTATUS, ALLOCATE_STATUS
    INTEGER :: num_roof_layers
    INTEGER :: num_wall_layers
@@ -1784,7 +1784,7 @@ MODULE module_sf_urban
    SUBROUTINE urban_var_init(ISURBAN, TSURFACE0_URB,TLAYER0_URB,TDEEP0_URB,IVGTYP,  & ! in
                              ims,ime,jms,jme,kms,kme,num_soil_layers,         & ! in
 !                             num_roof_layers,num_wall_layers,num_road_layers, & ! in
-                             restart,                                      & !in
+                             restart,sf_urban_physics,                     & !in
                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,  & ! inout
                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D, & ! inout
                              TRL_URB3D,TBL_URB3D,TGL_URB3D,                & ! inout
@@ -1800,7 +1800,7 @@ MODULE module_sf_urban
                              FRC_URB2D, UTYPE_URB2D)                         ! inout
    IMPLICIT NONE
 
-   INTEGER, INTENT(IN) :: ISURBAN
+   INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
    INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
 !   INTEGER, INTENT(IN) :: num_roof_layers, num_wall_layers, num_road_layers
@@ -1954,6 +1954,7 @@ MODULE module_sf_urban
       
 ! multi-layer urban
 !       write(*,*)i,j,TSURFACE0_URB(i,j),TLAYER0_URB(i,1,j),TLAYER0_URB(i,4,j)
+      IF( sf_urban_physics .EQ. 2)THEN
       DO k=1,num_urban_layers
 !        TRB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW1_URB4D(I,k,J)=TSURFACE0_URB(I,J)
@@ -1982,6 +1983,7 @@ MODULE module_sf_urban
           DLG_BEP(I,K,J)=0.
           DL_U_BEP(I,K,J)=0.
       END DO
+      ENDIF       !sf_urban_physics=2
      ENDIF        !restart
     END DO
    END DO

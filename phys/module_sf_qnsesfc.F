@@ -946,7 +946,6 @@ CONTAINS
 !
       RLOW=PLOW/(R_D*TLOW)
       CHS=AKHS
-if(i.eq.27.and.j.eq.30)print *,' qnsesfc chs ',i,j,chs
       CHS2=AKHS02
       CQS2=AKHS02
       HFX=-RLOW*CP*HSFLX

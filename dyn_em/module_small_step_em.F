@@ -1591,18 +1591,17 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !    gridpoints, and dz/dy is the change between y gridpoints]
 !   [cf1, cf2 and cf3 do vertical weighting of u or v values nearest
 !    the surface]
-!   if so, shouldn't there be map scale factors below???
 
     DO i=i_start, i_end
        w(i,1,j)=                                           &
 
-                .5*rdy*(                                   &
+                msfty(i,j)*.5*rdy*(                        &
                          (ht(i,j+1)-ht(i,j  ))             &
         *(cf1*v(i,1,j+1)+cf2*v(i,2,j+1)+cf3*v(i,3,j+1))    &
                         +(ht(i,j  )-ht(i,j-1))             &
         *(cf1*v(i,1,j  )+cf2*v(i,2,j  )+cf3*v(i,3,j  ))  ) &
 
-               +.5*rdx*(                                   &
+               +msftx(i,j)*.5*rdx*(                        &
                          (ht(i+1,j)-ht(i,j  ))             &
         *(cf1*u(i+1,1,j)+cf2*u(i+1,2,j)+cf3*u(i+1,3,j))    &
                         +(ht(i,j  )-ht(i-1,j))             &

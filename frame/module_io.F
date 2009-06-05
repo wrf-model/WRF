@@ -3972,12 +3972,6 @@ include "mpif.h"
 
         IF ( nproc .GT. 1 ) THEN
 
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'MemOrd(1:2) ',MemOrd(1:2)
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'bdy_mask(P_YSB) ',bdy_mask( P_YSB)
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'bdy_mask(P_YEB) ',bdy_mask( P_YEB)
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'ips - 1 ',ips-1
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'ipe-ips+1 ', ipe-ips+1
-
 #if 1
           IF ( (MemOrd(1:2) .EQ. 'ys' .AND. bdy_mask( P_YSB )) .OR.     &
                (MemOrd(1:2) .EQ. 'ye' .AND. bdy_mask( P_YEB ))       ) THEN
@@ -3998,14 +3992,8 @@ if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'ipe-ips+1 ', ipe-ips+1
           ENDIF
 #endif
 
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'my_displ ', my_displ
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'my_count ', my_count
-
           CALL mpi_gather( my_displ, 1, MPI_INTEGER, displs, 1, MPI_INTEGER, collective_root, communicator, ierr )
           CALL mpi_gather( my_count, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, collective_root, communicator, ierr )
-
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'displs ', displs(1:nproc)
-if ( trim(VarName) .eq. 'T_BYS' ) write(0,*)__FILE__,'counts ', counts(1:nproc)
 
           do j = jds,jde    ! bdy_width
           do k = kds,kde    ! levels

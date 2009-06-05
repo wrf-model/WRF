@@ -1041,7 +1041,8 @@ end subroutine set_flags
 
 subroutine print_id
 character(len=128)::id,msg
-#include "sfire_id.inc"
+!#include "sfire_id.inc"
+id='5ef422698db930faf5f742c098480859b7b24790'
 msg='version '//id
 call message(msg)
 end subroutine print_id

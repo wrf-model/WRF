@@ -200,7 +200,7 @@ CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT		=       -O0
+FCNOOPT		=       -O0 -fno-inline -fno-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
@@ -273,7 +273,7 @@ CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT		=       -O0
+FCNOOPT		=       -O0 -fno-inline -fno-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
@@ -350,7 +350,7 @@ CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT		=       -O0
+FCNOOPT		=       -O0 -fno-inline -fno-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
@@ -383,21 +383,21 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
-ARCH_LOCAL      =       -DF2CSTYLE -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM_SUBR
-CFLAGS_LOCAL    =       -DF2CSTYLE
+ARCH_LOCAL      =       -DNO_RRTM_PHYSICS -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -OPT:Ofast:Olimit=5000
+FCOPTIM         =       -O -OPT:Ofast:Olimit=5000
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -fixed-form
-FORMAT_FREE     =       -free-form
+FORMAT_FIXED    =       -fixedform
+FORMAT_FREE     =       -freeform
 FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS      =       -w -fno-second-underscore $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
-MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
+MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      /lib/cpp -C -P
 AR              =      ar
@@ -499,18 +499,20 @@ RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC
 CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS
-LDFLAGS_LOCAL   =       -ip
+# increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
+LDFLAGS_LOCAL   =       -ip -Wl,-stack_addr,0xF10000000 -Wl,-stack_size,0x64000000
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O0
+FCNOOPT         =       -O0 -fno-inline -fno-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+# added -fno-common at suggestion of R. Dubtsov as workaround for failing to link program_name
+FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise -fno-common $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
@@ -537,18 +539,20 @@ RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -i4
 ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC
 CFLAGS_LOCAL    =       -w -O3 -DMACOS
-LDFLAGS_LOCAL   =       
+# increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
+LDFLAGS_LOCAL   =       -ip -Wl,-stack_addr,0xF10000000 -Wl,-stack_size,0x64000000
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O0
+FCNOOPT         =       -O0 -fno-inline -fno-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
+# added -fno-common at suggestion of R. Dubtsov as workaround for failing to link program_name
+FCBASEOPTS      =       -w -ftz -align all -fno-alias -fp-model precise -fno-common $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO)
 MODULE_SRCH_FLAG =
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
@@ -818,7 +822,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC)
 
 ###########################################################
-#ARCH    Linux ppc64 BG blxlf compiler with blxlc # dmpar
+#ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar
 #
 DMPARALLEL      =       # 1
 OMPCPP		=	# not supported
@@ -836,7 +840,7 @@ LD		=	$(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
-ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE
 CFLAGS_LOCAL    =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC)  -DLANDREAD_STUB
 LIB_LOCAL       =       $(MPI_LIB)
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
@@ -862,7 +866,87 @@ ARFLAGS         =       ru
 M4 		=       m4 -B 14000
 RANLIB 		=       ranlib
 CC_TOOLS        =       cc
-
+###########################################################
+#ARCH    Linux ppc64 BG /P xlf compiler with xlc # smpar dmpar dm+sm
+#     developed on surveyor.alcf.anl.gov (thanks to ANL/ALCF)
+#
+DMPARALLEL      =       # 1
+OMPCPP		=	# -D_OPENMP
+OMP		=	# -qsmp=noauto
+# these have to be the same as DM_FC on surveyor or it fails with weird errors in time manager
+SFC             =       time mpixlf90_r
+SCC             =       time mpixlc_r
+DM_FC           =       time mpixlf90_r
+DM_CC           =       time mpixlc_r -DMPI2_SUPPORT
+FC              =        $(DM_FC)
+CC              =       $(DM_CC) -DFSEEKO64_OK
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
+# If system has even more processors, set VERY_LARGE_MAXPROC to that number
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE
+CFLAGS_LOCAL    =       -DNOUNDERSCORE -DLANDREAD_STUB
+LIB_LOCAL       =
+LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM		=       -O3 -qnoipa -qarch=auto -qcache=auto -qtune=auto
+FCNOOPT		=       -qnoopt
+FCDEBUG         =       # $(FCNOOPT) -g -qfullpath
+FORMAT_FIXED    =       -qfixed
+FORMAT_FREE     =       -qfree=f90
+FCSUFFIX        =       -qsuffix=f=f90
+BYTESWAPIO      =       
+FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=64000 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+MODULE_SRCH_FLAG =     
+TRADFLAG        =       
+# this might be different on different systems but we want the xlf version of cpp, not Linux's
+# surveyor.alcf.anl.gov
+CPP             =       /opt/ibmcmp/xlf/bg/11.1/exe/cpp -C -P
+AR              =       ar
+ARFLAGS         =       ru
+M4 		=       m4 -B 14000
+RANLIB 		=       ranlib
+CC_TOOLS        =       cc
+###########################################################
+#ARCH    Linux ppc64 IBM Blade Server xlf compiler with xlc # dmpar
+#    provided by Luis C. Cana Cascallar for IBM JS21 blade server, May 2009
+#
+DMPARALLEL      =       # 1
+OMPCPP		=	# not supported
+OMP		=	# not supported
+SFC		=       xlf90_r -q64
+SCC		=       xlc_r -q64
+DM_FC		=	mpif90 -q64
+DM_CC		=       mpicc -q64 -DMPI2_SUPPORT  -DFSEEKO64_OK
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD		=	$(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
+# If system has even more processors, set VERY_LARGE_MAXPROC to that number
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768
+CFLAGS_LOCAL    =       -DNOUNDERSCORE -DLANDREAD_STUB
+LDFLAGS_LOCAL   =       
+CPLUSPLUSLIB    =       -lC
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM		=       -O3 -qtune=ppc970 -qarch=ppc970 
+FCNOOPT		=       -qnoopt
+FCDEBUG         =       # -g $(FCNOOPT) -qfullpath
+FORMAT_FIXED    =       -qfixed
+FORMAT_FREE     =       -qfree=f90
+FCSUFFIX        =       -qsuffix=f=f90
+BYTESWAPIO      =       
+FCBASEOPTS      =       -w -qspill=20000 -qmaxmem=32767 $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
+MODULE_SRCH_FLAG =     
+TRADFLAG        =       
+# this might be different on different systems but we want the xlf version of cpp, not Linux
+CPP             =       /opt/ibmcmp/xlf/11.1/exe/cpp -C -P
+AR              =       ar
+ARFLAGS         =       ru
+M4 		=       m4 -B 14000
+RANLIB 		=       ranlib
+CC_TOOLS        =       xlc -q64
 ###########################################################
 #ARCH  NULL
 

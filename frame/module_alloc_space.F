@@ -88,7 +88,7 @@ CONTAINS
 
       WRITE(message,*)&
           'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
-      CALL  wrf_debug( 1, message )
+      CALL  wrf_debug( 0, message )
 
    END SUBROUTINE alloc_space_field_core
 END MODULE module_alloc_space

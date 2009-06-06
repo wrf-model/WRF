@@ -72,7 +72,6 @@ WRFVAR_OBJS = \
    da_grid_definitions.o \
    da_statistics.o \
    da_define_structures.o \
-   da_control.o \
    gamma1.o \
    da_spectral.o \
    da_radiance.o \
@@ -188,7 +187,6 @@ WRFVAR_OBJS = \
    wrf_restartin.o \
    wrf_restartout.o \
    output_wrf.o \
-   wrf_restartin.o \
    wrf_histin.o \
    wrf_histout.o \
    wrf_inputout.o \
@@ -210,10 +208,10 @@ wrfvar_esmf : setup da_wrfvar_esmf.exe da_advance_time.exe da_update_bc.exe
 
 da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                 $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o \
-                $(WRFVAR_LIBS) da_wrfvar_main.o
+                da_control.o $(WRFVAR_LIBS) da_wrfvar_main.o
 	$(RM) $@
-	$(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) da_wrfvar_main.o \
-        -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
+	$(LD) -o da_wrfvar.exe $(LDFLAGS) $(MODULE_DIRS) $(ESMF_IO_INC) \
+        da_control.o da_wrfvar_main.o -L. -lwrfvar $(CRTM_LIB) $(RTTOV_LIB) \
         ${MADIS_LIB} $(LIB)
 	@ if test -x $@ ; then cd ../da; $(LN) ../build/$@ . ; fi
 

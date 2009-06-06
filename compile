@@ -49,7 +49,7 @@ foreach a ( $argv )
       grep "DA_CORE=1" configure.wrf > /dev/null
       if ( ! $status ) then 
          # If configuration file has DA_CORE=1 hardwired, ok to set WRF_DA_CORE to 1
-         if ( ! $?WRF_DA_CORE ) setenv WRF_DA_CORE 1
+         setenv WRF_DA_CORE 1
       endif
     endif
     if ( "$a" == "nmm_real" ) then

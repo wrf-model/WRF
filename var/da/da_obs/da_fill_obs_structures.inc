@@ -136,7 +136,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
          rh_error = iv%synop(n)%q%error ! q error is rh at this stage!
 
          ! if((ob % synop(n) % p > iv%ptop) .AND. &
@@ -169,7 +169,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
          rh_error = iv%metar(n)%q%error ! q error is rh at this stage!
          call da_get_q_error(iv % metar(n) % p % inv, &
                               ob % metar(n) % t, &
@@ -195,7 +195,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
          rh_error = iv%ships(n)%q%error ! q error is rh at this stage!
          call da_get_q_error(iv % ships(n) % p % inv, &
                               ob % ships(n) % t, &
@@ -266,7 +266,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
             ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
             rh_error = iv%sound(n)%q(k)%error ! q error is rh at this stage!
             call da_get_q_error(iv % sound(n) % p(k), &
                                  ob % sound(n) % t(k), &
@@ -287,7 +287,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
          rh_error = iv%sonde_sfc(n)%q%error ! q error is rh at this stage!
          call da_get_q_error(iv % sonde_sfc(n) % p % inv, &
                               ob % sonde_sfc(n) % t, &
@@ -413,7 +413,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
          rh_error = iv%buoy(n)%q%error ! q error is rh at this stage!
          call da_get_q_error(iv % buoy(n) % p % inv, &
                               ob % buoy(n) % t, &
@@ -482,7 +482,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
             ! Calculate q error from rh error:
 
-         if (.not. present(uvq_direct) .or. .not. uvq_direct) then   !cys_add
+         if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then   !cys_add
             rh_error = iv%airsr(n)%q(k)%error ! q error is rh at this stage!
             call da_get_q_error(iv % airsr(n) % p(k), &
                                  ob % airsr(n) % t(k), &

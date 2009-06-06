@@ -109,7 +109,7 @@ if test -d ${EXT_DIR}/netcdf/pnetcdf-1.0.1/${COMPILER}_${PROCESSOR}; then
    export PNETCDF=${EXT_DIR}/netcdf/pnetcdf-1.0.1/${COMPILER}_${PROCESSOR}
 fi
 if test -d ${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}; then
-   export PNETCDF=${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}
+   export MADIS=${EXT_DIR}/madis/${COMPILER}_${PROCESSOR}
 fi
 
 if test -d /usr/lpp/ppe.poe; then

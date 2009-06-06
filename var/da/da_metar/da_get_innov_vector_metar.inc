@@ -73,16 +73,6 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
                if (iv % metar(n) % h < v_h(kts)) then
                   iv%info(metar)%zk(:,n) = 1.0+1.0e-6
                   call da_obs_sfc_correction(iv%info(metar), iv%metar(n), n, grid%xb)
-
-                  ! To keep the original "ob" with no change for multiple 
-                  ! outer-loops use:
-
-                  ! ob%metar(n)%p = iv%metar(n)%p%inv
-                  ! ob%metar(n)%t = iv%metar(n)%t%inv
-                  ! ob%metar(n)%q = iv%metar(n)%q%inv
-                  ! ob%metar(n)%u = iv%metar(n)%u%inv
-                  ! ob%metar(n)%v = iv%metar(n)%v%inv
-
                else
                   call da_to_zk(iv % metar(n) % h, v_h, v_interp_h, iv%info(metar)%zk(1,n))
                end if
@@ -133,8 +123,8 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_3d (grid%xb%q, iv%info(metar),model_q)
       call da_interp_lin_3d (grid%xb%p, iv%info(metar),model_p)
 
-   else if (sfc_assi_options == 2) then
-      ! 1.2.1 Surface assmiilation approach 2 
+   else if (sfc_assi_options == sfc_assi_options_2) then
+      ! 1.2.1 Surface assimilation approach 2 
       !(10-m u, v, 2-m t, q, and sfc_p)
 
       call da_interp_lin_2d (grid%xb%u10,  iv%info(metar), 1, model_u)
@@ -145,6 +135,13 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_2d (grid%xb%terr, iv%info(metar), 1, model_hsm)
 
       do n=iv%info(metar)%n1,iv%info(metar)%n2
+
+         iv%metar(n)%p%inv = ob%metar(n)%p
+         iv%metar(n)%t%inv = ob%metar(n)%t
+         iv%metar(n)%q%inv = ob%metar(n)%q
+         iv%metar(n)%u%inv = ob%metar(n)%u
+         iv%metar(n)%v%inv = ob%metar(n)%v
+
          if (iv%metar(n)%p%qc >= 0) then
             ! model surface p, t, q, h at observed site:
 

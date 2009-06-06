@@ -50,7 +50,7 @@ gen_be_stage0_wrf.exe : gen_be_stage0_wrf.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
            $(CPP) $(CPPFLAGS) $(FPPFLAGS) gen_be_stage0_wrf.b > gen_be_stage0_wrf.f ; \
         fi
 	$(RM) gen_be_stage0_wrf.b
-	if $(FGREP) '!$$OMP' $*.f ; then \
+	if $(FGREP) '!$$OMP' gen_be_stage0_wrf.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
 	  $(SFC) -c $(FCFLAGS) $(PROMOTION) gen_be_stage0_wrf.f ; \
         else \

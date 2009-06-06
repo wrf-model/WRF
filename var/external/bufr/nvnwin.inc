@@ -84,7 +84,8 @@
       NVNWIN = 0 
                                                                         
       DO I = 1, NMAX 
-      INVN (I) = BMISS 
+!     INVN (I) = BMISS 
+      INVN (I) = -9999999 ! for gfortran compiler- xz
       ENDDO 
                                                                         
 !  SEARCH BETWEEN INV1 AND INV2                                         

@@ -74,13 +74,13 @@ obsproc.exe:		$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(OBJS) \
 			obsproc.o
 			if [ "$(BUFR)" = "-DBUFR" ] ; then \
-			$(FC) -o $@ \
+			$(SFC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(MODULES_GTS) \
 			$(OBJS) $(BUFR_OBJS) \
 			obsproc.o $(LDFLAGS) $(LOCAL_LIBRARIES) ; \
 			else \
-			$(FC) -o $@ \
+			$(SFC) -o $@ \
 			$(MODULES) $(MODULES_MM5) $(MODULES_OBS) \
 			$(MODULES_GTS) \
 			$(OBJS) \

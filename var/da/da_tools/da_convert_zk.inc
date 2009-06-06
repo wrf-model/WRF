@@ -11,8 +11,9 @@ subroutine da_convert_zk (info)
 
    if (trace_use) call da_trace_entry("da_convert_zk")
 
-   where ( (info%zk(:,info%n1:info%n2) > 0.0 &
-            .and. info%zk(:,info%n1:info%n2) .ne. missing_r) .or. anal_type_verify)
+   where ( (info%zk(:,info%n1:info%n2) > 0.0 .or. anal_type_verify) &
+            .and. info%zk(:,info%n1:info%n2) .ne. missing_r) 
+
 
       info%k(:,info%n1:info%n2) = int ( info%zk(:,info%n1:info%n2))
 

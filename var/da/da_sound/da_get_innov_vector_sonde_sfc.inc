@@ -73,15 +73,6 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
                   iv%info(sonde_sfc)%zk(:,n) = 1.0+1.0e-6
                   call da_obs_sfc_correction(iv%info(sonde_sfc), iv%sonde_sfc(n), n, grid%xb)
 
-                  ! To keep the original "ob" with no change for multiple 
-                  ! outer-loops use:
-
-                  ! ob%sonde_sfc(n)%p = iv%sonde_sfc(n)%p%inv
-                  ! ob%sonde_sfc(n)%t = iv%sonde_sfc(n)%t%inv
-                  ! ob%sonde_sfc(n)%q = iv%sonde_sfc(n)%q%inv
-                  ! ob%sonde_sfc(n)%u = iv%sonde_sfc(n)%u%inv
-                  ! ob%sonde_sfc(n)%v = iv%sonde_sfc(n)%v%inv
-
                else
                   call da_to_zk(iv % sonde_sfc(n) % h, v_h, v_interp_h, iv%info(sonde_sfc)%zk(1,n))
                end if
@@ -127,8 +118,8 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
       call da_interp_lin_3d (grid%xb%t, iv%info(sonde_sfc), model_t)
       call da_interp_lin_3d (grid%xb%q, iv%info(sonde_sfc), model_q)
       call da_interp_lin_3d (grid%xb%p, iv%info(sonde_sfc), model_p)
-   else if (sfc_assi_options == 2) then
-      ! 1.2.1 Surface assmiilation approach 2(10-m u, v, 2-m t, q, and sfc_p)
+   else if (sfc_assi_options == sfc_assi_options_2) then
+      ! 1.2.1 Surface assimilation approach 2(10-m u, v, 2-m t, q, and sfc_p)
 
       call da_interp_lin_2d (grid%xb%u10,  iv%info(sonde_sfc), 1,model_u)
       call da_interp_lin_2d (grid%xb%v10,  iv%info(sonde_sfc), 1,model_v)
@@ -137,6 +128,12 @@ subroutine da_get_innov_vector_sonde_sfc( it, num_qcstat_conv,grid, ob, iv)
       call da_interp_lin_2d (grid%xb%psfc, iv%info(sonde_sfc), 1,model_p)
 
       do n=iv%info(sonde_sfc)%n1,iv%info(sonde_sfc)%n2
+
+         iv%sonde_sfc(n)%p%inv = ob%sonde_sfc(n)%p
+         iv%sonde_sfc(n)%t%inv = ob%sonde_sfc(n)%t
+         iv%sonde_sfc(n)%q%inv = ob%sonde_sfc(n)%q
+         iv%sonde_sfc(n)%u%inv = ob%sonde_sfc(n)%u
+         iv%sonde_sfc(n)%v%inv = ob%sonde_sfc(n)%v
 
          if (iv%sonde_sfc(n)%p%qc >= 0) then
             ! model surface p, t, q, h at observed site:

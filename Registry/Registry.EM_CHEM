@@ -803,10 +803,10 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
-state   real    t00            -       misc         -         -     irh       "t00"                   "BASE STATE TEMPERATURE   "  "K"
-state   real    p00            -       misc         -         -     irh       "p00"                   "BASE STATE PRESURE"         "Pa"
-state   real    tlp            -       misc         -         -     irh       "tlp"                   "BASE STATE LAPSE RATE    "  ""
-state   real    tiso           -       misc         -         -     irh       "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
+state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
+state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
+state   real    tlp            -       misc         -         -     i02rh     "tlp"                   "BASE STATE LAPSE RATE    "  ""
+state   real    tiso           -       misc         -         -     i02rh     "tiso"                  "TEMP AT WHICH THE BASE T TURNS CONST"  "K"
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
                                                 

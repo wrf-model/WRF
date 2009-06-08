@@ -379,9 +379,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real gridx,gridy,dxob,dyob,dzob,dxob_ms,dyob_ms
   real pob
   real hob
-  real grfacx,grfacy,uratiob,vratiob,tratiob,tratxob,fnpf
-  real stagx                       ! For x correction to mass-point stagger
-  real stagy                       ! For y correction to mass-point stagger
+  real uratiob,vratiob,tratiob,tratxob,fnpf
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
   LOGICAL MP_LOCAL_DUMMASK(NIOBF)  ! Mask for work to be done on this processor
@@ -575,12 +573,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !         Save mass-point arrays for computing rko for all var types
           if(ityp.eq.1) then
-            stagx = grfacx - gridx_t     !Correct x stagger to mass-point
-            stagy = grfacy - gridy_t     !Correct y stagger to mass-point
-            iobmg(n) = MIN0(MAX0(1,int(RA(n)+stagx)),ide-1)
-            jobmg(n) = MIN0(MAX0(1,int(RB(n)+stagy)),jde-1)
-            dxobmg(n) = RA(N)+stagx-FLOAT(int(RA(N)+stagx))
-            dyobmg(n) = RB(N)+stagy-FLOAT(int(RB(N)+stagy))
+            iobmg(n) = MIN0(MAX0(1,int(RIO(n)-gridx_t)),ide-1)
+            jobmg(n) = MIN0(MAX0(1,int(RJO(n)-gridy_t)),jde-1)
+            dxobmg(n) = RIO(N)-gridx_t-FLOAT(int(RIO(N)-gridx_t))
+            dyobmg(n) = RJO(N)-gridy_t-FLOAT(int(RJO(N)-gridy_t))
           endif 
           iob_ms = iobmg(n)
           job_ms = jobmg(n)

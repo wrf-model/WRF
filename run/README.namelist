@@ -50,7 +50,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  frames_per_outfile (max_dom)        = 1, 	; output times per history output file, used to split output files 
                                                   into smaller pieces
  restart                             = F,	; whether this run is a restart run
- cycling                             = F,      ; whether this run is a cycling run (initialized with wrfout file)
+ cycling                             = F,       ; whether this run is a cycling run, if so, initializes look-up table for Thompson schemes only
  restart_interval		     = 1440,	; restart output file interval in minutes
  reset_simulation_start              = F,       ; whether to overwrite simulation_start_date with forecast start time
  io_form_history                     = 2,       ; 2 = netCDF 
@@ -394,6 +394,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Monin-Obukhov scheme
                                      = 2, Monin-Obukhov (Janjic) scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 4, QNSE surface layer
+                                     = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
@@ -401,22 +403,26 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, thermal diffusion scheme
                                      = 2, Unified Noah land-surface model
                                      = 3, RUC land-surface model
-                                     = 5, MYNN surface layer
                                      = 7, Pleim-Xiu LSM (ARW)
+
+ sf_urban_physics(max_dom)           = 0, ; activate urban canopy model (in Noah LSM only)
+                                     = 0: no
+                                     = 1: Single-layer, UCM 
+                                     = 2: Multi-layer, BEP scheme (works only with MYJ and BouLac PBL)
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
-                                     = 4, Quasi-Normal Scale Elimination PBL by  
-                                     = 5, MYNN 2.5 level TKE scheme (by M. Pagowski of NOAA), works with
+                                     = 4, Quasi-Normal Scale Elimination PBL
+                                     = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
-                                     = 6, MYNN 3rd level TKE scheme (by M. Pagowski of NOAA), works only
-                                          MYNNSFC or sf_sfclay_physics = 5
+                                     = 6, MYNN 3rd level TKE scheme, works only
+                                          MYNNSFC (sf_sfclay_physics = 5)
                                      = 7, ACM2 (Pleim) PBL (ARW)
-                                     = 8, Bougeault and Lacarrere (BouLac) PBL (by B. Galperin of U of South Florida)
-                                     = 99, MRF scheme (to be removed)
+                                     = 8, Bougeault and Lacarrere (BouLac) PBL
+                                     = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
 
@@ -481,10 +487,6 @@ Namelist variables for controlling the adaptive time step option:
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
                                                   = 2: Pleim-Xu landsurface model
- sf_urban_physics(max_dom)           = 0,       ; activate urban canopy model (in Noah LSM only) 
-                                                  = 0: no
-                                                  = 1: Single-layer, Noah UCM (Hiroyuki Kusaka)
-                                                  = 2: Multi-layer, BEP scheme (Alberto Martilli) 
  num_land_cat                        = 24,      ; number of land categories in input data
  num_soil_cat                        = 16,      ; number of soil categories in input data
 
@@ -515,20 +517,16 @@ Namelist variables for controlling the adaptive time step option:
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
  lagday                              = 150      ; days over which tmn is computed using skin temperature
- skin_sst                            = 0        ; calculate skin SST
+ sst_skin                            = 0        ; calculate skin SST
  slope_rad                           = 0        ; slope effects for ra_sw_physics=1 (1=on, 0=off)
- topo_shading                        = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
- shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
+ topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for ra_sw_physics=1 (1=on, 0=off)
+ shadlen (max_dom)                   = 25000.   ; max shadow length in meters for topo_shading=1
  omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes); works with 
                                                   sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
-
- gwd_opt                             = 0       ; for running without gravity wave drag
-                                     = 1       ; for running the WRF-ARW with its gravity wave drag
-                                     = 2       ; for running the WRF-NMM with its gravity wave drag
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
@@ -706,6 +704,10 @@ The following are for observation nudging:
  do_curvature (max_dom)              = .true.,	; whether to do curvature calculations (idealized) (inactive)
  do_gradp (max_dom)                  = .true.,	; whether to do horizontal pressure gradient calculations (idealized) (inactive)
  fft_filter_lat                      = 45.      ; the latitude above which the polar filter is turned on
+
+ gwd_opt                             = 0       ; for running without gravity wave drag
+                                     = 1       ; for running the WRF-ARW with its gravity wave drag
+                                     = 2       ; for running the WRF-NMM with its gravity wave drag
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging

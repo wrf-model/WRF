@@ -813,6 +813,25 @@ end subroutine camrad
    REAL(r8)    :: pstd
    REAL(r8)    :: rh2o, cpair
 
+! These were made allocatable 20090612 to save static memory allocation. JM
+   IF ( .NOT. ALLOCATED( ksul   ) ) ALLOCATE( ksul( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( wsul   ) ) ALLOCATE( wsul( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( gsul   ) ) ALLOCATE( gsul( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( ksslt  ) ) ALLOCATE( ksslt( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( wsslt  ) ) ALLOCATE( wsslt( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( gsslt  ) ) ALLOCATE( gsslt( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( kcphil ) ) ALLOCATE( kcphil( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( wcphil ) ) ALLOCATE( wcphil( nrh, nspint ) )
+   IF ( .NOT. ALLOCATED( gcphil ) ) ALLOCATE( gcphil( nrh, nspint ) )
+
+   IF ( .NOT. ALLOCATED(ah2onw  ) ) ALLOCATE( ah2onw(n_p, n_tp, n_u, n_te, n_rh) )
+   IF ( .NOT. ALLOCATED(eh2onw  ) ) ALLOCATE( eh2onw(n_p, n_tp, n_u, n_te, n_rh) )
+   IF ( .NOT. ALLOCATED(ah2ow   ) ) ALLOCATE( ah2ow(n_p, n_tp, n_u, n_te, n_rh) )
+   IF ( .NOT. ALLOCATED(cn_ah2ow) ) ALLOCATE( cn_ah2ow(n_p, n_tp, n_u, n_te, n_rh) )
+   IF ( .NOT. ALLOCATED(cn_eh2ow) ) ALLOCATE( cn_eh2ow(n_p, n_tp, n_u, n_te, n_rh) )
+   IF ( .NOT. ALLOCATED(ln_ah2ow) ) ALLOCATE( ln_ah2ow(n_p, n_tp, n_u, n_te, n_rh) )
+   IF ( .NOT. ALLOCATED(ln_eh2ow) ) ALLOCATE( ln_eh2ow(n_p, n_tp, n_u, n_te, n_rh) )
+
 #if !defined(MAC_KLUDGE)
    ozncyc = .true.
    indirect = .true.

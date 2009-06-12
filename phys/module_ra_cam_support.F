@@ -104,13 +104,14 @@ MODULE module_ra_cam_support
       real(r8):: amd   ! Molecular weight of dry air (g/mol)
       real(r8):: p0    ! Standard pressure (dynes/cm**2)
 
-  real(r8):: ah2onw(n_p, n_tp, n_u, n_te, n_rh)   ! absorptivity (non-window)
-  real(r8):: eh2onw(n_p, n_tp, n_u, n_te, n_rh)   ! emissivity   (non-window)
-  real(r8):: ah2ow(n_p, n_tp, n_u, n_te, n_rh)    ! absorptivity (window, for adjacent layers)
-  real(r8):: cn_ah2ow(n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for absorptivity (window)
-  real(r8):: cn_eh2ow(n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for emissivity   (window)
-  real(r8):: ln_ah2ow(n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for absorptivity (window)
-  real(r8):: ln_eh2ow(n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for emissivity   (window)
+! These are now allocatable. JM 20090612
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ah2onw   ! (n_p, n_tp, n_u, n_te, n_rh)   ! absorptivity (non-window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: eh2onw   ! (n_p, n_tp, n_u, n_te, n_rh)   ! emissivity   (non-window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ah2ow    ! (n_p, n_tp, n_u, n_te, n_rh)    ! absorptivity (window, for adjacent layers)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: cn_ah2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for absorptivity (window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: cn_eh2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! continuum transmission for emissivity   (window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ln_ah2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for absorptivity (window)
+  real(r8), allocatable, dimension(:,:,:,:,:)  :: ln_eh2ow ! (n_p, n_tp, n_u, n_te, n_rh)    ! line-only transmission for emissivity   (window)
 
 !
 ! Constant coefficients for water vapor overlap with trace gases.
@@ -215,18 +216,21 @@ real(r8) pcf(6)     ! polynomial coeffs -> es transition water to ice
 integer, parameter :: idxVIS = 8     ! index to visible band
 integer, parameter :: nrh = 1000   ! number of relative humidity values for look-up-table
 integer, parameter :: nspint = 19   ! number of spectral intervals
-real(r8) :: ksul(nrh, nspint)    ! sulfate specific extinction  ( m^2 g-1 )
-real(r8) :: wsul(nrh, nspint)    ! sulfate single scattering albedo
-real(r8) :: gsul(nrh, nspint)    ! sulfate asymmetry parameter
+
+! These are now allocatable,  JM 20090612
+real(r8), allocatable, dimension(:,:) :: ksul    ! (nrh, nspint)    ! sulfate specific extinction  ( m^2 g-1 )
+real(r8), allocatable, dimension(:,:) :: wsul    ! (nrh, nspint)    ! sulfate single scattering albedo
+real(r8), allocatable, dimension(:,:) :: gsul    ! (nrh, nspint)    ! sulfate asymmetry parameter
+real(r8), allocatable, dimension(:,:) :: ksslt   ! (nrh, nspint)   ! sea-salt specific extinction  ( m^2 g-1 )
+real(r8), allocatable, dimension(:,:) :: wsslt   ! (nrh, nspint)   ! sea-salt single scattering albedo
+real(r8), allocatable, dimension(:,:) :: gsslt   ! (nrh, nspint)   ! sea-salt asymmetry parameter
+real(r8), allocatable, dimension(:,:) :: kcphil  ! (nrh, nspint)  ! hydrophilic carbon specific extinction  ( m^2 g-1 )
+real(r8), allocatable, dimension(:,:) :: wcphil  ! (nrh, nspint)  ! hydrophilic carbon single scattering albedo
+real(r8), allocatable, dimension(:,:) :: gcphil  ! (nrh, nspint)  ! hydrophilic carbon asymmetry parameter
+
 real(r8) :: kbg(nspint)          ! background specific extinction  ( m^2 g-1 )
 real(r8) :: wbg(nspint)          ! background single scattering albedo
 real(r8) :: gbg(nspint)          ! background asymmetry parameter
-real(r8) :: ksslt(nrh, nspint)   ! sea-salt specific extinction  ( m^2 g-1 )
-real(r8) :: wsslt(nrh, nspint)   ! sea-salt single scattering albedo
-real(r8) :: gsslt(nrh, nspint)   ! sea-salt asymmetry parameter
-real(r8) :: kcphil(nrh, nspint)  ! hydrophilic carbon specific extinction  ( m^2 g-1 )
-real(r8) :: wcphil(nrh, nspint)  ! hydrophilic carbon single scattering albedo
-real(r8) :: gcphil(nrh, nspint)  ! hydrophilic carbon asymmetry parameter
 real(r8) :: kcphob(nspint)       ! hydrophobic carbon specific extinction  ( m^2 g-1 )
 real(r8) :: wcphob(nspint)       ! hydrophobic carbon single scattering albedo
 real(r8) :: gcphob(nspint)       ! hydrophobic carbon asymmetry parameter
@@ -236,6 +240,7 @@ real(r8) :: gcb(nspint)          ! black carbon asymmetry parameter
 real(r8) :: kvolc(nspint)        ! volcanic specific extinction  ( m^2 g-1)
 real(r8) :: wvolc(nspint)        ! volcanic single scattering albedo
 real(r8) :: gvolc(nspint)        ! volcanic asymmetry parameter
+
 real(r8) :: kdst(ndstsz, nspint) ! dust specific extinction  ( m^2 g-1 )
 real(r8) :: wdst(ndstsz, nspint) ! dust single scattering albedo
 real(r8) :: gdst(ndstsz, nspint) ! dust asymmetry parameter

@@ -264,22 +264,23 @@
 !.. ntb_x refers to the number of elements for rain, snow, graupel,
 !.. and temperature array indices.  Variables beginning with t-p/c/m/n
 !.. represent lookup tables.
-      DOUBLE PRECISION, DIMENSION(ntb_g,ntb_r1,ntb_r):: &
+! These are now allocatable, 20090612, JM
+      DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:,:):: &
                 tcg_racg, tmr_racg, tcr_gacr, tmg_gacr, &
                 tnr_racg, tnr_gacr
-      DOUBLE PRECISION, DIMENSION(ntb_s,ntb_t,ntb_r1,ntb_r):: &
+      DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:,:,:):: &
                 tcs_racs1, tmr_racs1, tcs_racs2, tmr_racs2, &
                 tcr_sacr1, tms_sacr1, tcr_sacr2, tms_sacr2, &
                 tnr_racs1, tnr_racs2, tnr_sacr1, tnr_sacr2
-      DOUBLE PRECISION, DIMENSION(ntb_c,45):: &
+      DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:):: &
                 tpi_qcfz, tni_qcfz
-      DOUBLE PRECISION, DIMENSION(ntb_r,ntb_r1,45):: &
+      DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:,:):: &
                 tpi_qrfz, tpg_qrfz, tni_qrfz, tnr_qrfz
-      DOUBLE PRECISION, DIMENSION(ntb_i,ntb_i1):: &
+      DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:):: &
                 tps_iaus, tni_iaus, tpi_ide
-      REAL, DIMENSION(nbr,nbc):: t_Efrw
-      REAL, DIMENSION(nbs,nbc):: t_Efsw
-      DOUBLE PRECISION, DIMENSION(nbr, ntb_r1, ntb_r):: tnr_rev
+      REAL, ALLOCATABLE, DIMENSION(:,:):: t_Efrw
+      REAL, ALLOCATABLE, DIMENSION(:,:):: t_Efsw
+      DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:, :, :):: tnr_rev
 
 !..Variables holding a bunch of exponents and gamma values (cloud water,
 !.. cloud ice, rain, snow, then graupel).
@@ -315,338 +316,395 @@
 
       IMPLICIT NONE
 
-      INTEGER:: i, j, k, m, n
+      INTEGER :: i, j, k, m, n
+
+      LOGICAL :: do_init 
+
+!
+!jm allocate the lookup tables
+!
+      ! use whether the first lookup table has been allocated to also determine whether
+      ! to initialize them all.
+      do_init = .FALSE.
+      IF ( .NOT. ALLOCATED( tcg_racg ) ) THEN
+        ALLOCATE( tcg_racg(ntb_g,ntb_r1,ntb_r) )
+        do_init = .TRUE.
+      ENDIF
+
+      IF ( .NOT. ALLOCATED( tmr_racg ) ) ALLOCATE( tmr_racg(ntb_g,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tcr_gacr ) ) ALLOCATE( tcr_gacr(ntb_g,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tmg_gacr ) ) ALLOCATE( tmg_gacr(ntb_g,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tnr_racg ) ) ALLOCATE( tnr_racg(ntb_g,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tnr_gacr ) ) ALLOCATE( tnr_gacr(ntb_g,ntb_r1,ntb_r) )
+
+      IF ( .NOT. ALLOCATED( tcs_racs1 ) ) ALLOCATE( tcs_racs1(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tmr_racs1 ) ) ALLOCATE( tmr_racs1(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tcs_racs2 ) ) ALLOCATE( tcs_racs2(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tmr_racs2 ) ) ALLOCATE( tmr_racs2(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tcr_sacr1 ) ) ALLOCATE( tcr_sacr1(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tms_sacr1 ) ) ALLOCATE( tms_sacr1(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tcr_sacr2 ) ) ALLOCATE( tcr_sacr2(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tms_sacr2 ) ) ALLOCATE( tms_sacr2(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tnr_racs1 ) ) ALLOCATE( tnr_racs1(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tnr_racs2 ) ) ALLOCATE( tnr_racs2(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tnr_sacr1 ) ) ALLOCATE( tnr_sacr1(ntb_s,ntb_t,ntb_r1,ntb_r) )
+      IF ( .NOT. ALLOCATED( tnr_sacr2 ) ) ALLOCATE( tnr_sacr2(ntb_s,ntb_t,ntb_r1,ntb_r) )
+
+      IF ( .NOT. ALLOCATED( tpi_qcfz  ) ) ALLOCATE( tpi_qcfz(ntb_c,45) )
+      IF ( .NOT. ALLOCATED( tni_qcfz  ) ) ALLOCATE( tni_qcfz(ntb_c,45) )
+
+      IF ( .NOT. ALLOCATED( tpi_qrfz) ) ALLOCATE( tpi_qrfz(ntb_r,ntb_r1,45) )
+      IF ( .NOT. ALLOCATED( tpg_qrfz) ) ALLOCATE( tpg_qrfz(ntb_r,ntb_r1,45) )
+      IF ( .NOT. ALLOCATED( tni_qrfz) ) ALLOCATE( tni_qrfz(ntb_r,ntb_r1,45) )
+      IF ( .NOT. ALLOCATED( tnr_qrfz) ) ALLOCATE( tnr_qrfz(ntb_r,ntb_r1,45) )
+
+      IF ( .NOT. ALLOCATED( tps_iaus ) ) ALLOCATE( tps_iaus(ntb_i,ntb_i1) )
+      IF ( .NOT. ALLOCATED( tni_iaus ) ) ALLOCATE( tni_iaus(ntb_i,ntb_i1) )
+      IF ( .NOT. ALLOCATED( tpi_ide  ) ) ALLOCATE( tpi_ide(ntb_i,ntb_i1) )
+
+      IF ( .NOT. ALLOCATED( t_Efrw   ) ) ALLOCATE( t_Efrw(nbr,nbc) )
+      IF ( .NOT. ALLOCATED( t_Efsw   ) ) ALLOCATE( t_Efsw(nbs,nbc) )
+
+      IF ( .NOT. ALLOCATED( tnr_rev  ) ) ALLOCATE( tnr_rev(nbr, ntb_r1, ntb_r) )
+
+      IF ( do_init ) THEN
+!
+!jm end mods 20090608
+!
 
 !..From Martin et al. (1994), assign gamma shape parameter mu for cloud
 !.. drops according to general dispersion characteristics (disp=~0.25
 !.. for Maritime and 0.45 for Continental).
 !.. disp=SQRT((mu+2)/(mu+1) - 1) so mu varies from 15 for Maritime
 !.. to 2 for really dirty air.
-      mu_c = MIN(15., (1000.E6/Nt_c + 2.))
+        mu_c = MIN(15., (1000.E6/Nt_c + 2.))
 
 !..Schmidt number to one-third used numerous times.
-      Sc3 = Sc**(1./3.)
+        Sc3 = Sc**(1./3.)
 
 !..Compute min ice diam from mass, min snow/graupel mass from diam.
-      D0i = (xm0i/am_i)**(1./bm_i)
-      xm0s = am_s * D0s**bm_s
-      xm0g = am_g * D0g**bm_g
+        D0i = (xm0i/am_i)**(1./bm_i)
+        xm0s = am_s * D0s**bm_s
+        xm0g = am_g * D0g**bm_g
 
 !..These constants various exponents and gamma() assoc with cloud,
 !.. rain, snow, and graupel.
-      cce(1) = mu_c + 1.
-      cce(2) = bm_r + mu_c + 1.
-      cce(3) = bm_r + mu_c + 4.
-      ccg(1) = WGAMMA(cce(1))
-      ccg(2) = WGAMMA(cce(2))
-      ccg(3) = WGAMMA(cce(3))
-      ocg1 = 1./ccg(1)
-      ocg2 = 1./ccg(2)
+        cce(1) = mu_c + 1.
+        cce(2) = bm_r + mu_c + 1.
+        cce(3) = bm_r + mu_c + 4.
+        ccg(1) = WGAMMA(cce(1))
+        ccg(2) = WGAMMA(cce(2))
+        ccg(3) = WGAMMA(cce(3))
+        ocg1 = 1./ccg(1)
+        ocg2 = 1./ccg(2)
 
-      cie(1) = mu_i + 1.
-      cie(2) = bm_i + mu_i + 1.
-      cie(3) = bm_i + mu_i + bv_i + 1.
-      cie(4) = mu_i + bv_i + 1.
-      cie(5) = mu_i + 2.
-      cie(6) = bm_i + bv_i
-      cig(1) = WGAMMA(cie(1))
-      cig(2) = WGAMMA(cie(2))
-      cig(3) = WGAMMA(cie(3))
-      cig(4) = WGAMMA(cie(4))
-      cig(5) = WGAMMA(cie(5))
-      cig(6) = WGAMMA(cie(6))
-      oig1 = 1./cig(1)
-      oig2 = 1./cig(2)
-      obmi = 1./bm_i
+        cie(1) = mu_i + 1.
+        cie(2) = bm_i + mu_i + 1.
+        cie(3) = bm_i + mu_i + bv_i + 1.
+        cie(4) = mu_i + bv_i + 1.
+        cie(5) = mu_i + 2.
+        cie(6) = bm_i + bv_i
+        cig(1) = WGAMMA(cie(1))
+        cig(2) = WGAMMA(cie(2))
+        cig(3) = WGAMMA(cie(3))
+        cig(4) = WGAMMA(cie(4))
+        cig(5) = WGAMMA(cie(5))
+        cig(6) = WGAMMA(cie(6))
+        oig1 = 1./cig(1)
+        oig2 = 1./cig(2)
+        obmi = 1./bm_i
 
-      cre(1) = bm_r + 1.
-      cre(2) = mu_r + 1.
-      cre(3) = bm_r + mu_r + 1.
-      cre(4) = bm_r*2. + mu_r + 1.
-      cre(5) = mu_r + bv_r + 1.
-      cre(6) = bm_r + mu_r + bv_r + 1.
-      cre(7) = bm_r*0.5 + mu_r + bv_r + 1.
-      cre(8) = bm_r + mu_r + bv_r + 3.
-      cre(9) = mu_r + bv_r + 3.
-      cre(10) = mu_r + 2.
-      cre(11) = 0.5*(bv_r + 5. + 2.*mu_r)
-      cre(12) = bm_r*0.5 + mu_r + 1.
-      do n = 1, 12
-         crg(n) = WGAMMA(cre(n))
-      enddo
-      obmr = 1./bm_r
-      ore1 = 1./cre(1)
-      org1 = 1./crg(1)
-      org2 = 1./crg(2)
-      org3 = 1./crg(3)
+        cre(1) = bm_r + 1.
+        cre(2) = mu_r + 1.
+        cre(3) = bm_r + mu_r + 1.
+        cre(4) = bm_r*2. + mu_r + 1.
+        cre(5) = mu_r + bv_r + 1.
+        cre(6) = bm_r + mu_r + bv_r + 1.
+        cre(7) = bm_r*0.5 + mu_r + bv_r + 1.
+        cre(8) = bm_r + mu_r + bv_r + 3.
+        cre(9) = mu_r + bv_r + 3.
+        cre(10) = mu_r + 2.
+        cre(11) = 0.5*(bv_r + 5. + 2.*mu_r)
+        cre(12) = bm_r*0.5 + mu_r + 1.
+        do n = 1, 12
+           crg(n) = WGAMMA(cre(n))
+        enddo
+        obmr = 1./bm_r
+        ore1 = 1./cre(1)
+        org1 = 1./crg(1)
+        org2 = 1./crg(2)
+        org3 = 1./crg(3)
 
-      cse(1) = bm_s + 1.
-      cse(2) = bm_s + 2.
-      cse(3) = bm_s*2.
-      cse(4) = bm_s + bv_s + 1.
-      cse(5) = bm_s + bv_s + 2.
-      cse(6) = bm_s + bv_s + 3.
-      cse(7) = bm_s + mu_s + 1.
-      cse(8) = bm_s + mu_s + 2.
-      cse(9) = bm_s + mu_s + 3.
-      cse(10) = bm_s + mu_s + bv_s + 1.
-      cse(11) = bm_s + mu_s + bv_s + 2.
-      cse(12) = bm_s*2. + mu_s + 1.
-      cse(13) = bv_s + 2.
-      cse(14) = bm_s + bv_s
-      cse(15) = mu_s + 1.
-      cse(16) = 1.0 + (1.0 + bv_s)/2.
-      cse(17) = cse(16) + mu_s + 1.
-      cse(18) = bv_s + mu_s + 3.
-      do n = 1, 18
-         csg(n) = WGAMMA(cse(n))
-      enddo
-      oams = 1./am_s
-      obms = 1./bm_s
-      ocms = oams**obms
+        cse(1) = bm_s + 1.
+        cse(2) = bm_s + 2.
+        cse(3) = bm_s*2.
+        cse(4) = bm_s + bv_s + 1.
+        cse(5) = bm_s + bv_s + 2.
+        cse(6) = bm_s + bv_s + 3.
+        cse(7) = bm_s + mu_s + 1.
+        cse(8) = bm_s + mu_s + 2.
+        cse(9) = bm_s + mu_s + 3.
+        cse(10) = bm_s + mu_s + bv_s + 1.
+        cse(11) = bm_s + mu_s + bv_s + 2.
+        cse(12) = bm_s*2. + mu_s + 1.
+        cse(13) = bv_s + 2.
+        cse(14) = bm_s + bv_s
+        cse(15) = mu_s + 1.
+        cse(16) = 1.0 + (1.0 + bv_s)/2.
+        cse(17) = cse(16) + mu_s + 1.
+        cse(18) = bv_s + mu_s + 3.
+        do n = 1, 18
+           csg(n) = WGAMMA(cse(n))
+        enddo
+        oams = 1./am_s
+        obms = 1./bm_s
+        ocms = oams**obms
 
-      cge(1) = bm_g + 1.
-      cge(2) = mu_g + 1.
-      cge(3) = bm_g + mu_g + 1.
-      cge(4) = bm_g*2. + mu_g + 1.
-      cge(5) = bm_g + mu_g + 3.
-      cge(6) = bm_g + mu_g + bv_g + 1.
-      cge(7) = bm_g + mu_g + bv_g + 2.
-      cge(8) = bm_g + mu_g + bv_g + 3.
-      cge(9) = mu_g + bv_g + 3.
-      cge(10) = mu_g + 2.
-      cge(11) = 0.5*(bv_g + 5. + 2.*mu_g)
-      cge(12) = 0.5*(bv_g + 5.) + mu_g
-      do n = 1, 12
-         cgg(n) = WGAMMA(cge(n))
-      enddo
-      oamg = 1./am_g
-      obmg = 1./bm_g
-      ocmg = oamg**obmg
-      oge1 = 1./cge(1)
-      ogg1 = 1./cgg(1)
-      ogg2 = 1./cgg(2)
-      ogg3 = 1./cgg(3)
+        cge(1) = bm_g + 1.
+        cge(2) = mu_g + 1.
+        cge(3) = bm_g + mu_g + 1.
+        cge(4) = bm_g*2. + mu_g + 1.
+        cge(5) = bm_g + mu_g + 3.
+        cge(6) = bm_g + mu_g + bv_g + 1.
+        cge(7) = bm_g + mu_g + bv_g + 2.
+        cge(8) = bm_g + mu_g + bv_g + 3.
+        cge(9) = mu_g + bv_g + 3.
+        cge(10) = mu_g + 2.
+        cge(11) = 0.5*(bv_g + 5. + 2.*mu_g)
+        cge(12) = 0.5*(bv_g + 5.) + mu_g
+        do n = 1, 12
+           cgg(n) = WGAMMA(cge(n))
+        enddo
+        oamg = 1./am_g
+        obmg = 1./bm_g
+        ocmg = oamg**obmg
+        oge1 = 1./cge(1)
+        ogg1 = 1./cgg(1)
+        ogg2 = 1./cgg(2)
+        ogg3 = 1./cgg(3)
 
 !+---+-----------------------------------------------------------------+
 !..Simplify various rate eqns the best we can now.
 !+---+-----------------------------------------------------------------+
 
 !..Rain collecting cloud water and cloud ice
-      t1_qr_qc = PI*.25*av_r * crg(9)
-      t1_qr_qi = PI*.25*av_r * crg(9)
-      t2_qr_qi = PI*.25*am_r*av_r * crg(8)
+        t1_qr_qc = PI*.25*av_r * crg(9)
+        t1_qr_qi = PI*.25*av_r * crg(9)
+        t2_qr_qi = PI*.25*am_r*av_r * crg(8)
 
 !..Graupel collecting cloud water
-      t1_qg_qc = PI*.25*av_g * cgg(9)
+        t1_qg_qc = PI*.25*av_g * cgg(9)
 
 !..Snow collecting cloud water
-      t1_qs_qc = PI*.25*av_s
+        t1_qs_qc = PI*.25*av_s
 
 !..Snow collecting cloud ice
-      t1_qs_qi = PI*.25*av_s
+        t1_qs_qi = PI*.25*av_s
 
 !..Evaporation of rain; ignore depositional growth of rain.
-      t1_qr_ev = 0.78 * crg(10)
-      t2_qr_ev = 0.308*Sc3*SQRT(av_r) * crg(11)
+        t1_qr_ev = 0.78 * crg(10)
+        t2_qr_ev = 0.308*Sc3*SQRT(av_r) * crg(11)
 
 !..Sublimation/depositional growth of snow
-      t1_qs_sd = 0.86
-      t2_qs_sd = 0.28*Sc3*SQRT(av_s)
+        t1_qs_sd = 0.86
+        t2_qs_sd = 0.28*Sc3*SQRT(av_s)
 
 !..Melting of snow
-      t1_qs_me = PI*4.*C_sqrd*olfus * 0.86
-      t2_qs_me = PI*4.*C_sqrd*olfus * 0.28*Sc3*SQRT(av_s)
+        t1_qs_me = PI*4.*C_sqrd*olfus * 0.86
+        t2_qs_me = PI*4.*C_sqrd*olfus * 0.28*Sc3*SQRT(av_s)
 
 !..Sublimation/depositional growth of graupel
-      t1_qg_sd = 0.86 * cgg(10)
-      t2_qg_sd = 0.28*Sc3*SQRT(av_g) * cgg(11)
+        t1_qg_sd = 0.86 * cgg(10)
+        t2_qg_sd = 0.28*Sc3*SQRT(av_g) * cgg(11)
 
 !..Melting of graupel
-      t1_qg_me = PI*4.*C_cube*olfus * 0.86 * cgg(10)
-      t2_qg_me = PI*4.*C_cube*olfus * 0.28*Sc3*SQRT(av_g) * cgg(11)
+        t1_qg_me = PI*4.*C_cube*olfus * 0.86 * cgg(10)
+        t2_qg_me = PI*4.*C_cube*olfus * 0.28*Sc3*SQRT(av_g) * cgg(11)
 
 !..Constants for helping find lookup table indexes.
-      nic2 = NINT(ALOG10(r_c(1)))
-      nii2 = NINT(ALOG10(r_i(1)))
-      nii3 = NINT(ALOG10(Nt_i(1)))
-      nir2 = NINT(ALOG10(r_r(1)))
-      nir3 = NINT(ALOG10(N0r_exp(1)))
-      nis2 = NINT(ALOG10(r_s(1)))
-      nig2 = NINT(ALOG10(r_g(1)))
+        nic2 = NINT(ALOG10(r_c(1)))
+        nii2 = NINT(ALOG10(r_i(1)))
+        nii3 = NINT(ALOG10(Nt_i(1)))
+        nir2 = NINT(ALOG10(r_r(1)))
+        nir3 = NINT(ALOG10(N0r_exp(1)))
+        nis2 = NINT(ALOG10(r_s(1)))
+        nig2 = NINT(ALOG10(r_g(1)))
 
 !..Create bins of cloud water (from min diameter up to 100 microns).
-      Dc(1) = D0c*1.0d0
-      dtc(1) = D0c*1.0d0
-      do n = 2, nbc
-         Dc(n) = Dc(n-1) + 1.0D-6
-         dtc(n) = (Dc(n) - Dc(n-1))
-      enddo
+        Dc(1) = D0c*1.0d0
+        dtc(1) = D0c*1.0d0
+        DO n = 2, nbc
+           Dc(n) = Dc(n-1) + 1.0D-6
+           dtc(n) = (Dc(n) - Dc(n-1))
+        ENDDO
 
 !..Create bins of cloud ice (from min diameter up to 5x min snow size).
-      xDx(1) = D0i*1.0d0
-      xDx(nbi+1) = 5.0d0*D0s
-      do n = 2, nbi
-         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbi) &
-                  *DLOG(xDx(nbi+1)/xDx(1)) +DLOG(xDx(1)))
-      enddo
-      do n = 1, nbi
-         Di(n) = DSQRT(xDx(n)*xDx(n+1))
-         dti(n) = xDx(n+1) - xDx(n)
-      enddo
+        xDx(1) = D0i*1.0d0
+        xDx(nbi+1) = 5.0d0*D0s
+        DO n = 2, nbi
+           xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbi) &
+                    *DLOG(xDx(nbi+1)/xDx(1)) +DLOG(xDx(1)))
+        ENDDO
+        DO n = 1, nbi
+           Di(n) = DSQRT(xDx(n)*xDx(n+1))
+           dti(n) = xDx(n+1) - xDx(n)
+        ENDDO
 
 !..Create bins of rain (from min diameter up to 5 mm).
-      xDx(1) = D0r*1.0d0
-      xDx(nbr+1) = 0.005d0
-      do n = 2, nbr
-         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbr) &
-                  *DLOG(xDx(nbr+1)/xDx(1)) +DLOG(xDx(1)))
-      enddo
-      do n = 1, nbr
-         Dr(n) = DSQRT(xDx(n)*xDx(n+1))
-         dtr(n) = xDx(n+1) - xDx(n)
-      enddo
+        xDx(1) = D0r*1.0d0
+        xDx(nbr+1) = 0.005d0
+        DO n = 2, nbr
+           xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbr) &
+                    *DLOG(xDx(nbr+1)/xDx(1)) +DLOG(xDx(1)))
+        ENDDO
+        DO n = 1, nbr
+           Dr(n) = DSQRT(xDx(n)*xDx(n+1))
+           dtr(n) = xDx(n+1) - xDx(n)
+        ENDDO
 
 !..Create bins of snow (from min diameter up to 2 cm).
-      xDx(1) = D0s*1.0d0
-      xDx(nbs+1) = 0.02d0
-      do n = 2, nbs
-         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbs) &
-                  *DLOG(xDx(nbs+1)/xDx(1)) +DLOG(xDx(1)))
-      enddo
-      do n = 1, nbs
-         Ds(n) = DSQRT(xDx(n)*xDx(n+1))
-         dts(n) = xDx(n+1) - xDx(n)
-      enddo
+        xDx(1) = D0s*1.0d0
+        xDx(nbs+1) = 0.02d0
+        DO n = 2, nbs
+           xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbs) &
+                    *DLOG(xDx(nbs+1)/xDx(1)) +DLOG(xDx(1)))
+        ENDDO
+        DO n = 1, nbs
+           Ds(n) = DSQRT(xDx(n)*xDx(n+1))
+           dts(n) = xDx(n+1) - xDx(n)
+        ENDDO
 
 !..Create bins of graupel (from min diameter up to 5 cm).
-      xDx(1) = D0g*1.0d0
-      xDx(nbg+1) = 0.05d0
-      do n = 2, nbg
-         xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbg) &
-                  *DLOG(xDx(nbg+1)/xDx(1)) +DLOG(xDx(1)))
-      enddo
-      do n = 1, nbg
-         Dg(n) = DSQRT(xDx(n)*xDx(n+1))
-         dtg(n) = xDx(n+1) - xDx(n)
-      enddo
+        xDx(1) = D0g*1.0d0
+        xDx(nbg+1) = 0.05d0
+        DO n = 2, nbg
+           xDx(n) = DEXP(DFLOAT(n-1)/DFLOAT(nbg) &
+                    *DLOG(xDx(nbg+1)/xDx(1)) +DLOG(xDx(1)))
+        ENDDO
+        DO n = 1, nbg
+           Dg(n) = DSQRT(xDx(n)*xDx(n+1))
+           dtg(n) = xDx(n+1) - xDx(n)
+        ENDDO
 
 !+---+-----------------------------------------------------------------+
 !..Create lookup tables for most costly calculations.
 !+---+-----------------------------------------------------------------+
 
-      do k = 1, ntb_r
-         do j = 1, ntb_r1
-            do i = 1, ntb_g
-               tcg_racg(i,j,k) = 0.0d0
-               tmr_racg(i,j,k) = 0.0d0
-               tcr_gacr(i,j,k) = 0.0d0
-               tmg_gacr(i,j,k) = 0.0d0
-               tnr_racg(i,j,k) = 0.0d0
-               tnr_gacr(i,j,k) = 0.0d0
-            enddo
-         enddo
-      enddo
+        DO k = 1, ntb_r
+           DO j = 1, ntb_r1
+              DO i = 1, ntb_g
+                 tcg_racg(i,j,k) = 0.0d0
+                 tmr_racg(i,j,k) = 0.0d0
+                 tcr_gacr(i,j,k) = 0.0d0
+                 tmg_gacr(i,j,k) = 0.0d0
+                 tnr_racg(i,j,k) = 0.0d0
+                 tnr_gacr(i,j,k) = 0.0d0
+              ENDDO
+           ENDDO
+        ENDDO
 
-      do m = 1, ntb_r
-         do k = 1, ntb_r1
-            do j = 1, ntb_t
-               do i = 1, ntb_s
-                  tcs_racs1(i,j,k,m) = 0.0d0
-                  tmr_racs1(i,j,k,m) = 0.0d0
-                  tcs_racs2(i,j,k,m) = 0.0d0
-                  tmr_racs2(i,j,k,m) = 0.0d0
-                  tcr_sacr1(i,j,k,m) = 0.0d0
-                  tms_sacr1(i,j,k,m) = 0.0d0
-                  tcr_sacr2(i,j,k,m) = 0.0d0
-                  tms_sacr2(i,j,k,m) = 0.0d0
-                  tnr_racs1(i,j,k,m) = 0.0d0
-                  tnr_racs2(i,j,k,m) = 0.0d0
-                  tnr_sacr1(i,j,k,m) = 0.0d0
-                  tnr_sacr2(i,j,k,m) = 0.0d0
-               enddo
-            enddo
-         enddo
-      enddo
+        DO m = 1, ntb_r
+           DO k = 1, ntb_r1
+              DO j = 1, ntb_t
+                 DO i = 1, ntb_s
+                    tcs_racs1(i,j,k,m) = 0.0d0
+                    tmr_racs1(i,j,k,m) = 0.0d0
+                    tcs_racs2(i,j,k,m) = 0.0d0
+                    tmr_racs2(i,j,k,m) = 0.0d0
+                    tcr_sacr1(i,j,k,m) = 0.0d0
+                    tms_sacr1(i,j,k,m) = 0.0d0
+                    tcr_sacr2(i,j,k,m) = 0.0d0
+                    tms_sacr2(i,j,k,m) = 0.0d0
+                    tnr_racs1(i,j,k,m) = 0.0d0
+                    tnr_racs2(i,j,k,m) = 0.0d0
+                    tnr_sacr1(i,j,k,m) = 0.0d0
+                    tnr_sacr2(i,j,k,m) = 0.0d0
+                 ENDDO
+              ENDDO
+           ENDDO
+        ENDDO
 
-      do k = 1, 45
-         do j = 1, ntb_r1
-            do i = 1, ntb_r
-               tpi_qrfz(i,j,k) = 0.0d0
-               tni_qrfz(i,j,k) = 0.0d0
-               tpg_qrfz(i,j,k) = 0.0d0
-               tnr_qrfz(i,j,k) = 0.0d0
-            enddo
-         enddo
-         do i = 1, ntb_c
-            tpi_qcfz(i,k) = 0.0d0
-            tni_qcfz(i,k) = 0.0d0
-         enddo
-      enddo
+        DO k = 1, 45
+           DO j = 1, ntb_r1
+              DO i = 1, ntb_r
+                 tpi_qrfz(i,j,k) = 0.0d0
+                 tni_qrfz(i,j,k) = 0.0d0
+                 tpg_qrfz(i,j,k) = 0.0d0
+                 tnr_qrfz(i,j,k) = 0.0d0
+              ENDDO
+           ENDDO
+           DO i = 1, ntb_c
+              tpi_qcfz(i,k) = 0.0d0
+              tni_qcfz(i,k) = 0.0d0
+           ENDDO
+        ENDDO
 
-      do j = 1, ntb_i1
-         do i = 1, ntb_i
-            tps_iaus(i,j) = 0.0d0
-            tni_iaus(i,j) = 0.0d0
-            tpi_ide(i,j) = 0.0d0
-         enddo
-      enddo
+        DO j = 1, ntb_i1
+           DO i = 1, ntb_i
+              tps_iaus(i,j) = 0.0d0
+              tni_iaus(i,j) = 0.0d0
+              tpi_ide(i,j) = 0.0d0
+           ENDDO
+        ENDDO
 
-      do j = 1, nbc
-         do i = 1, nbr
-            t_Efrw(i,j) = 0.0
-         enddo
-         do i = 1, nbs
-            t_Efsw(i,j) = 0.0
-         enddo
-      enddo
+        DO j = 1, nbc
+           DO i = 1, nbr
+              t_Efrw(i,j) = 0.0
+           ENDDO
+           DO i = 1, nbs
+              t_Efsw(i,j) = 0.0
+           ENDDO
+        ENDDO
 
-      do k = 1, ntb_r
-         do j = 1, ntb_r1
-            do i = 1, nbr
-               tnr_rev(i,j,k) = 0.0d0
-            enddo
-         enddo
-      enddo
+        DO k = 1, ntb_r
+           DO j = 1, ntb_r1
+              DO i = 1, nbr
+                 tnr_rev(i,j,k) = 0.0d0
+              ENDDO
+           ENDDO
+        ENDDO
 
-      CALL wrf_debug(150, 'CREATING MICROPHYSICS LOOKUP TABLES ... ')
-      WRITE (wrf_err_message, '(a, f5.2, a, f5.2, a, f5.2, a, f5.2)') &
-          ' using: mu_c=',mu_c,' mu_i=',mu_i,' mu_r=',mu_r,' mu_g=',mu_g
-      CALL wrf_debug(150, wrf_err_message)
+        CALL wrf_debug(150, 'CREATING MICROPHYSICS LOOKUP TABLES ... ')
+        WRITE (wrf_err_message, '(a, f5.2, a, f5.2, a, f5.2, a, f5.2)') &
+            ' using: mu_c=',mu_c,' mu_i=',mu_i,' mu_r=',mu_r,' mu_g=',mu_g
+        CALL wrf_debug(150, wrf_err_message)
 
 !..Collision efficiency between rain/snow and cloud water.
-      CALL wrf_debug(200, '  creating qc collision eff tables')
-      call table_Efrw
-      call table_Efsw
+        CALL wrf_debug(200, '  creating qc collision eff tables')
+        CALL table_Efrw
+        CALL table_Efsw
 
 !..Drop evaporation.
-!     CALL wrf_debug(200, '  creating rain evap table')
-!     call table_dropEvap
+!       CALL wrf_debug(200, '  creating rain evap table')
+!       CALL table_dropEvap
 
 !..Initialize various constants for computing radar reflectivity.
-!     call radar_init
+!       CALL radar_init
 
-      if (.not. iiwarm) then
+        IF (.not. iiwarm) THEN
 
 !..Rain collecting graupel & graupel collecting rain.
-      CALL wrf_debug(200, '  creating rain collecting graupel table')
-      call qr_acr_qg
+          CALL wrf_debug(200, '  creating rain collecting graupel table')
+          call qr_acr_qg
 
 !..Rain collecting snow & snow collecting rain.
-      CALL wrf_debug(200, '  creating rain collecting snow table')
-      call qr_acr_qs
+          CALL wrf_debug(200, '  creating rain collecting snow table')
+          call qr_acr_qs
 
 !..Cloud water and rain freezing (Bigg, 1953).
-      CALL wrf_debug(200, '  creating freezing of water drops table')
-      call freezeH2O
+          CALL wrf_debug(200, '  creating freezing of water drops table')
+          call freezeH2O
 
 !..Conversion of some ice mass into snow category.
-      CALL wrf_debug(200, '  creating ice converting to snow table')
-      call qi_aut_qs
+          CALL wrf_debug(200, '  creating ice converting to snow table')
+          CALL qi_aut_qs
 
-      endif
+        ENDIF
 
-      CALL wrf_debug(150, ' ... DONE microphysical lookup tables')
+        CALL wrf_debug(150, ' ... DONE microphysical lookup tables')
+
+      END IF ! do_init
+! jm
 
       END SUBROUTINE thompson_init
 !+---+-----------------------------------------------------------------+

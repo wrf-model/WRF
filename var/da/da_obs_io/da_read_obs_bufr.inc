@@ -422,7 +422,21 @@ subroutine da_read_obs_bufr (iv, filename)
       platform % loc % pw %inv    = missing_r     
       platform % loc % pw %qc     = missing_data
       platform % loc % pw %error  = err_pw
+      pmq=nint(pmo(2,1))
+      if (pmq < qflag .and. pmq >= 0) then
+         platform % loc % slp % inv =pmo(1,1)*100.0
+         platform % loc % slp % qc  =pmq
+         platform % loc % slp % error = err_p          ! hardwired
+      end if
+      pwq=nint(qms(7,1))
+      if (pwq < qflag .and. pwq >= 0) then
+         platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
+         platform % loc % pw % qc  =  pwq
+         platform % loc % pw % error = err_pw          ! hardwired
+      end if
 
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE (i)
       do i=1,max_ob_levels
          platform % each (i) % height  = missing_r
          platform % each (i) % height_qc = missing_data
@@ -447,7 +461,10 @@ subroutine da_read_obs_bufr (iv, filename)
          platform % each (i) % q % qc  = missing_data
          platform % each (i) % q % error = err_q
       end do 
+      !$OMP END PARALLEL DO
 
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE (k, tpc, wpc, pqm, qqm, tqm, zqm, wqm, pwq, cat, poe, qoe, woe)
       do k = 1, platform % info % levels
 
          tpc = nint(pco(3,k))
@@ -473,22 +490,7 @@ subroutine da_read_obs_bufr (iv, filename)
          tqm=nint(qms(3,k))
          zqm=nint(qms(4,k))
          wqm=nint(qms(5,k))
-         pwq=nint(qms(7,k))
-         pmq=nint(pmo(2,1))
          cat=nint(obs(8,k))
-
-         if (pmq < qflag .and. pmq >= 0) then
-            platform % loc % slp % inv =pmo(1,1)*100.0
-            platform % loc % slp % qc  =pmq
-            platform % loc % slp % error = err_p          ! hardwired
-         end if
-
-         if (pwq < qflag .and. pwq >= 0) then
-            platform % loc % pw % inv = obs(7,k) * 0.1    ! convert to cm
-            platform % loc % pw % qc  =  pwq
-            platform % loc % pw % error = err_pw          ! hardwired
-         end if
-
 
          if (tqm < qflag .and. tqm >= 0) then
             toe = min(err_t, oes(3,k))
@@ -543,6 +545,7 @@ subroutine da_read_obs_bufr (iv, filename)
             platform % each (k) % p % error =poe
          end if
       end do
+      !$OMP END PARALLEL DO
 
       ! assign u,v,t,q obs errors for synop and metar
       if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then

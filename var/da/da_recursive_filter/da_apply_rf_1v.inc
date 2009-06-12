@@ -37,12 +37,15 @@ SUBROUTINE da_apply_rf_1v( be, vp, grid, nv )
    in=grid%xp%ipex-grid%xp%ipsx
    jn=grid%xp%jpex-grid%xp%jpsx
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( k )
    do k=grid%xp%kpsx,grid%xp%kpex
      call smoothx(in,jn, &
           grid%xp% v1x(grid%xp%ipsx:grid%xp%ipex,grid%xp%jpsx:grid%xp%jpex,k),&
           be%slix(grid%xp%ipsx:grid%xp%ipex,grid%xp%jpsx:grid%xp%jpex,k,nv),  &
           be%ndeg,be%be,be%nta,be%swidth,be%table)
    enddo
+   !$OMP END PARALLEL DO
 
 
    call da_transpose_x2y ( grid )
@@ -50,12 +53,15 @@ SUBROUTINE da_apply_rf_1v( be, vp, grid, nv )
    in=grid%xp%ipey-grid%xp%ipsy
    jn=grid%xp%jpey-grid%xp%jpsy
 
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( k )
    do k=grid%xp%kpsy,grid%xp%kpey
      call smoothy(in,jn, &
           grid%xp%v1y(grid%xp%ipsy:grid%xp%ipey,grid%xp%jpsy:grid%xp%jpey,k),&
           be%sljy(grid%xp%ipsy:grid%xp%ipey,grid%xp%jpsy:grid%xp%jpey,k,nv), &
           be%ndeg,be%be,be%nta,be%swidth,be%table)
    enddo
+   !$OMP END PARALLEL DO
 
 
    call da_transpose_y2z ( grid )

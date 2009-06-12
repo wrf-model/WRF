@@ -20,6 +20,8 @@ contains
       jtsm=jts-1
       ta=float(nta)/swidth
 
+    !$OMP PARALLEL DO &
+    !$OMP PRIVATE (j, jj, i, ii, k, kk, im, al, p2, p3, GA, DE)
     do j=1,n2
      jj=j+jtsm
       do i=1,n1
@@ -44,6 +46,7 @@ contains
         enddo
       enddo
     enddo
+    !$OMP END PARALLEL DO
 
       RETURN
       END SUBROUTINE da_rfz

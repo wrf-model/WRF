@@ -6,7 +6,7 @@ SUBROUTINE da_transform_bal_adj( vp, be, grid )
    TYPE (be_type), INTENT(IN)           :: be ! Background errors.
    type (domain) , intent(inout) :: grid   ! Dimensions and xpose buffers.
 
-   INTEGER                              :: i, j, k, kk, iunit  ! Loop counters.
+   INTEGER                              :: i, j, k, kk, ij, iunit  ! Loop counters.
 !-------------------------------------------------------------------
 !  [1.0] Initialise:
 !------------------------------------------------------------------- 
@@ -20,8 +20,19 @@ SUBROUTINE da_transform_bal_adj( vp, be, grid )
 #include "HALO_PSICHI_UV_ADJ.inc"
 #endif
 
-   vp%v1(:,:,:)=0.
-   vp%v2(:,:,:)=0.
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, ij )
+   DO ij = 1 , grid%num_tiles
+      DO k = kts,kte
+         DO j = grid%j_start(ij), grid%j_end(ij)
+            DO i= its,ite
+               vp%v1(i,j,k)=0.
+               vp%v2(i,j,k)=0.
+            END DO
+         END DO
+      END DO
+   ENDDO
+   !$OMP END PARALLEL DO
 
    call da_psichi_to_uv_adj( grid%xa % u, grid%xa % v, grid%xb % coefx,   &
                             grid%xb % coefy,  vp % v1, vp % v2  )
@@ -29,51 +40,104 @@ SUBROUTINE da_transform_bal_adj( vp, be, grid )
 !  [3.3]  adj Calculate Psfc_b from psi
 
 !--convert from delt.ps to delt.ln(ps)
-   grid%xa%psfc(its:ite,jts:jte) = grid%xa%psfc(its:ite,jts:jte) &
-                            * grid%xb%psfc(its:ite,jts:jte)
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, ij )
+   DO ij = 1 , grid%num_tiles
+      DO j = grid%j_start(ij), grid%j_end(ij)
+         DO i= its,ite
+            grid%xa%psfc(i,j) = grid%xa%psfc(i,j) * grid%xb%psfc(i,j)
+         END DO
+      END DO
+   END DO
+   !$OMP END PARALLEL DO
 
-    DO kk = kts,kte
-    DO j = jts,jte
-    DO i= its,ite
-       vp % v1(i,j,kk)= vp % v1(i,j,kk)+ &
-                        be % wgvz(i,j,kk) * grid%xa % psfc(i,j)
-    END DO
-    END DO
-    END DO
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, ij )
+   DO ij = 1 , grid%num_tiles
+      DO k = kts,kte
+         DO j = grid%j_start(ij), grid%j_end(ij)
+            DO i= its,ite
+               vp % v1(i,j,k)= vp % v1(i,j,k)+ &
+                                be % wgvz(i,j,k) * grid%xa % psfc(i,j)
+            END DO
+         END DO
+      END DO
+   END DO
+   !$OMP END PARALLEL DO
 
-   vp % v5(its:ite,jts:jte,1)=grid%xa % psfc(its:ite,jts:jte)
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, ij )
+   DO ij = 1 , grid%num_tiles
+      DO j = grid%j_start(ij), grid%j_end(ij)
+         DO i= its,ite
+            vp % v5(i,j,1)=grid%xa % psfc(i,j)
+         END DO
+      END DO
+   END DO
+   !$OMP END PARALLEL DO
 
 !  [3.2] adj Calculate chi_b from psi
 
-    DO k = kts,kte
-     DO j = jts,jte
-      DO i= its,ite
-         vp % v1(i,j,k)= vp % v1(i,j,k)+ &
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, ij )
+   DO ij = 1 , grid%num_tiles
+      DO k = kts,kte
+         DO j = grid%j_start(ij), grid%j_end(ij)
+            DO i= its,ite
+               vp % v1(i,j,k)= vp % v1(i,j,k)+ &
                          be % bvz(i,j,k) * vp % v2(i,j,k) 
+            END DO
+         END DO
       END DO
-     END DO
-    END DO
+   END DO
+   !$OMP END PARALLEL DO
 
 !  [3.1] Calculate t_b from psi
 
-   DO kk = kts,kte
-    DO k = kts,kte
-     DO j = jts,jte
-      DO i= its,ite
-         vp % v1(i,j,kk)= vp % v1(i,j,kk)+ &
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, kk, ij )
+   DO ij = 1 , grid%num_tiles
+      DO kk = kts,kte
+         DO k = kts,kte
+            DO j = grid%j_start(ij), grid%j_end(ij)
+               DO i= its,ite
+                  vp % v1(i,j,kk)= vp % v1(i,j,kk)+ &
                           be % agvz(i,j,k,kk) * grid%xa % t(i,j,k)     
+               END DO
+            END DO
+         END DO
       END DO
-     END DO
-    END DO
    END DO
+   !$OMP END PARALLEL DO
 
-   vp % v3(its:ite,jts:jte,kts:kte)= grid%xa % t(its:ite,jts:jte,kts:kte)
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, ij )
+   DO ij = 1 , grid%num_tiles
+      DO k = kts,kte
+         DO j = grid%j_start(ij), grid%j_end(ij)
+            DO i= its,ite
+               vp % v3(i,j,k)= grid%xa % t(i,j,k)
+            END DO
+         END DO
+      END DO
+   END DO
+   !$OMP END PARALLEL DO
 
 !  [3.5] treat humidity                         
 
    IF ( cv_options == 3 ) THEN
-      vp % v4(its:ite,jts:jte,kts:kte) = grid%xa % q(its:ite,jts:jte,kts:kte) &
-                                       * grid%xb % qs(its:ite,jts:jte,kts:kte)
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( i, j, k, ij )
+   DO ij = 1 , grid%num_tiles
+      DO k = kts,kte
+         DO j = grid%j_start(ij), grid%j_end(ij)
+            DO i= its,ite
+               vp % v4(i,j,k) = grid%xa % q(i,j,k) * grid%xb % qs(i,j,k)
+            END DO
+         END DO
+      END DO
+   END DO
+   !$OMP END PARALLEL DO
 
    ELSE IF ( cv_options_hum == 1 ) THEN
 

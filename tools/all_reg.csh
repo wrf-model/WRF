@@ -237,6 +237,8 @@ if ( ( $BASELINE == GENERATE ) || ( $BASELINE == COMPARE ) ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
 	else if   ( `uname` == AIX ) then
 		set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`
+	else if ( ( `uname` == Linux  ) && ( `hostname` == basswood ) ) then
+		set SAVE_DIR = /basswood/${user}/Regression_Tests/BASELINE/`uname`
 	else if ( ( `uname` == Darwin  ) && ( `hostname` == stink ) ) then
 		set SAVE_DIR = /stink/${user}/Regression_Tests/BASELINE/`uname`
 	else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
@@ -324,6 +326,8 @@ FOUND_SELECTED_TEST:
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
 			else if   ( `uname` == AIX ) then
 				set SAVE_DIR = /ptmp/${USER}/BASELINE/`uname`/$tests[$count_test]
+			else if ( ( `uname` == Linux ) && ( `hostname` == basswood ) ) then
+				set SAVE_DIR = /basswood/${USER}/Regression_Tests/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == Darwin ) && ( `hostname` == stink ) ) then
 				set SAVE_DIR = /stink/${USER}/Regression_Tests/BASELINE/`uname`/$tests[$count_test]
 			else if ( ( `uname` == Linux ) && ( `hostname` == bay-mmm ) ) then
@@ -359,6 +363,7 @@ FOUND_SELECTED_TEST:
 				if ( -e ed.in ) rm ed.in
 				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
+,s/1 2 3 4 5 6 7 8 9 10 11 12 13 14/1 2 3 4 5 6 7 8 9 10 11 12/
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
 EOF
@@ -366,6 +371,7 @@ EOF
 				if ( -e ed.in ) rm ed.in
 				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
+,s/1 2 3 4 5 6 7 8 9 10 11 12 13 14/1 2 3 4 5 6 7 8 9 10 11 12/
 ,s?GENERATE_BASELINE = FALSE?GENERATE_BASELINE = $SAVE_DIR?
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q
@@ -374,6 +380,7 @@ EOF
 				if ( -e ed.in ) rm ed.in
 				cat >! ed_in << EOF
 ,s/$OLDT/$NEWT/
+,s/1 2 3 4 5 6 7 8 9 10 11 12 13 14/1 2 3 4 5 6 7 8 9 10 11 12/
 ,s?COMPARE_BASELINE = FALSE?COMPARE_BASELINE = $SAVE_DIR?
 w reg.foo.$TEST_NUM[$count_test].$tests[$count_test]
 q

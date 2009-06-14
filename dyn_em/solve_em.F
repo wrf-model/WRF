@@ -2805,6 +2805,20 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
+       CALL microphysics_zero_outb (                                    &
+                      scalar , num_scalar , config_flags ,              &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       CALL microphysics_zero_outb (                                    &
+                      chem , num_chem , config_flags ,              &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
        IF ( config_flags%periodic_x ) THEN
          its = max(grid%i_start(ij),ids)
          ite = min(grid%i_end(ij),ide-1)
@@ -2817,6 +2831,20 @@ BENCH_START(moist_phys_end_tim)
 
        CALL microphysics_zero_outa (                                    &
                       moist , num_moist , config_flags ,                &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       CALL microphysics_zero_outa (                                    &
+                      scalar , num_scalar , config_flags ,              &
+                      ids, ide, jds, jde, kds, kde,                     &
+                      ims, ime, jms, jme, kms, kme,                     &
+                      its, ite, jts, jte,                               &
+                      k_start    , k_end                                )
+
+       CALL microphysics_zero_outa (                                    &
+                      chem , num_chem , config_flags ,                  &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &

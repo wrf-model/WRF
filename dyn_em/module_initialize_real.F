@@ -1318,7 +1318,7 @@ integer::oops1,oops2
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
                            CASE ( LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
-                              CALL wrf_error_fatal ( 'Assigning constant soil moisture, bad idea')
+                              CALL wrf_error_fatal ( 'Assigned constant soil moisture to 0.3, stopping')
                               DO ns = 1 , model_config_rec%num_soil_layers
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)

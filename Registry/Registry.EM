@@ -426,6 +426,8 @@ state   real   soil_levels    i{lin}j    misc          1     Z     i1      "SOIL
 state   real   st             i{lin}j    misc          1     Z     i1      "ST"            "SOIL TEMPERATURES"   "K"
 state   real   sm             i{lin}j    misc          1     Z     i1      "SM"            "SOIL MOISTURES"      "m3 m-3"
 state   real   sw             i{lin}j    misc          1     Z     i1      "SW"            "SOIL LIQUIDS"        "m3 m-3"
+state   real   soilt          i{lin}j    misc          1     Z     i1      "SOILT"         "RUC SOIL TEMPERATURES"  "K"
+state   real   soilm          i{lin}j    misc          1     Z     i1      "SOILM"         "RUC SOIL MOISTURES"  "m3 m-3"
 state   real   sm000007            ij    misc          1     -     i1      "SM000007"      "LAYER SOIL MOISTURE" "m3 m-3"
 state   real   sm007028            ij    misc          1     -     i1      "SM007028"      "LAYER SOIL MOISTURE" "m3 m-3"
 state   real   sm028100            ij    misc          1     -     i1      "SM028100"      "LAYER SOIL MOISTURE" "m3 m-3"

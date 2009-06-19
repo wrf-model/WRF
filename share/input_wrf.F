@@ -327,6 +327,25 @@
        call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
     endif
 
+    ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
+    ! is equal to what is in the global attributes of the met_em files
+
+    CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
+
+    IF ( ierr .EQ. 0 ) THEN
+       WRITE(wrf_err_message,*)'input_wrf: global attribute NUM_METGRID_SOIL_LEVELS returns ', itmp
+       CALL wrf_debug ( 300 , wrf_err_message )
+       IF ( config_flags%num_metgrid_soil_levels /= itmp ) THEN
+          call wrf_message("----------------- ERROR -------------------")
+          WRITE(wrf_err_message,'("namelist    : num_metgrid_soil_levels = ",I10)') config_flags%num_metgrid_soil_levels
+          call wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,'("input files : NUM_METGRID_SOIL_LEVELS = ",I10, " (from met_em files).")') itmp
+          call wrf_message(wrf_err_message)
+          call wrf_error_fatal("Mismatch between namelist and global attribute NUM_METGRID_SOIL_LEVELS")
+       END IF
+    END IF
+
+
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater
     CALL wrf_debug ( 300 , wrf_err_message )

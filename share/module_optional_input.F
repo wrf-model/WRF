@@ -630,50 +630,64 @@ USE module_io_domain
 !-------------------------------------------------------------------------
       IF ( flag_soil_levels == 1 ) THEN
 
-         PRINT '(A)','flag_soil_levels = 1 in met_em file.  Soil levels has net been tested.'
-         CALL wrf_error_fatal ( 'Soil levels has not been tested' )
-
          DO k = 1, num_st_levels_input
             st_levels_input(k) = grid%soil_levels(its,num_st_levels_input + 1 - k,jts)
             sm_levels_input(k) = grid%soil_levels(its,num_st_levels_input + 1 - k,jts)
             sw_levels_input(k) = grid%soil_levels(its,num_st_levels_input + 1 - k,jts)
          END DO
-      END IF
+
+         !----------------------------------------------------------------
+         ! Flip the input soil temperature/moisture/water 
+         ! profiles upside down to make k=1 closest to the sfc
+         !----------------------------------------------------------------
+         DO j = jts , MIN(jde-1,jte)
+            DO k = 1, num_st_levels_input
+               DO i = its , MIN(ide-1,ite)
+                  st_input(i,k,j) = grid%soilt(i,num_st_levels_input + 1 - k,j)
+                  sm_input(i,k,j) = grid%soilm(i,num_st_levels_input + 1 - k,j)
+                  !-------------------------------------------------------------------------
+                  ! Initialize sw_input to 0. For 3D RUC soil moisture, there is no sw, 
+                  ! but num_sw_levels_input is set to num_metgrid_soil_levels from the
+                  ! namelist causing sw_input to be used in init_soil_#_real subroutines
+                  !-------------------------------------------------------------------------
+                  sw_input(i,k,j) = 0.0
+               END DO
+            END DO
+         END DO
+
+      END IF    ! flag_soil_levels == 1
 
       IF ( flag_soil_layers == 1 ) THEN
          level_above = 0
          DO k = 1, num_st_levels_input
-            !----------------------------------------------------
+            !-------------------------------------------------------------
             ! Calculate mid-point of each layer and set to st_levels_input
             ! Flip the input soil depths upside down to make k=1 closest to the sfc
-            !----------------------------------------------------
+            !-------------------------------------------------------------
             st_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
             sm_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
             sw_levels_input(k) = (level_above + grid%soil_layers(its,num_st_levels_input + 1 - k,jts))/2
             level_above = grid%soil_layers(its,num_st_levels_input + 1 - k,jts)
          END DO
-      END IF
-#endif
 
-      IF ( ( flag_soil_levels == 1 ) .OR. ( flag_soil_layers == 1 ) ) THEN
-
-#if (EM_CORE==1)
+         !----------------------------------------------------------------
+         ! Flip the input soil temperature/moisture/water 
+         ! profiles upside down to make k=1 closest to the sfc
+         !----------------------------------------------------------------
          DO j = jts , MIN(jde-1,jte)
             DO k = 1, num_st_levels_input
                DO i = its , MIN(ide-1,ite)
-                 !----------------------------------------------------
-                 ! Flip the input soil temperature/moisture/water 
-                 ! profiles upside down to make k=1 closest to the sfc
-                 !----------------------------------------------------
                   st_input(i,k+1,j) = grid%st(i,num_st_levels_input + 1 - k,j)
                   sm_input(i,k+1,j) = grid%sm(i,num_st_levels_input + 1 - k,j)
                   sw_input(i,k+1,j) = grid%sw(i,num_st_levels_input + 1 - k,j)
                END DO
             END DO
          END DO
+
+      END IF    ! flag_soil_layers == 1
 #endif
 
-      ELSE       ! Legacy code
+      IF ( ( flag_soil_levels == 0 ) .AND. ( flag_soil_layers == 0 ) ) THEN        ! Legacy code
 
          flag_name(1:8) = 'ST000010'
          CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 

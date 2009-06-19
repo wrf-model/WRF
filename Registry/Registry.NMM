@@ -753,6 +753,7 @@ rconfig   integer s_sn                    namelist,domains	max_domains    1     
 rconfig   integer e_sn                    namelist,domains	max_domains    32      irh    "e_sn"          ""      ""
 rconfig   integer s_vert                  namelist,domains	max_domains    1       irh    "s_vert"                ""      ""
 rconfig   integer e_vert                  namelist,domains	max_domains    31      irh    "e_vert"                ""      ""
+rconfig   integer num_metgrid_soil_levels namelist,domains	1             4        irh    "num_metgrid_soil_levels"               "number of input levels or layers in 3D sm, st, sw arrays"      ""
 rconfig   real    dx                      namelist,domains     max_domains    200     h     "dx"        "X HORIZONTAL RESOLUTION"   "METERS"
 rconfig   real    dy                      namelist,domains   	max_domains    200     h     "dy"        "Y HORIZONTAL RESOLUTION"   "METERS"
 rconfig   integer grid_id                 namelist,domains	max_domains    1       irh    "id"            ""      ""

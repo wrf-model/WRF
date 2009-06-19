@@ -233,6 +233,8 @@ CONTAINS
    grid%truelat2 = 0.
    grid%moad_cen_lat = 0.
    grid%stand_lon    = 0.
+   grid%pole_lon = 0.
+   grid%pole_lat = 90.
    ! Apparently, map projection 0 is "none" which actually turns out to be
    ! a regular grid of latitudes and longitudes, the simple cylindrical projection
    grid%map_proj = 0

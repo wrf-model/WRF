@@ -4,7 +4,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    TYPE(domain)  :: parent , nest
 
    INTEGER iswater , map_proj, julyr, julday
-   REAL    truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon
+   REAL    truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon, pole_lat, pole_lon
    CHARACTER (LEN=256) :: char_junk
 
 ! single-value constants
@@ -32,6 +32,8 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    CALL nl_get_truelat2 ( 1 , truelat2 )
    CALL nl_get_moad_cen_lat ( 1 , moad_cen_lat )
    CALL nl_get_stand_lon ( 1 , stand_lon )
+   CALL nl_get_pole_lat ( 1 , pole_lat )
+   CALL nl_get_pole_lon ( 1 , pole_lon )
    CALL nl_get_map_proj ( 1 , map_proj )
    CALL nl_get_gmt ( 1 , gmt)
    CALL nl_get_julyr ( 1 , julyr)
@@ -45,6 +47,8 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
      CALL nl_set_truelat2 ( nest%id , truelat2 )
      CALL nl_set_moad_cen_lat ( nest%id , moad_cen_lat )
      CALL nl_set_stand_lon ( nest%id , stand_lon )
+     CALL nl_set_pole_lat ( nest%id , pole_lat )
+     CALL nl_set_pole_lon ( nest%id , pole_lon )
      CALL nl_set_map_proj ( nest%id , map_proj )
    END IF
    nest%gmt     = gmt
@@ -55,6 +59,8 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%truelat2= truelat2
    nest%moad_cen_lat= moad_cen_lat
    nest%stand_lon= stand_lon
+   nest%pole_lat= pole_lat
+   nest%pole_lon= pole_lon
    nest%map_proj= map_proj
 
    nest%step_number  = parent%step_number

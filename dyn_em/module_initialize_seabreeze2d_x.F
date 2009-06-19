@@ -191,6 +191,8 @@ CONTAINS
     CALL nl_set_truelat2(1,0.)
     CALL nl_set_moad_cen_lat (1,0.)
     CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
 !   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
     CALL nl_get_iswater(1,grid%iswater)

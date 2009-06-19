@@ -239,6 +239,17 @@
     CALL nl_set_stand_lon ( grid%id , config_flags%stand_lon )
 
 #if ( NMM_CORE != 1 )
+
+    CALL wrf_get_dom_ti_real ( fid , 'POLE_LAT' ,  config_flags%pole_lat , 1 , icnt , ierr )
+    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for POLE_LAT returns ',config_flags%pole_lat
+    CALL wrf_debug ( 300 , wrf_err_message )
+    CALL nl_set_pole_lat ( grid%id , config_flags%pole_lat )
+
+    CALL wrf_get_dom_ti_real ( fid , 'POLE_LON' ,  config_flags%pole_lon , 1 , icnt , ierr )
+    WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_real for POLE_LON returns ',config_flags%pole_lon
+    CALL wrf_debug ( 300 , wrf_err_message )
+    CALL nl_set_pole_lon ( grid%id , config_flags%pole_lon )
+
 ! program_name is defined in module_domain and set in the main program for whatever application
 ! is using subroutine input_wrf (that is, the subroutine you are looking at here). Data files
 ! written by SI have P_TOP as a metadata item; the real program and wrf model have it as a

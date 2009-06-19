@@ -570,6 +570,10 @@
     CALL wrf_put_dom_ti_real ( fid , 'TRUELAT2',  config_flags%truelat2, 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'MOAD_CEN_LAT',  config_flags%moad_cen_lat, 1 , ierr )
     CALL wrf_put_dom_ti_real ( fid , 'STAND_LON',  config_flags%stand_lon, 1 , ierr )
+#if (EM_CORE == 1)
+    CALL wrf_put_dom_ti_real ( fid , 'POLE_LAT',  config_flags%pole_lat, 1 , ierr )
+    CALL wrf_put_dom_ti_real ( fid , 'POLE_LON',  config_flags%pole_lon, 1 , ierr )
+#endif
     IF ( switch .NE. boundary_only .AND. switch .NE. aux_model_input9_only .AND. switch .NE. aux_model_input10_only ) THEN
 #ifdef PLANET
       ! When writing to restart files, use the values of the instantaneous

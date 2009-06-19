@@ -776,6 +776,9 @@ cat >! phys_real_3 << EOF
  bldt                                = 0,     0,     0,
  cu_physics                          = 3,     3,     0,
  cudt                                = 5,     5,     5,
+ omlcall                             = 1,
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
@@ -819,19 +822,15 @@ cat >! phys_real_4 << EOF
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 5,     5,     5,
  bldt                                = 0,     0,     0,
- cu_physics                          = 3,     3,     0,
+ cu_physics                          = 5,     5,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,
+ sf_urban_physics                    = 1,     1,     1,
  mp_zero_out                         = 0,
- maxiens                             = 1,
- maxens                              = 3,
- maxens2                             = 3,
- maxens3                             = 16,
- ensdim                              = 144,
 EOF
 
 cat >! dyn_real_4  << EOF
@@ -850,7 +849,7 @@ cat >! nest_real_4  << EOF
 EOF
 
 cat >! damp_real_4  << EOF
- damp_opt                            = 0,
+ damp_opt                            = 1,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
 EOF
@@ -861,7 +860,7 @@ cat >! phys_real_5 << EOF
  ra_sw_physics                       = 3,     3,     3,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 7,     7,     7,
- sf_surface_physics                  = 2,     2,     2,
+ sf_surface_physics                  = 7,     7,     7,
  bl_pbl_physics                      = 7,     7,     7,
  bldt                                = 0,     0,     0,
  cu_physics                          =99,    99,     0,
@@ -870,7 +869,7 @@ cat >! phys_real_5 << EOF
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 4,
+ num_soil_layers                     = 2,
  mp_zero_out                         = 0,
  levsiz                              = 59
  paerlev                             = 29
@@ -895,7 +894,7 @@ cat >! nest_real_5  << EOF
 EOF
 
 cat >! damp_real_5  << EOF
- damp_opt                            = 1,
+ damp_opt                            = 0,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
 EOF
@@ -1039,16 +1038,16 @@ cat >! phys_real_9 << EOF
  ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 5,     5,     5,
- sf_surface_physics                  = 2,     2,     2,
+ sf_surface_physics                  = 7,     7,     7,
  bl_pbl_physics                      = 6,     6,     6,
  bldt                                = 0,     0,     0,
- cu_physics                          =99,    99,     0,
+ cu_physics                          = 5,     5,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 4,
+ num_soil_layers                     = 2,
  mp_zero_out                         = 0,
 EOF
 
@@ -1079,7 +1078,7 @@ cat >! phys_real_10 << EOF
  ra_sw_physics                       = 2,     2,     2,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 4,     4,     4,
- sf_surface_physics                  = 1,     1,     1,
+ sf_surface_physics                  = 7,     7,     7,
  bl_pbl_physics                      = 4,     4,     4,
  bldt                                = 0,     0,     0,
  cu_physics                          =99,    99,     0,
@@ -1088,7 +1087,7 @@ cat >! phys_real_10 << EOF
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 5,
+ num_soil_layers                     = 2,
  mp_zero_out                         = 0,
 EOF
 
@@ -1207,19 +1206,25 @@ cat >! phys_real_13 << EOF
  ra_lw_physics                       = 1,     1,     1,
  ra_sw_physics                       = 1,     1,     1,
  radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 2,     2,     2,
- sf_surface_physics                  = 2,     2,     2,
- bl_pbl_physics                      = 8,     8,     8,
+ sf_sfclay_physics                   = 1,     1,     1,
+ sf_surface_physics                  = 3,     3,     3,
+ bl_pbl_physics                      = 1,     1,     1,
  bldt                                = 0,     0,     0,
- cu_physics                          = 5,     5,     0,
+ cu_physics                          = 3,     3,     0,
  cudt                                = 0,     0,     0,
+ slope_rad                           = 1,     1,     1,
+ topo_shading                        = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
- sf_urban_physics                    = 2,     2,     2,
  surface_input_source                = 1,
- num_soil_layers                     = 4,
+ num_soil_layers                     = 6,
  mp_zero_out                         = 0,
+ maxiens                             = 1,
+ maxens                              = 3,
+ maxens2                             = 3,
+ maxens3                             = 16,
+ ensdim                              = 144,
 EOF
 
 cat >! dyn_real_13  << EOF
@@ -1245,12 +1250,12 @@ EOF
 
 cat >! phys_real_14 << EOF
  mp_physics                          = 3,     3,     3, 
- ra_lw_physics                       = 1,     1,     1,
- ra_sw_physics                       = 1,     1,     1,
+ ra_lw_physics                       = 3,     3,     3,
+ ra_sw_physics                       = 3,     3,     3,
  radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 2,     2,     2,
- sf_surface_physics                  = 7,     7,     7,
- bl_pbl_physics                      = 8,     8,     8,
+ sf_sfclay_physics                   = 4,     4,     4,
+ sf_surface_physics                  = 3,     3,     3,
+ bl_pbl_physics                      = 4,     4,     4,
  bldt                                = 0,     0,     0,
  cu_physics                          = 2,     2,     0,
  cudt                                = 0,     0,     0,
@@ -1258,8 +1263,13 @@ cat >! phys_real_14 << EOF
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 2,
+ num_soil_layers                     = 6,
  mp_zero_out                         = 0,
+ levsiz                              = 59
+ paerlev                             = 29
+ cam_abs_freq_s                      = 21600
+ cam_abs_dim1                        = 4
+ cam_abs_dim2                        = 28
 EOF
 
 cat >! dyn_real_14  << EOF
@@ -1278,13 +1288,13 @@ cat >! nest_real_14  << EOF
 EOF
 
 cat >! damp_real_14  << EOF
- damp_opt                            = 3,
+ damp_opt                            = 1,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
 EOF
 
 if ( $GLOBAL == TRUE ) then
-	foreach exp ( 2 5 8 11 ) 
+	foreach exp ( 2 5 8 11 14 ) 
 		sed -e 's/ cam_abs_dim2 *= [0-9][0-9]/ cam_abs_dim2 = 41/g' phys_real_$exp >! phys_foo ; mv phys_foo phys_real_$exp
 	end
 	cp dyn_real_SAFE dyn_real_1

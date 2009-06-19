@@ -607,6 +607,14 @@ CONTAINS
 #ifdef DM_PARALLEL
 #     include "HALO_CUP_G3_OUT.inc"
 #endif
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( ij ,its,ite,jts,jte, i,j,k)
+      DO ij = 1 , num_tiles
+        its = i_start(ij)
+        ite = i_end(ij)
+        jts = j_start(ij)
+        jte = j_end(ij)
+
         call conv_grell_spread3d(rthcuten=rthcuten,rqvcuten=rqvcuten                &
      &            ,rqccuten=rqccuten,raincv=raincv,cugd_avedx=cugd_avedx            &
      &            ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten,rqicuten=rqicuten      &
@@ -618,9 +626,9 @@ CONTAINS
      &            ,ids=IDS,ide=IDE, jds=JDS,jde=JDE, kds=KDS,kde=KDE                &
      &            ,ips=IPS,ipe=IPE, jps=JPS,jpe=JPE, kps=KPS,kpe=KPE                &
      &            ,ims=IMS,ime=IME, jms=JMS,jme=JME, kms=KMS,kme=KME                &
-     &            ,i_start=i_start,i_end=i_end                                      &
-     &            ,j_start=j_start,j_end=j_end                                      &
-     &            ,kts=kts, kte=kte)
+     &            ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte)
+      ENDDO
+      !$OMP END PARALLEL DO
    endif
 #endif
 

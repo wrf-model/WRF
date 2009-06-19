@@ -592,7 +592,7 @@ CONTAINS
 !
    INTEGER :: i,J,K,NK,jj,ij,n
    INTEGER :: gfdl_ntsflg
-   LOGICAL :: radiation, myj, frpcpn
+   LOGICAL :: radiation, myj, frpcpn, isisfc
    LOGICAL, INTENT(in), OPTIONAL :: rdlai2d
    LOGICAL, INTENT(in), OPTIONAL :: usemonalb
    REAL    :: julian
@@ -670,7 +670,6 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
 !
-   INTEGER :: isisfc
    REAL :: xice_threshold
 !
 
@@ -689,7 +688,6 @@ CONTAINS
   if (sf_sfclay_physics .eq. 0) return
 ! if (sf_sfclay_physics .eq. 0 .or. sf_surface_physics.eq.0) return
 
-  isisfc = 0
   if ( fractional_seaice == 0 ) then
      xice_threshold = 0.5
   else if ( fractional_seaice == 1 ) then
@@ -831,8 +829,15 @@ CONTAINS
 ! IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
 
   radiation = .false.
-  myj = .false.
   frpcpn = .false.
+  myj    = ((sf_sfclay_physics .EQ. MYJSFCSCHEME) .OR. &
+            (sf_sfclay_physics .EQ. QNSESFCSCHEME) )
+  isisfc = ( FRACTIONAL_SEAICE .EQ. 1  .AND. (          &
+            (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
+            (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
+            (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
+            (sf_sfclay_physics .EQ. GFSSFCSCHEME ) )    &
+           )
 
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
@@ -907,7 +912,6 @@ CONTAINS
                                                       .TRUE. ) THEN
          CALL wrf_debug( 100, 'in SFCLAY' )
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
-            isisfc = 1
             CALL SFCLAY_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                  znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
@@ -945,12 +949,10 @@ CONTAINS
            end do
            end do
 #endif
-
          ENDIF
        ELSE
          CALL wrf_error_fatal('Lacking arguments for SFCLAY in surface driver')
        ENDIF
-
 
      CASE (PXSFCSCHEME)
 #if (NMM_CORE != 1)
@@ -960,7 +962,6 @@ CONTAINS
          CALL wrf_debug( 100, 'in PX Surface Layer scheme' )
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             CALL WRF_ERROR_FATAL("PXSFCLAY not adapted for FRACTIONAL_SEAICE=1 option")
-            isisfc = 1
             CALL PXSFCLAY_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,th_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                  znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
@@ -996,11 +997,9 @@ CONTAINS
       CASE (MYJSFCSCHEME)
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN
-        myj =.true.
 
         CALL wrf_debug(100,'in MYJSFC')
         IF ( FRACTIONAL_SEAICE == 1 ) THEN
-           isisfc = 1
            CALL MYJSFC_SEAICE_WRAPPER(itimestep,ht,dz8w,             &
                 p_phy,p8w,th_phy,t_phy,                              &
                 qv_curr,qc_curr,                                     &
@@ -1082,7 +1081,6 @@ CONTAINS
        IF (PRESENT(qv_curr) .AND. .TRUE. ) THEN
        CALL wrf_debug( 100, 'in GFSSFC' )
        IF (FRACTIONAL_SEAICE == 1) THEN
-          isisfc = 1
           CALL SF_GFS_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr, &
                p_phy,CP,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM,        &
                ZNT,UST,PSIM,PSIH,                                  &
@@ -1280,7 +1278,7 @@ CONTAINS
            frpcpn=.true.
          ENDIF
          IF ( FRACTIONAL_SEAICE == 1) THEN
-            IF ( isisfc == 1 ) THEN
+            IF ( isisfc ) THEN
                ! Use surface layer routine values from the ice portion of grid point
             ELSE
                !
@@ -1361,7 +1359,7 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 )
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
-            IF ( isisfc .EQ. 1 ) THEN
+            IF ( isisfc ) THEN
                DO j=j_start(ij),j_end(ij)
                   DO i=i_start(ij),i_end(ij)
                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
@@ -1472,7 +1470,7 @@ CONTAINS
            ENDIF
            CALL wrf_debug(100,'in RUC LSM')
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
-              IF ( isisfc == 1 ) THEN
+              IF ( isisfc ) THEN
                  !
                  ! use surface layer routine values from the ice portion of grid point
                  !
@@ -1523,7 +1521,7 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
-              if ( isisfc == 1 ) then
+              if ( isisfc ) then
                  !
                  !  back to ice and ocean average
                  !
@@ -1584,7 +1582,7 @@ CONTAINS
 
              CALL WRF_ERROR_FATAL("PXLSM not adapted for FRACTIONAL_SEAICE=1 option")
 
-             IF ( ISISFC .EQ. 1 ) THEN
+             IF ( isisfc ) THEN
                 !
                 ! use surface layer routine values from the ice portion of grid point
                 !
@@ -1634,7 +1632,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                      &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
           IF ( FRACTIONAL_SEAICE == 1 ) THEN
-             IF ( ISISFC .EQ. 1 ) THEN
+             IF ( isisfc ) THEN
                 !
                 !  back to ice and ocean average
                 !

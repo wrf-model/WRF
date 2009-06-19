@@ -329,6 +329,7 @@ CONTAINS
                                                       ! convert RAINBL from mm to m for PXLSM
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
           THETA1 = TH3D(i,1,j)			      ! potential temp at first layer
+          SNOBS = SNOW(I,J)
                    
           IF(PXLSM_SOIL_NUDGE .EQ. 1) THEN                   
             !-- 2 m Temp and RH for Nudging

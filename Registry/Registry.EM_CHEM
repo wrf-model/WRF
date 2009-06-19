@@ -1387,6 +1387,14 @@ rconfig   integer     obs_nudge_mois      namelist,fdda            max_domains  
 rconfig   real        obs_coef_mois       namelist,fdda            max_domains    0       rh       "obs_coef_mois"     "Moisture-nudging coef for domain"     "s-1"
 rconfig   integer     obs_nudge_pstr      namelist,fdda            max_domains    0       rh       "obs_nudge_pstr"    "Not used"                             ""
 rconfig   real        obs_coef_pstr       namelist,fdda            max_domains    0       rh       "obs_coef_pstr"     "Not used"                             ""
+rconfig   integer     obs_no_pbl_nudge_uv namelist,fdda            max_domains    0       rh       "obs_no_pbl_nudge_uv" "1=no wind-nudging within pbl"          ""
+rconfig   integer     obs_no_pbl_nudge_t  namelist,fdda            max_domains    0       rh       "obs_no_pbl_nudge_t"  "1=no temperature-nudging within pbl"   ""
+rconfig   integer     obs_no_pbl_nudge_q  namelist,fdda            max_domains    0       rh       "obs_no_pbl_nudge_q"  "1=no moisture-nudging within pbl"      ""
+rconfig   real        obs_sfcfact         namelist,fdda            1              1.0     h        "obs_sfcfact"       "Scale factor applied to time window for surface obs"     ""
+rconfig   real        obs_sfcfacr         namelist,fdda            1              1.0     h        "obs_sfcfacr"       "Scale factor applied to horiz radius of influence for surface obs"     ""
+rconfig   real        obs_dpsmx           namelist,fdda            1              7.5     h        "obs_dpsmx"         "Max pressure change allowed within horiz radius of influence"     "centibars"
+rconfig   real        obs_lml_ht1         namelist,fdda            1              100.    h        "obs_lml_ht1"       "Height 1 for spreading of lowest model level obs"     "km"
+rconfig   real        obs_lml_ht2         namelist,fdda            1              100.    h        "obs_lml_ht2"       "Height 2 for spreading of lowest model level obs"     "km"
 rconfig   real        obs_rinxy           namelist,fdda            max_domains    0       rh       "obs_rinxy"         "Horizontal radius of influence"       "km"
 rconfig   real        obs_rinsig          namelist,fdda            1              0       h        "obs_rinsig"        "Vertical radius of influence"         "sigma"
 rconfig   real        obs_twindo          namelist,fdda            max_domains    0       rh       "obs_twindo"        "Half-period time window for nudging"  "hrs"
@@ -1799,6 +1807,13 @@ typedef fdob_type integer REFPRT(max_domains)   # reference obs index for diagno
 typedef fdob_type real    WINDOW       # time window half-period for nudging (in minutes) 
 typedef fdob_type real    RTLAST       # time in hours of last obs used in current model step
 typedef fdob_type real    DATEND       # time in minutes after which data are asuumed to have ended
+typedef fdob_type logical NUDGE_UV_PBL # Flag for wind nudging within the PBL
+typedef fdob_type logical NUDGE_T_PBL  # Flag for temperature nudging within the PBL
+typedef fdob_type logical NUDGE_Q_PBL  # Flag for moisture nudging within the PBL
+typedef fdob_type real    SFCFACT      # scale factor applied to time window for surface obs
+typedef fdob_type real    SFCFACR      # scale factor applied to horiz radius of influence for surface obs
+typedef fdob_type real    LML_OBS_HT1_LEV  # base-state model vertical coordinate of LML_OBS_HT1
+typedef fdob_type real    LML_OBS_HT2_LEV  # base-state model vertical coordinate of LML_OBS_HT2
 typedef fdob_type real    RINFMN       # minimum radius of influence
 typedef fdob_type real    RINFMX       # maximum radius of influence
 typedef fdob_type real    PFREE        # pressure level (cb) where terrain effect becomes small

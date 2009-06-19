@@ -97,6 +97,7 @@ CONTAINS
 #if ( EM_CORE == 1 )
                          fdob,                                   & !Optional obs fdda
 #endif
+                         t00, p00, tlp,                          & !for obs-nudging
                          TYR,TYRA,TDLY,TLAG,NYEAR,NDAY,tmn_update,   &
                          ACHFX,ACLHF,ACGRDFLX                   &
                          )
@@ -321,6 +322,7 @@ CONTAINS
 #if ( EM_CORE == 1 )
    TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
 #endif
+   REAL, OPTIONAL, INTENT(IN) :: p00, t00, tlp   ! for obs-nudging base-state calcn
 
 ! Local data
 
@@ -595,11 +597,21 @@ integer myproc
                   model_config_rec%obs_idynin,                  &
                   model_config_rec%obs_dtramp,                  &
                   model_config_rec%fdda_end,                    &
-                  config_flags%restart,                         &
+                  model_config_rec%restart,                     &
                   obs_twindo_cg, obs_twindo,                    &
                   itimestep,                                    &
+                  model_config_rec%obs_no_pbl_nudge_uv,         &
+                  model_config_rec%obs_no_pbl_nudge_t,          &
+                  model_config_rec%obs_no_pbl_nudge_q,          &
+                  model_config_rec%obs_sfcfact,                 &
+                  model_config_rec%obs_sfcfacr,                 &
+                  model_config_rec%obs_dpsmx,                   &
+                  model_config_rec%obs_lml_ht1,                 &
+                  model_config_rec%obs_lml_ht2,                 &
                   xlat,                                         &
                   xlong,                                        &
+                  p00, t00, tlp,                                &
+                  zhalf, p_top,                                 &
                   fdob,                                         &
                   model_config_rec%obs_ipf_init,                &
                   ids, ide, jds, jde, kds, kde,                 &
@@ -1980,7 +1992,14 @@ integer myproc
    SUBROUTINE fdob_init(obs_nudge_opt, maxdom, inest, parid,       &
                         idynin, dtramp, fdaend, restart,           &
                         obs_twindo_cg, obs_twindo, itimestep,      &
+                        no_pbl_nudge_uv,                           &
+                        no_pbl_nudge_t,                            &
+                        no_pbl_nudge_q,                            &
+                        sfcfact, sfcfacr, dpsmx,                   &
+                        lml_ht1, lml_ht2,                          &
                         xlat, xlong,                               &
+                        p00, t00, tlp,                             &
+                        znu, p_top,                                &
                         fdob, ipf_init,                            &
                         ids, ide, jds, jde, kds, kde,              &
                         ims, ime, jms, jme, kms, kme,              &
@@ -2007,8 +2026,21 @@ integer myproc
    REAL    , INTENT(IN)    :: obs_twindo_cg   ! twindo on course grid
    REAL    , INTENT(IN)    :: obs_twindo
    INTEGER , INTENT(IN)    :: itimestep
-   REAL, DIMENSION( ims:ime, jms:jme ),                            &
-         INTENT(IN )       :: xlat, xlong  ! lat/long locations on mass point grid
+   INTEGER , INTENT(IN)    :: no_pbl_nudge_uv(maxdom)  ! flags for no wind nudging in pbl
+   INTEGER , INTENT(IN)    :: no_pbl_nudge_t(maxdom)   ! flags for no temperature nudging in pbl
+   INTEGER , INTENT(IN)    :: no_pbl_nudge_q(maxdom)   ! flags for no moisture nudging in pbl
+   REAL    , INTENT(IN)    :: sfcfact      ! scale factor applied to time window for surface obs
+   REAL    , INTENT(IN)    :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
+   REAL    , INTENT(IN)    :: dpsmx        ! max pressure change allowed within horiz. infl. range
+   REAL    , INTENT(IN)    :: lml_ht1      ! height 1 for spreading of lowest model level obs
+   REAL    , INTENT(IN)    :: lml_ht2      ! height 2 for spreading of lowest model level obs
+   REAL    , INTENT(IN)    :: xlat ( ims:ime, jms:jme )        ! latitudes on mass-point grid
+   REAL    , INTENT(IN)    :: xlong( ims:ime, jms:jme )        ! longitudes on mass-point grid
+   REAL    , INTENT(IN)    :: p00                      ! base state pressure
+   REAL    , INTENT(IN)    :: t00                      ! base state temperature
+   REAL    , INTENT(IN)    :: tlp                      ! base state lapse rate
+   REAL    , INTENT(IN)    :: znu( kms:kme )           ! eta values on half (mass) levels
+   REAL    , INTENT(IN)    :: p_top                    ! pressure at top of model
    TYPE(fdob_type), INTENT(INOUT)  :: fdob
 
    INTEGER                 :: e_sn         ! ending   north-south grid index
@@ -2023,7 +2055,14 @@ integer myproc
                         idynin, dtramp, fdaend, restart,           &
                         obs_twindo_cg,                             &
                         obs_twindo, itimestep,                     &
+                        no_pbl_nudge_uv,                           &
+                        no_pbl_nudge_t,                            &
+                        no_pbl_nudge_q,                            &
+                        sfcfact, sfcfacr, dpsmx,                   &
+                        lml_ht1, lml_ht2,                          &
                         xlat, xlong,                               &
+                        p00, t00, tlp,                             &
+                        znu, p_top,                                &
                         fdob, ipf_init,                            &
                         ids,ide, jds,jde, kds,kde,                 &
                         ims,ime, jms,jme, kms,kme,                 &

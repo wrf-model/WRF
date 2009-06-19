@@ -49,7 +49,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 #if ( EM_CORE == 1 ) 
                fdob,                                             &
 #endif
-               max_obs, nobs_ndg_vars,    &
+               max_obs, nobs_ndg_vars,                           &
                nobs_err_flds, nstat, varobs, errf, dx,           &
                KPBL, HT, mut, muu, muv,                          &
                msftx, msfty, msfux, msfuy, msfvx, msfvy, p_phy, t_tendf, t0,             &
@@ -126,7 +126,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, intent(inout)  :: varobs(nobs_ndg_vars, max_obs)
   REAL, intent(inout)  :: errf(nobs_err_flds, max_obs)
   REAL, intent(in)     :: dx           ! this-domain grid cell-size (m)
-  INTEGER, INTENT(IN) :: kpbl( ims:ime, jms:jme )
+  INTEGER, INTENT(IN) :: kpbl( ims:ime, jms:jme ) ! vertical layer index for PBL top
   REAL, INTENT(IN) :: ht( ims:ime, jms:jme )
   REAL, INTENT(IN) :: mut( ims:ime , jms:jme )   ! Air mass on t-grid 
   REAL, INTENT(IN) :: muu( ims:ime , jms:jme )   ! Air mass on u-grid 
@@ -215,7 +215,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 
         CALL errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rcp,       &
                    phb, ph, g,                                       &
-                   uratx, vratx, tratx,                              &
+                   uratx, vratx, tratx, kpbl,                        &
                    nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,    &
                    fdob%levidn, parid, fdob%nstat, fdob%nstaw,       &
                    nudge_wind, nudge_temp, nudge_mois, nudge_pstr,   &
@@ -289,6 +289,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   mut(ims,j), msftx(ims,j), msfty(ims,j),            &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
+                  fdob%nudge_t_pbl,                                  &
+                  fdob%sfcfact, fdob%sfcfacr,                        &
                   fdob%levidn,                                       &
                   parid, nstat,                                      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
@@ -313,6 +315,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   mut(ims,j), msftx(ims,j), msfty(ims,j),            &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
+                  fdob%nudge_q_pbl,                                  &
+                  fdob%sfcfact, fdob%sfcfacr,                        &
                   fdob%levidn,                                       &
                   parid, nstat,                                      &
                   fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,    &
@@ -338,6 +342,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 muu(ims,j), msfux(ims,j), msfuy(ims,j),              &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
+                fdob%nudge_uv_pbl,                                   &
+                fdob%sfcfact, fdob%sfcfacr,                          &
                 fdob%levidn,                                         &
                 parid, nstat,                                        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &
@@ -359,6 +365,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 muv(ims,j), msfvx(ims,j), msfvy(ims,j),              &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
+                fdob%nudge_uv_pbl,                                   &
+                fdob%sfcfact, fdob%sfcfacr,                          &
                 fdob%levidn,                                         &
                 parid, nstat,                                        &
                 fdob, fdob%lev_in_ob, fdob%plfo, fdob%nlevs_ob,      &

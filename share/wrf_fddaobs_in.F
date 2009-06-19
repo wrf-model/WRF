@@ -948,11 +948,9 @@
 !             print *,'dup single ob-replace ',n,inest,
 !             plfo(n),plfo(njc)
 ! this is the sfc ob replacement part
-              VAROBS(1,njc)=VAROBS(1,n)
-              VAROBS(2,njc)=VAROBS(2,n)
-              VAROBS(3,njc)=VAROBS(3,n)
-              VAROBS(4,njc)=VAROBS(4,n)
-              VAROBS(5,njc)=VAROBS(5,n)
+              do KN = 1,nndgv
+                VAROBS(KN,njc)=VAROBS(KN,n)
+              enddo
 ! don't need to switch these because they're the same
 !             RIO(njc)=RIO(n)
 !             RJO(njc)=RJO(n)
@@ -991,11 +989,9 @@
 !             n=n-meas_count
 ! set the first sounding ob to missing
               do njcc=njc,njc+nint(nlevs_ob(njc))-1
-                VAROBS(1,njcc)=-888888.
-                VAROBS(2,njcc)=-888888.
-                VAROBS(3,njcc)=-888888.
-                VAROBS(4,njcc)=-888888.
-                VAROBS(5,njcc)=-888888.
+                do KN = 1,nndgv
+                  VAROBS(KN,njcc)=-888888.
+                enddo
                 plfo(njcc)=99.
               enddo
               goto 100
@@ -1037,11 +1033,9 @@
                 call wrf_message(msg)
               ENDIF
 ! this is the single ua ob replacement part
-              VAROBS(1,njc)=VAROBS(1,n)
-              VAROBS(2,njc)=VAROBS(2,n)
-              VAROBS(3,njc)=VAROBS(3,n)
-              VAROBS(4,njc)=VAROBS(4,n)
-              VAROBS(5,njc)=VAROBS(5,n)
+              do KN = 1,nndgv
+                VAROBS(KN,njc)=VAROBS(KN,n)
+              enddo
 ! don't need to switch these because they're the same
 !           RIO(njc)=RIO(n)
 !           RJO(njc)=RJO(n)
@@ -1284,12 +1278,13 @@
     ENDIF
   ENDIF
   IF(KTAU.EQ.KTAUR)THEN
-    IF (iprt) THEN
-      write(msg,553)
-      call wrf_message(msg)
-      write(msg,554)
-      call wrf_message(msg)
-    ENDIF
+!ajb 05042009 These messages are incorrect, remnant of MM5?
+!   IF (iprt) THEN
+!     write(msg,553)
+!     call wrf_message(msg)
+!     write(msg,554)
+!     call wrf_message(msg)
+!   ENDIF
     IF(fdob%IWTSIG.NE.1)THEN
       IF (iprt) THEN
         write(msg,555)
@@ -1301,6 +1296,7 @@
          call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 556' )
       ENDIF
 ! IS MINIMUM GREATER THAN MAXIMUM?
+
       IF (iprt) then
         write(msg,557) fdob%DPSMX*10.,fdob%DCON
         call wrf_message(msg)
@@ -1310,7 +1306,6 @@
       ENDIF
     ENDIF
   ENDIF
-! IS DPSMX IN CB?
  
   IF(KTAU.EQ.KTAUR)THEN
     IF (iprt) then

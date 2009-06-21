@@ -669,6 +669,7 @@ The following are for observation nudging:
  base_temp                           = 290.,    ; real-data, em ONLY, base sea-level temp (K)
  base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
+ iso_temp                            = 0.,      ; real-data, em ONLY, reference temp in stratosphere
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
  kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)

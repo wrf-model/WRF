@@ -333,6 +333,7 @@ CONTAINS
    CHARACTER*256 :: MMINLU_loc
    CHARACTER*80 :: message
    INTEGER :: ISWATER
+   INTEGER :: ISICE
    INTEGER :: ISURBAN
    INTEGER :: sf_urban_physics
    INTEGER :: omlcall
@@ -379,11 +380,14 @@ integer myproc
 #endif
 
    CALL nl_get_cen_lat(id,cen_lat)
-   CALL wrf_debug(100,'calling nl_get_iswater, nl_get_mminlu_loc')
+   CALL wrf_debug(100,'calling nl_get_iswater, nl_get_isice, nl_get_mminlu_loc')
    CALL nl_get_iswater(id,iswater)
+   CALL nl_get_isice(id,isice)
    CALL nl_get_isurban(id,isurban)
    CALL nl_get_mminlu( 1, mminlu_loc )
-   CALL wrf_debug(100,'after nl_get_iswater, nl_get_mminlu_loc')
+   CALL wrf_debug(100,'after nl_get_iswater, nl_get_isice, nl_get_mminlu_loc')
+!-- temporary fix by ww
+   landuse_ISICE = isice
 
   IF(.not.restart)THEN
 !-- initialize common variables
@@ -462,7 +466,7 @@ integer myproc
    IF(mminlu_loc .ne. '    ')THEN
 !-- initialize surface properties
 
-     CALL landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss, embck,            &
+     CALL landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
                 znt, Z0, thc, xland, xice, xicem, julday, cen_lat, iswater, &
                 TRIM ( mminlu_loc ) ,                               &
                 landuse_ISICE, landuse_LUCATS,                      &
@@ -623,7 +627,7 @@ integer myproc
    END SUBROUTINE phy_init
 
 !=====================================================================
-   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, mavail, emiss, embck, &
+   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
                 znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu,  &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
                 lu_state,                                           &
@@ -644,7 +648,7 @@ integer myproc
    REAL    , INTENT(IN)           :: cen_lat
    CHARACTER(LEN=*), INTENT(IN)        :: mminlu
    LOGICAL,  INTENT(IN)           :: allowed_to_read , usemonalb
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: lu_index, snowc, xice, snoalb
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT  ) :: albedo, albbck, mavail, emiss, &
                                                                embck,                         &
                                                                znt, Z0, thc, xland, xicem
@@ -710,23 +714,23 @@ integer myproc
       ENDIF
 
 ! Read info from file LANDUSE.TBL
-      IF(MMINLU.EQ.'OLD ')THEN
+!     IF(MMINLU.EQ.'OLD ')THEN
 !       ISWATER=7
-        ISICE=11
-      ELSE IF(MMINLU.EQ.'USGS')THEN
+!       ISICE=11
+!     ELSE IF(MMINLU.EQ.'USGS')THEN
 !       ISWATER=16
-        ISICE=24
-      ELSE IF(MMINLU.EQ.'SiB ')THEN
+!       ISICE=24
+!     ELSE IF(MMINLU.EQ.'SiB ')THEN
 !       ISWATER=15
-        ISICE=16
-      ELSE IF(MMINLU.EQ.'LW12')THEN
+!       ISICE=16
+!     ELSE IF(MMINLU.EQ.'LW12')THEN
 !       ISWATER=15
-        ISICE=3
-      ELSE IF (MMINLU .EQ. 'MODIFIED_IGBP_MODIS_NOAH') THEN
-        ISICE = 15
-      ELSE
-         call wrf_error_fatal ("INPUT LandUse not found: "//TRIM(MMINLU))
-      ENDIF
+!       ISICE=3
+!     ELSE IF (MMINLU .EQ. 'MODIFIED_IGBP_MODIS_NOAH') THEN
+!       ISICE = 15
+!     ELSE
+!        call wrf_error_fatal ("INPUT LandUse not found: "//TRIM(MMINLU))
+!     ENDIF
       call wrf_message ( 'INPUT LandUse = "' // TRIM(MMINLU) // '"' )
       FOUND_LU = .FALSE.
       end_of_file = .FALSE.
@@ -814,7 +818,13 @@ integer myproc
           ENDIF
           IF(.NOT.usemonalb)ALBBCK(I,J)=ALBD(IS,ISN)/100.
           ALBEDO(I,J)=ALBBCK(I,J)
-          IF(SNOWC(I,J) .GT. 0.5)ALBEDO(I,J)=ALBBCK(I,J)*(1.+SCFX(IS))
+          IF(SNOWC(I,J) .GT. 0.5) THEN 
+             IF (usemonalb) THEN
+                 ALBEDO(I,J)=SNOALB(I,J)
+             ELSE
+                 ALBEDO(I,J)=ALBBCK(I,J)*(1.+SCFX(IS))
+             ENDIF
+          ENDIF
           THC(I,J)=THERIN(IS,ISN)/100.
           Z0(I,J)=SFZ0(IS,ISN)/100.
           ZNT(I,J)=Z0(I,J)

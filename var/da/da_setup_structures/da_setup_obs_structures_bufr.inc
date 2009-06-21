@@ -105,6 +105,12 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       !    call da_scan_bufr_radar(iv, 'radar.dat')
    end if
 
+   if ( use_gpsrefobs ) then
+      call da_scan_obs_bufrgpsro(iv, 'gpsro.bufr')
+      iv%info(gpsref)%plocal(iv%time) = iv%info(gpsref)%nlocal
+      iv%info(gpsref)%ptotal(iv%time) = iv%info(gpsref)%ntotal
+   end if
+
    !-------------------------------------------------------------------------
    ! Allocate the iv based on input number of obs:
    !--------------------------------------------------------------------------
@@ -137,6 +143,10 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       !    ! read radar observation file
       !    call da_read_bufr_radar(iv)
       ! end if
+   end if
+
+   if ( use_gpsrefobs ) then
+      call da_read_obs_bufrgpsro(iv, 'gpsro.bufr')
    end if
 
    if ( thin_conv ) then

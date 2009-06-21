@@ -26,7 +26,7 @@ module da_obs_io
 
    use da_define_structures, only : iv_type, multi_level_type, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
-      radar_each_level_type
+      radar_each_level_type, info_type, model_loc_type
    use da_grid_definitions, only : da_ffdduv
    use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station
    use da_par_util1, only : da_proc_sum_int
@@ -42,7 +42,7 @@ module da_obs_io
    use module_radiance, only : deg2rad
    use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
    use da_obs, only : da_set_obs_missing
-   use da_bufr, only : openbf, closbf, datelen, ufbint, readns
+   use da_bufr, only : openbf, closbf, datelen, ufbint, readns, ireadns, ufbseq
 #ifdef DM_PARALLEL
    use da_control, only : root
 !  use mpi, only : mpi_min
@@ -75,6 +75,8 @@ contains
 #include "da_write_y.inc"
 #include "da_read_obs_bufr.inc"
 #include "da_scan_obs_bufr.inc"
+#include "da_read_obs_bufrgpsro.inc"
+#include "da_scan_obs_bufrgpsro.inc"
 #include "da_final_write_obs.inc"
 #include "da_final_write_y.inc"
 #include "da_read_y_unit.inc"

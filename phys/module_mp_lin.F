@@ -1416,7 +1416,7 @@ CONTAINS
 !         Liu et al. autoconversion scheme
               rhocgs=rho(k)*1.e-3
               liqconc=rhocgs*qlz(k)
-              capn=rhocgs*qndropz(k)
+              capn=1.e-03*rhocgs*qndropz(k)
 !         rate function
               if(liqconc.gt.1.e-10)then
                  p0=kappa*beta/capn*(liqconc*liqconc*liqconc)

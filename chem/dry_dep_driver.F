@@ -1,13 +1,7 @@
 !
-!   WRF-chem V3.0 : Original version of dry_dep_driver written by Georg Grell (ESRL/GSD)
-!                   VERTMX was originally developed by Mariusz Pagowski. It is written to 
-!                   conserve, it needs concentration as input, it will not keep a
-!                   constant mixing ratio profile untouched. Further modifications 
-!                   by Richard C. Easter. In addition
-!                   modifications by Richard C. Easter (PNNL) are available to 
-!                   use mixing ratio as input and keep the mixing ratio constant.
-!
-!                    !!!!!!         Both versions are conserving.    !!!!!!!!!!
+!   WRF-chem V3.1 : Original version of dry_dep_driver written by Georg Grell (ESRL/GSD)
+!                   VERTMX was originally developed by Mariusz Pagowski and modified by
+!                   Richard C. Easter (PNNL) 
 !
 !WRF:MODEL_LAYER:CHEMICS
 !

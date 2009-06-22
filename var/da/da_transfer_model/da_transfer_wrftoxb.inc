@@ -600,7 +600,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    ! Calculate dew point temperature:
    !---------------------------------------------------------------------------
 
-   call da_trh_to_td(grid%xb % rh, grid%xb % t, grid%xb % td)
+   call da_trh_to_td (grid)
 
    if (print_detail_xb) then
       i=its; j=jts; k=kts
@@ -636,7 +636,15 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    tmpvar = log(10.0/0.0001)
 
-   do j=jts,jte
+   !$OMP PARALLEL DO &
+#ifndef A2C
+   !$OMP PRIVATE (ij, i, j, height)
+#else
+   !$OMP PRIVATE (ij, i, j, height, uu, vv)
+#endif
+   do ij = 1, grid%num_tiles
+
+   do j=grid%j_start(ij), grid%j_end(ij)
       do i=its,ite
          height = grid%xb%h(i,j,kts) - grid%xb%terr(i,j)
          rgh_fac(i,j) = 1.0/log(height/0.0001)
@@ -651,6 +659,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 #endif
       end do
    end do
+
+   end do
+   !$OMP END PARALLEL DO
 
    !---------------------------------------------------------------------------
    ! Brightness temperature SH Chen

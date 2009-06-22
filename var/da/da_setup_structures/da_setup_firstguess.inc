@@ -13,7 +13,7 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
    type(domain),intent(inout)   :: grid
    type(grid_config_rec_type), intent(in) :: config_flags
 
-   integer :: is, ie, js, je
+   integer :: is, ie, js, je, ij, i, j
    real    :: ddx , ddy    
 
    if (trace_use) call da_trace_entry("da_setup_firstguess")
@@ -67,9 +67,18 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
    if ((fg_format==fg_format_wrf_arw_regional) .or. &
       (fg_format==fg_format_wrf_arw_global  ) ) then
       ! Calculate multiplicative constants for PsiChi_TO_UV 
-      grid%xb%coefx(is:ie,js:je) = 0.5 * grid%xb%map_factor(is:ie,js:je)/grid%xb%ds
-      grid%xb%coefy(is:ie,js:je) = grid%xb%coefx(is:ie,js:je)
-      grid%xb%coefz(is:ie,js:je) = 0.5 / (grid%xb%map_factor(is:ie,js:je)*grid%xb%ds)
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE (ij, i, j)
+      do ij = 1, grid%num_tiles
+         do j = grid%j_start(ij), grid%j_end(ij)
+            do i = is, ie
+               grid%xb%coefx(i,j) = 0.5 * grid%xb%map_factor(i,j)/grid%xb%ds
+               grid%xb%coefy(i,j) = grid%xb%coefx(i,j)
+               grid%xb%coefz(i,j) = 0.5 / (grid%xb%map_factor(i,j)*grid%xb%ds)
+            end do
+         end do
+      end do
+      !$OMP END PARALLEL DO
    else if (fg_format == fg_format_wrf_nmm_regional) then
       grid%xb%coefx(is:ie,js:je) = 0.5/grid%mu0(is:ie,js:je)
       grid%xb%coefy(is:ie,js:je) = 0.5/grid%xb%ds         

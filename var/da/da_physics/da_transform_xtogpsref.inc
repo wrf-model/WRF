@@ -11,10 +11,14 @@ subroutine da_transform_xtogpsref(grid)
 
    type (domain), intent(inout) :: grid
    
-   integer :: i, j, k
+   integer :: i, j, k, ij
    real    :: partone, parttwo, dividnd
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtogpsref")
+
+   !$OMP PARALLEL DO &
+   !$OMP PRIVATE ( ij, i, j, k, partone, dividnd, parttwo)
+   do ij = 1 , grid%num_tiles
 
    do k = kts, kte
       do j = jts, jte
@@ -37,6 +41,9 @@ subroutine da_transform_xtogpsref(grid)
          end do
       end do
    end do
+
+   end do
+   !$OMP END PARALLEL DO
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtogpsref")
    

@@ -115,12 +115,17 @@
 
         ! Accumulate statistics for predictor mean/std
         ! ---------------------------------------------
-         do i = 1, npredmax
-            mean(i) = SUM(iv%instid(inst)%varbc_info%pred(i,1:num_rad),    &
-                          MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))  ! do not count HALO  
-            rms(i)  = SUM(iv%instid(inst)%varbc_info%pred(i,1:num_rad)**2, &
-                          MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))  ! do not count HALO 
-         end do
+	 if (num_rad > 0) then
+            do i = 1, npredmax
+               mean(i) = SUM( iv%instid(inst)%varbc_info%pred(i,1:num_rad),    &
+                         MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))   ! do not count HALO  
+               rms(i)  = SUM( iv%instid(inst)%varbc_info%pred(i,1:num_rad)**2, &
+                         MASK=iv%instid(inst)%info%proc_domain(1,1:num_rad))   ! do not count HALO 
+            end do
+	 else
+	    mean = 0.0
+	    rms  = 0.0
+	 end if
   
         ! Do inter-processor communication to gather statistics
         ! ------------------------------------------------------

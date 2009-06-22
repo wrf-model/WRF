@@ -39,7 +39,7 @@ subroutine da_read_obs_bufr (iv, filename)
    real                  :: hdr(7)
    real                  :: pmo(2,1)
    real                  :: obs(8,255),qms(8,255),oes(8,255),pco(8,255)
-   real                  :: obs_time,woe,toe,qoe,poe,pob
+   real                  :: obs_time,woe,toe,qoe,poe,pob,pwe
    integer               :: iyear, imonth, iday, ihour, imin
 
    integer               :: iost, ndup, n, i, j, k, surface_level, num_report, i1, i2
@@ -195,7 +195,7 @@ subroutine da_read_obs_bufr (iv, filename)
       if (outside_all) then
          num_outside_all = num_outside_all + 1
          if ( print_detail_obs ) then
-            write(unit=stdout,fmt='(a,1x,a,2(1x,f8.3),a)')  &
+            write(unit=stderr,fmt='(a,1x,a,2(1x,f8.3),a)')  &
                platform%info%name(1:8),platform%info%id(1:5), &
                platform%info%lat, platform%info%lon, '  -> outside_domain'
          end if
@@ -218,7 +218,7 @@ subroutine da_read_obs_bufr (iv, filename)
          outside_time = .true.
          num_outside_time = num_outside_time + 1
          if ( print_detail_obs ) then
-            write(unit=stdout,fmt='(a,1x,a,1x,a,a)')  &
+            write(unit=stderr,fmt='(a,1x,a,1x,a,a)')  &
                platform%info%name(1:8),platform%info%id(1:5), &
                trim(obs_date), '  -> outside_time'
          end if
@@ -429,10 +429,11 @@ subroutine da_read_obs_bufr (iv, filename)
          platform % loc % slp % error = err_p          ! hardwired
       end if
       pwq=nint(qms(7,1))
+      pwe = min(err_pw, oes(7,1))
       if (pwq < qflag .and. pwq >= 0) then
          platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
          platform % loc % pw % qc  =  pwq
-         platform % loc % pw % error = err_pw          ! hardwired
+         platform % loc % pw % error = pwe          ! hardwired
       end if
 
       !$OMP PARALLEL DO &
@@ -463,8 +464,8 @@ subroutine da_read_obs_bufr (iv, filename)
       end do 
       !$OMP END PARALLEL DO
 
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE (k, tpc, wpc, pqm, qqm, tqm, zqm, wqm, pwq, cat, poe, qoe, woe)
+      !!$OMP PARALLEL DO &
+      !!$OMP PRIVATE (k, tpc, wpc, pqm, qqm, tqm, wqm, zqm, cat, toe, poe, qoe, woe) 
       do k = 1, platform % info % levels
 
          tpc = nint(pco(3,k))
@@ -492,15 +493,18 @@ subroutine da_read_obs_bufr (iv, filename)
          wqm=nint(qms(5,k))
          cat=nint(obs(8,k))
 
+         toe = min(err_t, oes(3,k))
+         woe = min(err_uv, oes(5,k))
+         qoe = min(err_q, oes(2,k)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+         poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
+
          if (tqm < qflag .and. tqm >= 0) then
-            toe = min(err_t, oes(3,k))
             platform % each (k) % t % inv =obs(3,k)
             platform % each (k) % t % qc  =tqm
             platform % each (k) % t % error =toe
          end if
 
          if (wqm < qflag .and. wqm >= 0) then
-            woe = min(err_uv, oes(5,k))
             platform % each (k) % u % inv =obs(5,k)
             platform % each (k) % v % inv =obs(6,k)
             platform % each (k) % u % qc  =wqm
@@ -527,10 +531,9 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
 
          if (qqm<qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
-            qoe = min(err_q, oes(2,k))
             platform % each (k) % q % inv =obs(2,k)
             platform % each (k) % q % qc  =qqm
-            platform % each (k) % q % error = qoe * 10.0   ! convert to % from PREPBUFR percent divided by 10
+            platform % each (k) % q % error = qoe
          end if
 
          if (zqm < qflag .and. zqm >= 0)then
@@ -539,20 +542,28 @@ subroutine da_read_obs_bufr (iv, filename)
          end if
 
          if (pqm < qflag .and. pqm >= 0)then
-            poe = min(err_p, oes(1,k)*100.0)
             platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
             platform % each (k) % p % qc  =pqm
             platform % each (k) % p % error =poe
          end if
       end do
-      !$OMP END PARALLEL DO
+      !!$OMP END PARALLEL DO
 
       ! assign u,v,t,q obs errors for synop and metar
       if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
-         if ( wqm  == 9 .or. wqm  == 15) then
+         qqm=nint(qms(2,1))
+         tqm=nint(qms(3,1))
+         wqm=nint(qms(5,1))
+         toe = min(err_t, oes(3,1))
+         woe = min(err_uv, oes(5,1))
+         qoe = min(err_q, oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
+         if ( wqm == 8 .or. wqm  == 9 .or. wqm  == 15) then
             platform%each(1)%u%qc  = 88
             platform%each(1)%v%qc  = 88
-            if ( .not. use_errtable ) then
+            if ( use_errtable ) then
+               platform%each(1)%u%error = woe
+               platform%each(1)%v%error = woe
+            else
                platform%each(1)%u%error = 1.1
                platform%each(1)%v%error = 1.1
             end if
@@ -567,27 +578,33 @@ subroutine da_read_obs_bufr (iv, filename)
                platform%each(1)%v%qc  = missing_data
             end if
          end if
-         if ( tqm == 9 .or. tqm == 15 ) then
+         if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
             platform%each(1)%t%inv = obs(3,1)
             platform%each(1)%t%qc  = 88
-            if ( .not. use_errtable ) then
+            if ( use_errtable ) then
+               platform%each(1)%t%error = toe
+            else
                platform%each(1)%t%error = 2.0
             end if
          end if
-         if ( qqm == 9 .or. qqm == 15 ) then
+         if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
             platform%each(1)%q%inv = obs(2,1)
             platform%each(1)%q%qc  = 88
-            if ( .not. use_errtable ) then
+            if ( use_errtable ) then
+               platform%each(1)%q%error = qoe  ! RH percent
+            else
                platform%each(1)%q%error = 10   ! RH percent
             end if
          end if
       end if
       ! assign tpw obs errors for gpspw
       if ( t29 == 74 ) then
-         if ( pwq  == 9 .or. pwq  == 15) then
+         if ( pwq == 8 .or. pwq  == 9 .or. pwq  == 15) then
             platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
             platform%loc%pw%qc    = 88
-            if ( .not. use_errtable ) then
+            if ( use_errtable ) then
+               platform%loc%pw%error = pwe
+            else
                platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
             end if
          end if
@@ -1270,8 +1287,10 @@ subroutine da_read_obs_bufr (iv, filename)
    call da_message(message(1:1))
 
    do n = 1, num_ob_indexes
-      if ( nlocal(n) /= iv%info(n)%nlocal ) then
-         call da_error(__FILE__,__LINE__,(/"numbers mismatch between scanning and reading PREPBUFR file"/))
+      if ( n /= 9 ) then   ! skip checking for gpsref because gpsref data are read in separate subroutine
+         if ( nlocal(n) /= iv%info(n)%nlocal ) then
+            call da_error(__FILE__,__LINE__,(/"numbers mismatch between scanning and reading PREPBUFR file"/))
+         end if
       end if
    end do
 

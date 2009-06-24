@@ -85,7 +85,10 @@
               nj = (j-jpos) * nrj + ( nrjo2 + 1 )  ! j point on nest
               DO i = cims,cime
                 ni = (i-ipos) * nri + ( nrio2 + 1 )    ! i point on nest
-                if ( ni .ge. nits-nioff-nrio2 .and. ni .le. nite+nioff+nrio2 .and. nj .ge. njts-njoff-nrjo2 .and. nj .le. njte+njoff+nrjo2 ) then
+                if ( ni .ge. nits-nioff-nrio2 .and. &
+                     ni .le. nite+nioff+nrio2 .and. &
+                     nj .ge. njts-njoff-nrjo2 .and. &
+                     nj .le. njte+njoff+nrjo2 ) then
 !                 if ( imask(ni,nj) .eq. 1 .or. imask(ni-nioff,nj-njoff) .eq. 1 ) then
 !                   icmask( i, j ) = .TRUE.
 !                 endif

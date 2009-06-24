@@ -4594,7 +4594,7 @@ CONTAINS
           raincv,pratec
    REAL,                              INTENT(IN) ::   dt
    INTEGER                        :: ikk1,ikk2,ikk11,i,j,k,kk,nn,smoothh,smoothv
-   INTEGER                        :: ifs,ife,jfs,jfe,its,ite,jts,jte,ido,jdo,cugd_spread
+   INTEGER                        :: ifs,ife,jfs,jfe,ido,jdo,cugd_spread
    LOGICAL                        :: new
 !
 ! Flags relating to the optional tendency arrays declared above

@@ -15,17 +15,15 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    USE module_machine
-   USE module_domain
-   USE module_io
    USE module_wrf_error
-   USE module_io_wrf
-   USE module_integrate 
+   USE module_integrate
+   USE module_domain, ONLY : domain
+   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver
    USE module_driver_constants
-   USE module_state_description
-   USE module_configure
+   USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+   USE module_io_domain
    USE module_timing
    USE module_utility
-   USE module_initialize_real
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -36,6 +34,13 @@ PROGRAM convert_emissions
 #if (EM_CORE ==1)
    USE module_big_step_utilities_em
 #endif
+!#ifdef WRF_CHEM
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! for chemistry
+!   USE module_input_chem_data
+!!  USE module_input_chem_bioemiss
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    IMPLICIT NONE
@@ -425,7 +430,7 @@ PROGRAM convert_emissions
    CALL  wrf_message ( message )
    
    IF ( ierr .NE. 0 ) THEN
-     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+     CALL wrf_error_fatal( 'convert_emiss: error opening wrfchem emissions file for writing' )
    ENDIF
 
    write(message,FMT='(A)') ' PAST OPEN  GOCART BACKGROUND DATA WRF file '
@@ -1664,7 +1669,7 @@ PROGRAM convert_emissions
    write(message,FMT='(A,A)') ' EMISSIONS OUTPUT file name: ',TRIM(inpname)
    CALL  wrf_message ( message )
    IF ( ierr .NE. 0 ) THEN
-     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+     CALL wrf_error_fatal( 'convert_emiss: error opening wrfchem emissions file for writing' )
    ENDIF
 
    CALL calc_current_date ( grid%id , 0. )
@@ -2348,7 +2353,7 @@ PROGRAM convert_emissions
    CALL  wrf_message ( message )
 
    IF ( ierr .NE. 0 ) THEN
-     CALL wrf_error_fatal( 'real: error opening wrfchem emissions file for writing' )
+     CALL wrf_error_fatal( 'convert_emiss: error opening wrfchem emissions file for writing' )
    ENDIF
 
    write(message,FMT='(A)') ' WRITE BIOGENIC EMISSIONS WRF file '

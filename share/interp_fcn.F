@@ -820,8 +820,8 @@
      shw = 0
 
      ioff = 0 ; joff = 0
-     IF ( xstag ) ioff = (nri-1)/2
-     IF ( ystag ) joff = (nrj-1)/2
+     IF ( xstag ) ioff = 1
+     IF ( ystag ) joff = 1
 
      ! Iterate over the ND tile and compute the values
      ! from the CD tile. 

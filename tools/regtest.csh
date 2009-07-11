@@ -8,7 +8,7 @@
 #BSUB -n 4                              # number of total tasks
 #BSUB -o reg.out                        # output filename (%J to add job id)
 #BSUB -e reg.err                        # error filename
-#BSUB -J regtest                        # job name
+#BSUB -J regtest1                       # job name
 #BSUB -q share                          # queue
 #BSUB -W 6:00                          # wallclock time
 #BSUB -P 64000400
@@ -32,6 +32,13 @@
 #		Compaq 733 MHz   ev67 :  2.5 hours (empty)
 #		Intel  1.2 GHz (4-pe) :  3.0 hours (empty)
 #		IBM            P4     :  2.0 hours (empty)
+
+if ( `uname` == AIX ) then
+	set tdir = 1
+	if ( ! -d /ptmp/${USER}/${tdir} ) then
+		mkdir /ptmp/${USER}/${tdir}
+	endif
+endif
 
 #	Do we keep running even when there are BAD failures?
 
@@ -467,7 +474,7 @@ if      ( $REAL8 == TRUE ) then
 endif
 
 if      ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) &&   ( $REAL8 != TRUE ) && ( $GLOBAL != TRUE )   ) then
-	set PHYSOPTS =	( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 )
+	set PHYSOPTS =	( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA != TRUE ) && ( ( $REAL8 == TRUE ) || ( $GLOBAL == TRUE ) ) ) then
 	set PHYSOPTS =	( 1 2 3 4 5 6 )
 else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
@@ -479,7 +486,7 @@ else if ( ( $CHEM != TRUE ) && ( $FDDA == TRUE ) ) then
 	if ( $PHYSOPTS_FDDA == GRID ) then
 		set PHYSOPTS =	( 1 )
 	else
-		set PHYSOPTS =	( 1 2 3 )
+		set PHYSOPTS =	( 1 2 3 4 5 )
 	endif
 else if ( $CHEM == TRUE ) then
 	set PHYSOPTS =	( 1 2 3 4 5 6 )
@@ -890,7 +897,7 @@ cat >! time_real_5  << EOF
 EOF
 
 cat >! nest_real_5  << EOF
- input_from_file                     = .true.,.false.,.false.
+ input_from_file                     = .true.,.true.,.false.
 EOF
 
 cat >! damp_real_5  << EOF
@@ -1038,7 +1045,7 @@ cat >! phys_real_9 << EOF
  ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 5,     5,     5,
- sf_surface_physics                  = 7,     7,     7,
+ sf_surface_physics                  = 3,     3,     3,
  bl_pbl_physics                      = 6,     6,     6,
  bldt                                = 0,     0,     0,
  cu_physics                          = 5,     5,     0,
@@ -1047,7 +1054,7 @@ cat >! phys_real_9 << EOF
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 2,
+ num_soil_layers                     = 6,
  mp_zero_out                         = 0,
 EOF
 
@@ -1103,7 +1110,7 @@ cat >! time_real_10  << EOF
 EOF
 
 cat >! nest_real_10  << EOF
- input_from_file                     = .true.,.false.,.false.
+ input_from_file                     = .true.,.true.,.false.
 EOF
 
 cat >! damp_real_10  << EOF
@@ -1249,7 +1256,7 @@ cat >! damp_real_13  << EOF
 EOF
 
 cat >! phys_real_14 << EOF
- mp_physics                          = 3,     3,     3, 
+ mp_physics                          = 4,     4,     4, 
  ra_lw_physics                       = 3,     3,     3,
  ra_sw_physics                       = 3,     3,     3,
  radt                                = 30,    30,    30,
@@ -1257,7 +1264,7 @@ cat >! phys_real_14 << EOF
  sf_surface_physics                  = 3,     3,     3,
  bl_pbl_physics                      = 4,     4,     4,
  bldt                                = 0,     0,     0,
- cu_physics                          = 2,     2,     0,
+ cu_physics                          = 5,     5,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ifsnow                              = 0,
@@ -1288,6 +1295,46 @@ cat >! nest_real_14  << EOF
 EOF
 
 cat >! damp_real_14  << EOF
+ damp_opt                            = 1,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.05,   0.05,   0.05
+EOF
+
+cat >! phys_real_15 << EOF
+ mp_physics                          = 6,     6,     6, 
+ ra_lw_physics                       = 4,     4,     4,
+ ra_sw_physics                       = 4,     4,     4,
+ radt                                = 30,    30,    30,
+ sf_sfclay_physics                   = 1,     1,     1,
+ sf_surface_physics                  = 7,     7,     7,
+ bl_pbl_physics                      = 1,     1,     1,
+ bldt                                = 0,     0,     0,
+ cu_physics                          =99,    99,     0,
+ cudt                                = 0,     0,     0,
+ isfflx                              = 1,
+ ifsnow                              = 0,
+ icloud                              = 1,
+ surface_input_source                = 1,
+ num_soil_layers                     = 2,
+ mp_zero_out                         = 0,
+EOF
+
+cat >! dyn_real_15  << EOF
+ moist_adv_opt                       = 2,      2,      2,      
+ scalar_adv_opt                      = 2,      2,      2,     
+ chem_adv_opt                        = 0,      0,      0,     
+ tke_adv_opt                         = 0,      0,      0,     
+EOF
+
+cat >! time_real_15  << EOF
+ auxinput1_inname                    = "met_em.d<domain>.<date>"
+EOF
+
+cat >! nest_real_15  << EOF
+ input_from_file                     = .true.,.true.,.false.
+EOF
+
+cat >! damp_real_15  << EOF
  damp_opt                            = 1,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.05,   0.05,   0.05
@@ -1404,7 +1451,7 @@ cat >! fdda_real_3 << EOF
  if_ramping                          = 1,
  dtramp_min                          = 360.0,
  io_form_gfdda                       = 2,
- obs_nudge_opt                       = 1,1,1,1,1
+ obs_nudge_opt                       = 0,0,0,0,0
  max_obs                             = 150000,
  obs_nudge_wind                      = 1,1,1,1,1
  obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
@@ -1427,6 +1474,97 @@ EOF
 cat >! fdda_real_time_3 << EOF
  auxinput11_interval_s               = 180
  auxinput11_end_h                    = 6
+EOF
+
+cat >! fdda_real_4 << EOF
+ grid_sfdda                          = 1,     1,     1,
+ sgfdda_inname                       = "wrfsfdda_d<domain>",
+ sgfdda_end_h                        = 24,    24,    24,
+ sgfdda_interval_m                   = 360,   360,   360,
+ io_form_sgfdda                      = 2,
+ guv_sfc                             = 0.0003,     0.0003,     0.0003,
+ gt_sfc                              = 0.0003,     0.0003,     0.0003,
+ gq_sfc                              = 0.0003,     0.0003,     0.0003,
+ rinblw                              = 250.,
+ grid_fdda                           = 1,     1,     1,
+ gfdda_inname                        = "wrffdda_d<domain>",
+ gfdda_end_h                         = 24,    24,    24,
+ gfdda_interval_m                    = 360,   360,   360,
+ fgdt                                = 0,     0,     0,
+ if_no_pbl_nudging_uv                = 0,     0,     1,
+ if_no_pbl_nudging_t                 = 0,     0,     1,
+ if_no_pbl_nudging_q                 = 0,     0,     1,
+ if_zfac_uv                          = 0,     0,     1,
+  k_zfac_uv                          = 10,   10,     1,
+ if_zfac_t                           = 0,     0,     1,
+  k_zfac_t                           = 10,   10,     1,
+ if_zfac_q                           = 0,     0,     1,
+  k_zfac_q                           = 10,   10,     1,
+ guv                                 = 0.0003,     0.0003,     0.0003,
+ gt                                  = 0.0003,     0.0003,     0.0003,
+ gq                                  = 0.0003,     0.0003,     0.0003,
+ if_ramping                          = 1,
+ dtramp_min                          = 360.0,
+ io_form_gfdda                       = 2,
+ obs_nudge_opt                       = 1,1,1,1,1
+ max_obs                             = 150000,
+ obs_nudge_wind                      = 1,1,1,1,1
+ obs_coef_wind                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_temp                      = 1,1,1,1,1
+ obs_coef_temp                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_nudge_mois                      = 1,1,1,1,1
+ obs_coef_mois                       = 6.E-4,6.E-4,6.E-4,6.E-4,6.E-4
+ obs_rinxy                           = 240.,240.,180.,180,180
+ obs_rinsig                          = 0.1,
+ obs_twindo                          = 40.
+ obs_npfi                            = 10,
+ obs_ionf                            = 2,
+ obs_idynin                          = 0,
+ obs_dtramp                          = 40.,
+ obs_ipf_errob                       = .true.
+ obs_ipf_nudob                       = .true.
+ obs_ipf_in4dob                      = .true.
+EOF
+
+cat >! fdda_real_time_4 << EOF
+ auxinput11_interval_s               = 180
+ auxinput11_end_h                    = 6
+EOF
+
+cat >! fdda_real_5 << EOF
+ grid_fdda                           = 2,     2,     2,
+ gfdda_inname                        = "wrffdda_d<domain>",
+ gfdda_end_h                         = 24,    24,    24,
+ gfdda_interval_m                    = 360,   360,   360,
+ fgdt                                = 0,     0,     0,
+ fgdtzero                            = 0,     0,     0,
+ if_no_pbl_nudging_uv                = 0,     0,     0,
+ if_no_pbl_nudging_t                 = 0,     0,     0,
+ if_no_pbl_nudging_ph                = 0,     0,     0,
+ if_no_pbl_nudging_q                 = 0,     0,     0,
+ if_zfac_uv                          = 0,     0,     0,
+  k_zfac_uv                          = 10,   10,    10,
+ if_zfac_t                           = 0,     0,     0,
+  k_zfac_t                           = 10,   10,    10,
+ if_zfac_ph                          = 0,     0,     0,
+  k_zfac_ph                          = 10,   10,    10,
+ if_zfac_q                           = 0,     0,     0,
+  k_zfac_q                           = 10,   10,    10,
+ dk_zfac_uv                          = 1,     1,     1,
+ dk_zfac_t                           = 1,     1,     1,
+ dk_zfac_ph                          = 1,     1,     1,
+ guv                                 = 0.0003,     0.0003,     0.0003,
+ gt                                  = 0.0003,     0.0003,     0.0003,
+ gph                                 = 0.0003,     0.0003,     0.0003,
+ gq                                  = 0.0003,     0.0003,     0.0003,
+ xwavenum                            = 3
+ ywavenum                            = 3
+ if_ramping                          = 1,
+ dtramp_min                          = 60.0,
+ io_form_gfdda                       = 2,
+EOF
+
+cat >! fdda_real_time_5 << EOF
 EOF
 
 #	Tested options for ideal case em_b_wave.  Modifying these
@@ -1650,7 +1788,7 @@ if ( $ARCH[1] == AIX ) then
 		set CUR_DIR = ${LOADL_STEP_INITDIR}
 	else if   ( ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) then
 		set job_id              = $LSB_JOBID
-		set DEF_DIR             = /ptmp/$user/wrf_regression.${job_id}
+		set DEF_DIR             = /ptmp/$user/${tdir}/wrf_regression.${job_id}
 		set TMPDIR              = $DEF_DIR
 		if ( -d $DEF_DIR ) then
 			echo "${0}: ERROR::  Directory ${DEF_DIR} exists, please remove it"
@@ -2169,7 +2307,7 @@ if ( $FDDA == TRUE ) then
 		echo "Running FDDA tests (3D & SFC grid nudging only)" >>! ${DEF_DIR}/wrftest.output
 		echo " " >>! ${DEF_DIR}/wrftest.output
 	else if ( $PHYSOPTS_FDDA == BOTH ) then
-		echo "Running FDDA tests (3D & SFC grid=1, obs=2, 3D & SFC grid+obs=3)" >>! ${DEF_DIR}/wrftest.output
+		echo "Running FDDA tests (3D&SFC=1, obs=2, 3D&SFC=3, 3D&SFC+obs=4, Spectral=5)" >>! ${DEF_DIR}/wrftest.output
 		echo " " >>! ${DEF_DIR}/wrftest.output
 	endif
 endif

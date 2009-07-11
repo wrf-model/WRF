@@ -125,6 +125,8 @@ integer::oops1,oops2
       LOGICAL , PARAMETER :: want_full_levels = .TRUE.
       LOGICAL , PARAMETER :: want_half_levels = .FALSE.
 
+      CHARACTER (LEN=80) :: a_message
+
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
 
@@ -324,6 +326,10 @@ integer::oops1,oops2
          END IF
 
          !  Filter the input topography if this is a polar projection.
+
+         IF ( ( config_flags%polar ) .AND. ( grid%fft_filter_lat .GT. 90 ) ) THEN
+            CALL wrf_error_fatal ( 'If the polar boundary condition is used, then fft_filter_lat must be set in namelist.input' )
+         END IF
 
          IF ( config_flags%map_proj .EQ. PROJ_CASSINI ) THEN
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
@@ -627,6 +633,11 @@ integer::oops1,oops2
                          ims , ime , jms , jme , 1   , num_metgrid_levels , &
                          its , ite , jts , jte , 1   , num_metgrid_levels )
          ELSE
+            WRITE(a_message,FMT='(3(A,I2),A,L1)') 'ERROR in psfc: flag_psfc = ',flag_psfc, &
+                                               ', flag_soilhgt = ',flag_soilhgt , &
+                                               ', flag_slp = ',flag_slp , & 
+                                               ', sfcp_to_sfcp = ',config_flags%sfcp_to_sfcp 
+            CALL wrf_message ( a_message ) 
             CALL wrf_error_fatal ( 'not enough info for a p sfc computation' )
          END IF
 

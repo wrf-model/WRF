@@ -274,17 +274,17 @@ CONTAINS
   HT1: do k = kte, kts, -1
          if( LML_HT1 .gt. z_at_p(k) ) then
            fdob%LML_OBS_HT1_LEV = k
-           EXIT HT1 
+           EXIT HT1
          endif
-       enddo  HT1
+       enddo HT1
 
   fdob%LML_OBS_HT2_LEV = kte 
   HT2: do k = kte, kts, -1
          if( LML_HT2 .gt. z_at_p(k) ) then
            fdob%LML_OBS_HT2_LEV = k
-           EXIT HT2 
+           EXIT HT2
          endif
-       enddo HT2 
+       enddo HT2
   RETURN
 #endif
   END SUBROUTINE fddaobs_init
@@ -313,6 +313,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 #else
   USE module_dm, ONLY :                      wrf_dm_sum_real
 #endif
+  USE module_model_constants, ONLY : rcp
 
 !-----------------------------------------------------------------------
   IMPLICIT NONE
@@ -434,8 +435,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real :: dummy = 99999.
 
   real :: pbhi, pphi
-  real :: press,ttemp                  !ajb scratch variables
-! real model_temp,pot_temp             !ajb scratch variables
+  real :: obs_pottemp                  ! Potential temperature at observation
 
 !***  DECLARATIONS FOR IMPLICIT NONE
   integer nsta,ivar,n,ityp
@@ -566,7 +566,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !ajb      20040119: Note based on bugfix for dot/cross points split across processors,
 !ajb                which was actually a serial code fix: The ityp=2 (v-points) and
-!ajb                itype=3 (mass-points) cases should not use the ityp=1 (u-points)
+!ajb                ityp=3 (mass-points) cases should not use the ityp=1 (u-points)
 !ajb                case rko! This is necessary for bit-for-bit reproducability
 !ajb                with the parallel run.   (coarse mesh)
 
@@ -1031,7 +1031,13 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !yliu
             if(abs(tratxob) .lt. 1.0E-3) tratxob=1.
 
-            ERRF(3,N)=ERRF(3,N)+tratxob*VAROBS(3,N)-((1.-DZOB)*     &
+!ajb We must convert temperature to potential temperature
+            obs_pottemp = -888888.
+            if(varobs(3,n).gt.-800000. .and. varobs(5,n).gt.-800000) then
+              obs_pottemp = varobs(3,n)*(100./varobs(5,n))**RCP - t0
+            endif
+
+            ERRF(3,N)=ERRF(3,N)+tratxob*obs_pottemp-((1.-DZOB)*     &
                       ((1.-DyOB)*((1.-                              &
                       DxOB)*(TB(IOB,KOB,JOB))+DxOB*                 &
                       (TB(IOB+1,KOB,JOB)))+DyOB*((1.-DxOB)*         &
@@ -1886,8 +1892,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                      komin=max0(kobs, komin)   ! kobs here is kpblt(i)+1
                  else                          ! Obs acts below PBL top
 ! Obs will act only below the PBL top
-                     komax=min0(kpbl_obs(n), komax)
-!                    komax=min0(kpblt(i), komax)
+                     komax=min0(kpblt(i), komax)
                  endif
               endif
 ! yliu end

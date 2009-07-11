@@ -695,14 +695,17 @@
             rh_qc=-888888.
           endif
 
-!ajb Store potential temperature for WRF
+!ajb Store temperature for WRF
+!    NOTE: The conversion to potential temperature, performed later in subroutine
+!    errob, requires good pressure data, either directly or via good height data.
+!    So here, in addition to checking for good temperature data,  we must also
+!    do a check for good pressure or height.
           if(temperature_qc.ge.0..and.temperature_qc.lt.30000.)then
 
-            if(pressure_qc.ge.0..and.pressure_qc.lt.30000.)then
-
-              varobs(3,n) =                                             &
-                  temperature_data*(100000./pressure_data)**RCP - t0
-
+            if( (pressure_qc.ge.0..and.pressure_qc.lt.30000.) .or.    &
+                (height_qc  .ge.0..and.height_qc  .lt.30000.) ) then
+    
+              varobs(3,n) = temperature_data
             else
               varobs(3,n)=-888888.
             endif
@@ -851,14 +854,13 @@
         if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
 
 !Lilie
-!ajb Store potential temperature for WRF
+!ajb Store temperature for WRF
         if(temperature_qc.ge.0..and.temperature_qc.lt.30000.)then
 
           if((psfc_qc.ge.0..and.psfc_qc.lt.30000.).and.          &
              (psfc_data.gt.70000. .and.psfc_data.lt.105000.))then
 
-            varobs(3,n) =                                        &
-                  temperature_data*(100000./psfc_data)**RCP - t0
+            varobs(3,n) = temperature_data
           else
             varobs(3,n)=-888888.
           endif
@@ -1296,7 +1298,6 @@
          call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob STOP 556' )
       ENDIF
 ! IS MINIMUM GREATER THAN MAXIMUM?
-
       IF (iprt) then
         write(msg,557) fdob%DPSMX*10.,fdob%DCON
         call wrf_message(msg)

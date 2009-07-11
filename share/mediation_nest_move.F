@@ -1043,7 +1043,7 @@ LOGICAL FUNCTION should_not_move ( id )
   INTEGER, INTENT(IN) :: id
  ! Local
   LOGICAL retval
-  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, sf_urban_physics, obs_nudge_opt
+  INTEGER cu_physics, ra_sw_physics, ra_lw_physics, sf_urban_physics, sf_surface_physics, obs_nudge_opt
 
   retval = .FALSE.
 ! check for GD ensemble cumulus, which can not move
@@ -1067,6 +1067,12 @@ LOGICAL FUNCTION should_not_move ( id )
   CALL nl_get_sf_urban_physics( id , sf_urban_physics )
   IF ( sf_urban_physics .EQ. 1 .OR. sf_urban_physics .EQ. 2 ) THEN
     CALL wrf_message('UCMs Noah LSM can not be specified with moving nests. Movement disabled.')
+    retval = .TRUE.
+  ENDIF
+! check for PX lsm scheme, which can not move
+  CALL nl_get_sf_surface_physics( id , sf_surface_physics )
+  IF ( sf_surface_physics .EQ. PXLSMSCHEME ) THEN
+    CALL wrf_message('PX LSM can not be specified with moving nests. Movement disabled.')
     retval = .TRUE.
   ENDIF
 #if ( EM_CORE == 1 )

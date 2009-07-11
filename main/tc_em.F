@@ -52,8 +52,9 @@ PROGRAM tc_data
    INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
    INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
-   INTEGER :: time_loop_max , time_loop
+   INTEGER :: time_loop_max , time_loop, bogus_id, storm
    real::t1,t2
+   real    :: latc_loc(max_bogus),lonc_loc(max_bogus),vmax(max_bogus),rmax(max_bogus)
    INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
       USE module_domain, ONLY : domain
@@ -148,22 +149,45 @@ PROGRAM tc_data
                 'DEBUG real:  clock after timeStep set,' )
 
 
-         CALL       wrf_debug ( 100 , 'real_em: calling set_scalar_indices_from_config ' )
+         CALL       wrf_debug ( 100 , 'tc_em: calling set_scalar_indices_from_config ' )
          CALL set_scalar_indices_from_config ( grid%id , idum1, idum2 )
 
-         CALL       wrf_debug ( 100 , 'real_em: calling model_to_grid_config_rec ' )
+!This is goofy but we need to loop through the number of storms to get 
+!the namelist variables for the tc_bogus.  But then we need to 
+!call model_to_grid_config_rec with the grid%id = to 1 in order to
+!reset to the correct information.
+         CALL       wrf_debug ( 100 , 'tc_em: calling model_to_grid_config_rec ' )
+         lonc_loc(:) = -999.
+         latc_loc(:) = -999.
+         vmax(:)     = -999.
+         rmax(:)     = -999.
+         CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+         lonc_loc(1) = config_flags%lonc_loc
+         latc_loc(1) = config_flags%latc_loc
+         vmax(1)     = config_flags%vmax_meters_per_second
+         rmax(1)     = config_flags%rmax
+!         print *,lonc_loc(1),latc_loc(1),vmax(1),rmax(1)
+         do storm = 2,config_flags%num_storm
+             bogus_id = storm
+             CALL model_to_grid_config_rec ( bogus_id , model_config_rec , config_flags )
+             lonc_loc(storm) = config_flags%lonc_loc
+             latc_loc(storm) = config_flags%latc_loc
+             vmax(storm)     = config_flags%vmax_meters_per_second
+             rmax(storm)     = config_flags%rmax
+!             print *,"in loop ",storm,lonc_loc(storm),latc_loc(storm),vmax(storm),rmax(storm)
+         end do
          CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
          !  Initialize the WRF IO: open files, init file handles, etc.
 
-         CALL       wrf_debug ( 100 , 'real_em: calling init_wrfio' )
+         CALL       wrf_debug ( 100 , 'tc_em: calling init_wrfio' )
          CALL init_wrfio
 
          !  Some of the configuration values may have been modified from the initial READ
          !  of the NAMELIST, so we re-broadcast the configuration records.
 
 #ifdef DM_PARALLEL
-         CALL       wrf_debug ( 100 , 'real_em: re-broadcast the configuration records' )
+         CALL       wrf_debug ( 100 , 'tc_em: re-broadcast the configuration records' )
          CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
          CALL wrf_dm_bcast_bytes( configbuf, nbytes )
          CALL set_config_as_buffer( configbuf, configbuflen )
@@ -172,7 +196,7 @@ PROGRAM tc_data
          !   No looping in this layer.  
 
          CALL       wrf_debug ( 100 , 'calling tc_med_sidata_input' )
-         CALL tc_med_sidata_input ( grid , config_flags )
+         CALL tc_med_sidata_input ( grid , config_flags, latc_loc, lonc_loc,vmax,rmax )
          CALL       wrf_debug ( 100 , 'backfrom tc_med_sidata_input' )
 
       ELSE 
@@ -185,7 +209,7 @@ PROGRAM tc_data
 
    !  We are done.
 
-   CALL       wrf_debug (   0 , 'real_em: SUCCESS COMPLETE TC BOGUS' )
+   CALL       wrf_debug (   0 , 'tc_em: SUCCESS COMPLETE TC BOGUS' )
 
    CALL wrf_shutdown
 
@@ -196,7 +220,7 @@ END PROGRAM tc_data
 
 
 !-----------------------------------------------------------------
-SUBROUTINE tc_med_sidata_input ( grid , config_flags )
+SUBROUTINE tc_med_sidata_input ( grid , config_flags, latc_loc, lonc_loc,vmax, rmax )
   ! Driver layer
    USE module_domain
    USE module_io_domain
@@ -232,10 +256,12 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
    CHARACTER(LEN=8)  :: flag_name
 
-   INTEGER :: time_loop_max , loop, rc
-   INTEGER :: julyr , julday ,itmp,icnt
-   REAL :: gmt
-   real::t1,t2,t3,t4
+   INTEGER :: time_loop_max , loop, rc,icnt,itmp
+   INTEGER :: julyr , julday
+   REAL    :: gmt
+   real    :: t1,t2,t3,t4
+   real    :: latc_loc(max_bogus), lonc_loc(max_bogus)
+   real    :: vmax(max_bogus),rmax(max_bogus)
 
    grid%input_from_file = .true.
    grid%input_from_file = .false.
@@ -417,8 +443,9 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags )
 
       CALL cpu_time ( t3 )
 
-
-      CALL assemble_output ( grid , config_flags , loop , time_loop_max, current_date_char )
+!      print *,"before assemble_output ",vmax,rmax
+      CALL assemble_output ( grid , config_flags , loop , time_loop_max, current_date_char, &
+                             latc_loc, lonc_loc, vmax, rmax )
       CALL cpu_time ( t4 )
       WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for output ',NINT(t4-t3) ,' s.'
       CALL wrf_debug( 0, wrf_err_message )
@@ -461,7 +488,8 @@ SUBROUTINE tc_compute_si_start(  &
 END SUBROUTINE tc_compute_si_start
 
 !-----------------------------------------------------------------------
-SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_date_char )
+SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_date_char, &
+                             latc_loc, lonc_loc,vmax,rmax)
 
    USE module_big_step_utilities_em
    USE module_domain
@@ -478,14 +506,15 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max,current_
 
 !These values are in the name list and are avaiable from
 !from the config_flags.
-   real    :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax,stand_lon,cen_lat,ptop_in_pa
-
+   real    :: vmax(max_bogus),vmax_ratio
+   real    :: rmax(max_bogus),stand_lon,cen_lat,ptop_in_pa
+   real    :: latc_loc(max_bogus),lonc_loc(max_bogus)
 
    INTEGER :: ids , ide , jds , jde , kds , kde
    INTEGER :: ims , ime , jms , jme , kms , kme
    INTEGER :: ips , ipe , jps , jpe , kps , kpe
    INTEGER :: ijds , ijde , spec_bdy_width
-   INTEGER :: i , j , k , idts,map_proj,remove_only
+   INTEGER :: i , j , k , idts,map_proj,remove_only,storms
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
@@ -537,20 +566,17 @@ real::t1,t2,truelat1,truelat2
    cen_lat   = config_flags%cen_lat
    map_proj  = config_flags%map_proj
 
-   latc_loc   = config_flags%latc_loc
-   lonc_loc   = config_flags%lonc_loc
-   vmax       = config_flags%vmax_meters_per_second
    vmax_ratio = config_flags%vmax_ratio
-   rmax       = config_flags%rmax
    ptop_in_pa = config_flags%p_top_requested
    remove_only = 0
    if(config_flags%remove_storm) then
       remove_only = 1
    end if
 
+   storms = config_flags%num_storm
    call tc_bogus(cen_lat,stand_lon,map_proj,truelat1,truelat2, &
                  grid%dx,ipe,jpe,grid%num_metgrid_levels,ptop_in_pa, &
-                 latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
+                 latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,storms,grid)
 
 
 !Notes jps is the starting y. Usally 1
@@ -575,7 +601,7 @@ END SUBROUTINE assemble_output
 !----------------------------------------------------------------------------------------------
 
 SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_in_pa, &
-                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,grid)
+                    latc_loc,lonc_loc,vmax,vmax_ratio,rmax,remove_only,storms,grid)
       
 !center   lat is the center latitude from the global attributes 
 !stdlon   is the center longitude from the global attributes 
@@ -601,9 +627,9 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
   TYPE(domain)                 :: grid
   integer ew,ns,nz
   integer nproj
-  integer num_storm,nstrm
+  integer storms,nstrm
   real :: centerlat,stdlon,conef,truelat1,truelat2,dsm,dx
-  real :: latc_loc,lonc_loc,vmax,vmax_ratio,rmax
+  real :: latc_loc(max_bogus),lonc_loc(max_bogus),vmax(max_bogus),vmax_ratio,rmax(max_bogus)
   
   real :: press(ns,ew,nz),rhmx(nz), vwgt(nz)
   real, dimension(:,:,:) , allocatable :: u11,v11,t11,rh11,phi11
@@ -689,7 +715,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
         jproj = 'ME'
         print *,"A mercator projection"
    END IF
-   num_storm = 1
+
 
   knowni = 1.
   knownj = 1.
@@ -905,7 +931,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
 !  Loop over the number of storms to process.
    
  l_tcbogus = .FALSE.
-
+ all_storms : DO nstrm=1,storms
  k00  = 2
  kfrm = k00
  p85  = 850.
@@ -924,8 +950,10 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
  pprm = devpc*100.
  phip0= pprm/rho 
 
+
 !latc_loc and lonc_loc come in from the namelist. 
- CALL latlon_to_ij ( proj , latc_loc , lonc_loc , x0 , y0 )
+ 
+ CALL latlon_to_ij ( proj , latc_loc(nstrm) , lonc_loc(nstrm) , x0 , y0 )
  IF ( ( x0 .LT. 1. ) .OR. ( x0 .GT. REAL(jx-1) ) .OR. &
               ( y0 .LT. 1. ) .OR. ( y0 .GT. REAL(ix-1) ) ) THEN
          PRINT '(A,I3,A,A,A)','         Storm position is outside the computational domain.'
@@ -935,13 +963,13 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
 
  l_tcbogus = .TRUE.
 !  Bogus vortex specifications, vmax (m/s); rmax (m);
- vmx = vmax  * vmax_ratio
+ vmx = vmax(nstrm)  * vmax_ratio
 
- IF (  latc_loc .LT. 0.  ) THEN
+ IF (  latc_loc(nstrm) .LT. 0.  ) THEN
        vmx = -vmx
  END IF
    
- IF (  vmax  .LE. 0.  ) THEN
+ IF (  vmax(nstrm)  .LE. 0.  ) THEN
        vmx = SQRT( 2.*(1-beta)*ABS(phip0) )  
  END IF
 
@@ -953,11 +981,11 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
 
 !  Start computing.
 
- PRINT '(/,A,I3,A,A,A)'     ,'---> TC: Processing storm number= 1'
- PRINT '(A,F6.2,A,F7.2,A)'  ,'         Storm center lat= ',latc_loc,' lon= ',lonc_loc,'.'
+ PRINT '(/,A,I3,A,A,A)'     ,'---> TC: Processing storm number= ',nstrm
+ PRINT '(A,F6.2,A,F7.2,A)'  ,'         Storm center lat= ',latc_loc(nstrm),' lon= ',lonc_loc(nstrm),'.'
  PRINT '(A,2F6.2,A)'        ,'         Storm center grid position (x,y)= ',xjcn,xicn,'.'
- PRINT '(A,F5.2,F9.2,A)'    ,'         Storm max wind (m/s) and max radius (m)= ',vmx,rmax,'.'
- PRINT '(A,F5.2,A)'         ,'         Estmated central press dev (mb)= ',devpc,'.'
+ PRINT '(A,F5.2,F9.2,A)'    ,'         Storm max wind (m/s) and max radius (m)= ',vmx,rmax(nstrm),'.'
+ PRINT '(A,F5.2,A)'         ,'         Estimated central press dev (mb)= ',devpc,'.'
 
 
 !  Initialize storm center to (1,1)
@@ -973,7 +1001,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
      DO j=1,ew
         disx = REAL(j) - xjcn
         disy = REAL(i) - xicn
-        CALL rankine(disx,disy,dx,kx,vwgt,rmax,vmx,uuwork,vvwork,psiv,vorv)
+        CALL rankine(disx,disy,dx,kx,vwgt,rmax(nstrm),vmx,uuwork,vvwork,psiv,vorv)
         DO k=1,kx
            utcp(i,j,k)  = uuwork(k)
            vtcp(i,j,k)  = vvwork(k)
@@ -1083,7 +1111,7 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
 
    
    DO k=1,kx  !start of the k loop
-      IF ( latc_loc .GE. 0. ) THEN
+      IF ( latc_loc(nstrm) .GE. 0. ) THEN
            vormx = -1.e10
       ELSE
            vormx =  1.e10
@@ -1096,13 +1124,13 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
          DO j=1,ew
             rad = SQRT((REAL(i)-xico)**2.+(REAL(j)-xjco)**2.)*dx
             IF ( rad .LE. r_search ) THEN
-               IF ( latc_loc .GE. 0. ) THEN
+               IF ( latc_loc(nstrm) .GE. 0. ) THEN
                    IF ( vortsv(i,j,k) .GT. vormx ) THEN
                         vormx = vortsv(i,j,k)
                         i_mvc = i
                         j_mvc = j
                     END IF
-               ELSE IF (latc_loc .LT. 0. ) THEN
+               ELSE IF (latc_loc(nstrm) .LT. 0. ) THEN
                     IF ( vortsv(i,j,k) .LT. vormx ) THEN
                          vormx = vortsv(i,j,k)
                          i_mvc = i
@@ -1418,11 +1446,14 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
             delpx(i,j) = rho*dphx0*0.01
             pslx(i,j) = pslx(i,j) + delpx(i,j) 
             if(abs(grid%ht(j,i)) .lt. 1) then
-                  grid%p_gc(j,1,i) = pslx(i,j) * 100.
+                  grid%p_gc(j,1,i)  = pslx(i,j) * 100.
+                  grid%psfc_gc(j,i) = pslx(i,j) * 100.
+                  grid%pslv_gc(j,i) = pslx(i,j) * 100.
             else
-                  grid%p_gc(j,1,i)  = grid%p_gc(j,1,i) + (pslx(i,j) * 100. - grid%pslv_gc(j,i))
+                  grid%p_gc(j,1,i)  = grid%p_gc(j,1,i) - (pslx(i,j) * 100. + grid%pslv_gc(j,i))
+                  grid%psfc_gc(j,i) = grid%p_gc(j,1,i)
+                  grid%pslv_gc(j,i) = grid%pslv_gc(j,i) - (pslx(i,j) * 100. + grid%pslv_gc(j,i))
             end if
-            grid%pslv_gc(j,i) = pslx(i,j) * 100.
          END DO
       END DO
 
@@ -1452,10 +1483,10 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
             DO j=1,ew
                rh_min = avg_rh 
                rad = SQRT((REAL(i)-xico)**2.+(REAL(j)-xjco)**2.)*dx
-               IF ( rad .LE. rmax ) THEN
+               IF ( rad .LE. rmax(nstrm) ) THEN
                   rhtc(i,j,k) = rh_max
                ELSE
-                  rhtc(i,j,k) = (rmax/rad)*rh_max+(1.-(rmax/rad))*rh_min
+                  rhtc(i,j,k) = (rmax(nstrm)/rad)*rh_max+(1.-(rmax(nstrm)/rad))*rh_min
                END IF
             END DO
          END DO
@@ -1493,10 +1524,10 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
               rhbkg = rh0(i,j,k)
               rhbog = rhtc(i,j,k)
               rad = SQRT((REAL(i)-xico)**2.+(REAL(j)-xjco)**2.)*dx
-               IF ( (rad.GT.rmax) .AND. (rad.LE.r_vor2) ) THEN
-                    r_ratio = (rad-rmax)/(r_vor2-rmax)
+               IF ( (rad.GT.rmax(nstrm)) .AND. (rad.LE.r_vor2) ) THEN
+                    r_ratio = (rad-rmax(nstrm))/(r_vor2-rmax(nstrm))
                     rh2(i,j,k) = ((1.-r_ratio)*rhbog) + (r_ratio*rhbkg)
-              ELSE IF (rad .LE. rmax ) THEN
+              ELSE IF (rad .LE. rmax(nstrm) ) THEN
                     rh2(i,j,k) = rhbog
               ELSE
                     rh2(i,j,k) = rhbkg
@@ -1579,7 +1610,6 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
          END DO
       END DO
 
-
     !  New SLP.
       DO i=1,ns
          DO j=1,ew
@@ -1635,6 +1665,19 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
     PRINT '(A,I3,A)'       ,'         Bogus storm number ',nstrm,' completed.'
 
 
+   DO k=1,kx
+      DO i=1,ix
+         DO j=1,jx
+            u1(i,j,k)   = u2(i,j,k)
+            v1(i,j,k)   = v2(i,j,k)
+            t1(i,j,k)   = t2(i,j,k)
+            rh1(i,j,k)  = rh2(i,j,k)
+            phi1(i,j,k) = phi2(i,j,k)
+         END DO
+      END DO
+   END DO
+
+END DO all_storms
  deallocate(u11)
  deallocate(v11)
  deallocate(t11)
@@ -1678,13 +1721,15 @@ SUBROUTINE tc_bogus(centerlat,stdlon,nproj,truelat1,truelat2,dsm,ew,ns,nz,ptop_i
              grid%rh_gc(j,k,i)  = rh2(i,j,k)
              grid%ght_gc(j,k,i) = z2(i,j,k)
              if(k .eq. 1) then
-                if(abs(grid%ht(j,i)) .lt. 1) then
-                   grid%p_gc(j,k,i) = pslx(i,j) * 100.
+                if(abs(grid%ht_gc(j,i)) .lt. 1) then
+                   grid%p_gc(j,k,i)  = pslx(i,j) * 100.
+                   grid%pslv_gc(j,i) = pslx(i,j) * 100.
                 else
-                   grid%p_gc(j,k,i)  = grid%p_gc(j,k,i) + (pslx(i,j) * 100. - grid%pslv_gc(j,i))
+                   grid%p_gc(j,k,i)  = grid%p_gc(j,k,i)  + (pslx(i,j) * 100. - grid%pslv_gc(j,i))
+                   grid%pslv_gc(j,i) = grid%pslv_gc(j,i) + (pslx(i,j) * 100. - grid%pslv_gc(j,i))
                 end if
-                grid%pslv_gc(j,i) = pslx(i,j) * 100.
-             end if
+                grid%psfc(j,i)    = grid%p_gc(j,k,i)
+            end if
        end do
     end do
  end do

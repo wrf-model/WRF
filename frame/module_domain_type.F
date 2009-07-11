@@ -127,6 +127,7 @@ MODULE module_domain_type
       CHARACTER (LEN=25), POINTER, DIMENSION(:) :: desctsloc
       CHARACTER (LEN=256), POINTER, DIMENSION(:) :: ts_filename
       LOGICAL :: have_calculated_tslocs
+      LOGICAL :: have_displayed_alloc_stats   ! used in module_alloc_space to display alloc stats; only do it once.
 
    END TYPE domain
 END MODULE module_domain_type

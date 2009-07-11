@@ -697,6 +697,7 @@ CONTAINS
       ENDDO
       new_grid%time_set = .FALSE.
       new_grid%is_intermediate = .FALSE.
+      new_grid%have_displayed_alloc_stats = .FALSE.
 
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation

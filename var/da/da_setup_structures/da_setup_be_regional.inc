@@ -6,8 +6,8 @@ subroutine da_setup_be_regional(xb, be)
 
    implicit none
 
-   type (xb_type), intent(in)  :: xb                    ! First guess structure.
-   type (be_type), intent(out) :: be                    ! Back. errors structure.
+   type (xb_type), intent(in)    :: xb                    ! First guess structure.
+   type (be_type), intent(inout) :: be                    ! Back. errors structure.
 
    integer                     :: i, j, k, m       ! Loop counters.
    integer, allocatable:: bin(:,:,:)         ! Bin assigned to each 3D point

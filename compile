@@ -3,8 +3,13 @@
 cont1:
 
 if ( !  -e configure.wrf  ) then
-   ./configure $1
-   set dontask
+   if ( $1 == "all_wrfvar" ) then
+      ./configure wrfda
+      set dontask
+   else
+      ./configure $1
+      set dontask
+   endif
 endif
 
 

@@ -88,7 +88,7 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg)
    end if
 
    ! deallocate vv_x
-   deallocate (vv_x%v1, vv_x%v2, vv_x%v3, vv_x%v4, vv_x%v5)
+   deallocate (vv_x%v1, vv_x%v2, vv_x%v3, vv_x%v4, vv_x%v5, vv_x%alpha)
 
    if (rootproc) then
       ! finally, collapse data back into a globally-sized cv-array

@@ -27,8 +27,8 @@ subroutine da_add_flow_dependence_xa_adj (ne, ep, xa, vp)
       do j = jte, jts, -1
          do i = ite, its, -1
 
-            alpha = 0.0
             do n = ne, 1, -1
+               alpha = 0.0
                alpha = alpha + ep % v4(i,j,k,n) * xa % q(i,j,k)
                alpha = alpha + ep % v3(i,j,k,n) * xa % t(i,j,k)
                alpha = alpha + ep % v2(i,j,k,n) * xa % v(i,j,k)

@@ -1314,7 +1314,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
               iv%profiler(n)%p(k),zero,pr_error,        &
               uu, speed_qc, speed_error,               &
               vv, speed_qc, speed_error,               &
-              iv%info(profiler)%elv(n), zero, elv_error, &
+              iv%profiler(n)%h(k), zero, elv_error, &
               missing_r, missing_data, xmiss,           & 
               missing_r, missing_data, xmiss,           & 
               missing_r, missing_data, xmiss,           &
@@ -1540,7 +1540,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                ref, ref_qc,  ref_err,                       &   
                q, q_qc, q_err,                              &
                xmiss, iv%gpsref(n)%t(k)%inv,                &
-               iv%gpsref(n)%ref(k)%inv, iv%gpsref(n)%q(k)%inv*1e3 !q%inv in g/kg
+               iv%gpsref(n)%ref(k)%inv, missing_r
          end do 
       end do 
    end if

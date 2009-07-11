@@ -25,7 +25,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
    integer, parameter             :: AIRS_Max_Channels = 281
 
 #ifdef CRTM
-   integer                        :: k  ! Index dimension.
+   integer                        :: k, l  ! Index dimension.
 
    integer           :: inst, num_rad, nchanl, n, icld
    integer           :: ipred, npred, gammapred, id
@@ -344,7 +344,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
             Surface(n)%Land_Temperature=iv%instid(inst)%ts(n)      ! K
             Surface(n)%Soil_Moisture_Content=iv%instid(inst)%smois(n)  !0.05    ! volumetric water content (g/cm**3)
             !Surface(n)%Canopy_Water_Content=0.05      ! gravimetric water content
-            Surface(n)%Vegetation_Fraction=iv%instid(inst)%vegtyp(n)
+            Surface(n)%Vegetation_Fraction=iv%instid(inst)%vegfra(n)
             Surface(n)%Soil_Temperature=iv%instid(inst)%tslb(n)
          end if
          if (Surface(n)%Water_Coverage > 0.0) then
@@ -484,15 +484,28 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( n )
       do n = iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
-         call da_crtm_tl (1, nchanl, 1, Atmosphere(n),   &
-                            Surface(n),      &
-                            Atmosphere_TL(n),&
-                            Surface_TL(n),   &
-                            GeometryInfo(n), &
-                            ChannelInfo(inst:inst),  &
-                            RTSolution(:,n),   &
-                            RTSolution_TL(:,n),&
-                            Options(n))
+         if (.not. use_crtm_kmatrix) then
+            call da_crtm_tl (1, nchanl, 1, Atmosphere(n),   &
+                               Surface(n),      &
+                               Atmosphere_TL(n),&
+                               Surface_TL(n),   &
+                               GeometryInfo(n), &
+                               ChannelInfo(inst:inst),  &
+                               RTSolution(:,n),   &
+                               RTSolution_TL(:,n),&
+                               Options(n))
+         else
+            RTSolution_TL(:,n)%brightness_temperature = 0.
+            do l = 1, ChannelInfo(inst)%n_Channels
+               do k = kts , kte
+                  RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
+                                       iv%instid(inst)%t_jacobian(l,k,n) * Atmosphere_TL(n)%Temperature(k) +  &
+                                       iv%instid(inst)%q_jacobian(l,k,n) * Atmosphere_TL(n)%absorber(k,1)
+               end do
+               RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
+                                       iv%instid(inst)%ps_jacobian(l,n) * Atmosphere_TL(n)%Level_Pressure(Atmosphere_TL(n)%n_Layers) 
+            end do
+         endif
       end do
      !$OMP END PARALLEL DO
 

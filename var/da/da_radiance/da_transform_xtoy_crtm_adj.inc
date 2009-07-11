@@ -323,7 +323,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             Surface(n)%Land_Temperature=iv%instid(inst)%ts(n)      ! K
             Surface(n)%Soil_Moisture_Content=iv%instid(inst)%smois(n)  !0.05    ! volumetric water content (g/cm**3)
             !Surface(n)%Canopy_Water_Content=0.05      ! gravimetric water content
-            Surface(n)%Vegetation_Fraction=iv%instid(inst)%vegtyp(n)
+            Surface(n)%Vegetation_Fraction=iv%instid(inst)%vegfra(n)
             Surface(n)%Soil_Temperature=iv%instid(inst)%tslb(n)
          end if
          if (Surface(n)%Water_Coverage > 0.0) then
@@ -401,15 +401,32 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( n )
       do n =  iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
-         call da_crtm_ad (1, nchanl, 1, Atmosphere(n),   &
-                            Surface(n),      &
-                            RTSolution_AD(:,n),&
-                            GeometryInfo(n), &
-                            ChannelInfo(inst:inst),  &
-                            Atmosphere_AD(n),&
-                            Surface_AD(n),   &
-                            RTSolution(:,n),   &
-                            Options(n))
+         if (.not. use_crtm_kmatrix) then
+            call da_crtm_ad (1, nchanl, 1, Atmosphere(n),   &
+                               Surface(n),      &
+                               RTSolution_AD(:,n),&
+                               GeometryInfo(n), &
+                               ChannelInfo(inst:inst),  &
+                               Atmosphere_AD(n),&
+                               Surface_AD(n),   &
+                               RTSolution(:,n),   &
+                               Options(n))
+         else
+            do i = 1, ChannelInfo(inst)%n_Channels
+               Atmosphere_AD(n)%Level_Pressure(Atmosphere(n)%n_layers) = &
+                       Atmosphere_AD(n)%Level_Pressure(Atmosphere(n)%n_layers) + &
+                       iv%instid(inst)%ps_jacobian(i,n) * RTSolution_AD(i,n)%brightness_temperature   
+            end do
+
+            do k = kts , kte
+               do i = 1, ChannelInfo(inst)%n_Channels
+                  Atmosphere_AD(n)%Temperature(k) = Atmosphere_AD(n)%Temperature(k) + &
+                                iv%instid(inst)%t_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+                  Atmosphere_AD(n)%absorber(k,1) = Atmosphere_AD(n)%absorber(k,1) + &
+                                iv%instid(inst)%q_jacobian(i,k,n) * RTSolution_AD(i,n)%brightness_temperature
+               end do
+            end do
+         endif
       end do
       !$OMP END PARALLEL DO
 
@@ -486,8 +503,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
             if (atmosphere(n)%pressure(kte-k+1) >= 75.0) &        ! Zero Jacobian for top level(s)
                q_ad(k,n) = Atmosphere_AD(n)%Absorber(kte-k+1,1) * 1000.0            ! in g/kg
-               if (k < kte) &                                        ! Zero Jacobian for top level
-                  t_ad(k,n)=Atmosphere_AD(n)%Temperature(kte-k+1)
+            if (k < kte) &                                        ! Zero Jacobian for top level
+               t_ad(k,n)=Atmosphere_AD(n)%Temperature(kte-k+1)
          end do
 
          p_ad(n) = Atmosphere_AD(n)%Level_Pressure(atmosphere(n)%n_layers) * 0.01   ! in hPa

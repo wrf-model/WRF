@@ -22,7 +22,7 @@ subroutine da_wrfvar_init1(no_init1)
    !</DESCRIPTION>
 
    ! FIX? keep this version so netcdf files are the same until near release
-   program_name = "WRFVAR V3.1 (COMPATIBLE WITH WRF V3.1) MODEL"
+   program_name = "WRFVAR V3.1.1 (COMPATIBLE WITH WRF V3.1.1) MODEL"
    ! program_name = "WRFVAR "//release_version
 
    ! Initialize WRF modules:  

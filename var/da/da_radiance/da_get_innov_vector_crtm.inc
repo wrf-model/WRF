@@ -611,6 +611,12 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          !----------------------------------------------------------------
          ! full level pressures
          iv%instid(inst)%pf(0,n)  = Atmosphere(1)%level_pressure(0)
+         if (use_crtm_kmatrix) then
+            ! PS Jacobian
+            do l=1,nchanl
+               iv%instid(inst)%ps_jacobian(l,n)  = Atmosphere_k(l,1)%level_pressure(Atmosphere(1)%n_layers)
+            end do
+	 end if
          do k=1,Atmosphere(1)%n_layers
             iv%instid(inst)%pm(k,n)  = Atmosphere(1)%pressure(k)
             iv%instid(inst)%pf(k,n)  = Atmosphere(1)%level_pressure(k)

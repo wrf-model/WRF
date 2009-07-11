@@ -232,8 +232,8 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
       adj_par_rhs
 
    if (be % ne > 0) then
-      adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,:,:) * &
-         vp2_alpha(its:ite,jts:jte,:,:)) + adj_par_rhs
+      adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,kts:kte,:) * &
+         vp2_alpha(its:ite,jts:jte,kts:kte,:)) + adj_par_rhs
    end if
 
    if ( cv_options == 3 ) adj_par_rhs = sum (cv_2*cv)

@@ -1105,7 +1105,7 @@ subroutine da_write_filtered_obs(grid, ob, iv, &
               iv%profiler(n)%p(k),zero,pr_error,        &
               speed,speed_qc              ,speed_error, &
               dir  ,dir_qc                ,dir_error,   &
-              iv%info(profiler)%elv(n), zero, elv_error, &
+              iv%profiler(n)%h(k), zero, elv_error, &
               missing_r, missing_data, xmiss,           & 
               missing_r, missing_data, xmiss,           & 
               missing_r, missing_data, xmiss

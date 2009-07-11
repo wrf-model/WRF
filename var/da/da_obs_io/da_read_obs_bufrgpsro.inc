@@ -159,7 +159,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
                else if ( height < 7000.0  ) then
                   ref_error = ref_error*(3.0-(4.0e-4*height))
                else
-                  write(unit=message(1),fmt='()') 'unable to process with height = ', &
+                  write(unit=message(1),fmt='(a,f8.1,a,f8.2)') 'unable to process with height = ', &
                      height, ' at lat = ', info%lat
                   call da_error(__FILE__,__LINE__,message(1:1))
                end if
@@ -173,7 +173,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
                else if ( height < 5000.0 ) then
                   ref_error = ref_error*(0.75-(9.0e-5*height))
                else
-                  write(unit=message(1),fmt='()') 'unable to process with height = ', &
+                  write(unit=message(1),fmt='(a,f8.1,a,f8.2)') 'unable to process with height = ', &
                      height, ' at lat = ', info%lat
                   call da_error(__FILE__,__LINE__,message(1:1))
                end if
@@ -183,7 +183,7 @@ subroutine da_read_obs_bufrgpsro (iv, filename)
          write(info%name, '(a,i6.6,a,a)') 'NCEP_GPSRO_', nlocal, '_', date_char
 
          if ( print_detail_obs ) then
-            write(unit=stdout,fmt='(a,1x,a,1x,i4.4,4i2.2,2f8.2,f8.1,f8.2,i3,f9.5')  &
+            write(unit=stdout,fmt='(a,1x,a,1x,i4.4,4i2.2,2f8.2,f8.1,f8.2,i3,f9.5)')  &
                info%name,id(1:5),iyear,imonth,iday,ihour,imin, &
                info%lat,info%lon,height,ref_data,ref_qc,ref_error 
          end if

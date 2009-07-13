@@ -4,7 +4,7 @@ module da_control
    ! Purpose: Common reference point for WRFVAR control.
    !--------------------------------------------------------------------------
 
-   use module_driver_constants, only : max_domains, max_eta, max_moves, &
+   use module_driver_constants, only : max_domains, max_eta, max_moves, max_bogus, &
                                        max_outer_iterations, max_instruments
 
    implicit none

@@ -90,6 +90,7 @@
 !
 ! local stuff
 !
+   CHARACTER*256 :: mminlu_loc
    TYPE(WRFU_TimeInterval) :: tmpTimeInterval
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
@@ -99,7 +100,7 @@
 #endif
 
 call wrf_message("*********************************************************************")
-call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.1                         *")
+call wrf_message("*             PROGRAM: WRF/CHEM VERSION 3.1.1                       *")
 call wrf_message("*                                                                   *")
 call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
 call wrf_message("*                                                                   *")
@@ -182,6 +183,11 @@ call wrf_message("**************************************************************
 !   IF ( config_flags%chem_opt == 2 .AND. config_flags%dust_opt .NE. 2 ) THEN
 !       call wrf_error_fatal(" ERROR: USE dust_opt = 2 when using MADE/SORGAM aerosol option ")
 !   ENDIF
+
+    CALL nl_get_mminlu( 1, mminlu_loc )
+    IF (mminlu_loc .NE. 'USGS') THEN
+      call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
+    ENDIF
 
     if( .NOT. config_flags%restart ) then
        do j=jts,jte

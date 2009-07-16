@@ -103,6 +103,12 @@
       CALL nl_set_cu_physics( 1, 0 )
       CALL nl_set_damp_opt( 1, 0 )
 
+#ifdef WRF_CHEM
+      ! set chemistry option to zero
+      CALL nl_set_chem_opt (1, 0)
+      CALL nl_set_aer_ra_feedback (1, 0)
+#endif
+
       ! set diffusion to zero for backward integration
       CALL nl_set_km_opt( 1, head_grid%km_opt_dfi)
       CALL nl_set_moist_adv_dfi_opt( 1, head_grid%moist_adv_dfi_opt)
@@ -181,6 +187,12 @@
       CALL nl_set_bl_pbl_physics( 1, head_grid%bl_pbl_physics)
       CALL nl_set_cu_physics( 1, head_grid%cu_physics)
       CALL nl_set_damp_opt( 1, head_grid%damp_opt)
+
+#ifdef WRF_CHEM
+      ! reset chem option to normal
+      CALL nl_set_chem_opt( 1, head_grid%chem_opt)
+      CALL nl_set_aer_ra_feedback (1, head_grid%aer_ra_feedback)
+#endif
 
       ! reset km_opt to norlmal
       CALL nl_set_km_opt( 1, head_grid%km_opt)

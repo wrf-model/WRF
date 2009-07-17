@@ -4250,13 +4250,13 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 !  curvature term for v momentum eqn.
 
 !  Map scale factor notes
-!  ADT eqn 45, RHS terms 4 and 5, in cylindrical: mu u*u tan(lat)/(a mx)
+!  ADT eqn 45, RHS terms 4 and 5, in cylindrical:  - mu u*u tan(lat)/(a mx)
 !                                               - mu v w /(a mx)
 !  ru = mu u / my ; rw = mu w / my ; rv = mu v / mx
 !  terms are:
-!  (my/mx)*u ru tan(lat) / a - (my/mx)*v rw / a 
-!  = [my/(mx*a)]*[u ru tan(lat) - v rw]
-!  (1/a)*[(my/mx)*u ru tan(lat) - w rv]
+!  - (my/mx)*u ru tan(lat) / a - (my/mx)*v rw / a 
+!  = - [my/(mx*a)]*[u ru tan(lat) + v rw]
+!  - (1/a)*[(my/mx)*u ru tan(lat) + w rv]
 !  xlat defined with end points half grid space from pole, hence are on
 !  u latitude points => av here
 !
@@ -4277,7 +4277,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
                         0.25*(u(i,k,j)+u(i+1,k,j)+u(i,k,j-1)+u(i+1,k,j-1))*     &
                         tan((xlat(i,j)+xlat(i,j-1))*0.5*degrad)*                &
                         0.25*(ru(i,k,j)+ru(i+1,k,j)+ru(i,k,j-1)+ru(i+1,k,j-1))  &
-                       - v(i,k,j)*0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+              &
+                       + v(i,k,j)*0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+              &
                                                       rw(i,k+1,j)+rw(i,k,j))    )
       ENDDO
       ENDDO

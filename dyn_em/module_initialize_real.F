@@ -2082,24 +2082,36 @@ endif
 
    RECURSIVE SUBROUTINE find_my_parent ( grid_ptr_in , grid_ptr_out , id_i_am , id_wanted , found_the_id )
 
+!  RAR - Modified to correct problem in which the parent of a child domain could
+!  not be found in the namelist. This condition typically occurs while using the
+!  "allow_grid" namelist option when an inactive domain comes before an active
+!  domain in the list, i.e., the domain number of the active domain is greater than
+!  that of an inactive domain at the same level. 
+!      
       USE module_domain
 
       TYPE(domain) , POINTER :: grid_ptr_in , grid_ptr_out
       TYPE(domain) , POINTER :: grid_ptr_sibling
       INTEGER :: id_wanted , id_i_am
+      INTEGER :: nest                    ! RAR
       LOGICAL :: found_the_id
 
       found_the_id = .FALSE.
       grid_ptr_sibling => grid_ptr_in
+      nest = 0                           ! RAR
+
       DO WHILE ( ASSOCIATED ( grid_ptr_sibling ) )
 
          IF ( grid_ptr_sibling%grid_id .EQ. id_wanted ) THEN
             found_the_id = .TRUE.
             grid_ptr_out => grid_ptr_sibling
             RETURN
-         ELSE IF ( grid_ptr_sibling%num_nests .GT. 0 ) THEN
-            grid_ptr_sibling => grid_ptr_sibling%nests(1)%ptr
+! RAR    ELSE IF ( grid_ptr_sibling%num_nests .GT. 0 ) THEN
+         ELSE IF ( grid_ptr_sibling%num_nests .GT. 0 .AND. nest .LT. grid_ptr_sibling%num_nests ) THEN
+            nest = nest + 1               ! RAR
+            grid_ptr_sibling => grid_ptr_sibling%nests(nest)%ptr ! RAR
             CALL find_my_parent ( grid_ptr_sibling , grid_ptr_out , id_i_am , id_wanted , found_the_id )
+            IF (.NOT. found_the_id) grid_ptr_sibling => grid_ptr_sibling%parents(1)%ptr   ! RAR
          ELSE
             grid_ptr_sibling => grid_ptr_sibling%sibling
          END IF

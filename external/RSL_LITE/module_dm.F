@@ -470,7 +470,7 @@ CONTAINS
             c_jps = 0
          ENDIF
 
-         IF ( c_jps < c_jpe .AND. c_ips < c_ipe ) THEN
+         IF ( c_ips <= c_ipe ) THEN
 ! extend the patch dimensions out shw along edges of domain
            IF ( mytask_x .EQ. 0 ) THEN
              c_ips = c_ips - shw
@@ -480,8 +480,14 @@ CONTAINS
            ENDIF
            c_ims = max( c_ips - max(shw,thisdomain_max_halo_width), c_ids - bdx ) - 1
            c_ime = min( c_ipe + max(shw,thisdomain_max_halo_width), c_ide + bdx ) + 1
+         ELSE
+           c_ims = 0
+           c_ime = 0
+         ENDIF
+
 
 ! handle j dims
+         IF ( c_jps <= c_jpe ) THEN
 ! extend the patch dimensions out shw along edges of domain
            IF ( mytask_y .EQ. 0 ) THEN
               c_jps = c_jps - shw
@@ -493,8 +499,6 @@ CONTAINS
            c_jme = min( c_jpe + max(shw,thisdomain_max_halo_width), c_jde + bdx ) + 1
 ! handle k dims
          ELSE
-           c_ims = 0
-           c_ime = 0
            c_jms = 0
            c_jme = 0
          ENDIF

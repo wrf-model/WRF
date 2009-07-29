@@ -235,7 +235,7 @@ da_utils : setup \
            da_update_bc.exe \
            da_advance_time.exe \
            da_verif_obs.exe \
-           da_verif_anal.exe \
+           da_verif_grid.exe \
            da_bias_airmass.exe \
            da_bias_sele.exe \
            da_bias_scan.exe \
@@ -248,9 +248,9 @@ da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
 	$(SFC) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
-da_verif_anal.exe : da_verif_anal.o da_verif_anal_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
-	$(SFC) $(LDFLAGS) -o $@ da_verif_anal.o da_netcdf_interface.o \
-           da_verif_anal_control.o $(LIB_EXTERNAL)
+da_verif_grid.exe : da_verif_grid.o da_verif_grid_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
+	$(SFC) $(LDFLAGS) -o $@ da_verif_grid.o da_netcdf_interface.o \
+           da_verif_grid_control.o $(LIB_EXTERNAL)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_tune_obs_hollingsworth1.exe: da_tune_obs_hollingsworth1.o
@@ -335,8 +335,8 @@ init_modules.o :
 
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
 da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \
-da_verif_obs_control.o da_verif_obs_init.o da_verif_anal_control.o \
-da_verif_anal.o :
+da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o \
+da_verif_grid.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
